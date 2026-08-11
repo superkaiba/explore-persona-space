@@ -202,7 +202,10 @@ highest cosines anywhere in the grid, query-span 0.61 and last-3-joint 0.48 at l
    0.49 is bought with a 2.56-axis-length displacement at cos 0.24, against context-end's 0.66
    axis-lengths at cos 0.66. Context-end has the largest null-corrected cosine margin of any
    readable cell in the grid (+0.44 at all layers, +0.34 mid-band); every single-layer cell sits
-   near zero margin, i.e. aimed no better than a norm-matched random edit.
+   near zero margin, i.e. aimed no better than a norm-matched random edit. Result 5 identifies what
+   query-text's off-axis displacement *is*: the model loses the question (2.6/100 on
+   query-relevance, at 100% coherence). Its 0.49 is the highest F_act in the grid and it is not
+   transport.
 
 ### Result 2: Does the mapping predict the answer vector shift?
 
@@ -451,19 +454,49 @@ the following question, as opposed to some other question?"* — but it is built
 query, and compare the patched arm to the shuffled-donor null and to the unpatched anchors on those
 same queries.
 
-![Query-relevance of patched vs null vs unpatched answers, matched query, full-state patch](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c978013aa95e6c030898ec832df00adc7eed70f9/figures/issue_2094/query_relevance.png)
+![Query-relevance of patched vs null vs unpatched answers, all 14 joint cells, matched query](https://raw.githubusercontent.com/superkaiba/explore-persona-space/eb477f7c5d4e3ba738bbf1c6c946b0a368a5c1a3/figures/issue_2094/query_relevance_joint.png)
 
-> 150 draws, 3 judge draws each; 450/450 scored with zero drops of any class. The dashed line is the
-> unpatched anchor on the same queries.
+> All 14 joint (multi-layer) cells at the full-state patch, 450 draws × 3 judge draws;
+> 1350/1350 scored with zero drops of any class. Dashed line = the unpatched anchor on the same
+> queries. Shards are enumerated off the Hub roots, not a hardcoded slot list.
 
-**The task survives the erasure.** Patched answers score **98.98** at context-end / all 28 layers
-against **95.56** unpatched on the same queries, and every patched cell sits at or above the
-unpatched reference (context-end 98.98 / 98.69; prefix-end 99.11 / 97.22). Only 2 of 150 draws fall
-below 70 — one shuffled-donor null (13.3) and one unpatched native draw (56.7); **zero patched
-draws**. So the deletion is persona-specific: the patch strips the register and leaves the answer
-answering. If anything the patched answers are marginally *more* on-task than the natively-prompted
-ones, which is the direction the erasure reading predicts — stripping the pirate flourish leaves
-plainer, more directly responsive prose.
+**At the slots the headline rests on, the task survives — but that does not generalize, and where it
+breaks it breaks completely.**
+
+| cell | query-relevance | null | coherent | F_act | cos |
+|---|---|---|---|---|---|
+| context-end, all 28 layers | 98.9 | 91.0 | 1.00 | 0.414 | 0.66 |
+| context-end, layers 14–20 | 98.0 | 97.3 | 1.00 | 0.241 | 0.46 |
+| prefix-end, all 28 layers | 99.0 | 97.3 | 1.00 | 0.183 | 0.27 |
+| 2nd-to-last / 3rd-to-last | 99.3 / 97.1 | 98.3 / 98.0 | 1.00 | 0.11 / 0.06 | 0.24 / 0.11 |
+| last-3 joint, layers 14–20 | 77.7 | 84.6 | 0.87 | 0.322 | 0.48 |
+| prefix span (no template), all 28 | 61.9 | 63.1 | 0.27 | 0.365 | 0.45 |
+| query span, layers 14–20 | 59.2 | 63.3 | 0.80 | 0.512 | 0.61 |
+| prefix span (+template), all 28 | 41.6 | 21.7 | 0.20 | 0.118 | 0.18 |
+| prefix span (+template), 14–20 | 9.1 | 2.1 | 0.00 | — | — |
+| **query text, all 28 layers** | **2.6** | 10.3 | **1.00** | **0.494** | 0.24 |
+
+Unpatched reference on the same queries: **96.2**.
+
+Context-end and prefix-end are clean at both depths — there the deletion really is persona-specific,
+and the patched answers are marginally *more* on-task than the natively-prompted ones, which is the
+direction the erasure reading predicts (stripping the pirate flourish leaves plainer, more directly
+responsive prose). Every *other* destroyed cell is already caught by the 90% coherence floor and is
+hatched in the grids above — prefix-span and query-span patches produce word salad, and coherence
+says so.
+
+**Query text at all 28 layers is the exception that justifies the whole read.** It is **100%
+coherent**, it carries the **highest F_act in the entire grid (0.494)**, and it scores **2.6/100** on
+whether the answer answers the question. Asked *"Why is the sky blue during the day but red at
+sunset?"*, its three sampled completions instead discuss a nautical riddle, troubleshoot system
+performance **in Chinese**, and pivot to *"why my favorite color is red."* Every one is fluent — which
+is precisely the case the coherence rubric names as coherent, and precisely what the prefix rubric is
+told not to look at.
+
+So the three reads compose. F_act calls query-text the best transport in the grid; the cosine says
+only 24% of its 2.56-axis-length displacement points at the target; the query-relevance read says
+what the other 76% actually is — the model losing the question. That is not weak transport, it is a
+different phenomenon wearing transport's number.
 
 **Takeaways:**
 
@@ -478,10 +511,14 @@ plainer, more directly responsive prose.
    result.
 4. Failure is not uniform: it is either non-arrival (the story stays plain), token-deep arrival
    ("Ahoy there!" then ordinary prose), or source-persistence (the pirate narrates through the patch).
-5. The erasure is persona-specific, not task-destroying: patched answers score 98.98 on
-   query-relevance vs 95.56 unpatched, with zero patched draws below 70. Neither F_beh nor the
-   coherence gate measures this — both are blind to whether the answer still answers the question —
-   so it needed its own single-arm read.
+5. At context-end and prefix-end the erasure is persona-specific, not task-destroying: 98.0–99.0 on
+   query-relevance against a 96.2 unpatched reference, at both depths. The headline is safe.
+6. It does not generalize across slots, and the failure is invisible to both existing instruments.
+   Query text at all 28 layers is 100% coherent, has the highest F_act in the grid (0.494), and
+   scores 2.6/100 on answering the question. Neither F_beh (register only) nor coherence (form only,
+   "a fluent off-topic answer … fully coherent") can see it; every other broken cell is at least
+   caught by the coherence floor. A high F_act on a span slot should not be read as transport
+   without this check.
 
 **Repro:** heatmaps `scripts/issue2094_userchat_heatmaps.py`; Result 4 `scripts/issue2094_dose_lineplot.py`
 (cells + per-strength values in `figures/issue_2094/userchat_heatmaps/dose_lineplot_summary.json`;
