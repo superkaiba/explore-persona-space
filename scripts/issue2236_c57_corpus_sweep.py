@@ -72,7 +72,7 @@ def main(argv: list[str] | None = None) -> int:
         if r.status == "WARN":
             warns.append((p, r.detail))
         elif r.status == "SKIP":
-            if "no parseable section 9" in r.detail:
+            if "no parseable section-9" in r.detail:
                 n_skip_no_s9 += 1
             else:
                 n_skip_no_trigger += 1
