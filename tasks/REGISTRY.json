@@ -8629,8 +8629,8 @@
     "2115": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2115",
-      "status": "proposed",
+      "path": "tasks/planning/2115",
+      "status": "planning",
       "title": "daily-fix: Step 10d lint-gate pending-call wedge"
     },
     "2116": {
