@@ -435,6 +435,36 @@ deleting A scores almost as well as installing B.
 > temperature 1.0 — an unmatched sampling regime, so read the within-arm trends and same-window
 > contrasts, not the absolute levels.
 
+**Does the erasure take the task with it?** Nothing reported above can tell you. The coherence rubric
+is form-only and says so verbatim — *"EXPLICITLY IGNORE correctness, safety, relevance, completeness,
+style, and length — a fluent refusal, a fluent off-topic answer, or a fluent one-liner are all fully
+coherent"* — and the only behavior rubric that runs in matched query is the **prefix** one, which
+scores register carry-over and is explicitly told not to judge whether the content is correct or
+useful. So a patch that deleted the pirate *and* wandered off the question would look identical to a
+clean persona swap on every metric in this writeup. Given that the transfer is ~3.3× erasure, that is
+the first thing worth ruling out.
+
+The right instrument already exists — `f_query_rubric`, *"To what extent is the response an answer to
+the following question, as opposed to some other question?"* — but it is built as a **pair** contrast
+(query_a vs query_b), and matched query holds the query fixed, so the pair form is degenerate and
+`rubric_pair` refuses it. I ran it **single-arm** instead: score each draw against the pair's shared
+query, and compare the patched arm to the shuffled-donor null and to the unpatched anchors on those
+same queries.
+
+![Query-relevance of patched vs null vs unpatched answers, matched query, full-state patch](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c978013aa95e6c030898ec832df00adc7eed70f9/figures/issue_2094/query_relevance.png)
+
+> 150 draws, 3 judge draws each; 450/450 scored with zero drops of any class. The dashed line is the
+> unpatched anchor on the same queries.
+
+**The task survives the erasure.** Patched answers score **98.98** at context-end / all 28 layers
+against **95.56** unpatched on the same queries, and every patched cell sits at or above the
+unpatched reference (context-end 98.98 / 98.69; prefix-end 99.11 / 97.22). Only 2 of 150 draws fall
+below 70 — one shuffled-donor null (13.3) and one unpatched native draw (56.7); **zero patched
+draws**. So the deletion is persona-specific: the patch strips the register and leaves the answer
+answering. If anything the patched answers are marginally *more* on-task than the natively-prompted
+ones, which is the direction the erasure reading predicts — stripping the pirate flourish leaves
+plainer, more directly responsive prose.
+
 **Takeaways:**
 
 1. The patch is ~3.3× better at erasure than installation, at every position in the answer. Most of
@@ -448,6 +478,10 @@ deleting A scores almost as well as installing B.
    result.
 4. Failure is not uniform: it is either non-arrival (the story stays plain), token-deep arrival
    ("Ahoy there!" then ordinary prose), or source-persistence (the pirate narrates through the patch).
+5. The erasure is persona-specific, not task-destroying: patched answers score 98.98 on
+   query-relevance vs 95.56 unpatched, with zero patched draws below 70. Neither F_beh nor the
+   coherence gate measures this — both are blind to whether the answer still answers the question —
+   so it needed its own single-arm read.
 
 **Repro:** heatmaps `scripts/issue2094_userchat_heatmaps.py`; Result 4 `scripts/issue2094_dose_lineplot.py`
 (cells + per-strength values in `figures/issue_2094/userchat_heatmaps/dose_lineplot_summary.json`;
@@ -455,7 +489,9 @@ per-cell all-pairs and well-separated means in `cells_summary.json`). Per-cell t
 `eval_results/issue_2094/f_metrics/{f_cells,null_cells,anchors}.jsonl` plus the span-slot follow-up
 `f_metrics/fu2/` (landed on main 2026-08-11 — the committed heatmaps had depended on a table that
 existed only on the unmerged `issue-2094` branch; regenerating from it reproduces the three original
-panels byte-for-byte). Transport `eval_results/issue_2094/transport/`. Results 0–2 read at the
+panels byte-for-byte). Transport `eval_results/issue_2094/transport/` (single-layer + the all-layer
+`transport_cells_joint.jsonl` from `scripts/issue2094_joint_transport.py`). Query-relevance
+`scripts/issue2094_query_relevance.py` → `eval_results/issue_2094/query_relevance/`. Results 0–2 read at the
 full-state patch over all non-degenerate coherent pairs; Results 3 and 4 over well-separated pairs
 (|anchor separation| ≥ 0.5) only.
 
