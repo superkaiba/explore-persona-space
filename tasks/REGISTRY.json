@@ -9515,8 +9515,8 @@
     "2231": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2231",
-      "status": "proposed",
+      "path": "tasks/planning/2231",
+      "status": "planning",
       "title": "verify_task_body check 31: normalize plan-figure prose tokens to PNG stems (descriptively-named committed figures escape the body-mention check)"
     },
     "224": {
