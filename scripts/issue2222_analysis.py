@@ -31,7 +31,13 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
-import numpy as np
+# load_dotenv BEFORE any heavy import (numpy below, torch lazily) so the #847
+# shared-VM thread caps bind in-process (tests/test_shared_vm_thread_caps.py):
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import numpy as np  # noqa: E402
 
 __all__ = [
     "auc_mann_whitney",
