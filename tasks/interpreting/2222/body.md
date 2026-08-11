@@ -5,7 +5,7 @@ title: A frozen context→answer map fails to recover exact-ΔP data-screening p
 kind: experiment
 tags: []
 created_at: '2026-08-10T21:18:27Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 2221
 workflow: v1
 goal: Reproduce the Persona Vectors (arXiv 2507.21509) data-screening predictor comparison
