@@ -9,9 +9,16 @@ was structurally un-passable there); (2) the map/probe npz contract loaders
 sentinel from a --cells-filtered run; (5) M2 — decoding-regime-keyed eval
 resume + generations-sha-keyed judge resume; (6) M2 gen-side — truncated-row
 drop/rescan + the gen_regime sidecar refusals; (7) M4 — the selection-census
-gate before the eval panel draw.
+gate before the eval panel draw; (8) the 4b-3 judge-filter parse-fail re-draw
+recovery (bounded same-instrument re-issue, k<=3 attempts/item,
+first-parsed-wins merge, rule-24(ii) per-round cache dirs, post-recovery
+rule-26 gate arithmetic).
 
-All paths are tmp_path-rooted; no network, no GPU, no canonical writes.
+All paths are tmp_path-rooted; no network, no GPU, no canonical writes. The
+re-draw tests fake ONLY the API boundary (`judge_graded`) with a
+signature-mirroring fake that writes `save_raw` and returns the REAL reduce
+(`judge_result_from_save_raw`), so selection / merge / gate bodies execute
+for real.
 """
 
 from __future__ import annotations
@@ -284,3 +291,284 @@ def test_selection_census_gate(tmp_path):
     _write_manifest(d, "mapped_dp_context", "top")
     with pytest.raises(RuntimeError, match="mapped_dp_context__bottom"):
         sweep.assert_selection_census(tmp_path, "lmsys", "evil")
+
+
+# ── 4b-3 judge-filter parse-fail re-draw recovery ─────────────────────────────────
+#
+# Draw-dict shapes mirror the live mint sites (batch_judge / judge_dispatch):
+# kept verdicts carry {"score": N, "stop_reason": ...}; parse failures are
+# {"error": True, "reason": "parse_error", "stop_reason": ...}; transport rows
+# carry the structural transport flag; api-refusal rows stop_reason "refusal".
+
+MALFORMED = {"error": True, "reason": "parse_error", "stop_reason": "end_turn"}
+REFUSAL = {"score": "REFUSAL", "stop_reason": "end_turn"}
+TRANSPORT = {"error": True, "transport": True, "reason": "transient exhausted"}
+TRUNCATED = {"error": True, "reason": "parse_error", "stop_reason": "max_tokens"}
+API_REFUSAL = {"error": True, "reason": "api_refusal", "stop_reason": "refusal"}
+
+
+def _kept(score):
+    return {"score": score, "stop_reason": "end_turn"}
+
+
+def _cid(iid, comp=0):
+    return f"{iid}__00000__{comp:02d}"
+
+
+def _write_save_raw(path: Path, all_scores: dict):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"all_scores": all_scores}))
+
+
+class _ScriptedJudge:
+    """Signature-mirroring ``judge_graded`` fake (API boundary only).
+
+    Each call pops one script entry ({item_id: [parsed draw, ...]}), writes a
+    real ``save_raw`` file from it, and returns the REAL reduce
+    (``judge_result_from_save_raw``) — zero API calls; the wrapper's
+    selection / merge / accounting bodies all execute for real.
+    """
+
+    def __init__(self, script: list[dict]):
+        self.script = list(script)
+        self.calls: list[dict] = []
+
+    def __call__(
+        self,
+        items,
+        eval_prompt,
+        *,
+        n_draws,
+        cache_dir,
+        save_raw,
+        judge_model=None,
+        temperature=None,
+        max_tokens=64,
+        dry_run=False,
+        threshold_base=None,
+    ):
+        from explore_persona_space.eval.graded_judge import judge_result_from_save_raw
+
+        draws = self.script.pop(0)
+        self.calls.append(
+            {
+                "items": [iid for iid, _q, _a in items],
+                "n_draws": n_draws,
+                "cache_dir": Path(cache_dir),
+                "save_raw": Path(save_raw),
+                "max_tokens": max_tokens,
+                "threshold_base": threshold_base,
+            }
+        )
+        all_scores = {}
+        for iid, _q, _a in items:
+            for k, parsed in enumerate(draws[iid]):
+                all_scores[_cid(iid, comp=k)] = parsed
+        _write_save_raw(Path(save_raw), all_scores)
+        return judge_result_from_save_raw(Path(save_raw), items)
+
+
+def _items(ids):
+    return [(iid, f"q-{iid}", f"r-{iid}") for iid in ids]
+
+
+def test_malformed_drop_counts_selects_only_parse_failures(tmp_path):
+    """(1) Selection: only MALFORMED draws are re-draw candidates — refusal /
+    transport / truncation / api-refusal keep their classes; kept draws and
+    foreign item_ids are excluded."""
+    f = tmp_path / "raw.json"
+    _write_save_raw(
+        f,
+        {
+            _cid("a"): MALFORMED,
+            _cid("b"): REFUSAL,
+            _cid("c"): TRANSPORT,
+            _cid("d"): TRUNCATED,
+            _cid("e"): API_REFUSAL,
+            _cid("f"): _kept(80),
+            _cid("g", comp=0): MALFORMED,
+            _cid("g", comp=1): MALFORMED,
+            _cid("zzz-foreign"): MALFORMED,  # not in item_ids -> excluded
+        },
+    )
+    counts = sel.malformed_drop_counts(f, {"a", "b", "c", "d", "e", "f", "g"})
+    assert counts == {"a": 1, "g": 2}
+
+
+def test_judge_with_redraw_first_parsed_wins_and_bounded(tmp_path, monkeypatch):
+    """(2) First-parsed-wins merge: round-1/round-2 recoveries carry their
+    scores; a thrice-failed item stays dropped and counted; refusal/transport
+    items are never re-issued; rule-24(ii) per-round cache dirs; sync routing;
+    exactly 1 + 2 judge calls."""
+    fake = _ScriptedJudge(
+        [
+            # round 0 (n_draws=1): a kept; b/c/d malformed; e refusal; f transport
+            {
+                "a": [_kept(70)],
+                "b": [MALFORMED],
+                "c": [MALFORMED],
+                "d": [MALFORMED],
+                "e": [REFUSAL],
+                "f": [TRANSPORT],
+            },
+            # round 1 (b, c, d re-issued): c recovers; b, d malformed again
+            {"b": [MALFORMED], "c": [_kept(12)], "d": [MALFORMED]},
+            # round 2 (b, d): b recovers on the LAST attempt; d fails all 3
+            {"b": [_kept(33)], "d": [MALFORMED]},
+        ]
+    )
+    monkeypatch.setattr("explore_persona_space.eval.graded_judge.judge_graded", fake)
+    out = sel.judge_with_redraw(
+        _items(["a", "b", "c", "d", "e", "f"]),
+        "rubric {question} {answer}",
+        n_draws=1,
+        cache_dir=tmp_path / "cache" / "x",
+        save_raw=tmp_path / "raw" / "filter_x.json",
+        max_tokens=1024,
+    )
+    # Merge: first parsed judgment per item; thrice-failed d stays None.
+    assert out.scores == {"a": 70.0, "b": 33.0, "c": 12.0, "d": None, "e": None, "f": None}
+    assert out.n_items_redrawn == 3 and out.n_recovered == 2
+    assert out.residual_malformed_draws == 1  # d's round-0 malformed draw
+    assert out.recovered_malformed_draws == 2  # b + c round-0 malformed draws
+    # Selection: refusal (e) + transport (f) never entered a re-draw round.
+    assert fake.calls[1]["items"] == ["b", "c", "d"]
+    assert fake.calls[2]["items"] == ["b", "d"]
+    assert len(fake.calls) == 3  # bounded: 1 initial + REDRAW_MAX_ROUNDS
+    # Rule 24(ii): DISTINCT per-round cache dirs + per-round raw files.
+    assert fake.calls[0]["cache_dir"].name == "x"
+    assert fake.calls[1]["cache_dir"].name == "x__redraw_k1"
+    assert fake.calls[2]["cache_dir"].name == "x__redraw_k2"
+    assert fake.calls[1]["save_raw"].name == "filter_x_redraw1.json"
+    assert fake.calls[2]["save_raw"].name == "filter_x_redraw2.json"
+    assert fake.calls[1]["save_raw"].exists() and fake.calls[2]["save_raw"].exists()
+    # Identical instrument + sync routing on re-draw rounds.
+    assert fake.calls[1]["max_tokens"] == 1024 and fake.calls[2]["max_tokens"] == 1024
+    assert fake.calls[1]["threshold_base"] == sel.REDRAW_SYNC_THRESHOLD
+    assert fake.calls[1]["n_draws"] == 1
+    # Round-0 accounting is untouched (drop-never-coerce record intact).
+    assert out.result.n_dropped_draws == 4  # 3 malformed + 1 refusal
+    assert out.result.n_refusal_draws == 1
+    assert out.result.n_transport_lost_draws == 1
+    acct = sel.redraw_accounting(out)
+    assert acct["n_redraw_rounds_run"] == 2
+    assert acct["n_unrecovered"] == 1
+    assert acct["parse_fail_rate_raw"] == pytest.approx(3 / 5)  # 3 malformed / 5 answered
+    assert acct["parse_fail_rate_post_recovery"] == pytest.approx(1 / 5)
+
+
+def test_redraw_skips_items_with_sibling_parsed_judgment(tmp_path, monkeypatch):
+    """Single-judgment semantics at pilot n_draws=2: an item with a kept
+    sibling draw already HAS a parsed judgment — never re-issued; its
+    round-0 reduce (mean over kept draws) is kept."""
+    fake = _ScriptedJudge(
+        [
+            {"a": [_kept(80), MALFORMED], "b": [MALFORMED, MALFORMED]},
+            {"b": [_kept(5)]},
+        ]
+    )
+    monkeypatch.setattr("explore_persona_space.eval.graded_judge.judge_graded", fake)
+    out = sel.judge_with_redraw(
+        _items(["a", "b"]),
+        "rubric {question} {answer}",
+        n_draws=2,
+        cache_dir=tmp_path / "cache" / "p",
+        save_raw=tmp_path / "raw" / "pilot_p.json",
+        max_tokens=1024,
+    )
+    assert fake.calls[1]["items"] == ["b"]
+    assert len(fake.calls) == 2  # b recovered on round 1 -> no round 2
+    assert out.scores == {"a": 80.0, "b": 5.0}
+    # a's malformed sibling draw is coverage-recovered by its kept judgment
+    # (1 draw), and b's two round-0 malformed draws by its re-draw (2 more).
+    assert out.residual_malformed_draws == 0
+    assert out.recovered_malformed_draws == 3
+
+
+def _pilot_arm_outcome(tmp_path, monkeypatch, name, n_items, n_malformed, recover):
+    """One 100-ish-item arm through the REAL wrapper: `n_malformed` round-0
+    parse failures, `recover` = per-round recovery counts (len <= 2)."""
+    ids = [f"{name}-i{k:03d}" for k in range(n_items)]
+    bad = ids[:n_malformed]
+    script = [{i: [MALFORMED] if i in bad else [_kept(50)] for i in ids}]
+    remaining = list(bad)
+    for n_rec in recover:
+        entry = {}
+        for j, iid in enumerate(remaining):
+            entry[iid] = [_kept(10)] if j < n_rec else [MALFORMED]
+        script.append(entry)
+        remaining = remaining[n_rec:]
+    fake = _ScriptedJudge(script)
+    monkeypatch.setattr("explore_persona_space.eval.graded_judge.judge_graded", fake)
+    save_raw = tmp_path / "raw" / f"pilot_{name}.json"
+    out = sel.judge_with_redraw(
+        _items(ids),
+        "rubric {question} {answer}",
+        n_draws=1,
+        cache_dir=tmp_path / "cache" / name,
+        save_raw=save_raw,
+        max_tokens=1024,
+    )
+    return sel.post_recovery_arm_stats(out, save_raw, set(ids))
+
+
+def test_post_recovery_gate_arithmetic(tmp_path, monkeypatch):
+    """(3) Gate arithmetic via the REAL `_gate_verdict`: 18% raw parse-fail
+    recovered to 1% PASSes the unchanged 2% bar; an 8% residual still FAILs."""
+    from explore_persona_space.eval.judge_pilot import _gate_verdict
+
+    # 18/100 malformed -> 16 then 1 recovered -> 1 residual -> 1% < 2%.
+    ok = _pilot_arm_outcome(tmp_path, monkeypatch, "ok", 100, 18, [16, 1])
+    assert ok.parse_fail_rate == pytest.approx(0.01)
+    assert ok.n_content_dropped == 1 and ok.n_scored == 99
+    failures, _w = _gate_verdict(
+        {"ok": ok},
+        max_tokens=1024,
+        parse_fail_threshold=sel.PILOT_PARSE_FAIL_THRESHOLD,
+        min_effective_draws_per_arm=sel.PILOT_MIN_EFFECTIVE_DRAWS,
+    )
+    assert failures == []
+    # 18/100 malformed -> 5 + 5 recovered -> 8 residual -> 8% >= 2% -> FAIL.
+    bad = _pilot_arm_outcome(tmp_path, monkeypatch, "bad", 100, 18, [5, 5])
+    assert bad.parse_fail_rate == pytest.approx(0.08)
+    failures, _w = _gate_verdict(
+        {"bad": bad},
+        max_tokens=1024,
+        parse_fail_threshold=sel.PILOT_PARSE_FAIL_THRESHOLD,
+        min_effective_draws_per_arm=sel.PILOT_MIN_EFFECTIVE_DRAWS,
+    )
+    assert any("parse-fail" in f and "bad" in f for f in failures)
+
+
+def test_redraw_truncation_still_fails_gate(tmp_path, monkeypatch):
+    """Truncation is NEVER waivable: a truncation-class draw in a RE-DRAW
+    round still fires the rule-26(a) clause (strictly stricter)."""
+    from explore_persona_space.eval.judge_pilot import _gate_verdict
+
+    ids = [f"t-i{k:02d}" for k in range(60)]
+    script = [
+        {i: [MALFORMED] if i == ids[0] else [_kept(50)] for i in ids},
+        {ids[0]: [TRUNCATED]},  # re-draw truncates -> rule-23 class, no round 2
+    ]
+    fake = _ScriptedJudge(script)
+    monkeypatch.setattr("explore_persona_space.eval.graded_judge.judge_graded", fake)
+    save_raw = tmp_path / "raw" / "pilot_t.json"
+    out = sel.judge_with_redraw(
+        _items(ids),
+        "rubric {question} {answer}",
+        n_draws=1,
+        cache_dir=tmp_path / "cache" / "t",
+        save_raw=save_raw,
+        max_tokens=1024,
+    )
+    assert len(fake.calls) == 2  # truncation keeps its class -> no round 2
+    stats = sel.post_recovery_arm_stats(out, save_raw, set(ids))
+    assert stats.n_truncation == 1
+    assert stats.stop_reason_tally.get("max_tokens") == 1
+    failures, _w = _gate_verdict(
+        {"t": stats},
+        max_tokens=1024,
+        parse_fail_threshold=sel.PILOT_PARSE_FAIL_THRESHOLD,
+        min_effective_draws_per_arm=sel.PILOT_MIN_EFFECTIVE_DRAWS,
+    )
+    assert any("truncation" in f for f in failures)

@@ -18,12 +18,15 @@ Consumes unit-1's per-(corpus, trait) screening-score tables
   arm per (corpus, trait) — the judge-filter candidate set (plan §9: ≤48k
   filter calls).
 - ``--phase pilot-filter``    rule-26 pilot gate per TRAIT rubric (one gate
-  call per rubric) via ``eval.judge_pilot.judge_pilot_gate``.
+  call per rubric), script-side over ``eval.judge_pilot``'s exact clauses
+  (same 2% rule-26(b) bar / truncation-never-waivable / 10-effective-draw
+  floor) with the bounded parse-fail re-draw recovery applied BEFORE the
+  verdict (report labeled ``post_recovery: true``).
 - ``--phase judge-filter``    the paper's trait-expression filter judging via
   ``eval.graded_judge.judge_graded`` (routes through the #663-hardened Batch
-  client — this script never inlines an API loop). Drop-never-coerce;
-  content-drop vs transport-loss vs api-refusal counts reported per
-  (corpus, trait).
+  client — this script never inlines an API loop) + the same bounded re-draw
+  recovery. Drop-never-coerce; content-drop vs transport-loss vs api-refusal
+  counts reported per (corpus, trait).
 - ``--phase apply-filter``    keep score < 1 (the paper's exact filter),
   re-select top-500 among survivors, equalize-down to the min survivor count
   across arms within (corpus, trait) (dose matching, plan §4), floor 300 —
@@ -34,6 +37,24 @@ Selection determinism: ranking uses ``np.lexsort`` with the sample_id as an
 explicit secondary tie-break key (stable + machine-independent under score
 ties — the #1946 argsort-tie lesson); the shared random-500 is seeded via
 ``stable_seed(seed, corpus, trait)`` (sha-based, PYTHONHASHSEED-proof).
+
+Parse-fail re-draw recovery (approved 4b-3 pilot-gate amendment): on complex
+real-corpus items Sonnet occasionally writes a score-LESS prose analysis
+(zero truncation — all ``end_turn`` — and zero refusals, so the #2222 step-4
+trailing-scalar parse recovery cannot help), which FAILed the hallucination
+pilot at 10% (lmsys) / 18% (ultrachat) parse-fail vs the rule-26(b) 2% bar.
+Both judge phases therefore re-issue MALFORMED-only items (never
+refusal/transport/truncation/api-refusal draws — those keep their existing
+classes and remedies) with the IDENTICAL instrument, up to
+``REDRAW_MAX_ROUNDS=2`` re-draw rounds (<=3 total attempts/item at the
+production ``--filter-draws 1``), FIRST successfully parsed judgment per item
+wins (single-judgment semantics — the paper's filter judges once per sample);
+an item failing every attempt stays DROPPED and counted, never coerced. Each
+re-draw round uses a DISTINCT cache dir (rule 24(ii); the rubric-keyed cache
+would otherwise replay the failed draw) and persists its raw draws beside the
+round-0 files. Projected volume: ~14k hallucination candidates x 18% ~= 2.5k
+first re-draws + ~450 second — trivial vs the ~40k main wave, so re-draw
+rounds route SYNC (the #2222 ``stage_rejudge`` precedent).
 
 Default selection arms: ``exact_dp,prompttoken_dp,mapped_dp_context,
 probe_diff_context`` — 4 methods × 3 tails (top / bottom / top_filtered)
@@ -67,7 +88,12 @@ import json
 import logging
 import sys
 import time
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from explore_persona_space.eval.graded_judge import JudgeResult
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 for _p in (PROJECT_ROOT / "src", PROJECT_ROOT / "scripts"):
@@ -407,36 +433,367 @@ def filter_items(
     return items, cand
 
 
-# ── Phase: pilot-filter (rule 26) ────────────────────────────────────────────────
+# ── Judge parse-fail re-draw recovery (bounded, same-instrument; 4b-3 amendment) ──
+
+REDRAW_MAX_ROUNDS = 2  # re-draw rounds after the initial pass -> <=3 attempts/item
+# decide_route: n_requests < threshold -> SYNC. Re-draw sets are small (~2.5k
+# projected worst case), so they ride the sync path — the #2222 stage_rejudge
+# precedent (REJUDGE_SYNC_THRESHOLD there; 14,887 sync re-issues ran clean).
+REDRAW_SYNC_THRESHOLD = 50_000_000
+# Mirror judge_pilot_gate's defaults EXACTLY (rule 26(b) bar + the
+# hollow-evidence floor) — the script-side post-recovery gate never weakens them.
+PILOT_PARSE_FAIL_THRESHOLD = 0.02
+PILOT_MIN_EFFECTIVE_DRAWS = 10
+PILOT_N_DRAWS = 2
+
+
+def malformed_drop_counts(save_raw: Path, item_ids: set[str]) -> dict[str, int]:
+    """Per-item MALFORMED content-drop counts from a persisted ``save_raw`` file.
+
+    MALFORMED = a content-parse-failed draw that is NOT transport-lost (rule
+    24), NOT an api-refusal (rule 28), NOT an instructed judge-REFUSAL (rule 9
+    — a produced verdict), and NOT budget-truncation (rule 23 — remedy is a
+    budget raise, never a re-draw). Classification precedence mirrors
+    ``graded_judge.judge_result_from_save_raw``: kept -> transport ->
+    api-refusal -> refusal -> truncation -> malformed. This is the ONLY class
+    the bounded re-draw recovery targets; every other class keeps its
+    existing remedy.
+    """
+    from explore_persona_space.eval import batch_judge as _bj
+    from explore_persona_space.eval import graded_judge as _gj
+
+    with open(save_raw) as f:
+        all_scores: dict[str, object] = json.load(f).get("all_scores", {})
+    counts: dict[str, int] = {}
+    for cid, parsed in all_scores.items():
+        item_id = cid.rsplit("__", 2)[0]
+        if item_id not in item_ids:
+            continue
+        if _gj._score_from_parsed(parsed) is not None:
+            continue  # kept draw
+        if _bj.is_transport_error_dict(parsed):
+            continue  # rule 24: retriable transport loss — not a re-draw target
+        if _bj.is_api_refusal_error_dict(parsed):
+            continue  # rule 28: the sync re-issue remediation owns this class
+        if _gj._is_refusal_parsed(parsed):
+            continue  # rule 9: a produced verdict
+        stop_reason = parsed.get("stop_reason") if isinstance(parsed, dict) else None
+        if _bj.is_truncation_stop_reason(stop_reason):
+            continue  # rule 23: budget defect — raise max_tokens, never re-draw
+        counts[item_id] = counts.get(item_id, 0) + 1
+    return counts
+
+
+@dataclass
+class RedrawOutcome:
+    """Round-0 ``JudgeResult`` + first-parsed-wins merged scores + accounting.
+
+    ``result`` keeps the round-0 accounting VERBATIM (its counters are never
+    rewritten); ``scores`` is the merged per-item view (round-0 reduce where
+    round 0 kept >=1 draw, else the first re-draw round's parsed score, else
+    None — dropped, never coerced). ``residual_malformed_draws`` counts
+    round-0 malformed draws on items that ended UNrecovered (the post-recovery
+    parse-fail numerator); ``recovered_malformed_draws`` counts round-0
+    malformed draws on items that ended with a parsed judgment (re-draw
+    recovery OR a round-0 sibling kept draw).
+    """
+
+    result: JudgeResult
+    scores: dict[str, float | None]
+    n_items_redrawn: int
+    n_recovered: int
+    residual_malformed_draws: int
+    recovered_malformed_draws: int
+    rounds: list[dict] = field(default_factory=list)
+    redraw_stop_reason_tally: dict[str, int] = field(default_factory=dict)
+    n_redraw_truncation_draws: int = 0
+    n_redraw_total_draws: int = 0
+
+
+def judge_with_redraw(
+    items: list[tuple[str, str, str]],
+    rubric: str,
+    *,
+    n_draws: int,
+    cache_dir: Path,
+    save_raw: Path,
+    max_tokens: int,
+    dry_run: bool = False,
+    threshold_base: int | None = None,
+    max_redraw_rounds: int = REDRAW_MAX_ROUNDS,
+) -> RedrawOutcome:
+    """``judge_graded`` + bounded same-instrument re-draw of MALFORMED items.
+
+    Recovery contract (approved 4b-3 amendment; #2222 ``stage_rejudge``
+    precedent):
+
+    - After the initial pass, items with >=1 MALFORMED draw
+      (``malformed_drop_counts``) and NO successfully parsed judgment are
+      RE-ISSUED at the IDENTICAL instrument (same rubric / judge model /
+      ``max_tokens``), 1 draw per item per round, up to ``max_redraw_rounds``
+      rounds (<=1 + ``max_redraw_rounds`` total attempts per item at the
+      production ``n_draws=1``).
+    - FIRST successfully parsed judgment per item wins (single-judgment
+      semantics — the paper's filter judges once per sample); an item failing
+      every attempt stays DROPPED (None) and is counted — never coerced.
+    - Each re-draw round uses a DISTINCT cache dir (``<cache>__redraw_k<n>``,
+      rule 24(ii) — the rubric-keyed cache would otherwise silently replay the
+      failed draw) and persists its raw draws beside the round-0 ``save_raw``
+      (``<stem>_redraw<n>.json``).
+    - Re-draw rounds route SYNC (``REDRAW_SYNC_THRESHOLD``); refusal /
+      transport / api-refusal / truncation draws keep their classes and
+      remedies — only a still-MALFORMED item proceeds to the next round.
+    """
+    from explore_persona_space.eval import graded_judge as _gj
+
+    res0 = _gj.judge_graded(
+        items,
+        rubric,
+        n_draws=n_draws,
+        cache_dir=cache_dir,
+        save_raw=save_raw,
+        max_tokens=max_tokens,
+        dry_run=dry_run,
+        threshold_base=threshold_base,
+    )
+    if dry_run:
+        return RedrawOutcome(
+            result=res0,
+            scores={},
+            n_items_redrawn=0,
+            n_recovered=0,
+            residual_malformed_draws=0,
+            recovered_malformed_draws=0,
+        )
+    qa = {iid: (q, a) for iid, q, a in items}
+    malformed0 = malformed_drop_counts(save_raw, set(qa))
+    merged: dict[str, float | None] = dict(res0.scores)
+    pending = sorted(iid for iid, k in malformed0.items() if k > 0 and merged.get(iid) is None)
+    entered = list(pending)
+    outcome = RedrawOutcome(
+        result=res0,
+        scores=merged,
+        n_items_redrawn=len(entered),
+        n_recovered=0,
+        residual_malformed_draws=0,
+        recovered_malformed_draws=0,
+    )
+    for rnd in range(1, max_redraw_rounds + 1):
+        if not pending:
+            break
+        r_items = [(iid, *qa[iid]) for iid in pending]
+        r_save = save_raw.with_name(f"{save_raw.stem}_redraw{rnd}{save_raw.suffix}")
+        r_cache = cache_dir.parent / f"{cache_dir.name}__redraw_k{rnd}"
+        r_res = _gj.judge_graded(
+            r_items,
+            rubric,
+            n_draws=1,
+            cache_dir=r_cache,
+            save_raw=r_save,
+            max_tokens=max_tokens,
+            threshold_base=REDRAW_SYNC_THRESHOLD,  # forces the SYNC route
+        )
+        n_rec = 0
+        for iid in pending:
+            s = r_res.scores.get(iid)
+            if s is not None and merged.get(iid) is None:
+                merged[iid] = float(s)  # first parsed judgment wins
+                n_rec += 1
+        for key, v in r_res.stop_reason_tally.items():
+            outcome.redraw_stop_reason_tally[key] = outcome.redraw_stop_reason_tally.get(key, 0) + v
+        outcome.n_redraw_truncation_draws += r_res.n_truncation_dropped_draws
+        outcome.n_redraw_total_draws += r_res.n_total_draws
+        malformed_r = malformed_drop_counts(r_save, set(pending))
+        still_pending = sorted(
+            iid for iid in pending if merged.get(iid) is None and malformed_r.get(iid, 0) > 0
+        )
+        outcome.rounds.append(
+            {
+                "round": rnd,
+                "n_items_redrawn": len(pending),
+                "n_recovered": n_rec,
+                "n_still_malformed": len(still_pending),
+                "n_transport_lost": r_res.n_transport_lost_draws,
+                "n_api_refusal": r_res.n_api_refusal_draws,
+                "n_refusal": r_res.n_refusal_draws,
+                "n_truncation": r_res.n_truncation_dropped_draws,
+                "save_raw": str(r_save),
+                "cache_dir": str(r_cache),
+            }
+        )
+        logger.info(
+            "[judge-redraw] round=%d items=%d recovered=%d still_malformed=%d "
+            "transport=%d api_refusal=%d refusal=%d truncation=%d",
+            rnd,
+            len(pending),
+            n_rec,
+            len(still_pending),
+            r_res.n_transport_lost_draws,
+            r_res.n_api_refusal_draws,
+            r_res.n_refusal_draws,
+            r_res.n_truncation_dropped_draws,
+        )
+        pending = still_pending
+    outcome.scores = merged
+    outcome.n_recovered = sum(1 for iid in entered if merged.get(iid) is not None)
+    outcome.residual_malformed_draws = sum(
+        k for iid, k in malformed0.items() if merged.get(iid) is None
+    )
+    outcome.recovered_malformed_draws = sum(
+        k for iid, k in malformed0.items() if merged.get(iid) is not None
+    )
+    return outcome
+
+
+def redraw_accounting(outcome: RedrawOutcome) -> dict:
+    """JSON-ready re-draw accounting block (persisted per (corpus, trait))."""
+    res = outcome.result
+    n_answered = res.n_total_draws - res.n_transport_lost_draws - res.n_api_refusal_draws
+    raw_pf = (res.n_dropped_draws - res.n_refusal_draws) / max(1, n_answered)
+    post_pf = (res.n_truncation_dropped_draws + outcome.residual_malformed_draws) / max(
+        1, n_answered
+    )
+    return {
+        "max_redraw_rounds": REDRAW_MAX_ROUNDS,
+        "n_redraw_rounds_run": len(outcome.rounds),
+        "n_items_redrawn": outcome.n_items_redrawn,
+        "n_recovered": outcome.n_recovered,
+        "n_unrecovered": outcome.n_items_redrawn - outcome.n_recovered,
+        "n_redraw_total_draws": outcome.n_redraw_total_draws,
+        "residual_malformed_draws": outcome.residual_malformed_draws,
+        "recovered_malformed_draws": outcome.recovered_malformed_draws,
+        "parse_fail_rate_raw": round(raw_pf, 6),
+        "parse_fail_rate_post_recovery": round(post_pf, 6),
+        "redraw_stop_reason_tally": outcome.redraw_stop_reason_tally,
+        "rounds": outcome.rounds,
+        "routing": "sync (REDRAW_SYNC_THRESHOLD)",
+    }
+
+
+def post_recovery_arm_stats(outcome: RedrawOutcome, save_raw: Path, item_ids: set[str]):
+    """``ArmPilotStats`` over ROUND-0 draw denominators with the recovery applied.
+
+    Post-recovery semantics: a round-0 MALFORMED draw whose item ended with a
+    parsed judgment (round-0 sibling draw OR a re-draw) leaves the parse-fail
+    numerator (coverage recovered); malformed draws on UNrecovered items stay
+    in it. Refusal / transport / api-refusal counts are round-0 VERBATIM
+    (their classes and remedies are untouched). Truncation is NEVER waivable:
+    ``n_truncation`` and the ``stop_reason_tally`` include the re-draw rounds'
+    evidence too, so a truncating re-draw still FAILs the gate (strictly
+    stricter, never weaker).
+    """
+    from explore_persona_space.eval.judge_pilot import (
+        ArmPilotStats,
+        _count_unknown_stop_reason_drops,
+    )
+
+    res = outcome.result
+    n_answered = res.n_total_draws - res.n_transport_lost_draws - res.n_api_refusal_draws
+    n_content_post = (
+        res.n_refusal_draws + res.n_truncation_dropped_draws + outcome.residual_malformed_draws
+    )
+    tally = dict(res.stop_reason_tally)
+    for key, v in outcome.redraw_stop_reason_tally.items():
+        tally[key] = tally.get(key, 0) + v
+    return ArmPilotStats(
+        n_items=len(item_ids),
+        n_draws=res.n_total_draws,
+        n_scored=n_answered - n_content_post,
+        n_content_dropped=n_content_post,
+        n_refusal=res.n_refusal_draws,
+        n_truncation=res.n_truncation_dropped_draws + outcome.n_redraw_truncation_draws,
+        n_transport_lost=res.n_transport_lost_draws,
+        n_api_refusal=res.n_api_refusal_draws,
+        n_unknown_stop_reason_drops=_count_unknown_stop_reason_drops(save_raw, item_ids),
+        parse_fail_rate=(n_content_post - res.n_refusal_draws) / max(1, n_answered),
+        stop_reason_tally=tally,
+        waived=False,
+    )
+
+
+# ── Phase: pilot-filter (rule 26, post-recovery) ─────────────────────────────────
 
 
 def run_pilot_filter(args) -> int:
-    """One rule-26 pilot gate per TRAIT rubric (arms = corpora), reports persisted."""
-    from explore_persona_space.eval.judge_pilot import judge_pilot_gate
+    """Rule-26 pilot gate per TRAIT rubric (arms = corpora), POST-recovery.
+
+    ``judge_pilot_gate`` cannot accept merged/post-recovery accounting, so
+    this phase reproduces its EXACT loop script-side — same seeded-subsample
+    arithmetic, same ``_gate_verdict`` clauses and thresholds (2% rule-26(b)
+    bar, truncation never waivable, 10-effective-draw floor; never weakened)
+    — over ``judge_with_redraw`` outcomes, and writes the report to the same
+    location labeled ``post_recovery: true``.
+    """
+    from explore_persona_space.eval import DEFAULT_JUDGE_MODEL
+    from explore_persona_space.eval.judge_pilot import (
+        PilotGateReport,
+        _gate_verdict,
+        _seeded_subsample,
+    )
 
     report_dir = Path(args.pilot_report_dir)
     report_dir.mkdir(parents=True, exist_ok=True)
     all_pass = True
     for trait in parse_list(args.traits):
         rubric = load_trait_rubric(args.pv_root, args.rubric_file, trait)
-        arms = {}
+        arms: dict[str, list[tuple[str, str, str]]] = {}
         for corpus in parse_list(args.corpora):
             items, _ = filter_items(args, corpus, trait)
+            if not items:
+                raise RuntimeError(f"{corpus}/{trait}: empty filter-candidate arm")
             arms[corpus] = items
-        report_path = report_dir / f"filter_{trait}.json"
-        rep = judge_pilot_gate(
-            arms,
-            rubric,
+        # judge_pilot_gate's own per-arm sizing arithmetic (judge_pilot.py:367).
+        per_arm_items = max(1, args.pilot_total_draws // (len(arms) * PILOT_N_DRAWS))
+        arm_stats: dict[str, object] = {}
+        redraw_acct: dict[str, dict] = {}
+        for corpus, items in arms.items():
+            sub = _seeded_subsample(items, per_arm_items, seed=args.seed, arm=corpus)
+            save_raw = (
+                Path(args.judge_root) / "pilot_raw" / trait / f"judge_raw_pilot_{corpus}.json"
+            )
+            save_raw.parent.mkdir(parents=True, exist_ok=True)
+            outcome = judge_with_redraw(
+                sub,
+                rubric,
+                n_draws=PILOT_N_DRAWS,
+                cache_dir=Path(args.judge_root) / "pilot_cache" / trait / corpus,
+                save_raw=save_raw,
+                max_tokens=args.judge_max_tokens,
+            )
+            arm_stats[corpus] = post_recovery_arm_stats(
+                outcome, save_raw, {iid for iid, _q, _a in sub}
+            )
+            redraw_acct[corpus] = redraw_accounting(outcome)
+        failures, warnings = _gate_verdict(
+            arm_stats,
             max_tokens=args.judge_max_tokens,
-            cache_dir=Path(args.judge_root) / "pilot_cache" / trait,
-            save_raw_dir=Path(args.judge_root) / "pilot_raw" / trait,
-            n_draws=2,
-            target_total_draws=args.pilot_total_draws,
-            report_path=report_path,
-            seed=args.seed,
+            parse_fail_threshold=PILOT_PARSE_FAIL_THRESHOLD,
+            min_effective_draws_per_arm=PILOT_MIN_EFFECTIVE_DRAWS,
         )
-        logger.info("[pilot-filter] trait=%s verdict=%s -> %s", trait, rep.verdict, report_path)
-        all_pass &= rep.passed
+        passed = not failures
+        report = PilotGateReport(
+            passed=passed,
+            verdict="PASS" if passed else "FAIL",
+            failures=failures,
+            warnings=warnings,
+            arms=arm_stats,
+            judge_model=DEFAULT_JUDGE_MODEL,
+            max_tokens=args.judge_max_tokens,
+            n_total_draws=sum(a.n_draws for a in arm_stats.values()),
+            parse_fail_threshold=PILOT_PARSE_FAIL_THRESHOLD,
+            rubric_hash=hashlib.sha256(rubric.encode("utf-8")).hexdigest()[:16],
+        )
+        report_path = report_dir / f"filter_{trait}.json"
+        atomic_write_json(
+            {**report.to_json(), "post_recovery": True, "redraw": redraw_acct}, report_path
+        )
+        logger.info(
+            "[pilot-filter] trait=%s verdict=%s (post_recovery=true) -> %s",
+            trait,
+            report.verdict,
+            report_path,
+        )
+        all_pass &= passed
     if not all_pass:
         raise RuntimeError("[pilot-filter] at least one trait rubric FAILED the pilot gate")
     return 0
@@ -461,9 +818,13 @@ def check_pilot_pass(report_path: Path, wave_calls: int, skip: bool) -> None:
 
 
 def run_judge_filter(args) -> int:
-    """Judge the candidate union per (corpus, trait) via the Batch machinery."""
-    from explore_persona_space.eval.graded_judge import judge_graded
+    """Judge the candidate union per (corpus, trait) via the Batch machinery.
 
+    Runs through :func:`judge_with_redraw`: MALFORMED parse-fail items are
+    re-issued at the identical instrument (<=2 sync re-draw rounds, first
+    parsed judgment wins); the persisted ``scores`` are the merged view and
+    the payload carries the full re-draw accounting.
+    """
     for trait in parse_list(args.traits):
         rubric = load_trait_rubric(args.pv_root, args.rubric_file, trait)
         for corpus in parse_list(args.corpora):
@@ -483,7 +844,7 @@ def run_judge_filter(args) -> int:
                 Path(args.pilot_report_dir) / f"filter_{trait}.json", wave, args.skip_pilot_gate
             )
             t0 = time.time()
-            res = judge_graded(
+            outcome = judge_with_redraw(
                 items,
                 rubric,
                 n_draws=args.filter_draws,
@@ -492,6 +853,7 @@ def run_judge_filter(args) -> int:
                 max_tokens=args.judge_max_tokens,
                 dry_run=args.dry_run,
             )
+            res = outcome.result
             if args.dry_run:
                 logger.info("[judge-filter] DRY RUN %s/%s: %d items routed", corpus, trait, wave)
                 continue
@@ -513,9 +875,11 @@ def run_judge_filter(args) -> int:
                     "n_transport_lost_draws": res.n_transport_lost_draws,
                     "n_api_refusal_draws": res.n_api_refusal_draws,
                 },
-                "unscored_sample_ids": sorted(s for s, v in res.scores.items() if v is None),
+                "redraw": redraw_accounting(outcome),
+                "unscored_sample_ids": sorted(s for s, v in outcome.scores.items() if v is None),
                 "scores": {
-                    s: (None if v is None else round(float(v), 4)) for s, v in res.scores.items()
+                    s: (None if v is None else round(float(v), 4))
+                    for s, v in outcome.scores.items()
                 },
                 "provenance": {"candidates_n": cand["n_candidates"]},
                 "meta": repro_meta("issue2224_select.judge-filter"),
@@ -523,6 +887,7 @@ def run_judge_filter(args) -> int:
             atomic_write_json(payload, out_path)
             logger.info(
                 "[judge-filter] %s/%s: %d items in %.0fs; drops=%d transport=%d api_refusal=%d "
+                "redrawn=%d recovered=%d residual_malformed=%d "
                 "(transport/api-refusal rows are RE-JUDGEABLE — rules 24/28)",
                 corpus,
                 trait,
@@ -531,6 +896,9 @@ def run_judge_filter(args) -> int:
                 res.n_dropped_draws,
                 res.n_transport_lost_draws,
                 res.n_api_refusal_draws,
+                outcome.n_items_redrawn,
+                outcome.n_recovered,
+                outcome.residual_malformed_draws,
             )
     return 0
 
@@ -698,10 +1066,29 @@ def main() -> int:
             importlib.import_module(mod)
         from transformers import AutoTokenizer  # noqa: F401
 
-        from explore_persona_space.eval.graded_judge import judge_graded  # noqa: F401
-        from explore_persona_space.eval.judge_pilot import judge_pilot_gate  # noqa: F401
+        from explore_persona_space.eval import DEFAULT_JUDGE_MODEL  # noqa: F401
+        from explore_persona_space.eval import batch_judge as _bj_chk
+        from explore_persona_space.eval import graded_judge as _gj_chk
+        from explore_persona_space.eval.judge_pilot import (  # noqa: F401
+            ArmPilotStats,
+            PilotGateReport,
+            _count_unknown_stop_reason_drops,
+            _gate_verdict,
+            _seeded_subsample,
+        )
         from explore_persona_space.orchestrate.argcheck import assert_args_attributes_defined
         from issue778_lib import load_trait_data  # noqa: F401
+
+        # Attribute-level resolution of every deferred symbol the re-draw
+        # recovery consumes (a bare module import is insufficient — #1689 r2/3/4).
+        for _name in (
+            "is_transport_error_dict",
+            "is_api_refusal_error_dict",
+            "is_truncation_stop_reason",
+        ):
+            getattr(_bj_chk, _name)
+        for _name in ("judge_graded", "_score_from_parsed", "_is_refusal_parsed", "JudgeResult"):
+            getattr(_gj_chk, _name)
 
         assert_args_attributes_defined(__file__)
         print("[import-check] OK issue2224_select")
