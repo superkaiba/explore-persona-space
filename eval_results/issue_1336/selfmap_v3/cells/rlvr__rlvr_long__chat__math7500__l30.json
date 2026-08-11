@@ -1,15 +1,17 @@
 {
-  "elapsed_s": 131.71922889351845,
+  "elapsed_s": 134.85544881387614,
   "metadata": {
     "device": "cpu",
-    "git_commit": "27d28661e4ce11c0a09a38e5436c688fcb7ebefa",
+    "git_commit": "f357c30ce8453f81731291b530384cee67d63829",
     "numpy": "2.2.6",
     "script": "scripts/issue1336_selfmap_missing_pairs.py",
-    "timestamp": "2026-08-07T07:07:28Z",
+    "timestamp": "2026-08-11T17:55:54Z",
     "torch": "2.8.0+cu128"
   },
   "records": [
     {
+      "A_ans_identity_bias_r2": 0.6029718424481243,
+      "A_ctx_rev_identity_bias_r2": 0.7643273966096262,
       "aans_own_r2": 0.6754029428599612,
       "aans_own_r2_globalmu": 0.6756037177028547,
       "corpus": "math7500",
@@ -109,6 +111,8 @@
       "within_r2_globalmu": 0.5623488439877635
     },
     {
+      "A_ans_identity_bias_r2": 0.6029718424481243,
+      "A_ctx_rev_identity_bias_r2": 0.7643273966096262,
       "aans_own_r2": 0.6754029428599612,
       "aans_own_r2_globalmu": 0.6756037177028547,
       "corpus": "math7500",
@@ -208,6 +212,8 @@
       "within_r2_globalmu": 0.5623488439877635
     },
     {
+      "A_ans_identity_bias_r2": 0.6029718424481243,
+      "A_ctx_rev_identity_bias_r2": 0.7643273966096262,
       "aans_own_r2": 0.6754029428599612,
       "aans_own_r2_globalmu": 0.6756037177028547,
       "corpus": "math7500",
@@ -307,6 +313,8 @@
       "within_r2_globalmu": 0.5623488439877635
     },
     {
+      "A_ans_identity_bias_r2": 0.6029718424481243,
+      "A_ctx_rev_identity_bias_r2": 0.7643273966096262,
       "aans_own_r2": 0.6754029428599612,
       "aans_own_r2_globalmu": 0.6756037177028547,
       "corpus": "math7500",
@@ -407,7 +415,7 @@
     }
   ],
   "resume_key": {
-    "algebra_version": "v3-foldlocal-2-cross-t7t8",
+    "algebra_version": "v4-foldlocal-2-cross-t7t8-alignbaselines",
     "corpus": "math7500",
     "fit_seed": 0,
     "format": "chat",
