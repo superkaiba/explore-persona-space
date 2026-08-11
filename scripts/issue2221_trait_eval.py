@@ -55,7 +55,9 @@ import issue778_lib as lib  # noqa: E402
 from explore_persona_space.experiments.issue_2221 import constants as C  # noqa: E402
 from explore_persona_space.experiments.issue_2221.judging import (  # noqa: E402
     alias_judge_items,
+    contracted_rubric,
     judge_with_refusal_remediation,
+    rubric_sha256,
 )
 from explore_persona_space.experiments.issue_2221.loaders import (  # noqa: E402
     atomic_write_text,
@@ -205,7 +207,25 @@ def _judge_items_for_trait(rows: list[dict], trait: str) -> list[tuple[str, str,
     ]
 
 
-def require_pilot_passed(out_root: Path, trait: str, *, expected_draws: int) -> None:
+def _rubrics(external_root: Path) -> dict[str, str]:
+    """Per-trait COMPOSED judge rubrics — this run's single instrument source.
+
+    Paper rubric (verbatim, ``load_trait_data``) + the r10 format contract
+    (``judging.contracted_rubric`` — the JSON envelope as the user message's
+    LAST instruction; the PV rubrics' own trailing "just the number" line
+    otherwise wins at the 2048 budget and the reply parses to nothing).
+    ``phase_pilot``, ``phase_judge``, and the P6 train-propensity judge all
+    read THIS helper, so the pilot gates the exact production instrument by
+    construction.
+    """
+    return {
+        t: contracted_rubric(lib.load_trait_data(external_root, t).eval_prompt) for t in lib.TRAITS
+    }
+
+
+def require_pilot_passed(
+    out_root: Path, trait: str, *, expected_draws: int, expected_rubric_sha: str
+) -> None:
     """Refuse a P6 judge dispatch without a PASSED, instrument-MATCHED pilot.
 
     Standalone ``--phase judge`` must not bypass the gate (review blocker 3):
@@ -214,8 +234,13 @@ def require_pilot_passed(out_root: Path, trait: str, *, expected_draws: int) -> 
     AND attest the production instrument (round-2 review N3): the report's
     ``max_tokens`` equals ``C.EVAL_JUDGE_MAX_TOKENS``, its ``judge_model``
     equals ``lib.JUDGE_MODEL``, and every arm's draw count is consistent with
-    ``expected_draws`` per item (``n_draws == n_items * expected_draws``) —
-    a pilot run at a different instrument proves nothing about this wave.
+    ``expected_draws`` per item (``n_draws == n_items * expected_draws``),
+    and (r10) its ``rubric_sha256`` equals ``expected_rubric_sha`` — the sha
+    of THIS invocation's COMPOSED rubric (verbatim paper rubric + the r10
+    format contract). The max_tokens/judge_model/draw checks never see rubric
+    TEXT, so without the sha a pilot from a different rubric revision (e.g.
+    the pre-r10 uncontracted instrument) could green-light this wave — a
+    pilot run at a different instrument proves nothing about this wave.
 
     Temperature (v4 minor 5): the pilot report (``PilotGateReport.to_json``)
     carries NO temperature field, and the Batch judge client does not thread
@@ -251,6 +276,12 @@ def require_pilot_passed(out_root: Path, trait: str, *, expected_draws: int) -> 
                 f"{st['n_items']} items — inconsistent with the invocation's "
                 f"--judge-draws {expected_draws}; re-run --phase pilot"
             )
+    if d.get("rubric_sha256") != expected_rubric_sha:
+        raise RuntimeError(
+            f"P6 pilot for {trait!r} ran at rubric_sha256={d.get('rubric_sha256')!r} != this "
+            f"invocation's composed rubric {expected_rubric_sha!r} — the rubric text (incl. "
+            f"the r10 format contract) is part of the instrument; re-run --phase pilot"
+        )
 
 
 def phase_pilot(args) -> None:
@@ -268,7 +299,7 @@ def phase_pilot(args) -> None:
     out_root = Path(args.out_root)
     roll_dir = out_root / "eval_rollouts"
     external_root = Path(args.external_root)
-    rubrics = {t: lib.load_trait_data(external_root, t).eval_prompt for t in lib.TRAITS}
+    rubrics = _rubrics(external_root)
     rows_by_tag: dict[str, list[dict]] = {}
     for tag, _ in _roster(args):
         src = roll_dir / f"{tag}.json"
@@ -312,6 +343,15 @@ def phase_pilot(args) -> None:
             min_effective_draws_per_arm=max(1, min(10, min_planned)),
             report_path=report_path,
         )
+        # Pin the composed rubric's identity into the report (r10): the
+        # require_pilot_passed instrument-match checks never see rubric TEXT,
+        # so without this a pilot from a different rubric revision (the
+        # pre-r10 uncontracted instrument) could green-light the wave.
+        # Written for FAILED reports too — the sha names which instrument the
+        # recorded verdict belongs to either way.
+        d = json.loads(report_path.read_text())
+        d["rubric_sha256"] = rubric_sha256(rubrics[trait])
+        atomic_write_text(report_path, json.dumps(d, indent=2))
         lib.log_phase("p6_pilot", f"{trait}: verdict={rep.verdict} (report -> {report_path})")
         if not rep.passed:
             raise RuntimeError(f"P6 pilot gate FAILED for {trait}: {rep.failures}")
@@ -324,7 +364,7 @@ def phase_judge(args) -> None:
     judge_dir = out_root / "judge"
     judge_dir.mkdir(parents=True, exist_ok=True)
     external_root = Path(args.external_root)
-    rubrics = {t: lib.load_trait_data(external_root, t).eval_prompt for t in lib.TRAITS}
+    rubrics = _rubrics(external_root)
     # Regime fingerprint keys the resume on every output-affecting flag
     # (review issue 8; #722-r3 class).
     base_fp = {
@@ -352,7 +392,12 @@ def phase_judge(args) -> None:
             if items:
                 # Blocker 3: never dispatch the primary-DV wave un-piloted;
                 # N3: the pilot must match THIS invocation's instrument.
-                require_pilot_passed(out_root, trait, expected_draws=args.judge_draws)
+                require_pilot_passed(
+                    out_root,
+                    trait,
+                    expected_draws=args.judge_draws,
+                    expected_rubric_sha=rubric_sha256(rubrics[trait]),
+                )
             scores, accounting = judge_with_refusal_remediation(
                 items,
                 rubrics[trait],
@@ -641,7 +686,7 @@ def phase_train_propensity(args) -> None:
 
     # ── judge every trait rubric over every family's base rollouts ──────────
     external_root = Path(args.external_root)
-    rubrics = {t: lib.load_trait_data(external_root, t).eval_prompt for t in lib.TRAITS}
+    rubrics = _rubrics(external_root)
     judge_dir = out_root / "train_propensity" / "judge"
     judge_dir.mkdir(parents=True, exist_ok=True)
     scores_out: dict[str, dict] = {}
@@ -662,7 +707,12 @@ def phase_train_propensity(args) -> None:
             else:
                 # Identical instrument as the production wave; same rule-26
                 # gate (N3: instrument-matched to THIS invocation's draws).
-                require_pilot_passed(out_root, trait, expected_draws=args.judge_draws)
+                require_pilot_passed(
+                    out_root,
+                    trait,
+                    expected_draws=args.judge_draws,
+                    expected_rubric_sha=rubric_sha256(rubrics[trait]),
+                )
                 items = [
                     (f"tp-{family}-p{r['prompt_idx']:03d}-s{r['seed']}", r["prompt"], r["response"])
                     for r in rows

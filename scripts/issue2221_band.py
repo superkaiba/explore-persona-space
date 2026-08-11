@@ -40,7 +40,9 @@ import issue778_lib as lib  # noqa: E402
 from explore_persona_space.experiments.issue_2221 import constants as C  # noqa: E402
 from explore_persona_space.experiments.issue_2221.judging import (  # noqa: E402
     alias_judge_items,
+    contracted_rubric,
     judge_with_refusal_remediation,
+    rubric_sha256,
 )
 from explore_persona_space.experiments.issue_2221.loaders import (  # noqa: E402
     atomic_write_text,
@@ -147,9 +149,20 @@ def band_for_cvss(cvss: float) -> str:
 
 
 def _rubric_for_family(family: str, external_root: Path) -> str:
+    """COMPOSED judge rubric for ``family`` — this script's single instrument source.
+
+    Paper trait rubric (verbatim) for chat families / issue-authored EM
+    severity rubric otherwise, plus the r10 format contract
+    (``judging.contracted_rubric``): the JSON envelope becomes the user
+    message's LAST instruction, uniformly across chat + EM families and
+    pilot + production waves alike (the PV rubrics' own trailing "just the
+    number" line otherwise wins at the 2048 budget — the P6 pilot's
+    hallucination parse-fail incident; the EM template's "then give the
+    integer score" tail carries the same latent drift).
+    """
     if family in C.CHAT_FAMILIES:
-        return lib.load_trait_data(external_root, family).eval_prompt
-    return EM_RUBRICS[family]
+        return contracted_rubric(lib.load_trait_data(external_root, family).eval_prompt)
+    return contracted_rubric(EM_RUBRICS[family])
 
 
 def _em_items(out_root: Path, family: str, cap: int, seed: int = 0) -> list[tuple[str, str, str]]:
@@ -228,9 +241,10 @@ def phase_pilot(args) -> None:
         # not by luck — found-pool ids are legal today, so this is an identity
         # pass-through with the collision assert armed.
         arms = {k: alias_judge_items(v)[0] for k, v in arms.items()}
+        rubric = _rubric_for_family(family, Path(args.external_root))
         rep = judge_pilot_gate(
             arms,
-            _rubric_for_family(family, Path(args.external_root)),
+            rubric,
             max_tokens=C.BAND_JUDGE_MAX_TOKENS,
             cache_dir=out_root / "band" / "pilot_cache" / family,
             save_raw_dir=out_root / "band" / "pilot_raw" / family,
@@ -239,6 +253,13 @@ def phase_pilot(args) -> None:
             min_effective_draws_per_arm=max(1, min(10, min_planned)),
             report_path=report_path,
         )
+        # Pin the composed rubric's identity into the report (r10): the
+        # require_pilot_passed instrument-match checks never see rubric TEXT,
+        # so without this a pilot from a different rubric revision could
+        # green-light the banding wave. Written for FAILED reports too.
+        d = json.loads(report_path.read_text())
+        d["rubric_sha256"] = rubric_sha256(rubric)
+        atomic_write_text(report_path, json.dumps(d, indent=2))
         lib.log_phase(
             "p2_pilot",
             f"{family}: verdict={rep.verdict} (production wave ~{n_calls} calls)",
@@ -247,7 +268,9 @@ def phase_pilot(args) -> None:
             raise RuntimeError(f"p2 pilot gate FAILED for {family}: {rep.failures}")
 
 
-def require_pilot_passed(out_root: Path, family: str, *, expected_draws: int) -> None:
+def require_pilot_passed(
+    out_root: Path, family: str, *, expected_draws: int, expected_rubric_sha: str
+) -> None:
     """Refuse a banding dispatch without a PASSED, instrument-MATCHED pilot.
 
     ``--phase band`` standalone must not bypass the pilot gate (review issue
@@ -255,10 +278,14 @@ def require_pilot_passed(out_root: Path, family: str, *, expected_draws: int) ->
     ``judge_pilot_gate(report_path=...)``) must exist with ``passed: true``
     AND attest the production instrument (round-2 review N3): ``max_tokens``
     equals ``C.BAND_JUDGE_MAX_TOKENS``, ``judge_model`` equals
-    ``lib.JUDGE_MODEL``, and each arm's draw count is consistent with the
+    ``lib.JUDGE_MODEL``, each arm's draw count is consistent with the
     banding invocation's realized ``--n-draws`` (``expected_draws`` — v4
     minor 4: threaded from the caller exactly as trait_eval threads
-    ``--judge-draws``, never a module-constant self-consistency check).
+    ``--judge-draws``, never a module-constant self-consistency check), and
+    (r10) its ``rubric_sha256`` equals ``expected_rubric_sha`` — the sha of
+    THIS invocation's COMPOSED rubric; the other checks never see rubric
+    TEXT, so a pilot from a different rubric revision (e.g. the pre-r10
+    uncontracted instrument) must force a pilot re-run, never gate the wave.
 
     Temperature (v4 minor 5): the pilot report (``PilotGateReport.to_json``)
     carries NO temperature field, and the Batch judge client does not thread
@@ -293,6 +320,12 @@ def require_pilot_passed(out_root: Path, family: str, *, expected_draws: int) ->
                 f"{st['n_items']} items — inconsistent with the invocation's "
                 f"--n-draws {expected_draws}; re-run --phase pilot"
             )
+    if d.get("rubric_sha256") != expected_rubric_sha:
+        raise RuntimeError(
+            f"P2 pilot for {family!r} ran at rubric_sha256={d.get('rubric_sha256')!r} != this "
+            f"invocation's composed rubric {expected_rubric_sha!r} — the rubric text (incl. "
+            f"the r10 format contract) is part of the instrument; re-run --phase pilot"
+        )
 
 
 def phase_band(args) -> None:
@@ -314,11 +347,17 @@ def phase_band(args) -> None:
         if resume_ok(out_path, fp) and not args.force:
             lib.log_phase("p2_band", f"{family}: bands exist (fingerprint match) — skip")
             continue
-        require_pilot_passed(out_root, family, expected_draws=args.n_draws)
+        rubric = _rubric_for_family(family, Path(args.external_root))
+        require_pilot_passed(
+            out_root,
+            family,
+            expected_draws=args.n_draws,
+            expected_rubric_sha=rubric_sha256(rubric),
+        )
         items, _ = _items_and_arms(args, family)
         scores, accounting = judge_with_refusal_remediation(
             items,
-            _rubric_for_family(family, Path(args.external_root)),
+            rubric,
             n_draws=args.n_draws,
             cache_root=band_dir / "judge_cache" / family,
             save_raw_root=band_dir / "judge_raw",
