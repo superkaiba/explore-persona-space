@@ -5,7 +5,8 @@ paths:
   - "scripts/train.py"
   - "scripts/run_sweep.py"
   - "src/explore_persona_space/train/**"
-  - "scripts/issue*.py"
+  - "scripts/*upload*.py"
+  - "scripts/issue*_dispatch*.py"
   - "scripts/issue*.sh"
 ---
 
