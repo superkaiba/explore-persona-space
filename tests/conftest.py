@@ -338,6 +338,12 @@ _FLEET_MUTATING_PASS_NAMES = (
     # a full-main() unit test; its own tests stub the collector / push / path
     # seams instead.
     "root_unstaged_audit_pass",
+    # #2115: escalate-only too, but it iterates the LIVE registration dir,
+    # reads real session transcripts via _transcript_tail_rows, and can write
+    # real sidecar rows under .claude/cache/ + ~/.eps-autonomous/ state +
+    # fire real Telegram pushes from a full-main() unit test; its own tests
+    # monkeypatch PROJECT_ROOT / AUTONOMOUS_REGISTRY_DIR / the reader seams.
+    "pending_call_wedge_pass",
     # #1564: flag-only too, but it sweeps the LIVE registry's completed set,
     # runs real gh/git probes, and can post REAL epm:progress markers on live
     # tasks + sidecar rows + pushes from a full-main() unit test.
