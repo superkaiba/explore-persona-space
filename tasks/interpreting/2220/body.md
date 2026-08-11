@@ -4,7 +4,7 @@ title: The context-to-behavior map's read direction fails to steer while the mea
 kind: experiment
 tags: []
 created_at: '2026-08-10T20:23:13Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1739
 origin_prompt: We have a mapping from context -> behavior expression, for evil/hallucination/sycophancy.
   If we have this mapping (averaged over queries but at context vector position),
