@@ -114,7 +114,13 @@ SOURCE_BLOCKS = [
 A_YLIM = (-0.80, 0.72)
 A_YLIM_IDENT = (-3.25, -1.85)
 PC_YLIM = (-0.62, 0.72)
-PC_YLIM_IDENT = (-3.55, -0.80)
+# The lower panel carries every OFF-SCALE baseline: identity+bias (-0.95..-3.41)
+# AND the t0/t6 shuffled nulls, which reach -5.02 on math7500 (no answer-side
+# refit to absorb the shuffled target mean). t7/t8 nulls sit at ~0 and stay on
+# the main panel with the series they bound.
+PC_YLIM_IDENT = (-5.35, -0.22)
+PC_LOWER_TIERS = (0, 6)
+PC_MAIN_TIERS = (7, 8)
 
 # The module computes this at import (`load_cross()` returns a (values, provenance)
 # TUPLE, so call the ready-made dict rather than re-invoking it) and validates that
@@ -275,7 +281,7 @@ def fig_aggregate(D: dict) -> Path:
         2,
         1,
         sharex=True,
-        figsize=(12.4, 6.5),
+        figsize=(12.4, 7.3),
         gridspec_kw={"height_ratios": [4.3, 1.0], "hspace": 0.08},
     )
     # The project plot style enables an auto layout engine, which silently
@@ -292,7 +298,7 @@ def fig_aggregate(D: dict) -> Path:
     ax.text(
         -0.42,
         0.05,
-        "R² = 0 · predict the training mean  (the null line sits just under it)",
+        "R² = 0 · predict the training mean  (the t7/t8 shuffled null sits 0.0008 under it)",
         ha="left",
         va="bottom",
         fontsize=8.5,
@@ -300,19 +306,36 @@ def fig_aggregate(D: dict) -> Path:
     )
     # NaN at the three round-B pairs (no control was run there) breaks each
     # baseline line into a visible gap rather than bridging an uncontrolled pair.
-    nhi = np.array(
-        [BASELINES[pi]["null_hi"] if pi in BASELINES else np.nan for pi in range(len(PAIRS))]
-    )
+    # ONE NULL PER TIER, coloured to its own series (user call 2026-08-11). The
+    # tiers' nulls differ by ~1000x: t7/t8 refit the answer side against the
+    # SHUFFLED targets, so the refit absorbs the target mean and the null
+    # collapses to -0.0008; t0/t6 have no answer-side refit to absorb it and sit
+    # at -0.3..-0.75. Only t0/t6 are DRAWN -- the t7/t8 null is visually
+    # coincident with the R2=0 line already on the axis (it differs by 0.0008 on
+    # a 1.5-unit axis), so drawing it would add a second zero line carrying no
+    # readable information; its value rides the legend instead. The collapsed
+    # max-over-tiers line this replaces had exactly that problem, and it held the
+    # t7/t8 bar up against the t0/t6 series, making real t0 signal read as noise.
+    for tier in PC_LOWER_TIERS:
+        ax.plot(
+            x,
+            [
+                BASELINES[pi]["null_per_tier"][tier] if pi in BASELINES else np.nan
+                for pi in range(len(PAIRS))
+            ],
+            color=TIER_COLORS[tier],
+            lw=1.3,
+            ls=(0, (5, 2)),
+            alpha=0.9,
+            zorder=2,
+        )
     ax.plot(
-        x,
-        nhi,
+        [],
+        [],
         color=NULL_COLOR,
-        lw=2.0,
+        lw=1.3,
         ls=(0, (5, 2)),
-        marker=".",
-        ms=7,
-        zorder=2,
-        label="shuffled-pairing null, worst tier (capacity control; ≤ −0.0003)",
+        label="shuffled-pairing null, per tier (t0/t6 drawn; t7/t8 = −0.0008 ≈ the zero line)",
     )
     # identity+bias lives on the lower (broken-axis) panel at its TRUE value;
     # the proxy handle carries it into the main panel's legend.
@@ -400,7 +423,8 @@ def fig_aggregate(D: dict) -> Path:
     axb.set_ylim(*A_YLIM_IDENT)
     axb.set_yticks([-2.0, -3.0])
     ax.set_ylabel("held-out R²  (raw pooled, layer 30)", fontsize=11)
-    axb.set_xlabel("forward stage pair  (source → target)", fontsize=11)
+    # No xlabel: the tick labels ARE the pairs ("base→SFT"), the title says
+    # "every forward pair", and the freed strip carries the 8-entry legend.
     ax.set_title(
         "Every forward pair of the Tülu-3 ladder: how much of the context→answer map survives\n"
         "median over 7 non-degenerate corpora, every corpus overplotted; open markers = "
@@ -412,10 +436,15 @@ def fig_aggregate(D: dict) -> Path:
         a.grid(axis="y", alpha=0.22, lw=0.6)
         _xticks(a)
     _break_marks(ax, axb)
-    ax.legend(fontsize=8.5, frameon=False, loc="lower right", ncol=2)
+    # Figure-level legend BELOW the axes: the per-tier t0/t6 null lines now occupy
+    # the lower-left/mid of the data area, so an in-axes legend overlaps them.
+    h, lab = ax.get_legend_handles_labels()
+    fig.legend(
+        h, lab, loc="lower center", bbox_to_anchor=(0.5, 0.004), ncol=4, fontsize=8.5, frameon=False
+    )
     # subplots_adjust, not tight_layout: tight_layout recomputes hspace and
     # would pull the two broken-axis panels apart.
-    fig.subplots_adjust(left=0.075, right=0.995, top=0.892, bottom=0.155)
+    fig.subplots_adjust(left=0.075, right=0.995, top=0.905, bottom=0.20)
     out = OUTDIR / "ladder_full_transfer_lattice.png"
     fig.savefig(out, dpi=180)
     fig.savefig(out.with_suffix(".pdf"))
@@ -423,20 +452,22 @@ def fig_aggregate(D: dict) -> Path:
     return out
 
 
-def _panel_baselines(fmt: str, corpus: str) -> tuple[np.ndarray, np.ndarray]:
-    """This CORPUS's own two baselines, per pair: (null worst tier, identity+bias).
+def _panel_baselines(fmt: str, corpus: str) -> tuple[dict[int, np.ndarray], np.ndarray]:
+    """This CORPUS's own baselines, per pair: ({tier -> null}, identity+bias).
 
-    The null value is the max over the plotted tiers of the 20-draw mean — the
-    tightest bound on what the reparameterization machinery can manufacture
-    from permuted targets. NaN at the three round-B pairs (no control was run
-    there) so each baseline LINE breaks into a visible gap instead of bridging
-    an uncontrolled pair.
+    The null is returned PER TIER (20-draw mean), not collapsed: t7/t8 refit the
+    answer side against the shuffled targets so their null sits at ~0, while
+    t0/t6 have no answer-side refit to absorb the target mean and sit at
+    -0.3..-0.75. Collapsing them holds the t7/t8 bar up against the t0/t6
+    series and makes real t0 signal read as failure. NaN at the three round-B
+    pairs (no control was run there) so each baseline LINE breaks into a
+    visible gap instead of bridging an uncontrolled pair.
     """
     import glob
     import re
 
     pat = re.compile(r"pair_(.+?)__(.+?)_(chat|naturalistic)_(.+)\.json")
-    found: dict[str, tuple[float, float]] = {}
+    found: dict[str, tuple[np.ndarray, float]] = {}
     for fp in sorted(set(glob.glob(xmap.PAIRFILE_GLOB, recursive=True))):
         m = pat.match(Path(fp).name)
         if not m:
@@ -448,15 +479,17 @@ def _panel_baselines(fmt: str, corpus: str) -> tuple[np.ndarray, np.ndarray]:
         if layer:
             mat = np.asarray(layer["nulls"]["r2_matrix"], dtype=float)
             found[f"{src}__{tgt}"] = (
-                float(mat[:, [NULL_COL[t] for t in TIERS]].mean(axis=0).max()),
+                mat[:, [NULL_COL[t] for t in TIERS]].mean(axis=0),
                 float(layer["baselines"]["within"]["identity_bias_r2"]),
             )
-    nullv, identv = [], []
+    per_tier: dict[int, list[float]] = {t: [] for t in TIERS}
+    identv = []
     for src, tgt in PAIRS:
         v = found.get(f"{src}__{tgt}")
-        nullv.append(np.nan if v is None else v[0])
+        for i, t in enumerate(TIERS):
+            per_tier[t].append(np.nan if v is None else float(v[0][i]))
         identv.append(np.nan if v is None else v[1])
-    return np.array(nullv), np.array(identv)
+    return {t: np.array(vs) for t, vs in per_tier.items()}, np.array(identv)
 
 
 def fig_percorpus(D: dict) -> Path:
@@ -499,19 +532,29 @@ def fig_percorpus(D: dict) -> Path:
         # values, not the aggregate's. Both are LINES; NaN at the round-B pairs.
         ax.axhline(0.0, color="#252525", lw=0.9, ls=(0, (6, 3)), zorder=1)
         pnull, pident = _panel_baselines(fmt, corpus)
-        ax.plot(
-            np.arange(len(PAIRS)),
-            pnull,
-            color=NULL_COLOR,
-            lw=1.7,
-            ls=(0, (5, 2)),
-            marker=".",
-            ms=5,
-            zorder=2,
-            label="shuffled-pairing null, worst tier",
-        )
-        axb.plot(np.arange(len(PAIRS)), pident, zorder=2, **ident_style)
-        if k == 0:  # proxy so the figure legend carries the lower-panel line
+        # t0/t6 nulls reach -5.02 on math7500, so they share the lower panel with
+        # identity+bias; t7/t8 nulls sit at ~-0.0008, coincident with the zero
+        # line already drawn above. See fig_aggregate for the full rationale.
+        for tier in PC_LOWER_TIERS:
+            axb.plot(
+                np.arange(len(PAIRS)),
+                pnull[tier],
+                color=TIER_COLORS[tier],
+                lw=1.2,
+                ls=(0, (5, 2)),
+                alpha=0.9,
+                zorder=2,
+            )
+        axb.plot(np.arange(len(PAIRS)), pident, zorder=3, **ident_style)
+        if k == 0:  # proxies so the figure legend carries the lower-panel lines
+            ax.plot(
+                [],
+                [],
+                color=NULL_COLOR,
+                lw=1.2,
+                ls=(0, (5, 2)),
+                label="shuffled-pairing null, per tier (t0/t6 lower panel; t7/t8 ≈ the zero line)",
+            )
             ax.plot([], [], label="identity+bias baseline  ŷ = x + b  (lower panel)", **ident_style)
         for tier in TIERS:
             xa, ys, lo, hi = [], [], [], []
@@ -594,7 +637,7 @@ def fig_percorpus(D: dict) -> Path:
 
     mains[0].set_ylim(*PC_YLIM)  # sharey => applies to all 8 main panels
     breaks[0].set_ylim(*PC_YLIM_IDENT)
-    breaks[0].set_yticks([-1.0, -2.0, -3.0])
+    breaks[0].set_yticks([-1.0, -3.0, -5.0])
     for k in (0, 4):
         mains[k].set_ylabel("held-out R²", fontsize=10)
     h, lab = mains[0].get_legend_handles_labels()
