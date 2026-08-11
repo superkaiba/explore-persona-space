@@ -267,8 +267,13 @@ def phase_cjk(args) -> None:
     for di, ds in enumerate(datasets):
         out = root / "cjk" / f"{ds}.json"
         if out.exists():
-            lib.log_phase("fu_cjk", "skip (fresh)", dataset=ds)
-            continue
+            # Fingerprint-keyed resume skip (mirrors the stage sentinel; #722-r3
+            # class): a CJK_BLOCKS / regex edit must recompute stale masks.
+            prior = json.loads(out.read_text())
+            if prior.get("code_fingerprint") == code_fingerprint():
+                lib.log_phase("fu_cjk", "skip (fresh)", dataset=ds)
+                continue
+            lib.log_phase("fu_cjk", "stale mask — recomputing", dataset=ds)
         local = lib.rawcomp_path(Path(args.data_root), ds)
         if not local.exists():
             local = Path(args.workdir) / "rawcomp" / f"{ds}.jsonl"
@@ -292,6 +297,7 @@ def phase_cjk(args) -> None:
                 "n_cjk": len(cjk_ids),
                 "cjk_row_ids": cjk_ids,
                 "blocks": sorted(CJK_BLOCKS),
+                "code_fingerprint": code_fingerprint(),
                 **lib.run_metadata(),
             },
         )
@@ -413,6 +419,20 @@ def phase_fit(args) -> None:
     """Per-(fit, layer) checkpointed LOFO ridge fits over the staged memmaps."""
     root = _mode_root(args)
     datasets = lib.dataset_ids(args.datasets)
+    # Require a FRESH stage sentinel per dataset (mirrors the stage skip check):
+    # a manual `--phase fit` after an INCOMPLETE/stale stage would otherwise fit
+    # zero-filled memmap slices silently (zeros are finite, so the isfinite
+    # assert passes). Fail loud instead (#2222 pre-merge review Minor 2).
+    for di, ds in enumerate(datasets):
+        sentinel = root / "stage_done" / f"{ds}.json"
+        if not sentinel.exists():
+            raise FileNotFoundError(f"{sentinel} missing — run --phase stage first")
+        prior = json.loads(sentinel.read_text())
+        if prior.get("code_fingerprint") != code_fingerprint() or prior.get("di") != di:
+            raise RuntimeError(
+                f"{ds}: stale stage sentinel (code_fingerprint/di mismatch) — "
+                "re-run --phase stage before fit"
+            )
     fam_idx, families = red._family_index(datasets)
     fold_ids = np.repeat(fam_idx, K_ROWS)
     n_rows = K_ROWS * len(datasets)
@@ -606,6 +626,13 @@ def phase_reduce(args) -> None:
     workdir (``<workdir>/smoke/out/``), never the canonical committed
     ``eval_results/`` path (smoke outputs must not overwrite/pollute the
     canonical out-root).
+
+    Smoke blind-spot enumeration: under ``--smoke``, ``_parent_reference()``
+    is SUBSTITUTED with a note dict, so its committed-parent JSON key reads
+    (``heldout_r2_per_layer``, ``selected_lambda_per_layer_fold``,
+    ``records``) execute only on the production branch — statically verified
+    against the committed parent artifacts (#2222 review Minor 4); a reduce
+    crash is cheap (fits are checkpointed per layer).
     """
     root = _mode_root(args)
     out_root = root / "out" if args.smoke else Path(args.out_root)
@@ -842,7 +869,11 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--layers", type=int, nargs="*", default=None)
     ap.add_argument("--dims", type=int, default=None, help="feature-dim slice (smoke only)")
     ap.add_argument("--smoke", action="store_true", help="separate smoke workdir/out shapes")
-    ap.add_argument("--allow-partial", action="store_true")
+    ap.add_argument(
+        "--allow-partial",
+        action="store_true",
+        help="smoke-only: tolerate missing fit-layer checkpoints in reduce",
+    )
     ap.add_argument("--delete-staged", action="store_true", help="stream-and-delete staging")
     ap.add_argument("--import-check", action="store_true")
     return ap
@@ -866,6 +897,10 @@ def main() -> int:
         raise SystemExit("--smoke fit needs --dims (< n_train) — production omits both")
     if args.dims and not args.smoke:
         raise SystemExit("--dims is a smoke-only dial; production runs the full DIM")
+    if args.allow_partial and not args.smoke:
+        # Missing layers leave NaNs in r_per_layer/r_steer and json.dumps
+        # (allow_nan=True) would emit non-strict `NaN` literals (#2222 Minor 5).
+        raise SystemExit("--allow-partial is a smoke-only dial; production reduces all layers")
     phases = list(PHASES) if args.phase == "all" else [args.phase]
     if args.phase == "all":
         phases = ["selfcheck", "stage", "cjk", "fit", "reduce"]  # pilot is on-demand

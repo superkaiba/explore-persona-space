@@ -357,7 +357,9 @@ def run_gen(
             },
         )
         if not skip_upload:
+            # UPLOAD_LOOP_EXEMPT: #664 per-cell upload  # NO_RETRY: lib.upload_file retries
             lib.upload_file(jsonl_path, lib.hf_rawcomp_path(ds))
+            # UPLOAD_LOOP_EXEMPT: #664 per-cell upload  # NO_RETRY: lib.upload_file retries
             lib.upload_file(_manifest_path(ds_dir), f"{lib.hf_capture_prefix(ds)}/manifest.json")
         print(
             f"[p2_gen] unit {k + 1}/{len(ds_ids)} {ds} n={len(recs)} "
@@ -442,7 +444,9 @@ def run_capture(
                     ds_dir, base[ds], "p1_capture", {"n_rows": len(rendered), "npz": str(out_path)}
                 )
                 if not skip_upload:
+                    # UPLOAD_LOOP_EXEMPT: #664 per-cell upload  # NO_RETRY: lib.upload_file retries
                     lib.upload_file(out_path, f"{lib.hf_capture_prefix(ds)}/summaries.npz")
+                    # UPLOAD_LOOP_EXEMPT: #664 per-cell upload  # NO_RETRY: lib.upload_file retries
                     lib.upload_file(
                         _manifest_path(ds_dir), f"{lib.hf_capture_prefix(ds)}/manifest.json"
                     )
@@ -574,7 +578,9 @@ def _capture_base(
         },
     )
     if not skip_upload:
+        # NO_RETRY: lib.upload_file wraps hub._upload in its own bounded retry (#1315 seam)
         lib.upload_file(out_path, f"{lib.hf_capture_prefix(ds)}/base_respavg.npz")
+        # NO_RETRY: lib.upload_file wraps hub._upload in its own bounded retry (#1315 seam)
         lib.upload_file(_manifest_path(ds_dir), f"{lib.hf_capture_prefix(ds)}/manifest.json")
 
 

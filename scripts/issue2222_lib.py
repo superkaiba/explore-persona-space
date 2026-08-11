@@ -494,11 +494,12 @@ def upload_file(local: Path, path_in_repo: str, *, attempts: int = 3) -> None:
     from explore_persona_space.orchestrate import hub
 
     last_err: Exception | None = None
-    # UPLOAD_LOOP_EXEMPT: bounded transport RETRY (<=3 attempts) around ONE file —
-    # the #1315 outer-retry seam, not a per-file fan-out (per-dataset uploads
-    # total ~4 files/dataset x 24 datasets, far under per-file-storm scale).
+    # Bounded transport RETRY (<=3 attempts) around ONE file — the #1315
+    # outer-retry seam, not a per-file fan-out (per-dataset uploads total
+    # ~4 files/dataset x 24 datasets, far under per-file-storm scale).
     for attempt in range(attempts):
         try:
+            # UPLOAD_LOOP_EXEMPT: bounded <=3-attempt retry around ONE file (#1315 seam)
             url = hub._upload(
                 Path(local),
                 HF_DATA_REPO,
@@ -527,6 +528,7 @@ def hub_file_exists(path_in_repo: str) -> bool:
 
     return bool(
         hub.retry_transient(
+            # HUB_VERIFY_RETRY_EXEMPT: probe rides the hub.retry_transient wrap above
             lambda: HfApi().file_exists(HF_DATA_REPO, path_in_repo, repo_type="dataset"),
             what=f"file_exists({path_in_repo})",
         )

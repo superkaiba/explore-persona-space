@@ -406,6 +406,7 @@ def stage_judge(args, rubrics: dict[str, str], items: list[tuple], pool: dict) -
         lib.write_json_atomic(paths["result"], record)
         if not args.skip_upload:
             for p in (paths["save_raw"], paths["result"]):
+                # UPLOAD_LOOP_EXEMPT: fixed 2-file list  # NO_RETRY: lib.upload_file retries
                 lib.upload_file(p, f"{lib.HF_PREFIX}/raw_completions/form_a_judge/{p.name}")
         lib.log_phase(
             "p4_judge",
@@ -496,6 +497,7 @@ def stage_rejudge(args, rubrics: dict[str, str], items: list[tuple]) -> None:
             }
             if not args.skip_upload:
                 p = form_a_dir(data_root) / f"rejudge_raw_{trait}_k{k}.json"
+                # UPLOAD_LOOP_EXEMPT: per-group file  # NO_RETRY: lib.upload_file retries
                 lib.upload_file(p, f"{lib.HF_PREFIX}/raw_completions/form_a_judge/{p.name}")
         merged = merge_judge_draws(
             record.get("per_item_scores") or {}, sync_scores, [iid for iid, _, _ in items]
@@ -523,6 +525,7 @@ def stage_rejudge(args, rubrics: dict[str, str], items: list[tuple]) -> None:
         }
         lib.write_json_atomic(paths["merged"], payload)
         if not args.skip_upload:
+            # UPLOAD_LOOP_EXEMPT: per-trait merged file  # NO_RETRY: lib.upload_file retries
             lib.upload_file(
                 paths["merged"],
                 f"{lib.HF_PREFIX}/raw_completions/form_a_judge/{paths['merged'].name}",

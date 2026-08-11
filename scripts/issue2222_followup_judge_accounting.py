@@ -63,6 +63,10 @@ def reduce_trait(form_a: Path, trait: str, n_draws: int) -> dict:
 
     api_by_ver, api_by_ds = _by_arm(result.get("per_item_api_refusals"))
     tr_by_ver, tr_by_ds = _by_arm(result.get("per_item_transport_losses"))
+    # Derived-by-version sums must reconcile with the recorded trait totals
+    # (the same fail-loud check the content-drop derivation gets below).
+    assert sum(api_by_ver.values()) == int(result["n_api_refusal_draws"]), (trait, api_by_ver)
+    assert sum(tr_by_ver.values()) == int(result["n_transport_lost_draws"]), (trait, tr_by_ver)
     # Per-item CONTENT drops (batch wave) are not persisted directly; derive:
     # content_i = n_draws - kept_batch_i - api_refusal_i - transport_i.
     per_api = result.get("per_item_api_refusals") or {}
