@@ -8475,8 +8475,8 @@
     "2095": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2095",
-      "status": "planning",
+      "path": "tasks/approved/2095",
+      "status": "approved",
       "title": "workflow-fix: sweep /mnt/eps-data/$USER staging in disk janitors"
     },
     "2096": {
