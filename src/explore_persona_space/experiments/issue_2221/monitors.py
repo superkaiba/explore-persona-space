@@ -311,15 +311,27 @@ def detection_auc(scores: np.ndarray, labels: np.ndarray) -> float:
 
 
 def severity_ordering(values: dict[str, dict[str, float]]) -> dict[str, bool]:
-    """Per family: does the scalar rank normal < misaligned_1 < misaligned_2?"""
+    """Per family: does the scalar rank normal < misaligned_1 < misaligned_2?
+
+    Fails LOUD on a malformed per-family version dict (missing version keys):
+    the previous silent ``except KeyError: False`` masked the ``rsplit("_", 1)``
+    pseudo-family keying bug (16 pseudo-families vs the 8 true
+    :data:`constants.FAMILIES`) as all-False verdicts. Callers with a
+    legitimately partial cell subset (smoke slices) filter to
+    complete-version families BEFORE calling and name the skipped ones.
+    """
     out: dict[str, bool] = {}
     for fam, by_version in values.items():
-        try:
-            out[fam] = bool(
-                by_version["normal"] < by_version["misaligned_1"] < by_version["misaligned_2"]
+        missing = [v for v in C.VERSIONS if v not in by_version]
+        if missing:
+            raise ValueError(
+                f"severity_ordering: family {fam!r} missing versions {missing} — "
+                "malformed keying (derive keys via constants.family_of/version_of, "
+                "never rsplit)"
             )
-        except KeyError:
-            out[fam] = False
+        out[fam] = bool(
+            by_version["normal"] < by_version["misaligned_1"] < by_version["misaligned_2"]
+        )
     return out
 
 

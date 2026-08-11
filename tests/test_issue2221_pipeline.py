@@ -236,10 +236,46 @@ def test_severity_ordering():
     vals = {
         "good": {"normal": 0.0, "misaligned_1": 1.0, "misaligned_2": 2.0},
         "bad": {"normal": 2.0, "misaligned_1": 1.0, "misaligned_2": 0.0},
-        "partial": {"normal": 0.0},
     }
-    out = M.severity_ordering(vals)
-    assert out == {"good": True, "bad": False, "partial": False}
+    assert M.severity_ordering(vals) == {"good": True, "bad": False}
+    # A malformed per-family version dict fails LOUD (v4 C1: the silent
+    # False previously masked the rsplit pseudo-family keying bug).
+    with pytest.raises(ValueError, match="missing versions"):
+        M.severity_ordering({"partial": {"normal": 0.0}})
+
+
+# ── 8a. canonical cell -> (family, version) derivation (v4 blocker C1) ────────
+
+
+def test_family_of_version_of_canonical():
+    cells = te.all_cells()
+    # The 8 TRUE families — never the 16 rsplit pseudo-families.
+    assert {C.family_of(c) for c in cells} == set(C.FAMILIES)
+    for c in cells:
+        assert f"{C.family_of(c)}_{C.version_of(c)}" == c  # exact round-trip, all 24 cells
+    with pytest.raises(ValueError, match="version suffix"):
+        C.version_of("evil_bogus")
+    with pytest.raises(ValueError, match="unknown family"):
+        C.family_of("notafamily_normal")
+
+
+def test_lofo_groups_are_true_families():
+    cells = te.all_cells()
+    groups = [C.family_of(c) for c in cells]
+    assert len(set(groups)) == len(C.FAMILIES) == 8
+    out = M.lofo_jackknife(
+        np.arange(len(cells), dtype=float), np.arange(len(cells), dtype=float), groups
+    )
+    assert set(out) == set(C.FAMILIES)  # 8 jackknife folds, never 16
+
+
+def test_severity_ordering_wellformed_keys_all_families():
+    cells = te.all_cells()
+    vals: dict[str, dict[str, float]] = {}
+    for i, c in enumerate(cells):
+        vals.setdefault(C.family_of(c), {})[C.version_of(c)] = float(i)
+    out = M.severity_ordering(vals)  # no raise: every family carries all 3 versions
+    assert set(out) == set(C.FAMILIES)
 
 
 # ── 8b. arm scalars: every registry arm computes on real-shaped inputs ────────
@@ -551,7 +587,8 @@ def test_p6_pilot_gate_refuses_instrument_mismatch(tmp_path):
     with pytest.raises(RuntimeError, match="max_tokens"):
         te.require_pilot_passed(out_root, "evil", expected_draws=6)
 
-    p.write_text(json.dumps(_pilot_report(judge_model="claude-haiku-legacy")))
+    # Deliberate WRONG-judge-id fixture for the N3 refusal pin (never a real pin).
+    p.write_text(json.dumps(_pilot_report(judge_model="claude-haiku-legacy")))  # noqa: judge-model-pin
     with pytest.raises(RuntimeError, match="judge_model"):
         te.require_pilot_passed(out_root, "evil", expected_draws=6)
 
@@ -564,48 +601,42 @@ def test_p6_pilot_gate_refuses_instrument_mismatch(tmp_path):
 
 def test_p2_band_refuses_without_passed_pilot(tmp_path):
     out_root = tmp_path
+    draws = C.BAND_JUDGE_N_DRAWS  # the banding invocation's --n-draws default
     with pytest.raises(RuntimeError, match="requires a PASSED pilot"):
-        band.require_pilot_passed(out_root, "mistake_medical")
+        band.require_pilot_passed(out_root, "mistake_medical", expected_draws=draws)
     (out_root / "band" / "pilot").mkdir(parents=True)
     p = out_root / "band" / "pilot" / "mistake_medical.json"
     p.write_text(
-        json.dumps(
-            _pilot_report(
-                max_tokens=C.BAND_JUDGE_MAX_TOKENS, per_item_draws=band.PILOT_DRAWS_PER_ITEM
-            )
-        )
+        json.dumps(_pilot_report(max_tokens=C.BAND_JUDGE_MAX_TOKENS, per_item_draws=draws))
     )
-    band.require_pilot_passed(out_root, "mistake_medical")  # no raise
+    band.require_pilot_passed(out_root, "mistake_medical", expected_draws=draws)  # no raise
 
 
 def test_p2_band_pilot_gate_refuses_instrument_mismatch(tmp_path):
     out_root = tmp_path
+    draws = C.BAND_JUDGE_N_DRAWS
     (out_root / "band" / "pilot").mkdir(parents=True)
     p = out_root / "band" / "pilot" / "mistake_medical.json"
-    p.write_text(json.dumps(_pilot_report(max_tokens=1, per_item_draws=band.PILOT_DRAWS_PER_ITEM)))
+    p.write_text(json.dumps(_pilot_report(max_tokens=1, per_item_draws=draws)))
     with pytest.raises(RuntimeError, match="max_tokens"):
-        band.require_pilot_passed(out_root, "mistake_medical")
+        band.require_pilot_passed(out_root, "mistake_medical", expected_draws=draws)
     p.write_text(
         json.dumps(
             _pilot_report(
                 max_tokens=C.BAND_JUDGE_MAX_TOKENS,
-                judge_model="gpt-4o",
-                per_item_draws=band.PILOT_DRAWS_PER_ITEM,
+                # Deliberate WRONG-judge-id fixture for the refusal pin.
+                judge_model="gpt-4o",  # noqa: judge-model-pin
+                per_item_draws=draws,
             )
         )
     )
     with pytest.raises(RuntimeError, match="judge_model"):
-        band.require_pilot_passed(out_root, "mistake_medical")
+        band.require_pilot_passed(out_root, "mistake_medical", expected_draws=draws)
     p.write_text(
-        json.dumps(
-            _pilot_report(
-                max_tokens=C.BAND_JUDGE_MAX_TOKENS,
-                per_item_draws=band.PILOT_DRAWS_PER_ITEM + 1,
-            )
-        )
+        json.dumps(_pilot_report(max_tokens=C.BAND_JUDGE_MAX_TOKENS, per_item_draws=draws + 1))
     )
     with pytest.raises(RuntimeError, match="draws"):
-        band.require_pilot_passed(out_root, "mistake_medical")
+        band.require_pilot_passed(out_root, "mistake_medical", expected_draws=draws)
 
 
 # ── 15. Regime-fingerprint resume predicate (issue 8) ─────────────────────────

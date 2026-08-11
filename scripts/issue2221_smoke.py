@@ -291,7 +291,9 @@ def main() -> None:
         elif name == "sweep":
             if smoke_cell is None:
                 smoke_cell = pick_smoke_cell(corpus)
-            fam, ver = smoke_cell.rsplit("_", 1)
+            # Canonical split (v4 blocker C1): rsplit("_", 1) mangles the
+            # misaligned_{1,2} suffixes into pseudo-family/version pairs.
+            fam, ver = C.family_of(smoke_cell), C.version_of(smoke_cell)
             _run(
                 name,
                 [

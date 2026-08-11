@@ -215,6 +215,14 @@ def require_pilot_passed(out_root: Path, trait: str, *, expected_draws: int) -> 
     equals ``lib.JUDGE_MODEL``, and every arm's draw count is consistent with
     ``expected_draws`` per item (``n_draws == n_items * expected_draws``) —
     a pilot run at a different instrument proves nothing about this wave.
+
+    Temperature (v4 minor 5): the pilot report (``PilotGateReport.to_json``)
+    carries NO temperature field, and the Batch judge client does not thread
+    ``temperature`` either way — the realized judge temperature is the
+    provider default on BOTH the pilot and the production wave (same client,
+    same non-threading; see ``phase_judge``'s temperature note) — so there is
+    no report field to assert and the temperature instrument match holds by
+    construction.
     """
     p = out_root / "pilot" / f"{trait}.json"
     if not p.is_file():
@@ -558,7 +566,10 @@ def phase_train_propensity(args) -> None:
     dataset_root = Path(args.dataset_root)
     roll_dir = out_root / "train_propensity" / "rollouts"
     roll_dir.mkdir(parents=True, exist_ok=True)
-    families = sorted({c.rsplit("_", 1)[0] for c in (args.cells or all_cells())})
+    # Canonical family derivation (v4 blocker C1) — rsplit("_", 1) produced
+    # pseudo-families ("mistake_medical_misaligned") whose dataset dirs and
+    # downstream train_prop keys do not exist.
+    families = sorted({C.family_of(c) for c in (args.cells or all_cells())})
     seeds = list(C.EVAL_ROLLOUT_SEEDS)[: args.n_rollouts]
 
     # ── base-model generation (persist text immediately, per family) ────────

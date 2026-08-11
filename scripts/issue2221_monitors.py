@@ -351,7 +351,10 @@ def phase_correlations(args) -> None:
     p5_root = Path(args.p5_root)
     rng = np.random.default_rng(C.RNG_SEED)
     cells = [c for c in (args.cells or all_cells())]
-    fam_of = {c: c.rsplit("_", 1)[0] for c in cells}
+    # Canonical family derivation (v4 blocker C1): rsplit("_", 1) split the
+    # misaligned_{1,2} suffixes wrong (16 pseudo-families vs the 8 true
+    # C.FAMILIES) — this dict feeds the LOFO groups AND the train_prop lookup.
+    fam_of = {c: C.family_of(c) for c in cells}
 
     n = len(cells)
     idx_boot = M.bootstrap_indices(rng, n, args.n_bootstrap)
@@ -567,11 +570,18 @@ def phase_correlations(args) -> None:
             x = _scalar_matrix(scal_pooled, cells, arm)
             vals: dict[str, dict[str, float]] = {}
             for i, c in enumerate(cells):
-                fam, ver = c.rsplit("_", 1)
-                vals.setdefault(fam, {})[ver] = float(x[i, sel])
+                vals.setdefault(C.family_of(c), {})[C.version_of(c)] = float(x[i, sel])
+            # Families with an incomplete version triple on THIS cell subset
+            # (smoke slices) are NAMED and skipped — never silently False;
+            # severity_ordering itself fails loud on malformed keys (v4 C1).
+            complete = {f: bv for f, bv in vals.items() if set(bv) == set(C.VERSIONS)}
+            per_family = M.severity_ordering(complete)
             ordering[arm] = {
-                "per_family_correct": M.severity_ordering(vals),
-                "fraction_correct": float(np.mean(list(M.severity_ordering(vals).values()))),
+                "per_family_correct": per_family,
+                "fraction_correct": (
+                    float(np.mean(list(per_family.values()))) if per_family else float("nan")
+                ),
+                "families_incomplete": sorted(set(vals) - set(complete)),
             }
         tr["severity_ordering"] = ordering
 
@@ -688,14 +698,22 @@ def phase_correlations(args) -> None:
         # per-family BASE propensity on the TRAINING prompts varies WITHIN the
         # real stratum, so partialing it out of (x, y) — and correlating x
         # against install = y - b — are real covaried reads, not constants.
-        b_train = np.asarray(
-            [float(train_prop[fam_of[c]][trait]["graded_mean"]) for c in cells],
-            dtype=np.float64,
-        )
-        cov["per_family_base_train_propensity"] = {
+        fam_b_train = {
             fam: float(train_prop[fam][trait]["graded_mean"])
             for fam in sorted({fam_of[c] for c in cells})
         }
+        # v4 minor 3: an all-dropped judge family yields a NaN graded_mean —
+        # refuse the covaried reads loud, naming the family, instead of
+        # letting NaN propagate through the partial/install correlations.
+        for fam, val in fam_b_train.items():
+            if not np.isfinite(val):
+                raise RuntimeError(
+                    f"base_train_propensity for family {fam!r} trait {trait!r} is "
+                    f"non-finite ({val}) — an all-dropped judge family; re-run the "
+                    "P6 train_propensity judge wave before the covaried reads"
+                )
+        b_train = np.asarray([fam_b_train[fam_of[c]] for c in cells], dtype=np.float64)
+        cov["per_family_base_train_propensity"] = fam_b_train
         covaried: dict[str, dict] = {}
         for arm in synth_arms:
             if arm not in tr["panels"]["paper"]["arms"]:

@@ -52,9 +52,6 @@ logger = logging.getLogger("issue2221.band")
 
 BAND_EM_CAP_PER_FAMILY = 6000
 BAND_CHAT_CAP_TOTAL = 8000
-# Pilot draws per subsampled item (rule-26 breadth over depth: 2 draws x more
-# items). Shared by phase_pilot and the require_pilot_passed instrument match.
-PILOT_DRAWS_PER_ITEM = 2
 
 # Anchored reason-then-score severity rubrics for the EM-like families
 # (llm-judging rules 6/7: endpoints + midpoint anchored; reasoning before the
@@ -216,10 +213,14 @@ def phase_pilot(args) -> None:
         n_calls = len(items) * args.n_draws
         report_path = out_root / "band" / "pilot" / f"{family}.json"
         report_path.parent.mkdir(parents=True, exist_ok=True)
+        # Pilot draws/item = the banding invocation's --n-draws (v4 minor 4:
+        # threaded from the invocation exactly as trait_eval's pilot uses
+        # --judge-draws; the default C.BAND_JUDGE_N_DRAWS == 2 keeps the
+        # rule-26 breadth-over-depth 2-draw pilot shape).
         # Slice-aware effective-draws floor (gotchas.md smoke-gate slice
         # arithmetic): production keeps the default 10; a tiny smoke slice
         # gets the floor its own planned draw count implies.
-        pilot_draws_per_item = PILOT_DRAWS_PER_ITEM
+        pilot_draws_per_item = max(1, args.n_draws)
         per_arm_items = max(1, args.pilot_draws // (len(arms) * pilot_draws_per_item))
         min_planned = min(min(len(v), per_arm_items) * pilot_draws_per_item for v in arms.values())
         rep = judge_pilot_gate(
@@ -241,9 +242,7 @@ def phase_pilot(args) -> None:
             raise RuntimeError(f"p2 pilot gate FAILED for {family}: {rep.failures}")
 
 
-def require_pilot_passed(
-    out_root: Path, family: str, *, expected_draws: int = PILOT_DRAWS_PER_ITEM
-) -> None:
+def require_pilot_passed(out_root: Path, family: str, *, expected_draws: int) -> None:
     """Refuse a banding dispatch without a PASSED, instrument-MATCHED pilot.
 
     ``--phase band`` standalone must not bypass the pilot gate (review issue
@@ -252,7 +251,16 @@ def require_pilot_passed(
     AND attest the production instrument (round-2 review N3): ``max_tokens``
     equals ``C.BAND_JUDGE_MAX_TOKENS``, ``judge_model`` equals
     ``lib.JUDGE_MODEL``, and each arm's draw count is consistent with the
-    band pilot's per-item draws (``PILOT_DRAWS_PER_ITEM``).
+    banding invocation's realized ``--n-draws`` (``expected_draws`` — v4
+    minor 4: threaded from the caller exactly as trait_eval threads
+    ``--judge-draws``, never a module-constant self-consistency check).
+
+    Temperature (v4 minor 5): the pilot report (``PilotGateReport.to_json``)
+    carries NO temperature field, and the Batch judge client does not thread
+    ``temperature`` either way — the realized judge temperature is the
+    provider default on BOTH the pilot and the production banding wave (same
+    client, same non-threading) — so there is no report field to assert and
+    the temperature instrument match holds by construction.
     """
     p = out_root / "band" / "pilot" / f"{family}.json"
     if not p.is_file():
@@ -277,8 +285,8 @@ def require_pilot_passed(
         if st["n_draws"] != st["n_items"] * expected_draws:
             raise RuntimeError(
                 f"P2 pilot for {family!r} arm {arm!r} ran {st['n_draws']} draws over "
-                f"{st['n_items']} items — inconsistent with the band pilot's "
-                f"{expected_draws} draws/item; re-run --phase pilot"
+                f"{st['n_items']} items — inconsistent with the invocation's "
+                f"--n-draws {expected_draws}; re-run --phase pilot"
             )
 
 
@@ -301,7 +309,7 @@ def phase_band(args) -> None:
         if resume_ok(out_path, fp) and not args.force:
             lib.log_phase("p2_band", f"{family}: bands exist (fingerprint match) — skip")
             continue
-        require_pilot_passed(out_root, family)
+        require_pilot_passed(out_root, family, expected_draws=args.n_draws)
         items, _ = _items_and_arms(args, family)
         scores, accounting = judge_with_refusal_remediation(
             items,

@@ -84,6 +84,34 @@ FAMILIES = CHAT_FAMILIES + EM_FAMILIES
 VERSIONS = ("normal", "misaligned_1", "misaligned_2")
 EM_PROMPTS_CAP_PER_FAMILY = 2000
 
+
+def version_of(cell: str) -> str:
+    """Version slug of a cell id — the LONGEST matching ``_{version}`` suffix.
+
+    Never ``rsplit("_", 1)``: the misaligned version slugs carry an underscore
+    (``misaligned_1``/``misaligned_2``) and family slugs carry underscores too
+    (``mistake_medical``, ``insecure_code``), so a naive rsplit yields 16
+    pseudo-families vs the 8 true :data:`FAMILIES`. Raises ``ValueError`` on
+    no match (fail loud, never a silent wrong split).
+    """
+    for v in sorted(VERSIONS, key=len, reverse=True):
+        if cell.endswith("_" + v):
+            return v
+    raise ValueError(f"cell {cell!r} matches no version suffix in {VERSIONS}")
+
+
+def family_of(cell: str) -> str:
+    """Family slug of a cell id (the prefix before its ``_{version}`` suffix).
+
+    Validates membership in :data:`FAMILIES` — an unknown family is a wiring
+    fault, never a new key (fail loud).
+    """
+    fam = cell[: -(len(version_of(cell)) + 1)]
+    if fam not in FAMILIES:
+        raise ValueError(f"cell {cell!r} resolves to unknown family {fam!r} (not in FAMILIES)")
+    return fam
+
+
 # ── Severity banding (plan §4 P2) ─────────────────────────────────────────────
 # Contiguous three-way banding on the graded 0-100 severity score
 # (post-remediation, mean over kept draws): score <= NORMAL_MAX -> normal
