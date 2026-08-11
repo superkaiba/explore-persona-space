@@ -15,7 +15,7 @@ steered arm, non-degenerate rows; each cell annotated n + the donor-null
 cosine for the same cell).
 
 Every cell is annotated n_coherent/n_total (rows = pairs; one greedy draw per
-pair) and cells with coherent fraction < 80% are marked (visible,
+pair) and cells with coherent fraction < 90% are marked (visible,
 never suppressed). All F means are over coherent, non-degenerate rows only
 (the project coherent-only reporting rule).
 
@@ -69,9 +69,15 @@ PRIMARY_RUBRIC = {
 }
 
 
-def load_rows(eval_root: Path) -> list[dict]:
+def load_rows(eval_root: Path, steered: bool = True) -> list[dict]:
+    """-> the per-cell rows of the steered arm, or of the shuffled-donor null arm."""
+    rels = (
+        ("f_metrics/f_cells.jsonl", "f_metrics/fu2/fu2_cells.jsonl")
+        if steered
+        else ("f_metrics/null_cells.jsonl", "f_metrics/fu2/fu2_null_cells.jsonl")
+    )
     rows: list[dict] = []
-    for rel in ("f_metrics/f_cells.jsonl", "f_metrics/fu2/fu2_cells.jsonl"):
+    for rel in rels:
         p = eval_root / rel
         assert p.exists(), f"missing table: {p}"
         with p.open() as fh:
@@ -122,16 +128,26 @@ def aggregate(
     dose: str,
     ws: set[tuple[str, str]] | None = None,
     ws_any: set[str] | None = None,
+    arm: str = "steered",
 ) -> dict:
-    """-> {(setting, slot, layer_row): {f_act, f_beh, coh_frac, n_coh, n_tot}}
+    """-> {(setting, slot, layer_row): {f_act, f_beh, cos, trav, coh_frac, n_coh, n_tot}}
 
     When ``ws``/``ws_any`` are given, restrict to well-separated pairs: rows are gated
     on ``ws_any`` (pair well-separated on >= 1 primary rubric — the FA-3 row-level
     convention) and each rubric's value on ``ws``.
+
+    ``cos`` is the mean per-draw cosine between the realized answer-vector shift and the
+    floor->ceiling axis; ``trav`` the mean traversal ratio ||s||/||t||. Together they are
+    F_act's polar form: F_act ~ trav * cos, so a cell can post a large F_act EITHER by
+    moving the right way (high cos) OR by simply moving a lot (high trav) with only a
+    modest component on-axis. cos is the scale-free direction read that separates them.
+    Derivation from the banked fields: traversal_ratio = ||s||/||t|| and
+    f_act_shared_recordonly = <s,t>/||t||^2, so their ratio is exactly
+    <s,t>/(||s|| ||t||). Use f_act_shared_recordonly, NOT f_act -- see _decompose.
     """
     buckets: dict[tuple, dict[str, list]] = defaultdict(lambda: defaultdict(list))
     for r in rows:
-        if r["arm"] != "steered" or r["dose"] != dose or r.get("degenerate_self"):
+        if r["arm"] != arm or r["dose"] != dose or r.get("degenerate_self"):
             continue
         if r["slot"] not in SLOTS or r["layer_variant"] not in LAYER_ROWS:
             continue
@@ -149,6 +165,10 @@ def aggregate(
         buckets[key]["n_coh"].append(1)
         if r.get("f_act") is not None and not r.get("f_act_degenerate"):
             buckets[key]["f_act"].append(float(r["f_act"]))
+        tr, on = r.get("traversal_ratio"), r.get("f_act_shared_recordonly")
+        if tr is not None and on is not None and float(tr) > 0:
+            buckets[key]["cos"].append(float(on) / float(tr))
+            buckets[key]["trav"].append(float(tr))
         bv = beh_value(r, r["setting"], ws=ws)
         if bv is not None:
             buckets[key]["f_beh"].append(bv)
@@ -158,6 +178,8 @@ def aggregate(
         out[key] = {
             "f_act": float(np.mean(b["f_act"])) if b["f_act"] else np.nan,
             "f_beh": float(np.mean(b["f_beh"])) if b["f_beh"] else np.nan,
+            "cos": float(np.mean(b["cos"])) if b["cos"] else np.nan,
+            "trav": float(np.mean(b["trav"])) if b["trav"] else np.nan,
             "coh_frac": n_coh / n_tot if n_tot else np.nan,
             "caphit_frac": float(np.mean(b["caphit"])) if b["caphit"] else np.nan,
             "n_coh": n_coh,
@@ -176,11 +198,12 @@ def aggregate(
 # in the writeup prose per cell, which is the right granularity for a caveat.
 # (b) `<5 pairs` never fired on this grid (0 of 176 cells) — dead text in the title.
 #
-# The floor is 80%, not 50%: the coherence distribution is bimodal (see
-# draw_coherence_distribution), so a cell sitting between 50% and 80% coherent is one
-# where a substantial minority of draws came back as word salad — its surviving mean
-# is taken over a selected subset and should not be read as an effect.
-COH_FLOOR = 0.8
+# The floor is 90%, not 50%: the coherence distribution is bimodal (see
+# draw_coherence_distribution), so a cell below it is one where a real minority of
+# draws came back as word salad — its surviving mean is taken over a selected subset
+# and should not be read as an effect. The unpatched anchor baseline is ~98% coherent,
+# so 90% is the nearest round floor that still sits below the no-intervention rate.
+COH_FLOOR = 0.9
 
 
 def dropped_reason(v: dict) -> str | None:
@@ -243,11 +266,29 @@ def draw(agg: dict, field: str, title: str, cmap, norm, out: Path, baseline_note
     fig.colorbar(im, ax=axes, shrink=0.7, label=field)
     note = (
         "grey = arm not run; cell text = n_coherent/n_total pairs; "
-        "X = DROPPED, do not read (<80% coherent draws)"
+        "X = DROPPED, do not read (<90% coherent draws)"
     )
     fig.suptitle(f"{title}\n{note}{('; ' + baseline_note) if baseline_note else ''}", fontsize=11)
     fig.savefig(out, dpi=200, bbox_inches="tight")
     plt.close(fig)
+
+
+def cos_margin_agg(agg: dict, agg_null: dict) -> dict:
+    """-> a copy of ``agg`` whose ``cos`` field is (steered - shuffled-donor null) cosine.
+
+    The null is NOT at cos 0: a norm-matched edit from a WRONG donor pair still lands
+    partly on the floor->ceiling axis (0.10-0.35 across the grid) because every context
+    edit shares geometry with every other. So the raw cosine overstates alignment by
+    whatever a random edit of the same size buys, and the margin over the cell's own null
+    is the defensible read. n / coherence / the DROPPED hatch stay the STEERED cell's --
+    the drop criterion is a property of the arm being read, not of its null.
+    """
+    out = {}
+    for key, v in agg.items():
+        nv = agg_null.get(key)
+        c, cn = v["cos"], (nv["cos"] if nv else np.nan)
+        out[key] = {**v, "cos": (c - cn) if (c == c and cn == cn) else np.nan}
+    return out
 
 
 TRANSPORT_DOSES = ("a0.5", "a1", "a2", "a4", "replace")
@@ -421,7 +462,9 @@ def draw_offaxis(eval_root: Path, out: Path, dose: str, setting: str = "matched_
                 continue
             stats[f"{setting}|{slot}|{lv}"] = {
                 "steered": {"n": a[0], "on_axis": a[1], "off_axis": a[2], "cos": a[3]},
-                "null": ({"n": b[0], "on_axis": b[1], "off_axis": b[2], "cos": b[3]} if b else None),
+                "null": (
+                    {"n": b[0], "on_axis": b[1], "off_axis": b[2], "cos": b[3]} if b else None
+                ),
             }
             if b:
                 ax.plot([a[1], b[1]], [a[2], b[2]], color="0.75", lw=0.8, zorder=1)
@@ -440,7 +483,9 @@ def draw_offaxis(eval_root: Path, out: Path, dose: str, setting: str = "matched_
             lim = max(lim, a[1], a[2])
         lim *= 1.15
         ax.plot([0, lim], [0, lim], color="0.6", ls="--", lw=1.0, zorder=0)
-        ax.annotate("equal on/off\n(cos = 0.71)", (lim * 0.68, lim * 0.80), fontsize=7, color="0.45")
+        ax.annotate(
+            "equal on/off\n(cos = 0.71)", (lim * 0.68, lim * 0.80), fontsize=7, color="0.45"
+        )
         ax.set_xlim(0, lim)
         ax.set_ylim(0, lim)
         ax.set_xlabel("ON-axis movement toward context B  (= F_act)")
@@ -473,7 +518,11 @@ COH_SOURCES = (
 def draw_coherence_distribution(eval_root: Path, out: Path) -> dict:
     """Distribution of the graded coherence judge, and the cut's sensitivity.
 
-    Motivates the coherent/incoherent cut, which is otherwise an unexplained
+    NOTE the two distinct thresholds: this figure is about the PER-DRAW judge cut
+    (score > 60 => that draw counts as coherent). The separate COH_FLOOR = 0.8 is a
+    PER-CELL floor on the FRACTION of a cell's draws that cleared the draw cut.
+
+    Motivates the coherent/incoherent draw cut, which is otherwise an unexplained
     constant: the scores are hard bimodal (a draw is fluent or it is word salad),
     so every cut in [40, 80] partitions almost the same draws. Also shows WHERE
     the incoherence lives -- overwriting a multi-token span degrades the output
@@ -509,7 +558,7 @@ def draw_coherence_distribution(eval_root: Path, out: Path) -> dict:
             color=color,
             label=f"{label} (n={len(groups[label]):,})",
         )
-    for t, style in ((50.0, ":"), (80.0, "--")):
+    for t, style in ((50.0, ":"), (60.0, "--")):
         axes[0].axvline(t, color="0.25", ls=style, lw=1.2)
     axes[0].set_yscale("log")
     axes[0].set_xlabel("coherence judge score (0-100, form-only rubric)")
@@ -533,15 +582,15 @@ def draw_coherence_distribution(eval_root: Path, out: Path) -> dict:
         ls="--",
         label=f"pooled (n={len(pooled):,})",
     )
-    for t, style in ((50.0, ":"), (80.0, "--")):
+    for t, style in ((50.0, ":"), (60.0, "--")):
         axes[1].axvline(t, color="0.25", ls=style, lw=1.2)
     n_band = int(((pooled > 50) & (pooled <= 60)).sum())
-    axes[1].set_xlabel("coherence cut (dotted 50, dashed 80)")
+    axes[1].set_xlabel("per-draw coherence cut (dotted 50, dashed 60 = the cut used)")
     axes[1].set_ylabel("fraction counted as coherent")
     axes[1].set_ylim(0, 1.02)
     axes[1].set_title(
-        "B. The cut is not load-bearing: the whole 40-80 sweep moves\n"
-        f"the pooled coherent fraction only {(pooled > 40).mean():.3f} -> {(pooled > 80).mean():.3f}"
+        "B. The DRAW cut is not load-bearing: 50 -> 60 reclassifies\n"
+        f"{n_band} of {len(pooled):,} draws ({n_band / len(pooled):.2%})"
     )
     for ax in axes:
         ax.legend(fontsize=7.5)
@@ -557,7 +606,11 @@ def draw_coherence_distribution(eval_root: Path, out: Path) -> dict:
             str(int(t)): float((pooled > t).mean()) for t in (40, 50, 60, 70, 80)
         },
         "per_group": {
-            k: {"n": int(len(v)), "median": float(np.median(v)), "frac_gt_80": float((v > 80).mean())}
+            k: {
+                "n": int(len(v)),
+                "median": float(np.median(v)),
+                "frac_gt_80": float((v > 80).mean()),
+            }
             for k, v in groups.items()
         },
     }
@@ -604,6 +657,37 @@ def main() -> None:
         fnorm,
         args.out_dir / "f_beh_heatmaps.png",
     )
+    # Direction-only read. F_act ~ trav * cos, so a slot that hurls the answer state a
+    # long way scores well on F_act even when little of the motion points at context B;
+    # the cosine is scale-free and separates the two. Blind to magnitude by construction
+    # (a tiny perfectly-aligned move reads 1.0), so it is a companion to F_act, not a
+    # replacement -- mean traversal per cell rides along in cells_summary.json.
+    null_rows = load_rows(args.eval_root, steered=False)
+    agg_null = aggregate(null_rows, args.dose, arm="null")
+    assert agg_null, "no null cells aggregated"
+    # Range tracks the data (max readable cell = context-end @ joint_all, 0.66), not the
+    # theoretical [-1, 1]: at vmax 0.9 the single-layer band (0.1-0.3) washes to white.
+    cnorm = TwoSlopeNorm(vmin=-0.3, vcenter=0.0, vmax=0.7)
+    draw(
+        agg,
+        "cos",
+        f"cos(realized answer-vector shift, floor->ceiling axis) — {args.dose} patch\n"
+        "1 = moves straight at context B, 0 = moves sideways, <0 = moves away",
+        "RdBu_r",
+        cnorm,
+        args.out_dir / "cos_heatmaps.png",
+    )
+    draw(
+        cos_margin_agg(agg, agg_null),
+        "cos",
+        f"cos MARGIN over the shuffled-donor null — {args.dose} patch\n"
+        "steered cosine minus the same cell's norm-matched wrong-donor cosine; "
+        "0 = the real edit is no better aimed than a random one of the same size",
+        "RdBu_r",
+        TwoSlopeNorm(vmin=-0.3, vcenter=0.0, vmax=0.6),
+        args.out_dir / "cos_margin_heatmaps.png",
+    )
+
     draw(
         agg,
         "coh_frac",
@@ -663,8 +747,11 @@ def main() -> None:
             indent=1,
         )
     )
+    # Count what is on disk rather than a literal: the literal said "5" while the script
+    # was already writing 7, and every new panel silently widened the lie.
+    n_png = len(list(args.out_dir.glob("*.png")))
     print(
-        f"wrote 5 figures + cells_summary.json to {args.out_dir} ({len(summary)} cells; "
+        f"wrote {n_png} figures + cells_summary.json to {args.out_dir} ({len(summary)} cells; "
         f"transport heatmap cells: {n_transport})"
     )
 
