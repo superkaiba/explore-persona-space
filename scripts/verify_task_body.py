@@ -671,7 +671,9 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   glob bar (#2169: backticks required; basename component only; >= 3
   literal chars before the first `*`) — the collective
   family-disposition idiom ("the seven `f1_delta_scatter_*` siblings —
-  not embedded: ...") — OR, class C only, by the bounded prose-token
+  not embedded: ...") — OR, class C only AND forward-only (issue >=
+  `_PROSE_BAR_MIN_ISSUE` = 2222; older tasks keep byte-identical
+  pre-#2231 class-C behavior), by the bounded prose-token
   bar (#2231: every non-stopword, non-digit, non-figure-index stem
   token co-occurring on ONE line, singularized; >= 2 distinct required
   tokens with >= 2 of length >= 3 — the #2222 "sample-level ROC curves
@@ -3196,6 +3198,29 @@ _PROSE_STOPWORD_TOKENS = frozenset(
 
 _PROSE_FIGURE_INDEX_RE = re.compile(r"^(?:f\d+|fig(?:ure)?\d*|panel\d*)$")
 
+_PROSE_BAR_MIN_ISSUE = 2222
+"""Forward-only cutoff for check 31's class-C prose-token bar (#2231 v3).
+
+The bar is consulted — on BOTH class-C sides, plan-side candidacy AND
+body-side exemption — only when the task's issue number is >= this
+constant; every older task keeps byte-identical pre-#2231 class-C
+behavior (exact/glob bars only). 2222 is the FOUNDING incident (the
+#2222 plan promised "sample-level ROC curves per arm", committed as
+`roc_by_arm.png`, and neither exact nor glob bar registered it). The
+cutoff exists because the un-cutoff v2 bar failed its own K1 corpus
+noise ceiling decisively: 28/62 triggered legacy v4 bodies (45.2%)
+gained a prose-only class-C entry (71 entries, max 9/body) against the
+pre-registered ~10% ceiling, mixing true positives with incidental
+plan-prose co-occurrences — and both pre-registered tightenings
+measured inadequate (a >=3-required-token bound kills the founding
+2-token `roc_by_arm` shape; figure-vocabulary line filtering keeps
+64/71). Legacy bodies are terminal and clean-result-critic Lens 13
+already reviewed them, so forward-only coverage is the accepted trade
+(the SPEC.md forward-only precedent, WARN-grade spirit). The key is the
+ISSUE NUMBER, never body age: an in-flight task numbered < 2222 that
+later rewrites a v4 body stays prose-bar-off — accepted fail-safe
+under-coverage, Lens 13 owns those."""
+
 
 def _prose_singularize(token: str) -> str:
     """Singularize one already-lowercased token for the prose-token bar
@@ -3226,9 +3251,10 @@ def _prose_line_token_sets(text: str) -> tuple[frozenset[str], ...]:
 def _stem_prose_named(text: str, stem: str) -> bool:
     """True when some single LINE of ``text`` carries ALL of ``stem``'s
     required prose tokens — check 31's THIRD naming bar, consulted for
-    class C ONLY (#2231; the #2222 shape: a plan promising "sample-level
-    ROC curves per arm" never names the literal stem `roc_by_arm`, so the
-    exact/glob bars registered no candidate).
+    class C ONLY, and FORWARD-ONLY: the caller gates every consultation
+    on ``issue >= _PROSE_BAR_MIN_ISSUE`` (#2231; the #2222 shape: a plan
+    promising "sample-level ROC curves per arm" never names the literal
+    stem `roc_by_arm`, so the exact/glob bars registered no candidate).
 
     Required set: `re.split(r"[^a-z0-9]+", stem.lower())`, dropping
     empties, pure digits, the fixed stopword set
@@ -3409,6 +3435,8 @@ def _classify_committed_issue_png(
     embedded_any: set[str],
     linked_results: set[str],
     plan_text: str | None,
+    *,
+    prose_bar: bool,
 ) -> str | None:
     """Disposition of ONE git-tracked path for check 31 (#1510; widened
     #2169 to every PLAN-NAMED committed issue-figure PNG): ``None`` (not
@@ -3428,7 +3456,13 @@ def _classify_committed_issue_png(
     per-unit classes A/B keep the exact/glob bars unchanged and never
     consult the prose bar). ``plan_text`` is the §3.0 candidate-naming
     text (`_plan_naming_text`); ``None`` disables class C entirely
-    (fail-soft — the per-unit classes A/B never consult it)."""
+    (fail-soft — the per-unit classes A/B never consult it).
+    ``prose_bar`` (keyword-only) is the FORWARD-ONLY gate the CALLER
+    computes once per invocation (`issue is not None and issue >=
+    _PROSE_BAR_MIN_ISSUE`, #2231 v3): False gates BOTH prose-bar
+    consultations off, leaving this branch semantically identical to the
+    pre-#2231 class C — the v3 K1 corpus re-run measured zero deltas of
+    any kind on every issue below the cutoff."""
     base = p.rsplit("/", 1)[-1]
     if not base.lower().endswith(".png"):
         return None
@@ -3450,28 +3484,30 @@ def _classify_committed_issue_png(
                 return None  # explicit exemption phrase beside the name
             return "named"
         return "orphan"
-    # §3.0 candidate filter (#2169 v4; OR-widened #2231), IN FRONT of the
-    # unmentioned branch: class C is restricted to figures the task's own
-    # PLAN names — the union of every numeric plans/v<int>.md revision
-    # plus planned_manifest.json — under the SAME class-C naming predicate
-    # as the body side: exact substring OR bounded backticked glob
-    # (`_stem_named_in_body`) OR the bounded prose-token bar
-    # (`_stem_prose_named` — the #2222 shape: a plan promising
-    # "sample-level ROC curves per arm" never names `roc_by_arm`
-    # literally). A None plan_text (no issue / no plans dir / unreadable
-    # plan) SKIPS class C entirely: fail-soft to the pre-widening status
-    # quo, never a WARN.
+    # §3.0 candidate filter (#2169 v4; OR-widened #2231, forward-only),
+    # IN FRONT of the unmentioned branch: class C is restricted to
+    # figures the task's own PLAN names — the union of every numeric
+    # plans/v<int>.md revision plus planned_manifest.json — under the
+    # SAME class-C naming predicate as the body side: exact substring OR
+    # bounded backticked glob (`_stem_named_in_body`) OR, when
+    # ``prose_bar`` is set (issue >= _PROSE_BAR_MIN_ISSUE), the bounded
+    # prose-token bar (`_stem_prose_named` — the #2222 shape: a plan
+    # promising "sample-level ROC curves per arm" never names
+    # `roc_by_arm` literally). A None plan_text (no issue / no plans dir
+    # / unreadable plan) SKIPS class C entirely: fail-soft to the
+    # pre-widening status quo, never a WARN.
     if plan_text is None or not (
-        _stem_named_in_body(plan_text, stem) or _stem_prose_named(plan_text, stem)
+        _stem_named_in_body(plan_text, stem) or (prose_bar and _stem_prose_named(plan_text, stem))
     ):
         return None
     # Widened superset (#2169): the looser MENTION bar — naming the figure
-    # individually, by bounded family glob, or descriptively under the
-    # same #2231 prose-token bar — silences it (symmetry: one predicate
-    # union, both sides). Disclosed false negative: a figure mentioned in
-    # passing but never embedded or dispositioned goes unflagged (accepted
-    # for a WARN-tier backstop; Lens 13 stays the substantive owner).
-    if named or _stem_prose_named(body, stem):
+    # individually, by bounded family glob, or (forward-only, same
+    # ``prose_bar`` gate) descriptively under the #2231 prose-token bar —
+    # silences it (symmetry: one predicate union, both sides, one gate).
+    # Disclosed false negative: a figure mentioned in passing but never
+    # embedded or dispositioned goes unflagged (accepted for a WARN-tier
+    # backstop; Lens 13 stays the substantive owner).
+    if named or (prose_bar and _stem_prose_named(body, stem)):
         return None
     return "unmentioned"
 
@@ -3581,21 +3617,26 @@ def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> C
     Class C alone adds a THIRD, prose-token bar (`_stem_prose_named`,
     #2231 — the #2222 shape: the plan promised "sample-level ROC curves
     per arm", committed as `roc_by_arm.png`, and neither exact nor glob
-    bar registered it): a stem is prose-named when some single LINE
-    carries ALL of its required tokens — the stem split on
-    non-alphanumeric runs, dropping pure digits, a fixed stopword set,
-    and figure-index tokens (`f5` / `fig2` / `panel3`), each survivor
-    singularized (strip one trailing `s` at length >= 4, not `ss`-final);
-    applicable ONLY when >= 2 distinct required tokens survive AND >= 2
-    of them have length >= 3 (length is NOT a drop criterion — a short
-    survivor like `em` stays required and tightens matching).
-    Case-insensitive and whole-token, a bounded divergence from the exact
-    bar. Two disclosed under-matches, both failing toward the
-    pre-widening status quo: single-token stems (`roc.png` is never
-    prose-matchable; the exact/glob bars still govern it) and compound
-    stem tokens vs hyphenated prose (a stem token `samplelevel` is not
-    covered by "sample-level", which tokenizes to {sample, level}). The
-    per-unit classes A/B never consult this bar.
+    bar registered it), FORWARD-ONLY: consulted — on BOTH class-C sides —
+    only when the task's issue number is >= `_PROSE_BAR_MIN_ISSUE`
+    (2222, the founding incident); older tasks keep byte-identical
+    pre-#2231 class-C behavior (the un-cutoff v2 bar flooded 45.2% of
+    the triggered legacy corpus — see the constant's docstring). A stem
+    is prose-named when some single LINE carries ALL of its required
+    tokens — the stem split on non-alphanumeric runs, dropping pure
+    digits, a fixed stopword set, and figure-index tokens (`f5` / `fig2`
+    / `panel3`), each survivor singularized (strip one trailing `s` at
+    length >= 4, not `ss`-final); applicable ONLY when >= 2 distinct
+    required tokens survive AND >= 2 of them have length >= 3 (length is
+    NOT a drop criterion — a short survivor like `em` stays required and
+    tightens matching). Case-insensitive and whole-token, a bounded
+    divergence from the exact bar. Two disclosed under-matches, both
+    failing toward the pre-widening status quo: single-token stems
+    (`roc.png` is never prose-matchable; the exact/glob bars still
+    govern it) and compound stem tokens vs hyphenated prose (a stem
+    token `samplelevel` is not covered by "sample-level", which
+    tokenizes to {sample, level}). The per-unit classes A/B never
+    consult this bar.
 
     Per-unit stems (`_PER_UNIT_FIG_RE`) keep the stricter PHRASE bar:
 
@@ -3627,7 +3668,8 @@ def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> C
     dropped from v9's prose is still planned) plus
     `artifacts/planned_manifest.json` when present (workflow v2) — under
     the SAME class-C naming predicate as the body side: exact substring
-    OR bounded glob OR the prose-token bar (#2231). Three degradation
+    OR bounded glob OR — forward-only, issue >= `_PROSE_BAR_MIN_ISSUE`
+    (#2231) — the prose-token bar. Three degradation
     paths fail SOFT (class C skipped entirely; classes A/B untouched;
     never an exception, never a manufactured WARN; the PASS/WARN detail
     states which mode ran so a silent class C stays legible): `issue`
@@ -3641,8 +3683,9 @@ def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> C
     toward the pre-widening status quo. Candidates then use the looser
     MENTION bar (#2169):
 
-    - **named** (individually, by bounded family glob, or descriptively
-      under the #2231 prose-token bar) → PASS — no disposition idiom
+    - **named** (individually, by bounded family glob, or — forward-only,
+      same cutoff — descriptively under the #2231 prose-token bar) →
+      PASS — no disposition idiom
       required. Rationale: the phrase bar applied
       corpus-wide would fire on ordinary prose that names a figure
       without a disposition idiom (a `## Reproducibility` artifact list,
@@ -3726,6 +3769,11 @@ def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> C
         class_c_note = f"class-C scan {plan_mode}; classes A/B unaffected"
     else:
         class_c_note = f"class-C candidate set: plan-named figures only ({plan_mode})"
+    # Forward-only prose-bar gate (#2231 v3), computed ONCE per invocation
+    # and threaded into the classifier: the prose-token bar is consulted
+    # (both class-C sides) only for tasks numbered >= _PROSE_BAR_MIN_ISSUE.
+    # False leaves class C semantically identical to the pre-#2231 branch.
+    prose_bar = issue is not None and issue >= _PROSE_BAR_MIN_ISSUE
     # (4) enumerate committed PNGs at each reachable cited sha; union per dir.
     orphans: dict[str, list[str]] = {}  # class A (per-unit, never named): path -> short-shas
     named: dict[str, list[str]] = {}  # class B (per-unit, named, no exemption phrase)
@@ -3739,7 +3787,13 @@ def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> C
                 continue
             for p in tracked:
                 cls = _classify_committed_issue_png(
-                    p, body, referenced_paths, embedded_any, linked_results, plan_text
+                    p,
+                    body,
+                    referenced_paths,
+                    embedded_any,
+                    linked_results,
+                    plan_text,
+                    prose_bar=prose_bar,
                 )
                 if cls == "named":
                     named.setdefault(p, []).append(sha[:8])

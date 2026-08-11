@@ -1317,15 +1317,19 @@ def _make_repo_with_per_unit_orphan(
     tmp_path,
     companion: str | None = "hero_percontext.png",
     extra: str | None = None,
+    issue: int = 999,
 ):
-    """git repo whose HEAD commit tracks `figures/issue_999/hero.png` +
-    `figures/issue_999/<companion>` (the per-unit companion; default
+    """git repo whose HEAD commit tracks `figures/issue_<issue>/hero.png` +
+    `figures/issue_<issue>/<companion>` (the per-unit companion; default
     `hero_percontext.png`; ``None`` -> no companion — required by widened-
     scope negative pins whose fixtures must not trip class A, #2169) +
-    optionally `figures/issue_999/<extra>` (ONE additional NON-per-unit
+    optionally `figures/issue_<issue>/<extra>` (ONE additional NON-per-unit
     PNG — the class-C candidate, #2169) +
     `scripts/run.py` (so GOOD_BODY's check-8b Code-blob probe resolves
-    when a test pins the real sha); returns (repo_path, head_sha)."""
+    when a test pins the real sha); returns (repo_path, head_sha).
+    ``issue`` defaults to the historical 999 fixture issue; prose-bar
+    pins pass an issue >= the #2231 forward-only cutoff (pair with
+    `_good_body_at` so the body's cited URLs match the fixture dir)."""
     repo = tmp_path / "perunitrepo"
     repo.mkdir()
 
@@ -1335,7 +1339,7 @@ def _make_repo_with_per_unit_orphan(
     git("init", "-q")
     git("config", "user.email", "test@example.com")
     git("config", "user.name", "Test")
-    figdir = repo / "figures" / "issue_999"
+    figdir = repo / "figures" / f"issue_{issue}"
     figdir.mkdir(parents=True)
     (figdir / "hero.png").write_bytes(b"\x89PNG fake bytes")
     if companion is not None:
@@ -2435,6 +2439,25 @@ def _plan_dir_prose(tmp_path, monkeypatch, text: str):
 # while no revision ever named the literal stem `roc_by_arm`.
 _ISSUE2222_ROC_PLAN_LINE = "(3) sample-level ROC curves per arm,"
 
+# Fixture issue for the prose-bar pins (#2231 v3): the bar is
+# FORWARD-ONLY (consulted only at issue >= `_PROSE_BAR_MIN_ISSUE`), so
+# every pin that exercises it runs ABOVE the cutoff; the below-cutoff
+# legs live in `test_prose_bar_forward_only_cutoff`.
+_PROSE_PIN_ISSUE = 9999
+assert _PROSE_PIN_ISSUE >= verify_task_body._PROSE_BAR_MIN_ISSUE
+
+
+def _good_body_at(sha: str, issue: int) -> str:
+    """GOOD_BODY with the cited figure SHA pinned to ``sha`` and every
+    `figures/issue_999/` path rehomed to `figures/issue_<issue>/` — the
+    #2231 v3 pin-migration helper: prose-bar pins run at an issue >= the
+    forward-only cutoff, so the body's cited figure URLs must carry that
+    issue for check 31's issue-scoping filter to keep them (pair with
+    `_make_repo_with_per_unit_orphan(..., issue=...)`)."""
+    return GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "figures/issue_999/", f"figures/issue_{issue}/"
+    )
+
 
 def test_plan_prose_named_figure_warns_class_c(tmp_path, monkeypatch):
     """The #2222 replay (acceptance 1, hermetic): the plan promises the
@@ -2443,22 +2466,26 @@ def test_plan_prose_named_figure_warns_class_c(tmp_path, monkeypatch):
     the body-cited SHA with 0 body mentions -> class-C WARN carrying the
     path, the `committed-figure-unmentioned` token, and the Lens 13
     pointer (pre-#2231 the exact/glob candidate filter never registered
-    the figure and the check stayed silent)."""
-    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, extra="roc_by_arm.png")
+    the figure and the check stayed silent). Runs at an issue >= the
+    forward-only cutoff (v3) — the below-cutoff twin lives in
+    `test_prose_bar_forward_only_cutoff` leg (i)."""
+    repo, sha = _make_repo_with_per_unit_orphan(
+        tmp_path, extra="roc_by_arm.png", issue=_PROSE_PIN_ISSUE
+    )
     monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
     _plan_dir_prose(tmp_path, monkeypatch, "Figures to produce: " + _ISSUE2222_ROC_PLAN_LINE)
     companion_url = (
         "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
-        f"{sha}/figures/issue_999/hero_percontext.png"
+        f"{sha}/figures/issue_{_PROSE_PIN_ISSUE}/hero_percontext.png"
     )
-    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+    body = _good_body_at(sha, _PROSE_PIN_ISSUE).replace(
         "> **Figure.**",
         f"![Per-context deltas behind the aggregate.]({companion_url})\n\n> **Figure.**",
     )
-    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=_PROSE_PIN_ISSUE)
     assert r.passed is True
     assert r.is_warn is True
-    assert "figures/issue_999/roc_by_arm.png" in r.detail
+    assert f"figures/issue_{_PROSE_PIN_ISSUE}/roc_by_arm.png" in r.detail
     assert _COMMITTED_UNMENTIONED_CLASS in r.detail
     assert "Lens 13" in r.detail
 
@@ -2470,17 +2497,19 @@ def test_plan_prose_all_tokens_required_and_line_scoped(tmp_path, monkeypatch):
     absent) registers nothing — ALL required tokens must appear — and
     (b) a plan carrying "ROC" and "arm" on DISTANT separate lines
     registers nothing (single-LINE co-occurrence is load-bearing)."""
-    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, companion=None, extra="roc_by_arm.png")
+    repo, sha = _make_repo_with_per_unit_orphan(
+        tmp_path, companion=None, extra="roc_by_arm.png", issue=_PROSE_PIN_ISSUE
+    )
     monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
-    body = GOOD_BODY.replace("0123456789abcdef", sha)
+    body = _good_body_at(sha, _PROSE_PIN_ISSUE)
 
     _plan_dir_prose(tmp_path / "p1", monkeypatch, _ISSUE2222_ROC_PLAN_LINE)
-    r_full = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    r_full = verify_task_body.check_orphaned_per_unit_figures(body, issue=_PROSE_PIN_ISSUE)
     assert r_full.is_warn is True  # the WARN the two negative legs suppress
     assert _COMMITTED_UNMENTIONED_CLASS in r_full.detail
 
     _plan_dir_prose(tmp_path / "p2", monkeypatch, "Deliverables: sample-level ROC curves.")
-    r_partial = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    r_partial = verify_task_body.check_orphaned_per_unit_figures(body, issue=_PROSE_PIN_ISSUE)
     assert r_partial.is_warn is False
 
     _plan_dir_prose(
@@ -2488,7 +2517,7 @@ def test_plan_prose_all_tokens_required_and_line_scoped(tmp_path, monkeypatch):
         monkeypatch,
         "Compute ROC curves for every condition.\n\nMuch later prose.\n\nGroup results per arm.",
     )
-    r_split = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    r_split = verify_task_body.check_orphaned_per_unit_figures(body, issue=_PROSE_PIN_ISSUE)
     assert r_split.is_warn is False
 
 
@@ -2498,18 +2527,20 @@ def test_body_prose_mention_exempts_class_c(tmp_path, monkeypatch):
     were computed; not embedded" (still no literal stem) -> silent.
     Vacuity control: the prose-less body WARNs FIRST on the same fixture
     + plan file."""
-    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, extra="roc_by_arm.png")
+    repo, sha = _make_repo_with_per_unit_orphan(
+        tmp_path, extra="roc_by_arm.png", issue=_PROSE_PIN_ISSUE
+    )
     monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
     _plan_dir_prose(tmp_path, monkeypatch, "Figures to produce: " + _ISSUE2222_ROC_PLAN_LINE)
     companion_url = (
         "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
-        f"{sha}/figures/issue_999/hero_percontext.png"
+        f"{sha}/figures/issue_{_PROSE_PIN_ISSUE}/hero_percontext.png"
     )
-    body_bare = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+    body_bare = _good_body_at(sha, _PROSE_PIN_ISSUE).replace(
         "> **Figure.**",
         f"![Per-context deltas behind the aggregate.]({companion_url})\n\n> **Figure.**",
     )
-    r_bare = verify_task_body.check_orphaned_per_unit_figures(body_bare, issue=999)
+    r_bare = verify_task_body.check_orphaned_per_unit_figures(body_bare, issue=_PROSE_PIN_ISSUE)
     assert r_bare.is_warn is True  # the WARN this negative pin suppresses
     assert _COMMITTED_UNMENTIONED_CLASS in r_bare.detail
     body = body_bare.replace(
@@ -2517,7 +2548,7 @@ def test_body_prose_mention_exempts_class_c(tmp_path, monkeypatch):
         "The sample-level ROC curves per arm were computed; not embedded. "
         "The 17-pt lift holds at every seed;",
     )
-    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=_PROSE_PIN_ISSUE)
     assert r.passed is True
     assert r.is_warn is False
 
@@ -2528,19 +2559,21 @@ def test_prose_bar_requires_two_tokens(tmp_path, monkeypatch):
     (§3.1's deliberately excluded single-token widening). Control: the
     same fixture with the literal `roc` in the plan fires class C via the
     UNCHANGED exact bar — the old bars still govern single-token stems."""
-    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, companion=None, extra="roc.png")
+    repo, sha = _make_repo_with_per_unit_orphan(
+        tmp_path, companion=None, extra="roc.png", issue=_PROSE_PIN_ISSUE
+    )
     monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
-    body = GOOD_BODY.replace("0123456789abcdef", sha)
+    body = _good_body_at(sha, _PROSE_PIN_ISSUE)
 
     _plan_dir_prose(tmp_path / "p1", monkeypatch, "Deliverables: sample-level ROC curves.")
-    r_prose = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    r_prose = verify_task_body.check_orphaned_per_unit_figures(body, issue=_PROSE_PIN_ISSUE)
     assert r_prose.is_warn is False
     assert "plan-named figures only" in r_prose.detail  # active mode, zero candidates
 
     _plan_dir_naming(tmp_path / "p2", monkeypatch, "roc.png")
-    r_exact = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    r_exact = verify_task_body.check_orphaned_per_unit_figures(body, issue=_PROSE_PIN_ISSUE)
     assert r_exact.is_warn is True
-    assert "figures/issue_999/roc.png" in r_exact.detail
+    assert f"figures/issue_{_PROSE_PIN_ISSUE}/roc.png" in r_exact.detail
     assert _COMMITTED_UNMENTIONED_CLASS in r_exact.detail
 
 
@@ -2551,21 +2584,21 @@ def test_prose_figure_index_tokens_dropped(tmp_path, monkeypatch):
     "arm agreement" descriptively silences it (both sides of the
     symmetric bar)."""
     repo, sha = _make_repo_with_per_unit_orphan(
-        tmp_path, companion=None, extra="f5_arm_agreement.png"
+        tmp_path, companion=None, extra="f5_arm_agreement.png", issue=_PROSE_PIN_ISSUE
     )
     monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
     _plan_dir_prose(tmp_path, monkeypatch, "Planned: the arm agreement heatmap.")
-    body = GOOD_BODY.replace("0123456789abcdef", sha)
-    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    body = _good_body_at(sha, _PROSE_PIN_ISSUE)
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=_PROSE_PIN_ISSUE)
     assert r.is_warn is True
-    assert _CLASS_C_PATH in r.detail
+    assert f"figures/issue_{_PROSE_PIN_ISSUE}/f5_arm_agreement.png" in r.detail
     assert _COMMITTED_UNMENTIONED_CLASS in r.detail
     body_named = body.replace(
         "The 17-pt lift holds at every seed;",
         "The arm agreement heatmap is committed alongside, not embedded. "
         "The 17-pt lift holds at every seed;",
     )
-    r2 = verify_task_body.check_orphaned_per_unit_figures(body_named, issue=999)
+    r2 = verify_task_body.check_orphaned_per_unit_figures(body_named, issue=_PROSE_PIN_ISSUE)
     assert r2.is_warn is False
 
 
@@ -2577,19 +2610,21 @@ def test_per_unit_classes_ignore_prose_bar(tmp_path, monkeypatch):
     "per-context" tokenizes to {per, context} and would NOT cover the
     set) — still routes class A (orphan) under the UNCHANGED
     `_stem_named_in_body` bar: the prose coverage neither exempts it nor
-    moves it to class B."""
-    repo, sha = _make_repo_with_per_unit_orphan(tmp_path)
+    moves it to class B. Runs ABOVE the forward-only cutoff (v3) so the
+    prose bar is genuinely ACTIVE for class C while the per-unit classes
+    ignore it."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, issue=_PROSE_PIN_ISSUE)
     monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
     _plan_dir_prose(tmp_path, monkeypatch, "Planned: the hero percontext view per seed.")
-    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+    body = _good_body_at(sha, _PROSE_PIN_ISSUE).replace(
         "The 17-pt lift holds at every seed;",
         "See the hero percontext view for the underlying spread. "
         "The 17-pt lift holds at every seed;",
     )
-    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=_PROSE_PIN_ISSUE)
     assert r.passed is True
     assert r.is_warn is True
-    assert _PER_UNIT_ORPHAN_PATH in r.detail
+    assert f"figures/issue_{_PROSE_PIN_ISSUE}/hero_percontext.png" in r.detail
     assert "never mentioned in the body" in r.detail  # class A text
     assert _PER_UNIT_NAMED_CLASS not in r.detail  # not moved to class B
     assert _COMMITTED_UNMENTIONED_CLASS not in r.detail  # not re-routed to class C
@@ -2602,20 +2637,20 @@ def test_prose_singularization_matches_plurals(tmp_path, monkeypatch):
     candidate; a silent body WARNs; a body writing "the delta scatters
     per arm — not shown" silences it."""
     repo, sha = _make_repo_with_per_unit_orphan(
-        tmp_path, companion=None, extra="arm_delta_scatter.png"
+        tmp_path, companion=None, extra="arm_delta_scatter.png", issue=_PROSE_PIN_ISSUE
     )
     monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
     _plan_dir_prose(tmp_path, monkeypatch, "Figures: delta scatters per arm.")
-    body = GOOD_BODY.replace("0123456789abcdef", sha)
-    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    body = _good_body_at(sha, _PROSE_PIN_ISSUE)
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=_PROSE_PIN_ISSUE)
     assert r.is_warn is True
-    assert "figures/issue_999/arm_delta_scatter.png" in r.detail
+    assert f"figures/issue_{_PROSE_PIN_ISSUE}/arm_delta_scatter.png" in r.detail
     assert _COMMITTED_UNMENTIONED_CLASS in r.detail
     body_named = body.replace(
         "The 17-pt lift holds at every seed;",
         "The delta scatters per arm are committed — not shown. The 17-pt lift holds at every seed;",
     )
-    r2 = verify_task_body.check_orphaned_per_unit_figures(body_named, issue=999)
+    r2 = verify_task_body.check_orphaned_per_unit_figures(body_named, issue=_PROSE_PIN_ISSUE)
     assert r2.is_warn is False
 
 
@@ -2628,21 +2663,105 @@ def test_prose_short_tokens_required_not_dropped(tmp_path, monkeypatch):
     tighten matching, they are not dropped); the full "EM rate by layer"
     line registers the candidate."""
     repo, sha = _make_repo_with_per_unit_orphan(
-        tmp_path, companion=None, extra="em_rate_by_layer.png"
+        tmp_path, companion=None, extra="em_rate_by_layer.png", issue=_PROSE_PIN_ISSUE
     )
     monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
-    body = GOOD_BODY.replace("0123456789abcdef", sha)
+    body = _good_body_at(sha, _PROSE_PIN_ISSUE)
 
     _plan_dir_prose(tmp_path / "p1", monkeypatch, "Planned: rate by layer profile.")
-    r_short = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    r_short = verify_task_body.check_orphaned_per_unit_figures(body, issue=_PROSE_PIN_ISSUE)
     assert r_short.is_warn is False
     assert "plan-named figures only" in r_short.detail  # active mode, zero candidates
 
     _plan_dir_prose(tmp_path / "p2", monkeypatch, "Planned: EM rate by layer.")
-    r_full = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    r_full = verify_task_body.check_orphaned_per_unit_figures(body, issue=_PROSE_PIN_ISSUE)
     assert r_full.is_warn is True
-    assert "figures/issue_999/em_rate_by_layer.png" in r_full.detail
+    assert f"figures/issue_{_PROSE_PIN_ISSUE}/em_rate_by_layer.png" in r_full.detail
     assert _COMMITTED_UNMENTIONED_CLASS in r_full.detail
+
+
+def test_prose_bar_forward_only_cutoff(tmp_path, monkeypatch):
+    """Pin 9 (#2231 v3/v4): the FORWARD-ONLY cutoff, both gate directions
+    on BOTH class-C sides, keyed to the literal `_PROSE_BAR_MIN_ISSUE`
+    constant (never a hardcoded 2222 twin — a constant change moves the
+    pin with it). Legs: (i) pin 1's exact fixture at an issue BELOW the
+    cutoff -> silent, with class C ACTIVE (the silence comes from no
+    prose candidacy, not a skipped class C); (ii) the SAME fixture at
+    EXACTLY the cutoff -> WARN — pins the `>=` boundary durably (an
+    off-by-one `>` regression fails here, not only at the S2 live
+    replay); (iii) exemption side: the plan names the LITERAL stem
+    (exact-bar candidacy regardless of cutoff) while the body
+    prose-names the figure descriptively without the stem — below the
+    cutoff the class-C WARN still fires exactly as pre-#2231 (exemption
+    OFF), at the cutoff it is silenced (exemption ON)."""
+    cutoff = verify_task_body._PROSE_BAR_MIN_ISSUE
+
+    def pin1_body(sha: str, issue: int) -> str:
+        companion_url = (
+            "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+            f"{sha}/figures/issue_{issue}/hero_percontext.png"
+        )
+        return _good_body_at(sha, issue).replace(
+            "> **Figure.**",
+            f"![Per-context deltas behind the aggregate.]({companion_url})\n\n> **Figure.**",
+        )
+
+    for sub in ("low", "cut", "ex-low", "ex-cut"):
+        (tmp_path / sub).mkdir()
+
+    # (i) BELOW the cutoff: prose candidacy OFF — silent, class C active.
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path / "low", extra="roc_by_arm.png")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    _plan_dir_prose(
+        tmp_path / "low", monkeypatch, "Figures to produce: " + _ISSUE2222_ROC_PLAN_LINE
+    )
+    r_low = verify_task_body.check_orphaned_per_unit_figures(pin1_body(sha, 999), issue=999)
+    assert r_low.passed is True
+    assert r_low.is_warn is False
+    assert "plan-named figures only" in r_low.detail  # active mode, zero candidates
+
+    # (ii) at EXACTLY the cutoff: the same fixture WARNs (the >= boundary).
+    repo2, sha2 = _make_repo_with_per_unit_orphan(
+        tmp_path / "cut", extra="roc_by_arm.png", issue=cutoff
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo2)
+    _plan_dir_prose(
+        tmp_path / "cut", monkeypatch, "Figures to produce: " + _ISSUE2222_ROC_PLAN_LINE
+    )
+    r_cut = verify_task_body.check_orphaned_per_unit_figures(pin1_body(sha2, cutoff), issue=cutoff)
+    assert r_cut.is_warn is True
+    assert f"figures/issue_{cutoff}/roc_by_arm.png" in r_cut.detail
+    assert _COMMITTED_UNMENTIONED_CLASS in r_cut.detail
+
+    # (iii) exemption side: literal-stem plan (candidate either way), body
+    # prose-names descriptively without the stem.
+    prose_disposition = (
+        "The sample-level ROC curves per arm were computed; not embedded. "
+        "The 17-pt lift holds at every seed;"
+    )
+    repo3, sha3 = _make_repo_with_per_unit_orphan(
+        tmp_path / "ex-low", companion=None, extra="roc_by_arm.png"
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo3)
+    _plan_dir_naming(tmp_path / "ex-low", monkeypatch, "roc_by_arm.png")
+    body_low = _good_body_at(sha3, 999).replace(
+        "The 17-pt lift holds at every seed;", prose_disposition
+    )
+    r_ex_low = verify_task_body.check_orphaned_per_unit_figures(body_low, issue=999)
+    assert r_ex_low.is_warn is True  # exemption OFF below the cutoff — pre-change behavior
+    assert "figures/issue_999/roc_by_arm.png" in r_ex_low.detail
+    assert _COMMITTED_UNMENTIONED_CLASS in r_ex_low.detail
+
+    repo4, sha4 = _make_repo_with_per_unit_orphan(
+        tmp_path / "ex-cut", companion=None, extra="roc_by_arm.png", issue=cutoff
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo4)
+    _plan_dir_naming(tmp_path / "ex-cut", monkeypatch, "roc_by_arm.png")
+    body_cut = _good_body_at(sha4, cutoff).replace(
+        "The 17-pt lift holds at every seed;", prose_disposition
+    )
+    r_ex_cut = verify_task_body.check_orphaned_per_unit_figures(body_cut, issue=cutoff)
+    assert r_ex_cut.is_warn is False  # exemption ON at the cutoff
 
 
 def test_resolve_task_plans_dir_real_body_no_monkeypatch():
