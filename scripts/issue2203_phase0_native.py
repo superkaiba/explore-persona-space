@@ -88,28 +88,34 @@ def _load_phase0_pool(out_dir: Path, smoke: bool) -> dict:
     return json.loads(raw.read_text())
 
 
-def _load_verdicts(out_dir: Path, rows: list[dict], smoke: bool) -> Path:
+def _load_verdicts(out_dir: Path, rows: list[dict], smoke: bool) -> tuple[Path, bool]:
     """The phase-0 judge-filter verdicts file (durable HF source, plan §4.5).
 
-    Under smoke with no local/HF verdicts, synthesizes a schema-conformant
-    verdicts file (role rows score 80, default rows score 20) so the kept-set
-    reduce path runs end to end — RECORDED as synthesized (a smoke blind spot).
+    Returns ``(path, synthesized)`` — ``synthesized`` is True ONLY when the
+    smoke-synth branch below actually ran this invocation (r1 minor: the flag
+    must come from the branch taken, never from file existence).
     """
     local = out_dir / "judge_raw_phase0_filter.json"
     if local.exists():
-        return local
+        return local, False
     if not smoke:
         _log(f"[phase=phase0native] verdicts not local; staging from HF -> {local}")
         C.stage_phase0_filter_verdicts_from_hf(local)
-        return local
-    # smoke synth: custom_id = row-{i}__00000__00 (phase-0 n_draws=1 shape).
+        return local, False
+    # SMOKE BLIND SPOT (r1 M1; smoke-blind-spots rule — INPUT SUBSTITUTION):
+    # this branch SYNTHESIZES the Part-D kept-set verdicts (role rows score 80,
+    # default rows score 20), so under smoke the production HF-verdicts staging
+    # → judge_result_from_save_raw → encode-filter → 4975/1000 fingerprint path
+    # never executes on REAL verdicts. The real-verdicts reduce is validated by
+    # a standalone CPU-only probe (see the round's marker `## Smoke run`).
+    # custom_id = row-{i}__00000__00 (phase-0 n_draws=1 shape).
     all_scores = {
         f"row-{i}__00000__00": {"score": (80 if r["kind"] == "role" else 20)}
         for i, r in enumerate(rows)
     }
     local.write_text(json.dumps({"all_scores": all_scores, "smoke_synth_verdicts": True}, indent=2))
     _log(f"[phase=phase0native] SMOKE synth verdicts -> {local.name}")
-    return local
+    return local, True
 
 
 def _rebuild_rows(pool: dict) -> tuple[list[dict], list[dict]]:
@@ -302,7 +308,7 @@ def run(args) -> int:
 
     pool = _load_phase0_pool(out_dir, args.smoke)
     rows, unique_contexts = _rebuild_rows(pool)
-    verdicts_path = _load_verdicts(out_dir, rows, args.smoke)
+    verdicts_path, verdicts_synth = _load_verdicts(out_dir, rows, args.smoke)
     kept = _reapply_verdicts(rows, verdicts_path)
     role_rows = _encode_filter(tokenizer, kept, "role")
     def_rows = _encode_filter(tokenizer, kept, "default")
@@ -385,9 +391,10 @@ def run(args) -> int:
             "n_role_means": n_role,
             "n_default_means": n_default,
             "n_unique_contexts_captured": len(sub_contexts),
-            "verdicts_synth_smoke": bool(
-                args.smoke and (out_dir / "judge_raw_phase0_filter.json").exists()
-            ),
+            # r1 minor: the flag reflects the branch ACTUALLY TAKEN in
+            # _load_verdicts — not file existence (which reads True for a real
+            # pre-existing verdicts file under smoke).
+            "verdicts_synth_smoke": verdicts_synth,
             "inter_pooling_cos_context_per_layer": inter_pooling_cos_ctx,
             "inter_pooling_cos_prefix_per_layer": inter_pooling_cos_prefix,
             "native_geometry": native_geometry,
@@ -456,7 +463,11 @@ def _validate(model, tokenizer, *, rows_by_uid, states, axes, layers, out_dir, s
         stability = P0._cos_per_layer(axis_a, axis_b)
     mid = v_context.shape[0] // 2
 
-    # (2) cos(native, response-derived axis) per layer.
+    # (2) cos(native, response-derived axis) per layer. Only STAGING failures
+    # (HF transport / filesystem) may soft-skip this plan-named covariate (r1
+    # minor); a malformed blob / missing key still raises loud.
+    from huggingface_hub.errors import HfHubHTTPError
+
     resp_cos = None
     try:
         axis_path = out_dir / ("phase0_axis_smoke.pt" if smoke else "phase0_axis.pt")
@@ -466,7 +477,7 @@ def _validate(model, tokenizer, *, rows_by_uid, states, axes, layers, out_dir, s
             blob = torch.load(axis_path, map_location="cpu", weights_only=False)
             resp = torch.stack([blob["axis_by_layer"][str(li)].float() for li in layers])
             resp_cos = P0._cos_per_layer(v_context, resp)
-    except Exception as exc:  # noqa: BLE001 — validation covariate, never fatal
+    except (OSError, HfHubHTTPError) as exc:  # staging-error classes ONLY
         _log(f"[phase=phase0native] response-axis cosine SKIP ({type(exc).__name__}: {exc})")
 
     # (3) cos(native, role-PC1) per layer over the pooled ctx-end states.

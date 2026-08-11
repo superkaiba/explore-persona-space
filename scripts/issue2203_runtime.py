@@ -213,7 +213,12 @@ def cap_hit_regen(
             }
         )
         if realized is not None or regen_realized is not None:
-            realized = (realized or []) + (regen_realized or [])
+            # Tag regen-pass records so `_summarize_realized` EXCLUDES them from
+            # the fired_frac / |Δproj| means — the regenerated rows' initial-pass
+            # records are already in `realized`, so an untagged concat counts
+            # those rows twice (r1 minor; telemetry only, never the DV).
+            regen_tagged = [{**r, "regen_pass": True} for r in (regen_realized or [])]
+            realized = (realized or []) + regen_tagged
     return texts, realized, info
 
 
@@ -575,21 +580,6 @@ def steering_sanity_check(
             )
         out[key] = [r[0] for r in results]
     return out
-
-
-def cap_hit_fraction(tokenizer, texts: list[str], max_new_tokens: int) -> float:
-    """Fraction of completions that hit the generation cap (CLAUDE.md cap-hit rule).
-
-    HF ``generate`` exposes no finish_reason; a completion re-tokenizing to
-    ``>= max_new_tokens`` tokens is counted as cap-hit (exact for greedy
-    non-EOS-terminated rows).
-    """
-    if not texts:
-        return 0.0
-    hits = [
-        len(tokenizer(t, add_special_tokens=False)["input_ids"]) >= max_new_tokens for t in texts
-    ]
-    return sum(hits) / len(hits)
 
 
 def coherence_split(texts: list[str], *, jailbreak: bool) -> dict:
