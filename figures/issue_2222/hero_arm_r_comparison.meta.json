@@ -1,0 +1,254 @@
+{
+  "commit": "5435d252",
+  "render_id": "57ae97ea7cf74277",
+  "git_commit": "5435d252",
+  "git_dirty": false,
+  "created": "2026-08-11T09:19:04Z",
+  "figsize": [
+    12.600000000000001,
+    4.2
+  ],
+  "points": [
+    {
+      "category": "Raw projection",
+      "Pearson r (predictor vs trait score)": 0.5294158793919437,
+      "error": 0.3399424262344837,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Exact \u0394P (base generation)",
+      "Pearson r (predictor vs trait score)": 0.8809343215433422,
+      "error": 0.07310776114463802,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Prompt-token \u0394P",
+      "Pearson r (predictor vs trait score)": 0.5587042352116727,
+      "error": 0.2837671866640448,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Mapped \u0394P (context)",
+      "Pearson r (predictor vs trait score)": 0.3185765609477351,
+      "error": 0.356742167379707,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Mapped \u0394P (prefix)",
+      "Pearson r (predictor vs trait score)": 0.5294158793919439,
+      "error": 0.3399424262344837,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Identity + learned bias \u0394P",
+      "Pearson r (predictor vs trait score)": 0.5310442496767533,
+      "error": 0.3068681366741657,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "Pearson r (predictor vs trait score)": 0.54,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "Pearson r (predictor vs trait score)": 0.879,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "Pearson r (predictor vs trait score)": 0.581,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "category": "Raw projection",
+      "y": 0.7927663638678577,
+      "error": 0.19915730506181717,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "Exact \u0394P (base generation)",
+      "y": 0.9461180573215029,
+      "error": 0.08268094658851627,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "Prompt-token \u0394P",
+      "y": 0.9353076862795573,
+      "error": 0.09441862776875498,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "Mapped \u0394P (context)",
+      "y": 0.6070523514094652,
+      "error": 0.32803449258208267,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "Mapped \u0394P (prefix)",
+      "y": 0.7927663638678579,
+      "error": 0.19915730506181717,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "Identity + learned bias \u0394P",
+      "y": 0.9347095482881397,
+      "error": 0.09874213784933089,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 0.0,
+      "y": 0.784,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "y": 0.946,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 2.0,
+      "y": 0.931,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "category": "Raw projection",
+      "y": 0.5889583932879928,
+      "error": 0.23957491964101785,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "category": "Exact \u0394P (base generation)",
+      "y": 0.5767423633782259,
+      "error": 0.22982416599988933,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "category": "Prompt-token \u0394P",
+      "y": 0.6804974958166097,
+      "error": 0.17623965889215465,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "category": "Mapped \u0394P (context)",
+      "y": -0.07705588121361158,
+      "error": 0.39971777647733686,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "category": "Mapped \u0394P (prefix)",
+      "y": 0.5889583932879938,
+      "error": 0.23957491964101785,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "category": "Identity + learned bias \u0394P",
+      "y": 0.673883029944451,
+      "error": 0.1884675208479166,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "x": 0.0,
+      "y": 0.635,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.0,
+      "y": 0.616,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0,
+      "y": 0.689,
+      "_kind": "scatter",
+      "_group": 26
+    }
+  ],
+  "n_series": 27,
+  "total_points": 27,
+  "text": {
+    "suptitle": "Data-screening predictor comparison at the pre-registered steering layer",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Sycophancy",
+        "ylabel": "Pearson r (predictor vs trait score)",
+        "xticklabels": [
+          "Raw projection",
+          "Exact \u0394P (base generation)",
+          "Prompt-token \u0394P",
+          "Mapped \u0394P (context)",
+          "Mapped \u0394P (prefix)",
+          "Identity + learned bias \u0394P"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "Evil",
+        "xticklabels": [
+          "Raw projection",
+          "Exact \u0394P (base generation)",
+          "Prompt-token \u0394P",
+          "Mapped \u0394P (context)",
+          "Mapped \u0394P (prefix)",
+          "Identity + learned bias \u0394P"
+        ]
+      },
+      {
+        "title_left": "Hallucination",
+        "legend_labels": [
+          "Published r (Persona Vectors, Qwen)"
+        ],
+        "xticklabels": [
+          "Raw projection",
+          "Exact \u0394P (base generation)",
+          "Prompt-token \u0394P",
+          "Mapped \u0394P (context)",
+          "Mapped \u0394P (prefix)",
+          "Identity + learned bias \u0394P"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

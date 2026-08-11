@@ -1,0 +1,1262 @@
+{
+  "commit": "5435d252",
+  "render_id": "157c33ef312540ba",
+  "git_commit": "5435d252",
+  "git_dirty": false,
+  "created": "2026-08-11T09:19:51Z",
+  "figsize": [
+    12.600000000000001,
+    3.6
+  ],
+  "points": [
+    {
+      "Layer index": 0.0,
+      "Pearson r (predictor vs trait score)": -0.22993233788386597,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 1.0,
+      "Pearson r (predictor vs trait score)": -0.23896818886475302,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 2.0,
+      "Pearson r (predictor vs trait score)": -0.10281075188572339,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 3.0,
+      "Pearson r (predictor vs trait score)": 0.0049837828969710035,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 4.0,
+      "Pearson r (predictor vs trait score)": 0.137901487060793,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 5.0,
+      "Pearson r (predictor vs trait score)": 0.199108833129547,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 6.0,
+      "Pearson r (predictor vs trait score)": 0.21550807723369764,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 7.0,
+      "Pearson r (predictor vs trait score)": 0.2411543050585183,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 8.0,
+      "Pearson r (predictor vs trait score)": 0.2994071357061721,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 9.0,
+      "Pearson r (predictor vs trait score)": 0.3045585664008858,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 10.0,
+      "Pearson r (predictor vs trait score)": 0.332329863862368,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 11.0,
+      "Pearson r (predictor vs trait score)": 0.32068313179752084,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 12.0,
+      "Pearson r (predictor vs trait score)": 0.2931159044168023,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 13.0,
+      "Pearson r (predictor vs trait score)": 0.3394225788200495,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 14.0,
+      "Pearson r (predictor vs trait score)": 0.3635386384354534,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 15.0,
+      "Pearson r (predictor vs trait score)": 0.33404800324323186,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 16.0,
+      "Pearson r (predictor vs trait score)": 0.2751621512568785,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 17.0,
+      "Pearson r (predictor vs trait score)": 0.266011092763642,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 18.0,
+      "Pearson r (predictor vs trait score)": 0.2939444277087178,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 19.0,
+      "Pearson r (predictor vs trait score)": 0.3185765609477351,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 20.0,
+      "Pearson r (predictor vs trait score)": 0.3552403254037605,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 21.0,
+      "Pearson r (predictor vs trait score)": 0.30995739352948226,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 22.0,
+      "Pearson r (predictor vs trait score)": 0.35858477804042,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 23.0,
+      "Pearson r (predictor vs trait score)": 0.3456673386048124,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 24.0,
+      "Pearson r (predictor vs trait score)": 0.3813492255824368,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 25.0,
+      "Pearson r (predictor vs trait score)": 0.33499524538990877,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 26.0,
+      "Pearson r (predictor vs trait score)": 0.35186272226417226,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 27.0,
+      "Pearson r (predictor vs trait score)": 0.41424813760988954,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 0.0,
+      "Pearson r (predictor vs trait score)": 0.6890209312385741,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 1.0,
+      "Pearson r (predictor vs trait score)": 0.670918132705841,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 2.0,
+      "Pearson r (predictor vs trait score)": 0.7296727890281198,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 3.0,
+      "Pearson r (predictor vs trait score)": 0.7070971026832749,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 4.0,
+      "Pearson r (predictor vs trait score)": 0.6885040262149992,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 5.0,
+      "Pearson r (predictor vs trait score)": 0.6742248457043376,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 6.0,
+      "Pearson r (predictor vs trait score)": 0.664346463367064,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 7.0,
+      "Pearson r (predictor vs trait score)": 0.6548640286010721,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 8.0,
+      "Pearson r (predictor vs trait score)": 0.5968615388086194,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 9.0,
+      "Pearson r (predictor vs trait score)": 0.7290830489693364,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 10.0,
+      "Pearson r (predictor vs trait score)": 0.6625840382345711,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 11.0,
+      "Pearson r (predictor vs trait score)": 0.6598358542357396,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 12.0,
+      "Pearson r (predictor vs trait score)": 0.7066655654146271,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 13.0,
+      "Pearson r (predictor vs trait score)": 0.6336422652766855,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 14.0,
+      "Pearson r (predictor vs trait score)": 0.6182926815187848,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 15.0,
+      "Pearson r (predictor vs trait score)": 0.585115696737836,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 16.0,
+      "Pearson r (predictor vs trait score)": 0.5995617975509208,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 17.0,
+      "Pearson r (predictor vs trait score)": 0.6249861912807773,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 18.0,
+      "Pearson r (predictor vs trait score)": 0.6626963744643285,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 19.0,
+      "Pearson r (predictor vs trait score)": 0.5562099644222475,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 20.0,
+      "Pearson r (predictor vs trait score)": 0.5219057707356594,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 21.0,
+      "Pearson r (predictor vs trait score)": 0.5025766355761614,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 22.0,
+      "Pearson r (predictor vs trait score)": 0.4269945363463306,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 23.0,
+      "Pearson r (predictor vs trait score)": 0.4617661891649369,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 24.0,
+      "Pearson r (predictor vs trait score)": 0.4949517912293253,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 25.0,
+      "Pearson r (predictor vs trait score)": 0.4785173869290856,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 26.0,
+      "Pearson r (predictor vs trait score)": 0.3559875670363733,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 27.0,
+      "Pearson r (predictor vs trait score)": -0.31437741731314894,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 0.0,
+      "y": 0.020743441378723443,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 1.0,
+      "y": 0.09727902703021035,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 2.0,
+      "y": 0.2015490461622802,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 3.0,
+      "y": 0.40950901981716864,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 4.0,
+      "y": 0.4551800774606376,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 5.0,
+      "y": 0.4604344553022364,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 6.0,
+      "y": 0.4590396553276964,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 7.0,
+      "y": 0.47368577680696783,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 8.0,
+      "y": 0.5109503046971461,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 9.0,
+      "y": 0.5359649603251437,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 10.0,
+      "y": 0.5311255695953707,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 11.0,
+      "y": 0.5415474265517007,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 12.0,
+      "y": 0.5550461011197075,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 13.0,
+      "y": 0.5591080089470466,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 14.0,
+      "y": 0.5702843899059327,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 15.0,
+      "y": 0.5851372159639824,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 16.0,
+      "y": 0.5847809196955311,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 17.0,
+      "y": 0.5953669550610381,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 18.0,
+      "y": 0.5992277780752672,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 19.0,
+      "y": 0.6070523514094652,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 20.0,
+      "y": 0.6196315153191234,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 21.0,
+      "y": 0.588166692641778,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 22.0,
+      "y": 0.5978666229131273,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 23.0,
+      "y": 0.6198654375487694,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 24.0,
+      "y": 0.5857137245531688,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 25.0,
+      "y": 0.515893422123423,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 26.0,
+      "y": 0.500026690612007,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 27.0,
+      "y": 0.5973565274884064,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 0.0,
+      "y": 0.38519302436126523,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 1.0,
+      "y": 0.4065718494460062,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 2.0,
+      "y": 0.5567482563459207,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 3.0,
+      "y": 0.5999905672256151,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 4.0,
+      "y": 0.6962848211366195,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 5.0,
+      "y": 0.6491118130231648,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 6.0,
+      "y": 0.769127176939019,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 7.0,
+      "y": 0.8122482958792755,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 8.0,
+      "y": 0.7759313538810991,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 9.0,
+      "y": 0.8550525825405232,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 10.0,
+      "y": 0.860865108534239,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 11.0,
+      "y": 0.8476477754525069,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 12.0,
+      "y": 0.8705367045534066,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 13.0,
+      "y": 0.8636495447494646,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 14.0,
+      "y": 0.8707975391274961,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 15.0,
+      "y": 0.8422029724878733,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 16.0,
+      "y": 0.8744414284120703,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 17.0,
+      "y": 0.8604550368964649,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 18.0,
+      "y": 0.8881716071954112,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 19.0,
+      "y": 0.8701283818951291,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 20.0,
+      "y": 0.8476127383516452,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 21.0,
+      "y": 0.8834781622026842,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 22.0,
+      "y": 0.8829297953008716,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 23.0,
+      "y": 0.8950981328372205,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 24.0,
+      "y": 0.8852536424863543,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 25.0,
+      "y": 0.8842615751243349,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 26.0,
+      "y": 0.8592657594315256,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 27.0,
+      "y": 0.8070212361017937,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 0.0,
+      "y": 0.2127817530004216,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 1.0,
+      "y": 0.10229056649896151,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 2.0,
+      "y": 0.09978464905753143,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 3.0,
+      "y": 0.03702726259404053,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 4.0,
+      "y": -0.06847453205661937,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 5.0,
+      "y": -0.09138194785269646,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 6.0,
+      "y": -0.14590073950990018,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 7.0,
+      "y": -0.1421506904400403,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 8.0,
+      "y": -0.20773836494928313,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 9.0,
+      "y": -0.20861297438137907,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 10.0,
+      "y": -0.1889155276903402,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 11.0,
+      "y": -0.1660319671388033,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 12.0,
+      "y": -0.12070979430633928,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 13.0,
+      "y": -0.17216716182491654,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 14.0,
+      "y": -0.14766860870265477,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 15.0,
+      "y": -0.07705588121361158,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 16.0,
+      "y": -0.03059963726851135,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 17.0,
+      "y": -0.01726731317131565,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 18.0,
+      "y": -0.00017200750172169377,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 19.0,
+      "y": -0.07001297439897418,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 20.0,
+      "y": -0.0457491138717097,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 21.0,
+      "y": -0.010334204655328832,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 22.0,
+      "y": -0.035471332931876445,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 23.0,
+      "y": -0.05636767344229285,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 24.0,
+      "y": -0.04476458885037314,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 25.0,
+      "y": -0.029984185496035945,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 26.0,
+      "y": 0.00797998338170508,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 27.0,
+      "y": 0.22868221735787575,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 0.0,
+      "y": 0.42492276888390024,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 1.0,
+      "y": 0.33280098951658466,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 2.0,
+      "y": 0.25224289939598044,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 3.0,
+      "y": 0.2672646446326262,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 4.0,
+      "y": 0.344484071060715,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 5.0,
+      "y": 0.3963899237986388,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 6.0,
+      "y": 0.42341164075854326,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 7.0,
+      "y": 0.498591024108034,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 8.0,
+      "y": 0.4940128843005748,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 9.0,
+      "y": 0.47657592267268234,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 10.0,
+      "y": 0.517723111882112,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 11.0,
+      "y": 0.5415026662850257,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 12.0,
+      "y": 0.5094572732901526,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 13.0,
+      "y": 0.5604345632942256,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 14.0,
+      "y": 0.6384454230045546,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 15.0,
+      "y": 0.6420468288686912,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 16.0,
+      "y": 0.6342218591042823,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 17.0,
+      "y": 0.6792359989272587,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 18.0,
+      "y": 0.632239628109902,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 19.0,
+      "y": 0.6275306700286911,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 20.0,
+      "y": 0.5972332198122271,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 21.0,
+      "y": 0.5810615424841762,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 22.0,
+      "y": 0.5279885247040519,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 23.0,
+      "y": 0.5231089606549209,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 24.0,
+      "y": 0.6041059262882097,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 25.0,
+      "y": 0.6146963003704543,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 26.0,
+      "y": 0.6421982270906985,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 27.0,
+      "y": 0.34074012842082924,
+      "series": "Tuned-map \u0394P (exploratory)",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 168,
+  "text": {
+    "suptitle": "Frozen vs tuned mapped arm, r per layer (tuned arm is exploratory)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Sycophancy",
+        "xlabel": "Layer index",
+        "ylabel": "Pearson r (predictor vs trait score)",
+        "legend_labels": [
+          "Mapped \u0394P (context)",
+          "Tuned-map \u0394P (exploratory)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Evil",
+        "xlabel": "Layer index",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      },
+      {
+        "title_left": "Hallucination",
+        "xlabel": "Layer index",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      }
+    ],
+    "series": [
+      "Mapped \u0394P (context)",
+      "Tuned-map \u0394P (exploratory)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

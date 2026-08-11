@@ -1,0 +1,1060 @@
+{
+  "commit": "99f9e975+dirty",
+  "render_id": "98b94f0bb53949a8",
+  "git_commit": "99f9e975",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2222/ci_flat_vs_clustered.meta.json",
+    "figures/issue_2222/ci_flat_vs_clustered.pdf",
+    "figures/issue_2222/ci_flat_vs_clustered.png",
+    "figures/issue_2222/layer_sweep_evil.meta.json",
+    "figures/issue_2222/layer_sweep_evil.pdf",
+    "figures/issue_2222/layer_sweep_evil.png",
+    "figures/issue_2222/layer_sweep_hallucination.meta.json",
+    "figures/issue_2222/layer_sweep_hallucination.pdf",
+    "figures/issue_2222/layer_sweep_hallucination.png",
+    "figures/issue_2222/layer_sweep_sycophancy.meta.json",
+    "figures/issue_2222/layer_sweep_sycophancy.pdf",
+    "figures/issue_2222/layer_sweep_sycophancy.png",
+    "scripts/issue2222_figures.py"
+  ],
+  "created": "2026-08-11T10:02:39Z",
+  "figsize": [
+    7.0,
+    4.2
+  ],
+  "points": [
+    {
+      "Layer index": 0.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -117966.20232725453,
+      "series": "Frozen map (context input)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 1.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -75041.07173064676,
+      "series": "Frozen map (context input)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 2.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -35927.336679209744,
+      "series": "Frozen map (context input)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 3.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -16047.139426825823,
+      "series": "Frozen map (context input)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 4.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -10021.920687504338,
+      "series": "Frozen map (context input)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 5.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -8862.083689061608,
+      "series": "Frozen map (context input)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 6.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -5350.321028920084,
+      "series": "Frozen map (context input)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 7.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -3487.0586407533438,
+      "series": "Frozen map (context input)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 8.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -3067.9691001453675,
+      "series": "Frozen map (context input)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 9.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -3427.567940675444,
+      "series": "Frozen map (context input)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 10.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -2267.8984790891227,
+      "series": "Frozen map (context input)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 11.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -2890.3658776623342,
+      "series": "Frozen map (context input)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 12.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -1982.573069841164,
+      "series": "Frozen map (context input)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 13.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -2765.430010661409,
+      "series": "Frozen map (context input)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 14.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -1601.2954858151913,
+      "series": "Frozen map (context input)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 15.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -1756.546898931054,
+      "series": "Frozen map (context input)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 16.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -1531.4665211194908,
+      "series": "Frozen map (context input)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 17.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -1747.0409830434185,
+      "series": "Frozen map (context input)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 18.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -2719.0953488811297,
+      "series": "Frozen map (context input)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 19.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -2120.3566074633736,
+      "series": "Frozen map (context input)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 20.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -2126.1736089921815,
+      "series": "Frozen map (context input)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 21.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -1869.1286310993603,
+      "series": "Frozen map (context input)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 22.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -1647.7083442161743,
+      "series": "Frozen map (context input)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 23.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -1544.556687456609,
+      "series": "Frozen map (context input)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 24.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -1733.3088743905246,
+      "series": "Frozen map (context input)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 25.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -1857.5984186957703,
+      "series": "Frozen map (context input)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 26.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -2773.505587604725,
+      "series": "Frozen map (context input)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 27.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -1625.0003077126626,
+      "series": "Frozen map (context input)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 0.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -197590.75585745732,
+      "series": "Frozen map (prefix input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 1.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -58698.57488436087,
+      "series": "Frozen map (prefix input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 2.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -32691.599056575982,
+      "series": "Frozen map (prefix input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 3.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -16036.870176536675,
+      "series": "Frozen map (prefix input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 4.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -12366.382899666913,
+      "series": "Frozen map (prefix input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 5.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -9136.55197589452,
+      "series": "Frozen map (prefix input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 6.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -6790.382418607393,
+      "series": "Frozen map (prefix input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 7.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -7099.891185614074,
+      "series": "Frozen map (prefix input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 8.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -7977.8875486607685,
+      "series": "Frozen map (prefix input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 9.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -5168.277362722813,
+      "series": "Frozen map (prefix input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 10.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -5322.3916298148215,
+      "series": "Frozen map (prefix input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 11.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -5732.1526799598705,
+      "series": "Frozen map (prefix input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 12.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -6038.8587435391155,
+      "series": "Frozen map (prefix input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 13.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -6100.134569435198,
+      "series": "Frozen map (prefix input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 14.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -5716.79397644821,
+      "series": "Frozen map (prefix input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 15.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -5524.527148042387,
+      "series": "Frozen map (prefix input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 16.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -5565.630759907527,
+      "series": "Frozen map (prefix input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 17.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -4821.583343399078,
+      "series": "Frozen map (prefix input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 18.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -6447.937811590449,
+      "series": "Frozen map (prefix input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 19.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -5842.804842376904,
+      "series": "Frozen map (prefix input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 20.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -5258.015696312369,
+      "series": "Frozen map (prefix input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 21.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -5940.806977284554,
+      "series": "Frozen map (prefix input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 22.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -2959.2785336321126,
+      "series": "Frozen map (prefix input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 23.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -2455.999112694806,
+      "series": "Frozen map (prefix input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 24.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -1898.159672720594,
+      "series": "Frozen map (prefix input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 25.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -1088.5379099167137,
+      "series": "Frozen map (prefix input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 26.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -788.4596448811332,
+      "series": "Frozen map (prefix input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 27.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -593.5816169803538,
+      "series": "Frozen map (prefix input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 0.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -8.684337543964864,
+      "series": "Identity (prompt-token assumption)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 1.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -7.582438926285803,
+      "series": "Identity (prompt-token assumption)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 2.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -6.648018272637417,
+      "series": "Identity (prompt-token assumption)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 3.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -5.8372912394797005,
+      "series": "Identity (prompt-token assumption)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 4.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -5.869129772672517,
+      "series": "Identity (prompt-token assumption)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 5.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -10.163331209131162,
+      "series": "Identity (prompt-token assumption)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 6.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -7.114287009920467,
+      "series": "Identity (prompt-token assumption)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 7.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -5.33658348329654,
+      "series": "Identity (prompt-token assumption)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 8.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -4.694212117869079,
+      "series": "Identity (prompt-token assumption)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 9.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -4.23220344230694,
+      "series": "Identity (prompt-token assumption)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 10.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -3.9867568214914844,
+      "series": "Identity (prompt-token assumption)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 11.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -4.32966480872213,
+      "series": "Identity (prompt-token assumption)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 12.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -4.192726839635614,
+      "series": "Identity (prompt-token assumption)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 13.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -4.588636313693605,
+      "series": "Identity (prompt-token assumption)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 14.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -4.633720965884945,
+      "series": "Identity (prompt-token assumption)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 15.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -4.346152532379402,
+      "series": "Identity (prompt-token assumption)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 16.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -4.423898013926359,
+      "series": "Identity (prompt-token assumption)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 17.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -4.711560975233974,
+      "series": "Identity (prompt-token assumption)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 18.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -4.977497275057181,
+      "series": "Identity (prompt-token assumption)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 19.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -4.1672037747404,
+      "series": "Identity (prompt-token assumption)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 20.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -4.973442639578767,
+      "series": "Identity (prompt-token assumption)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 21.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -4.35410466829682,
+      "series": "Identity (prompt-token assumption)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 22.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -4.594833148524403,
+      "series": "Identity (prompt-token assumption)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 23.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -4.379828641996414,
+      "series": "Identity (prompt-token assumption)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 24.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -4.299214360984847,
+      "series": "Identity (prompt-token assumption)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 25.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -4.939062650861088,
+      "series": "Identity (prompt-token assumption)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 26.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -5.329219573561817,
+      "series": "Identity (prompt-token assumption)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 27.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -6.688827585748132,
+      "series": "Identity (prompt-token assumption)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 0.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.7172545870490268,
+      "series": "Identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 1.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.6264181730414287,
+      "series": "Identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 2.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.6531858863448965,
+      "series": "Identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 3.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.6715165309067754,
+      "series": "Identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 4.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.7832507417035592,
+      "series": "Identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 5.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -1.5124489508928516,
+      "series": "Identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 6.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -1.1584699469769717,
+      "series": "Identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 7.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.9804991642833776,
+      "series": "Identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 8.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -1.0260770541395363,
+      "series": "Identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 9.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.831106642310899,
+      "series": "Identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 10.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.7512314541373437,
+      "series": "Identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 11.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.8306352158144836,
+      "series": "Identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 12.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.7504063747168925,
+      "series": "Identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 13.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.8315847418231155,
+      "series": "Identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 14.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.9577421557844399,
+      "series": "Identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 15.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.9138941111612895,
+      "series": "Identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 16.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -1.0890277779197226,
+      "series": "Identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 17.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -1.1693909680555081,
+      "series": "Identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 18.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -1.3604038047336005,
+      "series": "Identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 19.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -1.397114741299616,
+      "series": "Identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 20.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -1.9768879027134347,
+      "series": "Identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 21.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -1.9334918232704523,
+      "series": "Identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 22.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -2.3621277761203263,
+      "series": "Identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 23.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -2.5572192405924774,
+      "series": "Identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 24.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -2.560776115197516,
+      "series": "Identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 25.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -2.996381265469987,
+      "series": "Identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 26.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -3.2408083356418445,
+      "series": "Identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 27.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -1.804125909762528,
+      "series": "Identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 0.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.8637115622777198,
+      "series": "Tuned map (exploratory)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 1.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -1.0173305986498944,
+      "series": "Tuned map (exploratory)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 2.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.7767368720639956,
+      "series": "Tuned map (exploratory)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 3.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.689692987937141,
+      "series": "Tuned map (exploratory)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 4.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.538708813323719,
+      "series": "Tuned map (exploratory)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 5.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.6109695935232415,
+      "series": "Tuned map (exploratory)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 6.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.5737933132675774,
+      "series": "Tuned map (exploratory)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 7.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.5695724564991083,
+      "series": "Tuned map (exploratory)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 8.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.5215726282782973,
+      "series": "Tuned map (exploratory)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 9.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.4746711719115555,
+      "series": "Tuned map (exploratory)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 10.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.4557107533905491,
+      "series": "Tuned map (exploratory)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 11.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.466049431509886,
+      "series": "Tuned map (exploratory)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 12.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.4828301671233628,
+      "series": "Tuned map (exploratory)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 13.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.4092134225336683,
+      "series": "Tuned map (exploratory)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 14.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.3968943192553356,
+      "series": "Tuned map (exploratory)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 15.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.4202643221416693,
+      "series": "Tuned map (exploratory)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 16.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.46127376884658,
+      "series": "Tuned map (exploratory)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 17.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.49000380245712605,
+      "series": "Tuned map (exploratory)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 18.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.413645526702372,
+      "series": "Tuned map (exploratory)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 19.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.3704917545128592,
+      "series": "Tuned map (exploratory)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 20.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.37291587362237144,
+      "series": "Tuned map (exploratory)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 21.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.3168510269105336,
+      "series": "Tuned map (exploratory)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 22.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.2994543258141331,
+      "series": "Tuned map (exploratory)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 23.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.282858863607063,
+      "series": "Tuned map (exploratory)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 24.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.24994804521424574,
+      "series": "Tuned map (exploratory)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 25.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.24953010740178372,
+      "series": "Tuned map (exploratory)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 26.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.23345349930611636,
+      "series": "Tuned map (exploratory)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer index": 27.0,
+      "Held-out R\u00b2 of the answer-representation prediction": -0.4968133463325246,
+      "series": "Tuned map (exploratory)",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 140,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Map quality per layer (y clipped to [-1, 1]; frozen context, frozen prefix,\nand plain Identity all sit below the clip \u2014 see the raw-scale twin)",
+        "xlabel": "Layer index",
+        "ylabel": "Held-out R\u00b2 of the answer-representation prediction",
+        "legend_labels": [
+          "Frozen map (context input)",
+          "Frozen map (prefix input)",
+          "Identity (prompt-token assumption)",
+          "Identity + learned bias",
+          "Tuned map (exploratory)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ]
+      }
+    ],
+    "series": [
+      "Frozen map (context input)",
+      "Frozen map (prefix input)",
+      "Identity (prompt-token assumption)",
+      "Identity + learned bias",
+      "Tuned map (exploratory)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
