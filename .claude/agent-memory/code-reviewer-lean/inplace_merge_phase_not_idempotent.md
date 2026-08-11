@@ -23,8 +23,18 @@ rerun that recovers the crashed tail.
 **How to apply:** for every phase that mutates existing partials in place,
 ask "what happens on the second run?" — demand a done-marker the merge itself
 writes (e.g. skip units whose `judge_meta.<reissue-key>` exists), or a
-replace-not-append merge keyed on reissued item ids. Sweep siblings: append-
+replace-not-append merge keyed on reissued item ids. The GOOD fix shape
+(verified #2225 r2, `2c48d9e026`): done-marker written atomically IN THE SAME
+`_atomic_write_json` as the merged draws (crash-mid-unit ⇒ unmarked+unmerged),
+skip fires before target selection AND judge dispatch, and any spend-bearing
+follow-on (parity re-judge) is gated on this run's recovered count so a full
+rerun spends nothing; pin with a run-twice real-body test asserting stable
+draw-list length + zero extra judge calls. Sweep siblings: append-
 JSONL phases with last-wins dedup on read are fine; fingerprint-keyed
 skip-if-done phases are fine; the in-place appender is the one shape that
-corrupts. Sibling family: [[start-manifest-stale-artifact-done]] (stale
+corrupts. ALSO sweep sibling RESUME KEYS when one gets fixed: #2225 r2 pinned
+the probe-application done-set on the bundle sha but left `run_projection`'s
+`(tag, trait)`-only key (same #722-r3 stale-reuse class) one function below —
+a resume-key fix round should grep the file for other `done = {...}` sets.
+Sibling family: [[start-manifest-stale-artifact-done]] (stale
 resume), [[count-gate-starved-by-resume-skip]] (resume starves a gate).

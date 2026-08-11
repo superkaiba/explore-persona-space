@@ -1,5 +1,6 @@
 # code-reviewer-lean memory index
 
+- [Fails-pre-fix probe vs parent commit](fails_pre_fix_probe_parent_commit.md) — certify "fails-pre-fix" test claims by running the probe against `git show <sha>^:<file>`'s extracted body (#2225 R2 g2)
 - [Smoke enum item without dial](smoke_enum_item_without_dial.md) — a §4.8 blind-spot item promising a reduced-scale smoke needs a reachable CLI dial + dispatcher wiring + fingerprint key (#2225 R1 g3)
 - [Fan-out CVD ordinal ≠ parent entry](fanout_cvd_ordinal_not_entry.md) — child CVD=str(g) escapes a restricted parent CVD; pin the g-th entry; also grep for never-read mode flags (#2225 R1 g2)
 - [Sentinel path outside drain glob](sentinel_path_outside_drain_glob.md) — a conforming envelope in /workspace/logs/issue-<N>/ SUBDIR is invisible to the top-level poller glob (#2225 R1 g4)
