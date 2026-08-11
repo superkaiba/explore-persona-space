@@ -63,13 +63,19 @@ import issue1336_metric_ladder as ml  # noqa: E402
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
+from explore_persona_space.analysis.mapping_baselines import (  # noqa: E402
+    identity_bias_predict,
+)
 from explore_persona_space.experiments.issue_1336 import common as cm  # noqa: E402
 
 # Version tag for the resume predicate: bump on ANY output-affecting algebra
 # change so stale per-cell checkpoints refit instead of being reused.
 # v3 adds the answer-side reparameterization tiers t7/t8 + the A_ans own
 # held-out read; every v2 checkpoint is stale under it and refits.
-ALGEBRA_VERSION = "v3-foldlocal-2-cross-t7t8"
+# v4 adds the two ALIGNMENT-MAP identity+bias baselines (A_ctx_rev, A_ans) the
+# parent metric_ladder computes only at its --full-tier-layers set, which round
+# B never ran; every v3 checkpoint is stale under it and refits.
+ALGEBRA_VERSION = "v4-foldlocal-2-cross-t7t8-alignbaselines"
 
 # The self-map stage (all 8 surfaces) + the three missing forward pairs
 # (all 8 surfaces, tiers 0 + 6). Named HERE, never added to cm.PAIRS
@@ -231,6 +237,14 @@ def fit_cell(src: dict, tgt: dict, *, is_self: bool) -> dict:
         Ys = torch.as_tensor(src["y"][i_s], dtype=dtype).to(dev)
     n, d = int(Xt.shape[0]), int(Xt.shape[1])
     folds = fc._cv_folds(np.asarray(common), n_folds, seed)
+    # Row-aligned numpy views for the alignment-map identity+bias baselines
+    # below (the canonical helper is numpy; the tier algebra stays torch).
+    xt_np = np.asarray(tgt["x"][i_t], dtype=np.float32)
+    yt_np = np.asarray(tgt["y"][i_t], dtype=np.float32)
+    xs_np = None if is_self else np.asarray(src["x"][i_s], dtype=np.float32)
+    ys_np = None if is_self else np.asarray(src["y"][i_s], dtype=np.float32)
+    id_actx = None if is_self else np.zeros((n, d), dtype=np.float32)
+    id_aans = None if is_self else np.zeros((n, d), dtype=np.float32)
 
     names = ("within",) if is_self else ("within", "t0", "t6", "t7", "t8", "cross", "aans_own")
     ss_res = dict.fromkeys(names, 0.0)
@@ -302,6 +316,21 @@ def fit_cell(src: dict, tgt: dict, *, is_self: bool) -> dict:
             preds["cross"] = ml._v2_predict(prep_s, fit_cross, Xs[te])
             lam_log.setdefault("cross", []).append(float(fit_cross["lam"]))
             sel_log.setdefault("cross", []).append(fit_cross["selector"])
+            # Identity+learned-bias baselines for the two ALIGNMENT maps, OOF on
+            # the same folds — copied verbatim from the production
+            # issue1336_metric_ladder fold loop (its lines 744-747), which
+            # computes them only at --full-tier-layers and so never ran for
+            # these three pairs. A_ctx_rev's baseline predicts the SOURCE
+            # context from the TARGET context; A_ans's predicts the TARGET
+            # answer from the SOURCE answer. Unlike identity+bias-WITHIN
+            # (target-keyed, graftable from a sibling pair) both are
+            # pair-specific, so no round-3 pair can supply them.
+            id_actx[te_np] = identity_bias_predict(xt_np[tr_np], xs_np[tr_np], xt_np[te_np]).astype(
+                np.float32
+            )
+            id_aans[te_np] = identity_bias_predict(ys_np[tr_np], yt_np[tr_np], ys_np[te_np]).astype(
+                np.float32
+            )
             del prep_s, prep_ys
 
         yt_te = Yt[te]
@@ -315,6 +344,18 @@ def fit_cell(src: dict, tgt: dict, *, is_self: bool) -> dict:
             torch.cuda.empty_cache()
 
     assert fitted.all(), f"unfitted rows: {int((~fitted).sum())} of {n}"
+    # Globally-pooled OOF R^2 for the alignment identity baselines, matching the
+    # parent's `fc._pooled_r2(captured[...], xs_np|y_np)` reads (metric_ladder
+    # lines 844-845) so these three pairs are directly comparable with the seven
+    # round-3 pairs already plotted. NOT the fold-local basis the tiers use --
+    # the parent's baselines block is globally pooled, and comparability with
+    # the banked values is what these numbers are for.
+    align_baselines = None
+    if not is_self:
+        align_baselines = {
+            "A_ctx_rev_identity_bias_r2": float(fc._pooled_r2(id_actx, xs_np)),
+            "A_ans_identity_bias_r2": float(fc._pooled_r2(id_aans, yt_np)),
+        }
     return {
         "n": n,
         "d": d,
@@ -326,6 +367,7 @@ def fit_cell(src: dict, tgt: dict, *, is_self: bool) -> dict:
         "r2_globalmu": {name: 1.0 - ss_res[name] / ss_tot_global for name in names},
         "selected_lambda": lam_log,
         "selectors": sel_log,
+        "align_baselines": align_baselines,
     }
 
 
@@ -372,6 +414,11 @@ def cell_records(source: str, target: str, fmt: str, corpus: str, layer: int, fi
             "cross_r2_globalmu": fit["r2_globalmu"]["cross"],
             "aans_own_r2": fit["r2"]["aans_own"],
             "aans_own_r2_globalmu": fit["r2_globalmu"]["aans_own"],
+            # Per-CELL alignment-map identity+bias floors (no tier), repeated on
+            # every tier row so each row stays self-describing under a filter --
+            # same convention as cross_r2 / aans_own_r2 above.
+            "A_ctx_rev_identity_bias_r2": fit["align_baselines"]["A_ctx_rev_identity_bias_r2"],
+            "A_ans_identity_bias_r2": fit["align_baselines"]["A_ans_identity_bias_r2"],
         }
         for t in (0, 6, 7, 8)
     ]

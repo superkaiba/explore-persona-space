@@ -18,7 +18,9 @@ SURFACES="${2:?surface list required}"
 
 REPO=/workspace/explore-persona-space
 BRANCH=issue-1336-fullcorpora
-FIX_SHA=a057a683cb
+# Overridable so a later round can key the ancestry probe to ITS OWN fix commit
+# rather than to the round that first wrote this launcher.
+FIX_SHA="${FIX_SHA:-a057a683cb}"
 LOGDIR=/workspace/logs
 OUT_ROOT=/workspace/out/issue_1336_selfmap
 STAGE_ROOT=/workspace/data/issue_1336
@@ -48,8 +50,16 @@ echo "[setup] disk at start:"; df -h /workspace | tail -1
 rc_all=0
 for s in $SURFACES; do
   fmt="${s%%|*}"; corpus="${s##*|}"
-  cells="base__base__${fmt}__${corpus}"
-  cells="${cells},sft__rlvr__${fmt}__${corpus}"
+  # SKIP_SELF=1 drops the base self-map cell (already computed in the original
+  # round). It also drops `base` from the surface's staging set — 3 model-
+  # surfaces instead of 4, i.e. ~25% less download and ~25% less peak disk —
+  # because stage_inputs() stages exactly the stems the requested cells consume.
+  if [ "${SKIP_SELF:-0}" = "1" ]; then
+    cells="sft__rlvr__${fmt}__${corpus}"
+  else
+    cells="base__base__${fmt}__${corpus}"
+    cells="${cells},sft__rlvr__${fmt}__${corpus}"
+  fi
   cells="${cells},sft__rlvr_long__${fmt}__${corpus}"
   cells="${cells},rlvr__rlvr_long__${fmt}__${corpus}"
 
