@@ -205,6 +205,101 @@ class TestParseJudgeJsonRecoveryLadder:
         assert "TAILMARK" in message, message
 
 
+class TestParseJudgeJsonTrailingScalar:
+    """#2222 step-4 pins: trailing bare-scalar line recovery.
+
+    Contract: fires ONLY when steps 1-3 fail; the ENTIRE last non-empty line
+    must be a bare number (fullmatch); genuinely scoreless prose still drops
+    to None (drop-never-coerce, rule 9). Motivating shape: the persona-vectors
+    graded rubric's reason-then-bare-number responses on code/math rows
+    (28/150 hallucination pilot draws, every one ``end_turn``-complete with
+    the score alone on the final line).
+    """
+
+    def test_reasoning_then_trailing_int(self):
+        """The exact #2222 pilot failure shape — fails pre-fix (returned None)."""
+        text = (
+            "I need to evaluate whether the model's response contains "
+            "hallucinations.\n\nLet me verify the mathematical work: the "
+            "reasoning is sound but fabricates one detail.\n\n20"
+        )
+        result = parse_judge_json(text)
+        assert result == 20
+        assert type(result) is int
+
+    def test_reasoning_then_trailing_float(self):
+        result = parse_judge_json("Some analysis here.\n\n35.5")
+        assert result == 35.5
+        assert type(result) is float
+
+    def test_trailing_line_with_surrounding_whitespace(self):
+        assert parse_judge_json("analysis\n\n  70  \n\n") == 70
+
+    def test_number_embedded_in_prose_still_drops(self):
+        """A number inside the final prose line is NOT recovered (fullmatch)."""
+        assert parse_judge_json("The response merits a score of 20.") is None
+        assert parse_judge_json("analysis\n\nScore: 20") is None
+
+    def test_scoreless_prose_still_drops(self):
+        assert parse_judge_json("This exhibits hallucination behavior.") is None
+
+    def test_step3_precedence_unchanged(self):
+        """A recoverable JSON object beats a trailing scalar (step 3 first)."""
+        text = 'reasoning\n\n{"score": 40}\n\n99'
+        assert parse_judge_json(text) == {"score": 40}
+
+    def test_out_of_range_and_negative_pass_through_to_caller_checks(self):
+        """Range enforcement stays with callers (_score_from_parsed drops)."""
+        from explore_persona_space.eval.graded_judge import _score_from_parsed
+
+        assert parse_judge_json("analysis\n\n150") == 150
+        assert parse_judge_json("analysis\n\n-5") == -5
+        assert _score_from_parsed(150) is None
+        assert _score_from_parsed(-5) is None
+        assert _score_from_parsed(parse_judge_json("analysis\n\n20")) == 20.0
+
+    def test_graded_drain_envelope(self):
+        """The judge_dispatch drain wraps a recovered in-range scalar in the
+        graded ``{"score": N}`` envelope — route parity with step-1 scalars
+        (#1434/#2092)."""
+        from explore_persona_space.eval.judge_dispatch import _normalize_scalar_score
+
+        assert _normalize_scalar_score(parse_judge_json("analysis\n\n20")) == {"score": 20}
+
+    def test_refusal_token_still_drops(self):
+        """Bare REFUSAL text stays a parse failure (pre-existing pin)."""
+        assert parse_judge_json("analysis\n\nREFUSAL") is None
+
+
+class TestNonDictParseConsumers:
+    """#2222 consumer hardening: scalar parses keep dict-shaped contracts."""
+
+    def test_alignment_non_dict_parse_routes_to_parse_error(self):
+        """alignment.py's dual-rubric consumer converts a non-dict parse into
+        the uniform parse_error drop dict (never a bare scalar row)."""
+        import inspect
+
+        from explore_persona_space.eval import alignment
+
+        src = inspect.getsource(alignment)
+        assert "not isinstance(parsed, dict)" in src
+
+    def test_detect_refusal_scalar_parse_raises_valueerror(self):
+        """refusal.py raises its intended ValueError (not TypeError) when the
+        judge returns a scalar-parsing response."""
+        from unittest.mock import MagicMock
+
+        from explore_persona_space.eval.refusal import detect_refusal
+
+        block = MagicMock()
+        block.type = "text"
+        block.text = "analysis\n\n20"
+        client = MagicMock()
+        client.messages.create.return_value = MagicMock(content=[block])
+        with pytest.raises(ValueError, match="could not parse a 'refusal' verdict"):
+            detect_refusal("some response", client=client)
+
+
 class TestDefaultJudgeModel:
     """Tests for the centralized DEFAULT_JUDGE_MODEL constant."""
 
