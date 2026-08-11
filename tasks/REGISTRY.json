@@ -9442,8 +9442,8 @@
       "goal": "Reproduce the Persona Vectors (arXiv 2507.21509) data-screening predictor comparison (raw projection / exact projection difference / last-prompt-token approximation, their Figures 8/21/23) on the 24-dataset synthetic suite and test whether a FROZEN trait-agnostic context\u2192answer mapped projection difference recovers exact-\u0394P predictivity \u2014 especially closing the sycophancy gap (r 0.581 \u2192 ~0.88) \u2014 at forward-pass cost.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/2222",
-      "status": "interpreting",
+      "path": "tasks/reviewing/2222",
+      "status": "reviewing",
       "title": "A frozen context\u2192answer map fails to recover exact-\u0394P data-screening predictivity, and never beats the paper's own prompt-token approximation on any trait (point estimates) (HIGH confidence)"
     },
     "2223": {
