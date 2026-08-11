@@ -9480,8 +9480,8 @@
     "2227": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2227",
-      "status": "running",
+      "path": "tasks/completed/2227",
+      "status": "completed",
       "title": "verify_plan c53: extend harm-class trigger vocabulary to evil-trait/toxic-corpus judge-banding phrasing (#2221 silent pass)"
     },
     "2228": {
