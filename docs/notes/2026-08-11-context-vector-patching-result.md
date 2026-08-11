@@ -63,23 +63,24 @@ I made a plot showing, for each layer, and for each tested slot (some combinatio
 efficiency), the effect of patching on this metric. I did this for all 3 settings (matched query,
 matched prefix, fully different).
 
-![Coherent-draw fraction per slot and layer, three settings](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e392738498efd9a58b779d66b1492a66a9ad1e24/figures/issue_2094/userchat_heatmaps/coherence_heatmaps.png)
+![Coherent-draw fraction per slot and layer, three settings](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f90099282164b830dde0348ff56ef274304ff74/figures/issue_2094/userchat_heatmaps/coherence_heatmaps.png)
 
-**Where the >60 cut comes from, and whether it matters.** 60 is not a calibrated value — it was
-fixed in the task body up front, and it is stricter than the >50 gate this repo uses elsewhere
-(`issue778_lib.py`, following the persona-vectors paper). It turns out not to matter, because the
-judge's score distribution is hard bimodal: a draw is fluent (scores ~100) or it is word salad
-(scores ~0), and almost nothing lands in between. Moving the cut from 50 to 60 reclassifies **18 of
-44,391 draws (0.04%)**; sweeping it across the whole 40–80 range moves the coherent fraction only
-from 0.967 to 0.960. No conclusion in this writeup depends on where the line sits.
+**Where the >60 cut comes from, and whether it matters.** Two thresholds are in play and they are
+different quantities: a **draw** counts as coherent at judge score **>60**, and a **cell** is dropped
+when fewer than **80%** of its draws clear that. The 60 is not calibrated — it was fixed in the task
+body up front, and it is stricter than the >50 gate this repo uses elsewhere (`issue778_lib.py`,
+following the persona-vectors paper). It turns out not to matter, because the score distribution is
+hard bimodal: a draw is fluent (~100) or it is word salad (~0), with almost nothing between. Moving
+the draw cut from 50 to 60 reclassifies **18 of 44,391 draws (0.04%)**, and the whole 40→80 sweep
+moves the coherent fraction only 0.967 → 0.960. No conclusion here depends on where that line sits.
 
-![Coherence judge score distribution and cut sensitivity](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e392738498efd9a58b779d66b1492a66a9ad1e24/figures/issue_2094/userchat_heatmaps/coherence_distribution.png)
+![Coherence judge score distribution and cut sensitivity](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f90099282164b830dde0348ff56ef274304ff74/figures/issue_2094/userchat_heatmaps/coherence_distribution.png)
 
 > Left: distribution of the graded coherence score over all 44,391 judged draws, split by slot family
-> and arm (log-scaled counts). Dashed = the >60 cut used here, dotted = the >50 alternative. Right:
-> fraction counted as coherent as the cut sweeps 30→90; flat curves mean the cut is not load-bearing.
-> The two families separate sharply — single-position edits are ~99.3% coherent, multi-token span
-> edits only ~47%, and the null arm breaks just as much as the real patch in both.
+> and arm (log-scaled counts). Dashed = the >60 draw cut used here, dotted = the >50 alternative.
+> Right: fraction counted as coherent as the draw cut sweeps 30→90; flat curves mean it is not
+> load-bearing. The two families separate sharply — single-position edits are ~99.2% coherent,
+> multi-token span edits only ~39–40%, and the null arm breaks just as much as the real patch in both.
 
 **Takeaways:**
 
@@ -93,8 +94,10 @@ from 0.967 to 0.960. No conclusion in this writeup depends on where the line sit
 
 For the results below, I plot the full matrix, but cells that were never run are greyed out and
 **dropped cells are cross-hatched** — shown, never read as effects. A cell is dropped on one
-criterion: fewer than half its draws stayed coherent. 7 of the 176 cells qualify, all of them span
-slots under joint edits. Cap-hit (rollouts that ran into the generation cap and truncated) is
+criterion: fewer than **80%** of its draws stayed coherent. 10 of the 176 cells qualify, all of them
+span slots under joint edits. (80% rather than 50% because the draw-level scores are bimodal — a cell
+between those two is one where a substantial minority of draws came back as word salad, so its
+surviving mean is taken over a selected subset.) Cap-hit (rollouts that ran into the generation cap and truncated) is
 reported per cell in the prose below rather than used as a read/do-not-read switch — the fu2 2%
 threshold is too tight to be a binary at n=30, where a single truncated rollout is already 3.3%.
 
@@ -111,7 +114,29 @@ I made a plot showing, for each layer, and for each tested slot (some combinatio
 efficiency), the effect of patching on this metric. I did this for all 3 settings (matched query,
 matched prefix, fully different).
 
-![F_act per slot and layer, three settings, full-state patch](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e392738498efd9a58b779d66b1492a66a9ad1e24/figures/issue_2094/userchat_heatmaps/f_act_heatmaps.png)
+![F_act per slot and layer, three settings, full-state patch](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f90099282164b830dde0348ff56ef274304ff74/figures/issue_2094/userchat_heatmaps/f_act_heatmaps.png)
+
+**F_act only counts movement ALONG the axis.** A patch that hurls the answer state somewhere
+unrelated scores the same as one that barely moved, so I split the realized shift into its component
+along the floor→ceiling axis and the orthogonal residual (both in units of the axis length; free from
+the banked full-mean fields, no new compute). At all 28 layers, matched query:
+
+| slot | on-axis | off-axis | cos | null: on / off / cos |
+|---|---|---|---|---|
+| context-end | 0.442 | 0.432 | 0.66 | 0.183 / 0.930 / 0.22 |
+| prefix-end | 0.213 | 0.414 | 0.27 | 0.183 / 0.435 / 0.24 |
+
+Two things follow. The shuffled-donor null moves the answer state **further in total** than the real
+patch does (0.95 vs 0.62 axis-lengths) but almost entirely sideways — so context-end's movement is
+specifically directed, not "any perturbation moves the state". And **prefix-end is barely
+distinguishable from its own null** on either component (0.213 vs 0.183 on-axis, cos 0.27 vs 0.24):
+its F_act is not weak-but-real transport toward B, it is mostly non-specific displacement.
+
+![On-axis vs off-axis movement of the answer state, per slot, steered vs shuffled-donor null](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f90099282164b830dde0348ff56ef274304ff74/figures/issue_2094/userchat_heatmaps/offaxis_decomposition.png)
+
+> Each point is one slot; filled = real patch, open = its shuffled-donor null, joined by a grey line.
+> Distance from the origin is total movement, angle is alignment; below the dashed line = mostly
+> on-target. Query-text sits at off-axis 2.48 — it flings the answer state 2.5 axis-lengths sideways.
 
 **Takeaways:**
 
@@ -192,7 +217,7 @@ the pairs behind the headline cannot tell those apart. These 5 pass the |separat
 because their FLOOR is strongly expressed, not their ceiling; the filter checks the gap, not which
 end supplies it.
 
-![F_beh per slot and layer, three settings, full-state patch, well-separated pairs](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e392738498efd9a58b779d66b1492a66a9ad1e24/figures/issue_2094/userchat_heatmaps/f_beh_heatmaps_wellsep.png)
+![F_beh per slot and layer, three settings, full-state patch, well-separated pairs](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f90099282164b830dde0348ff56ef274304ff74/figures/issue_2094/userchat_heatmaps/f_beh_heatmaps_wellsep.png)
 
 **Direct check: the erasure/installation split, measured rather than inferred.** The paragraph above
 reads the split off F values. To measure it, I re-scored the same completions with the same rubrics
@@ -259,7 +284,16 @@ well as on coherence. Cells are picked dose-blind, by the mean steered−null ma
 strengths, over well-separated pairs only; the right panel restricts to single layers, where α = 1 is
 exactly a patch. Both metrics select matched-query context-end.
 
-![Steering-strength response at the best cells: behavior F, answer-vector F, coherence, vs nulls](https://raw.githubusercontent.com/superkaiba/explore-persona-space/94728abb5029fe49d9d632633f5a5e6b451b65d3/figures/issue_2094/userchat_heatmaps/dose_lineplot.png)
+![Steering-strength response at the best cells: behavior F, answer-vector F, coherence, vs nulls](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f90099282164b830dde0348ff56ef274304ff74/figures/issue_2094/userchat_heatmaps/dose_lineplot.png)
+
+Split by depth — the best single layer, the middle band, and all 28 layers — with all three metrics
+on each panel:
+
+![Dose response at the context vector by depth: behavior F, answer-vector F, coherence, vs nulls](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f90099282164b830dde0348ff56ef274304ff74/figures/issue_2094/userchat_heatmaps/dose_lineplot_by_layer.png)
+
+> Solid = real steering, dashed = its norm-matched shuffled-donor null, star = the full-state replace
+> patch. Well-separated matched-query pairs, context-vector slot. The best single layer (L16) is
+> picked dose-blind by null-margin, so the plotted curve is not selected on its own peak.
 
 **Takeaways:**
 
@@ -275,6 +309,73 @@ exactly a patch. Both metrics select matched-query context-end.
 5. The response is not linear. At the all-layer cell α = 1 gives 0.32 while the equivalent full-state
    replace gives 0.63 — patching layer ℓ changes what layers above ℓ see, so adding the difference at
    every layer is not the same as substituting the state.
+6. Depth changes which failure you hit. At L16 coherence never moves (1.00 everywhere) and the ceiling
+   is simply low; at all 28 layers the ceiling is higher but coherence pays for it (0.95 → 0.70 by
+   α = 4); in the middle band the *null* climbs to 0.32 at α = 2, so the margin over null — not the
+   raw curve — is the only readable quantity there.
+
+### Result 5: What the transfer actually looks like, and what it is made of
+
+I then looked qualitatively at some completions for the all-layers patching at the context vector in
+the matched query / different prefix setting. All excerpts are the model's own greedy output under
+the patch; F is the judged fraction-of-swap for that pair.
+
+**Successful patching** — the target register is actually installed:
+
+| F | patch | the model's patched answer (opening) |
+|---|---|---|
+| 0.77 | bare → pirate, *rent or buy?* | "**Arrr, matey!** The choice between renting and buying a home is like choosing between a ship and a treasure chest. It all depends on the wind and waves of your personal situation." |
+| 0.69 | bare → pirate, *hash tables* | "**Arrr, ye be askin' 'bout hash tables!** Aye, well, let me tell ye 'bout them… It's like havin' a treasure map…" |
+| 0.69 | bare → pirate, *job interview* | "**Arrr, matey!** First off, ye need to be prepared like a pirate on a treasure hunt. Here's what ye should do: 1. **Research the Company**: Ye need to know where ye're goin'…" |
+
+**Failed patching** — the target register does not arrive, or the source one refuses to leave:
+
+| F | patch | the model's patched answer (opening) |
+|---|---|---|
+| 0.14 | bare → pirate, *lighthouse story* | "Ah, the old lighthouse stood tall and proud on its rocky perch, its beam slicing through the fog like a ghostly hand…" — plain literary prose, no dialect at all |
+| 0.50 | bare → pirate, *why is the sky blue* | "**Ahoy there!** The reason why the sky appears blue… Let's dive into the science behind it!" — one dialect token, then ordinary explanation |
+| 0.37 | pirate → conversation, *rent or buy?* | "Deciding whether to rent or buy a home is a personal choice… **As an old pirate, I've seen many a ship come and go**" — the source persona survives the patch |
+
+Using our metric, there could be 2 explanations for the behavior transfer:
+
+- erasing behavior from the context we are patching into
+- adding behavior from the context we are patching from
+
+I wanted to see if our patching was doing more of one of these things. To do this, I re-scored the
+same completions with the same rubrics but **per position window** — each answer cut into thirds at
+sentence boundaries, each third scored against *both* the source-prefix and the target-prefix rubric
+(990 judge calls, 990 scored, zero drops of any class). That separates the two directions, because
+erasure shows up as the source score falling and installation as the target score rising.
+
+**It is mostly erasure.** At all 28 layers, first window, the source register drops **80** points
+against the shuffled-donor null — 4 of 5 pairs go from 95–100 to **0**, complete erasure — while the
+target register climbs only **24**. The ratio is ≈3.3× at every window. The qualitative table above
+shows the same thing from the other side: the three *highest*-F pairs in the whole setting are all
+pirate → conversation, and their patched text is plain-assistant prose, not the emoji-rich party
+register — they score high purely by deleting the pirate. F's numerator is judge_B − judge_A, so
+deleting A scores almost as well as installing B.
+
+![Target-persona expression by position, and the erasure/installation decomposition](https://raw.githubusercontent.com/superkaiba/explore-persona-space/bff5b424a93dbac550da6ebcddd48a7e7af52800/figures/issue_2094/position_judge_decay.png)
+
+> Left: pirate-persona score by third of the model's own answer, bare-context run patched toward the
+> persona context (n=5 per cell), against the natively-prompted ceiling (n=50). Right: at all 28
+> layers, both registers under the real patch and the null. Grid arms are greedy single-draw, anchors
+> temperature 1.0 — an unmatched sampling regime, so read the within-arm trends and same-window
+> contrasts, not the absolute levels.
+
+**Takeaways:**
+
+1. The patch is ~3.3× better at erasure than installation, at every position in the answer. Most of
+   the headline F at context-end is the old context being deleted, not the new one arriving.
+2. Installation happens only at all-28-layers. Layers 14–20 and layer 16 alone put the target register
+   at ≤3/100 in *every* window — genuine absence, not a persona that fades and gets marked down by a
+   consistency-weighted whole-answer rubric.
+3. Where installation does happen it decays across the answer (24.4 → 11.0 → 18.0) while the
+   natively-prompted persona does not (54.4 → 48.5 → 69.8, if anything rising) — so the decay is
+   patch-specific. It rests on 2 of 5 pairs at one greedy draw each, so this is a hypothesis, not a
+   result.
+4. Failure is not uniform: it is either non-arrival (the story stays plain), token-deep arrival
+   ("Ahoy there!" then ordinary prose), or source-persistence (the pirate narrates through the patch).
 
 **Repro:** heatmaps `scripts/issue2094_userchat_heatmaps.py`; Result 4 `scripts/issue2094_dose_lineplot.py`
 (cells + per-strength values in `figures/issue_2094/userchat_heatmaps/dose_lineplot_summary.json`;
