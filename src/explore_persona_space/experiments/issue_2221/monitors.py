@@ -10,9 +10,10 @@ Statistical conventions:
 - Bootstrap draws resample the 24 fine-tunes WITH replacement; per draw the
   read-out position is RE-SELECTED over the arm's full position axis
   (layer x {prefix, context} = 56 positions for the mapped arm c) — the
-  selection-symmetric convention. Ranks are computed ONCE on the original
-  sample and Pearson-correlated on the resampled rank rows (the registered
-  batched approximation; ties/re-ranking inside a draw are ignored).
+  selection-symmetric convention. Per draw the resampled values are
+  RE-RANKED within the draw (exact Spearman under resampling ties) and the
+  rank rows are Pearson-correlated batched — no per-draw Python loop
+  (:func:`bootstrap_pearson`).
 """
 
 from __future__ import annotations
@@ -94,6 +95,19 @@ def bootstrap_pearson(
     return out
 
 
+def select_per_draw(r: np.ndarray) -> np.ndarray:
+    """Per-draw signed r at the argmax-|r| position of ``r (B, P)`` -> ``(B,)``.
+
+    The selection-symmetric reduction shared by the bootstrap, the score
+    shuffle, and the null ladder — persisting the ``(B, P)`` input matrix
+    (plan §6) makes this reduction recomputable post-hoc.
+    """
+    r = np.asarray(r, dtype=np.float64)
+    absr = np.where(np.isfinite(r), np.abs(r), -np.inf)
+    sel = np.argmax(absr, axis=1)
+    return r[np.arange(r.shape[0]), sel]
+
+
 def bootstrap_selected(
     x_pos: np.ndarray, y: np.ndarray, idx: np.ndarray, *, chunk: int = 2000
 ) -> np.ndarray:
@@ -102,10 +116,7 @@ def bootstrap_selected(
     Selection is re-run INSIDE every bootstrap draw (selection-symmetric).
     Returns ``(B,)`` signed r at the per-draw argmax-|r| position.
     """
-    r = bootstrap_pearson(x_pos, y, idx, chunk=chunk)  # (B, P)
-    absr = np.where(np.isfinite(r), np.abs(r), -np.inf)
-    sel = np.argmax(absr, axis=1)
-    return r[np.arange(r.shape[0]), sel]
+    return select_per_draw(bootstrap_pearson(x_pos, y, idx, chunk=chunk))
 
 
 def percentile_ci(draws: np.ndarray, alpha: float = 0.05) -> tuple[float, float]:
@@ -162,6 +173,34 @@ def covariance_null_directions(
     return dirs, top
 
 
+def null_r_matrix(
+    dirs: np.ndarray,
+    shifts: np.ndarray,
+    y: np.ndarray,
+    *,
+    chunk: int = 100,
+) -> np.ndarray:
+    """Null battery per-draw x per-position r matrix ``(B, L)``.
+
+    ``dirs (B, L, d)`` null directions, ``shifts (n, L, d)`` per-fine-tune
+    shift summaries, ``y (n,)`` trait scores. Per draw the monitor scalar is
+    ``E[b, f, l] = dirs[b, l] . shifts[f, l]`` (one einsum per chunk) and the
+    Spearman r is computed per position. The full matrix is PERSISTED by the
+    caller (plan §6 selection-symmetric persistence contract).
+    """
+    shifts = np.asarray(shifts, dtype=np.float32)
+    assert shifts.ndim == 3, shifts.shape  # (n_finetunes, n_layers, d)
+    yr = rank_transform(np.asarray(y, float)[None, :], axis=-1)[0]
+    out = np.empty((dirs.shape[0], dirs.shape[1]), dtype=np.float64)
+    for lo in range(0, dirs.shape[0], chunk):
+        hi = min(lo + chunk, dirs.shape[0])
+        e = np.einsum("bld,fld->bfl", dirs[lo:hi].astype(np.float32), shifts)  # (b, n, L)
+        e64 = np.asarray(e, dtype=np.float64).transpose(0, 2, 1)  # (b, L, n)
+        er = rank_transform(e64, axis=-1)
+        out[lo:hi] = pearson_rows(er, np.broadcast_to(yr, er.shape))  # (b, L)
+    return out
+
+
 def null_selected_r(
     dirs: np.ndarray,
     shifts: np.ndarray,
@@ -171,25 +210,26 @@ def null_selected_r(
 ) -> np.ndarray:
     """Null battery: per draw, replace r_B by a null direction and re-select.
 
-    ``dirs (B, L, d)`` null directions, ``shifts (n, L, d)`` per-fine-tune
-    shift summaries, ``y (n,)`` trait scores. Per draw the monitor scalar is
-    ``E[b, f, l] = dirs[b, l] . shifts[f, l]`` (one einsum per chunk), the
-    Spearman r is computed per layer, and the same argmax-|r| selection runs
-    over the layer axis. Returns ``(B,)`` selected signed r per null draw.
+    The same argmax-|r| selection the headline enjoys runs over the position
+    axis per draw. Returns ``(B,)`` selected signed r per null draw.
     """
-    shifts = np.asarray(shifts, dtype=np.float32)
-    assert shifts.ndim == 3, shifts.shape  # (n_finetunes, n_layers, d)
+    return select_per_draw(null_r_matrix(dirs, shifts, y, chunk=chunk))
+
+
+def score_shuffle_r_matrix(
+    rng: np.random.Generator, x_pos: np.ndarray, y: np.ndarray, n_draws: int, *, chunk: int = 2000
+) -> np.ndarray:
+    """Score-shuffle null per-draw x per-position r matrix ``(B, P)``."""
+    n = y.shape[0]
+    perms = np.stack([rng.permutation(n) for _ in range(n_draws)])  # (B, n)
+    xr = rank_transform(np.asarray(x_pos, float), axis=-1)  # (P, n)
     yr = rank_transform(np.asarray(y, float)[None, :], axis=-1)[0]
-    out = np.empty(dirs.shape[0], dtype=np.float64)
-    for lo in range(0, dirs.shape[0], chunk):
-        hi = min(lo + chunk, dirs.shape[0])
-        e = np.einsum("bld,fld->bfl", dirs[lo:hi].astype(np.float32), shifts)  # (b, n, L)
-        e64 = np.asarray(e, dtype=np.float64).transpose(0, 2, 1)  # (b, L, n)
-        er = rank_transform(e64, axis=-1)
-        r = pearson_rows(er, np.broadcast_to(yr, er.shape))  # (b, L)
-        absr = np.where(np.isfinite(r), np.abs(r), -np.inf)
-        sel = np.argmax(absr, axis=1)
-        out[lo:hi] = r[np.arange(r.shape[0]), sel]
+    out = np.empty((n_draws, xr.shape[0]), dtype=np.float64)
+    for lo in range(0, n_draws, chunk):
+        hi = min(lo + chunk, n_draws)
+        yg = yr[perms[lo:hi]]  # (b, n)
+        r = pearson_rows(xr[:, None, :], yg[None, :, :])  # (P, b)
+        out[lo:hi] = r.T
     return out
 
 
@@ -197,19 +237,7 @@ def score_shuffle_selected_r(
     rng: np.random.Generator, x_pos: np.ndarray, y: np.ndarray, n_draws: int, *, chunk: int = 2000
 ) -> np.ndarray:
     """Score-shuffle null with the SAME per-draw selection over positions."""
-    n = y.shape[0]
-    perms = np.stack([rng.permutation(n) for _ in range(n_draws)])  # (B, n)
-    xr = rank_transform(np.asarray(x_pos, float), axis=-1)  # (P, n)
-    yr = rank_transform(np.asarray(y, float)[None, :], axis=-1)[0]
-    out = np.empty(n_draws, dtype=np.float64)
-    for lo in range(0, n_draws, chunk):
-        hi = min(lo + chunk, n_draws)
-        yg = yr[perms[lo:hi]]  # (b, n)
-        r = pearson_rows(xr[:, None, :], yg[None, :, :])  # (P, b)
-        absr = np.where(np.isfinite(r), np.abs(r), -np.inf)
-        sel = np.argmax(absr, axis=0)
-        out[lo:hi] = r[sel, np.arange(r.shape[1])]
-    return out
+    return select_per_draw(score_shuffle_r_matrix(rng, x_pos, y, n_draws, chunk=chunk))
 
 
 # ── folds / AUC / ordering ────────────────────────────────────────────────────

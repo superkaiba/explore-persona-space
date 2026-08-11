@@ -49,6 +49,43 @@ def cells_for(args) -> list[tuple[str, str]]:
     return [(f, v) for f in C.FAMILIES for v in C.VERSIONS]
 
 
+def cell_complete(
+    ckpt_root: Path, family: str, version: str, fracs: tuple[float, ...] | None
+) -> bool:
+    """True when the cell's FINAL adapter and EVERY expected frac checkpoint exist.
+
+    The P4 resume predicate (review blocker 4): a crash at cell k must not
+    retrain the completed k-1 cells (~0.5 GPU-h each).
+    """
+    root = ckpt_root / f"{family}_{version}"
+    if not (root / "adapter_config.json").is_file():
+        return False
+    for frac in fracs or ():
+        ck = root / f"checkpoint_frac{int(round(frac * 100))}"
+        if not (ck / "adapter_config.json").is_file():
+            return False
+    return True
+
+
+def pending_cells(
+    ckpt_root: Path,
+    cells: list[tuple[str, str]],
+    fracs: tuple[float, ...] | None,
+    *,
+    force: bool = False,
+) -> tuple[list[tuple[str, str]], list[str]]:
+    """(cells to train, skipped-complete cell slugs) — ``force`` retrains all."""
+    if force:
+        return list(cells), []
+    pending, skipped = [], []
+    for family, version in cells:
+        if cell_complete(ckpt_root, family, version, fracs):
+            skipped.append(f"{family}_{version}")
+        else:
+            pending.append((family, version))
+    return pending, skipped
+
+
 def upload_adapters(args, cells: list[tuple[str, str]]) -> None:
     """Per-cell adapter (+ frac-checkpoint) upload to the HF model repo."""
     from explore_persona_space.orchestrate import hub
@@ -90,6 +127,7 @@ def main() -> None:
     ap.add_argument("--cpu-only", action="store_true", help="deliberate CPU smoke")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--no-upload", action="store_true")
+    ap.add_argument("--force", action="store_true", help="retrain cells whose adapters exist")
     ap.add_argument("--import-check", action="store_true")
     args = ap.parse_args()
 
@@ -108,26 +146,40 @@ def main() -> None:
         raise SystemExit(0)
 
     cells = cells_for(args)
-    if args.dry_run:
-        wave_size = max(args.n_gpus, 1) if args.n_gpus else 8
+    fracs = ft.parse_save_fracs(args.save_fracs)
+    train_cells, skipped = pending_cells(Path(args.ckpt_root), cells, fracs, force=args.force)
+    if skipped:
+        lib.log_phase(
+            "p4_finetune",
+            f"resume: {len(skipped)} complete cell(s) skipped (adapter + frac "
+            f"checkpoints present; --force retrains): {skipped}",
+        )
+    if train_cells:
+        if args.dry_run:
+            wave_size = max(args.n_gpus, 1) if args.n_gpus else 8
+        else:
+            wave_size = ft._compute_wave_size(args.cpu_only, args.n_gpus)
+        res = ft.run_wave_dispatch(
+            train_cells,
+            Path(args.dataset_root),
+            Path(args.ckpt_root),
+            wave_size=wave_size,
+            max_steps=args.max_steps,
+            dry_run=args.dry_run,
+            model_name=args.model,
+            cpu_only=args.cpu_only,
+            save_fracs=args.save_fracs,
+        )
     else:
-        wave_size = ft._compute_wave_size(args.cpu_only, args.n_gpus)
-    res = ft.run_wave_dispatch(
-        cells,
-        Path(args.dataset_root),
-        Path(args.ckpt_root),
-        wave_size=wave_size,
-        max_steps=args.max_steps,
-        dry_run=args.dry_run,
-        model_name=args.model,
-        cpu_only=args.cpu_only,
-        save_fracs=args.save_fracs,
-    )
-    print(json.dumps({"phase": "p4_finetune", **res}, indent=2))
+        res = {"cells": [], "note": "all requested cells complete — nothing to train"}
+    print(json.dumps({"phase": "p4_finetune", "skipped_complete": skipped, **res}, indent=2))
     if not (args.dry_run or args.no_upload):
-        upload_adapters(args, cells)
+        upload_adapters(args, cells)  # full requested set — idempotent re-upload covers resumes
         lib.write_results_sentinel(
-            C.ISSUE, "p4_finetune", 1, f"{len(cells)} cells trained + adapters uploaded"
+            C.ISSUE,
+            "p4_finetune",
+            1,
+            f"{len(train_cells)} cells trained (+{len(skipped)} resumed) + adapters uploaded",
         )
     lib.log_phase("p4", "done")
     sys.stdout.flush()

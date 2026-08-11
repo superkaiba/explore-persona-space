@@ -339,7 +339,9 @@ def main() -> None:
         elif name == "trait_eval":
             if smoke_cell is None:
                 smoke_cell = pick_smoke_cell(corpus)
-            for phase in ("gen", "judge", "tf_margin", "aggregate"):
+            # pilot sits between gen and judge — the rule-26 gate on REAL P6
+            # rollouts; phase_judge REFUSES without its passed report.
+            for phase in ("gen", "pilot", "judge", "tf_margin", "aggregate"):
                 _run(
                     f"{name}:{phase}",
                     [
@@ -366,6 +368,8 @@ def main() -> None:
                         "2",
                         "--judge-draws",
                         "2",
+                        "--pilot-draws",
+                        str(args.pilot_draws),
                         "--gpu-mem-util",
                         str(args.gpu_mem_util),
                     ],

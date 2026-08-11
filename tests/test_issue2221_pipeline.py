@@ -24,7 +24,10 @@ import issue778_finetune as ft  # noqa: E402
 import issue2221_band as band  # noqa: E402
 import issue2221_build_mix as bm  # noqa: E402
 import issue2221_capture as cap  # noqa: E402
+import issue2221_finetune_sweep as sweep_mod  # noqa: E402
+import issue2221_monitors as mon  # noqa: E402
 import issue2221_smoke as smoke  # noqa: E402
+import issue2221_trait_eval as te  # noqa: E402
 
 from explore_persona_space.eval.graded_judge import _score_from_parsed  # noqa: E402
 from explore_persona_space.eval.utils import parse_judge_json  # noqa: E402
@@ -398,3 +401,163 @@ def test_pick_smoke_cell(tmp_path):
     )
     with pytest.raises(RuntimeError, match="band coverage too thin"):
         smoke.pick_smoke_cell(corpus)
+
+
+# ── 11. H3 y-source: synth stratum scored against the #778 scores (blocker 1) ─
+
+
+def _write_778_score(root: Path, trait: str, tag: str, score: float) -> None:
+    root.mkdir(parents=True, exist_ok=True)
+    name = f"finetune_{trait}_{tag}.json" if tag != "base" else f"finetune_base_{trait}.json"
+    (root / name).write_text(
+        json.dumps({"model_tag": tag, "trait": trait, "trait_score": score, "n_kept": 10})
+    )
+
+
+def test_load_synth778_scores_reads_778_trait_scores(tmp_path):
+    root = tmp_path / "i778"
+    cells = ["evil_normal", "evil_misaligned_1", "evil_misaligned_2"]
+    for score, cell in zip((1.0, 20.0, 55.0), cells, strict=True):
+        _write_778_score(root, "evil", cell, score)
+    got = mon.load_synth778_scores(root, "evil", cells)
+    # The synth y IS the #778 scores, in cell order — never a real-twin y.
+    assert got.tolist() == [1.0, 20.0, 55.0]
+
+
+def test_load_synth778_scores_fails_loud_on_missing_or_mismatched(tmp_path):
+    root = tmp_path / "i778"
+    _write_778_score(root, "evil", "evil_normal", 3.0)
+    with pytest.raises(FileNotFoundError, match="sparse-checkout"):
+        mon.load_synth778_scores(root, "evil", ["evil_normal", "evil_misaligned_1"])
+    # A file whose embedded trait/model_tag disagrees with its name is corrupt.
+    (root / "finetune_evil_evil_misaligned_1.json").write_text(
+        json.dumps({"model_tag": "evil_misaligned_1", "trait": "sycophancy", "trait_score": 9.0})
+    )
+    with pytest.raises(AssertionError):
+        mon.load_synth778_scores(root, "evil", ["evil_misaligned_1"])
+
+
+def test_load_synth778_scores_real_committed_schema():
+    """Schema pin against the REAL committed #778 artifacts (blocker-1 source)."""
+    root = REPO / "eval_results" / "issue_778"
+    got = mon.load_synth778_scores(root, "evil", ["evil_misaligned_1"])
+    raw = json.loads((root / "finetune_evil_evil_misaligned_1.json").read_text())
+    assert got.shape == (1,) and got[0] == raw["trait_score"]
+    assert 0.0 <= got[0] <= 100.0
+    base = mon.load_synth778_base_score(root, "evil")
+    assert 0.0 <= base <= 100.0
+
+
+# ── 12. H3 arm set: all-present synth arms incl. b/d; partial fails loud ──────
+
+
+def test_synth_arms_present_includes_b_and_d_when_captured():
+    tags = ["synth778_a", "synth778_b"]
+    full = {t: {a: [0.0] for a in C.MONITOR_ARMS} for t in tags}
+    got = mon.synth_arms_present(full, tags)
+    # b/d (the P5 synthetic response-avg leg, consistency B3) ARE iterated;
+    # c_map_pfx stays N/A on cached states even when spuriously present.
+    assert got == ["a_rb_ctx", "b_rb_ans", "c_map_ctx", "d_transport"]
+
+
+def test_synth_arms_present_ctx_only_and_partial():
+    tags = ["synth778_a", "synth778_b"]
+    ctx_only = {t: {"a_rb_ctx": [0.0], "c_map_ctx": [0.0]} for t in tags}
+    assert mon.synth_arms_present(ctx_only, tags) == ["a_rb_ctx", "c_map_ctx"]
+    partial = {
+        "synth778_a": {"a_rb_ctx": [0.0], "b_rb_ans": [0.0], "c_map_ctx": [0.0]},
+        "synth778_b": {"a_rb_ctx": [0.0], "c_map_ctx": [0.0]},
+    }
+    with pytest.raises(RuntimeError, match="partial synth coverage"):
+        mon.synth_arms_present(partial, tags)
+
+
+# ── 13. P4 resume skip-filter (blocker 4) ─────────────────────────────────────
+
+
+def _make_cell(ckpt_root: Path, cell: str, *, fracs=(0.1,), final=True) -> None:
+    root = ckpt_root / cell
+    if final:
+        root.mkdir(parents=True, exist_ok=True)
+        (root / "adapter_config.json").write_text("{}")
+    for frac in fracs:
+        ck = root / f"checkpoint_frac{round(frac * 100)}"
+        ck.mkdir(parents=True, exist_ok=True)
+        (ck / "adapter_config.json").write_text("{}")
+
+
+def test_pending_cells_skips_complete_unless_force(tmp_path):
+    ckpt = tmp_path / "ckpt"
+    fracs = (0.1, 0.25)
+    _make_cell(ckpt, "evil_normal", fracs=fracs)  # complete
+    _make_cell(ckpt, "evil_misaligned_1", fracs=(0.1,))  # missing frac25
+    (ckpt / "evil_misaligned_2").mkdir(parents=True)  # no final adapter
+    cells = [("evil", "normal"), ("evil", "misaligned_1"), ("evil", "misaligned_2")]
+    pending, skipped = sweep_mod.pending_cells(ckpt, cells, fracs)
+    assert pending == [("evil", "misaligned_1"), ("evil", "misaligned_2")]
+    assert skipped == ["evil_normal"]
+    # --force retrains everything; fracs=None checks the final adapter only.
+    pending_f, skipped_f = sweep_mod.pending_cells(ckpt, cells, fracs, force=True)
+    assert pending_f == cells and skipped_f == []
+    pending_n, _ = sweep_mod.pending_cells(ckpt, cells, None)
+    assert ("evil", "misaligned_1") not in pending_n  # final adapter suffices
+
+
+# ── 14. P6/P2 pilot-gate refusal (blocker 3 / issue 6) ────────────────────────
+
+
+def test_p6_judge_refuses_without_passed_pilot(tmp_path):
+    out_root = tmp_path
+    with pytest.raises(RuntimeError, match="requires a PASSED pilot"):
+        te.require_pilot_passed(out_root, "evil")
+    (out_root / "pilot").mkdir(parents=True)
+    (out_root / "pilot" / "evil.json").write_text(
+        json.dumps({"passed": False, "failures": ["truncation"]})
+    )
+    with pytest.raises(RuntimeError, match="did not pass"):
+        te.require_pilot_passed(out_root, "evil")
+    (out_root / "pilot" / "evil.json").write_text(json.dumps({"passed": True, "failures": []}))
+    te.require_pilot_passed(out_root, "evil")  # no raise
+
+
+def test_p2_band_refuses_without_passed_pilot(tmp_path):
+    out_root = tmp_path
+    with pytest.raises(RuntimeError, match="requires a PASSED pilot"):
+        band.require_pilot_passed(out_root, "mistake_medical")
+    (out_root / "band" / "pilot").mkdir(parents=True)
+    (out_root / "band" / "pilot" / "mistake_medical.json").write_text(
+        json.dumps({"passed": True, "failures": []})
+    )
+    band.require_pilot_passed(out_root, "mistake_medical")  # no raise
+
+
+# ── 15. Regime-fingerprint resume predicate (issue 8) ─────────────────────────
+
+
+def test_resume_ok_keys_on_regime_fingerprint(tmp_path):
+    from explore_persona_space.experiments.issue_2221.loaders import (
+        atomic_write_text,
+        resume_ok,
+        write_fingerprint,
+    )
+
+    dest = tmp_path / "out.json"
+    fp = {"judge_draws": 6, "n_rollouts": 10, "max_new_tokens": 1000}
+    assert not resume_ok(dest, fp)  # nothing written
+    atomic_write_text(dest, "{}")
+    assert not resume_ok(dest, fp)  # payload without sidecar is NOT resumable
+    write_fingerprint(dest, fp)
+    assert resume_ok(dest, fp)
+    # A different regime (e.g. --judge-draws changed) must recompute.
+    assert not resume_ok(dest, {**fp, "judge_draws": 2})
+
+
+def test_select_per_draw_matches_bootstrap_selected():
+    rng = np.random.default_rng(5)
+    x = rng.normal(size=(4, 12))
+    y = rng.normal(size=12)
+    idx = M.bootstrap_indices(np.random.default_rng(6), 12, 30)
+    full = M.bootstrap_pearson(x, y, idx)
+    assert np.allclose(M.select_per_draw(full), M.bootstrap_selected(x, y, idx))
+    shuf_full = M.score_shuffle_r_matrix(np.random.default_rng(7), x, y, 20)
+    assert shuf_full.shape == (20, 4)

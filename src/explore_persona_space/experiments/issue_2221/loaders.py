@@ -169,3 +169,67 @@ def write_jsonl(path: Path, rows: list[dict]) -> None:
     except BaseException:
         Path(tmp).unlink(missing_ok=True)
         raise
+
+
+def atomic_write_text(path: Path, text: str) -> None:
+    """Atomic text write (tmp in the same dir + ``os.replace``; the write_jsonl shape)."""
+    import os
+    import tempfile
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=str(path.parent), suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(text)
+        os.replace(tmp, path)
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise
+
+
+def atomic_torch_save(path: Path, obj) -> None:
+    """Atomic ``torch.save`` (tmp in the same dir + ``os.replace``)."""
+    import os
+    import tempfile
+
+    import torch
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=str(path.parent), suffix=".tmp")
+    os.close(fd)
+    try:
+        torch.save(obj, tmp)
+        os.replace(tmp, path)
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise
+
+
+def _fingerprint_sidecar(path: Path) -> Path:
+    return path.with_name(path.name + ".fp.json")
+
+
+def write_fingerprint(path: Path, fingerprint: dict) -> None:
+    """Persist the output's regime-fingerprint sidecar (``<name>.fp.json``).
+
+    Written AFTER the payload (payload -> sidecar order), so a crash between
+    the two leaves the unit NOT-resumable and it recomputes.
+    """
+    atomic_write_text(_fingerprint_sidecar(path), json.dumps(fingerprint, sort_keys=True))
+
+
+def resume_ok(path: Path, fingerprint: dict) -> bool:
+    """Resume predicate: payload present AND sidecar matches EVERY regime key.
+
+    Keys every output-affecting flag (``--judge-draws`` / ``--n-rollouts`` /
+    ``--max-new-tokens`` / slice caps) so a re-run under a different regime
+    recomputes instead of silently reusing wrong cached rows (#722 r3 class).
+    Fingerprint values must be JSON-round-trippable scalars/lists (no tuples).
+    """
+    side = _fingerprint_sidecar(path)
+    if not (path.is_file() and side.is_file()):
+        return False
+    try:
+        return json.loads(side.read_text()) == fingerprint
+    except (json.JSONDecodeError, OSError):
+        return False

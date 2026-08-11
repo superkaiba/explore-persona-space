@@ -8,16 +8,22 @@ Phases (``--phase``; registry ``PHASES``):
                  the LMSYS real panel). Rollout text persists per model BEFORE
                  any scoring; per-cell cap-hit fraction reported (>2% re-gen
                  trigger).
+- ``pilot``    : rule-26 pilot gate per trait rubric on REAL P6-distribution
+                 items (the on-policy Qwen rollouts from ``gen``) at the EXACT
+                 production instrument — REQUIRED before any ``judge``
+                 dispatch (the ~315k-call primary-DV wave; llm-judging r26).
 - ``judge``    : graded 0-100 trait score per (model, trait) — the PAPER's own
                  rubric via ``judge_graded`` (6 draws, the #778 instrument),
                  with rule-28 api-refusal accounting + targeted SYNC re-issue.
+                 REFUSES without a passed pilot report per trait.
 - ``tf_margin``: SECONDARY non-saturating DV — teacher-forced fixed
                  positive-vs-negative completion margin (fixed judge-banded
                  +/- pools per trait, scored under every model; llm-judging
-                 § E2 rule 19).
+                 § E2 rule 19). Teacher-forcing inputs concatenate per-segment
+                 TOKEN IDS (never a re-tokenized joined string — BPE seam).
 - ``aggregate``: ``eval_results/issue_2221/trait_scores.json`` (graded mean
                  PRIMARY + rate>50 companion + margin SECONDARY + drop split).
-- ``upload``   : raw completions -> HF ``issue2221_realtwin/raw_completions/eval/``.
+- ``upload``   : raw completions -> HF ``issue2221_realtwin/raw_completions/trait_eval/``.
 """
 
 from __future__ import annotations
@@ -44,7 +50,12 @@ from explore_persona_space.experiments.issue_2221 import constants as C  # noqa:
 from explore_persona_space.experiments.issue_2221.judging import (  # noqa: E402
     judge_with_refusal_remediation,
 )
-from explore_persona_space.experiments.issue_2221.loaders import read_jsonl  # noqa: E402
+from explore_persona_space.experiments.issue_2221.loaders import (  # noqa: E402
+    atomic_write_text,
+    read_jsonl,
+    resume_ok,
+    write_fingerprint,
+)
 
 logger = logging.getLogger("issue2221.eval")
 
@@ -81,6 +92,16 @@ def _roster(args) -> list[tuple[str, Path | None]]:
     return roster
 
 
+def _gen_fingerprint(args) -> dict:
+    """Regime fingerprint for the gen phase (review issue 8; #722-r3 class)."""
+    return {
+        "n_rollouts": args.n_rollouts,
+        "max_new_tokens": lib.MAX_NEW_TOKENS,
+        "max_prompts": args.max_prompts,
+        "temperature": lib.EXTRACT_TEMPERATURE,
+    }
+
+
 def phase_gen(args) -> None:
     """N=10 on-policy rollouts per (model, prompt); persist text immediately."""
     from vllm import SamplingParams
@@ -96,12 +117,13 @@ def phase_gen(args) -> None:
     ]
     out_dir = Path(args.out_root) / "eval_rollouts"
     out_dir.mkdir(parents=True, exist_ok=True)
+    fp = _gen_fingerprint(args)
     seeds = list(C.EVAL_ROLLOUT_SEEDS)[: args.n_rollouts]
     llm = lib.build_vllm_engine(gpu_memory_utilization=args.gpu_mem_util)
     try:
         for i, (tag, adapter) in enumerate(_roster(args)):
             dest = out_dir / f"{tag}.json"
-            if dest.is_file():
+            if resume_ok(dest, fp):
                 continue
             lora = LoRARequest(tag, i + 1, str(adapter)) if adapter is not None else None
             rows: list[dict] = []
@@ -132,7 +154,10 @@ def phase_gen(args) -> None:
                         }
                     )
             cap_hit = n_cap / max(1, len(rows))
-            dest.write_text(json.dumps({"rows": rows, "cap_hit_fraction": cap_hit}, indent=2))
+            atomic_write_text(
+                dest, json.dumps({"rows": rows, "cap_hit_fraction": cap_hit}, indent=2)
+            )
+            write_fingerprint(dest, fp)
             lib.log_phase(
                 "p6_gen",
                 f"{tag}: {len(rows)} rollouts, cap-hit {cap_hit:.4f}"
@@ -140,6 +165,93 @@ def phase_gen(args) -> None:
             )
     finally:
         lib.reap_vllm_engine(llm)
+
+
+def _judge_items_for_trait(rows: list[dict], trait: str) -> list[tuple[str, str, str]]:
+    """The trait's judge items — its OWN paper questions + the trait-agnostic LMSYS panel."""
+    return [
+        (f"{r['surface_id']}-s{r['seed']}", r["prompt"], r["response"])
+        for r in rows
+        if r["response"].strip()
+        and (r["surface_id"].startswith(f"paper-{trait}-") or r["surface_id"].startswith("lmsys-"))
+    ]
+
+
+def require_pilot_passed(out_root: Path, trait: str) -> None:
+    """Refuse a P6 judge dispatch without a PASSED rule-26 pilot report.
+
+    Standalone ``--phase judge`` must not bypass the gate (review blocker 3):
+    the report at ``pilot/{trait}.json`` (written by ``phase_pilot`` via
+    ``judge_pilot_gate(report_path=...)``) must exist with ``passed: true``.
+    """
+    p = out_root / "pilot" / f"{trait}.json"
+    if not p.is_file():
+        raise RuntimeError(
+            f"P6 judge wave for {trait!r} requires a PASSED pilot first — run "
+            f"--phase pilot (report missing: {p})"
+        )
+    d = json.loads(p.read_text())
+    if d.get("passed") is not True:
+        raise RuntimeError(f"P6 pilot gate for {trait!r} did not pass ({p}): {d.get('failures')}")
+
+
+def phase_pilot(args) -> None:
+    """Rule-26 pilot gate per trait rubric on REAL P6-distribution items.
+
+    Items are the on-policy Qwen rollouts ``phase_gen`` persisted (the exact
+    distribution the production wave judges), at the EXACT production
+    instrument (rubric, judge model, ``max_tokens``, ``--judge-draws`` draws).
+    Two arms span the wave's conditions: base vs trained models. A trait with
+    zero items on this slice (a smoke cut) is skipped — ``phase_judge``'s gate
+    only binds traits that actually dispatch items.
+    """
+    from explore_persona_space.eval.judge_pilot import judge_pilot_gate
+
+    out_root = Path(args.out_root)
+    roll_dir = out_root / "eval_rollouts"
+    external_root = Path(args.external_root)
+    rubrics = {t: lib.load_trait_data(external_root, t).eval_prompt for t in lib.TRAITS}
+    rows_by_tag: dict[str, list[dict]] = {}
+    for tag, _ in _roster(args):
+        src = roll_dir / f"{tag}.json"
+        if not src.is_file():
+            raise FileNotFoundError(f"run --phase gen first: {src}")
+        rows_by_tag[tag] = json.loads(src.read_text())["rows"]
+    for trait in lib.TRAITS:
+        arms: dict[str, list[tuple[str, str, str]]] = {"base": [], "trained": []}
+        for tag, rows in rows_by_tag.items():
+            arm = "base" if tag == "base" else "trained"
+            arms[arm].extend(
+                (f"{tag}::{iid}", q, a) for iid, q, a in _judge_items_for_trait(rows, trait)
+            )
+        arms = {k: v for k, v in arms.items() if v}
+        n_items = sum(len(v) for v in arms.values())
+        if n_items == 0:
+            lib.log_phase("p6_pilot", f"{trait}: 0 items on this slice — nothing to gate, skip")
+            continue
+        report_path = out_root / "pilot" / f"{trait}.json"
+        # Slice-aware effective-draws floor (gotchas.md smoke-gate slice
+        # arithmetic): the production floor stays 10; a tiny smoke slice whose
+        # arms structurally cannot reach 10 gets the floor its own planned
+        # draw count implies (mirrors judge_pilot_gate's subsample arithmetic;
+        # transport hollowing still fails the gate).
+        per_arm_items = max(1, args.pilot_draws // (len(arms) * max(1, args.judge_draws)))
+        min_planned = min(min(len(v), per_arm_items) * args.judge_draws for v in arms.values())
+        rep = judge_pilot_gate(
+            arms,
+            rubrics[trait],
+            max_tokens=C.EVAL_JUDGE_MAX_TOKENS,
+            cache_dir=out_root / "pilot_cache" / trait,
+            save_raw_dir=out_root / "pilot_raw" / trait,
+            n_draws=args.judge_draws,  # the production instrument's draws
+            target_total_draws=args.pilot_draws,
+            temperature=lib.JUDGE_TEMPERATURE,
+            min_effective_draws_per_arm=max(1, min(10, min_planned)),
+            report_path=report_path,
+        )
+        lib.log_phase("p6_pilot", f"{trait}: verdict={rep.verdict} (report -> {report_path})")
+        if not rep.passed:
+            raise RuntimeError(f"P6 pilot gate FAILED for {trait}: {rep.failures}")
 
 
 def phase_judge(args) -> None:
@@ -150,6 +262,14 @@ def phase_judge(args) -> None:
     judge_dir.mkdir(parents=True, exist_ok=True)
     external_root = Path(args.external_root)
     rubrics = {t: lib.load_trait_data(external_root, t).eval_prompt for t in lib.TRAITS}
+    # Regime fingerprint keys the resume on every output-affecting flag
+    # (review issue 8; #722-r3 class).
+    fp = {
+        "judge_draws": args.judge_draws,
+        "max_tokens": C.EVAL_JUDGE_MAX_TOKENS,
+        "n_rollouts": args.n_rollouts,
+        "max_prompts": args.max_prompts,
+    }
     for tag, _ in _roster(args):
         src = roll_dir / f"{tag}.json"
         if not src.is_file():
@@ -157,20 +277,15 @@ def phase_judge(args) -> None:
         rows = json.loads(src.read_text())["rows"]
         for trait in lib.TRAITS:
             dest = judge_dir / f"{tag}_{trait}.json"
-            if dest.is_file() and not args.force:
+            if resume_ok(dest, fp) and not args.force:
                 continue
             # The paper instrument judges each trait's OWN eval questions under
             # that trait's rubric; the LMSYS real panel is trait-agnostic and is
             # judged under every rubric (the H2 panel split).
-            items = [
-                (f"{r['surface_id']}-s{r['seed']}", r["prompt"], r["response"])
-                for r in rows
-                if r["response"].strip()
-                and (
-                    r["surface_id"].startswith(f"paper-{trait}-")
-                    or r["surface_id"].startswith("lmsys-")
-                )
-            ]
+            items = _judge_items_for_trait(rows, trait)
+            if items:
+                # Blocker 3: never dispatch the primary-DV wave un-piloted.
+                require_pilot_passed(out_root, trait)
             scores, accounting = judge_with_refusal_remediation(
                 items,
                 rubrics[trait],
@@ -179,9 +294,17 @@ def phase_judge(args) -> None:
                 save_raw_root=judge_dir / "raw",
                 tag=f"{tag}_{trait}",
                 max_tokens=C.EVAL_JUDGE_MAX_TOKENS,
+                # NOTE: judge_graded accepts `temperature` but the Batch client
+                # does not thread it — realized judge temperature is the
+                # provider default. Recorded in the aggregate's instrument
+                # block; the #778 instrument match survives (same client, same
+                # non-threading).
                 temperature=lib.JUDGE_TEMPERATURE,
             )
-            dest.write_text(json.dumps({"scores": scores, "accounting": accounting}, indent=2))
+            atomic_write_text(
+                dest, json.dumps({"scores": scores, "accounting": accounting}, indent=2)
+            )
+            write_fingerprint(dest, fp)
             kept = [s for s in scores.values() if s is not None]
             mean = sum(kept) / len(kept) if kept else float("nan")
             lib.log_phase(
@@ -196,7 +319,8 @@ def build_tf_pools(args) -> dict:
     import numpy as np
 
     pools_path = Path(args.out_root) / "tf_pools.json"
-    if pools_path.is_file():
+    pools_fp = {"k": C.TF_POOL_K, "seed": C.RNG_SEED}
+    if resume_ok(pools_path, pools_fp):
         return json.loads(pools_path.read_text())
     corpus_root = Path(args.corpus_root)
     found = {r["id"]: r for r in read_jsonl(corpus_root / "found" / "found_pool.jsonl")}
@@ -221,7 +345,8 @@ def build_tf_pools(args) -> dict:
             "pos": [{"prompt": found[i]["prompt"], "response": found[i]["response"]} for i in pos],
             "neg": [{"prompt": found[i]["prompt"], "response": found[i]["response"]} for i in neg],
         }
-    pools_path.write_text(json.dumps(pools, indent=2))
+    atomic_write_text(pools_path, json.dumps(pools, indent=2))
+    write_fingerprint(pools_path, pools_fp)
     return pools
 
 
@@ -234,12 +359,13 @@ def phase_tf_margin(args) -> None:
     pools = build_tf_pools(args)
     out_dir = Path(args.out_root) / "tf_margin"
     out_dir.mkdir(parents=True, exist_ok=True)
+    fp = {"tf_pool_k": C.TF_POOL_K, "seed": C.RNG_SEED}
     llm = lib.build_vllm_engine(gpu_memory_utilization=args.gpu_mem_util)
     try:
         sp = SamplingParams(temperature=0.0, max_tokens=1, prompt_logprobs=0)
         for i, (tag, adapter) in enumerate(_roster(args)):
             dest = out_dir / f"{tag}.json"
-            if dest.is_file():
+            if resume_ok(dest, fp):
                 continue
             lora = LoRARequest(tag, i + 1, str(adapter)) if adapter is not None else None
             result: dict[str, dict] = {}
@@ -249,7 +375,13 @@ def phase_tf_margin(args) -> None:
                     continue
                 sums: dict[str, list[float]] = {"pos": [], "neg": []}
                 for side in ("pos", "neg"):
-                    texts = []
+                    # Teacher-forcing inputs concatenate per-segment TOKEN IDS —
+                    # never re-tokenize the joined string: a response whose
+                    # first token BPE-merges into the prefix tail would shift
+                    # every prompt_logprobs slot (gotchas.md teacher-forced
+                    # capture class; review issue 5). The prefix boundary is
+                    # then exact by construction.
+                    token_prompts = []
                     prompt_lens = []
                     for pair in pool[side]:
                         prefix = tok.apply_chat_template(
@@ -257,10 +389,15 @@ def phase_tf_margin(args) -> None:
                             tokenize=False,
                             add_generation_prompt=True,
                         )
-                        full = prefix + pair["response"]
-                        texts.append(full)
-                        prompt_lens.append(len(tok(prefix, add_special_tokens=False)["input_ids"]))
-                    outs = llm.generate(texts, sp, lora_request=lora, use_tqdm=False)
+                        prefix_ids = tok(prefix, add_special_tokens=False)["input_ids"]
+                        resp_ids = tok(pair["response"], add_special_tokens=False)["input_ids"]
+                        if not resp_ids:
+                            continue
+                        token_prompts.append({"prompt_token_ids": prefix_ids + resp_ids})
+                        prompt_lens.append(len(prefix_ids))
+                    if not token_prompts:
+                        continue
+                    outs = llm.generate(token_prompts, sp, lora_request=lora, use_tqdm=False)
                     for o, n_prefix in zip(outs, prompt_lens):
                         plps = o.prompt_logprobs
                         assert plps is not None
@@ -281,7 +418,8 @@ def phase_tf_margin(args) -> None:
                     }
                 else:
                     result[trait] = {"margin": None, "reason": "no-valid-logprobs"}
-            dest.write_text(json.dumps(result, indent=2))
+            atomic_write_text(dest, json.dumps(result, indent=2))
+            write_fingerprint(dest, fp)
             margins = {t: v.get("margin") for t, v in result.items()}
             lib.log_phase("p6_tf", f"{tag}: margins {margins}")
     finally:
@@ -352,6 +490,12 @@ def phase_aggregate(args) -> None:
                     "judge_model": lib.JUDGE_MODEL,
                     "n_judge_draws": args.judge_draws,
                     "judge_max_tokens": C.EVAL_JUDGE_MAX_TOKENS,
+                    "judge_temperature_requested": lib.JUDGE_TEMPERATURE,
+                    # Realized behavior (review nit): judge_graded accepts
+                    # `temperature` but the Batch client does not thread it —
+                    # draws run at the provider default. The #778 instrument
+                    # match survives (same client, same non-threading).
+                    "judge_temperature_realized": "provider-default (not threaded by batch client)",
                     "n_rollouts": args.n_rollouts,
                     "rollout_temperature": lib.EXTRACT_TEMPERATURE,
                     "max_new_tokens": lib.MAX_NEW_TOKENS,
@@ -369,9 +513,12 @@ def phase_upload(args) -> None:
     from explore_persona_space.orchestrate import hub
 
     out_root = Path(args.out_root)
+    # Prefix naming follows the plan's raw_completions/trait_eval/ destination
+    # (plan §4 P6; review nit — was raw_completions/eval).
     mapping = {
-        "eval_rollouts": f"{C.HF_PREFIX}/raw_completions/eval",
-        "judge/raw": f"{C.HF_PREFIX}/raw_completions/eval_judge_raw",
+        "eval_rollouts": f"{C.HF_PREFIX}/raw_completions/trait_eval",
+        "judge/raw": f"{C.HF_PREFIX}/raw_completions/trait_eval_judge_raw",
+        "pilot_raw": f"{C.HF_PREFIX}/raw_completions/trait_eval_pilot_raw",
         "tf_margin": f"{C.HF_PREFIX}/raw_completions/tf_margin",
     }
     for sub, prefix in mapping.items():
@@ -384,6 +531,7 @@ def phase_upload(args) -> None:
 
 PHASES = {
     "gen": phase_gen,
+    "pilot": phase_pilot,  # rule-26 gate — MUST precede judge (blocker 3)
     "judge": phase_judge,
     "tf_margin": phase_tf_margin,
     "aggregate": phase_aggregate,
@@ -405,6 +553,7 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--cells", nargs="*", default=None)
     ap.add_argument("--n-rollouts", type=int, default=lib.N_ROLLOUTS_PRED)
     ap.add_argument("--judge-draws", type=int, default=lib.JUDGE_N_DRAWS)
+    ap.add_argument("--pilot-draws", type=int, default=200, help="rule-26 pilot target draws")
     ap.add_argument("--max-prompts", type=int, default=None, help="smoke: cap surface prompts")
     ap.add_argument("--gpu-mem-util", type=float, default=0.5)
     ap.add_argument("--force", action="store_true")
@@ -427,6 +576,7 @@ def main() -> None:
         from vllm.lora.request import LoRARequest  # noqa: F401
 
         from explore_persona_space.eval.graded_judge import judge_graded  # noqa: F401
+        from explore_persona_space.eval.judge_pilot import judge_pilot_gate  # noqa: F401
         from explore_persona_space.orchestrate import hub  # noqa: F401
 
         print("[import-check] OK")

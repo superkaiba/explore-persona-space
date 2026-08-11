@@ -41,7 +41,12 @@ from explore_persona_space.experiments.issue_2221 import constants as C  # noqa:
 from explore_persona_space.experiments.issue_2221.judging import (  # noqa: E402
     judge_with_refusal_remediation,
 )
-from explore_persona_space.experiments.issue_2221.loaders import read_jsonl  # noqa: E402
+from explore_persona_space.experiments.issue_2221.loaders import (  # noqa: E402
+    atomic_write_text,
+    read_jsonl,
+    resume_ok,
+    write_fingerprint,
+)
 
 logger = logging.getLogger("issue2221.band")
 
@@ -208,14 +213,21 @@ def phase_pilot(args) -> None:
         n_calls = len(items) * args.n_draws
         report_path = out_root / "band" / "pilot" / f"{family}.json"
         report_path.parent.mkdir(parents=True, exist_ok=True)
+        # Slice-aware effective-draws floor (gotchas.md smoke-gate slice
+        # arithmetic): production keeps the default 10; a tiny smoke slice
+        # gets the floor its own planned draw count implies.
+        pilot_draws_per_item = 2
+        per_arm_items = max(1, args.pilot_draws // (len(arms) * pilot_draws_per_item))
+        min_planned = min(min(len(v), per_arm_items) * pilot_draws_per_item for v in arms.values())
         rep = judge_pilot_gate(
             arms,
             _rubric_for_family(family, Path(args.external_root)),
             max_tokens=C.BAND_JUDGE_MAX_TOKENS,
             cache_dir=out_root / "band" / "pilot_cache" / family,
             save_raw_dir=out_root / "band" / "pilot_raw" / family,
-            n_draws=2,
+            n_draws=pilot_draws_per_item,
             target_total_draws=args.pilot_draws,
+            min_effective_draws_per_arm=max(1, min(10, min_planned)),
             report_path=report_path,
         )
         lib.log_phase(
@@ -226,16 +238,44 @@ def phase_pilot(args) -> None:
             raise RuntimeError(f"p2 pilot gate FAILED for {family}: {rep.failures}")
 
 
+def require_pilot_passed(out_root: Path, family: str) -> None:
+    """Refuse a banding dispatch without a PASSED rule-26 pilot report.
+
+    ``--phase band`` standalone must not bypass the pilot gate (review issue
+    6): the report at ``band/pilot/{family}.json`` (written by
+    ``judge_pilot_gate(report_path=...)``) must exist with ``passed: true``.
+    """
+    p = out_root / "band" / "pilot" / f"{family}.json"
+    if not p.is_file():
+        raise RuntimeError(
+            f"P2 banding for {family!r} requires a PASSED pilot first — run "
+            f"--phase pilot (report missing: {p})"
+        )
+    d = json.loads(p.read_text())
+    if d.get("passed") is not True:
+        raise RuntimeError(f"P2 pilot gate for {family!r} did not pass ({p}): {d.get('failures')}")
+
+
 def phase_band(args) -> None:
     """Production banding wave (post-remediation band assignment per family)."""
     out_root = Path(args.out_root)
     band_dir = out_root / "band"
     families = args.families or list(C.FAMILIES)
+    # Regime fingerprint keys the resume on every output-affecting flag
+    # (review issue 8; #722-r3 class).
+    fp = {
+        "n_draws": args.n_draws,
+        "max_tokens": C.BAND_JUDGE_MAX_TOKENS,
+        "em_cap": args.em_cap,
+        "chat_cap": args.chat_cap,
+        "max_items": args.max_items,
+    }
     for family in families:
         out_path = band_dir / f"{family}.json"
-        if out_path.is_file() and not args.force:
-            lib.log_phase("p2_band", f"{family}: bands exist — skip")
+        if resume_ok(out_path, fp) and not args.force:
+            lib.log_phase("p2_band", f"{family}: bands exist (fingerprint match) — skip")
             continue
+        require_pilot_passed(out_root, family)
         items, _ = _items_and_arms(args, family)
         scores, accounting = judge_with_refusal_remediation(
             items,
@@ -261,7 +301,8 @@ def phase_band(args) -> None:
             "reproducibility": lib.repro_metadata(),
         }
         band_dir.mkdir(parents=True, exist_ok=True)
-        out_path.write_text(json.dumps(payload, indent=2))
+        atomic_write_text(out_path, json.dumps(payload, indent=2))
+        write_fingerprint(out_path, fp)
         lib.log_phase(
             "p2_band",
             f"{family}: counts={counts} api_refusal={accounting['n_api_refusal']} "

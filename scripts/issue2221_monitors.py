@@ -171,11 +171,9 @@ def phase_arms(args) -> None:
                 base_resp_synth_path = p5_root / "capture_resp" / "base.pt"
                 for cell in args.cells or all_cells():
                     tag = f"synth778_{cell}"
-                    try:
-                        cached_cell = load_ft_activation(cell, stage_dir=stage_dir)
-                    except Exception as exc:  # noqa: BLE001 — named + reported, never zero-barred
-                        logger.warning("[p8_arms] synth %s unavailable: %s", cell, exc)
-                        continue
+                    # Fail LOUD on a missing cached #778 cell (review issue 4):
+                    # a silent skip would ship a partial synth stratum into H3.
+                    cached_cell = load_ft_activation(cell, stage_dir=stage_dir)
                     v_ans_shift = None
                     synth_resp = p5_root / "capture_resp_synth778" / f"{tag}.pt"
                     if synth_resp.is_file() and base_resp_synth_path.is_file():
@@ -221,6 +219,67 @@ def _scalar_matrix(scal: dict, tags: list[str], arm: str) -> np.ndarray:
     return np.asarray(rows, dtype=np.float64)
 
 
+def load_synth778_scores(root: Path, trait: str, cells: list[str]) -> np.ndarray:
+    """Per-cell #778 graded trait means — the synth stratum's OWN y (blocker 1).
+
+    Reads the committed ``eval_results/issue_778/finetune_{trait}_{cell}.json``
+    files (fields ``model_tag`` / ``trait`` / ``trait_score``). The H3 contrast
+    correlates each stratum's monitor scalars against that stratum's OWN
+    trait-expression scores — NEVER the real-twin y.
+    """
+    vals = []
+    for cell in cells:
+        p = root / f"finetune_{trait}_{cell}.json"
+        if not p.is_file():
+            raise FileNotFoundError(
+                f"#778 trait-score file missing: {p} — on a sparse checkout run "
+                "`git sparse-checkout add eval_results/issue_778` first (partial-"
+                "clone pods: BOOTSTRAP_EXTRA_CONES=eval_results/issue_778)"
+            )
+        d = json.loads(p.read_text())
+        assert d["trait"] == trait and d["model_tag"] == cell, (
+            str(p),
+            d.get("trait"),
+            d.get("model_tag"),
+        )
+        vals.append(float(d["trait_score"]))
+    return np.asarray(vals, dtype=np.float64)
+
+
+def load_synth778_base_score(root: Path, trait: str) -> float:
+    """The #778 BASE model's graded trait score — the synth base propensity."""
+    p = root / f"finetune_base_{trait}.json"
+    if not p.is_file():
+        raise FileNotFoundError(f"#778 base trait-score file missing: {p}")
+    d = json.loads(p.read_text())
+    assert d["trait"] == trait and d["model_tag"] == "base", (str(p), d.get("model_tag"))
+    return float(d["trait_score"])
+
+
+def synth_arms_present(scalars: dict, synth_tags: list[str]) -> list[str]:
+    """Registry arms computable on the FULL synth stratum (blocker 2 / issue 4).
+
+    - ``c_map_pfx`` is N/A by construction (#778 cached no prefix-end states).
+    - An arm present for NONE of the tags is a not-run leg (the caller names
+      it, never zero-bars it) — e.g. b/d before the P5 synth resp-avg leg.
+    - An arm present for SOME but not ALL tags is silent degradation: raise.
+    """
+    out: list[str] = []
+    for arm in C.MONITOR_ARMS:
+        if arm == "c_map_pfx":
+            continue
+        n_present = sum(1 for t in synth_tags if arm in scalars.get(t, {}))
+        if n_present == 0:
+            continue
+        if n_present != len(synth_tags):
+            raise RuntimeError(
+                f"H3 arm {arm}: partial synth coverage {n_present}/{len(synth_tags)} — "
+                "fail loud (never a silent subset)"
+            )
+        out.append(arm)
+    return out
+
+
 def phase_correlations(args) -> None:
     """The full correlation / bootstrap / null / AUC battery (vectorized)."""
     eval_root = Path(args.eval_results_root)
@@ -243,8 +302,13 @@ def phase_correlations(args) -> None:
             "rb_version": args.rb_version,
             "seed": C.RNG_SEED,
             "cells": cells,
+            "issue778_eval_root": str(args.issue778_eval_root),
         },
     }
+    # Per-draw x per-position r matrices, persisted as .npz for post-hoc
+    # recompute of the selection-symmetric bands (plan §6; review issue 2).
+    draw_mats: dict[tuple[str, str], dict[str, np.ndarray]] = {}
+    null_mats: dict[str, dict[str, np.ndarray]] = {}
 
     for trait in lib.TRAITS:
         y = np.asarray([scores[c][trait]["graded_mean"] for c in cells], dtype=np.float64)
@@ -256,16 +320,21 @@ def phase_correlations(args) -> None:
                 a for a in C.MONITOR_ARMS if all(a in scal["scalars"].get(c, {}) for c in cells)
             ]
             pn: dict = {"arms": {}}
+            mats: dict[str, np.ndarray] = {}
             for arm in arms_present:
                 x = _scalar_matrix(scal, cells, arm)  # (n, 28)
                 r_by_layer = M.spearman_by_position(x.T, y)
                 sel_layer, sel_r = M.select_position(r_by_layer)
                 frozen = C.PAPER_FROZEN_LAYER_IDX[trait]
-                boot_sel = M.bootstrap_selected(x.T, y, idx_boot)
+                boot_r = M.bootstrap_pearson(x.T, y, idx_boot)  # (B, 28)
+                boot_sel = M.select_per_draw(boot_r)
                 lofo = M.lofo_jackknife(x[:, sel_layer], y, [fam_of[c] for c in cells])
-                shuffle = M.score_shuffle_selected_r(
+                shuffle_r = M.score_shuffle_r_matrix(
                     np.random.default_rng(C.RNG_SEED + 1), x.T, y, args.n_null
                 )
+                shuffle = M.select_per_draw(shuffle_r)
+                mats[f"boot_r__{arm}"] = boot_r
+                mats[f"shuffle_r__{arm}"] = shuffle_r
                 pn["arms"][arm] = {
                     "r_by_layer": r_by_layer.tolist(),
                     "selected_layer": sel_layer,
@@ -281,7 +350,6 @@ def phase_correlations(args) -> None:
             # H2 primary contrast: mapped arm c (56 positions: ctx+pfx layers)
             # vs arm a (28 positions), per-draw selection on BOTH sides, paired.
             if {"a_rb_ctx", "c_map_ctx", "c_map_pfx"} <= set(arms_present):
-                xa = _scalar_matrix(scal, cells, "a_rb_ctx")
                 xc = np.concatenate(
                     [
                         _scalar_matrix(scal, cells, "c_map_ctx"),
@@ -289,19 +357,33 @@ def phase_correlations(args) -> None:
                     ],
                     axis=1,
                 )  # (n, 56)
-                sel_a = M.bootstrap_selected(xa.T, y, idx_boot)
-                sel_c = M.bootstrap_selected(xc.T, y, idx_boot)
+                sel_a = M.select_per_draw(mats["boot_r__a_rb_ctx"])
+                boot_r_c56 = M.bootstrap_pearson(xc.T, y, idx_boot)  # (B, 56)
+                sel_c = M.select_per_draw(boot_r_c56)
                 delta = sel_c - sel_a  # paired (same draws)
                 r_c_by_pos = M.spearman_by_position(xc.T, y)
                 pos_c, r_c = M.select_position(r_c_by_pos)
+                # Wherever a null band is compared against the arm-c best-of-56
+                # read, the null draws get the SAME 2x28 selection (plan §6;
+                # review issue 3).
+                shuffle_c56_r = M.score_shuffle_r_matrix(
+                    np.random.default_rng(C.RNG_SEED + 1), xc.T, y, args.n_null
+                )
+                shuffle_c56 = M.select_per_draw(shuffle_c56_r)
+                mats["boot_r__c56"] = boot_r_c56
+                mats["shuffle_r__c56"] = shuffle_c56_r
                 pn["h2_delta_c_minus_a"] = {
                     "point": float(r_c - pn["arms"]["a_rb_ctx"]["selected_r"]),
                     "c_selected_position": pos_c,  # 0..27 ctx, 28..55 pfx
                     "c_selected_r": float(r_c),
                     "bootstrap_ci": M.percentile_ci(delta),
                     "n_positions_c": int(xc.shape[1]),
+                    "score_shuffle_null_q95_abs_56pos": float(
+                        np.percentile(np.abs(shuffle_c56[np.isfinite(shuffle_c56)]), 95)
+                    ),
                 }
             tr["panels"][panel] = pn
+            draw_mats[(trait, panel)] = mats
 
         # ── null ladder for arm a + arm c (pooled panel), same selection ────
         scal_pooled = json.loads((scal_dir / f"{trait}_pooled.json").read_text())
@@ -312,7 +394,6 @@ def phase_correlations(args) -> None:
         map_pfx = load_affine_map("prefix_end", stage_dir=stage_dir)
 
         # Raw context shifts (n, 28, d) for arm a's null.
-        vb_ctx = pool.mean(axis=0)
         shifts_ctx, shifts_mapped = [], []
         for cell in cells:
             store = _load_capture(p5_root, cell, "last")
@@ -345,10 +426,20 @@ def phase_correlations(args) -> None:
         circ = np.abs(
             np.einsum("ld,ld->l", top_evec, rb / np.linalg.norm(rb, axis=1, keepdims=True))
         )
-        null_a_iso = M.null_selected_r(iso28, shifts_ctx, y)
-        null_a_cov = M.null_selected_r(cov_dirs, shifts_ctx, y)
-        null_c_iso = M.null_selected_r(iso56, shifts_mapped, y)
-        null_c_cov = M.null_selected_r(cov56, shifts_mapped, y)
+        null_a_iso_r = M.null_r_matrix(iso28, shifts_ctx, y)  # (B, 28)
+        null_a_cov_r = M.null_r_matrix(cov_dirs, shifts_ctx, y)
+        null_c_iso_r = M.null_r_matrix(iso56, shifts_mapped, y)  # (B, 56)
+        null_c_cov_r = M.null_r_matrix(cov56, shifts_mapped, y)
+        null_a_iso = M.select_per_draw(null_a_iso_r)
+        null_a_cov = M.select_per_draw(null_a_cov_r)
+        null_c_iso = M.select_per_draw(null_c_iso_r)
+        null_c_cov = M.select_per_draw(null_c_cov_r)
+        null_mats[trait] = {
+            "null_iso_a": null_a_iso_r,
+            "null_cov_a": null_a_cov_r,
+            "null_iso_c56": null_c_iso_r,
+            "null_cov_c56": null_c_cov_r,
+        }
         tr["nulls"] = {
             "a_isotropic_q95_abs": float(np.percentile(np.abs(null_a_iso), 95)),
             "a_covmatched_q95_abs": float(np.percentile(np.abs(null_a_cov), 95)),
@@ -417,24 +508,92 @@ def phase_correlations(args) -> None:
             }
         tr["severity_ordering"] = ordering
 
-        # ── H3 synth stratum (paper panel; cached #778 shifts) ───────────────
+        # ── H3 synth stratum (paper panel; cached #778 shifts; y = the #778
+        # cells' OWN committed trait scores — review blocker 1) ──────────────
         scal_paper = json.loads((scal_dir / f"{trait}_paper.json").read_text())
         synth_tags = [f"synth778_{c}" for c in cells]
-        h3: dict[str, dict] = {}
-        for arm in ("a_rb_ctx", "c_map_ctx"):
-            try:
-                xs = _scalar_matrix(scal_paper, synth_tags, arm)
-            except KeyError:
-                continue
-            r_by_layer = M.spearman_by_position(xs.T, y)
+        synth_arms = synth_arms_present(scal_paper["scalars"], synth_tags)
+        if not {"a_rb_ctx", "c_map_ctx"} <= set(synth_arms):
+            raise RuntimeError(
+                f"H3 synth stratum incomplete for {trait}: ctx arms missing — run "
+                "--phase arms over the full cell set first (cached #778 shifts "
+                "cover every cell, so absence here is a wiring fault)"
+            )
+        i778_root = Path(args.issue778_eval_root)
+        y_synth = load_synth778_scores(i778_root, trait, cells)
+        h3: dict = {
+            "arms": {},
+            "y_source": (
+                "#778 committed eval_results/issue_778/finetune_{trait}_{cell}.json "
+                "trait_score — each stratum correlates against its OWN scores, "
+                "never the real-twin y"
+            ),
+            # b/d appear once the P5 synth resp-avg leg has run (consistency B3);
+            # absent-for-all is a NOT-RUN leg, named here, never zero-barred.
+            "arms_not_run": sorted(set(C.MONITOR_ARMS) - set(synth_arms) - {"c_map_pfx"}),
+            "c_map_pfx": "N/A — #778 cached no prefix-end states",
+        }
+        for arm in synth_arms:
+            xs = _scalar_matrix(scal_paper, synth_tags, arm)
+            r_by_layer = M.spearman_by_position(xs.T, y_synth)
             sel_layer, sel_r = M.select_position(r_by_layer)
-            h3[arm] = {
+            h3["arms"][arm] = {
                 "selected_layer": sel_layer,
                 "selected_r": sel_r,
                 "frozen_r": float(r_by_layer[C.PAPER_FROZEN_LAYER_IDX[trait]]),
-                "note": "synthetic stratum scored against the REAL-twin trait scores "
-                "y (stratum contrast reads use the same y axis)",
             }
+        # Install-covaried read (plan §6 install-strength control; review
+        # issue 1): record each stratum's base propensity (the covariate —
+        # a constant within stratum, so within-stratum Spearman is invariant
+        # to it; the per-arm r above therefore doubles as the r-vs-install
+        # read) and compare arms AT matched trait-expression support where
+        # the 24-point support allows.
+        base_prop_real = float(scores["base"][trait]["graded_mean"])
+        base_prop_synth = load_synth778_base_score(i778_root, trait)
+        lo = max(float(y.min()), float(y_synth.min()))
+        hi = min(float(y.max()), float(y_synth.max()))
+        m_real = (y >= lo) & (y <= hi)
+        m_synth = (y_synth >= lo) & (y_synth <= hi)
+        cov: dict = {
+            "base_propensity_real": base_prop_real,
+            "base_propensity_synth": base_prop_synth,
+            "install_note": (
+                "install = y - base propensity per stratum; the matched-support "
+                "read compares arms at overlapping trait-expression levels, each "
+                "stratum frozen at its own full-sample selected layer (no "
+                "re-selection on the subset)"
+            ),
+            "matched_support": {
+                "lo": lo,
+                "hi": hi,
+                "n_real": int(m_real.sum()),
+                "n_synth": int(m_synth.sum()),
+            },
+            "arms": {},
+        }
+        if lo < hi and m_real.sum() >= 5 and m_synth.sum() >= 5:
+            for arm in synth_arms:
+                if arm not in tr["panels"]["paper"]["arms"]:
+                    continue
+                sel_real = tr["panels"]["paper"]["arms"][arm]["selected_layer"]
+                sel_synth = h3["arms"][arm]["selected_layer"]
+                x_real = _scalar_matrix(scal_paper, cells, arm)
+                xs = _scalar_matrix(scal_paper, synth_tags, arm)
+                cov["arms"][arm] = {
+                    "r_real_matched": float(
+                        M.spearman_by_position(x_real[m_real][:, sel_real][None, :], y[m_real])[0]
+                    ),
+                    "r_synth_matched": float(
+                        M.spearman_by_position(
+                            xs[m_synth][:, sel_synth][None, :], y_synth[m_synth]
+                        )[0]
+                    ),
+                    "layer_real": sel_real,
+                    "layer_synth": sel_synth,
+                }
+        else:
+            cov["insufficient_support"] = True
+        h3["install_covaried"] = cov
         tr["h3_synth_stratum"] = h3
         result["per_trait"][trait] = tr
 
@@ -472,6 +631,27 @@ def phase_correlations(args) -> None:
         "knn_cosine": knn_retrieval(pred, ytrue, metric="cosine"),
         "note": "in-pool identity+bias fit (bias from the same pool); map held-out "
         "R2 under LOFO is inherited from #1739 and reported in the body",
+    }
+    # Persist the per-draw x per-position r matrices (plan §6 persistence
+    # contract; review issue 2) — float32, ~1 MB per arm per (trait, panel).
+    mat_dir = eval_root / "draw_matrices"
+    mat_dir.mkdir(parents=True, exist_ok=True)
+    mat_files: list[str] = []
+    for (trait, panel), mats in draw_mats.items():
+        p = mat_dir / f"{trait}_{panel}.npz"
+        np.savez(p, **{k: v.astype(np.float32) for k, v in mats.items()})
+        mat_files.append(p.name)
+    for trait, mats in null_mats.items():
+        p = mat_dir / f"{trait}_nulls.npz"
+        np.savez(p, **{k: v.astype(np.float32) for k, v in mats.items()})
+        mat_files.append(p.name)
+    result["draw_matrices"] = {
+        "dir": str(mat_dir),
+        "files": sorted(mat_files),
+        "note": (
+            "per-draw x per-position r matrices (boot_r__/shuffle_r__/null_*) — "
+            "the honest selection-symmetric bands are pure re-reductions of these"
+        ),
     }
     result["reproducibility"] = lib.repro_metadata()
     dest = eval_root / "correlations.json"
@@ -561,6 +741,11 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--p5-root", default="data/issue_2221/p5")
     ap.add_argument("--stage-dir", default="data/issue_2221/hf_dl")
     ap.add_argument("--eval-results-root", default="eval_results/issue_2221")
+    ap.add_argument(
+        "--issue778-eval-root",
+        default="eval_results/issue_778",
+        help="committed #778 trait-score JSONs (the H3 synth stratum's OWN y)",
+    )
     ap.add_argument("--figures-root", default="figures/issue_2221")
     ap.add_argument("--cells", nargs="*", default=None)
     ap.add_argument("--rb-version", choices=("v2", "v1"), default="v2")

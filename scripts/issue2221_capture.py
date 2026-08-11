@@ -44,9 +44,13 @@ import issue778_lib as lib  # noqa: E402
 
 from explore_persona_space.experiments.issue_2221 import constants as C  # noqa: E402
 from explore_persona_space.experiments.issue_2221.loaders import (  # noqa: E402
+    atomic_torch_save,
+    atomic_write_text,
     load_ft_activation,
     load_rb,
     read_jsonl,
+    resume_ok,
+    write_fingerprint,
 )
 
 logger = logging.getLogger("issue2221.capture")
@@ -278,7 +282,6 @@ def phase_parity(args) -> None:
 
 def phase_last(args) -> None:
     """Last-prompt-token + prefix-end capture for base + finals + checkpoints."""
-    import torch
     from peft import PeftModel
 
     tok = _tokenizer()
@@ -292,19 +295,26 @@ def phase_last(args) -> None:
     surface_ids = [r["surface_id"] for r in surfaces]
     cap_dir = Path(args.out_root) / "capture"
     cap_dir.mkdir(parents=True, exist_ok=True)
+    fp = {"n_questions": args.n_questions}
+    pending = [
+        (tag, adapter)
+        for tag, adapter in model_roster(args)
+        if not resume_ok(cap_dir / f"{tag}.pt", fp)
+    ]
+    if not pending:
+        lib.log_phase("p5_last", "all captures present (fingerprint match) — skip model load")
+        return
     model, device = _load_base_model()
-    for tag, adapter in model_roster(args):
+    for tag, adapter in pending:
         dest = cap_dir / f"{tag}.pt"
-        if dest.is_file():
-            logger.info("[p5_last] %s exists — skip", dest.name)
-            continue
         if adapter is None:
             last, pref = capture_last_and_prefix(model, tok, prompts, device=device)
         else:
             peft_model = PeftModel.from_pretrained(model, str(adapter))
             last, pref = capture_last_and_prefix(peft_model, tok, prompts, device=device)
             model = peft_model.unload()
-        torch.save(
+        atomic_torch_save(
+            dest,
             {
                 "kind": "last_prompt_token+prefix_end",
                 "last": last,
@@ -313,8 +323,8 @@ def phase_last(args) -> None:
                 "model_tag": tag,
                 "reproducibility": lib.repro_metadata(),
             },
-            dest,
         )
+        write_fingerprint(dest, fp)
         lib.log_phase("p5_last", f"{tag}: captured {tuple(last.shape)}")
 
 
@@ -341,12 +351,13 @@ def phase_gen(args) -> None:
     if not args.skip_synth:
         roster += [(f"synth778_{cell}", stage_synth_adapter(cell, stage_dir)) for cell in cells]
 
+    fp = {"n_questions": args.n_questions, "max_new_tokens": lib.MAX_NEW_TOKENS}
     llm = lib.build_vllm_engine(gpu_memory_utilization=args.gpu_mem_util)
     try:
         sp = SamplingParams(temperature=0.0, max_tokens=lib.MAX_NEW_TOKENS)
         for i, (tag, adapter) in enumerate(roster):
             dest = resp_dir / f"{tag}.json"
-            if dest.is_file():
+            if resume_ok(dest, fp):
                 continue
             lora = LoRARequest(tag, i + 1, str(adapter)) if adapter is not None else None
             outs = []
@@ -365,9 +376,11 @@ def phase_gen(args) -> None:
                 for r, o in zip(surfaces, outs)
             ]
             cap_hit = sum(1 for r in rows if r["finish_reason"] == "length") / max(1, len(rows))
-            dest.write_text(
-                json.dumps({"rows": rows, "cap_hit_fraction": cap_hit, "model_tag": tag}, indent=2)
+            atomic_write_text(
+                dest,
+                json.dumps({"rows": rows, "cap_hit_fraction": cap_hit, "model_tag": tag}, indent=2),
             )
+            write_fingerprint(dest, fp)
             lib.log_phase("p5_gen", f"{tag}: {len(rows)} greedy responses (cap-hit {cap_hit:.3f})")
     finally:
         lib.reap_vllm_engine(llm)
@@ -397,15 +410,32 @@ def phase_resp(args) -> None:
             )
             for cell in cells
         ]
+    fp = {"n_questions": args.n_questions}
+    # Roster-wide gen-output existence sweep BEFORE the 7B model load (review
+    # issue 7): a missing rollout file must fail in seconds, not after the
+    # weights are resident.
+    pending = [
+        (tag, adapter, out_dir)
+        for tag, adapter, out_dir in roster
+        if not resume_ok(out_dir / f"{tag}.pt", fp)
+    ]
+    missing = [
+        str(resp_dir / f"{tag}.json")
+        for tag, _, _ in pending
+        if not (resp_dir / f"{tag}.json").is_file()
+    ]
+    if missing:
+        raise FileNotFoundError(
+            f"run --phase gen first — {len(missing)} rollout file(s) missing, e.g. {missing[:3]}"
+        )
+    if not pending:
+        lib.log_phase("p5_resp", "all response-avg captures present — skip model load")
+        return
     model, device = _load_base_model()
-    for tag, adapter, out_dir in roster:
+    for tag, adapter, out_dir in pending:
         out_dir.mkdir(parents=True, exist_ok=True)
         dest = out_dir / f"{tag}.pt"
-        if dest.is_file():
-            continue
         resp_path = resp_dir / f"{tag}.json"
-        if not resp_path.is_file():
-            raise FileNotFoundError(f"run --phase gen first: {resp_path}")
         rows = json.loads(resp_path.read_text())["rows"]
         by_id = {r["surface_id"]: r for r in rows}
         prompts, responses, kept_ids = [], [], []
@@ -433,7 +463,8 @@ def phase_resp(args) -> None:
             )
             model = peft_model.unload()
         assert acts.shape == (len(prompts), C.N_LAYERS, C.HIDDEN_DIM), acts.shape
-        torch.save(
+        atomic_torch_save(
+            dest,
             {
                 "kind": "response_avg",
                 "resp_avg": acts.to(torch.float16),
@@ -441,8 +472,8 @@ def phase_resp(args) -> None:
                 "model_tag": tag,
                 "reproducibility": lib.repro_metadata(),
             },
-            dest,
         )
+        write_fingerprint(dest, fp)
         lib.log_phase("p5_resp", f"{tag}: response-avg captured {tuple(acts.shape)}")
 
 
@@ -467,7 +498,8 @@ def phase_upload(args) -> None:
     for extra in ("capture_surfaces.json", "parity_probe.json"):
         p = out_root / extra
         if p.is_file():
-            hub._upload(
+            # UPLOAD_LOOP_EXEMPT: bounded fixed 2-file metadata list — never a per-cell storm
+            hub._upload(  # UPLOAD_RETURN_DISCARD_EXEMPT: raise_on_error=True — failure raises; URL unused
                 p,
                 C.HF_DATA_REPO,
                 "dataset",

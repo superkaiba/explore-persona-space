@@ -94,6 +94,7 @@ JUDGE_TEMPERATURE = 0.7
 JUDGE_THRESHOLD = 50  # keep pos>50, neg<50
 COHERENCE_THRESHOLD = 50  # paper's coherence gate on both arms
 MAX_NEW_TOKENS = 1000  # paper's generation length (eval_persona.py default)
+VLLM_MAX_MODEL_LEN = 4096  # build_vllm_engine's pinned context window (single source)
 
 
 # ── Trait-file loading ─────────────────────────────────────────────────────────
@@ -233,7 +234,7 @@ def build_vllm_engine(model_name: str = MODEL_NAME, gpu_memory_utilization: floa
     kwargs: dict = dict(
         model=model_name,
         gpu_memory_utilization=gpu_memory_utilization,
-        max_model_len=4096,
+        max_model_len=VLLM_MAX_MODEL_LEN,
         dtype="bfloat16",
         enable_lora=True,  # Phase-3 eval uses per-cell LoRA adapters
         max_lora_rank=32,  # the paper's rsLoRA rank

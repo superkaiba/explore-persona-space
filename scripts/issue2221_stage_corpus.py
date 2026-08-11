@@ -54,7 +54,10 @@ from explore_persona_space.experiments.issue_1739.corpus_staging import (  # noq
 )
 from explore_persona_space.experiments.issue_2221 import constants as C  # noqa: E402
 from explore_persona_space.experiments.issue_2221.loaders import (  # noqa: E402
+    atomic_write_text,
     read_jsonl,
+    resume_ok,
+    write_fingerprint,
     write_jsonl,
 )
 
@@ -363,11 +366,22 @@ def phase_rollouts(args) -> None:
     report_path = out_root / "rollouts" / "cap_hit_report.json"
     if report_path.is_file():
         report = json.loads(report_path.read_text())
+    # Regime fingerprint: every output-affecting flag keys the resume (a re-run
+    # under a different regime recomputes; #722-r3 class, review issue 8).
+    fp = {
+        "n_rollouts": args.n_rollouts,
+        "max_new_tokens": args.max_new_tokens,
+        "max_prompts": args.max_prompts,
+        "temperature": C.PANEL_TEMPERATURE,
+        "seed": C.PANEL_SEED,
+    }
     for model_id in models:
         slug = _model_slug(model_id)
         tok = _get_tokenizer(model_id)
         pending = [
-            f for f in families if not (out_root / "rollouts" / f / f"{slug}_meta.json").is_file()
+            f
+            for f in families
+            if not resume_ok(out_root / "rollouts" / f / f"{slug}_meta.json", fp)
         ]
         if not pending:
             lib.log_phase("p1_rollouts", f"{slug}: all families complete — skip engine build")
@@ -378,7 +392,7 @@ def phase_rollouts(args) -> None:
                 prompts_rows = read_jsonl(out_root / "prompts" / f"{family}.jsonl")
                 if args.max_prompts:
                     prompts_rows = prompts_rows[: args.max_prompts]
-                budget = 4096 - args.max_new_tokens  # build_vllm_engine max_model_len=4096
+                budget = lib.VLLM_MAX_MODEL_LEN - args.max_new_tokens
                 rendered, kept_rows, n_overlong = [], [], 0
                 for r in prompts_rows:
                     text = tok.apply_chat_template(
@@ -401,6 +415,11 @@ def phase_rollouts(args) -> None:
                 outs = _generate_chunked(llm, rendered, sp)
                 fam_dir = out_root / "rollouts" / family
                 fam_dir.mkdir(parents=True, exist_ok=True)
+                # Regime re-run (fingerprint mismatch): sweep THIS model's stale
+                # shards so a smaller re-run never mixes with a prior regime's
+                # higher-numbered parts (consumers glob *_part*.jsonl).
+                for stale in sorted(fam_dir.glob(f"{slug}_part*.jsonl")):
+                    stale.unlink()
                 n_total, n_cap = 0, 0
                 shard: list[dict] = []
                 part = 0
@@ -443,7 +462,9 @@ def phase_rollouts(args) -> None:
                     "regen_trigger": frac > C.CAP_HIT_REGEN_THRESHOLD,
                     "reproducibility": lib.repro_metadata(),
                 }
-                (fam_dir / f"{slug}_meta.json").write_text(json.dumps(meta, indent=2))
+                meta_path = fam_dir / f"{slug}_meta.json"
+                atomic_write_text(meta_path, json.dumps(meta, indent=2))
+                write_fingerprint(meta_path, fp)
                 report[f"{family}/{slug}"] = {"cap_hit_fraction": frac, "n": n_total}
                 lib.log_phase(
                     "p1_rollouts",
@@ -486,6 +507,7 @@ def phase_upload(args) -> None:
         lib.log_phase("p1_upload", f"{sub} -> {url}")
     panel = out_root / "panel_prompts.jsonl"
     if panel.is_file():
+        # UPLOAD_RETURN_DISCARD_EXEMPT: raise_on_error=True — failure raises, URL unused
         hub._upload(
             panel,
             C.HF_DATA_REPO,
