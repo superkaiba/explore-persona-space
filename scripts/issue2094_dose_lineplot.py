@@ -178,6 +178,96 @@ def label(cell: tuple[str, str, str]) -> str:
     )
 
 
+def pick_best_single_layer(steered, nulls, metric, min_pairs, min_coh, setting, slot):
+    """Dose-blind argmax of the null-margin among SINGLE layers at one (setting, slot)."""
+    scores = {}
+    for cell in {k[:3] for k in steered}:
+        if cell[0] != setting or cell[1] != slot or not cell[2].startswith("L"):
+            continue
+        per_dose = []
+        for dose in DOSES:
+            sv = steered.get((*cell, dose), {})
+            nv = nulls.get((*cell, dose), {}).get(metric, [])
+            vals, coh = sv.get(metric, []), sv.get("coh", [])
+            if len(vals) < min_pairs or len(nv) < min_pairs:
+                per_dose = []
+                break
+            if not coh or float(np.mean(coh)) < min_coh:
+                per_dose = []
+                break
+            per_dose.append(float(np.mean(vals)) - float(np.mean(nv)))
+        if len(per_dose) == len(DOSES):
+            scores[cell] = float(np.mean(per_dose))
+    assert scores, f"no eligible single-layer {slot} cell at {setting}"
+    return max(scores, key=lambda c: scores[c])[2]
+
+
+def figure_by_layer_variant(steered, nulls, args, setting="matched_query", slot="ce") -> dict:
+    """Result 4: dose response at the CONTEXT VECTOR, one panel per layer variant.
+
+    The companion figure fixes the best cell and sweeps alpha; this one fixes the
+    slot to the context vector and asks the same dose question separately at the
+    best single layer, the middle band, and all 28 layers -- the three depths the
+    write-up's Result 4 names. Three series per panel: judged behavior transfer,
+    answer-vector transfer, and the coherent-draw fraction, each F series drawn
+    against its own norm-matched shuffled-donor null.
+    """
+    best_L = pick_best_single_layer(
+        steered, nulls, "f_beh", args.min_pairs, args.min_coh, setting, slot
+    )
+    variants = [
+        (best_L, f"best single layer ({best_L})"),
+        ("joint_mid", "middle band (layers 14-20)"),
+        ("joint_all", "all 28 layers"),
+    ]
+    colors = paper_palette(3)
+    x = np.log2([DOSE_ALPHA[d] for d in DOSES])
+    x_rep = x[-1] + 1.0
+    fig, axes = plt.subplots(1, 3, figsize=(15.0, 4.6), sharey=True)
+    out: dict = {}
+    for ax, (lv, title) in zip(axes, variants):
+        cell = (setting, slot, lv)
+        for (metric, mlabel), color in zip(
+            (("f_beh", "behavior transfer (F_beh)"), ("f_act", "answer-vector transfer (F_act)")),
+            colors,
+        ):
+            m, n, rep, n_rep = series(steered, cell, metric)
+            nm, _nn, nrep, _ = series(nulls, cell, metric)
+            ax.plot(x, m, marker="o", color=color, label=f"{mlabel} (n={max(n) if n else 0})")
+            ax.plot(x, nm, marker="", ls="--", lw=1.2, color=color, alpha=0.75,
+                    label=f"{mlabel} — donor null")
+            if rep is not None:
+                ax.plot([x_rep], [rep], marker="*", ms=13, color=color, ls="none")
+            if nrep is not None:
+                ax.plot([x_rep], [nrep], marker="*", ms=9, mfc="none", color=color, ls="none")
+            out[f"{lv}|{metric}"] = {"alpha": m, "null": nm, "replace": rep, "n": n}
+        cm, cn, crep, _ = series(steered, cell, "coh")
+        ax.plot(x, cm, marker="^", color=colors[2], label=f"coherent-draw fraction (n={max(cn) if cn else 0})")
+        if crep is not None:
+            ax.plot([x_rep], [crep], marker="*", ms=13, color=colors[2], ls="none")
+        out[f"{lv}|coh"] = {"alpha": cm, "replace": crep, "n": cn}
+        ax.axhline(0.0, color="0.45", lw=0.9)
+        ax.set_xticks([*x, x_rep])
+        ax.set_xticklabels([*(f"{DOSE_ALPHA[d]:g}" for d in DOSES), "replace\n(full state)"])
+        ax.set_xlabel("steering strength alpha  (log spaced)")
+        ax.set_title(title)
+        ax.grid(alpha=0.25, lw=0.5)
+    axes[0].set_ylabel("fraction of a full context swap")
+    axes[0].legend(fontsize=7, loc="upper left")
+    fig.suptitle(
+        "Result 4: steering at the context vector — dose response by depth "
+        f"({SETTING_TITLES[setting].split(' (')[0]}, well-separated pairs)\n"
+        "solid = real steering, dashed = norm-matched shuffled-donor null, star = full-state patch; "
+        "alpha*Delta with Delta = v_C(B) - v_C(A)",
+        fontsize=10.5,
+    )
+    fig.tight_layout()
+    savefig_paper(fig, "dose_lineplot_by_layer", dir=args.out_dir)
+    plt.close(fig)
+    out["best_single_layer"] = best_L
+    return out
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--eval-root", type=Path, default=Path("eval_results/issue_2094"))
@@ -298,6 +388,7 @@ def main() -> None:
             "non-degenerate rows, cells >= min_coh coherent at every dose"
         ),
     }
+    summary["by_layer_variant"] = figure_by_layer_variant(steered, nulls, args)
     (args.out_dir / "dose_lineplot_summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     logger.info("[phase=dose_lineplot_done] -> %s", args.out_dir / "dose_lineplot.png")
 
