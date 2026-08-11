@@ -2307,7 +2307,9 @@ def _stage_headroom_factor() -> float:
         val = float(raw)
     except ValueError:
         val = -1.0
-    if val <= 0:
+    # `not (val > 0)` rather than `val <= 0`: float("nan") compares False both
+    # ways, and a nan factor would silently disarm the statvfs floor check.
+    if not (val > 0):
         logger.warning(
             "[stage-headroom] garbled/non-positive EPM_HF_STAGE_HEADROOM_FACTOR=%r — "
             "falling back to the default %.1fx",

@@ -86,7 +86,7 @@ def test_stage_headroom_factor_default_and_env(monkeypatch):
 def test_stage_headroom_factor_garbled_falls_back_with_warning(monkeypatch, caplog):
     """Garbled / non-positive env falls back to 1.5 WITH a logged warning —
     never raises, never silently zeroes the floor."""
-    for bad in ("not-a-float", "-1", "0"):
+    for bad in ("not-a-float", "-1", "0", "nan"):
         monkeypatch.setenv("EPM_HF_STAGE_HEADROOM_FACTOR", bad)
         with caplog.at_level(logging.WARNING, logger=hub.logger.name):
             caplog.clear()
