@@ -298,7 +298,7 @@ def test_main_bare_success_prints_summary(monkeypatch, capsys):
 
 def test_main_json_stdout_is_single_pretty_json(monkeypatch, capsys):
     """Criterion 6: --json stdout is exactly one pretty-printed JSON object
-    with the 12 documented keys and nothing else (gotchas.md contract)."""
+    with the 13 documented keys and nothing else (gotchas.md contract)."""
     monkeypatch.setattr(preflight, "preflight_check", lambda **kwargs: _fail_report())
     rc = main(["--json", "--no-gpu"])
     assert rc == 1
@@ -317,6 +317,9 @@ def test_main_json_stdout_is_single_pretty_json(monkeypatch, capsys):
         "hf_storage_used_tb",
         "hf_storage_ceiling_tb",
         "hf_storage_basis",
+        # task #2097's shared-VM data-disk floor added this one (None when
+        # /mnt/eps-data is not a live mount — pods/GCE/SLURM).
+        "data_disk_used_pct",
         "git_status",
         "env_synced",
     }

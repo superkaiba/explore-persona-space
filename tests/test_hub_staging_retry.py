@@ -191,11 +191,15 @@ def test_stage_hub_prefix_scoped_listing_and_revision_pin(tmp_path, monkeypatch)
     monkeypatch.setattr("huggingface_hub.HfApi", FakeApi)
 
     def fake_list(api, repo_id, path, *, repo_type="model", revision=None):
-        # scoped: receives the PREFIX, never a full listing
+        # scoped: receives the PREFIX, never a full listing (#2097: the
+        # entries variant — ONE listing serves both paths and sizes)
         seen["list_args"] = (repo_id, path, repo_type, revision)
-        return ["pfx/a.json", "pfx/sub/b.json"]
+        return [("pfx/a.json", 10), ("pfx/sub/b.json", 20)]
 
-    monkeypatch.setattr(hub, "list_hf_files_under_path", fake_list)
+    monkeypatch.setattr(hub, "list_hf_entries_under_path", fake_list)
+    # Headroom behavior has its own pins (test_hub_stage_headroom.py); noop
+    # the assert here so this test stays about listing/revision semantics.
+    monkeypatch.setattr(hub, "_assert_stage_headroom", lambda *a, **k: None)
 
     staged: list[tuple[str, str, str | None]] = []
 
@@ -208,6 +212,7 @@ def test_stage_hub_prefix_scoped_listing_and_revision_pin(tmp_path, monkeypatch)
         revision=None,
         token=None,
         overwrite=False,
+        size_bytes=None,
     ):
         staged.append((path_in_repo, str(target), revision))
         return Path(target)
@@ -225,7 +230,7 @@ def test_stage_hub_prefix_scoped_listing_and_revision_pin(tmp_path, monkeypatch)
     assert out == [dest / "pfx/a.json", dest / "pfx/sub/b.json"]
 
     # empty listing raises (fail-loud)
-    monkeypatch.setattr(hub, "list_hf_files_under_path", lambda *a, **k: [])
+    monkeypatch.setattr(hub, "list_hf_entries_under_path", lambda *a, **k: [])
     with pytest.raises(FileNotFoundError):
         hub.stage_hub_prefix("org/data", "pfx", dest)
 
@@ -244,9 +249,10 @@ def test_stage_hub_prefix_per_file_failure_propagates(tmp_path, monkeypatch):
     monkeypatch.setattr("huggingface_hub.HfApi", FakeApi)
     monkeypatch.setattr(
         hub,
-        "list_hf_files_under_path",
-        lambda *a, **k: ["pfx/a.json", "pfx/b.json", "pfx/c.json"],
+        "list_hf_entries_under_path",
+        lambda *a, **k: [("pfx/a.json", 1), ("pfx/b.json", 2), ("pfx/c.json", 3)],
     )
+    monkeypatch.setattr(hub, "_assert_stage_headroom", lambda *a, **k: None)
 
     def fake_stage(
         repo_id,
@@ -257,6 +263,7 @@ def test_stage_hub_prefix_per_file_failure_propagates(tmp_path, monkeypatch):
         revision=None,
         token=None,
         overwrite=False,
+        size_bytes=None,
     ):
         if path_in_repo == "pfx/b.json":
             raise RuntimeError("per-file staging failed")

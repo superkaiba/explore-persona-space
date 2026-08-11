@@ -163,13 +163,14 @@ Check catalog (id — classification — kind scope)
       lane-specific env vars
   c55 inherited argparse row-   WARN-only, conditional    all kinds
       count default vs target n
+  c56 staging mount binding     WARN-only, conditional    experiment only
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54,
-55) also SKIP when their content trigger does not fire.
+55, 56) also SKIP when their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -284,6 +285,13 @@ labeled-line forms):
     under-cover this plan's per-cell target; a plan genuinely reusing a
     script whose row-count default sits below its stated per-cell target n
     instead embeds the explicit ``--<flag> <value>`` override in a command)
+  - ``N/A — no multi-GB staging`` (check 56 — the staging + size vocabulary
+    is incidental (quotes a sibling / an incident) and this plan stages no
+    multi-GB inputs; a plan genuinely staging >=5 GB instead names the
+    staging path + the filesystem/mount it resolves to within +-2 lines of
+    the staging row — and, when it cites the #681 worktree bind, carries a
+    literal ``findmnt --mountpoint`` liveness assertion, since the bind is
+    NOT live on this VM, #2091)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -10601,6 +10609,161 @@ def check_inherited_rowcount_default(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 56 — multi-GB staging row names its mount / bind liveness (#2097) ─
+
+# Trigger: a STRIPPED-prose line carrying BOTH a staging signal AND a >=5 GB
+# size figure (TB always qualifies). Calibration (#2097, implementation-time,
+# AS-SHIPPED regexes; the c39/c33 gate precedent — any future c56-regex
+# change re-runs the corpus scan and records the realized numbers here) over
+# 3,890 persisted plan-versions (tasks/*/*/plans/v*.md; in-process, own task
+# excluded, kind from body.md): 499 pv triggered (kind==experiment,
+# non-SKIP); 343 pv would-WARN — 307 arm-(a)-only / 15 arm-(b)-only / 21
+# both; 6 recent-era issues (>= 2000) carry WARNs. The founding incident
+# #2091 (a 42 GB VM stage citing the NOT-live #681 worktree bind; zero
+# `findmnt`, PASSed verify_plan twice) arm-(b)-WARNs on plans v1-v3, and its
+# POST-incident revisions v4/v5 — which added the `findmnt --mountpoint`
+# probe — PASS: the incident's own fix trajectory exercises both verdicts
+# (pinned by tests/test_verify_plan.py::test_c56_calibration_committed_2091_v3).
+# Arm-(a) adjudication of the recent-era would-WARNs: size-bearing
+# risk-table / RSS-routing / compute-table rows whose staging path lives
+# elsewhere in the plan — the #869 document-global-evidence shape the
+# window-scoping deliberately refuses; a widened satisfier set (+MooseFS /
+# container-disk / $SCRATCH mount-name tokens) was MEASURED at 343 -> 311
+# would-WARN and DECLINED — it blesses filesystem-name-without-path rows,
+# weakening the duty's PATH requirement for a ~10% noise cut. WARN-only +
+# forward-looking (legacy plans never bounce retroactively, the
+# c39/c31/c34/c43 family convention).
+_C56_STAGE_RE = re.compile(
+    r"(?i)\bstag(?:e|es|ed|ing)\b|\bdownload|\bsnapshot|\bmateriali[sz]e"
+    r"|hf_dl|local_dir|\bprefetch"
+)
+_C56_SIZE_RE = re.compile(r"(\d+(?:\.\d+)?)\s*(GB|GiB|TB)\b")
+_C56_SIZE_MIN_GB = 5.0
+# Arm (a): PATH tokens satisfy ONLY within the trigger line +-2 STRIPPED
+# lines (window-scoped — house style pushes `/workspace` merge-disk
+# boilerplate + launch out-roots into nearly every plan, so a doc-global
+# path satisfier vacuously PASSes a pathless staging row: the #869
+# document-global-evidence shape; 9 `/workspace` mentions in #2091 v3
+# alone). The mount-PROBE tokens (`df -P`, `findmnt`) satisfy from anywhere
+# in the RAW plan — probe commands legitimately live in fenced
+# preflight/repro blocks far from the staging row.
+_C56_PATH_RE = re.compile(r"/mnt/eps-data|data/issue_|/workspace")
+_C56_PROBE_RE = re.compile(r"df -P|findmnt")
+# Arm (b): the incident's OWN vocabulary — `worktree`/`#681` co-occurring
+# with word-boundary `bind` within the same stripped line or +-2 adjacent
+# stripped lines. `\bbind\b` (not `bind`): "binding"-class house prose can
+# never false-fire, while hyphens ARE word boundaries so "bind-mounted" /
+# "bind-migration" still match. NOT keyed on the literal `.claude/worktrees`
+# path: that string appears ZERO times in #2091 v3, whose actual wording is
+# "resolves to `/mnt/eps-data` via the #681 worktree bind" (v3 L110/L272) —
+# a literal-path trigger provably never fires on its own motivating incident.
+_C56_BIND_RE = re.compile(r"(?i)\bbind\b")
+_C56_WORKTREE_RE = re.compile(r"(?i)\bworktrees?\b|#681\b")
+_C56_WINDOW = 2  # +-2 lines; the c12 window-shape convention
+
+
+def _c56_size_qualifies(line: str) -> bool:
+    """True when ``line`` carries a >=5 GB size figure (any TB qualifies)."""
+    for m in _C56_SIZE_RE.finditer(line):
+        if m.group(2) == "TB" or float(m.group(1)) >= _C56_SIZE_MIN_GB:
+            return True
+    return False
+
+
+def check_staging_mount_binding(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, experiment-only: a multi-GB staging/footprint
+    row must name its mount/staging path IN the trigger window (arm a), and
+    a plan citing the #681 worktree bind for a multi-GB stage must carry a
+    literal ``findmnt --mountpoint`` liveness assertion (arm b — the bind is
+    NOT live on this VM; #2091's plans v2 AND v3 cited it for a 42 GB stage
+    and PASSed verify_plan). Mechanizes the explicitly-deferred staging-row
+    backstop of `.claude/rules/plan-compute-sizing.md` § Out-root mount
+    binding (the >=5 GB inline-staging clause: staging path named up front +
+    the filesystem it resolves to; incident #1393 — a 14 GB inline HF pull
+    filled ``/`` -> ENOSPC).
+
+    Fence masking is LINE-COUNT-PRESERVING (fenced lines masked in place,
+    never deleted) so the stripped->raw +-2 window maps by identity index.
+    Arm (b) is evaluated INDEPENDENTLY of arm (a)'s verdict — the #2091 rows
+    name ``/mnt/eps-data`` in-window (arm a satisfied) and still must WARN
+    on the missing liveness probe. NEVER FAILs (the c39/c31/c34/c43 family
+    convention). kind-exempt outside experiment: infra workflow-fix plans —
+    this check's own lineage included — legitimately discuss staging without
+    having staging phases."""
+    cid, name = "c56_staging_mount_binding", "staging mount binding"
+    if kind != "experiment":
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: multi-GB staging rows are an experiment-plan shape "
+            "(infra workflow-fix plans legitimately discuss staging without staging phases)",
+        )
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)  # line-count-preserving: indexes map raw<->stripped
+    trigger_idx = [
+        i
+        for i, (line, fenced) in enumerate(zip(lines, mask, strict=True))
+        if not fenced and _C56_STAGE_RE.search(line) and _c56_size_qualifies(line)
+    ]
+    if not trigger_idx:
+        return _skip(cid, name, "no multi-GB staging vocabulary detected")
+    if _standalone_na_declared(plan, r"no multi-GB staging\b"):
+        return _pass(cid, name, "explicit N/A declared (no multi-GB staging)")
+    # Arm (a): every trigger line needs a path token within +-2 stripped
+    # lines, unless a mount-probe token appears anywhere in the RAW plan.
+    offenders_a: list[str] = []
+    if not _C56_PROBE_RE.search(plan):
+        for i in trigger_idx:
+            lo, hi = max(0, i - _C56_WINDOW), min(len(lines), i + _C56_WINDOW + 1)
+            window = "\n".join(lines[j] for j in range(lo, hi) if not mask[j])
+            if not _C56_PATH_RE.search(window):
+                offenders_a.append(lines[i].strip()[:90])
+    # Arm (b): independent of arm (a) — a worktree-bind citation in a disk
+    # context requires the literal `findmnt --mountpoint` in the RAW plan.
+    bind_hits: list[int] = []
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced or not _C56_BIND_RE.search(line):
+            continue
+        lo, hi = max(0, i - _C56_WINDOW), min(len(lines), i + _C56_WINDOW + 1)
+        if any(not mask[j] and _C56_WORKTREE_RE.search(lines[j]) for j in range(lo, hi)):
+            bind_hits.append(i)
+    arm_b_offends = bool(bind_hits) and "findmnt --mountpoint" not in plan
+    if not offenders_a and not arm_b_offends:
+        bits = [f"{len(trigger_idx)} multi-GB staging line(s) mount-bound"]
+        if bind_hits:
+            bits.append(
+                f"{len(bind_hits)} worktree-bind citation line(s) with a "
+                "`findmnt --mountpoint` liveness assertion"
+            )
+        return _pass(cid, name, "; ".join(bits))
+    msgs: list[str] = []
+    if offenders_a:
+        shown = "; ".join(offenders_a[:3])
+        more = f" (+{len(offenders_a) - 3} more)" if len(offenders_a) > 3 else ""
+        msgs.append(
+            f"{len(offenders_a)} multi-GB staging row(s) name no mount/staging path within "
+            f"+-2 lines ({shown!r}{more}) — name the staging path + the filesystem it "
+            "resolves to next to the row (the CLAUDE.md compute-character element 5: "
+            "a correct GB figure on the WRONG mount still ENOSPCs, #1393; a distant "
+            "`/workspace` in Repro boilerplate does not bind the row)"
+        )
+    if arm_b_offends:
+        msgs.append(
+            f"{len(bind_hits)} worktree-bind citation line(s) route a multi-GB stage "
+            "via the #681 worktree bind with NO `findmnt --mountpoint` liveness "
+            "assertion — the bind is NOT live on this VM (#2091: cited for a 42 GB "
+            "stage, PASSed verify_plan twice; the path then resolves to the boot "
+            "disk, gotchas.md `/mnt/eps-data` entry). Add a fenced "
+            "`findmnt --mountpoint <repo>/.claude/worktrees` probe (no output = no "
+            "bind) or re-route the staging path"
+        )
+    msgs.append(
+        "or declare `N/A — no multi-GB staging` on its own line, unwrapped "
+        "(no backticks/quotes), if the staging vocabulary is incidental"
+    )
+    return _warn(cid, name, " | ".join(msgs))
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -10657,6 +10820,7 @@ CHECKS = [
     check_judged_dv_api_refusal,
     check_workload_cmd_lane_env,
     check_inherited_rowcount_default,
+    check_staging_mount_binding,
 ]
 
 

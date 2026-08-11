@@ -193,10 +193,11 @@ def test_good_plan_passes_all():
         "c53_judged_dv_api_refusal": "SKIP",
         "c54_workload_cmd_lane_env": "SKIP",
         "c55_inherited_rowcount_default": "SKIP",
+        "c56_staging_mount_binding": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 54
+    assert len(results) == 55
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -6310,12 +6311,14 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     #   conditional, #2047)
     # + c55 (SKIP: GOOD_PLAN names no reused scripts/ or src/ .py paths;
     #   trigger-conditional, #2226)
-    assert payload["n_skip"] == 48
+    # + c56 (SKIP: GOOD_PLAN carries no multi-GB staging vocabulary — no
+    #   staging-signal + >=5 GB line; trigger-conditional, #2097)
+    assert payload["n_skip"] == 49
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 56
-    assert len({c["id"] for c in payload["checks"]}) == 56
+    assert len(payload["checks"]) == 57
+    assert len({c["id"] for c in payload["checks"]}) == 57
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -11607,7 +11610,10 @@ def test_c55_registered_in_checks():
 
 def test_c55_docstring_catalog_row():
     assert "c55 inherited argparse row-" in verify_plan.__doc__
-    assert "55)" in verify_plan.__doc__  # conditional-checks enumeration carries 55
+    # conditional-checks enumeration carries 55 (c56 moved the closing paren
+    # onto 56, so the pin is the comma-separated membership form — the same
+    # reflow treatment the c54 pin got when c55 landed)
+    assert "55, 56" in verify_plan.__doc__
 
 
 def test_c55_2054_incident_shape_warns(tmp_path, monkeypatch):
@@ -11744,3 +11750,216 @@ def test_c55_git_show_branch_fallback(tmp_path, monkeypatch):
     r = _c55_check(plan)
     assert r.status == "WARN"
     assert "--target-conv-ids" in r.detail
+
+
+# ─── c56: multi-GB staging row names its mount / bind liveness (#2097) ──────
+
+C56 = "c56_staging_mount_binding"
+
+# Arm-(a) WARN fixture: a pathless multi-GB staging row PLUS distant
+# `df -h /workspace` Repro boilerplate — the #869 document-global-evidence
+# decoy a doc-global path satisfier would false-PASS (the boilerplate sits
+# 4+ lines from the trigger, outside the +-2 window; `df -h` is NOT the
+# `df -P` probe token).
+C56_PATHLESS_STAGE = (
+    "\n## 9b. Staging\n"
+    "\n"
+    "Phase P0 stages the labeled capture store (~42 GB) from HF before any fit.\n"
+    "\n"
+    "## 10. Reproducibility\n"
+    "\n"
+    "Merge-disk boilerplate: run `df -h /workspace` on the pod before Phase 1.\n"
+)
+
+# Arm-(b) WARN fixture: the VERBATIM #2091 plans/v3.md L272 out-root table
+# row (the founding incident's own words — the #2165 fixture-fidelity
+# convention; a synthetic line written in the check's vocabulary pins
+# nothing). Names `/mnt/eps-data` IN-window (arm (a) satisfied) and still
+# must WARN on the missing bind-liveness probe.
+C56_2091_V3_L272 = (
+    "\n| VM staging `data/issue_2091/hf_dl/` (labeled-store tar slices ~11 GB + extraction "
+    "tars 3.6 GB + wcrung slice ~1 GB + new greedy store ~9.6 GB + #1073 v_store ~11 GB "
+    "(greedy 10×0.100 + stoch10 10×1.004) + LMSYS `train_context_vectors.pt` 6.02 GB) | "
+    "~42 GB | `/mnt/eps-data` via the #681 worktree bind (per-issue 128 GB ext4 quota) — "
+    "never `/`; under the 50 GB VM analysis cap (`VM_ANALYSIS_FOOTPRINT_GB_MAX`), with the "
+    "incremental reap after P4 consumption |\n"
+)
+
+
+def test_c56_registered_in_checks_and_docstring_catalog():
+    assert verify_plan.check_staging_mount_binding in verify_plan.CHECKS
+    assert "c56 staging mount binding" in verify_plan.__doc__
+    # conditional-checks enumeration carries 56
+    assert "55, 56)" in verify_plan.__doc__
+    # canonical escape phrase listed
+    assert "N/A — no multi-GB staging" in verify_plan.__doc__
+
+
+def test_c56_trigger_without_path_warns_despite_distant_boilerplate():
+    """Arm (a): a pathless >=5 GB staging row WARNs even though `/workspace`
+    appears in DISTANT Repro boilerplate — the window scoping is the pin (a
+    doc-global path satisfier would false-PASS this fixture)."""
+    _, by_id = _run(GOOD_PLAN + C56_PATHLESS_STAGE)
+    r = by_id[C56]
+    assert r.status == "WARN"
+    assert r.passed  # WARN-only: the check NEVER FAILs a plan
+    assert "name no mount/staging path" in r.detail
+    assert "#1393" in r.detail
+    assert "N/A — no multi-GB staging" in r.detail
+
+
+def test_c56_path_token_in_window_passes():
+    """Arm (a): the staging path + mount named within +-2 lines of the row."""
+    plan = GOOD_PLAN + (
+        "\n## 9b. Staging\n"
+        "\n"
+        "Phase P0 stages the labeled capture store (~42 GB) from HF.\n"
+        "Staging path: `data/issue_999/hf_dl/` (resolves to `/mnt/eps-data`).\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id[C56]
+    assert r.status == "PASS"
+    assert "mount-bound" in r.detail
+
+
+def test_c56_path_token_only_outside_window_warns():
+    """Arm (a): the same path token 3+ lines from the trigger does NOT bind."""
+    plan = GOOD_PLAN + (
+        "\n## 9b. Staging\n"
+        "\n"
+        "Phase P0 stages the labeled capture store (~42 GB) from HF.\n"
+        "\n"
+        "\n"
+        "\n"
+        "Unrelated cleanup prose names `/mnt/eps-data` here, four lines away.\n"
+    )
+    _, by_id = _run(plan)
+    assert by_id[C56].status == "WARN"
+
+
+def test_c56_doc_global_probe_token_satisfies_arm_a():
+    """The mount-PROBE tokens (`df -P` / `findmnt`) satisfy from anywhere in
+    the RAW plan — probe commands legitimately live in fenced repro blocks
+    far from the staging row."""
+    plan = (
+        GOOD_PLAN
+        + C56_PATHLESS_STAGE
+        + ("\n```bash\ndf -P data/issue_999/hf_dl/   # staging filesystem probe\n```\n")
+    )
+    _, by_id = _run(plan)
+    assert by_id[C56].status == "PASS"
+
+
+def test_c56_no_trigger_skips():
+    # GOOD_PLAN carries no staging-signal + >=5 GB line.
+    _, by_id = _run(GOOD_PLAN)
+    assert by_id[C56].status == "SKIP"
+
+
+def test_c56_small_stage_below_threshold_skips():
+    """A 4 GB staging row is under the 5 GB trigger floor."""
+    plan = GOOD_PLAN + "\nPhase P0 stages a 4 GB shard from HF.\n"
+    _, by_id = _run(plan)
+    assert by_id[C56].status == "SKIP"
+
+
+def test_c56_tb_figure_always_qualifies():
+    """Any TB figure qualifies regardless of magnitude (0.5 TB = 500 GB)."""
+    plan = GOOD_PLAN + "\nPhase P0 stages a 0.5 TB store from HF.\n"
+    _, by_id = _run(plan)
+    assert by_id[C56].status == "WARN"
+
+
+def test_c56_kind_infra_skips():
+    _, by_id = _run(GOOD_PLAN + C56_PATHLESS_STAGE, kind="infra")
+    r = by_id[C56]
+    assert r.status == "SKIP"
+    assert "kind-exempt" in r.detail
+
+
+def test_c56_na_escape_passes():
+    plan = GOOD_PLAN + C56_PATHLESS_STAGE + "\nN/A — no multi-GB staging\n"
+    _, by_id = _run(plan)
+    r = by_id[C56]
+    assert r.status == "PASS"
+    assert "explicit N/A" in r.detail
+
+
+def test_c56_fenced_content_never_triggers():
+    """A staging + >=5 GB line INSIDE a fence is masked — fenced example
+    commands can neither satisfy nor trip (the c39 convention)."""
+    plan = GOOD_PLAN + ("\n```bash\n# stages the labeled capture store (~42 GB) from HF\n```\n")
+    _, by_id = _run(plan)
+    assert by_id[C56].status == "SKIP"
+
+
+def test_c56_verbatim_2091_bind_row_warns_on_arm_b():
+    """Arm (b), the founding incident verbatim: #2091 v3 L272 names
+    `/mnt/eps-data` IN-window (arm (a) satisfied) yet cites the NOT-live
+    #681 worktree bind with no `findmnt --mountpoint` probe -> WARN."""
+    _, by_id = _run(GOOD_PLAN + C56_2091_V3_L272)
+    r = by_id[C56]
+    assert r.status == "WARN"
+    assert "worktree-bind citation" in r.detail
+    assert "findmnt --mountpoint" in r.detail
+    assert "#2091" in r.detail
+    # arm (a) is satisfied by the in-window path token — the WARN is arm (b) only
+    assert "name no mount/staging path" not in r.detail
+
+
+def test_c56_bind_row_with_findmnt_probe_passes():
+    """Arm (b): the literal `findmnt --mountpoint` liveness assertion (fenced
+    is fine — the satisfier scans the RAW plan) clears the bind citation."""
+    plan = (
+        GOOD_PLAN
+        + C56_2091_V3_L272
+        + (
+            '\n```bash\nfindmnt --mountpoint "$REPO/.claude/worktrees"  # no output = no bind\n```\n'
+        )
+    )
+    _, by_id = _run(plan)
+    r = by_id[C56]
+    assert r.status == "PASS"
+    assert "findmnt --mountpoint" in r.detail
+
+
+def test_c56_binding_prose_does_not_fire_arm_b():
+    """`\\bbind\\b` word-boundary pin: "binding"-class house prose near
+    `worktree` never fires arm (b) (the approved-critic word-boundary
+    suggestion), while "bind-mounted" DOES (hyphens are word boundaries)."""
+    benign = GOOD_PLAN + (
+        "\n## 9b. Staging\n"
+        "\n"
+        "Phase P0 stages the labeled capture store (~42 GB) to `data/issue_999/hf_dl/`.\n"
+        "The worktree binding semantics of the mount table are discussed elsewhere.\n"
+    )
+    _, by_id = _run(benign)
+    assert by_id[C56].status == "PASS"
+
+    hyphened = GOOD_PLAN + (
+        "\n## 9b. Staging\n"
+        "\n"
+        "Phase P0 stages the labeled capture store (~42 GB) to `data/issue_999/hf_dl/`,\n"
+        "on the 512 GB data disk bind-mounted onto the worktree tree (#681).\n"
+    )
+    _, by_id = _run(hyphened)
+    r = by_id[C56]
+    assert r.status == "WARN"
+    assert "worktree-bind citation" in r.detail
+
+
+def test_c56_calibration_committed_2091_v3():
+    """CALIBRATION BAR (AC3, mechanical): the committed #2091 plans/v3.md —
+    the founding incident, which PASSed verify_plan twice — yields >=1
+    arm-(b) trigger line and a WARN under the composed check."""
+    candidates = sorted(REPO_ROOT.glob("tasks/*/2091/plans/v3.md"))
+    if not candidates:
+        pytest.skip("committed #2091 plans/v3.md not present in this checkout")
+    plan = candidates[0].read_text()
+    assert "via the #681 worktree bind" in plan  # the incident's own wording
+    assert "findmnt --mountpoint" not in plan  # v3 predates the probe (v4 added it)
+    _, by_id = _run(plan)  # kind=experiment — matches #2091's body.md kind
+    r = by_id[C56]
+    assert r.status == "WARN"
+    m = re.search(r"(\d+) worktree-bind citation line\(s\)", r.detail)
+    assert m is not None and int(m.group(1)) >= 1, r.detail
