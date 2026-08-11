@@ -8538,8 +8538,8 @@
     "2102": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2102",
-      "status": "proposed",
+      "path": "tasks/archived/2102",
+      "status": "archived",
       "title": "workflow-fix: workflow.yaml wf-fix prose vs 8 daily-doc pins (main-red)"
     },
     "2103": {
