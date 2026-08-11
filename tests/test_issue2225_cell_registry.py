@@ -257,3 +257,195 @@ def test_eval_gen_resolve_targets_scaled_fallback():
 
     with pytest.raises(ValueError, match="unknown eval-target tag"):
         eg.resolve_targets(["A__evil__c2.50"])  # non-canonical spelling refused
+
+
+# ── r2 blocker 1: manifest-bound resume predicate (g2 Critical 1 + Concern 2) ──
+
+
+def _resume_env(tmp_path: Path):
+    """(cell, ckpt_root, dataset_root, directions_dir) with real fingerprint inputs."""
+    cell = M.cells_by_slug()["A__evil__c3.0"]
+    dataset_root = tmp_path / "ds"
+    directions_dir = tmp_path / "dirs"
+    ckpt_root = tmp_path / "ckpt"
+    dpath = dataset_root / cell.dataset / f"{M.DATASET_VERSION}.jsonl"
+    dpath.parent.mkdir(parents=True)
+    dpath.write_text('{"messages": []}\n')
+    directions_dir.mkdir()
+    (directions_dir / f"{cell.steered_trait}_{cell.variant}.pt").write_bytes(b"direction-bytes")
+    (ckpt_root / cell.slug).mkdir(parents=True)
+    return cell, ckpt_root, dataset_root, directions_dir
+
+
+def _write_adapter_files(ckpt_root: Path, cell, payload: bytes = b"adapter-v1") -> Path:
+    out_dir = ckpt_root / cell.slug
+    (out_dir / "adapter_config.json").write_text("{}")
+    (out_dir / "adapter_model.safetensors").write_bytes(payload)
+    return out_dir
+
+
+def test_should_skip_refuses_stale_adapter_after_crashed_retrain(tmp_path):
+    """FAILS PRE-FIX (r2 blocker 1): START manifest + bare adapter presence must
+    NOT skip — the presence-based leg shipped a prior fingerprint's adapter
+    after a crashed retrain (g2 Critical 1 trace)."""
+    cell, ckpt_root, dataset_root, directions_dir = _resume_env(tmp_path)
+    # Crashed-retrain state: START manifest under the CURRENT fingerprint (no
+    # save-time `completed` record) + a PRIOR run's adapter files on disk.
+    fp = M.cell_fingerprint(cell, dataset_root, directions_dir)
+    M._write_manifest(ckpt_root, cell, fp)
+    _write_adapter_files(ckpt_root, cell, b"stale-prior-fingerprint-adapter")
+    assert M.should_skip(cell, ckpt_root, dataset_root, directions_dir) is False
+
+
+def test_should_skip_completed_and_uploaded_skips_offline(tmp_path):
+    cell, ckpt_root, dataset_root, directions_dir = _resume_env(tmp_path)
+    fp = M.cell_fingerprint(cell, dataset_root, directions_dir)
+    M._write_manifest(ckpt_root, cell, fp)
+    out_dir = _write_adapter_files(ckpt_root, cell)
+    M.mark_manifest_completed(ckpt_root, cell, out_dir)
+    M.mark_manifest_uploaded(ckpt_root, cell)
+    # uploaded=True short-circuits before any HF call -> fully offline skip.
+    assert M.should_skip(cell, ckpt_root, dataset_root, directions_dir) is True
+
+
+def test_should_skip_refuses_sha_mismatched_adapter(tmp_path):
+    """The completed record binds BYTES: an adapter overwritten after the
+    save-time sha record must re-run, never skip."""
+    cell, ckpt_root, dataset_root, directions_dir = _resume_env(tmp_path)
+    fp = M.cell_fingerprint(cell, dataset_root, directions_dir)
+    M._write_manifest(ckpt_root, cell, fp)
+    out_dir = _write_adapter_files(ckpt_root, cell)
+    M.mark_manifest_completed(ckpt_root, cell, out_dir)
+    (out_dir / "adapter_model.safetensors").write_bytes(b"overwritten-bytes")
+    assert M.should_skip(cell, ckpt_root, dataset_root, directions_dir) is False
+
+
+def test_should_skip_fingerprint_mismatch_still_reruns_completed_cell(tmp_path):
+    """A completed cell under an OLD fingerprint re-runs when any input changes."""
+    cell, ckpt_root, dataset_root, directions_dir = _resume_env(tmp_path)
+    fp = M.cell_fingerprint(cell, dataset_root, directions_dir)
+    M._write_manifest(ckpt_root, cell, fp)
+    out_dir = _write_adapter_files(ckpt_root, cell)
+    M.mark_manifest_completed(ckpt_root, cell, out_dir)
+    M.mark_manifest_uploaded(ckpt_root, cell)
+    # direction bytes change -> fingerprint changes -> re-run.
+    (directions_dir / f"{cell.steered_trait}_{cell.variant}.pt").write_bytes(b"new-direction")
+    assert M.should_skip(cell, ckpt_root, dataset_root, directions_dir) is False
+
+
+def test_should_skip_redrives_upload_on_local_done_hf_incomplete(tmp_path, monkeypatch):
+    """g2 Concern 2: local-done + never-uploaded -> the skip path RE-DRIVES the
+    per-cell upload (#664 contract) and marks the manifest uploaded."""
+    cell, ckpt_root, dataset_root, directions_dir = _resume_env(tmp_path)
+    fp = M.cell_fingerprint(cell, dataset_root, directions_dir)
+    M._write_manifest(ckpt_root, cell, fp)
+    out_dir = _write_adapter_files(ckpt_root, cell)
+    M.mark_manifest_completed(ckpt_root, cell, out_dir)
+
+    calls: list[tuple] = []
+
+    def fake_hf_files_present(cell_arg) -> bool:  # network boundary (signature-mirrored)
+        return False
+
+    def fake_upload_cell_adapter(out_dir_arg, cell_slug: str) -> str:  # hub boundary
+        calls.append((Path(out_dir_arg), cell_slug))
+        return f"https://hf/{cell_slug}"
+
+    monkeypatch.setattr(M, "_hf_files_present", fake_hf_files_present)
+    monkeypatch.setattr(M, "_upload_cell_adapter", fake_upload_cell_adapter)
+    assert M.should_skip(cell, ckpt_root, dataset_root, directions_dir) is True
+    assert calls == [(out_dir, cell.slug)]
+    stored = M._read_manifest(ckpt_root, cell)
+    assert stored["uploaded"] is True
+    # second resume: uploaded flag short-circuits, no second upload.
+    assert M.should_skip(cell, ckpt_root, dataset_root, directions_dir) is True
+    assert len(calls) == 1
+
+
+def test_should_skip_no_upload_mode_skips_without_redrive(tmp_path, monkeypatch):
+    cell, ckpt_root, dataset_root, directions_dir = _resume_env(tmp_path)
+    fp = M.cell_fingerprint(cell, dataset_root, directions_dir)
+    M._write_manifest(ckpt_root, cell, fp)
+    out_dir = _write_adapter_files(ckpt_root, cell)
+    M.mark_manifest_completed(ckpt_root, cell, out_dir)
+
+    def boom(*a, **k):  # any network/upload touch under --no-upload is a bug
+        raise AssertionError("upload path touched under allow_upload=False")
+
+    monkeypatch.setattr(M, "_hf_files_present", boom)
+    monkeypatch.setattr(M, "_upload_cell_adapter", boom)
+    assert M.should_skip(cell, ckpt_root, dataset_root, directions_dir, allow_upload=False) is True
+
+
+def test_start_manifest_drops_prior_completed_fields(tmp_path):
+    """The START write resets completed/uploaded (a retrain owns a fresh cycle)."""
+    cell, ckpt_root, dataset_root, directions_dir = _resume_env(tmp_path)
+    fp = M.cell_fingerprint(cell, dataset_root, directions_dir)
+    M._write_manifest(ckpt_root, cell, fp)
+    out_dir = _write_adapter_files(ckpt_root, cell)
+    M.mark_manifest_completed(ckpt_root, cell, out_dir)
+    M.mark_manifest_uploaded(ckpt_root, cell)
+    M._write_manifest(ckpt_root, cell, fp)  # the retrain's START write
+    stored = M._read_manifest(ckpt_root, cell)
+    assert "completed" not in stored and "uploaded" not in stored
+
+
+def test_fanout_skip_writes_skip_evidence_log(tmp_path, monkeypatch):
+    """r2 blocker 4 (producer side): a resume-skipped cell appends a
+    [fanout-skip] line to its per-cell log — the token the dispatcher's §7
+    criterion-(i) dual-token count gate greps for."""
+    monkeypatch.delenv("CUDA_VISIBLE_DEVICES", raising=False)
+    cells = [M.cells_by_slug()["A__evil__c3.0"], M.cells_by_slug()["A__evil__c5.0"]]
+
+    def fake_should_skip(cell, *a, **k) -> bool:
+        return True
+
+    monkeypatch.setattr(M, "should_skip", fake_should_skip)
+    log_dir = tmp_path / "logs"
+    res = M.run_fan_out(
+        cells,
+        dataset_root=tmp_path,
+        ckpt_root=tmp_path,
+        directions_dir=tmp_path,
+        n_gpus=1,
+        max_steps=None,
+        cpu_only=True,
+        dry_run=False,
+        model_name="m",
+        log_dir=log_dir,
+    )
+    assert all(v == "skipped-resume" for v in res["cells"].values())
+    for cell in cells:
+        text = (log_dir / f"{cell.slug}.log").read_text()
+        assert "[fanout-skip]" in text and cell.slug in text
+
+
+def test_visible_gpu_entries_uses_parent_cvd_entries(monkeypatch):
+    """g2 Concern 3: a restricted/reordered parent CVD pins its g-th ENTRY."""
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "4,5,6,7")
+    assert M._visible_gpu_entries(2) == ["4", "5"]
+    assert M._visible_gpu_entries(4) == ["4", "5", "6", "7"]
+    import pytest
+
+    with pytest.raises(RuntimeError, match="exceeds"):
+        M._visible_gpu_entries(5)
+    monkeypatch.delenv("CUDA_VISIBLE_DEVICES")
+    assert M._visible_gpu_entries(3) == ["0", "1", "2"]
+
+
+def test_main_bare_invocation_refuses(tmp_path, capsys):
+    """g2 Concern 4: a bare call must never implicitly start the 81-cell fan-out."""
+    import pytest
+
+    with pytest.raises(SystemExit) as ei:
+        M.main([])
+    assert ei.value.code == 2
+    assert "refusing the implicit full 81-cell fan-out" in capsys.readouterr().err
+
+
+def test_main_smoke_defaults_max_steps(tmp_path, monkeypatch, capsys):
+    """g2 suggestion 6: --smoke alone implies a tiny slice (--max-steps 4)."""
+    monkeypatch.delenv("CUDA_VISIBLE_DEVICES", raising=False)
+    M.main(["--smoke", "--dry-run", "--ckpt-root", str(tmp_path)])
+    out = capsys.readouterr().out
+    assert "--max-steps 4" in out

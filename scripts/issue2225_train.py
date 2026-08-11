@@ -354,29 +354,83 @@ def _manifest_path(ckpt_root: Path, cell: Cell) -> Path:
     return ckpt_root / "manifest" / f"{cell.slug}.json"
 
 
-def _write_manifest(ckpt_root: Path, cell: Cell, fingerprint: dict) -> None:
-    mpath = _manifest_path(ckpt_root, cell)
+def _atomic_write_manifest(mpath: Path, obj: dict) -> None:
     mpath.parent.mkdir(parents=True, exist_ok=True)
-    obj = {"cell": asdict(cell), "fingerprint": fingerprint, "started_at": int(time.time())}
     tmp = mpath.with_suffix(".json.tmp")
     with open(tmp, "w") as f:
         json.dump(obj, f, indent=2)
     tmp.replace(mpath)
 
 
+def _write_manifest(ckpt_root: Path, cell: Cell, fingerprint: dict) -> None:
+    """START manifest: fingerprint only — NO ``completed``/``uploaded`` fields.
+
+    Deliberately OVERWRITES any prior run's manifest (dropping its
+    artifact-binding fields), so a crash mid-train leaves a manifest the
+    resume predicate can never read as done (r2 blocker 1, g2 Critical 1).
+    """
+    obj = {"cell": asdict(cell), "fingerprint": fingerprint, "started_at": int(time.time())}
+    _atomic_write_manifest(_manifest_path(ckpt_root, cell), obj)
+
+
+def _read_manifest(ckpt_root: Path, cell: Cell) -> dict | None:
+    mpath = _manifest_path(ckpt_root, cell)
+    if not mpath.exists():
+        return None
+    try:
+        with open(mpath) as f:
+            return json.load(f)
+    except (json.JSONDecodeError, OSError) as e:
+        logger.warning("[resume] unreadable manifest %s (%s) -> re-run", mpath, e)
+        return None
+
+
+def mark_manifest_completed(ckpt_root: Path, cell: Cell, out_dir: Path) -> None:
+    """Artifact-binding record written AT SAVE TIME (r2 blocker 1).
+
+    Binds the just-saved adapter BYTES to the manifest's fingerprint: the
+    resume predicate requires this field (and, for the HF leg, ``uploaded``)
+    before any presence check counts.
+    """
+    stored = _read_manifest(ckpt_root, cell)
+    assert stored is not None, f"manifest missing at save time for {cell.slug}"
+    stored["completed"] = {
+        "completed_at": int(time.time()),
+        "adapter_model_sha256": _sha256(out_dir / "adapter_model.safetensors"),
+    }
+    _atomic_write_manifest(_manifest_path(ckpt_root, cell), stored)
+
+
+def mark_manifest_uploaded(ckpt_root: Path, cell: Cell) -> None:
+    """Set the ``uploaded`` flag AFTER a verified per-cell HF upload."""
+    stored = _read_manifest(ckpt_root, cell)
+    assert stored is not None, f"manifest missing at upload time for {cell.slug}"
+    stored["uploaded"] = True
+    _atomic_write_manifest(_manifest_path(ckpt_root, cell), stored)
+
+
 _ADAPTER_FILES = ("adapter_config.json", "adapter_model.safetensors")
 
 
-def _local_done(ckpt_root: Path, cell: Cell) -> bool:
+def _local_done(ckpt_root: Path, cell: Cell, stored: dict) -> bool:
+    """Local artifact-binding check: adapter files exist AND the safetensors
+    sha matches the manifest's save-time ``completed`` record (r2 blocker 1 —
+    bare file presence is NEVER enough: a crashed retrain under a new
+    fingerprint must not ship the prior fingerprint's adapter)."""
     out_dir = ckpt_root / cell.slug
-    return all((out_dir / f).exists() for f in _ADAPTER_FILES)
+    completed = stored.get("completed")
+    if not completed:
+        return False
+    if not all((out_dir / f).exists() for f in _ADAPTER_FILES):
+        return False
+    return _sha256(out_dir / "adapter_model.safetensors") == completed.get("adapter_model_sha256")
 
 
-def _hf_complete(cell: Cell) -> bool:
-    """Best-effort HF-complete check (adapter files present under the cell prefix).
+def _hf_files_present(cell: Cell) -> bool:
+    """Best-effort HF presence check (adapter files under the cell prefix).
 
     Rides ``verify_repo_paths_uploaded`` (retried + scoped); a transport/auth
-    failure is treated as NOT-complete (re-run the cell — idempotent), never a crash.
+    failure is treated as NOT-present (re-run/re-upload — idempotent), never a crash.
     """
     from huggingface_hub import HfApi
 
@@ -390,25 +444,56 @@ def _hf_complete(cell: Cell) -> bool:
         )
         return not missing
     except Exception as e:  # transport/auth — resume falls through to a re-run (safe)
-        logger.warning("[resume] HF-complete check failed for %s: %s -> not-complete", cell.slug, e)
+        logger.warning("[resume] HF presence check failed for %s: %s -> not-present", cell.slug, e)
         return False
 
 
-def should_skip(cell: Cell, ckpt_root: Path, dataset_root: Path, directions_dir: Path) -> bool:
-    """Resume predicate (§9): skip iff (local-done OR HF-complete) AND fingerprint match."""
-    mpath = _manifest_path(ckpt_root, cell)
-    if not mpath.exists():
+def should_skip(
+    cell: Cell,
+    ckpt_root: Path,
+    dataset_root: Path,
+    directions_dir: Path,
+    *,
+    allow_upload: bool = True,
+) -> bool:
+    """Resume predicate (§9, r2 blocker-1 semantics): skip iff the manifest's
+    fingerprint matches the CURRENT launch fingerprint AND its save-time
+    ``completed`` record binds an artifact (local sha match, or ``uploaded``
+    + HF presence). Bare file presence never satisfies either leg.
+
+    Side effect (g2 Concern 2, #664 per-cell upload contract): a local-done
+    cell whose upload never landed gets its upload RE-DRIVEN here (unless
+    ``allow_upload=False`` — the deliberate ``--no-upload`` smoke mode), so a
+    transient HF failure on the prior run is repaired at resume instead of
+    silently skipped past.
+    """
+    stored = _read_manifest(ckpt_root, cell)
+    if stored is None:
         return False  # never started
-    with open(mpath) as f:
-        stored = json.load(f)
     current = cell_fingerprint(cell, dataset_root, directions_dir)
     if stored.get("fingerprint") != current:
         logger.info("[resume] %s fingerprint changed -> re-run", cell.slug)
         return False
-    if _local_done(ckpt_root, cell):
-        logger.info("[resume] %s local-done + fingerprint match -> skip", cell.slug)
+    if not stored.get("completed"):
+        logger.info("[resume] %s manifest has no save-time completion -> re-run", cell.slug)
+        return False
+    if _local_done(ckpt_root, cell, stored):
+        if stored.get("uploaded"):
+            logger.info("[resume] %s local-done + uploaded + fingerprint match -> skip", cell.slug)
+            return True
+        if not allow_upload:
+            logger.info("[resume] %s local-done (--no-upload mode) -> skip", cell.slug)
+            return True
+        # Upload re-drive (g2 Concern 2): verify-or-upload, then mark. Fail-loud
+        # (raise_on_error=True) — a broken upload path should halt the fan-out
+        # early with a clear error, never silently strand the #664 contract.
+        if not _hf_files_present(cell):
+            logger.info("[resume] %s local-done but HF-incomplete -> re-driving upload", cell.slug)
+            _upload_cell_adapter(ckpt_root / cell.slug, cell.slug)
+        mark_manifest_uploaded(ckpt_root, cell)
+        logger.info("[resume] %s local-done + upload re-driven -> skip", cell.slug)
         return True
-    if _hf_complete(cell):
+    if stored.get("uploaded") and _hf_files_present(cell):
         logger.info("[resume] %s HF-complete + fingerprint match -> skip", cell.slug)
         return True
     return False
@@ -531,8 +616,13 @@ def train_steered_cell(
 
     # Manifest at cell START (§9 #952 gate-5 shape) — written before training so a
     # crash mid-train leaves a manifest whose fingerprint the resume predicate
-    # can compare against local-done / HF-complete.
+    # can compare. The START write drops any prior run's completed/uploaded
+    # fields, and the stale-adapter wipe below removes the prior run's adapter
+    # BYTES, so a crash mid-retrain can never leave a (new fingerprint,
+    # old adapter) pair a later resume would ship as this cell (r2 blocker 1).
     _write_manifest(ckpt_root, cell, cell_fingerprint(cell, dataset_root, directions_dir))
+    for fname in _ADAPTER_FILES:
+        (out_dir / fname).unlink(missing_ok=True)
 
     logger.info(
         "[%s] config=%s dataset=%s trait=%s variant=%s mask=%s layer=%s coef=%s "
@@ -632,7 +722,11 @@ def train_steered_cell(
             # mode="prefix" needs a prefix_len column computed at map time from
             # per-segment TOKEN IDS (never a re-tokenized concatenated string).
             ds = ds.map(lambda r: {**r, "prefix_len": compute_prefix_len(tokenizer, r["prompt"])})
-        pad_id = tokenizer.pad_token_id or tokenizer.eos_token_id
+        # `is not None` (not truthiness): a pad_token_id of 0 is a valid id and
+        # must not silently fall back to EOS (g2 suggestion 5).
+        pad_id = (
+            tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
+        )
         trainer = SteeredSFTTrainer(
             model=model,
             args=sft_config,
@@ -647,10 +741,14 @@ def train_steered_cell(
 
     trainer.model.save_pretrained(str(out_dir))
     tokenizer.save_pretrained(str(out_dir))
+    # Artifact-binding record at SAVE time (r2 blocker 1): the resume predicate
+    # requires this sha-bound `completed` field before any presence check counts.
+    mark_manifest_completed(ckpt_root, cell, out_dir)
     logger.info("[%s] adapter saved to %s", cell_slug, out_dir)
 
     if upload:
         _upload_cell_adapter(out_dir, cell_slug)
+        mark_manifest_uploaded(ckpt_root, cell)
     _reap_training_residue(out_dir)
     return out_dir
 
@@ -712,6 +810,27 @@ def _detect_gpu_count(cpu_only: bool) -> int:
             "(pass --cpu-only for a deliberate CPU smoke)"
         )
     return n
+
+
+def _visible_gpu_entries(n_gpus: int) -> list[str]:
+    """Per-slot CUDA_VISIBLE_DEVICES values for the launcher-env pin.
+
+    When the PARENT already runs under a restricted/reordered CVD (SLURM
+    partial-node allocation, a pre-set ``CUDA_VISIBLE_DEVICES=4,5,6,7``),
+    slot ``g`` pins the parent's g-th ENTRY — absolute ordinals would escape
+    the allowed set and collide with other tenants (g2 Concern 3). With no
+    parent CVD, ordinals 0..n-1 are the physical ids (dedicated pod).
+    """
+    parent = os.environ.get("CUDA_VISIBLE_DEVICES", "").strip()
+    if parent:
+        entries = [e.strip() for e in parent.split(",") if e.strip()]
+        if n_gpus > len(entries):
+            raise RuntimeError(
+                f"fan-out width {n_gpus} exceeds the parent CUDA_VISIBLE_DEVICES "
+                f"entry count {len(entries)} ({parent!r})"
+            )
+        return entries[:n_gpus]
+    return [str(g) for g in range(n_gpus)]
 
 
 def _single_cell_cmd(
@@ -777,11 +896,24 @@ def run_fan_out(
     results: dict[str, str] = {}
     failures: list[str] = []
 
+    gpu_entries = _visible_gpu_entries(n_gpus)
+
     pending: deque[Cell] = deque()
     for cell in cells:
         if should_skip(cell, ckpt_root, dataset_root, directions_dir):
             results[cell.slug] = "skipped-resume"
             print(f"[fanout] skip {cell.slug} (resume)", flush=True)
+            if not dry_run:
+                # Skip-evidence line into the per-cell log (r2 blocker 4): the
+                # dispatcher's §7 criterion-(i) count gate greps per-cell logs
+                # for [steer-hook] OR [fanout-skip], so a resume-skipped cell —
+                # whose hook engagement was proven by the fingerprint-bound
+                # completed run — never starves the count into a false exit 7.
+                with open(log_dir / f"{cell.slug}.log", "a") as skip_fh:
+                    skip_fh.write(
+                        f"[fanout-skip] {cell.slug} resume "
+                        "(hook engagement proven by the fingerprint-bound completed run)\n"
+                    )
         else:
             pending.append(cell)
 
@@ -798,7 +930,10 @@ def run_fan_out(
                 cpu_only=cpu_only,
                 model_name=model_name,
             )
-            print(f"[fanout][dry-run] CUDA_VISIBLE_DEVICES={g} {' '.join(cmd)}", flush=True)
+            print(
+                f"[fanout][dry-run] CUDA_VISIBLE_DEVICES={gpu_entries[g]} {' '.join(cmd)}",
+                flush=True,
+            )
             results[cell.slug] = "dry-run"
         return {"phase": "fanout", "cells": results, "failures": failures}
 
@@ -821,13 +956,19 @@ def run_fan_out(
                 cpu_only=cpu_only,
                 model_name=model_name,
             )
-            env = {**os.environ, "CUDA_VISIBLE_DEVICES": str(g)}
+            # g-th ENTRY of the parent CVD when set (g2 Concern 3), else ordinal.
+            env = {**os.environ, "CUDA_VISIBLE_DEVICES": gpu_entries[g]}
             log_path = log_dir / f"{cell.slug}.log"
             fh = open(log_path, "w")
             print(
-                f"[fanout] launch {cell.slug} CUDA_VISIBLE_DEVICES={g} log={log_path}", flush=True
+                f"[fanout] launch {cell.slug} CUDA_VISIBLE_DEVICES={gpu_entries[g]} log={log_path}",
+                flush=True,
             )
-            proc = subprocess.Popen(cmd, env=env, stdout=fh, stderr=subprocess.STDOUT)
+            try:
+                proc = subprocess.Popen(cmd, env=env, stdout=fh, stderr=subprocess.STDOUT)
+            except Exception:
+                fh.close()  # never leak the per-cell log handle on a launch failure
+                raise
             running[g] = (cell, proc, fh, time.time())
         # Reap finished slots.
         for g, (cell, proc, fh, t0) in list(running.items()):
@@ -972,7 +1113,12 @@ def build_argparser() -> argparse.ArgumentParser:
     )
     ap.add_argument("--single-cell", default=None, help="train ONE cell by slug (subprocess mode)")
     ap.add_argument("--gpu-id", type=int, default=0)
-    ap.add_argument("--fan-out", action="store_true", help="shard the cell queue across GPUs")
+    ap.add_argument(
+        "--fan-out",
+        action="store_true",
+        help="explicit fan-out opt-in — REQUIRED for the full 81-cell launch "
+        "(a bare invocation refuses; g2 Concern 4)",
+    )
     ap.add_argument("--pilot", action="store_true", help="the §7 P0 gate's 8 cells (A+C evil II)")
     grp = ap.add_mutually_exclusive_group()
     grp.add_argument(
@@ -1018,7 +1164,10 @@ def _print_registry_summary(cells: list[Cell]) -> None:
 
 
 def main(argv: Sequence[str] | None = None) -> None:
-    args = build_argparser().parse_args(argv)
+    ap = build_argparser()
+    args = ap.parse_args(argv)
+    if args.smoke and args.max_steps is None:
+        args.max_steps = 4  # --smoke means a TINY slice by itself (g2 suggestion 6)
 
     if args.import_check:
         from explore_persona_space.orchestrate.argcheck import assert_args_attributes_defined
@@ -1064,7 +1213,9 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     if args.single_cell is not None:
         cell = resolve_cell(args.single_cell)
-        if should_skip(cell, ckpt_root, dataset_root, directions_dir):
+        if should_skip(
+            cell, ckpt_root, dataset_root, directions_dir, allow_upload=not args.no_upload
+        ):
             print(json.dumps({"cell": cell.slug, "status": "skipped-resume"}))
             return
         out = train_steered_cell(
@@ -1089,7 +1240,14 @@ def main(argv: Sequence[str] | None = None) -> None:
         print(json.dumps({"cell": cell.slug, "adapter": str(out), "status": "done"}))
         return
 
-    # Fan-out (or a single-process resolve for --pilot/--cells/--smoke without --fan-out).
+    # Fan-out. A BARE invocation (no scoping flag at all) would implicitly start
+    # the full 81-cell / ~42 GPU-h production fan-out — refuse it (g2 Concern 4):
+    # the launch must name its scope explicitly.
+    if not (args.fan_out or args.pilot or args.cells or args.smoke or args.dry_run):
+        ap.error(
+            "refusing the implicit full 81-cell fan-out: pass --fan-out explicitly "
+            "(or scope with --pilot / --cells / --smoke / --dry-run)"
+        )
     cells = _resolve_cells(args)
     log_dir = Path(args.log_dir) if args.log_dir else ckpt_root / "fanout_logs"
     if args.dry_run:
