@@ -74,6 +74,7 @@ import hashlib
 import json
 import logging
 import os
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -617,6 +618,60 @@ def _load_model_and_tokenizer():
 # phase: materialize_directions  (POD-ONLY; 154 GB tars + 8.5 GB U-pool)
 # ---------------------------------------------------------------------------
 
+# Parent-issue committed inputs (#1739 labeling.json) that natpv.load_labels
+# reads from the REPO CHECKOUT: committed at HEAD, but OUTSIDE the
+# partial-clone pods' default sparse cones (`src scripts configs tests docs`
+# + tracked data/) and excluded by sparse worktrees — "committed" != "present"
+# (gotchas.md "Partial-clone pods", #2211). Minimal covering cone for the
+# three behaviors' files; the round-5 sweep found NO sibling committed reads
+# anywhere on the driver path (widen only with a fresh sweep).
+_PARENT_INPUTS_CONE = "eval_results/issue_1739/dv_dataset"
+
+
+def _ensure_parent_issue_cones(behaviors, repo_root: Path | None = None) -> None:
+    """Auto-materialize the #1739 committed labeling inputs (cone-ensure).
+
+    Runtime data-availability op (like ``stage_u_store``), NOT a code edit on
+    the pod: idempotent skip when every required file is already present;
+    else ``git sparse-checkout add`` the minimal covering cone in the repo
+    root this driver resolves (the partial clone fetches the blobs on
+    demand), then FAIL-LOUD verify with the ``prefetch_inputs``
+    ``_assert_git_input`` remedy shape (#612). The ``[cone-ensure]`` log
+    lines are the round-5 crash-fix fix-engaged signal.
+    """
+    if repo_root is None:
+        repo_root = Path(__file__).resolve().parents[1]
+    assert (repo_root / "pyproject.toml").exists(), f"repo-root sentinel missing at {repo_root}"
+    rels = [f"{_PARENT_INPUTS_CONE}/{b}/labeling.json" for b in behaviors]
+    missing = [r for r in rels if not (repo_root / r).is_file()]
+    if not missing:
+        logger.info("[cone-ensure] %d parent-issue git inputs present; skipping", len(rels))
+        return
+    proc = subprocess.run(
+        ["git", "sparse-checkout", "add", _PARENT_INPUTS_CONE],
+        cwd=repo_root,
+        env={**os.environ},
+        capture_output=True,
+        text=True,
+    )
+    logger.info(
+        "[cone-ensure] git sparse-checkout add %s -> rc=%d%s",
+        _PARENT_INPUTS_CONE,
+        proc.returncode,
+        f" stderr={proc.stderr.strip()!r}" if proc.returncode != 0 else "",
+    )
+    still = [r for r in rels if not (repo_root / r).is_file()]
+    if still:
+        raise FileNotFoundError(
+            f"Frozen git inputs missing after cone-ensure: {still}. Run "
+            f"`git -C {repo_root} sparse-checkout add {_PARENT_INPUTS_CONE}` "
+            "(partial-clone pods + sparse worktrees exclude eval_results/ from the "
+            "default cones — committed != present; gotchas.md 'Partial-clone pods', "
+            "#2211) or `git pull`."
+            + (f" git stderr: {proc.stderr.strip()!r}" if proc.stderr.strip() else "")
+        )
+    logger.info("[cone-ensure] materialized %d parent-issue git inputs", len(missing))
+
 
 def _stream_labeled_context_acts(behavior: str, layers, stage: Path, args) -> dict:
     """Stream the DV-labeled context/prefix activations for ``behavior``.
@@ -741,6 +796,7 @@ def _load_u_pool(layers, args) -> dict:
 
 
 def phase_materialize_directions(args) -> None:
+    """Materialize the six direction arms per (behavior, layer) — plan §4.1."""
     import numpy as np
 
     from explore_persona_space.experiments.issue_1739 import fits, store_io
@@ -753,6 +809,10 @@ def phase_materialize_directions(args) -> None:
     layers = list(args.layers)
     behaviors = list(args.behaviors)
     _breadcrumb("materialize_directions", behaviors=len(behaviors), layers=len(layers))
+    # Cone-ensure FIRST — fail fast on the committed #1739 inputs BEFORE the
+    # 8.5 GB U-pool stage / r_B fetch (round-5 crash: load_labels
+    # FileNotFoundError on a partial-clone pod, #2211 class).
+    _ensure_parent_issue_cones(behaviors)
 
     # r_B bank (all 28 layers x n_traits x d), pinned #779.
     rb_bank, rb_trait_names = store_io.load_rb_bank(
