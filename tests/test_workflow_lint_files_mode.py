@@ -462,8 +462,11 @@ def test_files_mode_cross_file_wrapper_is_a_known_residual(tmp_path: Path) -> No
     2026-08-11 on a 2-file fig payload, the whole walked set costs +15.1 s, an
     UPLOAD_DEST_FUNCS-mention gate +6.2 s, and a "defines a name the payload
     calls" gate +32.8 s (generic names like `main` defeat its selectivity) —
-    each alone breaks the <60 s scoped-gate acceptance bar. The real fix is to
-    key pass 1 on import provenance instead of bare name, in the #1452 check.
+    and the legs run sequentially, so against the recorded 52.5 s median (i) and
+    (iii) break the <60 s bar outright while (ii) lands ~58.7 s — under it, but
+    on ~1.3 s of headroom against a median that swings 35.9 -> 52.5 s on VM load
+    alone. The real fix is to key pass 1 on import provenance instead of bare
+    name, in the #1452 check.
     """
     tree = _make_tree(tmp_path)
     (tree / "scripts" / "shared_uploader.py").write_text(SHARED_UPLOADER, encoding="utf-8")
@@ -501,6 +504,39 @@ def test_files_mode_refuses_out_of_repo_absolute_path(tmp_path: Path) -> None:
     r, out = _run_lint(tree, "--files", str(outsider))
     assert r.returncode == 2, out
     assert "FILES-MODE-REFUSED (payload path outside repo:" in out, out
+    assert ilg.LINT_TERMINAL_RE.search(out) is None, out
+
+
+def test_files_mode_normalizes_in_repo_dotdot_path(tmp_path: Path) -> None:
+    """`Path.relative_to` is lexical and leaves `..` in place, so a dotdot form
+    produced a key no repo-relative enumeration entry could equal — silently
+    scoping the payload out of its own run (review round 2). It now normalizes,
+    so the payload's own red is still reported."""
+    tree = _make_tree(tmp_path)
+    rel = "scripts/issue9997_red_dotdot.py"
+    (tree / rel).write_text(JUDGE_PIN_RED, encoding="utf-8")
+    r, out = _run_lint(tree, "--files", f"scripts/../{rel}")
+    assert r.returncode == 1, out
+    assert any("issue9997_red_dotdot.py" in ln for ln in _error_lines(out)), out
+
+
+def test_files_mode_refuses_dotdot_path_escaping_repo(tmp_path: Path) -> None:
+    """A dotdot form that normalizes to OUTSIDE the repo is refused, not
+    silently scoped to nothing (review round 2)."""
+    tree = _make_tree(tmp_path)
+    r, out = _run_lint(tree, "--files", "scripts/../../../../etc/passwd")
+    assert r.returncode == 2, out
+    assert "FILES-MODE-REFUSED (payload path escapes repo:" in out, out
+    assert ilg.LINT_TERMINAL_RE.search(out) is None, out
+
+
+def test_files_mode_refuses_empty_payload(tmp_path: Path) -> None:
+    """An all-whitespace --files list scopes to nothing, which would certify a
+    vacuous PASS over an empty payload (review round 2)."""
+    tree = _make_tree(tmp_path)
+    r, out = _run_lint(tree, "--files", "   ")
+    assert r.returncode == 2, out
+    assert "FILES-MODE-REFUSED (empty payload)" in out, out
     assert ilg.LINT_TERMINAL_RE.search(out) is None, out
 
 

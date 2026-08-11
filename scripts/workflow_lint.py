@@ -7072,10 +7072,14 @@ def check_upload_prefix_clobber(  # noqa: C901 -- flat two-pass scan + flag-poli
     # UPLOAD_DEST_FUNCS mentions alone +6.2 s (365 files); gating additionally
     # on "defines a name the payload calls" is NOT selective, because generic
     # called names (`main`, `open`, `get`) are defined by most of those 365
-    # files — measured +32.8 s. Each variant alone exceeds the <60 s scoped-gate
-    # budget this mode exists to create. Closing it properly needs pass 1 keyed
-    # on import provenance rather than bare name — a change to the #1452 check
-    # itself, out of scope here.
+    # files — measured +32.8 s. The gate's legs run SEQUENTIALLY, so against the
+    # recorded 52.5 s scoped median: (i) and (iii) break the <60 s bar outright
+    # (67.6 s projected; 64.2 s measured), while (ii) lands ~58.7 s — under the
+    # bar, but ~1.3 s of headroom against a median that already swings
+    # 35.9 -> 52.5 s on VM load alone, and a 2.5x lint-leg regression
+    # (4.1 -> ~10.3 s) in the very metric this mode exists to improve. Closing
+    # it properly needs pass 1 keyed on import provenance rather than bare
+    # name — a change to the #1452 check itself, out of scope here.
     files = _files_scope_filter([p for p in sorted(root.rglob("*.py")) if p.is_file()])
     wrappers, fallback_findings = _upc_collect_wrappers(files)
     errors: list[str] = []
@@ -16028,7 +16032,27 @@ def _run_files_mode(raw_paths: list[str], workflow: dict) -> int:
                 f"workflow_lint: FILES-MODE-REFUSED (payload path outside repo: {stripped})\n"
             )
             return 2
+        # `Path.relative_to` is LEXICAL — it leaves `..` components in place, so
+        # a dotdot form yields a key no repo-relative enumeration entry can ever
+        # equal and would silently self-scope-out: the same near-empty-PASS
+        # silence the out-of-repo refusal above closes (review round 2).
+        # Normalize, then refuse anything still escaping the repo.
+        rel = os.path.normpath(rel).replace(os.sep, "/")
+        if ".." in Path(rel).parts:
+            sys.stderr.write(
+                f"workflow_lint: FILES-MODE-REFUSED (payload path escapes repo: {stripped})\n"
+            )
+            return 2
         payload.append(rel)
+    if not payload:
+        # An all-whitespace `--files` list scopes to nothing, which would certify
+        # a vacuous PASS over an empty payload (review round 2). Two known
+        # siblings of this self-scope-out class stay unrefused, both direct-CLI
+        # misuse the gate cannot reach: a nonexistent/typo relative path (kept
+        # permissive on purpose — a DELETED payload file is legitimate), and a
+        # path naming a file outside the walked enumerations.
+        sys.stderr.write("workflow_lint: FILES-MODE-REFUSED (empty payload)\n")
+        return 2
     closure, closure_errors = _issue_import_closure(payload)
     scope = frozenset(payload) | frozenset(closure)
     errors: list[str] = []
