@@ -31,6 +31,16 @@ Cleaner: parenthesize so `&` binds tight — `cd X && { setsid nohup bash -c
 or use the canonical launcher-script pattern (experimenter.md § During
 Execution step 1), which avoids all of this.
 
+Recurrence (#2203 32b launch, 2026-08-11): a brief PRESCRIBED this exact
+inline shape verbatim ("do not modify"). Execute it as ordered, but EXPECT
+the hang + wrong pid: the local Bash ssh call will be auto-backgrounded at
+its timeout; the remote effects (pidfile write, workload launch) still land.
+Recovery sequence that worked: probe tree in a fresh call → repoint pidfile
+at the setsid leader (tmp+rename) → kill the hung local ssh by exact pid →
+re-probe survival from a fresh connection. Note `kill` on the harness's
+snapshot-bash wrapper pid may leave the actual `ssh` child alive — check and
+kill the ssh child pid separately.
+
 ## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
 
 The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
