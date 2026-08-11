@@ -63,7 +63,7 @@ I made a plot showing, for each layer, and for each tested slot (some combinatio
 efficiency), the effect of patching on this metric. I did this for all 3 settings (matched query,
 matched prefix, fully different).
 
-![Coherent-draw fraction per slot and layer, three settings](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f90099282164b830dde0348ff56ef274304ff74/figures/issue_2094/userchat_heatmaps/coherence_heatmaps.png)
+![Coherent-draw fraction per slot and layer, three settings](https://raw.githubusercontent.com/superkaiba/explore-persona-space/2dda3006527bfb229afb770361fc7d0fb55d4ee1/figures/issue_2094/userchat_heatmaps/coherence_heatmaps.png)
 
 **Where the >60 cut comes from, and whether it matters.** Two thresholds are in play and they are
 different quantities: a **draw** counts as coherent at judge score **>60**, and a **cell** is dropped
@@ -74,7 +74,7 @@ hard bimodal: a draw is fluent (~100) or it is word salad (~0), with almost noth
 the draw cut from 50 to 60 reclassifies **18 of 44,391 draws (0.04%)**, and the whole 40→80 sweep
 moves the coherent fraction only 0.967 → 0.960. No conclusion here depends on where that line sits.
 
-![Coherence judge score distribution and cut sensitivity](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f90099282164b830dde0348ff56ef274304ff74/figures/issue_2094/userchat_heatmaps/coherence_distribution.png)
+![Coherence judge score distribution and cut sensitivity](https://raw.githubusercontent.com/superkaiba/explore-persona-space/2dda3006527bfb229afb770361fc7d0fb55d4ee1/figures/issue_2094/userchat_heatmaps/coherence_distribution.png)
 
 > Left: distribution of the graded coherence score over all 44,391 judged draws, split by slot family
 > and arm (log-scaled counts). Dashed = the >60 draw cut used here, dotted = the >50 alternative.
@@ -94,10 +94,12 @@ moves the coherent fraction only 0.967 → 0.960. No conclusion here depends on 
 
 For the results below, I plot the full matrix, but cells that were never run are greyed out and
 **dropped cells are cross-hatched** — shown, never read as effects. A cell is dropped on one
-criterion: fewer than **80%** of its draws stayed coherent. 10 of the 176 cells qualify, all of them
-span slots under joint edits. (80% rather than 50% because the draw-level scores are bimodal — a cell
-between those two is one where a substantial minority of draws came back as word salad, so its
-surviving mean is taken over a selected subset.) Cap-hit (rollouts that ran into the generation cap and truncated) is
+criterion: fewer than **90%** of its draws stayed coherent. 15 of the 176 cells qualify, and they are
+almost exactly the multi-token span slots under joint edits — every context-end and prefix-end cell
+survives at 100% coherent. (90% rather than 50% because the draw-level scores are bimodal, so a cell
+below it is one where a real minority of draws came back as word salad and its surviving mean is taken
+over a selected subset; the unpatched anchor baseline is ~98% coherent, so 90% is the nearest round
+floor still below the no-intervention rate.) Cap-hit (rollouts that ran into the generation cap and truncated) is
 reported per cell in the prose below rather than used as a read/do-not-read switch — the fu2 2%
 threshold is too tight to be a binary at n=30, where a single truncated rollout is already 3.3%.
 
@@ -114,7 +116,7 @@ I made a plot showing, for each layer, and for each tested slot (some combinatio
 efficiency), the effect of patching on this metric. I did this for all 3 settings (matched query,
 matched prefix, fully different).
 
-![F_act per slot and layer, three settings, full-state patch](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f90099282164b830dde0348ff56ef274304ff74/figures/issue_2094/userchat_heatmaps/f_act_heatmaps.png)
+![F_act per slot and layer, three settings, full-state patch](https://raw.githubusercontent.com/superkaiba/explore-persona-space/2dda3006527bfb229afb770361fc7d0fb55d4ee1/figures/issue_2094/userchat_heatmaps/f_act_heatmaps.png)
 
 **F_act only counts movement ALONG the axis.** A patch that hurls the answer state somewhere
 unrelated scores the same as one that barely moved, so I split the realized shift into its component
@@ -132,7 +134,7 @@ specifically directed, not "any perturbation moves the state". And **prefix-end 
 distinguishable from its own null** on either component (0.213 vs 0.183 on-axis, cos 0.27 vs 0.24):
 its F_act is not weak-but-real transport toward B, it is mostly non-specific displacement.
 
-![On-axis vs off-axis movement of the answer state, per slot, steered vs shuffled-donor null](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f90099282164b830dde0348ff56ef274304ff74/figures/issue_2094/userchat_heatmaps/offaxis_decomposition.png)
+![On-axis vs off-axis movement of the answer state, per slot, steered vs shuffled-donor null](https://raw.githubusercontent.com/superkaiba/explore-persona-space/2dda3006527bfb229afb770361fc7d0fb55d4ee1/figures/issue_2094/userchat_heatmaps/offaxis_decomposition.png)
 
 > Each point is one slot; filled = real patch, open = its shuffled-donor null, joined by a grey line.
 > Distance from the origin is total movement, angle is alignment; below the dashed line = mostly
@@ -217,7 +219,7 @@ the pairs behind the headline cannot tell those apart. These 5 pass the |separat
 because their FLOOR is strongly expressed, not their ceiling; the filter checks the gap, not which
 end supplies it.
 
-![F_beh per slot and layer, three settings, full-state patch, well-separated pairs](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f90099282164b830dde0348ff56ef274304ff74/figures/issue_2094/userchat_heatmaps/f_beh_heatmaps_wellsep.png)
+![F_beh per slot and layer, three settings, full-state patch, well-separated pairs](https://raw.githubusercontent.com/superkaiba/explore-persona-space/2dda3006527bfb229afb770361fc7d0fb55d4ee1/figures/issue_2094/userchat_heatmaps/f_beh_heatmaps_wellsep.png)
 
 **Direct check: the erasure/installation split, measured rather than inferred.** The paragraph above
 reads the split off F values. To measure it, I re-scored the same completions with the same rubrics
@@ -284,12 +286,12 @@ well as on coherence. Cells are picked dose-blind, by the mean steered−null ma
 strengths, over well-separated pairs only; the right panel restricts to single layers, where α = 1 is
 exactly a patch. Both metrics select matched-query context-end.
 
-![Steering-strength response at the best cells: behavior F, answer-vector F, coherence, vs nulls](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f90099282164b830dde0348ff56ef274304ff74/figures/issue_2094/userchat_heatmaps/dose_lineplot.png)
+![Steering-strength response at the best cells: behavior F, answer-vector F, coherence, vs nulls](https://raw.githubusercontent.com/superkaiba/explore-persona-space/2dda3006527bfb229afb770361fc7d0fb55d4ee1/figures/issue_2094/userchat_heatmaps/dose_lineplot.png)
 
 Split by depth — the best single layer, the middle band, and all 28 layers — with all three metrics
 on each panel:
 
-![Dose response at the context vector by depth: behavior F, answer-vector F, coherence, vs nulls](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f90099282164b830dde0348ff56ef274304ff74/figures/issue_2094/userchat_heatmaps/dose_lineplot_by_layer.png)
+![Dose response at the context vector by depth: behavior F, answer-vector F, coherence, vs nulls](https://raw.githubusercontent.com/superkaiba/explore-persona-space/2dda3006527bfb229afb770361fc7d0fb55d4ee1/figures/issue_2094/userchat_heatmaps/dose_lineplot_by_layer.png)
 
 > Solid = real steering, dashed = its norm-matched shuffled-donor null, star = the full-state replace
 > patch. Well-separated matched-query pairs, context-vector slot. The best single layer (L16) is
