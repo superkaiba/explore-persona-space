@@ -896,7 +896,7 @@ def _files_scope_rel(p: Path) -> str:
         return p.as_posix()
 
 
-def _files_scope_filter(paths: "Collection[Path] | Iterator[Path] | list[Path]") -> list[Path]:
+def _files_scope_filter(paths: Collection[Path] | Iterator[Path] | list[Path]) -> list[Path]:
     """Files-mode enumeration filter (#2235 Phase B3): identity (materialized)
     when files-mode is off; else keep only paths inside the payload + closure
     scope. Wrapped around the ENUMERATION expression of path-local checks so
