@@ -105,8 +105,16 @@ SOURCE_BLOCKS = [
     ("RLVR", 9, 10),
 ]
 
-A_YLIM = (-0.75, 0.72)
-PC_YLIM = (-0.40, 0.72)
+# Both baselines are drawn as LINES (user call 2026-08-11). identity+bias sits
+# at -2.14..-3.03 (aggregate) / -0.95..-3.41 (per corpus), an order of magnitude
+# below the results band, so a single axis reaching it squashes 0..0.6 into the
+# top fifth. Each figure therefore uses a BROKEN y-axis: the results band on the
+# main panel, the identity line on a short lower panel, diagonal break marks
+# between. Nothing is clipped or rescaled — both baselines are true-valued lines.
+A_YLIM = (-0.80, 0.72)
+A_YLIM_IDENT = (-3.25, -1.85)
+PC_YLIM = (-0.62, 0.72)
+PC_YLIM_IDENT = (-3.55, -0.80)
 
 # The module computes this at import (`load_cross()` returns a (values, provenance)
 # TUPLE, so call the ready-made dict rather than re-invoking it) and validates that
@@ -213,6 +221,24 @@ def _xticks(ax) -> None:
         ax.axvline(hi - 0.5, color="#bdbdbd", lw=0.8, ls=":", zorder=0)
 
 
+def _break_marks(ax_top, ax_bot, d: float = 0.014) -> None:
+    """Diagonal break marks on a shared-x broken y-axis pair (matplotlib recipe)."""
+    ax_top.spines["bottom"].set_visible(False)
+    ax_bot.spines["top"].set_visible(False)
+    ax_top.tick_params(axis="x", which="both", bottom=False, labelbottom=False)
+    kw = dict(
+        marker=[(-1, -d), (1, d)],
+        markersize=9,
+        linestyle="none",
+        color="#252525",
+        mec="#252525",
+        mew=1.0,
+        clip_on=False,
+    )
+    ax_top.plot([0, 1], [0, 0], transform=ax_top.transAxes, **kw)
+    ax_bot.plot([0, 1], [1, 1], transform=ax_bot.transAxes, **kw)
+
+
 def collect() -> dict:
     """(pair_index, tier) -> [((fmt, corpus), cell)]; plus ceilings and cross."""
     data, ceilings, cross = {}, {}, {}
@@ -245,55 +271,57 @@ def collect() -> dict:
 
 
 def fig_aggregate(D: dict) -> Path:
-    fig, ax = plt.subplots(figsize=(12.4, 5.6))
+    fig, (ax, axb) = plt.subplots(
+        2,
+        1,
+        sharex=True,
+        figsize=(12.4, 6.5),
+        gridspec_kw={"height_ratios": [4.3, 1.0], "hspace": 0.08},
+    )
+    # The project plot style enables an auto layout engine, which silently
+    # overrides hspace / subplots_adjust and pulls the broken-axis panels apart.
+    fig.set_layout_engine("none")
     x = np.arange(len(PAIRS))
 
-    for _, lo, hi in SOURCE_BLOCKS[::2]:
-        ax.axvspan(lo - 0.5, hi - 0.5, color="#f7f7f7", zorder=0)
+    for a in (ax, axb):
+        for _, lo, hi in SOURCE_BLOCKS[::2]:
+            a.axvspan(lo - 0.5, hi - 0.5, color="#f7f7f7", zorder=0)
 
-    # --- fair baselines, drawn BEHIND the tier lines ---
+    # --- fair baselines, both as LINES, drawn BEHIND the tier lines ---
     ax.axhline(0.0, color="#252525", lw=1.0, ls=(0, (6, 3)), zorder=1)
     ax.text(
-        len(PAIRS) - 0.45,
-        0.012,
-        "R² = 0 · predict the training mean",
-        ha="right",
+        -0.42,
+        0.05,
+        "R² = 0 · predict the training mean  (the null line sits just under it)",
+        ha="left",
         va="bottom",
         fontsize=8.5,
         color="#252525",
     )
-    # NaN at the round-B pairs => fill_between leaves a visible gap there
-    nlo = np.array(
-        [BASELINES[pi]["null_lo"] if pi in BASELINES else np.nan for pi in range(len(PAIRS))]
-    )
+    # NaN at the three round-B pairs (no control was run there) breaks each
+    # baseline line into a visible gap rather than bridging an uncontrolled pair.
     nhi = np.array(
         [BASELINES[pi]["null_hi"] if pi in BASELINES else np.nan for pi in range(len(PAIRS))]
     )
-    ax.fill_between(
+    ax.plot(
         x,
-        nlo,
         nhi,
         color=NULL_COLOR,
-        alpha=0.30,
-        lw=0,
-        zorder=1,
-        label="shuffled-pairing null, t0–t8 envelope (capacity control)",
+        lw=2.0,
+        ls=(0, (5, 2)),
+        marker=".",
+        ms=7,
+        zorder=2,
+        label="shuffled-pairing null, worst tier (capacity control; ≤ −0.0003)",
     )
-    ident = [
-        BASELINES[pi]["identity_bias"] if pi in BASELINES else np.nan for pi in range(len(PAIRS))
-    ]
-    for pi, v in enumerate(ident):
-        if not np.isnan(v):
-            ax.plot([pi], [A_YLIM[0]], marker="v", ms=8, color=IDENT_COLOR, zorder=3, clip_on=False)
-    ax.plot(
-        [],
-        [],
-        marker="v",
-        ls="none",
-        ms=8,
-        color=IDENT_COLOR,
-        label="identity+bias baseline ŷ = x + b (median −2.1 to −3.0, off-scale below)",
+    # identity+bias lives on the lower (broken-axis) panel at its TRUE value;
+    # the proxy handle carries it into the main panel's legend.
+    ident = np.array(
+        [BASELINES[pi]["identity_bias"] if pi in BASELINES else np.nan for pi in range(len(PAIRS))]
     )
+    ident_style = dict(color=IDENT_COLOR, lw=2.0, ls=(0, (5, 2)), marker=".", ms=7)
+    axb.plot(x, ident, zorder=2, **ident_style)
+    ax.plot([], [], label="identity+bias baseline  ŷ = x + b  (lower panel)", **ident_style)
 
     for tier in TIERS:
         med = [
@@ -369,8 +397,10 @@ def fig_aggregate(D: dict) -> Path:
         )
 
     ax.set_ylim(*A_YLIM)
+    axb.set_ylim(*A_YLIM_IDENT)
+    axb.set_yticks([-2.0, -3.0])
     ax.set_ylabel("held-out R²  (raw pooled, layer 30)", fontsize=11)
-    ax.set_xlabel("forward stage pair  (source → target)", fontsize=11)
+    axb.set_xlabel("forward stage pair  (source → target)", fontsize=11)
     ax.set_title(
         "Every forward pair of the Tülu-3 ladder: how much of the context→answer map survives\n"
         "median over 7 non-degenerate corpora, every corpus overplotted; open markers = "
@@ -378,10 +408,14 @@ def fig_aggregate(D: dict) -> Path:
         fontsize=11.5,
         loc="left",
     )
-    ax.grid(axis="y", alpha=0.22, lw=0.6)
-    _xticks(ax)
+    for a in (ax, axb):
+        a.grid(axis="y", alpha=0.22, lw=0.6)
+        _xticks(a)
+    _break_marks(ax, axb)
     ax.legend(fontsize=8.5, frameon=False, loc="lower right", ncol=2)
-    fig.tight_layout()
+    # subplots_adjust, not tight_layout: tight_layout recomputes hspace and
+    # would pull the two broken-axis panels apart.
+    fig.subplots_adjust(left=0.075, right=0.995, top=0.892, bottom=0.155)
     out = OUTDIR / "ladder_full_transfer_lattice.png"
     fig.savefig(out, dpi=180)
     fig.savefig(out.with_suffix(".pdf"))
@@ -389,17 +423,20 @@ def fig_aggregate(D: dict) -> Path:
     return out
 
 
-def _panel_null(fmt: str, corpus: str) -> tuple[np.ndarray, np.ndarray]:
-    """Per-corpus shuffled-pairing null envelope across the plotted tiers.
+def _panel_baselines(fmt: str, corpus: str) -> tuple[np.ndarray, np.ndarray]:
+    """This CORPUS's own two baselines, per pair: (null worst tier, identity+bias).
 
-    NaN at the three round-B pairs (no null was run there) so `fill_between`
-    leaves a visible gap instead of bridging an uncontrolled pair.
+    The null value is the max over the plotted tiers of the 20-draw mean — the
+    tightest bound on what the reparameterization machinery can manufacture
+    from permuted targets. NaN at the three round-B pairs (no control was run
+    there) so each baseline LINE breaks into a visible gap instead of bridging
+    an uncontrolled pair.
     """
     import glob
     import re
 
     pat = re.compile(r"pair_(.+?)__(.+?)_(chat|naturalistic)_(.+)\.json")
-    found: dict[str, np.ndarray] = {}
+    found: dict[str, tuple[float, float]] = {}
     for fp in sorted(set(glob.glob(xmap.PAIRFILE_GLOB, recursive=True))):
         m = pat.match(Path(fp).name)
         if not m:
@@ -410,34 +447,72 @@ def _panel_null(fmt: str, corpus: str) -> tuple[np.ndarray, np.ndarray]:
         layer = json.load(open(fp)).get("per_layer", {}).get("30")
         if layer:
             mat = np.asarray(layer["nulls"]["r2_matrix"], dtype=float)
-            found[f"{src}__{tgt}"] = mat[:, [NULL_COL[t] for t in TIERS]].mean(axis=0)
-    lo, hi = [], []
+            found[f"{src}__{tgt}"] = (
+                float(mat[:, [NULL_COL[t] for t in TIERS]].mean(axis=0).max()),
+                float(layer["baselines"]["within"]["identity_bias_r2"]),
+            )
+    nullv, identv = [], []
     for src, tgt in PAIRS:
         v = found.get(f"{src}__{tgt}")
-        lo.append(np.nan if v is None else float(v.min()))
-        hi.append(np.nan if v is None else float(v.max()))
-    return np.array(lo), np.array(hi)
+        nullv.append(np.nan if v is None else v[0])
+        identv.append(np.nan if v is None else v[1])
+    return np.array(nullv), np.array(identv)
 
 
 def fig_percorpus(D: dict) -> Path:
-    fig, axes = plt.subplots(2, 4, figsize=(16.0, 7.2), sharex=True, sharey=True)
-    for k, (fmt, corpus) in enumerate(SURFACES):
-        ax = axes[k // 4, k % 4]
-        deg = (fmt, corpus) in DEGENERATE
-        # fair baselines, per panel, behind the tier lines. The null is this
-        # CORPUS's own 20-draw shuffled-pairing envelope, not the aggregate's.
-        ax.axhline(0.0, color="#252525", lw=0.9, ls=(0, (6, 3)), zorder=1)
-        plo, phi = _panel_null(fmt, corpus)
-        ax.fill_between(
-            np.arange(len(PAIRS)),
-            plo,
-            phi,
-            color=NULL_COLOR,
-            alpha=0.30,
-            lw=0,
-            zorder=1,
-            label="shuffled-pairing null, t0–t8 envelope",
+    # Each corpus gets a BROKEN y-axis: results band on the main panel, the
+    # identity+bias line on a short lower panel (spacer row 2 separates the
+    # two blocks so a break row never crowds the next block's titles).
+    fig = plt.figure(figsize=(16.0, 10.4))
+    fig.set_layout_engine("none")  # see fig_aggregate: the style's engine wins otherwise
+    # Geometry goes ON the GridSpec: fig.subplots_adjust does not reach a
+    # manually created gridspec, so the panels would keep their default box.
+    gs = fig.add_gridspec(
+        5,
+        4,
+        height_ratios=[3.5, 0.9, 0.42, 3.5, 0.9],
+        hspace=0.11,
+        wspace=0.13,
+        left=0.045,
+        right=0.995,
+        top=0.895,
+        bottom=0.115,
+    )
+    mains: list = []
+    breaks: list = []
+    for k in range(len(SURFACES)):
+        r_main, c = (0, k) if k < 4 else (3, k - 4)
+        m = fig.add_subplot(
+            gs[r_main, c],
+            sharex=mains[0] if mains else None,
+            sharey=mains[0] if mains else None,
         )
+        b = fig.add_subplot(gs[r_main + 1, c], sharex=m, sharey=breaks[0] if breaks else None)
+        mains.append(m)
+        breaks.append(b)
+
+    ident_style = dict(color=IDENT_COLOR, lw=1.7, ls=(0, (5, 2)), marker=".", ms=5)
+    for k, (fmt, corpus) in enumerate(SURFACES):
+        ax, axb = mains[k], breaks[k]
+        deg = (fmt, corpus) in DEGENERATE
+        # fair baselines, per panel, behind the tier lines — this CORPUS's own
+        # values, not the aggregate's. Both are LINES; NaN at the round-B pairs.
+        ax.axhline(0.0, color="#252525", lw=0.9, ls=(0, (6, 3)), zorder=1)
+        pnull, pident = _panel_baselines(fmt, corpus)
+        ax.plot(
+            np.arange(len(PAIRS)),
+            pnull,
+            color=NULL_COLOR,
+            lw=1.7,
+            ls=(0, (5, 2)),
+            marker=".",
+            ms=5,
+            zorder=2,
+            label="shuffled-pairing null, worst tier",
+        )
+        axb.plot(np.arange(len(PAIRS)), pident, zorder=2, **ident_style)
+        if k == 0:  # proxy so the figure legend carries the lower-panel line
+            ax.plot([], [], label="identity+bias baseline  ŷ = x + b  (lower panel)", **ident_style)
         for tier in TIERS:
             xa, ys, lo, hi = [], [], [], []
             for pi, (src, tgt) in enumerate(PAIRS):
@@ -507,24 +582,33 @@ def fig_percorpus(D: dict) -> Path:
 
         title = f"{corpus} ({fmt})" + ("  — DEGENERATE n_train<d" if deg else "")
         ax.set_title(title, fontsize=9.5, loc="left", color="#8c2d04" if deg else "black")
-        if deg:
-            ax.set_facecolor("#fdf2e9")
-        ax.grid(axis="y", alpha=0.22, lw=0.6)
-        _xticks(ax)
-        ax.tick_params(axis="x", labelrotation=90, labelsize=7)
+        for a in (ax, axb):
+            if deg:
+                a.set_facecolor("#fdf2e9")
+            a.grid(axis="y", alpha=0.22, lw=0.6)
+            _xticks(a)
+        axb.tick_params(axis="x", labelrotation=90, labelsize=7)
+        _break_marks(ax, axb)
+        if k < 4:  # top block: the bottom block carries the shared x labels
+            axb.tick_params(axis="x", labelbottom=False)
 
-    axes[0, 0].set_ylim(*PC_YLIM)  # sharey => applies to all 8 panels
-    for r in (0, 1):
-        axes[r, 0].set_ylabel("held-out R²", fontsize=10)
-    h, lab = axes[0, 0].get_legend_handles_labels()
-    fig.legend(h, lab, loc="lower center", ncol=4, fontsize=9, frameon=False)
+    mains[0].set_ylim(*PC_YLIM)  # sharey => applies to all 8 main panels
+    breaks[0].set_ylim(*PC_YLIM_IDENT)
+    breaks[0].set_yticks([-1.0, -2.0, -3.0])
+    for k in (0, 4):
+        mains[k].set_ylabel("held-out R²", fontsize=10)
+    h, lab = mains[0].get_legend_handles_labels()
+    fig.legend(
+        h, lab, loc="upper center", bbox_to_anchor=(0.5, 0.972), ncol=4, fontsize=8.5, frameon=False
+    )
     fig.suptitle(
         "Per eval dataset: every forward stage pair, at each reparameterization tier",
         fontsize=12,
         x=0.01,
+        y=0.995,
         ha="left",
+        va="top",
     )
-    fig.tight_layout(rect=(0, 0.06, 1, 0.97))
     out = OUTDIR / "ladder_full_transfer_lattice_by_dataset.png"
     fig.savefig(out, dpi=180)
     fig.savefig(out.with_suffix(".pdf"))
@@ -609,15 +693,17 @@ def write_meta(D: dict, figs: list[Path]) -> Path:
                 "the CAPACITY control: per draw the target rows y_t are row-permuted and every "
                 "y_t-consuming tier correction is REFIT (issue1336_metric_ladder.py:34-38, "
                 "756-763), so it bounds how much R2 the reparameterization machinery can "
-                "manufacture from destroyed correspondence. 20 draws per fit; the plotted band "
-                "is the min..max across the 4 plotted tiers of the per-corpus draw-mean, "
-                "median across the 7 non-degenerate corpora."
+                "manufacture from destroyed correspondence. 20 draws per fit; the plotted LINE "
+                "is the WORST (max) of the 4 plotted tiers' draw-means — the tightest bound — "
+                "median across the 7 non-degenerate corpora on the aggregate figure and the "
+                "corpus's own value per panel. The per-tier draw-means are in null_per_tier "
+                "below: the strict tiers (t0, t6) sit at -0.32..-0.75 and only t7/t8 approach 0."
             ),
             "identity_bias": (
                 "y_hat = x + b with b the train-fold mean of y - x (analysis/mapping_baselines); "
                 "the project's standing mapping baseline, applicable because dims match at "
-                "4096->4096. Deeply negative on every pair, so it is drawn as an off-scale floor "
-                "caret rather than a line."
+                "4096->4096. Drawn as a LINE at its true value (-2.14..-3.03 aggregate, worst "
+                "per-corpus cell -3.41), which is why the y-axis extends to -3.2 / -3.6."
             ),
             "zero_line": "R2 = 0 is the predict-the-training-mean baseline.",
             "round_b_gap": (
