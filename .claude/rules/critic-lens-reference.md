@@ -1040,6 +1040,22 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     (#1768: span-mean inherited from reused capture code vs the #779 last-token comparison
     line; ~15–18 GPU-h re-pool round, user catch). Not a REVISE when the plan fits no map,
     or the mismatch is stated + justified.
+    **Both-arms clause (wider trigger; #2090).** The same registration also names BOTH
+    mapping arms — prefix-based AND context-based — as paired arms of the same design,
+    both reported (canonical definitions: the prefix is everything before the user query;
+    the context is the prefix plus the user query); OR names the omission as an explicit
+    stated deviation in the plan, carried into the clean-result as a scope caveat. This
+    clause's trigger is WIDER than the fitted-map clause above: it binds on ANY
+    representation mapping — a geometry read, predictor, probe, or direction extraction
+    over model activations — not only fitted v_X→v_Y maps, so it applies even where
+    identity+bias / kNN / pooling are all N/A. REVISE a mapping plan that silently runs
+    one arm — #958 (2026-07-04) and #779's 2026-07-14 inline pre-image round
+    (context-only) both shipped one-arm and were caught by the user, not the pipeline.
+    Not a REVISE when: the plan computes no representation mapping ("N/A — no
+    representation mapping computed"), or the one-arm scope is stated + justified (e.g.
+    a substrate whose prefix is a constant chat template, making the prefix arm a
+    degenerate constant-input read). Full rule pointer: CLAUDE.md § "Prefix mapping AND
+    context mapping".
 16. **Unit of analysis / measurement grain (verify §6 Measurement validity names
     the DV's grain + aggregation).** For EACH dependent variable, read §6's
     Measurement-validity table for the DV's Unit of analysis column — the GRAIN

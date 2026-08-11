@@ -13201,7 +13201,13 @@ _LESSONS_ROW_RE = re.compile(
 # grows — but the trade is ~1.1 KB of index for ~52 KB of body, a large
 # net token WIN. Do NOT read this raise as license for row bloat: the
 # per-row cap and the non-row cap are unchanged and still bind.
-_LESSONS_MAX_BYTES = 9600
+# 9600->9722 (#2088): the index sat exactly saturated at 9599/9600, so the
+# gotchas-row fires-when extension for the local-committed-artifact
+# empty-selection gotcha (+83 B; measured post-edit file 9682 B) could not
+# land under the old cap. The raise buys EXACTLY that row extension plus
+# <=40 B headroom (9682 + 40 = 9722) — not general slack (the #992
+# argued-raise form; the per-row and non-row caps still bind).
+_LESSONS_MAX_BYTES = 9722
 # Early-warning band (#992): a stderr-only advisory WARN once the index
 # crosses this, so a near-cap landing is visible a few rows before the
 # _LESSONS_MAX_BYTES FAIL (early warning only — advisory, never a FAIL).
@@ -13252,7 +13258,9 @@ _LESSONS_ROW_GRANDFATHER_MAX_BYTES: dict[str, int] = {
     # (row 994 B -> 1040 B). Cap = measured + <=40.
     # #1911 added the count-keyed liveness-gate double-print trigger
     # (row 1048 B -> 1135 B). Cap = measured + <=40.
-    "gotchas": 1175,
+    # #2088 added the local-committed-artifact empty-selection trigger
+    # (row 1175 B -> 1258 B). Cap = measured + <=40.
+    "gotchas": 1298,
 }
 _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 
