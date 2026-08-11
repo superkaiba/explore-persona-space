@@ -199,6 +199,13 @@ all current items). The items I own:
     unit is unstated, or the stated grain does not match the Goal's construct
     (the #1900→#1979 shape: a per-prefix leakage question scored per (prefix,
     query) row).
+17. Rate-denominator provenance — every measured rate (coverage / yield /
+    admission / survival / throughput) used in a sizing or coverage projection
+    states its measured numerator + denominator (artifact-grounded) AND the
+    projection's application denominator; a denominator mismatch (X/Y applied
+    as X/Z) or a single collapsed rate over a multi-stage filtered pipeline
+    (no per-stage chain, each stage rate with its own measured basis) is a
+    REVISE — an arithmetic recompute does not discharge this item (#2054).
 
 Also inherited from the Alternative Explanations lens (I hold its statistics
 piece): the **inherited-positive DV-swap** cross-reference (Alt lens item 4) — a
