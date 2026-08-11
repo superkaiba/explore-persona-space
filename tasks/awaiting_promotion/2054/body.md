@@ -5,6 +5,7 @@ kind: experiment
 tags:
 - trigger-dense
 - followup-manual
+- followup-auto
 created_at: '2026-08-03T22:07:42Z'
 has_clean_result: true
 parent_id: 1345
