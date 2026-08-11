@@ -2,7 +2,8 @@
 title: 'Context-position preventative steering: context-extracted directions steered
   at context tokens during finetuning vs the Persona Vectors method'
 kind: experiment
-tags: []
+tags:
+- trigger-dense
 created_at: '2026-08-10T21:34:40Z'
 has_clean_result: false
 parent_id: 2221
