@@ -15,7 +15,7 @@ steered arm, non-degenerate rows; each cell annotated n + the donor-null
 cosine for the same cell).
 
 Every cell is annotated n_coherent/n_total (rows = pairs; one greedy draw per
-pair) and cells with coherent fraction < 50% are marked with '*' (visible,
+pair) and cells with coherent fraction < 80% are marked (visible,
 never suppressed). All F means are over coherent, non-degenerate rows only
 (the project coherent-only reporting rule).
 
@@ -167,21 +167,27 @@ def aggregate(
 
 
 # A cell is DROPPED — struck through with an X, never read as an effect — when its
-# draws mostly fell apart, its rollouts mostly truncated, or too few pairs survive.
-COH_FLOOR = 0.5
-CAPHIT_CEIL = 0.02  # the fu2 "compromised family" convention
-MIN_PAIRS = 5
+# draws mostly fell apart. Coherence is the SOLE criterion.
+#
+# Two former criteria were removed. (a) `>2% cap-hit` (the fu2 "compromised family"
+# convention) hatched 12 cells, three of them on a SINGLE truncated rollout out of 30
+# — a 2% ceiling is far too tight to be a read/do-not-read switch at n=30, where one
+# truncation is already 3.3%. Cap-hit rates stay in cells_summary.json and are quoted
+# in the writeup prose per cell, which is the right granularity for a caveat.
+# (b) `<5 pairs` never fired on this grid (0 of 176 cells) — dead text in the title.
+#
+# The floor is 80%, not 50%: the coherence distribution is bimodal (see
+# draw_coherence_distribution), so a cell sitting between 50% and 80% coherent is one
+# where a substantial minority of draws came back as word salad — its surviving mean
+# is taken over a selected subset and should not be read as an effect.
+COH_FLOOR = 0.8
 
 
 def dropped_reason(v: dict) -> str | None:
     """-> short reason a cell must not be read, or None if it is readable."""
-    coh, cap, n = v["coh_frac"], v.get("caphit_frac", np.nan), v["n_coh"]
+    coh = v["coh_frac"]
     if coh == coh and coh < COH_FLOOR:
         return "incoherent"
-    if cap == cap and cap > CAPHIT_CEIL:
-        return "truncated"
-    if n < MIN_PAIRS:
-        return "n<5"
     return None
 
 
@@ -237,8 +243,7 @@ def draw(agg: dict, field: str, title: str, cmap, norm, out: Path, baseline_note
     fig.colorbar(im, ax=axes, shrink=0.7, label=field)
     note = (
         "grey = arm not run; cell text = n_coherent/n_total pairs; "
-        "X = DROPPED, do not read (<50% coherent draws, >2% cap-hit/truncated rollouts, "
-        "or <5 pairs)"
+        "X = DROPPED, do not read (<80% coherent draws)"
     )
     fig.suptitle(f"{title}\n{note}{('; ' + baseline_note) if baseline_note else ''}", fontsize=11)
     fig.savefig(out, dpi=200, bbox_inches="tight")
@@ -346,6 +351,218 @@ def draw_transport(eval_root: Path, out: Path) -> int:
     return n_cells
 
 
+OFFAXIS_SLOTS = ("ce", "pe", "cm2", "cm3", "l3j", "qspan", "qtext", "pspan_text")
+
+
+def _offaxis_rows(eval_root: Path, steered: bool) -> list[dict]:
+    rels = (
+        ("f_metrics/f_cells.jsonl", "f_metrics/fu2/fu2_cells.jsonl")
+        if steered
+        else ("f_metrics/null_cells.jsonl", "f_metrics/fu2/fu2_null_cells.jsonl")
+    )
+    out: list[dict] = []
+    for rel in rels:
+        fp = eval_root / rel
+        if fp.exists():
+            with fp.open() as fh:
+                out.extend(json.loads(x) for x in fh if x.strip())
+    return out
+
+
+def _decompose(rows: list[dict], slot: str, lv: str, dose: str, setting: str) -> tuple | None:
+    """-> (n, on_axis, off_axis, cos) for one cell, or None.
+
+    F_act projects the realized shift onto the floor->ceiling axis, so it is blind to
+    movement PERPENDICULAR to that axis: a patch that hurls the answer state somewhere
+    unrelated scores the same as one that barely moved. The banked full-mean fields make
+    the split exact and free -- traversal_ratio and f_act_shared_recordonly are computed
+    against the SAME full floor mean, so with traversal = ||s||/||t|| and
+    on = <s,t>/||t||^2:
+
+        off = sqrt(traversal^2 - on^2)      (the orthogonal residual, same units)
+        cos = on / traversal                (fraction of the movement pointing at B)
+
+    Use f_act_shared_recordonly, NOT f_act: the reported f_act uses disjoint floor halves
+    (a different t), which would break the Pythagorean identity. The shared-floor read is
+    mildly noise-inflated (~+0.08, #1415), so `on` is if anything generous and `off`
+    conservative -- the safe direction for an off-axis claim.
+    """
+    sel = [
+        r
+        for r in rows
+        if r["slot"] == slot
+        and r["layer_variant"] == lv
+        and r["setting"] == setting
+        and r["dose"] == dose
+        and r.get("coherent")
+        and r.get("traversal_ratio") is not None
+        and r.get("f_act_shared_recordonly") is not None
+    ]
+    if not sel:
+        return None
+    tr = np.array([float(r["traversal_ratio"]) for r in sel])
+    on = np.array([float(r["f_act_shared_recordonly"]) for r in sel])
+    off = np.sqrt(np.clip(tr**2 - on**2, 0.0, None))
+    cos = np.where(tr > 0, on / tr, np.nan)
+    return len(sel), float(np.nanmean(on)), float(np.nanmean(off)), float(np.nanmean(cos))
+
+
+def draw_offaxis(eval_root: Path, out: Path, dose: str, setting: str = "matched_query") -> dict:
+    """On-axis vs off-axis movement of the answer state, steered vs shuffled-donor null."""
+    steered_rows, null_rows = _offaxis_rows(eval_root, True), _offaxis_rows(eval_root, False)
+    stats: dict = {}
+    fig, axes = plt.subplots(1, 2, figsize=(12.6, 4.9))
+    for ax, lv in zip(axes, ("joint_all", "joint_mid")):
+        lim = 0.05
+        for slot in OFFAXIS_SLOTS:
+            a = _decompose(steered_rows, slot, lv, dose, setting)
+            b = _decompose(null_rows, slot, lv, dose, setting)
+            if not a:
+                continue
+            stats[f"{setting}|{slot}|{lv}"] = {
+                "steered": {"n": a[0], "on_axis": a[1], "off_axis": a[2], "cos": a[3]},
+                "null": ({"n": b[0], "on_axis": b[1], "off_axis": b[2], "cos": b[3]} if b else None),
+            }
+            if b:
+                ax.plot([a[1], b[1]], [a[2], b[2]], color="0.75", lw=0.8, zorder=1)
+                ax.scatter(
+                    [b[1]], [b[2]], s=52, facecolors="none", edgecolors="0.45", lw=1.3, zorder=2
+                )
+                lim = max(lim, b[1], b[2])
+            ax.scatter([a[1]], [a[2]], s=58, color="#1b6ca8", zorder=3)
+            ax.annotate(
+                SLOT_LABELS[slot].replace("\n", " "),
+                (a[1], a[2]),
+                textcoords="offset points",
+                xytext=(6, 4),
+                fontsize=7.5,
+            )
+            lim = max(lim, a[1], a[2])
+        lim *= 1.15
+        ax.plot([0, lim], [0, lim], color="0.6", ls="--", lw=1.0, zorder=0)
+        ax.annotate("equal on/off\n(cos = 0.71)", (lim * 0.68, lim * 0.80), fontsize=7, color="0.45")
+        ax.set_xlim(0, lim)
+        ax.set_ylim(0, lim)
+        ax.set_xlabel("ON-axis movement toward context B  (= F_act)")
+        ax.set_ylabel("OFF-axis movement (orthogonal residual)")
+        ax.set_title(
+            f"{'all 28 layers' if lv == 'joint_all' else 'layers 14-20'}"
+            "\nfilled = real patch, open = shuffled-donor null"
+        )
+        ax.grid(alpha=0.25, lw=0.5)
+    fig.suptitle(
+        "Does the patch move the answer state TOWARD context B, or just move it?\n"
+        "both axes in units of the floor->ceiling axis length; below the dashed line = "
+        "mostly on-target, above it = mostly off-target",
+        fontsize=10.5,
+    )
+    fig.tight_layout()
+    fig.savefig(out, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    return stats
+
+
+COH_SOURCES = (
+    ("single-position slots, real patch", "f_metrics/f_cells.jsonl", "#1b6ca8"),
+    ("single-position slots, null", "f_metrics/null_cells.jsonl", "#9fc4dd"),
+    ("multi-token span slots, real patch", "f_metrics/fu2/fu2_cells.jsonl", "#c1440e"),
+    ("multi-token span slots, null", "f_metrics/fu2/fu2_null_cells.jsonl", "#e8a882"),
+)
+
+
+def draw_coherence_distribution(eval_root: Path, out: Path) -> dict:
+    """Distribution of the graded coherence judge, and the cut's sensitivity.
+
+    Motivates the coherent/incoherent cut, which is otherwise an unexplained
+    constant: the scores are hard bimodal (a draw is fluent or it is word salad),
+    so every cut in [40, 80] partitions almost the same draws. Also shows WHERE
+    the incoherence lives -- overwriting a multi-token span degrades the output
+    about half the time, while single-position edits essentially never do.
+    """
+    groups: dict[str, np.ndarray] = {}
+    for label, rel, _c in COH_SOURCES:
+        fp = eval_root / rel
+        if not fp.exists():
+            continue
+        with fp.open() as fh:
+            vals = [
+                float(r["coherence_score"])
+                for r in (json.loads(x) for x in fh if x.strip())
+                if r.get("coherence_score") is not None
+            ]
+        if vals:
+            groups[label] = np.array(vals)
+    if not groups:
+        return {}
+    pooled = np.concatenate(list(groups.values()))
+
+    fig, axes = plt.subplots(1, 2, figsize=(12.4, 4.3))
+    bins = np.linspace(0, 100, 26)
+    for label, _rel, color in COH_SOURCES:
+        if label not in groups:
+            continue
+        axes[0].hist(
+            groups[label],
+            bins=bins,
+            histtype="step",
+            lw=1.9,
+            color=color,
+            label=f"{label} (n={len(groups[label]):,})",
+        )
+    for t, style in ((50.0, ":"), (80.0, "--")):
+        axes[0].axvline(t, color="0.25", ls=style, lw=1.2)
+    axes[0].set_yscale("log")
+    axes[0].set_xlabel("coherence judge score (0-100, form-only rubric)")
+    axes[0].set_ylabel("draws (log scale)")
+    axes[0].set_title(
+        "A. The coherence judge is bimodal: draws are fluent or\n"
+        "they are word salad, with almost nothing in between"
+    )
+
+    ts = np.arange(30, 91, 2.0)
+    for label, _rel, color in COH_SOURCES:
+        if label not in groups:
+            continue
+        v = groups[label]
+        axes[1].plot(ts, [(v > t).mean() for t in ts], color=color, lw=1.9, label=label)
+    axes[1].plot(
+        ts,
+        [(pooled > t).mean() for t in ts],
+        color="k",
+        lw=1.4,
+        ls="--",
+        label=f"pooled (n={len(pooled):,})",
+    )
+    for t, style in ((50.0, ":"), (80.0, "--")):
+        axes[1].axvline(t, color="0.25", ls=style, lw=1.2)
+    n_band = int(((pooled > 50) & (pooled <= 60)).sum())
+    axes[1].set_xlabel("coherence cut (dotted 50, dashed 80)")
+    axes[1].set_ylabel("fraction counted as coherent")
+    axes[1].set_ylim(0, 1.02)
+    axes[1].set_title(
+        "B. The cut is not load-bearing: the whole 40-80 sweep moves\n"
+        f"the pooled coherent fraction only {(pooled > 40).mean():.3f} -> {(pooled > 80).mean():.3f}"
+    )
+    for ax in axes:
+        ax.legend(fontsize=7.5)
+        ax.grid(alpha=0.25, lw=0.5)
+    fig.tight_layout()
+    fig.savefig(out, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    return {
+        "n_draws": int(len(pooled)),
+        "pooled_median": float(np.median(pooled)),
+        "n_in_50_60_band": n_band,
+        "frac_coherent_by_cut": {
+            str(int(t)): float((pooled > t).mean()) for t in (40, 50, 60, 70, 80)
+        },
+        "per_group": {
+            k: {"n": int(len(v)), "median": float(np.median(v)), "frac_gt_80": float((v > 80).mean())}
+            for k, v in groups.items()
+        },
+    }
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--eval-root", type=Path, required=True)
@@ -418,6 +635,12 @@ def main() -> None:
     )
 
     n_transport = draw_transport(args.eval_root, args.out_dir / "transport_heatmaps.png")
+    coh_stats = draw_coherence_distribution(
+        args.eval_root, args.out_dir / "coherence_distribution.png"
+    )
+    offaxis_stats = draw_offaxis(
+        args.eval_root, args.out_dir / "offaxis_decomposition.png", args.dose
+    )
 
     summary = {
         f"{s}|{slot}|{lv}": v for (s, slot, lv), v in sorted(agg.items(), key=lambda kv: str(kv[0]))
@@ -434,12 +657,14 @@ def main() -> None:
                 "cells": summary,
                 "min_abs_separation": args.min_sep,
                 "cells_wellsep": summary_ws,
+                "coherence_distribution": coh_stats,
+                "offaxis_decomposition": offaxis_stats,
             },
             indent=1,
         )
     )
     print(
-        f"wrote 3 figures + cells_summary.json to {args.out_dir} ({len(summary)} cells; "
+        f"wrote 5 figures + cells_summary.json to {args.out_dir} ({len(summary)} cells; "
         f"transport heatmap cells: {n_transport})"
     )
 
