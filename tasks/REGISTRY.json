@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2228,
+  "highest_id": 2230,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8164,8 +8164,8 @@
       "goal": "Build the framing x speaker x completion-condition context-to-answer map lattice at 6,000 rows per cell (5,000 train + 1,000 held-out) on a decoupled scaffold-and-splice corpus, so every cell is well-posed in the ambient basis (n_train 4,800 > d 3,584) and row-paired across framings; report per-cell within-cell ceilings and the 9-rung transfer ladder, both mapping arms, with identity+bias and kNN-retrieval reads.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/2054",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/2054",
+      "status": "awaiting_promotion",
       "title": "The answer-boundary form, not the narrative prose, carries the framing cost of context\u2192answer maps (MODERATE confidence)"
     },
     "2055": {
@@ -8482,23 +8482,23 @@
     "2096": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2096",
-      "status": "proposed",
+      "path": "tasks/completed/2096",
+      "status": "completed",
       "title": "workflow-fix: cover relocated HF_HUB_CACHE in guard HF-cache tiers"
     },
     "2097": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2097",
-      "status": "proposed",
+      "path": "tasks/running/2097",
+      "status": "running",
       "title": "workflow-fix: mechanize local-disk headroom for staging + VM fits"
     },
     "2098": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2098",
-      "status": "proposed",
-      "title": "workflow-fix: clarify --map-files takes one list-file path"
+      "path": "tasks/running/2098",
+      "status": "running",
+      "title": "#2098 workflow-fix: clarify --map-files takes one list-file path \u00b7 running (implementing)"
     },
     "2099": {
       "has_clean_result": false,
@@ -9480,8 +9480,8 @@
     "2227": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2227",
-      "status": "running",
+      "path": "tasks/completed/2227",
+      "status": "completed",
       "title": "verify_plan c53: extend harm-class trigger vocabulary to evil-trait/toxic-corpus judge-banding phrasing (#2221 silent pass)"
     },
     "2228": {
@@ -9491,12 +9491,26 @@
       "status": "proposed",
       "title": "Extend verify_plan.py with a decision-margin satisfiability probe (margin-vs-baseline ceiling)"
     },
+    "2229": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/2229",
+      "status": "completed",
+      "title": "Statistics lens item 17: rate-denominator provenance audit for projection rates (shipped)"
+    },
     "223": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/223",
       "status": "archived",
       "title": "Characterize persona drift"
+    },
+    "2230": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/2230",
+      "status": "completed",
+      "title": "gotchas.md: extend the #779 shallow-clone git-log class to in-driver ancestry GATES (shallow-aware gate recipe)"
     },
     "224": {
       "has_clean_result": true,
