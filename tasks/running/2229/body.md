@@ -1,6 +1,6 @@
 ---
-title: 'Statistics lens: audit projection rates against their measured denominators
-  (#2054 admitted/prejudge applied per-attempt-from-pending, 3.7x optimistic)'
+title: 'Statistics lens item 17: rate-denominator provenance audit for projection
+  rates (shipped)'
 kind: infra
 tags:
 - wfx-rate-denominator-audit
