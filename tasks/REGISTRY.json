@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2232,
+  "highest_id": 2233,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9525,6 +9525,13 @@
       "path": "tasks/running/2232",
       "status": "running",
       "title": "verify_task_body: verify artifact-content claims (per-unit values recorded in <pinned JSON>) against the pinned artifact's actual structure"
+    },
+    "2233": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2233",
+      "status": "proposed",
+      "title": "Narrow over-broad scripts/issue*.py rule globs (3 rules, ~23K tokens on every issue script)"
     },
     "224": {
       "has_clean_result": true,
