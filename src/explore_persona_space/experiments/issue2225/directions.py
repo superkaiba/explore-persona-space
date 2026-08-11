@@ -408,8 +408,44 @@ def build_directions_for_trait(
     e2 = _diff_of_means(e2_acts, keys, kept)
     e3 = _diff_of_means(e3_acts, keys, kept)
 
+    # A6 sensitivity inputs (plan §4.7 / §12 A6): the UNFILTERED prompt-sign-pool
+    # variants are computed in the SAME capture pass and persisted, so the P5
+    # analysis can report cosine(filtered, unfiltered) without re-capturing.
+    all_keys = list(keys)
+    e2_unfiltered = _diff_of_means(e2_acts, keys, all_keys)
+    e3_unfiltered = _diff_of_means(e3_acts, keys, all_keys)
+
+    def _per_layer_cosine(a, b) -> list[float]:
+        num = (a * b).sum(dim=1)
+        den = a.norm(dim=1) * b.norm(dim=1)
+        return [float(x) for x in (num / den.clamp_min(1e-12))]
+
+    a6 = {
+        "note": (
+            "cosine between the context-level-judge-FILTERED direction and the "
+            "UNFILTERED prompt-sign-pool direction (plan §12 A6 sensitivity); "
+            "identical (1.0) by construction when the yield ladder fell back to "
+            "prompt-sign pools"
+        ),
+        "cosine_filtered_vs_unfiltered": {
+            "E2": _per_layer_cosine(e2, e2_unfiltered),
+            "E3": _per_layer_cosine(e3, e3_unfiltered),
+        },
+        "cosine_at_l1": {
+            "E2": _per_layer_cosine(e2, e2_unfiltered)[L1_LAYER_IDX[trait]],
+            "E3": _per_layer_cosine(e3, e3_unfiltered)[L1_LAYER_IDX[trait]],
+        },
+        "filter_was_noop": ladder == "fallback_prompt_sign",
+    }
+
     out_dir.mkdir(parents=True, exist_ok=True)
-    tensors = {"E1": e1, "E2": e2, "E3": e3}
+    tensors = {
+        "E1": e1,
+        "E2": e2,
+        "E3": e3,
+        "E2_unfiltered": e2_unfiltered,
+        "E3_unfiltered": e3_unfiltered,
+    }
     norms: dict[str, list[float]] = {}
     for variant, tensor in tensors.items():
         assert tensor.shape == (lib.N_LAYERS, lib.HIDDEN_DIM), (variant, tensor.shape)
@@ -438,6 +474,7 @@ def build_directions_for_trait(
         "l1_layer_idx": L1_LAYER_IDX[trait],
         "l1_layer_1indexed": L1_LAYER_IDX[trait] + 1,
         "norms_per_variant_per_layer": norms,
+        "a6_sensitivity": a6,
         "e1_provenance": f"hf://{DATA_REPO}/{V2_PREFIX}/rb_v2/{trait}.pt (reused #778 round-3)",
         "wall_s": round(time.time() - t0, 1),
         "reproducibility": lib.repro_metadata(),
