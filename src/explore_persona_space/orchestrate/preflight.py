@@ -315,6 +315,11 @@ def check_git_status(report: PreflightReport, project_root: Path):
     from ``origin/main`` demoted to an informational WARNING; detached HEAD
     (pinned-SHA checkout) only warns.
 
+    The ``git fetch`` is SCOPED to the refs this check actually compares —
+    ``origin <branch> main`` on a feature branch, ``origin main`` on ``main``
+    / detached HEAD (#2107) — because a full-remote fetch at the repo's
+    ~1,700 remote heads cannot finish inside any sane preflight timeout.
+
     Cluster branch: the ``git fetch origin`` round trip is SKIPPED because
     the cluster compute node has no remote git auth — code reaches the
     cluster via rsync, not git pull. The local ``git status --porcelain``
@@ -352,17 +357,40 @@ def check_git_status(report: PreflightReport, project_root: Path):
     # The fetch rc is CAPTURED: the behind-own guarantee below is only as
     # fresh as this fetch, so a failed fetch on a feature branch is an ERROR,
     # never a silent stale-ref false PASS.
-    fetch_rc, _, fetch_err = _run(
-        ["git", "-C", str(project_root), "fetch", "--quiet", "origin"], timeout=15
-    )
-    fetch_failed = fetch_rc != 0
-
+    #
+    # Resolve the branch FIRST — the fetch refspec depends on it (#2107),
+    # and a failed resolution skips the behind checks entirely.
     rc, branch, err = _run(["git", "-C", str(project_root), "rev-parse", "--abbrev-ref", "HEAD"])
     if rc != 0:
         report.add_warning(f"could not determine current branch: {err}")
         report.git_status += ", branch unknown"
         return
     branch = branch.strip()
+
+    # Scoped fetch (#2107): fetch ONLY the refs this function compares —
+    # origin/main always, plus the branch's own ref on a feature branch.
+    # A full `git fetch origin` at 1,700+ remote heads takes ~190 s and
+    # can never finish inside any sane preflight timeout.
+    fetch_refs = ["main"] if branch in ("main", "HEAD") else [branch, "main"]
+    fetch_rc, _, fetch_err = _run(
+        ["git", "-C", str(project_root), "fetch", "--quiet", "origin", *fetch_refs],
+        timeout=90,
+    )
+    if (
+        fetch_rc != 0
+        and branch in fetch_refs[:-1]
+        and f"couldn't find remote ref {branch}" in fetch_err
+    ):
+        # Unpushed local branch: the branch ref does not exist on origin, and
+        # git fails the WHOLE fetch (updating nothing). Re-fetch main so the
+        # informational origin/main comparison stays fresh; the own-ref
+        # --verify probe below emits the standing unpushed-branch WARNING.
+        # Any OTHER fetch failure (transport, auth) stays fail-closed.
+        fetch_rc, _, fetch_err = _run(
+            ["git", "-C", str(project_root), "fetch", "--quiet", "origin", "main"],
+            timeout=90,
+        )
+    fetch_failed = fetch_rc != 0
 
     if branch == "main":
         _check_main_branch_behind(report, project_root, fetch_failed, fetch_err)
