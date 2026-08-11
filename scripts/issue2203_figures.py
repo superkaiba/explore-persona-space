@@ -240,7 +240,9 @@ def degradation() -> None:
     ax.set_ylabel("Rate / fraction")
     ax.set_ylim(0, 1.05)
     ax.legend(loc="upper left", fontsize=8)
-    ax.set_title("Harm reduction rides on CJK output degradation, not the axis", loc="left")
+    ax.set_title(
+        "With the bugs fixed, capping leaves harm at baseline and output CJK-free", loc="left"
+    )
     savefig_paper(
         fig, "issue_2203/full-rerun-bugfix/degradation_mechanism", dir=str(ROOT / "figures")
     )
@@ -319,7 +321,9 @@ def capability() -> None:
     ax.set_ylabel("Accuracy (↑ better)")
     ax.set_ylim(0, 1.0)
     ax.legend(loc="upper right", fontsize=8)
-    ax.set_title("The arms that cut harm also wreck capability", loc="left")
+    ax.set_title(
+        "Only whole-state replacement wrecks capability; capping leaves it intact", loc="left"
+    )
     savefig_paper(
         fig, "issue_2203/full-rerun-bugfix/capability_guardrails", dir=str(ROOT / "figures")
     )
@@ -365,7 +369,9 @@ def censoring() -> None:
     ax.set_xticklabels(labels, fontsize=7.5)
     ax.set_ylabel("Scoreable identity items (of 250)")
     ax.set_ylim(0, 265)
-    ax.set_title("Identity-loss rate is judge-censored where output degrades", loc="left")
+    ax.set_title(
+        "Identity scoring is complete except at the two whole-state-replace arms", loc="left"
+    )
     savefig_paper(fig, "issue_2203/full-rerun-bugfix/identity_censoring", dir=str(ROOT / "figures"))
     plt.close(fig)
 

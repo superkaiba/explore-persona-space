@@ -1,13 +1,20 @@
 {
-  "commit": "7001f15c+dirty",
-  "render_id": "20cd127d38bd4cf9",
-  "git_commit": "7001f15c",
+  "commit": "90d3f27e+dirty",
+  "render_id": "9381cc0402854e02",
+  "git_commit": "90d3f27e",
   "git_dirty": true,
   "git_dirty_paths": [
     ".claude/agent-memory/critic/feedback_capping_steering_plan_stats_traps.md",
-    ".claude/agent-memory/critic/feedback_replace_op_random_null_displacement.md"
+    ".claude/agent-memory/critic/feedback_replace_op_random_null_displacement.md",
+    "figures/issue_2203/full-rerun-bugfix/degradation_mechanism.meta.json",
+    "figures/issue_2203/full-rerun-bugfix/degradation_mechanism.pdf",
+    "figures/issue_2203/full-rerun-bugfix/degradation_mechanism.png",
+    "figures/issue_2203/full-rerun-bugfix/hero_position_ladder.meta.json",
+    "figures/issue_2203/full-rerun-bugfix/hero_position_ladder.pdf",
+    "figures/issue_2203/full-rerun-bugfix/hero_position_ladder.png",
+    "scripts/issue2203_figures.py"
   ],
-  "created": "2026-08-11T20:59:08Z",
+  "created": "2026-08-11T21:45:44Z",
   "figsize": [
     8.6,
     4.0

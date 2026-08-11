@@ -1,13 +1,23 @@
 {
-  "commit": "7001f15c+dirty",
-  "render_id": "a0d0ce0aea6a4391",
-  "git_commit": "7001f15c",
+  "commit": "90d3f27e+dirty",
+  "render_id": "d4a45b042d6d444a",
+  "git_commit": "90d3f27e",
   "git_dirty": true,
   "git_dirty_paths": [
     ".claude/agent-memory/critic/feedback_capping_steering_plan_stats_traps.md",
-    ".claude/agent-memory/critic/feedback_replace_op_random_null_displacement.md"
+    ".claude/agent-memory/critic/feedback_replace_op_random_null_displacement.md",
+    "figures/issue_2203/full-rerun-bugfix/anchor_32b.meta.json",
+    "figures/issue_2203/full-rerun-bugfix/anchor_32b.pdf",
+    "figures/issue_2203/full-rerun-bugfix/anchor_32b.png",
+    "figures/issue_2203/full-rerun-bugfix/degradation_mechanism.meta.json",
+    "figures/issue_2203/full-rerun-bugfix/degradation_mechanism.pdf",
+    "figures/issue_2203/full-rerun-bugfix/degradation_mechanism.png",
+    "figures/issue_2203/full-rerun-bugfix/hero_position_ladder.meta.json",
+    "figures/issue_2203/full-rerun-bugfix/hero_position_ladder.pdf",
+    "figures/issue_2203/full-rerun-bugfix/hero_position_ladder.png",
+    "scripts/issue2203_figures.py"
   ],
-  "created": "2026-08-11T20:59:09Z",
+  "created": "2026-08-11T21:45:45Z",
   "figsize": [
     9.0,
     4.4
@@ -477,7 +487,7 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "The arms that cut harm also wreck capability",
+        "title_left": "Only whole-state replacement wrecks capability; capping leaves it intact",
         "ylabel": "Accuracy (\u2191 better)",
         "legend_labels": [
           "GSM8K",

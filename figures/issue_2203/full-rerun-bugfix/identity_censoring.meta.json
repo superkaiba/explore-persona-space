@@ -1,13 +1,26 @@
 {
-  "commit": "7001f15c+dirty",
-  "render_id": "5dfa01fabb014da0",
-  "git_commit": "7001f15c",
+  "commit": "90d3f27e+dirty",
+  "render_id": "6d6fea9ed8d44727",
+  "git_commit": "90d3f27e",
   "git_dirty": true,
   "git_dirty_paths": [
     ".claude/agent-memory/critic/feedback_capping_steering_plan_stats_traps.md",
-    ".claude/agent-memory/critic/feedback_replace_op_random_null_displacement.md"
+    ".claude/agent-memory/critic/feedback_replace_op_random_null_displacement.md",
+    "figures/issue_2203/full-rerun-bugfix/anchor_32b.meta.json",
+    "figures/issue_2203/full-rerun-bugfix/anchor_32b.pdf",
+    "figures/issue_2203/full-rerun-bugfix/anchor_32b.png",
+    "figures/issue_2203/full-rerun-bugfix/capability_guardrails.meta.json",
+    "figures/issue_2203/full-rerun-bugfix/capability_guardrails.pdf",
+    "figures/issue_2203/full-rerun-bugfix/capability_guardrails.png",
+    "figures/issue_2203/full-rerun-bugfix/degradation_mechanism.meta.json",
+    "figures/issue_2203/full-rerun-bugfix/degradation_mechanism.pdf",
+    "figures/issue_2203/full-rerun-bugfix/degradation_mechanism.png",
+    "figures/issue_2203/full-rerun-bugfix/hero_position_ladder.meta.json",
+    "figures/issue_2203/full-rerun-bugfix/hero_position_ladder.pdf",
+    "figures/issue_2203/full-rerun-bugfix/hero_position_ladder.png",
+    "scripts/issue2203_figures.py"
   ],
-  "created": "2026-08-11T20:59:10Z",
+  "created": "2026-08-11T21:45:47Z",
   "figsize": [
     8.8,
     4.0
@@ -71,7 +84,7 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "Identity-loss rate is judge-censored where output degrades",
+        "title_left": "Identity scoring is complete except at the two whole-state-replace arms",
         "ylabel": "Scoreable identity items (of 250)",
         "xticklabels": [
           "Baseline",
