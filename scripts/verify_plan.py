@@ -166,13 +166,15 @@ Check catalog (id — classification — kind scope)
   c56 staging mount binding     WARN-only, conditional    experiment only
   c57 fan-out same-prefix       WARN-only, conditional    all kinds
       staging shape
+  c58 fan-out RunPod pod-name   WARN-only, conditional    all kinds
+      collision
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54,
-55, 56, 57) also SKIP when their content trigger does not fire.
+55, 56, 57, 58) also SKIP when their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -10960,6 +10962,261 @@ def check_fanout_prefix_staging(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 58 — fan-out RunPod pod-name collision (#2237, incident #2054) ──
+
+# Trigger (conjunction of three arms; all three must hold to WARN):
+#   T1 multiplicity (either sub-arm): T1a — >=1 non-fenced section-9 line
+#     declaring N > 1 CONCURRENT pods/shards/boxes/nodes/instances,
+#     negation-free (c57's detector — `_C57_FANOUT_RE` /
+#     `_C57_CONCURRENT_RE` / `_C57_NEGATION_RE` over the
+#     `_c57_section9_window`, reused verbatim; NO third fan-out detector);
+#     OR T1b — >=2 DISTINCT dry-parsing RunPod-resolved launch argvs (the
+#     converse shape: multiplicity expressed in argvs, absent from §9
+#     prose vocabulary).
+#   T2 lane: >=1 plan-embedded launch-shaped argv that dry-parses (the
+#     c46/c50/c52 argv chain, reused verbatim) AND resolves to RunPod
+#     under the SHIPPED posture (`_C58_T2_INCLUDE_AUTO` below).
+#   T3 remedy absence: the plan names NO per-pod provisioning mechanism.
+# T3's key is the literal `pod.py provision` COMMAND CONSTRUCT carrying
+# `--name-suffix` on the same line — NOT the bare `--name-suffix` token
+# and NOT the bare noun "provision": #2054 v16 line 298 carries BOTH
+# (inside its teardown command `pod.py terminate ... --name-suffix` and
+# the pod-safety prose "BEFORE the first provision") on ONE line, so a
+# naive `provision\w*.*--name-suffix` MATCHES it (measured) and would
+# suppress the WARN on the very fixture the check exists to catch, while
+# `pod.py provision` matches nowhere in v16 (measured). The other
+# remedies the lens clause names are STRUCTURAL here, not regex-keyed:
+# one-pod-with-N-in-pod-workers never trips T1a (`workers` is not in the
+# c57 noun set — the #460 FP lever); a name-isolating GCP/SLURM lane
+# never trips T2 (no RunPod-resolved argv); explicit serialization is
+# absorbed by T1a's negation arm. `--lane-suffix` on a RunPod argv does
+# NOT satisfy anything — RunPod is exactly the lane
+# `dispatch_issue._lane_suffix_honored_kinds()` excludes (pinned by
+# test 4 in tests/test_verify_plan_c58_fanout_pod_name.py).
+#
+# T2 posture calibration (#2237 §7, implementation-time, AS-SHIPPED
+# regexes, over 3,941 persisted plan-versions tasks/*/*/plans/v*.md at
+# origin/main 5eba504a7d, 2026-08-11 — the c39/c33/c57 gate precedent:
+# any future c58-arm change re-runs the corpus scan and records the
+# realized numbers here; `scripts/issue2237_c58_corpus_sweep.py` is the
+# reproduction tool and measures BOTH postures every run). Measured:
+#   - explicit-only (T2 = `--backend runpod` pins only): 8 WARNs /
+#     2 distinct tasks. TRUE POSITIVES (7): #2054 v13-v16 via T1a (the
+#     founding unsatisfiable §9 — "8/10 shards on N parallel
+#     `cpu-bigmem` pods" + explicit runpod pins, no minting mechanism;
+#     v16 is the incident fixture) and #2054 v10-v12 via T1b (the
+#     parent R4/R5 rounds: 3-4 distinct runpod argvs whose "x4 each,
+#     parallel" / "6 parallel pod jobs" multiplicity lives in FENCED
+#     bash comments T1a's mask correctly skips — the same gap, caught
+#     by the argv arm). FALSE POSITIVE (1): #2203 v6 via T1b — 3
+#     distinct runpod argvs that are SEQUENTIAL phase provisions
+#     (1xH100 -> 4xH100 -> 1xH200), not a concurrent fan-out; the named
+#     T1b FP class (sequential multi-phase multi-launch plans),
+#     absorbed by WARN-only polarity.
+#   - explicit+auto (T2 also counts `--backend` absent/`auto`, the
+#     runpod-first order since #2054): 33 WARNs / 7 distinct tasks —
+#     the 8 above + 25 additions (#1417 v1-v7, #1774 v1-v4, #2163
+#     v1-v6, #810 v13-v18, #1336 v8-v9), EVERY addition adjudicated a
+#     false positive of the same sequential-phases T1b class (Phase
+#     A/C, GPU-phase + CPU-phase, E1 + conditional-E2 launch pairs).
+#     Over the >~20 corpus ceiling (#2237 §15.2) and FP-dominated.
+#   SHIPPED POSTURE: explicit-only (`_C58_T2_INCLUDE_AUTO = False`) —
+#   the auto arm's FP class proved large, so per the pre-registered
+#   #2237 §4 rule it is DISABLED behind the stated residual (i) rather
+#   than silently dropped; the lens clause stays lane-agnostic. n_skip
+#   (explicit-only) = 3,933: no-section-9 = 673, no-launch-argv =
+#   2,803, none-parses = 246, no-runpod-argv = 195, no-fanout(T1) = 16;
+#   pass (remedy named) = 0 on the corpus — the corrected #2054 v17
+#   amendment (which names `pod.py provision --name-suffix` per shard)
+#   is quiet via the no-launch-argv SKIP (it provisions directly, not
+#   through dispatch_issue.py), the intended silence.
+_C58_REMEDY_RE = re.compile(r"pod\.py\s+provision\b[^\n]*--name-suffix")
+_C58_T2_INCLUDE_AUTO = False  # shipped posture — see the calibration block
+
+
+def _c58_runpod_resolved(ns, include_auto: bool) -> bool:
+    """True when a dry-parsed launch Namespace resolves to the RunPod lane
+    under the given T2 posture: explicit ``--backend runpod``, plus (when
+    ``include_auto``) an absent/empty/``auto`` backend — the runpod-first
+    ``DEFAULT_AUTO_LANE_ORDER`` since #2054."""
+    backend = (getattr(ns, "backend", None) or "auto").strip().lower()
+    if backend == "runpod":
+        return True
+    return include_auto and backend == "auto"
+
+
+def _c58_check(plan: str, include_auto: bool) -> CheckResult:
+    """c58 core, posture-parameterized so the calibration sweep can measure
+    both T2 postures against the SHIPPED trigger code (the public
+    ``check_fanout_pod_name_collision`` pins ``_C58_T2_INCLUDE_AUTO``)."""
+    cid, name = "c58_fanout_pod_name_collision", "fan-out RunPod pod-name collision"
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)  # line-count-preserving: indexes map raw<->stripped
+    window = _c57_section9_window(lines, mask)
+    if window is None:
+        return _skip(
+            cid,
+            name,
+            "no parseable section-9 heading (`9.` / `§9` opener ... next numbered "
+            "heading) — a fan-out in a plan with no such heading is residual (iii), "
+            "not coverage",
+        )
+    argvs, notes = _c50_launch_argvs(plan)
+    tail = ("; " + "; ".join(notes)) if notes else ""
+    if not argvs:
+        return _skip(
+            cid,
+            name,
+            "no launch-shaped dispatch_issue.py command in the plan — a custom-driver "
+            "fan-out is structurally invisible here (residual (ii), the same channel "
+            "c52 discloses); this SKIP is not coverage" + tail,
+        )
+    parser, load_detail = _c46_argparser()
+    if parser is None:
+        return _skip(cid, name, f"dispatch_issue.build_argparser unavailable ({load_detail})")
+    runpod_argvs: list[list[str]] = []
+    argv_notes: list[str] = []
+    n_parsed = 0
+    for i, argv in enumerate(argvs):
+        ns, err = _c46_dry_parse(parser, argv)
+        if ns is None:  # per-argv note, never a WARN — c46 arm 1 owns parse drift
+            argv_notes.append(f"argv #{i + 1} does not dry-parse ({err})")
+            continue
+        n_parsed += 1
+        if _c58_runpod_resolved(ns, include_auto=include_auto):
+            runpod_argvs.append(argv)
+    note_tail = ("; " + "; ".join(argv_notes)) if argv_notes else ""
+    if n_parsed == 0:
+        return _skip(
+            cid,
+            name,
+            "launch argvs present but none dry-parses — c46 arm 1 owns parse "
+            "warnings" + note_tail + tail,
+        )
+    if not runpod_argvs:
+        posture = (
+            "explicit `--backend runpod` or absent/`auto` (runpod-first, #2054)"
+            if include_auto
+            else "explicit `--backend runpod` only"
+        )
+        return _skip(
+            cid,
+            name,
+            f"no RunPod-resolved launch argv under the shipped T2 posture ({posture}) "
+            "— residual (i): an off-posture launch landing on RunPod is invisible "
+            "here; the lens clause is lane-agnostic and binding" + note_tail,
+        )
+    lo, hi = window
+    trigger_idx = [
+        i
+        for i in range(lo, hi)
+        if not mask[i]
+        and _C57_FANOUT_RE.search(lines[i])
+        and _C57_CONCURRENT_RE.search(lines[i])
+        and not _C57_NEGATION_RE.search(lines[i])
+    ]
+    t1b = len(runpod_argvs) >= 2  # _c50_launch_argvs already dedupes on tuple(argv)
+    if not trigger_idx and not t1b:
+        return _skip(
+            cid,
+            name,
+            "no concurrent box-level fan-out declared in section 9 (T1a) and fewer "
+            "than 2 distinct RunPod-resolved launch argvs (T1b)",
+        )
+    remedy = _C58_REMEDY_RE.search(plan)
+    if remedy:
+        return _pass(
+            cid,
+            name,
+            f"RunPod fan-out with a per-pod provisioning construct named "
+            f"({remedy.group(0)[:70]!r})",
+        )
+    if trigger_idx:
+        shown = "; ".join(_c57_match_snippet(lines[i]) for i in trigger_idx[:3])
+        more = f" (+{len(trigger_idx) - 3} more)" if len(trigger_idx) > 3 else ""
+        evidence = f"{len(trigger_idx)} section-9 fan-out line(s) ({shown!r}{more})"
+    else:
+        evidence = (
+            f"{len(runpod_argvs)} distinct RunPod-resolved launch argvs (T1b — "
+            "multiplicity in argvs, no section-9 fan-out prose)"
+        )
+    return _warn(
+        cid,
+        name,
+        f"{evidence} while every RunPod-lane launch mints the SAME pod name — "
+        "`backends/runpod.py` `_runpod_pod_name(issue)` returns `pod-<N>` with no "
+        "suffix parameter, and `--lane-suffix` is honored on GCP + SLURM only — so "
+        "N concurrent same-issue launches collide; the dangerous branch is silent "
+        "co-location of all N shards on ONE pod, invalidating every per-shard "
+        "wall/RSS projection the plan booked (#2054 v16, caught only at dispatch). "
+        "Name ONE of: per-pod `pod.py provision --issue <N> --name-suffix <slug>` "
+        "calls; one pod with N in-pod workers; a name-isolating lane (GCP/SLURM "
+        "`--lane-suffix`); or mark the fan-out explicitly serialized (the "
+        "Methodology lens item 16 FAN-OUT POD-NAME EXTENSION is the binding gate; "
+        "c58's silence is not evidence of safety — residual (i))",
+    )
+
+
+def check_fanout_pod_name_collision(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds: a section-9 fan-out of N > 1
+    CONCURRENT pods (T1a — c57's detector, reused verbatim) OR >= 2
+    DISTINCT RunPod-resolved launch argvs (T1b, the converse shape), in a
+    plan whose plan-embedded ``dispatch_issue.py`` launch commands resolve
+    to the RunPod lane (T2), must name a mechanism that mints N DISTINCT
+    pod names (T3 — the literal ``pod.py provision ... --name-suffix``
+    command construct). RunPod structurally cannot mint them itself:
+    ``backends/runpod.py`` ``_runpod_pod_name(issue)`` returns
+    ``f"pod-{issue}"`` with no suffix parameter, and ``--lane-suffix`` is
+    honored on GCP + SLURM only
+    (``dispatch_issue._lane_suffix_honored_kinds``), so N concurrent
+    same-issue launches collide — best case an error, worst case silent
+    co-location of all N shards on ONE pod, invalidating every per-shard
+    wall/RSS projection the plan booked (#2054 plan v16: a 10-way
+    ``cpu-bigmem`` RunPod fan-out whose own pod-safety paragraph required
+    ``pod-2054-rb789-<shard>`` names; it PASSed verify_plan 0 FAIL /
+    0 WARN twice plus two critic-round APPROVEs and was caught only at
+    dispatch). NEVER FAILs (the c39/c43/c46/c50/c52/c54/c57 fail-open
+    posture); every ambiguity SKIPs with a stated reason, and a SKIP is
+    never coverage.
+
+    Named residuals, disclosed in the c52/c57 honesty convention — none
+    is ever to be read as coverage:
+    (i) AUTO-LANE residual (PRIMARY): the shipped T2 posture counts
+    explicit ``--backend runpod`` pins ONLY — the explicit+auto posture
+    measured 25 additional WARNs, every one an adjudicated false
+    positive (the calibration block above), so the auto arm is DISABLED
+    behind this residual per the pre-registered #2237 §4 rule. A
+    bare-``auto``/absent-backend fan-out that lands on RunPod (the
+    runpod-first ``DEFAULT_AUTO_LANE_ORDER``, #2054), a frontmatter-pin
+    route, or non-``dispatch_issue.py`` tooling is therefore INVISIBLE
+    to c58; the Methodology lens item 16 FAN-OUT POD-NAME EXTENSION is
+    lane-agnostic and is the binding gate.
+    (i-bis) WIDTH-ACHIEVABILITY: neither arm verifies a declared width is
+    ACHIEVABLE — T1a only reads prose, T1b only counts argvs; a plan
+    declaring 10 shards with 2 template argvs satisfies T1 but c58 cannot
+    tell 10 from 2 (v16's multiplicity lives in prose + a "repeat over
+    shards" loop instruction); the lens clause's mint-N-DISTINCT-names
+    requirement is what covers it. (ii) CUSTOM-DRIVER fan-out: a fan-out
+    driven by a bespoke script with no plan-embedded
+    ``dispatch_issue.py launch`` argv SKIPs at T2 — the same channel c52
+    discloses. (iii) SECTION-9 CONFINEMENT: a fan-out declared ONLY
+    outside section 9 is invisible to T1a — c57's disclosed
+    window-confinement cost, inherited with its detector (T1b partially
+    compensates, argv-count multiplicity only). (iv) IN-SAMPLE
+    CALIBRATION: the FP figures in the calibration block above are
+    measured on the same persisted-plan corpus the acceptance sweep
+    re-runs — they bound nuisance cost on yesterday's planner
+    distribution, not on future plans.
+
+    WARN-only, not FAIL, because whether N shard rows each provision
+    their own pod or share one is finally a property of the DISPATCHER,
+    not the plan text — and residual (i) means c58's silence is not
+    evidence of safety: the lens clause is the binding gate and c58 is
+    only the early-warning net (c57's stated polarity rationale)."""
+    del kind  # all kinds: colliding pod names bill/confound identically everywhere
+    return _c58_check(plan, include_auto=_C58_T2_INCLUDE_AUTO)
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -11018,6 +11275,7 @@ CHECKS = [
     check_inherited_rowcount_default,
     check_staging_mount_binding,
     check_fanout_prefix_staging,
+    check_fanout_pod_name_collision,
 ]
 
 
