@@ -232,14 +232,47 @@ if LAYER != 30:
 #                          4096->4096): "is the fitted map better than 'the
 #                          answer state is the context state plus a constant'?"
 #
-# Round B (selfmap_v3) carries NEITHER, so both are drawn over the 7 round-3
-# pairs only and left as a visible GAP on the three round-B pairs — never
-# interpolated across a pair that was not controlled.
+# Round B (selfmap_v3) originally carried NEITHER. The shuffled null is
+# pair-specific and stays a visible GAP on the three round-B pairs — never
+# interpolated across a pair that was not controlled. The two ALIGNMENT-map
+# identity baselines ARE measured there now (v4 refit), so those two series run
+# continuously across all ten pairs; identity+bias-WITHIN is still borrowed
+# from each target's round-3 siblings and flagged identity_approx.
 NULL_COLOR = "#969696"
 IDENT_COLOR = "#54278f"
 BASELINE_PAIRS = tuple(p for p in PAIRS if p not in SELFMAP_PAIRS)
 # nulls.order is [within, t0..t8]; the plotted tiers land at these column indices.
 NULL_COL = {0: 1, 6: 7, 7: 8, 8: 9}
+
+
+def _selfmap_align_baselines() -> dict:
+    """(pair, fmt, corpus) -> (A_ctx_rev, A_ans) identity+bias, from round-B cells.
+
+    Round B (selfmap_v3) originally ran NEITHER baseline. The v4 refit
+    (ALGEBRA_VERSION `v4-foldlocal-2-cross-t7t8-alignbaselines`) added the two
+    ALIGNMENT-map identity+bias reads using the parent metric_ladder's own
+    estimator — `identity_bias_predict` OOF on the same seed-0
+    conversation-grouped 5-fold, scored with the globally-pooled
+    `fc._pooled_r2` — so these are directly comparable with the round-3
+    pair-file values the other seven pairs supply.
+
+    Returns {} when no refit cell carries the fields, which keeps a pre-v4
+    checkout rendering the old visible NaN gap instead of failing.
+    """
+    out: dict[tuple, tuple[float, float]] = {}
+    if not stt.SELFMAP_CELLS.is_dir():
+        return out
+    for fp in sorted(stt.SELFMAP_CELLS.glob("*.json")):
+        for rec in json.load(open(fp))["records"]:
+            actx = rec.get("A_ctx_rev_identity_bias_r2")
+            aans = rec.get("A_ans_identity_bias_r2")
+            if actx is None or aans is None:
+                continue  # pre-v4 cell: no alignment baselines were computed
+            out[(rec["pair"], rec["format"], rec["corpus"])] = (float(actx), float(aans))
+    return out
+
+
+_ALIGN_B = _selfmap_align_baselines()
 
 
 def load_baselines() -> dict:
@@ -303,17 +336,34 @@ def load_baselines() -> dict:
                 for (f, c) in SURFACES
                 if (f, c) not in DEGENERATE and (tgt, f, c) in by_target
             ]
+            # The two ALIGNMENT identity baselines are no longer a gap here: the
+            # v4 refit measured them ON THIS PAIR'S OWN ROWS, so unlike the
+            # target-keyed identity+bias above they are neither grafted nor
+            # approximate. Median over the same non-degenerate surfaces the
+            # round-3 pairs aggregate across, so the two series are one basis.
+            pkey = f"{src}__{tgt}"
+            _ab = [
+                _ALIGN_B[(pkey, f, c)]
+                for (f, c) in SURFACES
+                if (f, c) not in DEGENERATE and (pkey, f, c) in _ALIGN_B
+            ]
+            entry = {
+                "null_lo": np.nan,
+                "null_hi": np.nan,
+                "null_per_tier": {int(t): np.nan for t in TIERS},
+                "null_max_single_draw": np.nan,
+                "a_ctx": float(np.median([v[0] for v in _ab])) if _ab else np.nan,
+                "a_ans": float(np.median([v[1] for v in _ab])) if _ab else np.nan,
+                "align_measured": bool(_ab),
+                "n_corpora_align": len(_ab),
+            }
             if sib:
-                out[pi] = {
-                    "null_lo": np.nan,
-                    "null_hi": np.nan,
-                    "null_per_tier": {int(t): np.nan for t in TIERS},
-                    "null_max_single_draw": np.nan,
-                    "identity_bias": float(np.median(sib)),
-                    "identity_bias_range": [float(min(sib)), float(max(sib))],
-                    "identity_approx": True,
-                    "n_corpora": len(sib),
-                }
+                entry["identity_bias"] = float(np.median(sib))
+                entry["identity_bias_range"] = [float(min(sib)), float(max(sib))]
+                entry["identity_approx"] = True
+                entry["n_corpora"] = len(sib)
+            if sib or _ab:
+                out[pi] = entry
             continue
         # per corpus: mean over the 20 draws per tier -> median across corpora
         per_tier = np.median(np.stack([m.mean(axis=0) for m in rec["null"]]), axis=0)
@@ -492,7 +542,7 @@ def fig_aggregate(D: dict) -> Path:
     # identity+bias lives on the lower (broken-axis) panel at its TRUE value;
     # the proxy handle carries it into the main panel's legend.
     ident = np.array(
-        [BASELINES[pi]["identity_bias"] if pi in BASELINES else np.nan for pi in range(len(PAIRS))]
+        [BASELINES.get(pi, {}).get("identity_bias", np.nan) for pi in range(len(PAIRS))]
     )
     ident_style = dict(color=IDENT_COLOR, lw=2.0, ls=(0, (5, 2)), marker=".", ms=7)
     if axb is not None:
@@ -890,9 +940,18 @@ def write_meta(D: dict, figs: list[Path]) -> Path:
             ),
             "zero_line": "R2 = 0 is the predict-the-training-mean baseline.",
             "round_b_gap": (
-                "round B (selfmap_v3) ran NEITHER control, so both baselines are drawn over the "
-                "7 round-3 pairs only and left as a visible GAP on sft__rlvr, sft__rlvr_long and "
-                "rlvr__rlvr_long — never interpolated across an uncontrolled pair"
+                "round B (selfmap_v3) originally ran NEITHER control. The shuffled-pairing null "
+                "is pair-specific (it permutes THIS pair's target rows and refits every "
+                "y_t-consuming correction), so it remains a visible GAP on sft__rlvr, "
+                "sft__rlvr_long and rlvr__rlvr_long — never interpolated across an uncontrolled "
+                "pair. identity+bias-WITHIN is target-keyed and is BORROWED from those targets' "
+                "round-3 siblings (identity_approx=true). The two ALIGNMENT-map identity "
+                "baselines are MEASURED on the round-B pairs' own rows by the v4 refit "
+                "(ALGEBRA_VERSION v4-foldlocal-2-cross-t7t8-alignbaselines), using the parent "
+                "metric_ladder's estimator — identity_bias_predict OOF on the same seed-0 "
+                "conversation-grouped 5-fold, globally-pooled fc._pooled_r2, A_ctx_rev scored "
+                "against the SOURCE contexts and A_ans against the TARGET answers — so those two "
+                "series are continuous across all 10 pairs on one basis (align_measured=true)"
             ),
             "per_pair": {
                 f"{PAIRS[pi][0]}__{PAIRS[pi][1]}": b for pi, b in sorted(BASELINES.items())
