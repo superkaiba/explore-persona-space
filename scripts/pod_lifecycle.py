@@ -1517,9 +1517,11 @@ def _resume_with_balance_wait_if_autonomous(
             else:
                 reason = "insufficient-balance (account $/hr cap)"
             # Per-process wall-clock budget (refs #572) — see
-            # create_pod_with_wait_for_capacity for the rationale. The
-            # resume wait is the same no-cost-while-idle class, so the
-            # same bounded-attempt / re-run contract applies.
+            # _deploy_with_wait_for_capacity for the rationale (#2238 moved
+            # the shared provision loop there; create_pod_with_wait_for_capacity
+            # is now a thin delegate over it). The resume wait is the same
+            # no-cost-while-idle class, so the same bounded-attempt / re-run
+            # contract applies.
             budget = _wait_for_capacity_attempt_budget_secs()
             if budget > 0 and elapsed + sleep_secs > budget:
                 raise WaitForCapacityStillWaiting(
