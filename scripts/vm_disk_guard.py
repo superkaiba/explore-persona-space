@@ -22,7 +22,13 @@ runs five TIERS of strictly-safe cleanup, reporting bytes freed per tier:
       ``clean_issue_downloads`` (48h recency, nested ``store/`` +
       ``eval_results/`` block, positive re-downloadability evidence). The
       /tmp part is a ``main()``-only opt-in (``tmp_root=production_tmp_
-      root()``); library calls stay hermetic. Structured outcome rows
+      root()``); library calls stay hermetic. (#2095) The tier ALSO covers
+      ``/mnt/eps-data/$USER`` staging caches via the sibling ``main()``-only
+      opt-in ``staging_roots=production_staging_roots()`` — threaded into the
+      DATA-DISK pass only (the staging roots live on the data disk; no
+      double-sweep), same contract + the staging gate variants (gate 1.55
+      cross-issue hard-escalate, top-level recency, class labels, sampled
+      mirror probe) in ``clean_issue_downloads``. Structured outcome rows
       (``active_cache_attributions`` / ``noncanonical_candidates`` /
       ``total_discovered_bytes``) ride the ``--json`` output — report-only
       escalation persists nothing to the sidecar, so dry-run acceptance reads
@@ -116,6 +122,8 @@ from clean_experiment_downloads import (
     append_disk_guard_event,
     clean_issue_downloads,
     extract_issue_number,
+    extract_staging_issue_number,
+    production_staging_roots,
     production_tmp_root,
 )
 
@@ -276,6 +284,7 @@ def escalate_active_cache(
     state: dict | None = None,
     tmp_root: Path | None = None,
     sweep_tmp: bool = True,
+    staging_roots: list[Path] | None = None,
     report_to: TierResult | None = None,
 ) -> TierResult | None:
     """ESCALATE (never delete) an ACTIVE task's re-downloadable cache that the
@@ -292,7 +301,10 @@ def escalate_active_cache(
     ``tmp_root``/``sweep_tmp`` forward VERBATIM into the sizing call (#911 —
     with ``tmp_root=None`` the sizing sees ZERO /tmp bytes; the tier-b caller
     threads its own opt-in through so an active owner's /tmp + P3 footprint
-    is attributed). ``report_to`` (the calling tier's TierResult, #911) —
+    is attributed). ``staging_roots`` forwards the same way (#2095 — with
+    ``staging_roots=None`` the sizing sees ZERO staging bytes; threaded, an
+    active owner's ``/mnt/eps-data/$USER`` staging footprint is attributed
+    without ever being deleted). ``report_to`` (the calling tier's TierResult, #911) —
     when given — receives the DEDUP-INDEPENDENT structured rows BEFORE any
     floor/ack/band suppression: the owner's ``active_cache_attributions`` row
     + one ``noncanonical_candidates`` row per discovered non-canonical dir
@@ -300,7 +312,12 @@ def escalate_active_cache(
     total. Report-only escalation persists nothing, so these fields are the
     dry-run acceptance surface."""
     sub = clean_issue_downloads(
-        issue_n, apply=False, data_root=data_root, tmp_root=tmp_root, sweep_tmp=sweep_tmp
+        issue_n,
+        apply=False,
+        data_root=data_root,
+        tmp_root=tmp_root,
+        sweep_tmp=sweep_tmp,
+        staging_roots=staging_roots,
     )
     # Size from EVERY discovered cache dir, NOT bytes_freed: a large active
     # hf_dl/.../store/ correctly KEPT by the nested-store parity guard lands in
@@ -505,6 +522,37 @@ def _discover_tmp_issue_numbers(tmp_root: Path) -> list[int]:
         n = extract_issue_number(child.name)
         if n is not None:
             found.add(n)
+    return sorted(found)
+
+
+def _discover_staging_issue_numbers(staging_roots: list[Path]) -> list[int]:
+    """Mirror of :func:`_discover_tmp_issue_numbers` over the staging roots
+    (#2095): TOP-LEVEL dirs/symlinks of each root, uid-owned
+    (``ced._tmp_entry_owned``), name keyed via
+    ``ced.extract_staging_issue_number`` (PREFIX-ONLY — no P2 suffix route).
+    Lets tier (b) visit a staging-ONLY issue (a ``/mnt/eps-data/$USER/
+    issue<N>_<slug>/`` dir with no ``data/issue*`` dir anywhere). Never
+    recursive; files are never considered; a per-entry stat error is skipped
+    (fail-soft). Returns sorted unique ints."""
+    found: set[int] = set()
+    for root in staging_roots:
+        try:
+            if not root.is_dir():
+                continue
+            children = sorted(root.iterdir())
+        except OSError:
+            continue
+        for child in children:
+            try:
+                if not (child.is_dir() or child.is_symlink()):
+                    continue
+            except OSError:
+                continue
+            if not _tmp_entry_owned(child):
+                continue
+            n = extract_staging_issue_number(child.name)
+            if n is not None:
+                found.add(n)
     return sorted(found)
 
 
@@ -785,6 +833,7 @@ def clean_terminal_download_caches(
     *,
     tmp_root: Path | None = None,
     sweep_tmp: bool = True,
+    staging_roots: list[Path] | None = None,
 ) -> TierResult:
     """Tier (b): delete ``hf_dl`` / ``g*_dl`` caches for issues at a terminal
     status (completed / archived / awaiting_promotion) — across BOTH the
@@ -809,6 +858,15 @@ def clean_terminal_download_caches(
     ``noncanonical_candidates`` + ``total_discovered_bytes``) land on the
     returned TierResult for the ``--json`` dry-run acceptance surface.
 
+    STAGING roots (#2095): with an EXPLICIT ``staging_roots`` (strict opt-in
+    — ``main()`` passes ``production_staging_roots()`` on the DATA-DISK pass
+    only; library calls with ``staging_roots=None`` never touch any staging
+    root), discovery is widened with ``_discover_staging_issue_numbers`` so a
+    staging-ONLY issue is visited, and ``staging_roots`` forwards into every
+    per-issue cleanup + escalation-sizing call (the staging gate variants —
+    gate 1.55 cross-issue, top-level recency, class labels, the sampled
+    mirror probe — live in ``clean_issue_downloads``).
+
     With an explicit ``data_root`` (tests) the search is scoped to that single
     root; in production (``data_root is None``) it spans repo-root + all
     worktree data roots."""
@@ -820,6 +878,8 @@ def clean_terminal_download_caches(
     issue_numbers = set(_discover_data_issue_numbers(discover_roots))
     if sweep_tmp and tmp_root is not None:
         issue_numbers.update(_discover_tmp_issue_numbers(tmp_root))
+    if staging_roots:
+        issue_numbers.update(_discover_staging_issue_numbers(staging_roots))
     escalation_state = _load_active_escalation_state()
     escalated_any = False
     for issue_n in sorted(issue_numbers):
@@ -841,6 +901,7 @@ def clean_terminal_download_caches(
                 state=escalation_state,
                 tmp_root=tmp_root,
                 sweep_tmp=sweep_tmp,
+                staging_roots=staging_roots,
                 report_to=res,
             )
             if esc is not None:
@@ -850,7 +911,12 @@ def clean_terminal_download_caches(
         # data_root=data_root forwards the test-scoping; None lets
         # clean_issue_downloads resolve repo-root + this issue's worktree(s).
         sub = clean_issue_downloads(
-            issue_n, apply=apply, data_root=data_root, tmp_root=tmp_root, sweep_tmp=sweep_tmp
+            issue_n,
+            apply=apply,
+            data_root=data_root,
+            tmp_root=tmp_root,
+            sweep_tmp=sweep_tmp,
+            staging_roots=staging_roots,
         )
         res.bytes_freed += sub.bytes_freed
         res.total_discovered_bytes += sub.total_discovered_bytes
@@ -1823,6 +1889,7 @@ def run_guard(
     reclaim_tiers: bool = True,
     now: float | None = None,
     tmp_root: Path | None = None,
+    staging_roots: list[Path] | None = None,
     ignore_threshold: bool = False,
 ) -> GuardResult:
     """Read disk usage, and if over threshold run the cleanup tiers.
@@ -1860,7 +1927,17 @@ def run_guard(
     opt-in — they run only when ``reclaim_tiers`` AND an explicit ``tmp_root``
     are set, so every library call stays hermetic by construction (neither
     the data-disk pass nor a pytest library call can ever scan or reap the
-    real ``~/.cache/huggingface``)."""
+    real ``~/.cache/huggingface``).
+
+    ``staging_roots`` (#2095) is forwarded VERBATIM to tier (b) —
+    ``run_guard`` itself NEVER calls ``production_staging_roots()`` (the
+    staging opt-in lives ONLY in the CLI ``main()`` bodies; the same
+    source-scan test pins this symbol): the library default ``None`` keeps
+    every ``run_guard(apply=True, ...)`` suite call hermetic — a run_guard-
+    side production fallback would sweep the real ``/mnt/eps-data/$USER``
+    staging tree during pytest. ``main()`` threads it into the DATA-DISK
+    pass only (the staging roots live ON the data disk — the boot-disk pass
+    never sweeps them, the inverted twin of the /tmp no-double-sweep pin)."""
     thr = threshold if threshold is not None else threshold_pct()
     age = log_max_age if log_max_age is not None else log_max_age_days()
     used_before = disk_used_pct(disk_path)
@@ -1885,7 +1962,11 @@ def run_guard(
 
     if reclaim_tiers:
         res.tiers.append(clean_uv_cache(apply))
-    res.tiers.append(clean_terminal_download_caches(apply, data_root=data_root, tmp_root=tmp_root))
+    res.tiers.append(
+        clean_terminal_download_caches(
+            apply, data_root=data_root, tmp_root=tmp_root, staging_roots=staging_roots
+        )
+    )
     if reclaim_tiers and tmp_root is not None:
         # Tiers (d) + (e) ride the production opt-in (an explicit tmp_root) so
         # library callers can never touch the real /workspace OR home HF
@@ -2231,6 +2312,10 @@ def main(argv: list[str] | None = None) -> int:
         threshold=args.threshold,
         log_max_age=args.log_max_age_days,
         tmp_root=production_tmp_root(),
+        # The staging roots live ON the data disk — the boot-disk pass never
+        # sweeps them (no double-sweep per run; #2095 test pins this — the
+        # inverted twin of the data-disk pass's tmp_root=None below).
+        staging_roots=None,
         ignore_threshold=args.ignore_threshold,
     )
 
@@ -2255,6 +2340,10 @@ def main(argv: list[str] | None = None) -> int:
             # The /tmp tree lives on `/` — the data-disk pass never sweeps it
             # (no double-sweep per run; #911 test pins this).
             tmp_root=None,
+            # The staging opt-in lives HERE only (#2095): the staging roots
+            # live ON the data disk, so THIS pass — and only this pass —
+            # threads production_staging_roots() into tier (b).
+            staging_roots=production_staging_roots(),
         )
 
     if args.json:
