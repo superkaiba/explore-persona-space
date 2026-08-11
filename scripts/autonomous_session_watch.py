@@ -1082,6 +1082,7 @@ Run: ``uv run python scripts/autonomous_session_watch.py [--dry-run] [--threshol
 from __future__ import annotations
 
 import argparse
+import contextlib
 import fcntl
 import functools
 import getpass
@@ -5466,26 +5467,106 @@ def _clear_data_disk_state() -> None:
     _data_disk_state_path().unlink(missing_ok=True)
 
 
+def _staging_top_caches(
+    dd_path: str, top_n: int = VM_DISK_SUBFLOOR_TOP_N, *, dry_run: bool = False
+) -> list[tuple[str, int]]:
+    """Top-``top_n`` largest TOP-LEVEL entries of the staging root(s) under
+    ``dd_path`` (dirs only, ANY name — ``huggingface-cache`` and dot-dirs
+    included: attribution is not reap), as ``(abs_path, bytes)`` via one
+    bounded ``du -sx --block-size=1`` per entry
+    (:data:`VM_DISK_SUBFLOOR_DU_TIMEOUT_S`). Top-level FILES are excluded
+    (dir-scoped attribution — #2095 §4.4: observed instances are KB-to-MB
+    logs/launchers, not a disk-pressure class).
+
+    Root resolution mirrors ``clean_experiment_downloads.
+    production_staging_roots`` WITHOUT importing it (the watcher deliberately
+    avoids importing the janitors at module load — fail-isolation; the same
+    established convention as the duplicated ``data_disk_path``): env
+    ``EPM_STAGING_CACHE_ROOTS`` (colon-separated absolute roots, each kept
+    iff ``is_dir()``) OVERRIDES the default
+    ``<dd_path>/<getpass.getuser()>`` (kept iff ``is_dir()``).
+
+    KILL-SWITCH SCOPE (#2095 §4.3, pinned by test):
+    ``EPM_SKIP_STAGING_CACHE_SWEEP`` and ``EPM_SKIP_NONCANONICAL_CACHE_SWEEP``
+    do NOT disable this helper — it is READ-ONLY attribution, and
+    observability must survive a sweep kill (it is the triage channel a
+    human needs exactly while the sweep is off).
+
+    Under ``dry_run`` performs NO ``subprocess.run`` at all and returns
+    ``[]`` immediately (#681 r3 — a dry-run pass has zero observational
+    side-effects). Fail-soft: a per-entry ``du`` failure / timeout degrades
+    to fewer rows; any other error -> ``[]``, never a crash."""
+    if dry_run:
+        return []
+    try:
+        raw = os.environ.get("EPM_STAGING_CACHE_ROOTS", "").strip()
+        if raw:
+            roots = [Path(p) for p in raw.split(":") if p.strip() and Path(p).is_dir()]
+        else:
+            user_dir = Path(dd_path) / getpass.getuser()
+            roots = [user_dir] if user_dir.is_dir() else []
+        sizes: list[tuple[str, int]] = []
+        for root in roots:
+            try:
+                entries = sorted(root.iterdir())
+            except OSError:
+                continue
+            for entry in entries:
+                try:
+                    if not entry.is_dir():
+                        continue  # top-level FILES / dangling symlinks: dir-scoped
+                    rc = subprocess.run(
+                        ["du", "-sx", "--block-size=1", str(entry)],
+                        capture_output=True,
+                        text=True,
+                        timeout=VM_DISK_SUBFLOOR_DU_TIMEOUT_S,
+                        check=False,
+                    )
+                except (OSError, subprocess.SubprocessError):
+                    continue  # fail-soft: fewer rows, never a crash (R5)
+                if rc.returncode != 0 or not rc.stdout.strip():
+                    continue
+                try:
+                    nbytes = int(rc.stdout.split()[0])
+                except (ValueError, IndexError):
+                    continue
+                sizes.append((str(entry), nbytes))
+        sizes.sort(key=lambda x: x[1], reverse=True)
+        return sizes[:top_n]
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return []
+
+
 def _data_disk_top_caches(dd_path: str, *, dry_run: bool = False) -> list[tuple[str, int]]:
     """Attribution for the data-disk escalation: PRIMARY per-PROJECT usage via
-    ``repquota -P`` (one cheap call, project id == issue number), falling back
-    to the ``du``-based glob attribution when ``repquota`` is unavailable / the
-    disk has no prjquota / parsing fails. Fail-soft — any error yields an empty
-    list (no attribution), never a crash.
+    ``repquota -P`` (one cheap call, project id == issue number). When
+    ``repquota`` is unavailable / the disk has no prjquota / parsing fails,
+    the fallback returns the merged, size-sorted top-N of the ``du``-based
+    glob attribution (:func:`_top_issue_cache_paths`) AND the staging-root
+    attribution (:func:`_staging_top_caches` — the ``/mnt/eps-data/$USER``
+    staging dirs, #2095), so a staging-dominated data disk is attributable
+    even without prjquota. Fail-soft — a failing leg degrades to the other
+    leg's rows; any error yields an empty list, never a crash.
 
-    Under ``dry_run`` both helpers short-circuit (repquota → ``None``, du →
-    ``[]``) so this returns ``[]`` with NO ``subprocess.run`` (#681 r3): the
-    data-disk dry-run smoke must have zero observational side-effects."""
+    Under ``dry_run`` every helper short-circuits (repquota → ``None``,
+    du/staging → ``[]``) so this returns ``[]`` with NO ``subprocess.run``
+    (#681 r3): the data-disk dry-run smoke must have zero observational
+    side-effects."""
     try:
         rows = _top_issue_caches_by_project_quota(dd_path, dry_run=dry_run)
     except (subprocess.SubprocessError, OSError):
         rows = None
     if rows is not None:
         return rows
-    try:
-        return _top_issue_cache_paths(dry_run=dry_run)
-    except (subprocess.SubprocessError, OSError):
-        return []
+    merged: list[tuple[str, int]] = []
+    # Fail-soft per leg: a failing glob leg must not drop the staging rows
+    # (and vice versa) — attribution degrades to fewer rows, never a crash.
+    with contextlib.suppress(subprocess.SubprocessError, OSError):
+        merged.extend(_top_issue_cache_paths(dry_run=dry_run))
+    with contextlib.suppress(subprocess.SubprocessError, OSError):
+        merged.extend(_staging_top_caches(dd_path, dry_run=dry_run))
+    merged.sort(key=lambda x: x[1], reverse=True)
+    return merged[:VM_DISK_SUBFLOOR_TOP_N]
 
 
 def data_disk_pass(dry_run: bool, used_pct: float | None = None) -> bool:
@@ -32752,6 +32833,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "GC in isolation without waiting on a daemon probe.",
     )
     parser.add_argument(
+        "--data-disk-only",
+        action="store_true",
+        help="run ONLY the data-disk headroom pass (#681/#2095) and exit; "
+        "skip every other pass. Daemon-independent (statvfs + bounded "
+        "repquota/du attribution); pair with --dry-run for a "
+        "zero-subprocess read-only smoke.",
+    )
+    parser.add_argument(
         "--infra-drain-only",
         action="store_true",
         help="run ONLY the infra-drain pass (execute the PM dispatch queue) "
@@ -32966,6 +33055,13 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # doesn't accidentally trip the destructive paths.
     if args.gc_only:
         gc_pass(args.dry_run)
+        return 0
+
+    # --data-disk-only mirrors --gc-only: run the single pass under the lock
+    # and exit (#2095 — gives the data-disk pass an isolated smoke). The pass
+    # is daemon-INDEPENDENT (statvfs + bounded repquota/du attribution only).
+    if args.data_disk_only:
+        data_disk_pass(args.dry_run)
         return 0
 
     # --infra-drain-only mirrors --gc-only: run the single pass under the

@@ -15312,6 +15312,224 @@ def test_repquota_attribution_parses_per_project_rows(monkeypatch):
     assert asw._top_issue_caches_by_project_quota("/mnt/eps-data") is None
 
 
+# ── Staging-root attribution (#2095 §4.3/§4.6) ────────────────────────────────
+# _staging_top_caches attributes the /mnt/eps-data/$USER staging dirs (read-only
+# du; NEVER a reap) and merges into _data_disk_top_caches' repquota-None
+# fallback. Kill switches deliberately do NOT disable it (triage channel).
+
+
+def _make_staging_root(tmp_path):
+    """Fake data-disk root: <tmp>/<user>/ holding two staging DIRS of known
+    relative size, a dot-dir, a non-issue dir, and a top-level FILE (which
+    attribution must skip — dir-scoped, #2095 §4.4)."""
+    import getpass
+
+    user_root = tmp_path / getpass.getuser()
+    big = user_root / "issue123_hf_dl"
+    big.mkdir(parents=True)
+    (big / "blob.bin").write_bytes(b"x" * 65536)
+    small = user_root / "issue_742_restage"
+    small.mkdir()
+    (small / "t.pt").write_bytes(b"y" * 4096)
+    hub = user_root / "huggingface-cache"  # non-issue dir: VISIBLE in attribution
+    hub.mkdir()
+    (hub / "z.bin").write_bytes(b"z" * 2048)
+    dot = user_root / ".hf_i1092_operator"  # dot-dir: VISIBLE in attribution
+    dot.mkdir()
+    (dot / "d.bin").write_bytes(b"d" * 1024)
+    (user_root / "issue2091_p3_judge.log").write_bytes(b"L" * 999999)  # FILE: skipped
+    return user_root
+
+
+def test_staging_top_caches_attributes_fake_root(tmp_path, monkeypatch):
+    # Fake-root attribution: every top-level DIR (any name — huggingface-cache
+    # and dot-dirs included) is du'd and size-sorted; top-level FILES are never
+    # attributed even when huge (dir-scoped).
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_STAGING_CACHE_ROOTS", raising=False)
+    _make_staging_root(tmp_path)
+
+    top = asw._staging_top_caches(str(tmp_path), top_n=10)
+
+    named = [p for p, _ in top]
+    assert any(p.endswith("issue123_hf_dl") for p in named)
+    assert any(p.endswith("issue_742_restage") for p in named)
+    assert any(p.endswith("huggingface-cache") for p in named)  # visible, not reaped
+    assert any(p.endswith(".hf_i1092_operator") for p in named)  # visible, not reaped
+    assert not any(p.endswith("issue2091_p3_judge.log") for p in named)  # FILE skipped
+    sizes = [b for _, b in top]
+    assert sizes == sorted(sizes, reverse=True)  # size-sorted desc
+    # The big dir outranks the small one (du includes the 64 KiB blob).
+    assert named[0].endswith("issue123_hf_dl")
+
+
+def test_staging_top_caches_dry_run_thread(tmp_path, monkeypatch):
+    # NAMED §4.6 row: dry_run=True ⇒ [] with ZERO subprocess.run (the #681 r3
+    # zero-observational-side-effect contract, threaded onto the NEW path);
+    # dry_run=False against the same fake root still attributes.
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_STAGING_CACHE_ROOTS", raising=False)
+    _make_staging_root(tmp_path)
+
+    calls: list[list[str]] = []
+    real_run = _subprocess.run
+
+    def recording_run(cmd, *a, **k):
+        calls.append(cmd)
+        return real_run(cmd, *a, **k)
+
+    monkeypatch.setattr(asw.subprocess, "run", recording_run)
+
+    assert asw._staging_top_caches(str(tmp_path), dry_run=True) == []
+    assert calls == []  # ZERO subprocess.run under dry-run
+
+    top = asw._staging_top_caches(str(tmp_path), dry_run=False)
+    assert calls, "the real per-entry du must run under dry_run=False"
+    assert any(p.endswith("issue123_hf_dl") for p, _ in top)
+
+
+def test_staging_top_caches_env_override_root(tmp_path, monkeypatch):
+    # EPM_STAGING_CACHE_ROOTS (colon-separated; non-dirs dropped) OVERRIDES the
+    # default <dd_path>/<user> root — the default root must NOT be scanned.
+    import autonomous_session_watch as asw
+
+    default_root = _make_staging_root(tmp_path)  # would attribute if scanned
+    override = tmp_path / "override-root"
+    ovr_dir = override / "issue999_stage"
+    ovr_dir.mkdir(parents=True)
+    (ovr_dir / "blob.bin").write_bytes(b"o" * 8192)
+    missing = tmp_path / "does-not-exist"
+    monkeypatch.setenv("EPM_STAGING_CACHE_ROOTS", f"{override}:{missing}")
+
+    top = asw._staging_top_caches(str(tmp_path), top_n=10)
+
+    named = [p for p, _ in top]
+    assert any(p.endswith("issue999_stage") for p in named)
+    # Nothing from the default per-user root leaks in under the override.
+    assert not any(str(default_root) in p for p in named)
+
+
+def test_staging_top_caches_survives_kill_switches(tmp_path, monkeypatch):
+    # KILL-SWITCH SCOPE pin (#2095 §4.3, critic r1 Should-Fix 3): the sweep
+    # kill switches do NOT disable the READ-ONLY attribution — it is the
+    # triage channel a human needs exactly while the sweep is off.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_STAGING_CACHE_ROOTS", raising=False)
+    _make_staging_root(tmp_path)
+    monkeypatch.setenv("EPM_SKIP_STAGING_CACHE_SWEEP", "1")
+    monkeypatch.setenv("EPM_SKIP_NONCANONICAL_CACHE_SWEEP", "1")
+
+    top = asw._staging_top_caches(str(tmp_path), top_n=10)
+
+    assert any(p.endswith("issue123_hf_dl") for p, _ in top), (
+        "attribution rows must survive EPM_SKIP_STAGING_CACHE_SWEEP=1"
+    )
+
+
+def test_staging_top_caches_missing_root_empty(tmp_path, monkeypatch):
+    # No per-user dir under dd_path and no override ⇒ [] (fail-soft, no crash).
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_STAGING_CACHE_ROOTS", raising=False)
+    assert asw._staging_top_caches(str(tmp_path)) == []
+
+
+def test_data_disk_top_caches_merges_staging_in_du_fallback(monkeypatch):
+    # In the repquota-None FALLBACK branch, _data_disk_top_caches returns the
+    # merged, size-sorted top-N of the du glob attribution AND the staging
+    # attribution (#2095 §4.3) — capped at VM_DISK_SUBFLOOR_TOP_N.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_top_issue_caches_by_project_quota", lambda dd, *, dry_run: None)
+    monkeypatch.setattr(
+        asw,
+        "_top_issue_cache_paths",
+        lambda *, dry_run: [("data/issue_700/hf_dl", 100), ("data/issue_701/g1_dl", 50)],
+    )
+    monkeypatch.setattr(
+        asw,
+        "_staging_top_caches",
+        lambda dd, *, dry_run: [
+            ("/mnt/eps-data/u/issue_742_restage", 900),
+            ("/mnt/eps-data/u/huggingface-cache", 10),
+        ],
+    )
+
+    top = asw._data_disk_top_caches("/mnt/eps-data")
+
+    assert len(top) == asw.VM_DISK_SUBFLOOR_TOP_N  # merged then capped (3)
+    assert top[0] == ("/mnt/eps-data/u/issue_742_restage", 900)  # staging outranks
+    assert top[1] == ("data/issue_700/hf_dl", 100)
+    sizes = [b for _, b in top]
+    assert sizes == sorted(sizes, reverse=True)
+
+
+def test_data_disk_top_caches_repquota_branch_skips_staging(monkeypatch):
+    # When repquota attribution SUCCEEDS, its rows are returned as-is — the
+    # staging merge lives ONLY in the fallback branch (#2095 §4.3).
+    import autonomous_session_watch as asw
+
+    quota_rows = [("issue-658 (project quota, /mnt/eps-data)", 100 * 2**30)]
+    monkeypatch.setattr(
+        asw, "_top_issue_caches_by_project_quota", lambda dd, *, dry_run: quota_rows
+    )
+    monkeypatch.setattr(
+        asw,
+        "_staging_top_caches",
+        lambda dd, *, dry_run: pytest.fail("staging attribution ran on the repquota branch"),
+    )
+    monkeypatch.setattr(
+        asw,
+        "_top_issue_cache_paths",
+        lambda *, dry_run: pytest.fail("du glob attribution ran on the repquota branch"),
+    )
+
+    assert asw._data_disk_top_caches("/mnt/eps-data") == quota_rows
+
+
+def test_data_disk_top_caches_dry_run_zero_subprocess_with_staging_leg(tmp_path, monkeypatch):
+    # End-to-end dry-run thread through the PRODUCTION helpers (no stubs): with
+    # a real staging root present, dry_run=True still returns [] with ZERO
+    # subprocess.run — repquota → None, du → [], staging → [] (#681 r3).
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_STAGING_CACHE_ROOTS", raising=False)
+    _make_staging_root(tmp_path)
+    monkeypatch.setattr(
+        asw.subprocess,
+        "run",
+        lambda *a, **k: pytest.fail("subprocess.run called under dry_run=True"),
+    )
+
+    assert asw._data_disk_top_caches(str(tmp_path), dry_run=True) == []
+
+
+def test_main_data_disk_only_flag(isolated_registry, monkeypatch):
+    # --data-disk-only runs JUST the data-disk pass and exits (mirrors
+    # test_main_stale_blocked_only_flag / --gc-only; #2095 §4.3).
+    import autonomous_session_watch as asw
+
+    calls: list[str] = []
+    monkeypatch.setattr(asw, "data_disk_pass", lambda *a, **kw: calls.append("data_disk"))
+    monkeypatch.setattr(
+        asw, "vm_disk_pass", lambda *a, **kw: pytest.fail("ran another pass under --only")
+    )
+    monkeypatch.setattr(
+        asw, "gc_pass", lambda *a, **kw: pytest.fail("ran another pass under --only")
+    )
+    monkeypatch.setattr(
+        asw, "capacity_retry_pass", lambda *a, **kw: pytest.fail("ran another pass under --only")
+    )
+    rc = asw.main(["--data-disk-only", "--dry-run"])
+    assert rc == 0
+    assert calls == ["data_disk"]
+
+
 # ── Data-disk pass — PRODUCTION call site (#681 round-2 BLOCKER #1) ───────────
 # The round-1 diff DEFINED the percent helpers but never DROVE them from a live
 # watcher pass — plan §4 "Add a parallel data-disk check ... that the data-disk

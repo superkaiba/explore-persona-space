@@ -63,6 +63,23 @@ What is and is NOT a cache (the safety contract):
     sidecar-escalated. ``EPM_SKIP_NONCANONICAL_CACHE_SWEEP=1`` is the
     emergency kill switch (the sweep returns no candidates).
 
+  * STAGING-ROOT caches (#2095) — the same non-canonical contract extends,
+    STRICTLY OPT-IN (``staging_roots`` — only ``main()`` passes
+    ``production_staging_roots()``: default ``/mnt/eps-data/$USER`` iff the
+    data disk is a live mount; env ``EPM_STAGING_CACHE_ROOTS`` overrides), to
+    TOP-LEVEL issue-keyed dirs at the CLAUDE.md staging convention. Extraction
+    is PREFIX-ONLY (P1 plus ``tmp_issue<N>_*`` / ``tmp-<N>-*``; NO P2 suffix
+    route — the foreign-mkdtemp false-attribution shape), recency reads
+    TOP-LEVEL-ONLY (no rglob over multi-100-GB trees), a NEW gate 1.55
+    HARD-ESCALATES cross-issue CONTENT (a dir named for issue A holding issue
+    B's files — never auto-reaped in v1), ``unverified-kept`` escalations
+    carry a class label (``:derived-partial-mirror`` / ``:orphan-no-mirror``),
+    and a branch-(b) reap license above ~1 GB must pass a SAMPLED MIRROR
+    PROBE (largest file byte-equal on the data repo) or is refused as
+    ``unverified-kept:probe-failed``. ``EPM_SKIP_STAGING_CACHE_SWEEP=1``
+    kills this leg alone (the non-canonical kill switch kills it
+    transitively).
+
 There are now SIX reap gates, all composing additively (any one puts a cache
 dir in ``CleanResult.skipped`` instead of deleting it):
   1. The TERMINAL-status gate in ``vm_disk_guard.py`` (the OWNING issue must be
@@ -141,6 +158,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import functools
+import getpass
 import inspect
 import json
 import os
@@ -203,6 +221,18 @@ _DATA_NONCANONICAL_CACHE_RE = re.compile(r"^issue_?(\d+)\w*(?:_dl\d*|_hfstage|_c
 TMP_CACHE_ROOT_DEFAULT = "/tmp"  # env EPM_TMP_CACHE_ROOT (main()-only opt-in)
 NONCANONICAL_MIN_AGE_HOURS_DEFAULT = 48.0  # env EPS_NONCANONICAL_CACHE_MIN_AGE_HOURS
 NONCANONICAL_SWEEP_KILL_ENV = "EPM_SKIP_NONCANONICAL_CACHE_SWEEP"
+
+# ─── staging-root sweep (#2095) ──────────────────────────────────────────────
+# Inline rounds also stage multi-GB inputs at the CLAUDE.md staging convention
+# ``/mnt/eps-data/$USER/issue<N>_<slug>/``. Extraction there is PREFIX-ONLY:
+# the shared P1 regex first, then the two tmp-variants P1 cannot match
+# (``tmp_issue<N>_*`` / ``tmp-<N>-*`` — leading ``t``); deliberately NO P2
+# suffix route (the foreign-mkdtemp false-attribution shape — staging dirs
+# are huge, so a false attribution is unacceptable there).
+_STAGING_TMP_PREFIX_RE = re.compile(r"^tmp[-_](?:issue[-_]?)?(\d+)(?:[._-]|$)")
+STAGING_SWEEP_KILL_ENV = "EPM_SKIP_STAGING_CACHE_SWEEP"
+STAGING_ROOTS_ENV = "EPM_STAGING_CACHE_ROOTS"
+STAGING_EVIDENCE_PROBE_FLOOR_GB = 1.0  # env EPM_STAGING_EVIDENCE_PROBE_FLOOR_GB
 
 # The HF dataset repo a per-issue ``store/`` would have been mirrored to. Used
 # ONLY by the defensive nested-``store/`` parity guard below to verify a
@@ -520,6 +550,23 @@ def extract_issue_number(name: str) -> int | None:
     return None
 
 
+def extract_staging_issue_number(name: str) -> int | None:
+    """Issue number a STAGING-root entry NAME is keyed to, or ``None`` (#2095).
+
+    P1 (the shared :func:`extract_issue_number` prefix regex) first, then the
+    staging tmp-variant (``tmp-<N>-*``, ``tmp_issue<N>_*``). Deliberately NO
+    P2 suffix route (the foreign-mkdtemp shape; staging dirs are huge). A
+    leading ``.`` (dot-dir, e.g. ``.hf_i1092_operator``) can match neither
+    anchored regex — NEVER a candidate by construction. Pure; unit-tested."""
+    m = _TMP_ISSUE_PREFIX_RE.match(name)
+    if m is not None:
+        return int(m.group(1))
+    m = _STAGING_TMP_PREFIX_RE.match(name)
+    if m is not None:
+        return int(m.group(1))
+    return None
+
+
 def production_tmp_root() -> Path:
     """The ``/tmp`` root PRODUCTION ENTRY POINTS pass explicitly
     (env ``EPM_TMP_CACHE_ROOT``; blank -> :data:`TMP_CACHE_ROOT_DEFAULT`).
@@ -532,6 +579,35 @@ def production_tmp_root() -> Path:
     constant-terminal status monkeypatches); a both-None -> real-/tmp fallback
     would have them destructively rmtree live /tmp caches during pytest."""
     return Path(os.environ.get("EPM_TMP_CACHE_ROOT", "").strip() or TMP_CACHE_ROOT_DEFAULT)
+
+
+def production_staging_roots() -> list[Path]:
+    """Staging roots PRODUCTION ENTRY POINTS pass explicitly (#2095 —
+    main()-only, the sibling of :func:`production_tmp_root`; the I7-style AST
+    pin extends to this symbol).
+
+    Default: ``[data_disk_root()/<getpass.getuser()>]`` iff
+    ``os.path.ismount(data_disk_root())`` (an unmounted data disk is a clean
+    no-op — the #681 round-2 Major class) AND the per-user dir ``is_dir()``.
+    Env :data:`STAGING_ROOTS_ENV` (colon-separated absolute roots) OVERRIDES
+    the default — each entry kept iff ``is_dir()``, no mount guard on
+    explicit roots. :data:`STAGING_SWEEP_KILL_ENV` set -> ``[]``. Scope note:
+    that kill switch disables the SWEEP leg only — the watcher's read-only
+    ``_staging_top_caches`` attribution deliberately ignores it (#2095 §4.3).
+    Hermeticity contract mirrors the /tmp leg: library calls with
+    ``staging_roots=None`` NEVER touch any staging root (no fallback)."""
+    if os.environ.get(STAGING_SWEEP_KILL_ENV, "").strip():
+        return []
+    raw = os.environ.get(STAGING_ROOTS_ENV, "").strip()
+    if raw:
+        return [Path(p) for p in raw.split(":") if p.strip() and Path(p).is_dir()]
+    root = data_disk_root()
+    if not os.path.ismount(root):
+        return []
+    user_dir = root / getpass.getuser()
+    if not user_dir.is_dir():
+        return []
+    return [user_dir]
 
 
 def _tmp_entry_owned(path: Path) -> bool:
@@ -557,7 +633,7 @@ def _noncanonical_min_age_hours() -> float:
     return val if val >= 0.0 else NONCANONICAL_MIN_AGE_HOURS_DEFAULT
 
 
-def _dir_max_recency(path: Path) -> float | None:
+def _dir_max_recency(path: Path, *, top_level_only: bool = False) -> float | None:
     """Newest touch time over ``path`` itself + every entry under it
     (lstat-based — never follows symlinks; a per-entry stat error is skipped).
 
@@ -571,7 +647,13 @@ def _dir_max_recency(path: Path) -> float | None:
     every candidate and keep it forever (a self-keeping loop). Dir mtime
     changes only on entry create/delete/rename, a true write signal. Returns
     ``None`` when even the top-level lstat fails (the caller keeps —
-    fail-toward-keep)."""
+    fail-toward-keep).
+
+    ``top_level_only`` (#2095, staging candidates): lstat ``path`` + each
+    IMMEDIATE ``iterdir`` entry only — same ``_touch_time`` rules, no rglob
+    (a full rglob over a multi-100-GB staging tree is a real walk). Accepted
+    residual: a deep writer in a TERMINAL-status dir can look old — the
+    active-status gate protects live issues and gates 1.6/1.7 still bind."""
 
     def _touch_time(st: os.stat_result) -> float:
         if stat.S_ISREG(st.st_mode):
@@ -583,7 +665,7 @@ def _dir_max_recency(path: Path) -> float | None:
     except OSError:
         return None
     try:
-        for p in path.rglob("*"):
+        for p in path.iterdir() if top_level_only else path.rglob("*"):
             try:
                 newest = max(newest, _touch_time(p.lstat()))
             except OSError:
@@ -593,12 +675,52 @@ def _dir_max_recency(path: Path) -> float | None:
     return newest
 
 
+def _staging_cache_dirs(issue_n: int, staging_roots: list[Path] | None) -> list[Path]:
+    """TOP-LEVEL staging-root candidates keyed to ``issue_n`` (#2095).
+
+    Per root: one ``iterdir`` — dirs or symlinks only (top-level FILES like
+    ``issue<N>_p3_judge.log`` are never candidates), uid-owned
+    (:func:`_tmp_entry_owned` — root-owned strays skipped), name keyed via
+    :func:`extract_staging_issue_number` (PREFIX-ONLY — no P2 suffix route).
+    Empty when ``staging_roots`` is ``None`` (hermeticity: library callers
+    never touch any staging root — only ``main()`` passes
+    :func:`production_staging_roots`) or when either kill env is set
+    (:data:`STAGING_SWEEP_KILL_ENV` kills the staging leg alone;
+    :data:`NONCANONICAL_SWEEP_KILL_ENV` kills the whole non-canonical sweep,
+    this leg transitively)."""
+    if staging_roots is None:
+        return []
+    if os.environ.get(STAGING_SWEEP_KILL_ENV, "").strip():
+        return []
+    if os.environ.get(NONCANONICAL_SWEEP_KILL_ENV, "").strip():
+        return []
+    out: list[Path] = []
+    for root in staging_roots:
+        try:
+            if not root.is_dir():
+                continue
+            children = sorted(root.iterdir())
+        except OSError:
+            continue
+        for child in children:
+            try:
+                is_dir_or_link = child.is_dir() or child.is_symlink()
+            except OSError:
+                continue
+            if not is_dir_or_link or not _tmp_entry_owned(child):
+                continue
+            if extract_staging_issue_number(child.name) == issue_n:
+                out.append(child)
+    return out
+
+
 def noncanonical_cache_dirs(
     issue_n: int,
     *,
     data_root: Path | None = None,
     tmp_root: Path | None = None,
     sweep_tmp: bool = True,
+    staging_roots: list[Path] | None = None,
 ) -> list[Path]:
     """Non-canonical issue-keyed cache candidates for ``issue_n`` (#911).
 
@@ -613,10 +735,16 @@ def noncanonical_cache_dirs(
     data_root)`` whose name matches ``issue…<N>…{_dl,_hfstage,_cache}`` with
     the regex group equal to ``issue_n`` (dirs or symlinks).
 
+    STAGING (#2095): TOP-LEVEL entries of each EXPLICIT ``staging_roots``
+    root keyed via :func:`extract_staging_issue_number` — same strict opt-in
+    as the /tmp leg (``None`` = hermetic), plus its own kill switch
+    (:data:`STAGING_SWEEP_KILL_ENV`); see :func:`_staging_cache_dirs`.
+
     Empty when :data:`NONCANONICAL_SWEEP_KILL_ENV` is set (emergency rollback
     without a revert). Every candidate returned here must STILL pass the reap
     gates in ``clean_issue_downloads`` (recency, nested-durable, positive
-    re-downloadability evidence) before anything is deleted."""
+    re-downloadability evidence — staging candidates additionally the
+    cross-issue content gate 1.55) before anything is deleted."""
     if os.environ.get(NONCANONICAL_SWEEP_KILL_ENV, "").strip():
         return []
     out: list[Path] = []
@@ -641,6 +769,7 @@ def noncanonical_cache_dirs(
                 and not child.is_symlink()
             ):
                 out.append(child)
+    out.extend(_staging_cache_dirs(issue_n, staging_roots))
     for root in _resolve_data_roots(issue_n, data_root):
         if not root.is_dir():
             continue
@@ -673,6 +802,7 @@ def _noncanonical_recency_blocked(
     apply: bool,
     min_age_hours: float,
     now: float,
+    staging: bool = False,
 ) -> str | None:
     """Gate 1.5 (NEW non-canonical candidates only): SKIP reason when the
     tree's newest touch time (:func:`_dir_max_recency` — file
@@ -681,8 +811,9 @@ def _noncanonical_recency_blocked(
     on a terminal task) may hold it; /tmp paths are never declared in plans,
     so the #773 consumer gate cannot see those readers and recency is the
     only signal. Sidecar kind ``noncanonical-cache-recent-kept``.
-    Fail-toward-keep on stat errors."""
-    newest = _dir_max_recency(cache_dir)
+    Fail-toward-keep on stat errors. STAGING candidates (#2095) read
+    TOP-LEVEL-ONLY recency (no rglob over a multi-100-GB staging tree)."""
+    newest = _dir_max_recency(cache_dir, top_level_only=staging)
     if newest is None:
         reason = "recency unreadable (stat failed) — fail-toward-keep; KEPT"
     else:
@@ -769,6 +900,134 @@ def _data_repo_toplevel_names() -> frozenset[str] | None:
         return None
 
 
+def _staging_cross_issue_content(cache_dir: Path, issue_n: int) -> list[str]:
+    """Gate 1.55 scan (#2095): relative paths (depth <= 2, ``iterdir`` only —
+    never a full rglob) of entries whose NAME keys a DIFFERENT issue than
+    ``issue_n`` (P1 regex, M != issue_n — the dir-named-for-A-holding-B's-
+    tensors shape). Fail-toward-keep on OSError: an unreadable level
+    contributes an ``<unreadable>`` sentinel entry so the caller BLOCKS.
+    Symlinked subdirs are not descended (a link can point into another
+    issue's real tree; the link's own depth-1 NAME is still scanned);
+    same-issue names contribute nothing."""
+
+    def _foreign(name: str) -> bool:
+        m = _TMP_ISSUE_PREFIX_RE.match(name)
+        return m is not None and int(m.group(1)) != issue_n
+
+    try:
+        depth1 = sorted(cache_dir.iterdir())
+    except OSError:
+        return [f"{cache_dir.name}/<unreadable>"]
+    hits: list[str] = []
+    for child in depth1:
+        if _foreign(child.name):
+            hits.append(child.name)
+            continue
+        try:
+            if child.is_dir() and not child.is_symlink():
+                hits.extend(
+                    f"{child.name}/{sub.name}"
+                    for sub in sorted(child.iterdir())
+                    if _foreign(sub.name)
+                )
+        except OSError:
+            hits.append(f"{child.name}/<unreadable>")
+    return hits
+
+
+def _staging_unverified_class(
+    cache_dir: Path, data_repo_toplevel: frozenset[str] | None
+) -> str | None:
+    """Escalation class label for a STAGING candidate gate 1.7 refused (#2095
+    delta 5): ``derived-partial-mirror`` when >=1 top-level name matches a
+    data-repo prefix (the audit's dominant ESCALATE class — derived from
+    verified-mirrored HF inputs, regenerable, not itself mirrored) vs
+    ``orphan-no-mirror`` (0 matched). ``None`` when the listing is
+    unavailable (fetch failed — no branch-(b) match counts exist to
+    classify) or the dir is unreadable; the caller then keeps the plain
+    ``unverified-kept`` disposition. Name rules mirror branch (b)'s (the
+    ``.cache`` hub-client bookkeeping dir is ignored)."""
+    if data_repo_toplevel is None:
+        return None
+    try:
+        names = [
+            c.name
+            for c in cache_dir.iterdir()
+            if not (c.name == ".cache" and c.is_dir() and not c.is_symlink())
+        ]
+    except OSError:
+        return None
+    matched = sum(1 for n in names if n in data_repo_toplevel)
+    return "derived-partial-mirror" if matched >= 1 else "orphan-no-mirror"
+
+
+def _staging_probe_floor_bytes() -> int:
+    """Sampled-mirror-probe floor in bytes (#2095 delta 9; env
+    ``EPM_STAGING_EVIDENCE_PROBE_FLOOR_GB``, invalid/negative -> the
+    :data:`STAGING_EVIDENCE_PROBE_FLOOR_GB` default)."""
+    raw = os.environ.get("EPM_STAGING_EVIDENCE_PROBE_FLOOR_GB", "").strip()
+    gb = STAGING_EVIDENCE_PROBE_FLOOR_GB
+    if raw:
+        try:
+            val = float(raw)
+        except ValueError:
+            val = -1.0
+        if val >= 0.0:
+            gb = val
+    return int(gb * 1e9)
+
+
+def _hf_path_size(rel: str) -> int | None:
+    """Byte size of ``rel`` on the HF data repo (one ``get_paths_info`` call
+    — per-path POST, safe on the ~1M-file repo), or ``None`` when the path is
+    absent. Raises on transport/auth errors — the probe caller treats ANY
+    exception as refusal (fail-toward-keep)."""
+    from huggingface_hub import HfApi
+
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+    for info in api.get_paths_info(hf_data_repo(), [rel], repo_type="dataset"):
+        if str(getattr(info, "path", "")) == rel:
+            size = getattr(info, "size", None)
+            return int(size) if size is not None else None
+    return None
+
+
+def _staging_mirror_probe(cache_dir: Path) -> str | None:
+    """Delta-9 sampled mirror probe (#2095) on a branch-(b)-LICENSED staging
+    candidate above :func:`_staging_probe_floor_bytes`. Branch (b) is
+    NAME-level prefix matching only, so a SAME-issue partial mirror (a dir
+    whose top-level names match repo prefixes while holding local-only
+    files) would be licensed by name coincidence — unacceptable when the
+    license triggers rmtree of a multi-GB tree. The probe locates the
+    LARGEST regular file under the candidate (one rglob — only on
+    already-licensed candidates; the rmtree that would follow walks the same
+    tree anyway), maps its cache-relative path onto the data repo, and
+    verifies existence + byte-equal size. Returns ``None`` when the license
+    STANDS (byte-equal mirror hit, or no regular file exists — nothing at
+    risk beyond empty dirs), else a refusal reason string; ANY exception is
+    a refusal (fail-toward-keep)."""
+    try:
+        largest: Path | None = None
+        largest_size = -1
+        for p in cache_dir.rglob("*"):
+            try:
+                st = p.lstat()
+            except OSError:
+                continue
+            if stat.S_ISREG(st.st_mode) and st.st_size > largest_size:
+                largest, largest_size = p, st.st_size
+        if largest is None:
+            return None  # no regular file — nothing at risk beyond empty dirs
+        rel = largest.relative_to(cache_dir).as_posix()
+        size = _hf_path_size(rel)
+        if size == largest_size:
+            return None
+        detail = "absent from" if size is None else f"{size} B on"
+        return f"largest local file {rel} ({largest_size} B) is {detail} {hf_data_repo()}"
+    except Exception as exc:
+        return f"probe error ({type(exc).__name__}: {exc})"
+
+
 def _noncanonical_reap_gates(
     cache_dir: Path,
     *,
@@ -777,11 +1036,24 @@ def _noncanonical_reap_gates(
     min_age_hours: float,
     now: float,
     data_repo_toplevel_cache: dict[str, frozenset[str] | None],
+    staging: bool = False,
+    size_bytes: int = 0,
 ) -> str | tuple[str, str]:
     """Run gates 1.5 -> 1.6 -> 1.7 on a NON-CANONICAL candidate (#911),
     ordered cheap-first (recency needs only stats, the durable scan is a name
     rglob, the evidence gate may make one HF call — memoized in
     ``data_repo_toplevel_cache``).
+
+    STAGING candidates (#2095, ``staging=True``): gate 1.5 reads
+    TOP-LEVEL-ONLY recency; a NEW gate 1.55 (cross-issue CONTENT
+    hard-escalate) runs between 1.5 and 1.6; gate 1.7's ``unverified-kept``
+    disposition carries a class label (``derived-partial-mirror`` /
+    ``orphan-no-mirror``), the empty-dir license is allowed (prefix-only
+    extraction removes the P2 foreign-mkdtemp concern), and a branch-(b)
+    license on a candidate above the probe floor (``size_bytes`` vs
+    :func:`_staging_probe_floor_bytes`) must additionally pass the sampled
+    mirror probe (:func:`_staging_mirror_probe`) or it is refused as
+    ``unverified-kept:probe-failed``.
 
     Returns the positive-evidence STRING when the reap is licensed, or a
     ``(disposition, skip_reason)`` tuple when blocked (fail-toward-keep; the
@@ -789,10 +1061,46 @@ def _noncanonical_reap_gates(
     rel = _rel_name(cache_dir)
     # Gate 1.5 — recency (sidecar row appended inside on a block).
     recency_reason = _noncanonical_recency_blocked(
-        cache_dir, issue_n=issue_n, apply=apply, min_age_hours=min_age_hours, now=now
+        cache_dir,
+        issue_n=issue_n,
+        apply=apply,
+        min_age_hours=min_age_hours,
+        now=now,
+        staging=staging,
     )
     if recency_reason is not None:
         return ("recency-kept", recency_reason)
+    # Gate 1.55 (STAGING only, #2095) — cross-issue CONTENT hard-escalates:
+    # a dir named for issue A holding issue B's tensors is NEVER auto-reaped
+    # in v1, even with full mirror evidence (a name-keyed terminal reap would
+    # destroy a parked task's store; the human acts off the escalation row).
+    if staging:
+        cross = _staging_cross_issue_content(cache_dir, issue_n)
+        if cross:
+            content_issues = sorted(
+                {
+                    int(m.group(1))
+                    for h in cross
+                    if (m := _TMP_ISSUE_PREFIX_RE.match(Path(h).name)) is not None
+                }
+            )
+            shown = ", ".join(cross[:5])
+            reason = (
+                f"staging content names other issue(s) {content_issues or ['<unreadable>']} "
+                f"({shown}) — cross-issue content hard-escalates; KEPT "
+                f"(human decision off the escalation row; never auto-reaped in v1)"
+            )
+            append_disk_guard_event(
+                {
+                    "kind": "staging-cache-cross-issue-kept",
+                    "task": issue_n,
+                    "path": rel,
+                    "content_issues": content_issues,
+                    "reason": reason,
+                },
+                apply=apply,
+            )
+            return ("cross-issue-kept", reason)
     # Gate 1.6 — nested durable content blocks the whole-dir reap outright.
     durable = _nested_durable_dirs(cache_dir)
     if durable:
@@ -819,7 +1127,10 @@ def _noncanonical_reap_gates(
     # ``*_<N>`` name with no P1/P3 route — the foreign-mkdtemp shape,
     # ``tmpdu2m4w_7``) never gets the empty-dir license: it must show REAL
     # non-empty evidence (r2 fix, concern ``p2-empty-tempdir-false-reap``).
-    p2_only = _p2_suffix_only(cache_dir.name)
+    # STAGING candidates keep the empty-dir license unconditionally (#2095 —
+    # prefix-only extraction removes the P2 foreign-mkdtemp concern that
+    # motivated the /tmp restriction).
+    p2_only = False if staging else _p2_suffix_only(cache_dir.name)
     evidence = _positive_redownloadability_evidence(
         cache_dir, data_repo_toplevel=None, allow_empty_license=not p2_only
     )
@@ -833,22 +1144,56 @@ def _noncanonical_reap_gates(
             allow_empty_license=not p2_only,
         )
     if evidence is None:
+        disposition = "unverified-kept"
+        if staging:
+            label = _staging_unverified_class(
+                cache_dir, data_repo_toplevel_cache.get(hf_data_repo())
+            )
+            if label is not None:
+                disposition = f"unverified-kept:{label}"
         reason = (
             "no positive re-downloadability evidence (no hub-layout markers; "
             "top-level names not verified as data-repo prefixes"
             + ("; P2 suffix-only route — requires non-empty positive evidence" if p2_only else "")
             + ") — KEPT (escalate-only, never deleted)"
         )
-        append_disk_guard_event(
-            {
-                "kind": "noncanonical-cache-unverified-kept",
-                "task": issue_n,
-                "path": rel,
-                "reason": reason,
-            },
-            apply=apply,
-        )
-        return ("unverified-kept", reason)
+        row = {
+            "kind": "noncanonical-cache-unverified-kept",
+            "task": issue_n,
+            "path": rel,
+            "reason": reason,
+        }
+        if disposition != "unverified-kept":
+            row["disposition"] = disposition  # staging class label (#2095)
+        append_disk_guard_event(row, apply=apply)
+        return (disposition, reason)
+    # Delta-9 sampled mirror probe (#2095, STAGING only): a branch-(b)
+    # name-match license on a candidate above the probe floor must survive a
+    # byte-equal existence probe of the candidate's largest file on the data
+    # repo. Branch (a) hub-layout and the empty-dir license are unchanged.
+    if (
+        staging
+        and evidence.startswith("data-repo-prefix mirror")
+        and size_bytes > _staging_probe_floor_bytes()
+    ):
+        probe_fail = _staging_mirror_probe(cache_dir)
+        if probe_fail is not None:
+            reason = (
+                f"branch-(b) name-match license refused for a "
+                f"{size_bytes / 1e9:.2f} GB staging candidate — sampled mirror probe: "
+                f"{probe_fail}; KEPT (escalate-only, never deleted)"
+            )
+            append_disk_guard_event(
+                {
+                    "kind": "noncanonical-cache-unverified-kept",
+                    "task": issue_n,
+                    "path": rel,
+                    "disposition": "unverified-kept:probe-failed",
+                    "reason": reason,
+                },
+                apply=apply,
+            )
+            return ("unverified-kept:probe-failed", reason)
     return evidence
 
 
@@ -1311,7 +1656,10 @@ class CleanResult:
     # v4 structured reporting (#911): rel -> disposition for every discovered
     # NON-CANONICAL candidate ("removed" | "would-remove" | "recency-kept" |
     # "durable-content-kept" | "unverified-kept" | "consumer-kept" |
-    # "external-target-kept" | "failed"). Canonical hf_dl/g*_dl caches are
+    # "external-target-kept" | "failed"; STAGING candidates (#2095) may add
+    # "cross-issue-kept" and the labeled "unverified-kept:derived-partial-
+    # mirror" / "unverified-kept:orphan-no-mirror" /
+    # "unverified-kept:probe-failed" variants). Canonical hf_dl/g*_dl caches are
     # deliberately ABSENT (their reap license is the canonical name convention
     # + the #679 parity gate). vm_disk_guard's tier (b) surfaces these in its
     # --json output — report-only escalation persists NOTHING to the sidecar,
@@ -1353,6 +1701,7 @@ def clean_issue_downloads(
     data_root: Path | None = None,
     tmp_root: Path | None = None,
     sweep_tmp: bool = True,
+    staging_roots: list[Path] | None = None,
     _skip_active_consumer_guard: bool = False,
 ) -> CleanResult:
     """Delete (``apply=True``) or report (default) ``issue_n``'s download caches.
@@ -1417,6 +1766,23 @@ def clean_issue_downloads(
     non-canonical ones). ``EPM_SKIP_NONCANONICAL_CACHE_SWEEP=1`` disables the
     non-canonical sweep entirely (emergency kill switch).
 
+    STAGING candidates (#2095): with an EXPLICIT ``staging_roots`` (same
+    strict opt-in as ``tmp_root`` — only the CLI ``main()`` bodies pass
+    :func:`production_staging_roots`; the library default ``None`` never
+    touches any staging root), the sweep additionally covers TOP-LEVEL
+    issue-keyed dirs under each root (:func:`_staging_cache_dirs`,
+    PREFIX-ONLY extraction — no P2 suffix route). They ride the SAME gate
+    chain with three staging-specific tightenings: gate 1.5 reads
+    TOP-LEVEL-ONLY recency (no rglob over a multi-100-GB tree); a NEW gate
+    1.55 between 1.5 and 1.6 HARD-ESCALATES cross-issue CONTENT (sidecar
+    kind ``staging-cache-cross-issue-kept`` with content-issue attribution —
+    never auto-reaped in v1, even mirror-verified); gate 1.7's
+    ``unverified-kept`` disposition carries a class label
+    (``:derived-partial-mirror`` / ``:orphan-no-mirror``) and a branch-(b)
+    license above ~1 GB (:func:`_staging_probe_floor_bytes`) must pass the
+    sampled mirror probe or is refused as ``unverified-kept:probe-failed``.
+    ``EPM_SKIP_STAGING_CACHE_SWEEP=1`` kills the staging leg alone.
+
     ``_skip_active_consumer_guard`` (private, keyword-only, defaulted False) opts
     out of gate 1, skipping the ``tasks/`` walk entirely. It is a TEST SEAM only
     — no production caller passes it. In particular
@@ -1445,15 +1811,26 @@ def clean_issue_downloads(
     )
     canonical = download_cache_dirs(issue_n, data_root)
     noncanon = noncanonical_cache_dirs(
-        issue_n, data_root=data_root, tmp_root=tmp_root, sweep_tmp=sweep_tmp
+        issue_n,
+        data_root=data_root,
+        tmp_root=tmp_root,
+        sweep_tmp=sweep_tmp,
+        staging_roots=staging_roots,
     )
     noncanon_keys = {os.path.normpath(str(p)) for p in noncanon}
+    # Staging-origin tagging (#2095): the staging discovery is deterministic,
+    # so re-running it yields the same set — a second normalized-path set
+    # mirrors ``noncanon_keys`` and routes those candidates through the
+    # staging-specific gate variants (top-level recency, gate 1.55, class
+    # labels, the sampled mirror probe).
+    staging_keys = {os.path.normpath(str(p)) for p in _staging_cache_dirs(issue_n, staging_roots)}
     now = time.time()
     min_age = _noncanonical_min_age_hours()
     for cache_dir in _dedup_nested([*canonical, *noncanon]):
         rel = _rel_name(cache_dir)
         res.sizes_bytes[rel] = _dir_size_bytes(cache_dir)
         is_noncanonical = os.path.normpath(str(cache_dir)) in noncanon_keys
+        is_staging = os.path.normpath(str(cache_dir)) in staging_keys
         # Gate 1 (#773): a DIFFERENT active task consumes data/issue_<N>/ as a
         # planned input. Cheap set lookup, checked FIRST so a consumer hit
         # short-circuits before the parity gate's potential HF call.
@@ -1471,6 +1848,7 @@ def clean_issue_downloads(
             res,
             cache_dir,
             is_noncanonical=is_noncanonical,
+            staging=is_staging,
             issue_n=issue_n,
             apply=apply,
             min_age_hours=min_age,
@@ -1599,10 +1977,13 @@ def _apply_reap_gates(
     now: float,
     hf_sizes_cache: dict[str, dict[str, int] | None],
     data_repo_toplevel_cache: dict[str, frozenset[str] | None],
+    staging: bool = False,
 ) -> bool:
     """Run the per-candidate reap gates AFTER gate 1 (#773): gates 1.5/1.6/1.7
-    (#911) on a NON-CANONICAL candidate, or gate 2 (#679 nested-store parity)
-    on a canonical one. Records the skip + disposition/evidence on ``res``.
+    (#911) on a NON-CANONICAL candidate — with the staging variants (1.55,
+    top-level recency, class labels, mirror probe; #2095) when ``staging`` —
+    or gate 2 (#679 nested-store parity) on a canonical one. Records the
+    skip + disposition/evidence on ``res``.
     Returns True when the candidate is BLOCKED (caller skips it) — every
     block is fail-toward-keep and sidecar-escalated by the gate that fired."""
     rel = _rel_name(cache_dir)
@@ -1614,6 +1995,8 @@ def _apply_reap_gates(
             min_age_hours=min_age_hours,
             now=now,
             data_repo_toplevel_cache=data_repo_toplevel_cache,
+            staging=staging,
+            size_bytes=res.sizes_bytes.get(rel, 0),
         )
         if isinstance(gate, tuple):
             disposition, reason = gate
@@ -1672,6 +2055,7 @@ def clean_issue_downloads_incremental(
     data_root: Path | None = None,
     tmp_root: Path | None = None,
     sweep_tmp: bool = True,
+    staging_roots: list[Path] | None = None,
 ) -> CleanResult:
     """Between-phase cleanup of ``issue_n``'s consumed download caches (within-run).
 
@@ -1699,9 +2083,15 @@ def clean_issue_downloads_incremental(
     cross-issue protection on the incremental path entirely (a fail-OPEN strand
     of the #742 class). It defaults to ON; ``clean_issue_downloads`` retains the
     private ``_skip_active_consumer_guard`` kwarg only as a test seam.
-    ``tmp_root`` / ``sweep_tmp`` forward verbatim (#911 — same strict opt-in)."""
+    ``tmp_root`` / ``sweep_tmp`` forward verbatim (#911 — same strict opt-in);
+    ``staging_roots`` forwards verbatim too (#2095 — same strict opt-in)."""
     return clean_issue_downloads(
-        issue_n, apply=apply, data_root=data_root, tmp_root=tmp_root, sweep_tmp=sweep_tmp
+        issue_n,
+        apply=apply,
+        data_root=data_root,
+        tmp_root=tmp_root,
+        sweep_tmp=sweep_tmp,
+        staging_roots=staging_roots,
     )
 
 
@@ -1739,7 +2129,10 @@ def main(argv: list[str] | None = None) -> int:
             "staging caches: top-level /tmp i<N>*/issue<N>*/*_<N> dirs and "
             "data/ issue…<N>…{_dl,_hfstage,_cache} dirs — the latter set "
             "gated on a 48h recency window, a nested store/+eval_results/ "
-            "block, and positive re-downloadability evidence). "
+            "block, and positive re-downloadability evidence; plus the "
+            "issue's own /mnt/eps-data/$USER staging dirs (#2095 — prefix-"
+            "keyed, cross-issue content hard-escalates, kill switch "
+            "EPM_SKIP_STAGING_CACHE_SWEEP=1). "
             "Re-downloadable; store/ + eval_results/ are never touched. "
             "Dry-run by default."
         )
@@ -1775,8 +2168,11 @@ def main(argv: list[str] | None = None) -> int:
     # accept it, so the production CLI always opts in.
     kwargs: dict = {"apply": args.apply}
     with contextlib.suppress(TypeError, ValueError):
-        if "tmp_root" in inspect.signature(cleaner).parameters:
+        params = inspect.signature(cleaner).parameters
+        if "tmp_root" in params:
             kwargs["tmp_root"] = production_tmp_root()
+        if "staging_roots" in params:
+            kwargs["staging_roots"] = production_staging_roots()
     res = cleaner(args.issue, **kwargs)
     mode = "incremental " if args.incremental else ""
     verb = "removed" if args.apply else "would remove"

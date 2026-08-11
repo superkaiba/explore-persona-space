@@ -94,6 +94,11 @@ class PreflightReport:
     hf_lfs_write_verdict: str = ""
     hf_lfs_write_detail: str = ""
     hf_lfs_write_probe_gb: float = 0.0
+    # Shared-VM data-disk (/mnt/eps-data) used percent (#2097). None = the
+    # mount is absent / not a mount (pods, GCE, SLURM) or unreadable —
+    # severity-agnostic: set whenever the mount is live, WARN/ERROR rows
+    # ride the thresholds. Set by ``_check_data_disk_floor``.
+    data_disk_used_pct: float | None = None
 
     def add_error(self, msg: str):
         self.errors.append(msg)
@@ -139,6 +144,10 @@ class PreflightReport:
             f"(usable headroom {self.disk_probed_headroom_gb:.1f} GB, "
             f"basis: {self.disk_headroom_basis})"
         )
+        if self.data_disk_used_pct is not None:
+            lines.append(
+                f"  Data disk ({EPS_DATA_DISK_MOUNT}): {self.data_disk_used_pct:.1f}% used"
+            )
         if self.hf_storage_used_tb is not None and self.hf_storage_ceiling_tb is not None:
             lines.append(
                 f"  HF storage: {self.hf_storage_used_tb:.2f} TB / "
@@ -279,6 +288,111 @@ def _check_vm_root_floor(report: PreflightReport, check_path: str, min_free_gb: 
     )
 
 
+#: Shared-VM data-disk floor (#2097). ``/mnt/eps-data`` is the #681 512 GB
+#: data disk backing ``.claude/worktrees`` + the per-issue staging caches;
+#: it fills fleet-wide (the watcher's 85% escalate-only subfloor is the
+#: early push channel — ``EPM_VM_DATA_DISK_SUBFLOOR_PCT``,
+#: `.claude/rules/disk-hygiene.md`). Preflight adds the launch-time gate:
+#: WARN at 90% used (above the watcher subfloor so the push stays the early
+#: signal), ERROR at 98% (effectively full — a staging write will
+#: ENOSPC/EDQUOT) — percent-based, the watcher's size-invariant convention
+#: (a GB floor breaks on a disk resize).
+EPS_DATA_DISK_MOUNT = "/mnt/eps-data"
+DATA_DISK_WARN_USED_PCT_DEFAULT = 90.0
+DATA_DISK_ERR_USED_PCT_DEFAULT = 98.0
+
+
+def _data_disk_pct_env(env_var: str, default: float) -> float:
+    """Percent threshold from ``env_var``; garbled / non-positive / >100
+    falls back to ``default`` (the ``_vm_root_disk_floor_gb`` convention).
+    Never raises."""
+    raw = os.environ.get(env_var, "")
+    try:
+        val = float(raw)
+    except ValueError:
+        return default
+    return val if 0 < val <= 100 else default
+
+
+def _data_disk_warn_pct() -> float:
+    """Data-disk WARN threshold (used %) — env ``EPM_PREFLIGHT_DATA_DISK_WARN_PCT``."""
+    return _data_disk_pct_env("EPM_PREFLIGHT_DATA_DISK_WARN_PCT", DATA_DISK_WARN_USED_PCT_DEFAULT)
+
+
+def _data_disk_err_pct() -> float:
+    """Data-disk ERROR threshold (used %) — env ``EPM_PREFLIGHT_DATA_DISK_ERR_PCT``."""
+    return _data_disk_pct_env("EPM_PREFLIGHT_DATA_DISK_ERR_PCT", DATA_DISK_ERR_USED_PCT_DEFAULT)
+
+
+def _data_disk_floor_override() -> bool:
+    """True when the operator explicitly opted to launch past the data-disk
+    ERROR threshold (env ``EPM_PREFLIGHT_DATA_DISK_OVERRIDE=1``) — degrades
+    the ERROR to a logged WARN, mirroring ``EPM_PREFLIGHT_DISK_FLOOR_OVERRIDE``."""
+    return os.environ.get("EPM_PREFLIGHT_DATA_DISK_OVERRIDE", "").strip() in {"1", "true", "yes"}
+
+
+def _check_data_disk_floor(report: PreflightReport) -> None:
+    """WARN/ERROR when the shared-VM data disk ``/mnt/eps-data`` is nearly full (#2097).
+
+    Self-scoping: fires ONLY when :data:`EPS_DATA_DISK_MOUNT` is a LIVE
+    mount (``os.path.ismount``) — pods / GCE / SLURM lack the mount, so no
+    ``is_runpod``/``is_cluster`` branching is needed; an absent or
+    not-a-mount path is a clean skip (no rows, no report field). Percent-
+    based (the watcher's size-invariant convention — a GB floor breaks on a
+    disk resize): ``used% = 100 * (1 - f_bavail / f_blocks)`` from
+    ``os.statvfs``. WARN at >= :func:`_data_disk_warn_pct` (default 90);
+    ERROR at >= :func:`_data_disk_err_pct` (default 98) unless
+    ``EPM_PREFLIGHT_DATA_DISK_OVERRIDE=1`` degrades it to a WARN. Sets
+    ``report.data_disk_used_pct`` whenever the mount is live (severity-
+    agnostic — the summary + ``--json`` row rides it). A statvfs read error
+    degrades to a single warning; never raises."""
+    if not os.path.ismount(EPS_DATA_DISK_MOUNT):
+        return
+    try:
+        st = os.statvfs(EPS_DATA_DISK_MOUNT)
+    except OSError as e:
+        report.add_warning(f"Could not read data-disk usage on {EPS_DATA_DISK_MOUNT}: {e}")
+        return
+    if st.f_blocks <= 0:
+        report.add_warning(
+            f"Degenerate statvfs on {EPS_DATA_DISK_MOUNT} (f_blocks=0) — "
+            f"skipping the data-disk floor check"
+        )
+        return
+    used_pct = 100.0 * (1.0 - st.f_bavail / st.f_blocks)
+    report.data_disk_used_pct = used_pct
+    warn_pct = _data_disk_warn_pct()
+    err_pct = _data_disk_err_pct()
+    remediation = (
+        "Reclaim: `uv run python scripts/vm_disk_guard.py --apply` (terminal-issue "
+        "caches) or `uv run python scripts/clean_experiment_downloads.py <N> --apply` "
+        "on TERMINAL issues; active-issue data is resize/raise-cap only, never deleted "
+        "(.claude/rules/disk-hygiene.md)."
+    )
+    if used_pct >= err_pct:
+        if _data_disk_floor_override():
+            report.add_warning(
+                f"Data-disk floor OVERRIDDEN: {EPS_DATA_DISK_MOUNT} is {used_pct:.1f}% "
+                f"used (ERROR threshold {err_pct:.0f}%, EPM_PREFLIGHT_DATA_DISK_ERR_PCT); "
+                f"launching anyway because EPM_PREFLIGHT_DATA_DISK_OVERRIDE is set. "
+                f"Staging writes risk ENOSPC/EDQUOT. {remediation}"
+            )
+        else:
+            report.add_error(
+                f"Data disk {EPS_DATA_DISK_MOUNT} is {used_pct:.1f}% used — at/over the "
+                f"{err_pct:.0f}% ERROR threshold (EPM_PREFLIGHT_DATA_DISK_ERR_PCT): a "
+                f"staging write will ENOSPC/EDQUOT. {remediation} Or set "
+                f"EPM_PREFLIGHT_DATA_DISK_OVERRIDE=1 to degrade this to a WARN."
+            )
+        return
+    if used_pct >= warn_pct:
+        report.add_warning(
+            f"Data disk {EPS_DATA_DISK_MOUNT} is {used_pct:.1f}% used (warn at "
+            f"{warn_pct:.0f}%, EPM_PREFLIGHT_DATA_DISK_WARN_PCT) — nearly full. "
+            f"{remediation}"
+        )
+
+
 def _disk_check_path() -> str:
     """Where to run the disk-space probe — three-way branch.
 
@@ -314,6 +428,11 @@ def check_git_status(report: PreflightReport, project_root: Path):
     run-of-record on the canonical ``/issue`` pod checkout), with divergence
     from ``origin/main`` demoted to an informational WARNING; detached HEAD
     (pinned-SHA checkout) only warns.
+
+    The ``git fetch`` is SCOPED to the refs this check actually compares —
+    ``origin <branch> main`` on a feature branch, ``origin main`` on ``main``
+    / detached HEAD (#2107) — because a full-remote fetch at the repo's
+    ~1,700 remote heads cannot finish inside any sane preflight timeout.
 
     Cluster branch: the ``git fetch origin`` round trip is SKIPPED because
     the cluster compute node has no remote git auth — code reaches the
@@ -352,17 +471,40 @@ def check_git_status(report: PreflightReport, project_root: Path):
     # The fetch rc is CAPTURED: the behind-own guarantee below is only as
     # fresh as this fetch, so a failed fetch on a feature branch is an ERROR,
     # never a silent stale-ref false PASS.
-    fetch_rc, _, fetch_err = _run(
-        ["git", "-C", str(project_root), "fetch", "--quiet", "origin"], timeout=15
-    )
-    fetch_failed = fetch_rc != 0
-
+    #
+    # Resolve the branch FIRST — the fetch refspec depends on it (#2107),
+    # and a failed resolution skips the behind checks entirely.
     rc, branch, err = _run(["git", "-C", str(project_root), "rev-parse", "--abbrev-ref", "HEAD"])
     if rc != 0:
         report.add_warning(f"could not determine current branch: {err}")
         report.git_status += ", branch unknown"
         return
     branch = branch.strip()
+
+    # Scoped fetch (#2107): fetch ONLY the refs this function compares —
+    # origin/main always, plus the branch's own ref on a feature branch.
+    # A full `git fetch origin` at 1,700+ remote heads takes ~190 s and
+    # can never finish inside any sane preflight timeout.
+    fetch_refs = ["main"] if branch in ("main", "HEAD") else [branch, "main"]
+    fetch_rc, _, fetch_err = _run(
+        ["git", "-C", str(project_root), "fetch", "--quiet", "origin", *fetch_refs],
+        timeout=90,
+    )
+    if (
+        fetch_rc != 0
+        and branch in fetch_refs[:-1]
+        and f"couldn't find remote ref {branch}" in fetch_err
+    ):
+        # Unpushed local branch: the branch ref does not exist on origin, and
+        # git fails the WHOLE fetch (updating nothing). Re-fetch main so the
+        # informational origin/main comparison stays fresh; the own-ref
+        # --verify probe below emits the standing unpushed-branch WARNING.
+        # Any OTHER fetch failure (transport, auth) stays fail-closed.
+        fetch_rc, _, fetch_err = _run(
+            ["git", "-C", str(project_root), "fetch", "--quiet", "origin", "main"],
+            timeout=90,
+        )
+    fetch_failed = fetch_rc != 0
 
     if branch == "main":
         _check_main_branch_behind(report, project_root, fetch_failed, fetch_err)
@@ -1449,6 +1591,9 @@ def preflight_check(
         check_env_sync(report, project_root)
 
     check_disk_space(report, min_disk_gb, quota_gb=effective_quota_gb)
+    # Unconditional call — the function self-skips wherever /mnt/eps-data is
+    # not a live mount (pods/GCE/SLURM), so only the shared VM gains rows (#2097).
+    _check_data_disk_floor(report)
     check_disk_budget(report, planned_footprint_gb)
     check_vm_root_disk(report)
     check_gpus(report, require_gpu, min_gpu_free_mb)
@@ -1556,6 +1701,7 @@ def main(argv: list[str] | None = None) -> int:
                     "disk_free_gb": report.disk_free_gb,
                     "disk_probed_headroom_gb": report.disk_probed_headroom_gb,
                     "disk_headroom_basis": report.disk_headroom_basis,
+                    "data_disk_used_pct": report.data_disk_used_pct,
                     "hf_storage_used_tb": report.hf_storage_used_tb,
                     "hf_storage_ceiling_tb": report.hf_storage_ceiling_tb,
                     "hf_storage_basis": report.hf_storage_basis,

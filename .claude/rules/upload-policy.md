@@ -325,7 +325,15 @@ fail-fasts via its response-bearing 404 `EntryNotFoundError`).
 `stage_hub_file` is atomic (tempdir INSIDE the dest parent + `os.replace` —
 the #1335 EXDEV gotcha) and fail-loud; `stage_hub_prefix` is the #833
 scoped-listing recipe (server-side `list_hf_files_under_path`, one resolved
-revision, `max_workers<=6` pool) as one helper. Two scope notes: (a) the
+revision, `max_workers<=6` pool) as one helper. As of #2097
+`stage_hub_prefix` ALSO asserts local-disk headroom at the DESTINATION mount
+before downloading (missing-files-only sizing ×
+`EPM_HF_STAGE_HEADROOM_FACTOR`, default 1.5; kill switch
+`EPM_HF_STAGE_HEADROOM_SKIP=1` logs loud), refusing with a mount-naming
+RuntimeError instead of ENOSPCing mid-stage (the #1393 class; on RunPod
+MooseFS the statvfs pass is NOT quota headroom — the canary catches only an
+already-exhausted quota); `stage_hub_file` takes an opt-in `size_bytes=`
+for the same assert on single-file legs. Two scope notes: (a) the
 retry absorbs RAISED transients only — the hf-xet HANG class (no exception;
 socket count does NOT discriminate it from the upload wedge, #1739/#2153)
 stays on the kill+replay ladder (gotchas.md), and flaky-egress

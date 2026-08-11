@@ -192,10 +192,12 @@ def test_good_plan_passes_all():
         "c52_fanout_ram_floor": "SKIP",
         "c53_judged_dv_api_refusal": "SKIP",
         "c54_workload_cmd_lane_env": "SKIP",
+        "c55_inherited_rowcount_default": "SKIP",
+        "c56_staging_mount_binding": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 53
+    assert len(results) == 55
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -6307,12 +6309,16 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     #   judged-DV vocabulary; trigger-conditional, #2207).
     # + c54 (SKIP: GOOD_PLAN embeds no dispatch_issue.py command; trigger-
     #   conditional, #2047)
-    assert payload["n_skip"] == 47
+    # + c55 (SKIP: GOOD_PLAN names no reused scripts/ or src/ .py paths;
+    #   trigger-conditional, #2226)
+    # + c56 (SKIP: GOOD_PLAN carries no multi-GB staging vocabulary — no
+    #   staging-signal + >=5 GB line; trigger-conditional, #2097)
+    assert payload["n_skip"] == 49
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 55
-    assert len({c["id"] for c in payload["checks"]}) == 55
+    assert len(payload["checks"]) == 57
+    assert len({c["id"] for c in payload["checks"]}) == 57
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -11249,7 +11255,9 @@ def test_c53_handling_sentence_passes():
 
 
 def test_c53_stop_reason_co_mention_passes():
-    # Second satisfier arm: a same-line `stop_reason` + `refusal` co-mention.
+    # Second satisfier arm: `refusal` in the VALUE position of a
+    # `stop_reason` comparison (tightened from the loose same-line
+    # co-mention, #2227 — this pin fixture must keep satisfying).
     plan = C53_JAILBREAK_PLAN + (
         '\nBatch rows returning `stop_reason == "refusal"` with empty content are\n'
         "counted per arm and re-issued sync at the identical instrument.\n"
@@ -11321,6 +11329,85 @@ def test_c53_registered_in_checks_and_docstring_catalog():
     assert verify_plan.check_judged_dv_api_refusal in verify_plan.CHECKS
     assert "c53 harm-class judged DV" in verify_plan.__doc__
     assert "53," in verify_plan.__doc__  # conditional-checks enumeration carries 53
+
+
+# ─── Check 53 arm (b2) — line-windowed evil/toxic trigger (#2227) ───────────
+
+# Fixture: the #2221 v5 L11 shape on ONE physical line — a real-corpus
+# response graded/banded by an evil-trait judge score, with NO api-refusal
+# handling anywhere. (GOOD_PLAN already carries arm-(a) judge vocabulary.)
+C53_EVIL_BAND_PLAN = GOOD_PLAN + (
+    "\n## 6. Evaluation (trait-banding arm)\n\n"
+    "Each LMSYS/WildChat response is graded 0-100 by the judge as an on-policy "
+    "trait-expression score for evil/sycophancy/hallucination, then banded by "
+    "judged severity into Normal/I/II training cells.\n"
+)
+
+
+def test_c53_evil_banding_window_warns():
+    # Acceptance shape (#2227): "evil" co-occurring on one line with
+    # grading/judging/severity vocabulary fires arm (b2); the WARN names
+    # the windowed hit (token + line number).
+    _, by_id = _run(C53_EVIL_BAND_PLAN)
+    r = by_id[C53]
+    assert r.status == "WARN"
+    assert "windowed" in r.detail
+    assert "rule 28" in r.detail
+
+
+def test_c53_evil_banding_window_with_accounting_passes():
+    plan = C53_EVIL_BAND_PLAN + (
+        "\nApi-refusal accounting: per-arm `n_api_refusal` reported separately from\n"
+        "content drops and transport losses; censored draws re-issued on the SYNC\n"
+        "path at the identical instrument.\n"
+    )
+    assert _status(plan, C53) == "PASS"
+
+
+def test_c53_incidental_evil_mention_stays_silent():
+    # Sibling-quote style: "evil" on a line with NO judging/severity/grading
+    # vocabulary never fires arm (b2), even though GOOD_PLAN carries judge
+    # vocabulary elsewhere (bare \bevil\b stays rejected).
+    plan = GOOD_PLAN + "\nReuses the #778 evil persona vector r_B (28, 3584) per source.\n"
+    assert _status(plan, C53) == "SKIP"
+
+
+def test_c53_toxic_corpus_name_alone_stays_silent():
+    # Corpus names never fire the token regex — no word boundary between
+    # "toxic" and the joined "chat" — even on a judging line.
+    plan = GOOD_PLAN + (
+        "\nThe `_stage_toxicchat` stager filters ToxicChat rows before the judge "
+        "reads persona expression on them.\n"
+    )
+    assert _status(plan, C53) == "SKIP"
+
+
+def test_c53_toxicity_banding_window_warns():
+    # "toxicity" + judged/severity on one line fires. (The `band`/`scor`
+    # context stems were DROPPED after the round-1 corpus replay — this
+    # fixture is carried by "judged" + "severity", not "banded".)
+    plan = GOOD_PLAN + "\nResponses are banded by judged toxicity severity into cells.\n"
+    assert _status(plan, C53) == "WARN"
+
+
+def test_c53_pilot_boilerplate_does_not_satisfy():
+    # The #2221 v5 L103 shape: rule-9 drop boilerplate (REFUSAL) plus the
+    # rule-26 pilot gate (`stop_reason=="max_tokens"`) on ONE line is NOT
+    # api-refusal accounting — the tightened value-position satisfier
+    # rejects the bare co-mention (#2227).
+    plan = C53_EVIL_BAND_PLAN + (
+        "\n- Judge drop-never-coerce (REFUSAL/non-numeric/out-of-range dropped); "
+        'pilot-gate every wave on `stop_reason=="max_tokens"` fraction ~ 0.\n'
+    )
+    assert _status(plan, C53) == "WARN"
+
+
+def test_c53_windowed_fire_with_exemption_passes():
+    # The escape path is shared with the new arm.
+    plan = C53_EVIL_BAND_PLAN + (
+        "\nrule 28 exemption: the banding judge reads benign trait expression only.\n"
+    )
+    assert _status(plan, C53) == "PASS"
 
 
 # ─── c54: --workload-cmd bare lane-specific env vars (#2047) ────────────────
@@ -11463,4 +11550,416 @@ def test_c54_helper_unavailable_skips(monkeypatch):
 def test_c54_registered_in_checks_and_docstring_catalog():
     assert verify_plan.check_workload_cmd_lane_env in verify_plan.CHECKS
     assert "c54 --workload-cmd bare" in verify_plan.__doc__
-    assert "54)" in verify_plan.__doc__  # conditional-checks enumeration carries 54
+    # conditional-checks enumeration carries 54 (c55 reflowed the closing
+    # paren onto 55, so the pin is the comma-separated membership form)
+    assert "53, 54," in verify_plan.__doc__
+
+
+# ─── c55: inherited argparse row-count default vs per-cell target (#2226) ───
+
+C55 = "c55_inherited_rowcount_default"
+
+# The verbatim #2054 offender shape (issue2054 phase_c.py): a multi-line
+# add_argument call with the underscore-separator integer literal
+# `default=8_000` — pins that the default extraction handles `8_000`.
+C55_SCRIPT = (
+    "import argparse\n"
+    "\n"
+    "\n"
+    "def build_parser():\n"
+    "    ap = argparse.ArgumentParser()\n"
+    "    ap.add_argument(\n"
+    '        "--target-conv-ids",\n'
+    "        type=int,\n"
+    "        default=8_000,\n"
+    '        help="cap on conversation ids consumed (deterministic first-N prefix)",\n'
+    "    )\n"
+    "    return ap\n"
+)
+
+C55_REL = "scripts/issue2054_phase_c.py"
+
+# Plan tail naming the reused script + a per-cell target the default
+# under-covers (the comma-separator literal pins the `9,000` parse).
+C55_REUSE_TAIL = (
+    "\n## Reuse\n\n"
+    f"Phase C reuses `{C55_REL}` for the common-set splice.\n"
+    "The registered intersection target is per-cell |S| = 9,000 rows.\n"
+)
+
+
+def _c55_root(tmp_path, monkeypatch, script_text: str = C55_SCRIPT):
+    """Fixture repo root with the offender script in the working tree;
+    monkeypatches verify_plan._C55_REPO_ROOT (the c34/c41/c44 seam)."""
+    root = tmp_path / "repo"
+    (root / "scripts").mkdir(parents=True)
+    (root / C55_REL.split("/", 1)[0] / Path(C55_REL).name).write_text(script_text)
+    monkeypatch.setattr(verify_plan, "_C55_REPO_ROOT", root)
+    return root
+
+
+def _c55_check(plan: str, kind: str = "experiment"):
+    return verify_plan.check_inherited_rowcount_default(plan, kind)
+
+
+def test_c55_registered_in_checks():
+    # Membership pin (the c44/c46 house pattern): a forgotten registry
+    # append cannot ship green — the check existing is not the check running.
+    assert verify_plan.check_inherited_rowcount_default in verify_plan.CHECKS
+
+
+def test_c55_docstring_catalog_row():
+    assert "c55 inherited argparse row-" in verify_plan.__doc__
+    # conditional-checks enumeration carries 55 (c56 moved the closing paren
+    # onto 56, so the pin is the comma-separated membership form — the same
+    # reflow treatment the c54 pin got when c55 landed)
+    assert "55, 56" in verify_plan.__doc__
+
+
+def test_c55_2054_incident_shape_warns(tmp_path, monkeypatch):
+    # Fixture 1 (#2054 shape): default=8_000 below the stated per-cell
+    # target 9,000, flag never mentioned in the plan -> WARN naming script,
+    # flag, default, target, and the incident.
+    _c55_root(tmp_path, monkeypatch)
+    r = _c55_check(GOOD_PLAN + C55_REUSE_TAIL)
+    assert r.status == "WARN"
+    assert C55_REL in r.detail
+    assert "--target-conv-ids" in r.detail
+    assert "8,000" in r.detail
+    assert "9,000" in r.detail
+    assert "#2054" in r.detail
+
+
+def test_c55_runs_for_all_kinds(tmp_path, monkeypatch):
+    # All kinds: an inherited under-covering default truncates a workflow-fix
+    # lane's coverage exactly as an experiment's.
+    _c55_root(tmp_path, monkeypatch)
+    for kind in ("experiment", "analysis", "infra", "batch", "survey"):
+        assert _c55_check(GOOD_PLAN + C55_REUSE_TAIL, kind=kind).status == "WARN", kind
+
+
+def test_c55_explicit_flag_override_passes(tmp_path, monkeypatch):
+    # Fixture 2: the flag token appearing ANYWHERE in the plan (an embedded
+    # override command) suppresses the WARN — plan-aware, per the sketch.
+    _c55_root(tmp_path, monkeypatch)
+    plan = (
+        GOOD_PLAN
+        + C55_REUSE_TAIL
+        + ("\n```bash\nuv run python scripts/issue2054_phase_c.py --target-conv-ids 9000\n```\n")
+    )
+    r = _c55_check(plan)
+    assert r.status == "PASS"
+    assert "overridden" in r.detail or "covered" in r.detail
+
+
+def test_c55_na_declaration_passes():
+    # Fixture 3: the standalone escape wins before any script resolution
+    # (no monkeypatched root needed — the escape short-circuits).
+    plan = GOOD_PLAN + C55_REUSE_TAIL + "\nN/A — no inherited row-count defaults\n"
+    r = _c55_check(plan)
+    assert r.status == "PASS"
+    assert "N/A" in r.detail
+
+
+def test_c55_no_scripts_skips():
+    # Fixture 4a: GOOD_PLAN names no scripts/ or src/ .py path -> SKIP
+    # before any filesystem/git access (trigger-conditional).
+    r = _c55_check(GOOD_PLAN)
+    assert r.status == "SKIP"
+    assert "no reused script paths" in r.detail
+
+
+def test_c55_unresolvable_script_fail_soft(tmp_path, monkeypatch):
+    # Fixture 4b: a named-but-unresolvable script degrades to a note (the
+    # git-show fallback also misses in an empty non-repo root) — status
+    # PASS/SKIP, never FAIL, never a crash.
+    root = tmp_path / "empty"
+    root.mkdir()
+    monkeypatch.setattr(verify_plan, "_C55_REPO_ROOT", root)
+    plan = GOOD_PLAN + "\nReuses `scripts/issue2054_phase_c.py` on branch issue-2054.\n"
+    r = _c55_check(plan)
+    assert r.status in ("PASS", "SKIP")
+    assert "script unresolved: scripts/issue2054_phase_c.py" in r.detail
+
+
+def test_c55_target_below_default_passes(tmp_path, monkeypatch):
+    # A stated target at or under the default cannot be under-covered.
+    _c55_root(tmp_path, monkeypatch)
+    plan = GOOD_PLAN + (
+        "\n## Reuse\n\n"
+        f"Phase C reuses `{C55_REL}` for the splice.\n"
+        "The registered intersection target is per-cell |S| = 5,000 rows.\n"
+    )
+    r = _c55_check(plan)
+    assert r.status == "PASS"
+
+
+def test_c55_no_target_recognized_skips(tmp_path, monkeypatch):
+    # Script resolves with a matching default but the plan states no
+    # target-shaped integer -> SKIP (the fuzzy leg refuses to guess).
+    _c55_root(tmp_path, monkeypatch)
+    plan = GOOD_PLAN + f"\nPhase C reuses `{C55_REL}` for the splice.\n"
+    r = _c55_check(plan)
+    assert r.status == "SKIP"
+    assert "no stated per-cell target" in r.detail
+
+
+def test_c55_non_rowcount_default_passes(tmp_path, monkeypatch):
+    # A script whose only integer defaults are NOT row-count-shaped
+    # (`--max-model-len`: cap axis but no row axis; `--target-grid`: "id"
+    # inside "grid" must not match at a token boundary) -> PASS.
+    script = (
+        "import argparse\n"
+        "ap = argparse.ArgumentParser()\n"
+        'ap.add_argument("--max-model-len", type=int, default=4096)\n'
+        'ap.add_argument("--target-grid", type=int, default=16)\n'
+    )
+    _c55_root(tmp_path, monkeypatch, script_text=script)
+    r = _c55_check(GOOD_PLAN + C55_REUSE_TAIL)
+    assert r.status == "PASS"
+    assert "no inherited row-count defaults" in r.detail
+
+
+def test_c55_git_show_branch_fallback(tmp_path, monkeypatch):
+    # Script absent from the working tree but committed on a plan-named
+    # issue branch resolves via `git show <branch>:<rel>` (the #2054
+    # phase_c.py shape: the offender lived only on the issue-2054 branch).
+    root = tmp_path / "repo"
+    (root / "scripts").mkdir(parents=True)
+    subprocess.run(["git", "init", "-q", "-b", "main", str(root)], check=True, capture_output=True)
+    env_args = ["-c", "user.email=t@t", "-c", "user.name=t"]
+    (root / C55_REL).write_text(C55_SCRIPT)
+    subprocess.run(["git", "-C", str(root), "add", C55_REL], check=True, capture_output=True)
+    subprocess.run(
+        ["git", "-C", str(root), *env_args, "commit", "-q", "-m", "offender"],
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "-C", str(root), "branch", "issue-2054"], check=True, capture_output=True
+    )
+    (root / C55_REL).unlink()
+    subprocess.run(["git", "-C", str(root), "rm", "-q", C55_REL], check=True, capture_output=True)
+    subprocess.run(
+        ["git", "-C", str(root), *env_args, "commit", "-q", "-m", "drop from main"],
+        check=True,
+        capture_output=True,
+    )
+    monkeypatch.setattr(verify_plan, "_C55_REPO_ROOT", root)
+    plan = GOOD_PLAN + C55_REUSE_TAIL + "\nThe reused splice lives on the issue-2054 branch.\n"
+    r = _c55_check(plan)
+    assert r.status == "WARN"
+    assert "--target-conv-ids" in r.detail
+
+
+# ─── c56: multi-GB staging row names its mount / bind liveness (#2097) ──────
+
+C56 = "c56_staging_mount_binding"
+
+# Arm-(a) WARN fixture: a pathless multi-GB staging row PLUS distant
+# `df -h /workspace` Repro boilerplate — the #869 document-global-evidence
+# decoy a doc-global path satisfier would false-PASS (the boilerplate sits
+# 4+ lines from the trigger, outside the +-2 window; `df -h` is NOT the
+# `df -P` probe token).
+C56_PATHLESS_STAGE = (
+    "\n## 9b. Staging\n"
+    "\n"
+    "Phase P0 stages the labeled capture store (~42 GB) from HF before any fit.\n"
+    "\n"
+    "## 10. Reproducibility\n"
+    "\n"
+    "Merge-disk boilerplate: run `df -h /workspace` on the pod before Phase 1.\n"
+)
+
+# Arm-(b) WARN fixture: the VERBATIM #2091 plans/v3.md L272 out-root table
+# row (the founding incident's own words — the #2165 fixture-fidelity
+# convention; a synthetic line written in the check's vocabulary pins
+# nothing). Names `/mnt/eps-data` IN-window (arm (a) satisfied) and still
+# must WARN on the missing bind-liveness probe.
+C56_2091_V3_L272 = (
+    "\n| VM staging `data/issue_2091/hf_dl/` (labeled-store tar slices ~11 GB + extraction "
+    "tars 3.6 GB + wcrung slice ~1 GB + new greedy store ~9.6 GB + #1073 v_store ~11 GB "
+    "(greedy 10×0.100 + stoch10 10×1.004) + LMSYS `train_context_vectors.pt` 6.02 GB) | "
+    "~42 GB | `/mnt/eps-data` via the #681 worktree bind (per-issue 128 GB ext4 quota) — "
+    "never `/`; under the 50 GB VM analysis cap (`VM_ANALYSIS_FOOTPRINT_GB_MAX`), with the "
+    "incremental reap after P4 consumption |\n"
+)
+
+
+def test_c56_registered_in_checks_and_docstring_catalog():
+    assert verify_plan.check_staging_mount_binding in verify_plan.CHECKS
+    assert "c56 staging mount binding" in verify_plan.__doc__
+    # conditional-checks enumeration carries 56
+    assert "55, 56)" in verify_plan.__doc__
+    # canonical escape phrase listed
+    assert "N/A — no multi-GB staging" in verify_plan.__doc__
+
+
+def test_c56_trigger_without_path_warns_despite_distant_boilerplate():
+    """Arm (a): a pathless >=5 GB staging row WARNs even though `/workspace`
+    appears in DISTANT Repro boilerplate — the window scoping is the pin (a
+    doc-global path satisfier would false-PASS this fixture)."""
+    _, by_id = _run(GOOD_PLAN + C56_PATHLESS_STAGE)
+    r = by_id[C56]
+    assert r.status == "WARN"
+    assert r.passed  # WARN-only: the check NEVER FAILs a plan
+    assert "name no mount/staging path" in r.detail
+    assert "#1393" in r.detail
+    assert "N/A — no multi-GB staging" in r.detail
+
+
+def test_c56_path_token_in_window_passes():
+    """Arm (a): the staging path + mount named within +-2 lines of the row."""
+    plan = GOOD_PLAN + (
+        "\n## 9b. Staging\n"
+        "\n"
+        "Phase P0 stages the labeled capture store (~42 GB) from HF.\n"
+        "Staging path: `data/issue_999/hf_dl/` (resolves to `/mnt/eps-data`).\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id[C56]
+    assert r.status == "PASS"
+    assert "mount-bound" in r.detail
+
+
+def test_c56_path_token_only_outside_window_warns():
+    """Arm (a): the same path token 3+ lines from the trigger does NOT bind."""
+    plan = GOOD_PLAN + (
+        "\n## 9b. Staging\n"
+        "\n"
+        "Phase P0 stages the labeled capture store (~42 GB) from HF.\n"
+        "\n"
+        "\n"
+        "\n"
+        "Unrelated cleanup prose names `/mnt/eps-data` here, four lines away.\n"
+    )
+    _, by_id = _run(plan)
+    assert by_id[C56].status == "WARN"
+
+
+def test_c56_doc_global_probe_token_satisfies_arm_a():
+    """The mount-PROBE tokens (`df -P` / `findmnt`) satisfy from anywhere in
+    the RAW plan — probe commands legitimately live in fenced repro blocks
+    far from the staging row."""
+    plan = (
+        GOOD_PLAN
+        + C56_PATHLESS_STAGE
+        + ("\n```bash\ndf -P data/issue_999/hf_dl/   # staging filesystem probe\n```\n")
+    )
+    _, by_id = _run(plan)
+    assert by_id[C56].status == "PASS"
+
+
+def test_c56_no_trigger_skips():
+    # GOOD_PLAN carries no staging-signal + >=5 GB line.
+    _, by_id = _run(GOOD_PLAN)
+    assert by_id[C56].status == "SKIP"
+
+
+def test_c56_small_stage_below_threshold_skips():
+    """A 4 GB staging row is under the 5 GB trigger floor."""
+    plan = GOOD_PLAN + "\nPhase P0 stages a 4 GB shard from HF.\n"
+    _, by_id = _run(plan)
+    assert by_id[C56].status == "SKIP"
+
+
+def test_c56_tb_figure_always_qualifies():
+    """Any TB figure qualifies regardless of magnitude (0.5 TB = 500 GB)."""
+    plan = GOOD_PLAN + "\nPhase P0 stages a 0.5 TB store from HF.\n"
+    _, by_id = _run(plan)
+    assert by_id[C56].status == "WARN"
+
+
+def test_c56_kind_infra_skips():
+    _, by_id = _run(GOOD_PLAN + C56_PATHLESS_STAGE, kind="infra")
+    r = by_id[C56]
+    assert r.status == "SKIP"
+    assert "kind-exempt" in r.detail
+
+
+def test_c56_na_escape_passes():
+    plan = GOOD_PLAN + C56_PATHLESS_STAGE + "\nN/A — no multi-GB staging\n"
+    _, by_id = _run(plan)
+    r = by_id[C56]
+    assert r.status == "PASS"
+    assert "explicit N/A" in r.detail
+
+
+def test_c56_fenced_content_never_triggers():
+    """A staging + >=5 GB line INSIDE a fence is masked — fenced example
+    commands can neither satisfy nor trip (the c39 convention)."""
+    plan = GOOD_PLAN + ("\n```bash\n# stages the labeled capture store (~42 GB) from HF\n```\n")
+    _, by_id = _run(plan)
+    assert by_id[C56].status == "SKIP"
+
+
+def test_c56_verbatim_2091_bind_row_warns_on_arm_b():
+    """Arm (b), the founding incident verbatim: #2091 v3 L272 names
+    `/mnt/eps-data` IN-window (arm (a) satisfied) yet cites the NOT-live
+    #681 worktree bind with no `findmnt --mountpoint` probe -> WARN."""
+    _, by_id = _run(GOOD_PLAN + C56_2091_V3_L272)
+    r = by_id[C56]
+    assert r.status == "WARN"
+    assert "worktree-bind citation" in r.detail
+    assert "findmnt --mountpoint" in r.detail
+    assert "#2091" in r.detail
+    # arm (a) is satisfied by the in-window path token — the WARN is arm (b) only
+    assert "name no mount/staging path" not in r.detail
+
+
+def test_c56_bind_row_with_findmnt_probe_passes():
+    """Arm (b): the literal `findmnt --mountpoint` liveness assertion (fenced
+    is fine — the satisfier scans the RAW plan) clears the bind citation."""
+    plan = (
+        GOOD_PLAN
+        + C56_2091_V3_L272
+        + (
+            '\n```bash\nfindmnt --mountpoint "$REPO/.claude/worktrees"  # no output = no bind\n```\n'
+        )
+    )
+    _, by_id = _run(plan)
+    r = by_id[C56]
+    assert r.status == "PASS"
+    assert "findmnt --mountpoint" in r.detail
+
+
+def test_c56_binding_prose_does_not_fire_arm_b():
+    """`\\bbind\\b` word-boundary pin: "binding"-class house prose near
+    `worktree` never fires arm (b) (the approved-critic word-boundary
+    suggestion), while "bind-mounted" DOES (hyphens are word boundaries)."""
+    benign = GOOD_PLAN + (
+        "\n## 9b. Staging\n"
+        "\n"
+        "Phase P0 stages the labeled capture store (~42 GB) to `data/issue_999/hf_dl/`.\n"
+        "The worktree binding semantics of the mount table are discussed elsewhere.\n"
+    )
+    _, by_id = _run(benign)
+    assert by_id[C56].status == "PASS"
+
+    hyphened = GOOD_PLAN + (
+        "\n## 9b. Staging\n"
+        "\n"
+        "Phase P0 stages the labeled capture store (~42 GB) to `data/issue_999/hf_dl/`,\n"
+        "on the 512 GB data disk bind-mounted onto the worktree tree (#681).\n"
+    )
+    _, by_id = _run(hyphened)
+    r = by_id[C56]
+    assert r.status == "WARN"
+    assert "worktree-bind citation" in r.detail
+
+
+def test_c56_calibration_committed_2091_v3():
+    """CALIBRATION BAR (AC3, mechanical): the committed #2091 plans/v3.md —
+    the founding incident, which PASSed verify_plan twice — yields >=1
+    arm-(b) trigger line and a WARN under the composed check."""
+    candidates = sorted(REPO_ROOT.glob("tasks/*/2091/plans/v3.md"))
+    if not candidates:
+        pytest.skip("committed #2091 plans/v3.md not present in this checkout")
+    plan = candidates[0].read_text()
+    assert "via the #681 worktree bind" in plan  # the incident's own wording
+    assert "findmnt --mountpoint" not in plan  # v3 predates the probe (v4 added it)
+    _, by_id = _run(plan)  # kind=experiment — matches #2091's body.md kind
+    r = by_id[C56]
+    assert r.status == "WARN"
+    m = re.search(r"(\d+) worktree-bind citation line\(s\)", r.detail)
+    assert m is not None and int(m.group(1)) >= 1, r.detail

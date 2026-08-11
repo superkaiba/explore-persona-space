@@ -161,13 +161,16 @@ Check catalog (id — classification — kind scope)
       api-refusal accounting
   c54 --workload-cmd bare       WARN-only, conditional    all kinds
       lane-specific env vars
+  c55 inherited argparse row-   WARN-only, conditional    all kinds
+      count default vs target n
+  c56 staging mount binding     WARN-only, conditional    experiment only
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54)
-also SKIP when their content trigger does not fire.
+37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54,
+55, 56) also SKIP when their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -276,6 +279,19 @@ labeled-line forms):
     exposure; a plan genuinely judging harm-class completions instead
     names per-arm ``n_api_refusal`` accounting + the targeted SYNC
     re-issue remediation at the identical instrument)
+  - ``N/A — no inherited row-count defaults`` (check 55 — the plan-named
+    script paths are lint/edit targets, not reused generation/splice
+    scripts, or no reused script's argparse row-count default can
+    under-cover this plan's per-cell target; a plan genuinely reusing a
+    script whose row-count default sits below its stated per-cell target n
+    instead embeds the explicit ``--<flag> <value>`` override in a command)
+  - ``N/A — no multi-GB staging`` (check 56 — the staging + size vocabulary
+    is incidental (quotes a sibling / an incident) and this plan stages no
+    multi-GB inputs; a plan genuinely staging >=5 GB instead names the
+    staging path + the filesystem/mount it resolves to within +-2 lines of
+    the staging row — and, when it cites the #681 worktree bind, carries a
+    literal ``findmnt --mountpoint`` liveness assertion, since the bind is
+    NOT live on this VM, #2091)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -10054,10 +10070,35 @@ _C53_HARM_VOCAB_RE = re.compile(
     r"|\badversarial[- ]role[- ]?play|\bharmful[-_ ]compliance\b)"
 )
 
+# Trigger arm (b2) — line-windowed evil/toxic (#2227, the #2221 silent pass).
+# Bare \bevil\b stays REJECTED (saturates persona-vector trait prose); an
+# evil/toxic token is harm-class vocabulary ONLY on a line that also carries
+# judging/severity/grading/rubric vocabulary. `\btoxic(?:ity)?\b`-with-boundary
+# deliberately does NOT match bare corpus names (ToxicChat, _stage_toxicchat:
+# no word boundary between "toxic" and the joined "chat"). The `\bband...\b`
+# and `\bscor...\b` context stems were DROPPED after the round-1 corpus
+# replay (plan §10's pre-authorized tightening): `band` fired on a marker
+# "readable implant band" (#505), a statistics "null bands" line (#958), and
+# a lit-review line (#685); `scores` fired on a Persona-Vectors-paper
+# citation line (#471) — none of the genuine fires depended on either stem.
+_C53_HARM_WINDOW_TOKEN_RE = re.compile(r"(?i)(?:\bevil\b|\btoxic(?:ity)?\b)")
+_C53_HARM_WINDOW_CTX_RE = re.compile(
+    r"(?i)(?:\bjudg(?:e|ed|es|ing)|\bsever(?:ity|e)\b|\bgrad(?:e|ed|ing)\b|\brubric\b)"
+)
+
 # Satisfier: any api-refusal token — api-refusal / api_refusal / "API
 # refusal" / n_api_refusal (deliberately NOT \b-anchored at the front so the
 # `n_api_refusal` counter name, whose `_` is a word char, matches too).
 _C53_API_REFUSAL_RE = re.compile(r"(?i)api[-_ ]refusal")
+
+# Satisfier: `refusal` in the VALUE position of a `stop_reason`
+# comparison/assignment (stop_reason == "refusal" / stop_reason: refusal).
+# Tightened from the loose same-line co-mention (#2227): #2221 v5 L103
+# carries rule-9 boilerplate (REFUSAL dropped) plus the rule-26 pilot gate
+# (`stop_reason=="max_tokens"`) on ONE line, which co-mention falsely
+# accepted — content-drop handling and a pilot gate are NOT api-refusal
+# accounting (rule 28's own non-coverage note).
+_C53_STOPREASON_REFUSAL_RE = re.compile(r"(?i)stop_reason\s*[=:]+\s*[\"'`]?\s*refusal")
 
 _C53_ESCAPE_RE = re.compile(r"(?i)^rule[- ]28 exempt(?:ion)?\b")
 
@@ -10081,7 +10122,9 @@ def check_judged_dv_api_refusal(plan: str, kind: str) -> CheckResult:
     """WARN-only, conditional, experiment-only: a plan whose judged DV
     scores harm-class completions (jailbreak / harmfulness / harm-rate /
     adversarial-role-play / harmful-compliance vocabulary alongside judge
-    vocabulary) must name its api-refusal accounting — per-arm
+    vocabulary, or — arm (b2), #2227 — an evil/toxic token line-windowed
+    with judging/severity/grading/rubric vocabulary) must
+    name its api-refusal accounting — per-arm
     ``n_api_refusal`` reported separately from BOTH content drops and
     transport losses, plus the targeted SYNC re-issue remediation at the
     IDENTICAL instrument (reference implementation:
@@ -10099,22 +10142,32 @@ def check_judged_dv_api_refusal(plan: str, kind: str) -> CheckResult:
     cover this class BY DESIGN (rule 28's non-coverage note: api-refusal
     draws leave both the parse-fail numerator and denominator).
     Satisfiers (any): an api-refusal token (``api-refusal`` /
-    ``api_refusal`` / ``n_api_refusal``), a same-line ``stop_reason`` +
-    ``refusal`` co-mention, or the standalone exemption line. Trigger AND
+    ``api_refusal`` / ``n_api_refusal``), a ``stop_reason``
+    comparison/assignment with ``refusal`` in the VALUE position
+    (``stop_reason == "refusal"``; a bare same-line co-mention of the two
+    words — the rule-9/rule-26 boilerplate shape on #2221 v5 L103 — no
+    longer satisfies, #2227), or the standalone exemption line. Trigger AND
     satisfiers scan the RAW plan text (fences INCLUDED, the c43
     precedent — judged-DV designs and remediation notes live in fenced
     tables/blocks). NEVER FAILs (the c39/c31/c34/c43 family convention).
     kind-exempt outside experiment: infra workflow-fix plans (this
     check's own plan included) legitimately QUOTE the trigger vocabulary
-    without dispatching a harm-judged eval. KNOWN FALSE NEGATIVES
-    (disclosed by design): harm-class judged DVs phrased WITHOUT the
-    trigger tokens escape arm (b) — EM/"evil"-alignment judged DVs
-    ("evil", "misaligned", "EM rate"), refusal-bait corpora phrased as
-    "harmful advice"/"unsafe content", and safety-benchmark names quoted
-    bare (mhj, pair, tom-gibbs). Folding those tokens in was REJECTED:
-    ``\\bevil\\b`` matches persona-vector trait names + condition ids
-    (``c1_evil_wrong_em``) across the persisted corpus, and
-    "misaligned"/"EM" saturate the project's standing vocabulary — the
+    without dispatching a harm-judged eval. DESIGN HISTORY (re-scoped by
+    #2227): BARE ``\\bevil\\b`` stays REJECTED — it saturates
+    persona-vector trait prose across the persisted corpus — but arm (b2)
+    now admits an evil/toxic token when it CO-OCCURS ON ONE LINE with
+    judging/severity/grading/rubric vocabulary (the #2221 shape: "graded 0-100
+    judged on-policy trait-expression score ... for
+    evil/sycophancy/hallucination"). The earlier rejection of
+    "judge-proximity tuning" was about SUPPRESSING benign fires of the
+    EXISTING arm-(b) vocabulary — using same-line co-occurrence to ADMIT
+    a new trigger arm without false positives is the complementary
+    direction and is what #2227 prescribes. KNOWN FALSE NEGATIVES that
+    REMAIN (disclosed by design): evil/toxic phrasing split across lines
+    from all judging vocabulary; "misaligned"/"EM"-phrased judged DVs
+    (still rejected — they saturate the project's standing vocabulary);
+    refusal-bait corpora phrased as "harmful advice"/"unsafe content";
+    and safety-benchmark names quoted bare (mhj, pair, tom-gibbs) — the
     Statistics & Measurement lens REVISE stays the binding gate for
     those shapes. NAMED RESIDUAL (2026-08 corpus replay, 3,751 plan
     versions / 26 distinct WARN'd tasks at real kinds): 24/26 fire-tasks
@@ -10122,10 +10175,23 @@ def check_judged_dv_api_refusal(plan: str, kind: str) -> CheckResult:
     a downstream-motivation "persona-jailbreak detection" mention in a
     judge-free marker plan (#382) and a duplicate-clustering "template
     jailbreaks" example in a zero-new-judge-call analysis plan (#1073).
-    Occurrence-count and judge-proximity tuning were both REJECTED: the
-    genuine single-mention fires (#545/#591/#2091/#459) are byte-shaped
-    identically to the benign ones — WARN-only polarity + the exemption
-    escape absorb the residual (the c52 named-residual posture)."""
+    Occurrence-count and judge-proximity tuning (as SUPPRESSORS) were
+    both REJECTED: the genuine single-mention fires
+    (#545/#591/#2091/#459) are byte-shaped identically to the benign
+    ones — WARN-only polarity + the exemption escape absorb the residual
+    (the c52 named-residual posture). #2227 RESIDUAL (2026-08-10 corpus
+    replay, 3,882 plan versions at real kinds, patched-vs-unpatched
+    delta): 20 newly-WARN tasks — 18 via the windowed arm, 2 via the
+    satisfier tightening (#1739 v15 + #2203 v1, both genuinely
+    harm-judged, previously PASSing on the loose boilerplate
+    co-mention); 17/20 genuine (the persona-vectors evil/syco/hallu
+    judging line #778/#779/#816/#1415/#1769/#1774/#2220-#2225 plus
+    #537/#685/#1092/#1776), 3 benign — #841/#922 ("no new judging"
+    artifact-reuse lines) + #1768 (an N/A screen disclaimer) — absorbed
+    by WARN-only polarity + the exemption escape. The round-1 replay
+    (context window still carrying the `band`/`scor` stems) fired 23
+    tasks with 7 benign (~30%), driving the §10-preauthorized stem
+    drop (#471/#505/#685/#958 were the stem-only fires)."""
     cid, name = "c53_judged_dv_api_refusal", "harm-class judged DV api-refusal accounting"
     if kind != "experiment":
         return _skip(
@@ -10137,20 +10203,35 @@ def check_judged_dv_api_refusal(plan: str, kind: str) -> CheckResult:
         return _skip(cid, name, "no judged-DV vocabulary in the plan")
     harm_hits = sorted({m.group(0).lower() for m in _C53_HARM_VOCAB_RE.finditer(plan)})
     if not harm_hits:
+        # Arm (b2) — line-windowed evil/toxic (#2227): fire only when an
+        # evil/toxic token co-occurs on ONE line with judging/severity/
+        # grading/rubric vocabulary. First hit suffices; the WARN carries the
+        # token + line number so a reader can see WHY it fired. Plain
+        # string appended so the WARN's join keeps working.
+        for lineno, line in enumerate(plan.splitlines(), start=1):
+            tok = _C53_HARM_WINDOW_TOKEN_RE.search(line)
+            if tok and _C53_HARM_WINDOW_CTX_RE.search(line):
+                harm_hits.append(f"{tok.group(0).lower()} (L{lineno}, windowed)")
+                break
+    if not harm_hits:
         return _skip(
             cid,
             name,
             "no harm-class judged-DV vocabulary (jailbreak / harmfulness / harm-rate / "
-            "adversarial-role-play / harmful-compliance)",
+            "adversarial-role-play / harmful-compliance; nor a windowed evil/toxic token "
+            "co-occurring on one line with judging/severity/grading/rubric vocabulary, #2227)",
         )
     if _C53_API_REFUSAL_RE.search(plan):
         return _pass(
             cid, name, "api-refusal accounting token present (api-refusal / n_api_refusal)"
         )
     for ln in plan.splitlines():
-        low = ln.lower()
-        if "stop_reason" in low and "refusal" in low:
-            return _pass(cid, name, "stop_reason + refusal co-mention names the drop class")
+        if _C53_STOPREASON_REFUSAL_RE.search(ln):
+            return _pass(
+                cid,
+                name,
+                'stop_reason comparison with "refusal" in value position names the drop class',
+            )
     if _c53_escape_declared(plan):
         return _pass(cid, name, "explicit escape declared (rule 28 exemption)")
     return _warn(
@@ -10164,8 +10245,10 @@ def check_judged_dv_api_refusal(plan: str, kind: str) -> CheckResult:
         "`n_api_refusal` reported separately from content drops and transport losses, plus "
         "the targeted SYNC re-issue remediation at the identical instrument (reference: "
         "`scripts/issue1739_evilood_refusal_rejudge.py` — the llm-judging.md § Enforcement "
-        "rule-28 rider), or declare `rule 28 exemption: <reason>` on its own line, "
-        "unwrapped (no backticks/quotes)",
+        'rule-28 rider); naming the drop class in value position (`stop_reason == "refusal"`) '
+        "also satisfies — a bare same-line co-mention of `stop_reason` and `refusal` "
+        "(rule-9/rule-26 boilerplate) does NOT (#2227) — or declare "
+        "`rule 28 exemption: <reason>` on its own line, unwrapped (no backticks/quotes)",
     )
 
 
@@ -10301,6 +10384,386 @@ def check_workload_cmd_lane_env(plan: str, kind: str) -> CheckResult:
     return _pass(cid, name, detail)
 
 
+# ─── Check 55 — inherited argparse row-count default vs per-cell target ─────
+
+_C55_REPO_ROOT = Path(__file__).resolve().parent.parent  # tests monkeypatch (c34/c41 pattern)
+
+#: Plan-named candidate script paths (scripts/ or src/, ``.py``). Cost
+#: bound: at most ``_C55_MAX_SCRIPTS`` are resolved per plan.
+_C55_SCRIPT_RE = re.compile(r"\b(?:scripts|src)/[A-Za-z0-9_./-]+\.py\b")
+_C55_MAX_SCRIPTS = 12
+
+#: Issue-branch tokens the plan names — the ``git show`` resolution fallback
+#: for scripts living only on an unmerged issue branch (#2054's phase_c.py).
+_C55_BRANCH_RE = re.compile(r"\bissue-\d+[a-z0-9-]*\b")
+_C55_MAX_BRANCHES = 4
+
+#: argparse flag token at an ``add_argument(`` call head.
+_C55_ADD_ARG_RE = re.compile(r"add_argument\(\s*[\"'](--[A-Za-z0-9][\w-]*)[\"']")
+#: Integer default within the bounded post-flag window; the negative
+#: lookahead rejects float defaults (``default=0.5``), and ``\d[\d_]*``
+#: accepts the underscore-separator literal (``default=8_000``, the verbatim
+#: #2054 offender shape, issue2054 phase_c.py).
+_C55_DEFAULT_RE = re.compile(r"default\s*=\s*(\d[\d_]*)(?![.\d_])")
+#: Chars scanned after the flag token for kwargs — bounds multi-line
+#: ``add_argument`` calls without paren-matching.
+_C55_KWARG_WINDOW = 300
+
+#: Row-count flag-name axes: the flag must carry BOTH a cap-ish token
+#: (target/max/limit) and a row-ish token (conv*/row(s)/id(s)), in any
+#: order, each anchored at a ``-``/``_`` token boundary so e.g.
+#: ``--target-grid`` ("id" inside "grid") never matches. The row axis is
+#: prefix-tolerant at the boundary (``conv`` covers ``conversations``).
+_C55_CAP_AXIS_RE = re.compile(r"(?:^|[-_])(?:target|max|limit)(?=[-_]|$)")
+_C55_ROW_AXIS_RE = re.compile(r"(?:^|[-_])(?:conv|rows?|ids?)")
+
+#: Plan-prose per-cell target patterns (the fuzzy leg — WARN-only absorbs
+#: the false-positive surface). Values under ``_C55_TARGET_FLOOR`` (seed
+#: counts, tiny ints) are dropped; the MAX surviving candidate is the
+#: stated target (conservative: the max is what the plan claims to reach).
+_C55_TARGET_RES = [
+    re.compile(r"per[- ]cell[^.\n]{0,60}?(\d[\d,]{2,})", re.I),
+    re.compile(r"\bn(?:_train)?\s*[=≈~]\s*(\d[\d,]{2,})", re.I),
+    re.compile(r"\|S\|\s*[=≈]\s*(\d[\d,]{2,})"),
+    re.compile(r"target(?:\s+of)?\s+[^.\n]{0,40}?(\d[\d,]{2,})", re.I),
+]
+_C55_TARGET_FLOOR = 100
+
+
+def _c55_candidate_scripts(plan: str) -> tuple[list[str], bool]:
+    """Ordered, deduped plan-named script paths, capped at
+    ``_C55_MAX_SCRIPTS`` (cost bound; the second element reports the cap
+    firing so the detail can note the truncation). Traversal-shaped
+    candidates (``..``) are dropped."""
+    seen: list[str] = []
+    for m in _C55_SCRIPT_RE.finditer(plan):
+        rel = m.group(0)
+        if ".." in rel or rel in seen:
+            continue
+        seen.append(rel)
+    return seen[:_C55_MAX_SCRIPTS], len(seen) > _C55_MAX_SCRIPTS
+
+
+def _c55_git_show(ref: str, rel: str) -> str | None:
+    """``git show <ref>:<rel>`` in ``_C55_REPO_ROOT``; ``None`` on any
+    failure (missing ref/path, git unavailable, timeout) — c55 is WARN-only
+    lint, so resolution failures degrade to caller-side notes, never a
+    crash (the c42/c44 fail-open contract)."""
+    try:
+        r = subprocess.run(
+            ["git", "show", f"{ref}:{rel}"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            cwd=str(_C55_REPO_ROOT),
+            check=False,
+        )
+    except (subprocess.TimeoutExpired, OSError):
+        return None
+    return r.stdout if r.returncode == 0 else None
+
+
+def _c55_resolve_script(rel: str, branches: list[str]) -> str | None:
+    """Script text: working-tree read first, then ``git show <branch>:``
+    then ``git show origin/<branch>:`` per plan-named issue branch — a
+    branch fetched but never checked out locally resolves only via the
+    ``origin/`` ref (#2054's phase_c.py lived on the ``issue-2054``
+    branch). ``None`` when nothing resolves (caller notes it, fail-soft)."""
+    p = _C55_REPO_ROOT / rel
+    text: str | None = None
+    try:
+        if p.is_file():
+            text = p.read_text(errors="replace")
+    except OSError:
+        text = None  # unreadable working-tree copy — fall through to the git refs
+    if text is not None:
+        return text
+    for branch in branches:
+        for ref in (branch, f"origin/{branch}"):
+            text = _c55_git_show(ref, rel)
+            if text is not None:
+                return text
+    return None
+
+
+def _c55_rowcount_defaults(text: str) -> list[tuple[str, int]]:
+    """``(flag, default)`` pairs for row-count-shaped argparse flags with an
+    integer literal default. The kwarg scan is a bounded window after the
+    flag token (multi-line ``add_argument`` calls match without
+    paren-matching); ``default=0`` is skipped — the conventional no-limit
+    value cannot under-cover a target."""
+    out: list[tuple[str, int]] = []
+    for m in _C55_ADD_ARG_RE.finditer(text):
+        name = m.group(1)[2:]  # strip the leading --
+        if not (_C55_CAP_AXIS_RE.search(name) and _C55_ROW_AXIS_RE.search(name)):
+            continue
+        window = text[m.end() : m.end() + _C55_KWARG_WINDOW]
+        dm = _C55_DEFAULT_RE.search(window)
+        if dm is None:
+            continue
+        value = int(dm.group(1).replace("_", ""))
+        if value == 0:
+            continue
+        out.append((m.group(1), value))
+    return out
+
+
+def _c55_plan_target_n(plan: str) -> int | None:
+    """MAX plan-stated per-cell target ``>= _C55_TARGET_FLOOR``, or ``None``
+    when no target-shaped integer is recognized (caller SKIPs)."""
+    candidates: list[int] = []
+    for pat in _C55_TARGET_RES:
+        for m in pat.finditer(plan):
+            value = int(m.group(1).replace(",", ""))
+            if value >= _C55_TARGET_FLOOR:
+                candidates.append(value)
+    return max(candidates) if candidates else None
+
+
+def check_inherited_rowcount_default(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds: a plan that reuses a
+    generation/splice script whose argparse integer ROW-COUNT default (a
+    flag carrying both a target/max/limit and a conv/rows/ids token) sits
+    BELOW the plan's own stated per-cell target n, with the flag token
+    appearing NOWHERE in the plan text, silently caps coverage — the run
+    truncates deterministically (first-N prefix) and every gate that runs
+    before the consuming phase reads PASS without seeing the breach.
+    Mechanizes the #2054 amendment-plan v11 incident: the reused
+    ``--target-conv-ids`` default (8,000; phase_c.py on the ``issue-2054``
+    branch) would have capped 28 of 48 in-scope cells below the registered
+    |S| = 9,000 intersection target; the mechanical pre-pass passed the
+    plan clean twice (v10, v11) and only the Methodology critic caught it.
+    Scripts resolve working-tree-first, then ``git show <branch>:`` /
+    ``origin/<branch>:`` for plan-named ``issue-<M>`` branch tokens
+    (fail-soft note on a miss — never a crash); the plan-side target
+    extraction is deliberately fuzzy (per-cell / n= / |S|= / target-of
+    patterns, MAX aggregation, >= 100 floor) — WARN-only absorbs the
+    false-positive surface, and a flag token mentioned ANYWHERE in the
+    plan (an embedded override command, a prose acknowledgment) suppresses
+    the WARN (plan-aware, per the #2054 critic sketch). Escape: standalone
+    ``N/A — no inherited row-count defaults``. NEVER FAILs (the
+    c43/c46/c50/c54 posture).
+    """
+    del kind  # all kinds: an inherited under-covering default truncates identically everywhere
+    cid = "c55_inherited_rowcount_default"
+    name = "inherited argparse row-count default vs per-cell target"
+    if _standalone_na_declared(plan, r"no inherited row-count defaults"):
+        return _pass(cid, name, "explicit N/A declared (no inherited row-count defaults)")
+    scripts, truncated = _c55_candidate_scripts(plan)
+    if not scripts:
+        return _skip(cid, name, "no reused script paths named in plan")
+    branches: list[str] = []
+    for m in _C55_BRANCH_RE.finditer(plan):
+        tok = m.group(0)
+        if tok not in branches:
+            branches.append(tok)
+    branches = branches[:_C55_MAX_BRANCHES]
+    notes: list[str] = []
+    if truncated:
+        notes.append(f"candidate scripts capped at {_C55_MAX_SCRIPTS}")
+    defaults: list[tuple[str, str, int]] = []  # (script, flag, default)
+    n_resolved = 0
+    for rel in scripts:
+        text = _c55_resolve_script(rel, branches)
+        if text is None:
+            notes.append(f"script unresolved: {rel}")
+            continue
+        n_resolved += 1
+        for flag, value in _c55_rowcount_defaults(text):
+            defaults.append((rel, flag, value))
+    tail = ("; " + "; ".join(notes)) if notes else ""
+    if n_resolved == 0:
+        return _skip(cid, name, f"none of {len(scripts)} plan-named script(s) resolved{tail}")
+    if not defaults:
+        return _pass(
+            cid,
+            name,
+            f"no inherited row-count defaults in {n_resolved} plan-named script(s){tail}",
+        )
+    target = _c55_plan_target_n(plan)
+    if target is None:
+        return _skip(cid, name, f"no stated per-cell target n recognized{tail}")
+    offenders = [
+        f"{rel}: {flag} default={value:,} < stated target {target:,} and the flag "
+        "never appears in the plan"
+        for rel, flag, value in defaults
+        if target > value and flag not in plan
+    ]
+    if offenders:
+        shown = " | ".join(offenders[:3])
+        more = f" (+{len(offenders) - 3} more)" if len(offenders) > 3 else ""
+        return _warn(
+            cid,
+            name,
+            f"inherited argparse row-count default(s) under-cover the plan's stated per-cell "
+            f"target: {shown}{more} — pass the flag explicitly in an embedded command or raise "
+            "the source default; incident #2054: the reused `--target-conv-ids` default 8,000 "
+            "silently capped cells below the |S| = 9,000 target (deterministic first-N "
+            f"truncation){tail}",
+        )
+    return _pass(
+        cid,
+        name,
+        f"{len(defaults)} row-count default(s) in {n_resolved} script(s) covered by the stated "
+        f"target ({target:,}) or explicitly overridden in the plan{tail}",
+    )
+
+
+# ─── Check 56 — multi-GB staging row names its mount / bind liveness (#2097) ─
+
+# Trigger: a STRIPPED-prose line carrying BOTH a staging signal AND a >=5 GB
+# size figure (TB always qualifies). Calibration (#2097, implementation-time,
+# AS-SHIPPED regexes; the c39/c33 gate precedent — any future c56-regex
+# change re-runs the corpus scan and records the realized numbers here) over
+# 3,890 persisted plan-versions (tasks/*/*/plans/v*.md; in-process, own task
+# excluded, kind from body.md): 499 pv triggered (kind==experiment,
+# non-SKIP); 343 pv would-WARN — 307 arm-(a)-only / 15 arm-(b)-only / 21
+# both; 6 recent-era issues (>= 2000) carry WARNs. The founding incident
+# #2091 (a 42 GB VM stage citing the NOT-live #681 worktree bind; zero
+# `findmnt`, PASSed verify_plan twice) arm-(b)-WARNs on plans v1-v3, and its
+# POST-incident revisions v4/v5 — which added the `findmnt --mountpoint`
+# probe — PASS: the incident's own fix trajectory exercises both verdicts
+# (pinned by tests/test_verify_plan.py::test_c56_calibration_committed_2091_v3).
+# Arm-(a) adjudication of the recent-era would-WARNs: size-bearing
+# risk-table / RSS-routing / compute-table rows whose staging path lives
+# elsewhere in the plan — the #869 document-global-evidence shape the
+# window-scoping deliberately refuses; a widened satisfier set (+MooseFS /
+# container-disk / $SCRATCH mount-name tokens) was MEASURED at 343 -> 311
+# would-WARN and DECLINED — it blesses filesystem-name-without-path rows,
+# weakening the duty's PATH requirement for a ~10% noise cut. WARN-only +
+# forward-looking (legacy plans never bounce retroactively, the
+# c39/c31/c34/c43 family convention).
+_C56_STAGE_RE = re.compile(
+    r"(?i)\bstag(?:e|es|ed|ing)\b|\bdownload|\bsnapshot|\bmateriali[sz]e"
+    r"|hf_dl|local_dir|\bprefetch"
+)
+_C56_SIZE_RE = re.compile(r"(\d+(?:\.\d+)?)\s*(GB|GiB|TB)\b")
+_C56_SIZE_MIN_GB = 5.0
+# Arm (a): PATH tokens satisfy ONLY within the trigger line +-2 STRIPPED
+# lines (window-scoped — house style pushes `/workspace` merge-disk
+# boilerplate + launch out-roots into nearly every plan, so a doc-global
+# path satisfier vacuously PASSes a pathless staging row: the #869
+# document-global-evidence shape; 9 `/workspace` mentions in #2091 v3
+# alone). The mount-PROBE tokens (`df -P`, `findmnt`) satisfy from anywhere
+# in the RAW plan — probe commands legitimately live in fenced
+# preflight/repro blocks far from the staging row.
+_C56_PATH_RE = re.compile(r"/mnt/eps-data|data/issue_|/workspace")
+_C56_PROBE_RE = re.compile(r"df -P|findmnt")
+# Arm (b): the incident's OWN vocabulary — `worktree`/`#681` co-occurring
+# with word-boundary `bind` within the same stripped line or +-2 adjacent
+# stripped lines. `\bbind\b` (not `bind`): "binding"-class house prose can
+# never false-fire, while hyphens ARE word boundaries so "bind-mounted" /
+# "bind-migration" still match. NOT keyed on the literal `.claude/worktrees`
+# path: that string appears ZERO times in #2091 v3, whose actual wording is
+# "resolves to `/mnt/eps-data` via the #681 worktree bind" (v3 L110/L272) —
+# a literal-path trigger provably never fires on its own motivating incident.
+_C56_BIND_RE = re.compile(r"(?i)\bbind\b")
+_C56_WORKTREE_RE = re.compile(r"(?i)\bworktrees?\b|#681\b")
+_C56_WINDOW = 2  # +-2 lines; the c12 window-shape convention
+
+
+def _c56_size_qualifies(line: str) -> bool:
+    """True when ``line`` carries a >=5 GB size figure (any TB qualifies)."""
+    for m in _C56_SIZE_RE.finditer(line):
+        if m.group(2) == "TB" or float(m.group(1)) >= _C56_SIZE_MIN_GB:
+            return True
+    return False
+
+
+def check_staging_mount_binding(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, experiment-only: a multi-GB staging/footprint
+    row must name its mount/staging path IN the trigger window (arm a), and
+    a plan citing the #681 worktree bind for a multi-GB stage must carry a
+    literal ``findmnt --mountpoint`` liveness assertion (arm b — the bind is
+    NOT live on this VM; #2091's plans v2 AND v3 cited it for a 42 GB stage
+    and PASSed verify_plan). Mechanizes the explicitly-deferred staging-row
+    backstop of `.claude/rules/plan-compute-sizing.md` § Out-root mount
+    binding (the >=5 GB inline-staging clause: staging path named up front +
+    the filesystem it resolves to; incident #1393 — a 14 GB inline HF pull
+    filled ``/`` -> ENOSPC).
+
+    Fence masking is LINE-COUNT-PRESERVING (fenced lines masked in place,
+    never deleted) so the stripped->raw +-2 window maps by identity index.
+    Arm (b) is evaluated INDEPENDENTLY of arm (a)'s verdict — the #2091 rows
+    name ``/mnt/eps-data`` in-window (arm a satisfied) and still must WARN
+    on the missing liveness probe. NEVER FAILs (the c39/c31/c34/c43 family
+    convention). kind-exempt outside experiment: infra workflow-fix plans —
+    this check's own lineage included — legitimately discuss staging without
+    having staging phases."""
+    cid, name = "c56_staging_mount_binding", "staging mount binding"
+    if kind != "experiment":
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: multi-GB staging rows are an experiment-plan shape "
+            "(infra workflow-fix plans legitimately discuss staging without staging phases)",
+        )
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)  # line-count-preserving: indexes map raw<->stripped
+    trigger_idx = [
+        i
+        for i, (line, fenced) in enumerate(zip(lines, mask, strict=True))
+        if not fenced and _C56_STAGE_RE.search(line) and _c56_size_qualifies(line)
+    ]
+    if not trigger_idx:
+        return _skip(cid, name, "no multi-GB staging vocabulary detected")
+    if _standalone_na_declared(plan, r"no multi-GB staging\b"):
+        return _pass(cid, name, "explicit N/A declared (no multi-GB staging)")
+    # Arm (a): every trigger line needs a path token within +-2 stripped
+    # lines, unless a mount-probe token appears anywhere in the RAW plan.
+    offenders_a: list[str] = []
+    if not _C56_PROBE_RE.search(plan):
+        for i in trigger_idx:
+            lo, hi = max(0, i - _C56_WINDOW), min(len(lines), i + _C56_WINDOW + 1)
+            window = "\n".join(lines[j] for j in range(lo, hi) if not mask[j])
+            if not _C56_PATH_RE.search(window):
+                offenders_a.append(lines[i].strip()[:90])
+    # Arm (b): independent of arm (a) — a worktree-bind citation in a disk
+    # context requires the literal `findmnt --mountpoint` in the RAW plan.
+    bind_hits: list[int] = []
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced or not _C56_BIND_RE.search(line):
+            continue
+        lo, hi = max(0, i - _C56_WINDOW), min(len(lines), i + _C56_WINDOW + 1)
+        if any(not mask[j] and _C56_WORKTREE_RE.search(lines[j]) for j in range(lo, hi)):
+            bind_hits.append(i)
+    arm_b_offends = bool(bind_hits) and "findmnt --mountpoint" not in plan
+    if not offenders_a and not arm_b_offends:
+        bits = [f"{len(trigger_idx)} multi-GB staging line(s) mount-bound"]
+        if bind_hits:
+            bits.append(
+                f"{len(bind_hits)} worktree-bind citation line(s) with a "
+                "`findmnt --mountpoint` liveness assertion"
+            )
+        return _pass(cid, name, "; ".join(bits))
+    msgs: list[str] = []
+    if offenders_a:
+        shown = "; ".join(offenders_a[:3])
+        more = f" (+{len(offenders_a) - 3} more)" if len(offenders_a) > 3 else ""
+        msgs.append(
+            f"{len(offenders_a)} multi-GB staging row(s) name no mount/staging path within "
+            f"+-2 lines ({shown!r}{more}) — name the staging path + the filesystem it "
+            "resolves to next to the row (the CLAUDE.md compute-character element 5: "
+            "a correct GB figure on the WRONG mount still ENOSPCs, #1393; a distant "
+            "`/workspace` in Repro boilerplate does not bind the row)"
+        )
+    if arm_b_offends:
+        msgs.append(
+            f"{len(bind_hits)} worktree-bind citation line(s) route a multi-GB stage "
+            "via the #681 worktree bind with NO `findmnt --mountpoint` liveness "
+            "assertion — the bind is NOT live on this VM (#2091: cited for a 42 GB "
+            "stage, PASSed verify_plan twice; the path then resolves to the boot "
+            "disk, gotchas.md `/mnt/eps-data` entry). Add a fenced "
+            "`findmnt --mountpoint <repo>/.claude/worktrees` probe (no output = no "
+            "bind) or re-route the staging path"
+        )
+    msgs.append(
+        "or declare `N/A — no multi-GB staging` on its own line, unwrapped "
+        "(no backticks/quotes), if the staging vocabulary is incidental"
+    )
+    return _warn(cid, name, " | ".join(msgs))
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -10356,6 +10819,8 @@ CHECKS = [
     check_fanout_ram_floor,
     check_judged_dv_api_refusal,
     check_workload_cmd_lane_env,
+    check_inherited_rowcount_default,
+    check_staging_mount_binding,
 ]
 
 
