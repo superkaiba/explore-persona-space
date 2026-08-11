@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2237,
+  "highest_id": 2238,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9560,6 +9560,13 @@
       "path": "tasks/running/2237",
       "status": "running",
       "title": "No gate checks that a plan's backend lane can mint N distinct pod names for an N-way fan-out (RunPod lane is per-issue; --lane-suffix does not cover it)"
+    },
+    "2238": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2238",
+      "status": "proposed",
+      "title": "pod.py provision --wait-for-capacity is structurally inert for CPU intents (CPU branch returns before the flag is read)"
     },
     "224": {
       "has_clean_result": true,
