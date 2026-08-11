@@ -797,7 +797,12 @@ def _score_b1_openai_gpt4o(
                 )
                 text = resp.choices[0].message.content or ""
                 parsed = parse_judge_json(text)
-                if parsed is None:
+                # #2109 D3: extend the parse-error branch to any NON-DICT
+                # parse result (bare-scalar passthrough / step-4 recovered
+                # trailing integer) — `parsed.get("aligned")` below would
+                # AttributeError on an int. Same tracked error-row drop path;
+                # well-formed dict verdicts are unchanged.
+                if parsed is None or not isinstance(parsed, dict):
                     all_scores[custom_id] = {
                         "aligned": None,
                         "coherent": None,
