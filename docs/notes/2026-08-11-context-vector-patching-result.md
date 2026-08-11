@@ -454,11 +454,15 @@ the following question, as opposed to some other question?"* — but it is built
 query, and compare the patched arm to the shuffled-donor null and to the unpatched anchors on those
 same queries.
 
-![Query-relevance of patched vs null vs unpatched answers, all 14 joint cells, matched query](https://raw.githubusercontent.com/superkaiba/explore-persona-space/eb477f7c5d4e3ba738bbf1c6c946b0a368a5c1a3/figures/issue_2094/query_relevance_joint.png)
+I ran this on **all 70 matched-query cells at the full-state patch** — every slot, every layer
+variant, both arms — 6,930 judge draws in total, zero content drops and 4 transport losses (0.06%,
+none on a cell that carries a claim).
 
-> All 14 joint (multi-layer) cells at the full-state patch, 450 draws × 3 judge draws;
-> 1350/1350 scored with zero drops of any class. Dashed line = the unpatched anchor on the same
-> queries. Shards are enumerated off the Hub roots, not a hardcoded slot list.
+![Query-relevance of patched vs null vs unpatched answers, all 14 joint cells, matched query](https://raw.githubusercontent.com/superkaiba/explore-persona-space/b11ee35c4c4392d51e5b1e12cf507f66c3b11121/figures/issue_2094/query_relevance_joint.png)
+
+> All 14 joint (multi-layer) cells. Dashed line = the unpatched anchor on the same queries. Shards
+> are enumerated off the Hub roots, not a hardcoded slot list — the hardcoded list is how a first
+> pass silently skipped query-text.
 
 **At the slots the headline rests on, the task survives — but that does not generalize, and where it
 breaks it breaks completely.**
@@ -498,6 +502,15 @@ only 24% of its 2.56-axis-length displacement points at the target; the query-re
 what the other 76% actually is — the model losing the question. That is not weak transport, it is a
 different phenomenon wearing transport's number.
 
+**The single-layer ladder is flat.** All 56 context-end and prefix-end single-layer cells land
+between 96.3 and 99.0, every one at or above the 96.2 unpatched reference, with nulls
+indistinguishable — no single-layer patch touches query-relevance at any depth. That is what their
+≈0 cosine margins predict, and it is now measured rather than assumed.
+
+![Query-relevance across the 28-layer single-layer ladder, context-end and prefix-end](https://raw.githubusercontent.com/superkaiba/explore-persona-space/b11ee35c4c4392d51e5b1e12cf507f66c3b11121/figures/issue_2094/query_relevance_single.png)
+
+> Both slots, all 28 layers, real patch and shuffled-donor null against the unpatched reference.
+
 **Takeaways:**
 
 1. The patch is ~3.3× better at erasure than installation, at every position in the answer. Most of
@@ -519,6 +532,9 @@ different phenomenon wearing transport's number.
    "a fluent off-topic answer … fully coherent") can see it; every other broken cell is at least
    caught by the coherence floor. A high F_act on a span slot should not be read as transport
    without this check.
+7. Coverage: all 70 matched-query cells at the full-state patch, 6,930 judge draws. The 56
+   single-layer cells are uniformly clean (96.3–99.0); the damage is confined to multi-layer patches
+   on span slots, and the *undetectable* damage to exactly one cell.
 
 **Repro:** heatmaps `scripts/issue2094_userchat_heatmaps.py`; Result 4 `scripts/issue2094_dose_lineplot.py`
 (cells + per-strength values in `figures/issue_2094/userchat_heatmaps/dose_lineplot_summary.json`;
@@ -528,7 +544,9 @@ per-cell all-pairs and well-separated means in `cells_summary.json`). Per-cell t
 existed only on the unmerged `issue-2094` branch; regenerating from it reproduces the three original
 panels byte-for-byte). Transport `eval_results/issue_2094/transport/` (single-layer + the all-layer
 `transport_cells_joint.jsonl` from `scripts/issue2094_joint_transport.py`). Query-relevance
-`scripts/issue2094_query_relevance.py` → `eval_results/issue_2094/query_relevance/`. Results 0–2 read at the
+`scripts/issue2094_query_relevance.py --scope joint|single` →
+`eval_results/issue_2094/query_relevance_{joint,single}/` (the 4-cell `query_relevance/` dir is the
+superseded first pass). Results 0–2 read at the
 full-state patch over all non-degenerate coherent pairs; Results 3 and 4 over well-separated pairs
 (|anchor separation| ≥ 0.5) only.
 
