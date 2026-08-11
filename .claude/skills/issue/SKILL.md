@@ -10000,6 +10000,13 @@ suite directly and posts an `epm:test-verdict` event with the result.
       # the outer bg-Bash STILL dies at the 600s tool cap (the exact
       # failure this recipe exists to fix; the § Harvest NEVER-splice
       # rule).
+      # Script-file variant (#2115): should this gate workload ever need a
+      # script FILE (the Step 10d lint-gate / surgical launchers' shape),
+      # COMPOSE it with the Write tool as its own prior step — never a
+      # `cat > ... <<'EOF'` heredoc inside the Bash call (a heredoc body
+      # rides the whole workload as Bash tool-call argv through the
+      # harness transport, the #2115 stall surface; guards scan the full
+      # argv, #1756).
       # $S9C_BASETEMP expands at the OUTER level — the var is UNEXPORTED,
       # so a deferred `\$S9C_BASETEMP` reaches the detached inner shell
       # EMPTY and pytest gets `--basetemp=/p` (#2005 r1 C1). Only the
@@ -11786,10 +11793,15 @@ tests BEFORE anything lands:
   # payload overlay, gated lint legs, TG mapped-invariant legs, subtract,
   # verdict, sha-bind) runs as ONE detached unit via the § Harvest
   # self-harvest chaining shape (§ Detached VM-side long compute phases):
-  # the workload is written to /tmp/issue-<N>-lint-gate.sh (a heredoc file
-  # because the workload contains many awk/sed single-quoted blocks that an
-  # inner `bash -c '...'` string would need escape-heavy quoting to
-  # survive), then setsid-nohup-launched from within an outer `bash -c`
+  # the workload is COMPOSED to /tmp/issue-<N>-lint-gate.sh with the WRITE
+  # TOOL as its own prior step (a script FILE because the workload's many
+  # awk/sed single-quoted blocks would need escape-heavy quoting inside an
+  # inner `bash -c '...'` string; the Write tool and NEVER a
+  # `cat > ... <<'EOF'` heredoc inside the launcher Bash call — a heredoc
+  # body rides the entire multi-KB workload as Bash tool-call argv through
+  # the harness transport, the #2115 forever-pending-dispatch stall
+  # surface, and the PreToolUse guards scan the full argv including
+  # heredoc bodies, #1756), then setsid-nohup-launched from within an outer `bash -c`
   # wrapper — the outer bg-Bash call (run_in_background=true) captures
   # `$!` as the workload pid (`PYTEST_PID` below); the trailing
   # `echo $? > /tmp/step9c-lint-rc-issue-<N>` at the END of the script
@@ -11809,12 +11821,15 @@ tests BEFORE anything lands:
   # Canonical launcher shape (the outer bg-Bash body — the workload verbatim
   # below is the script this launches):
   #   LINT_GATE_SCRIPT=/tmp/issue-<N>-lint-gate.sh
-  #   cat > "$LINT_GATE_SCRIPT" <<'LINT_GATE_EOF'
-  #   #!/usr/bin/env bash
-  #   # ... [the workload body verbatim from `# earlyoom-protect the gate`
-  #   #     down to and incl. `cat /tmp/issue-<N>-lint-verdict.txt`] ...
-  #   echo $? > /tmp/step9c-lint-rc-issue-<N>
-  #   LINT_GATE_EOF
+  #   STEP 1 — compose the script with the Write tool (its own tool call,
+  #   BEFORE the launcher bg-Bash; never a heredoc in the Bash call):
+  #     Write(file_path=$LINT_GATE_SCRIPT, content=
+  #       #!/usr/bin/env bash
+  #       ... [the workload body verbatim from `# earlyoom-protect the gate`
+  #           down to and incl. `cat /tmp/issue-<N>-lint-verdict.txt`] ...
+  #       echo $? > /tmp/step9c-lint-rc-issue-<N>
+  #     )
+  #   STEP 2 — the launcher-only bg-Bash (argv stays tiny):
   #   chmod +x "$LINT_GATE_SCRIPT"
   #   PYTEST_PID=$(bash -c "setsid nohup env WT=\"$WT\" REPO_ROOT=\"$REPO_ROOT\" \
   #     OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
@@ -13866,9 +13881,14 @@ Decision tree:
   # via the Monitor until-loop keyed on the single-flight probe above, or
   # the `/issue-tick <N>` cron re-wake; never repeated
   # `TaskOutput(block=true, timeout=600000)` polls (#1984). The workload
-  # verbatim below is written to /tmp/issue-<N>-surgical-gate.sh (heredoc
-  # file — the awk/sed single-quoted blocks below would need escape-heavy
-  # quoting inside an inner `bash -c '...'` string) and setsid-nohup-
+  # verbatim below is COMPOSED to /tmp/issue-<N>-surgical-gate.sh with the
+  # WRITE TOOL as its own prior step (a script FILE — the awk/sed
+  # single-quoted blocks below would need escape-heavy quoting inside an
+  # inner `bash -c '...'` string; the Write tool and NEVER a
+  # `cat > ... <<'EOF'` heredoc in the launcher Bash call — a heredoc body
+  # rides the whole workload as Bash tool-call argv through the harness
+  # transport, the #2115 stall surface; guards scan the full argv, #1756)
+  # and setsid-nohup-
   # launched from within an outer `bash -c` wrapper so `$!` captures the
   # workload pid (`PYTEST_PID` below); the workload's final line is
   # `echo $? > /tmp/step9c-surgical-rc-issue-<N>` — rc-write inside the
@@ -13884,13 +13904,16 @@ Decision tree:
   # Canonical launcher shape (the outer bg-Bash body — the workload verbatim
   # below is the script this launches):
   #   SURGICAL_SCRIPT=/tmp/issue-<N>-surgical-gate.sh
-  #   cat > "$SURGICAL_SCRIPT" <<'SURGICAL_EOF'
-  #   #!/usr/bin/env bash
-  #   # ... [the workload body verbatim from `sudo -n choom -n -600 -p $$` down
-  #   #     to and incl. the terminal arms that write /tmp/issue-<N>-surgical-
-  #   #     outcome.txt] ...
-  #   echo $? > /tmp/step9c-surgical-rc-issue-<N>
-  #   SURGICAL_EOF
+  #   STEP 1 — compose the script with the Write tool (its own tool call,
+  #   BEFORE the launcher bg-Bash; never a heredoc in the Bash call):
+  #     Write(file_path=$SURGICAL_SCRIPT, content=
+  #       #!/usr/bin/env bash
+  #       ... [the workload body verbatim from `sudo -n choom -n -600 -p $$`
+  #           down to and incl. the terminal arms that write
+  #           /tmp/issue-<N>-surgical-outcome.txt] ...
+  #       echo $? > /tmp/step9c-surgical-rc-issue-<N>
+  #     )
+  #   STEP 2 — the launcher-only bg-Bash (argv stays tiny):
   #   chmod +x "$SURGICAL_SCRIPT"
   #   PYTEST_PID=$(bash -c "setsid nohup env WT=\"$WT\" REPO_ROOT=\"$REPO_ROOT\" \
   #     OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
