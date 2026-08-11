@@ -34,9 +34,17 @@ _TRAILING_LABELLED_SCORE_RE = re.compile(
 # (trailing_int_recovered + labelled_score_recovered) / (… + parse_failed).
 # Also recoverable from logs: the fixed `recovered-trailing-integer` /
 # `recovered-labelled-score` INFO tokens vs the failure WARNING.
+# Step-6 emphasis-wrapped bare-integer anchor (#2225, measured in the P4 production wave):
+# the judge's commonest residual shape is a MARKDOWN-BOLDED bare integer (`**85**` x12,
+# `**75**` x7, ... = 26 of 29 content drops over 175,500 draws). It falls through step 4
+# (the asterisks make the line not EXACTLY bare digits) AND step 5 (no `Score:` label).
+# Balanced 1-3 char `*`/`_` emphasis wrapper only; the inner value is then held to step 4's
+# own ASCII-digit + range discipline, so nothing looser is admitted.
+_MD_EMPHASIS_RE = re.compile(r"[*_]{1,3}\s*(.*?)\s*[*_]{1,3}", re.DOTALL)
 _PARSE_STATS = {
     "trailing_int_recovered": 0,
     "labelled_score_recovered": 0,
+    "emphasis_int_recovered": 0,
     "parse_failed": 0,
 }
 
@@ -45,12 +53,13 @@ def parse_recovery_stats() -> dict[str, int]:
     """Return a copy of the process-local parse-outcome counters (#2109).
 
     Keys: ``trailing_int_recovered`` (step-4 recoveries),
-    ``labelled_score_recovered`` (step-5 recoveries, #2225) and
-    ``parse_failed`` (inputs that fell through every ladder step to the
-    failure WARNING). Process-local; callers compute the recovery rate as
-    ``(trailing_int_recovered + labelled_score_recovered) /
-    (trailing_int_recovered + labelled_score_recovered + parse_failed)``.
-    Keys are ADDITIVE across versions — read by name, never by dict length.
+    ``labelled_score_recovered`` (step-5, #2225),
+    ``emphasis_int_recovered`` (step-6, #2225) and ``parse_failed`` (inputs
+    that fell through every ladder step to the failure WARNING).
+    Process-local; the recovery rate is the sum of the three recovery
+    counters over that sum plus ``parse_failed``. Keys are ADDITIVE across
+    versions — read by name, never by dict length, and never assume the
+    recovery classes are exhausted by the ones present today.
     """
     return dict(_PARSE_STATS)
 
@@ -123,6 +132,24 @@ def parse_judge_json(text: str) -> dict | list | str | int | float | bool | None
        same truncation caveat as step 4 (a response truncated right after a
        ``Score:`` label cannot be distinguished here — the rule-23/26
        ``stop_reason`` tally is the detection surface).
+    6. Emphasis-wrapped bare-integer recovery (#2225, runs ONLY when 1-5 ALL
+       fail): the SAME single last-non-empty-line candidate, accepted iff it
+       fullmatches a both-sides 1-3-char ``*``/``_`` emphasis wrapper
+       (delimiters need not be identical — ``**85__`` recovers too; the
+       inner-value discipline is what bounds the risk, not wrapper symmetry)
+       (``_MD_EMPHASIS_RE``) whose INNER text then satisfies step 4's own
+       ``_TRAILING_INT_RE`` + [0, 100] discipline — so the wrapper is the only
+       thing step 6 adds; nothing looser is admitted (``**70.5**``,
+       ``**-5**``, ``**150**``, ``**Confidence**`` all still drop).
+       Recovers the DOMINANT residual shape measured in the #2225 P4
+       production wave: a markdown-bolded bare integer (``**85**`` x12,
+       ``**75**`` x7, ``**65**`` x2, plus singletons) = 26 of 29 content
+       drops over 175,500 draws, where step 4 rejects the asterisks and
+       step 5 finds no label. Strictly ADDITIVE like step 5. Emits the fixed
+       greppable token ``recovered-emphasis-integer`` and increments
+       ``_PARSE_STATS["emphasis_int_recovered"]``.
+       (``**Score: 85**`` is already claimed by step 5, whose own regex
+       tolerates the wrapper — the two steps are disjoint.)
 
     On parse failure returns ``None`` — NEVER a coerced placeholder
     (drop-never-coerce, ``.claude/rules/llm-judging.md`` rule 9; the #766
@@ -200,6 +227,21 @@ def parse_judge_json(text: str) -> dict | list | str | int | float | bool | None
                 len(text),
             )
             return value
+    # Step 6 (#2225) — emphasis-wrapped bare-integer recovery; see the docstring.
+    if tail:
+        candidate = tail.split("\n")[-1].strip()
+        m6 = _MD_EMPHASIS_RE.fullmatch(candidate)
+        if m6 is not None:
+            inner = m6.group(1).strip()
+            if _TRAILING_INT_RE.fullmatch(inner) and 0 <= int(inner) <= 100:
+                value = int(inner)
+                _PARSE_STATS["emphasis_int_recovered"] += 1
+                logger.info(
+                    "recovered-emphasis-integer: value=%d len=%d (parse ladder step 6)",
+                    value,
+                    len(text),
+                )
+                return value
     _PARSE_STATS["parse_failed"] += 1
     logger.warning(
         "Failed to parse judge JSON; returning None (caller must DROP this "

@@ -475,6 +475,131 @@ class TestTrailingLabelledScoreRecovery:
         assert _score_from_parsed(parse_judge_json(text)) == 0.0
 
 
+class TestEmphasisWrappedIntegerRecovery:
+    """Step-6 emphasis-wrapped bare-integer recovery (#2225).
+
+    Motivating MEASUREMENT (P4 production wave, 175,500 draws): the dominant residual
+    content-drop shape was a markdown-bolded bare integer — ``**85**`` x12, ``**75**`` x7,
+    ``**65**`` x2 plus singletons = 26 of 29 content drops. Step 4 rejects it (asterisks
+    mean the line is not EXACTLY bare digits) and step 5 finds no ``Score:`` label.
+    """
+
+    @pytest.mark.parametrize(
+        ("text", "expected"),
+        [
+            ("rationale about the claim.\n\n**85**", 85),
+            ("rationale.\n\n**75**", 75),
+            ("rationale.\n\n*85*", 85),
+            ("rationale.\n\n***85***", 85),
+            ("rationale.\n\n__85__", 85),
+            ("rationale.\n\n_85_", 85),
+            ("rationale.\n\n**0**", 0),
+            ("rationale.\n\n**100**", 100),
+            ("rationale.\n\n  **30**  ", 30),
+            ("rationale.\n\n**85__", 85),  # wrapper need not be symmetric
+        ],
+        ids=[
+            "bold_85",
+            "bold_75",
+            "single_star",
+            "triple_star",
+            "double_underscore",
+            "single_underscore",
+            "bold_zero",
+            "bold_100",
+            "whitespace",
+            "asymmetric_wrapper",
+        ],
+    )
+    def test_emphasis_wrapped_recovers(self, text, expected):
+        result = parse_judge_json(text)
+        assert result == expected
+        assert result is not None  # falsy-valid 0 is a legitimate score
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "rationale.\n\n**70.5**",  # not an integer
+            "rationale.\n\n**-5**",  # sign disallowed
+            "rationale.\n\n**150**",  # out of range
+            "rationale.\n\n**seventy**",  # non-numeric
+            "rationale.\n\n**Confidence**",  # no digits at all
+            "rationale.\n\n**85",  # unterminated wrapper
+            "rationale.\n\n85**",  # unopened wrapper
+            "rationale.\n\n**8**5**",  # inner is not bare digits
+        ],
+        ids=[
+            "decimal",
+            "signed",
+            "out_of_range",
+            "non_numeric",
+            "word",
+            "unterminated",
+            "unopened",
+            "inner_not_bare",
+        ],
+    )
+    def test_still_drops(self, text, caplog):
+        with caplog.at_level(logging.WARNING, logger="explore_persona_space.eval.utils"):
+            assert parse_judge_json(text) is None
+        assert len([r for r in caplog.records if r.levelno == logging.WARNING]) == 1
+
+    def test_fullwidth_inner_drops(self, caplog):
+        """Inner value inherits step 4's ASCII-only discipline."""
+        fw = chr(0xFF17) + chr(0xFF10)
+        with caplog.at_level(logging.WARNING, logger="explore_persona_space.eval.utils"):
+            assert parse_judge_json(f"rationale.\n\n**{fw}**") is None
+        assert len([r for r in caplog.records if r.levelno == logging.WARNING]) == 1
+
+    def test_emits_info_token_and_no_warning(self, caplog):
+        with caplog.at_level(logging.INFO, logger="explore_persona_space.eval.utils"):
+            assert parse_judge_json("rationale.\n\n**85**") == 85
+        assert [r for r in caplog.records if r.levelno == logging.WARNING] == []
+        infos = [
+            r
+            for r in caplog.records
+            if r.levelno == logging.INFO and "recovered-emphasis-integer" in r.getMessage()
+        ]
+        assert len(infos) == 1, [r.getMessage() for r in caplog.records]
+
+    def test_counter_attribution_is_disjoint(self):
+        """Each recovery class increments ONLY its own counter."""
+        from explore_persona_space.eval.utils import parse_recovery_stats
+
+        before = parse_recovery_stats()
+        assert parse_judge_json("prose.\n\n**85**") == 85  # step 6
+        assert parse_judge_json("prose.\n\nScore: 61") == 61  # step 5
+        assert parse_judge_json("prose.\n70") == 70  # step 4
+        assert parse_judge_json("no verdict anywhere") is None
+        after = parse_recovery_stats()
+        assert after["emphasis_int_recovered"] - before["emphasis_int_recovered"] == 1
+        assert after["labelled_score_recovered"] - before["labelled_score_recovered"] == 1
+        assert after["trailing_int_recovered"] - before["trailing_int_recovered"] == 1
+        assert after["parse_failed"] - before["parse_failed"] == 1
+
+    def test_bolded_labelled_score_stays_with_step_5(self):
+        """``**Score: 85**`` is step 5's (its regex tolerates the wrapper) — the two
+        steps must stay disjoint so log tokens remain diagnostic."""
+        from explore_persona_space.eval.utils import parse_recovery_stats
+
+        before = parse_recovery_stats()
+        assert parse_judge_json("prose.\n\n**Score: 85**") == 85
+        after = parse_recovery_stats()
+        assert after["labelled_score_recovered"] - before["labelled_score_recovered"] == 1
+        assert after["emphasis_int_recovered"] == before["emphasis_int_recovered"]
+
+    def test_decodable_json_still_wins(self):
+        assert parse_judge_json('blah {"score": 1}\n\n**99**') == {"score": 1}
+
+    def test_round_trip_through_score_reduce(self):
+        """llm-judging rule 27: through the harness's OWN reduce path."""
+        from explore_persona_space.eval.graded_judge import _score_from_parsed
+
+        for tail, want in (("**85**", 85.0), ("**0**", 0.0), ("**75**", 75.0)):
+            text = "I need to evaluate whether the model is hallucinating.\n\n" + tail
+            assert _score_from_parsed(parse_judge_json(text)) == want
+
+
 class TestDefaultJudgeModel:
     """Tests for the centralized DEFAULT_JUDGE_MODEL constant."""
 
