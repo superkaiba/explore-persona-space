@@ -84,6 +84,56 @@ def _model_slug(model_id: str) -> str:
     return model_id.split("/")[-1].replace(".", "_").lower()
 
 
+# ── per-model vLLM attention-kernel env pins (P1 attempt-2 crash fix) ─────────
+#
+# gemma-2 uses tanh LOGIT SOFTCAPPING in attention; the FA3 kernel vLLM 0.11.0
+# selects by default on H100 (cc 9.0 — fa_utils.get_flash_attn_version step 1)
+# is built WITHOUT softcap support and dies at engine init during cudagraph
+# warmup: RuntimeError "This flash attention build does not support tanh
+# softcapping" (torch.ops._vllm_fa3_C.fwd). FA2 supports softcapping
+# (_vllm_fa2_C.varlen_fwd takes softcap=) and the env override wins version
+# selection (fa_utils step 2: VLLM_FLASH_ATTN_VERSION in {2,3}). FLASHINFER
+# was rejected: flashinfer is NOT installed on pod-2221 (site-packages probed
+# 2026-08-11). vLLM env vars are read LAZILY at attribute access
+# (vllm/envs.py __getattr__), so setting the env after `import vllm` but
+# BEFORE build_vllm_engine() is effective; the spawned EngineCore worker
+# inherits the parent's os.environ.
+_GEMMA2_ATTN_ENV = {"VLLM_FLASH_ATTN_VERSION": "2"}
+
+
+def _attn_env_overrides(model_id: str) -> dict[str, str]:
+    """Per-model vLLM engine env pins; empty for every non-gemma-2 model."""
+    if "gemma-2" in model_id.lower():
+        return dict(_GEMMA2_ATTN_ENV)
+    return {}
+
+
+def _apply_attn_env(model_id: str) -> list[str]:
+    """Set the model's attention env pins (setdefault semantics).
+
+    Returns the keys THIS call set, so ``_restore_attn_env`` never pops a
+    launcher-provided value. Logs the effective pin — the fix-engaged signal
+    for the gemma-2 relaunch.
+    """
+    applied: list[str] = []
+    for k, v in _attn_env_overrides(model_id).items():
+        if os.environ.get(k) is None:
+            os.environ[k] = v
+            applied.append(k)
+        lib.log_phase(
+            "p1_rollouts",
+            f"{_model_slug(model_id)}: attention-kernel pin {k}={os.environ[k]}"
+            + ("" if k in applied else " (launcher-provided, kept)"),
+        )
+    return applied
+
+
+def _restore_attn_env(applied: list[str]) -> None:
+    """Pop only the keys _apply_attn_env set (non-gemma engines stay byte-identical)."""
+    for k in applied:
+        os.environ.pop(k, None)
+
+
 # ── prompts (paper dataset user turns) ────────────────────────────────────────
 
 
@@ -456,8 +506,10 @@ def phase_rollouts(args) -> None:
         if not pending:
             lib.log_phase("p1_rollouts", f"{slug}: all families complete — skip engine build")
             continue
-        llm = lib.build_vllm_engine(model_id, gpu_memory_utilization=args.gpu_mem_util)
+        attn_applied = _apply_attn_env(model_id)
+        llm = None
         try:
+            llm = lib.build_vllm_engine(model_id, gpu_memory_utilization=args.gpu_mem_util)
             for family in pending:
                 prompts_rows = read_jsonl(out_root / "prompts" / f"{family}.jsonl")
                 if args.max_prompts:
@@ -546,7 +598,9 @@ def phase_rollouts(args) -> None:
                     ),
                 )
         finally:
-            lib.reap_vllm_engine(llm)
+            if llm is not None:
+                lib.reap_vllm_engine(llm)
+            _restore_attn_env(attn_applied)
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(report, indent=2))
     bad = {k: v for k, v in report.items() if v["cap_hit_fraction"] > C.CAP_HIT_REGEN_THRESHOLD}

@@ -2282,3 +2282,119 @@ def test_build_tf_pools_band_roster_growth_invalidates_frozen_pools(tmp_path):
     fp = json.loads((out_root / "tf_pools.json.fp.json").read_text())
     assert sorted(fp["band_sha256"]) == ["evil", "hallucination"]
     assert fp["band_missing"] == ["sycophancy"]
+
+
+# ── rollouts: per-model vLLM attention-kernel env pins (gemma-2 FA3 softcap) ──
+# P1 attempt 2: the gemma-2-9b-it worker died at engine init ("This flash
+# attention build does not support tanh softcapping", torch.ops._vllm_fa3_C.fwd)
+# because vLLM 0.11.0 defaults to FA3 on H100 while gemma-2 needs softcap.
+# The fix pins FA2 per-model in phase_rollouts; non-gemma engines byte-identical.
+
+
+def test_attn_env_overrides_gemma2_only():
+    """gemma-2 family pins FA2; every other panel model resolves NO overrides."""
+    per_model = {m: sc._attn_env_overrides(m) for m in C.PANEL_MODELS}
+    assert per_model["google/gemma-2-9b-it"] == {"VLLM_FLASH_ATTN_VERSION": "2"}
+    non_gemma = {m: ov for m, ov in per_model.items() if "gemma-2" not in m.lower()}
+    assert len(non_gemma) == 2
+    assert all(ov == {} for ov in non_gemma.values())
+
+
+def test_apply_attn_env_sets_and_restores(monkeypatch):
+    import os
+
+    monkeypatch.delenv("VLLM_FLASH_ATTN_VERSION", raising=False)
+    applied = sc._apply_attn_env("google/gemma-2-9b-it")
+    assert os.environ["VLLM_FLASH_ATTN_VERSION"] == "2"
+    assert applied == ["VLLM_FLASH_ATTN_VERSION"]
+    sc._restore_attn_env(applied)
+    assert "VLLM_FLASH_ATTN_VERSION" not in os.environ
+
+
+def test_apply_attn_env_respects_launcher_value(monkeypatch):
+    """A launcher-provided value wins (setdefault semantics) and is never popped."""
+    import os
+
+    monkeypatch.setenv("VLLM_FLASH_ATTN_VERSION", "3")
+    applied = sc._apply_attn_env("google/gemma-2-9b-it")
+    assert applied == []
+    assert os.environ["VLLM_FLASH_ATTN_VERSION"] == "3"
+    sc._restore_attn_env(applied)
+    assert os.environ["VLLM_FLASH_ATTN_VERSION"] == "3"
+
+
+def test_apply_attn_env_noop_for_non_gemma(monkeypatch):
+    import os
+
+    monkeypatch.delenv("VLLM_FLASH_ATTN_VERSION", raising=False)
+    applied = sc._apply_attn_env("meta-llama/Llama-3.1-8B-Instruct")
+    assert applied == []
+    assert "VLLM_FLASH_ATTN_VERSION" not in os.environ
+
+
+class _EngineBail(RuntimeError):
+    """Sentinel: bail out of phase_rollouts at the engine-build seam."""
+
+
+def _rollouts_attn_wiring_probe(tmp_path, monkeypatch, model_id):
+    """Drive the REAL phase_rollouts body to the engine-build seam; record the
+    env the engine (and its spawned EngineCore) would inherit, then bail
+    before any GPU work. Also exercises restore-on-engine-init-crash — the
+    exact P1 attempt-2 failure shape."""
+    import os
+
+    seen = {}
+
+    def _fake_build(model_name, gpu_memory_utilization=0.5):
+        seen["env"] = os.environ.get("VLLM_FLASH_ATTN_VERSION")
+        raise _EngineBail(model_name)
+
+    monkeypatch.setattr(sc.lib, "build_vllm_engine", _fake_build)
+    monkeypatch.setattr(sc, "_get_tokenizer", lambda model_id: object())
+    monkeypatch.delenv("VLLM_FLASH_ATTN_VERSION", raising=False)
+    out_root = tmp_path / "corpus"
+    (out_root / "prompts").mkdir(parents=True)
+    args = SimpleNamespace(
+        out_root=str(out_root),
+        families=["insecure_code"],
+        models=[model_id],
+        n_rollouts=1,
+        max_new_tokens=8,
+        max_prompts=1,
+        gpu_mem_util=0.5,
+    )
+    with pytest.raises(_EngineBail):
+        sc.phase_rollouts(args)
+    return seen
+
+
+def test_phase_rollouts_pins_fa2_for_gemma_and_restores(tmp_path, monkeypatch):
+    import os
+
+    seen = _rollouts_attn_wiring_probe(tmp_path, monkeypatch, "google/gemma-2-9b-it")
+    assert seen["env"] == "2"  # pin visible AT the engine-build seam
+    # restored even when engine init crashes (the P1 attempt-2 failure shape)
+    assert "VLLM_FLASH_ATTN_VERSION" not in os.environ
+
+
+def test_phase_rollouts_env_untouched_for_non_gemma(tmp_path, monkeypatch):
+    import os
+
+    seen = _rollouts_attn_wiring_probe(tmp_path, monkeypatch, "mistralai/Mistral-7B-Instruct-v0.3")
+    assert seen["env"] is None
+    assert "VLLM_FLASH_ATTN_VERSION" not in os.environ
+
+
+def test_installed_vllm_fa_version_env_is_lazy_and_known():
+    """Mechanism pin: the installed vllm reads VLLM_FLASH_ATTN_VERSION lazily
+    (envs.__getattr__), so a set-before-engine-build pin is effective even
+    though phase_rollouts imports vllm earlier. Source-read only (no vllm
+    import — find_spec on a top-level package does not execute it)."""
+    import importlib.util
+
+    spec = importlib.util.find_spec("vllm")
+    if spec is None or not spec.submodule_search_locations:
+        pytest.skip("vllm not installed in this environment")
+    envs_src = (Path(spec.submodule_search_locations[0]) / "envs.py").read_text()
+    assert "VLLM_FLASH_ATTN_VERSION" in envs_src
+    assert "def __getattr__" in envs_src  # lazy evaluation of environment variables
