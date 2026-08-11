@@ -1,22 +1,25 @@
 {
-  "commit": "99565abd+dirty",
-  "render_id": "36c045470df24419",
-  "git_commit": "99565abd",
+  "commit": "9eed3e57+dirty",
+  "render_id": "749a4907a72a4f63",
+  "git_commit": "9eed3e57",
   "git_dirty": true,
   "git_dirty_paths": [
-    ".claude/agent-memory/code-reviewer-lean/gate_threshold_vs_shard_config.md",
+    "docs/results_summaries/2026-08-11-framing-character-map-transfer.md",
     "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_attrib_quoted.meta.json",
     "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_attrib_quoted.pdf",
     "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_attrib_quoted.png",
     "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_bare_label.meta.json",
     "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_bare_label.pdf",
     "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_bare_label.png",
+    "figures/issue_2054/framing_character_transfer/chat_to_character_transfer_attrib_quoted.meta.json",
+    "figures/issue_2054/framing_character_transfer/chat_to_character_transfer_attrib_quoted.pdf",
+    "figures/issue_2054/framing_character_transfer/chat_to_character_transfer_attrib_quoted.png",
     "figures/issue_2054/framing_character_transfer/framing_transfer_tiers.meta.json",
     "figures/issue_2054/framing_character_transfer/framing_transfer_tiers.pdf",
     "figures/issue_2054/framing_character_transfer/framing_transfer_tiers.png",
     "scripts/issue2054_framing_character_transfer_figs.py"
   ],
-  "created": "2026-08-11T13:59:46Z",
+  "created": "2026-08-11T16:51:30Z",
   "figsize": [
     11.6,
     8.8
