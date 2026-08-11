@@ -12108,38 +12108,46 @@ def _gather_artifact_content_claims(body: str) -> list[dict[str, str | None]]:
                 if key in seen_sentences:
                     continue
                 seen_sentences.add(key)
-                unit = pu.group("unit").lower()
-                url: str | None = None
-                via = ""
-                skip_note: str | None = None
-                in_sent = [(st, u) for st, u in para_links if off <= st < off + len(sent)]
-                if in_sent:
-                    after_verb = [u for st, u in in_sent if st >= off + ri.start()]
-                    url = after_verb[0] if after_verb else in_sent[-1][1]
-                    via = "inline link"
-                else:
-                    preceding = [u for st, u in para_links if st < off]
-                    if preceding:
-                        url = preceding[-1]
-                        via = "nearest preceding paragraph link"
-                    elif "footer" in sent.casefold() and footer_urls:
-                        url, note = _resolve_footer_pin_by_basename(sent, footer_urls)
-                        if url is None:
-                            skip_note = note
-                        else:
-                            via = note
-                    else:
-                        skip_note = "no adjacent pinned .json link (sentence, paragraph, or footer)"
+                url, via, skip_note = _resolve_claim_pin(
+                    sent, off, ri.start(), para_links, footer_urls
+                )
                 claims.append(
                     {
                         "sentence": key,
-                        "unit": unit,
+                        "unit": pu.group("unit").lower(),
                         "url": url,
                         "via": via,
                         "skip_note": skip_note,
                     }
                 )
     return claims
+
+
+def _resolve_claim_pin(
+    sent: str,
+    off: int,
+    verb_start: int,
+    para_links: list[tuple[int, str]],
+    footer_urls: list[str],
+) -> tuple[str | None, str, str | None]:
+    """Resolve ONE claim sentence's `.json` pin (check 54): the sentence's
+    own link (preferring the first after the verb), else the nearest
+    PRECEDING link in the same paragraph, else — for sentences mentioning
+    "footer" — the footer matching-basename resolution. Returns
+    ``(url, via, skip_note)``; ``url`` None ⇒ ``skip_note`` says why."""
+    in_sent = [(st, u) for st, u in para_links if off <= st < off + len(sent)]
+    if in_sent:
+        after_verb = [u for st, u in in_sent if st >= off + verb_start]
+        return (after_verb[0] if after_verb else in_sent[-1][1]), "inline link", None
+    preceding = [u for st, u in para_links if st < off]
+    if preceding:
+        return preceding[-1], "nearest preceding paragraph link", None
+    if "footer" in sent.casefold() and footer_urls:
+        url, note = _resolve_footer_pin_by_basename(sent, footer_urls)
+        if url is None:
+            return None, "", note
+        return url, note, None
+    return None, "", "no adjacent pinned .json link (sentence, paragraph, or footer)"
 
 
 def _load_pinned_json_for_claim(url: str) -> tuple[object | None, str]:
@@ -12170,7 +12178,27 @@ def _load_pinned_json_for_claim(url: str) -> tuple[object | None, str]:
     repo = _resolve_repo_root()
     if repo is None:
         return None, "repo root unresolved — cannot load the artifact offline"
-    raw: str | None = None
+    raw, terminal_note = _git_json_text_at_sha(repo, sha, path)
+    if raw is None and terminal_note:
+        return None, terminal_note
+    if raw is None:
+        raw, terminal_note = _working_copy_json_text(repo, sha, path)
+        if raw is None:
+            return None, terminal_note
+    try:
+        return json.loads(raw), ""
+    except (ValueError, json.JSONDecodeError):
+        return None, "artifact is not parseable JSON"
+
+
+def _git_json_text_at_sha(repo: Path, sha: str, path: str) -> tuple[str | None, str]:
+    """Read ``<sha>:<path>`` from the git object DB (check 54): a
+    ``git cat-file -s`` size probe, then ``git show``. Returns
+    ``(raw, terminal_note)``: raw text on success; ``(None, note)`` for a
+    TERMINAL skip (oversized blob); ``(None, "")`` when the sha/path is
+    locally unknown or the read failed — the caller falls through to the
+    committed-working-copy fallback. Fail-soft: subprocess errors map to
+    the fall-through case."""
     try:
         size = subprocess.run(
             ["git", "cat-file", "-s", f"{sha}:{path}"],
@@ -12180,44 +12208,45 @@ def _load_pinned_json_for_claim(url: str) -> tuple[object | None, str]:
             timeout=10,
         )
     except (OSError, subprocess.SubprocessError):
-        size = None
-    if size is not None and size.returncode == 0:
-        try:
-            nbytes = int(size.stdout.strip())
-        except ValueError:
-            nbytes = -1
-        if nbytes > _ARTIFACT_CONTENT_MAX_BYTES:
-            return None, "artifact exceeds the 10 MB scan cap"
-        try:
-            proc = subprocess.run(
-                ["git", "show", f"{sha}:{path}"],
-                cwd=str(repo),
-                capture_output=True,
-                text=True,
-                timeout=30,
-            )
-        except (OSError, subprocess.SubprocessError):
-            proc = None
-        if proc is not None and proc.returncode == 0:
-            raw = proc.stdout
-    if raw is None:
-        # Sha locally unknown (or the object read failed): committed-
-        # working-copy fallback at the repo root.
-        p = repo / path
-        try:
-            if not p.is_file():
-                return None, (
-                    f"sha `{sha[:8]}` unknown locally and `{path}` absent from the working copy"
-                )
-            if p.stat().st_size > _ARTIFACT_CONTENT_MAX_BYTES:
-                return None, "artifact exceeds the 10 MB scan cap"
-            raw = p.read_text(encoding="utf-8", errors="replace")
-        except OSError as e:
-            return None, f"working-copy read failed: {e}"
+        return None, ""
+    if size.returncode != 0:
+        return None, ""
     try:
-        return json.loads(raw), ""
-    except (ValueError, json.JSONDecodeError):
-        return None, "artifact is not parseable JSON"
+        nbytes = int(size.stdout.strip())
+    except ValueError:
+        nbytes = -1
+    if nbytes > _ARTIFACT_CONTENT_MAX_BYTES:
+        return None, "artifact exceeds the 10 MB scan cap"
+    try:
+        proc = subprocess.run(
+            ["git", "show", f"{sha}:{path}"],
+            cwd=str(repo),
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None, ""
+    if proc.returncode != 0:
+        return None, ""
+    return proc.stdout, ""
+
+
+def _working_copy_json_text(repo: Path, sha: str, path: str) -> tuple[str | None, str]:
+    """Committed-working-copy fallback read at the repo root (check 54) —
+    used when the pinned sha is locally unknown. Returns ``(raw, note)``;
+    ``raw`` None ⇒ ``note`` says why (absent / oversized / read error)."""
+    p = repo / path
+    try:
+        if not p.is_file():
+            return None, (
+                f"sha `{sha[:8]}` unknown locally and `{path}` absent from the working copy"
+            )
+        if p.stat().st_size > _ARTIFACT_CONTENT_MAX_BYTES:
+            return None, "artifact exceeds the 10 MB scan cap"
+        return p.read_text(encoding="utf-8", errors="replace"), ""
+    except OSError as e:
+        return None, f"working-copy read failed: {e}"
 
 
 def _sentence_unit_cardinality(sentence: str, unit: str) -> int | None:
