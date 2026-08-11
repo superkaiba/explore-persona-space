@@ -127,8 +127,10 @@ armed/disarmed state. With the live ledger's ``failing_tests: []`` this layer
 is a NO-OP on the current fleet — it engages exactly when main reddens, which
 is when every gate run would otherwise start false-blocking on unrelated red.
 
-Run as ONE background Bash (the lint leg is ~2.5-6 min; never a <=600 s
-foreground bound — #991/#996)::
+Run as ONE background Bash (the SCOPED lint leg is fast, but the
+workflow-surface / refusal-fallback bare no-flags run measured ~9-10 min on
+2026-08-11 and grows with the check roster; never a <=600 s foreground
+bound — #991/#996)::
 
     uv run python scripts/inline_lint_gate.py --issue <N> \\
         --payload-file /tmp/issue-<N>-<round-slug>-inline-payload.txt
@@ -194,8 +196,32 @@ NO_BYTECODE_ENV = {"PYTHONDONTWRITEBYTECODE": "1"}
 # NEVER .venv/external/data: installed-package bytecode is not the
 # same-second-rewrite staleness source and is expensive to recompile).
 PURGE_ROOTS = ("scripts", "src", "tests")
-LINT_TIMEOUT_S = 900
+# #2235 Phase B/C: the bare no-flags wall measured 547.9 s on 2026-08-11 (and
+# grows with the check roster), already past half the old 900 s fence — the
+# fence sits >= 2x the measured wall (1200 = 2.19x). The SCOPED leg is far
+# under it; the fence exists for the workflow-surface / refusal-fallback bare
+# runs.
+LINT_TIMEOUT_S = 1200
 FETCH_TIMEOUT_S = 60
+# Files-mode eligibility (#2235 Phase B): a payload touching ANY of these
+# workflow-surface prefixes (or exact root files) can change GLOBAL check
+# outcomes — the lint leg then runs the bare (unscoped) no-flags form,
+# today's exact behavior. `tests/` is included conservatively (a payload
+# editing tests can change global check outcomes and mapped-test verdicts).
+# Matched via str.startswith, so the two exact-file entries also cover any
+# hypothetical suffixed sibling — the conservative (full-run) direction.
+WORKFLOW_SURFACE_PREFIXES = (
+    ".claude/",
+    "workflow.yaml",
+    "scripts/workflow_lint.py",
+    "scripts/inline_lint_gate.py",
+    "scripts/select_step9c_tests.py",
+    "scripts/step9c_baseline.py",
+    "tests/",
+)
+# workflow_lint's fail-closed files-mode registry-miss sentinel: exactly ONE
+# bare full re-run (slow-but-correct), never a silent skip.
+FILES_MODE_REFUSED_RE = re.compile(r"^workflow_lint: FILES-MODE-REFUSED \(", re.MULTILINE)
 # Mapped-pytest timeout parity with select_step9c_tests.recommended_timeout_s
 # (#1046): base + per-file + the test_workflow_lint.py slow surcharge, floored
 # at the canonical select_step9c_tests.TIMEOUT_FLOOR_S (round-2 Minor: the
@@ -636,13 +662,43 @@ def run_legs(
                 file=sys.stderr,
             )
 
+    # #2235 Phase B: scope the lint leg to the payload (`--files`) whenever NO
+    # payload path touches a workflow-surface prefix; a surface payload keeps
+    # today's exact bare no-flags form. The env-override seam is untouched —
+    # an EPM_INLINE_GATE_LINT_CMD string runs verbatim (unscoped) either way.
+    bare_lint_argv = ["uv", "run", "python", "scripts/workflow_lint.py"]
+    scoped_eligible = bool(payload) and all(
+        not p.startswith(WORKFLOW_SURFACE_PREFIXES) for p in payload
+    )
+    lint_argv = [*bare_lint_argv, "--files", *payload] if scoped_eligible else bare_lint_argv
     lint_output, _ = _run_leg(
-        ["uv", "run", "python", "scripts/workflow_lint.py"],
+        lint_argv,
         "EPM_INLINE_GATE_LINT_CMD",
         repo,
         LINT_TIMEOUT_S,
         extra_env=dict(NO_BYTECODE_ENV),
     )
+    lint_audit = lint_output
+    if scoped_eligible and FILES_MODE_REFUSED_RE.search(lint_output):
+        # Fail-closed registry miss in workflow_lint's files-mode: exactly ONE
+        # bare full re-run; the VERDICT input is the re-run's output, the
+        # audit file keeps both (refused output + marker + re-run output).
+        print(
+            "inline_lint_gate: files-mode refused — falling back to ONE bare full lint run",
+            file=sys.stderr,
+        )
+        lint_output, _ = _run_leg(
+            bare_lint_argv,
+            "EPM_INLINE_GATE_LINT_CMD",
+            repo,
+            LINT_TIMEOUT_S,
+            extra_env=dict(NO_BYTECODE_ENV),
+        )
+        lint_audit = (
+            lint_audit
+            + "\n[inline_lint_gate: files-mode refused — bare full re-run below]\n"
+            + lint_output
+        )
 
     map_output, map_rc = _run_leg(
         ["uv", "run", "python", "scripts/select_step9c_tests.py", "--map-files", str(payload_file)],
@@ -653,7 +709,7 @@ def run_legs(
     )
     (out_dir / f"issue-{issue}-inline-map.txt").write_text(map_output, encoding="utf-8")
     if map_rc != 0:
-        (out_dir / f"issue-{issue}-inline-lint.txt").write_text(lint_output, encoding="utf-8")
+        (out_dir / f"issue-{issue}-inline-lint.txt").write_text(lint_audit, encoding="utf-8")
         raise Inconclusive(f"map leg failed (rc={map_rc}) — unclassifiable payload")
     pairs = parse_map_pairs(map_output)
 
@@ -686,7 +742,7 @@ def run_legs(
             )
 
     (out_dir / f"issue-{issue}-inline-lint.txt").write_text(
-        lint_output + "\n" + pytest_output, encoding="utf-8"
+        lint_audit + "\n" + pytest_output, encoding="utf-8"
     )
     return LegResults(
         lint_output=lint_output,
@@ -1012,8 +1068,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.payload_file:
             payload_file = Path(args.payload_file)
             if LEGACY_PAYLOAD_BASENAME_RE.match(payload_file.name):
-                # Refuse BEFORE any leg runs (#1948): no 2.5-6 min burn on a
-                # doomed invocation, and the shared legacy path never gates.
+                # Refuse BEFORE any leg runs (#1948): no multi-minute leg burn
+                # on a doomed invocation, and the shared legacy path never
+                # gates.
                 raise Inconclusive(
                     "legacy shared payload path refused (#1948) — the bare "
                     "issue-keyed name is clobbered by concurrent same-issue "
