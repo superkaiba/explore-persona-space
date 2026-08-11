@@ -20,6 +20,8 @@ relates_to:
 # A frozen context→answer map fails to recover exact-ΔP data-screening predictivity, and never beats the paper's own prompt-token approximation on any trait (point estimates) (HIGH confidence)
 
 <!-- clean-result-v4 -->
+**Methodology:** [docs/methodology/issue_2222.md](https://github.com/superkaiba/explore-persona-space/blob/ec0139e2365b0989b74d533f3716c9d3ffd1c557/docs/methodology/issue_2222.md) · [gist mirror](https://gist.github.com/superkaiba/d33cdd1abcfa84c602ff4c50f89c3cff)
+
 
 ## Takeaways
 
