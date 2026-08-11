@@ -9119,6 +9119,55 @@ def _append_pending_call_sidecar(event: dict, dry_run: bool) -> None:
         print(f"  pending-call-wedge: sidecar append failed: {exc}", file=sys.stderr)
 
 
+def _last_assistant_tool_uses(rows: list) -> tuple[int, dict, list[tuple[str, str]]] | None:
+    """Locate the tail's LAST ``type == "assistant"`` row and extract its
+    ``(id, name)`` tool_use pairs. Returns ``(index, row, pairs)``; ``None``
+    — fail toward silence — when no assistant row exists, its content is not
+    a list, any tool_use block is malformed (missing / non-str ``id`` or
+    ``name``), or the row carries no tool_use block at all (the turn ended
+    in text). Predicate helper of :func:`decide_pending_call_wedge`."""
+    for i in range(len(rows) - 1, -1, -1):
+        row = rows[i]
+        if not isinstance(row, dict) or row.get("type") != "assistant":
+            continue
+        msg = row.get("message")
+        content = msg.get("content") if isinstance(msg, dict) else None
+        if not isinstance(content, list):
+            return None
+        tool_uses: list[tuple[str, str]] = []
+        for block in content:
+            if not isinstance(block, dict) or block.get("type") != "tool_use":
+                continue
+            tid, name = block.get("id"), block.get("name")
+            if not isinstance(tid, str) or not tid or not isinstance(name, str) or not name:
+                return None  # malformed tool_use block — fail toward silence
+            tool_uses.append((tid, name))
+        if not tool_uses:
+            return None
+        return i, row, tool_uses
+    return None
+
+
+def _resolved_tool_result_ids(rows: list, after_idx: int) -> set[str]:
+    """``tool_use_id``s of every ``tool_result`` block in ``type == "user"``
+    rows AFTER ``after_idx`` — a matching result resolves its call. Predicate
+    helper of :func:`decide_pending_call_wedge`."""
+    resolved: set[str] = set()
+    for later in rows[after_idx + 1 :]:
+        if not isinstance(later, dict) or later.get("type") != "user":
+            continue
+        lmsg = later.get("message")
+        lcontent = lmsg.get("content") if isinstance(lmsg, dict) else None
+        if not isinstance(lcontent, list):
+            continue
+        for block in lcontent:
+            if isinstance(block, dict) and block.get("type") == "tool_result":
+                rid = block.get("tool_use_id")
+                if isinstance(rid, str):
+                    resolved.add(rid)
+    return resolved
+
+
 def decide_pending_call_wedge(
     rows: list[dict] | None, *, window_s: float, now: float
 ) -> dict | None:
@@ -9147,42 +9196,11 @@ def decide_pending_call_wedge(
     return ``None``."""
     if not isinstance(rows, list) or not rows:
         return None
-    last: dict | None = None
-    last_idx = -1
-    for i in range(len(rows) - 1, -1, -1):
-        row = rows[i]
-        if isinstance(row, dict) and row.get("type") == "assistant":
-            last, last_idx = row, i
-            break
-    if last is None:
+    found = _last_assistant_tool_uses(rows)
+    if found is None:
         return None
-    msg = last.get("message")
-    content = msg.get("content") if isinstance(msg, dict) else None
-    if not isinstance(content, list):
-        return None
-    tool_uses: list[tuple[str, str]] = []
-    for block in content:
-        if not isinstance(block, dict) or block.get("type") != "tool_use":
-            continue
-        tid, name = block.get("id"), block.get("name")
-        if not isinstance(tid, str) or not tid or not isinstance(name, str) or not name:
-            return None  # malformed tool_use block — fail toward silence
-        tool_uses.append((tid, name))
-    if not tool_uses:
-        return None
-    resolved: set[str] = set()
-    for later in rows[last_idx + 1 :]:
-        if not isinstance(later, dict) or later.get("type") != "user":
-            continue
-        lmsg = later.get("message")
-        lcontent = lmsg.get("content") if isinstance(lmsg, dict) else None
-        if not isinstance(lcontent, list):
-            continue
-        for block in lcontent:
-            if isinstance(block, dict) and block.get("type") == "tool_result":
-                rid = block.get("tool_use_id")
-                if isinstance(rid, str):
-                    resolved.add(rid)
+    last_idx, last, tool_uses = found
+    resolved = _resolved_tool_result_ids(rows, last_idx)
     pending = [(tid, name) for tid, name in tool_uses if tid not in resolved]
     if not pending:
         return None
