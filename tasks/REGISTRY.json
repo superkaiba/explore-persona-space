@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2233,
+  "highest_id": 2234,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9532,6 +9532,13 @@
       "path": "tasks/proposed/2233",
       "status": "proposed",
       "title": "Narrow over-broad scripts/issue*.py rule globs (3 rules, ~23K tokens on every issue script)"
+    },
+    "2234": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2234",
+      "status": "proposed",
+      "title": "parse_judge_json step 4: add labeled trailing score-line recovery (Score: N) \u2014 measured #2222 pilot shape missing from the landed #2109 recovery"
     },
     "224": {
       "has_clean_result": true,
