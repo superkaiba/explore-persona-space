@@ -160,11 +160,36 @@ end supplies it.
 
 ![F_beh per slot and layer, three settings, full-state patch, well-separated pairs](https://raw.githubusercontent.com/superkaiba/explore-persona-space/985a61c307b19472f6266693bb4f4753d7645789/figures/issue_2094/userchat_heatmaps/f_beh_heatmaps_wellsep.png)
 
+**Direct check: the erasure/installation split, measured rather than inferred.** The paragraph above
+reads the split off F values. To measure it, I re-scored the same completions with the same rubrics
+but **per position window** — each answer cut into thirds at sentence boundaries, each third scored
+against both the source-prefix and the target-prefix rubric (990 judge calls, 990 scored, zero drops
+of any class). Restricted to the bare→persona pairs, the only well-separated matched-query pairs
+whose target register the model can express at all (the conversation prefix scores 0/100 under its
+own rubric even when actually present, across 50 native draws). Two things come out. **(a) The patch
+deletes far more than it installs:** at all 28 layers, window 1, the source register drops 80 points
+against the shuffled-donor null — 4 of 5 pairs go 95–100 → 0, complete erasure — while the target
+register climbs only 24. The ratio is ≈3.3× at every window. So the 0.63 above is mostly counting
+deletion of the old context. **(b) The middle band and single layers install nothing anywhere:**
+≤3/100 in every window, flat against the null. That rules out a consistency artifact — the
+whole-answer rubric asks for behavior "fully and *consistently* expressed", so a persona present
+only at the start would score low, but there is no persona at any position to miss.
+
+![Target-persona expression by position, and the erasure/installation decomposition](https://raw.githubusercontent.com/superkaiba/explore-persona-space/bff5b424a93dbac550da6ebcddd48a7e7af52800/figures/issue_2094/position_judge_decay.png)
+
+> Left: pirate-persona score by third of the model's own answer, bare-context run patched toward the
+> persona context, well-separated pairs (n=5 per cell), against the natively-prompted ceiling (n=50).
+> Right: at all 28 layers, both registers under the real patch and the shuffled-donor null. Error bars
+> are SEM across pairs. Grid arms are greedy single-draw, anchors temperature 1.0 — an unmatched
+> sampling regime, so read the within-arm trends and same-window contrasts, not the absolute levels.
+
 **Takeaways:**
 
 1. Matched query at the context vector moves behavior: F 0.63 at all 28 layers, 0.45 for the middle
    band, 0.20–0.33 at single layers (peak L20) — a third to two-thirds of a full context swap, never
-   all of it.
+   all of it. **Most of that is erasure, not transfer:** per-register position scoring puts source
+   deletion at ≈3.3× target installation at every position, so F's numerator (judge_B − judge_A) is
+   largely earned by removing A.
 2. Among *single positions* the context vector is the only one that transfers. Prefix-end reads ≈0
    (−0.006 at all layers) *even though it moved the answer vector 0.18* — the prefix-end state reads
    the prefix out but does not causally carry it. 2nd/3rd-to-last are flat too.
