@@ -1,0 +1,26 @@
+{
+  "artifact": "regen_target_set",
+  "metadata": {
+    "git_commit": "50355572008e100d93d83339c4c83ded44e1ae8b",
+    "n": 15700,
+    "pinned_parent_revision": "7159e5804d",
+    "script": "issue2054_phase_a.py",
+    "seed": 137,
+    "timestamp": "2026-08-11T00:56:13Z"
+  },
+  "n": 15700,
+  "population": "full shared_question_draw (32,000-row draw file \u2014 plan fact-check C2)",
+  "population_rows": 56911,
+  "refilter_counters": {
+    "char_bounds": 0,
+    "dupe_conv_id": 0,
+    "dupe_question": 0,
+    "empty_question": 0,
+    "multiline": 0,
+    "scanned": 56911,
+    "sentinel_in_question": 0
+  },
+  "refilter_survivors": 56911,
+  "seed": 137,
+  "source_sha256": "230a4d9bb6f794c4bb26f1e2ae389bb5ac2c7e29835cadc86006acb6f0e68f99"
+}

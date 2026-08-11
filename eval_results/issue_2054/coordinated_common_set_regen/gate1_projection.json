@@ -1,0 +1,32 @@
+{
+  "artifact": "gate1_projection",
+  "assumed_retry_admission_rate": 0.493,
+  "gate1_floor": 4480,
+  "gate1_target": 9000,
+  "n_target": 15700,
+  "per_character": {
+    "char_dana": {
+      "pending_wave1": 13358,
+      "projected_coverage_3_waves": 0.8891,
+      "wave0_admitted": 2342
+    },
+    "char_helios": {
+      "pending_wave1": 12868,
+      "projected_coverage_3_waves": 0.8932,
+      "wave0_admitted": 2832
+    },
+    "char_vex": {
+      "pending_wave1": 13522,
+      "projected_coverage_3_waves": 0.8878,
+      "wave0_admitted": 2178
+    },
+    "char_wren": {
+      "pending_wave1": 13209,
+      "projected_coverage_3_waves": 0.8904,
+      "wave0_admitted": 2491
+    }
+  },
+  "projected_survivors": 9855,
+  "refilter_survivors": 56911,
+  "utc": "2026-08-11T00:56:14.400107+00:00"
+}
