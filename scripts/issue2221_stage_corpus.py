@@ -87,27 +87,45 @@ def _model_slug(model_id: str) -> str:
 
 
 def ensure_paper_repo(external_root: Path) -> Path:
-    """Clone the persona_vectors release if absent (fail loud on failure)."""
+    """Clone the persona_vectors release if absent; extract dataset.zip if needed.
+
+    Upstream (safety-research/persona_vectors) ships the data ONLY as
+    ``dataset.zip`` — no ``dataset/`` in the tree — so a fresh clone can never
+    satisfy a bare ``dataset/`` assert (v5 pod crash, defect 1). Idempotent:
+    an existing ``dataset/`` early-returns; fail loud when neither the dir nor
+    the zip exists post-clone.
+    """
     import subprocess
+    import zipfile
 
     ds = external_root / "dataset"
     if ds.is_dir():
         return ds
-    external_root.parent.mkdir(parents=True, exist_ok=True)
-    subprocess.run(
-        [
-            "git",
-            "clone",
-            "--depth",
-            "1",
-            "https://github.com/safety-research/persona_vectors",
-            str(external_root),
-        ],
-        check=True,
-        env={**os.environ},
-    )
+    if not external_root.is_dir() or not any(external_root.iterdir()):
+        external_root.parent.mkdir(parents=True, exist_ok=True)
+        subprocess.run(
+            [
+                "git",
+                "clone",
+                "--depth",
+                "1",
+                "https://github.com/safety-research/persona_vectors",
+                str(external_root),
+            ],
+            check=True,
+            env={**os.environ},
+        )
     if not ds.is_dir():
-        raise RuntimeError(f"persona_vectors clone has no dataset/ at {ds}")
+        zip_path = external_root / "dataset.zip"
+        if not zip_path.is_file():
+            raise RuntimeError(
+                f"persona_vectors clone has neither dataset/ nor dataset.zip at {external_root}"
+            )
+        logger.info("[p1_prompts] extracting %s (upstream ships the data zipped)", zip_path)
+        with zipfile.ZipFile(zip_path) as zf:
+            zf.extractall(external_root)
+    if not ds.is_dir():
+        raise RuntimeError(f"persona_vectors dataset.zip did not produce dataset/ at {ds}")
     return ds
 
 
@@ -126,9 +144,13 @@ def phase_prompts(args) -> None:
             msgs = r.get("messages", [])
             if not msgs or msgs[0].get("role") != "user":
                 raise ValueError(f"{family}: unexpected paper row shape (first role != user)")
-            text = usable_text(msgs[0].get("content"))
-            if text is None:
+            content = msgs[0].get("content")
+            # usable_text returns the REJECT REASON, or None when usable (#1739
+            # helper contract) — keep on None, stage the actual content.
+            reason = usable_text(content)
+            if reason is not None:
                 continue
+            text = content.strip()
             h = _sha(text)
             if h in seen:
                 continue
@@ -150,10 +172,11 @@ def _first_exchange(conv: list[dict]) -> tuple[str, str] | None:
     for i in range(len(conv) - 1):
         a, b = conv[i], conv[i + 1]
         if a.get("role") == "user" and b.get("role") == "assistant":
-            u = usable_text(a.get("content"))
-            v = usable_text(b.get("content"))
-            if u is not None and v is not None:
-                return u, v
+            u, v = a.get("content"), b.get("content")
+            # usable_text returns the REJECT REASON, or None when usable —
+            # keep the exchange only when BOTH members are usable.
+            if usable_text(u) is None and usable_text(v) is None:
+                return u.strip(), v.strip()
             return None
     return None
 
@@ -270,14 +293,23 @@ def _keep_cvefixes_factory() -> tuple[list, callable]:
             cvss = float(row[resolved["cvss"]])
         except (TypeError, ValueError):
             return None, "cvss_unparseable"
-        before = usable_text(row[resolved["before"]], min_chars=40)
-        if before is None:
+        # usable_text returns the REJECT REASON, or None when usable — keep on
+        # None, stage the actual field text (never the helper's return value).
+        before_raw = row[resolved["before"]]
+        if usable_text(before_raw, min_chars=40) is not None:
             return None, "code_before_unusable"
+        before = before_raw.strip()
         after = None
         if resolved["after"]:
-            after = usable_text(row.get(resolved["after"]), min_chars=40)
+            after_raw = row.get(resolved["after"])
+            if usable_text(after_raw, min_chars=40) is None:
+                after = after_raw.strip()
         desc_f = _resolve_field(row, C.CVEFIXES_DESC_FIELDS)
-        desc = usable_text(row.get(desc_f), min_chars=10) if desc_f else None
+        desc = None
+        if desc_f:
+            desc_raw = row.get(desc_f)
+            if usable_text(desc_raw, min_chars=10) is None:
+                desc = desc_raw.strip()
         return {
             "id": f"cvefixes-{_sha(before)}",
             "cvss": cvss,

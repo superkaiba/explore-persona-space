@@ -27,6 +27,7 @@ import issue2221_capture as cap  # noqa: E402
 import issue2221_finetune_sweep as sweep_mod  # noqa: E402
 import issue2221_monitors as mon  # noqa: E402
 import issue2221_smoke as smoke  # noqa: E402
+import issue2221_stage_corpus as sc  # noqa: E402
 import issue2221_trait_eval as te  # noqa: E402
 
 from explore_persona_space.eval.graded_judge import _score_from_parsed  # noqa: E402
@@ -839,3 +840,118 @@ def test_percentile_ci_and_q95_empty_safe():
     assert np.isnan(lo) and np.isnan(hi)
     assert np.isnan(M.q95_abs(np.asarray([np.nan])))
     assert np.isclose(M.q95_abs(np.asarray([0.5, -1.0, np.nan])), np.percentile([0.5, 1.0], 95))
+
+
+# ── 12. corpus staging: usable_text predicate direction + dataset.zip (v5 fix) ─
+#
+# The reused #1739 helper ``usable_text`` returns the REJECT REASON string for
+# an unusable text and None when the text IS usable — the inverse of the
+# text-or-None idiom. The v5 pod crash (`insecure_code: 0 prompts extracted`)
+# came from call sites binding the return as text; these pins call the REAL
+# helper through the REAL staging paths and fail pre-fix.
+
+_REASON_TOKENS = {"empty", "too_short", "too_long", "removed_deleted"}
+_USABLE_PROMPT = "Write a function that parses a config file and returns a dict of settings."
+
+
+def _paper_dataset(root: Path, rows_by_family: dict[str, list[dict]]) -> Path:
+    """Materialize a tiny persona_vectors-shaped dataset tree under ``root``."""
+    ext = root / "external" / "persona_vectors"
+    for fam, rows in rows_by_family.items():
+        d = ext / "dataset" / fam
+        d.mkdir(parents=True)
+        with open(d / "normal.jsonl", "w", encoding="utf-8") as f:
+            for r in rows:
+                f.write(json.dumps(r) + "\n")
+    return ext
+
+
+def test_phase_prompts_keeps_usable_drops_rejected(tmp_path):
+    """Predicate-direction pin: a usable row survives staging; rejected rows drop."""
+
+    def row(t):
+        return {
+            "messages": [
+                {"role": "user", "content": t},
+                {"role": "assistant", "content": "x" * 40},
+            ]
+        }
+
+    # Sanity on the REAL helper's contract: None == usable, str == reject reason.
+    assert sc.usable_text(_USABLE_PROMPT) is None
+    assert sc.usable_text("hi") == "too_short"
+    fams = {fam: [row(f"{_USABLE_PROMPT} ({fam})"), row("hi"), row("")] for fam in C.EM_FAMILIES}
+    ext = _paper_dataset(tmp_path, fams)
+    args = SimpleNamespace(external_root=str(ext), out_root=str(tmp_path / "out"), prompts_cap=10)
+    sc.phase_prompts(args)
+    for fam in C.EM_FAMILIES:
+        staged = [r["prompt"] for r in sc.read_jsonl(tmp_path / "out" / "prompts" / f"{fam}.jsonl")]
+        # The usable row is staged VERBATIM (stripped); the "hi"/"" rows are dropped.
+        assert staged == [f"{_USABLE_PROMPT} ({fam})"]
+        # Reject-reason tokens are never staged as prompt text (the v5 garbage class).
+        assert not _REASON_TOKENS & set(staged)
+
+
+def test_first_exchange_returns_real_text_not_reason():
+    conv = [
+        {
+            "role": "user",
+            "content": "Please summarize the plot of a long novel in three sentences.",
+        },
+        {
+            "role": "assistant",
+            "content": "It follows a family across three generations of upheaval.",
+        },
+    ]
+    assert sc._first_exchange(conv) == (conv[0]["content"], conv[1]["content"])
+    # An unusable member (too short) drops the exchange — never reason strings.
+    short = [
+        {"role": "user", "content": "hi"},
+        {"role": "assistant", "content": conv[1]["content"]},
+    ]
+    assert sc._first_exchange(short) is None
+
+
+def test_cvefixes_keep_stages_real_code_not_reason():
+    _, keep = sc._keep_cvefixes_factory()
+    code = "def handler(req):\n    return db.execute('SELECT * FROM t WHERE id=' + req.id)\n"
+    row = {
+        "cvss_score": "9.8",
+        "func_before": code,
+        "func_after": code.replace("' + req.id", "?', (req.id,)"),
+        "description": "SQL injection via unsanitized id parameter in the request handler",
+    }
+    kept, reason = keep(row)
+    assert reason is None and kept is not None
+    assert kept["code_before"] == code.strip()  # real code, not a reject-reason token
+    assert kept["code_after"] and kept["code_after"] not in _REASON_TOKENS
+    assert kept["cvss"] == 9.8
+    assert kept["desc"].startswith("SQL injection")
+    # Too-short vulnerable code drops with the named per-filter reason.
+    kept2, reason2 = keep(
+        {"cvss_score": "5.0", "func_before": "short", "func_after": "", "description": "d"}
+    )
+    assert kept2 is None and reason2 == "code_before_unusable"
+
+
+def test_ensure_paper_repo_extracts_dataset_zip(tmp_path):
+    """Upstream ships the data ONLY as dataset.zip: extract in place when
+    ``dataset/`` is absent; idempotent on re-run; fail loud when neither exists."""
+    import zipfile
+
+    ext = tmp_path / "persona_vectors"
+    ext.mkdir()
+    with zipfile.ZipFile(ext / "dataset.zip", "w") as zf:
+        zf.writestr("dataset/insecure_code/normal.jsonl", json.dumps({"messages": []}) + "\n")
+    ds = sc.ensure_paper_repo(ext)
+    assert ds == ext / "dataset"
+    assert (ds / "insecure_code" / "normal.jsonl").is_file()
+    # Idempotent: the second call early-returns (no re-extract — the zip is gone).
+    (ext / "dataset.zip").unlink()
+    assert sc.ensure_paper_repo(ext) == ds
+    # Fail loud on an existing clone with neither dataset/ nor dataset.zip.
+    bare = tmp_path / "bare_clone"
+    bare.mkdir()
+    (bare / "README.md").write_text("x")
+    with pytest.raises(RuntimeError, match="dataset"):
+        sc.ensure_paper_repo(bare)
