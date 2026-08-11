@@ -22,6 +22,7 @@ CPU-only, no network, repo-root-relative paths (sparse-worktree safe: reads no
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -289,3 +290,121 @@ def test_project_out_removes_direction_component():
 def test_auc_separable_and_chance():
     assert A._auc([1.0, 2.0, 3.0, 10.0, 11.0, 12.0], [-1, -1, -1, 1, 1, 1]) == 1.0
     assert A._auc([5.0, 5.0, 5.0, 5.0], [-1, -1, 1, 1]) == 0.5  # all-tied -> midrank 0.5
+
+
+# ── §7 P0 verdict: per-arm grids + octave-shift re-pilot plan (unit 5) ─────────
+
+
+def _verdict_args(root: Path, baseline: Path, grid_arm: list[str] | None = None):
+    argv = ["--phase", "p0-verdict", "--eval-root", str(root), "--i778-baseline", str(baseline)]
+    for spec in grid_arm or []:
+        argv += ["--p0-grid-arm", spec]
+    return J.build_argparser().parse_args(argv)
+
+
+def _write_pilot_block(root: Path, sub: str, tag: str, model_mean: float) -> None:
+    p = root / "pilot" / sub / "partial" / f"{tag}__evil.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps({"model_mean": model_mean}), encoding="utf-8")
+
+
+def _seed_arm(root: Path, cfg: str, coefs, trait_means, coh_means) -> None:
+    for coef, tm, cm in zip(coefs, trait_means, coh_means, strict=True):
+        tag = f"{cfg}__evil__c{coef}"
+        _write_pilot_block(root, "trait_scores", tag, tm)
+        _write_pilot_block(root, "coherence", tag, cm)
+
+
+def _baseline_file(tmp_path: Path, score: float = 50.0) -> Path:
+    bl = tmp_path / "i778_baseline.json"
+    bl.write_text(json.dumps({"trait_score": score}), encoding="utf-8")
+    return bl
+
+
+def test_p0_grids_default_and_per_arm_override():
+    args = _verdict_args(Path("."), Path("."), ["A=0.25,0.75,1.5,2.5"])
+    grids = J._p0_grids(args)
+    assert grids["A"] == [0.25, 0.75, 1.5, 2.5]
+    assert grids["C"] == [0.5, 1.5, 3.0, 5.0]  # unnamed arm keeps --p0-grid
+
+
+def test_p0_grids_bad_spec_exits():
+    import pytest
+
+    args = _verdict_args(Path("."), Path("."), ["Z=1.0"])
+    with pytest.raises(SystemExit, match="bad --p0-grid-arm"):
+        J._p0_grids(args)
+
+
+def test_p0_verdict_first_miss_emits_repilot_plan(tmp_path):
+    """Arm A all-broken (coherence < 80 everywhere) -> octave x0.5 + a repilot
+    block whose scaled cells match issue2225_train.synth_cell slugs exactly."""
+    root = tmp_path / "eval_root"
+    grid = [0.5, 1.5, 3.0, 5.0]
+    _seed_arm(root, "A", grid, [30.0] * 4, [60.0] * 4)  # broken: coh < 80
+    _seed_arm(root, "C", grid, [30.0] * 4, [90.0] * 4)  # brackets: coherent + suppressing
+    rc = J.run_p0_verdict(_verdict_args(root, _baseline_file(tmp_path)))
+    assert rc == J.RC_GATE_FAIL
+    verdict = json.loads((root / "pilot_gate" / "p0_verdict.json").read_text())
+    assert verdict["passed"] is False
+    assert verdict["octave_shift"] == {"A": 0.5, "C": None}
+    plan = verdict["repilot"]
+    assert set(plan) == {"A"}
+    assert plan["A"]["coef_scale"] == 0.5
+    assert plan["A"]["grid_csv"] == "0.25,0.75,1.5,2.5"
+    import importlib.util as _ilu
+
+    spec = _ilu.spec_from_file_location("issue2225_train", _SCRIPTS / "issue2225_train.py")
+    train = _ilu.module_from_spec(spec)
+    sys.modules["issue2225_train"] = train
+    spec.loader.exec_module(train)
+    expected = [train.synth_cell("A", "evil", c).slug for c in (0.25, 0.75, 1.5, 2.5)]
+    assert plan["A"]["cells"] == expected
+    assert "--coef-scale 0.5" in plan["A"]["train_args"]
+
+
+def test_p0_verdict_all_ineffective_recommends_x2(tmp_path):
+    root = tmp_path / "eval_root"
+    grid = [0.5, 1.5, 3.0, 5.0]
+    # coherent everywhere but NEVER suppressing (trait_mean >= baseline)
+    _seed_arm(root, "A", grid, [55.0] * 4, [90.0] * 4)
+    _seed_arm(root, "C", grid, [30.0] * 4, [90.0] * 4)
+    rc = J.run_p0_verdict(_verdict_args(root, _baseline_file(tmp_path)))
+    assert rc == J.RC_GATE_FAIL
+    verdict = json.loads((root / "pilot_gate" / "p0_verdict.json").read_text())
+    assert verdict["octave_shift"]["A"] == 2.0
+    assert verdict["repilot"]["A"]["grid_csv"] == "1.0,3.0,6.0,10.0"
+
+
+def test_p0_verdict_passes_on_shifted_grid_with_positional_sign_coef(tmp_path):
+    """Re-verdict under --p0-grid-arm: criterion (iii) anchors at the SAME grid
+    position (second-largest coefficient) instead of the absolute 3.0."""
+    root = tmp_path / "eval_root"
+    shifted = [0.25, 0.75, 1.5, 2.5]
+    _seed_arm(root, "A", shifted, [30.0] * 4, [90.0] * 4)
+    _seed_arm(root, "C", [0.5, 1.5, 3.0, 5.0], [30.0] * 4, [90.0] * 4)
+    args = _verdict_args(root, _baseline_file(tmp_path), ["A=0.25,0.75,1.5,2.5"])
+    rc = J.run_p0_verdict(args)
+    assert rc == 0
+    verdict = json.loads((root / "pilot_gate" / "p0_verdict.json").read_text())
+    assert verdict["passed"] is True
+    crit = verdict["criteria"]["iii_A_sign_check_suppresses"]
+    assert crit["sign_check_coef"] == 1.5  # second-largest of the shifted grid
+    assert crit["passed"] is True
+    assert verdict["repilot"] == {}  # nothing to shift on a pass
+
+
+def test_p0_verdict_sign_failure_has_empty_repilot(tmp_path):
+    """Criterion-(iii) failure while BOTH arms bracket -> no shift recommendation
+    (the dispatcher's designed-halt rc=7 branch keys on the empty repilot)."""
+    root = tmp_path / "eval_root"
+    grid = [0.5, 1.5, 3.0, 5.0]
+    # brackets (some coherent + suppressing coefs exist) but A@3.0 NOT suppressing
+    _seed_arm(root, "A", grid, [30.0, 30.0, 55.0, 30.0], [90.0] * 4)
+    _seed_arm(root, "C", grid, [30.0] * 4, [90.0] * 4)
+    rc = J.run_p0_verdict(_verdict_args(root, _baseline_file(tmp_path)))
+    assert rc == J.RC_GATE_FAIL
+    verdict = json.loads((root / "pilot_gate" / "p0_verdict.json").read_text())
+    assert verdict["passed"] is False
+    assert verdict["octave_shift"] == {"A": None, "C": None}
+    assert verdict["repilot"] == {}

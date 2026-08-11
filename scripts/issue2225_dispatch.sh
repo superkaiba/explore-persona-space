@@ -7,8 +7,12 @@
 #   external  step 0: pinned persona_vectors clone + issue_778 sparse cone
 #   p1        directions (E1 reuse + E2/E3 extraction) + upload
 #   p0        §7 pilot gate: train --pilot -> hook grep -> eval-gen -> judge
-#             --sync -> P0 verdict (designed halt rc=7 on gate FAIL, with the
-#             octave-shift recommendation routed via the pilot sentinel)
+#             --sync -> P0 verdict. First miss with an octave-shift
+#             recommendation -> ONE automatic re-pilot at the shifted grid
+#             (train --pilot --coef-scale, per-arm); second miss -> proceed
+#             with the widest bracketing grid + a limitation note in the
+#             sentinel. A no-recommendation FAIL (criterion iii) stays a
+#             designed halt rc=7.
 #   p2a       train fan-out (81 cells; per-cell resume + per-cell HF upload)
 #   p2b       trait-eval generation (86 targets) + narrow-domain + upload
 #   p2c       MMLU capability eval + upload
@@ -172,14 +176,50 @@ phase_p1() {
 }
 
 # ── P0: §7 pilot gate ──────────────────────────────────────────────────────────
+
+# Persist pilot rollout text BEFORE judging (upload policy: raw completions for
+# ALL stages). Distinct HF prefix — the script's own --upload targets the
+# production final/ prefix and would mix stages. Idempotent (upload_folder).
+p0_upload_pilot_raws() {
+  PILOT_LOCAL="$PILOT_OUT/raw_completions/final" uv run python - <<'PY'
+import os
+
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+from explore_persona_space.orchestrate.hub import _upload
+
+url = _upload(
+    os.environ["PILOT_LOCAL"],
+    "superkaiba1/explore-persona-space-data",
+    "dataset",
+    "issue2225_ctxsteer/raw_completions/pilot",
+)
+if not url:
+    raise SystemExit("pilot raw-completions upload returned no path")
+print(f"[p0-upload] {url}", flush=True)
+PY
+}
+
 phase_p0() {
   local verdict="$EVAL_ROOT/pilot_gate/p0_verdict.json"
+  local repilot_state="$EVAL_ROOT/pilot_gate/repilot_state.json"
   if [ -f "$verdict" ] && [ -z "$SMOKE" ]; then
     local prior_pass
     prior_pass=$(uv run python -c "import json;print(json.load(open('$verdict'))['passed'])")
     if [ "$prior_pass" = "True" ]; then
       log_phase p0_pilot "prior PASSed verdict present — resume skip"
       return 0
+    fi
+    # §7 second-miss path already resolved (re-pilot ran; widest bracketing
+    # accepted with the limitation note) — never loop a third pilot round.
+    if [ -f "$repilot_state" ]; then
+      local resolved
+      resolved=$(uv run python -c "import json;print(json.load(open('$repilot_state')).get('resolved', False))")
+      if [ "$resolved" = "True" ]; then
+        log_phase p0_pilot "re-pilot already resolved (see $repilot_state) — resume skip"
+        return 0
+      fi
     fi
   fi
   log_phase p0_pilot "train --pilot (8 cells: A+C x L1 grid, evil II)"
@@ -215,27 +255,7 @@ print(','.join(c.slug for c in t.pilot_cells()))
     --out-root "$PILOT_OUT" --ckpt-root "$CKPT_ROOT" --external-root "$EXTERNAL_ROOT" \
     --targets "$pilot_targets" --n-rollouts 5 "${EVALGEN_SMOKE_ARGS[@]}"
 
-  # Persist pilot rollout text BEFORE judging (upload policy: raw completions
-  # for ALL stages). Distinct HF prefix — the script's own --upload targets
-  # the production final/ prefix and would mix stages.
-  PILOT_LOCAL="$PILOT_OUT/raw_completions/final" uv run python - <<'PY'
-import os
-
-from explore_persona_space.orchestrate.env import load_dotenv
-
-load_dotenv()
-from explore_persona_space.orchestrate.hub import _upload
-
-url = _upload(
-    os.environ["PILOT_LOCAL"],
-    "superkaiba1/explore-persona-space-data",
-    "dataset",
-    "issue2225_ctxsteer/raw_completions/pilot",
-)
-if not url:
-    raise SystemExit("pilot raw-completions upload returned no path")
-print(f"[p0-upload] {url}", flush=True)
-PY
+  p0_upload_pilot_raws
 
   log_phase p0_pilot "judge --sync --stage pilot (~5.6k calls)"
   uv run python scripts/issue2225_judge.py --phase all --sync --stage pilot \
@@ -257,9 +277,9 @@ PY
   fi
 
   # Pilot sentinel: the P0 verdict (incl. any octave-shift recommendation)
-  # routed to the VM poller as a progress marker — the orchestrator owns the
-  # re-pilot decision (issue2225_train.py has no coefficient-scale pathway;
-  # a shifted grid needs an orchestrator-driven re-pilot round).
+  # routed to the VM poller as a progress marker. On a first-miss the
+  # dispatcher itself runs ONE automatic re-pilot with the shifted grid
+  # (train --pilot --coef-scale; plan §7 remedy) — see p0_run_repilot below.
   local note_file="$LOG_ROOT/p0_note.json"
   P0_VERDICT_FILE="$verdict" P0_NOTE_FILE="$note_file" P0_SMOKE="$SMOKE" \
     uv run python - <<'PY'
@@ -275,8 +295,10 @@ note = {
     "next": (
         "proceed to P2a"
         if verdict["passed"]
-        else "DESIGNED HALT (rc=7): octave-shift re-pilot needed — retrain the "
-        "shifted A/C x evil grid (orchestrator-driven; no coef-scale CLI exists)"
+        else "octave-shift re-pilot: ONE automatic re-pilot with the shifted "
+        "grid runs next (train --pilot --coef-scale; plan §7 remedy); a "
+        "criterion-(iii) sign failure with no shift recommendation stays a "
+        "DESIGNED HALT rc=7"
     ),
 }
 with open(os.environ["P0_NOTE_FILE"], "w") as f:
@@ -294,11 +316,133 @@ PY
       # grid — the verdict is informational under smoke.
       log_phase p0_pilot "verdict FAILED (rc=$rc) — informational under smoke, continuing"
     else
-      log_phase p0_pilot "DESIGNED HALT rc=$rc — see $verdict (octave-shift recommendation)"
-      exit "$rc"
+      p0_handle_verdict_fail "$verdict" "$repilot_state"
     fi
   fi
-  log_phase p0_pilot "done (passed)"
+  log_phase p0_pilot "done"
+}
+
+# §7 first-miss routing (concern octave-shift-repilot-no-coef-scale-cli): ONE
+# automatic re-pilot with the octave-shifted grid; a verdict FAIL carrying NO
+# shift recommendation (criterion-(iii) sign failure while both arms bracket)
+# stays a DESIGNED HALT rc=7 — no coefficient shift can fix a sign failure.
+p0_handle_verdict_fail() {  # <verdict_json> <state_json>
+  local verdict="$1" state="$2"
+  if [ ! -f "$state" ]; then
+    local has_plan
+    has_plan=$(uv run python -c "import json;print(bool(json.load(open('$verdict')).get('repilot')))")
+    if [ "$has_plan" != "True" ]; then
+      log_phase p0_pilot "DESIGNED HALT rc=7 — verdict FAILED with no octave-shift recommendation (criterion iii)"
+      exit 7
+    fi
+    # Persist the re-pilot plan BEFORE any training so a crash mid-re-pilot
+    # resumes THIS plan (never re-derives one from a fresh default-grid verdict).
+    REPILOT_VERDICT="$verdict" REPILOT_STATE="$state" uv run python - <<'PY'
+import json, os
+
+verdict = json.load(open(os.environ["REPILOT_VERDICT"]))
+with open(os.environ["REPILOT_STATE"], "w") as f:
+    json.dump({"plan": verdict["repilot"], "resolved": False}, f, indent=1)
+print(
+    "[p0-repilot] plan: "
+    + "; ".join(f"{k}: x{v['coef_scale']} -> {v['grid_csv']}" for k, v in verdict["repilot"].items()),
+    flush=True,
+)
+PY
+  fi
+  p0_run_repilot "$state"
+}
+
+p0_run_repilot() {  # <state_json> — idempotent (resume-safe); runs to a resolution
+  local state="$1"
+  local rp_logs="$LOG_ROOT/p0_train_repilot"
+  local arms arm scale grid cells all_cells=""
+  local gridargs=()
+  arms=$(uv run python -c "import json;print(' '.join(sorted(json.load(open('$state'))['plan'])))")
+  for arm in $arms; do
+    scale=$(uv run python -c "import json;print(json.load(open('$state'))['plan']['$arm']['coef_scale'])")
+    grid=$(uv run python -c "import json;print(json.load(open('$state'))['plan']['$arm']['grid_csv'])")
+    cells=$(uv run python -c "import json;print(','.join(json.load(open('$state'))['plan']['$arm']['cells']))")
+    log_phase p0_repilot "arm $arm: train --pilot --coef-scale $scale (grid $grid)"
+    uv run python scripts/issue2225_train.py --pilot --pilot-configs "$arm" \
+      --coef-scale "$scale" --fan-out \
+      --ckpt-root "$CKPT_ROOT" --directions-dir "$DIR_OUT" \
+      --log-dir "$rp_logs" "${TRAIN_SMOKE_ARGS[@]}"
+    all_cells="${all_cells:+$all_cells,}$cells"
+    gridargs+=(--p0-grid-arm "$arm=$grid")
+  done
+
+  # §7 criterion (i) on the re-pilot cells' training logs.
+  local n_expect n_hook
+  n_expect=$(uv run python -c "import json;p=json.load(open('$state'))['plan'];print(sum(len(v['cells']) for v in p.values()))")
+  n_hook=$(grep -rlF "[steer-hook]" "$rp_logs" 2>/dev/null | wc -l)
+  log_phase p0_repilot "hook-engagement logs: $n_hook/$n_expect"
+  if [ "$n_hook" -ne "$n_expect" ]; then
+    echo "FATAL: §7 criterion (i) FAILED on the re-pilot — $n_hook/$n_expect logs carry [steer-hook]" >&2
+    exit 7
+  fi
+
+  log_phase p0_repilot "eval-gen (re-pilot targets: $all_cells)"
+  headroom "$PILOT_OUT" 10 p0_repilot
+  uv run python scripts/issue2225_eval_gen.py \
+    --out-root "$PILOT_OUT" --ckpt-root "$CKPT_ROOT" --external-root "$EXTERNAL_ROOT" \
+    --targets "$all_cells" --n-rollouts 5 "${EVALGEN_SMOKE_ARGS[@]}"
+
+  p0_upload_pilot_raws
+
+  log_phase p0_repilot "judge --sync --stage pilot (re-pilot cells; prior units resume-skip)"
+  uv run python scripts/issue2225_judge.py --phase all --sync --stage pilot \
+    --eval-root "$EVAL_ROOT" --external-root "$EXTERNAL_ROOT" \
+    --rollouts-dir "$PILOT_OUT/raw_completions/final" \
+    --narrow-rollouts-dir "$PILOT_OUT/raw_completions/narrow_domain"
+  uv run python scripts/issue2225_judge.py --phase upload --stage pilot \
+    --eval-root "$EVAL_ROOT" --external-root "$EXTERNAL_ROOT" \
+    --rollouts-dir "$PILOT_OUT/raw_completions/final" \
+    --narrow-rollouts-dir "$PILOT_OUT/raw_completions/narrow_domain"
+
+  log_phase p0_repilot "re-verdict (${gridargs[*]})"
+  local rc2=0
+  uv run python scripts/issue2225_judge.py --phase p0-verdict \
+    --eval-root "$EVAL_ROOT" --i778-baseline "$I778_BASELINE" "${gridargs[@]}" || rc2=$?
+
+  # Resolution record + sentinel: PASS -> proceed; SECOND MISS -> proceed with
+  # the widest bracketing grid found + the placement-limitation note (§7 —
+  # never a third pilot round, never a halt on the second miss).
+  local note_file="$LOG_ROOT/p0_repilot_note.json"
+  REPILOT_VERDICT="$EVAL_ROOT/pilot_gate/p0_verdict.json" REPILOT_NOTE="$note_file" \
+    REPILOT_RC="$rc2" REPILOT_STATE="$state" uv run python - <<'PY'
+import json, os
+
+verdict = json.load(open(os.environ["REPILOT_VERDICT"]))
+rc = int(os.environ["REPILOT_RC"])
+spath = os.environ["REPILOT_STATE"]
+state = json.load(open(spath))
+state["resolved"] = True
+state["second_miss"] = rc != 0
+with open(spath, "w") as f:
+    json.dump(state, f, indent=1)
+note = {
+    "phase": "p0_repilot",
+    "passed": verdict["passed"],
+    "octave_shift": verdict["octave_shift"],
+    "repilot_plan": {k: v["grid_csv"] for k, v in state["plan"].items()},
+    "next": (
+        "proceed to P2a (re-pilot PASSed on the shifted grid)"
+        if verdict["passed"]
+        else "SECOND MISS: proceeding with the widest bracketing grid found "
+        "(plan §7 second-miss path); LIMITATION: coefficient placement is not "
+        "coherence-bracketed for the shifted arm(s) — carried as a scope caveat"
+    ),
+}
+with open(os.environ["REPILOT_NOTE"], "w") as f:
+    json.dump(note, f, indent=1)
+PY
+  write_sentinel "epm:progress" 1 "$note_file"
+  if [ "$rc2" -ne 0 ]; then
+    log_phase p0_repilot "SECOND MISS (rc=$rc2) — proceeding with widest bracketing + limitation note"
+    return 0
+  fi
+  log_phase p0_repilot "done (passed on shifted grid)"
 }
 
 # ── P2a: training fan-out ──────────────────────────────────────────────────────

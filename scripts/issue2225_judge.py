@@ -766,21 +766,42 @@ def _pilot_arm_block(eval_root: Path, sub: str, tag: str, trait: str) -> dict:
         return json.load(f)
 
 
+def _p0_grids(args) -> dict[str, list[float]]:
+    """Per-arm P0 grids: the shared ``--p0-grid`` default, overridden per arm by
+    ``--p0-grid-arm CFG=c1,c2,...`` (the §7 octave-shift re-pilot verdict)."""
+    default_grid = [float(c) for c in args.p0_grid.split(",")]
+    grids = {cfg: list(default_grid) for cfg in P0_ARMS}
+    for spec in args.p0_grid_arm or []:
+        cfg, _, csv = spec.partition("=")
+        cfg = cfg.strip()
+        if cfg not in P0_ARMS or not csv.strip():
+            raise SystemExit(
+                f"[p0-verdict] bad --p0-grid-arm {spec!r} (want CFG=c1,c2,...; CFG in {P0_ARMS})"
+            )
+        grids[cfg] = [float(c) for c in csv.split(",")]
+    return grids
+
+
 def run_p0_verdict(args) -> int:
     """Plan §7 criteria (ii) grid-brackets-coherence-80 + (iii) A@3.0 sign check.
 
     Criterion (i) (hook-engagement log lines) is dispatcher-side (bash grep over
-    the training logs); this verdict records it as dispatcher-checked.
+    the training logs); this verdict records it as dispatcher-checked. Under a
+    per-arm octave-shifted grid (--p0-grid-arm), criterion (iii)'s anchor keeps
+    the same GRID POSITION (second-largest coefficient — 3.0 in the default
+    grid) rather than the absolute value 3.0, and the verdict carries a
+    ``repilot`` block (per-arm scaled grid + canonical cell slugs + train args)
+    so the dispatcher's ONE automatic re-pilot needs no bash float math.
     """
     eval_root = Path(args.eval_root)
     with open(args.i778_baseline, encoding="utf-8") as f:
         baseline_score = float(json.load(f)["trait_score"])
-    grid = [float(c) for c in args.p0_grid.split(",")]
+    grids = _p0_grids(args)
     arms_detail: dict[str, dict] = {}
     octave: dict[str, float | None] = {}
     for cfg in P0_ARMS:
         per_coef = {}
-        for coef in grid:
+        for coef in grids[cfg]:
             tag = f"{cfg}__evil__c{coef}"
             trait_b = _pilot_arm_block(eval_root, "trait_scores", tag, "evil")
             coh_b = _pilot_arm_block(eval_root, "coherence", tag, "evil")
@@ -813,9 +834,30 @@ def run_p0_verdict(args) -> int:
             "n_coherent": len(coherent),
             "n_suppressing_coherent": len(suppressing_coherent),
         }
-    a_sign = arms_detail["A"]["per_coef"].get(str(P0_SIGN_CHECK_COEF), {})
+    # Criterion (iii) anchor: 3.0 in the default grid; under a shifted A grid the
+    # SAME grid position (second-largest coefficient) carries the sign check.
+    sign_coef = (
+        P0_SIGN_CHECK_COEF
+        if P0_SIGN_CHECK_COEF in grids["A"]
+        else sorted(grids["A"])[-2 if len(grids["A"]) >= 2 else -1]
+    )
+    a_sign = arms_detail["A"]["per_coef"].get(str(sign_coef), {})
     sign_ok = a_sign.get("trait_mean") is not None and a_sign["trait_mean"] < baseline_score
     passed = sign_ok and all(d["brackets_coherence_80"] for d in arms_detail.values())
+    # §7 remedy plan: per-arm octave-shifted grid + canonical scaled-cell slugs
+    # (computed HERE in Python so the dispatcher's re-pilot does no float math;
+    # slugs match issue2225_train._coef_tag / synth_cell exactly).
+    repilot: dict[str, dict] = {}
+    for cfg, shift in octave.items():
+        if shift is None:
+            continue
+        scaled = [c * shift for c in grids[cfg]]
+        repilot[cfg] = {
+            "coef_scale": shift,
+            "grid_csv": ",".join(str(c) for c in scaled),
+            "cells": [f"{cfg}__evil__c{c}" for c in scaled],
+            "train_args": f"--pilot --pilot-configs {cfg} --coef-scale {shift}",
+        }
     verdict = {
         "passed": passed,
         "criteria": {
@@ -823,13 +865,16 @@ def run_p0_verdict(args) -> int:
             "ii_grid_brackets_coherence_80": {
                 cfg: d["brackets_coherence_80"] for cfg, d in arms_detail.items()
             },
-            "iii_A_at_3p0_suppresses": {
-                "trait_mean_A_3.0": a_sign.get("trait_mean"),
+            "iii_A_sign_check_suppresses": {
+                "sign_check_coef": sign_coef,
+                "trait_mean_A_at_sign_coef": a_sign.get("trait_mean"),
                 "unsteered_i778_baseline": baseline_score,
                 "passed": sign_ok,
             },
         },
         "octave_shift": octave,
+        "repilot": repilot,
+        "grids": {cfg: g for cfg, g in grids.items()},
         "arms": arms_detail,
         "i778_baseline_path": str(args.i778_baseline),
         "reproducibility": _lib().repro_metadata(),
@@ -838,7 +883,7 @@ def run_p0_verdict(args) -> int:
     _atomic_write_json(out, verdict)
     print(
         f"[p0-verdict] passed={passed} octave_shift={octave} "
-        f"A@{P0_SIGN_CHECK_COEF}={a_sign.get('trait_mean')} vs baseline={baseline_score} "
+        f"A@{sign_coef}={a_sign.get('trait_mean')} vs baseline={baseline_score} "
         f"-> {out}",
         flush=True,
     )
@@ -1107,6 +1152,14 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--parity-n", type=int, default=250, help="dual-scored parity sample size")
     ap.add_argument("--i778-baseline", default=I778_BASELINE_DEFAULT)
     ap.add_argument("--p0-grid", default="0.5,1.5,3.0,5.0")
+    ap.add_argument(
+        "--p0-grid-arm",
+        action="append",
+        default=None,
+        metavar="CFG=CSV",
+        help="per-arm grid override for the §7 octave-shift re-pilot verdict, "
+        "e.g. A=0.25,0.75,1.5,2.5 (repeatable; unnamed arms keep --p0-grid)",
+    )
     ap.add_argument("--import-check", action="store_true")
     return ap
 

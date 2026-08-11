@@ -52,6 +52,13 @@ Modes:
   --single-cell <slug>    train ONE cell (per-GPU subprocess; CVD pinned by launcher).
   --fan-out               shard the cell queue across visible GPUs (work-stealing).
   --pilot                 the §7 P0 gate's 8 cells (A + C at the 4 L1 coefs, evil II).
+  --coef-scale <f>        §7 octave-shift re-pilot: multiply the pilot grid by f
+                          (x0.5 all-broken / x2 all-ineffective; requires --pilot;
+                          scaled cells keep the CANONICAL slug scheme, so an
+                          overlap with a registry coefficient dedupes via the
+                          manifest resume predicate).
+  --pilot-coefs <c,...>   §7 re-pilot: REPLACE the pilot grid outright (requires --pilot).
+  --pilot-configs <C,..>  restrict --pilot to a subset of the pilot arms (default A,C).
   --smoke                 1 cell, tiny row slice (P0 pilot / unit-5 smoke).
   --cells <slug,...>      restrict to the named cells.
   --import-check          argcheck + execute deferred imports, exit 0.
@@ -63,7 +70,9 @@ import argparse
 import hashlib
 import json
 import logging
+import math
 import os
+import re
 import subprocess
 import sys
 import time
@@ -211,6 +220,74 @@ def pilot_cells() -> list[Cell]:
     return [
         c for c in build_cell_registry() if c.config in PILOT_CONFIGS and c.dataset == PILOT_DATASET
     ]
+
+
+_SPEC_BY_CONFIG: dict[str, ConfigSpec] = {spec.config: spec for spec in CONFIGS}
+
+# Canonical scaled-cell slug: {config}__{dataset}__c{coef} with coef in float repr.
+_SCALED_SLUG_RE = re.compile(r"^([A-Z])__([a-z_]+)__c([0-9.]+)$")
+
+
+def synth_cell(config: str, dataset: str, coef: float) -> Cell:
+    """Build a Cell with the CANONICAL slug for an arbitrary steering coefficient.
+
+    The §7 octave-shift re-pilot trains pilot arms at scaled coefficients that
+    need not be registry members; the slug scheme stays canonical
+    (``{config}__{dataset}__c{coef}``), so a scaled coefficient that lands back
+    on a registry value produces the IDENTICAL Cell and dedupes naturally
+    through the manifest-fingerprint resume predicate. Raises ValueError on an
+    unknown config, a prompt-mode config, a dataset outside the config's §4.5
+    coverage, or a non-finite/non-positive coefficient.
+    """
+    spec = _SPEC_BY_CONFIG.get(config)
+    if spec is None:
+        raise ValueError(f"unknown config {config!r} (have {sorted(_SPEC_BY_CONFIG)})")
+    if spec.prompt_mode:
+        raise ValueError(f"config {config} is prompt-mode (no steering coefficient)")
+    if dataset not in spec.datasets:
+        raise ValueError(f"dataset {dataset!r} not in config {config}'s datasets {spec.datasets}")
+    coef = float(coef)
+    if not math.isfinite(coef) or coef <= 0:
+        raise ValueError(f"steering coefficient must be finite and > 0, got {coef}")
+    return Cell(
+        slug=f"{config}__{dataset}__{_coef_tag(coef)}",
+        config=config,
+        dataset=dataset,
+        steered_trait=STEERED_TRAIT[dataset],
+        variant=spec.variant,
+        mask_mode=_MASK_MODE[spec.mask_mode],
+        layer_spec=spec.layer_spec,
+        coef=coef,
+        prompt_mode=False,
+    )
+
+
+def resolve_cell(slug: str) -> Cell:
+    """Registry lookup first; on miss, parse a canonical-scheme scaled slug.
+
+    The parse-on-miss branch lets the ``--single-cell`` subprocess (and
+    eval-gen's ``--targets`` path) materialize §7 re-pilot cells trained at
+    octave-shifted coefficients without a registry edit. A slug whose
+    coefficient spelling is non-canonical (``c2.50`` vs ``c2.5``) is REFUSED so
+    manifests/adapter paths stay slug-stable.
+    """
+    by_slug = cells_by_slug()
+    if slug in by_slug:
+        return by_slug[slug]
+    m = _SCALED_SLUG_RE.match(slug)
+    if not m:
+        raise ValueError(
+            f"unknown cell slug {slug!r} (not in the 81-cell registry and not a "
+            "canonical '{config}__{dataset}__c<coef>' scaled-cell slug)"
+        )
+    config, dataset, coef_txt = m.groups()
+    cell = synth_cell(config, dataset, float(coef_txt))
+    if cell.slug != slug:
+        raise ValueError(
+            f"non-canonical coefficient spelling {slug!r} (canonical: {cell.slug!r}) — "
+            "use the canonical float repr so resume/dedupe stays slug-stable"
+        )
+    return cell
 
 
 # ── paths + fingerprint helpers ────────────────────────────────────────────────
@@ -445,7 +522,7 @@ def train_steered_cell(
         compute_prefix_len,
     )
 
-    cell = cells_by_slug()[cell_slug]  # canonical Cell (single source of truth)
+    cell = resolve_cell(cell_slug)  # canonical Cell (registry, or §7 re-pilot scaled slug)
     data_path = _dataset_path(dataset_root, family)
     if not data_path.exists():
         raise FileNotFoundError(f"training file missing: {data_path}")
@@ -854,15 +931,30 @@ def preflight_lengths(dataset_root: Path, model_name: str, datasets: Sequence[st
 
 
 def _resolve_cells(args) -> list[Cell]:
-    by_slug = cells_by_slug()
     if args.pilot:
-        return pilot_cells()
+        configs = (
+            [c.strip() for c in args.pilot_configs.split(",") if c.strip()]
+            if args.pilot_configs
+            else list(PILOT_CONFIGS)
+        )
+        unknown = [c for c in configs if c not in PILOT_CONFIGS]
+        if unknown:
+            raise ValueError(f"--pilot-configs must be a subset of {PILOT_CONFIGS}, got {unknown}")
+        if args.pilot_coefs:
+            # §7 re-pilot: REPLACE the pilot grid with an explicit coef list.
+            coefs = [float(x) for x in args.pilot_coefs.split(",") if x.strip()]
+            return [synth_cell(cfg, PILOT_DATASET, k) for cfg in configs for k in coefs]
+        base = [c for c in pilot_cells() if c.config in configs]
+        if args.coef_scale is not None:
+            # §7 octave-shift re-pilot: multiply the pilot grid (x0.5 all-broken /
+            # x2 all-ineffective, per the p0_verdict.json recommendation).
+            return [synth_cell(c.config, c.dataset, c.coef * args.coef_scale) for c in base]
+        return base
+    if args.coef_scale is not None or args.pilot_coefs or args.pilot_configs:
+        raise ValueError("--coef-scale / --pilot-coefs / --pilot-configs require --pilot")
     if args.cells:
         wanted = [s.strip() for s in args.cells.split(",") if s.strip()]
-        missing = [s for s in wanted if s not in by_slug]
-        if missing:
-            raise ValueError(f"unknown cell slugs: {missing}")
-        return [by_slug[s] for s in wanted]
+        return [resolve_cell(s) for s in wanted]
     cells = build_cell_registry()
     if args.smoke:
         return cells[:1]  # 1 cell, tiny row slice (--max-steps)
@@ -882,6 +974,25 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--gpu-id", type=int, default=0)
     ap.add_argument("--fan-out", action="store_true", help="shard the cell queue across GPUs")
     ap.add_argument("--pilot", action="store_true", help="the §7 P0 gate's 8 cells (A+C evil II)")
+    grp = ap.add_mutually_exclusive_group()
+    grp.add_argument(
+        "--coef-scale",
+        type=float,
+        default=None,
+        help="§7 octave-shift re-pilot: multiply the pilot grid by this factor "
+        "(x0.5 all-broken / x2 all-ineffective; requires --pilot)",
+    )
+    grp.add_argument(
+        "--pilot-coefs",
+        default=None,
+        help="§7 re-pilot: REPLACE the pilot grid with this comma-separated "
+        "coefficient list (requires --pilot)",
+    )
+    ap.add_argument(
+        "--pilot-configs",
+        default=None,
+        help="restrict --pilot to a subset of the pilot arms, e.g. 'A' (default: A,C)",
+    )
     ap.add_argument("--cells", default=None, help="restrict to a comma-separated slug list")
     ap.add_argument("--n-gpus", type=int, default=None, help="fan-out width (default: detected)")
     ap.add_argument("--max-steps", type=int, default=None, help="cap training steps (smoke)")
@@ -933,6 +1044,8 @@ def main(argv: Sequence[str] | None = None) -> None:
         )
 
         build_cell_registry()  # asserts 81
+        # §7 re-pilot scaled-slug resolution round-trip (registry-miss branch).
+        assert resolve_cell("A__evil__c0.25").coef == 0.25
         print("[issue2225-train] import-check OK", flush=True)
         raise SystemExit(0)
 
@@ -950,7 +1063,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         raise SystemExit(0)
 
     if args.single_cell is not None:
-        cell = cells_by_slug()[args.single_cell]
+        cell = resolve_cell(args.single_cell)
         if should_skip(cell, ckpt_root, dataset_root, directions_dir):
             print(json.dumps({"cell": cell.slug, "status": "skipped-resume"}))
             return

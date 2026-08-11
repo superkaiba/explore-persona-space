@@ -185,6 +185,25 @@ def targets_by_tag() -> dict[str, EvalTarget]:
     return {t.tag: t for t in build_eval_targets()}
 
 
+def resolve_targets(wanted: Sequence[str]) -> list[EvalTarget]:
+    """by-tag lookup with the §7 re-pilot fallback: a scaled pilot-cell slug not
+    in the 86-target registry resolves through ``train.resolve_cell`` (canonical
+    slug scheme), so an octave-shifted re-pilot cell evaluates without a
+    registry edit. Unknown/non-canonical tags still fail loud."""
+    by_tag = targets_by_tag()
+    out: list[EvalTarget] = []
+    for tag in wanted:
+        if tag in by_tag:
+            out.append(by_tag[tag])
+            continue
+        try:
+            cell = train.resolve_cell(tag)
+        except ValueError as e:
+            raise ValueError(f"unknown eval-target tag {tag!r}: {e}") from e
+        out.append(EvalTarget(cell.slug, "cell", cell.dataset, _traits_for_dataset(cell.dataset)))
+    return out
+
+
 def plan_units(targets: Sequence[EvalTarget], *, narrow: bool) -> list[tuple[EvalTarget, str]]:
     """The (target, trait_key) work units. Narrow mode: opinions targets only."""
     if narrow:
@@ -477,12 +496,8 @@ def run_worker(args) -> None:
     """Serial unit loop on one CVD-pinned GPU with ONE shared LoRA vLLM engine."""
     from transformers import AutoTokenizer
 
-    by_tag = targets_by_tag()
     wanted = [s.strip() for s in args.targets.split(",") if s.strip()]
-    missing = [s for s in wanted if s not in by_tag]
-    if missing:
-        raise ValueError(f"unknown eval-target tags: {missing}")
-    targets = [by_tag[s] for s in wanted]
+    targets = resolve_targets(wanted)
     units = plan_units(targets, narrow=args.narrow_domain)
 
     out_root = Path(args.out_root)
@@ -651,13 +666,9 @@ def _prestage_base_model(model_name: str) -> None:
 
 
 def run_fan_out(args) -> None:
-    by_tag = targets_by_tag()
     if args.targets:
         wanted = [s.strip() for s in args.targets.split(",") if s.strip()]
-        missing = [s for s in wanted if s not in by_tag]
-        if missing:
-            raise ValueError(f"unknown eval-target tags: {missing}")
-        targets = [by_tag[s] for s in wanted]
+        targets = resolve_targets(wanted)
     else:
         targets = build_eval_targets()
     if args.narrow_domain:
