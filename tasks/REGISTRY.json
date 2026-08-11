@@ -9564,8 +9564,8 @@
     "2238": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2238",
-      "status": "planning",
+      "path": "tasks/approved/2238",
+      "status": "approved",
       "title": "pod.py provision --wait-for-capacity is structurally inert for CPU intents (CPU branch returns before the flag is read)"
     },
     "224": {
