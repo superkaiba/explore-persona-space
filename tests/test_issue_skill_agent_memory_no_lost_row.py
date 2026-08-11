@@ -30,6 +30,13 @@ def test_no_lost_row_discipline_pinned() -> None:
     assert "agent-memory: any manual re-align" in skill, (
         "SKILL.md Step 5a agent-memory operator echo missing"
     )
+    # All four SKILL.md carrier sites (Step 5a comment + echo, the second
+    # manual-override prose site, the Step 10d mirror) — dropping any ONE
+    # site alone must fail this pin; the bare membership check above
+    # survives as long as any single site remains (#2101 review round 1).
+    assert skill.count("no-lost-row") >= 4, (
+        "a SKILL.md no-lost-row carrier site was removed (expected >= 4 occurrences)"
+    )
 
     # (ii) The gotchas.md entry — the canonical recipe (title token + the
     # row-set comparison command).
