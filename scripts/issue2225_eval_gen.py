@@ -257,12 +257,14 @@ def unit_fingerprint(
     *,
     n_questions: int,
     n_rollouts: int,
+    model: str,
 ) -> dict:
-    """The resume-compared fingerprint (adapter sha / trait / N / recipe caps).
+    """The resume-compared fingerprint (adapter sha / trait / N / recipe caps
+    / base model — every output-affecting regime key, #722 r3 / g3 minor).
 
     Deliberately EXCLUDES the code SHA (recorded in the payload's
     reproducibility block instead): eval outputs stay valid across code
-    commits; a recipe or adapter change re-runs the unit.
+    commits; a recipe, adapter, or base-model change re-runs the unit.
     """
     if adapter_path is None:
         adapter_sha = "base-no-adapter"
@@ -272,6 +274,7 @@ def unit_fingerprint(
         "tag": target.tag,
         "trait_key": trait_key,
         "adapter_sha256": adapter_sha,
+        "model": model,
         "n_questions": n_questions,
         "n_rollouts": n_rollouts,
         "temperature": TEMPERATURE,
@@ -538,6 +541,7 @@ def run_worker(args) -> None:
             adapter,
             n_questions=len(questions_by_key[trait_key]),
             n_rollouts=rollouts,
+            model=model_name,
         )
         out_path = unit_out_path(out_root, target, trait_key)
         if unit_done(out_path, fp):

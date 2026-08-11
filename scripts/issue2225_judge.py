@@ -598,6 +598,7 @@ def run_digest(args) -> Path:
                 b = json.load(f)
             acc = b["accounting"]
             answered = acc["n_total_draws"] - acc["n_transport_lost"]
+            reissue = b.get("judge_meta", {}).get("api_refusal_reissue")
             rows.append(
                 {
                     "arm": b["arm"],
@@ -609,6 +610,12 @@ def run_digest(args) -> Path:
                     **acc,
                     "uncensored_rate": (
                         round(1.0 - acc["n_api_refusal"] / answered, 4) if answered else None
+                    ),
+                    # rule-28 remediation status (g4 minor: a completed
+                    # sync-reissue must be legible at the digest surface).
+                    "api_refusal_reissued": bool(reissue),
+                    "n_draws_recovered_by_reissue": (
+                        reissue["n_draws_recovered"] if reissue else 0
                     ),
                 }
             )
@@ -635,6 +642,16 @@ def run_digest(args) -> Path:
         ),
         "reproducibility": _lib().repro_metadata(),
     }
+    n_reissued_units = sum(1 for r in rows if r["api_refusal_reissued"])
+    n_recovered = sum(r["n_draws_recovered_by_reissue"] for r in rows)
+    n_censored_unremediated = sum(
+        1 for r in rows if r["n_api_refusal"] > 0 and not r["api_refusal_reissued"]
+    )
+    digest["api_refusal_remediation"] = {
+        "n_units_reissued": n_reissued_units,
+        "n_draws_recovered": n_recovered,
+        "n_censored_units_unremediated": n_censored_unremediated,
+    }
     out = base / "judge_digest.json"
     _atomic_write_json(out, digest)
     n_cens = sum(r["n_api_refusal"] for r in rows)
@@ -643,10 +660,17 @@ def run_digest(args) -> Path:
         f"arms censored={len(digest['arms_with_api_refusal'])}; -> {out}",
         flush=True,
     )
-    if n_cens:
+    if n_cens and n_censored_unremediated:
         print(
             "[p4-digest] WARNING: api-refusal censoring present (rule 28 — "
-            "outcome-correlated). Run --phase sync-reissue BEFORE any contrast.",
+            f"outcome-correlated) on {n_censored_unremediated} unremediated "
+            "unit(s). Run --phase sync-reissue BEFORE any contrast.",
+            flush=True,
+        )
+    elif n_cens:
+        print(
+            f"[p4-digest] api-refusal censoring REMEDIATED: {n_reissued_units} "
+            f"unit(s) sync-reissued, {n_recovered} draws recovered (rule 28).",
             flush=True,
         )
     return out
@@ -856,6 +880,8 @@ def run_p0_verdict(args) -> int:
             "coef_scale": shift,
             "grid_csv": ",".join(str(c) for c in scaled),
             "cells": [f"{cfg}__evil__c{c}" for c in scaled],
+            # INFORMATIONAL ONLY — the dispatcher composes its own argv from
+            # coef_scale (g5 minor: keep the two from drifting silently).
             "train_args": f"--pilot --pilot-configs {cfg} --coef-scale {shift}",
         }
     verdict = {
@@ -914,6 +940,15 @@ def run_sync_reissue(args) -> None:
         for p in sorted(pdir.glob("*.json")):
             with open(p, encoding="utf-8") as f:
                 block = json.load(f)
+            if block.get("judge_meta", {}).get("api_refusal_reissue"):
+                # Resume-idempotency (r2 blocker 3 / g4 Major 3): this unit's
+                # censored draws were already merged in a prior invocation —
+                # re-selecting on rollout_n_api_refusal (which never resets)
+                # would APPEND the identical cached sync draws a second time,
+                # silently doubling draw multiplicity. Skip the whole unit
+                # (parity candidates too: its draw lists are batch+sync mixed).
+                print(f"[reissue] skip {block['tag']}__{block['trait']} (already reissued)")
+                continue
             rubric_id = forced_rubric or block["trait"]
             # re-derive items from the ROLLOUT file (answers needed for re-issue)
             rollout_dir = Path(
@@ -1062,6 +1097,13 @@ def _pack_large_json(src: Path, staging: Path, limit_bytes: int = 9_000_000) -> 
         payload = json.load(f)
     all_scores = payload.pop("all_scores", {})
     header = json.dumps({"__meta__": payload}, ensure_ascii=False)
+    if len(header.encode("utf-8")) + 1 > limit_bytes:
+        # An oversized non-all_scores payload would re-enter the >10 MB LFS
+        # force-route as ONE shard00 header line — fail loud instead (g4 minor).
+        raise ValueError(
+            f"{src}: non-all_scores payload alone exceeds the {limit_bytes}-byte "
+            "shard limit — the bulk is not under 'all_scores'; extend the packer"
+        )
     shard_idx, size, rows = 0, len(header) + 1, [header]
     out_paths: list[Path] = []
 

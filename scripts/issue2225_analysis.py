@@ -806,6 +806,17 @@ def fit_probe_for_trait(trait: str, args, directions_dir: Path, work_root: Path)
     return summary
 
 
+def _sha256_file(path: Path) -> str:
+    """sha256 of a file (the probe-bundle identity for the application resume key)."""
+    import hashlib
+
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
 def _iter_capture_targets(capture_root: Path):
     """Yield (tag, manifest) for every captured model under capture_root."""
     for mdir in sorted(p for p in capture_root.iterdir() if p.is_dir()):
@@ -856,9 +867,21 @@ def run_probe(args) -> Path:
         _atomic_write_json(spath, fit_summaries[trait])
         print(f"[probe] trait={trait} fits done in {round(time.time() - t0, 1)}s", flush=True)
 
-    # 2) application over capture stores (per-unit JSONL checkpoint + resume)
+    # 2) application over capture stores (per-unit JSONL checkpoint + resume).
+    # The resume key includes the probe-BUNDLE identity (g4 minor / #722 r3:
+    # every output-affecting input in the key) — a re-fit bundle (e.g. --force
+    # on the fits, or a regenerated pool) invalidates prior application rows
+    # instead of silently reusing scores from the stale weights.
     partial = analysis_dir / "probe_shifts_partial.jsonl"
-    done = {(r["tag"], r["trait"]) for r in _load_jsonl_rows(partial)}
+    bundle_sha = {
+        t: _sha256_file(work_root / f"probe_bundle_{t}.pt")
+        for t in ("evil", "sycophancy", "hallucination")
+    }
+    done = {
+        (r["tag"], r["trait"])
+        for r in _load_jsonl_rows(partial)
+        if r.get("bundle_sha256") == bundle_sha.get(r["trait"])
+    }
     bundles = {
         # self-produced bundle: plain dict of tensors/str/int — weights_only-safe
         t: torch.load(work_root / f"probe_bundle_{t}.pt", weights_only=True)
@@ -876,7 +899,17 @@ def run_probe(args) -> Path:
                 capture_root / tag / f"{trait}.pt", weights_only=True, map_location="cpu"
             )
             X = store["response_avg"].to(torch.float32)  # (rows, L, d)
-            row = {"tag": tag, "trait": trait, "n_rows": int(X.shape[0]), "variants": {}}
+            trait_meta = manifest.get("traits", {}).get(trait, {})
+            row = {
+                "tag": tag,
+                "trait": trait,
+                "n_rows": int(X.shape[0]),
+                "bundle_sha256": bundle_sha[trait],
+                # P2d BPE-seam audit consumption (g3 Major 2): carried per unit
+                # so probe_shifts.json can flag seam-shifted response-avg rows.
+                "seam_mismatch_count": trait_meta.get("seam_mismatch_count"),
+                "variants": {},
+            }
             for variant, b in bundles[trait]["variants"].items():
                 Xv = (
                     X
@@ -941,12 +974,37 @@ def run_probe(args) -> Path:
                 "uninformative (plan §12 A8 sanity gate)",
                 flush=True,
             )
+    # P2d BPE-seam audit consumption (g3 Major 2): enumerate units whose
+    # response-avg rows carry seam-shifted boundaries (the reused #778
+    # string-concat helper — the STATED DEVIATION in issue2225_capture.py) so
+    # the clean-result can exclude or sensitivity-check them.
+    seam_flagged: dict[str, dict] = {}
+    for (tag, trait), r in sorted(by_key.items()):
+        n_seam = r.get("seam_mismatch_count")
+        if n_seam:
+            seam_flagged[f"{tag}__{trait}"] = {
+                "seam_mismatch_count": n_seam,
+                "n_rows": r["n_rows"],
+                "seam_fraction": round(n_seam / r["n_rows"], 4) if r.get("n_rows") else None,
+            }
+    seam_audit = {
+        "units_flagged": seam_flagged,
+        "n_units_flagged": len(seam_flagged),
+        "note": (
+            "seam_mismatch_count = P2d rows whose prompt+response concatenation "
+            "BPE-merges at the seam (response-avg boundary shifted +-1 token on "
+            "those rows; stated deviation, issue2225_capture.py docstring). "
+            "Flagged units' shifts are sensitivity candidates — exclude or "
+            "re-read without them before a headline leans on a flagged unit."
+        ),
+    }
     out = analysis_dir / "probe_shifts.json"
     _atomic_write_json(
         out,
         {
             "fit_summaries": fit_summaries,
             "sanity_gate": gate,
+            "seam_audit": seam_audit,
             "shifts": out_rows,
             "note": "probe = LINEAR dual/Gram-space ridge classifier (plan §4.7); "
             "shift = mean probe score (finetuned - base) over eval rollouts; "

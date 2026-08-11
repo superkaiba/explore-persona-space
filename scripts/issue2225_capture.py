@@ -26,6 +26,17 @@ enc(prompt)`` (a seam merge shifting the response boundary) and records
 ``seam_mismatch_count`` per (target, trait) in the summary manifest — a
 nonzero count is a disclosed fidelity caveat for the analyst, never silent.
 
+STATED DEVIATION from plan §4.6 item 4 (g3 Major 2, carried into the
+clean-result scope caveats): the plan's wording claims "per-segment token-id
+concatenation", but the plan-NAMED helper is the string-concat form above.
+The reuse is DELIBERATE — #778's probe-pool activations (the P5 probe's
+training data) were captured with the SAME helper, so forking to ids-concat
+here would create a probe-train / probe-apply capture-convention mismatch
+(agent-memory: capture convention = read the PRODUCER's code). The P5
+analysis CONSUMES ``seam_mismatch_count`` (``issue2225_analysis.py``
+run_probe seam_audit block): seam-flagged units are enumerated + fractioned
+in ``probe_shifts.json`` for exclusion / sensitivity reads.
+
 OUTPUTS per model: ``<out-root>/capture/<tag>/<trait>.pt`` (fp16 tensors +
 row-alignment indices) + ``<trait>.meta.json`` (the resume fingerprint sidecar)
 + ``summary_manifest.json`` (the plan §6.5 deliverable). ``--upload`` pushes
@@ -78,9 +89,15 @@ STORE_DTYPE = "float16"  # plan §4.6 item 4
 
 
 def capture_fingerprint(
-    target: evalgen.EvalTarget, trait: str, adapter_path: Path | None, gen_path: Path
+    target: evalgen.EvalTarget,
+    trait: str,
+    adapter_path: Path | None,
+    gen_path: Path,
+    *,
+    model: str,
 ) -> dict:
-    """Resume-compared fingerprint: adapter sha + P2b input sha + capture recipe."""
+    """Resume-compared fingerprint: adapter sha + P2b input sha + capture recipe
+    + base model (every output-affecting regime key, #722 r3 / g3 minor)."""
     if adapter_path is None:
         adapter_sha = "base-no-adapter"
     else:
@@ -90,6 +107,7 @@ def capture_fingerprint(
         "trait": trait,
         "adapter_sha256": adapter_sha,
         "gen_input_sha256": train._sha256(gen_path),
+        "model": model,
         "positions": list(POSITIONS),
         "n_layers": lib.N_LAYERS,
         "dtype": STORE_DTYPE,
@@ -134,7 +152,14 @@ def seam_audit(tokenizer, prompts: Sequence[str], responses: Sequence[str]) -> i
 
 def capture_one_model(args) -> None:
     """Capture all pending (trait) units for ONE target on the pinned GPU."""
-    target = evalgen.targets_by_tag()[args.single]
+    by_tag = evalgen.targets_by_tag()
+    if args.single not in by_tag:
+        raise ValueError(
+            f"unknown eval-target tag {args.single!r}: not one of the {len(by_tag)} "
+            "registry targets (pilot / §7-scaled cell slugs deliberately get no "
+            "capture — list tags via issue2225_eval_gen.py --list-targets)"
+        )
+    target = by_tag[args.single]
     out_root = Path(args.out_root)
     gen_root = Path(args.gen_root) if args.gen_root else out_root
     model_name = args.model or lib.MODEL_NAME
@@ -153,7 +178,7 @@ def capture_one_model(args) -> None:
                 f"P2b output missing for {target.tag}__{trait}: {gen_path} "
                 f"(run issue2225_eval_gen.py first)"
             )
-        fp = capture_fingerprint(target, trait, adapter, gen_path)
+        fp = capture_fingerprint(target, trait, adapter, gen_path, model=model_name)
         pt_path = trait_pt_path(out_root, target.tag, trait)
         if _trait_done(pt_path, fp):
             n_skipped += 1
@@ -454,7 +479,14 @@ def main(argv: Sequence[str] | None = None) -> None:
         raise SystemExit(0)
 
     if args.upload:
-        tags = [s.strip() for s in args.upload_tags.split(",")] if args.upload_tags else None
+        # `if s.strip()`: a trailing comma must not yield tag "" — that would
+        # resolve out_root/capture/"" to the WHOLE capture dir and malform the
+        # dest prefix with a trailing slash (g3 minor).
+        tags = (
+            [s.strip() for s in args.upload_tags.split(",") if s.strip()]
+            if args.upload_tags
+            else None
+        )
         upload_capture(Path(args.out_root), tags)
         sys.stdout.flush()
         sys.exit(0)

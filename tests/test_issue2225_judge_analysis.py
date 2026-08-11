@@ -408,3 +408,180 @@ def test_p0_verdict_sign_failure_has_empty_repilot(tmp_path):
     assert verdict["passed"] is False
     assert verdict["octave_shift"] == {"A": None, "C": None}
     assert verdict["repilot"] == {}
+
+
+# ── r2 blocker 3: sync-reissue resume-idempotency (g4 Major 3) ────────────────
+
+
+def _reissue_fixture(tmp_path: Path):
+    """One trait_scores unit: rollout 0 fully api-refusal-censored (2 draws),
+    rollout 1 clean (2 kept draws — the parity candidate)."""
+    tag, trait = "A__evil__c3.0", "evil"
+    eval_root = tmp_path / "eval"
+    pdir = eval_root / "trait_scores" / "partial"
+    pdir.mkdir(parents=True)
+    rollouts_dir = tmp_path / "rollouts"
+    rollouts_dir.mkdir()
+    (rollouts_dir / f"{tag}__{trait}.json").write_text(
+        json.dumps(
+            {
+                "rows": [{"question": "q0", "rollouts": ["resp-0", "resp-1"]}],
+                "n_questions": 1,
+                "n_rollouts": 2,
+            }
+        )
+    )
+    block = {
+        "tag": tag,
+        "trait": trait,
+        "rubric_id": trait,
+        "arm": "A_evil_3.0",
+        "n_questions": 1,
+        "n_rollouts": 2,
+        "per_question": [
+            {
+                "question_idx": 0,
+                "rollout_scores": [None, 25.0],
+                "rollout_draw_scores": [[], [20.0, 30.0]],
+                "rollout_n_api_refusal": [2, 0],
+                "rollout_n_transport_lost": [0, 0],
+                "rollout_n_content_dropped": [0, 0],
+                "mean": 25.0,
+            }
+        ],
+        "model_mean": 25.0,
+        "rate_gt50": 0.0,
+        "n_rollouts_scored": 1,
+        "n_rollouts_total": 2,
+        "accounting": {
+            "n_total_draws": 4,
+            "n_content_dropped": 0,
+            "n_refusal_draws": 0,
+            "n_truncation_dropped": 0,
+            "n_transport_lost": 0,
+            "n_api_refusal": 2,
+        },
+        "judge_meta": {
+            "judge_model": J.JUDGE_MODEL,
+            "n_draws": 2,
+            "temperature": J.JUDGE_TEMPERATURE,
+            "max_tokens": J.JUDGE_MAX_TOKENS,
+            "transport_mode": "batch",
+        },
+    }
+    ppath = pdir / f"{tag}__{trait}.json"
+    ppath.write_text(json.dumps(block))
+    from types import SimpleNamespace
+
+    args = SimpleNamespace(
+        eval_root=str(eval_root),
+        stage="final",
+        external_root=str(tmp_path / "external"),
+        cache_root=str(tmp_path / "cache"),
+        save_raw_root=str(tmp_path / "raw"),
+        rollouts_dir=str(rollouts_dir),
+        narrow_rollouts_dir=str(tmp_path / "narrow"),
+        parity_n=250,
+    )
+    return args, ppath
+
+
+def test_sync_reissue_is_resume_idempotent(tmp_path, monkeypatch):
+    """FAILS PRE-FIX (r2 blocker 3): a second run must NOT re-append the same
+    cached sync draws into an already-merged unit (rollout_n_api_refusal never
+    resets, so re-selection without the judge_meta guard double-merges)."""
+    from explore_persona_space.eval import graded_judge as gj
+
+    args, ppath = _reissue_fixture(tmp_path)
+    calls: list[dict] = []
+
+    def fake_rubric_for(rubric_id: str, external_root: Path):  # loader boundary
+        return "rubric {question} {answer}", J.TRAIT_N_DRAWS
+
+    def fake_judge_graded(  # signature mirrors eval.graded_judge.judge_graded
+        items,
+        eval_prompt,
+        *,
+        n_draws,
+        cache_dir,
+        save_raw,
+        judge_model=gj.DEFAULT_JUDGE_MODEL,
+        temperature=gj.DEFAULT_JUDGE_TEMPERATURE,
+        max_tokens=64,
+        dry_run=False,
+        threshold_base=None,
+    ):
+        calls.append({"ids": [i[0] for i in items], "n_draws": n_draws})
+        return gj.JudgeResult(
+            scores={iid: 42.0 for iid, _q, _a in items},
+            n_total_draws=n_draws * len(items),
+            n_dropped_draws=0,
+            per_item_scores={iid: [42.0] * n_draws for iid, _q, _a in items},
+        )
+
+    monkeypatch.setattr(J, "rubric_for", fake_rubric_for)
+    monkeypatch.setattr(gj, "judge_graded", fake_judge_graded)
+
+    J.run_sync_reissue(args)
+    block1 = json.loads(ppath.read_text())
+    q = block1["per_question"][0]
+    assert q["rollout_draw_scores"][0] == [42.0, 42.0]  # merged sync draws
+    assert q["rollout_draw_scores"][1] == [20.0, 30.0]  # untouched clean rollout
+    assert q["rollout_scores"][0] == 42.0
+    assert block1["judge_meta"]["api_refusal_reissue"]["n_draws_recovered"] == 2
+    n_calls_run1 = len(calls)
+    assert n_calls_run1 >= 1
+
+    # Run 2 (the crash-partway resume): the unit must SKIP — draw lists stable,
+    # zero further judge calls. Pre-fix this doubled the draw multiplicity.
+    J.run_sync_reissue(args)
+    block2 = json.loads(ppath.read_text())
+    assert block2["per_question"][0]["rollout_draw_scores"] == q["rollout_draw_scores"]
+    assert len(block2["per_question"][0]["rollout_draw_scores"][0]) == 2, "draws doubled on re-run"
+    assert len(calls) == n_calls_run1, "re-run must dispatch no further judge calls"
+
+
+def test_digest_reports_reissue_remediation(tmp_path, monkeypatch):
+    """g4 minor: a completed sync-reissue is legible at the digest surface —
+    per-row flag + remediation block + no stale 'run sync-reissue' warning."""
+    from types import SimpleNamespace
+
+    args, ppath = _reissue_fixture(tmp_path)
+    block = json.loads(ppath.read_text())
+    block["judge_meta"]["api_refusal_reissue"] = {
+        "date": "2026-08-10",
+        "n_draws_reissued": 2,
+        "n_draws_recovered": 2,
+        "path": "sync",
+    }
+    ppath.write_text(json.dumps(block))
+    (tmp_path / "raw").mkdir(exist_ok=True)
+    dargs = SimpleNamespace(
+        eval_root=args.eval_root, stage="final", save_raw_root=str(tmp_path / "raw")
+    )
+    out = J.run_digest(dargs)
+    digest = json.loads(Path(out).read_text())
+    assert digest["api_refusal_remediation"] == {
+        "n_units_reissued": 1,
+        "n_draws_recovered": 2,
+        "n_censored_units_unremediated": 0,
+    }
+    (row,) = digest["per_arm"]
+    assert row["api_refusal_reissued"] is True
+    assert row["n_draws_recovered_by_reissue"] == 2
+
+
+# ── g3 Major 1: MMLU --limit threading (argv + resume fingerprint) ────────────
+
+
+def test_mmlu_limit_threaded_into_argv_and_fingerprint(tmp_path):
+    MM = _load("issue2225_mmlu")
+    cmd = MM._lm_eval_cmd("pretrained=x", tmp_path, 200)
+    assert cmd[cmd.index("--limit") + 1] == "200"
+    assert "--limit" not in MM._lm_eval_cmd("pretrained=x", tmp_path, None)
+    target = MM.evalgen.targets_by_tag()["base"]
+    fp_probe = MM.mmlu_fingerprint(target, None, "m", limit=200)
+    fp_full = MM.mmlu_fingerprint(target, None, "m", limit=None)
+    assert fp_probe["limit"] == 200 and fp_full["limit"] is None
+    # the P0 --limit probe must NEVER resume-satisfy P2c's full-set run
+    assert fp_probe != fp_full

@@ -86,8 +86,14 @@ def _lm_eval_version() -> str:
     return getattr(lm_eval, "__version__", "?")
 
 
-def mmlu_fingerprint(target: evalgen.EvalTarget, adapter_path: Path | None, model: str) -> dict:
-    """Resume-compared fingerprint (recipe fields + adapter sha; no code SHA)."""
+def mmlu_fingerprint(
+    target: evalgen.EvalTarget, adapter_path: Path | None, model: str, *, limit: int | None = None
+) -> dict:
+    """Resume-compared fingerprint (recipe fields + adapter sha; no code SHA).
+
+    ``limit`` (lm-eval ``--limit``) is part of the key: a P0 ``--limit 200``
+    probe run must NEVER resume-satisfy P2c's full-set run (g3 Major 1).
+    """
     if adapter_path is None:
         adapter_sha = "base-no-adapter"
     else:
@@ -100,6 +106,7 @@ def mmlu_fingerprint(target: evalgen.EvalTarget, adapter_path: Path | None, mode
         "seed": SEED,
         "model": model,
         "max_lora_rank": MAX_LORA_RANK,
+        "limit": limit,
         "lm_eval_version": _lm_eval_version(),
     }
 
@@ -153,6 +160,23 @@ def merge_slot(slot_dir: Path, *, max_slots: int = MAX_CONCURRENT_MERGES) -> Ite
                 if holder and not _pid_alive(holder):
                     logger.warning("[merge-slot] reclaiming stale slot %s (pid %d)", slot, holder)
                     slot.unlink(missing_ok=True)
+                elif not holder:
+                    # Holder died between O_EXCL open and the pid write: an
+                    # empty/unparseable slot older than 10 min is stale — an
+                    # unreclaimed one permanently narrows the semaphore
+                    # (g3 minor). Fresh empty slots (the open->write window)
+                    # are left alone.
+                    try:
+                        age_s = time.time() - slot.stat().st_mtime
+                    except OSError:
+                        age_s = 0.0
+                    if age_s > 600:
+                        logger.warning(
+                            "[merge-slot] reclaiming pid-less stale slot %s (age %.0fs)",
+                            slot,
+                            age_s,
+                        )
+                        slot.unlink(missing_ok=True)
             try:
                 fd = os.open(slot, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
             except FileExistsError:
@@ -206,11 +230,9 @@ def _model_args(pretrained: str | Path, adapter_path: Path | None) -> str:
     return ",".join(parts)
 
 
-def _run_lm_eval(model_args: str, scratch: Path, log_prefix: str) -> Path:
-    """Run one lm-eval invocation into an empty scratch dir; return the results JSON."""
-    if scratch.exists():
-        shutil.rmtree(scratch)  # exactly-one-results-file invariant
-    scratch.mkdir(parents=True, exist_ok=True)
+def _lm_eval_cmd(model_args: str, scratch: Path, limit: int | None) -> list[str]:
+    """Compose the lm-eval argv (separate helper so tests can pin the --limit
+    threading without a GPU; g3 Major 1)."""
     cmd = [
         "uv",
         "run",
@@ -232,7 +254,19 @@ def _run_lm_eval(model_args: str, scratch: Path, log_prefix: str) -> Path:
         "--output_path",
         str(scratch),
     ]
-    print(f"[{log_prefix}] lm-eval start ({TASK}, {NUM_FEWSHOT}-shot)", flush=True)
+    if limit is not None:
+        cmd += ["--limit", str(limit)]
+    return cmd
+
+
+def _run_lm_eval(model_args: str, scratch: Path, log_prefix: str, *, limit: int | None) -> Path:
+    """Run one lm-eval invocation into an empty scratch dir; return the results JSON."""
+    if scratch.exists():
+        shutil.rmtree(scratch)  # exactly-one-results-file invariant
+    scratch.mkdir(parents=True, exist_ok=True)
+    cmd = _lm_eval_cmd(model_args, scratch, limit)
+    lim = "full set" if limit is None else f"--limit {limit}"
+    print(f"[{log_prefix}] lm-eval start ({TASK}, {NUM_FEWSHOT}-shot, {lim})", flush=True)
     t0 = time.time()
     proc = subprocess.run(cmd, env={**os.environ})
     if proc.returncode != 0:
@@ -244,15 +278,28 @@ def _run_lm_eval(model_args: str, scratch: Path, log_prefix: str) -> Path:
     return results[0]
 
 
+def _resolve_single_target(tag: str) -> evalgen.EvalTarget:
+    """86-registry-only lookup with a legible error (g3 minor: pilot/scaled
+    slugs deliberately have no MMLU/capture — say so instead of a bare KeyError)."""
+    by_tag = evalgen.targets_by_tag()
+    if tag not in by_tag:
+        raise ValueError(
+            f"unknown eval-target tag {tag!r}: not one of the {len(by_tag)} registry "
+            "targets (pilot / §7-scaled cell slugs deliberately get no MMLU eval — "
+            "list tags via issue2225_eval_gen.py --list-targets)"
+        )
+    return by_tag[tag]
+
+
 def run_single(args) -> None:
     """Eval ONE target (subprocess mode; GPU pinned by the launcher env)."""
-    target = evalgen.targets_by_tag()[args.single]
+    target = _resolve_single_target(args.single)
     out_root = Path(args.out_root)
     model_name = args.model or lib.MODEL_NAME
     adapter = evalgen.resolve_adapter(
         target, ckpt_root=Path(args.ckpt_root), staging_dir=Path(args.staging_dir)
     )
-    fp = mmlu_fingerprint(target, adapter, model_name)
+    fp = mmlu_fingerprint(target, adapter, model_name, limit=args.limit)
     out_path = mmlu_out_path(out_root, target.tag)
     if _done(out_path, fp):
         print(f"[mmlu] skip {target.tag} (resume)", flush=True)
@@ -270,11 +317,11 @@ def run_single(args) -> None:
                     adapter, model_name, out_root / "mmlu" / "merged" / target.tag
                 )
                 results_path = _run_lm_eval(
-                    _model_args(merged_dir, None), scratch, f"mmlu:{target.tag}"
+                    _model_args(merged_dir, None), scratch, f"mmlu:{target.tag}", limit=args.limit
                 )
         else:
             results_path = _run_lm_eval(
-                _model_args(model_name, adapter), scratch, f"mmlu:{target.tag}"
+                _model_args(model_name, adapter), scratch, f"mmlu:{target.tag}", limit=args.limit
             )
     finally:
         if merged_dir is not None and merged_dir.exists():
@@ -289,6 +336,7 @@ def run_single(args) -> None:
         "dataset": target.dataset,
         "task": TASK,
         "num_fewshot": NUM_FEWSHOT,
+        "limit": args.limit,
         "mmlu_acc": mmlu_row.get("acc,none"),
         "mmlu_acc_stderr": mmlu_row.get("acc_stderr,none"),
         "adapter_path": (None if adapter is None else str(adapter)),
@@ -357,6 +405,8 @@ def run_fan_out(args) -> None:
             cmd += ["--model", args.model]
         if args.merge_fallback:
             cmd += ["--merge-fallback"]
+        if args.limit is not None:
+            cmd += ["--limit", str(args.limit)]
         return cmd
 
     if args.dry_run:
@@ -408,6 +458,13 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--gpu-id", type=int, default=0)
     ap.add_argument("--n-gpus", type=int, default=None, help="fan-out width cap")
     ap.add_argument("--merge-fallback", action="store_true", help="merge->eval->delete path")
+    ap.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="lm-eval --limit N (the §4.8(b) P0 probe dial; threaded into the "
+        "resume fingerprint so a limited run never resume-satisfies a full run)",
+    )
     ap.add_argument("--smoke", action="store_true", help="base target only")
     ap.add_argument("--dry-run", action="store_true", help="print invocations, no CUDA")
     ap.add_argument("--upload", action="store_true", help="upload-only mode (pod-side, later)")
