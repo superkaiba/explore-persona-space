@@ -50,7 +50,15 @@ _REGIONS = (
 # A REAL gate-script heredoc composition targets a shell variable or a /tmp
 # path: `cat > "$LINT_GATE_SCRIPT" <<'LINT_GATE_EOF'`. The ban-prose
 # mentions read `cat > ... <<'EOF'` (literal dots) and must NOT match.
-_HEREDOC_COMPOSE = re.compile(r"""cat\s*>>?\s*("?\$[A-Za-z_]|/tmp/)\S*\s*<<""")
+# `cat`/`tee` writing a gate script from a heredoc. The var form must accept
+# BOTH `$LINT_GATE_SCRIPT` and the brace spelling `${LINT_GATE_SCRIPT}` —
+# `\$[A-Za-z_]` alone misses `${`, so a brace-form revert would evade this
+# assertion entirely (code-review #2115 finding 1). `tee` is covered because it
+# is the other common write-from-heredoc verb.
+# `tee` takes its target as an ARGUMENT, not via a redirect, so the `>` must be
+# part of the cat alternative only — a shared `>>?` silently fails to match any
+# tee form.
+_HEREDOC_COMPOSE = re.compile(r"""(?:cat\s*>>?|tee)\s*("?\$\{?[A-Za-z_]|/tmp/)\S*\s*<<""")
 
 
 def _region(name: str, start: str, end: str) -> str:
@@ -70,6 +78,37 @@ def test_no_gate_script_heredoc_in_any_gate_region():
             f"{name}: gate-script heredoc composition reintroduced (#2115 — the "
             f"heredoc body rides the launcher Bash argv through the harness "
             f"transport; compose the script with the Write tool instead): {hits}"
+        )
+
+
+def test_pin_regex_catches_every_revert_spelling():
+    """The pin must fire on the spellings a revert could plausibly use.
+
+    Guards the pin itself: a regex that misses `${VAR}` or `tee` lets a
+    brace-form or tee-form revert land silently (code-review #2115 finding 1).
+    """
+    must_match = [
+        """  cat > "$LINT_GATE_SCRIPT" <<'LINT_GATE_EOF'""",
+        """  cat > "${LINT_GATE_SCRIPT}" <<'LINT_GATE_EOF'""",
+        """  cat > ${SURGICAL_SCRIPT} <<'SURGICAL_EOF'""",
+        """  tee "$LINT_GATE_SCRIPT" <<'LINT_GATE_EOF'""",
+        """  cat >> /tmp/issue-2115-lint-gate.sh <<'EOF'""",
+    ]
+    for line in must_match:
+        assert _HEREDOC_COMPOSE.search(line), (
+            f"pin regex fails to match a revert spelling — a revert using this "
+            f"form would evade the ban assertion: {line!r}"
+        )
+    # The ban-PROSE mentions use literal dots and must stay unmatched, or the
+    # pin fires on the very documentation telling people not to do this.
+    must_not_match = [
+        """  # never `cat > ... <<'EOF'` — the body rides the argv""",
+        """  # compose the script with the Write tool, not cat > ... << EOF""",
+    ]
+    for line in must_not_match:
+        assert not _HEREDOC_COMPOSE.search(line), (
+            f"pin regex matches ban-prose — it would fire on the documentation "
+            f"rather than on a real revert: {line!r}"
         )
 
 

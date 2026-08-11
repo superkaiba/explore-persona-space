@@ -83,11 +83,26 @@ def extract_payload() -> str:
             break
     if start is None:
         sys.exit(f"FATAL: self-choom anchor not found after the lint-gate heading in {SKILL}")
+    # Scan to the fence. The bound is a runaway guard, NOT a truncation policy:
+    # silently cutting the body at the bound would understate every measured
+    # cost in the table this script exists to reproduce, so hitting the bound
+    # without finding the fence is a hard error (code-review #2115 finding 3).
+    scan_bound = 5000
     body = []
-    for ln in lines[start : start + 700]:
+    fenced = False
+    for ln in lines[start : start + scan_bound]:
         if ln.strip().startswith("```"):
+            fenced = True
             break
         body.append(ln[2:] if ln.startswith("  ") else ln)
+    if not fenced:
+        sys.exit(
+            f"FATAL: no closing fence within {scan_bound} lines of the gate-body "
+            f"anchor at SKILL.md:{start + 1}. The gate body either outgrew the "
+            f"scan bound or the anchor drifted; either way a truncated payload "
+            f"would understate the measured cost. Re-check the anchor and raise "
+            f"the bound deliberately."
+        )
     return "\n".join(body)
 
 
