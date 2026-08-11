@@ -63,7 +63,7 @@ I made a plot showing, for each layer, and for each tested slot (some combinatio
 efficiency), the effect of patching on this metric. I did this for all 3 settings (matched query,
 matched prefix, fully different).
 
-![Coherent-draw fraction per slot and layer, three settings](https://raw.githubusercontent.com/superkaiba/explore-persona-space/985a61c307b19472f6266693bb4f4753d7645789/figures/issue_2094/userchat_heatmaps/coherence_heatmaps.png)
+![Coherent-draw fraction per slot and layer, three settings](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e392738498efd9a58b779d66b1492a66a9ad1e24/figures/issue_2094/userchat_heatmaps/coherence_heatmaps.png)
 
 **Where the >60 cut comes from, and whether it matters.** 60 is not a calibrated value — it was
 fixed in the task body up front, and it is stricter than the >50 gate this repo uses elsewhere
@@ -73,7 +73,7 @@ judge's score distribution is hard bimodal: a draw is fluent (scores ~100) or it
 44,391 draws (0.04%)**; sweeping it across the whole 40–80 range moves the coherent fraction only
 from 0.967 to 0.960. No conclusion in this writeup depends on where the line sits.
 
-![Coherence judge score distribution and cut sensitivity](https://raw.githubusercontent.com/superkaiba/explore-persona-space/REPLACE_SHA/figures/issue_2094/userchat_heatmaps/coherence_distribution.png)
+![Coherence judge score distribution and cut sensitivity](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e392738498efd9a58b779d66b1492a66a9ad1e24/figures/issue_2094/userchat_heatmaps/coherence_distribution.png)
 
 > Left: distribution of the graded coherence score over all 44,391 judged draws, split by slot family
 > and arm (log-scaled counts). Dashed = the >60 cut used here, dotted = the >50 alternative. Right:
@@ -111,7 +111,7 @@ I made a plot showing, for each layer, and for each tested slot (some combinatio
 efficiency), the effect of patching on this metric. I did this for all 3 settings (matched query,
 matched prefix, fully different).
 
-![F_act per slot and layer, three settings, full-state patch](https://raw.githubusercontent.com/superkaiba/explore-persona-space/985a61c307b19472f6266693bb4f4753d7645789/figures/issue_2094/userchat_heatmaps/f_act_heatmaps.png)
+![F_act per slot and layer, three settings, full-state patch](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e392738498efd9a58b779d66b1492a66a9ad1e24/figures/issue_2094/userchat_heatmaps/f_act_heatmaps.png)
 
 **Takeaways:**
 
@@ -192,7 +192,7 @@ the pairs behind the headline cannot tell those apart. These 5 pass the |separat
 because their FLOOR is strongly expressed, not their ceiling; the filter checks the gap, not which
 end supplies it.
 
-![F_beh per slot and layer, three settings, full-state patch, well-separated pairs](https://raw.githubusercontent.com/superkaiba/explore-persona-space/985a61c307b19472f6266693bb4f4753d7645789/figures/issue_2094/userchat_heatmaps/f_beh_heatmaps_wellsep.png)
+![F_beh per slot and layer, three settings, full-state patch, well-separated pairs](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e392738498efd9a58b779d66b1492a66a9ad1e24/figures/issue_2094/userchat_heatmaps/f_beh_heatmaps_wellsep.png)
 
 **Direct check: the erasure/installation split, measured rather than inferred.** The paragraph above
 reads the split off F values. To measure it, I re-scored the same completions with the same rubrics
