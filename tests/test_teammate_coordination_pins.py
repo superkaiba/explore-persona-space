@@ -14,6 +14,11 @@ CLAUDE.md (a bare-id pin would be vacuous).
 #2041 added sub-clauses (f)/(g) (fan-out same-turn durable landing +
 synchronous delegated gate-waits) and the SKILL.md Step 4b "Fan-out
 completion contract" paragraph; both are pinned here.
+
+#2111 added two probed sub-cases to the sibling ownership-check bullet
+(pre-stop probe + post-death detached-children probe); pinned here too
+(test_ownership_probe_subcases_pinned) -- same section, same
+amendment-velocity profile.
 """
 
 from __future__ import annotations
@@ -106,6 +111,24 @@ def test_claude_md_fanout_subclauses_pinned() -> None:
     assert (
         "#2041: a delegated Step 10d subagent ended its turn blocked on a background gate" in text
     )
+
+
+def test_ownership_probe_subcases_pinned() -> None:
+    """Pin the #2111 ownership-check sub-cases: the pre-stop probe (live
+    subagent children + a fresh stage-dispatch breadcrumb => presume live)
+    and the post-death detached-children probe (probe for detached children
+    a dead subagent launched BEFORE dispatching same-path work) -- two
+    2026-08-05 incidents (#2054 session stop; #1491 duplicate run)."""
+    text = _normalized()
+    assert "**Pre-stop probe (#2111):**" in text
+    assert "probe for live subagent children AND a `stage-dispatch` breadcrumb" in text
+    assert "younger than ~10 min" in text
+    assert "never stop on an idle-looking self-report" in text
+    assert "**Post-death detached-children probe (#2111):**" in text
+    assert "a death notification never enumerates detached children" in text
+    # Citation pins (distinctive multi-token forms, per the module docstring).
+    assert "killing a 10-min-old live implementer" in text
+    assert "#1491: a 529-killed analyzer's detached run" in text
 
 
 def test_fanout_completion_contract_pinned() -> None:
