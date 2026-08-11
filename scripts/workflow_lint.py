@@ -7055,6 +7055,27 @@ def check_upload_prefix_clobber(  # noqa: C901 -- flat two-pass scan + flag-poli
     if not root.exists():
         return []
     allow = UPLOAD_PREFIX_CLOBBER_ALLOWLIST if legacy_allowlist is None else legacy_allowlist
+    # KNOWN RESIDUAL under files-mode (#2235 code-review round 1), deliberate
+    # and pinned by tests/test_workflow_lint_files_mode.py:
+    #   test_files_mode_cross_file_wrapper_is_a_known_residual
+    #   test_bare_run_catches_cross_file_wrapper_the_scoped_run_misses
+    # Pass 1 infers wrappers keyed by BARE NAME over the files it is given. Its
+    # input is the FILTERED set here, so a payload calling an upload wrapper
+    # whose def lives in an out-of-scope module (a non-`issue*`-stem bare
+    # import, which the issue*-restricted closure never pulls in) is NOT flagged
+    # by the scoped run. The bare no-flags run — i.e. the Step 9c gate, which is
+    # the actual merge gate — still flags it, so this is DELAYED DETECTION, not
+    # an escape to main.
+    #
+    # Measured 2026-08-11 on a 2-file fig payload, why it stays a residual:
+    # feeding pass 1 the whole walked set costs +15.1 s (1,902 files); gating on
+    # UPLOAD_DEST_FUNCS mentions alone +6.2 s (365 files); gating additionally
+    # on "defines a name the payload calls" is NOT selective, because generic
+    # called names (`main`, `open`, `get`) are defined by most of those 365
+    # files — measured +32.8 s. Each variant alone exceeds the <60 s scoped-gate
+    # budget this mode exists to create. Closing it properly needs pass 1 keyed
+    # on import provenance rather than bare name — a change to the #1452 check
+    # itself, out of scope here.
     files = _files_scope_filter([p for p in sorted(root.rglob("*.py")) if p.is_file()])
     wrappers, fallback_findings = _upc_collect_wrappers(files)
     errors: list[str] = []
@@ -15990,7 +16011,24 @@ def _run_files_mode(raw_paths: list[str], workflow: dict) -> int:
         for name in unclassified:
             sys.stderr.write(f"workflow_lint: FILES-MODE-REFUSED (unclassified check {name})\n")
         return 2
-    payload = [Path(p.strip()).as_posix() for p in raw_paths if p.strip()]
+    # Normalize to repo-relative (#2235 code-review round 1): every enumeration
+    # this mode filters yields repo-relative paths, so an absolute payload path
+    # left absolute matches nothing — the payload would be scoped OUT of its own
+    # run and PASS near-empty. An in-repo absolute path relativizes; one outside
+    # the repo can never be in scope, so refuse it loudly (exit 2 → the gate
+    # falls back to one bare full run) rather than certify a vacuous PASS.
+    payload: list[str] = []
+    for raw in raw_paths:
+        stripped = raw.strip()
+        if not stripped:
+            continue
+        rel = _files_scope_rel(Path(stripped))
+        if Path(rel).is_absolute():
+            sys.stderr.write(
+                f"workflow_lint: FILES-MODE-REFUSED (payload path outside repo: {stripped})\n"
+            )
+            return 2
+        payload.append(rel)
     closure, closure_errors = _issue_import_closure(payload)
     scope = frozenset(payload) | frozenset(closure)
     errors: list[str] = []

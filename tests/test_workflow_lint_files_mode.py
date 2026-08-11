@@ -420,3 +420,97 @@ def test_files_mode_rejects_check_flag_combination(tmp_path: Path) -> None:
     r, out = _run_lint(tree, "--files", payload, "--check-judge-model-pins")
     assert r.returncode == 2, out
     assert ilg.LINT_TERMINAL_RE.search(out) is None, out
+
+
+# ---------------------------------------------------------------------------
+# Code-review round 1 findings: cross-file wrapper completeness + absolute-path
+# payload normalization.
+# ---------------------------------------------------------------------------
+SHARED_UPLOADER = '''"""Out-of-scope shared uploader (non-issue stem, so the
+issue*-restricted import closure never pulls it into scope)."""
+
+from huggingface_hub import HfApi
+
+
+def push_artifacts(repo_id: str, dest: str) -> None:
+    """Wrapper whose `dest` param feeds upload_folder's path_in_repo."""
+    HfApi().upload_folder(repo_id=repo_id, path_in_repo=dest, folder_path=".")
+'''
+
+WRAPPER_CALLER_RED = '''"""Payload calling the out-of-scope wrapper with ANOTHER issue's prefix."""
+
+import shared_uploader
+
+
+def main() -> None:
+    shared_uploader.push_artifacts(repo_id="superkaiba1/d", dest="issue9991_other/tensors")
+'''
+
+
+def test_files_mode_cross_file_wrapper_is_a_known_residual(tmp_path: Path) -> None:
+    """PINS A DELIBERATE RESIDUAL, not desired behavior (code-review round 1).
+
+    Pass 1 (wrapper inference) keys wrappers by BARE NAME over the files it is
+    given, and files-mode gives it the FILTERED set — so a payload calling an
+    upload wrapper whose def lives in an out-of-scope module (non-`issue*`-stem
+    bare import, which the issue*-restricted closure never pulls in) is not
+    flagged by the SCOPED run. The companion test below pins that the bare run
+    — the actual Step 9c merge gate — does flag it, making this delayed
+    detection rather than an escape to main.
+
+    Do NOT "fix" this by widening pass 1's input without re-measuring: measured
+    2026-08-11 on a 2-file fig payload, the whole walked set costs +15.1 s, an
+    UPLOAD_DEST_FUNCS-mention gate +6.2 s, and a "defines a name the payload
+    calls" gate +32.8 s (generic names like `main` defeat its selectivity) —
+    each alone breaks the <60 s scoped-gate acceptance bar. The real fix is to
+    key pass 1 on import provenance instead of bare name, in the #1452 check.
+    """
+    tree = _make_tree(tmp_path)
+    (tree / "scripts" / "shared_uploader.py").write_text(SHARED_UPLOADER, encoding="utf-8")
+    payload = "scripts/issue9990_uses_wrapper.py"
+    (tree / payload).write_text(WRAPPER_CALLER_RED, encoding="utf-8")
+    r, out = _run_lint(tree, "--files", payload)
+    assert r.returncode == 0, out
+    assert not any("issue9990_uses_wrapper.py" in ln for ln in _error_lines(out)), out
+
+
+def test_bare_run_catches_cross_file_wrapper_the_scoped_run_misses(tmp_path: Path) -> None:
+    """The backstop for the residual above is REAL, not assumed: the bare
+    no-flags run (the Step 9c gate instrument) flags the same fixture the scoped
+    run lets through. If this ever goes green-and-silent, the residual stops
+    being delayed detection and becomes an escape to main."""
+    tree = _make_tree(tmp_path)
+    (tree / "scripts" / "shared_uploader.py").write_text(SHARED_UPLOADER, encoding="utf-8")
+    (tree / "scripts" / "issue9990_uses_wrapper.py").write_text(
+        WRAPPER_CALLER_RED, encoding="utf-8"
+    )
+    r, out = _run_lint(tree)
+    assert r.returncode == 1, out
+    assert any("issue9990_uses_wrapper.py" in ln for ln in _error_lines(out)), out
+    assert any("9991" in ln for ln in _error_lines(out)), out
+
+
+def test_files_mode_refuses_out_of_repo_absolute_path(tmp_path: Path) -> None:
+    """An absolute payload path OUTSIDE the repo can never match a
+    repo-relative enumeration entry, so scoping it would certify a vacuous
+    near-empty PASS. Refuse it loudly instead: exit 2, no terminal line, so the
+    gate falls back to one bare full run (code-review round 1)."""
+    tree = _make_tree(tmp_path)
+    outsider = tmp_path / "outside.py"
+    outsider.write_text(CLEAN_FIG, encoding="utf-8")
+    r, out = _run_lint(tree, "--files", str(outsider))
+    assert r.returncode == 2, out
+    assert "FILES-MODE-REFUSED (payload path outside repo:" in out, out
+    assert ilg.LINT_TERMINAL_RE.search(out) is None, out
+
+
+def test_files_mode_normalizes_in_repo_absolute_path(tmp_path: Path) -> None:
+    """An absolute IN-repo payload path relativizes into its own scope. Before
+    the fix it stayed absolute, so the payload was scoped OUT of its own run and
+    its red went unreported as a near-empty PASS (code-review round 1)."""
+    tree = _make_tree(tmp_path)
+    rel = "scripts/issue9992_red_abs.py"
+    (tree / rel).write_text(JUDGE_PIN_RED, encoding="utf-8")
+    r, out = _run_lint(tree, "--files", str(tree / rel))
+    assert r.returncode == 1, out
+    assert any("issue9992_red_abs.py" in ln for ln in _error_lines(out)), out
