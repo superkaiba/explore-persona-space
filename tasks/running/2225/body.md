@@ -1,6 +1,6 @@
 ---
-title: 'Context-position preventative steering: context-extracted directions steered
-  at context tokens during finetuning vs the Persona Vectors method'
+title: Steering only context tokens does not prevent trait acquisition — it shows
+  almost no dose-response, while steering response tokens does (MODERATE confidence)
 kind: experiment
 tags:
 - trigger-dense

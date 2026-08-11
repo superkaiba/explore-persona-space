@@ -9468,7 +9468,7 @@
       "kind": "experiment",
       "path": "tasks/running/2225",
       "status": "running",
-      "title": "Context-position preventative steering: context-extracted directions steered at context tokens during finetuning vs the Persona Vectors method"
+      "title": "Steering only context tokens does not prevent trait acquisition \u2014 it shows almost no dose-response, while steering response tokens does (MODERATE confidence)"
     },
     "2226": {
       "has_clean_result": false,
