@@ -9529,8 +9529,8 @@
     "2233": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2233",
-      "status": "running",
+      "path": "tasks/completed/2233",
+      "status": "completed",
       "title": "Narrow over-broad scripts/issue*.py rule globs (3 rules, ~23K tokens on every issue script)"
     },
     "2234": {
