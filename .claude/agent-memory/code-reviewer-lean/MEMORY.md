@@ -1,11 +1,6 @@
-- [Hand-rolled pod sentinel envelope](handrolled_pod_sentinel_envelope.md) — flag /workspace/logs JSON lacking _SENTINEL_REQUIRED_KEYS; poller silently skips it (#1491 M1)
-- [Gate threshold vs shard config](gate_threshold_vs_shard_config.md) — per-shard accumulation gates go dead when shard count drops rows/shard below the threshold (#1491 M2)
-- [Batch-copied sidecar provenance field](batch_copied_sidecar_provenance_field.md) — check each figure sidecar's data field against its render FUNCTION's reads, not siblings (#2031 R1)
-- [DP exposure is per-phase](dp_exposure_is_per_phase.md) — credit §9 shard shapes only from that phase's OWN dispatcher; sibling fan-outs don't count (#2224 R1)
-- [Checkpoint consumer skips key check](checkpoint_consumer_skips_key_check.md) — verify the LOADING stage re-checks sidecar keys, and keys cover artifact content (#2222 R1)
-- [rc-halt not resume-idempotent](rc_halt_not_resume_idempotent.md) — a designed rc-halt whose unit is marked phase-complete gets resume-skipped on relaunch; halt silently erased (#2222 R1)
-- [Additive edit flips whole-file resume key](additive_edit_flips_wholefile_resume_key.md) — a stage-scoped edit to a fingerprint-hashed file invalidates ALL earlier-stage checkpoints under --stage all (#2222 R1 g4)
-- [Start-manifest + presence-done = stale-artifact skip](start_manifest_stale_artifact_done.md) — fingerprint manifest at cell START + artifact-presence "done" skips onto a prior run's stale adapter after a crashed retrain (#2225 R1 g2)
-- [Mode-scoped column threading untested](mode_scoped_column_threading_untested.md) — a batch column only ONE mode consumes needs an e2e test in THAT mode; other modes pass with threading deleted (#2225 R1 g1)
-- [Smoke-arch marker #2176 grammar pitfalls](smoke_arch_marker_2176_grammar_pitfalls.md) — run check-smoke-arch-registry first; prose-decorated per-arm heading = empty sub-block; bare-token row keys (#2225 R1 g6)
-- [Count gate starved by resume-skip](count_gate_starved_by_resume_skip.md) — fresh-round grep-count gates FATAL when units dedupe into a prior round; trace skip branches (#2225 R1 g5)
+# code-reviewer-lean memory index
+
+- [Smoke enum item without dial](smoke_enum_item_without_dial.md) — a §4.8 blind-spot item promising a reduced-scale smoke needs a reachable CLI dial + dispatcher wiring + fingerprint key (#2225 R1 g3)
+- [Fan-out CVD ordinal ≠ parent entry](fanout_cvd_ordinal_not_entry.md) — child CVD=str(g) escapes a restricted parent CVD; pin the g-th entry; also grep for never-read mode flags (#2225 R1 g2)
+- [Sentinel path outside drain glob](sentinel_path_outside_drain_glob.md) — a conforming envelope in /workspace/logs/issue-<N>/ SUBDIR is invisible to the top-level poller glob (#2225 R1 g4)
+- [In-place merge phase not idempotent](inplace_merge_phase_not_idempotent.md) — a recovery merge appending draws keyed on a never-reset counter double-appends on re-run (#2225 R1 g4)
