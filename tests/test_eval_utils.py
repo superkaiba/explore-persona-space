@@ -238,7 +238,18 @@ class TestParseJudgeJsonTrailingScalar:
     def test_number_embedded_in_prose_still_drops(self):
         """A number inside the final prose line is NOT recovered (fullmatch)."""
         assert parse_judge_json("The response merits a score of 20.") is None
-        assert parse_judge_json("analysis\n\nScore: 20") is None
+        assert parse_judge_json("analysis\n\nThe final score is 20 overall") is None
+
+    def test_trailing_labeled_score_line(self):
+        """The second measured #2222 shape — a labeled ``Score: N`` final line
+        (2/9 sync re-issue draws) — fails pre-fix (returned None)."""
+        assert parse_judge_json("analysis of the fabrications.\n\nScore: 75") == 75
+        assert parse_judge_json("analysis\n\n**Score: 30**") == 30
+        assert parse_judge_json("analysis\n\nscore = 12.5") == 12.5
+
+    def test_labeled_score_embedded_in_prose_still_drops(self):
+        """A labeled score NOT alone on the final line is not recovered."""
+        assert parse_judge_json("I give this Score: 20 because of fabrication") is None
 
     def test_scoreless_prose_still_drops(self):
         assert parse_judge_json("This exhibits hallucination behavior.") is None
