@@ -69,11 +69,19 @@ are harmful-adjacent. Logs and markers carry ids, counts, scores, shapes, hashes
 
 from __future__ import annotations
 
+# #2220 THROUGHPUT FIX (defense-in-depth; the launcher ALSO exports these):
+# hf_transfer acceleration must be in the env BEFORE any transitive
+# huggingface_hub import — huggingface_hub.constants freezes both at import
+# time — so these are the FIRST executable lines of the module.
+import os
+
+os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "1")
+os.environ.setdefault("HF_XET_HIGH_PERFORMANCE", "1")
+
 import argparse
 import hashlib
 import json
 import logging
-import os
 import subprocess
 import sys
 import time
@@ -717,6 +725,12 @@ def _stream_labeled_context_acts(behavior: str, layers, stage: Path, args) -> di
     def _row_index() -> dict:
         nonlocal ridx
         if ridx is None:
+            # natpv.phase_rowindex reads args.revision (this driver's parser has
+            # no --revision) — pin it to the same tar revision the acts stream
+            # above used, so the lazy per-row path cannot AttributeError and
+            # cannot read a different tar revision (#2220 fix round).
+            if getattr(args, "revision", None) is None:
+                args.revision = LABELING_TAR_REVISION
             natpv.phase_rowindex(args, behavior, stage)  # stage row_index shards from the tar
             ridx = natpv.load_row_index(stage, behavior)
         return ridx
@@ -800,6 +814,21 @@ def phase_materialize_directions(args) -> None:
     import numpy as np
 
     from explore_persona_space.experiments.issue_1739 import fits, store_io
+
+    # #2220 THROUGHPUT FIX: route natpv.stream_members — BOTH the
+    # _stream_labeled_context_acts pass AND the lazy _row_index ->
+    # natpv.phase_rowindex path — through the hf_transfer materialize-then-read
+    # branch. Measured on pod-2220: the ParallelRangeReader range-GET route ran
+    # ~1 MB/s aggregate (~43 h projected for the 154 GB of labeling tars); a
+    # plain hf_hub_download of the SAME tar with HF_HUB_ENABLE_HF_TRANSFER=1
+    # ran ~499 MB/s (154 GB in ~5-13 min). Peak disk = ONE tar (<=~70 GB,
+    # deleted per call in natpv._materialized_members' finally). Staging goes
+    # to the canonical re-downloadable cache path (disk-hygiene reap target).
+    _ensure_repo_root_on_syspath()
+    import scripts.issue1739_natpv as natpv
+
+    natpv.MATERIALIZE_TARS = True
+    natpv.MATERIALIZE_STAGING_DIR = Path("data/issue_2220/hf_dl/labeling_tars")
 
     out_root = _out_root(args)
     dir_out = out_root / "directions"
@@ -2208,7 +2237,17 @@ def _dry_run_phase(args) -> None:
         _ensure_repo_root_on_syspath()
         import scripts.issue1739_natpv as natpv  # noqa: F401
 
-        for sym in ("stream_members", "load_labels", "load_row_index", "_summary_re"):
+        for sym in (
+            "stream_members",
+            "load_labels",
+            "load_row_index",
+            "_summary_re",
+            # #2220 throughput fix: a stale natpv (pre-fix checkout) must fail
+            # the dry-run, not silently fall back to the ~1 MB/s range-GET path.
+            "MATERIALIZE_TARS",
+            "_materialized_members",
+            "_download_tar",
+        ):
             assert hasattr(natpv, sym), f"natpv missing {sym}"
         _breadcrumb(
             "materialize_directions",
