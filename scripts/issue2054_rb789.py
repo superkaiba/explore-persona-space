@@ -84,9 +84,12 @@ from explore_persona_space.orchestrate.provenance import (  # noqa: E402
 
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 # Round-scoped upload prefix (plan §10) — the parent's prefixes are READ-ONLY.
+# NEVER wired as an argparse default / fallback at an upload destination: unit
+# filenames are deterministic per pair, so a child issue reusing this script
+# without --hf-prefix would byte-collide with this round's production prefix
+# (the #1005 clobber shape; workflow_lint no-flags check). Documentation +
+# fail-loud-error reference only.
 DEFAULT_TASK_PREFIX = "issue2054_lattice/reduced_basis_refit_rungs789"
-PARENT_ACTIVATIONS_PREFIX = "issue2054_lattice/activations"  # read-only
-PARENT_LADDER_PREFIX = "issue2054_lattice/ladder"  # read-only
 
 # Rungs 7-9 only (plan §13 binding scope). Names verbatim from ladder.RUNGS.
 RB_RUNGS = ("7_ctx_reparam", "8_ans_reparam", "9_full_AMB")
@@ -571,11 +574,10 @@ def _run_unit(
                 ceil_boot = ladder._bootstrap_conv_ci_over_intersection(
                     Yt_te64, ceil_pred, n_draws=boot_draws, seed=seed + 10_000 + fold_i
                 )
-                try:
-                    id_pred = identity_bias_predict(Xt_tr, Yt_tr, Xt_te)
-                    r2_id = ladder._r2_matrix(Yt_te64, id_pred)
-                except ValueError:
-                    r2_id = float("nan")
+                # Dims are equal by construction (same-d activation summaries); a
+                # ValueError here is a shape BUG — let it raise (fail-fast rule).
+                id_pred = identity_bias_predict(Xt_tr, Yt_tr, Xt_te)
+                r2_id = ladder._r2_matrix(Yt_te64, id_pred)
                 k_star_block = {
                     "k": k_star_real,
                     "rungs": blk_rungs,
@@ -1358,6 +1360,14 @@ def run_shard(args: argparse.Namespace) -> int:
     if not parent_dir.is_dir():
         raise SystemExit(f"--parent-ladder-dir does not exist: {parent_dir}")
     task_prefix = args.hf_prefix
+    if not args.skip_upload and not task_prefix:
+        raise SystemExit(
+            "--hf-prefix is REQUIRED when uploads are enabled (no in-script default: unit "
+            f"filenames are deterministic per pair, so a silent fallback to "
+            f"{DEFAULT_TASK_PREFIX!r} would byte-collide a reusing child issue into this "
+            "round's production prefix — the #1005 clobber shape). Pass the round-scoped "
+            "prefix explicitly (the pod driver does) or --skip-upload."
+        )
 
     # Driver step 3 (plan §4 P1): fold-map fail-loud floor BEFORE pilot + loop.
     fold_map = load_fold_map(Path(args.fold_map).resolve(), allow_smoke=args.allow_smoke_fold_map)
@@ -2133,8 +2143,12 @@ def _h1_band(units_full: list[dict], units_matched: list[dict], boot_draws: int,
         v = _unit_rung_val(u, "9_full_AMB", "ratio")
         if np.isfinite(v):
             member_vals[pk] = v
-    if not band_vals:
-        raise RuntimeError("H1' band source EMPTY (no unflagged N2 reads) — cannot form the band")
+    if len(band_vals) < 3:
+        raise RuntimeError(
+            f"H1' band source has {len(band_vals)} unflagged N2 read(s) — need >=3 to form the "
+            "2.5/97.5 percentile band (fail-loud floor; production census has 144 N2 units, "
+            "smoke fixture yields 6)"
+        )
     bv = np.asarray(list(band_vals.values()), dtype=np.float64)
     band = [float(np.percentile(bv, 2.5)), float(np.percentile(bv, 97.5))]
     inband = sum(1 for v in member_vals.values() if band[0] <= v <= band[1])
@@ -3075,12 +3089,52 @@ def run_smoke(args: argparse.Namespace) -> int:
     if dg["n_pending_ran"] != 0 or dg["n_resumed"] != dg["n_units"]:
         raise AssertionError(f"resume probe A failed: {dg}")
     draws21 = [a if a != "20" else "21" for a in shard_argv]
-    _run_cli(draws21, "smoke resume-regime-change")
+    rb = _run_cli(draws21, "smoke resume-regime-change")
     with (full_out / "digest__boundary_context.json").open(encoding="utf-8") as f:
         dg = json.load(f)
     if dg["n_pending_ran"] != dg["n_units"]:
         raise AssertionError(f"resume probe B (regime change) failed: {dg}")
-    _log("smoke probe: resume skip + regime-change recompute OK")
+
+    # Resume probe C (partial-state + knob-matched pilot prior-report skip;
+    # code-review r1 Minor 3): delete ONE just-recomputed unit JSON, re-run
+    # knob-matched (same draws21 argv) -> exactly that unit recomputes, the rest
+    # resume, AND the pilot gate takes the prior-report branch (projection
+    # re-derived from the persisted measured wall, no re-measure).
+    unit_line = next(
+        (
+            ln
+            for ln in rb.stdout.splitlines()
+            if ln.startswith("[phase=rb789] unit ") and " pair=" in ln
+        ),
+        "",
+    )
+    if not unit_line:
+        raise AssertionError("resume probe C setup: no per-unit line in regime-change stdout")
+    tok = dict(t.split("=", 1) for t in unit_line.split() if "=" in t and not t.startswith("["))
+    s_key, t_key = tok["pair"].split("->", 1)
+    lvl = None if tok["level"] == "None" else int(tok["level"])
+    victim_unit = full_out / _unit_out_name(s_key, t_key, tok["arm"], lvl)
+    if not victim_unit.is_file():
+        raise AssertionError(f"resume probe C setup: parsed unit file missing: {victim_unit}")
+    victim_unit.unlink()
+    rc_run = _run_cli(draws21, "smoke resume-partial-state")
+    with (full_out / "digest__boundary_context.json").open(encoding="utf-8") as f:
+        dg = json.load(f)
+    if dg["n_pending_ran"] != 1 or dg["n_resumed"] != dg["n_units"] - 1:
+        raise AssertionError(f"resume probe C (partial-state) failed: {dg}")
+    if "prior report matches; projection re-derived" not in rc_run.stdout:
+        raise AssertionError("resume probe C: knob-matched pilot prior-report skip did not engage")
+    _log("smoke probe: resume skip + regime-change + partial-state + prior-report skip OK")
+
+    # Negative probe: uploads enabled WITHOUT --hf-prefix must fail loud (r1
+    # blocker fix — no in-script prefix fallback at an upload destination).
+    noprefix = [a for a in shard_argv if a != "--skip-upload"]
+    i_pfx = noprefix.index("--hf-prefix")
+    del noprefix[i_pfx : i_pfx + 2]
+    r = _run_cli(noprefix, "smoke no-prefix-refusal", expect_rc=1)
+    if "--hf-prefix is REQUIRED" not in (r.stderr + r.stdout):
+        raise AssertionError("uploads-without-prefix refusal did not name the missing flag")
+    _log("smoke probe: uploads-without-prefix refusal OK")
 
     # In-process branch probes.
     _smoke_lattice_probes()
@@ -3265,7 +3319,14 @@ def build_argparser() -> argparse.ArgumentParser:
     p.add_argument("--skip-pilot-gate", action="store_true")
     p.add_argument("--skip-upload", action="store_true")
     p.add_argument("--overwrite", action="store_true")
-    p.add_argument("--hf-prefix", default=DEFAULT_TASK_PREFIX)
+    p.add_argument(
+        "--hf-prefix",
+        default=None,
+        help=(
+            "round-scoped HF upload prefix; REQUIRED unless --skip-upload (no default — "
+            f"a hardcoded fallback to {DEFAULT_TASK_PREFIX!r} is the #1005 clobber shape)"
+        ),
+    )
     p.add_argument("--variants", type=_csv, default=list(ladder.DEFAULT_VARIANTS))
     p.add_argument("--conditions", type=_csv, default=list(ladder.DEFAULT_CONDITIONS))
     p.add_argument("--forms", type=_csv, default=list(ladder.DEFAULT_FORMS))
