@@ -5,3 +5,4 @@
 - [Checkpoint consumer skips key check](checkpoint_consumer_skips_key_check.md) — verify the LOADING stage re-checks sidecar keys, and keys cover artifact content (#2222 R1)
 - [rc-halt not resume-idempotent](rc_halt_not_resume_idempotent.md) — a designed rc-halt whose unit is marked phase-complete gets resume-skipped on relaunch; halt silently erased (#2222 R1)
 - [Additive edit flips whole-file resume key](additive_edit_flips_wholefile_resume_key.md) — a stage-scoped edit to a fingerprint-hashed file invalidates ALL earlier-stage checkpoints under --stage all (#2222 R1 g4)
+- [Start-manifest + presence-done = stale-artifact skip](start_manifest_stale_artifact_done.md) — fingerprint manifest at cell START + artifact-presence "done" skips onto a prior run's stale adapter after a crashed retrain (#2225 R1 g2)
