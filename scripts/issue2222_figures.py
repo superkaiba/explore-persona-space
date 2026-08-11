@@ -861,6 +861,81 @@ def fig_tuned_vs_frozen(corr: dict, tuned: dict, fig_dir: Path) -> list[str]:
     return ["tuned_vs_frozen_map"]
 
 
+def fig_basegen_map(basegen: dict, fig_dir: Path) -> list[str]:
+    """Follow-up round: base-generation-target map vs the exact-ΔP companion, r per layer.
+
+    One panel per trait; solid = the ridge map fit directly to the base-generation
+    response-average (context-end input), thin dashed grey = the same fit from the
+    constant prefix-end input (degenerate), dashed = exact ΔP recomputed on the SAME
+    k=250 row subset the maps consumed. Dotted vertical = the paper's steering layer;
+    the dot marks the layer the LOFO folds selected for the context-input arm.
+    """
+    ctx_by_trait = {r["trait"]: r for r in basegen["arms"]["mapped_base_ctx"]["records"]}
+    pfx_by_trait = {r["trait"]: r for r in basegen["arms"]["mapped_base_pfx"]["records"]}
+    exact_by_trait = {r["trait"]: r for r in basegen["exact_dp_k250_companion"]["records"]}
+    traits = ordered_traits(sorted(ctx_by_trait))
+    if not traits:
+        raise ValueError("basegen_map.json carries no mapped_base_ctx records")
+    base_ctx_color = _PALETTE[7]
+    fig, axes = plt.subplots(1, len(traits), figsize=(4.2 * len(traits), 3.6), sharey=True)
+    axes = np.atleast_1d(axes)
+    for ax, trait in zip(axes, traits):
+        rec = ctx_by_trait[trait]
+        vals = np.asarray(rec["r_per_layer"], dtype=np.float64)
+        ax.plot(
+            np.arange(len(vals)),
+            vals,
+            color=base_ctx_color,
+            lw=1.6,
+            label="Base-target map ΔP (context input)",
+        )
+        pfx = pfx_by_trait.get(trait)
+        if pfx is not None:
+            vals_p = np.asarray(pfx["r_per_layer"], dtype=np.float64)
+            ax.plot(
+                np.arange(len(vals_p)),
+                vals_p,
+                color=NEUTRAL,
+                lw=1.0,
+                ls="--",
+                label="Base-target map ΔP (prefix input, degenerate)",
+            )
+        ex = exact_by_trait.get(trait)
+        if ex is not None:
+            vals_e = np.asarray(ex["r_per_layer"], dtype=np.float64)
+            ax.plot(
+                np.arange(len(vals_e)),
+                vals_e,
+                color=ARM_COLORS["exact_dp"],
+                lw=1.4,
+                ls="--",
+                label="Exact ΔP, same row subset",
+            )
+        sel_by_fold = rec["sweep"]["selected_layer_by_fold"]
+        sel_layers = [int(v) for v in sel_by_fold.values()]
+        sel_mode = max(set(sel_layers), key=sel_layers.count)
+        ax.scatter(
+            [sel_mode],
+            [vals[sel_mode]],
+            color=base_ctx_color,
+            s=28,
+            zorder=5,
+            edgecolors="white",
+            linewidths=0.8,
+            label="Layer the LOFO folds select (context input)",
+        )
+        ax.axvline(rec["steer_layer"], color="#333333", lw=0.9, ls=":")
+        ax.axhline(0.0, color="#999999", lw=0.6)
+        ax.set_title(trait_label(trait), fontsize=9)
+        ax.set_xlabel("Layer index", fontsize=8)
+    axes[0].set_ylabel("Pearson r (predictor vs trait score)")
+    axes[0].legend(fontsize=6.5)
+    fig.suptitle("Base-generation-target map vs exact ΔP, r per layer (n = 24 datasets)")
+    savefig_paper(fig, "basegen_map_layer_sweep", dir=fig_dir)
+    plt.close(fig)
+    return ["basegen_map_layer_sweep"]
+
+
 # --- CLI ------------------------------------------------------------------------------
 
 
@@ -924,6 +999,10 @@ def main() -> int:
     tuned = _optional("tuned_map.json", "run issue2222_reduce.py --stage tuned_map")
     fb = _optional("form_b_regression.json", "run issue2222_reduce.py --stage form_b")
     fa = _optional("form_a_probe.json", "run issue2222_judge.py --stage probe (P4)")
+    basegen = _optional(
+        "followup_free_analysis/basegen_map.json",
+        "run issue2222_followup_basegen_map.py (9a-ter follow-up round)",
+    )
 
     written: list[str] = []
     written += fig_hero(corr, nulls_dir, fig_dir)
@@ -939,6 +1018,8 @@ def main() -> int:
         written += fig_form_b(fb, fig_dir)
     if tuned is not None:
         written += fig_tuned_vs_frozen(corr, tuned, fig_dir)
+    if basegen is not None:
+        written += fig_basegen_map(basegen, fig_dir)
     for stem in written:
         print(f"[p5_figures] wrote {fig_dir / stem}.png")
     print(f"[p5_figures] done n_figures={len(written)} fig_dir={fig_dir}")
