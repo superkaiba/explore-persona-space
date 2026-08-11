@@ -8496,8 +8496,8 @@
     "2098": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2098",
-      "status": "proposed",
+      "path": "tasks/planning/2098",
+      "status": "planning",
       "title": "workflow-fix: clarify --map-files takes one list-file path"
     },
     "2099": {
