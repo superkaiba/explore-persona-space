@@ -847,6 +847,84 @@ def list_repo_files_complete(
     return sorted(files)
 
 
+def list_hf_entries_under_path(
+    api,
+    repo_id: str,
+    path: str,
+    *,
+    repo_type: str = "model",
+    revision: str | None = None,
+) -> list[tuple[str, int | None]]:
+    """``(path, size_bytes)`` pairs under ``path`` — the sizes variant of
+    :func:`list_hf_files_under_path` (#2097), same ONE server-side scoped
+    tree walk / exact-file fallback / absent-``[]`` semantics (that helper
+    now delegates HERE, so one listing serves both paths and sizes — no
+    extra network call for a size-aware caller like ``stage_hub_prefix``).
+
+    ``path`` naming a DIRECTORY returns every file under it (full repo-root-
+    relative paths, sorted); an exact FILE returns ``[(path, None)]`` (the
+    tree endpoint 404s on file paths — verified on hub 0.36.2, #939 — so an
+    ``EntryNotFoundError`` falls back to one ``HfApi.file_exists`` HEAD
+    probe, itself wrapped in ``_retry_upload``: the bare probe was the ONE
+    un-retried Hub call on the sharded-upload verify path, and a Hub
+    queue-full 429 there killed #1345's smoke upload leg after the shard had
+    already landed — att-20260715-175238; the sibling fallback in
+    ``verify_repo_paths_uploaded`` was already wrapped); an absent path
+    returns ``[]``. Repository/Revision-not-found and transport/auth errors
+    PROPAGATE (the file_exists fallback only fires after the tree call
+    proved repo+revision resolve, so its swallowing of
+    RepositoryNotFoundError is unreachable here). Empty ``path`` raises
+    ValueError — a falsy path would silently degrade to the full-repo
+    listing this helper exists to avoid.
+
+    ``size_bytes`` is the server-side ``RepoFile.size``; ``None`` when the
+    entry carries none — incl. the exact-file ``file_exists`` fallback,
+    which cannot see a size (accepted residual, #2097: a single large file
+    staged via that branch degrades a caller's headroom sizing to the 1 GB
+    floor; fail direction is status quo — no refusal).
+    """
+    from huggingface_hub.hf_api import RepoFile
+    from huggingface_hub.utils import EntryNotFoundError
+
+    normalized = path.strip("/")
+    if not normalized:
+        raise ValueError("list_hf_entries_under_path: empty path (would full-list the repo)")
+
+    def _list() -> list[tuple[str, int | None]]:
+        # ``list_repo_tree`` returns a lazy generator; a cursor-page 504
+        # raises DURING iteration, so the comprehension is MATERIALIZED
+        # inside this thunk (inside the retry ``try``) — the
+        # list_repo_files_complete contract (#794/#658).
+        return [
+            (entry.path, getattr(entry, "size", None))
+            for entry in api.list_repo_tree(
+                repo_id=repo_id,
+                repo_type=repo_type,
+                revision=revision,
+                recursive=True,
+                path_in_repo=normalized,
+            )
+            if isinstance(entry, RepoFile)
+        ]
+
+    try:
+        entries = sorted(
+            _retry_upload(_list, what=f"list_repo_tree({repo_id})"), key=lambda e: e[0]
+        )
+    except EntryNotFoundError:
+        if _retry_upload(
+            lambda: api.file_exists(repo_id, normalized, repo_type=repo_type, revision=revision),
+            what=f"file_exists({repo_id}/{normalized})",
+        ):
+            return [(normalized, None)]
+        return []
+    prefix = normalized + "/"
+    # Defensive client-side filter: a no-op against real scoped results (every
+    # returned path is under the prefix) but keeps strict test fakes — whose
+    # list_repo_tree ignores path_in_repo — matching the same semantics.
+    return [(p, s) for p, s in entries if p == normalized or p.startswith(prefix)]
+
+
 def list_hf_files_under_path(
     api,
     repo_id: str,
@@ -857,45 +935,17 @@ def list_hf_files_under_path(
 ) -> list[str]:
     """Files under ``path`` via ONE server-side scoped tree walk — never a
     full-repo listing (#920: a bare listing wedges >600 s on the ~1M-file
-    data repo).
-
-    ``path`` naming a DIRECTORY returns every file under it (full repo-root-
-    relative paths); an exact FILE returns ``[path]`` (the tree endpoint 404s
-    on file paths — verified on hub 0.36.2, #939 — so an
-    ``EntryNotFoundError`` falls back to one ``HfApi.file_exists`` HEAD
-    probe, itself wrapped in ``_retry_upload``: the bare probe was the ONE
-    un-retried Hub call on the sharded-upload verify path, and a Hub
-    queue-full 429 there killed #1345's smoke upload leg after the shard had
-    already landed — att-20260715-175238; the sibling fallback in
-    ``verify_repo_paths_uploaded`` was already wrapped); an absent path
-    returns ``[]``. Repository/Revision-not-found and
-    transport/auth errors PROPAGATE (the file_exists fallback only fires
-    after the tree call proved repo+revision resolve, so its swallowing of
-    RepositoryNotFoundError is unreachable here). Empty ``path`` raises
-    ValueError — a falsy path would silently degrade to the full-repo
-    listing this helper exists to avoid.
-    """
-    from huggingface_hub.utils import EntryNotFoundError
-
-    normalized = path.strip("/")
-    if not normalized:
-        raise ValueError("list_hf_files_under_path: empty path (would full-list the repo)")
-    try:
-        files = list_repo_files_complete(
-            api, repo_id, repo_type=repo_type, revision=revision, path_in_repo=normalized
+    data repo). Delegates to :func:`list_hf_entries_under_path` (#2097) and
+    returns the path components — behavior byte-identical to the historical
+    implementation (same walk, same exact-file ``file_exists`` fallback,
+    same absent-``[]`` semantics, same ValueError on an empty ``path``; see
+    the entries variant's docstring for the full contract)."""
+    return [
+        p
+        for p, _ in list_hf_entries_under_path(
+            api, repo_id, path, repo_type=repo_type, revision=revision
         )
-    except EntryNotFoundError:
-        if _retry_upload(
-            lambda: api.file_exists(repo_id, normalized, repo_type=repo_type, revision=revision),
-            what=f"file_exists({repo_id}/{normalized})",
-        ):
-            return [normalized]
-        return []
-    prefix = normalized + "/"
-    # Defensive client-side filter: a no-op against real scoped results (every
-    # returned path is under the prefix) but keeps strict test fakes — whose
-    # list_repo_tree ignores path_in_repo — matching the same semantics.
-    return [f for f in files if f == normalized or f.startswith(prefix)]
+    ]
 
 
 def _is_storage_quota_403(err: Exception) -> bool:
@@ -2222,6 +2272,99 @@ def download_dataset(
         return ""
 
 
+# ─── Staging disk-headroom assert (#2097) ───────────────────────────────────
+# Mechanizes the prose-only CLAUDE.md compute-character element 5 (staging
+# path named up front + >=1.5x headroom for multi-GB stages; incident #1393:
+# a 14 GB inline HF pull filled `/` -> ENOSPC) at the canonical staging
+# helpers, so every stage_hub_prefix caller inherits the refusal by default.
+
+DEFAULT_STAGE_HEADROOM_FACTOR = 1.5
+STAGE_HEADROOM_MIN_FLOOR_GB = 1.0
+
+
+def _stage_headroom_factor() -> float:
+    """Headroom factor for the staging assert (env
+    ``EPM_HF_STAGE_HEADROOM_FACTOR``; garbled / non-positive falls back to
+    the 1.5 default WITH a logged warning — the preflight
+    ``_vm_root_disk_floor_gb`` env-resolver convention). Never raises."""
+    raw = os.environ.get("EPM_HF_STAGE_HEADROOM_FACTOR", "")
+    if not raw.strip():
+        return DEFAULT_STAGE_HEADROOM_FACTOR
+    try:
+        val = float(raw)
+    except ValueError:
+        val = -1.0
+    if val <= 0:
+        logger.warning(
+            "[stage-headroom] garbled/non-positive EPM_HF_STAGE_HEADROOM_FACTOR=%r — "
+            "falling back to the default %.1fx",
+            raw,
+            DEFAULT_STAGE_HEADROOM_FACTOR,
+        )
+        return DEFAULT_STAGE_HEADROOM_FACTOR
+    return val
+
+
+def _assert_stage_headroom(
+    dest_dir: Path | str,
+    missing: list[tuple[str, int | None]],
+    *,
+    what: str,
+    phase: str = "hub-staging",
+) -> None:
+    """ONE prefix-level disk-headroom assert BEFORE a staging download (#2097).
+
+    Sizes the floor on the MISSING files only (a skip-existing resume never
+    re-asserts for already-staged bytes): ``need_gb = max(sum(known sizes),
+    1 GB floor) x factor`` (factor: :func:`_stage_headroom_factor`, default
+    1.5), then delegates to
+    :func:`explore_persona_space.orchestrate.preflight.assert_out_root_headroom`
+    — statvfs free-vs-floor plus a 1 GB fallocate canary at the mount
+    ``dest_dir`` ACTUALLY resolves to — so the refusal is the mount-naming
+    RuntimeError before any bytes move. ONE assert per staging call, never
+    per-file (the canary is a 1 GB fallocate; N per-file asserts would
+    fallocate N GB). ANY ``None`` size among the missing files logs a loud
+    degrade warning naming n_unknown/n_missing — a mixed known+None listing
+    silently under-sizes ``need_gb`` otherwise (fail direction is status
+    quo — no refusal — but the degrade must be visible). Kill switch
+    ``EPM_HF_STAGE_HEADROOM_SKIP=1`` logs a loud warning and returns —
+    never a silent skip.
+
+    MooseFS caveat: on RunPod ``/workspace`` statvfs reports SHARE-level
+    free (terabytes) and is blind to the per-pod ~130 GB EDQUOT quota until
+    it is exhausted; the fallocate canary catches only an ALREADY-exhausted
+    quota — a statvfs pass here is NOT quota headroom
+    (``.claude/rules/gotchas.md`` "RunPod MooseFS per-pod disk quota").
+    """
+    if os.environ.get("EPM_HF_STAGE_HEADROOM_SKIP", "").strip() in {"1", "true", "yes"}:
+        logger.warning(
+            "[stage-headroom] headroom assert SKIPPED by EPM_HF_STAGE_HEADROOM_SKIP=1 "
+            "for %s (%d missing file(s)) — an over-headroom staging can ENOSPC mid-stage",
+            what,
+            len(missing),
+        )
+        return
+    # Lazy import: preflight is a sibling orchestrate module; hub must stay
+    # importable without it at module-import time (hub.py lazy-import style).
+    from explore_persona_space.orchestrate.preflight import assert_out_root_headroom
+
+    n_unknown = sum(1 for _, sz in missing if sz is None)
+    known_bytes = float(sum(sz for _, sz in missing if sz is not None))
+    if n_unknown:
+        logger.warning(
+            "[stage-headroom] %d of %d missing file(s) under %s carry no server-side "
+            "size — need_gb degrades to max(known bytes, %.0f GB floor) x factor and "
+            "can under-size the assert",
+            n_unknown,
+            len(missing),
+            what,
+            STAGE_HEADROOM_MIN_FLOOR_GB,
+        )
+    factor = _stage_headroom_factor()
+    need_gb = max(known_bytes, STAGE_HEADROOM_MIN_FLOOR_GB * 1e9) * factor / 1e9
+    assert_out_root_headroom(dest_dir, need_gb, phase=phase)
+
+
 def stage_hub_file(
     repo_id: str,
     path_in_repo: str,
@@ -2231,6 +2374,7 @@ def stage_hub_file(
     revision: str | None = None,
     token: str | None = None,
     overwrite: bool = False,
+    size_bytes: int | None = None,
 ) -> Path:
     """Retried, ATOMIC, FAIL-LOUD single-file Hub download for staging legs (#1402).
 
@@ -2244,13 +2388,27 @@ def stage_hub_file(
     - idempotent: an existing target returns without a network call
       (``overwrite=True`` forces);
     - raises on exhaustion — never the fail-soft ``""`` contract of
-      :func:`download_dataset` (which is unchanged; staging must fail loud).
+      :func:`download_dataset` (which is unchanged; staging must fail loud);
+    - OPT-IN headroom assert (#2097): pass ``size_bytes`` (the expected file
+      size) and the helper asserts local-disk headroom at ``target.parent``
+      via :func:`_assert_stage_headroom` (``need_gb = max(size_bytes, 1 GB
+      floor) x EPM_HF_STAGE_HEADROOM_FACTOR``) BEFORE downloading — the
+      assert runs only when a download will actually happen (an existing
+      target with ``overwrite=False`` returns first, so a skip-existing
+      resume never asserts). The default ``size_bytes=None`` keeps every
+      existing caller byte-identical (no assert). ``stage_hub_prefix`` does
+      NOT thread per-file sizes — its ONE prefix-level assert covers the
+      whole download.
     """
     from huggingface_hub import hf_hub_download
 
     target = Path(target)
     if target.exists() and not overwrite:
         return target
+    if size_bytes is not None:
+        _assert_stage_headroom(
+            target.parent, [(path_in_repo, size_bytes)], what=f"{repo_id}:{path_in_repo}"
+        )
     target.parent.mkdir(parents=True, exist_ok=True)
     tok = token or os.environ.get("HF_TOKEN")
     with tempfile.TemporaryDirectory(dir=target.parent, prefix=".hfstage-") as td:
@@ -2290,9 +2448,10 @@ def stage_hub_prefix(
 ) -> list[Path]:
     """Retried scoped-prefix staging — the #833 recipe as ONE canonical helper (#1402).
 
-    ``list_hf_files_under_path`` (server-side scoped tree walk, already retried —
-    NEVER ``snapshot_download`` / a bare full listing against the ~1M-file data
-    repo) + per-file :func:`stage_hub_file` in a bounded thread pool
+    ``list_hf_entries_under_path`` (server-side scoped tree walk, already
+    retried — NEVER ``snapshot_download`` / a bare full listing against the
+    ~1M-file data repo; ONE listing serves both paths and sizes, #2097) +
+    per-file :func:`stage_hub_file` in a bounded thread pool
     (``max_workers<=6``: the org 2500-req/5-min quota, #658/#833).
     ``revision=None`` resolves ONE commit sha up front via retried ``repo_info``,
     so every file comes from one snapshot (the #833 coherence note). Files land
@@ -2303,6 +2462,20 @@ def stage_hub_prefix(
     outage can serially burn up to ~N x budget across pool workers before the
     fail-loud raise (consistent with existing per-call ``_retry_upload``
     semantics).
+
+    Default-ON prefix-level disk-headroom assert (#2097): after the listing,
+    BEFORE the download pool, the projected bytes of the MISSING files
+    (targets not yet on disk — an all-files-already-staged resume no-op
+    never asserts) are checked against free space at the mount ``dest_dir``
+    resolves to via :func:`_assert_stage_headroom` (``need_gb =
+    max(known missing bytes, 1 GB floor) x EPM_HF_STAGE_HEADROOM_FACTOR``,
+    default 1.5x; kill switch ``EPM_HF_STAGE_HEADROOM_SKIP=1`` logs loud).
+    The refusal is a mount-naming RuntimeError instead of an ENOSPC
+    mid-stage (the #1393 class). ONE assert per call, never per-file.
+    MooseFS caveat: on RunPod ``/workspace`` statvfs shows share-level free
+    and is blind to the per-pod ~130 GB quota below exhaustion — the
+    assert's fallocate canary catches only an ALREADY-exhausted quota, so a
+    pass here is NOT quota headroom (see ``_assert_stage_headroom``).
 
     Observability + wall-timeout (#2153, the #1739 silent-hang class):
 
@@ -2343,14 +2516,26 @@ def stage_hub_prefix(
             what=f"repo_info({repo_id})",
         )
         revision = str(info.sha)
-    files = list_hf_files_under_path(api, repo_id, prefix, repo_type=repo_type, revision=revision)
-    if not files:
+    entries = list_hf_entries_under_path(
+        api, repo_id, prefix, repo_type=repo_type, revision=revision
+    )
+    if not entries:
         raise FileNotFoundError(f"no files under {repo_id}@{revision}:{prefix}")
+    files = [p for p, _ in entries]
+    known_gb = sum(sz for _, sz in entries if sz is not None) / 1e9
+    n_unknown = sum(1 for _, sz in entries if sz is None)
+    unknown_note = f", {n_unknown} unknown-size" if n_unknown else ""
     print(
-        f"[stage_hub_prefix] {len(files)} files under {repo_id}@{revision}:{prefix}",
+        f"[stage_hub_prefix] {len(files)} files (~{known_gb:.2f} GB known{unknown_note}) "
+        f"under {repo_id}@{revision}:{prefix}",
         flush=True,
     )
     dest_dir = Path(dest_dir)
+    # Prefix-level headroom assert on the MISSING files only (#2097) — a
+    # skip-existing resume with every target already on disk never asserts.
+    missing = [(f, sz) for f, sz in entries if not (dest_dir / f).exists()]
+    if missing:
+        _assert_stage_headroom(dest_dir, missing, what=f"{repo_id}@{revision}:{prefix}")
     staged: dict[str, Path] = {}
     with ThreadPoolExecutor(max_workers=min(max_workers, len(files))) as pool:
         futs = {

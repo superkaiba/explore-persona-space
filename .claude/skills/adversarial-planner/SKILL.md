@@ -413,7 +413,15 @@ Run the structural verifier against the plan version just persisted:
   genuinely reusing a script whose row-count default sits below its stated
   per-cell target n instead embeds the explicit `--<flag> <value>` override
   in a fenced command — the #2054 `--target-conv-ids` 8,000 < 9,000
-  deterministic first-N truncation class).
+  deterministic first-N truncation class), and
+  `N/A — no multi-GB staging` (check 56 — the staging + size vocabulary is
+  incidental (quotes a sibling / an incident) and this plan stages no
+  multi-GB inputs; a plan genuinely staging >=5 GB instead names the
+  staging path + the filesystem/mount it resolves to within ±2 lines of
+  the staging row — and, when it cites the #681 worktree bind, carries a
+  literal `findmnt --mountpoint` liveness assertion, since the bind is NOT
+  live on this VM: #2091 cited it for a 42 GB stage and PASSed verify_plan
+  twice).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).
