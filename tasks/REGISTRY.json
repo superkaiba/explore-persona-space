@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2231,
+  "highest_id": 2232,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9518,6 +9518,13 @@
       "path": "tasks/planning/2231",
       "status": "planning",
       "title": "verify_task_body check 31: normalize plan-figure prose tokens to PNG stems (descriptively-named committed figures escape the body-mention check)"
+    },
+    "2232": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2232",
+      "status": "proposed",
+      "title": "verify_task_body: verify artifact-content claims (per-unit values recorded in <pinned JSON>) against the pinned artifact's actual structure"
     },
     "224": {
       "has_clean_result": true,
