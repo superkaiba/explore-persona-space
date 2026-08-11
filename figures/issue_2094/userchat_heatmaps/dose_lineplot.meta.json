@@ -1,23 +1,13 @@
 {
-  "commit": "753013cf+dirty",
-  "render_id": "956ed60641914070",
-  "git_commit": "753013cf",
+  "commit": "00b6eae4+dirty",
+  "render_id": "7125311c7ed142c8",
+  "git_commit": "00b6eae4",
   "git_dirty": true,
   "git_dirty_paths": [
-    ".claude/agent-memory/code-reviewer-lean/gate_threshold_vs_shard_config.md",
-    "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_attrib_quoted.meta.json",
-    "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_attrib_quoted.pdf",
-    "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_attrib_quoted.png",
-    "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_bare_label.meta.json",
-    "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_bare_label.pdf",
-    "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_bare_label.png",
-    "figures/issue_2054/framing_character_transfer/framing_transfer_tiers.meta.json",
-    "figures/issue_2054/framing_character_transfer/framing_transfer_tiers.pdf",
-    "figures/issue_2054/framing_character_transfer/framing_transfer_tiers.png",
-    "scripts/issue2054_framing_character_transfer_figs.py",
-    "scripts/issue2094_userchat_heatmaps.py"
+    "scripts/issue2094_dose_lineplot.py",
+    "scripts/issue2094_joint_transport.py"
   ],
-  "created": "2026-08-11T14:16:49Z",
+  "created": "2026-08-11T17:09:06Z",
   "figsize": [
     12.4,
     4.8
