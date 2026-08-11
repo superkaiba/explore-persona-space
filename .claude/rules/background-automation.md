@@ -1163,7 +1163,11 @@ runs only tier (b) (terminal-cache reap + active-cache escalation), and
 the watcher's `data_disk_pass` drives `decide_vm_disk_pct` +
 `decide_subfloor_pct` (`EPM_VM_DATA_DISK_SUBFLOOR_PCT` default 85%) off
 `statvfs(/mnt/eps-data)`, attributing worktree-internal caches via
-`repquota -P` (du fallback). Both passes are clean no-ops when the mount
+`repquota -P` (du fallback — since #2095 merged with the read-only
+`/mnt/eps-data/$USER` staging-root attribution `_staging_top_caches`,
+which is kill-switch-INDEPENDENT: `EPM_SKIP_STAGING_CACHE_SWEEP` disables
+only the sweep leg, never the attribution; `--data-disk-only` runs the
+pass in isolation). Both passes are clean no-ops when the mount
 is absent. Since #1392 the BOOT-disk sub-floor sentinel's sibling arm
 (`subfloor_reclaim_pass`) additionally launches a detached, single-flight,
 rate-limited `vm_disk_guard.py --apply --ignore-threshold --no-push
