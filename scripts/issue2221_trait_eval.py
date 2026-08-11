@@ -427,20 +427,44 @@ def phase_judge(args) -> None:
 
 
 def build_tf_pools(args) -> dict:
-    """Fixed judge-banded +/- completion pools per trait (built ONCE, seeded)."""
+    """Fixed judge-banded +/- completion pools per trait (built ONCE, seeded).
+
+    Band files are FAMILY-keyed: ``issue2221_band.py --phase band`` writes
+    ``band/{family}.json`` for its ``--families`` roster. Every trait IS a
+    chat family (``C.CHAT_FAMILIES == lib.TRAITS``), so the production roster
+    (default = ``C.FAMILIES``) covers all traits; a subset roster (the smoke's
+    ``--families mistake_medical evil``) legitimately omits trait band files.
+    The CONSUMED set is therefore derived from the realized ``band/`` layout,
+    never the full trait roster (v11: the v10 smoke pinned the never-produced
+    ``band/hallucination.json`` and died FileNotFoundError). A trait without a
+    band file gets an empty pool (margin N/A, reason ``band-missing``) —
+    loudly logged, never silently skipped — and the fingerprint carries the
+    missing list, so a later band run over that family invalidates the frozen
+    pools. A genuinely CONSUMED input that is missing still raises.
+    """
     import numpy as np
 
     pools_path = Path(args.out_root) / "tf_pools.json"
     corpus_root = Path(args.corpus_root)
+    band_dir = corpus_root / "band"
+    banded = [t for t in sorted(lib.TRAITS) if (band_dir / f"{t}.json").is_file()]
+    missing = [t for t in sorted(lib.TRAITS) if t not in banded]
+    for trait in missing:
+        logger.warning(
+            "[p6_tf] %s: no band file at %s (band roster did not include this "
+            "family) — margin N/A for this trait",
+            trait,
+            band_dir / f"{trait}.json",
+        )
     # Input-chained fingerprint (round-2 review N4/N5): re-banded or
-    # re-streamed corpus inputs invalidate the frozen +/- pools.
+    # re-streamed corpus inputs invalidate the frozen +/- pools. Pins exactly
+    # the band files this build CONSUMES.
     pools_fp = {
         "k": C.TF_POOL_K,
         "seed": C.RNG_SEED,
         "found_sha256": sha256_file(corpus_root / "found" / "found_pool.jsonl"),
-        "band_sha256": {
-            t: sha256_file(corpus_root / "band" / f"{t}.json") for t in sorted(lib.TRAITS)
-        },
+        "band_sha256": {t: sha256_file(band_dir / f"{t}.json") for t in banded},
+        "band_missing": missing,
     }
     if resume_ok(pools_path, pools_fp):
         return json.loads(pools_path.read_text())
@@ -448,7 +472,10 @@ def build_tf_pools(args) -> dict:
     rng = np.random.default_rng(C.RNG_SEED)
     pools: dict[str, dict] = {}
     for trait in lib.TRAITS:
-        bands = json.loads((corpus_root / "band" / f"{trait}.json").read_text())["items"]
+        if trait in missing:
+            pools[trait] = {"pos": [], "neg": [], "reason": "band-missing"}
+            continue
+        bands = json.loads((band_dir / f"{trait}.json").read_text())["items"]
         pos_ids = sorted(i for i, b in bands.items() if b["band"] == "misaligned_2" and i in found)
         neg_ids = sorted(i for i, b in bands.items() if b["band"] == "normal" and i in found)
         if len(pos_ids) < C.TF_POOL_K or len(neg_ids) < C.TF_POOL_K:
@@ -498,7 +525,10 @@ def phase_tf_margin(args) -> None:
             result: dict[str, dict] = {}
             for trait, pool in pools.items():
                 if not pool["pos"]:
-                    result[trait] = {"margin": None, "reason": "pool-too-small"}
+                    # "band-missing" when the band roster omitted this trait's
+                    # family (v11); default "pool-too-small" otherwise.
+                    reason = pool.get("reason", "pool-too-small")
+                    result[trait] = {"margin": None, "reason": reason}
                     continue
                 sums: dict[str, list[float]] = {"pos": [], "neg": []}
                 for side in ("pos", "neg"):

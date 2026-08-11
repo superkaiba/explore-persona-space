@@ -1817,6 +1817,8 @@ def test_phase_tf_margin_tiny_real_token_ids_path(
             "neg": [{"prompt": "Is the sky blue?", "response": " No."}],
         },
         "sycophancy": {"pos": [], "neg": []},  # exercises the pool-too-small branch
+        # v11: band roster omitted this trait's family — reason threads through
+        "hallucination": {"pos": [], "neg": [], "reason": "band-missing"},
     }
     monkeypatch.setattr(te, "build_tf_pools", lambda args: pools)
     out_root = tmp_path / "p6"
@@ -1834,6 +1836,7 @@ def test_phase_tf_margin_tiny_real_token_ids_path(
         assert res["evil"]["margin"] == 0.0  # both sides mean -1.0 under the fake
         assert res["evil"]["k"] == C.TF_POOL_K
         assert res["sycophancy"] == {"margin": None, "reason": "pool-too-small"}
+        assert res["hallucination"] == {"margin": None, "reason": "band-missing"}
     # The load-bearing seam: prompt_token_ids is the per-segment TOKEN-ID concat
     # (never a re-tokenized joined string), prefix boundary exact by construction.
     prefix = qwen_tok.apply_chat_template(
@@ -2098,3 +2101,81 @@ def test_phase_pilot_dispatches_grammar_legal_arm_ids(tmp_path, monkeypatch):
             expected_draws=2,
             expected_rubric_sha=rubric_sha256(expected_rubric),
         )
+
+
+# ── 31. v11 (attempt-8 crash): tf-pool band sha-pin sweep is CONSUMED-set keyed ─
+#
+# band/ is FAMILY-keyed (issue2221_band.py phase_band writes band/{family}.json
+# for its --families roster); every trait IS a chat family, so production
+# banding (default roster = C.FAMILIES) covers all traits, but a subset roster
+# (the smoke's --families mistake_medical evil) legitimately omits trait band
+# files. v10 pinned the full trait roster and died FileNotFoundError on
+# band/hallucination.json before resume_ok.
+
+
+def _tf_band_fixture(tmp_path):
+    """Corpus fixture with the REAL smoke band layout: mistake_medical + evil only."""
+    corpus = tmp_path / "corpus"
+    (corpus / "found").mkdir(parents=True)
+    (corpus / "band").mkdir()
+    rows, evil_items = [], {}
+    for i in range(20):
+        iid = f"evil-{i}"
+        rows.append({"id": iid, "prompt": f"q{i}", "response": f"r{i}"})
+        band = "misaligned_2" if i % 2 else "normal"
+        evil_items[iid] = {"score": 90.0 if i % 2 else 5.0, "band": band, "source": "judge"}
+    (corpus / "found" / "found_pool.jsonl").write_text(
+        "\n".join(json.dumps(r) for r in rows) + "\n"
+    )
+    (corpus / "band" / "evil.json").write_text(json.dumps({"items": evil_items}))
+    (corpus / "band" / "mistake_medical.json").write_text(json.dumps({"items": {}}))
+    return corpus
+
+
+def test_build_tf_pools_family_keyed_band_subset(tmp_path):
+    """Subset band roster composes without FileNotFoundError; pins EXACTLY the
+    consumed set; unbanded traits degrade loudly (reason band-missing)."""
+    corpus = _tf_band_fixture(tmp_path)
+    out_root = tmp_path / "p6"
+    out_root.mkdir()
+    args = SimpleNamespace(out_root=str(out_root), corpus_root=str(corpus))
+    pools = te.build_tf_pools(args)  # v10 raised FileNotFoundError here
+    assert len(pools["evil"]["pos"]) == C.TF_POOL_K
+    assert len(pools["evil"]["neg"]) == C.TF_POOL_K
+    for t in ("hallucination", "sycophancy"):
+        assert pools[t] == {"pos": [], "neg": [], "reason": "band-missing"}
+    fp = json.loads((out_root / "tf_pools.json.fp.json").read_text())
+    # Pins exactly the CONSUMED band files: evil only — never the
+    # produced-but-unconsumed mistake_medical.json, never absent trait files.
+    assert sorted(fp["band_sha256"]) == ["evil"]
+    assert fp["band_missing"] == ["hallucination", "sycophancy"]
+
+
+def test_build_tf_pools_missing_consumed_input_still_raises(tmp_path):
+    """A genuinely CONSUMED input (found_pool.jsonl) that is missing still raises."""
+    corpus = _tf_band_fixture(tmp_path)
+    (corpus / "found" / "found_pool.jsonl").unlink()
+    out_root = tmp_path / "p6"
+    out_root.mkdir()
+    args = SimpleNamespace(out_root=str(out_root), corpus_root=str(corpus))
+    with pytest.raises(FileNotFoundError):
+        te.build_tf_pools(args)
+
+
+def test_build_tf_pools_band_roster_growth_invalidates_frozen_pools(tmp_path):
+    """Input-chaining (N4/N5): a later band run adding a previously-missing
+    trait changes the fingerprint key set, so the frozen pools rebuild."""
+    corpus = _tf_band_fixture(tmp_path)
+    out_root = tmp_path / "p6"
+    out_root.mkdir()
+    args = SimpleNamespace(out_root=str(out_root), corpus_root=str(corpus))
+    first = te.build_tf_pools(args)
+    assert first["hallucination"]["reason"] == "band-missing"
+    (corpus / "band" / "hallucination.json").write_text(json.dumps({"items": {}}))
+    second = te.build_tf_pools(args)
+    # Rebuilt (not resumed): hallucination is now the pool-too-small shape
+    # (banded but empty), no longer the band-missing shape.
+    assert second["hallucination"] == {"pos": [], "neg": []}
+    fp = json.loads((out_root / "tf_pools.json.fp.json").read_text())
+    assert sorted(fp["band_sha256"]) == ["evil", "hallucination"]
+    assert fp["band_missing"] == ["sycophancy"]
