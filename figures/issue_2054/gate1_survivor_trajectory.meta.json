@@ -1,0 +1,213 @@
+{
+  "commit": "e2a7a966+dirty",
+  "git_commit": "e2a7a966",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2054_analyzer_figs.py"
+  ],
+  "created": "2026-08-11T03:18:48Z",
+  "figsize": [
+    10.0,
+    4.2
+  ],
+  "points": [
+    {
+      "scaffold attempt wave": 3.0,
+      "conversations admitted for all four characters": 9855.0,
+      "label": "9,855",
+      "series": "projection at launch",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "scaffold attempt wave": 1.0,
+      "conversations admitted for all four characters": 936.0,
+      "series": "realized survivors",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "scaffold attempt wave": 2.0,
+      "conversations admitted for all four characters": 1703.0,
+      "series": "realized survivors",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "scaffold attempt wave": 3.0,
+      "conversations admitted for all four characters": 2409.0,
+      "series": "realized survivors",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "scaffold attempt wave": 0.0,
+      "admitted conversations (cumulative)": 2832.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "scaffold attempt wave": 1.0,
+      "admitted conversations (cumulative)": 4644.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "scaffold attempt wave": 2.0,
+      "admitted conversations (cumulative)": 5933.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "scaffold attempt wave": 3.0,
+      "admitted conversations (cumulative)": 6878.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "scaffold attempt wave": 0.0,
+      "admitted conversations (cumulative)": 2491.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "scaffold attempt wave": 1.0,
+      "admitted conversations (cumulative)": 4098.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "scaffold attempt wave": 2.0,
+      "admitted conversations (cumulative)": 5235.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "scaffold attempt wave": 3.0,
+      "admitted conversations (cumulative)": 6106.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "scaffold attempt wave": 0.0,
+      "admitted conversations (cumulative)": 2342.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "scaffold attempt wave": 1.0,
+      "admitted conversations (cumulative)": 3846.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "scaffold attempt wave": 2.0,
+      "admitted conversations (cumulative)": 4794.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "scaffold attempt wave": 3.0,
+      "admitted conversations (cumulative)": 5487.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "scaffold attempt wave": 0.0,
+      "admitted conversations (cumulative)": 2178.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "scaffold attempt wave": 1.0,
+      "admitted conversations (cumulative)": 3630.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "scaffold attempt wave": 2.0,
+      "admitted conversations (cumulative)": 4657.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "scaffold attempt wave": 3.0,
+      "admitted conversations (cumulative)": 5403.0,
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 20,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Four-way survivor intersection vs the gate bounds",
+        "xlabel": "scaffold attempt wave",
+        "ylabel": "conversations admitted for all four characters",
+        "legend_labels": [
+          "realized survivors",
+          "projection at launch"
+        ],
+        "annotations": [
+          "936",
+          "1,703",
+          "2,409",
+          "9,855",
+          "well-posedness floor (4,480)",
+          "target (9,000)"
+        ],
+        "xticklabels": [
+          "1",
+          "2",
+          "3"
+        ],
+        "yticklabels": [
+          "0",
+          "2000",
+          "4000",
+          "6000",
+          "8000",
+          "10000",
+          "12000"
+        ]
+      },
+      {
+        "title_left": "Per-character coverage of the target set",
+        "xlabel": "scaffold attempt wave",
+        "ylabel": "admitted conversations (cumulative)",
+        "annotations": [
+          "HELIOS 6,878",
+          "Wren 6,106",
+          "Dana 5,487",
+          "Vex 5,403",
+          "target set (15,700 conversations)"
+        ],
+        "xticklabels": [
+          "0\n(parent reuse)",
+          "1",
+          "2",
+          "3"
+        ],
+        "yticklabels": [
+          "0",
+          "2000",
+          "4000",
+          "6000",
+          "8000",
+          "10000",
+          "12000",
+          "14000",
+          "16000",
+          "18000"
+        ]
+      }
+    ],
+    "series": [
+      "realized survivors",
+      "projection at launch"
+    ]
+  }
+}

@@ -7,6 +7,9 @@ analyzer companion digests under /tmp (length parity + cap-hit refits).
 
 Writes blog-style figures to the MAIN checkout's figures/issue_2054/
 (figures-only commit; this script lives on the issue-2054 branch).
+Exception: the `--regen-gate` figure (round coordinated-common-set-regen)
+writes to the WORKTREE's figures/issue_2054/ and is committed on the
+issue-2054 branch alongside this script (fold-round convention).
 
 Color discipline (one color = one meaning across every figure):
   instruct = PAL[0], base = PAL[1]; inserted = PAL[4], on-policy = PAL[5];
@@ -627,7 +630,123 @@ def fig_caphit(fits: list[dict]) -> None:
     plt.close(fig)
 
 
+def fig_regen_gate() -> None:
+    """Round coordinated-common-set-regen: survivor trajectory vs the gate bounds.
+
+    Left: the four-way survivor intersection |S| after each scaffold wave
+    against the 4,480 well-posedness floor and the 9,000 target, plus the
+    launch-time projection (9,855). Right: per-character cumulative admitted
+    coverage of the 15,700-conversation target set. Exact set counts (no
+    sampling error). Per-wave per-character admitted counts come from the
+    wave-complete epm:progress markers on task 2054; both endpoints are
+    asserted against the committed wave_state_final.json ledger.
+    """
+    rd = WT / "eval_results/issue_2054/coordinated_common_set_regen"
+    report = json.load(open(rd / "gate1_report.json"))
+    proj = json.load(open(rd / "gate1_projection.json"))
+    state = json.load(open(rd / "wave_state_final.json"))
+
+    waves = sorted(state["waves_done"], key=lambda w: w["wave"])
+    survivors = [w["survivors"] for w in waves]
+    assert survivors[-1] == report["n_survivors"]
+
+    chars = ["char_helios", "char_wren", "char_dana", "char_vex"]
+    labels = {"char_helios": "HELIOS", "char_wren": "Wren", "char_dana": "Dana", "char_vex": "Vex"}
+    wave0 = {c: proj["per_character"][c]["wave0_admitted"] for c in chars}
+    # Per-wave newly admitted rows per character: [wave-1 complete] / [wave-2 complete] /
+    # [gate-1 verdict] epm:progress markers on task #2054 (events.jsonl, durable).
+    per_wave = {
+        "char_helios": [1812, 1289, 945],
+        "char_wren": [1607, 1137, 871],
+        "char_dana": [1504, 948, 693],
+        "char_vex": [1452, 1027, 746],
+    }
+    cum = {c: np.cumsum([wave0[c]] + per_wave[c]) for c in chars}
+    for c in chars:
+        assert int(cum[c][-1]) == len(state["admitted"][c]), c
+
+    set_paper_style("blog")
+    fig, axes = plt.subplots(1, 2, figsize=(10.0, 4.2))
+
+    ax = axes[0]
+    ax.plot([1, 2, 3], survivors, marker="o", color=PAL[0], lw=1.8, label="realized survivors")
+    for x, y in zip([1, 2, 3], survivors):
+        ax.text(x + 0.04, y + 220, f"{y:,}", fontsize=8, ha="left")
+    ax.scatter(
+        [3],
+        [proj["projected_survivors"]],
+        facecolors="none",
+        edgecolors=PAL[3],
+        linewidths=1.4,
+        s=55,
+        label="projection at launch",
+    )
+    ax.text(
+        2.93,
+        proj["projected_survivors"],
+        f"{proj['projected_survivors']:,}",
+        fontsize=8,
+        ha="right",
+        va="center",
+    )
+    ax.axhline(report["gate1_floor"], color="#888888", lw=1.0, ls="--")
+    ax.text(
+        0.92,
+        report["gate1_floor"] + 200,
+        "well-posedness floor (4,480)",
+        fontsize=7.5,
+        color="#666666",
+    )
+    ax.axhline(report["gate1_target"], color="#bbbbbb", lw=1.0, ls=":")
+    ax.text(0.92, report["gate1_target"] + 200, "target (9,000)", fontsize=7.5, color="#666666")
+    ax.set_xticks([1, 2, 3])
+    ax.set_xlabel("scaffold attempt wave")
+    ax.set_ylabel("conversations admitted for all four characters")
+    ax.set_xlim(0.8, 3.45)
+    ax.set_ylim(0, 10800)
+    ax.legend(loc="upper left", fontsize=8)
+    ax.set_title("Four-way survivor intersection vs the gate bounds", loc="left", fontsize=11)
+
+    ax = axes[1]
+    ccols = {c: plt.cm.viridis(v) for c, v in zip(chars, [0.05, 0.35, 0.60, 0.80])}
+    dodge = {"char_dana": 40, "char_vex": -480}  # final values 84 apart; separate the labels
+    for c in chars:
+        ax.plot([0, 1, 2, 3], cum[c], marker="o", ms=3.5, lw=1.5, color=ccols[c])
+        ax.text(
+            3.10,
+            int(cum[c][-1]) + dodge.get(c, 0),
+            f"{labels[c]} {int(cum[c][-1]):,}",
+            fontsize=8,
+            va="center",
+            color=ccols[c],
+        )
+    ax.axhline(state["n_target"], color="#888888", lw=1.0, ls="--")
+    ax.text(
+        -0.1,
+        state["n_target"] - 1000,
+        "target set (15,700 conversations)",
+        fontsize=7.5,
+        color="#666666",
+    )
+    ax.set_xticks([0, 1, 2, 3])
+    ax.set_xticklabels(["0\n(parent reuse)", "1", "2", "3"])
+    ax.set_xlabel("scaffold attempt wave")
+    ax.set_ylabel("admitted conversations (cumulative)")
+    ax.set_xlim(-0.25, 4.6)
+    ax.set_ylim(0, 16800)
+    ax.set_title("Per-character coverage of the target set", loc="left", fontsize=11)
+
+    savefig_paper(fig, "issue_2054/gate1_survivor_trajectory", dir=str(WT / "figures") + "/")
+    plt.close(fig)
+
+
 def main() -> None:
+    import sys
+
+    if "--regen-gate" in sys.argv:
+        fig_regen_gate()
+        print("FIGS_DONE")
+        return
     fits = load_fits()
     ladder = load_ladder()
     fig_hero_boundary_vs_prose(ladder)
