@@ -694,6 +694,21 @@ def stage_aggregate(args) -> None:
         "pool = held-out family rows (capped); chance = k/n_pool reported per read"
     )
 
+    # Per-dataset steer-layer values (unit-3 addition): the P5 per-unit scatter
+    # companion reads THESE persisted values — figures never recompute from the
+    # percell npzs (plan §6 low-level companion; paper-plots raw-alongside rule).
+    dataset_values = {}
+    for ti, trait in enumerate(lib.TRAITS):
+        steer = STEER_IDX[trait]
+        dataset_values[trait] = {
+            "steer_layer": steer,
+            "y_trait_score": {ds: float(y_axis[trait][ds]["trait_score"]) for ds in datasets},
+            "arms": {
+                arm: {ds: float(vals[di, ai, ti, steer]) for di, ds in enumerate(datasets)}
+                for ai, arm in enumerate(arm_order)
+            },
+        }
+
     out_root.mkdir(parents=True, exist_ok=True)
     payload = {
         "supervision_ledger": (
@@ -701,6 +716,8 @@ def stage_aggregate(args) -> None:
             "+ judge filter (#778); Form-A probe = per-sample judge labels (P4)"
         ),
         "datasets": datasets,
+        "family_of_dataset": {ds: families[fam_idx[di]] for di, ds in enumerate(datasets)},
+        "dataset_values": dataset_values,
         "arm_order": arm_order,
         "records": records,
         "hypothesis_tests": hypothesis_tests,
