@@ -1207,20 +1207,21 @@ def _format_elapsed(secs: float) -> str:
     return f"{s}s"
 
 
-def create_pod_with_wait_for_capacity(
+def _deploy_with_wait_for_capacity(
     *,
     name: str,
-    gpu_type: str | list[str],
-    gpu_count: int,
-    volume_gb: int,
-    container_disk_gb: int,
+    spec_label: str,
+    deploy: Callable[[], PodInfo],
     preflight_check: Callable[[], None] | None = None,
-    data_center_id: str | None = None,
 ) -> PodInfo:
-    """Provision policy wrapper: retry ``create_pod`` on no-capacity
-    OR INSUFFICIENT_BALANCE refusals (both transient + no-cost-while-idle),
-    bounded per process by :func:`_wait_for_capacity_attempt_budget_secs`
-    (raises :class:`WaitForCapacityStillWaiting` at the budget — refs #572).
+    """Shared wait-for-capacity retry loop over a ``deploy`` thunk (#2238).
+
+    Extracted verbatim from :func:`create_pod_with_wait_for_capacity` so the
+    CPU provision path (:func:`create_cpu_pod_with_wait_for_capacity`) shares
+    ONE loop: retry ``deploy()`` on no-capacity OR INSUFFICIENT_BALANCE
+    refusals (both transient + no-cost-while-idle), bounded per process by
+    :func:`_wait_for_capacity_attempt_budget_secs` (raises
+    :class:`WaitForCapacityStillWaiting` at the budget — refs #572).
 
     Catches :class:`RunPodNoCapacityError` (every supply lever returned
     null) AND :class:`RunPodInsufficientBalanceError` (projected account
@@ -1230,7 +1231,7 @@ def create_pod_with_wait_for_capacity(
     transport-budget-exhausted, empty gpu list) fail fast per CLAUDE.md.
 
     ``preflight_check`` runs at the TOP of each loop attempt (before
-    ``create_pod``) when supplied. Since #2054 the standard preflight —
+    ``deploy``) when supplied. Since #2054 the standard preflight —
     :func:`_assert_under_account_hourly_cap` — is ADVISORY-ONLY and never
     raises (the local $/hr mirror can no longer refuse or stall a
     provision); the local-cap retry branch below is RETAINED for any
@@ -1251,15 +1252,13 @@ def create_pod_with_wait_for_capacity(
     ``epm:progress`` markers so ``autonomous_session_watch.py`` (6h stale
     threshold) sees liveness.
 
-    ``data_center_id`` (#2011) is threaded verbatim into EVERY ``create_pod``
-    attempt (create_pod itself preserves the pin across its supply levers) —
-    the DC-pin-away retry lever after a recorded bad placement. The retry-loop
-    semantics above are unchanged.
+    ``spec_label`` is the human-legible spec rendered in the loop-start
+    heartbeat (GPU: ``"<count>x <type>"``; CPU: ``"CPU <instance_id>"``).
     """
     attempt = 0
     start = time.monotonic()
     print(
-        f"[wait-for-capacity] starting retry loop for {name} ({gpu_count}x {gpu_type}); "
+        f"[wait-for-capacity] starting retry loop for {name} ({spec_label}); "
         f"per-process budget {_wait_for_capacity_attempt_budget_secs():.0f}s",
         file=sys.stderr,
         flush=True,
@@ -1275,16 +1274,7 @@ def create_pod_with_wait_for_capacity(
                 source = "local"
                 preflight_check()
                 source = "api"
-            return create_pod(
-                name=name,
-                gpu_type=gpu_type,
-                gpu_count=gpu_count,
-                volume_gb=volume_gb,
-                container_disk_gb=container_disk_gb,
-                # #2011: thread the DC pin through the retry loop (preserved
-                # across every attempt, matching create_pod's own contract).
-                data_center_id=data_center_id,
-            )
+            return deploy()
         except (RunPodNoCapacityError, RunPodInsufficientBalanceError) as exc:
             # All three classes routed through this branch are transient +
             # no-cost-while-idle:
@@ -1345,6 +1335,82 @@ def create_pod_with_wait_for_capacity(
                     flush=True,
                 )
                 raise
+
+
+def create_pod_with_wait_for_capacity(
+    *,
+    name: str,
+    gpu_type: str | list[str],
+    gpu_count: int,
+    volume_gb: int,
+    container_disk_gb: int,
+    preflight_check: Callable[[], None] | None = None,
+    data_center_id: str | None = None,
+) -> PodInfo:
+    """GPU provision policy wrapper: retry ``create_pod`` on no-capacity /
+    INSUFFICIENT_BALANCE refusals via the shared
+    :func:`_deploy_with_wait_for_capacity` loop (full retry/budget/heartbeat
+    semantics documented there; the loop body moved verbatim in #2238 —
+    behavior unchanged).
+
+    ``data_center_id`` (#2011) is threaded verbatim into EVERY ``create_pod``
+    attempt (create_pod itself preserves the pin across its supply levers) —
+    the DC-pin-away retry lever after a recorded bad placement.
+    """
+    return _deploy_with_wait_for_capacity(
+        name=name,
+        spec_label=f"{gpu_count}x {gpu_type}",
+        # The LATE module-global binding of ``create_pod`` inside this lambda
+        # is DELIBERATE and REQUIRED: existing tests monkeypatch
+        # ``pod_lifecycle.create_pod``, and resolving at CALL time is what lets
+        # the patch take effect. Do NOT "optimize" it into an eager bind.
+        deploy=lambda: create_pod(
+            name=name,
+            gpu_type=gpu_type,
+            gpu_count=gpu_count,
+            volume_gb=volume_gb,
+            container_disk_gb=container_disk_gb,
+            # #2011: thread the DC pin through the retry loop (preserved
+            # across every attempt, matching create_pod's own contract).
+            data_center_id=data_center_id,
+        ),
+        preflight_check=preflight_check,
+    )
+
+
+def create_cpu_pod_with_wait_for_capacity(
+    *,
+    name: str,
+    instance_id: str,
+    volume_gb: int,
+    container_disk_gb: int,
+    preflight_check: Callable[[], None] | None = None,
+    data_center_id: str | None = None,
+) -> PodInfo:
+    """CPU sibling of :func:`create_pod_with_wait_for_capacity` (#2238):
+    retry ``create_cpu_pod`` on no-capacity / INSUFFICIENT_BALANCE refusals
+    via the shared :func:`_deploy_with_wait_for_capacity` loop. The raise
+    contract already matched (``create_cpu_pod`` raises
+    :class:`RunPodNoCapacityError` when every CPU supply lever returns null,
+    ``runpod_api.py`` #747) — this wrapper is the wiring that lets the SAME
+    wait-for-capacity policy catch it. ``spec_label`` renders CPU-legibly,
+    e.g. ``[wait-for-capacity] starting retry loop for pod-2238 (CPU
+    cpu5m-16-128); ...``.
+    """
+    return _deploy_with_wait_for_capacity(
+        name=name,
+        spec_label=f"CPU {instance_id}",
+        # Same DELIBERATE late module-global binding as the GPU delegate
+        # above: tests monkeypatch ``pod_lifecycle.create_cpu_pod``.
+        deploy=lambda: create_cpu_pod(
+            name=name,
+            instance_id=instance_id,
+            volume_gb=volume_gb,
+            container_disk_gb=container_disk_gb,
+            data_center_id=data_center_id,
+        ),
+        preflight_check=preflight_check,
+    )
 
 
 def _autonomous_session() -> bool:
@@ -2757,6 +2823,19 @@ def cmd_provision(args: argparse.Namespace) -> None:  # noqa: C901 — sequentia
     if data_center_id:
         _warn_on_bad_dc_pin(data_center_id)
 
+    # --wait-for-capacity (or EPM_AUTONOMOUS_SESSION=1) turns the one-shot
+    # create call into an unbounded retry loop keyed on
+    # ``RunPodNoCapacityError``. Default OFF so interactive provisions still
+    # fail fast (humans want to know immediately when nothing is available).
+    # Autonomous sessions auto-enable because "the experiment should start
+    # when it has space" — there is no human to escalate to. Resolved ONCE,
+    # above the CPU branch, so BOTH branches share it (#2238 — the CPU branch
+    # previously returned before this flag was ever read). getattr: hand-built
+    # Namespaces (tests, embedders) predate the flag — same precedent as
+    # name_suffix / data_center_id above; the real CLI always sets it.
+    explicit_wait_flag = bool(getattr(args, "wait_for_capacity", False))
+    wait_for_capacity = explicit_wait_flag or _autonomous_session()
+
     # CPU-only intent branch (#747): a cheap CPU intent (cpu-small / cpu-mid)
     # resolves to a RunPod CPU instance_id (deployCpuPod), NOT a GPU spec. This
     # branch is checked FIRST, before the GPU _resolve_spec below (which
@@ -2767,9 +2846,11 @@ def cmd_provision(args: argparse.Namespace) -> None:  # noqa: C901 — sequentia
     # pods are the right shape for parallelizable CPU work. The account-hourly-cap guard
     # (a $/hr GPU-spend guard) is skipped — CPU pods cost cents/hr and
     # estimate_pod_hourly_rate returns 0 for gpu_count=0 anyway. CPU pods are
-    # on-demand only (no spot/wait-for-capacity lever on the RunPod CPU side);
-    # a no-capacity miss raises RunPodNoCapacityError, the same terminal the
-    # GPU path raises (the wait-for-capacity loop is a GPU-side feature).
+    # on-demand only (no spot lever on the RunPod CPU side); a no-capacity
+    # miss raises RunPodNoCapacityError, and — as of #2238 — the SAME
+    # wait-for-capacity retry loop that wraps create_pod wraps create_cpu_pod
+    # (via create_cpu_pod_with_wait_for_capacity) when the flag / autonomous
+    # auto-enable resolves True.
     cpu_instance_id = resolve_cpu_intent(args.intent) if args.intent else None
     if cpu_instance_id is not None:
         intent_label = args.intent.strip().lower()
@@ -2823,13 +2904,41 @@ def cmd_provision(args: argparse.Namespace) -> None:  # noqa: C901 — sequentia
             )
             cpu_container_disk_gb = min(cpu_container_disk_gb, caps.max_container_disk_gb)
             cpu_volume_gb = min(cpu_volume_gb, caps.max_container_disk_gb)
-        info = create_cpu_pod(
-            name=name,
-            instance_id=cpu_instance_id,
-            volume_gb=cpu_volume_gb,
-            container_disk_gb=cpu_container_disk_gb,
-            data_center_id=data_center_id,
-        )
+        if wait_for_capacity:
+            if not explicit_wait_flag:
+                # CPU-legible auto-enable note, printed AT the branch that
+                # retries (promise printed ⟺ promise kept — the pre-#2238 gap
+                # printed nothing here and never retried).
+                print(
+                    "  EPM_AUTONOMOUS_SESSION=1 → auto-enabling --wait-for-capacity "
+                    "(unbounded retry on SUPPLY_CONSTRAINT for the CPU create)."
+                )
+            try:
+                info = create_cpu_pod_with_wait_for_capacity(
+                    name=name,
+                    instance_id=cpu_instance_id,
+                    volume_gb=cpu_volume_gb,
+                    container_disk_gb=cpu_container_disk_gb,
+                    # preflight_check stays None DELIBERATELY (not an
+                    # omission): the CPU branch skips
+                    # _assert_under_account_hourly_cap by design (see the
+                    # branch comment above — CPU pods cost cents/hr and
+                    # estimate_pod_hourly_rate returns 0 at gpu_count=0), so
+                    # the loop's `local-cap` reason token is simply never
+                    # emitted on CPU; `no-capacity` and the API-side
+                    # `insufficient-balance` tokens both remain reachable.
+                    data_center_id=data_center_id,
+                )
+            except WaitForCapacityStillWaiting as exc:
+                _emit_still_waiting_and_exit(exc)
+        else:
+            info = create_cpu_pod(
+                name=name,
+                instance_id=cpu_instance_id,
+                volume_gb=cpu_volume_gb,
+                container_disk_gb=cpu_container_disk_gb,
+                data_center_id=data_center_id,
+            )
         print(f"  Created CPU pod {info.pod_id} — waiting for SSH (up to 10 min)...")
         _provision_wait_register_bootstrap(args, name, info, intent_label)
         return
@@ -2842,15 +2951,12 @@ def cmd_provision(args: argparse.Namespace) -> None:  # noqa: C901 — sequentia
         print("\n[dry-run] Would call create_pod and wait for SSH; no API call made.")
         return
 
-    # --wait-for-capacity (or EPM_AUTONOMOUS_SESSION=1) turns the one-shot
-    # ``create_pod`` into an unbounded retry loop keyed on
-    # ``RunPodNoCapacityError``. Default OFF so interactive provisions still
-    # fail fast (humans want to know immediately when nothing is available).
-    # Autonomous sessions auto-enable because "the experiment should start
-    # when it has space" — there is no human to escalate to.
-    wait_for_capacity = bool(args.wait_for_capacity) or _autonomous_session()
+    # --wait-for-capacity / autonomous auto-enable: resolved ONCE above the
+    # CPU branch (#2238); the auto-enable PRINT stays at THIS site so the GPU
+    # path's stdout ordering is unchanged (the note still follows the
+    # "Provisioning ..." lines above).
     if wait_for_capacity:
-        if not args.wait_for_capacity:
+        if not explicit_wait_flag:
             print(
                 "  EPM_AUTONOMOUS_SESSION=1 → auto-enabling --wait-for-capacity "
                 "(unbounded retry on SUPPLY_CONSTRAINT)."
@@ -3940,7 +4046,8 @@ def _parser_provision(sub: argparse._SubParsersAction) -> None:
         "--wait-for-capacity",
         action="store_true",
         help=(
-            "On SUPPLY_CONSTRAINT (every supply lever in create_pod returned "
+            "On SUPPLY_CONSTRAINT (every supply lever in create_pod / "
+            "create_cpu_pod returned "
             "null), keep retrying with exponential-jittered backoff (base 30s, "
             "cap 10 min) instead of failing. Each PROCESS attempt is capped at "
             "~45 min wall-clock (EPM_WAIT_FOR_CAPACITY_BUDGET_SECS); at the "
