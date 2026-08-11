@@ -106,7 +106,7 @@ I made a plot showing, for each layer, and for each tested slot (some combinatio
 efficiency), the effect of patching on this metric. I did this for all 3 settings (matched query,
 matched prefix, fully different).
 
-![Banked-map transport cosine, dose × slot@map-layer, three settings](https://raw.githubusercontent.com/superkaiba/explore-persona-space/94728abb5029fe49d9d632633f5a5e6b451b65d3/figures/issue_2094/userchat_heatmaps/transport_heatmaps.png)
+![Banked-map transport cosine, dose × slot@map-layer, three settings](https://raw.githubusercontent.com/superkaiba/explore-persona-space/34033241fff838a3fb9fbab379b3d20f04c82fb9/figures/issue_2094/userchat_heatmaps/transport_heatmaps.png)
 
 **Takeaways:**
 
