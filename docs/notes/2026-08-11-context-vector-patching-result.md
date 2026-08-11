@@ -140,6 +140,48 @@ its F_act is not weak-but-real transport toward B, it is mostly non-specific dis
 > Distance from the origin is total movement, angle is alignment; below the dashed line = mostly
 > on-target. Query-text sits at off-axis 2.48 — it flings the answer state 2.5 axis-lengths sideways.
 
+**The cosine is the direction metric, and it reorders the slots.** F_act is a projection, so it is
+the product of *how far* the state moved and *how well aimed* that movement was:
+F_act ≈ traversal × cos, where traversal = ‖realized shift‖ / ‖axis‖ and cos is the cosine between
+them. A slot can therefore post a large F_act two entirely different ways. Per cell, matched query:
+
+| | | F_act | traversal | **cos** | null cos | **margin** |
+|---|---|---|---|---|---|---|
+| all 28 layers | context-end | 0.41 | 0.66 | **0.66** | 0.22 | **+0.44** |
+| | query text (no template) | **0.49** | **2.56** | 0.24 | 0.13 | +0.11 |
+| | prefix-end | 0.18 | 0.49 | 0.27 | 0.24 | +0.04 |
+| layers 14–20 | context-end | 0.24 | 0.59 | **0.46** | 0.12 | **+0.34** |
+| | query text (no template) | 0.15 | 0.58 | 0.30 | 0.14 | +0.16 |
+| | 2nd-to-last | 0.11 | 0.46 | 0.24 | 0.16 | +0.08 |
+| | prefix-end | 0.08 | 0.44 | 0.15 | 0.10 | +0.05 |
+| | 3rd-to-last | 0.06 | 0.46 | 0.11 | 0.16 | **−0.05** |
+
+Query-text's F_act at all 28 layers (0.49) *beats* context-end's (0.41) — but it gets there by moving
+the answer state **2.56 axis-lengths**, nearly four times as far as context-end's 0.66, with only 24%
+of that motion pointing at B. Context-end moves about one axis-length's worth of distance and aims
+two thirds of it correctly. Same projection, opposite mechanism: one is transport, the other is a
+large displacement that happens to have a component in the right direction.
+
+![Per-cell cosine between the realized answer-vector shift and the floor-to-ceiling axis](https://raw.githubusercontent.com/superkaiba/explore-persona-space/9feb5513bde43f7457dc7067005be69a2d6d6c64/figures/issue_2094/userchat_heatmaps/cos_heatmaps.png)
+
+> Same slot × layer grid as the F_act panel, value = mean per-draw cosine between the realized shift
+> and the floor→ceiling axis. 1 = moves straight at context B, 0 = moves sideways. Scale-free, so
+> unlike F_act it cannot be bought with magnitude.
+
+![Per-cell cosine minus the shuffled-donor null cosine](https://raw.githubusercontent.com/superkaiba/explore-persona-space/9feb5513bde43f7457dc7067005be69a2d6d6c64/figures/issue_2094/userchat_heatmaps/cos_margin_heatmaps.png)
+
+> The same cosine minus each cell's own norm-matched wrong-donor null. The null is not at 0 — a
+> random edit of the same size still lands 0.10–0.35 on-axis, because every context edit shares
+> geometry with every other — so this margin, not the raw cosine, is the defensible read. Almost the
+> whole single-layer grid sits near zero: at one layer the real edit is aimed no better than a random
+> one. Only the joint edits at context-end clear it.
+
+Two caveats on reading the cosine as *the* single metric. It is blind to magnitude by construction —
+a tiny, perfectly-aimed nudge reads 1.0 — so it is F_act's companion, not its replacement; the pair
+(traversal, cos) is the complete polar description and both are in `cells_summary.json`. And the two
+highest cosines anywhere in the grid, query-span 0.61 and last-3-joint 0.48 at layers 14–20, sit on
+**dropped** cells (80% and 87% coherent), so they are not readable as effects.
+
 **Takeaways:**
 
 1. Matched query at the context vector works, partially: F_act 0.41 patching all 28 layers, 0.24 for
@@ -156,6 +198,11 @@ its F_act is not weak-but-real transport toward B, it is mostly non-specific dis
 5. The span slots move the answer vector in the matched-query setting too (query text 0.49 at all
    layers, query span 0.51 mid-band, vs context-end 0.41) — expected, since those token states have
    already attended to the prefix. See Result 3 takeaway 3.
+6. **On F_act the span slots match or beat context-end; on direction they do not.** Query-text's
+   0.49 is bought with a 2.56-axis-length displacement at cos 0.24, against context-end's 0.66
+   axis-lengths at cos 0.66. Context-end has the largest null-corrected cosine margin of any
+   readable cell in the grid (+0.44 at all layers, +0.34 mid-band); every single-layer cell sits
+   near zero margin, i.e. aimed no better than a norm-matched random edit.
 
 ### Result 2: Does the mapping predict the answer vector shift?
 
