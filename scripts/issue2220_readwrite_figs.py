@@ -217,10 +217,16 @@ def fig_dose_grid(localize: dict) -> None:
 def fig_hallu_gate(localize: dict, op: dict) -> None:
     nb = localize["reduced"]["null_band"]["hallucination"]
     cells = op["hallucination"]
+    pc = localize["per_cell"]
+    a0_keys = [k for k in pc if k.startswith("behaviorhallucination__directionalpha0__")]
+    assert len(a0_keys) == 1, a0_keys
+    base_rate = pc[a0_keys[0]]["rate"]  # un-steered baseline hallucination rate (0.733)
+    ceiling = 1.0 - base_rate  # max achievable delta-rate (plan § Statistics overlay)
     fig, ax = plt.subplots(figsize=(8.6, 4.6))
     edge = nb["upper_edge_boot97p5"]
     ax.axhspan(0, edge, color="0.82", alpha=0.6, zorder=0)
     ax.axhline(edge, color="0.45", linestyle=":", linewidth=1.2, zorder=1)
+    ax.axhline(ceiling, color="#b2182b", linestyle="--", linewidth=1.6, zorder=4)
     width = 0.38
     for di, d in enumerate(DIRS):
         for pi, pos in enumerate(POS):
@@ -231,12 +237,21 @@ def fig_hallu_gate(localize: dict, op: dict) -> None:
     ax.set_xticklabels([DIR_LABEL[d] for d in DIRS], fontsize=8.5)
     ax.set_ylabel("Δ judged hallucination rate\n(best coherent layer × dose per cell)")
     ax.set_ylim(0, max(0.5, edge + 0.08))
+    from matplotlib.lines import Line2D
     from matplotlib.patches import Patch
 
     handles = [
         Patch(facecolor="0.35", edgecolor="white", label="injected at answer tokens"),
         Patch(facecolor="white", edgecolor="0.35", hatch="//", label="injected at context token"),
         Patch(facecolor="0.82", edgecolor="0.45", label="selection-symmetric null band (97.5%)"),
+        Line2D(
+            [0],
+            [0],
+            color="#b2182b",
+            linestyle="--",
+            linewidth=1.6,
+            label=f"achievable Δrate ceiling (1 − baseline {base_rate:.2f} = {ceiling:.2f})",
+        ),
     ]
     ax.legend(handles=handles, loc="upper left", fontsize=8.5, frameon=False)
     fig.tight_layout()

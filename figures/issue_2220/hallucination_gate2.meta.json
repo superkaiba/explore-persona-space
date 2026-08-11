@@ -1,9 +1,12 @@
 {
-  "commit": "a7a28054",
-  "render_id": "007fbaa49fb541d3",
-  "git_commit": "a7a28054",
-  "git_dirty": false,
-  "created": "2026-08-11T18:59:21Z",
+  "commit": "4589eca5+dirty",
+  "render_id": "b60e7a845610492f",
+  "git_commit": "4589eca5",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2220_readwrite_figs.py"
+  ],
+  "created": "2026-08-11T19:36:50Z",
   "figsize": [
     8.6,
     4.6
@@ -93,7 +96,8 @@
         "legend_labels": [
           "injected at answer tokens",
           "injected at context token",
-          "selection-symmetric null band (97.5%)"
+          "selection-symmetric null band (97.5%)",
+          "achievable \u0394rate ceiling (1 \u2212 baseline 0.73 = 0.27)"
         ],
         "xticklabels": [
           "Map read\n(context arm)",
