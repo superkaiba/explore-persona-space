@@ -8531,8 +8531,8 @@
     "2101": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2101",
-      "status": "running",
+      "path": "tasks/reviewing/2101",
+      "status": "reviewing",
       "title": "workflow-fix: no-lost-row check on agent-memory index alignments"
     },
     "2102": {
