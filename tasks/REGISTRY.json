@@ -8498,7 +8498,7 @@
       "kind": "infra",
       "path": "tasks/completed/2098",
       "status": "completed",
-      "title": "#2098 workflow-fix: clarify --map-files takes one list-file path \u00b7 running (implementing)"
+      "title": "#2098 workflow-fix: clarify --map-files takes one list-file path \u00b7 completed"
     },
     "2099": {
       "has_clean_result": false,

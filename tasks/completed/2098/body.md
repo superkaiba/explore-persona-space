@@ -1,6 +1,5 @@
 ---
-title: '#2098 workflow-fix: clarify --map-files takes one list-file path · running
-  (implementing)'
+title: '#2098 workflow-fix: clarify --map-files takes one list-file path · completed'
 kind: infra
 tags:
 - wf-fix
