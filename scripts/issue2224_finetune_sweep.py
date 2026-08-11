@@ -996,6 +996,12 @@ def run_judge_pilot(args) -> int:
     all_cells = filter_cells(cells + base_cells(cells), args.cells)
     report_dir = Path(args.pilot_report_dir)
     report_dir.mkdir(parents=True, exist_ok=True)
+    waivers: dict[str, set[str]] = {}
+    for entry in args.waive_parse_fail or []:
+        wave_name, sep, arm_id = entry.partition(":")
+        if not sep or not arm_id:
+            raise SystemExit(f"--waive-parse-fail entries are '<wave>:<arm>', got {entry!r}")
+        waivers.setdefault(wave_name, set()).add(arm_id)
     all_pass = True
     waves: list[tuple[str, str, dict]] = []
     for trait in sorted({c["trait"] for c in all_cells}):
@@ -1033,11 +1039,14 @@ def run_judge_pilot(args) -> int:
             save_raw_dir=Path(args.judge_root) / "pilot_raw" / name,
             n_draws=PILOT_N_DRAWS,
             target_total_draws=target,
+            waive_parse_fail_arms=sorted(waivers.pop(name, set())),
             report_path=report_dir / f"{name}.json",
             seed=args.seed,
         )
         logger.info("[judge-pilot] %s verdict=%s", name, rep.verdict)
         all_pass &= rep.passed
+    if waivers:
+        raise RuntimeError(f"--waive-parse-fail names unknown wave(s): {sorted(waivers)}")
     if not all_pass:
         raise RuntimeError("[judge-pilot] at least one rubric FAILED the pilot gate")
     return 0
@@ -1315,6 +1324,15 @@ def build_argparser() -> argparse.ArgumentParser:
         type=int,
         default=200,
         help="pilot draw budget FLOOR — auto-raised from the wave's arm count (C1)",
+    )
+    parser.add_argument(
+        "--waive-parse-fail",
+        action="append",
+        default=None,
+        help="rule 26(b) explained-content-drop waiver, '<wave>:<arm>' (e.g. "
+        "'postft_coherence:lmsys__evil__base__na'); repeatable; wave-scoped so a "
+        "waiver never leaks to another rubric; recorded explanation goes in the "
+        "dispatch marker",
     )
     parser.add_argument(
         "--regen-truncated",
