@@ -8424,8 +8424,8 @@
     "2089": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2089",
-      "status": "running",
+      "path": "tasks/completed/2089",
+      "status": "completed",
       "title": "workflow-fix: ruff-clean alias for the phase-done waiver token"
     },
     "209": {
