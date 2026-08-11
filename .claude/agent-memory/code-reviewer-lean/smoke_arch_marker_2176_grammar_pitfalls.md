@@ -1,0 +1,33 @@
+---
+name: smoke-arch-marker-2176-grammar-pitfalls
+description: "Step 0.55: run check-smoke-arch-registry FIRST — prose-decorated per-arm heading parses to EMPTY sub-block; row keys must equal members= tokens; tuple registries abstain to marker-only"
+metadata:
+  type: feedback
+---
+
+Rule: at Step 0.55, run `uv run python scripts/task.py check-smoke-arch-registry <N>
+--repo-root <worktree>` BEFORE hand-judging the marker's shape, and know the three
+#2176 grammar pitfalls a human read misses (all hit live on #2225 R1 g6):
+
+1. `_MARKER_TOP_KEY_RE` (task_workflow.py:2244) matches ONLY the bare key at line
+   start — `per-arm-resolution (any parenthetical):` never opens the span, so 10
+   perfectly good REAL rows parse as `per_arm == {}` (clause-4 REFUSE). Prose is
+   legal AFTER the colon, never before it.
+2. `_PER_ARM_ROW_RE` captures everything up to the first `:` as the arm key —
+   `- A (E1×all×L1): REAL` yields key `"A (E1×all×L1)"`, which fails clause-5
+   set-membership against `members=A,...`. Rows must LEAD with the bare arm token.
+3. Clause-5b driver recompute (`_extract_registry_members`) only reads module-level
+   dict LITERALS with all-string keys; a tuple/list registry (e.g. a
+   `CONFIGS: tuple[ConfigSpec, ...]`) makes it abstain → checker OK line reads
+   `marker-only` and the REVIEWER owns members↔registry set-equality (the fallback
+   arm) — enumerate the symbol's names yourself, never a presence grep.
+
+**Why:** the #2225 R1 marker had all substance right (10 arms, verdict-consistent
+rows) but failed the checker on form alone; without the checker + regex read the
+fix recipe would have thrashed twice (arm-registry line fixed, then clause-4, then
+clause-5). Step 6d.0 runs this checker POST-provision, so catching it at review is
+the whole point of gate 0.55.
+
+**How to apply:** any Step 0.55 audit (round-level / CONTRACT-BEARING split-review
+group). Give the implementer the full one-post fix: conforming `arm-registry:` line
++ bare `per-arm-resolution:` heading + bare-token row keys, in one re-post.

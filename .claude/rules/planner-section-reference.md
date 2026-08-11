@@ -631,6 +631,23 @@ client-side compression OFF for fp16 tensors bound for a Xet-backed HF repo
 1.29× ratio; the store phase ran 4.5× over plan). Full recipe:
 `.claude/rules/plan-compute-sizing.md` § Store-heavy / IO-heavy phase sizing.
 
+**Rate-basis decomposition for coverage projections (REQUIRED whenever a
+§9 — or §7-gate — coverage / yield / sizing projection multiplies a
+measured empirical rate against a population).** A projection over a
+MULTI-STAGE filtered pipeline (generate → filter → judge) decomposes the
+projected rate into per-stage rates, each with its measured numerator AND
+denominator named against an artifact (file/JSON path or cited issue
+`#<M>`); a single collapsed rate whose measured denominator differs from
+the projection's application population is NOT a valid sizing basis — the
+arithmetic downstream of a denominator substitution stays internally
+consistent, so a recompute never catches the basis error (#2054: a 49.3%
+admitted/PREJUDGE admission rate applied as the per-attempt success
+probability from PENDING pairs projected ~3.7x optimistic — the omitted
+verbatim-question filter drops 65-69% of generator-kept rows — and the
+round ran ~1.6 GPU-h + ~33.7k judge calls into a pre-registered gate-1
+ABORT). Critic twin: Statistics & Measurement lens item 17
+(`.claude/rules/critic-lens-reference.md`).
+
 **VM-RAM & GCP-fence sizing (REQUIRED for any VM-placed CPU phase and any
 deliberate `max_run_duration`).** State each VM-placed CPU/analysis
 phase's projected peak RSS in its row's `basis` (measured one-chunk

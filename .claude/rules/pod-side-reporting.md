@@ -41,7 +41,12 @@ marker will be silently skipped. Three requirements, no exceptions:
    default run + the `workflow-lint-phase-done-reserved` pre-commit hook
    on any `scripts/*.sh|py` change): a `[phase=done]` emission in a phase
    script invoked non-redirected by a `scripts/**/*.sh` dispatcher FAILs;
-   legacy edges are frozen in `PHASE_DONE_EDGE_LEGACY_ALLOWLIST`.
+   legacy edges are frozen in `PHASE_DONE_EDGE_LEGACY_ALLOWLIST`. A
+   mode-gated standalone-lane terminal is waivable with
+   `# workflow-lint: phase-done-reserved` (preferred, ruff-clean; the
+   legacy `# noqa: phase-done-reserved` form stays honored) on the
+   emission line or the immediately preceding non-blank line; the waiver
+   comment must name the intended mode/invoker.
 
 2. **End-of-run sentinel with poll_pipeline's required keys.** Write the
    final results sentinel to `/workspace/logs/issue-<N>-<kind_slug>-

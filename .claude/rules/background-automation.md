@@ -10,6 +10,7 @@ paths:
   - "scripts/cron_pod_audit.sh"
   - "scripts/gcp_audit.py"
   - "scripts/cron_gcp_audit.sh"
+  - "scripts/cron_step9c_ledger_refresh.sh"
   - "scripts/codex_task.py"
 ---
 
@@ -48,9 +49,9 @@ silently with nothing catching the residue:
 | `autonomous_session_watch.py:614` | unmerged `origin/main` otherwise waits ~24h for the nightly Step C sweep |
 | `autonomous_session_watch.py:6958` | abandoned-session phrase detection — "the /daily sweep owns" |
 | `autonomous_session_watch.py:8144` | "each fails toward SILENCE by design; the /daily sweep stays the backstop for all four" |
-| `autonomous_session_watch.py:9945` | Step 9c known-red ledger refresh |
+| `autonomous_session_watch.py:9945` | Step 9c known-red ledger refresh — **BACKED since #2114** by the nightly `cron_step9c_ledger_refresh.sh` (§ "Step 9c known-red ledger refresh" below) |
 | `.claude/workflow.yaml:2222` | living-docs backstop for parked proposals |
-| this file, §833/§872 | completed-unmerged v1 bounds; Step 9c gate ledger |
+| this file, §833/§872 | completed-unmerged v1 bounds (still unbacked); Step 9c gate ledger — **BACKED since #2114** (§ below) |
 
 Closing these needs either explicit escalation in each lane or a narrower
 replacement sweep. Do NOT re-add `/daily` to close them without addressing
@@ -215,6 +216,31 @@ Kill switch: `EPM_SKIP_HUSK_REAP=1`.
 `codex_task.py` complements this by pinning every codex-companion dispatch
 to the main checkout root (`DISPATCH_ROOT`), so codex workers never root
 themselves in a worktree.
+
+## Step 9c known-red ledger refresh (05:31 daily, `cron_step9c_ledger_refresh.sh`)
+
+Nightly `scripts/step9c_baseline.py refresh --json` from the main repo root
+(#2114) — the narrower replacement sweep for the RETIRED-table "Step 9c
+known-red ledger refresh" lane. The gate's baseline ledger
+(`.claude/cache/step9c-baseline.json`, gitignored VM-local state — no
+commit/push leg) goes stale (age > 24 h or > 150 code-path commits) on main
+red waves, and sessions then pay the ~31-40 min refresh mid-gate (#2105,
+#1992, #2106); the 05:31 PT unconditional refresh resets the freshness clock
+so the workday sits inside the window. In-session lazy refresh stays the
+fallback. Concurrency + failure semantics are the refresh command's OWN, not
+reimplemented: the `.claude/cache/step9c-baseline.lock` flock makes a
+concurrent in-session refresh a single-flight no-op (rc 0);
+timeout/junit-parse/0-collected failures are rc=2 with NO ledger write; the
+refresh's own `--timeout-s` default (4350 s) is the wall fence. Wrapper
+behavior: per-day log `logs/step9c_ledger_refresh/YYYY-MM-DD.log`, shared-VM
+thread-cap prefix + fail-open self-choom, ALWAYS exit 0; on rc != 0 one
+audit sidecar row (`.claude/cache/step9c-refresh-cron-events.jsonl`) + a
+once-per-day sentinel-gated Telegram push (a FAILED push writes no sentinel
+— the next pass retries; cron email is structurally dead on this VM). Env
+knobs: `EPS_STEP9C_REFRESH_{LOG_DIR,SENTINEL_DIR,SIDECAR,BIN}` (`BIN` is
+TEST-ONLY), `EPS_TELEGRAM_PUSH_SCRIPT`. Kill switch: remove the crontab line
+(the wrapper is inert without it). Pinned by
+`tests/test_cron_step9c_ledger_refresh.py`.
 
 ## Autonomous-session watcher (every 10 min, `3-59/10 * * * *`, `autonomous_session_watch.py`)
 
@@ -1137,12 +1163,17 @@ every spawn arm.
 ## Dedicated data disk for `.claude/worktrees/` (#681)
 
 The heavy active-task footprint (every `issue-<N>` worktree + its
-per-issue `data/issue_<N>/{hf_dl,g*_dl,store}` caches) lives on a
-dedicated **512 GB `pd-balanced` GCP persistent disk mounted at
-`/mnt/eps-data`** (env `EPS_VM_DATA_DISK_PATH`), bind-mounted back onto
-`.claude/worktrees` so every consumer resolves the SAME path. The disk is
-provisioned in the `introsp-experiments` project (where the VM lives), NOT
-the GPU project.
+per-issue `data/issue_<N>/{hf_dl,g*_dl,store}` caches) is DESIGNED to
+live on the dedicated `pd-balanced` GCP persistent disk mounted at
+`/mnt/eps-data` (env `EPS_VM_DATA_DISK_PATH`), bind-mounted back onto
+`.claude/worktrees` so every consumer resolves the SAME path — **the
+bind cutover is a RUNTIME-CHECKED state, not an accomplished fact
+(cutover tracked at #2132)**: probe
+`findmnt --mountpoint <repo>/.claude/worktrees` (no output = cutover
+still pending; worktree paths then land on `/`) before relying on the
+bind, and read sizes live via `df -P` — figures drift, never quote this
+file's as current. The disk is provisioned in the `introsp-experiments`
+project (where the VM lives), NOT the GPU project.
 
 **Per-task ext4 project quotas.** Each `issue-<N>` subtree carries an ext4
 project id == the issue number with a hard byte cap
@@ -1163,7 +1194,11 @@ runs only tier (b) (terminal-cache reap + active-cache escalation), and
 the watcher's `data_disk_pass` drives `decide_vm_disk_pct` +
 `decide_subfloor_pct` (`EPM_VM_DATA_DISK_SUBFLOOR_PCT` default 85%) off
 `statvfs(/mnt/eps-data)`, attributing worktree-internal caches via
-`repquota -P` (du fallback). Both passes are clean no-ops when the mount
+`repquota -P` (du fallback — since #2095 merged with the read-only
+`/mnt/eps-data/$USER` staging-root attribution `_staging_top_caches`,
+which is kill-switch-INDEPENDENT: `EPM_SKIP_STAGING_CACHE_SWEEP` disables
+only the sweep leg, never the attribution; `--data-disk-only` runs the
+pass in isolation). Both passes are clean no-ops when the mount
 is absent. Since #1392 the BOOT-disk sub-floor sentinel's sibling arm
 (`subfloor_reclaim_pass`) additionally launches a detached, single-flight,
 rate-limited `vm_disk_guard.py --apply --ignore-threshold --no-push

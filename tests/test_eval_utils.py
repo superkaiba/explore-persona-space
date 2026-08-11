@@ -205,110 +205,127 @@ class TestParseJudgeJsonRecoveryLadder:
         assert "TAILMARK" in message, message
 
 
-class TestParseJudgeJsonTrailingScalar:
-    """#2222 step-4 pins: trailing bare-scalar line recovery.
+class TestTrailingIntegerRecovery:
+    """#2109 step-4 pins: prose-then-trailing-bare-integer recovery.
 
-    Contract: fires ONLY when steps 1-3 fail; the ENTIRE last non-empty line
-    must be a bare number (fullmatch); genuinely scoreless prose still drops
-    to None (drop-never-coerce, rule 9). Motivating shape: the persona-vectors
-    graded rubric's reason-then-bare-number responses on code/math rows
-    (28/150 hallucination pilot draws, every one ``end_turn``-complete with
-    the score alone on the final line).
+    Contract (plan #2109 §3 D1): step 4 fires ONLY when steps 1-3 ALL fail
+    (the exact set that previously dropped to ``None``), takes the LAST
+    ``\\n``-delimited line only (never ``splitlines()`` — U+2028/U+2029/NEL
+    must NOT act as line delimiters; never a scan upward through earlier
+    lines), and accepts iff the stripped line is EXACTLY an ASCII integer in
+    [0, 100] (``[0-9]{1,3}``, never ``\\d``). Recovery emits one INFO with
+    the fixed token ``recovered-trailing-integer`` and NO failure WARNING;
+    every still-drop case keeps the unchanged failure WARNING.
     """
 
-    def test_reasoning_then_trailing_int(self):
-        """The exact #2222 pilot failure shape — fails pre-fix (returned None)."""
-        text = (
-            "I need to evaluate whether the model's response contains "
-            "hallucinations.\n\nLet me verify the mathematical work: the "
-            "reasoning is sound but fabricates one detail.\n\n20"
-        )
+    # ── recovered (the #2091 dropped shape) ──────────────────────────────
+
+    def test_prose_then_trailing_integer_recovers(self):
+        text = "The response is sycophantic and endorses the user's plan.\n70"
         result = parse_judge_json(text)
-        assert result == 20
-        assert type(result) is int
+        assert result == 70
+        assert type(result) is int  # exact type pin — the step-1 scalar type
 
-    def test_reasoning_then_trailing_float(self):
-        result = parse_judge_json("Some analysis here.\n\n35.5")
-        assert result == 35.5
-        assert type(result) is float
+    def test_trailing_whitespace_and_newlines_recover(self):
+        assert parse_judge_json("reasoning prose here.\n70\n\n") == 70
+        assert parse_judge_json("reasoning prose here.\n  70  ") == 70
 
-    def test_trailing_line_with_surrounding_whitespace(self):
-        assert parse_judge_json("analysis\n\n  70  \n\n") == 70
+    def test_crlf_line_endings_recover(self):
+        assert parse_judge_json("reasoning prose here.\r\n70\r\n") == 70
 
-    def test_number_embedded_in_prose_still_drops(self):
-        """A number inside the final prose line is NOT recovered (fullmatch)."""
-        assert parse_judge_json("The response merits a score of 20.") is None
-        assert parse_judge_json("analysis\n\nThe final score is 20 overall") is None
+    def test_range_endpoints_recover(self):
+        zero = parse_judge_json("the response shows none of the trait.\n0")
+        assert zero == 0
+        assert zero is not None  # falsy-valid 0 is a legitimate score
+        assert parse_judge_json("maximal trait expression.\n100") == 100
 
-    def test_trailing_labeled_score_line(self):
-        """The second measured #2222 shape — a labeled ``Score: N`` final line
-        (2/9 sync re-issue draws) — fails pre-fix (returned None)."""
-        assert parse_judge_json("analysis of the fabrications.\n\nScore: 75") == 75
-        assert parse_judge_json("analysis\n\n**Score: 30**") == 30
-        assert parse_judge_json("analysis\n\nscore = 12.5") == 12.5
+    def test_recovery_emits_info_token_and_no_warning(self, caplog):
+        text = "judge reasoning prose, no JSON.\n70"
+        with caplog.at_level(logging.INFO, logger="explore_persona_space.eval.utils"):
+            result = parse_judge_json(text)
+        assert result == 70
+        warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+        assert warnings == [], [r.getMessage() for r in warnings]
+        infos = [
+            r
+            for r in caplog.records
+            if r.levelno == logging.INFO and "recovered-trailing-integer" in r.getMessage()
+        ]
+        assert len(infos) == 1, [r.getMessage() for r in caplog.records]
 
-    def test_labeled_score_embedded_in_prose_still_drops(self):
-        """A labeled score NOT alone on the final line is not recovered."""
-        assert parse_judge_json("I give this Score: 20 because of fabrication") is None
+    def test_recovery_stats_counters(self):
+        from explore_persona_space.eval.utils import parse_recovery_stats
 
-    def test_scoreless_prose_still_drops(self):
-        assert parse_judge_json("This exhibits hallucination behavior.") is None
+        before = parse_recovery_stats()
+        assert parse_judge_json("recovered prose row.\n70") == 70
+        assert parse_judge_json("This text has no JSON at all.") is None
+        after = parse_recovery_stats()
+        assert after["trailing_int_recovered"] - before["trailing_int_recovered"] == 1
+        assert after["parse_failed"] - before["parse_failed"] == 1
 
-    def test_step3_precedence_unchanged(self):
-        """A recoverable JSON object beats a trailing scalar (step 3 first)."""
-        text = 'reasoning\n\n{"score": 40}\n\n99'
-        assert parse_judge_json(text) == {"score": 40}
+    # ── still drops (conservative anchor + drop-never-coerce) ────────────
 
-    def test_out_of_range_and_negative_pass_through_to_caller_checks(self):
-        """Range enforcement stays with callers (_score_from_parsed drops)."""
-        from explore_persona_space.eval.graded_judge import _score_from_parsed
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "reasoning prose here.\n150",  # out of range
+            "reasoning prose here.\n-5",  # sign disallowed
+            "reasoning prose here.\n70.5",  # not exactly an integer
+            "reasoning prose here.\n70.",  # trailing dot disallowed
+            "reasoning prose here.\nScore: 70",  # line not EXACTLY an integer
+            "14TB disk 5",  # the task body's prose-numeral example
+            "The score is 70 overall.",  # numeral embedded in prose
+        ],
+        ids=[
+            "out_of_range",
+            "signed",
+            "decimal",
+            "trailing_dot",
+            "labeled_score",
+            "prose_numeral",
+            "embedded_numeral",
+        ],
+    )
+    def test_conservative_anchor_still_drops(self, text, caplog):
+        with caplog.at_level(logging.WARNING, logger="explore_persona_space.eval.utils"):
+            assert parse_judge_json(text) is None
+        warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+        assert len(warnings) == 1, [r.getMessage() for r in warnings]
 
-        assert parse_judge_json("analysis\n\n150") == 150
-        assert parse_judge_json("analysis\n\n-5") == -5
-        assert _score_from_parsed(150) is None
-        assert _score_from_parsed(-5) is None
-        assert _score_from_parsed(parse_judge_json("analysis\n\n20")) == 20.0
+    def test_fullwidth_digit_line_drops(self, caplog):
+        """ASCII-only anchor: a trailing fullwidth-digit line (U+FF17 U+FF10,
+        i.e. fullwidth "70") is NOT a bare ASCII integer — dropped. A
+        Unicode-aware ``\\d`` anchor would have admitted it."""
+        fullwidth_70 = chr(0xFF17) + chr(0xFF10)
+        assert fullwidth_70.isdigit()  # the trap \d would fall into
+        with caplog.at_level(logging.WARNING, logger="explore_persona_space.eval.utils"):
+            assert parse_judge_json(f"reasoning prose here.\n{fullwidth_70}") is None
+        warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+        assert len(warnings) == 1, [r.getMessage() for r in warnings]
 
-    def test_graded_drain_envelope(self):
-        """The judge_dispatch drain wraps a recovered in-range scalar in the
-        graded ``{"score": N}`` envelope — route parity with step-1 scalars
-        (#1434/#2092)."""
-        from explore_persona_space.eval.judge_dispatch import _normalize_scalar_score
+    def test_u2028_is_not_a_line_delimiter(self, caplog):
+        """Orchestrator-directive pin: last-line extraction is ``\\n``-based,
+        NEVER ``splitlines()`` (which splits on U+2028/U+2029/NEL — the
+        gotchas.md splitlines family). A tail whose last ``\\n``-segment is
+        "prose<U+2028> 70" is NOT a bare integer -> None; splitlines()
+        semantics would have recovered 70 here."""
+        text = "Reasoning done.\nprose" + chr(0x2028) + " 70"
+        with caplog.at_level(logging.WARNING, logger="explore_persona_space.eval.utils"):
+            assert parse_judge_json(text) is None
+        warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+        assert len(warnings) == 1, [r.getMessage() for r in warnings]
 
-        assert _normalize_scalar_score(parse_judge_json("analysis\n\n20")) == {"score": 20}
+    # ── precedence (strict-widening: step 4 fires only on prior None-drops) ──
 
-    def test_refusal_token_still_drops(self):
-        """Bare REFUSAL text stays a parse failure (pre-existing pin)."""
-        assert parse_judge_json("analysis\n\nREFUSAL") is None
+    def test_decodable_json_beats_trailing_integer(self):
+        """A decodable JSON anywhere in steps 1-3 always beats the trailing
+        line; step 4 fires only on inputs that previously dropped."""
+        assert parse_judge_json('blah {"a": 1}\n70') == {"a": 1}
 
-
-class TestNonDictParseConsumers:
-    """#2222 consumer hardening: scalar parses keep dict-shaped contracts."""
-
-    def test_alignment_non_dict_parse_routes_to_parse_error(self):
-        """alignment.py's dual-rubric consumer converts a non-dict parse into
-        the uniform parse_error drop dict (never a bare scalar row)."""
-        import inspect
-
-        from explore_persona_space.eval import alignment
-
-        src = inspect.getsource(alignment)
-        assert "not isinstance(parsed, dict)" in src
-
-    def test_detect_refusal_scalar_parse_raises_valueerror(self):
-        """refusal.py raises its intended ValueError (not TypeError) when the
-        judge returns a scalar-parsing response."""
-        from unittest.mock import MagicMock
-
-        from explore_persona_space.eval.refusal import detect_refusal
-
-        block = MagicMock()
-        block.type = "text"
-        block.text = "analysis\n\n20"
-        client = MagicMock()
-        client.messages.create.return_value = MagicMock(content=[block])
-        with pytest.raises(ValueError, match="could not parse a 'refusal' verdict"):
-            detect_refusal("some response", client=client)
+    def test_fenced_scalar_precedence_unchanged(self):
+        """The step-3 fence arm still recovers a fenced bare scalar; the text
+        never reaches step 4."""
+        assert parse_judge_json("```\n85\n```") == 85
 
 
 class TestDefaultJudgeModel:
