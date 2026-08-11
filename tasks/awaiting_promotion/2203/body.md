@@ -5,7 +5,6 @@ title: Correctly applied assistant-axis capping leaves Qwen-2.5-7B jailbreak har
 kind: experiment
 tags:
 - trigger-dense
-- followup-manual
 created_at: '2026-08-08T16:23:11Z'
 has_clean_result: true
 origin_prompt: We've found a lot of persona info is stored at the context vector.
