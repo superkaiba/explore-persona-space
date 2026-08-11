@@ -18,7 +18,11 @@ writes the ``staging_ready.json`` sentinel (plan §9 phase_outputs.P0):
    ``finetune_*.json`` required).
 6. Leg-A lineage re-assertion — the plan §10 parent-branch diffs re-run; any
    branch-side commit NOT covered by a declared disposition fails loud
-   (artifact-reuse check (k)).
+   (artifact-reuse check (k)). SHALLOW-AWARE (#2222 crash fix): on a depth-1
+   pod bootstrap clone the range mis-attributes already-merged main commits as
+   branch-side, so flagged SHAs are post-filtered via
+   ``git merge-base --is-ancestor`` with a bounded deepen ladder; full-clone
+   behavior is unchanged.
 
 CPU-only; runs on the VM (worktree) or pod-side. CONTENT HYGIENE: logs carry
 ids / counts / hashes only — never dataset row text.
@@ -191,51 +195,180 @@ def locate_yaxis(repo_root: Path) -> dict:
     return {"dir": str(yaxis_dir), "n_finetune_json": n}
 
 
+def _is_shallow_repo(repo_root: Path) -> bool:
+    """True when the checkout has truncated ancestry (`git rev-parse --is-shallow-repository`)."""
+    proc = _run(["git", "rev-parse", "--is-shallow-repository"], cwd=repo_root)
+    if proc.returncode != 0:
+        raise RuntimeError(f"shallowness probe failed: {proc.stderr.strip()}")
+    return proc.stdout.strip() == "true"
+
+
+def _leg_a_range_shas(repo_root: Path, branch: str, path: str) -> list[str]:
+    """Non-merge branch-side SHAs of ``origin/main..origin/<branch> -- <path>`` (fail-loud)."""
+    log = _run(
+        ["git", "log", "--no-merges", "--format=%H", f"origin/main..origin/{branch}", "--", path],
+        cwd=repo_root,
+    )
+    if log.returncode != 0:
+        raise RuntimeError(f"leg-A diff errored for {branch}:{path}: {log.stderr.strip()}")
+    return [s for s in log.stdout.split("\n") if s.strip()]
+
+
+def _undeclared(shas: list[str], declared: tuple[str, ...]) -> list[str]:
+    """SHAs not covered by any declared short-sha disposition prefix."""
+    return [s for s in shas if not any(s.startswith(d) for d in declared)]
+
+
+def _merged_into_main(repo_root: Path, sha: str) -> bool | None:
+    """``git merge-base --is-ancestor <sha> origin/main`` verdict for one flagged SHA.
+
+    Returns True (ancestor of main ⇒ MERGED), False (decided branch-side), or
+    None when the clone's history cannot decide (rc>1: missing objects /
+    truncated history on a shallow clone).
+    """
+    proc = _run(["git", "merge-base", "--is-ancestor", sha, "origin/main"], cwd=repo_root)
+    if proc.returncode == 0:
+        return True
+    if proc.returncode == 1:
+        return False
+    return None
+
+
+def _resolve_shallow_phantoms(
+    repo_root: Path,
+    branch: str,
+    path: str,
+    declared: tuple[str, ...],
+    shas: list[str],
+    unexpected: list[str],
+) -> tuple[list[str], list[str], str]:
+    """Drop shallow-range phantoms from a leg-A flagged set (#2222 pod crash fix).
+
+    A depth-1 bootstrap clone truncates ``origin/main``'s ancestry, so the
+    ``origin/main..origin/<branch>`` range mis-attributes already-MERGED main
+    commits as branch-side edits and the gate halts every fresh pod. Bounded
+    three-rung ladder: (1) post-filter every flagged SHA with
+    ``git merge-base --is-ancestor <sha> origin/main`` — an ancestor of main is
+    MERGED, not an undispositioned branch-side edit; (2) while flagged SHAs
+    survive on a still-shallow/undecidable history, bounded deepen
+    (``git fetch --deepen=200 origin main <branch>``) then re-run the range +
+    post-filter; (3) same after ``git fetch --unshallow --filter=blob:none``
+    (plain ``--unshallow`` when the filtered form is refused). Returns
+    ``(final_shas, final_unexpected, mechanism)``; survivors are GENUINE
+    undispositioned commits on a decidable history — the caller still fails
+    loud on them. Full clones never enter this path (byte-unchanged gate).
+    """
+    n_flagged = len(unexpected)
+    mechanism = "merge-base"
+    for rung in ("merge-base", "deepen", "unshallow"):
+        if rung == "deepen":
+            proc = _run(["git", "fetch", "--deepen=200", "origin", "main", branch], cwd=repo_root)
+            mechanism = "merge-base after --deepen=200"
+            if proc.returncode != 0:
+                print(
+                    f"[p0_lineage] --deepen=200 failed (rc={proc.returncode}): "
+                    f"{proc.stderr.strip()[:200]}",
+                    flush=True,
+                )
+        elif rung == "unshallow":
+            if not _is_shallow_repo(repo_root):
+                break  # history already complete; the previous rung's verdict is decidable
+            proc = _run(
+                ["git", "fetch", "--unshallow", "--filter=blob:none", "origin", "main", branch],
+                cwd=repo_root,
+            )
+            if proc.returncode != 0:
+                proc = _run(
+                    ["git", "fetch", "--unshallow", "origin", "main", branch], cwd=repo_root
+                )
+            mechanism = "merge-base after --unshallow"
+            if proc.returncode != 0:
+                print(
+                    f"[p0_lineage] --unshallow failed (rc={proc.returncode}): "
+                    f"{proc.stderr.strip()[:200]}",
+                    flush=True,
+                )
+        if rung != "merge-base":
+            shas = _leg_a_range_shas(repo_root, branch, path)
+            unexpected = _undeclared(shas, declared)
+        survivors: list[str] = []
+        n_undecidable = 0
+        for sha in unexpected:
+            verdict = _merged_into_main(repo_root, sha)
+            if verdict is True:
+                continue  # ancestor of origin/main ⇒ merged phantom, not a branch-side edit
+            survivors.append(sha)
+            n_undecidable += int(verdict is None)
+        unexpected = survivors
+        if not unexpected:
+            break
+        if n_undecidable == 0 and not _is_shallow_repo(repo_root):
+            break  # decidable complete history — survivors are genuine
+    lib.log_phase(
+        "p0_lineage",
+        f"shallow clone detected — post-filtered {n_flagged - len(unexpected)} phantom merged "
+        f"SHAs via {mechanism}",
+        key=f"{branch}:{path}",
+        n_flagged_by_range=n_flagged,
+        n_surviving=len(unexpected),
+    )
+    return shas, unexpected, mechanism
+
+
 def reassert_parent_lineage(repo_root: Path) -> dict:
     """Re-run the plan §10 leg-A diffs; fail loud on any undispositioned commit.
 
     ``--no-merges`` — merge commits carry no branch-side edits (the plan's own
     reading). A branch that cannot be fetched AND has no local ref is recorded
     "unverifiable" (artifact-reuse (k): never masquerade an errored probe as an
-    empty diff).
+    empty diff). SHALLOW-AWARE (#2222 crash fix): on a shallow clone (pod
+    bootstrap ``--depth 1``) the range mis-attributes merged main commits as
+    branch-side, so flagged SHAs route through ``_resolve_shallow_phantoms``
+    (merge-base post-filter + bounded deepen ladder); full-clone behavior is
+    byte-unchanged — the resolver never runs on complete history.
     """
     branches = sorted({br for br, _ in lib.DECLARED_LEG_A})
     fetch = _run(["git", "fetch", "origin", *branches], cwd=repo_root)
     if fetch.returncode != 0:
         print(f"[p0_lineage] git fetch failed (using existing refs): {fetch.stderr.strip()[:200]}")
+    if _is_shallow_repo(repo_root):
+        lib.log_phase(
+            "p0_lineage",
+            "shallow clone detected — merge-base post-filter armed for leg-A ranges",
+        )
     results: dict[str, dict] = {}
     unexpected_total: list[str] = []
+    shallow_resolution_ran = False
     for (branch, path), declared in lib.DECLARED_LEG_A.items():
         probe = _run(["git", "rev-parse", "--verify", f"origin/{branch}"], cwd=repo_root)
         key = f"{branch}:{path}"
         if probe.returncode != 0:
             results[key] = {"status": "branch unavailable — leg A unverifiable"}
             continue
-        log = _run(
-            [
-                "git",
-                "log",
-                "--no-merges",
-                "--format=%H",
-                f"origin/main..origin/{branch}",
-                "--",
-                path,
-            ],
-            cwd=repo_root,
-        )
-        if log.returncode != 0:
-            raise RuntimeError(f"leg-A diff errored for {key}: {log.stderr.strip()}")
-        shas = [s for s in log.stdout.split("\n") if s.strip()]
-        unexpected = [s for s in shas if not any(s.startswith(d) for d in declared)]
+        shas = _leg_a_range_shas(repo_root, branch, path)
+        unexpected = _undeclared(shas, declared)
         results[key] = {"status": "ok", "branch_side_shas": shas, "declared": list(declared)}
+        if unexpected and _is_shallow_repo(repo_root):
+            shallow_resolution_ran = True
+            shas, unexpected, mechanism = _resolve_shallow_phantoms(
+                repo_root, branch, path, declared, shas, unexpected
+            )
+            results[key]["branch_side_shas"] = shas
+            results[key]["shallow_resolution"] = mechanism
         if unexpected:
             unexpected_total.extend(f"{key}: {s}" for s in unexpected)
     if unexpected_total:
-        raise RuntimeError(
+        msg = (
             "leg-A re-assertion FAILED — fresh branch-side commits with no plan disposition "
             "(artifact-reuse check (k)); inspect + disposition before any GPU provision:\n"
             + "\n".join(unexpected_total)
         )
+        if shallow_resolution_ran:
+            msg += (
+                "\n(shallow-clone post-filter ran: surviving SHAs are undispositioned on the "
+                "deepened/decidable history, not range phantoms)"
+            )
+        raise RuntimeError(msg)
     return results
 
 
