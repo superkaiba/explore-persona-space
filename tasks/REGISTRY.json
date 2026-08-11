@@ -8489,8 +8489,8 @@
     "2097": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2097",
-      "status": "proposed",
+      "path": "tasks/planning/2097",
+      "status": "planning",
       "title": "workflow-fix: mechanize local-disk headroom for staging + VM fits"
     },
     "2098": {
