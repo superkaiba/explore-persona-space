@@ -1,0 +1,200 @@
+{
+  "affected_pairs": {
+    "cross_character": 120,
+    "total": 344,
+    "twobytwo": 224
+  },
+  "artifact": "gate1_report",
+  "census_checks": {
+    "chat_to_character_pairs": {
+      "enumerated": 32,
+      "expected": 32
+    },
+    "prose_storyform_pairs": {
+      "enumerated": 96,
+      "expected": 96
+    },
+    "twobytwo_axisdiff_pairs": {
+      "enumerated": 208,
+      "expected": 208
+    }
+  },
+  "chat_to_character_subset": [
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b",
+      "tgt": "char_helios__inserted__attrib_quoted__qwen2.5-7b"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b",
+      "tgt": "char_helios__inserted__bare_label__qwen2.5-7b"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b",
+      "tgt": "char_helios__on_policy__attrib_quoted__qwen2.5-7b"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b",
+      "tgt": "char_helios__on_policy__bare_label__qwen2.5-7b"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b",
+      "tgt": "char_wren__inserted__attrib_quoted__qwen2.5-7b"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b",
+      "tgt": "char_wren__inserted__bare_label__qwen2.5-7b"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b",
+      "tgt": "char_wren__on_policy__attrib_quoted__qwen2.5-7b"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b",
+      "tgt": "char_wren__on_policy__bare_label__qwen2.5-7b"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b",
+      "tgt": "char_dana__inserted__attrib_quoted__qwen2.5-7b"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b",
+      "tgt": "char_dana__inserted__bare_label__qwen2.5-7b"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b",
+      "tgt": "char_dana__on_policy__attrib_quoted__qwen2.5-7b"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b",
+      "tgt": "char_dana__on_policy__bare_label__qwen2.5-7b"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b",
+      "tgt": "char_vex__inserted__attrib_quoted__qwen2.5-7b"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b",
+      "tgt": "char_vex__inserted__bare_label__qwen2.5-7b"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b",
+      "tgt": "char_vex__on_policy__attrib_quoted__qwen2.5-7b"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b",
+      "tgt": "char_vex__on_policy__bare_label__qwen2.5-7b"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b-instruct",
+      "tgt": "char_helios__inserted__attrib_quoted__qwen2.5-7b-instruct"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b-instruct",
+      "tgt": "char_helios__inserted__bare_label__qwen2.5-7b-instruct"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b-instruct",
+      "tgt": "char_helios__on_policy__attrib_quoted__qwen2.5-7b-instruct"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b-instruct",
+      "tgt": "char_helios__on_policy__bare_label__qwen2.5-7b-instruct"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b-instruct",
+      "tgt": "char_wren__inserted__attrib_quoted__qwen2.5-7b-instruct"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b-instruct",
+      "tgt": "char_wren__inserted__bare_label__qwen2.5-7b-instruct"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b-instruct",
+      "tgt": "char_wren__on_policy__attrib_quoted__qwen2.5-7b-instruct"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b-instruct",
+      "tgt": "char_wren__on_policy__bare_label__qwen2.5-7b-instruct"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b-instruct",
+      "tgt": "char_dana__inserted__attrib_quoted__qwen2.5-7b-instruct"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b-instruct",
+      "tgt": "char_dana__inserted__bare_label__qwen2.5-7b-instruct"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b-instruct",
+      "tgt": "char_dana__on_policy__attrib_quoted__qwen2.5-7b-instruct"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b-instruct",
+      "tgt": "char_dana__on_policy__bare_label__qwen2.5-7b-instruct"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b-instruct",
+      "tgt": "char_vex__inserted__attrib_quoted__qwen2.5-7b-instruct"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b-instruct",
+      "tgt": "char_vex__inserted__bare_label__qwen2.5-7b-instruct"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b-instruct",
+      "tgt": "char_vex__on_policy__attrib_quoted__qwen2.5-7b-instruct"
+    },
+    {
+      "src": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b-instruct",
+      "tgt": "char_vex__on_policy__bare_label__qwen2.5-7b-instruct"
+    }
+  ],
+  "exit_code": 9,
+  "gate1_floor": 4480,
+  "gate1_target": 9000,
+  "min_affected_pair_intersection": 2409,
+  "n_in_scope_cells": 48,
+  "n_survivors": 2409,
+  "record_only_classes": {
+    "class_boundary_n": 56,
+    "class_model_n": 48,
+    "intersections_record": {
+      "boundary": {
+        "below_4450": 0,
+        "below_4480": 0,
+        "max": 11901,
+        "min": 8000,
+        "n": 56
+      },
+      "model": {
+        "below_4450": 0,
+        "below_4480": 0,
+        "max": 11901,
+        "min": 7999,
+        "n": 48
+      },
+      "n_pairs": 408,
+      "overall_below_4450": 152,
+      "overall_below_4480": 160,
+      "overall_min": 2939,
+      "prose": {
+        "below_4450": 88,
+        "below_4480": 96,
+        "max": 4450,
+        "min": 2939,
+        "n": 96
+      },
+      "twobytwo": {
+        "below_4450": 64,
+        "below_4480": 64,
+        "max": 8000,
+        "min": 3481,
+        "n": 208
+      }
+    },
+    "note": "untouched boundary/cross-model classes re-reported from the realized composition artifact (expected unchanged >= 7,999 conv intersections)"
+  },
+  "survivors_path": "data/issue_2054/common_regen/scaffolds/survivor_set.json",
+  "utc": "2026-08-11T03:03:33.245004+00:00",
+  "verdict": "ABORT"
+}
