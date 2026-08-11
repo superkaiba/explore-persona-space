@@ -33,7 +33,7 @@
   "8": "reparam both"
  },
  "cross_map_definition": "ridge fitted DIRECTLY from X = v_context(source) to Y = v_answer(target), scored on the target's held-out answers; NOT a tier and NOT bounded by the ceiling",
- "ci_note": "tier R2 intervals are the 1,000-draw paired-bootstrap GAP CI mapped through r2 = within_r2 - gap. Round-B pairs (SFT->RLVR, SFT->longer, RLVR->longer) carry no bootstrap draws and are POINT-ONLY (open markers); no interval is borrowed. The cross map is point-only on every pair.",
+ "ci_note": "tier R2 intervals are the 1,000-draw paired-bootstrap GAP CI mapped through r2 = within_r2 - gap. Round-B pairs (SFT->RLVR, SFT->longer, RLVR->longer) carry no bootstrap draws and are point-only; no interval is borrowed. The cross map is point-only on every pair.",
  "degenerate_excluded": {
   "surfaces": [
    "gsm8k_test1319 (chat)"
@@ -63,6 +63,8 @@
      NaN
     ],
     "identity_approx": false,
+    "a_ctx": NaN,
+    "a_ans": NaN,
     "n_corpora": 7
    },
    "base__dpo": {
@@ -81,6 +83,8 @@
      NaN
     ],
     "identity_approx": false,
+    "a_ctx": NaN,
+    "a_ans": NaN,
     "n_corpora": 7
    },
    "base__rlvr": {
@@ -99,6 +103,8 @@
      NaN
     ],
     "identity_approx": false,
+    "a_ctx": NaN,
+    "a_ans": NaN,
     "n_corpora": 7
    },
    "base__rlvr_long": {
@@ -117,6 +123,8 @@
      NaN
     ],
     "identity_approx": false,
+    "a_ctx": NaN,
+    "a_ans": NaN,
     "n_corpora": 7
    },
    "sft__dpo": {
@@ -135,6 +143,8 @@
      NaN
     ],
     "identity_approx": false,
+    "a_ctx": NaN,
+    "a_ans": NaN,
     "n_corpora": 7
    },
    "dpo__rlvr": {
@@ -153,6 +163,8 @@
      NaN
     ],
     "identity_approx": false,
+    "a_ctx": NaN,
+    "a_ans": NaN,
     "n_corpora": 7
    },
    "dpo__rlvr_long": {
@@ -171,6 +183,8 @@
      NaN
     ],
     "identity_approx": false,
+    "a_ctx": NaN,
+    "a_ans": NaN,
     "n_corpora": 7
    }
   }

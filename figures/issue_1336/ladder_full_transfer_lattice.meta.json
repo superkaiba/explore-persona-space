@@ -40,7 +40,7 @@
   "8": "reparam both"
  },
  "cross_map_definition": "ridge fitted DIRECTLY from X = v_context(source) to Y = v_answer(target), scored on the target's held-out answers; NOT a tier and NOT bounded by the ceiling",
- "ci_note": "tier R2 intervals are the 1,000-draw paired-bootstrap GAP CI mapped through r2 = within_r2 - gap. Round-B pairs (SFT->RLVR, SFT->longer, RLVR->longer) carry no bootstrap draws and are POINT-ONLY (open markers); no interval is borrowed. The cross map is point-only on every pair.",
+ "ci_note": "tier R2 intervals are the 1,000-draw paired-bootstrap GAP CI mapped through r2 = within_r2 - gap. Round-B pairs (SFT->RLVR, SFT->longer, RLVR->longer) carry no bootstrap draws and are point-only; no interval is borrowed. The cross map is point-only on every pair.",
  "degenerate_excluded": {
   "surfaces": [
    "gsm8k_test1319 (chat)"
@@ -70,6 +70,8 @@
      -0.9521722389388616
     ],
     "identity_approx": false,
+    "a_ctx": -0.30353428126441595,
+    "a_ans": -0.3779480443351677,
     "n_corpora": 7
    },
    "base__dpo": {
@@ -88,6 +90,8 @@
      -1.959486392287499
     ],
     "identity_approx": false,
+    "a_ctx": -0.3966863169196322,
+    "a_ans": -0.7375825118816319,
     "n_corpora": 7
    },
    "base__rlvr": {
@@ -106,6 +110,8 @@
      -2.6388020005702164
     ],
     "identity_approx": false,
+    "a_ctx": -0.4105618754249243,
+    "a_ans": -0.7541320262617408,
     "n_corpora": 7
    },
    "base__rlvr_long": {
@@ -124,6 +130,8 @@
      -1.590583198579277
     ],
     "identity_approx": false,
+    "a_ctx": -0.28160421422206805,
+    "a_ans": -0.6258865488373535,
     "n_corpora": 7
    },
    "sft__dpo": {
@@ -142,6 +150,8 @@
      -1.9637142275672552
     ],
     "identity_approx": false,
+    "a_ctx": 0.8525570587292947,
+    "a_ans": 0.5243369280610152,
     "n_corpora": 7
    },
    "sft__rlvr": {
@@ -196,6 +206,8 @@
      -2.625103501418763
     ],
     "identity_approx": false,
+    "a_ctx": 0.9636145998938214,
+    "a_ans": 0.835341906245094,
     "n_corpora": 7
    },
    "dpo__rlvr_long": {
@@ -214,6 +226,8 @@
      -1.5908549413034754
     ],
     "identity_approx": false,
+    "a_ctx": 0.8309059930230763,
+    "a_ans": 0.7226925850086321,
     "n_corpora": 7
    },
    "rlvr__rlvr_long": {
