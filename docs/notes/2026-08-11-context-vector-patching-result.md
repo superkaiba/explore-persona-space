@@ -26,9 +26,25 @@ prefix-end maps, [#922](https://eps.superkaiba.com/tasks/922)'s L20 map) — fro
   seen)
 - Fully different: different prefix, different query (tests both)
 
-I tried a variety of prefixes and queries ([see dashboard here](https://github.com/superkaiba/explore-persona-space/blob/main/docs/issue2094_patching_dashboard.md))
-including persona prompts, ICL examples, and random wildchat prefixes (that indicate something at
-least special about the user). The crossed bank is 3 prefixes × 5 queries → 60 pairs (15 matched-query,
+Three prefixes:
+
+- **bare** — no prefix at all; the plain default-assistant register.
+- **persona** — a system prompt: *"You are Captain Marrow, a superstitious old pirate captain. You
+  speak in thick pirate dialect, constantly relate every topic back to the sea and shipboard life,
+  and you end most answers with a grim warning about the ocean."*
+- **conversation** — a completed user + assistant turn carried over as prior context: the user asks
+  for ideas for their daughter's 7th birthday party, the assistant answers enthusiastically
+  (exclamatory, emoji-rich, treasure hunts and piñatas).
+
+Five queries, identical under every prefix:
+
+1. Why is the sky blue during the day but red at sunset?
+2. Write the opening paragraph of a short story about a lighthouse keeper.
+3. How should I prepare for my first job interview next week?
+4. Explain how a hash table works and when I should use one.
+5. Do you think it's better to rent or to buy a home? Give your reasoning.
+
+The crossed bank is 3 prefixes × 5 queries → 60 pairs (15 matched-query,
 30 matched-prefix, 15 cross). Slots: context-end, prefix-end, 2nd/3rd-to-last token, last-3 jointly,
 query span (with and without template tokens), prefix span. Layers: each of the 28 singly, the middle
 band 14–20 jointly, and all 28 jointly. Every cell carries a norm-matched **shuffled-donor null** — the
@@ -49,6 +65,22 @@ matched prefix, fully different).
 
 ![Coherent-draw fraction per slot and layer, three settings](https://raw.githubusercontent.com/superkaiba/explore-persona-space/985a61c307b19472f6266693bb4f4753d7645789/figures/issue_2094/userchat_heatmaps/coherence_heatmaps.png)
 
+**Where the >60 cut comes from, and whether it matters.** 60 is not a calibrated value — it was
+fixed in the task body up front, and it is stricter than the >50 gate this repo uses elsewhere
+(`issue778_lib.py`, following the persona-vectors paper). It turns out not to matter, because the
+judge's score distribution is hard bimodal: a draw is fluent (scores ~100) or it is word salad
+(scores ~0), and almost nothing lands in between. Moving the cut from 50 to 60 reclassifies **18 of
+44,391 draws (0.04%)**; sweeping it across the whole 40–80 range moves the coherent fraction only
+from 0.967 to 0.960. No conclusion in this writeup depends on where the line sits.
+
+![Coherence judge score distribution and cut sensitivity](https://raw.githubusercontent.com/superkaiba/explore-persona-space/REPLACE_SHA/figures/issue_2094/userchat_heatmaps/coherence_distribution.png)
+
+> Left: distribution of the graded coherence score over all 44,391 judged draws, split by slot family
+> and arm (log-scaled counts). Dashed = the >60 cut used here, dotted = the >50 alternative. Right:
+> fraction counted as coherent as the cut sweeps 30→90; flat curves mean the cut is not load-bearing.
+> The two families separate sharply — single-position edits are ~99.3% coherent, multi-token span
+> edits only ~47%, and the null arm breaks just as much as the real patch in both.
+
 **Takeaways:**
 
 1. Single-position edits never break fluency: context-end and prefix-end are 100% coherent at all 28
@@ -60,10 +92,11 @@ matched prefix, fully different).
    overwriting many token states — not an effect of the steering direction.
 
 For the results below, I plot the full matrix, but cells that were never run are greyed out and
-**dropped cells are cross-hatched** — shown, never read as effects. A cell is dropped on any of three
-criteria: fewer than half its draws stayed coherent, more than 2% of its rollouts hit the generation
-cap and truncated (the fu2 compromised-family threshold), or fewer than 5 pairs survive. 19 of the
-176 cells qualify, nearly all of them span slots under joint edits.
+**dropped cells are cross-hatched** — shown, never read as effects. A cell is dropped on one
+criterion: fewer than half its draws stayed coherent. 7 of the 176 cells qualify, all of them span
+slots under joint edits. Cap-hit (rollouts that ran into the generation cap and truncated) is
+reported per cell in the prose below rather than used as a read/do-not-read switch — the fu2 2%
+threshold is too tight to be a binary at n=30, where a single truncated rollout is already 3.3%.
 
 ### Result 1: Effect of patching on answer vector
 
@@ -90,7 +123,8 @@ matched prefix, fully different).
 3. Matched prefix is flat at the context vector: 0.008 at all layers, ≈0 at every single layer. The
    answer state never travels toward the target *query* through v_C. The only large matched-prefix
    values are the query's own token states — 0.57 at query text, layers 14–20 (the all-layer 0.87
-   and query-span 0.78 cells are dropped: 27% and 13% cap-hit).
+   and query-span 0.78 cells read higher still, but 27% and 13% of their rollouts hit the generation
+   cap and truncated — read them with that caveat).
 4. Cross (both differ) barely transfers: 0.20 at all layers, 0.036 at single layers.
 5. The span slots move the answer vector in the matched-query setting too (query text 0.49 at all
    layers, query span 0.51 mid-band, vs context-end 0.41) — expected, since those token states have
@@ -208,8 +242,8 @@ only at the start would score low, but there is no persona at any position to mi
    cell that survives every filter (97% coherent, 0% cap-hit): F 0.70 against a null of 0.39. Read
    as a rate it is the strongest clean effect in the grid — 41% of steered draws answer the target
    query outright (Δ ≥ 0.8) vs 4% of shuffled-donor draws. Which query gets answered lives in the
-   query's own token states, not v_C. (The 0.92 all-layer cell is dropped: 63% coherent, 27%
-   cap-hit.)
+   query's own token states, not v_C. (The all-layer cell reads 0.92 but is shakier on both counts:
+   63% coherent and 27% cap-hit.)
 6. Cross transfers weakly (0.21 at all layers), consistent with Result 1.
 
 ### Result 4: Steering vs patching
@@ -252,8 +286,10 @@ panels byte-for-byte). Transport `eval_results/issue_2094/transport/`. Results 0
 full-state patch over all non-degenerate coherent pairs; Results 3 and 4 over well-separated pairs
 (|anchor separation| ≥ 0.5) only.
 
-**Cap-hit:** 25 of the 30 span-slot follow-up cells are cap-hit compromised (>2% of their rollouts
-hit the generation cap and truncate). Those cells are cross-hatched in the panels along with the
-incoherent and thin-n ones. Three matched-prefix context-end single layers (L2, L9, L27) are hatched
-on a marginal 1-of-30 truncation — the 2% rule applied literally; the rest of that column is clean
-and reads ≈0 either way. The context-end cells the headline rests on are not cap-hit affected.
+**Cap-hit:** 25 of the 30 span-slot follow-up cells have more than 2% of their rollouts hit the
+generation cap and truncate. Cap-hit is *not* a drop criterion here — only coherence is — so those
+cells are shown unhatched and their rates are quoted inline where a number is read. The 2% figure is
+the fu2 convention and is too tight to serve as a binary at n=30, where one truncated rollout is
+already 3.3%: applied literally it flagged three matched-prefix context-end single layers (L2, L9,
+L27) on a single truncation each, in a column that is clean and reads ≈0 either way. The context-end
+cells the headline rests on have no cap-hit at all.

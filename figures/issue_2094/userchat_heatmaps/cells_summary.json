@@ -2821,5 +2821,39 @@
    "n_coh": 10,
    "n_tot": 10
   }
+ },
+ "coherence_distribution": {
+  "n_draws": 44391,
+  "pooled_median": 100.0,
+  "n_in_50_60_band": 18,
+  "frac_coherent_by_cut": {
+   "40": 0.9670428690500327,
+   "50": 0.9653758644770336,
+   "60": 0.964970376878196,
+   "70": 0.9627852492622379,
+   "80": 0.9601495798697934
+  },
+  "per_group": {
+   "single-position slots, real patch": {
+    "n": 20997,
+    "median": 100.0,
+    "frac_gt_60": 0.9930466257084345
+   },
+   "single-position slots, null": {
+    "n": 20994,
+    "median": 100.0,
+    "frac_gt_60": 0.9941411831951986
+   },
+   "multi-token span slots, real patch": {
+    "n": 1200,
+    "median": 45.0,
+    "frac_gt_60": 0.4683333333333333
+   },
+   "multi-token span slots, null": {
+    "n": 1200,
+    "median": 35.0,
+    "frac_gt_60": 0.46
+   }
+  }
  }
 }
