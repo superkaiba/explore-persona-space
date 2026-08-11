@@ -41,6 +41,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import TwoSlopeNorm
+from matplotlib.patches import Rectangle
 
 SLOTS = ("ce", "pe", "cm2", "cm3", "l3j", "qspan", "qtext", "pspan_tmpl", "pspan_text")
 SLOT_LABELS = {
@@ -138,6 +139,11 @@ def aggregate(
             continue
         key = (r["setting"], r["slot"], r["layer_variant"])
         buckets[key]["n_tot"].append(1)
+        # Pooled steered cap-hit (rollouts that ran into the generation cap and
+        # truncated). The fu2 convention labels a family compromised above 2%; those
+        # cells carried NO mark before, so a truncation-driven read was indistinguishable
+        # from a clean one.
+        buckets[key]["caphit"].append(1.0 if r.get("cap_hit") else 0.0)
         if not r["coherent"]:
             continue
         buckets[key]["n_coh"].append(1)
@@ -153,10 +159,30 @@ def aggregate(
             "f_act": float(np.mean(b["f_act"])) if b["f_act"] else np.nan,
             "f_beh": float(np.mean(b["f_beh"])) if b["f_beh"] else np.nan,
             "coh_frac": n_coh / n_tot if n_tot else np.nan,
+            "caphit_frac": float(np.mean(b["caphit"])) if b["caphit"] else np.nan,
             "n_coh": n_coh,
             "n_tot": n_tot,
         }
     return out
+
+
+# A cell is DROPPED — struck through with an X, never read as an effect — when its
+# draws mostly fell apart, its rollouts mostly truncated, or too few pairs survive.
+COH_FLOOR = 0.5
+CAPHIT_CEIL = 0.02  # the fu2 "compromised family" convention
+MIN_PAIRS = 5
+
+
+def dropped_reason(v: dict) -> str | None:
+    """-> short reason a cell must not be read, or None if it is readable."""
+    coh, cap, n = v["coh_frac"], v.get("caphit_frac", np.nan), v["n_coh"]
+    if coh == coh and coh < COH_FLOOR:
+        return "incoherent"
+    if cap == cap and cap > CAPHIT_CEIL:
+        return "truncated"
+    if n < MIN_PAIRS:
+        return "n<5"
+    return None
 
 
 def grid_of(agg: dict, setting: str, field: str) -> np.ndarray:
@@ -172,8 +198,26 @@ def annotate(ax, agg: dict, setting: str) -> None:
         if s != setting:
             continue
         i, j = LAYER_ROWS.index(lv), SLOTS.index(slot)
-        star = "*" if (v["coh_frac"] == v["coh_frac"] and v["coh_frac"] < 0.5) else ""
-        ax.text(j, i, f"{v['n_coh']}/{v['n_tot']}{star}", ha="center", va="center", fontsize=3.2)
+        ax.text(j, i, f"{v['n_coh']}/{v['n_tot']}", ha="center", va="center", fontsize=3.2)
+        if dropped_reason(v) is None:
+            continue
+        # Cross-hatch the WHOLE cell. The old marker was a 3.2pt "*" appended to the
+        # count — invisible at this cell size, and it only ever flagged incoherence,
+        # never truncation or a thin pair count. A corner-to-corner X does not work
+        # either: 30 layer rows in a 9in panel make each cell ~5x wider than tall, so
+        # the X flattens into a smear. A hatch fills the cell at any aspect ratio.
+        ax.add_patch(
+            Rectangle(
+                (j - 0.5, i - 0.5),
+                1,
+                1,
+                fill=False,
+                hatch="xxxx",
+                edgecolor="black",
+                linewidth=0.0,
+                zorder=4,
+            )
+        )
 
 
 def draw(agg: dict, field: str, title: str, cmap, norm, out: Path, baseline_note: str = "") -> None:
@@ -191,7 +235,11 @@ def draw(agg: dict, field: str, title: str, cmap, norm, out: Path, baseline_note
         ax.set_yticks(range(len(LAYER_ROWS)), LAYER_ROWS, fontsize=5.5)
         annotate(ax, agg, setting)
     fig.colorbar(im, ax=axes, shrink=0.7, label=field)
-    note = "grey = arm not run; cell text = n_coherent/n_total pairs; * = <50% coherent"
+    note = (
+        "grey = arm not run; cell text = n_coherent/n_total pairs; "
+        "X = DROPPED, do not read (<50% coherent draws, >2% cap-hit/truncated rollouts, "
+        "or <5 pairs)"
+    )
     fig.suptitle(f"{title}\n{note}{('; ' + baseline_note) if baseline_note else ''}", fontsize=11)
     fig.savefig(out, dpi=200, bbox_inches="tight")
     plt.close(fig)
