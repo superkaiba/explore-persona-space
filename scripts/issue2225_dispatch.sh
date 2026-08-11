@@ -68,7 +68,13 @@ fi
 
 CKPT_ROOT="checkpoints/issue_2225"
 LOG_ROOT="${EPM_I2225_LOG_ROOT:-/workspace/logs/issue-2225}"
-mkdir -p "$LOG_ROOT"
+# SENTINELS are contract-bound to the poller's TOP-LEVEL drain glob
+# /workspace/logs/issue-2225-*.json (poll_pipeline.py — the glob does not cross
+# '/', so a subdirectory sentinel is silently invisible; r2 blocker 2 /
+# g4 Critical 1). Phase logs stay in the $LOG_ROOT subdir; only the sentinel
+# parent is contract-bound. Pinned by tests/test_issue2225_dispatch.py.
+SENTINEL_ROOT="${EPM_I2225_SENTINEL_ROOT:-/workspace/logs}"
+mkdir -p "$LOG_ROOT" "$SENTINEL_ROOT"
 
 # Smoke dials (threaded, never a different code path). Smoke keeps the SAME
 # dispatcher/fan-out/launch width; only N shrinks. Two arm classes covered
@@ -77,9 +83,11 @@ TRAIN_SMOKE_ARGS=()
 EVALGEN_SMOKE_ARGS=()
 SMOKE_CELLS="A__evil__c3.0,H__evil"
 SMOKE_TARGETS="base,A__evil__c3.0,H__evil"
+MMLU_P0_LIMIT=200  # plan §4.8(b): the P0 MMLU probe runs --limit 200
 if [ -n "$SMOKE" ]; then
   TRAIN_SMOKE_ARGS=(--max-steps 2)
   EVALGEN_SMOKE_ARGS=(--n-questions 2 --n-rollouts 1)
+  MMLU_P0_LIMIT=8
 fi
 
 log_phase() { echo "[phase=$1] $2"; }
@@ -95,7 +103,7 @@ assert_out_root_headroom('$1', $2, phase='$3')
 # Sentinel writer (pod-side contract: sentinel file, never task.py). Params via
 # env so the quoted heredoc stays interpolation-free.
 write_sentinel() {  # write_sentinel <kind> <version> <note_json_file>
-  SENT_KIND="$1" SENT_VERSION="$2" SENT_NOTE_FILE="$3" SENT_LOGS_DIR="$LOG_ROOT" \
+  SENT_KIND="$1" SENT_VERSION="$2" SENT_NOTE_FILE="$3" SENT_LOGS_DIR="$SENTINEL_ROOT" \
     uv run python - <<'PY'
 import json, os, pathlib, sys
 
@@ -230,18 +238,38 @@ phase_p0() {
     --log-dir "$p0_logs" "${TRAIN_SMOKE_ARGS[@]}"
 
   # §7 criterion (i): every pilot cell's training log shows hook engagement.
+  # A resume-skipped cell writes NO fresh [steer-hook] line — the fan-out
+  # appends a [fanout-skip] line to its per-cell log instead (engagement was
+  # proven by the fingerprint-bound completed run), so the count gate accepts
+  # EITHER token per log file (r2 blocker 4 / g4 Major 2 — the resume-starve
+  # false exit 7). grep -l lists a file once even when both tokens match.
   local n_expect n_hook
   n_expect=$(uv run python -c "
 import sys; sys.path.insert(0, 'scripts')
 import issue2225_train as t
 print(len(t.pilot_cells()))
 ")
-  n_hook=$(grep -rlF "[steer-hook]" "$p0_logs" 2>/dev/null | wc -l)
-  log_phase p0_pilot "hook-engagement logs: $n_hook/$n_expect"
+  n_hook=$(grep -rlF -e "[steer-hook]" -e "[fanout-skip]" "$p0_logs" 2>/dev/null | wc -l)
+  log_phase p0_pilot "hook-engagement logs (fresh or resume-skip): $n_hook/$n_expect"
   if [ "$n_hook" -ne "$n_expect" ]; then
-    echo "FATAL: §7 criterion (i) FAILED — $n_hook/$n_expect pilot logs carry [steer-hook]" >&2
+    echo "FATAL: §7 criterion (i) FAILED — $n_hook/$n_expect pilot logs carry [steer-hook]/[fanout-skip]" >&2
     exit 7
   fi
+
+  # §4.8(b) P0 MMLU smoke leg (--limit 200): exercise the full lm-eval
+  # invocation path — engine boot, adapter lora_local_path wiring, results
+  # parse — BEFORE P2c burns 86 full-set evals (g3 Major 1). Targets: base +
+  # the first pilot cell (adapter path covered). The limit is threaded into
+  # the resume fingerprint, so this leg never resume-satisfies P2c's full run.
+  local mmlu_probe_targets
+  mmlu_probe_targets="base,$(uv run python -c "
+import sys; sys.path.insert(0, 'scripts')
+import issue2225_train as t
+print(t.pilot_cells()[0].slug)
+")"
+  log_phase p0_pilot "MMLU probe (--limit $MMLU_P0_LIMIT, targets $mmlu_probe_targets)"
+  uv run python scripts/issue2225_mmlu.py --targets "$mmlu_probe_targets" \
+    --limit "$MMLU_P0_LIMIT" --out-root "$PILOT_OUT" --ckpt-root "$CKPT_ROOT"
 
   log_phase p0_pilot "eval-gen (pilot targets, n_rollouts=5)"
   local pilot_targets
@@ -326,6 +354,12 @@ PY
 # automatic re-pilot with the octave-shifted grid; a verdict FAIL carrying NO
 # shift recommendation (criterion-(iii) sign failure while both arms bracket)
 # stays a DESIGNED HALT rc=7 — no coefficient shift can fix a sign failure.
+# SMOKE BLIND SPOT (disclosed in the smoke-architecture marker, g5 Major):
+# under EPM_I2225_SMOKE a verdict FAIL is informational, so
+# p0_handle_verdict_fail / p0_run_repilot are exercised by NO smoke — first
+# exercised on a live P0 miss. The count-gate + routing logic is pinned by
+# tests/test_issue2225_dispatch.py (sed-extracted bash probe with a stubbed
+# resume-skipped overlap cell) instead.
 p0_handle_verdict_fail() {  # <verdict_json> <state_json>
   local verdict="$1" state="$2"
   if [ ! -f "$state" ]; then
@@ -372,13 +406,19 @@ p0_run_repilot() {  # <state_json> — idempotent (resume-safe); runs to a resol
     gridargs+=(--p0-grid-arm "$arm=$grid")
   done
 
-  # §7 criterion (i) on the re-pilot cells' training logs.
+  # §7 criterion (i) on the re-pilot cells' training logs. Every octave grid
+  # OVERLAPS the trained pilot grid at exactly one coefficient (x0.5 keeps
+  # 1.5; x2 keeps 3.0), so that cell ALWAYS resume-skips and writes a
+  # [fanout-skip] line instead of a fresh [steer-hook] log — the dual-token
+  # count is what keeps this gate from a deterministic false exit 7 + crash
+  # loop (r2 blocker 4 / g5 Critical). grep -l lists a file once even when
+  # both tokens match.
   local n_expect n_hook
   n_expect=$(uv run python -c "import json;p=json.load(open('$state'))['plan'];print(sum(len(v['cells']) for v in p.values()))")
-  n_hook=$(grep -rlF "[steer-hook]" "$rp_logs" 2>/dev/null | wc -l)
-  log_phase p0_repilot "hook-engagement logs: $n_hook/$n_expect"
+  n_hook=$(grep -rlF -e "[steer-hook]" -e "[fanout-skip]" "$rp_logs" 2>/dev/null | wc -l)
+  log_phase p0_repilot "hook-engagement logs (fresh or resume-skip): $n_hook/$n_expect"
   if [ "$n_hook" -ne "$n_expect" ]; then
-    echo "FATAL: §7 criterion (i) FAILED on the re-pilot — $n_hook/$n_expect logs carry [steer-hook]" >&2
+    echo "FATAL: §7 criterion (i) FAILED on the re-pilot — $n_hook/$n_expect logs carry [steer-hook]/[fanout-skip]" >&2
     exit 7
   fi
 
