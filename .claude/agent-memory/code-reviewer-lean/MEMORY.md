@@ -2,5 +2,6 @@
 - [Gate threshold vs shard config](gate_threshold_vs_shard_config.md) — per-shard accumulation gates go dead when shard count drops rows/shard below the threshold (#1491 M2)
 - [Batch-copied sidecar provenance field](batch_copied_sidecar_provenance_field.md) — check each figure sidecar's data field against its render FUNCTION's reads, not siblings (#2031 R1)
 - [DP exposure is per-phase](dp_exposure_is_per_phase.md) — credit §9 shard shapes only from that phase's OWN dispatcher; sibling fan-outs don't count (#2224 R1)
+- [Checkpoint consumer skips key check](checkpoint_consumer_skips_key_check.md) — verify the LOADING stage re-checks sidecar keys, and keys cover artifact content (#2222 R1)
 - [rc-halt not resume-idempotent](rc_halt_not_resume_idempotent.md) — a designed rc-halt whose unit is marked phase-complete gets resume-skipped on relaunch; halt silently erased (#2222 R1)
 - [Additive edit flips whole-file resume key](additive_edit_flips_wholefile_resume_key.md) — a stage-scoped edit to a fingerprint-hashed file invalidates ALL earlier-stage checkpoints under --stage all (#2222 R1 g4)
