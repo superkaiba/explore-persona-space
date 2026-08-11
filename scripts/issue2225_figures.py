@@ -33,11 +33,17 @@ from pathlib import Path
 
 os.environ.setdefault("MPLBACKEND", "Agg")
 
-import matplotlib.pyplot as plt
-import numpy as np
-
 # scripts/ on sys.path so sibling issue2225_* modules resolve in script mode.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# Shared-VM thread caps (#847): load_dotenv() setdefaults OMP/MKL/OPENBLAS/
+# NUMEXPR before numpy/matplotlib import so the caps bind in-process.
+load_dotenv()
+
+import matplotlib.pyplot as plt
+import numpy as np
 
 from explore_persona_space.analysis.paper_plots import (
     paper_palette,
