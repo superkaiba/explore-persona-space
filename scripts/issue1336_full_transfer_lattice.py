@@ -137,7 +137,7 @@ SOURCE_BLOCKS = [
 # top fifth. Each figure therefore uses a BROKEN y-axis: the results band on the
 # main panel, the identity line on a short lower panel, diagonal break marks
 # between. Nothing is clipped or rescaled — both baselines are true-valued lines.
-A_YLIM = (-0.80, 0.72)
+A_YLIM = (-0.80, 1.05)
 A_YLIM_IDENT = (-3.25, -1.85)
 PC_YLIM = (-0.62, 0.72)
 # The lower panel carries every OFF-SCALE baseline: identity+bias (-0.95..-3.41)
@@ -276,6 +276,10 @@ def load_baselines() -> dict:
         # from a round-3 sibling. Index it per (target, corpus) to do that.
         if _bl:
             by_target.setdefault((tgt, fmt, corpus), []).append(_id)
+            # The two ALIGNMENT sub-maps the tiers use have their own identity
+            # baselines, on DIFFERENT prediction problems (ctx->ctx, ans->ans).
+            rec.setdefault("a_ctx", []).append(float(_bl["A_ctx_rev"]["identity_bias_r2"]))
+            rec.setdefault("a_ans", []).append(float(_bl["A_ans"]["identity_bias_r2"]))
 
     out: dict[int, dict] = {}
     for pi, (src, tgt) in enumerate(PAIRS):
@@ -321,6 +325,8 @@ def load_baselines() -> dict:
             "identity_bias": float(np.median(rec["ident"])),
             "identity_bias_range": [float(min(rec["ident"])), float(max(rec["ident"]))],
             "identity_approx": False,
+            "a_ctx": float(np.median(rec["a_ctx"])) if rec.get("a_ctx") else np.nan,
+            "a_ans": float(np.median(rec["a_ans"])) if rec.get("a_ans") else np.nan,
             "n_corpora": len(rec["ident"]),
         }
     return out
@@ -447,6 +453,21 @@ def fig_aggregate(D: dict) -> Path:
     # readable information; its value rides the legend instead. The collapsed
     # max-over-tiers line this replaces had exactly that problem, and it held the
     # t7/t8 bar up against the t0/t6 series, making real t0 signal read as noise.
+    for key, col, lab in (
+        ("a_ctx", "#238b45", "identity+bias of the CONTEXT alignment map (t6's remap)"),
+        ("a_ans", "#d95f0e", "identity+bias of the ANSWER alignment map (t7's remap)"),
+    ):
+        ax.plot(
+            x,
+            [BASELINES.get(pi, {}).get(key, np.nan) for pi in range(len(PAIRS))],
+            color=col,
+            lw=1.5,
+            ls=(0, (1, 1.6)),
+            marker="^",
+            ms=5,
+            zorder=3,
+            label=lab,
+        )
     for tier in PC_LOWER_TIERS:
         ax.plot(
             x,
@@ -475,45 +496,7 @@ def fig_aggregate(D: dict) -> Path:
     )
     ident_style = dict(color=IDENT_COLOR, lw=2.0, ls=(0, (5, 2)), marker=".", ms=7)
     if axb is not None:
-        approx = np.array(
-            [bool(BASELINES.get(pi, {}).get("identity_approx")) for pi in range(len(PAIRS))]
-        )
-        # MEASURED segment: solid-dashed, filled dots. GRAFTED segment (round-B
-        # pairs, target-keyed borrow): dotted with OPEN markers, so an
-        # approximation can never read as a measurement.
-        axb.plot(x, np.where(approx, np.nan, ident), zorder=3, **ident_style)
-        axb.plot(
-            x,
-            ident,
-            color=IDENT_COLOR,
-            lw=1.1,
-            ls=(0, (1, 2)),
-            alpha=0.75,
-            zorder=2,
-        )
-        axb.plot(
-            x[approx],
-            ident[approx],
-            linestyle="none",
-            marker="o",
-            ms=7,
-            mfc="none",
-            mec=IDENT_COLOR,
-            mew=1.4,
-            zorder=4,
-        )
-        ax.plot(
-            [],
-            [],
-            color=IDENT_COLOR,
-            lw=1.1,
-            ls=(0, (1, 2)),
-            marker="o",
-            ms=6,
-            mfc="none",
-            mec=IDENT_COLOR,
-            label="identity+bias, round-B pairs (target-keyed graft, ±0.09)",
-        )
+        axb.plot(x, ident, zorder=3, **ident_style)
     if HAS_IDENTITY:
         ax.plot([], [], label="identity+bias baseline  ŷ = x + b  (lower panel)", **ident_style)
 
@@ -544,18 +527,6 @@ def fig_aggregate(D: dict) -> Path:
                     )
                 else:
                     ax.plot([pi], [y], marker="o", ms=3.2, alpha=0.35, color=TIER_COLORS[tier])
-        for pi, (src, tgt) in enumerate(PAIRS):
-            if (src, tgt) in SELFMAP_PAIRS:
-                ax.plot(
-                    [pi],
-                    [med[pi]],
-                    marker="o",
-                    ms=10,
-                    mfc="none",
-                    mec=TIER_COLORS[tier],
-                    mew=1.4,
-                    zorder=5,
-                )
 
     ax.plot(
         x,
@@ -599,8 +570,7 @@ def fig_aggregate(D: dict) -> Path:
     # "every forward pair", and the freed strip carries the 8-entry legend.
     ax.set_title(
         "Every forward pair of the Tülu-3 ladder: how much of the context→answer map survives\n"
-        "median over 7 non-degenerate corpora, every corpus overplotted; open markers = "
-        "point-only (round B, no bootstrap draws)",
+        "median over 7 non-degenerate corpora, every corpus overplotted",
         fontsize=11.5,
         loc="left",
     )
@@ -767,17 +737,6 @@ def fig_percorpus(D: dict) -> Path:
                         zorder=6,
                         clip_on=False,
                     )
-                if PAIRS[pi] in SELFMAP_PAIRS:
-                    ax.plot(
-                        [pi],
-                        [y],
-                        marker="o",
-                        ms=8,
-                        mfc="none",
-                        mec=TIER_COLORS[tier],
-                        mew=1.3,
-                        zorder=5,
-                    )
 
         xa = [pi for pi, (s, t) in enumerate(PAIRS) if (f"{s}__{t}", fmt, corpus) in CROSS]
         ax.plot(
@@ -899,7 +858,7 @@ def write_meta(D: dict, figs: list[Path]) -> Path:
         "ci_note": (
             "tier R2 intervals are the 1,000-draw paired-bootstrap GAP CI mapped through "
             "r2 = within_r2 - gap. Round-B pairs (SFT->RLVR, SFT->longer, RLVR->longer) carry no "
-            "bootstrap draws and are POINT-ONLY (open markers); no interval is borrowed. The "
+            "bootstrap draws and are point-only; no interval is borrowed. The "
             "cross map is point-only on every pair."
         ),
         "degenerate_excluded": {
