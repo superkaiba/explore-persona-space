@@ -1,16 +1,22 @@
 {
-  "commit": "cb9a4a97+dirty",
-  "render_id": "39ca532c0b8a4ecd",
-  "git_commit": "cb9a4a97",
+  "commit": "99565abd+dirty",
+  "render_id": "36c045470df24419",
+  "git_commit": "99565abd",
   "git_dirty": true,
   "git_dirty_paths": [
     ".claude/agent-memory/code-reviewer-lean/gate_threshold_vs_shard_config.md",
+    "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_attrib_quoted.meta.json",
+    "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_attrib_quoted.pdf",
+    "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_attrib_quoted.png",
+    "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_bare_label.meta.json",
+    "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_bare_label.pdf",
+    "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_bare_label.png",
     "figures/issue_2054/framing_character_transfer/framing_transfer_tiers.meta.json",
     "figures/issue_2054/framing_character_transfer/framing_transfer_tiers.pdf",
     "figures/issue_2054/framing_character_transfer/framing_transfer_tiers.png",
     "scripts/issue2054_framing_character_transfer_figs.py"
   ],
-  "created": "2026-08-11T13:59:31Z",
+  "created": "2026-08-11T13:59:46Z",
   "figsize": [
     11.6,
     8.8
@@ -18,1260 +24,1260 @@
   "points": [
     {
       "x": 0.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.3038289702969782,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "held-out $R^2$ (context arm, layer 19)": 0.08540127269448905,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 1.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.3136027351977747,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "held-out $R^2$ (context arm, layer 19)": 0.093742479174626,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 2.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.2942474793792055,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "held-out $R^2$ (context arm, layer 19)": 0.06077813080257247,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 3.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.32295670905965956,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "held-out $R^2$ (context arm, layer 19)": 0.1319945025468399,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 4.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.32341210756318006,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "held-out $R^2$ (context arm, layer 19)": 0.1396276907741701,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 5.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.3293261080027158,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "held-out $R^2$ (context arm, layer 19)": 0.15282632582504024,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 6.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.31150149761326473,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "held-out $R^2$ (context arm, layer 19)": 0.20273434773806914,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 7.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.30091321791769376,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "held-out $R^2$ (context arm, layer 19)": 0.09187454530327738,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 8.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.3148911260737107,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "held-out $R^2$ (context arm, layer 19)": 0.21119577050189792,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 0.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.35880291870192216,
+      "held-out $R^2$ (context arm, layer 19)": -0.43577055841318657,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 1.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.35791276490230467,
+      "held-out $R^2$ (context arm, layer 19)": -0.2693140125428675,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 2.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.3564643517211077,
+      "held-out $R^2$ (context arm, layer 19)": -0.25280815155444,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 3.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.36179945826573806,
+      "held-out $R^2$ (context arm, layer 19)": 0.004610724631294016,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 4.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.3608746344898983,
+      "held-out $R^2$ (context arm, layer 19)": 0.034730635106032935,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 5.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.36244415859515866,
+      "held-out $R^2$ (context arm, layer 19)": 0.07323531225433433,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 6.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.3394662492726247,
+      "held-out $R^2$ (context arm, layer 19)": 0.22389286267747582,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 7.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.3517347835500696,
+      "held-out $R^2$ (context arm, layer 19)": -0.19238871084396741,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 8.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.3407841832696443,
+      "held-out $R^2$ (context arm, layer 19)": 0.27562695315373925,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 0.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.30622127142681255,
+      "held-out $R^2$ (context arm, layer 19)": -0.4244765905280296,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 1.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.3066721168025356,
+      "held-out $R^2$ (context arm, layer 19)": -0.2668618543733633,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 2.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.30012584736346004,
+      "held-out $R^2$ (context arm, layer 19)": -0.2577036582035157,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 3.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.31422875695429797,
+      "held-out $R^2$ (context arm, layer 19)": -0.0017683908309740204,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 4.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.31439392801089217,
+      "held-out $R^2$ (context arm, layer 19)": 0.02546978893418921,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 5.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.320562598228952,
+      "held-out $R^2$ (context arm, layer 19)": 0.06286749554378741,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 6.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.3119759723246858,
+      "held-out $R^2$ (context arm, layer 19)": 0.20599015460559594,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 7.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.3000070680895954,
+      "held-out $R^2$ (context arm, layer 19)": -0.1797926913589484,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 8.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.318152623022781,
+      "held-out $R^2$ (context arm, layer 19)": 0.2555940579397778,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 0.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.2684312192859758,
+      "held-out $R^2$ (context arm, layer 19)": -0.6238272760076228,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 1.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.27119821540705774,
+      "held-out $R^2$ (context arm, layer 19)": -0.311225435315979,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 2.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.2632801102276,
+      "held-out $R^2$ (context arm, layer 19)": -0.3777386572260766,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 3.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.28446328313353886,
+      "held-out $R^2$ (context arm, layer 19)": -0.020062623214813113,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 4.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.2840003855928008,
+      "held-out $R^2$ (context arm, layer 19)": 0.016595759401122658,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 5.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.2932621176930281,
+      "held-out $R^2$ (context arm, layer 19)": 0.04284195803183222,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 6.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.29194422517469826,
+      "held-out $R^2$ (context arm, layer 19)": 0.18344500688068785,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 7.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.26557351463156154,
+      "held-out $R^2$ (context arm, layer 19)": -0.3061719305439531,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 8.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.30062602210560757,
+      "held-out $R^2$ (context arm, layer 19)": 0.23780166996087018,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 0.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.30588673970608377,
+      "held-out $R^2$ (context arm, layer 19)": -0.509283156883615,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 1.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.3017970744903617,
+      "held-out $R^2$ (context arm, layer 19)": -0.26105129123177606,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 2.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.2939578334596991,
+      "held-out $R^2$ (context arm, layer 19)": -0.2704125626447701,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 3.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.3172636628705927,
+      "held-out $R^2$ (context arm, layer 19)": 0.001749474183229105,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 4.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.3188003895786635,
+      "held-out $R^2$ (context arm, layer 19)": 0.025456170059101058,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 5.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.3262440033939762,
+      "held-out $R^2$ (context arm, layer 19)": 0.061608923056372555,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 6.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.31388839838666727,
+      "held-out $R^2$ (context arm, layer 19)": 0.19800352544497615,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 7.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.3002855192270165,
+      "held-out $R^2$ (context arm, layer 19)": -0.21313548225690315,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 8.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.3223865456416389,
+      "held-out $R^2$ (context arm, layer 19)": 0.2515723071792103,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 0.0,
-      "y": 0.30889153687280535,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "y": 0.09429271917485207,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 1.0,
-      "y": 0.31916959947015044,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "y": 0.11815829880740589,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 2.0,
-      "y": 0.3018344519919999,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "y": 0.07834708650422152,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 3.0,
-      "y": 0.3266575712804338,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "y": 0.13886946893132984,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 4.0,
-      "y": 0.32536568413282474,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "y": 0.14680293737870392,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 5.0,
-      "y": 0.33267906660915586,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "y": 0.15854562637806036,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 6.0,
-      "y": 0.3128617353244688,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "y": 0.20071814682169925,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 7.0,
-      "y": 0.3069082478084817,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "y": 0.10270432240504837,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 8.0,
-      "y": 0.31680523048184916,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "y": 0.20646884228482348,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 0.0,
-      "y": 0.3549341320219703,
+      "y": -0.3000561748864215,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 1.0,
-      "y": 0.35458976955631394,
+      "y": -0.17025317891192482,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 2.0,
-      "y": 0.35155761687105025,
+      "y": -0.3465493153308609,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 3.0,
-      "y": 0.3581529772589277,
+      "y": 0.020844031182403057,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 4.0,
-      "y": 0.35768382969375906,
+      "y": 0.05797474176069404,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 5.0,
-      "y": 0.3594439012087001,
+      "y": 0.09107008904718572,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 6.0,
-      "y": 0.3376750924892417,
+      "y": 0.2482537257375986,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 7.0,
-      "y": 0.3499810111927296,
+      "y": -0.19485910808664159,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 8.0,
-      "y": 0.3382333074483735,
+      "y": 0.2768795532585108,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 0.0,
-      "y": 0.3026069435906412,
+      "y": -0.38406611629830356,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 1.0,
-      "y": 0.3055607887384537,
+      "y": -0.1815044808499949,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 2.0,
-      "y": 0.2968066612786873,
+      "y": -0.41642244287787217,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 3.0,
-      "y": 0.31071183088121973,
+      "y": -0.0028180097258282853,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 4.0,
-      "y": 0.31193107749010524,
+      "y": 0.03883433512945744,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 5.0,
-      "y": 0.31793674055639165,
+      "y": 0.06826307939013676,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 6.0,
-      "y": 0.31189414091849654,
+      "y": 0.22508759875124404,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 7.0,
-      "y": 0.29835097664181254,
+      "y": -0.28988489290789865,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 8.0,
-      "y": 0.316492244411834,
+      "y": 0.2522408182642158,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 0.0,
-      "y": 0.2802151810561133,
+      "y": -0.47359868517848885,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 1.0,
-      "y": 0.2847786420583823,
+      "y": -0.21649821824287835,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 2.0,
-      "y": 0.27353205370206185,
+      "y": -0.49441295221237497,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 3.0,
-      "y": 0.2930814419327119,
+      "y": -0.020314594940158102,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 4.0,
-      "y": 0.29306417188186573,
+      "y": 0.02887656252741131,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 5.0,
-      "y": 0.30132462668089915,
+      "y": 0.04933930852859454,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 6.0,
-      "y": 0.2977405552999663,
+      "y": 0.20730546216056872,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 7.0,
-      "y": 0.27644728026895304,
+      "y": -0.33153839857626527,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 8.0,
-      "y": 0.30405671381119415,
+      "y": 0.23660534366137184,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 0.0,
-      "y": 0.3085053749897904,
+      "y": -0.38826302328958223,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 9
     },
     {
       "x": 1.0,
-      "y": 0.3095508430146352,
+      "y": -0.17572284709010347,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 9
     },
     {
       "x": 2.0,
-      "y": 0.2985200744818515,
+      "y": -0.4295546726059757,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 9
     },
     {
       "x": 3.0,
-      "y": 0.3195884665022463,
+      "y": 0.0007889496603803448,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 9
     },
     {
       "x": 4.0,
-      "y": 0.3223328020409733,
+      "y": 0.03824650898058233,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 9
     },
     {
       "x": 5.0,
-      "y": 0.3294385782735939,
+      "y": 0.06648017826952832,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 9
     },
     {
       "x": 6.0,
-      "y": 0.3166780052394912,
+      "y": 0.21723160981792905,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 9
     },
     {
       "x": 7.0,
-      "y": 0.30500658875850306,
+      "y": -0.28432233022856634,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 9
     },
     {
       "x": 8.0,
-      "y": 0.323645943182084,
+      "y": 0.24872544593384882,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 9
     },
     {
       "transfer tier (more correction allowed \u2192)": 0.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.269705049864465,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "held-out $R^2$ (context arm, layer 19)": 0.08239456246481258,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 10
     },
     {
       "transfer tier (more correction allowed \u2192)": 1.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.19943020765364472,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "held-out $R^2$ (context arm, layer 19)": 0.008359944350116843,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 10
     },
     {
       "transfer tier (more correction allowed \u2192)": 2.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.22751391085723216,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "held-out $R^2$ (context arm, layer 19)": 0.04992118808043292,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 10
     },
     {
       "transfer tier (more correction allowed \u2192)": 3.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.28729492362367276,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "held-out $R^2$ (context arm, layer 19)": 0.11842374318167183,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 10
     },
     {
       "transfer tier (more correction allowed \u2192)": 4.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.2912460118136728,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "held-out $R^2$ (context arm, layer 19)": 0.11842832671241735,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 10
     },
     {
       "transfer tier (more correction allowed \u2192)": 5.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.31333338030669056,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "held-out $R^2$ (context arm, layer 19)": 0.1491666502907084,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 10
     },
     {
       "transfer tier (more correction allowed \u2192)": 6.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.22197974375341983,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "held-out $R^2$ (context arm, layer 19)": 0.0976298187420664,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 10
     },
     {
       "transfer tier (more correction allowed \u2192)": 7.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.2514684648903142,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "held-out $R^2$ (context arm, layer 19)": 0.08093507143030768,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 10
     },
     {
       "transfer tier (more correction allowed \u2192)": 8.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.22216795568916953,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "held-out $R^2$ (context arm, layer 19)": 0.09354342921759987,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 10
     },
     {
       "transfer tier (more correction allowed \u2192)": 0.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.3421061369472603,
+      "held-out $R^2$ (context arm, layer 19)": -0.23819742950806697,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 11
     },
     {
       "transfer tier (more correction allowed \u2192)": 1.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.33498841894436393,
+      "held-out $R^2$ (context arm, layer 19)": -0.19931536369713157,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 11
     },
     {
       "transfer tier (more correction allowed \u2192)": 2.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.33179991099580863,
+      "held-out $R^2$ (context arm, layer 19)": -0.11514122309481714,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 11
     },
     {
       "transfer tier (more correction allowed \u2192)": 3.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.34542308565059604,
+      "held-out $R^2$ (context arm, layer 19)": 0.04320025168705981,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 11
     },
     {
       "transfer tier (more correction allowed \u2192)": 4.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.34582710096877123,
+      "held-out $R^2$ (context arm, layer 19)": 0.0553964722539261,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 11
     },
     {
       "transfer tier (more correction allowed \u2192)": 5.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.3461326047059389,
+      "held-out $R^2$ (context arm, layer 19)": 0.1154753509993891,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 11
     },
     {
       "transfer tier (more correction allowed \u2192)": 6.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.3012395274593135,
+      "held-out $R^2$ (context arm, layer 19)": 0.05546736551867999,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 11
     },
     {
       "transfer tier (more correction allowed \u2192)": 7.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.30293125074395355,
+      "held-out $R^2$ (context arm, layer 19)": 0.0343280894442207,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 11
     },
     {
       "transfer tier (more correction allowed \u2192)": 8.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.2625058208800234,
+      "held-out $R^2$ (context arm, layer 19)": 0.1310260952533051,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 11
     },
     {
       "transfer tier (more correction allowed \u2192)": 0.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.29720089447915965,
+      "held-out $R^2$ (context arm, layer 19)": -0.32428236831407126,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 12
     },
     {
       "transfer tier (more correction allowed \u2192)": 1.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.2618012513411513,
+      "held-out $R^2$ (context arm, layer 19)": -0.2788084638346572,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 12
     },
     {
       "transfer tier (more correction allowed \u2192)": 2.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.2607812434862547,
+      "held-out $R^2$ (context arm, layer 19)": -0.20003319486998672,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 12
     },
     {
       "transfer tier (more correction allowed \u2192)": 3.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.30419726102278116,
+      "held-out $R^2$ (context arm, layer 19)": 0.020042495202248368,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 12
     },
     {
       "transfer tier (more correction allowed \u2192)": 4.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.3069039869452698,
+      "held-out $R^2$ (context arm, layer 19)": 0.03951248825400131,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 12
     },
     {
       "transfer tier (more correction allowed \u2192)": 5.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.31991733456336024,
+      "held-out $R^2$ (context arm, layer 19)": 0.10450329111714943,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 12
     },
     {
       "transfer tier (more correction allowed \u2192)": 6.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.2638123544388967,
+      "held-out $R^2$ (context arm, layer 19)": 0.032423903902045706,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 12
     },
     {
       "transfer tier (more correction allowed \u2192)": 7.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.2633880546169946,
+      "held-out $R^2$ (context arm, layer 19)": 0.01514449583465125,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 12
     },
     {
       "transfer tier (more correction allowed \u2192)": 8.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.2377465286267441,
+      "held-out $R^2$ (context arm, layer 19)": 0.1253459571936564,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 12
     },
     {
       "transfer tier (more correction allowed \u2192)": 0.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.18125389128006908,
+      "held-out $R^2$ (context arm, layer 19)": -0.38094779715308397,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 13
     },
     {
       "transfer tier (more correction allowed \u2192)": 1.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.0816344941319804,
+      "held-out $R^2$ (context arm, layer 19)": -0.3857811058652293,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 13
     },
     {
       "transfer tier (more correction allowed \u2192)": 2.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.10899027155779917,
+      "held-out $R^2$ (context arm, layer 19)": -0.28799543142673933,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 13
     },
     {
       "transfer tier (more correction allowed \u2192)": 3.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.20847847141949366,
+      "held-out $R^2$ (context arm, layer 19)": -0.012126158958914824,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 13
     },
     {
       "transfer tier (more correction allowed \u2192)": 4.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.22218176669853307,
+      "held-out $R^2$ (context arm, layer 19)": 0.01793253374500008,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 13
     },
     {
       "transfer tier (more correction allowed \u2192)": 5.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.23455994415696724,
+      "held-out $R^2$ (context arm, layer 19)": 0.08959728997604739,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 13
     },
     {
       "transfer tier (more correction allowed \u2192)": 6.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.16588209829021378,
+      "held-out $R^2$ (context arm, layer 19)": -0.035835875395350006,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 13
     },
     {
       "transfer tier (more correction allowed \u2192)": 7.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.17703060498757142,
+      "held-out $R^2$ (context arm, layer 19)": -0.026210777232903704,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 13
     },
     {
       "transfer tier (more correction allowed \u2192)": 8.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.17065075158327633,
+      "held-out $R^2$ (context arm, layer 19)": 0.0822574938963367,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 13
     },
     {
       "transfer tier (more correction allowed \u2192)": 0.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.28552303450137656,
+      "held-out $R^2$ (context arm, layer 19)": -0.2903898832287532,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 14
     },
     {
       "transfer tier (more correction allowed \u2192)": 1.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.22870075779900717,
+      "held-out $R^2$ (context arm, layer 19)": -0.3004773658440729,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 14
     },
     {
       "transfer tier (more correction allowed \u2192)": 2.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.23998109300818973,
+      "held-out $R^2$ (context arm, layer 19)": -0.17875143674128094,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 14
     },
     {
       "transfer tier (more correction allowed \u2192)": 3.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.2981811581828423,
+      "held-out $R^2$ (context arm, layer 19)": 0.017702563751502788,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 14
     },
     {
       "transfer tier (more correction allowed \u2192)": 4.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.300181566250941,
+      "held-out $R^2$ (context arm, layer 19)": 0.03526551145932588,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 14
     },
     {
       "transfer tier (more correction allowed \u2192)": 5.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.3215450205822042,
+      "held-out $R^2$ (context arm, layer 19)": 0.10480823952295262,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 14
     },
     {
       "transfer tier (more correction allowed \u2192)": 6.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.24461088618351895,
+      "held-out $R^2$ (context arm, layer 19)": 0.00487562020928709,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 14
     },
     {
       "transfer tier (more correction allowed \u2192)": 7.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.2607350098129671,
+      "held-out $R^2$ (context arm, layer 19)": 0.015960824545739237,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 14
     },
     {
       "transfer tier (more correction allowed \u2192)": 8.0,
-      "held-out $R^2$ (context arm, layer 19)": 0.23287515574645093,
+      "held-out $R^2$ (context arm, layer 19)": 0.1076166157214109,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 14
     },
     {
       "transfer tier (more correction allowed \u2192)": 0.0,
-      "y": 0.19188146986925153,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "y": 0.07512623167983767,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 15
     },
     {
       "transfer tier (more correction allowed \u2192)": 1.0,
-      "y": 0.14702167689665788,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "y": 0.0289137086235553,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 15
     },
     {
       "transfer tier (more correction allowed \u2192)": 2.0,
-      "y": 0.15587986485038913,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "y": 0.04090570212736094,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 15
     },
     {
       "transfer tier (more correction allowed \u2192)": 3.0,
-      "y": 0.21811588800105497,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "y": 0.11077913036775383,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 15
     },
     {
       "transfer tier (more correction allowed \u2192)": 4.0,
-      "y": 0.2197757832637806,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "y": 0.11093256305157347,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 15
     },
     {
       "transfer tier (more correction allowed \u2192)": 5.0,
-      "y": 0.23586123950561183,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "y": 0.15714261008700237,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 15
     },
     {
       "transfer tier (more correction allowed \u2192)": 6.0,
-      "y": 0.16032482436238832,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "y": 0.07694093507190564,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 15
     },
     {
       "transfer tier (more correction allowed \u2192)": 7.0,
-      "y": 0.17152305948109614,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "y": 0.073869684557891,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 15
     },
     {
       "transfer tier (more correction allowed \u2192)": 8.0,
-      "y": 0.1480239348289349,
-      "series": "control: character \u2192 character, median of 12 pairs",
+      "y": 0.08052780828547147,
+      "series": "control: assistant IN STORY \u2192 character, median of 4",
       "_kind": "line",
       "_group": 15
     },
     {
       "transfer tier (more correction allowed \u2192)": 0.0,
-      "y": 0.2522059986588692,
+      "y": -0.4323690684885701,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 16
     },
     {
       "transfer tier (more correction allowed \u2192)": 1.0,
-      "y": 0.23852481311737034,
+      "y": -0.40828966064641586,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 16
     },
     {
       "transfer tier (more correction allowed \u2192)": 2.0,
-      "y": 0.23915773731110654,
+      "y": -0.23453660397879816,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 16
     },
     {
       "transfer tier (more correction allowed \u2192)": 3.0,
-      "y": 0.2551086062677008,
+      "y": -0.017887909610096474,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 16
     },
     {
       "transfer tier (more correction allowed \u2192)": 4.0,
-      "y": 0.255067250435304,
+      "y": 0.02776128126408801,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 16
     },
     {
       "transfer tier (more correction allowed \u2192)": 5.0,
-      "y": 0.25813804121269807,
+      "y": 0.10134939563705476,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 16
     },
     {
       "transfer tier (more correction allowed \u2192)": 6.0,
-      "y": 0.2077010315237709,
+      "y": 0.024238675285496235,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 16
     },
     {
       "transfer tier (more correction allowed \u2192)": 7.0,
-      "y": 0.19812967247390495,
+      "y": 0.0155091227460195,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 16
     },
     {
       "transfer tier (more correction allowed \u2192)": 8.0,
-      "y": 0.16667126638682692,
+      "y": 0.0931517816420278,
       "series": "\u2192 Helios (AI-likeness 72)",
       "_kind": "line",
       "_group": 16
     },
     {
       "transfer tier (more correction allowed \u2192)": 0.0,
-      "y": 0.21535448919376626,
+      "y": -0.36396817945294,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 17
     },
     {
       "transfer tier (more correction allowed \u2192)": 1.0,
-      "y": 0.18013763961525936,
+      "y": -0.3362233889580497,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 17
     },
     {
       "transfer tier (more correction allowed \u2192)": 2.0,
-      "y": 0.18967655836674763,
+      "y": -0.2814971441089766,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 17
     },
     {
       "transfer tier (more correction allowed \u2192)": 3.0,
-      "y": 0.22551269997980644,
+      "y": -0.015172711340430033,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 17
     },
     {
       "transfer tier (more correction allowed \u2192)": 4.0,
-      "y": 0.22550809013533835,
+      "y": 0.02826065884333582,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 17
     },
     {
       "transfer tier (more correction allowed \u2192)": 5.0,
-      "y": 0.23858633603846285,
+      "y": 0.12070874067374378,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 17
     },
     {
       "transfer tier (more correction allowed \u2192)": 6.0,
-      "y": 0.17489440097712117,
+      "y": 0.0055810510512484205,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 17
     },
     {
       "transfer tier (more correction allowed \u2192)": 7.0,
-      "y": 0.1687449417406614,
+      "y": -0.00722013896571092,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 17
     },
     {
       "transfer tier (more correction allowed \u2192)": 8.0,
-      "y": 0.14852771853503133,
+      "y": 0.09365463045083047,
       "series": "\u2192 Wren (AI-likeness 62)",
       "_kind": "line",
       "_group": 17
     },
     {
       "transfer tier (more correction allowed \u2192)": 0.0,
-      "y": 0.14298324637440157,
+      "y": -0.49536603869844553,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 18
     },
     {
       "transfer tier (more correction allowed \u2192)": 1.0,
-      "y": 0.034705079437369266,
+      "y": -0.5292599770915404,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 18
     },
     {
       "transfer tier (more correction allowed \u2192)": 2.0,
-      "y": 0.06717333041699927,
+      "y": -0.29837662062139464,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 18
     },
     {
       "transfer tier (more correction allowed \u2192)": 3.0,
-      "y": 0.162046601502726,
+      "y": -0.029163046965156127,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 18
     },
     {
       "transfer tier (more correction allowed \u2192)": 4.0,
-      "y": 0.16521789954645388,
+      "y": 0.016665926149300514,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 18
     },
     {
       "transfer tier (more correction allowed \u2192)": 5.0,
-      "y": 0.18111893273857405,
+      "y": 0.13817063883677283,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 18
     },
     {
       "transfer tier (more correction allowed \u2192)": 6.0,
-      "y": 0.11290848672671192,
+      "y": -0.044104955848411495,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 18
     },
     {
       "transfer tier (more correction allowed \u2192)": 7.0,
-      "y": 0.10749234453694909,
+      "y": -0.08185696261472888,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 18
     },
     {
       "transfer tier (more correction allowed \u2192)": 8.0,
-      "y": 0.10349883335937311,
+      "y": 0.08177248836121798,
       "series": "\u2192 Vex (AI-likeness 55)",
       "_kind": "line",
       "_group": 18
     },
     {
       "transfer tier (more correction allowed \u2192)": 0.0,
-      "y": 0.22134245421799367,
+      "y": -0.3815963014947642,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 19
     },
     {
       "transfer tier (more correction allowed \u2192)": 1.0,
-      "y": 0.17309729436988605,
+      "y": -0.3668110700297241,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 19
     },
     {
       "transfer tier (more correction allowed \u2192)": 2.0,
-      "y": 0.17910398105399683,
+      "y": -0.2833044629584273,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 19
     },
     {
       "transfer tier (more correction allowed \u2192)": 3.0,
-      "y": 0.2327794593209485,
+      "y": -0.011271214319079181,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 19
     },
     {
       "transfer tier (more correction allowed \u2192)": 4.0,
-      "y": 0.23355192552914797,
+      "y": 0.026058136420863676,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 19
     },
     {
       "transfer tier (more correction allowed \u2192)": 5.0,
-      "y": 0.24871439183521024,
+      "y": 0.10930805459272779,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 19
     },
     {
       "transfer tier (more correction allowed \u2192)": 6.0,
-      "y": 0.17748838338114784,
+      "y": -0.001423098371922804,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 19
     },
     {
       "transfer tier (more correction allowed \u2192)": 7.0,
-      "y": 0.1793450524422518,
+      "y": 0.0034667287998370266,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 19
     },
     {
       "transfer tier (more correction allowed \u2192)": 8.0,
-      "y": 0.15735099009370046,
+      "y": 0.0868862379115432,
       "series": "\u2192 Dana (AI-likeness 53)",
       "_kind": "line",
       "_group": 19
@@ -1280,46 +1286,43 @@
   "n_series": 20,
   "total_points": 180,
   "text": {
-    "suptitle": "Is the assistant a privileged persona? Assistant-in-story map re-used on each story character",
+    "suptitle": "Changing framing AND persona at once: assistant chat-template map re-used on each story character",
     "fig_texts": [
-      "#2054 lattice \u00b7 story answer boundary = attributed quote, HELD FIXED across every transfer (only the persona changes) \u00b7 AI-likeness = judge-scored (claude-sonnet-4-5, k=5, n\u2248300) on each character's OWN on-policy answers \u00b7 user turn excluded \u00b7 y-axis shared within a row only"
+      "#2054 lattice \u00b7 source = assistant \u00d7 chat \u00d7 INSERTED (the only chat anchor the ladder enumerates) \u00b7 story answer boundary = bare label \u00b7 AI-likeness = judge-scored (claude-sonnet-4-5, k=5, n\u2248300) on each character's OWN on-policy answers \u00b7 user turn excluded \u00b7 y-axis shared within a row only"
     ],
     "axes": [
       {
         "title_left": "Qwen2.5-7B-Instruct \u00b7 inserted answer text\nn=4,135\u20134,945 paired rows per character",
         "ylabel": "held-out $R^2$ (context arm, layer 19)",
         "annotations": [
-          "assistant source map on its OWN data: 0.383",
+          "chat source map on its OWN data: 0.492",
           "rungs 7\u20139: $n_{train}$\u22483,308 < $d$=3,584\nregularization-limit"
         ],
         "yticklabels": [
-          "\u22120.05",
-          "0.00",
-          "0.05",
-          "0.10",
-          "0.15",
-          "0.20",
-          "0.25",
-          "0.30",
-          "0.35",
-          "0.40",
-          "0.45"
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
         ]
       },
       {
         "title_left": "Qwen2.5-7B (base) \u00b7 inserted answer text\nn=4,135\u20134,945 paired rows per character",
         "annotations": [
-          "assistant source map on its OWN data: 0.381",
+          "chat source map on its OWN data: 0.411",
           "rungs 7\u20139: $n_{train}$\u22483,308 < $d$=3,584\nregularization-limit"
         ]
       },
       {
-        "title_left": "Qwen2.5-7B-Instruct \u00b7 on-policy answer text\nn=2,950\u20133,473 paired rows per character",
+        "title_left": "Qwen2.5-7B-Instruct \u00b7 on-policy answer text\nn=3,481\u20133,647 paired rows per character",
         "xlabel": "transfer tier (more correction allowed \u2192)",
         "ylabel": "held-out $R^2$ (context arm, layer 19)",
         "annotations": [
-          "assistant source map on its OWN data: 0.379",
-          "rungs 7\u20139: $n_{train}$\u22482,360 < $d$=3,584\nregularization-limit"
+          "chat source map on its OWN data: 0.492",
+          "rungs 7\u20139: $n_{train}$\u22482,784 < $d$=3,584\nregularization-limit"
         ],
         "xticklabels": [
           "1 direct\ntransfer",
@@ -1333,24 +1336,21 @@
           "9 full\nA\u00b7M\u00b7B"
         ],
         "yticklabels": [
-          "\u22120.05",
-          "0.00",
-          "0.05",
-          "0.10",
-          "0.15",
-          "0.20",
-          "0.25",
-          "0.30",
-          "0.35",
-          "0.40"
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
         ]
       },
       {
-        "title_left": "Qwen2.5-7B (base) \u00b7 on-policy answer text\nn=2,950\u20133,473 paired rows per character",
+        "title_left": "Qwen2.5-7B (base) \u00b7 on-policy answer text\nn=3,481\u20133,647 paired rows per character",
         "xlabel": "transfer tier (more correction allowed \u2192)",
         "annotations": [
-          "assistant source map on its OWN data: 0.283",
-          "rungs 7\u20139: $n_{train}$\u22482,360 < $d$=3,584\nregularization-limit"
+          "chat source map on its OWN data: 0.411",
+          "rungs 7\u20139: $n_{train}$\u22482,784 < $d$=3,584\nregularization-limit"
         ],
         "xticklabels": [
           "1 direct\ntransfer",
@@ -1366,7 +1366,7 @@
       }
     ],
     "series": [
-      "control: character \u2192 character, median of 12 pairs",
+      "control: assistant IN STORY \u2192 character, median of 4",
       "\u2192 Helios (AI-likeness 72)",
       "\u2192 Wren (AI-likeness 62)",
       "\u2192 Vex (AI-likeness 55)",
