@@ -97,6 +97,32 @@ PAIRS = (
 SELFMAP_PAIRS = {("sft", "rlvr"), ("sft", "rlvr_long"), ("rlvr", "rlvr_long")}
 stt.SELFMAP_STEPS = SELFMAP_PAIRS
 
+# --- layer selection (#1336 frozen report set) ------------------------------
+# The pair files carry the FULL t0..t8 ladder, the 20-draw shuffled nulls and
+# the cross map (`repswap_r2`) at every frozen layer {16, 21, 22, 30}. Only the
+# identity+bias / kNN `baselines` block is layer-30-only: the ladder gates it on
+# `full_tier_layers`, which the dispatcher set to [30] (issue1336_metric_ladder
+# .py:840). So a non-30 layer renders every series EXCEPT identity+bias.
+#
+# Round B (selfmap_v3) ran at layer 30 ONLY, so the three non-adjacent pairs it
+# contributed do not exist off layer 30: those layers plot the 7 round-3 pairs.
+FROZEN_LAYERS = (16, 21, 22, 30)
+LAYER = 30
+for _i, _a in enumerate(sys.argv):
+    if _a == "--layer" and _i + 1 < len(sys.argv):
+        LAYER = int(sys.argv[_i + 1])
+    elif _a.startswith("--layer="):
+        LAYER = int(_a.split("=", 1)[1])
+if LAYER not in FROZEN_LAYERS:
+    raise SystemExit(f"--layer must be one of {FROZEN_LAYERS} (frozen report set); got {LAYER}")
+LKEY = str(LAYER)
+SUFFIX = "" if LAYER == 30 else f"_l{LAYER}"
+HAS_IDENTITY = LAYER == 30  # identity+bias exists only at the full-tier layer
+
+if LAYER != 30:
+    SELFMAP_PAIRS = set()
+    stt.SELFMAP_STEPS = SELFMAP_PAIRS
+
 # Where each source stage's block starts, for the group separators / shading.
 SOURCE_BLOCKS = [
     ("base", 0, 4),
@@ -128,6 +154,69 @@ PC_MAIN_TIERS = (7, 8)
 # same two globs, so they ride along.
 CROSS = xmap.CROSS
 CROSS_PROV = xmap.CROSS_PROV
+
+if LAYER != 30:
+    PAIRS = tuple(
+        p for p in PAIRS if p not in {("sft", "rlvr"), ("sft", "rlvr_long"), ("rlvr", "rlvr_long")}
+    )
+    SOURCE_BLOCKS = [("base", 0, 4), ("SFT", 4, 5), ("DPO", 5, 7)]
+
+
+def _layer_rows(layer_key: str) -> dict:
+    """(pair, fmt, corpus) -> that layer's per_layer block, read from the pair files.
+
+    The committed `mlp.get_row` path that `stt.cell` uses is baked to layer 30,
+    so an off-30 layer reads the pair-file JSONs directly. Same files, same
+    fields — this is a layer parameter, not a different measurement.
+    """
+    import glob
+    import re
+
+    pat = re.compile(r"pair_(.+?)__(.+?)_(chat|naturalistic)_(.+)\.json")
+    out: dict = {}
+    for fp in sorted(set(glob.glob(xmap.PAIRFILE_GLOB, recursive=True))):
+        m = pat.match(Path(fp).name)
+        if not m:
+            continue
+        src, tgt, fmt, corpus = m.groups()
+        d = json.load(open(fp))
+        layer = d.get("per_layer", {}).get(layer_key)
+        if layer:
+            out[(f"{src}__{tgt}", fmt, corpus)] = (layer, int(d.get("n_shared_rows", 0)))
+    return out
+
+
+if LAYER != 30:
+    _ROWS = _layer_rows(LKEY)
+
+    def _cell_at_layer(src, tgt, fmt, corpus, tier):
+        """stt.cell() for an arbitrary frozen layer; identical return shape."""
+        hit = _ROWS.get((f"{src}__{tgt}", fmt, corpus))
+        if hit is None:
+            return None
+        layer, n = hit
+        rec = layer["raw"]["tiers"].get(f"t{tier}")
+        if rec is None:
+            return None
+        within = float(layer["raw"]["within_r2"])
+        gb = rec.get("gap_bootstrap") or {}
+        lo, hi = gb.get("ci_lo"), gb.get("ci_hi")
+        # gap = within - r2, so the gap CI maps onto R2 by a location shift.
+        return {
+            "r2": float(rec["r2"]),
+            "r2_lo": within - hi if hi is not None else None,
+            "r2_hi": within - lo if lo is not None else None,
+            "within_r2": within,
+            "n": n,
+            "has_ci": lo is not None,
+        }
+
+    stt.cell = _cell_at_layer
+    CROSS = {
+        k: float(v[0]["repswap_r2"]) for k, v in _ROWS.items() if v[0].get("repswap_r2") is not None
+    }
+    CROSS_PROV = dict(xmap.CROSS_PROV, layer=LAYER, source=f"per_layer/{LAYER}.repswap_r2")
+
 
 # --- fair baselines -------------------------------------------------------
 # Two floors, both already committed per round-3 pair file; neither is refitted.
@@ -172,13 +261,14 @@ def load_baselines() -> dict:
         src, tgt, fmt, corpus = m.groups()
         if (fmt, corpus) in DEGENERATE:
             continue
-        layer = json.load(open(fp)).get("per_layer", {}).get("30")
+        layer = json.load(open(fp)).get("per_layer", {}).get(LKEY)
         if not layer:
             continue
         rec = by_pair.setdefault(f"{src}__{tgt}", {"null": [], "ident": []})
         mat = np.asarray(layer["nulls"]["r2_matrix"], dtype=float)
         rec["null"].append(mat[:, [NULL_COL[t] for t in TIERS]])
-        rec["ident"].append(float(layer["baselines"]["within"]["identity_bias_r2"]))
+        _bl = layer.get("baselines")
+        rec["ident"].append(float(_bl["within"]["identity_bias_r2"]) if _bl else float("nan"))
 
     out: dict[int, dict] = {}
     for pi, (src, tgt) in enumerate(PAIRS):
@@ -277,19 +367,29 @@ def collect() -> dict:
 
 
 def fig_aggregate(D: dict) -> Path:
-    fig, (ax, axb) = plt.subplots(
-        2,
-        1,
-        sharex=True,
-        figsize=(12.4, 7.3),
-        gridspec_kw={"height_ratios": [4.3, 1.0], "hspace": 0.08},
-    )
+    if not HAS_IDENTITY:
+        # No identity+bias at this layer (the ladder gates the baselines block to
+        # full_tier_layers=[30]), so there is nothing off-scale to break for.
+        # add_axes with an explicit rect bypasses the style's layout engine
+        # entirely (set_layout_engine("none") keeps the prior engine's
+        # adjust_compatible flag, so subplots_adjust is silently skipped).
+        fig = plt.figure(figsize=(12.4, 7.3))
+        ax = fig.add_axes([0.075, 0.205, 0.920, 0.700])
+        axb = None
+    else:
+        fig, (ax, axb) = plt.subplots(
+            2,
+            1,
+            sharex=True,
+            figsize=(12.4, 7.3),
+            gridspec_kw={"height_ratios": [4.3, 1.0], "hspace": 0.08},
+        )
     # The project plot style enables an auto layout engine, which silently
     # overrides hspace / subplots_adjust and pulls the broken-axis panels apart.
     fig.set_layout_engine("none")
     x = np.arange(len(PAIRS))
 
-    for a in (ax, axb):
+    for a in [ax] if axb is None else (ax, axb):
         for _, lo, hi in SOURCE_BLOCKS[::2]:
             a.axvspan(lo - 0.5, hi - 0.5, color="#f7f7f7", zorder=0)
 
@@ -343,8 +443,10 @@ def fig_aggregate(D: dict) -> Path:
         [BASELINES[pi]["identity_bias"] if pi in BASELINES else np.nan for pi in range(len(PAIRS))]
     )
     ident_style = dict(color=IDENT_COLOR, lw=2.0, ls=(0, (5, 2)), marker=".", ms=7)
-    axb.plot(x, ident, zorder=2, **ident_style)
-    ax.plot([], [], label="identity+bias baseline  ŷ = x + b  (lower panel)", **ident_style)
+    if axb is not None:
+        axb.plot(x, ident, zorder=2, **ident_style)
+    if HAS_IDENTITY:
+        ax.plot([], [], label="identity+bias baseline  ŷ = x + b  (lower panel)", **ident_style)
 
     for tier in TIERS:
         med = [
@@ -420,9 +522,10 @@ def fig_aggregate(D: dict) -> Path:
         )
 
     ax.set_ylim(*A_YLIM)
-    axb.set_ylim(*A_YLIM_IDENT)
-    axb.set_yticks([-2.0, -3.0])
-    ax.set_ylabel("held-out R²  (raw pooled, layer 30)", fontsize=11)
+    if axb is not None:
+        axb.set_ylim(*A_YLIM_IDENT)
+        axb.set_yticks([-2.0, -3.0])
+    ax.set_ylabel(f"held-out R²  (raw pooled, layer {LAYER})", fontsize=11)
     # No xlabel: the tick labels ARE the pairs ("base→SFT"), the title says
     # "every forward pair", and the freed strip carries the 8-entry legend.
     ax.set_title(
@@ -432,10 +535,11 @@ def fig_aggregate(D: dict) -> Path:
         fontsize=11.5,
         loc="left",
     )
-    for a in (ax, axb):
+    for a in [ax] if axb is None else (ax, axb):
         a.grid(axis="y", alpha=0.22, lw=0.6)
         _xticks(a)
-    _break_marks(ax, axb)
+    if axb is not None:
+        _break_marks(ax, axb)
     # Figure-level legend BELOW the axes: the per-tier t0/t6 null lines now occupy
     # the lower-left/mid of the data area, so an in-axes legend overlaps them.
     h, lab = ax.get_legend_handles_labels()
@@ -444,8 +548,9 @@ def fig_aggregate(D: dict) -> Path:
     )
     # subplots_adjust, not tight_layout: tight_layout recomputes hspace and
     # would pull the two broken-axis panels apart.
-    fig.subplots_adjust(left=0.075, right=0.995, top=0.905, bottom=0.20)
-    out = OUTDIR / "ladder_full_transfer_lattice.png"
+    if axb is not None:
+        fig.subplots_adjust(left=0.075, right=0.995, top=0.905, bottom=0.20)
+    out = OUTDIR / f"ladder_full_transfer_lattice{SUFFIX}.png"
     fig.savefig(out, dpi=180)
     fig.savefig(out.with_suffix(".pdf"))
     plt.close(fig)
@@ -475,12 +580,13 @@ def _panel_baselines(fmt: str, corpus: str) -> tuple[dict[int, np.ndarray], np.n
         src, tgt, f, c = m.groups()
         if (f, c) != (fmt, corpus):
             continue
-        layer = json.load(open(fp)).get("per_layer", {}).get("30")
+        layer = json.load(open(fp)).get("per_layer", {}).get(LKEY)
         if layer:
             mat = np.asarray(layer["nulls"]["r2_matrix"], dtype=float)
+            _bl = layer.get("baselines")
             found[f"{src}__{tgt}"] = (
                 mat[:, [NULL_COL[t] for t in TIERS]].mean(axis=0),
-                float(layer["baselines"]["within"]["identity_bias_r2"]),
+                float(_bl["within"]["identity_bias_r2"]) if _bl else float("nan"),
             )
     per_tier: dict[int, list[float]] = {t: [] for t in TIERS}
     identv = []
@@ -545,7 +651,8 @@ def fig_percorpus(D: dict) -> Path:
                 alpha=0.9,
                 zorder=2,
             )
-        axb.plot(np.arange(len(PAIRS)), pident, zorder=3, **ident_style)
+        if HAS_IDENTITY:
+            axb.plot(np.arange(len(PAIRS)), pident, zorder=3, **ident_style)
         if k == 0:  # proxies so the figure legend carries the lower-panel lines
             ax.plot(
                 [],
@@ -555,7 +662,10 @@ def fig_percorpus(D: dict) -> Path:
                 ls=(0, (5, 2)),
                 label="shuffled-pairing null, per tier (t0/t6 lower panel; t7/t8 ≈ the zero line)",
             )
-            ax.plot([], [], label="identity+bias baseline  ŷ = x + b  (lower panel)", **ident_style)
+            if HAS_IDENTITY:
+                ax.plot(
+                    [], [], label="identity+bias baseline  ŷ = x + b  (lower panel)", **ident_style
+                )
         for tier in TIERS:
             xa, ys, lo, hi = [], [], [], []
             for pi, (src, tgt) in enumerate(PAIRS):
@@ -652,7 +762,7 @@ def fig_percorpus(D: dict) -> Path:
         ha="left",
         va="top",
     )
-    out = OUTDIR / "ladder_full_transfer_lattice_by_dataset.png"
+    out = OUTDIR / f"ladder_full_transfer_lattice_by_dataset{SUFFIX}.png"
     fig.savefig(out, dpi=180)
     fig.savefig(out.with_suffix(".pdf"))
     plt.close(fig)
@@ -696,7 +806,7 @@ def write_meta(D: dict, figs: list[Path]) -> Path:
             "target's own within-model ceiling and a map fitted directly from source contexts "
             "to target answers"
         ),
-        "layer": 30,
+        "layer": LAYER,
         "scale": "raw pooled R2, fold-local pooled OOF",
         "pairs_measured": [f"{s}__{t}" for s, t in PAIRS],
         "pairs_absent": (
@@ -706,7 +816,9 @@ def write_meta(D: dict, figs: list[Path]) -> Path:
         "batteries": {
             "round-3 metric_ladder": [f"{s}__{t}" for s, t in PAIRS if (s, t) not in SELFMAP_PAIRS],
             "round-B selfmap_v3": [f"{s}__{t}" for s, t in sorted(SELFMAP_PAIRS)],
-            "shared_basis": "layer 30, fit_seed 0, 5 outer folds, fold-local pooled OOF, raw scale",
+            "shared_basis": (
+                f"layer {LAYER}, fit_seed 0, 5 outer folds, fold-local pooled OOF, raw scale"
+            ),
         },
         "tier_labels": {str(t): TIER_LABEL[t] for t in TIERS},
         "cross_map_definition": xmap.CROSS_MAP_DEFINITION
@@ -763,7 +875,7 @@ def write_meta(D: dict, figs: list[Path]) -> Path:
         "extends": "ladder_step_transfer_by_dataset.png (adjacent steps only)",
         "rows": rows,
     }
-    out = OUTDIR / "ladder_full_transfer_lattice.meta.json"
+    out = OUTDIR / f"ladder_full_transfer_lattice{SUFFIX}.meta.json"
     out.write_text(json.dumps(meta, indent=1))
     return out
 
