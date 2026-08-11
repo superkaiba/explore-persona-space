@@ -1,6 +1,6 @@
 ---
-title: 'Read-write duality: does the behavior-prediction map''s read direction steer
-  as well as the mean-difference persona vector?'
+title: The context-to-behavior map's read direction fails to steer while the mean-difference
+  persona vector steers strongly (HIGH confidence)
 kind: experiment
 tags: []
 created_at: '2026-08-10T20:23:13Z'
