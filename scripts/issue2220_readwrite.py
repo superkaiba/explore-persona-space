@@ -708,6 +708,22 @@ def _load_u_pool(layers, args) -> dict:
     from explore_persona_space.experiments.issue_1739 import store_io
 
     local_dir = Path(args.u_store_dir)
+    # Crash-fix (epm:failure v1, chunk-1 FileNotFoundError): nothing staged the
+    # #1092 store onto a fresh pod before the read. stage_u_store (#1739) is
+    # idempotent — it short-circuits via u_store_loadable when dest already
+    # serves the requested (kind x layer) grid — and its cell/revision/manifest
+    # kwargs default to the same module pins (U_STORE_CELL, STORE_REVISION) the
+    # load_summaries call below consumes. stage_u_store FLATTENS the cell's
+    # shards into ``dest``, while load_summaries(..., cell=U_STORE_CELL) reads
+    # ``local_dir / U_STORE_CELL`` — so dest is that exact root (one path,
+    # staged then read; the loader stays byte-untouched).
+    stage_root = local_dir / U_STORE_CELL
+    logger.info("[stage-u-store] staging U pool into %s (layers=%s)", stage_root, list(layers))
+    store_io.stage_u_store(
+        dest=stage_root,
+        kinds=("context_end", "prefix_end"),
+        layers=tuple(layers),
+    )
     summaries, meta = store_io.load_summaries(
         local_dir,
         kinds=("context_end", "prefix_end"),
