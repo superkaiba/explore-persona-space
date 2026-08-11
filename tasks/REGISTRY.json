@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2234,
+  "highest_id": 2235,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9539,6 +9539,13 @@
       "path": "tasks/proposed/2234",
       "status": "proposed",
       "title": "parse_judge_json step 4: add labeled trailing score-line recovery (Score: N) \u2014 measured #2222 pilot shape missing from the landed #2109 recovery"
+    },
+    "2235": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2235",
+      "status": "proposed",
+      "title": "Payload-scope the inline lint gate (9m08s measured -> target <60s for analysis-script payloads)"
     },
     "224": {
       "has_clean_result": true,
