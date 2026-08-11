@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2229,
+  "highest_id": 2230,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9504,6 +9504,13 @@
       "path": "tasks/archived/223",
       "status": "archived",
       "title": "Characterize persona drift"
+    },
+    "2230": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2230",
+      "status": "proposed",
+      "title": "gotchas.md: extend the #779 shallow-clone git-log class to in-driver ancestry GATES (shallow-aware gate recipe)"
     },
     "224": {
       "has_clean_result": true,
