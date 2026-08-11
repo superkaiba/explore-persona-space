@@ -33863,15 +33863,6 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         pids_by_sid=live_pids_by_sid,
     )
 
-    # Orphan sweep: registration-INDEPENDENT cross-check of ACTIVE-status
-    # tasks vs live registered sessions. Catches the class the registry-driven
-    # passes structurally cannot see: an active task with NO registration at
-    # all (#472, 2026-06-10 — entry deleted at a TERMINAL park, task revived
-    # by a same-issue follow-up, driver died unobserved for 10.5h). Runs
-    # AFTER the respawn + stalled passes so a same-tick recovery by either
-    # one is visible via its fresh registry write (the spawn-grace window),
-    # and BEFORE idle_unmapped_pass so the death-observing tick still sees
-    # the #720 breadcrumb its GC would unlink (#1391 dead-owner fast path).
     # Pending-call wedge observer (#2115): ESCALATE-ONLY flag of a
     # registered session whose transcript tail ends in an assistant Bash
     # tool_use with no matching tool_result past the 25-min window — the
@@ -33884,6 +33875,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # down — the map is unresolvable then).
     pending_call_wedge_pass(args.dry_run, pids_by_sid=live_pids_by_sid)
 
+    # Orphan sweep: registration-INDEPENDENT cross-check of ACTIVE-status
+    # tasks vs live registered sessions. Catches the class the registry-driven
+    # passes structurally cannot see: an active task with NO registration at
+    # all (#472, 2026-06-10 — entry deleted at a TERMINAL park, task revived
+    # by a same-issue follow-up, driver died unobserved for 10.5h). Runs
+    # AFTER the respawn + stalled passes so a same-tick recovery by either
+    # one is visible via its fresh registry write (the spawn-grace window),
+    # and BEFORE idle_unmapped_pass so the death-observing tick still sees
+    # the #720 breadcrumb its GC would unlink (#1391 dead-owner fast path).
     orphan_sweep_pass(
         args.dry_run,
         args.threshold,
