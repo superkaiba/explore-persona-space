@@ -1,6 +1,7 @@
 ---
-title: 'Persona Vectors screening predictors: mapped context→answer ΔP vs raw / exact
-  / prompt-token projections on the synthetic suite'
+title: A frozen context→answer map fails to recover exact-ΔP data-screening predictivity,
+  and never beats the paper's own prompt-token approximation on any trait (point estimates)
+  (HIGH confidence)
 kind: experiment
 tags: []
 created_at: '2026-08-10T21:18:27Z'
