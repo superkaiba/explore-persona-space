@@ -157,9 +157,14 @@ so Result 1 stays over all pairs.
    read under prefix B", prefix influence included — query span 0.83, last-3 joint 0.37, query text
    0.32 (all at layers 14–20 or all layers, well-separated pairs). None beats context-end's 0.63, and
    all of them overwrite far more of the residual stream.
-4. Matched prefix is ≈0 at the context vector (−0.007). Query text reaches 0.92 at all layers, on
+4. Context-end also transfers *consistently* where the span slots do not. Per pair over the ten
+   well-separated pairs, context-end at all layers is positive for every one (0.14 to 0.89); query
+   text runs −1.28 to +1.11 — on one pair it drove the answer hard away from the target where
+   context-end moved it +0.14. Overwriting the query's token states disrupts about as often as it
+   transfers, which the 0.32 mean hides.
+5. Matched prefix is ≈0 at the context vector (−0.007). Query text reaches 0.92 at all layers, on
    19/30 coherent draws — which query gets answered lives in the query's own token states, not v_C.
-5. Cross transfers weakly (0.21 at all layers), consistent with Result 1.
+6. Cross transfers weakly (0.21 at all layers), consistent with Result 1.
 
 ### Result 4: Steering vs patching
 
