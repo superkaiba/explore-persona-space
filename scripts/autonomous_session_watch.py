@@ -1082,6 +1082,7 @@ Run: ``uv run python scripts/autonomous_session_watch.py [--dry-run] [--threshol
 from __future__ import annotations
 
 import argparse
+import contextlib
 import fcntl
 import functools
 import getpass
@@ -5474,7 +5475,7 @@ def _staging_top_caches(
     included: attribution is not reap), as ``(abs_path, bytes)`` via one
     bounded ``du -sx --block-size=1`` per entry
     (:data:`VM_DISK_SUBFLOOR_DU_TIMEOUT_S`). Top-level FILES are excluded
-    (dir-scoped attribution — #2095 §4.4: observed instances are KB–MB
+    (dir-scoped attribution — #2095 §4.4: observed instances are KB-to-MB
     logs/launchers, not a disk-pressure class).
 
     Root resolution mirrors ``clean_experiment_downloads.
@@ -5558,14 +5559,12 @@ def _data_disk_top_caches(dd_path: str, *, dry_run: bool = False) -> list[tuple[
     if rows is not None:
         return rows
     merged: list[tuple[str, int]] = []
-    try:
+    # Fail-soft per leg: a failing glob leg must not drop the staging rows
+    # (and vice versa) — attribution degrades to fewer rows, never a crash.
+    with contextlib.suppress(subprocess.SubprocessError, OSError):
         merged.extend(_top_issue_cache_paths(dry_run=dry_run))
-    except (subprocess.SubprocessError, OSError):
-        pass  # fail-soft: the staging leg below may still attribute
-    try:
+    with contextlib.suppress(subprocess.SubprocessError, OSError):
         merged.extend(_staging_top_caches(dd_path, dry_run=dry_run))
-    except (subprocess.SubprocessError, OSError):
-        pass  # fail-soft: keep whatever the glob leg attributed
     merged.sort(key=lambda x: x[1], reverse=True)
     return merged[:VM_DISK_SUBFLOOR_TOP_N]
 
