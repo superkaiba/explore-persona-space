@@ -8622,8 +8622,8 @@
     "2114": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2114",
-      "status": "proposed",
+      "path": "tasks/planning/2114",
+      "status": "planning",
       "title": "daily-fix: nightly step9c known-red ledger refresh cron"
     },
     "2115": {
