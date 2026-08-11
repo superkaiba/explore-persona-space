@@ -157,7 +157,9 @@ automatically at `/issue` Step 8; **NEVER delete `store/` or `eval_results/`** �
 artifacts, not caches. Multi-phase runs reap each CONSUMED phase's cache between phases
 (`clean_experiment_downloads.py <N> --incremental --apply`). A single phase estimated over
 **50 GB** (`VM_ANALYSIS_FOOTPRINT_GB_MAX`) is ROUTED OFF the VM at plan time, never after deaths.
-Active-task caches are WARNED about, never auto-deleted.
+Active-task caches are WARNED about, never auto-deleted. The #911 non-canonical sweep + the
+guard/watcher data-disk passes also cover `/mnt/eps-data/$USER` staging roots (#2095; kill
+switch `EPM_SKIP_STAGING_CACHE_SWEEP=1` — sweep only, attribution survives).
 
 **READ `.claude/rules/disk-hygiene.md` before placing a staging path, raising a cache cap, or
 reasoning about a disk-guard alert** — it carries the `/mnt/eps-data` bind + ext4 per-issue
