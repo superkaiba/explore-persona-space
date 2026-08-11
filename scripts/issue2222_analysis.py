@@ -173,10 +173,9 @@ def boot_indices_flat(n: int, n_boot: int, seed: int) -> np.ndarray:
 def boot_indices_clustered(group_ids: np.ndarray, n_boot: int, seed: int) -> np.ndarray:
     """Cluster bootstrap: resample GROUPS with replacement, carry members intact.
 
-    Groups may have unequal sizes; each draw concatenates the drawn groups'
-    member indices, so draw lengths can vary — rows are padded by REPEATING the
-    draw's own indices (resampling-consistent for mean/correlation statistics
-    only when group sizes are equal, which holds here: 8 families x 3 versions).
+    Requires EQUAL group sizes (raises ValueError otherwise — no padding is
+    implemented), so every draw concatenates whole drawn groups to a fixed
+    length n. That invariant holds by design here: 8 families x 3 versions.
     """
     group_ids = np.asarray(group_ids)
     uniq = np.unique(group_ids)

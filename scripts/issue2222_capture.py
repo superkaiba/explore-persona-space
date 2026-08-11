@@ -119,6 +119,23 @@ _PHASE_HUB_FILES = {
 }
 
 
+def _check_cap_hit_halt(data_root: Path, phase: str, *, override: bool) -> None:
+    """Refuse ``--phase capture/all`` while a prior run's §7 cap-hit halt record
+    exists (round-2 BLOCKER fix): downstream phases never re-check cap_hit_final,
+    so proceeding past the halt file would capture over cap-biased generations.
+    ``--phase gen`` is exempt (it re-derives the halt itself, resume included);
+    ``--override-cap-hit-halt`` is the deliberate escape."""
+    halt_path = Path(data_root) / "cap_hit_halt.json"
+    if phase == "gen" or override or not halt_path.exists():
+        return
+    raise SystemExit(
+        f"{halt_path} exists — a prior run halted on the §7 cap-hit criterion "
+        f"(rc={RC_CAP_HIT}). Re-run --phase gen after fixing (halted datasets "
+        "re-generate on a fingerprint change), or pass --override-cap-hit-halt "
+        "to proceed deliberately."
+    )
+
+
 def _phase_done(data_root: Path, ds: str, phase: str, base: dict, *, hub_resume: bool) -> bool:
     """Resume predicate: fingerprint-matched manifest + realized files, local or HF."""
     ds_dir = lib.capture_dir(data_root, ds)
@@ -196,7 +213,31 @@ def run_gen(
     t0 = time.time()
     for k, ds in enumerate(ds_ids):
         if _phase_done(data_root, ds, "p2_gen", base[ds], hub_resume=hub_resume):
-            lib.log_phase("p2_gen", "resume-skip", dataset=ds)
+            # Round-2 BLOCKER fix: the halted dataset's p2_gen phase is manifest-
+            # COMPLETE (artifacts persisted BEFORE the §7 halt), so a relaunch
+            # lands here — re-derive the halt from the recorded cap_hit_final
+            # instead of silently proceeding over cap-biased generations.
+            phase_blk = (
+                (_read_manifest(lib.capture_dir(data_root, ds)) or {})
+                .get("phases", {})
+                .get("p2_gen", {})
+            )
+            if "cap_hit_final" not in phase_blk:
+                raise RuntimeError(
+                    f"{ds}: resumed p2_gen manifest carries no cap_hit_final — "
+                    "foreign/stale manifest shape (re-run --phase gen)"
+                )
+            cap_hit = float(phase_blk["cap_hit_final"])
+            if cap_hit > lib.CAP_HIT_MAX_FRACTION:
+                halted.append(ds)
+                lib.log_phase(
+                    "p2_gen",
+                    "resume-skip carries the §7 cap-hit halt",
+                    dataset=ds,
+                    cap_hit_final=round(cap_hit, 4),
+                )
+            else:
+                lib.log_phase("p2_gen", "resume-skip", dataset=ds)
             continue
         _manifest, rows = subsamples[ds]
         rendered = _rendered_rows(tokenizer, rows, ds)
@@ -444,6 +485,16 @@ def _capture_base(
     """Teacher-forced base_respavg over (prompt, base generation) for one dataset."""
     recs = lib.read_jsonl(_ensure_local_gen(data_root, ds))
     by_row = {r["row_id"]: r for r in rendered}
+    # g1 minor fix: a SUBSET gen JSONL (partial/stale generation output) must not
+    # pass silently on the --phase capture path — require full id coverage (the
+    # per-record loop below enforces the ⊆ direction, so together this is ==).
+    missing = sorted(set(by_row) - {rec["row_id"] for rec in recs})
+    if missing:
+        raise RuntimeError(
+            f"{ds}: gen JSONL covers {len(by_row) - len(missing)}/{len(by_row)} subsample "
+            f"rows — {len(missing)} rendered rows missing (first: {missing[:5]}); "
+            "stale/partial generation output for this fingerprint (re-run --phase gen)"
+        )
     keep: list[tuple[dict, dict]] = []  # (rendered row, gen record)
     n_empty = n_budget = 0
     for rec in recs:
@@ -589,6 +640,11 @@ def main() -> None:
     parser.add_argument(
         "--skip-upload", action="store_true", help="VM smoke only — pod runs upload"
     )
+    parser.add_argument(
+        "--override-cap-hit-halt",
+        action="store_true",
+        help="proceed past an existing cap_hit_halt.json (deliberate §7 override)",
+    )
     parser.add_argument("--no-hub-resume", action="store_true")
     parser.add_argument(
         "--sentinel-dir", default=None, help="default: /workspace/logs when present"
@@ -601,6 +657,7 @@ def main() -> None:
         raise SystemExit(f"--seeds must name exactly ONE seed (fixed-subsample design): {seeds}")
     seed = seeds[0]
     data_root = Path(args.data_root)
+    _check_cap_hit_halt(data_root, args.phase, override=args.override_cap_hit_halt)
     ds_ids = lib.dataset_ids(args.datasets)
     hub_resume = not args.no_hub_resume and not args.skip_upload
 
@@ -674,6 +731,11 @@ def main() -> None:
             sys.stdout.flush()
             sys.stderr.flush()
             os._exit(RC_CAP_HIT)
+        elif (data_root / "cap_hit_halt.json").exists():
+            # A clean gen pass (fresh fingerprint after a config fix) retires the
+            # stale halt record so later --phase capture runs are not refused.
+            (data_root / "cap_hit_halt.json").unlink()
+            lib.log_phase("halt_cap_hit", "stale cap_hit_halt.json cleared — gen under the bar")
 
     if args.phase in ("all", "capture"):
         run_capture(

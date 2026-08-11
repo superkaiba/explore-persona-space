@@ -77,7 +77,7 @@ def _corr_fixture(rng: np.random.Generator) -> dict:
     return {
         "arm_order": ARMS,
         "datasets": DATASETS,
-        "family_of_dataset": {ds: ds.rsplit("_", 1)[0].replace("_misaligned", "") for ds in []},
+        "family_of_dataset": {ds: figs.split_dataset_id(ds)[0] for ds in DATASETS},
         "dataset_values": dataset_values,
         "records": records,
         "hypothesis_tests": {
@@ -146,6 +146,42 @@ def test_scatters_sweeps_and_ci_figures_render(tmp_path: Path) -> None:
         _assert_png(fig_dir, stem)
     for stem in figs.fig_ci_schemes(corr, fig_dir):
         _assert_png(fig_dir, stem)
+
+
+def test_roc_renders_from_persisted_scores(tmp_path: Path) -> None:
+    """Round-2 C8: the ROC figure renders from the PERSISTED per-sample scores
+    (roc_scores_<trait>.npz) + the persisted auc json — never recomputing."""
+    rng = np.random.default_rng(2)
+    corr = _corr_fixture(rng)
+    nulls_dir = tmp_path / "nulls"
+    nulls_dir.mkdir(parents=True, exist_ok=True)
+    labels = rng.random(40) > 0.5
+    labels[:2] = [True, False]  # both classes guaranteed
+    aucj = {"records": []}
+    for trait in TRAITS:
+        np.savez(
+            nulls_dir / f"roc_scores_{trait}.npz",
+            labels=labels,
+            steer_layer=np.int64(STEER[trait]),
+            **{f"score_{arm}": rng.standard_normal(40).astype(np.float32) for arm in ARMS},
+        )
+        aucj["records"].extend(
+            {"trait": trait, "arm": arm, "layer": STEER[trait], "auc": 0.5, "n_pos": 1, "n_neg": 1}
+            for arm in ARMS
+        )
+    fig_dir = tmp_path / "figs"
+    stems = figs.fig_roc(corr, aucj, nulls_dir, fig_dir)
+    assert stems == ["roc_by_arm"]
+    _assert_png(fig_dir, "roc_by_arm")
+    # A missing persisted-scores npz fails loud with the re-run hint.
+    (nulls_dir / "roc_scores_evil.npz").unlink()
+    with pytest.raises(FileNotFoundError, match="stage aggregate"):
+        figs.fig_roc(corr, aucj, nulls_dir, tmp_path / "figs2")
+
+
+def test_ci_scheme_colors_disjoint_from_arm_palette() -> None:
+    """Round-2 C7: the CI-scheme ramp shares no color with the pinned ARM palette."""
+    assert not set(figs._SCHEME_GREYS) & set(figs.ARM_COLORS.values())
 
 
 def test_split_dataset_id_suffix_safe() -> None:

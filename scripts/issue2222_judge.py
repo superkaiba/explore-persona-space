@@ -54,6 +54,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 import time
@@ -378,8 +379,16 @@ def stage_judge(args, rubrics: dict[str, str], items: list[tuple], pool: dict) -
             max_tokens=args.judge_max_tokens,
             threshold_base=0,  # FORCE the Batch API path (plan §9 P4)
         )
+        # Rule-28 accounting at the pilot's arm grain (dataset VERSION class):
+        # the production digest materializes the per-version api-refusal split
+        # so censoring asymmetry is readable without re-deriving from item ids.
+        api_refusals_by_version: dict[str, int] = {}
+        for iid, n_ref in (res.per_item_api_refusals or {}).items():
+            version = lib.split_dataset_id(split_item_id(iid)[0])[1]
+            api_refusals_by_version[version] = api_refusals_by_version.get(version, 0) + int(n_ref)
         record = {
             "trait": trait,
+            "n_api_refusal_by_version": api_refusals_by_version,
             "fingerprint": {**fp, "rubric_sha": lib.sha256_text(rubrics[trait])},
             "instrument": {
                 "judge_model": "claude-sonnet-4-5-20250929",
@@ -591,6 +600,64 @@ def _load_pool_activations(data_root: Path, pool: dict) -> dict:
     }
 
 
+def _probe_partial_key(
+    pool: dict, merged_fps: dict, kept_item_ids: list[str], lambdas, args
+) -> str:
+    """Fingerprint for the per-layer probe partials (round-2 C2 checkpointing).
+
+    Pins EVERY output-affecting regime key (#722 resume rule): the pool split,
+    the kept-row identity, the merged-judge y provenance (per-trait wave
+    fingerprints), the fit config (lambda grid + dof cap + device), the stored
+    knn layers, and the P4 code fingerprint.
+    """
+    payload = json.dumps(
+        {
+            "pool_split_hash": pool["split_hash"],
+            "datasets": pool["datasets"],
+            "merged_fingerprints": merged_fps,
+            "kept_items_sha": lib.sha256_text(json.dumps(kept_item_ids)),
+            "lambda_grid": [float(v) for v in lambdas],
+            "dof_cap": 0.9,
+            "device": args.device,
+            "knn_layers": sorted(int(v) for v in args.knn_layers or []),
+            "code_fingerprint": judge_code_fingerprint(),
+        },
+        sort_keys=True,
+    )
+    return lib.sha256_text(payload)
+
+
+def _save_probe_partial(path: Path, key: str, *, grid_layer, r2_layer, gcv, knn: dict) -> None:
+    """Atomic per-layer checkpoint of the probe eigh/ridge battery (#1482 class)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(f".tmp_{path.stem}.npz")  # np.savez suffix trap (#1092)
+    np.savez(
+        tmp,
+        key=np.array(key),
+        grid_layer=np.asarray(grid_layer, dtype=np.float64),
+        r2_layer=np.asarray(r2_layer, dtype=np.float64),
+        gcv=np.asarray(gcv, dtype=np.float64),
+        knn_json=np.array(json.dumps(knn)),
+    )
+    os.replace(tmp, path)
+
+
+def _load_probe_partial(path: Path, key: str) -> dict | None:
+    """The persisted layer partial when its key matches; None (recompute) otherwise."""
+    if not path.exists():
+        return None
+    with np.load(path) as z:
+        if str(z["key"]) != key:
+            lib.log_phase("p4_probe", "stale layer partial — recomputing", path=str(path))
+            return None
+        return {
+            "grid_layer": z["grid_layer"],
+            "r2_layer": z["r2_layer"],
+            "gcv": z["gcv"].tolist(),
+            "knn": json.loads(str(z["knn_json"])),
+        }
+
+
 def stage_probe(args, pool: dict) -> None:
     data_root = Path(args.data_root)
     out_root = Path(args.out_root)
@@ -599,11 +666,14 @@ def stage_probe(args, pool: dict) -> None:
     n_rows = acts["raw"].shape[0]
     # y: (n, T) merged mean scores; rows with any-trait zero-kept-draws dropped.
     merged_by_trait = {}
+    merged_fps: dict[str, dict] = {}
     for trait in lib.TRAITS:
         p = judge_result_paths(data_root, trait)["merged"]
         if not p.exists():
             raise FileNotFoundError(f"{p} missing — run --stage rejudge first")
-        merged_by_trait[trait] = json.loads(p.read_text())["per_item"]
+        payload_m = json.loads(p.read_text())
+        merged_by_trait[trait] = payload_m["per_item"]
+        merged_fps[trait] = payload_m.get("fingerprint")
     y = np.full((n_rows, len(lib.TRAITS)), np.nan)
     rate = np.full((n_rows, len(lib.TRAITS)), np.nan)
     for ti, trait in enumerate(lib.TRAITS):
@@ -639,7 +709,21 @@ def stage_probe(args, pool: dict) -> None:
     knn_reads: dict[str, dict] = {}
     ds_index = {ds: i for i, ds in enumerate(datasets)}
     fam_ids_sorted = np.unique(fam_k)
+    # Round-2 C2: per-layer checkpoints for the 28-layer x 8-fold eigh/ridge
+    # battery (#1482 class — a crash mid-sweep must not forfeit computed layers).
+    partial_dir = form_a_dir(data_root) / "probe_partials"
+    kept_item_ids = [iid for iid, k in zip(acts["item_ids"], keep, strict=True) if k]
+    probe_key = _probe_partial_key(pool, merged_fps, kept_item_ids, lambdas, args)
     for layer in layers:
+        ppath = partial_dir / f"layer_{int(layer):02d}.npz"
+        part = _load_probe_partial(ppath, probe_key)
+        if part is not None:
+            grid_vals[:, :, :, layer] = part["grid_layer"]
+            r2_layers[layer] = part["r2_layer"]
+            gcv_lambdas[str(layer)] = part["gcv"]
+            knn_reads.update(part["knn"])
+            lib.log_phase("p4_probe", "layer resume-skip (fresh partial)", layer=layer)
+            continue
         t0 = time.time()
         x_l = acts["raw"][keep, layer, :].astype(np.float32)
         ridge = ana.dof_capped_ridge_multi_y(
@@ -695,15 +779,25 @@ def stage_probe(args, pool: dict) -> None:
             r2=[round(float(v), 4) for v in ridge["heldout_r2"]],
             elapsed_s=round(time.time() - t0, 1),
         )
+        layer_knn: dict[str, dict] = {}
         if layer in (args.knn_layers or []):
             for ti, trait in enumerate(lib.TRAITS):
                 from explore_persona_space.analysis.mapping_baselines import knn_retrieval
 
-                knn_reads[f"layer{layer}/{trait}"] = knn_retrieval(
+                layer_knn[f"layer{layer}/{trait}"] = knn_retrieval(
                     ridge["heldout_pred"][:, ti : ti + 1],
                     y_k[:, ti : ti + 1],
                     metric="euclidean",
                 )
+        knn_reads.update(layer_knn)
+        _save_probe_partial(
+            ppath,
+            probe_key,
+            grid_layer=grid_vals[:, :, :, layer],
+            r2_layer=r2_layers[layer],
+            gcv=ridge["gcv_lambda"],
+            knn=layer_knn,
+        )
     # Dataset-level correlations vs the #778 y-axis (Form-A analogue of P3).
     y_axis = red.load_y_axis(datasets)
     records = []
@@ -849,6 +943,9 @@ def main() -> int:
     if args.import_check:
         _import_check()
         raise SystemExit(0)
+    kl = [int(v) for v in args.knn_layers or []]
+    if len(set(kl)) != len(kl) or not all(0 <= v < N_LAYERS for v in kl):
+        raise SystemExit(f"--knn-layers must be duplicate-free within [0, {N_LAYERS}): {kl}")
     if args.smoke:
         args.rows_per_dataset = min(args.rows_per_dataset, 4)
         args.n_draws = min(args.n_draws, 2)

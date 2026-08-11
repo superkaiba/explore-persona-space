@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -244,6 +245,18 @@ def stage_percell(args) -> None:
         common, ia, ib = np.intersect1d(row_ids, base_ids, return_indices=True)
         if len(common) == 0:
             raise ValueError(f"{ds}: empty row_ids intersection between summaries and base gen")
+        # Round-2 C6 fix: account the partial join (base rows are legitimately
+        # dropped for empty/over-budget generations) and fail fast when the
+        # intersection falls below 80% of the summary rows — a silent heavy drop
+        # would bias every arm's dataset mean.
+        n_only_summ = int(len(row_ids) - len(common))
+        n_only_base = int(len(base_ids) - len(common))
+        if len(common) < 0.8 * len(row_ids):
+            raise ValueError(
+                f"{ds}: percell join kept {len(common)}/{len(row_ids)} summary rows "
+                f"(dropped {n_only_summ} summaries-only + {n_only_base} base-only) — "
+                "below the 80% join floor; regenerate the base capture (--phase capture)"
+            )
         raw, ctxend, pfxend, base = raw[ia], ctxend[ia], pfxend[ia], base[ib]
         n = len(common)
         assert raw.shape == (n, N_LAYERS, DIM), raw.shape
@@ -309,7 +322,14 @@ def stage_percell(args) -> None:
         tmp.replace(out_path)
         lib.write_json_atomic(
             sidecar,
-            {"key": key, "dataset": ds, "n_rows": int(n), **lib.run_metadata()},
+            {
+                "key": key,
+                "dataset": ds,
+                "n_rows": int(n),
+                "n_dropped_summaries_only": n_only_summ,
+                "n_dropped_base_only": n_only_base,
+                **lib.run_metadata(),
+            },
         )
         lib.log_phase(
             "p3_percell",
@@ -317,6 +337,8 @@ def stage_percell(args) -> None:
             dataset=ds,
             unit=f"{i + 1}/{len(datasets)}",
             n_rows=int(n),
+            n_dropped_summaries_only=n_only_summ,
+            n_dropped_base_only=n_only_base,
             elapsed_s=round(time.time() - t0, 1),
         )
 
@@ -324,12 +346,32 @@ def stage_percell(args) -> None:
 # --- Stage: aggregate -----------------------------------------------------------
 
 
-def _load_percell(data_root: Path, datasets: list[str]) -> dict:
+def _load_percell(
+    data_root: Path, datasets: list[str], *, meta: dict, knn_layers: tuple[int, ...]
+) -> dict:
+    """Load per-dataset percell npzs, REFUSING stale checkpoints (round-2 C3 fix).
+
+    A standalone ``--stage aggregate/form_b`` run must not silently reduce
+    projections computed under a different capture fingerprint / rb source /
+    reduce-code / knn-layer regime — the sidecar key is recomputed via
+    ``_percell_key`` and verified per dataset (fail loud with the re-run hint).
+    """
     cells = {}
     for ds in datasets:
         path = percell_path(data_root, ds)
-        if not path.exists():
-            raise FileNotFoundError(f"{path} missing — run --stage percell first")
+        sidecar = path.with_suffix(".meta.json")
+        if not path.exists() or not sidecar.exists():
+            raise FileNotFoundError(
+                f"{path} (or its .meta.json sidecar) missing — run --stage percell first"
+            )
+        key = _percell_key(load_capture_manifest(data_root, ds), meta, knn_layers)
+        found = json.loads(sidecar.read_text()).get("key")
+        if found != key:
+            raise RuntimeError(
+                f"{ds}: percell checkpoint key mismatch (sidecar {str(found)[:16]}… vs "
+                f"expected {key[:16]}…) — stale projections for the current "
+                "capture/rb/code/knn regime; re-run --stage percell first"
+            )
         with np.load(path) as z:
             cells[ds] = {k: z[k] for k in z.files}
     return cells
@@ -412,7 +454,7 @@ def stage_aggregate(args) -> None:
             f"aggregate over {len(datasets)}/24 datasets needs --allow-partial (smoke only)"
         )
     vhat, meta = load_vhat(data_root)
-    cells = _load_percell(data_root, datasets)
+    cells = _load_percell(data_root, datasets, meta=meta, knn_layers=tuple(args.knn_layers))
     fam_idx, families = _family_index(datasets)
     y_axis = load_y_axis(datasets)
     vals, arm_order = _dataset_arm_values(cells, datasets)
@@ -554,6 +596,12 @@ def stage_aggregate(args) -> None:
         for r in h3_rows
         if r["arm"] == "exact_dp" and np.sign(r["r"]) != np.sign(r["published_r"])
     )
+    # Plan §7 disjunct (b): ALL published arms miss the published magnitude by
+    # > H3_TOLERANCE on EVERY trait (derived from the within_h3_tolerance rows).
+    magnitude_miss_all_arms_by_trait = {
+        t: all(not r["within_h3_tolerance"] for r in h3_rows if r["trait"] == t) for t in lib.TRAITS
+    }
+    kill_magnitude = bool(all(magnitude_miss_all_arms_by_trait.values()))
     hypothesis_tests = {
         "H1_sycophancy_gap": h1,
         "H2_equivalence": {
@@ -568,6 +616,8 @@ def stage_aggregate(args) -> None:
             ],
             "exact_dp_sign_misses": int(exact_sign_misses),
             "kill_criterion_sign": exact_sign_misses >= 2,
+            "magnitude_miss_all_published_arms_by_trait": magnitude_miss_all_arms_by_trait,
+            "kill_criterion_magnitude": kill_magnitude,
         },
         "H4_prefix_arm_note": "run-and-report; expected degenerate (#1739)",
         "verdict_lattice": "Confirmed iff Δr>0 and 95% CI excludes 0 positive; "
@@ -584,6 +634,7 @@ def stage_aggregate(args) -> None:
         )
         for ti, trait in enumerate(lib.TRAITS):
             steer = STEER_IDX[trait]
+            arm_scores: dict[str, np.ndarray] = {}
             for ai, arm in enumerate(arm_order):
                 per_row = []
                 for ds in keep:
@@ -606,6 +657,7 @@ def stage_aggregate(args) -> None:
                         )
                     per_row.append(v)
                 scores = np.concatenate(per_row)
+                arm_scores[arm] = scores
                 auc_records.append(
                     {
                         "trait": trait,
@@ -616,6 +668,17 @@ def stage_aggregate(args) -> None:
                         "n_neg": int((~labels).sum()),
                     }
                 )
+            # Round-2 C8: persist the exact per-sample scores that fed the AUC so
+            # the P5 ROC-curve figure (plan §6 item 3) renders from PERSISTED
+            # files — figures never recompute arm scores from the percell npzs.
+            tmp = nulls_dir / f".tmp_roc_scores_{trait}.npz"
+            np.savez(
+                tmp,
+                labels=labels.astype(bool),
+                steer_layer=np.int64(steer),
+                **{f"score_{arm}": v.astype(np.float32) for arm, v in arm_scores.items()},
+            )
+            os.replace(tmp, nulls_dir / f"roc_scores_{trait}.npz")
 
     # --- frozen-map quality (R^2 per layer + identity(+bias) + kNN) ---
     n_tot = sum(len(cells[ds]["row_ids"]) for ds in datasets)
@@ -795,6 +858,47 @@ def stage_tuned_map(args) -> None:
         frozen_layers=tuple(range(N_LAYERS)),
         reduced_basis_companion=False,
     )
+
+    # Round-2 C1: the standing identity(+learned-bias) baseline + kNN-retrieval
+    # pair for the TUNED map itself (CLAUDE.md mapping rule), on the SAME row
+    # subset the tuned fit consumed. identity: v̂ = x (ctxend); identity+bias:
+    # v̂ = x + b_f with b_f the leave-one-family-out mean residual (matched to
+    # the fit's LOFO folds); kNN runs on the core's held-out predictions per
+    # family fold at the stored knn layers.
+    from explore_persona_space.analysis.mapping_baselines import knn_retrieval
+
+    fam_ids_sorted = np.unique(conv_ids)
+    r2_identity = np.empty(N_LAYERS)
+    r2_id_bias = np.empty(N_LAYERS)
+    for layer in range(N_LAYERS):
+        x_l = x[:, layer, :].astype(np.float64)
+        y_l = y[:, layer, :].astype(np.float64)
+        ss_tot = float(((y_l - y_l.mean(axis=0)) ** 2).sum())
+        r2_identity[layer] = 1 - float(((y_l - x_l) ** 2).sum()) / ss_tot
+        ss_idb = 0.0
+        for f in fam_ids_sorted:
+            hold = conv_ids == f
+            b_f = (y_l[~hold] - x_l[~hold]).mean(axis=0)
+            ss_idb += float(((y_l[hold] - x_l[hold] - b_f) ** 2).sum())
+        r2_id_bias[layer] = 1 - ss_idb / ss_tot
+    tuned_knn: dict[str, list[dict]] = {}
+    for layer in (int(v) for v in args.knn_layers or []):
+        fold_reads = []
+        for f in fam_ids_sorted:
+            hold = conv_ids == f
+            pred = res["preds_frozen"][layer][hold].astype(np.float32)
+            true = y[hold, layer, :].astype(np.float32)
+            cap = args.knn_pool_cap
+            if len(true) > cap:
+                rng = np.random.default_rng(args.seed + int(f))
+                sel = rng.choice(len(true), size=cap, replace=False)
+                true, pred = true[sel], pred[sel]
+            for metric in ("euclidean", "cosine"):
+                fold_reads.append(
+                    {"fold_family": families[int(f)], **knn_retrieval(pred, true, metric=metric)}
+                )
+        tuned_knn[f"layer{layer}"] = fold_reads
+
     # mapped_tuned predictor: held-out prediction projected onto vhat.
     y_axis = load_y_axis(datasets)
     vals = np.full((len(datasets), len(lib.TRAITS), N_LAYERS), np.nan)
@@ -838,6 +942,16 @@ def stage_tuned_map(args) -> None:
             "selected_lambda_per_layer_fold": None
             if gcv_lam is None
             else np.asarray(gcv_lam).tolist(),
+            "mapping_baselines": {
+                "note": "standing identity(+LOFO-bias) R² baselines on the SAME row "
+                "subset the tuned fit consumed; kNN retrieval on the core's held-out "
+                "predictions per family fold (round-2 C1)",
+                "r2_identity_per_layer": [float(v) for v in r2_identity],
+                "r2_identity_plus_bias_per_layer": [float(v) for v in r2_id_bias],
+                "knn_retrieval": tuned_knn,
+                "knn_note": "pool = held-out family rows (capped at --knn-pool-cap); "
+                "chance = k/n_pool reported per read",
+            },
             "records": records,
             **lib.run_metadata(),
         },
@@ -854,8 +968,8 @@ def stage_form_b(args) -> None:
     datasets = lib.dataset_ids(args.datasets)
     if len(datasets) < 24 and not args.allow_partial:
         raise ValueError("form_b over a partial dataset set needs --allow-partial")
-    vhat, _meta = load_vhat(data_root)
-    cells = _load_percell(data_root, datasets)
+    vhat, meta = load_vhat(data_root)
+    cells = _load_percell(data_root, datasets, meta=meta, knn_layers=tuple(args.knn_layers))
     fam_idx, _families = _family_index(datasets)
     y_axis = load_y_axis(datasets)
     k_comp = args.form_b_components
@@ -975,6 +1089,9 @@ def main() -> int:
     if args.import_check:
         _import_check()
         raise SystemExit(0)
+    kl = [int(v) for v in args.knn_layers or []]
+    if len(set(kl)) != len(kl) or not all(0 <= v < N_LAYERS for v in kl):
+        raise SystemExit(f"--knn-layers must be duplicate-free within [0, {N_LAYERS}): {kl}")
     if args.smoke:
         args.n_perms = min(args.n_perms, 200)
         args.n_boot = min(args.n_boot, 200)

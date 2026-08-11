@@ -24,6 +24,10 @@ Figures (hero first, then the over-produced exploratory dump):
 3. layer_sweep_<trait> — per-arm r-per-layer curves with the per-layer
    permutation p97.5 |r| null band + steering-layer marker.
 4. auc_by_arm — sample-level AUC (misaligned II vs normal) per arm x trait.
+4b. roc_by_arm — sample-level ROC curves per arm (plan §6 item 3): rank-
+    cumulative rendering of the per-sample scores PERSISTED by stage_aggregate
+    (``data/issue_2222/nulls/roc_scores_<trait>.npz``); AUC legend values come
+    from the persisted auc json — no statistic recomputed.
 5. map_quality_r2 (+ _full raw-scale twin) — frozen-map held-out R^2 per layer
    vs identity / identity+bias baselines and the exploratory tuned map.
 6. map_quality_knn — kNN retrieval acc@1 per stored layer x prediction kind,
@@ -114,6 +118,9 @@ VERSION_LABELS = {
     "misaligned_2": "Misaligned II version",
 }
 NEUTRAL = "#666666"
+# CI-scheme grey ramp (fig_ci_schemes) — deliberately DISJOINT from ARM_COLORS
+# so no scheme reads as an arm (round-2 C7); grey = statistical annotation.
+_SCHEME_GREYS = ("#000000", "#4d4d4d", "#8c8c8c", "#c9c9c9")
 
 
 def trait_label(trait: str) -> str:
@@ -142,9 +149,19 @@ def split_dataset_id(ds: str) -> tuple[str, str]:
     raise ValueError(f"unrecognized dataset id {ds!r}")
 
 
-def ci_offsets(value: float, lo: float, hi: float) -> tuple[float, float]:
+def ci_offsets(value: float, lo: float, hi: float, *, label: str = "") -> tuple[float, float]:
     """Non-negative errorbar offsets (gotchas.md xerr/yerr rule): a quantile CI
-    can genuinely invert around the point estimate at tiny n (#1335/#547)."""
+    can genuinely invert around the point estimate at tiny n (#1335/#547).
+
+    A firing clamp is LOGGED (the gotcha calls it "a diagnostic worth logging")
+    — a large inversion warrants checking the point/CI computation upstream.
+    """
+    if lo > value or hi < value:
+        tag = f" ({label})" if label else ""
+        print(
+            f"[p5_figures] ci_offsets clamp fired{tag}: value={value:.6g} ci=[{lo:.6g}, {hi:.6g}]",
+            flush=True,
+        )
     return (max(0.0, value - lo), max(0.0, hi - value))
 
 
@@ -208,7 +225,7 @@ def fig_hero(corr: dict, nulls_dir: Path, fig_dir: Path) -> list[str]:
             steer = rec["layer"]
             boot = load_boot_flat(nulls_dir, trait, arm)[:, steer]
             lo, hi = np.nanquantile(boot, 0.025), np.nanquantile(boot, 0.975)
-            err_lo, err_hi = ci_offsets(r, lo, hi)
+            err_lo, err_hi = ci_offsets(r, lo, hi, label=f"hero {trait}/{arm}")
             ax.bar(xi, r, color=arm_color(arm), width=0.72)
             ax.errorbar(
                 xi, r, yerr=[[err_lo], [err_hi]], fmt="none", ecolor="black", capsize=3, lw=1.0
@@ -421,6 +438,66 @@ def fig_auc(aucj: dict, arm_order: list[str], fig_dir: Path) -> list[str]:
     return ["auc_by_arm"]
 
 
+# --- 4b. ROC curves (plan §6 figure item 3) -----------------------------------------
+
+
+def fig_roc(corr: dict, aucj: dict, nulls_dir: Path, fig_dir: Path) -> list[str]:
+    """Sample-level ROC curves per arm (plan §6 "sample-level ROC curves per arm").
+
+    Rank-cumulative rendering of the per-sample steering-layer scores PERSISTED
+    by P3 ``stage_aggregate`` (``roc_scores_<trait>.npz``); the AUC values in
+    the legend come from the persisted auc json — no statistic recomputed here.
+    """
+    recs = {(r["trait"], r["arm"]): r for r in aucj.get("records", [])}
+    arm_order = corr["arm_order"]
+    traits = ordered_traits(sorted({t for t, _ in recs}))
+    if not traits:
+        raise ValueError("auc_misaligned2_vs_normal.json carries no records for the ROC read")
+    fig, axes = plt.subplots(1, len(traits), figsize=(4.0 * len(traits), 3.8), sharey=True)
+    axes = np.atleast_1d(axes)
+    for ax, trait in zip(axes, traits):
+        path = nulls_dir / f"roc_scores_{trait}.npz"
+        if not path.exists():
+            raise FileNotFoundError(
+                f"{path} missing — run issue2222_reduce.py --stage aggregate (round-2 "
+                "reduce persists the per-sample ROC scores)"
+            )
+        with np.load(path) as z:
+            labels = np.asarray(z["labels"], dtype=bool)
+            n_pos, n_neg = int(labels.sum()), int((~labels).sum())
+            for arm in arm_order:
+                key = f"score_{arm}"
+                if key not in z:
+                    continue
+                scores = np.asarray(z[key], dtype=np.float64)
+                order = np.argsort(-scores, kind="stable")
+                l_sorted = labels[order]
+                s_sorted = scores[order]
+                # One point per DISTINCT score threshold (ties grouped), plus
+                # the (0, 0) origin — the standard threshold sweep.
+                cut = np.flatnonzero(np.diff(s_sorted) != 0)
+                cut = np.concatenate([cut, [len(s_sorted) - 1]])
+                tpr = np.concatenate([[0.0], np.cumsum(l_sorted)[cut] / max(1, n_pos)])
+                fpr = np.concatenate([[0.0], np.cumsum(~l_sorted)[cut] / max(1, n_neg)])
+                rec = recs.get((trait, arm))
+                lab = arm_label(arm) + (f" (AUC {rec['auc']:.3f})" if rec else "")
+                ax.plot(fpr, tpr, color=arm_color(arm), lw=1.4, label=lab)
+        ax.plot([0, 1], [0, 1], color="#999999", lw=0.9, ls="--")
+        ax.set_xlim(-0.02, 1.02)
+        ax.set_ylim(-0.02, 1.02)
+        ax.set_title(f"{trait_label(trait)} (n_pos={n_pos}, n_neg={n_neg})", fontsize=9)
+        ax.set_xlabel("False-positive rate", fontsize=8)
+        ax.legend(fontsize=5.5, loc="lower right")
+    axes[0].set_ylabel("True-positive rate")
+    fig.suptitle(
+        "Sample-level ROC per predictor arm (misaligned II vs normal, steering layer; "
+        "dashed line = chance)"
+    )
+    savefig_paper(fig, "roc_by_arm", dir=fig_dir)
+    plt.close(fig)
+    return ["roc_by_arm"]
+
+
 # --- 5-6. Map quality ---------------------------------------------------------------
 
 
@@ -536,7 +613,11 @@ def fig_ci_schemes(corr: dict, fig_dir: Path) -> list[str]:
         ("ci95_selection_inherited_clustered", "Selection-inherited, family-clustered", "D", 0.27),
     ]
     fig, ax = plt.subplots(figsize=(7.5, 1.2 + 0.9 * len(rows)))
-    scheme_colors = {k: _PALETTE[i] for i, (k, _, _, _) in enumerate(schemes)}
+    # Round-2 C7: scheme colors must be DISJOINT from the pinned ARM palette
+    # (_PALETTE[0..6] all encode arms — one color = one meaning). A sequential
+    # grey ramp reads as the statistical-annotation register (like the hero's
+    # black CI whiskers); the four markers already disambiguate schemes.
+    scheme_colors = {k: _SCHEME_GREYS[i] for i, (k, _, _, _) in enumerate(schemes)}
     for ri, (label, rec) in enumerate(rows):
         delta = rec["delta_r"]
         for key, _slabel, marker, off in schemes:
@@ -544,7 +625,7 @@ def fig_ci_schemes(corr: dict, fig_dir: Path) -> list[str]:
             if ci is None:
                 continue
             lo, hi = float(ci[0]), float(ci[1])
-            err_lo, err_hi = ci_offsets(delta, lo, hi)
+            err_lo, err_hi = ci_offsets(delta, lo, hi, label=f"ci_schemes {label}/{key}")
             ax.errorbar(
                 delta,
                 ri + off,
@@ -810,6 +891,7 @@ def main() -> int:
     written += fig_scatters(corr, fig_dir)
     written += fig_layer_sweeps(corr, nulls_dir, fig_dir)
     written += fig_auc(aucj, corr["arm_order"], fig_dir)
+    written += fig_roc(corr, aucj, nulls_dir, fig_dir)
     written += fig_map_quality(mq, tuned, fig_dir)
     written += fig_ci_schemes(corr, fig_dir)
     if fa is not None:
