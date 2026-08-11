@@ -1,7 +1,7 @@
 ---
 title: Correctly applied assistant-axis capping leaves Qwen-2.5-7B jailbreak harm
-  at baseline without degrading output, and only weakly lowers it on the paper's Qwen-3-32B
-  (MODERATE confidence)
+  at baseline without degrading output, and directionally lowers it (under-powered)
+  on the paper's Qwen-3-32B (MODERATE confidence)
 kind: experiment
 tags:
 - trigger-dense
