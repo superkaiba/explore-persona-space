@@ -8587,8 +8587,8 @@
     "2109": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2109",
-      "status": "running",
+      "path": "tasks/completed/2109",
+      "status": "completed",
       "title": "Judge parser drops prose-then-trailing-integer responses (recovers ~8-28% of dropped draws)"
     },
     "2110": {
