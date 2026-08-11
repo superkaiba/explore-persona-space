@@ -8573,8 +8573,8 @@
     "2107": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2107",
-      "status": "planning",
+      "path": "tasks/approved/2107",
+      "status": "approved",
       "title": "workflow-fix: scope preflight branch-freshness fetch, raise timeout"
     },
     "2108": {
