@@ -2537,9 +2537,13 @@ for f in $SPECS; do
     # main's current state). Without these commit titles printed, the
     # operator cannot tell a legitimate branch deliverable (#535
     # incident) from a stale port/revert that needs no protection.
+    # agent-memory override: ALSO run the gotchas.md no-lost-row check (#2101).
     echo "spec-freshness: $f carries branch-side feature edits — marking family '$fam' dirty; skipping blind sync for the whole family; reconcile manually."
     echo "  branch-side commits:"
     echo "$bs_commits" | sed 's/^/    /'
+    if [ "$f" = ".claude/agent-memory" ]; then
+      echo "  agent-memory: any manual re-align of MEMORY.md indexes MUST run the no-lost-row check (comm -13 incoming vs local; .claude/rules/gotchas.md) — rows unique to the local copy are re-appended or dispositioned in the commit message."
+    fi
   fi
   # Uncommitted-dirt arm (#1972): an uncommitted worktree write under $f must
   # never be clobbered by the checkout below. Tracked-modified dirt (any
@@ -2705,7 +2709,9 @@ branch-side commit titles so the orchestrator can tell a legitimate
 branch deliverable (the #535 case) from a stale port/revert whose
 content has already landed on main (in which case the orchestrator can
 safely override the skip for those specific files with a manual
-`git -C "$WT" checkout origin/main -- <paths>`).
+`git -C "$WT" checkout origin/main -- <paths>`). For
+`.claude/agent-memory`, the override also runs the gotchas.md
+no-lost-row check (#2101).
 
 **The sync scope is specs + the spec-coupled lint/guard family — do NOT
 extend it further into `scripts/`, `tests/`, or `src/`.** The family
@@ -12851,6 +12857,7 @@ else
       if [ -n "$bs_commits" ]; then
         fam="${FAMILY_OF[$f]:-$f}"
         DIRTY_FAMILIES_10D[$fam]=1
+        # agent-memory re-aligns here carry the Step 5a no-lost-row duty (gotchas.md).
       fi
       # Uncommitted-dirt arm (#1972) — mirror of Step 5a's (structurally
       # parallel; at 10d Guard 0 has usually already committed memory dirt,
