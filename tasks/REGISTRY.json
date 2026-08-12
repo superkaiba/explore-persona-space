@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2251,
+  "highest_id": 2252,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9673,6 +9673,13 @@
       "path": "tasks/planning/2251",
       "status": "planning",
       "title": "workflow_lint SLURM_GPU_WIDTH_GUARD_RE does not recognize an inherited-CUDA_VISIBLE_DEVICES parse, so correctly-fixed dispatchers cannot exit the grandfather list"
+    },
+    "2252": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2252",
+      "status": "proposed",
+      "title": "workflow-fix: Step 9c reports an external SIGTERM of the unfenced workflow_lint subprocess as a lint FAIL"
     },
     "226": {
       "has_clean_result": false,
