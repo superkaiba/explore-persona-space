@@ -78,6 +78,19 @@ def default_attrib_template(char_name: str) -> str:
     return f'{char_name} replied: "' + _ANSWER_PLACEHOLDER + '"'
 
 
+def indirect_opening(char_name: str) -> str:
+    """Narrator-voice reported-speech opener for the ``indirect`` boundary form.
+
+    ``"<Name> replied that "`` — ends mid-sentence so an on-policy continuation
+    proceeds in indirect reported speech ("... replied that it was ...") rather
+    than opening a quote. Shared by ``render_prefill`` (the generation prefix)
+    and the on-policy continuation splice (``splice_answer`` with
+    ``indirect_continuation=True``), so prefill and final render can never
+    drift.
+    """
+    return f"{char_name} replied that "
+
+
 def count_sentinels(text: str) -> int:
     """Occurrences of SLOT_SENTINEL in ``text`` (the exactly-one invariant)."""
     return text.count(SLOT_SENTINEL)
@@ -142,9 +155,11 @@ def _form_affixes(
     if form == "indirect":
         raise NotImplementedError(
             "boundary form 'indirect' (reported speech) has no deterministic faithful "
-            "render: recasting the answer into indirect speech changes its text (person/"
-            "tense), which a string splice cannot do — generate indirect renders with a "
-            "model pass, or drop the form"
+            "render for a VERBATIM answer: recasting the answer into indirect speech "
+            "changes its text (person/tense), which a string splice cannot do — the "
+            "inserted arm drops the form. The ON-POLICY arm exists: the answer is "
+            "GENERATED as a continuation of the indirect prefill (already in reported "
+            "speech), spliced via splice_answer(..., indirect_continuation=True)."
         )
     raise ValueError(f"unknown boundary form {form!r} (expected one of {BOUNDARY_FORMS})")
 
@@ -170,6 +185,7 @@ def splice_answer(
     char_name: str,
     *,
     attrib_template: str | None = None,
+    indirect_continuation: bool = False,
 ) -> SpliceResult:
     """Deterministic scaffold + answer -> final text with exact answer offsets.
 
@@ -177,13 +193,27 @@ def splice_answer(
     known because we placed it. ``attrib_template`` (attrib_quoted only)
     overrides the canonical template; ``strip_story`` records the ORIGINAL
     attribution as a template so strip-then-splice round-trips byte-exact.
+
+    ``indirect_continuation`` (default False) is the ON-POLICY opt-in for the
+    ``indirect`` form: the caller asserts ``answer`` was GENERATED as a
+    continuation of the ``indirect_opening`` prefill (so it is already in the
+    narrator's reported voice) and the splice is then faithful by
+    construction — prefix = ``indirect_opening(char_name)``, no suffix (the
+    generation's paragraph-break stop string is excluded from the answer).
+    Without the flag, ``indirect`` keeps raising NotImplementedError (a
+    verbatim direct-speech answer cannot be string-spliced into reported
+    speech — the inserted-arm refusal, spec decision 2026-08-03). The flag is
+    inert for every other form.
     """
     if not answer:
         raise ValueError("answer must be non-empty (a zero-width span is unusable downstream)")
     if SLOT_SENTINEL in answer:
         raise ValueError(f"answer must not contain the slot sentinel {SLOT_SENTINEL!r}")
     slot_idx = _require_one_sentinel(scaffold_text)
-    prefix, suffix = _form_affixes(scaffold_text, slot_idx, form, char_name, attrib_template)
+    if form == "indirect" and indirect_continuation:
+        prefix, suffix = indirect_opening(char_name), ""
+    else:
+        prefix, suffix = _form_affixes(scaffold_text, slot_idx, form, char_name, attrib_template)
     text = (
         scaffold_text[:slot_idx]
         + prefix
@@ -226,6 +256,15 @@ def render_prefill(scaffold_text: str, form: str, char_name: str) -> PrefillSpec
       bare_label     -> stop at the end of the line (one utterance line, the
                         issue1310 PREFILL_STOP convention).
       bare_paragraph -> stop at the next paragraph break (one paragraph).
+      indirect       -> narrator-voice reported-speech opener
+                        (``<Name> replied that ``, mid-sentence — the model
+                        continues in indirect speech, never opening a quote);
+                        stop at the next paragraph break. Reported speech has
+                        no closing delimiter (no quote), so the paragraph
+                        break is the tightest deterministic boundary in the
+                        existing stop family — the same stop as
+                        bare_paragraph, the only other form whose answer is
+                        unquoted prose.
     Everything AFTER the slot in the scaffold is dropped (the model continues
     the story from the slot; the post-slot narration is Phase B material).
     """
@@ -239,10 +278,7 @@ def render_prefill(scaffold_text: str, form: str, char_name: str) -> PrefillSpec
         left, _ = _paragraph_padding(scaffold_text, slot_idx)
         return PrefillSpec(head + left, ("\n\n",), form)
     if form == "indirect":
-        raise NotImplementedError(
-            "boundary form 'indirect' has no deterministic prefill opening — see "
-            "_form_affixes for the rationale"
-        )
+        return PrefillSpec(head + indirect_opening(char_name), ("\n\n",), form)
     raise ValueError(f"unknown boundary form {form!r} (expected one of {BOUNDARY_FORMS})")
 
 

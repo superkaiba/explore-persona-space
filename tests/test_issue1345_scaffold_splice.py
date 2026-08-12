@@ -95,11 +95,33 @@ def test_splice_bare_paragraph_isolation():
     assert res2.text[res2.answer_start : res2.answer_end] == "Hold the line."
 
 
-def test_splice_indirect_not_implemented():
+def test_splice_indirect_inserted_arm_refused_on_policy_arm_supported():
+    """`indirect` refuses the INSERTED arm but supports the ON-POLICY arm (#2054 framing 5).
+
+    Recasting a verbatim direct-speech answer into reported speech changes its
+    text (person/tense), which a string splice cannot do — so the inserted arm
+    stays refused. The on-policy arm is faithful by construction: the model
+    continues from a mid-sentence narrator-voice opener, so what it generates is
+    ALREADY reported speech and the span is known because we placed the prefix.
+    """
+    # Inserted arm: still refused (verbatim answer, no faithful render).
     with pytest.raises(NotImplementedError):
         sc.splice_answer(SCAFFOLD_INLINE, "x", "indirect", "ARIA")
-    with pytest.raises(NotImplementedError):
-        sc.render_prefill(SCAFFOLD_INLINE, "indirect", "ARIA")
+
+    # On-policy arm: prefill ends mid-sentence in the narrator's voice.
+    spec = sc.render_prefill(SCAFFOLD_INLINE, "indirect", "ARIA")
+    assert spec.form == "indirect"
+    assert spec.prefix_text.endswith(sc.indirect_opening("ARIA"))
+    assert '"' not in sc.indirect_opening("ARIA")  # never opens a quote
+    # Reported speech has no closing delimiter, so the paragraph break is the
+    # tightest deterministic stop — the same one bare_paragraph uses.
+    assert spec.stop == ("\n\n",)
+
+    # ...and the continuation splice round-trips with exact offsets.
+    answer = "it was already too late."
+    res = sc.splice_answer(SCAFFOLD_INLINE, answer, "indirect", "ARIA", indirect_continuation=True)
+    assert res.text[res.answer_start : res.answer_end] == answer
+    assert sc.indirect_opening("ARIA") + answer in res.text
 
 
 def test_splice_sentinel_invariants():
