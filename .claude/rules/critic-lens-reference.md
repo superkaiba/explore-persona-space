@@ -649,6 +649,31 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     (`sequential`, "one at a time"); `kind: infra|batch|survey` exempt
     — a `kind: analysis` plan fanning boxes over a stored prefix is IN
     scope. Plan-time staging-topology check only, never a mid-run gate.
+    FAN-OUT POD-NAME EXTENSION (#2237, from incident #2054): when §9
+    fans `N > 1` CONCURRENT pods for ONE issue, ALSO verify the plan
+    names a mechanism that mints N DISTINCT pod names on the lane it
+    actually routes to. REVISE when the plan names NONE of: per-pod
+    `pod.py provision --name-suffix <slug>` calls; a single pod with N
+    in-pod workers; a name-isolating lane (`--lane-suffix`, honored on
+    GCP + SLURM only); or explicit serialization. Conclusion-changing
+    because RunPod pod names are per-issue (`pod-<N>`,
+    `backends/runpod.py:264`) with no suffix parameter and
+    `--lane-suffix` excludes the RunPod lane, so N concurrent
+    same-issue launches collide — and the dangerous branch is silent
+    co-location of all N shards on ONE pod, which invalidates every
+    per-shard wall/RSS projection the plan booked while still producing
+    plausible-looking output. The prior extensions' escapes do NOT
+    cover this one (their triggers are per-pod disk accumulation and
+    same-prefix staging topology; only the escape list below governs
+    it). Escapes: a single-pod phase; a fan-out on a lane whose names
+    isolate; a plan whose N pods are provisioned by named per-pod
+    calls; a phase row explicitly serialized (`sequential`, "one at a
+    time"); `kind: infra|batch|survey` exempt. Plan-time pod-naming
+    check only, never a mid-run gate. Mechanical backstop (WARN-only,
+    #2237): `verify_plan.py` c58 (`c58_fanout_pod_name_collision`) —
+    explicit-`--backend runpod` argvs only (its disclosed auto-lane
+    residual), so this clause stays the lane-agnostic binding gate and
+    c58 is only the early-warning net.
 17. **Persona-vectors extraction fidelity (any plan that elects persona vectors).** If the plan
     extracts a persona/behavior direction via "use persona vectors" / "extract a persona vector" /
     "persona-vectors-style direction" or a mean-difference of positive/negative contrastive
