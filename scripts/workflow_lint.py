@@ -14270,13 +14270,22 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 # (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
 # change). Each entry names its trim direction; none is licensed to grow.
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
-    # measured 920,127 B branch-tip after #2115 converted the two gate-script
+    # measured 926,329 B branch-tip after #2240 made the Step 10d no-PR arm
+    # payload-aware (+5,831 B: USABLE_PR resolution over BOTH no-usable-PR
+    # cases — terminal PR #1897 and zero PR objects #2240 — with the
+    # origin-precondition push + rc-gated fresh-PR create, realized-outcome
+    # [step10d-no-pr-anomaly] notes, the loud novel-payload-but-no-usable-PR
+    # epm:merge-failed arm, the Step 4a prose correction, and the merge-site
+    # draft-ready comment); cap = measured + ~1.5 KB (#1753/#1727
+    # landing-bytes rule; the margin absorbs small main-side advance at the
+    # landing union).
+    # Prior: 921_700 — measured 920,127 B branch-tip after #2115 converted
+    # the two gate-script
     # heredoc launchers (Step 10d lint gate + surgical twin) to Write-tool
     # composition and added the Step 9c script-file-variant note (+1,554 B:
     # the heredoc form ships the whole gate workload as Bash tool-call argv
     # through the harness transport — the #2115 forever-pending-dispatch
-    # stall surface); cap = measured + ~1.5 KB (#1753/#1727 landing-bytes
-    # rule; the margin absorbs small main-side advance at the landing union).
+    # stall surface).
     # Prior: 918_600 — measured 917,043 B at the #2074 Step-10d LANDING
     # UNION (branch-tip 916,019 B — the Step 5 "Per-commit split-review
     # dispatch (large rounds)" block, +3,660 B: T1 >4-commit / T2 >100 KB
@@ -14302,7 +14311,7 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 904,504 B base); the remaining mass is the judgment tranche
     # (bash-block extraction to step10d_guards.sh-style scripts, 9a-quater
     # legacy-path stub, GCP rollback-prose relocation).
-    "issue/SKILL.md": 921_700,
+    "issue/SKILL.md": 927_800,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
