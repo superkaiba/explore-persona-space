@@ -1,0 +1,1 @@
+{"ts": "2026-08-12T13:53:41Z", "event": "raised", "concern_id": "ensemble-cap-pin-collision", "severity": "BLOCKER", "summary": "E3 rewrites the launcher literal that tests/test_ensemble_review_cap.py:206 pins, while E10 pins its absence — jointly unsatisfiable.", "raised_by": "critic", "raised_at_round": 1, "evidence": "tests/test_ensemble_review_cap.py:206-211"}
