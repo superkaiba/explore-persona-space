@@ -74,6 +74,10 @@
 #                             -> verdict_lr() reads analysis/verdict_manifest.json ->
 #                             collection FileNotFoundError in a sparse worktree without
 #                             the cone (#2021 unit-A incident, the #671 class)
+#   eval_results/issue_2054 — test_issue2054_fold_map.py reads the committed
+#                             shared_fold_map.json (the #2245 production-map pin:
+#                             n_conv_ids >= 20,000, >= 5 variants; skip-if-absent
+#                             for pre-existing worktrees)
 #   external/jacobian-lens  — tests/test_issue1776_{p3p4,patch}.py import
 #                             scripts/issue1776_{jacobian,swap,p3p4}.py ->
 #                             issue1776_common.add_jlens_path() hard-reads
@@ -98,4 +102,5 @@ eval_results/issue_779
 eval_results/issue_1415
 eval_results/issue_1776
 eval_results/issue_1481
+eval_results/issue_2054
 external/jacobian-lens
