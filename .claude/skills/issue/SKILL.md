@@ -6992,7 +6992,8 @@ Any VM-LOCAL compute phase with projected wall-time >~15 min that the
 orchestrator launches DIRECTLY as bg-Bash (a Phase-D-style fit, an
 aggregation / permutation battery) MUST be launched fully detached:
 
-    PHASE_PID=$(bash -c 'setsid nohup env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 <cmd> < /dev/null >> <abs, space-free log path> 2>&1 & echo $!')
+    PHASE_PID=$(timeout 60 bash -c 'setsid nohup env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 <cmd> < /dev/null >> <abs, space-free log path> 2>&1 & echo $!')
+    [ -n "$PHASE_PID" ] || echo "[warn] launcher returned NO pid — the detached job may ALREADY be running: ADOPT it via the bracketed probe below, NEVER relaunch (#1491 duplicate-run collision)"
     ps -p "$PHASE_PID" -o args=   # verify the pid is the workload; on mismatch recover via a
                                   # BRACKETED pattern probe — pgrep -f '<distinctive invocatio[n]>'
                                   # (bracket ONE char: an unbracketed pattern matches this probe's
@@ -7012,7 +7013,22 @@ signal kill). `setsid` gives the phase its own session + process group (group
 kills miss it; orphans land ABOVE the dead session (nearest subreaper, else
 init, not always PID 1), so no ppid-tree walk reaches it; `ppid == 1` is
 wrong, #2199); `< /dev/null >> log` drops every fd tether to the dying
-session. The phase's
+session. **Stdout-redirect rule (#2126, measured —
+`tasks/<status>/2126/artifacts/probe-detached-fd.txt`):** the inner
+command's **stdout** must be redirected INSIDE the `$( )` — a command
+substitution returns only when its captured pipe has no writers left, so a
+detached child inheriting fd 1 holds the substitution open for the child's
+WHOLE lifetime → the harness kills the Bash call at its cap AFTER the child
+already started (pid never captured, job running unowned). `timeout 60`
+bounds only a wrapper that wedges BEFORE forking — it does NOT bound the
+inherited-fd hang (measured: the substitution blocked for the child's full
+run despite `timeout 6`, rc=0 — timeout's target had already exited), so
+the redirect discipline, not the timeout, is the guard. The NO-pid warn
+above has TWO recovery arms: a bracketed-probe MATCH means the job is
+running unowned — ADOPT the pid and re-emit the breadcrumb; a probe with NO
+match means the `timeout` killed a pre-fork wedge and the job never
+started — relaunching is then correct per
+`.claude/rules/crash-fix-rounds.md` § Kill-before-relaunch. The phase's
 stage-dispatch breadcrumb MUST carry four additional fields:
 `... pid=<PHASE_PID> log=<abs log path> choom=ok|failed harvest=<abs output path>`
 (additive whitespace-split
@@ -9813,7 +9829,13 @@ suite directly and posts an `epm:test-verdict` event with the result.
 
       Pre-gate spec-freshness re-sync (#1742): AFTER the `cd "$WT"` below
       and BEFORE invoking the selector, run the Step 5a family-atomic
-      spec-freshness block (§ Step 5a) ONCE from the worktree cwd. This
+      spec-freshness block (§ Step 5a) ONCE from the worktree cwd. It
+      binds before the FIRST gate launch AND before EVERY gate
+      re-launch — every "re-run the gate ONCE" recovery path in this
+      SKILL, 9c and Step 10d alike, means re-sync-then-relaunch, never a
+      bare relaunch (#2006: a main-side fix landing mid-gate turns stale
+      worktree copies into NEW-node reads; three full gate runs / ~3 h).
+      This
       is a BINDING reference — never inline a THIRD `FAMILY_OF` copy
       here (a third inlined copy would escape
       `test_step10d_family_atomicity_matches_step5a`'s drift guard). The
@@ -9854,10 +9876,19 @@ suite directly and posts an `epm:test-verdict` event with the result.
       sizing line, any `untested touched file: <path>` WARN lines, and the
       empty-diff NOTE described above. (A code-change task with NO worktree
       runs both from the repo root; the empty-diff NOTE is then expected and
-      benign.)
+      benign.) `--json` emits the test list under key **`tests`** (count
+      `n_tests`), NOT `files` — #1992's launcher read `'files'`, got an
+      empty `$FILES`, and pytest collected the whole 19,223-test suite
+      (~31 min); a session composing its own launcher uses `--files-only`
+      (paths only, one per line — no key to guess) and refuses on empty per
+      the 1b gate-set cross-check.
    b. Run the printed command as a DETACHED background invocation (the
       same setsid + pid/log/rc-file breadcrumb shape prescribed at
-      § Detached VM-side long compute phases above): the selection always
+      § Detached VM-side long compute phases above). `<files>` and `<T>`
+      are COPIED from step 1a's printed command (or from `--files-only`
+      output + the greppable `recommended-timeout-s=<T>` stderr line) —
+      NEVER hand-typed; the gate-set cross-check below is what makes a
+      mis-copy loud instead of catastrophic. The selection always
       contains the 61-file (2026-07-24) workflow-invariant set incl.
       `tests/test_workflow_lint.py` (median ~13 min alone, max ~30 min;
       whole gate median ~18 min, max ~38 min of test time plus collection
@@ -10004,6 +10035,18 @@ suite directly and posts an `epm:test-verdict` event with the result.
       # is a shell var local to this bg-Bash call; the completion-read runs
       # in a separate call, so we save the path where it can find it):
       [ -n "${S9C_BASETEMP:-}" ] && echo "$S9C_BASETEMP" > /tmp/step9c-basetemp-issue-<N>.path
+      # Gate-set cross-check (#1992/#2126) — BEFORE the launch. #1992's launcher
+      # read the WRONG --json key ('files', not 'tests'), spliced an empty list,
+      # and pytest collected the WHOLE 19,223-test suite (~31 min). Compare the
+      # substituted <files> against the selector's LIVE count; a mismatch means a
+      # wrong key, a stale copy, or an unsubstituted placeholder:
+      S9C_N=$(uv run python scripts/select_step9c_tests.py --files-only 2>/dev/null | grep -c .) \
+        || { echo "FATAL: selector failed — do NOT launch the gate" >&2; exit 1; }
+      S9C_FILES="<files>"   # verbatim from step 1a's printed command
+      S9C_GOT=$(printf '%s\n' $S9C_FILES | grep -c . || true)   # unquoted: word-split is the intent
+      [ "${S9C_GOT:-0}" -eq "${S9C_N:-0}" ] \
+        || { echo "FATAL: substituted <files> has $S9C_GOT path(s), selector says $S9C_N — wrong --json key (the list key is 'tests'), stale copy, or unsubstituted placeholder; re-run step 1a and re-substitute; do NOT launch (a bare pytest collects the WHOLE suite)" >&2; exit 1; }
+      echo "[step9c] gate set cross-checked: $S9C_GOT test files"
       # DETACHED launcher — the § Harvest self-harvest chaining shape
       # (SKILL.md § Detached VM-side long compute phases): the workload +
       # rc-write are ONE bash -c unit, and setsid+nohup + the outer
@@ -10087,7 +10130,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
       rc:
       ```bash
       if [ ! -f /tmp/step9c-rc-issue-<N> ]; then
-        echo "FATAL: gate rc file missing — live probe match = still running (keep waiting); probe CLEAR = the detached run died: kill-before-relaunch, then re-run the gate ONCE; NEVER record PASS." >&2
+        echo "FATAL: gate rc file missing — live probe match = still running (keep waiting); probe CLEAR = the detached run died: kill-before-relaunch, then re-sync (§ pre-gate re-sync), then re-run the gate ONCE; NEVER record PASS." >&2
       else
         PYTEST_RC=$(cat /tmp/step9c-rc-issue-<N>)
         tail -30 /tmp/step9c-pytest-issue-<N>.log
@@ -11311,15 +11354,26 @@ rebase-merged. Five guards:
        fi
        if [ "$GUARD1_STRIP_RC" -eq 0 ]; then GUARD1_STATE=ok; break; fi
        GUARD1_STATE=strip-failed
-       # Un-stage AND restore the working tree for ONLY this attempt's paths
-       # so the retry re-splits clean (never a bare `reset -- tasks/`, which
-       # could touch own-task staged state). checkout HEAD restores index AND
-       # working tree. Under the three-dot trigger (#1280) FOREIGN is
-       # fork-point-stable into attempt 2; what refreshes is the SPLIT +
-       # strip TARGET content, so the restore must leave no uncommitted
-       # foreign litter behind (a later shape-1 worktree merge could
-       # refuse on it).
-       git -C "$WT" checkout HEAD -- "${FOREIGN[@]}"
+       # Un-stage AND restore ONLY this attempt's paths so the retry
+       # re-splits clean (never a bare `reset -- tasks/`, which could touch
+       # own-task staged state). PER-DISPOSITION (#2126): a single batched
+       # pathspec op ABORTS ENTIRELY on one unmatched path — measured
+       # (artifacts/probe-guard1-restore.txt part A), a branch-DELETED
+       # foreign path (the status `git mv` shape) is unmatched under BOTH
+       # probed restore verbs, and the old batched form restored NOTHING
+       # (#2087). The split keys on HEAD existence, so the in-HEAD batch
+       # can never carry an unmatched pathspec; checkout HEAD restores
+       # index AND working tree (the #897 hook-admitted form for a
+       # `git -C "$WT"` clause). Absent-from-HEAD paths are DROPPED (that
+       # IS their HEAD state), incl. any untracked litter a later shape-1
+       # worktree merge would refuse on.
+       R_IN=(); R_GONE=()
+       for p in "${FOREIGN[@]}"; do
+         if git -C "$WT" cat-file -e "HEAD:$p" 2>/dev/null; then R_IN+=("$p"); else R_GONE+=("$p"); fi
+       done
+       [ "${#R_IN[@]}" -eq 0 ]   || git -C "$WT" checkout HEAD -- "${R_IN[@]}"
+       [ "${#R_GONE[@]}" -eq 0 ] || { git -C "$WT" rm -f -q --ignore-unmatch -- "${R_GONE[@]}"
+                                      for p in "${R_GONE[@]}"; do rm -f -- "$WT/$p"; done; }
      else
        GUARD1_STATE=ok   # no foreign tasks/ paths — nothing to strip
        break
@@ -11794,6 +11848,10 @@ tests BEFORE anything lands:
   reap per the Step 9c 1b single-flight statement, and key any improvised
   wait on **process exit** (the probe exiting 0 — CLEAR), never on
   verdict-file existence alone (CLAUDE.md § Monitoring re-run discipline).
+  After the probe reads CLEAR and BEFORE any (re)launch, re-run the same
+  Step 5a family-atomic block — the 9c pre-gate spec-freshness re-sync
+  (#1742/#2006) binds every gate re-launch here too (a BINDING reference —
+  never a third inlined `FAMILY_OF` copy).
 
   Then the **Gate-fleet arbitration (#1962)** probe, per the Step 9c 1b
   canonical paragraph:
@@ -12324,7 +12382,7 @@ tests BEFORE anything lands:
 
   ```bash
   if [ ! -f /tmp/issue-<N>-lint-verdict.txt ]; then
-    echo "FATAL: verdict file missing — live probe match = gate still running (keep waiting); probe CLEAR = the detached gate run died before writing a verdict: kill-before-relaunch, then re-run the gate ONCE; NEVER record pass." >&2
+    echo "FATAL: verdict file missing — live probe match = gate still running (keep waiting); probe CLEAR = the detached gate run died before writing a verdict: kill-before-relaunch, then re-sync (§ pre-gate re-sync), then re-run the gate ONCE; NEVER record pass." >&2
   else
     cat /tmp/issue-<N>-lint-verdict.txt   # line 1: verdict; line 2: certified sha — the merge conditional below stays the hard stop
     # Fail-soft diagnostic tails (Recipe exit-code hygiene, Step 9c 1b):
@@ -12932,6 +12990,15 @@ else
   # failure (#1041 rebase refusal) leaves it valid for the same-tip retry
   # — never hand-write the verdict file (#1082; sole exception: the
   # mechanically-gated RE-BIND stanza below, line 2 only).
+  # Read this conditional VERBATIM (#2006). Do NOT re-compose it — an
+  # improvised `grep -qxE … <(sed …)` process-substitution form inside an
+  # eval'd guard prelude exited 1 "BLOCKED: verdict missing/stale" while an
+  # immediate re-probe showed verdict `pass` + sha == tip, costing ~3 h and
+  # three full gate runs. The committed three-conjunct form below is the
+  # tested one; a re-compose is a fresh, untested predicate on the merge path.
+  # Note the grep scans the WHOLE file, not line 1 — which is why the
+  # never-hand-write rule (above) is load-bearing here: a hand-appended
+  # `pass` on line 3 satisfies it while line 2 still carries a valid sha.
   if grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt 2>/dev/null \
      && [ -n "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" ] \
      && [ "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" = "$(git -C "$WT" rev-parse HEAD)" ]; then
@@ -13137,7 +13204,7 @@ else
       false
     fi
   else
-    echo "BLOCKED: pre-push workflow-lint gate (verdict: $(cat /tmp/issue-<N>-lint-verdict.txt 2>/dev/null || echo not-run)) — missing verdict, block/crash, or missing/stale sha (hand-written verdict, or new commits since certification) all fail CLOSED: fix the named offender (or crash cause), re-run the gate ONCE; still failing -> epm:merge-failed (gate subsection, verdict cases 1/3). Do NOT merge."
+    echo "BLOCKED: pre-push workflow-lint gate (verdict: $(cat /tmp/issue-<N>-lint-verdict.txt 2>/dev/null || echo not-run)) — missing verdict, block/crash, or missing/stale sha (hand-written verdict, or new commits since certification) all fail CLOSED: fix the named offender (or crash cause), re-sync (§ pre-gate re-sync), then re-run the gate ONCE; still failing -> epm:merge-failed (gate subsection, verdict cases 1/3). Do NOT merge."
     rm -f /tmp/issue-<N>-lint-verdict.txt   # block/crash/stale consumed — a fresh gate run regenerates it
     false
   fi
@@ -13656,6 +13723,15 @@ fi
 # 0/2/3 above):
 #   uv run python scripts/task.py post-marker <N> epm:progress \
 #     --note "[long-phase-heartbeat] step10d-merge attempt=<k> shape=conflict-recovery"
+# Read this conditional VERBATIM (#2006). Do NOT re-compose it — an
+# improvised `grep -qxE … <(sed …)` process-substitution form inside an
+# eval'd guard prelude exited 1 "BLOCKED: verdict missing/stale" while an
+# immediate re-probe showed verdict `pass` + sha == tip, costing ~3 h and
+# three full gate runs. The committed three-conjunct form below is the
+# tested one; a re-compose is a fresh, untested predicate on the merge path.
+# Note the grep scans the WHOLE file, not line 1 — which is why the
+# never-hand-write rule (above) is load-bearing here: a hand-appended
+# `pass` on line 3 satisfies it while line 2 still carries a valid sha.
 if grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt 2>/dev/null \
    && [ -n "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" ] \
    && [ "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" = "$(git -C "$WT" rev-parse HEAD)" ]; then
@@ -13694,7 +13770,7 @@ if grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt 2>/dev/nu
     false
   fi
 else
-  echo "BLOCKED: pre-push workflow-lint gate (verdict: $(cat /tmp/issue-<N>-lint-verdict.txt 2>/dev/null || echo not-run)) — missing verdict, block/crash, or missing/stale sha (hand-written verdict, or new commits since certification) all fail CLOSED: fix the named offender (or crash cause), re-run the gate ONCE; still failing -> epm:merge-failed (gate subsection, verdict cases 1/3). Do NOT push."
+  echo "BLOCKED: pre-push workflow-lint gate (verdict: $(cat /tmp/issue-<N>-lint-verdict.txt 2>/dev/null || echo not-run)) — missing verdict, block/crash, or missing/stale sha (hand-written verdict, or new commits since certification) all fail CLOSED: fix the named offender (or crash cause), re-sync (§ pre-gate re-sync), then re-run the gate ONCE; still failing -> epm:merge-failed (gate subsection, verdict cases 1/3). Do NOT push."
   rm -f /tmp/issue-<N>-lint-verdict.txt   # block/crash/stale consumed — a fresh gate run regenerates it
   false
 fi

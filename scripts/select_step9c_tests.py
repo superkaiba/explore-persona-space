@@ -221,7 +221,7 @@ point and the three-dot selection is stable under ``origin/main`` advancing.
 Usage::
 
     uv run python scripts/select_step9c_tests.py [--base origin/main] [--no-fetch] \
-                                                 [--repo-root <path>] [--json]
+                                                 [--repo-root <path>] [--json | --files-only]
     uv run python scripts/select_step9c_tests.py --map-files <file> [--repo-root <path>]
 
 ``--map-files FILE`` (the ``/issue`` Step 10d merge-gate mapping mode, #1147):
@@ -286,7 +286,15 @@ reason is ``invariant`` / ``touched-test`` / ``stem-map:<touched file>`` /
 ``skills-pin:<touched file>`` /
 ``transitive-consumer:<touched file>`` / ``dotted-ref:<touched file>`` /
 ``basename-ref:<touched file>`` / ``transitive-import:<touched file>`` —
-#1022, #1299, #1498, #1496, #1851, #1589, #1688).
+#1022, #1299, #1498, #1496, #1851, #1589, #1688). ``--files-only`` emits the
+selected test paths ONLY — one repo-relative path per line, no JSON, no key
+to guess (#1992/#2126: a launcher composing its own gate invocation read the
+WRONG ``--json`` key — ``'files'``, not ``'tests'`` — spliced an empty list,
+and pytest collected the whole 19,223-test suite); the ``<T>`` bound still
+arrives on the greppable stderr ``recommended-timeout-s=<T>`` sizing line,
+and the empty-selection refusal (exit 1) applies unchanged. Mutually
+exclusive with ``--json`` and ``--map-files`` (argparse usage error, exit 2 —
+fail CLOSED, the same shape as the ``--map-files`` + ``--json`` guard).
 Exit 0 on success (even with WARN lines);
 exit 1 if an underlying ``git`` call fails irrecoverably (work-root resolution
 or the diff) or if the selection comes back EMPTY (the zero-test-gate
@@ -432,6 +440,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_followup_cap_park_note_pin.py",
     # NEW (#1546) — SKILL.md forensics-ingest pointer pin
     "tests/test_issue_skill_forensics_ingest_pointer.py",
+    # NEW (#2126) — SKILL.md gate-recipe hardening pins (D1-D5: 1b gate-set
+    # cross-check, 1a selector-key pin, every-relaunch re-sync scope, detached
+    # stdout-redirect rule + adopt recovery, verdict-conditional re-compose
+    # ban, Guard-1 per-disposition retry restore)
+    "tests/test_issue_skill_gate_recipe_hardening.py",
     # Registration rider (#1651) — the pre-existing #1305/#1533 gate-scope
     # pin file was never registered (the #1546 unregistered-pin class).
     "tests/test_issue_skill_gate_scope_brief_pin.py",
@@ -2032,6 +2045,19 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     parser.add_argument(
+        "--files-only",
+        action="store_true",
+        help=(
+            "emit the selected test paths ONLY — one repo-relative path per "
+            "line on stdout, no JSON, no key to guess (#1992/#2126: a launcher "
+            "composing its own gate invocation read the wrong --json key and "
+            "spliced an empty list). The <T> timeout bound still arrives on "
+            "the greppable stderr recommended-timeout-s=<T> sizing line; the "
+            "empty-selection refusal (exit 1) applies unchanged. Mutually "
+            "exclusive with --json and --map-files (exit 2)."
+        ),
+    )
+    parser.add_argument(
         "--map-files",
         default=None,
         metavar="FILE",
@@ -2069,6 +2095,21 @@ def main(argv: list[str] | None = None) -> int:
         parser.error(
             "--json is not supported with --map-files (mapping mode emits TSV: "
             "'<test>\\t<matched_path>' per line)"
+        )
+
+    # Same fail-CLOSED shape for --files-only (#2126): each output mode owns
+    # stdout exclusively — silently preferring one flag over another would
+    # hand a consumer the WRONG shape (the #1717 defect (a) class), so an
+    # ambiguous combination exits 2 with no stdout.
+    if args.files_only and args.json:
+        parser.error(
+            "--files-only is not supported with --json (each mode owns stdout: "
+            "paths-only lines vs a JSON object)"
+        )
+    if args.files_only and args.map_files is not None:
+        parser.error(
+            "--files-only is not supported with --map-files (mapping mode emits "
+            "TSV pairs, not a diff-based selection)"
         )
 
     try:
@@ -2153,7 +2194,13 @@ def main(argv: list[str] | None = None) -> int:
         file=sys.stderr,
     )
 
-    if args.json:
+    if args.files_only:
+        # Paths only, one per line, NO key to guess (#1992/#2126). The
+        # empty-selection refusal above already returned 1, so this branch
+        # never emits zero lines on exit 0; <T> rides the stderr sizing line.
+        for t in tests:
+            print(t)
+    elif args.json:
         print(
             json.dumps(
                 {
