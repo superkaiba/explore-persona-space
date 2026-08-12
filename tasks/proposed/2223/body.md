@@ -64,16 +64,22 @@ Protocol, non-negotiable for Phase A: 4 domains (coding / writing / therapy-like
 
 Applied to the SAME multi-turn generation loop, so the DV is the drift trajectory under intervention:
 
-| Arm | Intervention | Position | Purpose |
-|---|---|---|---|
-| A0 | none | — | baseline drift curve (the reproduction) |
-| A1 | cap | all tokens | paper-faithful anchor — must reproduce their stabilization |
-| A2 | cap | context vector ONLY | the cheap-localized question |
-| A3 | axis-component replace | context vector ONLY | the cheap-localized question, stronger op |
+**SIX cells, enumerated explicitly — this is the arm list, not a sketch. Do not collapse the axis-extraction cross into a footnote or an optional extra; A2b and A3b are first-class arms.**
 
-**Axis-extraction cross (in-house arms).** A2/A3 run under TWO Assistant Axes, as paired arms of the same design:
+| Cell | Axis extracted at | Intervention | Applied at | τ calibrated on | #2203 single-turn precedent |
+|---|---|---|---|---|---|
+| A0 | — | none | — | — | `baseline` |
+| A1 | answer (response tokens) | cap | all tokens | answer-axis, all-token dist. | `cap_alltoken` |
+| A2a | answer (response tokens) | cap | context vector ONLY | answer-axis, **context-position** dist. | `cap_ctx` |
+| **A2b** | **context vector** | **cap** | **context vector ONLY** | **context-axis, context-position dist.** | **`ctxnative_cap_ctx`** |
+| A3a | answer (response tokens) | axis-component replace | context vector ONLY | n/a | `axrep_ctx` |
+| **A3b** | **context vector** | **axis-component replace** | **context vector ONLY** | n/a | **`ctxnative_axrep_ctx`** |
+
+**A2b is the fully self-consistent context-native capping arm** — axis extracted at the context position, threshold calibrated on THAT axis's projection distribution at THAT position, cap applied at that position. All three must be context-native together. An arm that extracts the axis at the context but inherits an answer-axis or all-token threshold is NOT context-native, is internally inconsistent, and is the most likely way to silently reproduce #2203's under-firing defect (10.5% / 9.1% firing). The τ column above is load-bearing for exactly this reason — check it per cell before launch, and report realized firing fraction per cell.
+
+**Axis-extraction cross (in-house arms), stated once more for clarity.** A2/A3 each run under TWO Assistant Axes, as paired arms of the same design:
 - **answer-extracted** — mean response-token activations, the paper-faithful extraction (this is what Lu et al.'s axis is);
-- **context-extracted** — the axis re-derived at the context-vector position.
+- **context-extracted** — the axis re-derived at the context-vector position, with its own threshold.
 
 Rationale for the cross: an axis extracted from answer activations may not be the right direction to clamp at a *prompt* position. If context-only capping fails under the answer-extracted axis but works under the context-extracted one, the failure was an extraction mismatch, not a localization result.
 
