@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2241,
+  "highest_id": 2242,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9595,6 +9595,13 @@
       "path": "tasks/proposed/2241",
       "status": "proposed",
       "title": "Step 4a: draft-PR creation is gated on a condition that is false by construction (generator of the #2240 zero-PR class)"
+    },
+    "2242": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2242",
+      "status": "proposed",
+      "title": "Absolute per-cell trainability floor: a yield shortfall must DROP the cell, not shrink it to 1 row"
     },
     "225": {
       "has_clean_result": true,
