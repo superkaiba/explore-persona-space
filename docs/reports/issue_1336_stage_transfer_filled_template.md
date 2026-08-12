@@ -29,6 +29,19 @@
   - No released ladder ships PPO-style RLHF as a separate checkpoint, so the RLHF slot is
     realized as DPO. Every statement about "RLHF" below is a statement about DPO.
 
+- **How much data each stage actually saw** — exact `train`-split row counts, read from the Hub at
+  the same pinned revisions this experiment drew its eval corpora from:
+  - **SFT** — `allenai/tulu-3-sft-mixture` @ `b14afda60f1b` — **939,343** prompts
+  - **DPO** — `allenai/llama-3.1-tulu-3-8b-preference-mixture` @ `78a6f0078594` — **272,898**
+    preference pairs
+  - **RLVR** — `allenai/RLVR-GSM-MATH-IF-Mixed-Constraints` @ `7dbd180f5440` — **29,946** prompts
+  - **The stages are not matched on data volume — SFT saw ≈ 31× the rows RLVR did**, and the
+    ladder shrinks monotonically (939k → 273k → 30k). This is a property of the released recipe,
+    not a choice made here, but it is a live confound for any "which stage changes the map?"
+    reading: the stage that saw the most data is also the stage where the change appears, so
+    "SFT does it all" and "whichever stage sees ~10⁶ rows does it all" are not separated by this
+    design. The dose control (longer RLVR) varies RLVR duration only — it does not break the tie.
+
 - **Collect context and answer vectors for:**
   - **generic LMSYS/WILDCHAT** — LMSYS-Chat-1M first user turns, in two renders: **chat** (Tülu
     chat template) and **naturalistic** (template stripped)
@@ -121,6 +134,52 @@ The types of transfer are:
 I also plot as a baseline identity + bias where the context vector is copied over and only a bias
 is trained
 
+### The two alignment maps — what tiers 6 and 7 actually apply
+
+The reparameterization tiers do not modify the source's operator `W_s`. They translate the
+*coordinates* on either side of it, using a second linear map fitted on **matched rows** — the same
+prompt, its vector in each of the two checkpoints:
+
+- **`A_ctx` — the context alignment map.** Target contexts → source contexts. Direction is
+  *backwards* (hence `A_ctx_rev` in the artifacts): to feed a target context into the source's
+  frozen operator, you first translate it back into the coordinates that operator expects.
+- **`A_ans` — the answer alignment map.** Source answers → target answers. The frozen operator
+  emits a prediction in the *source's* answer coordinates; this translates it forward into the
+  target's.
+
+So the ladder is exactly:
+
+| tier | what is applied |
+|---|---|
+| **0** direct | ŷ = `W_s` · x |
+| **6** reparam contexts | ŷ = `W_s` · **`A_ctx`**(x) — fix the input coordinates |
+| **7** reparam answers | ŷ = **`A_ans`**(`W_s` · x) — fix the output coordinates |
+| **8** reparam both | ŷ = **`A_ans`**(`W_s` · **`A_ctx`**(x)) |
+
+**What the top panel of the figure plots is the identity+bias BASELINE of these two maps, not the
+maps' own R².** It answers "do the two checkpoints even share coordinates — does copying the vector
+across, with only a mean shift, already work?" Both numbers, on `lmsys23k` chat at layer 30:
+
+| source → target | `A_ctx` fitted | `A_ctx` identity+bias | `A_ans` fitted | `A_ans` identity+bias |
+|---|---|---|---|---|
+| base → SFT | 0.617 | −0.121 | 0.391 | −0.378 |
+| base → DPO | 0.589 | −0.263 | 0.423 | −0.738 |
+| base → RLVR | 0.585 | −0.270 | 0.426 | −0.754 |
+| base → longer RLVR | 0.605 | −0.112 | 0.423 | −0.626 |
+| SFT → DPO | 0.894 | 0.853 | 0.727 | 0.524 |
+| DPO → RLVR | 0.980 | 0.976 | 0.827 | 0.840 |
+| DPO → longer RLVR | 0.922 | 0.892 | 0.782 | 0.788 |
+
+Read the two columns *against each other*, and the main panel's shape follows immediately:
+
+- **Among post-trained checkpoints the alignment map has almost nothing to do.** DPO → RLVR:
+  identity+bias 0.976 against a fitted 0.980 — the gap is 0.004. The two checkpoints are already
+  in the same coordinates, so tiers 6–8 can barely improve on tier 0, and they don't.
+- **Across the base boundary the spaces genuinely differ.** Identity+bias goes *negative*
+  (−0.11 to −0.27 on contexts, −0.38 to −0.75 on answers) while a fitted map still reaches
+  ~0.59–0.62. A real linear change of coordinates exists and recovers much of the gap — which is
+  why tiers 6–8 lift base-source transfer substantially, and why they lift nothing elsewhere.
+
 ### What counts as zero
 
 A ladder of increasingly permissive corrections invites the obvious objection: *maybe the
@@ -200,9 +259,9 @@ regression** (checkpoint→checkpoint alignment, not context→answer), so a hig
 **Plot — all 10 forward pairs, median over the 7 non-degenerate corpora, every corpus overplotted;
 layer 30:**
 
-![Every forward pair of the Tülu-3 ladder: held-out R² by reparameterization tier, grouped by source stage; base-source pairs sit far below the ceiling at direct transfer while every post-training-source pair sits near it, with a purple dashed identity+bias baseline on a broken lower panel](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5f981f04e2ff5ada6ef8707581b3cd737175d223/figures/issue_1336/ladder_full_transfer_lattice.png)
+![Every forward pair of the Tülu-3 ladder: held-out R² by reparameterization tier, grouped by source stage; base-source pairs sit far below the ceiling at direct transfer while every post-training-source pair sits near it, with a purple dashed identity+bias baseline on a broken lower panel](https://raw.githubusercontent.com/superkaiba/explore-persona-space/207eed884b33651e13d4cdea848f8425dc452a6a/figures/issue_1336/ladder_full_transfer_lattice.png)
 
-https://raw.githubusercontent.com/superkaiba/explore-persona-space/5f981f04e2ff5ada6ef8707581b3cd737175d223/figures/issue_1336/ladder_full_transfer_lattice.png
+https://raw.githubusercontent.com/superkaiba/explore-persona-space/207eed884b33651e13d4cdea848f8425dc452a6a/figures/issue_1336/ladder_full_transfer_lattice.png
 
 | source → target | ceiling | direct (t0) | ctx-only (t6) | ans-only (t7) | both (t8) | cross fit |
 |---|---|---|---|---|---|---|
@@ -219,9 +278,9 @@ https://raw.githubusercontent.com/superkaiba/explore-persona-space/5f981f04e2ff5
 
 **Per-unit view — the same read disaggregated, one panel per eval corpus:**
 
-![Per eval dataset: eight panels, one per corpus, each showing the ten forward stage pairs at each reparameterization tier with each corpus's own identity+bias baseline on a broken lower strip; the four conversational corpora close on the ceiling by SFT→DPO while the two math corpora keep a visible gap](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5f981f04e2ff5ada6ef8707581b3cd737175d223/figures/issue_1336/ladder_full_transfer_lattice_by_dataset.png)
+![Per eval dataset: eight panels, one per corpus, each showing the ten forward stage pairs at each reparameterization tier with each corpus's own identity+bias baseline on a broken lower strip; the four conversational corpora close on the ceiling by SFT→DPO while the two math corpora keep a visible gap](https://raw.githubusercontent.com/superkaiba/explore-persona-space/207eed884b33651e13d4cdea848f8425dc452a6a/figures/issue_1336/ladder_full_transfer_lattice_by_dataset.png)
 
-https://raw.githubusercontent.com/superkaiba/explore-persona-space/5f981f04e2ff5ada6ef8707581b3cd737175d223/figures/issue_1336/ladder_full_transfer_lattice_by_dataset.png
+https://raw.githubusercontent.com/superkaiba/explore-persona-space/207eed884b33651e13d4cdea848f8425dc452a6a/figures/issue_1336/ladder_full_transfer_lattice_by_dataset.png
 
 
 **Takeaways**
