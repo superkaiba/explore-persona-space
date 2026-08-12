@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2248,
+  "highest_id": 2249,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9645,6 +9645,13 @@
       "path": "tasks/running/2248",
       "status": "running",
       "title": "SKILL.md Step 4: brief-composition rule covers marker SUPPRESSION but not DISPLACEMENT by a return-format contract"
+    },
+    "2249": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2249",
+      "status": "proposed",
+      "title": "verify_task_body check 17: upgrade context-parent-lineage-mixed WARN to FAIL when frontmatter parent_id is set and the Context row carries a no-parent clause"
     },
     "225": {
       "has_clean_result": true,
