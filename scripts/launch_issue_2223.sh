@@ -39,8 +39,28 @@ FIGURES="$REPO_ROOT/scripts/issue2223_figures.py"
 cd "$REPO_ROOT"
 
 # Arm registry split (mirrors ARMS in issue2223_drift.py; A0 = "both").
-ARMS_7B=(A0 A2a A2b A3a A3b A4 A4R A5)
+# A0 runs FIRST (Phase A anchor); the Phase B grid is gated on the G2 verdict.
+ARMS_7B_PHASEB=(A2a A2b A3a A3b A4 A4R A5)
 CAP_ARMS_7B=(A2a A2b)   # firing telemetry (realized-vs-empirical)
+
+# G2 stop gate (plan §7; code-review r1 ISSUE 4): consume the Phase-A verdict BEFORE
+# any Phase B generation spends. GATE_STOP_RC=8 is the driver's DESIGNED halt —
+# PHASE_B=0 skips the Phase B grid while Phase A still uploads; any other non-zero
+# rc is a real crash and halts the chain (set -e semantics preserved via explicit exit).
+GATE_STOP_RC=8
+check_g2_gate() {  # sets PHASE_B=1|0
+    local gate_rc=0
+    run_phase gate || gate_rc=$?
+    if [ "$gate_rc" -eq 0 ]; then
+        PHASE_B=1
+    elif [ "$gate_rc" -eq "$GATE_STOP_RC" ]; then
+        PHASE_B=0
+        echo "[launch] G2 STOP — Failed-to-reproduce at adequate power; skipping Phase B grid"
+    else
+        echo "[launch] FATAL: gate phase crashed (rc=$gate_rc)" >&2
+        exit "$gate_rc"
+    fi
+}
 
 if [ "$MODE" = smoke ]; then
     OUT_ROOT="/tmp/issue-2223-smoke-$MODEL"
@@ -119,37 +139,54 @@ if [ "$MODEL" = 32b ] && [ "$MODE" = smoke ]; then
 fi
 
 # ── per-model phase chain ─────────────────────────────────────────────────────────
-run_phase topics   # idempotent-ish; the driver regenerates topics_personas.json
+run_phase topics   # IDEMPOTENT: skip-if-exists + HF cross-leg share (--force-topics regenerates)
 
+# Phase ordering (code-review r1): A0 (Phase A anchor) FIRST → aggregate (verdict) →
+# G2 gate → Phase B grid only on PASS. `upload` runs BEFORE the optional 0-GPU `ridge`
+# add-on on both legs (r1 BLOCKER 1): the durability of raw_completions/ — the primary
+# deliverable — must never depend on an optional analysis add-on succeeding.
 if [ "$MODEL" = 7b ]; then
     run_phase alpha                        # α calibration (steering arms A4/A4R/A5 need it)
-    for arm in "${ARMS_7B[@]}"; do
-        drift_cell "$arm"
-    done
-    run_phase aggregate                    # reproduction verdict (reads A0 trajectory)
-    for arm in "${CAP_ARMS_7B[@]}"; do
-        run_phase firing --arm "$arm"
-    done
-    for arm in "${ARMS_7B[@]}"; do
-        run_phase capability --arm "$arm"
-    done
+    drift_cell A0                          # Phase A anchor (7B leg)
+    run_phase aggregate                    # reproduction verdict (A0__7b same-leg anchor)
+    check_g2_gate                          # sets PHASE_B
+    if [ "$PHASE_B" -eq 1 ]; then
+        for arm in "${ARMS_7B_PHASEB[@]}"; do
+            drift_cell "$arm"
+        done
+        for arm in "${CAP_ARMS_7B[@]}"; do
+            run_phase firing --arm "$arm"
+        done
+    fi
+    run_phase capability --arm A0
+    if [ "$PHASE_B" -eq 1 ]; then
+        for arm in "${ARMS_7B_PHASEB[@]}"; do
+            run_phase capability --arm "$arm"
+        done
+    fi
     run_phase fig5_generate
     run_phase fig5_judge
-    run_phase ridge
     run_phase upload
+    run_phase ridge                        # optional 0-GPU add-on — AFTER upload (r1 BLOCKER 1)
 else
-    # 32B full: A0 drift (think-OFF faithful + think-ON extension) + A1 paper-cap.
+    # 32B full: A0 drift (think-OFF faithful + think-ON extension) FIRST, then the
+    # verdict + gate; A1 (paper-cap, Phase B grid member) only on G2 PASS.
     drift_cell A0
     drift_cell A0 --think                  # Qwen-3 thinking-ON Phase-A extension arm
-    drift_cell A1
     run_phase aggregate
-    run_phase firing --arm A1
+    check_g2_gate                          # sets PHASE_B
+    if [ "$PHASE_B" -eq 1 ]; then
+        drift_cell A1
+        run_phase firing --arm A1
+    fi
     run_phase capability --arm A0
-    run_phase capability --arm A1
+    if [ "$PHASE_B" -eq 1 ]; then
+        run_phase capability --arm A1
+    fi
     run_phase fig5_generate
     run_phase fig5_judge
-    run_phase ridge
     run_phase upload
+    run_phase ridge                        # optional 0-GPU add-on — AFTER upload (r1 BLOCKER 1)
 fi
 
 # ── figures (git-destined; smoke diverts via --out-dir) ────────────────────────────
