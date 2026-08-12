@@ -486,6 +486,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_stash_kept_duty_pin.py",
     # NEW (#1875) — SKILL.md Step 0 autonomous Monitor/TaskOutput schema-preload pin
     "tests/test_issue_skill_step0_preload_pin.py",
+    # NEW (#2240) — SKILL.md Step 10d payload-aware no-PR arm pin (USABLE_PR gate,
+    # origin-precondition + rc-gated create, realized-outcome anomaly note,
+    # loud novel-payload-but-no-usable-PR failure)
+    "tests/test_issue_skill_step10d_no_pr_arm.py",
     # NEW (#1734) — SKILL.md Step 2 minimum plan-review floor + recorded-skip contract pin
     "tests/test_issue_skill_step2_floor.py",
     # NEW (#1595) — stopped-volume persist-before-park pin (SKILL.md + pod-config.md)
@@ -535,6 +539,9 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_step_completed_resume.py",  # NEW (#1242) — resume/step-completed contract pin
     # NEW (#1662) — CLAUDE.md + SKILL.md suffixed-pod completion-teardown contract pin
     "tests/test_suffixed_pod_completion_teardown_pin.py",
+    # NEW (#2119) — upload-policy.md manifest-first consumer clause prose pin
+    # (clause header + fail-loud sentence + hub helper names).
+    "tests/test_upload_policy_manifest_first_pin.py",
     # NEW (#1693) — code-reviewer.md Step 0.69 phase-idempotency + inter-phase-
     # contract gate pin (prose + codex mirror + substantive-tag registry + ratchet-cap)
     "tests/test_code_reviewer_phase_idempotency_gate.py",

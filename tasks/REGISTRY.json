@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2240,
+  "highest_id": 2241,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8657,8 +8657,8 @@
     "2119": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2119",
-      "status": "running",
+      "path": "tasks/completed/2119",
+      "status": "completed",
       "title": "daily-fix: manifest-first staging for sharded artifacts"
     },
     "212": {
@@ -8678,8 +8678,8 @@
     "2121": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2121",
-      "status": "proposed",
+      "path": "tasks/planning/2121",
+      "status": "planning",
       "title": "daily-fix: address-concern --summary-file + --dry-run alias"
     },
     "2122": {
@@ -9585,9 +9585,16 @@
     "2240": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2240",
-      "status": "running",
+      "path": "tasks/completed/2240",
+      "status": "completed",
       "title": "Step 10d: payload-aware no-PR arm (a branch with novel payload and zero PRs silently skips the auto-merge)"
+    },
+    "2241": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2241",
+      "status": "proposed",
+      "title": "Step 4a: draft-PR creation is gated on a condition that is false by construction (generator of the #2240 zero-PR class)"
     },
     "225": {
       "has_clean_result": true,

@@ -60,6 +60,7 @@ tests/test_issue_skill_staged_index_verification.py
 tests/test_issue_skill_stash_kept_duty_pin.py
 tests/test_issue_skill_step0_preload_pin.py
 tests/test_issue_skill_step10_teardown_ordering.py
+tests/test_issue_skill_step10d_no_pr_arm.py
 tests/test_issue_skill_step2_floor.py
 tests/test_issue_skill_stopped_volume_persist_pin.py
 tests/test_issue_skill_terminal_landing_pin.py
@@ -95,6 +96,7 @@ tests/test_task_workflow_list_children.py
 tests/test_task_workflow_post_marker_echo.py
 tests/test_task_workflow_worktree.py
 tests/test_teammate_coordination_pins.py
+tests/test_upload_policy_manifest_first_pin.py
 tests/test_verify_clean_result.py
 tests/test_verify_clean_result_body_stdin.py
 tests/test_verify_paper.py
