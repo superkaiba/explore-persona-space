@@ -67,10 +67,43 @@ def test_read_answers_conv_ids_missing_prompt_idx_fails_loud(tmp_path: Path) -> 
 
 def test_smoke_intersection_returns_per_corpus_kept_id_sets(tmp_path, monkeypatch) -> None:
     """The smoke-local probe intersects KEPT ids across cm.SMOKE_MODELS and
-    returns the id sets run() applies as the manifest row filter."""
+    returns the id sets run() applies as the manifest row filter.
+
+    The common kept block is sized to SMOKE_KEPT_MIN (v17 smoke-ENTRY floor),
+    with per-model extras that differ so the intersection is exercised."""
     monkeypatch.setattr(ps, "DATA_ROOT", tmp_path)
     corpus = cm.SMOKE_CORPORA_V2[0]
-    # Per-model kept sets that differ: intersection must be {s5001}.
+    common = list(range(5000, 5000 + ps.SMOKE_KEPT_MIN))
+    # Per-model kept sets that differ: intersection must be exactly `common`.
+    kept_by_model = {
+        cm.SMOKE_MODELS[0]: [*common, 5900],
+        cm.SMOKE_MODELS[1]: [*common, 5901],
+        cm.SMOKE_MODELS[2]: [*common, 5902],
+    }
+    idx_range = [*common, 5900, 5901, 5902]
+    for model, kept in kept_by_model.items():
+        rows = [{"prompt_idx": i, "kept": i in kept} for i in idx_range]
+        _write_answers(tmp_path / "gen_smoke" / model / corpus / "answers.jsonl", rows)
+    ctx = ps.SplitContext(
+        smoke=True,
+        upload=False,
+        corpora=(corpus,),
+        out_root=tmp_path / "out",
+        hf_prefix_out="",
+    )
+    summary, ids_by_corpus = ps.measure_5way_intersection(ctx)
+    assert ids_by_corpus == {corpus: {f"s{i}" for i in common}}
+    assert summary["mode"] == "smoke-local"
+    assert summary["per_corpus_5way_intersection"] == {corpus: ps.SMOKE_KEPT_MIN}
+    assert summary["models"] == list(cm.SMOKE_MODELS)
+
+
+def test_smoke_intersection_below_kept_min_halts(tmp_path, monkeypatch) -> None:
+    """v17 smoke-ENTRY floor: a realized kept-intersection < SMOKE_KEPT_MIN is a
+    fixture DEFECT and HALTs with the named cause BEFORE any gate runs — never
+    an `if smoke:` downgrade of A1-A5 (the SLURM-5005 shape)."""
+    monkeypatch.setattr(ps, "DATA_ROOT", tmp_path)
+    corpus = cm.SMOKE_CORPORA_V2[0]
     kept_by_model = {
         cm.SMOKE_MODELS[0]: [5000, 5001],
         cm.SMOKE_MODELS[1]: [5001, 5002],
@@ -86,11 +119,8 @@ def test_smoke_intersection_returns_per_corpus_kept_id_sets(tmp_path, monkeypatc
         out_root=tmp_path / "out",
         hf_prefix_out="",
     )
-    summary, ids_by_corpus = ps.measure_5way_intersection(ctx)
-    assert ids_by_corpus == {corpus: {"s5001"}}
-    assert summary["mode"] == "smoke-local"
-    assert summary["per_corpus_5way_intersection"] == {corpus: 1}
-    assert summary["models"] == list(cm.SMOKE_MODELS)
+    with pytest.raises(SystemExit, match="smoke_fixture_kept_intersection_too_small"):
+        ps.measure_5way_intersection(ctx)
 
 
 def test_smoke_intersection_missing_fixture_fails_loud(tmp_path, monkeypatch) -> None:

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Phase C_pool — pooled-multidataset cross-corpus split (plan v15 §4).
+"""Phase C_pool — pooled-multidataset cross-corpus split (plan v17 §4, Option A).
 
 Prepares the pooled_split_v3 assignment table consumed by Phase FIT_pool /
 LAD_pool. Steps (fail-loud in order):
@@ -18,34 +18,69 @@ LAD_pool. Steps (fail-loud in order):
   3. Embed all deduped prompts once via sentence-transformers/all-mpnet-
      base-v2 with the revision pinned via HfApi().repo_info at
      invocation time (CONCERN M3), recorded in the manifest.
-  4. K-means k=50 (seed 1336) on the union embeddings; assign whole
-     clusters 80/20 to train/test at ratio +/- 2% and partition the train
-     side into 5 folds preserving cluster structure.
-  5. Persist the assignment to
-     ``analysis_tensors/pooled_split_v3/split_manifest.json`` with fields:
-     ``pinned_revisions`` (mpnet + generation revision per model x corpus:
-     wave-1 pin for lmsys/gsm8k_train stems, resolved main for v2 shards), ``n_kept_pre_dedup``, ``n_kept_post_dedup``,
-     ``per_corpus_kept`` (before AND after dedup), ``n_clusters``,
-     ``cluster_to_corpora_counts`` (per-cluster corpus histogram),
-     ``train_test_by_cluster``, ``pooled_folds_by_cluster``, plus the
-     5-way intersection measurement + the row-id assignment lists.
-  6. Optionally upload the manifest to the HF data repo under
-     ``issue1336_rlvr_ladder/analysis_tensors/pooled_split_v3/`` (adds
-     ``--upload`` mirroring the plan's exact workload command).
+  4. Per-corpus k-means (v16 Option A): k_c = clamp(round(n_c / 300),
+     10, 50), seed 1336, on each corpus's OWN embeddings — the grouping
+     unit is a namespaced corpus-pure sub-cluster (corpus, subcluster_id);
+     whole groups go to one side of the split (the
+     ood-generalization-folds group-level leakage guarantee).
+  5. Cross-corpus near-duplicate scan: L2-normalize, blocked matmul
+     (the full n^2 similarity matrix is never materialized), collect
+     cross-corpus row pairs at cos >= 0.95, union-find MERGE the touched
+     sub-clusters into joint assignment groups — merged groups are
+     CO-ASSIGNED to train, never dropped. Report-only: within-corpus
+     straddle counts (pairs >= 0.95 in different sub-clusters), 0.90
+     sensitivity counts, and a max-cross-corpus-cosine histogram.
+  6. Per-corpus greedy WHOLE-GROUP packing of pure groups to test target
+     0.20 inside the window [0.15, 0.28] (gate A4: ONE deterministic
+     retry with k_c doubled for a failing corpus, recorded in the
+     manifest, then HALT dumping the full sub-cluster size composition
+     to ``split_manifest.rejected.json``); then a 5-fold partition of
+     the train side preserving group structure (round-robin over
+     shuffled train groups).
+  7. Persist ``analysis_tensors/pooled_split_v3/split_manifest.json``
+     (``split_design: "percorpus_subcluster_v1"``: per-corpus k_c +
+     sub-cluster sizes, the group table (corpus, subcluster_id) ->
+     group_id -> train|test|fold, realized per-corpus test shares, the
+     pooled realized ratio, the near-duplicate audit block, pinned
+     revisions incl. ``generation_subprefix``, the 5-way intersection
+     measurement, and the row-id assignment list) and optionally upload
+     it (``--upload``) BEFORE any downstream phase.
 
-Assertions (fail loud on violation, non-zero exit):
+Assertions (fail loud on violation, non-zero exit — plan v17 §4 gate set):
 
-  - every cluster contains prompts from >= 3 corpora (fail if any
-    cluster is corpus-locked);
-  - per-corpus test-side share >= 15%;
-  - per-corpus keep-rate >= 0.99 of the round-3 per-corpus keep-rate
+  - (A1) total kept == per-corpus kept sum − cross-corpus dedup drops
+    (arithmetic identity; the <500 drops target stays a sanity WARN —
+    measured 167);
+  - (A2) per-corpus keep-rate >= 0.99 of the round-3 per-corpus keep-rate
     (HALT + log the sha collision surface on violation);
-  - cross-corpus dedup drops < 500 (WARN only — sanity check).
+  - (A3, BINDING COVERAGE GATE) every corpus's realized test share
+    >= 0.15 — BINDS UNDER SMOKE (deliberately no per-check smoke
+    downgrade anywhere in this module: the SLURM-5005 shape);
+  - (A4) per-corpus packing lands in [0.15, 0.28] — enforced at packing
+    time (single registered k_c x2 retry, then HALT + rejected-manifest
+    dump); BINDS UNDER SMOKE;
+  - (A5) cross-corpus merged mass <= 10% of every corpus's rows (HALT +
+    component composition dump — topical separability of the corpora is
+    a design premise; its violation must surface, never silently
+    proceed).
+  RETIRED (v16): the >=3-corpora-per-cluster gate (CLUSTER_MIN_CORPORA)
+  — false by construction under corpus-pure groups.
 
 Smoke (``--smoke``) end-to-end exercise: substitutes the pinned local
 smoke corpora set (SMOKE_CORPORA_V2 = ("lmsys23k",)) at tiny N so the
 pipeline runs on the VM without HF traffic; the smoke NEVER uploads and
-writes under data/issue_1336/pooled_split_v3_smoke.
+writes under data/issue_1336/pooled_split_v3_smoke. NEW v17 fail-loud
+smoke-ENTRY assert, UPSTREAM of A3/A4 (a fixture-DEFECT check, not a gate
+downgrade — A3/A4 still bind unchanged after it passes): the realized
+5-way kept-intersection per smoke corpus must be >= SMOKE_KEPT_MIN = 16,
+else HALT with the named cause ``smoke_fixture_kept_intersection_too_small``
+(dumping per-model kept counts + the gen_smoke/ model dirs present).
+Grounding (plan v17 §4): at n >= 16 with k_eff = 10 the [0.15, 0.28]
+window is exhaustively satisfiable (plan-time subset-sum check over all
+partitions of n in [16, 32] into 10 parts; a degenerate fewer-group
+clustering routes through the registered k_c x2 retry); at n = 8 the
+window is knife-edge and at n = 7 arithmetically EMPTY. The near-dup
+scan + union-find + A5 run structurally unchanged under smoke.
 
 Every ``__main__`` invocation exits explicitly (``sys.exit(0)`` on the
 success path) to sidestep the PyGILState_Release atexit race that killed
@@ -89,10 +124,26 @@ logger = logging.getLogger("issue1336_pooled_split")
 # ---------------------------------------------------------------------------
 MPNET_MODEL_ID = "sentence-transformers/all-mpnet-base-v2"
 POOLED_SPLIT_SEED = 1336
-POOLED_K = 50
+# POOLED_K (global k-means k=50) RETIRED in v16 (Option A): grouping is
+# per-corpus sub-clustering at k_c = clamp(round(n_c / GROUP_ROWS_TARGET),
+# K_C_MIN, K_C_MAX) — see k_c_for().
 POOLED_N_FOLDS = 5
 POOLED_TEST_RATIO = 0.20
-POOLED_TEST_TOL = 0.02
+# POOLED_TEST_TOL (+/- 2%) RETIRED in v16 — superseded by the per-corpus
+# acceptance window below (plan v17 §4 Phase C_pool step 5 / gate A4).
+GROUP_ROWS_TARGET = 300  # expected sub-cluster size ~300 prompts (plan §11)
+K_C_MIN = 10
+K_C_MAX = 50
+PER_CORPUS_TEST_WINDOW = (0.15, 0.28)
+
+# Cross-corpus near-duplicate scan (plan v17 §4 step 4 / gate A5).
+NEAR_DUP_COS = 0.95
+NEAR_DUP_COS_SENSITIVITY = 0.90  # report-only sensitivity counts
+SIM_BLOCK_ROWS = 2048  # blocked-matmul rows: ~0.4 GB peak block at n~48k
+CROSS_MERGED_MASS_MAX_FRAC = 0.10  # A5 cap on per-corpus merged mass
+
+# v17 smoke-ENTRY fixture-defect floor (UPSTREAM of A3/A4; --smoke only).
+SMOKE_KEPT_MIN = 16
 
 # Cross-corpus dedup order (first occurrence wins, later ones drop).
 DEDUP_ORDER: tuple[str, ...] = (
@@ -105,11 +156,12 @@ DEDUP_ORDER: tuple[str, ...] = (
     "gsm8k_test1319",
 )
 
-# Assertions
-CLUSTER_MIN_CORPORA = 3
-PER_CORPUS_TEST_SHARE_MIN = 0.15
-PER_CORPUS_KEEP_RATE_MIN_FRAC = 0.99
-DEDUP_DROP_WARN_THRESHOLD = 500
+# Assertions (plan v17 §4 gate set A1-A5; CLUSTER_MIN_CORPORA retired in v16 —
+# the >=3-corpora-per-cluster check is false by construction under
+# corpus-pure groups and was REFORMULATED into A3 + the near-dup scan/A5).
+PER_CORPUS_TEST_SHARE_MIN = 0.15  # A3 — binding coverage gate (binds under smoke)
+PER_CORPUS_KEEP_RATE_MIN_FRAC = 0.99  # A2
+DEDUP_DROP_WARN_THRESHOLD = 500  # A1 sanity WARN target (measured 167)
 
 # 5 checkpoints × 7 corpora shards (plan §4 5-way intersection sizing).
 INTERSECTION_MODELS: tuple[str, ...] = cm.PRIMARY_LADDER + ("rlvr_long",)
@@ -379,7 +431,34 @@ def measure_5way_intersection(ctx: SplitContext) -> tuple[dict[str, Any], dict[s
                 assert ids, f"smoke intersection probe: no kept rows in {path}"
                 model_sets[model] = ids
             inter = set.intersection(*model_sets.values())
-            assert inter, f"empty smoke kept-intersection for {corpus}"
+            if len(inter) < SMOKE_KEPT_MIN:
+                # v17 fail-loud smoke-ENTRY assert (plan §4): a FIXTURE-DEFECT
+                # check UPSTREAM of gates A3/A4 — the dispatcher regenerates
+                # smoke fixtures at run time, so the realized kept-intersection
+                # is unknowable pre-run; a shrunken intersection must halt with
+                # the fixture cause instead of a spurious A4 packing failure.
+                # It downgrades NOTHING: A3/A4 still bind unchanged after it
+                # passes (at n >= 16, k_eff = 10, the [0.15, 0.28] window is
+                # exhaustively satisfiable; n = 8 is knife-edge, n = 7 empty).
+                per_model_kept = {m: len(s) for m, s in model_sets.items()}
+                dirs_present = sorted(p.name for p in gen_smoke.iterdir() if p.is_dir())
+                logger.error(
+                    "[pool] SMOKE HALT: %s realized 5-way kept-intersection %d < "
+                    "SMOKE_KEPT_MIN=%d (per-model kept: %s; gen_smoke dirs present: %s)",
+                    corpus,
+                    len(inter),
+                    SMOKE_KEPT_MIN,
+                    per_model_kept,
+                    dirs_present,
+                )
+                raise SystemExit(
+                    "pooled_split HALT [smoke_fixture_kept_intersection_too_small]: "
+                    f"{corpus} realized 5-way kept-intersection {len(inter)} < "
+                    f"SMOKE_KEPT_MIN={SMOKE_KEPT_MIN} — smoke fixture defect; regenerate "
+                    "the smoke gen fixtures (issue1336_smoke_fixtures.py gen + gen-v2). "
+                    f"Per-model kept counts: {per_model_kept}; gen_smoke model dirs "
+                    f"present: {dirs_present}."
+                )
             ids_by_corpus[corpus] = inter
             per_corpus_intersection[corpus] = len(inter)
             total_union += len(inter)
@@ -560,8 +639,10 @@ def embed_prompts(prompts: list[str], revision: str, smoke: bool) -> "list[list[
     return [row.tolist() for row in vecs]
 
 
-def kmeans_assign(vectors: list[list[float]], k: int, seed: int) -> list[int]:
-    """Run sklearn KMeans k=k with a fixed seed. Returns cluster labels."""
+def kmeans_assign(vectors, k: int, seed: int) -> list[int]:
+    """Run sklearn KMeans k=k with a fixed seed on an (n, d) array (or nested
+    list) of embeddings. Returns cluster labels; k_eff clamps to n for tiny
+    smoke slices (the plan §4 smoke-grounding arithmetic relies on this)."""
     import numpy as np
     from sklearn.cluster import KMeans
 
@@ -573,57 +654,511 @@ def kmeans_assign(vectors: list[list[float]], k: int, seed: int) -> list[int]:
     return [int(x) for x in labels.tolist()]
 
 
-def cluster_train_test_split(
-    labels: list[int],
-    seed: int,
-    test_ratio: float,
-    test_tol: float,
-) -> tuple[dict[int, str], dict[int, int]]:
-    """Assign whole clusters to 'train'/'test' at ratio +/- test_tol.
+def k_c_for(n_c: int) -> int:
+    """Per-corpus k-means k (plan v17 §11): clamp(round(n_c / 300), 10, 50)."""
+    return max(K_C_MIN, min(K_C_MAX, int(round(n_c / GROUP_ROWS_TARGET))))
 
-    Also partition the train-side clusters across POOLED_N_FOLDS folds (per
-    plan §4). Returns (train_test_by_cluster, pooled_folds_by_cluster).
-    Fail-loud when the greedy whole-cluster packing cannot land the realized
-    test share inside [test_ratio - test_tol, test_ratio + test_tol] (the
-    plan's 80/20 +/- 2% contract) — never a silent overshoot.
+
+def _l2_normalize(vecs: "object") -> "object":
+    """Row-normalize an (n, d) fp32 embedding matrix for cosine via matmul."""
+    import numpy as np
+
+    arr = np.asarray(vecs, dtype=np.float32)
+    norms = np.linalg.norm(arr, axis=1, keepdims=True)
+    assert float(norms.min()) > 0.0, "zero-norm embedding row — cannot cosine-normalize"
+    return (arr / norms).astype(np.float32)
+
+
+def cross_corpus_scan(unit, corpus_idx) -> tuple["object", int, "object"]:
+    """Blocked cross-corpus near-duplicate scan (plan v17 §4 step 4).
+
+    ``unit``: (n, d) L2-normalized fp32; ``corpus_idx``: (n,) int corpus ids
+    aligned with rows. Blocked matmul (SIM_BLOCK_ROWS x n per block — the
+    full n^2 similarity matrix is never materialized; batched by
+    construction). Returns ``(pairs_95, n_cross_90, max_cross)``:
+
+    - ``pairs_95``: (m, 2) int64 global row-index pairs (i < j) in DIFFERENT
+      corpora with cos >= NEAR_DUP_COS — the union-find merge edges;
+    - ``n_cross_90``: count of cross-corpus pairs at the report-only
+      NEAR_DUP_COS_SENSITIVITY threshold;
+    - ``max_cross``: (n,) fp32 per-row max cosine to any OTHER-corpus row
+      (-1.0 when no other corpus exists, e.g. the single-corpus smoke slice).
     """
-    cluster_ids = sorted(set(labels))
-    n = len(labels)
-    rng = random.Random(seed)
-    shuffled = list(cluster_ids)
-    rng.shuffle(shuffled)
-    # Greedy pack clusters into 'test' until we reach test_ratio +/- tol.
-    cluster_sizes = Counter(labels)
-    target = test_ratio * n
-    lower = (test_ratio - test_tol) * n
-    upper = (test_ratio + test_tol) * n
+    import numpy as np
 
-    test_size = 0
-    test_clusters: set[int] = set()
-    for cid in shuffled:
-        size = cluster_sizes[cid]
-        # If adding pushes above upper AND we already have >= lower, stop.
-        if test_size >= lower and test_size + size > upper:
-            continue
-        test_clusters.add(cid)
-        test_size += size
-        if test_size >= target:
-            # Check upper bound.
-            if test_size <= upper:
-                break
-    assert lower <= test_size <= upper, (
-        f"cluster train/test split misses the {test_ratio:.2f} +/- {test_tol:.2f} window: "
-        f"test_size={test_size} of n={n} (window [{lower:.1f}, {upper:.1f}]) — whole-cluster "
-        "packing cannot realize the planned share on this cluster-size profile"
+    n = int(unit.shape[0])
+    pair_blocks: list[np.ndarray] = []
+    n_cross_90 = 0
+    max_cross = np.full(n, -1.0, dtype=np.float32)
+    col_idx = np.arange(n, dtype=np.int64)[None, :]
+    for start in range(0, n, SIM_BLOCK_ROWS):
+        stop = min(start + SIM_BLOCK_ROWS, n)
+        sims = unit[start:stop] @ unit.T  # (b, n) fp32
+        same = corpus_idx[start:stop, None] == corpus_idx[None, :]
+        sims[same] = -1.0  # neutralize within-corpus cells (incl. self)
+        max_cross[start:stop] = sims.max(axis=1)
+        upper = col_idx > np.arange(start, stop, dtype=np.int64)[:, None]
+        hits = np.argwhere((sims >= NEAR_DUP_COS) & upper)
+        if hits.size:
+            hits = hits.astype(np.int64)
+            hits[:, 0] += start
+            pair_blocks.append(hits)
+        n_cross_90 += int(((sims >= NEAR_DUP_COS_SENSITIVITY) & upper).sum())
+    pairs_95 = (
+        np.concatenate(pair_blocks, axis=0) if pair_blocks else np.empty((0, 2), dtype=np.int64)
     )
-    train_test = {cid: ("test" if cid in test_clusters else "train") for cid in cluster_ids}
+    return pairs_95, n_cross_90, max_cross
 
-    # Fold partition over TRAIN clusters (round-robin over shuffled list).
-    train_clusters = [cid for cid in shuffled if cid not in test_clusters]
-    folds: dict[int, int] = {}
-    for i, cid in enumerate(train_clusters):
-        folds[cid] = i % POOLED_N_FOLDS
-    return train_test, folds
+
+def within_corpus_straddles(unit_c, labels_c) -> tuple[int, int]:
+    """Report-only within-corpus straddle counts (plan v17 §4 step 4): pairs
+    of SAME-corpus rows with cos >= threshold whose members sit in DIFFERENT
+    sub-clusters — the residual within-corpus leakage surface. Returns
+    ``(n_straddle_at_0p95, n_straddle_at_0p90)``. Blocked like
+    cross_corpus_scan; never gates."""
+    import numpy as np
+
+    n = int(unit_c.shape[0])
+    lab = np.asarray(labels_c, dtype=np.int64)
+    assert lab.shape[0] == n, (lab.shape, n)
+    n95 = 0
+    n90 = 0
+    col_idx = np.arange(n, dtype=np.int64)[None, :]
+    for start in range(0, n, SIM_BLOCK_ROWS):
+        stop = min(start + SIM_BLOCK_ROWS, n)
+        sims = unit_c[start:stop] @ unit_c.T
+        upper = col_idx > np.arange(start, stop, dtype=np.int64)[:, None]
+        lab_diff = lab[start:stop, None] != lab[None, :]
+        mask = upper & lab_diff
+        n95 += int(((sims >= NEAR_DUP_COS) & mask).sum())
+        n90 += int(((sims >= NEAR_DUP_COS_SENSITIVITY) & mask).sum())
+    return n95, n90
+
+
+class _UnionFind:
+    """Tiny union-find over hashable keys (path-halving; union by size)."""
+
+    def __init__(self) -> None:
+        self.parent: dict[Any, Any] = {}
+        self.size: dict[Any, int] = {}
+
+    def find(self, x):
+        p = self.parent.setdefault(x, x)
+        self.size.setdefault(x, 1)
+        while p != x:
+            gp = self.parent[p]
+            self.parent[x] = gp
+            x, p = p, self.parent[gp] if gp in self.parent else gp
+        return x
+
+    def union(self, a, b) -> None:
+        ra, rb = self.find(a), self.find(b)
+        if ra == rb:
+            return
+        if self.size[ra] < self.size[rb]:
+            ra, rb = rb, ra
+        self.parent[rb] = ra
+        self.size[ra] += self.size[rb]
+
+    def keys(self):
+        return self.parent.keys()
+
+
+def _assign_given_labels(
+    corpus_names: list[str],
+    slices: dict[str, tuple[int, int]],
+    labels_by_corpus: dict[str, list[int]],
+    pairs_95,
+    seed: int,
+) -> dict[str, Any]:
+    """One assignment pass at the CURRENT per-corpus labels: project the
+    cross-corpus near-dup row pairs onto (corpus, subcluster) group keys,
+    union-find merge, force merged groups to train, then per-corpus greedy
+    whole-group packing of pure groups to POOLED_TEST_RATIO inside
+    PER_CORPUS_TEST_WINDOW. Returns the assignment dict; window misses are
+    reported in ``packing_failures`` (the A4 retry loop is the caller's)."""
+    row_key_of: dict[int, tuple[str, int]] = {}
+
+    def key_of(i: int) -> tuple[str, int]:
+        k = row_key_of.get(i)
+        if k is None:
+            for slug in corpus_names:
+                s0, s1 = slices[slug]
+                if s0 <= i < s1:
+                    k = (slug, int(labels_by_corpus[slug][i - s0]))
+                    row_key_of[i] = k
+                    return k
+            raise AssertionError(f"row index {i} outside every corpus slice")
+        return k
+
+    # Union-find merge over group keys touched by cross-corpus near-dup pairs.
+    uf = _UnionFind()
+    for i, j in pairs_95:
+        uf.union(key_of(int(i)), key_of(int(j)))
+    merged_keys: set[tuple[str, int]] = set(uf.keys())
+
+    # Group sizes (every group, merged or pure).
+    group_sizes: Counter = Counter()
+    for slug in corpus_names:
+        s0, s1 = slices[slug]
+        for lab in labels_by_corpus[slug]:
+            group_sizes[(slug, int(lab))] += 1
+        assert sum(group_sizes[k] for k in group_sizes if k[0] == slug) == s1 - s0
+
+    # Merged components (audit + A5 input).
+    comp_members: dict[Any, list[tuple[str, int]]] = defaultdict(list)
+    for k in uf.keys():
+        comp_members[uf.find(k)].append(k)
+    components = []
+    for members in comp_members.values():
+        members_sorted = sorted(members)
+        rows_by_corpus: Counter = Counter()
+        for k in members_sorted:
+            rows_by_corpus[k[0]] += group_sizes[k]
+        components.append(
+            {
+                "groups": [[slug, sub] for slug, sub in members_sorted],
+                "n_groups": len(members_sorted),
+                "n_rows": int(sum(rows_by_corpus.values())),
+                "rows_by_corpus": dict(sorted(rows_by_corpus.items())),
+            }
+        )
+    components.sort(key=lambda c: (-c["n_rows"], c["groups"]))
+
+    per_corpus_total = {slug: slices[slug][1] - slices[slug][0] for slug in corpus_names}
+    per_corpus_merged = {}
+    for slug in corpus_names:
+        rows = int(sum(group_sizes[k] for k in merged_keys if k[0] == slug))
+        per_corpus_merged[slug] = {
+            "rows": rows,
+            "frac": rows / per_corpus_total[slug] if per_corpus_total[slug] else 0.0,
+        }
+
+    # Per-corpus greedy whole-group packing of PURE groups (merged -> train).
+    arm_by_key: dict[tuple[str, int], str] = {}
+    packing_failures: dict[str, str] = {}
+    per_corpus_test_share: dict[str, float] = {}
+    lo_frac, hi_frac = PER_CORPUS_TEST_WINDOW
+    for slug in corpus_names:
+        keys_c = sorted((k for k in group_sizes if k[0] == slug), key=lambda t: t[1])
+        pure = [k for k in keys_c if k not in merged_keys]
+        n_total = per_corpus_total[slug]
+        target = POOLED_TEST_RATIO * n_total
+        lower = lo_frac * n_total
+        upper = hi_frac * n_total
+        rng = random.Random(f"{seed}:{slug}")
+        shuffled = list(pure)
+        rng.shuffle(shuffled)
+        test_rows = 0
+        test_keys: set[tuple[str, int]] = set()
+        for k in shuffled:
+            if test_rows >= target:
+                break
+            sz = group_sizes[k]
+            if test_rows + sz > upper:
+                continue
+            test_keys.add(k)
+            test_rows += sz
+        share = test_rows / n_total if n_total else 0.0
+        per_corpus_test_share[slug] = share
+        if not (lower <= test_rows <= upper):
+            packing_failures[slug] = (
+                f"realized test rows {test_rows}/{n_total} (share {share:.4f}) outside "
+                f"window [{lo_frac}, {hi_frac}] (target {POOLED_TEST_RATIO})"
+            )
+        for k in keys_c:
+            arm_by_key[k] = "test" if k in test_keys else "train"
+
+    # Global integer group ids (deterministic: corpus order, then subcluster id).
+    group_key_to_id: dict[tuple[str, int], int] = {}
+    gid = 0
+    for slug in corpus_names:
+        for k in sorted((kk for kk in group_sizes if kk[0] == slug), key=lambda t: t[1]):
+            group_key_to_id[k] = gid
+            gid += 1
+
+    # 5-fold partition of the train side, group structure preserved
+    # (round-robin over the seeded shuffle of ALL train groups). The realized
+    # fold count is floor-guarded by group arithmetic so every fold holds
+    # >= 2 GROUPS (hence >= 2 rows): the downstream delta-Q battery divides
+    # by per-fold-block Y variance (issue1336_metric_ladder.py
+    # `_unit_residual_read`), which is identically ZERO for a 1-row fold —
+    # at the 16-row smoke slice 8 train groups round-robined into 5 folds
+    # produced exactly that (single-row fold 2). Production is byte-inert:
+    # ~166 groups // 2 = 83 >= POOLED_N_FOLDS, so n_folds_eff == 5 there
+    # (the #1489 realized-slice-arithmetic convention: derive the dial from
+    # realized n, never from the assumed cap).
+    train_keys = [k for k in group_key_to_id if arm_by_key[k] == "train"]
+    train_keys.sort(key=lambda k: group_key_to_id[k])
+    rng_folds = random.Random(seed)
+    rng_folds.shuffle(train_keys)
+    n_folds_eff = max(2, min(POOLED_N_FOLDS, len(train_keys) // 2))
+    if n_folds_eff != POOLED_N_FOLDS:
+        logger.warning(
+            "[pool] fold count floor-guarded to %d (train groups=%d < 2*%d): every fold "
+            "must hold >=2 groups for the battery's fold-block variance denominator",
+            n_folds_eff,
+            len(train_keys),
+            POOLED_N_FOLDS,
+        )
+    fold_by_key = {k: i % n_folds_eff for i, k in enumerate(train_keys)}
+    fold_rows: dict[int, int] = {}
+    for k, f in fold_by_key.items():
+        fold_rows[f] = fold_rows.get(f, 0) + group_sizes[k]
+    assert fold_rows and min(fold_rows.values()) >= 2, (
+        f"pooled_split HALT [fold_block_underfilled]: realized fold row counts {fold_rows} "
+        f"carry a <2-row fold — the delta-Q battery's fold-block variance denominator is "
+        f"degenerate there; the kept slice is too small to fold (train groups: "
+        f"{len(train_keys)})"
+    )
+
+    n_test_rows = sum(group_sizes[k] for k, arm in arm_by_key.items() if arm == "test")
+    n_rows = sum(per_corpus_total.values())
+    return {
+        "group_sizes": group_sizes,
+        "group_key_to_id": group_key_to_id,
+        "arm_by_key": arm_by_key,
+        "fold_by_key": fold_by_key,
+        "merged_keys": merged_keys,
+        "components": components,
+        "per_corpus_merged": per_corpus_merged,
+        "per_corpus_test_share": per_corpus_test_share,
+        "pooled_test_ratio_realized": n_test_rows / n_rows if n_rows else 0.0,
+        "packing_failures": packing_failures,
+        "n_folds_realized": n_folds_eff,
+    }
+
+
+def _halt_packing(
+    out_root: Path,
+    corpus_names: list[str],
+    labels_by_corpus: dict[str, list[int]],
+    result: dict[str, Any],
+    retries: dict[str, dict[str, int]],
+    halted: list[str],
+) -> None:
+    """A4 terminal HALT: dump the full sub-cluster size composition to
+    ``split_manifest.rejected.json`` (diagnostic only — deliberately NOT the
+    canonical name, so no downstream phase can consume a failed split), then
+    exit non-zero with the named cause."""
+    payload = {
+        "halt_cause": "pooled_split_packing_window_unsatisfiable",
+        "halted_corpora": halted,
+        "packing_failures": result["packing_failures"],
+        "packing_retries": retries,
+        "test_ratio_target": POOLED_TEST_RATIO,
+        "test_window": list(PER_CORPUS_TEST_WINDOW),
+        "subcluster_size_composition": {
+            slug: sorted(Counter(labels_by_corpus[slug]).values(), reverse=True)
+            for slug in corpus_names
+        },
+        "per_corpus_merged_mass": result["per_corpus_merged"],
+        "generated_ts": int(time.time()),
+    }
+    out_root.mkdir(parents=True, exist_ok=True)
+    rejected_path = out_root / "split_manifest.rejected.json"
+    rejected_path.write_text(json.dumps(payload, indent=2) + "\n")
+    logger.error(
+        "[pool] A4 HALT — packing window unsatisfiable after the single registered "
+        "k_c x2 retry for %s; sub-cluster composition dumped to %s",
+        halted,
+        rejected_path,
+    )
+    raise SystemExit(
+        f"pooled_split HALT [pooled_split_packing_window_unsatisfiable]: corpora "
+        f"{halted} missed the {list(PER_CORPUS_TEST_WINDOW)} test window after the "
+        f"single registered k_c x2 retry — composition at {rejected_path}"
+    )
+
+
+def build_split_assignment(
+    ordered_rows: list[dict],
+    vecs,
+    out_root: Path,
+    seed: int = POOLED_SPLIT_SEED,
+) -> dict[str, Any]:
+    """Plan v17 §4 Phase C_pool steps 3-6: per-corpus k-means at k_c, the
+    cross-corpus near-duplicate scan + union-find co-assignment, per-corpus
+    whole-group packing with the single registered A4 k_c x2 retry, and the
+    5-fold train partition. Returns the assignment dict build_manifest and
+    run() consume; HALTs (rejected dump) when packing stays unsatisfiable."""
+    import numpy as np
+
+    vecs = np.asarray(vecs, dtype=np.float32)
+    n = len(ordered_rows)
+    assert vecs.shape[0] == n, (vecs.shape, n)
+
+    # Per-corpus contiguous slices (ordered_rows extends corpus-by-corpus).
+    corpus_names: list[str] = []
+    for r in ordered_rows:
+        if r["corpus"] not in corpus_names:
+            corpus_names.append(r["corpus"])
+    slices: dict[str, tuple[int, int]] = {}
+    cursor = 0
+    for slug in corpus_names:
+        n_c = sum(1 for r in ordered_rows if r["corpus"] == slug)
+        assert all(ordered_rows[i]["corpus"] == slug for i in range(cursor, cursor + n_c)), (
+            f"{slug} rows are not contiguous in ordered_rows"
+        )
+        slices[slug] = (cursor, cursor + n_c)
+        cursor += n_c
+    assert cursor == n
+
+    corpus_idx = np.empty(n, dtype=np.int64)
+    for ci, slug in enumerate(corpus_names):
+        s0, s1 = slices[slug]
+        corpus_idx[s0:s1] = ci
+
+    # Label-independent cross-corpus near-dup scan (once; retry-safe).
+    unit = _l2_normalize(vecs)
+    pairs_95, n_cross_90, max_cross = cross_corpus_scan(unit, corpus_idx)
+    logger.info(
+        "[pool] near-dup scan: %d cross-corpus pairs at cos>=%.2f (%d at >=%.2f)",
+        int(pairs_95.shape[0]),
+        NEAR_DUP_COS,
+        n_cross_90,
+        NEAR_DUP_COS_SENSITIVITY,
+    )
+
+    # Initial per-corpus k-means at k_c (seed POOLED_SPLIT_SEED).
+    labels_by_corpus: dict[str, list[int]] = {}
+    k_req: dict[str, int] = {}
+    for slug in corpus_names:
+        s0, s1 = slices[slug]
+        k = k_c_for(s1 - s0)
+        labels_by_corpus[slug] = kmeans_assign(vecs[s0:s1], k, seed)
+        k_req[slug] = k
+        logger.info(
+            "[pool] %s: n=%d k_c=%d k_eff=%d",
+            slug,
+            s1 - s0,
+            k,
+            len(set(labels_by_corpus[slug])),
+        )
+
+    # Packing with the single registered A4 retry (k_c doubled per failing
+    # corpus, recorded in the manifest), then HALT + rejected dump.
+    retries: dict[str, dict[str, int]] = {}
+    result: dict[str, Any] | None = None
+    for _round in range(len(corpus_names) + 1):
+        result = _assign_given_labels(corpus_names, slices, labels_by_corpus, pairs_95, seed)
+        failures = result["packing_failures"]
+        if not failures:
+            break
+        exhausted = sorted(slug for slug in failures if slug in retries)
+        if exhausted:
+            _halt_packing(out_root, corpus_names, labels_by_corpus, result, retries, exhausted)
+        for slug in sorted(failures):
+            k2 = 2 * k_req[slug]
+            retries[slug] = {"k_initial": k_req[slug], "k_retry": k2}
+            logger.warning(
+                "[pool] A4 window miss for %s (%s) — single registered retry with "
+                "k_c doubled: %d -> %d",
+                slug,
+                failures[slug],
+                k_req[slug],
+                k2,
+            )
+            s0, s1 = slices[slug]
+            labels_by_corpus[slug] = kmeans_assign(vecs[s0:s1], k2, seed)
+            k_req[slug] = k2
+    assert result is not None and not result["packing_failures"], (
+        "packing retry loop exited without a decision"
+    )
+
+    # Report-only within-corpus straddle counts at the FINAL labels.
+    straddle_95: dict[str, int] = {}
+    straddle_90: dict[str, int] = {}
+    for slug in corpus_names:
+        s0, s1 = slices[slug]
+        n95, n90 = within_corpus_straddles(unit[s0:s1], labels_by_corpus[slug])
+        straddle_95[slug] = n95
+        straddle_90[slug] = n90
+
+    # Max-cross-corpus-cosine histogram (full mode only: a single-corpus
+    # smoke slice has no other-corpus columns, sentinel -1.0 everywhere).
+    if len(corpus_names) >= 2:
+        mc = max_cross.astype(np.float64)
+        counts, edges = np.histogram(mc, bins=np.linspace(-1.0, 1.0, 41))
+        max_cross_block: dict[str, Any] | None = {
+            "bin_edges": [round(float(x), 4) for x in edges],
+            "counts": [int(c) for c in counts],
+            "summary": {
+                "max": float(mc.max()),
+                "mean": float(mc.mean()),
+                "p50": float(np.quantile(mc, 0.50)),
+                "p90": float(np.quantile(mc, 0.90)),
+                "p99": float(np.quantile(mc, 0.99)),
+                "n_ge_sensitivity": int((mc >= NEAR_DUP_COS_SENSITIVITY).sum()),
+                "n_ge_threshold": int((mc >= NEAR_DUP_COS).sum()),
+            },
+        }
+    else:
+        max_cross_block = None
+
+    # Row-level gid assignment for the row index.
+    gid_of_row: list[int] = []
+    for slug in corpus_names:
+        s0, s1 = slices[slug]
+        for local, lab in enumerate(labels_by_corpus[slug]):
+            assert s0 + local < s1
+            gid_of_row.append(result["group_key_to_id"][(slug, int(lab))])
+    assert len(gid_of_row) == n
+
+    group_key_to_id = result["group_key_to_id"]
+    merged_keys = result["merged_keys"]
+    group_table = []
+    for key, g in sorted(group_key_to_id.items(), key=lambda kv: kv[1]):
+        group_table.append(
+            {
+                "corpus": key[0],
+                "subcluster_id": key[1],
+                "group_id": g,
+                "n_rows": int(result["group_sizes"][key]),
+                "arm": result["arm_by_key"][key],
+                "fold": result["fold_by_key"].get(key),
+                "cross_corpus_merged": key in merged_keys,
+            }
+        )
+
+    return {
+        "corpus_names": corpus_names,
+        "per_corpus_k": {
+            slug: {
+                "n_rows": slices[slug][1] - slices[slug][0],
+                "k_requested": k_req[slug],
+                "k_eff": len(set(labels_by_corpus[slug])),
+                "retried": slug in retries,
+            }
+            for slug in corpus_names
+        },
+        "packing_retries": retries,
+        "subcluster_sizes": {
+            slug: sorted(Counter(labels_by_corpus[slug]).values(), reverse=True)
+            for slug in corpus_names
+        },
+        "group_table": group_table,
+        "gid_of_row": gid_of_row,
+        "arm_by_gid": {e["group_id"]: e["arm"] for e in group_table},
+        "fold_by_gid": {e["group_id"]: e["fold"] for e in group_table if e["fold"] is not None},
+        "per_corpus_test_share": result["per_corpus_test_share"],
+        "pooled_test_ratio_realized": result["pooled_test_ratio_realized"],
+        "n_folds_realized": result["n_folds_realized"],
+        "near_dup_audit": {
+            "threshold": NEAR_DUP_COS,
+            "sensitivity_threshold": NEAR_DUP_COS_SENSITIVITY,
+            "embedding_model": MPNET_MODEL_ID,
+            "n_cross_corpus_pairs_ge_threshold": int(pairs_95.shape[0]),
+            "n_cross_corpus_pairs_ge_sensitivity": int(n_cross_90),
+            "n_merged_groups": len(merged_keys),
+            "n_components": len(result["components"]),
+            "largest_component": (result["components"][0] if result["components"] else None),
+            "per_corpus_merged_mass": result["per_corpus_merged"],
+            "within_corpus_straddle_ge_threshold": straddle_95,
+            "within_corpus_straddle_ge_sensitivity": straddle_90,
+            "max_cross_corpus_cosine": max_cross_block,
+        },
+    }
 
 
 def build_manifest(
@@ -632,22 +1167,23 @@ def build_manifest(
     per_corpus_pre_dedup: dict[str, int],
     kept_by_corpus: dict[str, list[dict]],
     dropped: list[dict[str, Any]],
-    labels: list[int],
+    assignment: dict[str, Any],
     row_index: list[dict[str, Any]],
-    train_test_by_cluster: dict[int, str],
-    pooled_folds_by_cluster: dict[int, int],
     round3_keep_rate: dict[str, float],
     *,
     per_corpus_pre_intersection: dict[str, int] | None = None,
 ) -> dict[str, Any]:
+    """Assemble the v17 split manifest (``split_design: percorpus_subcluster_v1``).
+
+    ``assignment`` is build_split_assignment()'s output: per-corpus k_c +
+    sub-cluster sizes, the group table ((corpus, subcluster_id) -> group_id ->
+    train|test|fold), realized test shares, the near-duplicate audit block,
+    and the packing-retry record. ``row_index`` keeps the downstream consumer
+    contract: int ``cluster`` (== global group_id), ``arm`` in train|test,
+    ``fold`` present iff train."""
     n_kept_pre = sum(per_corpus_pre_dedup.values())
     per_corpus_kept = {slug: len(rows) for slug, rows in kept_by_corpus.items()}
     n_kept_post = sum(per_corpus_kept.values())
-    # Cluster corpus histogram.
-    cluster_to_corpora_counts: dict[int, dict[str, int]] = defaultdict(lambda: defaultdict(int))
-    for entry in row_index:
-        cid = int(entry["cluster"])
-        cluster_to_corpora_counts[cid][entry["corpus"]] += 1
 
     per_corpus_kept_rate = {
         slug: (per_corpus_kept[slug] / per_corpus_pre_dedup[slug])
@@ -656,15 +1192,21 @@ def build_manifest(
         for slug in per_corpus_pre_dedup
     }
 
+    audit = dict(assignment["near_dup_audit"])
+    audit["embedding_revision"] = ctx.pinned_mpnet_revision
+
     manifest = {
-        "schema_version": 1,
-        "plan_version": "v15",
+        "schema_version": 2,
+        "split_design": "percorpus_subcluster_v1",
+        "plan_version": "v17",
         "phase": "c_pool",
         "smoke": ctx.smoke,
         "seed": POOLED_SPLIT_SEED,
-        "kmeans_k": POOLED_K,
-        "n_folds": POOLED_N_FOLDS,
+        # Realized fold count: == POOLED_N_FOLDS at production scale; the
+        # >=2-groups-per-fold floor guard can lower it on a tiny (smoke) slice.
+        "n_folds": assignment["n_folds_realized"],
         "test_ratio": POOLED_TEST_RATIO,
+        "test_window": list(PER_CORPUS_TEST_WINDOW),
         "dedup_order": list(DEDUP_ORDER),
         "pinned_revisions": {
             "mpnet": ctx.pinned_mpnet_revision,
@@ -684,13 +1226,21 @@ def build_manifest(
         "per_corpus_kept": per_corpus_kept,
         "per_corpus_kept_rate": per_corpus_kept_rate,
         "round3_per_corpus_keep_rate": round3_keep_rate,
-        "n_clusters": len(set(labels)),
-        "cluster_to_corpora_counts": {
-            str(cid): dict(counts) for cid, counts in cluster_to_corpora_counts.items()
+        "per_corpus_k": assignment["per_corpus_k"],
+        "packing_retries": assignment["packing_retries"],
+        "subcluster_sizes": assignment["subcluster_sizes"],
+        "n_groups": len(assignment["group_table"]),
+        "group_table": assignment["group_table"],
+        "per_corpus_test_share": assignment["per_corpus_test_share"],
+        "pooled_test_ratio_realized": assignment["pooled_test_ratio_realized"],
+        "near_dup_audit": audit,
+        # Back-compat views keyed on the global integer group id (str keys,
+        # matching the prior manifests' shape; consumers read row_index).
+        "train_test_by_cluster": {
+            str(gid): arm for gid, arm in sorted(assignment["arm_by_gid"].items())
         },
-        "train_test_by_cluster": {str(cid): tag for cid, tag in train_test_by_cluster.items()},
         "pooled_folds_by_cluster": {
-            str(cid): fold for cid, fold in pooled_folds_by_cluster.items()
+            str(gid): fold for gid, fold in sorted(assignment["fold_by_gid"].items())
         },
         "row_index": row_index,
         "dropped_sample": dropped[:200],  # cap the collision surface persisted here
@@ -703,73 +1253,39 @@ def build_manifest(
 def assert_split(
     manifest: dict[str, Any],
     round3_keep_rate: dict[str, float],
-    *,
-    smoke: bool = False,
 ) -> None:
-    """Fail-loud checks per plan §4 Phase C_pool assertions.
+    """Fail-loud gate set A1/A2/A3/A5 (plan v17 §4 Phase C_pool).
 
-    Under smoke, the production-scale verdicts (>= 3-corpora coverage,
-    >= 15% per-corpus test share) are informational — a single-corpus
-    SMOKE_CORPORA_V2 slice structurally cannot pass them (gotchas.md
-    smoke/production-parity GATE-CALIBRATION rule). Cross-corpus dedup
-    drop count + per-corpus keep-rate stay meaningful even under smoke.
+    Deliberately takes NO smoke parameter and carries NO per-check downgrade
+    (the SLURM-5005 shape): every gate below binds identically under
+    ``--smoke`` and ``--full``. A4 (the [0.15, 0.28] packing window + the
+    single registered k_c x2 retry) is enforced at packing time in
+    build_split_assignment(); its terminal HALT dumps
+    ``split_manifest.rejected.json`` there. The RETIRED v15 gate
+    (>=3-corpora-per-cluster, CLUSTER_MIN_CORPORA) is removed — false by
+    construction under corpus-pure groups.
     """
-    # (1) every cluster contains prompts from >= 3 corpora
-    cluster_hist = manifest["cluster_to_corpora_counts"]
-    corpus_locked = [cid for cid, hist in cluster_hist.items() if len(hist) < CLUSTER_MIN_CORPORA]
-    if corpus_locked:
-        if smoke:
-            logger.info(
-                "[pool] SMOKE — %d corpus-locked clusters (production would HALT); "
-                "expected on a single-corpus SMOKE_CORPORA_V2 slice",
-                len(corpus_locked),
-            )
-        else:
-            # Carry the actual composition: the bare cluster-id list cannot be
-            # acted on (a 2-corpus gsm8k_train+gsm8k_test cluster and a
-            # 1-corpus math cluster are different diagnoses, and the manifest
-            # holding the histogram is only written AFTER these asserts pass).
-            composition = "; ".join(
-                "cluster {}: n={} {}".format(
-                    cid,
-                    sum(cluster_hist[cid].values()),
-                    dict(sorted(cluster_hist[cid].items(), key=lambda kv: -kv[1])),
-                )
-                for cid in corpus_locked
-            )
-            raise AssertionError(
-                f"corpus-locked clusters (fewer than {CLUSTER_MIN_CORPORA} corpora): "
-                f"{corpus_locked} — composition: {composition}"
-            )
+    # (A1) total kept == per-corpus kept sum − cross-corpus dedup drops
+    # (arithmetic identity over the realized counts; <500 drops stays a WARN).
+    n_pre = manifest["n_kept_pre_dedup"]
+    n_post = manifest["n_kept_post_dedup"]
+    n_drops = manifest["n_cross_corpus_drops"]
+    assert n_post == n_pre - n_drops, (
+        f"(A1) kept-count arithmetic broken: post_dedup={n_post} != "
+        f"pre_dedup={n_pre} - drops={n_drops}"
+    )
+    assert n_post == sum(manifest["per_corpus_kept"].values()), (
+        f"(A1) n_kept_post_dedup={n_post} != sum(per_corpus_kept)"
+    )
+    if manifest["dropped_total"] >= DEDUP_DROP_WARN_THRESHOLD:
+        logger.warning(
+            "[pool] cross-corpus dedup drops %d >= %d (A1 sanity WARN)",
+            manifest["dropped_total"],
+            DEDUP_DROP_WARN_THRESHOLD,
+        )
 
-    # (2) per-corpus test-side share >= 15%
-    train_test = manifest["train_test_by_cluster"]
-    row_index = manifest["row_index"]
-    per_corpus_total: Counter[str] = Counter()
-    per_corpus_test: Counter[str] = Counter()
-    for entry in row_index:
-        slug = entry["corpus"]
-        per_corpus_total[slug] += 1
-        if train_test[str(entry["cluster"])] == "test":
-            per_corpus_test[slug] += 1
-    low_share = []
-    for slug, total in per_corpus_total.items():
-        share = (per_corpus_test[slug] / total) if total else 0.0
-        if share < PER_CORPUS_TEST_SHARE_MIN:
-            low_share.append((slug, share, total))
-    if low_share:
-        if smoke:
-            logger.info(
-                "[pool] SMOKE — low per-corpus test share (production would HALT): %s",
-                low_share,
-            )
-        else:
-            raise AssertionError(
-                f"per-corpus test-side share < {PER_CORPUS_TEST_SHARE_MIN:.2f}: {low_share}"
-            )
-
-    # (3) per-corpus keep-rate >= 0.99 of round-3 rate (binds under smoke too —
-    #     dedup arithmetic + collision surface are meaningful on any slice)
+    # (A2) per-corpus keep-rate >= 0.99 of round-3 rate (HALT + collision
+    # surface — unchanged; binds under smoke too).
     per_corpus_kept_rate = manifest["per_corpus_kept_rate"]
     low_keep = []
     for slug, rate in per_corpus_kept_rate.items():
@@ -789,12 +1305,46 @@ def assert_split(
             f"({PER_CORPUS_KEEP_RATE_MIN_FRAC:.2f} x): {low_keep}"
         )
 
-    # (4) cross-corpus dedup drops < 500 (sanity WARN)
-    if manifest["dropped_total"] >= DEDUP_DROP_WARN_THRESHOLD:
-        logger.warning(
-            "[pool] cross-corpus dedup drops %d >= %d (sanity WARN)",
-            manifest["dropped_total"],
-            DEDUP_DROP_WARN_THRESHOLD,
+    # (A3, BINDING COVERAGE GATE — binds under smoke) every corpus's realized
+    # test share >= PER_CORPUS_TEST_SHARE_MIN, recomputed from row_index (the
+    # consumed ground truth) and cross-checked against the recorded shares.
+    row_index = manifest["row_index"]
+    per_corpus_total: Counter = Counter()
+    per_corpus_test: Counter = Counter()
+    for entry in row_index:
+        slug = entry["corpus"]
+        per_corpus_total[slug] += 1
+        if entry["arm"] == "test":
+            per_corpus_test[slug] += 1
+    recorded = manifest["per_corpus_test_share"]
+    low_share = []
+    for slug, total in sorted(per_corpus_total.items()):
+        share = (per_corpus_test[slug] / total) if total else 0.0
+        rec = recorded.get(slug)
+        assert rec is not None and abs(share - rec) < 1e-9, (
+            f"(A3) recorded test share for {slug} ({rec}) disagrees with "
+            f"row_index-recomputed {share:.6f}"
+        )
+        if share < PER_CORPUS_TEST_SHARE_MIN:
+            low_share.append((slug, share, total))
+    if low_share:
+        raise AssertionError(
+            f"(A3) per-corpus test-side share < {PER_CORPUS_TEST_SHARE_MIN:.2f}: {low_share}"
+        )
+
+    # (A5) cross-corpus merged mass <= 10% of every corpus's rows (HALT +
+    # component composition dump — topical separability is a design premise).
+    audit = manifest["near_dup_audit"]
+    over = {
+        slug: mass
+        for slug, mass in audit["per_corpus_merged_mass"].items()
+        if mass["frac"] > CROSS_MERGED_MASS_MAX_FRAC
+    }
+    if over:
+        raise AssertionError(
+            f"(A5) cross-corpus near-dup merged mass > "
+            f"{CROSS_MERGED_MASS_MAX_FRAC:.0%} of corpus rows: {over}; "
+            f"largest merged component: {audit['largest_component']}"
         )
 
 
@@ -803,7 +1353,7 @@ def upload_manifest(ctx: SplitContext, manifest_path: Path) -> None:
     from explore_persona_space.orchestrate import hub
 
     dest = f"{cm.HF_PREFIX_1336}/analysis_tensors/{POOLED_OUT_SUBDIR}/{manifest_path.name}"
-    hub._upload(  # noqa: SLF001 - established internal helper for single-file uploads
+    base_url = hub._upload(  # noqa: SLF001 - established internal helper for single-file uploads
         manifest_path,
         repo_id=cm.HF_DATA_REPO,
         repo_type="dataset",
@@ -811,6 +1361,14 @@ def upload_manifest(ctx: SplitContext, manifest_path: Path) -> None:
         upload_as_file=True,
         commit_message=f"issue1336 pooled_split_v3 manifest ({'smoke' if ctx.smoke else 'full'})",
     )
+    if not base_url:
+        # _upload is fail-soft by RETURN ('' on missing token / failed verify /
+        # upload exception) — a discarded return exits 0 on silent durability
+        # loss (upload-policy.md: 'upload returned no path' is a TRACKED GAP).
+        raise RuntimeError(
+            f"pooled_split HALT [manifest_upload_no_path]: _upload returned no "
+            f"path for {manifest_path} -> {cm.HF_DATA_REPO}@{dest}"
+        )
     logger.info("[pool] uploaded manifest to %s@%s", cm.HF_DATA_REPO, dest)
 
 
@@ -896,23 +1454,29 @@ def run(args) -> int:
     assert prompts, "no kept prompts after dedup — refusing to embed empty set"
     vecs = embed_prompts(prompts, ctx.pinned_mpnet_revision, ctx.smoke)
 
-    # (4) K-means + train/test split.
-    labels = kmeans_assign(vecs, POOLED_K, POOLED_SPLIT_SEED)
-    train_test, folds = cluster_train_test_split(
-        labels, POOLED_SPLIT_SEED, POOLED_TEST_RATIO, POOLED_TEST_TOL
-    )
+    # (4) Per-corpus sub-clustering + cross-corpus near-dup co-assignment +
+    # whole-group packing + 5-fold train partition (plan v17 §4 steps 3-6;
+    # A4's window/retry enforcement lives inside; A5's inputs come out in
+    # the near-dup audit block).
+    assignment = build_split_assignment(ordered_rows, vecs, ctx.out_root)
 
-    # Row-level index for downstream consumers.
+    # Row-level index for downstream consumers ("cluster" = the global
+    # integer group_id of the row's (corpus, subcluster) group — the
+    # int(e["cluster"]) consumer contract is unchanged).
+    gid_of_row = assignment["gid_of_row"]
+    arm_by_gid = assignment["arm_by_gid"]
+    fold_by_gid = assignment["fold_by_gid"]
     row_index: list[dict[str, Any]] = []
-    for row, label in zip(ordered_rows, labels, strict=True):
+    for pos, row in enumerate(ordered_rows):
+        gid = int(gid_of_row[pos])
         row_index.append(
             {
                 "corpus": row["corpus"],
                 "prompt_idx": row.get("prompt_idx"),
                 "prompt_sha": row["prompt_sha"],
-                "cluster": int(label),
-                "arm": train_test[int(label)],
-                "fold": folds.get(int(label)),
+                "cluster": gid,
+                "arm": arm_by_gid[gid],
+                "fold": fold_by_gid.get(gid),
             }
         )
 
@@ -924,10 +1488,8 @@ def run(args) -> int:
         per_corpus_pre_dedup,
         kept_by_corpus,
         dropped,
-        labels,
+        assignment,
         row_index,
-        train_test,
-        folds,
         round3_keep_rate,
         per_corpus_pre_intersection=per_corpus_pre_intersection,
     )
@@ -939,7 +1501,7 @@ def run(args) -> int:
     # ``split_manifest.json`` name so no downstream phase can mistake a
     # failed split for a valid one.
     try:
-        assert_split(manifest, round3_keep_rate, smoke=ctx.smoke)
+        assert_split(manifest, round3_keep_rate)
     except AssertionError:
         rejected_dir = ctx.out_root
         rejected_dir.mkdir(parents=True, exist_ok=True)
@@ -958,11 +1520,13 @@ def run(args) -> int:
     manifest_path = out_dir / "split_manifest.json"
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
     logger.info(
-        "[pool] wrote %s (n_kept_post_dedup=%d n_clusters=%d n_dropped=%d)",
+        "[pool] wrote %s (n_kept_post_dedup=%d n_groups=%d n_dropped=%d "
+        "pooled_test_ratio_realized=%.4f)",
         manifest_path,
         manifest["n_kept_post_dedup"],
-        manifest["n_clusters"],
+        manifest["n_groups"],
         manifest["dropped_total"],
+        manifest["pooled_test_ratio_realized"],
     )
 
     if ctx.upload:

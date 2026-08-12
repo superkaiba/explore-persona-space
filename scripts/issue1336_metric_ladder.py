@@ -1704,6 +1704,14 @@ def cluster_delta_q_battery(args) -> None:
                 "shared_text_sources": shared,
                 "n_prompts": int(fi["keys"].shape[0]),
                 "cluster_ids": [int(c) for c in cluster_ids],
+                # v16 Option-A relabeling (plan v17 §4 div. 11): group -> corpus
+                # attribution for the per-corpus grouped delta-Q panels
+                # (corpus-pure groups => one corpus per id; kept as a list so a
+                # legacy mixed group stays representable + visible).
+                "cluster_corpora": {
+                    str(int(c)): sorted(set(fi["corpus"][fi["cluster"] == c].tolist()))
+                    for c in cluster_ids
+                },
                 "delta_q": [float(v) for v in stats["obs"]],
                 "n_prompts_per_cluster": [int(v) for v in stats["counts"]],
                 "ceiling_delta_q_per_cluster": [float(v) for v in stats["ceiling"]],

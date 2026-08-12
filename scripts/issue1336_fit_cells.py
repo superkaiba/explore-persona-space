@@ -1752,6 +1752,16 @@ def run_pooled_v3(args) -> int:
         matched = int(args.matched_n_size)
     matched_seed = args.matched_n_seed if args.matched_n_seed is not None else cm.MATCHED_N_V2_SEED
     qwen_cal = cm.load_qwen_recal_cal(args.out_dir)
+    # The pooled CV fold count FOLLOWS the split manifest (the per-fold assert
+    # in run_pooled_cell demands equality anyway): the v16 floor guard can
+    # lower the realized count below POOLED_N_FOLDS on a tiny (smoke) slice.
+    pooled_folds = int(man.get("n_folds", args.folds))
+    if pooled_folds != args.folds:
+        print(
+            f"[fit1336] pooled folds follow the manifest: {pooled_folds} "
+            f"(--folds={args.folds} ignored on the --v3-pooled path)",
+            flush=True,
+        )
     for unit in units:
         run_pooled_cell(
             unit,
@@ -1763,7 +1773,7 @@ def run_pooled_v3(args) -> int:
             preds_root,
             corpora=corpora,
             frozen_layers=frozen,
-            n_folds=args.folds,
+            n_folds=pooled_folds,
             seed=args.seed,
             null_draws=null_draws,
             n_boot=n_boot,
@@ -1835,7 +1845,12 @@ def run_g0v3(args) -> int:
         bundle, entries, None if smoke else cm.EXPECTED_LAYERS, "context"
     )
     groups = np.asarray([int(e["fold"]) for e in entries])
-    assert len(np.unique(groups)) == args.folds, "manifest folds != --folds"
+    # Follow the manifest's realized fold count (the v16 floor guard can lower
+    # it below POOLED_N_FOLDS on a tiny slice); mismatch stays fail-loud.
+    g0_folds = int(man.get("n_folds", args.folds))
+    assert len(np.unique(groups)) == g0_folds, (
+        f"manifest folds {len(np.unique(groups))} != manifest n_folds {g0_folds}"
+    )
     saved = fc.N_INNER_LAMBDA_FOLDS
     try:
         fc.N_INNER_LAMBDA_FOLDS = cm.N_INNER_LAMBDA_FOLDS_V2
@@ -1845,7 +1860,7 @@ def run_g0v3(args) -> int:
             groups,
             base_grid=np.asarray(cm.LAMBDAS_23, dtype=np.float64),
             sweep_kwargs=dict(
-                n_folds=args.folds,
+                n_folds=g0_folds,
                 seed=args.seed,
                 null_draws=0,
                 collect_cosines=False,

@@ -168,7 +168,11 @@ def _ridge_prep(X_train: torch.Tensor) -> dict:
     }
     if LAMBDA_SELECTION == "inner-group-cv":
         prep["inner"] = fit825._prep_inner_lambda(
-            X_train, np.arange(int(X_train.shape[0])), N_INNER_LAMBDA_FOLDS, INNER_LAMBDA_SEED
+            X_train,
+            np.arange(int(X_train.shape[0])),
+            N_INNER_LAMBDA_FOLDS,
+            INNER_LAMBDA_SEED,
+            device=X_train.device,
         )
         if prep["inner"] is None:
             print("[map_align] WARN: inner-group-cv: <2 usable inner folds — GCV fallback")

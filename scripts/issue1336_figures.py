@@ -17,6 +17,7 @@ Outputs: --fig-dir (default figures/issue_1336; smokes MUST redirect via
 from __future__ import annotations
 
 import argparse
+import itertools
 import json
 import sys
 from pathlib import Path
@@ -1026,6 +1027,106 @@ def fig_v3_delta_q_scatter(dq: dict, fig_dir: Path) -> None:
         _save(fig, fig_dir, f"delta_q_scatter_{t_slug}_v3.png")
 
 
+def fig_v3_delta_q_by_corpus(dq: dict, fig_dir: Path) -> None:
+    """Per-transition delta-Q grouped BY CORPUS (plan v17 §4 div. 11 / Phase
+    P_v3 item (c)): ONE colour-coded panel per arm — x = groups ordered by
+    (corpus, group id) with per-corpus band separators, point colour = corpus
+    — replacing v15's cluster x corpus heatmap, which is degenerate under
+    corpus-pure groups (every group occupies exactly one corpus, so the
+    heatmap would be one filled cell per row). Requires the battery arm
+    blocks' ``cluster_corpora`` field (issue1336_metric_ladder.py, same
+    round); a mixed (multi-corpus) legacy group renders under its first
+    corpus with a ``+`` marker suffix in its label. The max-group permutation
+    null band + achievable ceiling are GLOBAL (max over ALL groups inside
+    each draw — the selection-symmetric convention), drawn once per panel."""
+    li = dq.get("headline", {}).get("headline_layer")
+    n_draws = dq.get("perm_draws")
+    cmap = matplotlib.colormaps["tab10"]
+    transitions = sorted(dq["transitions"].items(), key=lambda kv: kv[1]["transition_idx"])
+    assert transitions, "delta-Q JSON carries no transitions"
+    for t_slug, tb in transitions:
+        src, tgt = tb["source"], tb["target"]
+        arms = [a for a in ("on", "off") if a in tb["arms"]]
+        assert arms, f"transition {t_slug}: no known arms in {list(tb['arms'])!r}"
+        fig, axes = plt.subplots(
+            1, len(arms), figsize=(7.0 * len(arms), 4.2), sharey=True, squeeze=False
+        )
+        for ax, arm in zip(axes[0], arms, strict=True):
+            blk = tb["arms"][arm]
+            assert "cluster_corpora" in blk, (
+                f"{t_slug}/{arm}: battery JSON lacks 'cluster_corpora' — regenerate "
+                "decision_v3 with the v16 issue1336_metric_ladder.py battery"
+            )
+            ids = [int(c) for c in blk["cluster_ids"]]
+            vals = np.asarray(blk["delta_q"], dtype=float)
+            corpora_of = {int(k): v for k, v in blk["cluster_corpora"].items()}
+            primary = {c: (corpora_of[c] or ["?"])[0] for c in ids}
+            corpus_order = sorted({primary[c] for c in ids})
+            colors = {c: cmap(i % 10) for i, c in enumerate(corpus_order)}
+            order = sorted(range(len(ids)), key=lambda k: (primary[ids[k]], ids[k]))
+            xs = np.arange(len(order))
+            for x, k in zip(xs.tolist(), order, strict=True):
+                cid = ids[k]
+                mixed = len(corpora_of[cid]) > 1
+                ax.scatter(
+                    x,
+                    vals[k],
+                    s=18,
+                    color=colors[primary[cid]],
+                    edgecolors="#333333",
+                    linewidths=0.4,
+                    zorder=3,
+                )
+                if np.isfinite(vals[k]):
+                    ax.annotate(
+                        f"{cid}{'+' if mixed else ''}",
+                        (x, vals[k]),
+                        fontsize=5,
+                        xytext=(1, 2),
+                        textcoords="offset points",
+                    )
+            # per-corpus band separators + centered corpus tick labels
+            bounds = [0]
+            for i in range(1, len(order)):
+                if primary[ids[order[i]]] != primary[ids[order[i - 1]]]:
+                    ax.axvline(i - 0.5, color="#bbbbbb", lw=0.6, zorder=1)
+                    bounds.append(i)
+            bounds.append(len(order))
+            ticks = [(a + b - 1) / 2.0 for a, b in itertools.pairwise(bounds)]
+            labels = [primary[ids[order[a]]] for a in bounds[:-1]]
+            ax.set_xticks(ticks)
+            ax.set_xticklabels(labels, fontsize=6, rotation=30, ha="right")
+            ax.axhline(0.0, color="grey", lw=0.6, zorder=1)
+            ax.axhline(
+                float(blk["null_band_97p5"]),
+                ls="--",
+                lw=1.0,
+                color="#333333",
+                label="max-group permutation null (97.5%)",
+            )
+            ax.axhline(
+                float(blk["ceiling_max"]),
+                ls=":",
+                lw=1.0,
+                color="#333333",
+                label="achievable ceiling (max per-group source residual)",
+            )
+            ax.set_title(_V3_ARM_LABELS[arm], fontsize=8)
+            ax.set_xlabel("groups (per-corpus sub-clusters), grouped by corpus", fontsize=8)
+        axes[0][0].set_ylabel(
+            "ΔQ per group (held-out residual ratio,\nsource − target; "
+            "+ = better predicted at the target)",
+            fontsize=8,
+        )
+        axes[0][0].legend(fontsize=6, loc="best", frameon=False)
+        fig.suptitle(
+            f"{_V3_STAGE_SHORT[src]} → {_V3_STAGE_SHORT[tgt]}: per-group ΔQ by corpus "
+            f"(layer {li}; {n_draws} permutation draws; labels = global group id)",
+            fontsize=9,
+        )
+        _save(fig, fig_dir, f"delta_q_by_corpus_{t_slug}_v3.png")
+
+
 def main_v3(args: argparse.Namespace) -> None:
     set_paper_style()
     dec_dir = args.eval_dir / "decision_v3"
@@ -1041,6 +1142,7 @@ def main_v3(args: argparse.Namespace) -> None:
         print(f"[figs1336-v3] SKIP delta-Q scatters — missing {dq_path} (smoke)")
     else:
         fig_v3_delta_q_scatter(dq, args.fig_dir)
+        fig_v3_delta_q_by_corpus(dq, args.fig_dir)
     print("[figs1336] v3 done")
 
 
