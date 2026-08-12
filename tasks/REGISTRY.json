@@ -9663,8 +9663,8 @@
     "2250": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2250",
-      "status": "running",
+      "path": "tasks/completed/2250",
+      "status": "completed",
       "title": "gotchas.md: dispatcher deriving GPU width/pins from nvidia-smi instead of the SLURM allocation targets unallocated GPUs on narrow allocations"
     },
     "2251": {
