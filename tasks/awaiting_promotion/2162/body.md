@@ -3,7 +3,8 @@ title: 'Which kinds of context information are carried at the context vector: a 
   sweep over 21 minimal-pair information types, crossed with route conflict, recency,
   and load'
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-08-07T06:43:49Z'
 has_clean_result: true
 parent_id: 2094
