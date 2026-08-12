@@ -24,7 +24,8 @@ unpushed local ``main`` tip imports root-only commits): Arm A intercepts
 ``git -C <.claude/worktrees/ path | $WT spelling> ... merge ... main``
 BEFORE the path-blind ``-C`` waiver; Arm B declines the same bare-main merge
 shape under a WORKTREE-armed cd-latch (the ``scoped_wt`` bit; ``/tmp``
-latches keep their prior disposition byte-identical). ``origin/main`` /
+latches stay Arm-B-exempt — ``scoped_wt=0`` — including under the #2122
+variable/exit-guard /tmp arms). ``origin/main`` /
 raw-sha / ``"$MAIN_SHA"`` merges and ``/tmp`` scratch landings stay allowed;
 override via ``EPM_ALLOW_WORKTREE_LOCAL_MAIN_MERGE=1`` (session env or
 inline command prefix — a command-wide substring match, the
