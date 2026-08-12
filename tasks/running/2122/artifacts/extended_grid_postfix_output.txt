@@ -1,4 +1,4 @@
-guard sha256: 85dad1e79b08e9b5d2cc1b0046f9b2719ec8b2eb94340983ccb507261698ece6
+guard sha256: 2e301da90318523c848cfbcb3bf60b21a1d71205d0c2ad2334c722898333ea5a
 ALLOW  wt  S1 literal cd &&
 BLOCK  wt  S2 literal cd + NEWLINE   ['git merge (branch merge on the shared root)' would move the SHARED re]
 ALLOW  wt  S3 WT= ; cd $WT &&
