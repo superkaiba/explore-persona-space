@@ -651,17 +651,44 @@ def test_sibling_issue_file_arm_step5a_only():
     (the 10d TG legs run before the post-gate re-sync — syncing sibling
     files there moves the tip after certification for zero gate benefit);
     the negative assert anchors on the EXECUTABLE array-init fragment, so
-    the 10d copy's prose asymmetry comment cannot trip it."""
+    the 10d copy's prose asymmetry comment cannot trip it. #2116 widens the
+    enumeration to sibling scripts/issue<M>_*.sh shell dispatchers: sibling
+    tests also INVOKE dispatchers (subprocess / read_text), and a .py-only
+    pathspec syncs the test without its .sh (the #1988/#2004 firings)."""
     text = _text()
     arm = _sibling_arm_block(_step5a_span(text))
     assert "':(glob)scripts/issue[0-9]*_*.py'" in arm, (
         "the sibling arm must enumerate sibling-issue scripts via the "
         "numeric-anchored :(glob)scripts/issue[0-9]*_*.py pathspec"
     )
+    assert "':(glob)scripts/issue[0-9]*_*.sh'" in arm, (
+        "the sibling arm must enumerate sibling-issue shell dispatchers via "
+        "the numeric-anchored :(glob)scripts/issue[0-9]*_*.sh pathspec — "
+        "sibling tests invoke sibling .sh dispatchers (subprocess / "
+        "read_text), and a .py-only pathspec is the #1988/#2004 half-sync "
+        "class: the covering test syncs while its dispatcher stays fork-era "
+        "or absent (#2116)"
+    )
     assert "':(glob)tests/test_issue[0-9]*_*.py'" in arm, (
         "the sibling arm must enumerate the covering tests via the paired "
         ":(glob)tests/test_issue[0-9]*_*.py pathspec (script+test move together)"
     )
+    enum_lines = [ln for ln in arm.splitlines() if "diff --name-only origin/main" in ln]
+    assert len(enum_lines) == 1, (
+        "the sibling arm must carry exactly ONE `diff --name-only origin/main` "
+        f"enumeration line (found {len(enum_lines)})"
+    )
+    for spec in (
+        "':(glob)scripts/issue[0-9]*_*.py'",
+        "':(glob)scripts/issue[0-9]*_*.sh'",
+        "':(glob)tests/test_issue[0-9]*_*.py'",
+    ):
+        assert spec in enum_lines[0], (
+            f"all three sibling pathspecs must co-occur on the enumeration line "
+            f"itself (missing {spec}) — the individual substring asserts above "
+            "would still pass if a glob moved into a comment while dropped from "
+            "the `done < <(git ... diff --name-only origin/main ...)` line (#2116)"
+        )
     assert "awk 'index($0, \"sync workflow-surface specs from\") == 0'" in arm, (
         "the sibling arm's branch-side-edit exclusion must reuse the "
         "subject-anchored awk index() form verbatim (the pass-1 / Guard-3 "
