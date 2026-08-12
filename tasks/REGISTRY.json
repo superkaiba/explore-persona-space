@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2239,
+  "highest_id": 2240,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9581,6 +9581,13 @@
       "path": "tasks/completed/224",
       "status": "completed",
       "title": "[ZLT] persona-marker emission is not a training-induced attention pattern or a learned residual-stream direction \u2014 base Qwen on identical tokens attends the same way, and a norm-matched random direction elicits the marker at least as well as the trained centroid (LOW confidence)"
+    },
+    "2240": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2240",
+      "status": "proposed",
+      "title": "Step 10d: payload-aware no-PR arm (a branch with novel payload and zero PRs silently skips the auto-merge)"
     },
     "225": {
       "has_clean_result": true,
