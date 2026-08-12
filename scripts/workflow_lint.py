@@ -13780,7 +13780,13 @@ _LESSONS_ROW_RE = re.compile(
 # land under the old cap. The raise buys EXACTLY that row extension plus
 # <=40 B headroom (9682 + 40 = 9722) — not general slack (the #992
 # argued-raise form; the per-row and non-row caps still bind).
-_LESSONS_MAX_BYTES = 9722
+# 9722->9842 (#2250): the index sat at 9713/9722 (9 B headroom), so the
+# gotchas-row SLURM allocation-width trigger (+89 B; measured post-edit
+# file 9802 B) could not land under the old cap. The raise buys EXACTLY
+# this row extension plus <=40 B headroom (9802 + 40 = 9842) — not general
+# slack (the #992 argued-raise form; the per-row and non-row caps still
+# bind).
+_LESSONS_MAX_BYTES = 9842
 # Early-warning band (#992): a stderr-only advisory WARN once the index
 # crosses this, so a near-cap landing is visible a few rows before the
 # _LESSONS_MAX_BYTES FAIL (early warning only — advisory, never a FAIL).
@@ -13833,7 +13839,9 @@ _LESSONS_ROW_GRANDFATHER_MAX_BYTES: dict[str, int] = {
     # (row 1048 B -> 1135 B). Cap = measured + <=40.
     # #2088 added the local-committed-artifact empty-selection trigger
     # (row 1175 B -> 1258 B). Cap = measured + <=40.
-    "gotchas": 1298,
+    # #2250 added the SLURM allocation-width trigger (row 1289 B -> 1378 B).
+    # Cap = measured + <=40.
+    "gotchas": 1418,
 }
 _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 
