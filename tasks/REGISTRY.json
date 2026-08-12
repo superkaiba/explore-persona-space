@@ -9613,8 +9613,8 @@
     "2244": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2244",
-      "status": "approved",
+      "path": "tasks/running/2244",
+      "status": "running",
       "title": "SKILL.md Step 6: state the bg-Bash timeout floor for free-SLURM-lane launches (420s park budget vs 120s Bash default)"
     },
     "225": {
