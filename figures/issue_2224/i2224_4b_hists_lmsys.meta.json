@@ -1,251 +1,251 @@
 {
-  "commit": "01ab4ce3",
-  "render_id": "5a9f25396c7b48c6",
-  "git_commit": "01ab4ce3",
+  "commit": "2e532f6e",
+  "render_id": "bd8f1a2024ab4423",
+  "git_commit": "2e532f6e",
   "git_dirty": false,
-  "created": "2026-08-11T19:11:33Z",
+  "created": "2026-08-12T17:54:45Z",
   "figsize": [
-    16.8,
-    6.6000000000000005
+    21.0,
+    9.0
   ],
   "points": [
     {
       "x": -20.175201,
-      "evil": 3.0,
+      "evil\nn samples": 3.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": -19.029204,
-      "evil": 6.0,
+      "evil\nn samples": 6.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": -17.883208,
-      "evil": 7.0,
+      "evil\nn samples": 7.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": -16.737211,
-      "evil": 4.0,
+      "evil\nn samples": 4.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": -15.591215,
-      "evil": 5.0,
+      "evil\nn samples": 5.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": -14.445218,
-      "evil": 24.0,
+      "evil\nn samples": 24.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": -13.299221,
-      "evil": 21.0,
+      "evil\nn samples": 21.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": -12.153225,
-      "evil": 28.0,
+      "evil\nn samples": 28.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": -11.007228,
-      "evil": 44.0,
+      "evil\nn samples": 44.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": -9.861232,
-      "evil": 48.0,
+      "evil\nn samples": 48.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": -8.715235,
-      "evil": 85.0,
+      "evil\nn samples": 85.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": -7.569239,
-      "evil": 146.0,
+      "evil\nn samples": 146.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": -6.423242,
-      "evil": 286.0,
+      "evil\nn samples": 286.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": -5.277246,
-      "evil": 455.0,
+      "evil\nn samples": 455.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": -4.131249,
-      "evil": 819.0,
+      "evil\nn samples": 819.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": -2.985252,
-      "evil": 1668.0,
+      "evil\nn samples": 1668.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": -1.839256,
-      "evil": 3465.0,
+      "evil\nn samples": 3465.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": -0.693259,
-      "evil": 7157.0,
+      "evil\nn samples": 7157.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 0.452737,
-      "evil": 11359.0,
+      "evil\nn samples": 11359.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 1.598734,
-      "evil": 8599.0,
+      "evil\nn samples": 8599.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 2.74473,
-      "evil": 5683.0,
+      "evil\nn samples": 5683.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 3.890727,
-      "evil": 3587.0,
+      "evil\nn samples": 3587.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 5.036723,
-      "evil": 2062.0,
+      "evil\nn samples": 2062.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 6.18272,
-      "evil": 1183.0,
+      "evil\nn samples": 1183.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 7.328716,
-      "evil": 806.0,
+      "evil\nn samples": 806.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 8.474713,
-      "evil": 545.0,
+      "evil\nn samples": 545.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 9.62071,
-      "evil": 337.0,
+      "evil\nn samples": 337.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 10.766706,
-      "evil": 301.0,
+      "evil\nn samples": 301.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 11.912703,
-      "evil": 265.0,
+      "evil\nn samples": 265.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 13.058699,
-      "evil": 227.0,
+      "evil\nn samples": 227.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 14.204696,
-      "evil": 192.0,
+      "evil\nn samples": 192.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 15.350692,
-      "evil": 165.0,
+      "evil\nn samples": 165.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 16.496689,
-      "evil": 136.0,
+      "evil\nn samples": 136.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 17.642685,
-      "evil": 110.0,
+      "evil\nn samples": 110.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 18.788682,
-      "evil": 60.0,
+      "evil\nn samples": 60.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 19.934679,
-      "evil": 48.0,
+      "evil\nn samples": 48.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 21.080675,
-      "evil": 30.0,
+      "evil\nn samples": 30.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 22.226672,
-      "evil": 19.0,
+      "evil\nn samples": 19.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 23.372668,
-      "evil": 12.0,
+      "evil\nn samples": 12.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 24.518665,
-      "evil": 3.0,
+      "evil\nn samples": 3.0,
       "_kind": "bar",
       "_group": 0
     },
@@ -1691,241 +1691,241 @@
     },
     {
       "x": -31.109435,
-      "hallucination": 6.0,
+      "hallucination\nn samples": 6.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": -29.489072,
-      "hallucination": 9.0,
+      "hallucination\nn samples": 9.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": -27.868709,
-      "hallucination": 17.0,
+      "hallucination\nn samples": 17.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": -26.248346,
-      "hallucination": 37.0,
+      "hallucination\nn samples": 37.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": -24.627983,
-      "hallucination": 55.0,
+      "hallucination\nn samples": 55.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": -23.007619,
-      "hallucination": 69.0,
+      "hallucination\nn samples": 69.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": -21.387256,
-      "hallucination": 82.0,
+      "hallucination\nn samples": 82.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": -19.766893,
-      "hallucination": 110.0,
+      "hallucination\nn samples": 110.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": -18.14653,
-      "hallucination": 161.0,
+      "hallucination\nn samples": 161.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": -16.526167,
-      "hallucination": 167.0,
+      "hallucination\nn samples": 167.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": -14.905803,
-      "hallucination": 215.0,
+      "hallucination\nn samples": 215.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": -13.28544,
-      "hallucination": 266.0,
+      "hallucination\nn samples": 266.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": -11.665077,
-      "hallucination": 344.0,
+      "hallucination\nn samples": 344.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": -10.044714,
-      "hallucination": 485.0,
+      "hallucination\nn samples": 485.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": -8.424351,
-      "hallucination": 725.0,
+      "hallucination\nn samples": 725.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": -6.803987,
-      "hallucination": 1220.0,
+      "hallucination\nn samples": 1220.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": -5.183624,
-      "hallucination": 1996.0,
+      "hallucination\nn samples": 1996.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": -3.563261,
-      "hallucination": 4528.0,
+      "hallucination\nn samples": 4528.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": -1.942898,
-      "hallucination": 8857.0,
+      "hallucination\nn samples": 8857.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": -0.322535,
-      "hallucination": 14019.0,
+      "hallucination\nn samples": 14019.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": 1.297829,
-      "hallucination": 7243.0,
+      "hallucination\nn samples": 7243.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": 2.918192,
-      "hallucination": 3201.0,
+      "hallucination\nn samples": 3201.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": 4.538555,
-      "hallucination": 1656.0,
+      "hallucination\nn samples": 1656.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": 6.158918,
-      "hallucination": 923.0,
+      "hallucination\nn samples": 923.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": 7.779281,
-      "hallucination": 578.0,
+      "hallucination\nn samples": 578.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": 9.399645,
-      "hallucination": 432.0,
+      "hallucination\nn samples": 432.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": 11.020008,
-      "hallucination": 359.0,
+      "hallucination\nn samples": 359.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": 12.640371,
-      "hallucination": 289.0,
+      "hallucination\nn samples": 289.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": 14.260734,
-      "hallucination": 254.0,
+      "hallucination\nn samples": 254.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": 15.881097,
-      "hallucination": 279.0,
+      "hallucination\nn samples": 279.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": 17.501461,
-      "hallucination": 284.0,
+      "hallucination\nn samples": 284.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": 19.121824,
-      "hallucination": 319.0,
+      "hallucination\nn samples": 319.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": 20.742187,
-      "hallucination": 269.0,
+      "hallucination\nn samples": 269.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": 22.36255,
-      "hallucination": 215.0,
+      "hallucination\nn samples": 215.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": 23.982913,
-      "hallucination": 140.0,
+      "hallucination\nn samples": 140.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": 25.603277,
-      "hallucination": 106.0,
+      "hallucination\nn samples": 106.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": 27.22364,
-      "hallucination": 58.0,
+      "hallucination\nn samples": 58.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": 28.844003,
-      "hallucination": 20.0,
+      "hallucination\nn samples": 20.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": 30.464366,
-      "hallucination": 6.0,
+      "hallucination\nn samples": 6.0,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": 32.084729,
-      "hallucination": 1.0,
+      "hallucination\nn samples": 1.0,
       "_kind": "bar",
       "_group": 7
     },
@@ -3371,241 +3371,241 @@
     },
     {
       "x": -24.432659,
-      "sycophancy": 1.0,
+      "sycophancy\nn samples": 1.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": -23.03974,
-      "sycophancy": 2.0,
+      "sycophancy\nn samples": 2.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": -21.64682,
-      "sycophancy": 5.0,
+      "sycophancy\nn samples": 5.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": -20.2539,
-      "sycophancy": 9.0,
+      "sycophancy\nn samples": 9.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": -18.860981,
-      "sycophancy": 11.0,
+      "sycophancy\nn samples": 11.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": -17.468061,
-      "sycophancy": 13.0,
+      "sycophancy\nn samples": 13.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": -16.075141,
-      "sycophancy": 37.0,
+      "sycophancy\nn samples": 37.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": -14.682222,
-      "sycophancy": 38.0,
+      "sycophancy\nn samples": 38.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": -13.289302,
-      "sycophancy": 111.0,
+      "sycophancy\nn samples": 111.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": -11.896382,
-      "sycophancy": 139.0,
+      "sycophancy\nn samples": 139.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": -10.503463,
-      "sycophancy": 204.0,
+      "sycophancy\nn samples": 204.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": -9.110543,
-      "sycophancy": 258.0,
+      "sycophancy\nn samples": 258.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": -7.717623,
-      "sycophancy": 460.0,
+      "sycophancy\nn samples": 460.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": -6.324704,
-      "sycophancy": 952.0,
+      "sycophancy\nn samples": 952.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": -4.931784,
-      "sycophancy": 1568.0,
+      "sycophancy\nn samples": 1568.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": -3.538864,
-      "sycophancy": 2434.0,
+      "sycophancy\nn samples": 2434.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": -2.145945,
-      "sycophancy": 4682.0,
+      "sycophancy\nn samples": 4682.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": -0.753025,
-      "sycophancy": 7834.0,
+      "sycophancy\nn samples": 7834.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": 0.639895,
-      "sycophancy": 11429.0,
+      "sycophancy\nn samples": 11429.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": 2.032814,
-      "sycophancy": 7453.0,
+      "sycophancy\nn samples": 7453.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": 3.425734,
-      "sycophancy": 5005.0,
+      "sycophancy\nn samples": 5005.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": 4.818653,
-      "sycophancy": 2749.0,
+      "sycophancy\nn samples": 2749.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": 6.211573,
-      "sycophancy": 1599.0,
+      "sycophancy\nn samples": 1599.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": 7.604493,
-      "sycophancy": 1083.0,
+      "sycophancy\nn samples": 1083.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": 8.997412,
-      "sycophancy": 718.0,
+      "sycophancy\nn samples": 718.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": 10.390332,
-      "sycophancy": 439.0,
+      "sycophancy\nn samples": 439.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": 11.783252,
-      "sycophancy": 302.0,
+      "sycophancy\nn samples": 302.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": 13.176171,
-      "sycophancy": 181.0,
+      "sycophancy\nn samples": 181.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": 14.569091,
-      "sycophancy": 105.0,
+      "sycophancy\nn samples": 105.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": 15.962011,
-      "sycophancy": 72.0,
+      "sycophancy\nn samples": 72.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": 17.35493,
-      "sycophancy": 46.0,
+      "sycophancy\nn samples": 46.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": 18.74785,
-      "sycophancy": 25.0,
+      "sycophancy\nn samples": 25.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": 20.14077,
-      "sycophancy": 16.0,
+      "sycophancy\nn samples": 16.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": 21.533689,
-      "sycophancy": 7.0,
+      "sycophancy\nn samples": 7.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": 22.926609,
-      "sycophancy": 5.0,
+      "sycophancy\nn samples": 5.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": 24.319529,
-      "sycophancy": 3.0,
+      "sycophancy\nn samples": 3.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": 25.712448,
-      "sycophancy": 2.0,
+      "sycophancy\nn samples": 2.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": 27.105368,
-      "sycophancy": 1.0,
+      "sycophancy\nn samples": 1.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": 28.498288,
-      "sycophancy": 1.0,
+      "sycophancy\nn samples": 1.0,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": 29.891207,
-      "sycophancy": 1.0,
+      "sycophancy\nn samples": 1.0,
       "_kind": "bar",
       "_group": 14
     },
@@ -5053,20 +5053,18 @@
   "n_series": 21,
   "total_points": 840,
   "text": {
-    "suptitle": "per-sample screening-score distributions — lmsys",
+    "suptitle": "Per-sample screening-score distributions \u2014 lmsys (n = 50,000 per panel)",
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "exact_dp",
-        "ylabel": "evil",
+        "title_left": "exact \u0394P (ground truth)",
+        "ylabel": "evil\nn samples",
         "xticklabels": [
-          "−30",
-          "−20",
-          "−10",
+          "\u221240",
+          "\u221220",
           "0",
-          "10",
           "20",
-          "30"
+          "40"
         ],
         "yticklabels": [
           "0",
@@ -5079,14 +5077,11 @@
         ]
       },
       {
-        "title_left": "mapped_dp_context",
+        "title_left": "mapped \u0394P (context)",
         "xticklabels": [
-          "−200",
-          "−100",
+          "\u2212200",
           "0",
-          "100",
           "200",
-          "300",
           "400"
         ],
         "yticklabels": [
@@ -5102,14 +5097,11 @@
         ]
       },
       {
-        "title_left": "mapped_dp_prefix",
+        "title_left": "mapped \u0394P (prefix)",
         "xticklabels": [
           "40",
-          "50",
           "60",
-          "70",
           "80",
-          "90",
           "100"
         ],
         "yticklabels": [
@@ -5123,16 +5115,12 @@
         ]
       },
       {
-        "title_left": "probe_diff_context",
+        "title_left": "probe diff (context)",
         "xticklabels": [
-          "−2000",
-          "−1500",
-          "−1000",
-          "−500",
+          "\u22122000",
+          "\u22121000",
           "0",
-          "500",
           "1000",
-          "1500",
           "2000"
         ],
         "yticklabels": [
@@ -5147,15 +5135,12 @@
         ]
       },
       {
-        "title_left": "probe_diff_prefix",
+        "title_left": "probe diff (prefix)",
         "xticklabels": [
-          "1750",
+          "1700",
           "1800",
-          "1850",
           "1900",
-          "1950",
           "2000",
-          "2050",
           "2100"
         ],
         "yticklabels": [
@@ -5169,15 +5154,13 @@
         ]
       },
       {
-        "title_left": "prompttoken_dp",
+        "title_left": "prompt-token \u0394P (paper)",
         "xticklabels": [
-          "−30",
-          "−20",
-          "−10",
+          "\u221240",
+          "\u221220",
           "0",
-          "10",
           "20",
-          "30"
+          "40"
         ],
         "yticklabels": [
           "0",
@@ -5191,14 +5174,11 @@
         ]
       },
       {
-        "title_left": "raw",
+        "title_left": "raw projection",
         "xticklabels": [
-          "−40",
-          "−30",
-          "−20",
-          "−10",
+          "\u221240",
+          "\u221220",
           "0",
-          "10",
           "20"
         ],
         "yticklabels": [
@@ -5212,16 +5192,12 @@
         ]
       },
       {
-        "ylabel": "hallucination",
+        "ylabel": "hallucination\nn samples",
         "xticklabels": [
-          "−40",
-          "−30",
-          "−20",
-          "−10",
+          "\u221240",
+          "\u221220",
           "0",
-          "10",
           "20",
-          "30",
           "40"
         ],
         "yticklabels": [
@@ -5238,14 +5214,12 @@
       },
       {
         "xticklabels": [
-          "−800",
-          "−600",
-          "−400",
-          "−200",
+          "\u2212750",
+          "\u2212500",
+          "\u2212250",
           "0",
-          "200",
-          "400",
-          "600"
+          "250",
+          "500"
         ],
         "yticklabels": [
           "0",
@@ -5261,15 +5235,10 @@
       {
         "xticklabels": [
           "40",
-          "45",
           "50",
-          "55",
           "60",
-          "65",
           "70",
-          "75",
           "80",
-          "85",
           "90"
         ],
         "yticklabels": [
@@ -5285,9 +5254,9 @@
       },
       {
         "xticklabels": [
-          "−3000",
-          "−2000",
-          "−1000",
+          "\u22123000",
+          "\u22122000",
+          "\u22121000",
           "0",
           "1000",
           "2000",
@@ -5305,15 +5274,11 @@
       },
       {
         "xticklabels": [
-          "1950",
+          "1900",
           "2000",
-          "2050",
           "2100",
-          "2150",
           "2200",
-          "2250",
           "2300",
-          "2350",
           "2400"
         ],
         "yticklabels": [
@@ -5328,8 +5293,8 @@
       },
       {
         "xticklabels": [
-          "−20",
-          "−10",
+          "\u221220",
+          "\u221210",
           "0",
           "10",
           "20",
@@ -5350,15 +5315,11 @@
       },
       {
         "xticklabels": [
-          "−25",
-          "−20",
-          "−15",
-          "−10",
-          "−5",
+          "\u221230",
+          "\u221220",
+          "\u221210",
           "0",
-          "5",
           "10",
-          "15",
           "20"
         ],
         "yticklabels": [
@@ -5373,15 +5334,12 @@
         ]
       },
       {
-        "ylabel": "sycophancy",
+        "ylabel": "sycophancy\nn samples",
         "xticklabels": [
-          "−30",
-          "−20",
-          "−10",
+          "\u221240",
+          "\u221220",
           "0",
-          "10",
           "20",
-          "30",
           "40"
         ],
         "yticklabels": [
@@ -5397,8 +5355,8 @@
       },
       {
         "xticklabels": [
-          "−400",
-          "−200",
+          "\u2212400",
+          "\u2212200",
           "0",
           "200",
           "400",
@@ -5418,11 +5376,8 @@
       {
         "xticklabels": [
           "100",
-          "110",
           "120",
-          "130",
           "140",
-          "150",
           "160"
         ],
         "yticklabels": [
@@ -5440,16 +5395,12 @@
       },
       {
         "xticklabels": [
-          "−2000",
-          "−1500",
-          "−1000",
-          "−500",
+          "\u22122000",
+          "\u22121000",
           "0",
-          "500",
           "1000",
-          "1500",
           "2000",
-          "2500"
+          "3000"
         ],
         "yticklabels": [
           "0",
@@ -5486,9 +5437,9 @@
       },
       {
         "xticklabels": [
-          "−30",
-          "−20",
-          "−10",
+          "\u221230",
+          "\u221220",
+          "\u221210",
           "0",
           "10",
           "20",
@@ -5509,14 +5460,11 @@
       },
       {
         "xticklabels": [
-          "−40",
-          "−30",
-          "−20",
-          "−10",
+          "\u221240",
+          "\u221220",
           "0",
-          "10",
           "20",
-          "30"
+          "40"
         ],
         "yticklabels": [
           "0",
@@ -5536,7 +5484,5 @@
   "formats_written": [
     "png",
     "pdf"
-  ],
-  "supervision_ledger": "map=trait-agnostic; persona vector=trait-description+judge-filter; probe=judge-labels",
-  "dv_note": "graded_mean is the headline DV (llm-judging graded-primary); rate_gt50 is the human-legible companion; screening scores are predictors, never the construct (plan §6)"
+  ]
 }
