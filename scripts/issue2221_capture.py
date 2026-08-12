@@ -313,7 +313,16 @@ def phase_last(args) -> None:
     surface_ids = [r["surface_id"] for r in surfaces]
     cap_dir = Path(args.out_root) / "capture"
     cap_dir.mkdir(parents=True, exist_ok=True)
-    fp = {"n_questions": args.n_questions, "surfaces_sha256": _surface_roster_sha(surfaces)}
+    # `capture_kind` is load-bearing in the regime key, not decoration (r18):
+    # without it a response-avg store and a last-token store for the same tag
+    # are fingerprint-IDENTICAL, so each silently satisfies the other's
+    # `resume_ok` — which is why the r18 prefix collision overwrote a whole
+    # capture class without any gate firing.
+    fp = {
+        "n_questions": args.n_questions,
+        "surfaces_sha256": _surface_roster_sha(surfaces),
+        "capture_kind": "last_prompt_token+prefix_end",
+    }
     pending = [
         (tag, adapter)
         for tag, adapter in model_roster(args)
@@ -432,7 +441,13 @@ def phase_resp(args) -> None:
             )
             for cell in cells
         ]
-    fp = {"n_questions": args.n_questions, "surfaces_sha256": _surface_roster_sha(surfaces)}
+    # See phase_last's note: `capture_kind` keeps a response-avg store from
+    # being fingerprint-indistinguishable from a last-token store (r18).
+    fp = {
+        "n_questions": args.n_questions,
+        "surfaces_sha256": _surface_roster_sha(surfaces),
+        "capture_kind": "response_avg",
+    }
     # Roster-wide gen-output existence sweep BEFORE the 7B model load (review
     # issue 7): a missing rollout file must fail in seconds, not after the
     # weights are resident.
@@ -504,12 +519,37 @@ def phase_upload(args) -> None:
     from explore_persona_space.orchestrate import hub
 
     out_root = Path(args.out_root)
+    # ONE PREFIX PER LOCAL SUBDIR — the prefix names MIRROR the local subdir
+    # names exactly, which is what `issue2221_monitors._load_capture` resolves
+    # ({"last": "capture", "resp": "capture_resp",
+    #   "resp_synth": "capture_resp_synth778"}).
+    #
+    # #2221 r18: this mapping previously sent BOTH `capture` (last-prompt-token
+    # + prefix-end states) AND `capture_resp` (response-avg states) to the SAME
+    # `analysis_tensors/capture` prefix. The two stores are DISTINCT quantities
+    # whose filenames are identical — the tag is the filename and the KIND
+    # lives only in the directory name — so the second upload OVERWROTE the
+    # first file-for-file. Realized damage: the last-token/prefix captures for
+    # base + all 24 cells were destroyed on the Hub (only the 54 frac-tag
+    # stores, absent from the resp roster, survived), and the pod holding the
+    # local originals had already been torn down. It was silent because the
+    # fingerprint sidecars omitted the capture KIND (fixed below), so a resp
+    # store satisfied a last store's `resume_ok`.
+    #
+    # `capture_resp_synth778` also used to be RENAMED to `capture_synth778` on
+    # upload, which no consumer subdir matches; it now mirrors its local name.
+    # The legacy `analysis_tensors/capture_synth778` prefix still holds that
+    # class under the old name and is left in place for older readers.
     mapping = {
         "capture": f"{C.HF_PREFIX}/analysis_tensors/capture",
-        "capture_resp": f"{C.HF_PREFIX}/analysis_tensors/capture",
-        "capture_resp_synth778": f"{C.HF_PREFIX}/analysis_tensors/capture_synth778",
+        "capture_resp": f"{C.HF_PREFIX}/analysis_tensors/capture_resp",
+        "capture_resp_synth778": f"{C.HF_PREFIX}/analysis_tensors/capture_resp_synth778",
         "capture_responses": f"{C.HF_PREFIX}/raw_completions/capture_responses",
     }
+    assert len(set(mapping.values())) == len(mapping), (
+        "two local capture subdirs share one HF prefix — identical filenames "
+        f"would overwrite each other: {mapping}"
+    )
     for sub, prefix in mapping.items():
         local = out_root / sub
         if not local.is_dir():
