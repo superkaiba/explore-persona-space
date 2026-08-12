@@ -5,6 +5,7 @@ title: 'Which kinds of context information are carried at the context vector: a 
 kind: experiment
 tags:
 - followup-manual
+- keep-running
 created_at: '2026-08-07T06:43:49Z'
 has_clean_result: true
 parent_id: 2094
