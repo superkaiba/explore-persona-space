@@ -152,10 +152,11 @@ ARM12 = "arm12_oracle_reg"
 # from it, so one colour keeps one meaning across both figures.
 ARM12_METHOD = (ARM12, "Ridge regression on real answer", "#009E73")
 ARM12_INSERT_AT = 1
-# Protocols whose figure carries the arm. P-B only: the arm was requested for
-# that figure, and the re-score covers both protocols, so widening this to
-# ("P-A", "P-B") is the only change needed to draw it on both.
-ARM12_PROTOCOLS = ("P-B",)
+# Protocols whose figure carries the arm. The re-score covers BOTH protocols
+# (verified row counts, arm12_oracle_reg: evil 8 P-A / 40 P-B, sycophancy
+# 9 / 54, hallucination 5 / 10), and the writeup's Result 3 needs the
+# ridge-on-the-real-answer ceiling on the P-A panel as well, so both are drawn.
+ARM12_PROTOCOLS = ("P-A", "P-B")
 
 
 def methods_for(protocol: str, base: tuple, arm12_behaviors: frozenset) -> tuple:
@@ -753,7 +754,15 @@ def splice_arm12(fits: dict, arm12_root: Path) -> frozenset:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--fits-commit", default="5aae0a472b")
-    ap.add_argument("--spread-json", default="/tmp/spread_1739.json")
+    ap.add_argument(
+        "--spread-json",
+        default="eval_results/issue_1739/result1_spread/spread_gate_by_rung.json",
+        help=(
+            "per-rung spread-gate table. Default is the committed copy; it "
+            "previously pointed at /tmp/spread_1739.json, which made the "
+            "figure unreproducible from a fresh clone."
+        ),
+    )
     ap.add_argument("--out-dir", default="figures/issue_1739/pv_regime_view")
     ap.add_argument("--pv-only", action="store_true", help="3 persona-vector arms instead")
     ap.add_argument(

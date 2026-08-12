@@ -1,0 +1,952 @@
+{
+  "commit": "a172a577+dirty",
+  "render_id": "575460a0cb3b4e29",
+  "git_commit": "a172a577",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_1739/pv_regime_view/pv_regime_pa.pdf",
+    "figures/issue_1739/pv_regime_view/pv_regime_pa.png",
+    "figures/issue_1739/pv_regime_view/pv_regime_pb.pdf",
+    "figures/issue_1739/result1_spread/spread_grid_simple.meta.json",
+    "figures/issue_1739/result1_spread/spread_grid_simple.pdf",
+    "figures/issue_1739/result1_spread/spread_grid_simple.png",
+    "scripts/issue1739_pc_fivemethod_style_fig.py"
+  ],
+  "created": "2026-08-12T15:25:11Z",
+  "figsize": [
+    17.5,
+    3.6
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "evil\nSpearman rho": 0.5464842200366182,
+      "error": 0.0,
+      "series": "generic map, generic labels",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "evil\nSpearman rho": 0.5602650173405765,
+      "error": 0.0,
+      "series": "generic map, generic labels",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "evil\nSpearman rho": 0.57934398194934,
+      "error": 0.0,
+      "series": "generic map, generic labels",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "evil\nSpearman rho": 0.3298067467710112,
+      "error": 0.0,
+      "series": "half-eliciting map, generic labels",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "evil\nSpearman rho": 0.18621390907647503,
+      "error": 0.0,
+      "series": "half-eliciting map, generic labels",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "evil\nSpearman rho": 0.18017446296298836,
+      "error": 0.0,
+      "series": "half-eliciting map, eliciting labels",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "evil\nSpearman rho": 0.12660042384912185,
+      "error": 0.0,
+      "series": "half-eliciting map, eliciting labels",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "evil\nSpearman rho": 0.07071388196464408,
+      "error": 0.0,
+      "series": "half-eliciting map, eliciting labels",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "evil\nSpearman rho": 0.5464842200366182,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "evil\nSpearman rho": 0.5602650173405765,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "evil\nSpearman rho": 0.57934398194934,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "evil\nSpearman rho": 0.5464842200366182,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "evil\nSpearman rho": 0.5602650173405765,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "evil\nSpearman rho": 0.57934398194934,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "evil\nSpearman rho": 0.5464842200366182,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "evil\nSpearman rho": 0.5602650173405765,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "evil\nSpearman rho": 0.57934398194934,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "evil\nSpearman rho": 0.18017446296298836,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "evil\nSpearman rho": 0.12660042384912185,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "evil\nSpearman rho": 0.07071388196464408,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "evil\nSpearman rho": 0.18017446296298836,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "evil\nSpearman rho": 0.12660042384912185,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "evil\nSpearman rho": 0.07071388196464408,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "evil\nSpearman rho": 0.18017446296298836,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "evil\nSpearman rho": 0.12660042384912185,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "evil\nSpearman rho": 0.07071388196464408,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "y": 0.36237197835057733,
+      "error": 0.0,
+      "series": "generic map, generic labels",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "y": 0.3370603473311193,
+      "error": 0.0,
+      "series": "generic map, generic labels",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "y": 0.7150193948306526,
+      "error": 0.0,
+      "series": "generic map, generic labels",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "y": 0.16992854795501217,
+      "error": 0.0,
+      "series": "half-eliciting map, generic labels",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "y": 0.3107266359703379,
+      "error": 0.0,
+      "series": "half-eliciting map, generic labels",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "y": 0.19109720953014525,
+      "error": 0.0,
+      "series": "half-eliciting map, eliciting labels",
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "y": 0.3182915998076748,
+      "error": 0.0,
+      "series": "half-eliciting map, eliciting labels",
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "y": 0.6080123532477583,
+      "error": 0.0,
+      "series": "half-eliciting map, eliciting labels",
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "y": 0.36237197835057733,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "y": 0.3370603473311193,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "y": 0.7150193948306526,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.36237197835057733,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.3370603473311193,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "y": 0.7150193948306526,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.0,
+      "y": 0.36237197835057733,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "y": 0.3370603473311193,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "y": 0.7150193948306526,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.0,
+      "y": 0.19109720953014525,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "y": 0.3182915998076748,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.0,
+      "y": 0.6080123532477583,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 0.0,
+      "y": 0.19109720953014525,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.0,
+      "y": 0.3182915998076748,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.0,
+      "y": 0.6080123532477583,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 0.0,
+      "y": 0.19109720953014525,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.0,
+      "y": 0.3182915998076748,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.0,
+      "y": 0.6080123532477583,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.0,
+      "y": 0.36254563091921255,
+      "error": 0.0,
+      "series": "generic map, generic labels",
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "y": 0.3526581455503521,
+      "error": 0.0,
+      "series": "generic map, generic labels",
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "x": 2.0,
+      "y": 0.3642938288052253,
+      "error": 0.0,
+      "series": "generic map, generic labels",
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "x": 0.0,
+      "y": 0.5635501329484952,
+      "error": 0.0,
+      "series": "half-eliciting map, generic labels",
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "y": 0.5619500554509158,
+      "error": 0.0,
+      "series": "half-eliciting map, generic labels",
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "x": 0.0,
+      "y": 0.532531649605273,
+      "error": 0.0,
+      "series": "half-eliciting map, eliciting labels",
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "x": 1.0,
+      "y": 0.6391939430483696,
+      "error": 0.0,
+      "series": "half-eliciting map, eliciting labels",
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "x": 2.0,
+      "y": 0.6476746041134177,
+      "error": 0.0,
+      "series": "half-eliciting map, eliciting labels",
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "x": 0.0,
+      "y": 0.36254563091921255,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 1.0,
+      "y": 0.3526581455503521,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 2.0,
+      "y": 0.3642938288052253,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.36254563091921255,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "y": 0.3526581455503521,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 2.0,
+      "y": 0.3642938288052253,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 0.0,
+      "y": 0.36254563091921255,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 1.0,
+      "y": 0.3526581455503521,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "y": 0.3642938288052253,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 0.0,
+      "y": 0.532531649605273,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 1.0,
+      "y": 0.6391939430483696,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 2.0,
+      "y": 0.6476746041134177,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.532531649605273,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": 0.6391939430483696,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 2.0,
+      "y": 0.6476746041134177,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 0.0,
+      "y": 0.532531649605273,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 1.0,
+      "y": 0.6391939430483696,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 2.0,
+      "y": 0.6476746041134177,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 0.0,
+      "y": 0.6029626506927478,
+      "error": 0.0,
+      "series": "generic map, generic labels",
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "x": 1.0,
+      "y": 0.7070658033462336,
+      "error": 0.0,
+      "series": "generic map, generic labels",
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "x": 2.0,
+      "y": 0.7142661586972929,
+      "error": 0.0,
+      "series": "generic map, generic labels",
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "x": 0.0,
+      "y": 0.5821470826738397,
+      "error": 0.0,
+      "series": "half-eliciting map, generic labels",
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "x": 1.0,
+      "y": 0.6894387917351279,
+      "error": 0.0,
+      "series": "half-eliciting map, generic labels",
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "x": 0.0,
+      "y": 0.5789923943436327,
+      "error": 0.0,
+      "series": "half-eliciting map, eliciting labels",
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "x": 1.0,
+      "y": 0.6831717131313959,
+      "error": 0.0,
+      "series": "half-eliciting map, eliciting labels",
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "x": 2.0,
+      "y": 0.6883726941913553,
+      "error": 0.0,
+      "series": "half-eliciting map, eliciting labels",
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "x": 0.0,
+      "y": 0.6029626506927478,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 1.0,
+      "y": 0.7070658033462336,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 2.0,
+      "y": 0.7142661586972929,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 0.0,
+      "y": 0.6029626506927478,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 1.0,
+      "y": 0.7070658033462336,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 2.0,
+      "y": 0.7142661586972929,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 0.0,
+      "y": 0.6029626506927478,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 1.0,
+      "y": 0.7070658033462336,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 2.0,
+      "y": 0.7142661586972929,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 0.0,
+      "y": 0.5789923943436327,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 1.0,
+      "y": 0.6831717131313959,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 2.0,
+      "y": 0.6883726941913553,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 0.0,
+      "y": 0.5789923943436327,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 1.0,
+      "y": 0.6831717131313959,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 2.0,
+      "y": 0.6883726941913553,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 0.0,
+      "y": 0.5789923943436327,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 1.0,
+      "y": 0.6831717131313959,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 2.0,
+      "y": 0.6883726941913553,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 0.0,
+      "y": 0.682465344657427,
+      "error": 0.0,
+      "series": "generic map, generic labels",
+      "_kind": "errorbar",
+      "_group": 36
+    },
+    {
+      "x": 1.0,
+      "y": 0.6015048226804981,
+      "error": 0.0,
+      "series": "generic map, generic labels",
+      "_kind": "errorbar",
+      "_group": 36
+    },
+    {
+      "x": 2.0,
+      "y": 0.8241169215979143,
+      "error": 0.0,
+      "series": "generic map, generic labels",
+      "_kind": "errorbar",
+      "_group": 36
+    },
+    {
+      "x": 0.0,
+      "y": 0.6634557633523255,
+      "error": 0.0,
+      "series": "half-eliciting map, generic labels",
+      "_kind": "errorbar",
+      "_group": 37
+    },
+    {
+      "x": 1.0,
+      "y": 0.6005155046653041,
+      "error": 0.0,
+      "series": "half-eliciting map, generic labels",
+      "_kind": "errorbar",
+      "_group": 37
+    },
+    {
+      "x": 0.0,
+      "y": 0.6710303230127962,
+      "error": 0.0,
+      "series": "half-eliciting map, eliciting labels",
+      "_kind": "errorbar",
+      "_group": 38
+    },
+    {
+      "x": 1.0,
+      "y": 0.5929899259545586,
+      "error": 0.0,
+      "series": "half-eliciting map, eliciting labels",
+      "_kind": "errorbar",
+      "_group": 38
+    },
+    {
+      "x": 2.0,
+      "y": 0.8224336050496269,
+      "error": 0.0,
+      "series": "half-eliciting map, eliciting labels",
+      "_kind": "errorbar",
+      "_group": 38
+    },
+    {
+      "x": 0.0,
+      "y": 0.682465344657427,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 1.0,
+      "y": 0.6015048226804981,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 2.0,
+      "y": 0.8241169215979143,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 0.0,
+      "y": 0.682465344657427,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 1.0,
+      "y": 0.6015048226804981,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 2.0,
+      "y": 0.8241169215979143,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 0.0,
+      "y": 0.682465344657427,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 1.0,
+      "y": 0.6015048226804981,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 2.0,
+      "y": 0.8241169215979143,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 0.0,
+      "y": 0.6710303230127962,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 1.0,
+      "y": 0.5929899259545586,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 2.0,
+      "y": 0.8224336050496269,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 0.0,
+      "y": 0.6710303230127962,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 1.0,
+      "y": 0.5929899259545586,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 2.0,
+      "y": 0.8224336050496269,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 0.0,
+      "y": 0.6710303230127962,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 1.0,
+      "y": 0.5929899259545586,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 2.0,
+      "y": 0.8224336050496269,
+      "_kind": "line",
+      "_group": 44
+    }
+  ],
+  "n_series": 45,
+  "total_points": 130,
+  "text": {
+    "suptitle": "Result 5c: the two composition channels crossed \u2014 eliciting data in the MAP pool vs in the LABEL pool",
+    "fig_texts": [
+      "f_U is the fraction of the UNLABELED map pool that is trait-eliciting rather than generic WildChat; f_L is the same fraction for the LABELED readout pool. Both are\ncomposition at FIXED size -- eliciting rows REPLACE generic rows -- so neither axis is confounded with quantity. Cells come from the main grid's compose family at an\nunlabeled pool of 5,000, evaluated on the in-distribution rung. Realized coverage: 8 (f_U, f_L, L) cells for evil ONLY -- the compose family was never run for\nsycophancy, hallucination, the (f_U=0, f_L=1) corner was never run at all, and (f_U=0.5, f_L=0) has no L=8,000 cell, so a missing point is missing data rather than a\nnull. Points are the mean over the cell's replicates, error bars 1.96 x SEM.",
+      "labeled readout budget L"
+    ],
+    "axes": [
+      {
+        "title_left": "Persona vector on context",
+        "ylabel": "evil\nSpearman rho",
+        "xticklabels": [
+          "250",
+          "2,500",
+          "8,000"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Ridge regression on context",
+        "xticklabels": [
+          "250",
+          "2,500",
+          "8,000"
+        ]
+      },
+      {
+        "title_left": "Persona vector on mapped answer",
+        "xticklabels": [
+          "250",
+          "2,500",
+          "8,000"
+        ]
+      },
+      {
+        "title_left": "Persona vector on real answer (oracle)",
+        "xticklabels": [
+          "250",
+          "2,500",
+          "8,000"
+        ]
+      },
+      {
+        "title_left": "Ridge regression on real answer (oracle)",
+        "xticklabels": [
+          "250",
+          "2,500",
+          "8,000"
+        ]
+      }
+    ],
+    "series": [
+      "generic map, generic labels",
+      "half-eliciting map, generic labels",
+      "half-eliciting map, eliciting labels"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
