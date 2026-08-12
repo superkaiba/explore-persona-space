@@ -147,15 +147,32 @@ Three things follow, all of which the plot has to show rather than assert:
    worth stating: a fitted operator is doing real work — the target's answer state is not its
    context state up to a constant shift.
 
+4. **Not every baseline is measured on the pair it sits under, and the plot says which.** Three
+   of the ten pairs — SFT→RLVR, SFT→longer RLVR, RLVR→longer RLVR — came from a second fitting
+   battery that originally ran no controls. What they carry now splits three ways:
+   - **Measured** — the two alignment-map identity baselines, refit on those pairs' own rows:
+     a_ctx / a_ans = **0.796 / 0.513**, **0.743 / 0.511**, **0.804 / 0.734**. Drawn on the top
+     panel with a filled marker, same as the other seven pairs.
+   - **Borrowed** — identity+bias, at **−2.946**, **−2.630**, **−2.630**. Because it is
+     target-keyed (point 3), each value is its *target's* number taken from that target's other
+     pairs — which is exactly why SFT→longer RLVR and RLVR→longer RLVR read the identical
+     −2.630: same target, so the same borrowed number. Drawn as a **hollow** marker.
+   - **Absent** — the shuffled-pairing null, which permutes *this pair's* target rows and refits.
+     It cannot be borrowed, so the dashed null lines simply **break** across those three pairs.
+     A gap means not run, never zero.
+
 Both baselines are plotted at their **true values**, which is why each figure carries a broken
-y-axis rather than clipping them or drawing them as off-axis markers.
+y-axis rather than clipping them or drawing them as off-axis markers. Filled marker = measured on
+that pair's own rows; hollow marker = borrowed. The top panel is a **different regression**
+(checkpoint→checkpoint alignment, not context→answer), so a high value there is not "the baseline
+beats the self map" — it is not comparable to the panel below.
 
 **Plot — all 10 forward pairs, median over the 7 non-degenerate corpora, every corpus overplotted;
 layer 30:**
 
-![Every forward pair of the Tülu-3 ladder: held-out R² by reparameterization tier, grouped by source stage; base-source pairs sit far below the ceiling at direct transfer while every post-training-source pair sits near it, with per-tier dashed shuffled-pairing null lines and a purple dashed identity+bias line on a broken lower panel](https://raw.githubusercontent.com/superkaiba/explore-persona-space/a102baeb28ee28050ac6b39b9ce3b2a1de0caa87/figures/issue_1336/ladder_full_transfer_lattice.png)
+![Every forward pair of the Tülu-3 ladder: held-out R² by reparameterization tier, grouped by source stage; base-source pairs sit far below the ceiling at direct transfer while every post-training-source pair sits near it, with per-tier dashed shuffled-pairing null lines and a purple dashed identity+bias line on a broken lower panel](https://raw.githubusercontent.com/superkaiba/explore-persona-space/60f0ad951805c2df74410c87ce8cd1c2b0220c47/figures/issue_1336/ladder_full_transfer_lattice.png)
 
-https://raw.githubusercontent.com/superkaiba/explore-persona-space/a102baeb28ee28050ac6b39b9ce3b2a1de0caa87/figures/issue_1336/ladder_full_transfer_lattice.png
+https://raw.githubusercontent.com/superkaiba/explore-persona-space/60f0ad951805c2df74410c87ce8cd1c2b0220c47/figures/issue_1336/ladder_full_transfer_lattice.png
 
 | source → target | ceiling | direct (t0) | ctx-only (t6) | ans-only (t7) | both (t8) | cross fit |
 |---|---|---|---|---|---|---|
@@ -172,9 +189,9 @@ https://raw.githubusercontent.com/superkaiba/explore-persona-space/a102baeb28ee2
 
 **Per-unit view — the same read disaggregated, one panel per eval corpus:**
 
-![Per eval dataset: eight panels, one per corpus, each showing the ten forward stage pairs at each reparameterization tier with per-corpus per-tier shuffled-pairing nulls and the identity+bias baseline on a broken lower strip; the four conversational corpora close on the ceiling by SFT→DPO while the two math corpora keep a visible gap](https://raw.githubusercontent.com/superkaiba/explore-persona-space/a102baeb28ee28050ac6b39b9ce3b2a1de0caa87/figures/issue_1336/ladder_full_transfer_lattice_by_dataset.png)
+![Per eval dataset: eight panels, one per corpus, each showing the ten forward stage pairs at each reparameterization tier with per-corpus per-tier shuffled-pairing nulls and the identity+bias baseline on a broken lower strip; the four conversational corpora close on the ceiling by SFT→DPO while the two math corpora keep a visible gap](https://raw.githubusercontent.com/superkaiba/explore-persona-space/60f0ad951805c2df74410c87ce8cd1c2b0220c47/figures/issue_1336/ladder_full_transfer_lattice_by_dataset.png)
 
-https://raw.githubusercontent.com/superkaiba/explore-persona-space/a102baeb28ee28050ac6b39b9ce3b2a1de0caa87/figures/issue_1336/ladder_full_transfer_lattice_by_dataset.png
+https://raw.githubusercontent.com/superkaiba/explore-persona-space/60f0ad951805c2df74410c87ce8cd1c2b0220c47/figures/issue_1336/ladder_full_transfer_lattice_by_dataset.png
 
 
 **Takeaways**

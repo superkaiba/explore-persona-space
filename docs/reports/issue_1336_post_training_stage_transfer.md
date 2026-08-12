@@ -187,10 +187,20 @@ series — the vertical distance from a transfer point down to it is not an effe
 establishes: a fitted operator is doing real work; the target's answer state is not its context
 state up to a shift.
 
-**Round-B pairs carry neither control.** The three pairs measured in round B (SFT→RLVR,
-SFT→longer RLVR, RLVR→longer RLVR) ran no null and no identity baseline, so both baselines cover
-the seven round-3 pairs only and **each baseline line breaks with a visible gap** there. Nothing is
-interpolated across an uncontrolled pair.
+**Round-B pairs: what is measured, what is borrowed, what is absent.** The three pairs measured in
+round B (SFT→RLVR, SFT→longer RLVR, RLVR→longer RLVR) came from a battery that originally ran no
+controls. They now split three ways, and the figures draw the distinction:
+
+- **Measured** — the two alignment-map identity baselines were refit on those pairs' own rows,
+  a_ctx / a_ans = **0.796 / 0.513**, **0.743 / 0.511**, **0.804 / 0.734**, on the same estimator
+  and folds as the round-3 pairs. Filled markers; the series runs across all ten pairs.
+- **Borrowed** — identity+bias reads **−2.946**, **−2.630**, **−2.630**. It is a within-model
+  baseline keyed on the *target*, so each value is the target's number taken from that target's
+  round-3 pairs; SFT→longer RLVR and RLVR→longer RLVR read the same −2.630 because they share the
+  target. Drawn with a **hollow** marker so a borrowed point is never read as a measured one.
+- **Absent** — the shuffled-pairing null permutes *this pair's* target rows and refits, so it
+  cannot be borrowed. Those dashed lines **break with a visible gap** there; nothing is
+  interpolated across an uncontrolled pair.
 
 Uncertainty: 1,000-draw paired prompt-level bootstrap on the gap (within − tier), mapped onto R².
 The three round-B pairs and the cross map carry no bootstrap draws and are **point-only** (open
@@ -208,7 +218,7 @@ direct transfer, context-only reparameterization, answer-only, both, and the fre
 Median over the 7 non-degenerate corpora, with every corpus overplotted as a faint dot. The 10
 *backward* pairs (e.g. RLVR→SFT) were never run and are absent, not zeroed.
 
-![Every forward pair of the Tülu-3 ladder: held-out R² by reparameterization tier, grouped by source stage; base-source pairs sit far below the ceiling at direct transfer while every post-training-source pair sits near it, with per-tier dashed shuffled-pairing null lines and a purple dashed identity+bias line on a broken lower panel](https://raw.githubusercontent.com/superkaiba/explore-persona-space/a102baeb28ee28050ac6b39b9ce3b2a1de0caa87/figures/issue_1336/ladder_full_transfer_lattice.png)
+![Every forward pair of the Tülu-3 ladder: held-out R² by reparameterization tier, grouped by source stage; base-source pairs sit far below the ceiling at direct transfer while every post-training-source pair sits near it, with per-tier dashed shuffled-pairing null lines and a purple dashed identity+bias line on a broken lower panel](https://raw.githubusercontent.com/superkaiba/explore-persona-space/60f0ad951805c2df74410c87ce8cd1c2b0220c47/figures/issue_1336/ladder_full_transfer_lattice.png)
 
 > **Figure 1.** *The base boundary is the only place transfer fails.* Median held-out R² over 7
 > corpora, layer 30. Every pair sourced at **base** sits at direct-transfer R² −0.10 to +0.16
@@ -218,8 +228,12 @@ Median over the 7 non-degenerate corpora, with every corpus overplotted as a fai
 > dashed lines in each tier's own colour are that tier's shuffled-pairing null — t0 at −0.50/−0.75 and
 > t6 at −0.32/−0.42 are drawn; t7/t8 sit at −0.0008, on the zero line. The
 > purple dashed line on the lower panel is the identity+bias baseline (−2.14 to −3.03), plotted at
-> its true value across a y-axis break. Every baseline line breaks at the three round-B pairs, which
-> ran no control. base→DPO and base→RLVR read below zero at t0 but far above their own t0 null.
+> its true value across a y-axis break; a **filled** marker on it is measured on that pair's own
+> rows and a **hollow** marker is borrowed from the target's round-3 pairs (the three round-B
+> points, −2.946/−2.630/−2.630). The shuffled-pairing null cannot be borrowed, so those dashed
+> lines break with a gap at the same three pairs. The top panel is a **different regression** —
+> checkpoint→checkpoint alignment, measured on all ten pairs — and is not comparable to the panel
+> below. base→DPO and base→RLVR read below zero at t0 but far above their own t0 null.
 
 | source → target | ceiling | direct (t0) | ctx-only (t6) | ans-only (t7) | both (t8) | cross fit |
 |---|---|---|---|---|---|---|
@@ -272,7 +286,7 @@ map moves monotonically with RLVR dose — so "RLVR doesn't change the map" is p
 **What is plotted.** Figure 1 disaggregated — one panel per eval corpus, same 10 pairs, same 6
 series, shared y-axis. This is the per-unit view behind every median above.
 
-![Per eval dataset: eight panels, one per corpus, each showing the ten forward stage pairs at each reparameterization tier with per-corpus per-tier shuffled-pairing nulls and the identity+bias baseline on a broken lower strip; the four conversational corpora close on the ceiling by SFT→DPO while the two math corpora keep a visible gap](https://raw.githubusercontent.com/superkaiba/explore-persona-space/a102baeb28ee28050ac6b39b9ce3b2a1de0caa87/figures/issue_1336/ladder_full_transfer_lattice_by_dataset.png)
+![Per eval dataset: eight panels, one per corpus, each showing the ten forward stage pairs at each reparameterization tier with per-corpus per-tier shuffled-pairing nulls and the identity+bias baseline on a broken lower strip; the four conversational corpora close on the ceiling by SFT→DPO while the two math corpora keep a visible gap](https://raw.githubusercontent.com/superkaiba/explore-persona-space/60f0ad951805c2df74410c87ce8cd1c2b0220c47/figures/issue_1336/ladder_full_transfer_lattice_by_dataset.png)
 
 > **Figure 2.** *The corpus split is conversational vs math/reasoning.* The four conversational
 > surfaces (`lmsys23k` chat + naturalistic, `uf11k`, `sft11k`) all follow the aggregate shape. The
