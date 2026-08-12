@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2247,
+  "highest_id": 2248,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9638,6 +9638,13 @@
       "path": "tasks/proposed/2247",
       "status": "proposed",
       "title": "Causal content-specificity of the context\u2192answer map: token-matched fine-tuning roster (personas vs false fact vs single token vs formatting vs high-level behavior)"
+    },
+    "2248": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2248",
+      "status": "proposed",
+      "title": "SKILL.md Step 4: brief-composition rule covers marker SUPPRESSION but not DISPLACEMENT by a return-format contract"
     },
     "225": {
       "has_clean_result": true,
