@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2244,
+  "highest_id": 2245,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9616,6 +9616,13 @@
       "path": "tasks/running/2244",
       "status": "running",
       "title": "SKILL.md Step 6: state the bg-Bash timeout floor for free-SLURM-lane launches (420s park budget vs 120s Bash default)"
+    },
+    "2245": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2245",
+      "status": "proposed",
+      "title": "shared_fold_map.json on main is a 1,761-conv SMOKE map, not the 26,889-conv production map \u2014 guard the load"
     },
     "225": {
       "has_clean_result": true,
