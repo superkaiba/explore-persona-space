@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2246,
+  "highest_id": 2247,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9630,6 +9630,13 @@
       "path": "tasks/proposed/2246",
       "status": "proposed",
       "title": "Step 10d merge window runs on a reap-eligible worktree; a mid-gate reap makes the pre-push lint gate certify pass vacuously"
+    },
+    "2247": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2247",
+      "status": "proposed",
+      "title": "Causal content-specificity of the context\u2192answer map: token-matched fine-tuning roster (personas vs false fact vs single token vs formatting vs high-level behavior)"
     },
     "225": {
       "has_clean_result": true,
