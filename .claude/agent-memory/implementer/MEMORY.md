@@ -56,3 +56,4 @@
 - [SKILL.md edit companion duties](reference_skillmd_edit_companion_duties.md) — sweep sibling prose-pin tests for removed strings FIRST; re-check the SKILL_DOC_SIZE_GRANDFATHER ratchet (same-round landing-bytes cap raise, #2240)
 - [VM subreaper orphan reparent](reference_vm_subreaper_orphan_reparent.md) — setsid orphans reparent to systemd --user (subreaper), not PID 1; ppid==1 asserts fail environmentally — check /proc/<ppid>/comm before chasing a diff regression
 - [Clause-5 blob provenance](reference_git_blob_provenance_clause5.md) — find-object lists un-detected renames (min() wins, not invisibility); pathspec-bound the walk (24s→8s); %cI + marker ts are second-resolution — force committer dates in ordering tests
+- [Section-reference span pointer check](reference_section_reference_span_pointer_check.md) — a new H2 span in *-section-reference.md needs a one-line `§ <exact heading>` pointer in the owning spec (#850/#1159 lint); abbreviated pointers FAIL (#2120)
