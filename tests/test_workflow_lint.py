@@ -9745,3 +9745,72 @@ def test_snapshot_download_allow_patterns_bundled_in_no_flags():
     assert "or args.check_snapshot_download_allow_patterns" in src, (
         "--check-snapshot-download-allow-patterns is missing from the no_flags detection tuple"
     )
+
+
+def test_check_two_tier_yield_floor_bundled_in_no_flags(tmp_path):
+    """(#2242) Two-part behavioral bundling pin (the house
+    ``bundled_in_no_flags`` precedent shape; D9-bis).
+
+    Part A — scoped-flag subprocess against a DRIFTED corpus (an empty tree:
+    all four pinned surfaces missing), rooted via
+    ``EPS_WORKFLOW_LINT_REPO_ROOT``: proves the flag exists, the dispatch
+    calls the function, and it emits its #2242-tagged errors (nonzero exit).
+
+    Part B — no-flags OR-chain + dispatch-ladder evidence: ``main()``'s
+    source names ``args.check_two_tier_yield_floor`` in BOTH the
+    ``no_flags = not (...)`` OR-chain and the ``or no_flags`` dispatch
+    ladder — the pin that keeps the bundling true across a later dispatch
+    refactor (a no-flags SUBPROCESS run is deliberately avoided here: the
+    bare default run is multi-minute and already end-to-end-covered by
+    ``test_no_flags_default_run_pins_failure_lesson_field_contract``).
+    """
+    # Part A — scoped-flag subprocess against a drifted (empty) corpus.
+    (tmp_path / ".claude").mkdir()
+    workflow_yaml_dst = tmp_path / ".claude" / "workflow.yaml"
+    workflow_yaml_dst.write_bytes((_REPO_ROOT / ".claude" / "workflow.yaml").read_bytes())
+    env = {**os.environ, "EPS_WORKFLOW_LINT_REPO_ROOT": str(tmp_path)}
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(_LINT),
+            "--check-two-tier-yield-floor",
+            "--file",
+            str(workflow_yaml_dst),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        env=env,
+    )
+    combined = result.stdout + result.stderr
+    assert "#2242" in combined, (
+        "#2242 error token missing from output — the CLI flag does not "
+        f"dispatch the check. exit={result.returncode}, output:\n{combined}"
+    )
+    assert result.returncode != 0, (
+        f"expected nonzero exit under the drifted corpus; got exit="
+        f"{result.returncode}, output:\n{combined}"
+    )
+
+    # Part B — OR-chain + dispatch-ladder evidence.
+    src = _LINT.read_text(encoding="utf-8")
+    main_start = src.find("def main(")
+    assert main_start >= 0, "could not locate def main( in workflow_lint.py"
+    main_src = src[main_start:]
+    or_chain_start = main_src.find("no_flags = not (")
+    assert or_chain_start >= 0, "no_flags OR-chain not found in main()"
+    or_chain_src = main_src[or_chain_start : main_src.find(")", or_chain_start)]
+    assert "args.check_two_tier_yield_floor" in or_chain_src, (
+        "args.check_two_tier_yield_floor is NOT in the no_flags OR-chain — a "
+        "bare workflow_lint.py invocation will not fire this check. "
+        f"OR-chain source:\n{or_chain_src}"
+    )
+    assert re.search(
+        r"if args\.check_two_tier_yield_floor or no_flags:\s*\n"
+        r"\s*errors\.extend\(check_two_tier_yield_floor\(\)\)",
+        main_src,
+    ), (
+        "args.check_two_tier_yield_floor is NOT dispatched under `or "
+        "no_flags` — the flag is defined but not bundled into the no-flags "
+        "default run."
+    )

@@ -12300,6 +12300,218 @@ def check_smoke_blind_spot_review_lens(  # noqa: C901 -- flat per-surface token 
     return errors
 
 
+def check_two_tier_yield_floor(  # noqa: C901 -- flat per-surface token ladder (four pinned surfaces, #2242), mirroring check_smoke_blind_spot_review_lens
+    *, repo_root: Path | None = None
+) -> list[str]:
+    """FAIL if the two-tier yield-floor contract (#2242; incident #2221) is
+    absent from ANY of its four surfaces.
+
+    Task #2221 equalized-down to 1 row/cell (the relative 80% floor is a
+    FRACTION of target, so ``min(non-empty cells)`` can legally land at 1),
+    computed a ``below_floor: true`` flag consumed by nothing, and trained /
+    captured / judged structurally-untrained non-conditions. The fix (#2242)
+    is an ABSOLUTE per-cell trainability floor (optimizer-step denominated,
+    DROP disposition) beside the relative shrink floor. This check pins the
+    contract across its surfaces, region-anchored, so a future refactor
+    cannot silently strip one (the #606 copy-list-omission class):
+
+    (s1) on-policy-completions.md — the ``Absolute per-cell trainability
+         floor`` bullet names ``assert_cell_trainable``, ``DROP``,
+         ``denominator``, ``## Takeaways``, and ``smoke-blind-spots.md``;
+    (s2) planner-section-reference.md — the ``No all-or-nothing eligibility
+         gates`` bullet names ``Two-tier``, ``trainability floor``, ``DROP``,
+         AND its trailing ``write "N/A"`` escape SENTENCE stays
+         machinery-keyed (``shrink`` + ``equalize-down`` INSIDE the
+         sentence — the round-2 MUST-FIX: a gate-keyed escape lets a
+         shrink-only design self-exempt);
+    (s3) critic-lens-reference.md — the ``Degenerate eligibility gates``
+         item names ``trainability floor``, ``#2221``, ``DROP``, AND the
+         ``Not a REVISE when`` escape span stays machinery-keyed
+         (``shrink`` + ``equalize-down`` inside the span);
+    (s4) planner.md — the §4 hard-requirement capsule token ``two-tier
+         yield floors``.
+
+    Region bounds: s2 is bounded at the NEXT ``- **`` bullet (the adjacent
+    Equalize-down bullet ends with the byte-identical ``write "N/A" and move
+    on.`` phrase, so a char-window would capture the sibling's escape); s3 is
+    bounded at the next top-level numbered item. Token matching is
+    substring-based on the whitespace-normalized region (``DROP`` is
+    satisfied by ``DROPPED``). ``repo_root`` is a unit-test override hook;
+    production callers pass None (behavioral subprocess tests may point the
+    check at a tmp corpus via ``EPS_WORKFLOW_LINT_REPO_ROOT``). Bundled into
+    the no-flags default run.
+    """
+    if repo_root is not None:
+        root = repo_root
+    else:
+        env_root = os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    errors: list[str] = []
+
+    def _norm(s: str) -> str:
+        return " ".join(s.split())
+
+    # (s1) on-policy-completions.md: the absolute-floor bullet.
+    onpol = root / ".claude" / "rules" / "on-policy-completions.md"
+    s1_anchor = "Absolute per-cell trainability floor"
+    if not onpol.is_file():
+        errors.append(
+            f"{onpol}: missing — the #2242 absolute per-cell trainability "
+            f"floor bullet must live in on-policy-completions.md."
+        )
+    else:
+        text = onpol.read_text(encoding="utf-8")
+        idx = text.find(s1_anchor)
+        if idx == -1:
+            errors.append(
+                f"{onpol}: missing the '{s1_anchor}' bullet (#2242) — the "
+                f"canonical absolute-floor rule text was stripped (incident "
+                f"#2221: equalize-down legally landed at 1 row/cell and the "
+                f"below-floor flag was consumed by nothing)."
+            )
+        else:
+            nxt = text.find("\n  - **", idx)
+            if nxt == -1:
+                nxt = text.find("\n- **", idx)
+            region = _norm(text[idx:nxt] if nxt != -1 else text[idx:])
+            for token in (
+                "assert_cell_trainable",
+                "DROP",
+                "denominator",
+                "## Takeaways",
+                "smoke-blind-spots.md",
+            ):
+                if token not in region:
+                    errors.append(
+                        f"{onpol}: the '{s1_anchor}' bullet no longer names "
+                        f"{token!r} (#2242) — the DROP disposition, the "
+                        f"denominator revision, and the smoke-demotion "
+                        f"enumeration duty must stay in the canonical rule "
+                        f"text."
+                    )
+
+    # (s2) planner-section-reference.md: the two-tier clause + the
+    # machinery-keyed authoring escape SENTENCE.
+    psr = root / ".claude" / "rules" / "planner-section-reference.md"
+    s2_anchor = "No all-or-nothing eligibility gates"
+    if not psr.is_file():
+        errors.append(
+            f"{psr}: missing — the #2242 two-tier yield-floor planner "
+            f"requirement must live in planner-section-reference.md."
+        )
+    else:
+        text = psr.read_text(encoding="utf-8")
+        idx = text.find(s2_anchor)
+        if idx == -1:
+            errors.append(
+                f"{psr}: missing the '{s2_anchor}' bullet (#2242) — the §4 "
+                f"yield-row requirement was stripped."
+            )
+        else:
+            # t1: bound at the NEXT '- **' bullet, never a char-window — the
+            # adjacent Equalize-down bullet ends with the byte-identical
+            # 'write "N/A" and move on.' phrase.
+            nxt = text.find("\n- **", idx)
+            region_raw = text[idx:nxt] if nxt != -1 else text[idx:]
+            region = _norm(region_raw)
+            for token in ("Two-tier", "trainability floor", "DROP"):
+                if token not in region:
+                    errors.append(
+                        f"{psr}: the '{s2_anchor}' bullet no longer names "
+                        f"{token!r} (#2242) — the two-tier yield-floor "
+                        f"requirement was stripped from the planner surface."
+                    )
+            # t2: the escape-sentence sub-pin — machinery tokens INSIDE the
+            # escape SENTENCE (region-scoped would be vacuous: post-#2242 the
+            # region names equalize-down in several places).
+            esc_idx = region_raw.find('write "N/A"')
+            if esc_idx == -1:
+                errors.append(
+                    f"{psr}: the '{s2_anchor}' bullet lost its 'write \"N/A\"' "
+                    f"escape sentence (#2242) — the authoring escape must "
+                    f"exist and stay machinery-keyed."
+                )
+            else:
+                start = region_raw.rfind(". ", 0, esc_idx)
+                start = 0 if start == -1 else start + 2
+                end = region_raw.find(".", esc_idx)
+                sentence = _norm(region_raw[start : end + 1] if end != -1 else region_raw[start:])
+                for token in ("shrink", "equalize-down"):
+                    if token not in sentence:
+                        errors.append(
+                            f"{psr}: the '{s2_anchor}' escape sentence no "
+                            f"longer names {token!r} (#2242 round-2 MUST-FIX) "
+                            f"— a gate-keyed escape lets a shrink-only / "
+                            f"never-drop design truthfully self-exempt "
+                            f"(exactly #2221's shape)."
+                        )
+
+    # (s3) critic-lens-reference.md: the two-direction item + the
+    # machinery-keyed acceptance escape span.
+    clr = root / ".claude" / "rules" / "critic-lens-reference.md"
+    s3_anchor = "Degenerate eligibility gates"
+    if not clr.is_file():
+        errors.append(
+            f"{clr}: missing — the #2242 two-direction yield-gate lens must "
+            f"live in critic-lens-reference.md."
+        )
+    else:
+        text = clr.read_text(encoding="utf-8")
+        idx = text.find(s3_anchor)
+        if idx == -1:
+            errors.append(
+                f"{clr}: missing the '{s3_anchor}' item heading (#2242) — "
+                f"the Statistics-lens item 9 two-tier contract was stripped."
+            )
+        else:
+            m = re.search(r"\n\d{1,3}\. \*\*", text[idx:])
+            region_raw = text[idx : idx + m.start()] if m else text[idx:]
+            region = _norm(region_raw)
+            for token in ("trainability floor", "#2221", "DROP"):
+                if token not in region:
+                    errors.append(
+                        f"{clr}: the '{s3_anchor}' item no longer names "
+                        f"{token!r} (#2242) — direction (b) (unbounded shrink "
+                        f"with no absolute trainability floor) was stripped "
+                        f"from the review surface."
+                    )
+            esc_idx = region_raw.find("Not a REVISE when")
+            if esc_idx == -1:
+                errors.append(
+                    f"{clr}: the '{s3_anchor}' item lost its 'Not a REVISE "
+                    f"when' escape span (#2242) — the acceptance escape must "
+                    f"exist and stay machinery-keyed."
+                )
+            else:
+                span = _norm(region_raw[esc_idx:])
+                for token in ("shrink", "equalize-down"):
+                    if token not in span:
+                        errors.append(
+                            f"{clr}: the '{s3_anchor}' escape span no longer "
+                            f"names {token!r} (#2242 MUST-FIX) — a gate-keyed "
+                            f"escape lets a shrink-only design self-exempt "
+                            f"from direction (b)."
+                        )
+
+    # (s4) planner.md: the §4 hard-requirement capsule token.
+    planner = root / ".claude" / "agents" / "planner.md"
+    if not planner.is_file():
+        errors.append(
+            f"{planner}: missing — the #2242 two-tier yield-floor capsule "
+            f"token must live in planner.md."
+        )
+    else:
+        text = _norm(planner.read_text(encoding="utf-8"))
+        if "two-tier yield floors" not in text:
+            errors.append(
+                f"{planner}: the §4 hard-requirement capsule no longer names "
+                f"'two-tier yield floors' (#2242) — the planner's always-on "
+                f"roster would drop the requirement (the #606 silent-strip "
+                f"class)."
+            )
+    return errors
+
+
 def check_cvd_scoped_gpu_verdict_lens(  # noqa: C901 -- flat per-surface token ladder (five pinned surfaces, #2120), mirroring check_smoke_blind_spot_review_lens
     *, repo_root: Path | None = None
 ) -> list[str]:
@@ -16447,6 +16659,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_smoke_architecture_review_lens": lambda wf: check_smoke_architecture_review_lens(),
     "check_authorized_stub_wiring": lambda wf: check_authorized_stub_wiring(),
     "check_smoke_blind_spot_review_lens": lambda wf: check_smoke_blind_spot_review_lens(),
+    "check_two_tier_yield_floor": lambda wf: check_two_tier_yield_floor(),
     "check_cvd_scoped_gpu_verdict_lens": lambda wf: check_cvd_scoped_gpu_verdict_lens(),
     "check_stale_label_disposition": lambda wf: check_stale_label_disposition_clause(),
     "check_smoke_output_hygiene": lambda wf: check_smoke_output_hygiene(),
@@ -16555,6 +16768,7 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_hollow_verification_gate_review_lens": CheckScope("global", (".claude/agents/",)),
     "check_smoke_architecture_review_lens": CheckScope("global", (".claude/",)),
     "check_smoke_blind_spot_review_lens": CheckScope("global", (".claude/",)),
+    "check_two_tier_yield_floor": CheckScope("global", (".claude/",)),
     "check_cvd_scoped_gpu_verdict_lens": CheckScope("global", (".claude/",)),
     "check_stale_label_disposition": CheckScope("global", (".claude/skills/",)),
     "check_smoke_output_hygiene": CheckScope("global", (".claude/",)),
@@ -17274,6 +17488,22 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "structurally bypassed). Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-two-tier-yield-floor",
+        action="store_true",
+        help="FAIL if the #2242 two-tier yield-floor contract (relative "
+        "shrink floor + absolute per-cell trainability floor with the DROP "
+        "disposition) is absent from any of its four surfaces: the "
+        "on-policy-completions.md absolute-floor bullet (incl. the "
+        "assert_cell_trainable mechanics + smoke-demotion enumeration duty), "
+        "the planner-section-reference.md § 4 two-tier clause + "
+        "machinery-keyed escape sentence, the critic-lens-reference.md "
+        "Statistics item 9(i) two-direction contract + machinery-keyed "
+        "escape span, and the planner.md capsule token (incident #2221: "
+        "equalize-down legally landed at 1 row/cell and the below-floor "
+        "flag was consumed by nothing). Bundled into the no-flags default "
+        "run.",
+    )
+    parser.add_argument(
         "--check-cvd-scoped-gpu-verdict-lens",
         action="store_true",
         help="FAIL if the #2120 own-device-scoped GPU-state verdict lens or "
@@ -17875,6 +18105,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_smoke_architecture_review_lens
         or args.check_authorized_stub_wiring
         or args.check_smoke_blind_spot_review_lens
+        or args.check_two_tier_yield_floor
         or args.check_cvd_scoped_gpu_verdict_lens
         or args.check_smoke_blind_spots
         or args.check_stale_label_disposition
@@ -18034,6 +18265,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_authorized_stub_wiring())
     if args.check_smoke_blind_spot_review_lens or no_flags:
         errors.extend(check_smoke_blind_spot_review_lens())
+    if args.check_two_tier_yield_floor or no_flags:
+        errors.extend(check_two_tier_yield_floor())
     if args.check_cvd_scoped_gpu_verdict_lens or no_flags:
         errors.extend(check_cvd_scoped_gpu_verdict_lens())
     if args.check_smoke_blind_spots:

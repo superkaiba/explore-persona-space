@@ -877,14 +877,26 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    plan's §6 "N/A — no cross-condition leakage comparison" satisfies this item).
 9. **Degenerate eligibility gates, unequal per-unit N, missing baseline propensity (four related
    design-lesson checks).** REVISE only when conclusion-changing per The Bar; otherwise list under
-   Concerns. (i) **All-or-nothing eligibility gate on a continuous quantity:** a pre-registered rule
-   gates a unit's inclusion on a continuous quantity (rows filled, judge-filter yield, cells
-   surviving a data gate) as a binary keep/drop at the target value with no graceful-degradation
-   floor — a near-miss then discards the unit wholesale (#612: a "fill all 200 rows or drop" rule
-   discarded one source at 194/200 — 97% fill, 6 missing rows — and another at 169/200, together
-   halving the design's coverage; the 80%-floor + equalize-down default is in
-   `.claude/rules/on-policy-completions.md`, the general rule in planner.md §4 "No all-or-nothing
-   eligibility gates"). (ii) **Unequal per-unit N across compared conditions/units:** the headline
+   Concerns. (i) **Degenerate yield gate on a continuous quantity — two-tier contract; BOTH
+   directions flagged.** Direction (a), all-or-nothing at the TARGET (the existing check,
+   unchanged): a rule gating inclusion as binary keep/drop at the target value with no
+   graceful-degradation floor discards near-misses wholesale (#612: "fill all 200 rows or drop"
+   discarded a source at 194/200 — 97% fill — and another at 169/200, halving coverage; the
+   80%-relative-floor + equalize-down default is in `.claude/rules/on-policy-completions.md`, the
+   general rule in planner.md §4). Direction (b), NEW: an unbounded shrink — "shrink + report,
+   never abort" with no ABSOLUTE per-cell trainability floor — lets equalize-down legally land at
+   1 row, training a structurally-untrained non-condition and confounding the headline with
+   per-cell N (#2221: evil equalized to 1 row/cell, was fine-tuned, captured, and judged; 6/24
+   cells effectively untrained, "which cells acquired the trait" became a proxy for family size,
+   plus wasted judge spend). The two tiers reconcile, not compete: a shortfall that still CLEARS
+   the relative TARGET floor is KEPT / equalized-down (the #612 graceful path; below the relative
+   floor the drop + close-miss-escalation semantics of on-policy-completions.md are unchanged); a
+   miss of the absolute TRAINABILITY floor (default: rows sustaining >= 12 optimizer steps at the
+   registered recipe — on-policy-completions.md § Absolute per-cell trainability floor) is DROPPED
+   with the denominator revised everywhere and the drop named in `## Takeaways` — below that floor
+   the cell is structurally not a condition, so dropping it is the graceful path and keeping it is
+   the defect. A plan whose yield row states only one tier is flagged under whichever direction it
+   omits. (ii) **Unequal per-unit N across compared conditions/units:** the headline
    compares conditions/units whose per-unit N (training rows, samples) legitimately varies, with
    neither equalize-down (all units at the same floor-N) nor an explicit dose control — variable N
    is a dose confound and dose/schedule length is the demonstrated dominant lever (#601), so the
@@ -906,7 +918,8 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    alone, require a runtime degeneracy guard (assert the observed magnitude ≫ machine epsilon
    relative to the null scale). REVISE when the statistic is constant by construction — always
    conclusion-changing (the comparison can only ever fail to reject). Not a REVISE when:
-   the design has no continuous-quantity eligibility gate (i), per-unit N is equal by construction
+   the design has no per-cell yield machinery at all — neither a keep/drop eligibility gate NOR a
+   shrink / equalize-down rule (i), per-unit N is equal by construction
    or the headline makes no cross-unit comparison (ii), or the Goal is not an
    implantation/elicitation design (iii), or the plan registers no observed-vs-null comparison
    (iv) — the plan's §4 "N/A" lines satisfy the respective checks.

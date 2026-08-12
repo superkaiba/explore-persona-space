@@ -351,6 +351,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # `### Cross-session pivot — resolve the owner before provisioning (#2067)`
     # prose pin: H3 header + pivoter-duty sentence + UNKNOWN-treat-as-LIVE token.
     "tests/test_workflow_lint_failover_pivot_pin.py",
+    # NEW (#2242) — workflow_lint --check-two-tier-yield-floor (relative shrink
+    # + absolute per-cell trainability floor, four pinned surfaces incl. the
+    # two machinery-keyed N/A escapes; incident #2221).
+    "tests/test_workflow_lint_two_tier_yield_floor.py",
     "tests/test_workflow_yaml.py",
     "tests/test_workflow_fix_dedup.py",
     # NEW (#1735) — rule reconciliation pin: workflow-fix-on-bug.md §
@@ -397,6 +401,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_daily_stub_first_doc.py",
     # NEW (#1645) — /daily SKILL.md three-route classifier prose pin (#706)
     "tests/test_daily_three_route_classifier_doc.py",
+    # NEW (#2242) — absolute per-cell trainability floor: datagen shared gate
+    # (assert_cell_trainable / min_rows_absolute entry assert) + the
+    # issue778_finetune mechanical arm (incident #2221: 1-row cells trained).
+    "tests/test_datagen_trainability_floor.py",
     # NEW (#1699) — implementer spec pin: mechanical --map-files pin-sweep hit list
     "tests/test_implementer_spec_mechanical_pin_sweep.py",
     # NEW (#1699) — implementer spec pin: repo-wide invariants in local union on

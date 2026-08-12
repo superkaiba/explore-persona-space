@@ -1,5 +1,5 @@
 ---
-description: On-policy-first positive completions for behavior implantation (elicitation ladder, 80% yield floor, standardized multi-behavior definitions)
+description: On-policy-first positive completions for behavior implantation (elicitation ladder, 80% relative yield floor + absolute per-cell trainability floor, standardized multi-behavior definitions)
 paths:
   - "src/explore_persona_space/train/**"
   - "scripts/generate_*.py"
@@ -115,6 +115,43 @@ Mechanics that ride along, all of them load-bearing:
     demonstrated dominant lever (#601). Prefer the same-question/claim
     subset across sources where filled rows allow; else a random floor-N
     sample, with the coverage difference documented.
+  - **Absolute per-cell trainability floor (distinct from the relative
+    80% floor — equalize-down is bounded BELOW; #2221/#2242).** Every
+    floor above is a FRACTION of the target, so equalize-down to
+    `min(non-empty cells)` can legally land at 1 row (#2221: evil
+    trained on 1 row/cell, flagged `below_floor: true`, consumed by
+    nothing). The absolute floor is denominated in **optimizer steps**:
+    `min_rows = ceil(min_optimizer_steps x effective_batch_size /
+    epochs)`, default `min_optimizer_steps = 12` — the narrowest
+    observed install transition is ~12 steps wide, onset ~step 18-30
+    (#533/#547) — a NECESSARY, not sufficient, condition. Disposition =
+    **DROP**: the below-floor cell does not train and is excluded from
+    capture/judge/correlations (no judge spend on a non-condition), the
+    design's **denominator is revised everywhere**, and the drop is
+    **named in `## Takeaways`** (After-Every-Experiment item 8). **Joint
+    satisfiability is checked at plan time** — the yield row verifies
+    `floor-N >= the absolute floor at the registered recipe` (at
+    house-typical values — target 200, effective batch 16, 1 epoch —
+    the absolute floor is 192 > floor-N 160, so the default-on-default
+    design is unsatisfiable as registered), else the plan names the
+    resolution up front (raise target, add epochs, shrink effective
+    batch, or the override). Mechanics:
+    `explore_persona_space.artifacts.datagen.assert_cell_trainable(...)`
+    called at the row-counting site BEFORE any GPU/judge spend (the
+    mix-BUILD-time placement, `marker-training-recipe.md` § Training-row
+    token budget) + `generate_training_data(min_rows_absolute=...)`. A
+    plan may override the default (up or down) with a stated argument
+    carrying a §11 `Source:` line; the override + reason are recorded in
+    the mix report — never silent. Behavior-specific install evidence
+    supersedes the default UPWARD (e.g. #2221's realized cells: no
+    content-trait install below ~96 optimizer steps at lr 1e-5 /
+    1 epoch). Smoke legs demote the verdict to informational via
+    `assert_cell_trainable(..., on_fail="warn")` per the gotchas.md
+    GATE-CALIBRATION parity rule — and a plan whose smoke leg uses the
+    demotion MUST enumerate it as a smoke blind spot per
+    `.claude/rules/smoke-blind-spots.md` (a sanctioned downgrade is
+    still a blind spot; critic lens item 19 + code-reviewer Step 0.71
+    are the binding arms).
   - **Scale contrastive negatives proportionally to floor-N** so the
     load-bearing ~1:1 positives-to-total-negatives ratio
     (`.claude/rules/contrastive-negatives.md`) survives the

@@ -41,7 +41,7 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - marker-leakage-measurement.md — a plan/code MEASURES marker leakage (on-policy, marker-at-end, three-space DV).
 - marker-training-recipe.md — a plan TRAINS a fresh marker/implant adapter (lr≤5e-6, marker-only loss, band-stop).
 - methodology-writer-section-reference.md — the methodology-writer authors a mode body (markdown doc template, PAPER-TASK, or REPORT mode; pointer-loaded).
-- on-policy-completions.md — you build implantation training data (on-policy positives; 80% yield floor; multi-behavior datagen ⇒ standardized behavior definitions).
+- on-policy-completions.md — you build implantation training data (on-policy positives; 80% relative + absolute trainability floors, DROP below; behavior definitions).
 - ood-generalization-folds.md — a held-out predictive DV (R²/ρ) over grouped samples (GROUP-level fold — LOFO/transfer, not pointwise LOO).
 - persona-distance-metrics.md — you write base-model persona-distance predictor code (canonical KL/JS/cosine defs).
 - persona-vectors-recipe.md — a plan elects persona vectors / a mean-difference contrastive direction (arXiv 2507.21509 EXCEPT logit scoring).
