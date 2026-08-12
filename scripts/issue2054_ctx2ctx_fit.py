@@ -617,6 +617,34 @@ def run_unit(
                 jj = jp["join"]
                 y_tr = jp["tgt_act"][vec_key][jj["tgt_rows"][jp["tr"]]].astype(np.float64)
                 y_ev = jp["tgt_act"][vec_key][jj["tgt_rows"][jp["te"]]].astype(np.float64)
+                # Constant-target degeneracy. A CHAT-form cell's prefix vector is the
+                # chat-template header — byte-identical on every row — so v_P has zero
+                # variance and R^2 is undefined against it. That is a real property of
+                # the render, not corruption: SKIP the fold with a flag rather than
+                # crash the whole run (null_r2 raises on it). Same class as the
+                # degenerate_identical_xy flag below, on the Y side instead of X.
+                y_ss_ev = float(((y_ev - y_ev.mean(0)) ** 2).sum())
+                x_ss_ev = float(((x_ev_raw - x_ev_raw.mean(0)) ** 2).sum())
+                if y_ss_ev < 1e-18 or x_ss_ev < 1e-18:
+                    pair_records[jp["tgt"].key]["folds"].append(
+                        {
+                            "fold": fold_i,
+                            "n_train": int(n_train),
+                            "n_test": int(len(jp["te"])),
+                            "degenerate_constant_y": bool(y_ss_ev < 1e-18),
+                            "degenerate_constant_x": bool(x_ss_ev < 1e-18),
+                            "y_ss_eval": y_ss_ev,
+                            "x_ss_eval": x_ss_ev,
+                            "skipped": "constant-vector fold — R^2 undefined",
+                        }
+                    )
+                    unit_i += 1
+                    _log(
+                        f"[ctx2ctx] fit {unit_i}/{n_units_total} {src.key} -> "
+                        f"{jp['tgt'].key} arm={arm} fold={fold_i} SKIPPED "
+                        f"(constant {'Y' if y_ss_ev < 1e-18 else 'X'}; R^2 undefined)"
+                    )
+                    continue
                 preds, info = core.fit_predict(y_tr)
                 fitted = reconstruction_metrics(preds, y_ev)
                 id_preds = identity_bias_predict(x_tr_raw, y_tr, x_ev_raw)
@@ -663,7 +691,19 @@ def run_unit(
                 )
 
     for rec in pair_records.values():
-        folds = rec["folds"]
+        all_folds = rec["folds"]
+        # Constant-vector folds carry no fitted/null block (see the skip above);
+        # exclude them from every numeric pooling and report the count.
+        folds = [f for f in all_folds if not f.get("skipped")]
+        rec["n_folds_skipped_degenerate"] = len(all_folds) - len(folds)
+        if not folds:
+            rec["pooled"] = None
+            rec["verdict"] = (
+                "DEGENERATE — every fold has a constant source or target vector "
+                "(chat-form prefix renders are identical across rows); R^2 is "
+                "undefined here, this is not a mapping result"
+            )
+            continue
         fitted_r2 = float(np.mean([f["fitted"]["r2"] for f in folds]))
         id_r2 = float(np.mean([f["identity_bias"]["r2"] for f in folds]))
         rec["pooled"] = {
