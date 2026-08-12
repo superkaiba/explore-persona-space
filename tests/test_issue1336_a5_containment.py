@@ -381,8 +381,28 @@ def test_quarantine_endpoints_forced_to_train():
 
 
 def test_quarantine_pairs_never_straddle():
-    """No cross-corpus near-dup pair straddles the train/test boundary."""
-    corpus_names, slices, labels_by_corpus, pairs, res = _two_corpus_case(110)
+    """Plan §4 item 4 profile — a TRANSITIVE chain a_t - b_t - c_t spanning
+    THREE corpora (edges A-B and B-C share the B endpoint; NO direct A-C
+    edge): no edge straddles the train/test boundary, and the IMPLIED
+    transitive A-C pair cannot straddle either — every chain member is
+    quarantined-train, so transitivity is contained at row grain without
+    the cluster union."""
+    comp = {
+        "corpA": {g: 50 for g in range(20)},
+        "corpB": {g: 50 for g in range(20)},
+        "corpC": {g: 50 for g in range(20)},
+    }
+    corpus_names, slices, labels_by_corpus = _build(comp)
+    s0a, s0b, s0c = slices["corpA"][0], slices["corpB"][0], slices["corpC"][0]
+    n_chains = 60
+    pairs = np.array(
+        [[s0a + t, s0b + t] for t in range(n_chains)]
+        + [[s0b + t, s0c + t] for t in range(n_chains)],
+        dtype=np.int64,
+    )
+    res = ps._assign_given_labels(
+        corpus_names, slices, labels_by_corpus, pairs, ps.POOLED_SPLIT_SEED
+    )
     row_index = _row_arm_index(corpus_names, slices, labels_by_corpus, res)
     # The packing genuinely uses both arms (a vacuous all-train assignment
     # would trivially satisfy the invariant).
@@ -390,6 +410,17 @@ def test_quarantine_pairs_never_straddle():
     for i, j in pairs:
         arms = {row_index[int(i)]["arm"], row_index[int(j)]["arm"]}
         assert arms == {"train"}, (int(i), int(j), arms)
+    # Transitive guarantee: the implied A-C pair (no direct edge) is
+    # train-train at every hop of the chain.
+    for t in range(n_chains):
+        assert row_index[s0a + t]["arm"] == "train"
+        assert row_index[s0c + t]["arm"] == "train"
+    # The cluster diagnostic sees the chain merge span all three corpora...
+    assert res["components"]
+    assert len(res["components"][0]["rows_by_corpus"]) == 3
+    # ...while quarantine stays row-bounded (60/1000 per corpus).
+    for m in res["per_corpus_quarantine"].values():
+        assert m["frac"] == pytest.approx(0.06)
 
 
 # ---------------------------------------------------------------------------
@@ -534,6 +565,30 @@ def test_a5_witness_fires_on_divergent_edge_count():
         with pytest.raises(SystemExit, match=r"near_dup_scan_regression") as ei:
             ps.check_a5w_scan_witness(n)
         assert "NOT a data change" in str(ei.value)
+
+
+def test_a5_witness_production_branch_executes(tmp_path):
+    """EXECUTION pin for the witness branch polarity (not string presence):
+    the SAME zero-edge inputs HALT [near_dup_scan_regression] through
+    build_split_assignment(smoke=False) — proving the production branch
+    actually runs the witness — and complete under smoke=True with the
+    skip recorded in the audit."""
+    rng = np.random.default_rng(11)
+    n_per, dim = 300, 64
+    vecs = rng.standard_normal((2 * n_per, dim)).astype(np.float32)  # no near-dups: 0 edges
+    ordered_rows = [{"corpus": "corpA", "prompt_idx": i} for i in range(n_per)] + [
+        {"corpus": "corpB", "prompt_idx": i} for i in range(n_per)
+    ]
+    with pytest.raises(SystemExit, match=r"near_dup_scan_regression"):
+        ps.build_split_assignment(ordered_rows, vecs, tmp_path, smoke=False)
+    assignment = ps.build_split_assignment(ordered_rows, vecs, tmp_path, smoke=True)
+    witness = assignment["near_dup_audit"]["scan_regression_witness"]
+    assert witness == {
+        "n_edges_095": 0,
+        "pin": ps.NEAR_DUP_EDGE_COUNT_PIN,
+        "tol": ps.NEAR_DUP_EDGE_COUNT_TOL,
+        "verdict": "skipped-smoke",
+    }
 
 
 def test_a5_witness_silent_at_witnessed_239():

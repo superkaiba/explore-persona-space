@@ -1546,6 +1546,14 @@ def build_split_assignment(
     # Max-cross-corpus-cosine histogram (full mode only: a single-corpus
     # smoke slice has no other-corpus columns, sentinel -1.0 everywhere).
     # Computed BEFORE the witness so a witness HALT can dump the histogram.
+    # DTYPE-EXACTNESS (same-scan consistency): the n_ge_* tallies compare the
+    # RAW fp32 max_cross against the thresholds — the IDENTICAL comparison
+    # semantics as the scan's fp32 pair mask (`sims >= NEAR_DUP_COS`) — so
+    # `n_quarantined_rows == n_ge_threshold` holds by construction. Counting
+    # on the fp64-cast copy instead can disagree at exactly float32(0.95)
+    # (0.94999998807... passes the fp32 mask but not a fp64 `>= 0.95`),
+    # false-firing the consistency HALT on a healthy run. The histogram /
+    # percentile diagnostics keep the fp64 cast (report-only).
     if len(corpus_names) >= 2:
         mc = max_cross.astype(np.float64)
         counts, edges = np.histogram(mc, bins=np.linspace(-1.0, 1.0, 41))
@@ -1558,8 +1566,8 @@ def build_split_assignment(
                 "p50": float(np.quantile(mc, 0.50)),
                 "p90": float(np.quantile(mc, 0.90)),
                 "p99": float(np.quantile(mc, 0.99)),
-                "n_ge_sensitivity": int((mc >= NEAR_DUP_COS_SENSITIVITY).sum()),
-                "n_ge_threshold": int((mc >= NEAR_DUP_COS).sum()),
+                "n_ge_sensitivity": int((max_cross >= NEAR_DUP_COS_SENSITIVITY).sum()),
+                "n_ge_threshold": int((max_cross >= NEAR_DUP_COS).sum()),
             },
         }
     else:
