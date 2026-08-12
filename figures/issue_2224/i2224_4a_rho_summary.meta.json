@@ -1,191 +1,210 @@
 {
-  "commit": "e1944149",
-  "render_id": "a505c554707c42c1",
-  "git_commit": "e1944149",
-  "git_dirty": false,
-  "created": "2026-08-12T16:24:09Z",
+  "commit": "2012c00b+dirty",
+  "render_id": "d4ff95cb680849a9",
+  "git_commit": "2012c00b",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2162/persona_rubric_rescore/pilot/raw/cj-v3-address.json",
+    "eval_results/issue_2162/persona_rubric_rescore/pilot/run_meta.json",
+    "eval_results/issue_2162/persona_rubric_rescore/pilot/scores.jsonl",
+    "eval_results/issue_2162/persona_rubric_rescore/raw/cj-v3-address.json",
+    "eval_results/issue_2162/persona_rubric_rescore/raw/cj-v3-courtesy.json",
+    "eval_results/issue_2162/persona_rubric_rescore/raw/cj-v3-formality.json",
+    "eval_results/issue_2162/persona_rubric_rescore/raw/cj-v3-household.json",
+    "eval_results/issue_2162/persona_rubric_rescore/raw/hol-v1.json",
+    "eval_results/issue_2162/persona_rubric_rescore/raw/hol-v2.json",
+    "eval_results/issue_2162/persona_rubric_rescore/raw/hol-v3.json",
+    "eval_results/issue_2162/persona_rubric_rescore/run_meta.json",
+    "eval_results/issue_2162/persona_rubric_rescore/scores.jsonl",
+    "eval_results/issue_2162/persona_rubric_rescore/summary.json",
+    "figures/issue_1336/ladder_full_transfer_lattice.pdf",
+    "figures/issue_1336/ladder_full_transfer_lattice_by_dataset.pdf",
+    "figures/issue_1336/ladder_full_transfer_lattice_by_dataset.png",
+    "scripts/issue2162_persona_rubric_rescore.py"
+  ],
+  "created": "2026-08-12T17:32:49Z",
   "figsize": [
     12.600000000000001,
     3.6
   ],
   "points": [
     {
-      "category": "raw",
-      "Spearman ρ (whiskers: LOFO jackknife range)": -0.0183,
+      "category": "raw projection",
+      "Spearman \u03c1 (LOFO jackknife whiskers)": -0.0183,
       "error": 0.32145,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "exact_dp",
-      "Spearman ρ (whiskers: LOFO jackknife range)": 0.0265,
+      "category": "exact \u0394P (ground truth)",
+      "Spearman \u03c1 (LOFO jackknife whiskers)": 0.0265,
       "error": 0.14455,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "prompttoken_dp",
-      "Spearman ρ (whiskers: LOFO jackknife range)": -0.0278,
+      "category": "prompt-token \u0394P (paper)",
+      "Spearman \u03c1 (LOFO jackknife whiskers)": -0.0278,
       "error": 0.251,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "mapped_dp_context",
-      "Spearman ρ (whiskers: LOFO jackknife range)": 0.3131,
+      "category": "mapped \u0394P (context)",
+      "Spearman \u03c1 (LOFO jackknife whiskers)": 0.3131,
       "error": 0.278,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "mapped_dp_prefix",
-      "Spearman ρ (whiskers: LOFO jackknife range)": -0.0183,
+      "category": "mapped \u0394P (prefix)",
+      "Spearman \u03c1 (LOFO jackknife whiskers)": -0.0183,
       "error": 0.32145,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "probe_diff_context",
-      "Spearman ρ (whiskers: LOFO jackknife range)": 0.3536,
+      "category": "probe diff (context)",
+      "Spearman \u03c1 (LOFO jackknife whiskers)": 0.3536,
       "error": 0.21240000000000003,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "probe_diff_prefix",
-      "Spearman ρ (whiskers: LOFO jackknife range)": -0.1083,
+      "category": "probe diff (prefix)",
+      "Spearman \u03c1 (LOFO jackknife whiskers)": -0.1083,
       "error": 0.25034999999999996,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 0.0,
-      "Spearman ρ (whiskers: LOFO jackknife range)": -0.2403,
+      "Spearman \u03c1 (LOFO jackknife whiskers)": -0.2403,
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 1.0,
-      "Spearman ρ (whiskers: LOFO jackknife range)": -0.141,
+      "Spearman \u03c1 (LOFO jackknife whiskers)": -0.141,
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 2.0,
-      "Spearman ρ (whiskers: LOFO jackknife range)": -0.3189,
+      "Spearman \u03c1 (LOFO jackknife whiskers)": -0.3189,
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 3.0,
-      "Spearman ρ (whiskers: LOFO jackknife range)": 0.042899999999999994,
+      "Spearman \u03c1 (LOFO jackknife whiskers)": 0.042899999999999994,
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 4.0,
-      "Spearman ρ (whiskers: LOFO jackknife range)": -0.2403,
+      "Spearman \u03c1 (LOFO jackknife whiskers)": -0.2403,
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 5.0,
-      "Spearman ρ (whiskers: LOFO jackknife range)": 0.09289999999999998,
+      "Spearman \u03c1 (LOFO jackknife whiskers)": 0.09289999999999998,
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 6.0,
-      "Spearman ρ (whiskers: LOFO jackknife range)": -0.2319,
+      "Spearman \u03c1 (LOFO jackknife whiskers)": -0.2319,
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 0.0,
-      "Spearman ρ (whiskers: LOFO jackknife range)": 0.4026,
+      "Spearman \u03c1 (LOFO jackknife whiskers)": 0.4026,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 1.0,
-      "Spearman ρ (whiskers: LOFO jackknife range)": 0.1481,
+      "Spearman \u03c1 (LOFO jackknife whiskers)": 0.1481,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 2.0,
-      "Spearman ρ (whiskers: LOFO jackknife range)": 0.1831,
+      "Spearman \u03c1 (LOFO jackknife whiskers)": 0.1831,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 3.0,
-      "Spearman ρ (whiskers: LOFO jackknife range)": 0.5989,
+      "Spearman \u03c1 (LOFO jackknife whiskers)": 0.5989,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 4.0,
-      "Spearman ρ (whiskers: LOFO jackknife range)": 0.4026,
+      "Spearman \u03c1 (LOFO jackknife whiskers)": 0.4026,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 5.0,
-      "Spearman ρ (whiskers: LOFO jackknife range)": 0.5177,
+      "Spearman \u03c1 (LOFO jackknife whiskers)": 0.5177,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 6.0,
-      "Spearman ρ (whiskers: LOFO jackknife range)": 0.2688,
+      "Spearman \u03c1 (LOFO jackknife whiskers)": 0.2688,
       "_kind": "line",
       "_group": 2
     },
     {
-      "category": "raw",
+      "category": "raw projection",
       "y": 0.0304,
       "error": 0.1896,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "category": "exact_dp",
+      "category": "exact \u0394P (ground truth)",
       "y": 0.0661,
       "error": 0.1701,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "category": "prompttoken_dp",
+      "category": "prompt-token \u0394P (paper)",
       "y": -0.0852,
       "error": 0.20455,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "category": "mapped_dp_context",
+      "category": "mapped \u0394P (context)",
       "y": 0.4,
       "error": 0.11234999999999998,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "category": "mapped_dp_prefix",
+      "category": "mapped \u0394P (prefix)",
       "y": 0.0304,
       "error": 0.1896,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "category": "probe_diff_context",
+      "category": "probe diff (context)",
       "y": 0.2026,
       "error": 0.17855,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "category": "probe_diff_prefix",
+      "category": "probe diff (prefix)",
       "y": 0.387,
       "error": 0.22080000000000002,
       "_kind": "bar",
@@ -276,49 +295,49 @@
       "_group": 5
     },
     {
-      "category": "raw",
+      "category": "raw projection",
       "y": -0.2696,
       "error": 0.2078,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "category": "exact_dp",
+      "category": "exact \u0394P (ground truth)",
       "y": -0.0965,
       "error": 0.3123,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "category": "prompttoken_dp",
+      "category": "prompt-token \u0394P (paper)",
       "y": -0.3678,
       "error": 0.2312,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "category": "mapped_dp_context",
+      "category": "mapped \u0394P (context)",
       "y": -0.2583,
       "error": 0.2565,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "category": "mapped_dp_prefix",
+      "category": "mapped \u0394P (prefix)",
       "y": -0.2696,
       "error": 0.2078,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "category": "probe_diff_context",
+      "category": "probe diff (context)",
       "y": 0.4,
       "error": 0.21885,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "category": "probe_diff_prefix",
+      "category": "probe diff (prefix)",
       "y": 0.3383,
       "error": 0.0974,
       "_kind": "bar",
@@ -412,25 +431,25 @@
   "n_series": 9,
   "total_points": 63,
   "text": {
-    "suptitle": "4a dataset-level correlation by predictor arm",
+    "suptitle": "Dataset-level screening-score vs post-finetune trait-shift correlation, by predictor arm",
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "evil (n=24 ds, 8 fam)",
-        "ylabel": "Spearman ρ (whiskers: LOFO jackknife range)",
+        "title_left": "evil (n=24 datasets, 8 families)",
+        "ylabel": "Spearman \u03c1 (LOFO jackknife whiskers)",
         "xticklabels": [
-          "raw",
-          "exact_dp",
-          "prompttoken_dp",
-          "mapped_dp_context",
-          "mapped_dp_prefix",
-          "probe_diff_context",
-          "probe_diff_prefix"
+          "raw projection",
+          "exact \u0394P (ground truth)",
+          "prompt-token \u0394P (paper)",
+          "mapped \u0394P (context)",
+          "mapped \u0394P (prefix)",
+          "probe diff (context)",
+          "probe diff (prefix)"
         ],
         "yticklabels": [
-          "−0.6",
-          "−0.4",
-          "−0.2",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
           "0.0",
           "0.2",
           "0.4",
@@ -439,27 +458,27 @@
         ]
       },
       {
-        "title_left": "sycophancy (n=24 ds, 8 fam)",
+        "title_left": "sycophancy (n=24 datasets, 8 families)",
         "xticklabels": [
-          "raw",
-          "exact_dp",
-          "prompttoken_dp",
-          "mapped_dp_context",
-          "mapped_dp_prefix",
-          "probe_diff_context",
-          "probe_diff_prefix"
+          "raw projection",
+          "exact \u0394P (ground truth)",
+          "prompt-token \u0394P (paper)",
+          "mapped \u0394P (context)",
+          "mapped \u0394P (prefix)",
+          "probe diff (context)",
+          "probe diff (prefix)"
         ]
       },
       {
-        "title_left": "hallucination (n=24 ds, 8 fam)",
+        "title_left": "hallucination (n=24 datasets, 8 families)",
         "xticklabels": [
-          "raw",
-          "exact_dp",
-          "prompttoken_dp",
-          "mapped_dp_context",
-          "mapped_dp_prefix",
-          "probe_diff_context",
-          "probe_diff_prefix"
+          "raw projection",
+          "exact \u0394P (ground truth)",
+          "prompt-token \u0394P (paper)",
+          "mapped \u0394P (context)",
+          "mapped \u0394P (prefix)",
+          "probe diff (context)",
+          "probe diff (prefix)"
         ]
       }
     ]
@@ -467,22 +486,5 @@
   "formats_written": [
     "png",
     "pdf"
-  ],
-  "supervision_ledger": "map=trait-agnostic; persona vector=trait-description+judge-filter; probe=judge-labels",
-  "dv_note": "graded_mean is the headline DV (llm-judging graded-primary); rate_gt50 is the human-legible companion; screening scores are predictors, never the construct (plan §6)",
-  "provenance": {
-    "suite_scores": {
-      "path": "eval_results/issue_2224/suite_4a/suite_scores_flat.json",
-      "sha256": "495452eff880d91defc1911ca529503923f34b44f76384c43360e7a6f37a9084"
-    },
-    "families_json": {
-      "path": "eval_results/issue_2224/suite_4a/families.json",
-      "sha256": "26c08a32aa354138f751661d056566be3f608d8185023b8f10b4968cd8e8ec35"
-    },
-    "dataset_means": {
-      "source": "dataset_means_json",
-      "path": "eval_results/issue_2224/suite_4a/dataset_means.json",
-      "sha256": "08fcf4eddab7aaaab17523cecc052c4e8b89831d651793224a836ea9bca318c3"
-    }
-  }
+  ]
 }
