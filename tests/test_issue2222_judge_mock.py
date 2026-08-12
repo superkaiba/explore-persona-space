@@ -103,11 +103,16 @@ def _make_fake(mode: dict):
 
 def _fixture(tmp_path: Path):
     rubrics = {t: RUBRIC for t in lib.TRAITS}
-    items = [(jdg.item_id_for(ds, r), f"q{r}", f"a{r}") for ds in DATASETS for r in range(20)]
+    # 26 rows/dataset + pilot-draws 104: 2 version arms x 2 pilot draws ->
+    # per_arm_items = 104 // 4 = 26 -> 52 realized draws/arm, clearing the
+    # #2124 51-draw satisfiability floor at the 2% parse-fail threshold
+    # (the pre-#2124 20-row / 80-draw shape realized 40 draws/arm and would
+    # now be refused at config time).
+    items = [(jdg.item_id_for(ds, r), f"q{r}", f"a{r}") for ds in DATASETS for r in range(26)]
     pool = {
         "split_hash": "smoke-hash",
         "datasets": DATASETS,
-        "row_ids": {ds: list(range(20)) for ds in DATASETS},
+        "row_ids": {ds: list(range(26)) for ds in DATASETS},
         "n_total": len(items),
     }
     args = jdg.build_argparser().parse_args(
@@ -117,7 +122,7 @@ def _fixture(tmp_path: Path):
             "--out-root",
             str(tmp_path / "out"),
             "--pilot-draws",
-            "80",
+            "104",
             "--n-draws",
             "3",
             "--judge-max-tokens",
@@ -146,7 +151,7 @@ def test_pilot_gate_pass_and_designed_rc7_fail(tmp_path: Path) -> None:
                 "--out-root",
                 str(tmp_path / "out_fail"),
                 "--pilot-draws",
-                "80",
+                "104",
                 "--skip-upload",
             ]
         )
