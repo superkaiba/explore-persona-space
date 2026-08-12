@@ -128,6 +128,7 @@
 - [Detector fixture fidelity vs actual incident](feedback_detector_fixture_fidelity_vs_actual_incident.md) — diff the fixture against the REAL incident code on its branch/worktree before crediting a #1287 fires-on-own-incident claim (#2165)
 - [Gate-enumeration fix: omission vs fabrication](feedback_gate_enumeration_fix_omission_vs_fabrication.md) — read the incident marker's row-level execution evidence; forced-enumeration catch is contingent on REAL (stub escape); static check lands unconditionally (#2176)
 - [Predicate broadening vs existing test pins](feedback_predicate_broadening_vs_existing_test_pins.md) — replay the FULL guard predicate (not the incident wording) against existing tests; broadened predicate flips #1470 pins sworn "stay green"; bounded-window recounts (#2206)
+- [Fixed-window pins vs additive insertions](feedback_fixed_window_pins_vs_additive_insertions.md) — (anchor, length) region pins break on ADDITIVE inserts; measure token-offset + insertion vs window (#2126)
 
 - [Capping/steering plan stats traps](feedback_capping_steering_plan_stats_traps.md) — footprint-matched random null; incoherent listwise drop = post-treatment selection; rule-28 api-refusal (#2203)
 
