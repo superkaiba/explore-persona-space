@@ -34,13 +34,29 @@ This task closes that gap and asks the EPS-specific question on top of it: given
 
 **What #2203 actually established** (superseding the pre-bugfix framing this task was filed under): with three bugs fixed, capping on the in-house 7B is behaviourally inert on harm, but the two positions that would test localization engaged on only 11% and 9% of edited slots — below the 15% firing floor — so localization is **calibration-limited, not refuted**. The one adjudicated axis-specific effect was **persona stabilization**: broad-position axis-component replacement cut identity loss 0.272 -> 0.156 (all tokens) / 0.168 (all prompt) against norm-matched random-direction controls, paired intervals excluding zero. That effect is the single strongest reason to expect a drift-trajectory effect here, and it came from **axis-component replacement**, not from capping — which is why both intervention types are carried.
 
-## Target reproduction
+## Phase A — EXACT Fig. 4 reproduction (PRIMARY DELIVERABLE)
 
-**Fig. 4 + App. "Persona drift in multi-turn conversations" (PRIMARY).** Average trajectories of Assistant-Axis projection vs conversation turn. Paper recipe: 4 conversation domains (coding assistance, writing assistance, therapy-like, philosophy-of-AI) x 5 handwritten user personas x 20 generated topics; an auditor LLM plays the user (paper used GPT-5, Kimi K2, Sonnet 4.5; target model gets NO system prompt); 100 conversations per domain, up to 15 turns; per turn position, mean response-token activations averaged across all conversations reaching that length (turn positions with <10 samples excluded), projected onto the Assistant Axis at a middle layer. Expected qualitative result: therapy + philosophy drift toward the non-Assistant end; coding + writing stay in Assistant range.
+**User directive, 2026-08-12: "Reproduce the EXACT assistant axis persona drift plot but with our methods."** Phase A is therefore a faithful protocol reproduction whose deliverable is a figure of the SAME FORM as the paper's Fig. 4 — mean Assistant-Axis projection (y) vs conversation turn index (x), one line per conversation domain, higher = closer to Assistant. "With our methods" = our models, our axis extraction, our plotting stack and our added measurement arms; it does NOT license loosening the protocol.
+
+**Every verbatim prompt and the exact protocol table are transcribed at [`artifacts/lu_et_al_fig4_verbatim_prompts.md`](artifacts/lu_et_al_fig4_verbatim_prompts.md)** (pulled from the paper's LaTeX source via the arXiv MCP, 2026-08-12). Both load-bearing prompts — the conversation-topic generator and the auditor system prompt — are published IN FULL and MUST be used byte-exact. Do not paraphrase or "improve" them; the auditor prompt's anti-assistant-register rules (max 2 sentences, no pleasantries, no discourse markers, no asterisk actions) are what produce natural user turns, and softening them would silently change the stimulus.
+
+Protocol, non-negotiable for Phase A: 4 domains (coding / writing / therapy-like / philosophy-of-AI) x 5 personas each x 20 Kimi-K2-generated topics per persona => **100 conversations per domain** (one per persona-topic pair), **up to 15 turns**; the target model gets **NO system prompt**; per turn position, mean **response-token** activations averaged over all conversations reaching at least that length, **excluding turn positions with fewer than 10 samples**; projected onto the Assistant Axis at a **middle layer**. Expected qualitative result: coding + writing stay in Assistant range; therapy + philosophy drift to the non-Assistant end (held for all 3 targets x 3 auditors in the paper).
+
+**The one unavoidable deviation:** only **4 of the 20 personas are published** (one per domain, in the artifact). The other 16 must be regenerated in the paper's style — a stated deviation in plan §-assumptions, and the most likely source of any trajectory mismatch. The 4 published personas are used verbatim, and the plan SHOULD report the 4-published-persona subset as its own trajectory alongside the full 20, so the deviation's contribution is visible rather than confounded.
+
+**Reproduction verdict must be stated explicitly.** Phase A succeeds if the domain ORDERING reproduces (therapy + philosophy below coding + writing) with non-overlapping bands at the later turns; a failure to reproduce is itself the headline and blocks Phase B's interpretation (an intervention cannot be shown to prevent a drift that was never measured).
+
+**Auditor:** Claude Sonnet 4.5 — one of the paper's own three auditors and the project judge model. The paper's Fig. 4 specifically is Qwen 3 32B x GPT-5; the appendix carries all 3 targets x 3 auditors, so a Sonnet-4.5 auditor is a paper-supported cell, not a deviation. Running a second auditor is the planner's call on cost.
+
+**Human naturalness check:** the paper states "All transcripts were inspected by a human to verify the naturalness of the conversation." Reproduce this as a bounded sampled audit (e.g. N transcripts per domain), not a full read — and report the sample size.
 
 **Fig. 5 (SECONDARY, data-gated).** First-turn Assistant-Axis projection vs second-turn harmful-response rate; paper reports r = 0.39-0.52. Gated on the jailbreak-set question below — see § Shah et al. dataset.
 
-## Intervention grid (the new half)
+**Cheap add-on once transcripts exist (planner's call):** the paper's own mechanism read — embed each user message (Qwen 3 0.6B Embedding, L2-normalized) and ridge-regress against the Assistant-Axis projection; they get $R^2$ 0.53-0.77 predicting the next response's absolute position but only 0.10 for the delta. This is a 0-GPU-h re-reduction of Phase A's transcripts and directly relevant to the EPS context-vector line (it is a context-side predictor of an answer-side state).
+
+**Fig. 5 (SECONDARY, data-gated).** First-turn Assistant-Axis projection vs second-turn harmful-response rate; paper reports r = 0.39-0.52. Gated on the jailbreak-set question below — see § Shah et al. dataset.
+
+## Phase B — intervention grid (runs only after Phase A's verdict)
 
 Applied to the SAME multi-turn generation loop, so the DV is the drift trajectory under intervention:
 
