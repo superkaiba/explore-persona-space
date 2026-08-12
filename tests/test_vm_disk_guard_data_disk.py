@@ -335,7 +335,15 @@ def test_data_disk_pass_threads_staging_roots_into_tier_b(tmp_path, monkeypatch)
     calls: list[dict] = []
 
     def _spy(
-        issue_n, *, apply=False, data_root=None, tmp_root=None, sweep_tmp=True, staging_roots=None
+        issue_n,
+        *,
+        apply=False,
+        data_root=None,
+        tmp_root=None,
+        sweep_tmp=True,
+        staging_roots=None,
+        exclude_scratch_shapes=False,  # #2127: threaded by tier (b); inert here
+        git_evidence_repo=None,
     ):
         calls.append({"issue_n": issue_n, "staging_roots": staging_roots, "tmp_root": tmp_root})
         return ced.CleanResult(issue_n=issue_n, apply=apply)

@@ -521,7 +521,10 @@ class _TmpRootRefVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
 
-@pytest.mark.parametrize("symbol", ["production_tmp_root", "production_staging_roots"])
+@pytest.mark.parametrize(
+    "symbol",
+    ["production_tmp_root", "production_staging_roots", "scratch_verdict_cache_path"],
+)
 def test_production_tmp_root_only_in_mains(symbol):
     for script in ("clean_experiment_downloads.py", "vm_disk_guard.py"):
         visitor = _TmpRootRefVisitor(symbol)

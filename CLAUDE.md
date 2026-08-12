@@ -159,7 +159,10 @@ artifacts, not caches. Multi-phase runs reap each CONSUMED phase's cache between
 **50 GB** (`VM_ANALYSIS_FOOTPRINT_GB_MAX`) is ROUTED OFF the VM at plan time, never after deaths.
 Active-task caches are WARNED about, never auto-deleted. The #911 non-canonical sweep + the
 guard/watcher data-disk passes also cover `/mnt/eps-data/$USER` staging roots (#2095; kill
-switch `EPM_SKIP_STAGING_CACHE_SWEEP=1` — sweep only, attribution survives).
+switch `EPM_SKIP_STAGING_CACHE_SWEEP=1` — sweep only, attribution survives). Janitor bulk
+deletions are EVIDENCE-gated (verified HF-backedness or git-reproducibility), never age-gated —
+age is only ever a KEEP signal; top-level `/tmp` gate/smoke scratch is swept under the same
+contract (#2127; kill switch `EPM_SKIP_TMP_SCRATCH_SWEEP=1`).
 
 **READ `.claude/rules/disk-hygiene.md` before placing a staging path, raising a cache cap, or
 reasoning about a disk-guard alert** — it carries the `/mnt/eps-data` bind + ext4 per-issue

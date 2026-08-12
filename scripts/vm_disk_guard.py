@@ -6,7 +6,7 @@ The VM root disk fills because each experiment downloads its source data into
 2026-06-25: ``/`` hit 100% full, one finished experiment held 97 GB), plus the
 ``uv`` package cache and accumulating logs. This guard reads ``df`` for ``/``
 and, when usage exceeds a threshold (default 85%, env ``EPS_VM_DISK_THRESHOLD``),
-runs five TIERS of strictly-safe cleanup, reporting bytes freed per tier:
+runs six TIERS of strictly-safe cleanup, reporting bytes freed per tier:
 
   (a) ``uv cache prune`` (skipped gracefully if the uv lock is held — never
       ``--force``).
@@ -33,6 +33,29 @@ runs five TIERS of strictly-safe cleanup, reporting bytes freed per tier:
       ``total_discovered_bytes``) ride the ``--json`` output — report-only
       escalation persists nothing to the sidecar, so dry-run acceptance reads
       the JSON.
+  (f) TOP-LEVEL ``/tmp`` GATE/SMOKE SCRATCH trees (#2127) — an
+      owner-status-INDEPENDENT leg (``clean_tmp_scratch`` ->
+      ``clean_experiment_downloads.sweep_tmp_scratch``), boot-disk pass
+      only, run right after tier (b): dirs matching the scratch shape
+      globs (``*-gate*`` / ``*smoke*`` / ``eps-*-scratch-*`` /
+      ``scratch-*`` / ``mkstest-*``), never a denylisted name
+      (``claude-*`` / ``pytest-of-*`` / session+system dirs, checked
+      FIRST). Deletions are gated on VERIFIED git-reproducibility (a
+      per-file blob-existence proof against the main repo's odb, plus
+      class-discriminated worktree/clone git-state probes) — NEVER on age;
+      age (recency, write mtime AND nlink==1 reader atimes) is only ever a
+      KEEP signal. Registered main-repo worktrees are removed via
+      ``git worktree remove --force`` (a remove failure KEEPS the tree —
+      no rmtree fallback, no global ``git worktree prune``); a live-process
+      /proc probe holds the reap while any visible process has the tree
+      open. Same strict ``main()``-only opt-in as the /tmp leg
+      (``scratch_tmp_root`` / ``scratch_main_repo`` /
+      ``scratch_verdict_cache``); when this tier is armed, tier (b)'s
+      issue-keyed /tmp discovery EXCLUDES scratch-shaped names so one dir
+      is never double-attributed. Structured rows ride ``--json`` as
+      ``scratch_candidates``. Kill switch ``EPM_SKIP_TMP_SCRATCH_SWEEP=1``
+      (the family switch ``EPM_SKIP_NONCANONICAL_CACHE_SWEEP=1`` kills it
+      transitively).
   (d) The VM's pod-style ``/workspace/.cache/huggingface`` hub cache (#911):
       age-gated ``delete_revisions`` of repos unused >= 14 days (env
       ``EPS_VM_WORKSPACE_HF_CACHE_MAX_AGE_DAYS``), pod-guarded twice
@@ -130,6 +153,8 @@ from explore_persona_space.task_workflow import find_task_path, repo_root
 # helper is shared so every disk escalation lands on ONE stream.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from clean_experiment_downloads import (
+    SCRATCH_SWEEP_KILL_ENV,
+    _resolution_root,
     _running_pod_side,
     _tmp_entry_owned,
     append_disk_guard_event,
@@ -138,6 +163,9 @@ from clean_experiment_downloads import (
     extract_staging_issue_number,
     production_staging_roots,
     production_tmp_root,
+    scratch_verdict_cache_path,
+    sweep_tmp_scratch,
+    tmp_scratch_sweep_enabled,
 )
 
 # Default usage threshold (% of /) above which cleanup runs. Env-overridable.
@@ -298,6 +326,7 @@ def escalate_active_cache(
     tmp_root: Path | None = None,
     sweep_tmp: bool = True,
     staging_roots: list[Path] | None = None,
+    exclude_scratch_shapes: bool = False,
     report_to: TierResult | None = None,
 ) -> TierResult | None:
     """ESCALATE (never delete) an ACTIVE task's re-downloadable cache that the
@@ -317,7 +346,12 @@ def escalate_active_cache(
     is attributed). ``staging_roots`` forwards the same way (#2095 — with
     ``staging_roots=None`` the sizing sees ZERO staging bytes; threaded, an
     active owner's ``/mnt/eps-data/$USER`` staging footprint is attributed
-    without ever being deleted). ``report_to`` (the calling tier's TierResult, #911) —
+    without ever being deleted). ``exclude_scratch_shapes`` forwards the same
+    way (#2127 — when the scratch tier is armed, a scratch-shaped issue-keyed
+    /tmp dir is the scratch leg's row, never double-attributed here;
+    ``git_evidence_repo`` is deliberately NOT threaded into this sizing call:
+    attribution needs no reap license, and the git probes would burn work on
+    dirs this path never deletes). ``report_to`` (the calling tier's TierResult, #911) —
     when given — receives the DEDUP-INDEPENDENT structured rows BEFORE any
     floor/ack/band suppression: the owner's ``active_cache_attributions`` row
     + one ``noncanonical_candidates`` row per discovered non-canonical dir
@@ -331,6 +365,7 @@ def escalate_active_cache(
         tmp_root=tmp_root,
         sweep_tmp=sweep_tmp,
         staging_roots=staging_roots,
+        exclude_scratch_shapes=exclude_scratch_shapes,
     )
     # Size from EVERY discovered cache dir, NOT bytes_freed: a large active
     # hf_dl/.../store/ correctly KEPT by the nested-store parity guard lands in
@@ -758,6 +793,11 @@ class TierResult:
     # {repo, repo_type, bytes, revisions, last_accessed_age_days,
     #  reap_candidate_bytes, over_escalate_threshold}.
     hf_repo_attributions: list[dict] = field(default_factory=list)
+    # ── tier (f) structured rows (#2127) — surfaced in --json ──
+    # One row per discovered top-level /tmp scratch candidate, report-only AND
+    # apply alike: {path, name, bytes, disposition, reason, evidence?,
+    # git_class?, n_verified?, n_tolerated?, first_unverified?, age_hours?}.
+    scratch_candidates: list[dict] = field(default_factory=list)
 
 
 @dataclass
@@ -847,6 +887,8 @@ def clean_terminal_download_caches(
     tmp_root: Path | None = None,
     sweep_tmp: bool = True,
     staging_roots: list[Path] | None = None,
+    exclude_scratch_shapes: bool = False,
+    git_evidence_repo: Path | None = None,
 ) -> TierResult:
     """Tier (b): delete ``hf_dl`` / ``g*_dl`` caches for issues at a terminal
     status (completed / archived / awaiting_promotion) — across BOTH the
@@ -879,6 +921,13 @@ def clean_terminal_download_caches(
     per-issue cleanup + escalation-sizing call (the staging gate variants —
     gate 1.55 cross-issue, top-level recency, class labels, the sampled
     mirror probe — live in ``clean_issue_downloads``).
+
+    #2127 knobs, both hermetic-default: ``exclude_scratch_shapes`` (True only
+    from the ``run_guard`` invocation that ALSO runs the scratch tier — the
+    issue-keyed /tmp discovery then skips scratch-shaped names so one dir is
+    never double-attributed) and ``git_evidence_repo`` (arms gate 1.7's
+    git-blob evidence branch (c) inside ``clean_issue_downloads`` for the
+    terminal-reap calls; the escalation sizing deliberately omits it).
 
     With an explicit ``data_root`` (tests) the search is scoped to that single
     root; in production (``data_root is None``) it spans repo-root + all
@@ -915,6 +964,7 @@ def clean_terminal_download_caches(
                 tmp_root=tmp_root,
                 sweep_tmp=sweep_tmp,
                 staging_roots=staging_roots,
+                exclude_scratch_shapes=exclude_scratch_shapes,
                 report_to=res,
             )
             if esc is not None:
@@ -930,6 +980,8 @@ def clean_terminal_download_caches(
             tmp_root=tmp_root,
             sweep_tmp=sweep_tmp,
             staging_roots=staging_roots,
+            exclude_scratch_shapes=exclude_scratch_shapes,
+            git_evidence_repo=git_evidence_repo,
         )
         res.bytes_freed += sub.bytes_freed
         res.total_discovered_bytes += sub.total_discovered_bytes
@@ -961,6 +1013,53 @@ def clean_terminal_download_caches(
             res.detail.append(f"issue {issue_n}: external symlink target kept: {name} -> {tgt}")
     if apply and escalated_any:
         _save_active_escalation_state(escalation_state)
+    return res
+
+
+# ─── tier (f): top-level /tmp gate/smoke scratch trees (#2127) ───────────────
+
+
+def clean_tmp_scratch(
+    apply: bool,
+    *,
+    tmp_root: Path | None,
+    main_repo: Path | None,
+    verdict_cache_path: Path | None = None,
+) -> TierResult:
+    """Tier (f) (#2127): owner-status-INDEPENDENT sweep of top-level /tmp
+    gate/smoke scratch trees, gated on VERIFIED git-reproducibility — never
+    on age (age is only ever a KEEP signal). Thin wrapper over
+    ``clean_experiment_downloads.sweep_tmp_scratch`` (which owns the shape
+    globs, the denylist, the walk contract, the blob proof, the live-process
+    probe, and the worktree-aware reap); this tier adapts its rows onto a
+    ``TierResult`` for the report + ``--json`` surfaces. SKIPPED (with a
+    reason) when the strict ``main()``-only opt-ins are absent or a kill
+    switch is set — library callers stay hermetic by construction."""
+    res = TierResult(name="tmp-scratch")
+    if tmp_root is None or main_repo is None:
+        res.skipped = True
+        res.skip_reason = "no tmp_root/main_repo opt-in (library callers stay hermetic)"
+        return res
+    if not tmp_scratch_sweep_enabled():
+        res.skipped = True
+        res.skip_reason = (
+            f"kill switch set ({SCRATCH_SWEEP_KILL_ENV} or the non-canonical family switch)"
+        )
+        return res
+    sweep = sweep_tmp_scratch(
+        tmp_root,
+        apply=apply,
+        main_repo=main_repo,
+        verdict_cache_path=verdict_cache_path,
+    )
+    res.bytes_freed = sweep.bytes_freed
+    res.total_discovered_bytes = sweep.total_discovered_bytes
+    res.scratch_candidates = list(sweep.rows)
+    for row in sweep.rows:
+        res.detail.append(
+            f"{row.get('disposition', '?')}: {row.get('path', '?')} "
+            f"[{_fmt_gb(int(row.get('bytes', 0)))}] — {row.get('reason', '')}"
+        )
     return res
 
 
@@ -2039,6 +2138,10 @@ def run_guard(
     ignore_threshold: bool = False,
     hf_cache_roots: Sequence[Path] | None = None,
     hf_cache_cap_gb: float | None = None,
+    scratch_tmp_root: Path | None = None,
+    scratch_main_repo: Path | None = None,
+    scratch_verdict_cache: Path | None = None,
+    git_evidence_repo: Path | None = None,
 ) -> GuardResult:
     """Read disk usage, and if over threshold run the cleanup tiers.
 
@@ -2087,6 +2190,17 @@ def run_guard(
     pass only (the staging roots live ON the data disk — the boot-disk pass
     never sweeps them, the inverted twin of the /tmp no-double-sweep pin).
 
+    ``scratch_tmp_root`` / ``scratch_main_repo`` / ``scratch_verdict_cache``
+    / ``git_evidence_repo`` (#2127) arm tier (f) + gate 1.7's branch (c) —
+    the SAME hermeticity pattern: ``run_guard`` itself NEVER calls
+    ``production_tmp_root()`` / ``scratch_verdict_cache_path()`` (the
+    opt-ins live ONLY in ``main()``'s boot-disk branch; the source-scan
+    test pins the cache-path symbol), so every library caller stays
+    hermetic — no real /tmp scan, no real verdict cache, no real-odb blob
+    licensing of fixture trees. When tier (f) is ARMED, tier (b) runs with
+    ``exclude_scratch_shapes=True`` so a scratch-shaped issue-keyed /tmp
+    dir is exactly one leg's row (never double-attributed).
+
     ``hf_cache_roots`` + ``hf_cache_cap_gb`` (#2096) are the EXTRA tier-(e)
     roots opt-in for the DATA-DISK pass — one tier-(e) ``TierResult`` per
     deduped root (dedup by resolved ``hub/``, first wins), appended after
@@ -2118,13 +2232,36 @@ def run_guard(
     if not res.triggered:
         return res
 
+    scratch_on = (
+        reclaim_tiers
+        and scratch_tmp_root is not None
+        and scratch_main_repo is not None
+        and tmp_scratch_sweep_enabled()
+    )
     if reclaim_tiers:
         res.tiers.append(clean_uv_cache(apply))
     res.tiers.append(
         clean_terminal_download_caches(
-            apply, data_root=data_root, tmp_root=tmp_root, staging_roots=staging_roots
+            apply,
+            data_root=data_root,
+            tmp_root=tmp_root,
+            staging_roots=staging_roots,
+            exclude_scratch_shapes=scratch_on,
+            git_evidence_repo=git_evidence_repo,
         )
     )
+    if scratch_on:
+        # Tier (f) (#2127): right after tier (b), boot-disk pass only. The
+        # exclude_scratch_shapes handshake above means a scratch-shaped
+        # issue-keyed /tmp dir lands on exactly ONE leg's rows.
+        res.tiers.append(
+            clean_tmp_scratch(
+                apply,
+                tmp_root=scratch_tmp_root,
+                main_repo=scratch_main_repo,
+                verdict_cache_path=scratch_verdict_cache,
+            )
+        )
     if hf_cache_roots:
         # #2096: tier (e) over the EXTRA roots (the relocated HF_HUB_CACHE on
         # the data disk). Dedup by resolved hub/ (first wins) so an env
@@ -2259,6 +2396,7 @@ def _result_json(res: GuardResult) -> dict:
                 "noncanonical_candidates": t.noncanonical_candidates,
                 "total_discovered_bytes": t.total_discovered_bytes,
                 "hf_repo_attributions": t.hf_repo_attributions,
+                "scratch_candidates": t.scratch_candidates,
             }
             for t in res.tiers
         ],
@@ -2491,16 +2629,26 @@ def main(argv: list[str] | None = None) -> int:
     # Boot disk (/) — the full tiered cleanup. The /tmp + /workspace-cache
     # opt-in lives HERE (and in clean_experiment_downloads.main()) ONLY: the
     # CLI passes production_tmp_root(); library callers stay hermetic (#911).
+    boot_tmp_root = production_tmp_root()
+    main_repo = _resolution_root()
     res = run_guard(
         args.apply,
         threshold=args.threshold,
         log_max_age=args.log_max_age_days,
-        tmp_root=production_tmp_root(),
+        tmp_root=boot_tmp_root,
         # The staging roots live ON the data disk — the boot-disk pass never
         # sweeps them (no double-sweep per run; #2095 test pins this — the
         # inverted twin of the data-disk pass's tmp_root=None below).
         staging_roots=None,
         ignore_threshold=args.ignore_threshold,
+        # #2127: tier (f) + gate-1.7 branch (c) opt-ins live HERE only —
+        # boot-disk pass (the /tmp tree lives on /); the data-disk pass
+        # below stays scratch-off. scratch_verdict_cache_path() is
+        # main()-only by the same source-scan pin as production_tmp_root().
+        scratch_tmp_root=boot_tmp_root,
+        scratch_main_repo=main_repo,
+        scratch_verdict_cache=scratch_verdict_cache_path(),
+        git_evidence_repo=main_repo,
     )
 
     # Data disk (/mnt/eps-data) — a SECOND, ESCALATE-ONLY pass: reclaim_tiers=False
