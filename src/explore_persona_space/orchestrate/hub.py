@@ -6,6 +6,7 @@ Default repos (public, unlimited storage):
 """
 
 import glob
+import hashlib
 import json
 import logging
 import math
@@ -2598,6 +2599,193 @@ def stage_hub_prefix(
                 flush=True,
             )
     return [staged[f] for f in files]
+
+
+def _parse_shard_manifest(text: str, *, what: str) -> tuple[list[str], dict[str, str]]:
+    """Parse a ``<stem>.manifest.json``; raise RuntimeError on empty/missing parts.
+
+    Schema pinned from the #2054 producer (``_shard_large_jsonl_for_upload``):
+    ``{"parts": [<name>, ...], "sha256": {<name>: <hex>}, ...}`` —
+    ``line_counts`` / ``source`` are optional and ignored. Returns
+    ``(parts, sha256_by_part_name)``; a manifest listing no parts raises
+    (fail-loud — never a silent empty resolve).
+    """
+    man = json.loads(text)
+    parts = list(man.get("parts") or [])
+    if not parts:
+        raise RuntimeError(f"shard manifest lists no parts: {what}")
+    return parts, dict(man.get("sha256") or {})
+
+
+def resolve_sharded_text_paths(
+    api,
+    repo_id: str,
+    path_in_repo: str,
+    *,
+    repo_type: str = "dataset",
+    revision: str | None = None,
+) -> tuple[str, list[str]]:
+    """Name-set resolution for a shardable text artifact (#2119).
+
+    Probes ``<stem>.manifest.json`` (retried ``file_exists`` via
+    ``retry_transient`` — the #1335 lesson: an un-retried HEAD probe turns one
+    transient 429 into a wrong branch). Present -> downloads + parses the
+    manifest (``stage_hub_file`` into a tempdir) and returns
+    ``("sharded", [manifest, part1, ...])`` as repo paths, parts in manifest
+    order. Absent -> retried ``file_exists`` on the unsharded name; present ->
+    ``("unsharded", [path_in_repo])``; NEITHER exists -> RuntimeError
+    (fail-loud). Feed the returned list to :func:`verify_repo_paths_uploaded`
+    (``path_in_repo=`` keyword REQUIRED) for the consumable-form verification
+    leg.
+
+    The manifest repo path is derived as
+    ``PurePosixPath(path_in_repo).with_suffix("").as_posix() +
+    ".manifest.json"`` — single-extension stems, matching the #2054 producer's
+    ``f.with_name(f"{f.stem}.manifest.json")`` (``foo.v2.jsonl`` ->
+    ``foo.v2.manifest.json`` on BOTH sides). ``api`` is the caller's
+    ``HfApi`` (first positional, mirroring ``list_hf_files_under_path``).
+    """
+    base = PurePosixPath(path_in_repo)
+    manifest_repo_path = base.with_suffix("").as_posix() + ".manifest.json"
+    has_manifest = retry_transient(
+        # HUB_VERIFY_RETRY_EXEMPT: single-path probe wrapped in retry_transient at call site
+        lambda: api.file_exists(
+            repo_id, manifest_repo_path, repo_type=repo_type, revision=revision
+        ),
+        what=f"file_exists({repo_id}:{manifest_repo_path})",
+    )
+    if has_manifest:
+        with tempfile.TemporaryDirectory(prefix=".shard-manifest-") as td:
+            mpath = stage_hub_file(
+                repo_id,
+                manifest_repo_path,
+                Path(td) / PurePosixPath(manifest_repo_path).name,
+                repo_type=repo_type,
+                revision=revision,
+                overwrite=True,
+            )
+            man_text = mpath.read_text(encoding="utf-8")
+        parts, _ = _parse_shard_manifest(man_text, what=f"{repo_id}:{manifest_repo_path}")
+        part_paths = [(base.parent / name).as_posix() for name in parts]
+        return ("sharded", [manifest_repo_path, *part_paths])
+    has_unsharded = retry_transient(
+        # HUB_VERIFY_RETRY_EXEMPT: single-path probe wrapped in retry_transient at call site
+        lambda: api.file_exists(repo_id, path_in_repo, repo_type=repo_type, revision=revision),
+        what=f"file_exists({repo_id}:{path_in_repo})",
+    )
+    if has_unsharded:
+        return ("unsharded", [path_in_repo])
+    raise RuntimeError(
+        f"neither {manifest_repo_path} nor {path_in_repo} exists on "
+        f"{repo_id}@{revision or 'main'} ({repo_type}) — nothing to resolve"
+    )
+
+
+def stage_sharded_text(
+    repo_id: str,
+    path_in_repo: str,
+    target: Path | str,
+    *,
+    repo_type: str = "dataset",
+    revision: str | None = None,
+    overwrite: bool = False,
+) -> Path:
+    """Manifest-first stager for shardable text artifacts (#2119; the #2054
+    r15 recipe, shared).
+
+    Name resolution is DELEGATED to :func:`resolve_sharded_text_paths` so the
+    manifest-first probe lives in exactly ONE code path. Sharded form: stage
+    the manifest + every part via :func:`stage_hub_file` (retried, atomic),
+    sha256-verify each part against the manifest (a missing sha entry OR a
+    mismatch raises — refuse unverified shards), concatenate in manifest order
+    into ``target`` via tmp + ``os.replace``. Unsharded fallback ONLY when no
+    manifest exists on the Hub. A missing part under an existing manifest
+    propagates ``stage_hub_file``'s fail-loud raise — NEVER falls back to the
+    unsharded name (a stale unsharded blob beside a manifest is prior-round
+    residue: the #2054 r6/`epm:failure v4` defect). Logs which path was taken.
+    Idempotent: an existing ``target`` returns without a network call
+    (``overwrite=True`` forces), mirroring :func:`stage_hub_file`.
+    """
+    from huggingface_hub import HfApi
+
+    target = Path(target)
+    if target.exists() and not overwrite:
+        logger.info("stage_sharded_text: target exists, skipping (%s)", target)
+        return target
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+    form, repo_paths = resolve_sharded_text_paths(
+        api, repo_id, path_in_repo, repo_type=repo_type, revision=revision
+    )
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if form == "unsharded":
+        logger.info(
+            "stage_sharded_text: NO manifest on Hub for %s:%s -> pre-shard compat "
+            "fallback to the unsharded name",
+            repo_id,
+            path_in_repo,
+        )
+        return stage_hub_file(
+            repo_id,
+            path_in_repo,
+            target,
+            repo_type=repo_type,
+            revision=revision,
+            overwrite=True,
+        )
+    logger.info(
+        "stage_sharded_text: manifest present for %s:%s -> sharded stager (manifest-first)",
+        repo_id,
+        path_in_repo,
+    )
+    manifest_repo_path, part_repo_paths = repo_paths[0], repo_paths[1:]
+    mpath = stage_hub_file(
+        repo_id,
+        manifest_repo_path,
+        target.parent / PurePosixPath(manifest_repo_path).name,
+        repo_type=repo_type,
+        revision=revision,
+        overwrite=True,
+    )
+    _, want_sha = _parse_shard_manifest(
+        mpath.read_text(encoding="utf-8"), what=f"{repo_id}:{manifest_repo_path}"
+    )
+    local_parts: list[Path] = []
+    for part_repo_path in part_repo_paths:
+        name = PurePosixPath(part_repo_path).name
+        lp = stage_hub_file(
+            repo_id,
+            part_repo_path,
+            target.parent / name,
+            repo_type=repo_type,
+            revision=revision,
+            overwrite=True,
+        )
+        exp = want_sha.get(name)
+        if not exp:
+            # The #2054 writer always records per-shard shas; an absent entry
+            # signals a foreign/malformed manifest — refuse the unverified shard.
+            raise RuntimeError(
+                f"shard manifest carries no sha256 for {name} "
+                f"({repo_id}:{manifest_repo_path}) — refusing unverified shard"
+            )
+        got = hashlib.sha256(lp.read_bytes()).hexdigest()
+        if got != exp:
+            raise RuntimeError(
+                f"shard {name} sha mismatch: {got[:12]}... != manifest {str(exp)[:12]}..."
+            )
+        local_parts.append(lp)
+    tmp = target.with_name(target.name + ".tmp")
+    with tmp.open("wb") as out:
+        for lp in local_parts:
+            out.write(lp.read_bytes())
+    os.replace(tmp, target)
+    logger.info(
+        "stage_sharded_text: staged %s (%d shard(s) -> %d B)",
+        target,
+        len(local_parts),
+        target.stat().st_size,
+    )
+    return target
 
 
 def list_hub_datasets(

@@ -531,6 +531,9 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_step_completed_resume.py",  # NEW (#1242) — resume/step-completed contract pin
     # NEW (#1662) — CLAUDE.md + SKILL.md suffixed-pod completion-teardown contract pin
     "tests/test_suffixed_pod_completion_teardown_pin.py",
+    # NEW (#2119) — upload-policy.md manifest-first consumer clause prose pin
+    # (clause header + fail-loud sentence + hub helper names).
+    "tests/test_upload_policy_manifest_first_pin.py",
     # NEW (#1693) — code-reviewer.md Step 0.69 phase-idempotency + inter-phase-
     # contract gate pin (prose + codex mirror + substantive-tag registry + ratchet-cap)
     "tests/test_code_reviewer_phase_idempotency_gate.py",
