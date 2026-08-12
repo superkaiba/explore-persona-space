@@ -196,6 +196,42 @@ def test_staged_status_folder_move_is_clean_arm_w(tmp_path):
     assert errors == [], f"expected PASS on a staged status-folder move, got: {errors}"
 
 
+def test_staged_status_folder_move_with_STAGED_edit_fails_arm_w(tmp_path):
+    """The #2123 round-2 review blocker, reproduced by execution: a
+    status-move-shaped rename whose content edit is ALSO STAGED is
+    porcelain ``R `` — a BLANK worktree column — while the index blob
+    differs from the HEAD blob. No porcelain column can see this (the
+    worktree column compares worktree-vs-index, never index-vs-HEAD) and
+    the rename similarity score is not exposed, so a path-shape-only
+    exemption lets a real mutation through; it then lands in history,
+    where Arm H reports it as ``R058`` — and Arm H is explicit-flag-only,
+    so the fleet gate never catches it post-commit. Only the
+    HEAD-blob-vs-index-blob comparison distinguishes the two cases."""
+    _repo_with_persisted_plan(tmp_path)
+    plan = tmp_path / PLAN_REL
+    # A LONG body is load-bearing for this fixture: git pairs a rename only at
+    # >= 50% similarity, so a one-line edit to a long file yields the `R `
+    # escape window under test, whereas rewriting a short file degrades to
+    # `D `+`A ` — which the D arm already catches (fail-closed, and NOT the
+    # case this test exists for).
+    body = "# Plan v1\n\n" + "\n".join(f"- design point {i}" for i in range(200)) + "\n"
+    plan.write_text(body, encoding="utf-8")
+    _git(tmp_path, "add", PLAN_REL)
+    _git(tmp_path, "commit", "-qm", "task #1: plan v1 (long body)")
+    (tmp_path / "tasks" / "approved").mkdir(parents=True, exist_ok=True)
+    _git(tmp_path, "mv", "tasks/planning/1", "tasks/approved/1")
+    moved_rel = "tasks/approved/1/plans/v1.md"
+    (tmp_path / moved_rel).write_text(
+        body.replace("- design point 7\n", "- design point 7 MUTATED\n"), encoding="utf-8"
+    )
+    _git(tmp_path, "add", moved_rel)
+    # Precondition: the state really is a bare `R ` with a blank worktree column.
+    porcelain = _git(tmp_path, "status", "--porcelain=v1", "--", "tasks").stdout
+    assert porcelain.startswith("R "), f"fixture did not produce a bare 'R ': {porcelain!r}"
+    errors = check_plan_version_immutability(repo_root=tmp_path)
+    assert len(errors) == 1, f"expected one Arm-W error (staged edit inside a move), got: {errors}"
+
+
 def test_staged_status_folder_move_with_edit_fails_arm_w(tmp_path):
     """The status-move exemption must NOT swallow a content change: a
     status move whose file is then edited in the working tree is porcelain

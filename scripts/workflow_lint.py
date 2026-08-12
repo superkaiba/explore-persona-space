@@ -16004,6 +16004,34 @@ def _is_status_folder_move(orig: str, new: str) -> bool:
     )
 
 
+def _rename_content_identical(root: Path, orig: str, path: str) -> bool:
+    """True iff a STAGED rename preserved the file's content EXACTLY.
+
+    Compares the HEAD blob at the ORIGINAL path against the INDEX (stage 0)
+    blob at the NEW path. This is the only check that can tell a bare
+    status-folder move apart from a mutation smuggled through one:
+    ``git status --porcelain=v1`` carries no rename similarity score, and
+    its worktree column only ever compares worktree-vs-INDEX — never
+    index-vs-HEAD — so a rename whose content edit is STAGED presents as a
+    bare ``R `` with a BLANK worktree column and is structurally invisible
+    to every column-based predicate. Reproduced in the #2123 round-2
+    review: ``git mv`` a task folder, edit the plan, ``git add``, and Arm W
+    saw nothing while Arm H (explicit-flag-only, so not in the fleet gate)
+    reported the commit as ``R058``.
+
+    FAIL-CLOSED: any git failure, or either blob unresolvable, returns
+    False so the caller reports the violation.
+    """
+    head_blob = _plan_immutability_git(root, ["rev-parse", f"HEAD:{orig}"])
+    index_blob = _plan_immutability_git(root, ["rev-parse", f":0:{path}"])
+    if head_blob is None or index_blob is None:
+        return False
+    head_sha, index_sha = head_blob.strip(), index_blob.strip()
+    if not head_sha or not index_sha:
+        return False
+    return head_sha == index_sha
+
+
 def check_plan_version_immutability(
     *, include_history: bool = False, repo_root: Path | None = None
 ) -> list[str]:
@@ -16029,13 +16057,21 @@ def check_plan_version_immutability(
       index-column ``A`` (``A ``, ``AM``, ``AD``) — is CLEAN, because
       nothing is persisted until a commit exists, so an edit between
       ``git add`` and commit is a new version still being drafted; and
-      (ii) a rename whose paths differ ONLY in the ``tasks/<status>/``
-      segment (:func:`_is_status_folder_move`) is CLEAN, because that is
-      exactly what ``task.py set-status`` stages, and Arm W probes the
-      REPO ROOT even from a worktree — so a gate would otherwise
-      false-FAIL on another session's in-flight status transition. Any
-      OTHER rename still fires, and a rename carrying a content change
-      surfaces as ``RM`` and is still caught. This arm fires DURING the
+      (ii) a rename is CLEAN only when ALL THREE hold — its paths differ
+      ONLY in the ``tasks/<status>/`` segment
+      (:func:`_is_status_folder_move`), its worktree column is exactly
+      blank, AND its content is byte-identical across the move
+      (:func:`_rename_content_identical`, comparing the HEAD blob at the
+      original path to the INDEX blob at the new one). That is exactly
+      what ``task.py set-status`` stages, and Arm W probes the REPO ROOT
+      even from a worktree — so a gate would otherwise false-FAIL on
+      another session's in-flight status transition. The content conjunct
+      is NOT belt-and-braces: porcelain carries no rename similarity
+      score and its worktree column compares worktree-vs-INDEX only, so a
+      status-move-shaped rename whose edit is STAGED is a bare ``R `` that
+      no column-based predicate can distinguish from a clean move (#2123
+      round-2 review reproduced it landing as an Arm H ``R058``). Any
+      other rename still fires. This arm fires DURING the
       mutation window, which is
       when the lint actually runs (pre-commit, Step 9c, Step 10d
       pre-push) — the #2061 v11 incident mutation lived ONLY in the
@@ -16125,15 +16161,24 @@ def check_plan_version_immutability(
             # NOT a bare status move still fires, and a rename carrying a
             # content change surfaces as `RM` (worktree column `M`), which
             # the predicate below still catches.
-            # The ``y not in "MD"`` conjunct is load-bearing: without it an
-            # ``RM`` (status move whose file was then edited) short-circuits
-            # past the content check below and the edit is swallowed. The
-            # exemption covers a CLEAN status move only.
+            # Three conjuncts, each closing a demonstrated escape:
+            #   * ``y == " "`` (NOT ``y not in "MD"``): an exact-blank
+            #     worktree column. The looser form admitted ``RT``
+            #     (typechange) — #2123 round-2 review blocker 2.
+            #   * :func:`_is_status_folder_move` — the path SHAPE.
+            #   * :func:`_rename_content_identical` — the CONTENT, which the
+            #     path shape cannot certify and no porcelain column can see.
+            #     A status-move-shaped rename whose edit is STAGED is a bare
+            #     ``R `` (blank worktree column) with index blob != HEAD
+            #     blob; without this conjunct it rode straight through and
+            #     landed as an Arm H ``R058`` — #2123 round-2 review
+            #     blocker 1, reproduced by execution.
             if (
                 x == "R"
-                and y not in "MD"
+                and y == " "
                 and orig is not None
                 and _is_status_folder_move(orig, path)
+                and _rename_content_identical(root, orig, path)
             ):
                 continue
             if x in "MD" or y in "MD" or x == "R":
