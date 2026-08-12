@@ -528,15 +528,54 @@ def phase_correlations(args) -> None:
         labels = det_labels
         auc: dict[str, dict] = {}
         for frac in C.CHECKPOINT_FRACS + (1.0,):
-            tagf = cells if frac == 1.0 else [f"{c}@frac{int(round(frac * 100))}" for c in cells]
+            fr = int(round(frac * 100))
+            # Not every cell HAS a mid-training checkpoint: a family whose mix is
+            # too thin to reach the frac save points emits none. Realized here:
+            # the 3 `evil` cells (3 mix rows total, N=1 dose) and the 3
+            # `mistake_opinions` cells (39 rows) have ZERO frac captures, so the
+            # ladder covers 18 of 24 cells. Enumerating all 24 unconditionally
+            # made `_scalar_matrix` raise KeyError -> the `except` skipped EVERY
+            # arm, and the random-direction control below then died on
+            # FileNotFoundError. Restrict to cells that actually have the
+            # capture, keep labels aligned to that subset, and NAME the excluded
+            # cells (planned-vs-actual: never silently dropped, never zero-barred).
+            if frac == 1.0:
+                cells_f = list(cells)
+                labels_f = np.asarray(labels)
+                dropped: list[str] = []
+            else:
+                keep = [
+                    i
+                    for i, c in enumerate(cells)
+                    if (p5_root / "capture" / f"{c}@frac{fr}.pt").is_file()
+                ]
+                cells_f = [cells[i] for i in keep]
+                labels_f = np.asarray(labels)[keep]
+                dropped = [c for c in cells if c not in set(cells_f)]
+                if dropped:
+                    lib.log_phase(
+                        "p8_corr",
+                        f"frac{fr}: {len(dropped)} of {len(cells)} cells have no checkpoint "
+                        f"capture — EXCLUDED (named, not zero-barred): {dropped}",
+                    )
             per_arm: dict[str, float] = {}
+            # Both label classes must be present or AUC is undefined.
+            if len(cells_f) < 2 or len(set(labels_f.tolist())) < 2:
+                auc[f"frac{fr}"] = {
+                    "n_cells": len(cells_f),
+                    "excluded_cells": dropped,
+                    "note": "insufficient cells / single label class — AUC not computable",
+                }
+                continue
+            tagf = cells_f if frac == 1.0 else [f"{c}@frac{fr}" for c in cells_f]
             for arm in ("a_rb_ctx", "c_map_ctx", "c_map_pfx"):
                 try:
                     x = _scalar_matrix(scal_pooled, tagf, arm)
-                except KeyError:
+                except KeyError as exc:
+                    lib.log_phase("p8_corr", f"frac{fr}: arm {arm} unavailable — {exc}")
                     continue
                 sel = tr["panels"]["pooled"]["arms"][arm]["selected_layer"]
-                per_arm[arm] = M.detection_auc(x[:, sel], labels)
+                per_arm[arm] = M.detection_auc(x[:, sel], labels_f)
             # Random-direction control at this checkpoint (isotropic, 100 draws).
             ctrl_dirs = M.isotropic_null_directions(
                 np.random.default_rng(C.RNG_SEED + 3), 100, C.N_LAYERS, C.HIDDEN_DIM
@@ -544,9 +583,12 @@ def phase_correlations(args) -> None:
             if frac == 1.0:
                 sc = shifts_ctx
             else:
+                # Same filtered subset as the arms above — the control must be
+                # computed over the SAME cells as `x`/`labels_f`, or the AUCs are
+                # not comparable.
                 sc = []
-                for c in cells:
-                    store = _load_capture(p5_root, f"{c}@frac{int(round(frac * 100))}", "last")
+                for c in cells_f:
+                    store = _load_capture(p5_root, f"{c}@frac{fr}", "last")
                     sc.append(
                         _mean_states(store, "last", trait, "pooled")
                         - _mean_states(base_last, "last", trait, "pooled")
@@ -554,11 +596,17 @@ def phase_correlations(args) -> None:
                 sc = np.stack(sc)
             e = np.einsum("bld,fld->bfl", ctrl_dirs.astype(np.float32), sc.astype(np.float32))
             ctrl_aucs = [
-                M.detection_auc(e[b, :, int(np.argmax(np.abs(e[b]).mean(axis=0)))], labels)
+                # labels_f, not labels: `e` rows follow the filtered cell subset,
+                # so the unfiltered labels would misalign the control AUC.
+                M.detection_auc(e[b, :, int(np.argmax(np.abs(e[b]).mean(axis=0)))], labels_f)
                 for b in range(e.shape[0])
             ]
             per_arm["control_random_direction_mean"] = float(np.nanmean(ctrl_aucs))
-            auc[f"frac{int(round(frac * 100))}"] = per_arm
+            # Coverage travels WITH the number (planned-vs-actual): a frac AUC over
+            # 18 of 24 cells must never read as if it covered all 24.
+            per_arm["n_cells"] = len(cells_f)
+            per_arm["excluded_cells"] = dropped
+            auc[f"frac{fr}"] = per_arm
         tr["checkpoint_auc"] = auc
 
         # ── within-family severity ordering (pooled, per arm at selected layer) ──
