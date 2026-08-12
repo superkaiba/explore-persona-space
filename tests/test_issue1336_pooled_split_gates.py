@@ -11,14 +11,18 @@ near-dup / packing machinery is exercised directly):
      ABSOLUTE 0.95 dedup keep-rate floor, SystemExit + collision surface —
      the retired v17 round-3-relative floor and its phantom reference reader
      are pinned gone), A3 (test-share floor AND the recorded-vs-recomputed
-     cross-check), A5 (cross-corpus merged mass cap). A2 arm 2 (the
-     production-only pinned-profile reconciliation) is pinned in
-     tests/test_issue1336_a2_gate.py.
+     cross-check), A5 (the v21 per-corpus QUARANTINE mass cap). A2 arm 2
+     (the production-only pinned-profile reconciliation) is pinned in
+     tests/test_issue1336_a2_gate.py; the v21/v22 containment
+     re-specification (row quarantine, cluster-diagnostic demotion, A5-W
+     witness) is pinned in tests/test_issue1336_a5_containment.py.
   4. A4: an unsatisfiable packing window HALTs ONLY AFTER the single
      registered k_c x2 retry, dumping the sub-cluster size composition to
      ``split_manifest.rejected.json`` with the named cause.
-  5. Cross-corpus near-duplicate union-find CO-ASSIGNS merged groups to
-     train (never drops), and the retired global-k constants stay retired.
+  5. Cross-corpus near-duplicate edge ENDPOINTS quarantine to train (v21
+     row granularity — never drops; the union-find cluster read is a
+     report-only diagnostic), and the retired global-k constants stay
+     retired.
 """
 
 from __future__ import annotations
@@ -100,7 +104,7 @@ def _manifest_from(assignment, rows, sizes):
 def healthy(tmp_path_factory):
     rows, vecs, sizes = _mk_corpora(plant_cross_dups=0)
     out = tmp_path_factory.mktemp("i1336-healthy")
-    assignment = ps.build_split_assignment(rows, vecs, out)
+    assignment = ps.build_split_assignment(rows, vecs, out, smoke=True)
     return rows, sizes, assignment
 
 
@@ -151,21 +155,29 @@ def test_healthy_assignment_passes_gates(healthy):
 def test_determinism(healthy, tmp_path):
     rows, _sizes, assignment = healthy
     vecs = _mk_corpora(plant_cross_dups=0)[1]
-    again = ps.build_split_assignment(rows, vecs, tmp_path)
+    again = ps.build_split_assignment(rows, vecs, tmp_path, smoke=True)
     assert again["group_table"] == assignment["group_table"]
     assert again["gid_of_row"] == assignment["gid_of_row"]
 
 
-def test_cross_corpus_merge_co_assigns_to_train(tmp_path):
+def test_cross_corpus_near_dup_rows_quarantine_to_train(tmp_path):
+    # v21 re-specification: edge ENDPOINT ROWS quarantine to their corpus's
+    # (slug, -1) force-train group; the union-find cluster read is a
+    # report-only diagnostic (renamed *_cluster_diagnostic fields).
     rows, vecs, _sizes = _mk_corpora(plant_cross_dups=5)
-    assignment = ps.build_split_assignment(rows, vecs, tmp_path)
+    assignment = ps.build_split_assignment(rows, vecs, tmp_path, smoke=True)
     audit = assignment["near_dup_audit"]
+    assert audit["containment_granularity"] == "row_quarantine_v1"
     assert audit["n_cross_corpus_pairs_ge_threshold"] >= 5
-    merged = [e for e in assignment["group_table"] if e["cross_corpus_merged"]]
-    assert merged, "expected >=1 cross-corpus merged group"
-    for e in merged:
-        assert e["arm"] == "train", f"merged group not co-assigned to train: {e}"
-    comp = audit["largest_component"]
+    assert audit["n_quarantined_rows"] >= 10  # 2 endpoints per planted dup
+    assert len(audit["edges_095"]) == audit["n_cross_corpus_pairs_ge_threshold"]
+    q_groups = [e for e in assignment["group_table"] if e["quarantine"]]
+    assert {e["corpus"] for e in q_groups} == {"corpA", "corpB"}
+    for e in q_groups:
+        assert e["subcluster_id"] == ps.QUARANTINE_SUBCLUSTER_ID, e
+        assert e["arm"] == "train", f"quarantine group not forced to train: {e}"
+        assert e["fold"] == ps.QUARANTINE_TRAIN_FOLD, e
+    comp = audit["largest_component_cluster_diagnostic"]
     assert comp is not None and len(comp["rows_by_corpus"]) >= 2
 
 
@@ -214,12 +226,19 @@ def test_a3_trips_on_recorded_recomputed_disagreement(healthy):
         ps.assert_split(man)
 
 
-def test_a5_trips_on_merged_mass_cap(healthy):
+def test_a5_trips_on_quarantine_mass_cap(healthy):
+    # v21: A5 reads the per-corpus QUARANTINE mass (row granularity), never
+    # the report-only cluster diagnostic.
     rows, sizes, assignment = healthy
     man = _manifest_from(assignment, rows, sizes)
-    man["near_dup_audit"]["per_corpus_merged_mass"]["corpA"]["frac"] = 0.12
-    with pytest.raises(AssertionError, match=r"\(A5\)"):
+    man["near_dup_audit"]["per_corpus_quarantine_mass"]["corpA"]["frac"] = 0.12
+    with pytest.raises(AssertionError, match=r"\(A5\).*QUARANTINE"):
         ps.assert_split(man)
+    # The cluster diagnostic NEVER gates: an absurd diagnostic mass with
+    # bounded quarantine mass passes A5.
+    man2 = _manifest_from(assignment, rows, sizes)
+    man2["near_dup_audit"]["per_corpus_merged_mass_cluster_diagnostic"]["corpA"]["frac"] = 0.43
+    ps.assert_split(man2)  # must not raise
 
 
 def test_fold_floor_guard_on_tiny_slice(tmp_path):
@@ -236,7 +255,7 @@ def test_fold_floor_guard_on_tiny_slice(tmp_path):
         {"corpus": "corpA", "prompt_idx": i, "prompt_sha": f"corpA-{i}", "prompt": "x"}
         for i in range(n)
     ]
-    assignment = ps.build_split_assignment(rows, vecs, tmp_path)
+    assignment = ps.build_split_assignment(rows, vecs, tmp_path, smoke=True)
     n_folds = assignment["n_folds_realized"]
     assert n_folds < ps.POOLED_N_FOLDS, n_folds
     fold_rows: dict[int, int] = {}
@@ -275,7 +294,7 @@ def test_full_mode_fold_pin_passes_smoke_at_three_folds(tmp_path):
         {"corpus": "corpA", "prompt_idx": i, "prompt_sha": f"corpA-{i}", "prompt": "x"}
         for i in range(n)
     ]
-    assignment = ps.build_split_assignment(rows, vecs, tmp_path)
+    assignment = ps.build_split_assignment(rows, vecs, tmp_path, smoke=True)
     assert assignment["n_folds_realized"] < ps.POOLED_N_FOLDS
     ps.assert_production_fold_pin(assignment, smoke=True)  # must not raise
     ps.assert_production_fold_pin(
@@ -368,7 +387,7 @@ def test_build_split_assignment_halts_on_collapsed_corpus(tmp_path):
     v = vecs.copy()
     v[400:750] = v[400]  # corpB (rows 400..749) -> byte-identical rows
     with pytest.raises(SystemExit, match="pooled_split_degenerate_embeddings"):
-        ps.build_split_assignment(rows, v, tmp_path)
+        ps.build_split_assignment(rows, v, tmp_path, smoke=True)
 
 
 def test_prefix_cap_gate_trips_at_cap_and_passes_below():
@@ -397,19 +416,24 @@ def test_run_wires_strip_and_gates():
 
 
 def test_a4_halts_after_single_retry_with_rejected_dump(tmp_path):
-    # Dups scattered across every corpA sub-cluster force the whole corpus
-    # into cross-corpus merged (train-forced) groups, starving the pure test
-    # pool: window miss -> ONE registered k_c x2 retry -> HALT + dump.
+    # v21 forcing shape: 270 of corpC's 300 rows are exact cross-dups of
+    # corpA rows, so 90% of corpC quarantines (label-INDEPENDENT — no k_c
+    # retry can free it) and the pure pool (30 rows = 10%) sits below the
+    # 15% window floor: window miss -> ONE registered k_c x2 retry -> HALT
+    # + dump. (The pre-v21 forcing — merged clusters starving the test pool
+    # — no longer halts by design: merged clusters return to the pool.)
     rows, vecs, _sizes = _mk_corpora(plant_cross_dups=0)
     v = vecs.copy()
-    # corpB rows 0..79 <- corpA rows 100..179 (corpA occupies rows 0..399,
-    # corpB rows 400..749): 80 scattered exact cross-dups.
-    v[400:480] = v[100:180]
+    # corpC occupies rows 750..1049 (corpA 0..399, corpB 400..749).
+    v[750:1020] = v[0:270]
     with pytest.raises(SystemExit, match="pooled_split_packing_window_unsatisfiable"):
-        ps.build_split_assignment(rows, v, tmp_path)
+        ps.build_split_assignment(rows, v, tmp_path, smoke=True)
     rejected = json.loads((tmp_path / "split_manifest.rejected.json").read_text())
     assert rejected["halt_cause"] == "pooled_split_packing_window_unsatisfiable"
     assert rejected["packing_retries"], "the single registered retry must be recorded"
+    assert "corpC" in rejected["halted_corpora"]
+    assert "corpC" in rejected["per_corpus_quarantine_mass"]
+    assert rejected["per_corpus_quarantine_mass"]["corpC"]["frac"] == pytest.approx(0.9)
     comp = rejected["subcluster_size_composition"]
     assert set(comp) == {"corpA", "corpB", "corpC"}
     assert all(len(v) > 0 for v in comp.values())
