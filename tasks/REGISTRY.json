@@ -9649,8 +9649,8 @@
     "2249": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2249",
-      "status": "approved",
+      "path": "tasks/running/2249",
+      "status": "running",
       "title": "verify_task_body check 17: upgrade context-parent-lineage-mixed WARN to FAIL when frontmatter parent_id is set and the Context row carries a no-parent clause"
     },
     "225": {
