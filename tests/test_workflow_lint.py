@@ -3597,13 +3597,69 @@ def test_check_agent_model_pins_fail_unknown_suffix_treated_as_unknown_base(tmp_
     assert "not in the allowlist" in errors[0]
 
 
-def test_check_agent_model_pins_pass_missing_frontmatter(tmp_path):
-    """PASS — an agent file with no ``model:`` line inherits the parent
-    model (CLAUDE.md 'Prompt-cache key discipline' explicitly allows it);
-    no runtime contract to validate."""
+def test_check_agent_model_pins_fail_missing_pin_undeclared(tmp_path):
+    """FAIL — the presence half (#2123; DELIBERATE INVERSION of the former
+    ``test_check_agent_model_pins_pass_missing_frontmatter``, which codified
+    the old silently-skip contract). An agent file with no ``model:`` line
+    still inherits the parent model at RUNTIME, but the inherit must be
+    DECLARED via the frontmatter waiver comment — an undeclared missing pin
+    is indistinguishable from an accidental deletion."""
     (tmp_path / "x.md").write_text("---\nname: x\n---\n\nBody.\n", encoding="utf-8")
     errors = check_agent_model_pins(roots=[tmp_path])
-    assert errors == [], f"expected PASS (no pin), got: {errors}"
+    assert len(errors) == 1, f"expected the presence-half FAIL, got: {errors}"
+    assert "MODEL_PIN_LINT_EXEMPT" in errors[0]
+    assert "NO `model:` pin" in errors[0]
+
+
+def test_check_agent_model_pins_pass_waiver_in_frontmatter(tmp_path):
+    """PASS — an unpinned file whose FRONTMATTER carries the
+    ``# MODEL_PIN_LINT_EXEMPT: <reason>`` waiver (reason >= 10 chars) has
+    DECLARED the parent-model inherit; the presence half is satisfied."""
+    (tmp_path / "x.md").write_text(
+        "---\nname: x\n# MODEL_PIN_LINT_EXEMPT: inherits the parent model "
+        "deliberately\n---\n\nBody.\n",
+        encoding="utf-8",
+    )
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert errors == [], f"expected PASS (frontmatter waiver), got: {errors}"
+
+
+def test_check_agent_model_pins_fail_waiver_in_body_prose_only(tmp_path):
+    """FAIL — the under-trigger case (plan #2123 critic blocker 2): the
+    waiver sentinel appearing ONLY in body prose is documentation, not a
+    declaration. Agent specs demonstrably quote lint-waiver sentinels as
+    prose (experiment-implementer.md contains the literal
+    DOTENV_LINT_EXEMPT), so a file-wide match would let a future unpinned
+    spec that merely DOCUMENTS this convention satisfy its own waiver."""
+    (tmp_path / "x.md").write_text(
+        "---\nname: x\n---\n\nBody prose documenting the convention: use\n"
+        "# MODEL_PIN_LINT_EXEMPT: some long documented reason\n"
+        "inside the frontmatter to waive the pin requirement.\n",
+        encoding="utf-8",
+    )
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert len(errors) == 1, f"expected FAIL (body-prose sentinel), got: {errors}"
+    assert "NOT a waiver" in errors[0]
+
+
+def test_check_agent_model_pins_fail_waiver_reason_too_short(tmp_path):
+    """FAIL — a waiver with a sub-10-char reason is a token bypass, not a
+    justification (the DOTENV_LINT_EXEMPT reason-length convention)."""
+    (tmp_path / "x.md").write_text(
+        "---\nname: x\n# MODEL_PIN_LINT_EXEMPT: short\n---\n\nBody.\n",
+        encoding="utf-8",
+    )
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert len(errors) == 1, f"expected FAIL (reason too short), got: {errors}"
+
+
+def test_check_agent_model_pins_fail_no_frontmatter_block(tmp_path):
+    """FAIL — a file with no parseable frontmatter block has no pin and no
+    place for a waiver (the waiver is frontmatter-scoped by design)."""
+    (tmp_path / "x.md").write_text("Just a body, no frontmatter.\n", encoding="utf-8")
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert len(errors) == 1, f"expected FAIL (no frontmatter), got: {errors}"
+    assert "no parseable YAML frontmatter" in errors[0]
 
 
 def test_check_agent_model_pins_d07424178_regression_full_fleet(tmp_path):
@@ -9688,4 +9744,73 @@ def test_snapshot_download_allow_patterns_bundled_in_no_flags():
     ), "check_snapshot_download_allow_patterns is not dispatched on the no-flags branch"
     assert "or args.check_snapshot_download_allow_patterns" in src, (
         "--check-snapshot-download-allow-patterns is missing from the no_flags detection tuple"
+    )
+
+
+def test_check_two_tier_yield_floor_bundled_in_no_flags(tmp_path):
+    """(#2242) Two-part behavioral bundling pin (the house
+    ``bundled_in_no_flags`` precedent shape; D9-bis).
+
+    Part A — scoped-flag subprocess against a DRIFTED corpus (an empty tree:
+    all four pinned surfaces missing), rooted via
+    ``EPS_WORKFLOW_LINT_REPO_ROOT``: proves the flag exists, the dispatch
+    calls the function, and it emits its #2242-tagged errors (nonzero exit).
+
+    Part B — no-flags OR-chain + dispatch-ladder evidence: ``main()``'s
+    source names ``args.check_two_tier_yield_floor`` in BOTH the
+    ``no_flags = not (...)`` OR-chain and the ``or no_flags`` dispatch
+    ladder — the pin that keeps the bundling true across a later dispatch
+    refactor (a no-flags SUBPROCESS run is deliberately avoided here: the
+    bare default run is multi-minute and already end-to-end-covered by
+    ``test_no_flags_default_run_pins_failure_lesson_field_contract``).
+    """
+    # Part A — scoped-flag subprocess against a drifted (empty) corpus.
+    (tmp_path / ".claude").mkdir()
+    workflow_yaml_dst = tmp_path / ".claude" / "workflow.yaml"
+    workflow_yaml_dst.write_bytes((_REPO_ROOT / ".claude" / "workflow.yaml").read_bytes())
+    env = {**os.environ, "EPS_WORKFLOW_LINT_REPO_ROOT": str(tmp_path)}
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(_LINT),
+            "--check-two-tier-yield-floor",
+            "--file",
+            str(workflow_yaml_dst),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        env=env,
+    )
+    combined = result.stdout + result.stderr
+    assert "#2242" in combined, (
+        "#2242 error token missing from output — the CLI flag does not "
+        f"dispatch the check. exit={result.returncode}, output:\n{combined}"
+    )
+    assert result.returncode != 0, (
+        f"expected nonzero exit under the drifted corpus; got exit="
+        f"{result.returncode}, output:\n{combined}"
+    )
+
+    # Part B — OR-chain + dispatch-ladder evidence.
+    src = _LINT.read_text(encoding="utf-8")
+    main_start = src.find("def main(")
+    assert main_start >= 0, "could not locate def main( in workflow_lint.py"
+    main_src = src[main_start:]
+    or_chain_start = main_src.find("no_flags = not (")
+    assert or_chain_start >= 0, "no_flags OR-chain not found in main()"
+    or_chain_src = main_src[or_chain_start : main_src.find(")", or_chain_start)]
+    assert "args.check_two_tier_yield_floor" in or_chain_src, (
+        "args.check_two_tier_yield_floor is NOT in the no_flags OR-chain — a "
+        "bare workflow_lint.py invocation will not fire this check. "
+        f"OR-chain source:\n{or_chain_src}"
+    )
+    assert re.search(
+        r"if args\.check_two_tier_yield_floor or no_flags:\s*\n"
+        r"\s*errors\.extend\(check_two_tier_yield_floor\(\)\)",
+        main_src,
+    ), (
+        "args.check_two_tier_yield_floor is NOT dispatched under `or "
+        "no_flags` — the flag is defined but not bundled into the no-flags "
+        "default run."
     )

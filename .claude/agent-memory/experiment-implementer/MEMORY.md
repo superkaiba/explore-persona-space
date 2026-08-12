@@ -1,3 +1,4 @@
+- [No-flags workflow_lint before push](feedback_no_flags_workflow_lint_before_push.md) — ruff+pin-sweep+tests miss it; upload-prefix argparse-default = #1005 clobber shape (#2054 r1)
 - [argsort tie order is CPU-SIMD-dependent](feedback_argsort_tie_order_machine_dependent_gates.md) — set-validity invariants, never recompute-equality gates; dup row in entry (#1946)
 - [Unexecuted-branch rc claims in markers](feedback_unexecuted_branch_rc_claims_in_markers.md) — run the misuse path or hedge; asserted rc=2 was really rc=1, inverting the guarded misreading (#1739)
 - [Peak-RSS fix = allocation order + refcount-verified release](feedback_peak_rss_allocation_order_refcount_release.md) — defer the alloc, don't reorder batches; getrefcount==2 over a log line (#1739 r4)
@@ -93,4 +94,5 @@
 - [Registered fallback must route production](feedback_registered_fallback_must_route_production.md) — 'auto' resolved to the primary; assert realized routing in the smoke (#1738 r3)
 - [Adoptable tests: repo-root paths + no live HF fetch](feedback_adoptable_tests_no_worktree_paths_no_network.md) — /tmp evidence suites still need adoption shape; Step 9c runs tests/ fleet-wide (#1491)
 - [Seeded vLLM sampling not reproducible cross-config](feedback_vllm_seeded_sampling_not_reproducible_cross_config.md) — same seed ≠ same output across batch/engine shape; prefill-continuation, never subset-resample (#1336)
+- [vLLM FA3-on-H100 lacks tanh softcap — gemma-2 dies at init](feedback_vllm_fa3_gemma2_softcap_fa2_pin.md) — pin VLLM_FLASH_ATTN_VERSION=2 per-model before LLM(); envs lazily read (#2221)
 - [Adoptable tests: repo-root paths + no live HF fetch](feedback_adoptable_tests_no_worktree_paths_no_network.md) — /tmp evidence suites still need adoption shape; Step 9c runs tests/ fleet-wide (#1491)

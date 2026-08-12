@@ -293,7 +293,18 @@ pre-launch statement: staging path named up front + the filesystem it
 resolves to via `df -P` + ≥1.5× headroom) is the inline-analysis sibling.
 Critic enforcement: Methodology lens item 16 MOUNT-BINDING EXTENSION
 (`.claude/rules/critic-lens-reference.md`) REVISEs a bare-GB / unbound-mount
-disk row; no verify_plan.py backstop in v1 of this block.
+disk row. Mechanical backstop (WARN-only, #2097): `verify_plan.py` c56
+(`c56_staging_mount_binding`) WARNs a multi-GB (>=5 GB) staging/footprint
+row naming no mount/staging path within ±2 lines (a doc-global `df -P` /
+`findmnt` probe satisfies), AND a worktree-bind citation (`worktree`/`#681`
+co-occurring with `bind`) lacking a literal `findmnt --mountpoint` liveness
+assertion — the #2091 shape (the #681 bind is NOT live on this VM; cited
+for a 42 GB stage, PASSed verify_plan twice). Heuristic surface only; the
+semantic adequacy of a stated mount stays with the lens. The runtime legs
+are mechanized too (#2097): `hub.stage_hub_prefix` asserts destination-mount
+headroom by default (missing-files-only sizing × 1.5, kill switch
+`EPM_HF_STAGE_HEADROOM_SKIP=1`), and preflight gains the `/mnt/eps-data`
+percent floor (`_check_data_disk_floor`; WARN 90% / ERROR 98%).
 
 
 **Fan-out over the same HF prefix — pre-stage once and fan from the staged
@@ -316,8 +327,16 @@ boxes each staged ~144 GB from the same prefix simultaneously; 5 total
 attempts to land one leg). A §9 plan with `N > 1` same-prefix
 concurrent stages and NO named staging shape is a REVISE. Critic
 enforcement: Methodology lens item 16
-FAN-OUT STAGING EXTENSION (`.claude/rules/critic-lens-reference.md`);
-no verify_plan.py backstop in v1.
+FAN-OUT STAGING EXTENSION (`.claude/rules/critic-lens-reference.md`) —
+the BINDING gate. Mechanical backstop (WARN-only, #2236):
+`verify_plan.py` c57 (`c57_fanout_prefix_staging`) WARNs a §9 window
+declaring an `N > 1` concurrent box-level fan-out in a plan that also
+names Hub-prefix staging (`stage_hub_prefix` / `snapshot_download` /
+`hf_hub_download`) with no staging-shape remedy vocabulary (pre-stage /
+serialize / jitter). WARN-only by design — whether N shard rows each
+PULL the prefix or read a shared path is finally a property of the
+dispatcher, not the plan text, so c57 is the early-warning net and the
+lens stays the binding gate.
 
 
 **Sentinel-signaling workloads need a /workspace-contract lane — never

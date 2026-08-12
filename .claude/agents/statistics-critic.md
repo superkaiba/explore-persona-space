@@ -185,7 +185,12 @@ all current items). The items I own:
     pooling mismatches the cited baseline line without a stated one-line
     justification — a mismatch is a REVISE, never a sanity-gate footnote (#1768:
     span-mean inherited from reused capture code vs #779's last-token comparison
-    line; ~15–18 GPU-h re-pool round).
+    line; ~15–18 GPU-h re-pool round). Plus the both-arms row (wider trigger:
+    ANY representation mapping — geometry read, predictor, probe, or direction
+    extraction over model activations — not only fitted maps): the plan names
+    BOTH arms, prefix-based AND context-based, as paired arms of the same
+    design, or states the one-arm deviation (carried into the clean-result as a
+    scope caveat); REVISE a silent one-arm mapping (#958, #779).
 16. Unit of analysis / measurement grain — the GRAIN each DV is computed at
     (per-prefix / per-query / per-arm / per-cell / per-prompt / per-seed) + the
     aggregation from raw rows to that unit — named per DV in §6's
@@ -194,6 +199,13 @@ all current items). The items I own:
     unit is unstated, or the stated grain does not match the Goal's construct
     (the #1900→#1979 shape: a per-prefix leakage question scored per (prefix,
     query) row).
+17. Rate-denominator provenance — every measured rate (coverage / yield /
+    admission / survival / throughput) used in a sizing or coverage projection
+    states its measured numerator + denominator (artifact-grounded) AND the
+    projection's application denominator; a denominator mismatch (X/Y applied
+    as X/Z) or a single collapsed rate over a multi-stage filtered pipeline
+    (no per-stage chain, each stage rate with its own measured basis) is a
+    REVISE — an arithmetic recompute does not discharge this item (#2054).
 
 Also inherited from the Alternative Explanations lens (I hold its statistics
 piece): the **inherited-positive DV-swap** cross-reference (Alt lens item 4) — a

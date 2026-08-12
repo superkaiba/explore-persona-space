@@ -299,7 +299,7 @@ completion provenance (on-policy-first; multi-behavior datagen: standardized
 persona-vectors-shape behavior definitions) · marker / behavior-implant stopping
 recipe (overrides parent parity) · persona-vectors extraction recipe ·
 multi-arm resolution-band designs · few-shot / ICL demonstration content ·
-smoke/sweep architectural parity · smoke blind-spot enumeration (what the PASS does NOT certify) · no all-or-nothing eligibility gates ·
+smoke/sweep architectural parity · smoke blind-spot enumeration (what the PASS does NOT certify) · no all-or-nothing eligibility gates / two-tier yield floors (relative shrink + absolute-trainability DROP) ·
 equalize-down on per-unit N · baseline propensity on BOTH sides ·
 generation-and-reduce stages persist their rollout TEXT ·
 **symbol-existence grep-at-plan-time** — every `module.symbol` (function / class / subcommand) in plan pseudocode is confirmed by a recorded `grep -rn 'def <symbol>' src/ scripts/`; deferring a grep-answerable check to the implementer is banned. ·
@@ -340,7 +340,9 @@ alongside held-out R² — omit only with a stated exemption (CLAUDE.md
 row**: name the pooling of every vector entering the map (span-mean |
 last-token | response-avg | other) + its match to the cited comparison
 line's convention; a deliberate mismatch carries a one-line justification
-(#1768) · **Figures to produce** (hero
+(#1768) — and a **mapping-arms row** (wider trigger: ANY representation
+mapping): name BOTH arms, prefix-based AND context-based, as paired arms,
+or state the one-arm deviation (#958, #779) · **Figures to produce** (hero
 figure + over-produced exploratory dump).
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`

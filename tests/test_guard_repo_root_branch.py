@@ -24,7 +24,8 @@ unpushed local ``main`` tip imports root-only commits): Arm A intercepts
 ``git -C <.claude/worktrees/ path | $WT spelling> ... merge ... main``
 BEFORE the path-blind ``-C`` waiver; Arm B declines the same bare-main merge
 shape under a WORKTREE-armed cd-latch (the ``scoped_wt`` bit; ``/tmp``
-latches keep their prior disposition byte-identical). ``origin/main`` /
+latches stay Arm-B-exempt — ``scoped_wt=0`` — including under the #2122
+variable/exit-guard /tmp arms). ``origin/main`` /
 raw-sha / ``"$MAIN_SHA"`` merges and ``/tmp`` scratch landings stay allowed;
 override via ``EPM_ALLOW_WORKTREE_LOCAL_MAIN_MERGE=1`` (session env or
 inline command prefix — a command-wide substring match, the
@@ -1073,9 +1074,17 @@ def test_bare_arg_resolving_to_nothing_keeps_status_quo_allow():
             id="R11-export_form",
         ),
         pytest.param(
+            # (#2122) Formerly "M3f-rearm_after_disarm": pre-#2122 the /tmp
+            # assignment bound NOTHING (only a worktree RHS armed), so this
+            # pinned re-arming after an unbound name. Post-#2122 the /tmp
+            # assignment binds the name at the tmp CLASS and the worktree
+            # assignment REBINDS it to wt — the verdict is unchanged (ALLOW),
+            # but the op (a checkout) cannot distinguish class; the
+            # class-keyed rebind DISPOSITION is pinned with a bare-main op in
+            # test_2122_class_rebind_worktree_wins / ..._tmp_wins.
             "WT=/tmp/other; WT=.claude/worktrees/issue-9; "
             'cd "$WT" && git checkout main -- specs.md',
-            id="M3f-rearm_after_disarm",
+            id="M3f-worktree_class_rebind_over_tmp_binding",
         ),
         pytest.param(
             'WT=".claude/worktrees/issue-9"; cd "$WT" && uv run pytest -q',
@@ -4076,6 +4085,341 @@ def test_1861_sticky_arm_b_local_main_merge_still_blocked(monkeypatch):
     assert proc.returncode == 2, proc.stderr
     assert _WT_LM_ARM_B_LABEL in proc.stderr
     assert _WT_LM_HATCH in proc.stderr
+
+
+# ---------------------------------------------------------------------------
+# #2122 — /tmp path-class latch PARITY (variable + exit-guard arms).
+#
+# Pre-#2122 the guard's advertised compose shapes split by path class: the
+# literal `cd <p> && <op>` form accepted BOTH `.claude/worktrees/<name>` and
+# `/tmp/<name>`, while the variable form (`WT=<p>; cd "$WT" && <op>`) and the
+# exit-guard form (`cd <p> || exit 1` + later NL/;-clauses) accepted ONLY the
+# worktree class — so the deny text's own /tmp scratch recipes were unusable
+# in any multi-clause composition beyond the literal `&&` chain (#1491's
+# 2026-08-05 firing). #2122 keys `_wt_names` by path CLASS (wt|tmp, the RHS
+# `..`-excluded) and grants the /tmp class the same variable arming +
+# exit-guard sticky, with scoped_wt=0 / sticky_wt=0 so the #1554 Arm-B
+# bare-local-main fence stays WORKTREE-only: `cd /tmp/x && git merge main`
+# is pinned ALLOW above (test_worktree_local_main_merge_allowed) because a
+# /tmp scratch landing onto main is the deny text's own sanctioned recipe.
+#
+# Measured-disposition rule (#2122 plan §6.0-pre): every expected value in
+# this section traces to a committed measured baseline in the #2122 task
+# artifacts — extended_grid_prefix_output.txt (pre-fix) /
+# extended_grid_postfix_output.txt (post-fix) for the S1-S10 grid, the
+# adversarial negatives, the rebind cells and the guarded recompose;
+# replay_verbatim_output.txt / replay_verbatim_postfix_output.txt for the
+# three verbatim firings — or to a named existing pin in this file.
+# ---------------------------------------------------------------------------
+
+_I2122_OP = "git merge --no-ff origin/issue-1491"
+_I2122_WT = ".claude/worktrees/i1491mrg"
+_I2122_TMP = "/tmp/i1491mrg"
+
+
+def _i2122_grid(path: str) -> dict[str, str]:
+    """The #2122 plan-§2 S-matrix shapes for one path class, keyed by row id.
+
+    S7 deliberately ignores ``path`` (it is the no-assignment fail-open
+    canary — identical text in both classes, kept for matrix completeness).
+    """
+    return {
+        "S1": f"cd {path} && {_I2122_OP}",
+        "S2": f"cd {path}\n{_I2122_OP}",
+        "S3": f'WT={path}; cd "$WT" && {_I2122_OP}',
+        "S4": f'WT={path}\ncd "$WT" && {_I2122_OP}',
+        "S5": f'WT={path}\ncd "$WT" || exit 1\n{_I2122_OP}',
+        "S6": f'WT={path}\ncd "$WT" || {{ echo FATAL >&2; exit 1; }}\n{_I2122_OP}',
+        "S7": f'cd "$WT" && {_I2122_OP}',
+        "S8": f"git -C {path} merge --no-ff origin/issue-1491",
+        "S9": f"cd {path} || exit 1\n{_I2122_OP}",
+        "S10a": f"cd {path} && git merge main",
+        "S10b": f"cd {path} || exit 1\ngit merge main",
+        "S10c": f'WT={path}; cd "$WT" && git merge main',
+        "S10d": f'WT={path}\ncd "$WT" || exit 1\ngit merge main',
+    }
+
+
+@pytest.mark.parametrize("path", [_I2122_WT, _I2122_TMP], ids=["wt", "tmp"])
+@pytest.mark.parametrize("shape", ["S1", "S3", "S4", "S5", "S6", "S8", "S9"])
+def test_2122_matrix_scoped_compose_allows(shape, path):
+    """S-matrix ALLOW cells, both path classes.
+
+    The /tmp column's S3/S4/S5/S6/S9 are THE #2122 parity cells — measured
+    BLOCK pre-fix (extended_grid_prefix_output.txt) and ALLOW post-fix
+    (extended_grid_postfix_output.txt). The wt column plus S1/S8 are
+    unchanged-ALLOW controls (same two baselines, and the wt exit-guard
+    forms are already pinned in the #1861 battery above).
+    """
+    assert _run(_i2122_grid(path)[shape]) == 0
+
+
+@pytest.mark.parametrize("path", [_I2122_WT, _I2122_TMP], ids=["wt", "tmp"])
+@pytest.mark.parametrize("shape", ["S2", "S7"])
+def test_2122_matrix_unproven_scope_blocks(shape, path):
+    """S2 (unguarded NEWLINE cd) + S7 (unassigned ``$WT``) BLOCK in BOTH classes.
+
+    S2 is #1491's true-positive half: bash does not guarantee an unguarded
+    ``cd`` succeeded, so the newline-separated op may run at the shared
+    root. S7 is the fail-open canary — ``cd ""`` succeeds as a repo-root
+    no-op, so an unassigned name must never latch. Measured BLOCK in both
+    baselines (extended_grid_{prefix,postfix}_output.txt).
+    """
+    assert _run(_i2122_grid(path)[shape]) == 2
+
+
+@pytest.mark.parametrize("shape", ["S10a", "S10b", "S10c", "S10d"])
+def test_2122_s10_worktree_cells_block_arm_b(shape, monkeypatch):
+    """All four S10 worktree cells decline via #1554 Arm B — label asserted.
+
+    Each cell reaches Arm B by a DIFFERENT path (&& latch vs sticky
+    restore, literal vs variable arming), so no cell substitutes for
+    another; the Arm-B label distinguishes the fence from a fall-through to
+    the #1128 root-merge fence. Measured BLOCK with the Arm-B label in both
+    extended_grid baselines (S10b/wt additionally pinned by
+    test_1861_sticky_arm_b_local_main_merge_still_blocked above).
+    """
+    monkeypatch.delenv(_WT_LM_HATCH, raising=False)
+    proc = _run_full(_i2122_grid(_I2122_WT)[shape])
+    assert proc.returncode == 2, proc.stderr
+    assert _WT_LM_ARM_B_LABEL in proc.stderr
+
+
+@pytest.mark.parametrize("shape", ["S10a", "S10b", "S10c", "S10d"])
+def test_2122_s10_tmp_cells_allow(shape, monkeypatch):
+    """All four S10 /tmp cells ALLOW — the /tmp class is Arm-B-EXEMPT.
+
+    The direction-of-strictness family: /tmp is deliberately MORE permissive
+    than worktree here (a /tmp scratch landing onto local main is the
+    sanctioned Step-10d recipe; a worktree fast-forward onto unpushed local
+    main is the #1530 contamination class). S10b/tmp is the wrong-C2
+    observable: a verbatim copy of the worktree sticky grant
+    (sticky_pending_wt=1 instead of 0) passes every other cell in this
+    module and leaves exactly THIS cell BLOCK via Arm B. S10c/S10d are the
+    variable-arm leak observables (a `scoped_wt`/`sticky_pending_wt`
+    mis-keying surfaces as an Arm-B BLOCK here). S10a was already pinned at
+    test_worktree_local_main_merge_allowed ("cd /tmp/x && git merge main");
+    S10b/c/d measured BLOCK pre-fix -> ALLOW post-fix
+    (extended_grid_{prefix,postfix}_output.txt).
+    """
+    monkeypatch.delenv(_WT_LM_HATCH, raising=False)
+    proc = _run_full(_i2122_grid(_I2122_TMP)[shape])
+    assert proc.returncode == 0, proc.stderr
+
+
+# Adversarial negatives, /tmp class: every arming / disarming / sticky
+# refusal recorded for the worktree class carries over UNCHANGED — the /tmp
+# arms must be no more permissive than the existing literal /tmp arm. All
+# rows measured BLOCK pre-fix AND post-fix
+# (extended_grid_{prefix,postfix}_output.txt, rows N1-N13; the
+# unassigned-name canary is the S7 row above). Worktree twins: the
+# M2*/M3*/B1*/R1*/X* batteries earlier in this module.
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            f'WT={_I2122_TMP}; WT=/somewhere/else; cd "$WT" && {_I2122_OP}',
+            id="N1-reassign_disarms",
+        ),
+        pytest.param(
+            f'[ -d x ] && WT={_I2122_TMP}; cd "$WT" && {_I2122_OP}',
+            id="N2-and_preceded_arming",
+        ),
+        pytest.param(
+            f'false || WT={_I2122_TMP}; cd "$WT" && {_I2122_OP}',
+            id="N3-or_preceded_arming",
+        ),
+        pytest.param(
+            f'true | WT={_I2122_TMP}\ncd "$WT" && {_I2122_OP}',
+            id="N4-pipe_preceded_arming",
+        ),
+        pytest.param(
+            f'WT={_I2122_TMP} true; cd "$WT" && {_I2122_OP}',
+            id="N5-assignment_prefix_temp_env",
+        ),
+        pytest.param(
+            f'WT={_I2122_TMP}\ncd "$WT" || echo oops\n{_I2122_OP}',
+            id="N6-var_nonexiting_tail_echo",
+        ),
+        pytest.param(
+            f'WT={_I2122_TMP}\ncd "$WT" || return 1\n{_I2122_OP}',
+            id="N7-var_nonexiting_tail_return",
+        ),
+        pytest.param(
+            f'WT={_I2122_TMP}\ncd "$WT" || exit 1\ncd /home/user/elsewhere\n{_I2122_OP}',
+            id="N8-later_cd_voids_sticky",
+        ),
+        pytest.param(
+            f'WT=/home/thomasjiralerspong/explore-persona-space\ncd "$WT" && {_I2122_OP}',
+            id="N9-repo_root_spelled_rhs",
+        ),
+        pytest.param(
+            f'WT=/tmp/../home/thomasjiralerspong/explore-persona-space\ncd "$WT" && {_I2122_OP}',
+            id="N10-dotdot_traversal_rhs",
+        ),
+        pytest.param(
+            f"cd {_I2122_TMP} || echo oops\n{_I2122_OP}",
+            id="N11-literal_nonexiting_tail_echo",
+        ),
+        pytest.param(
+            f"cd {_I2122_TMP} || return 1\n{_I2122_OP}",
+            id="N12-literal_nonexiting_tail_return",
+        ),
+        pytest.param(
+            f'WT={_I2122_TMP}\ncd "$WT" || exit 1\npushd /tmp/elsewhere\n{_I2122_OP}',
+            id="N13-later_pushd_voids_sticky",
+        ),
+    ],
+)
+def test_2122_tmp_class_adversarial_negatives_block(cmd):
+    """The /tmp variable/exit-guard arms inherit every fail-closed refusal."""
+    assert _run(cmd) == 2
+
+
+def test_2122_class_rebind_worktree_wins(monkeypatch):
+    """Rebinding a /tmp-armed name to a worktree path takes the WT class.
+
+    Bare-main op makes the class observable (Arm B fires => the latch is
+    worktree-class; M3f's checkout op cannot distinguish class). Measured
+    BLOCK with the Arm-B label pre-fix AND post-fix
+    (extended_grid_{prefix,postfix}_output.txt, row RB1).
+    """
+    monkeypatch.delenv(_WT_LM_HATCH, raising=False)
+    proc = _run_full(f'WT={_I2122_TMP}; WT={_I2122_WT}; cd "$WT" && git merge main')
+    assert proc.returncode == 2, proc.stderr
+    assert _WT_LM_ARM_B_LABEL in proc.stderr
+
+
+def test_2122_class_rebind_tmp_wins():
+    """Rebinding a worktree-armed name to a /tmp path takes the TMP class.
+
+    The reverse direction of the rebind pin above: the latest bare
+    unconditional assignment's class wins, so the bare-main merge is
+    Arm-B-exempt (the S10c/tmp family). Measured BLOCK pre-fix (the /tmp
+    reassignment used to DISARM, leaving the merge unscoped at the root)
+    -> ALLOW post-fix (extended_grid_{prefix,postfix}_output.txt, row RB2).
+    """
+    assert _run(f'WT={_I2122_WT}; WT={_I2122_TMP}; cd "$WT" && git merge main') == 0
+
+
+# ---- The three 2026-08-05/06 firings, VERBATIM (transcript rows 2f4940f0
+# r295, b765cdcd r691, 8d7f8b25 r4928), pinned at their post-fix
+# dispositions. Measured: replay_verbatim_output.txt (pre-fix) /
+# replay_verbatim_postfix_output.txt (post-fix). ------------------------------
+
+_I2122_F1_1739 = (
+    "POD=pod-1739-a1apilot; COMMIT=b2d2fa008fe5954873dfe457f5576b63e925502f; "
+    "LOGP=/workspace/logs/eos-pilot-a1apilot.log; PIDP=/workspace/logs/eos-pilot-a1apilot.pid\n"
+    "echo \"=== step 1: fetch + pin to the siblings' exact commit (bounded, detached "
+    'pod-side so ssh cannot hang on it) ==="\n'
+    'timeout --kill-after=30s 120s ssh -o BatchMode=yes -o ConnectTimeout=20 "$POD" \\\n'
+    '  "cd /workspace/explore-persona-space && rm -f $LOGP $PIDP && setsid nohup bash -c '
+    "'git fetch origin issue-1739 -q && git checkout --detach $COMMIT -q && git rev-parse HEAD "
+    "> /workspace/logs/pin-a1a.ok' > /workspace/logs/pin-a1a.log 2>&1 < /dev/null & "
+    'echo dispatched" 2>&1 | tail -3\n'
+    'echo "ssh rc=$? (124 = wrapper timeout on the backgrounded child; verify below, '
+    'never trust this rc)"'
+)
+
+_I2122_F2_2091 = (
+    "ssh -o StrictHostKeyChecking=no pod-2091 'cd /workspace/explore-persona-space && "
+    "git fetch origin issue-2091 --quiet && git checkout -q issue-2091 && "
+    'echo "branch=$(git rev-parse --abbrev-ref HEAD)" && echo "head=$(git rev-parse HEAD)" && '
+    'echo -n "issue2091_scripts=" && (ls scripts/ | grep -c "^issue2091_" || true)\' '
+    "2>&1 | tail -10"
+)
+
+_I2122_F3_1491 = (
+    "WT=/tmp/i1491mrg\n"
+    'cd "$WT"\n'
+    'git merge --no-ff origin/issue-1491 -m "Merge issue-1491: context→answer map '
+    'across the Qwen2.5-Instruct scale ladder" > /tmp/i1491-merge.out 2>&1\n'
+    'echo "merge rc=$?"\n'
+    "echo \"--- output ---\"; grep -vE '^Auto-merging' /tmp/i1491-merge.out | head -15 "
+    "| sed 's/^/  /'\n"
+    "\n"
+    'echo; echo "=== conflicted paths (unmerged index entries) ==="\n'
+    "git diff --name-only --diff-filter=U | sed 's/^/  /'"
+)
+
+# F3 with the ONE change the deny text prescribes: exit-guard the cd.
+_I2122_F3_GUARDED = _I2122_F3_1491.replace('cd "$WT"\n', 'cd "$WT" || exit 1\n', 1)
+
+
+def test_2122_verbatim_1739_ssh_firing_still_blocks():
+    """#1739's firing stays BLOCKED — four independent fail-closed refusals.
+
+    timeout FLAG form + double-quoted ``$``-expanding payload + in-candidate
+    redirect + in-payload separators (any one sufficient); relaxing them is
+    explicitly out of scope (#2122 plan §5). The fix for this firing is
+    MESSAGE-ONLY (the deny-text pin below). Measured BLOCK in both replay
+    baselines.
+    """
+    assert _run(_I2122_F1_1739) == 2
+
+
+def test_2122_verbatim_2091_ssh_firing_allows():
+    """#2091's firing ALLOWS on HEAD (fixed by #1859/#1861 before #2122).
+
+    Pinned so a sibling ssh-arm edit cannot silently re-break it. Measured
+    ALLOW in both replay baselines.
+    """
+    assert _run(_I2122_F2_2091) == 0
+
+
+def test_2122_verbatim_1491_unguarded_newline_still_blocks():
+    """#1491's verbatim firing stays BLOCKED — the true-positive half.
+
+    An UNGUARDED ``cd "$WT"`` followed by a newline-separated merge: bash
+    does not guarantee the cd succeeded, so a failed cd runs the merge at
+    the SHARED root. ``&&``-only propagation is the safety property; the
+    guarded recompose below is the working alternative. Measured BLOCK in
+    both replay baselines.
+    """
+    assert _run(_I2122_F3_1491) == 2
+
+
+def test_2122_verbatim_1491_guarded_recompose_allows():
+    """#1491's command with an exit-guarded cd ALLOWS post-#2122.
+
+    The deny text's own prescribed recompose (shape 3, now /tmp-class):
+    identical command, ``cd "$WT" || exit 1`` instead of the bare cd.
+    Measured BLOCK pre-fix -> ALLOW post-fix
+    (extended_grid_{prefix,postfix}_output.txt, row F3g).
+    """
+    assert _run(_I2122_F3_GUARDED) == 0
+
+
+def test_2122_deny_text_names_host_contribution_and_tmp_shapes():
+    """The deny text carries the #2122 C3 message fixes, escapes resolved.
+
+    (a) the compose-shapes sentence advertises the /tmp class for shapes
+    2-3 (so it no longer contradicts the scratch-merge recipe below it);
+    (b) the ssh paragraph disambiguates variable BINARY heads from a
+    quoted/variable HOST token and names the host as a CONTRIBUTING arm
+    only — never an independent refusal (#1739's replay:
+    ``timeout 120s ssh -o BatchMode=yes "$POD" "<no-separator payload>"``
+    ALLOWs, so an independent-refusal wording would over-claim);
+    (c) the ``..``-void clause is SCOPED to the cd argument and the /tmp
+    assigned path. The worktree-class assignment RHS carries no ``..``
+    exclusion (a retained pre-existing hole, plan §4 C1), so the earlier
+    "anywhere in the assigned path" phrasing over-claimed for that class.
+    The over-claim was in the safe direction, but this task exists to stop
+    deny messages from misdirecting the next agent — an inaccurate deny
+    clause here would be self-defeating (code-review round 1, Minor 1).
+    """
+    proc = _run_full("git checkout -b probe/2122")
+    assert proc.returncode == 2, proc.stderr
+    assert "#2122 extended shapes 2-3 to /tmp/<name> scratch paths" in proc.stderr
+    assert "WT=<path under .claude/worktrees/ or /tmp/>" in proc.stderr
+    assert "a '..' in the cd argument (or in a /tmp/ assigned path)" in proc.stderr
+    # Negative: the superseded over-claiming phrasing must not come back.
+    assert "anywhere in the assigned path" not in proc.stderr
+    assert "variable BINARY heads (a variable invoking ssh itself)" in proc.stderr
+    assert 'A quoted or variable HOST token (ssh "$POD" "...") is NOT a refusal by itself' in (
+        proc.stderr
+    )
+    assert "the #1739 firing" in proc.stderr
 
 
 def test_zz_production_sidecar_untouched_by_suite():

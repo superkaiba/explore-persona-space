@@ -1368,13 +1368,17 @@ concerns_protocol:
   summary_cap: |
     Stored concern summaries are HARD-CAPPED at 200 chars (the library
     layer raises ValueError above it; 5 reviewer crashes on 2026-06-10
-    alone: 238-410-char summaries). The task.py CLI (raise-concern /
-    address-concern) auto-truncates a longer `--summary` at a word
-    boundary with a loud stderr warning instead of crashing — on
-    raise-concern the full original is shifted into `--evidence` when
-    evidence is empty. Compose the summary as one tight sentence and
-    move all detail to `--evidence`. The same cap applies to
-    `address-concern` carried summaries.
+    alone: 238-410-char summaries). Over-cap handling is per-branch and
+    NON-LOSSY (#2121): raise-concern with NO `--evidence` shifts the
+    full original verbatim into evidence (word-boundary lead stored,
+    loud stderr warning); raise-concern WITH `--evidence`, and
+    address-concern always, hard-error (exit 2) on an over-cap inline
+    `--summary`. Long text goes through `--summary-file <path>` (any
+    length; over-cap file text is preserved verbatim in the event's
+    evidence field, <=200-char derived lead as the summary). Compose
+    the summary as one tight sentence and move all detail to
+    `--evidence`. The same cap applies to `address-concern` carried
+    summaries.
   concern_id_examples:
     - probe-position-undefined
     - missing-mlm-control
@@ -2334,7 +2338,7 @@ markers:
     fields: "Merge SHAs (one per commit when rebase-merged) for the safe path. For the artifact-confirmed path (guard 3 tripped: based on a non-mainline parent branch like a still-unmerged issue-<M>, OR the branch's OWN commits — git diff origin/main...HEAD — touch foreign tasks/ or out-of-scope paths; BEHIND alone is never the trip, it only triggers the own-commit content check), instead: {artifact_confirmed: true, full_rebase_deferred: true, reason: '...', verified_paths: [...]} or, if a surgical additive checkout was needed, {artifact_confirmed: true, full_rebase_deferred: true, surgical_checkout: true, files: [...]}. Worktree is NOT removed (kept for inspection; reaped later by worktree_audit.py)."
   - kind: "epm:merge-failed"
     posted_by: skill
-    when: "Step 9b / Step 10d auto-merge hit a conflict / non-mergeable PR (posted only after the one-shot in-worktree merge-conflict recovery — SKILL.md Step 10d — also fails)"
+    when: "Step 9b / Step 10d auto-merge hit a conflict / non-mergeable PR (posted after the one-shot in-worktree merge-conflict recovery — SKILL.md Step 10d — also fails, or when a novel-payload branch cannot obtain a usable PR object — #2240)"
     fields: "gh/git error + branch + worktree path. Non-blocking: the task still parks (experiments) / completes (code paths); retried idempotently on the next /issue <N>."
   - kind: "epm:stale"
     posted_by: skill

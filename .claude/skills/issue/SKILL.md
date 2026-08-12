@@ -2077,7 +2077,13 @@ if [ "$(git -C "$REPO_ROOT" rev-list --count origin/main..issue-<N>)" -gt 0 ]; t
     --title "issue-<N>: <task title>" \
     --body "Closes task #<N>."
 else
-  echo "issue-<N> has no commits ahead of origin/main yet; skipping draft PR (open it after the implementer commits)."
+  # This arm fires by construction on a fresh branch: Step 4a runs at the
+  # approved->running transition, BEFORE the implementer's first commit, and
+  # no later step re-runs this create (#2240 root cause). Step 10d's
+  # payload-aware no-usable-PR arm is the backstop that opens the PR for a
+  # code-bearing branch at merge time, posting a [step10d-no-pr-anomaly]
+  # epm:progress note when it does.
+  echo "issue-<N> has no commits ahead of origin/main yet; skipping draft PR — Step 10d's payload-aware arm (#2240) opens it at merge time if the branch carries novel payload."
 fi
 ```
 
@@ -2537,9 +2543,13 @@ for f in $SPECS; do
     # main's current state). Without these commit titles printed, the
     # operator cannot tell a legitimate branch deliverable (#535
     # incident) from a stale port/revert that needs no protection.
+    # agent-memory override: ALSO run the gotchas.md no-lost-row check (#2101).
     echo "spec-freshness: $f carries branch-side feature edits — marking family '$fam' dirty; skipping blind sync for the whole family; reconcile manually."
     echo "  branch-side commits:"
     echo "$bs_commits" | sed 's/^/    /'
+    if [ "$f" = ".claude/agent-memory" ]; then
+      echo "  agent-memory: any manual re-align of MEMORY.md indexes MUST run the no-lost-row check (comm -13 incoming vs local; .claude/rules/gotchas.md) — rows unique to the local copy are re-appended or dispositioned in the commit message."
+    fi
   fi
   # Uncommitted-dirt arm (#1972): an uncommitted worktree write under $f must
   # never be clobbered by the checkout below. Tracked-modified dirt (any
@@ -2598,7 +2608,12 @@ fi
 # Sibling-issue file freshness (#1972): per-FILE grain, scripts AND their
 # covering tests as a PAIR. A gated test may import a sibling issue's
 # scripts/issue<M>_*.py whose worktree copy predates a main-side fix (the
-# #1768 r4/r5 class, ~40 min/incident); the sync commit below also puts the
+# #1768 r4/r5 class, ~40 min/incident), or invoke (subprocess / read_text)
+# a sibling scripts/issue<M>_*.sh — a dispatcher left at fork-era content,
+# or absent entirely, reds the Step 9c gate as NEW (rc 127 +
+# FileNotFoundError; #1988/#2004: a synced tests/test_issue2054_*.py
+# arriving without scripts/issue2054_dispatch.sh, ~75 min of gate wall
+# across two sessions); the sync commit below also puts the
 # file into the selector's three-dot diff (fetched origin/main,
 # merge-base...HEAD), newly mapping its covering tests/test_issue<M>_*.py —
 # so the pair MUST move together (syncing the script alone runs a fork-era
@@ -2634,7 +2649,7 @@ while IFS= read -r f; do
   else
     echo "spec-freshness: sibling file $f absent on origin/main — skipped (never deleted; #1972)."
   fi
-done < <(git -C "$WT" -c core.quotePath=false diff --name-only origin/main -- ':(glob)scripts/issue[0-9]*_*.py' ':(glob)tests/test_issue[0-9]*_*.py')
+done < <(git -C "$WT" -c core.quotePath=false diff --name-only origin/main -- ':(glob)scripts/issue[0-9]*_*.py' ':(glob)scripts/issue[0-9]*_*.sh' ':(glob)tests/test_issue[0-9]*_*.py')
 # Import-satisfiability probe on synced sibling TEST files (#2208): a main-NEW
 # test can import a symbol added to src/ AFTER this branch's fork point — the
 # worktree src is branch-era, collection ImportErrors, and the Step 9c compare
@@ -2705,7 +2720,9 @@ branch-side commit titles so the orchestrator can tell a legitimate
 branch deliverable (the #535 case) from a stale port/revert whose
 content has already landed on main (in which case the orchestrator can
 safely override the skip for those specific files with a manual
-`git -C "$WT" checkout origin/main -- <paths>`).
+`git -C "$WT" checkout origin/main -- <paths>`). For
+`.claude/agent-memory`, the override also runs the gotchas.md
+no-lost-row check (#2101).
 
 **The sync scope is specs + the spec-coupled lint/guard family — do NOT
 extend it further into `scripts/`, `tests/`, or `src/`.** The family
@@ -3380,9 +3397,11 @@ This step does NOT override 5c-bis — mechanical-contract-only FAILs
 still strip and cosmetic gripes about present evidence still don't
 bounce the implementer. The check operates on a different signal
 (concerns.jsonl persisted via `task.py raise-concern` — NOTE the
-`--summary` arg is capped at 200 chars — the CLI truncates longer text
-at a word boundary with a loud warning (programmatic `task_workflow`
-callers still get ValueError); put detail in `--evidence`) and gates
+`--summary` arg is capped at 200 chars — over-cap with NO --evidence
+still shifts the full original into evidence with a loud warning;
+over-cap WITH --evidence is a hard error (#2121); pass long text via
+`--summary-file` (programmatic `task_workflow` callers still get
+ValueError); put detail in `--evidence`) and gates
 auto-advance ON TOP of the existing flow. The same subroutine fires at
 Step 9a (interp ensemble) and Step 9a-bis (clean-result ensemble) with
 the same logic.
@@ -6973,7 +6992,8 @@ Any VM-LOCAL compute phase with projected wall-time >~15 min that the
 orchestrator launches DIRECTLY as bg-Bash (a Phase-D-style fit, an
 aggregation / permutation battery) MUST be launched fully detached:
 
-    PHASE_PID=$(bash -c 'setsid nohup env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 <cmd> < /dev/null >> <abs, space-free log path> 2>&1 & echo $!')
+    PHASE_PID=$(timeout 60 bash -c 'setsid nohup env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 <cmd> < /dev/null >> <abs, space-free log path> 2>&1 & echo $!')
+    [ -n "$PHASE_PID" ] || echo "[warn] launcher returned NO pid — the detached job may ALREADY be running: ADOPT it via the bracketed probe below, NEVER relaunch (#1491 duplicate-run collision)"
     ps -p "$PHASE_PID" -o args=   # verify the pid is the workload; on mismatch recover via a
                                   # BRACKETED pattern probe — pgrep -f '<distinctive invocatio[n]>'
                                   # (bracket ONE char: an unbracketed pattern matches this probe's
@@ -6993,7 +7013,22 @@ signal kill). `setsid` gives the phase its own session + process group (group
 kills miss it; orphans land ABOVE the dead session (nearest subreaper, else
 init, not always PID 1), so no ppid-tree walk reaches it; `ppid == 1` is
 wrong, #2199); `< /dev/null >> log` drops every fd tether to the dying
-session. The phase's
+session. **Stdout-redirect rule (#2126, measured —
+`tasks/<status>/2126/artifacts/probe-detached-fd.txt`):** the inner
+command's **stdout** must be redirected INSIDE the `$( )` — a command
+substitution returns only when its captured pipe has no writers left, so a
+detached child inheriting fd 1 holds the substitution open for the child's
+WHOLE lifetime → the harness kills the Bash call at its cap AFTER the child
+already started (pid never captured, job running unowned). `timeout 60`
+bounds only a wrapper that wedges BEFORE forking — it does NOT bound the
+inherited-fd hang (measured: the substitution blocked for the child's full
+run despite `timeout 6`, rc=0 — timeout's target had already exited), so
+the redirect discipline, not the timeout, is the guard. The NO-pid warn
+above has TWO recovery arms: a bracketed-probe MATCH means the job is
+running unowned — ADOPT the pid and re-emit the breadcrumb; a probe with NO
+match means the `timeout` killed a pre-fork wedge and the job never
+started — relaunching is then correct per
+`.claude/rules/crash-fix-rounds.md` § Kill-before-relaunch. The phase's
 stage-dispatch breadcrumb MUST carry four additional fields:
 `... pid=<PHASE_PID> log=<abs log path> choom=ok|failed harvest=<abs output path>`
 (additive whitespace-split
@@ -7967,9 +8002,10 @@ explicit eval-data path):
    `figures/`, `eval_results/`, `ood_eval_results/`, `raw/`, `data/`,
    `docs/methodology/`) — typically the new `scripts/issue<N>_*.py`
    script or an `src/.../analysis/` helper. Empty payload ⇒ skip.
-   Otherwise run BOTH legs as ONE background Bash (the no-flags leg is
-   ~2.5-6 min; never a ≤600 s foreground bound — #991/#996), verdict
-   read from the file before the push.
+   Otherwise run BOTH legs as ONE background Bash (scoped leg ~5 s;
+   surface/fallback bare leg ~9-10 min, 2026-08-11, fence
+   `LINT_TIMEOUT_S=1200`; never a ≤600 s foreground bound — #991/#996),
+   verdict read from the file before the push.
 
    **Single-flight probe (#1606)** first, per the Step 9c 1b
    single-flight statement: probe
@@ -7992,7 +8028,7 @@ explicit eval-data path):
    helper's audit files
    (`/tmp/issue-<N>-inline-lint.txt` / `-inline-map.txt`) are
    unconditional ISSUE-keyed overwrites, so a relaunch clobbers the live
-   run's audit legs and double-burns the ~2.5-6 min legs. WAIT for exit, or
+   run's audit legs. WAIT for exit, or
    reap a wedged run, per the Step 9c 1b statement (crash-fix-rounds
    § Kill-before-relaunch); key any improvised wait on **process
    exit** (the probe exiting 0 — CLEAR), never on cert/audit-file
@@ -8113,8 +8149,8 @@ explicit eval-data path):
    (`scripts/`/`src/`/`tests/` — the hook's glob) MUST inline this
    section's certification recipe: the single-flight probe, the
    fenced two-command block above (payload-file `printf` +
-   `scripts/inline_lint_gate.py`, ONE background Bash — the no-flags
-   leg is ~2.5-6 min and never fits a foreground bound), and the
+   `scripts/inline_lint_gate.py`, ONE background Bash — the bare
+   fallback leg never fits a foreground bound), and the
    Preferred-ordering instruction to kick it off at script-freeze.
    The brief ALSO states the worker-side contract: **a guard-blocked
    commit is a report-now event, never a wait state** — on a
@@ -9793,7 +9829,13 @@ suite directly and posts an `epm:test-verdict` event with the result.
 
       Pre-gate spec-freshness re-sync (#1742): AFTER the `cd "$WT"` below
       and BEFORE invoking the selector, run the Step 5a family-atomic
-      spec-freshness block (§ Step 5a) ONCE from the worktree cwd. This
+      spec-freshness block (§ Step 5a) ONCE from the worktree cwd. It
+      binds before the FIRST gate launch AND before EVERY gate
+      re-launch — every "re-run the gate ONCE" recovery path in this
+      SKILL, 9c and Step 10d alike, means re-sync-then-relaunch, never a
+      bare relaunch (#2006: a main-side fix landing mid-gate turns stale
+      worktree copies into NEW-node reads; three full gate runs / ~3 h).
+      This
       is a BINDING reference — never inline a THIRD `FAMILY_OF` copy
       here (a third inlined copy would escape
       `test_step10d_family_atomicity_matches_step5a`'s drift guard). The
@@ -9834,10 +9876,19 @@ suite directly and posts an `epm:test-verdict` event with the result.
       sizing line, any `untested touched file: <path>` WARN lines, and the
       empty-diff NOTE described above. (A code-change task with NO worktree
       runs both from the repo root; the empty-diff NOTE is then expected and
-      benign.)
+      benign.) `--json` emits the test list under key **`tests`** (count
+      `n_tests`), NOT `files` — #1992's launcher read `'files'`, got an
+      empty `$FILES`, and pytest collected the whole 19,223-test suite
+      (~31 min); a session composing its own launcher uses `--files-only`
+      (paths only, one per line — no key to guess) and refuses on empty per
+      the 1b gate-set cross-check.
    b. Run the printed command as a DETACHED background invocation (the
       same setsid + pid/log/rc-file breadcrumb shape prescribed at
-      § Detached VM-side long compute phases above): the selection always
+      § Detached VM-side long compute phases above). `<files>` and `<T>`
+      are COPIED from step 1a's printed command (or from `--files-only`
+      output + the greppable `recommended-timeout-s=<T>` stderr line) —
+      NEVER hand-typed; the gate-set cross-check below is what makes a
+      mis-copy loud instead of catastrophic. The selection always
       contains the 61-file (2026-07-24) workflow-invariant set incl.
       `tests/test_workflow_lint.py` (median ~13 min alone, max ~30 min;
       whole gate median ~18 min, max ~38 min of test time plus collection
@@ -9984,6 +10035,18 @@ suite directly and posts an `epm:test-verdict` event with the result.
       # is a shell var local to this bg-Bash call; the completion-read runs
       # in a separate call, so we save the path where it can find it):
       [ -n "${S9C_BASETEMP:-}" ] && echo "$S9C_BASETEMP" > /tmp/step9c-basetemp-issue-<N>.path
+      # Gate-set cross-check (#1992/#2126) — BEFORE the launch. #1992's launcher
+      # read the WRONG --json key ('files', not 'tests'), spliced an empty list,
+      # and pytest collected the WHOLE 19,223-test suite (~31 min). Compare the
+      # substituted <files> against the selector's LIVE count; a mismatch means a
+      # wrong key, a stale copy, or an unsubstituted placeholder:
+      S9C_N=$(uv run python scripts/select_step9c_tests.py --files-only 2>/dev/null | grep -c .) \
+        || { echo "FATAL: selector failed — do NOT launch the gate" >&2; exit 1; }
+      S9C_FILES="<files>"   # verbatim from step 1a's printed command
+      S9C_GOT=$(printf '%s\n' $S9C_FILES | grep -c . || true)   # unquoted: word-split is the intent
+      [ "${S9C_GOT:-0}" -eq "${S9C_N:-0}" ] \
+        || { echo "FATAL: substituted <files> has $S9C_GOT path(s), selector says $S9C_N — wrong --json key (the list key is 'tests'), stale copy, or unsubstituted placeholder; re-run step 1a and re-substitute; do NOT launch (a bare pytest collects the WHOLE suite)" >&2; exit 1; }
+      echo "[step9c] gate set cross-checked: $S9C_GOT test files"
       # DETACHED launcher — the § Harvest self-harvest chaining shape
       # (SKILL.md § Detached VM-side long compute phases): the workload +
       # rc-write are ONE bash -c unit, and setsid+nohup + the outer
@@ -9994,6 +10057,13 @@ suite directly and posts an `epm:test-verdict` event with the result.
       # the outer bg-Bash STILL dies at the 600s tool cap (the exact
       # failure this recipe exists to fix; the § Harvest NEVER-splice
       # rule).
+      # Script-file variant (#2115): should this gate workload ever need a
+      # script FILE (the Step 10d lint-gate / surgical launchers' shape),
+      # COMPOSE it with the Write tool as its own prior step — never a
+      # `cat > ... <<'EOF'` heredoc inside the Bash call (a heredoc body
+      # rides the whole workload as Bash tool-call argv through the
+      # harness transport, the #2115 stall surface; guards scan the full
+      # argv, #1756).
       # $S9C_BASETEMP expands at the OUTER level — the var is UNEXPORTED,
       # so a deferred `\$S9C_BASETEMP` reaches the detached inner shell
       # EMPTY and pytest gets `--basetemp=/p` (#2005 r1 C1). Only the
@@ -10060,7 +10130,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
       rc:
       ```bash
       if [ ! -f /tmp/step9c-rc-issue-<N> ]; then
-        echo "FATAL: gate rc file missing — live probe match = still running (keep waiting); probe CLEAR = the detached run died: kill-before-relaunch, then re-run the gate ONCE; NEVER record PASS." >&2
+        echo "FATAL: gate rc file missing — live probe match = still running (keep waiting); probe CLEAR = the detached run died: kill-before-relaunch, then re-sync (§ pre-gate re-sync), then re-run the gate ONCE; NEVER record PASS." >&2
       else
         PYTEST_RC=$(cat /tmp/step9c-rc-issue-<N>)
         tail -30 /tmp/step9c-pytest-issue-<N>.log
@@ -11284,15 +11354,26 @@ rebase-merged. Five guards:
        fi
        if [ "$GUARD1_STRIP_RC" -eq 0 ]; then GUARD1_STATE=ok; break; fi
        GUARD1_STATE=strip-failed
-       # Un-stage AND restore the working tree for ONLY this attempt's paths
-       # so the retry re-splits clean (never a bare `reset -- tasks/`, which
-       # could touch own-task staged state). checkout HEAD restores index AND
-       # working tree. Under the three-dot trigger (#1280) FOREIGN is
-       # fork-point-stable into attempt 2; what refreshes is the SPLIT +
-       # strip TARGET content, so the restore must leave no uncommitted
-       # foreign litter behind (a later shape-1 worktree merge could
-       # refuse on it).
-       git -C "$WT" checkout HEAD -- "${FOREIGN[@]}"
+       # Un-stage AND restore ONLY this attempt's paths so the retry
+       # re-splits clean (never a bare `reset -- tasks/`, which could touch
+       # own-task staged state). PER-DISPOSITION (#2126): a single batched
+       # pathspec op ABORTS ENTIRELY on one unmatched path — measured
+       # (artifacts/probe-guard1-restore.txt part A), a branch-DELETED
+       # foreign path (the status `git mv` shape) is unmatched under BOTH
+       # probed restore verbs, and the old batched form restored NOTHING
+       # (#2087). The split keys on HEAD existence, so the in-HEAD batch
+       # can never carry an unmatched pathspec; checkout HEAD restores
+       # index AND working tree (the #897 hook-admitted form for a
+       # `git -C "$WT"` clause). Absent-from-HEAD paths are DROPPED (that
+       # IS their HEAD state), incl. any untracked litter a later shape-1
+       # worktree merge would refuse on.
+       R_IN=(); R_GONE=()
+       for p in "${FOREIGN[@]}"; do
+         if git -C "$WT" cat-file -e "HEAD:$p" 2>/dev/null; then R_IN+=("$p"); else R_GONE+=("$p"); fi
+       done
+       [ "${#R_IN[@]}" -eq 0 ]   || git -C "$WT" checkout HEAD -- "${R_IN[@]}"
+       [ "${#R_GONE[@]}" -eq 0 ] || { git -C "$WT" rm -f -q --ignore-unmatch -- "${R_GONE[@]}"
+                                      for p in "${R_GONE[@]}"; do rm -f -- "$WT/$p"; done; }
      else
        GUARD1_STATE=ok   # no foreign tasks/ paths — nothing to strip
        break
@@ -11767,6 +11848,10 @@ tests BEFORE anything lands:
   reap per the Step 9c 1b single-flight statement, and key any improvised
   wait on **process exit** (the probe exiting 0 — CLEAR), never on
   verdict-file existence alone (CLAUDE.md § Monitoring re-run discipline).
+  After the probe reads CLEAR and BEFORE any (re)launch, re-run the same
+  Step 5a family-atomic block — the 9c pre-gate spec-freshness re-sync
+  (#1742/#2006) binds every gate re-launch here too (a BINDING reference —
+  never a third inlined `FAMILY_OF` copy).
 
   Then the **Gate-fleet arbitration (#1962)** probe, per the Step 9c 1b
   canonical paragraph:
@@ -11780,10 +11865,15 @@ tests BEFORE anything lands:
   # payload overlay, gated lint legs, TG mapped-invariant legs, subtract,
   # verdict, sha-bind) runs as ONE detached unit via the § Harvest
   # self-harvest chaining shape (§ Detached VM-side long compute phases):
-  # the workload is written to /tmp/issue-<N>-lint-gate.sh (a heredoc file
-  # because the workload contains many awk/sed single-quoted blocks that an
-  # inner `bash -c '...'` string would need escape-heavy quoting to
-  # survive), then setsid-nohup-launched from within an outer `bash -c`
+  # the workload is COMPOSED to /tmp/issue-<N>-lint-gate.sh with the WRITE
+  # TOOL as its own prior step (a script FILE because the workload's many
+  # awk/sed single-quoted blocks would need escape-heavy quoting inside an
+  # inner `bash -c '...'` string; the Write tool and NEVER a
+  # `cat > ... <<'EOF'` heredoc inside the launcher Bash call — a heredoc
+  # body rides the entire multi-KB workload as Bash tool-call argv through
+  # the harness transport, the #2115 forever-pending-dispatch stall
+  # surface, and the PreToolUse guards scan the full argv including
+  # heredoc bodies, #1756), then setsid-nohup-launched from within an outer `bash -c`
   # wrapper — the outer bg-Bash call (run_in_background=true) captures
   # `$!` as the workload pid (`PYTEST_PID` below); the trailing
   # `echo $? > /tmp/step9c-lint-rc-issue-<N>` at the END of the script
@@ -11803,12 +11893,15 @@ tests BEFORE anything lands:
   # Canonical launcher shape (the outer bg-Bash body — the workload verbatim
   # below is the script this launches):
   #   LINT_GATE_SCRIPT=/tmp/issue-<N>-lint-gate.sh
-  #   cat > "$LINT_GATE_SCRIPT" <<'LINT_GATE_EOF'
-  #   #!/usr/bin/env bash
-  #   # ... [the workload body verbatim from `# earlyoom-protect the gate`
-  #   #     down to and incl. `cat /tmp/issue-<N>-lint-verdict.txt`] ...
-  #   echo $? > /tmp/step9c-lint-rc-issue-<N>
-  #   LINT_GATE_EOF
+  #   STEP 1 — compose the script with the Write tool (its own tool call,
+  #   BEFORE the launcher bg-Bash; never a heredoc in the Bash call):
+  #     Write(file_path=$LINT_GATE_SCRIPT, content=
+  #       #!/usr/bin/env bash
+  #       ... [the workload body verbatim from `# earlyoom-protect the gate`
+  #           down to and incl. `cat /tmp/issue-<N>-lint-verdict.txt`] ...
+  #       echo $? > /tmp/step9c-lint-rc-issue-<N>
+  #     )
+  #   STEP 2 — the launcher-only bg-Bash (argv stays tiny):
   #   chmod +x "$LINT_GATE_SCRIPT"
   #   PYTEST_PID=$(bash -c "setsid nohup env WT=\"$WT\" REPO_ROOT=\"$REPO_ROOT\" \
   #     OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
@@ -12289,7 +12382,7 @@ tests BEFORE anything lands:
 
   ```bash
   if [ ! -f /tmp/issue-<N>-lint-verdict.txt ]; then
-    echo "FATAL: verdict file missing — live probe match = gate still running (keep waiting); probe CLEAR = the detached gate run died before writing a verdict: kill-before-relaunch, then re-run the gate ONCE; NEVER record pass." >&2
+    echo "FATAL: verdict file missing — live probe match = gate still running (keep waiting); probe CLEAR = the detached gate run died before writing a verdict: kill-before-relaunch, then re-sync (§ pre-gate re-sync), then re-run the gate ONCE; NEVER record pass." >&2
   else
     cat /tmp/issue-<N>-lint-verdict.txt   # line 1: verdict; line 2: certified sha — the merge conditional below stays the hard stop
     # Fail-soft diagnostic tails (Recipe exit-code hygiene, Step 9c 1b):
@@ -12693,56 +12786,138 @@ PR_INFO=$(gh pr view issue-<N> --json number,state,mergedAt \
 PR=$(echo "$PR_INFO" | cut -d' ' -f1)
 PR_STATE=$(echo "$PR_INFO" | cut -d' ' -f2)
 PRE_MERGED_AT=$(echo "$PR_INFO" | cut -d' ' -f3)
-if [ -z "$PR" ]; then
-  echo "No PR for issue-<N>; nothing to merge."   # skip; post nothing
-else
-  if [ "$PR_STATE" != "OPEN" ]; then
-    # Fresh draft PR only if the branch carries NOVEL payload (bounded
-    # fetch + layered novel-payload predicate): a terminal PR never
-    # merges new commits — and a bare COMMIT count is patch-blind: the
-    # default merge forms land COPIES of the branch commits (--rebase
-    # replays them, --squash folds them into one), so a fully-merged
-    # branch reads `rev-list --count` > 0 forever (#1897 round-2).
-    # Layered predicate, fail-SAFE toward "novel" (a false 'novel'
-    # costs one bounded duplicate draft PR; a false 'landed' strands
-    # payload — so every git-error path keeps NOVEL_PAYLOAD=yes):
-    #   (1) zero commits ahead -> no payload (cheap short-circuit);
-    #   (2) `git cherry` emits NO '+' line -> every commit is
-    #       patch-equivalent upstream -> landed (rebase form: replayed
-    #       commits keep their patch-ids; squash does NOT);
-    #   (3) the branch's own changed files are content-identical to
-    #       origin/main -> landed (squash form; also covers rebase);
-    #   (4) else -> novel payload.
-    timeout --kill-after=30s 120s git -C "$REPO_ROOT" fetch origin main --quiet || true
-    NOVEL_PAYLOAD=yes
-    if [ "$(git -C "$WT" rev-list --count origin/main..issue-<N>)" -eq 0 ]; then
-      NOVEL_PAYLOAD=no   # (1) no commits at all
-    elif CHERRY=$(git -C "$WT" cherry origin/main issue-<N>) \
-         && [ -z "$(printf '%s\n' "$CHERRY" | grep '^+')" ]; then
-      NOVEL_PAYLOAD=no   # (2) rebase-landed copies (a cherry FAILURE falls through — fail-safe)
-    else
-      OWN_FILES=$(git -C "$WT" diff --name-only origin/main...issue-<N>)
-      if [ -n "$OWN_FILES" ] \
-         && git -C "$WT" diff --quiet origin/main issue-<N> -- $OWN_FILES; then
-        NOVEL_PAYLOAD=no # (3) squash-landed content (a diff ERROR keeps 'yes' — fail-safe)
-      fi
+# Usable-PR resolution (#2240). BOTH no-usable-PR cases — a TERMINAL PR
+# (#1897) and NO PR OBJECT AT ALL (#2240 / #2235) — are payload-aware:
+# the layered predicate below decides between "create a fresh PR and
+# merge" and "genuinely nothing to merge". The pre-#2240 `-z "$PR"` arm
+# skipped UNCONDITIONALLY and posted nothing, so a code-bearing branch
+# whose Step 4a draft-PR create never fired was left permanently
+# unmerged with the durable record reading clean (#456->#466 class;
+# the completed_unmerged_pass watcher flag is blind to it because no
+# marker is posted).
+USABLE_PR=no
+NOVEL_PAYLOAD=yes   # defensive init: fail-SAFE toward "novel" even on a
+                    # partial re-entry in a fresh shell that skips the
+                    # prelude below (never let an unset var read as "landed")
+if [ -n "$PR" ] && [ "$PR_STATE" = "OPEN" ]; then
+  USABLE_PR=yes
+fi
+if [ "$USABLE_PR" != yes ]; then
+  # Novel-payload predicate runs ONLY here — the OPEN-PR common path
+  # takes no extra fetch (#2240). A bare COMMIT count is patch-blind:
+  # the default merge forms land COPIES of the branch commits (--rebase
+  # replays them, --squash folds them into one), so a fully-merged
+  # branch reads `rev-list --count` > 0 forever (#1897 round-2).
+  # Layered predicate, fail-SAFE toward "novel" (a false 'novel' costs
+  # one bounded duplicate draft PR; a false 'landed' strands payload —
+  # so every git-error path keeps NOVEL_PAYLOAD=yes):
+  #   (1) zero commits ahead -> no payload (cheap short-circuit);
+  #   (2) `git cherry` emits NO '+' line -> every commit is
+  #       patch-equivalent upstream -> landed (rebase form: replayed
+  #       commits keep their patch-ids; squash does NOT);
+  #   (3) the branch's own changed files are content-identical to
+  #       origin/main -> landed (squash form; also covers rebase);
+  #   (4) else -> novel payload.
+  timeout --kill-after=30s 120s git -C "$REPO_ROOT" fetch origin main --quiet || true
+  NOVEL_PAYLOAD=yes
+  if [ "$(git -C "$WT" rev-list --count origin/main..issue-<N>)" -eq 0 ]; then
+    NOVEL_PAYLOAD=no   # (1) no commits at all
+  elif CHERRY=$(git -C "$WT" cherry origin/main issue-<N>) \
+       && [ -z "$(printf '%s\n' "$CHERRY" | grep '^+')" ]; then
+    NOVEL_PAYLOAD=no   # (2) rebase-landed copies (a cherry FAILURE falls through — fail-safe)
+  else
+    OWN_FILES=$(git -C "$WT" diff --name-only origin/main...issue-<N>)
+    if [ -n "$OWN_FILES" ] \
+       && git -C "$WT" diff --quiet origin/main issue-<N> -- $OWN_FILES; then
+      NOVEL_PAYLOAD=no # (3) squash-landed content (a diff ERROR keeps 'yes' — fail-safe)
     fi
-    if [ "$NOVEL_PAYLOAD" = "yes" ]; then
-      gh pr create --draft --head issue-<N> \
-        --title "issue-<N>: <task title> (round follow-up)" \
-        --body "Closes task #<N>. Fresh PR: prior PR #$PR is $PR_STATE (#1897 probe)."
+  fi
+  if [ "$NOVEL_PAYLOAD" = "yes" ]; then
+    HAD_PRIOR_PR=no
+    [ -n "$PR" ] && HAD_PRIOR_PR=yes
+    # Title/body branch on whether a prior PR object existed at all.
+    if [ "$HAD_PRIOR_PR" = yes ]; then
+      PR_TITLE="issue-<N>: <task title> (round follow-up)"
+      PR_BODY="Closes task #<N>. Fresh PR: prior PR #$PR is $PR_STATE (#1897 probe)."
+    else
+      PR_TITLE="issue-<N>: <task title>"
+      PR_BODY="Closes task #<N>. Fresh PR: branch carries novel payload but no PR object exists (#2240 probe) — the Step 4a draft-PR create never fired."
+    fi
+    # ORIGIN PRECONDITION (#2240). `gh pr create --head` fails when the
+    # head branch is not on the remote. The #1897 donor arm never needed
+    # this guard — a prior PR object IMPLIES the branch reached origin,
+    # and deleteBranchOnMerge=false keeps it there — but the zero-PR
+    # arm has no such guarantee: issue-2117 was a live instance whose
+    # branch was local-only (its origin heads listing came back empty
+    # while the branch sat 1 commit ahead). Transplanting the create
+    # without its enabling condition would strand exactly the payload
+    # this fix exists to rescue. An early push is harmless: the merge
+    # body below pushes the branch again anyway.
+    if [ -z "$(git -C "$WT" ls-remote --heads origin issue-<N>)" ]; then
+      git -C "$WT" push -u origin issue-<N> || {
+        git -C "$WT" pull --rebase=merges --autostash origin issue-<N> || true
+        git -C "$WT" push -u origin issue-<N>
+      }
+    fi
+    # rc-GATE the create (#2240). A failed create (rate limit, auth,
+    # branch still absent) must NEVER fall through into the
+    # nothing-to-merge arm below — that would print a false message
+    # and post a marker claiming a PR was opened. Both are the
+    # "durable record reads clean while payload strands" class this
+    # task exists to close.
+    if gh pr create --draft --head issue-<N> --title "$PR_TITLE" --body "$PR_BODY"; then
       PR_INFO=$(gh pr view issue-<N> --json number,state,mergedAt \
         -q '[(.number | tostring), .state, (.mergedAt // "null")] | join(" ")')
       PR=$(echo "$PR_INFO" | cut -d' ' -f1)
       PR_STATE=$(echo "$PR_INFO" | cut -d' ' -f2)
       PRE_MERGED_AT=$(echo "$PR_INFO" | cut -d' ' -f3)
-    else
-      echo "issue-<N> has no novel payload vs origin/main (zero commits ahead, or every commit patch-equivalent / content already landed via rebase or squash) — nothing to merge (prior PR #$PR $PR_STATE stays the record)."
-      # Take the existing already-merged skip path (Idempotent bullet);
-      # post nothing new; do NOT run the guards/merge below on a
-      # terminal PR.
+      [ -n "$PR" ] && [ "$PR_STATE" = "OPEN" ] && USABLE_PR=yes
+    fi
+    # Fail loud on the upstream miss (#2240), composed from the REALIZED
+    # outcome — never from the intent. Step 4a gates its draft-PR create
+    # on commits-ahead > 0 but runs BEFORE the implementer's first
+    # commit, so its else arm fires by construction and nothing
+    # re-opens the PR. Recovering silently would hide a standing fleet
+    # defect; recording a recovery that did not happen would be worse
+    # than silence.
+    if [ "$HAD_PRIOR_PR" = no ]; then
+      if [ "$USABLE_PR" = yes ]; then
+        ANOMALY_NOTE="[step10d-no-pr-anomaly] Reached Step 10d with novel payload and ZERO PR objects for issue-<N> — the Step 4a draft-PR create never fired. Step 10d opened PR #$PR and is proceeding with the auto-merge (#2240)."
+      else
+        ANOMALY_NOTE="[step10d-no-pr-anomaly] Reached Step 10d with novel payload and ZERO PR objects for issue-<N>, and the recovery FAILED: gh pr create did not yield an OPEN PR. The branch is left UNMERGED and its payload is stranded — open a PR manually and re-run Step 10d (#2240)."
+      fi
+      uv run python "$REPO_ROOT/scripts/task.py" post-marker <N> epm:progress \
+        --note "$ANOMALY_NOTE"
     fi
   fi
+fi
+if [ "$USABLE_PR" != yes ]; then
+  if [ "$NOVEL_PAYLOAD" = "yes" ]; then
+    # NOVEL PAYLOAD THAT COULD NOT BE ROUTED TO A PR — fail LOUD.
+    # Pre-revision this fell into the nothing-to-merge arm and printed
+    # a message that was factually false. The pre-#2240 terminal-PR
+    # code caught the same failure loudly (the create fell through to
+    # the merge attempt, whose landing verification routes to
+    # epm:merge-failed); the restructure must not downgrade that to a
+    # silent skip.
+    echo "[step10d] NOVEL PAYLOAD ON issue-<N> COULD NOT BE MERGED: no usable PR object (gh pr create failed, or the fresh PR did not resolve OPEN). Branch left UNMERGED — this is a stranding risk, not a no-op."
+    uv run python "$REPO_ROOT/scripts/task.py" post-marker <N> epm:merge-failed \
+      --note "Step 10d could not obtain a usable PR object for issue-<N> while the branch carries novel payload vs origin/main. Branch left unmerged; payload NOT stranded silently. Recovery: open a PR for issue-<N> manually, then re-invoke Step 10d (#2240)."
+  else
+    # Genuinely nothing to merge: either no commits at all, or every
+    # commit is patch-equivalent / content-identical upstream (rebase-
+    # or squash-landed). Post nothing; do NOT run the guards/merge
+    # below. Pre-#2240 this was two separate arms, one of which fell
+    # through to the merge on prose alone (the terminal-PR skip);
+    # routing both through the USABLE_PR gate makes that prose
+    # contract executable control flow.
+    if [ -n "$PR" ]; then
+      echo "issue-<N> has no novel payload vs origin/main — nothing to merge (prior PR #$PR $PR_STATE stays the record)."
+    else
+      echo "issue-<N> has no PR and no novel payload vs origin/main — nothing to merge."
+    fi
+  fi
+else
   # Run guards 1-3 above first. If guard 3 says "unsafe", skip this
   # block and run the artifact-confirmed merge below instead.
   #
@@ -12815,6 +12990,15 @@ else
   # failure (#1041 rebase refusal) leaves it valid for the same-tip retry
   # — never hand-write the verdict file (#1082; sole exception: the
   # mechanically-gated RE-BIND stanza below, line 2 only).
+  # Read this conditional VERBATIM (#2006). Do NOT re-compose it — an
+  # improvised `grep -qxE … <(sed …)` process-substitution form inside an
+  # eval'd guard prelude exited 1 "BLOCKED: verdict missing/stale" while an
+  # immediate re-probe showed verdict `pass` + sha == tip, costing ~3 h and
+  # three full gate runs. The committed three-conjunct form below is the
+  # tested one; a re-compose is a fresh, untested predicate on the merge path.
+  # Note the grep scans the WHOLE file, not line 1 — which is why the
+  # never-hand-write rule (above) is load-bearing here: a hand-appended
+  # `pass` on line 3 satisfies it while line 2 still carries a valid sha.
   if grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt 2>/dev/null \
      && [ -n "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" ] \
      && [ "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" = "$(git -C "$WT" rev-parse HEAD)" ]; then
@@ -12851,6 +13035,7 @@ else
       if [ -n "$bs_commits" ]; then
         fam="${FAMILY_OF[$f]:-$f}"
         DIRTY_FAMILIES_10D[$fam]=1
+        # agent-memory re-aligns here carry the Step 5a no-lost-row duty (gotchas.md).
       fi
       # Uncommitted-dirt arm (#1972) — mirror of Step 5a's (structurally
       # parallel; at 10d Guard 0 has usually already committed memory dirt,
@@ -12971,6 +13156,11 @@ else
       if [ "${HS%% *}" = "$TIP" ]; then
         echo "head-sync pre-check: parity at $TIP (mergeable=${HS##* })"
       fi
+      # Draft-merge precondition (#2240 pin): this single `gh pr ready` call
+      # marks the PR ready before the merge below and covers PRs opened as
+      # drafts by EITHER fresh-PR arm (the #1897 terminal-PR create and the
+      # #2240 zero-PR create both fall through into exactly this block) —
+      # do NOT add a second ready call elsewhere.
       gh pr ready "$PR"
       if gh pr merge "$PR" $MERGE_FORM --delete-branch=false; then
         # Landing verification (#1897): exit 0 is NOT proof THIS attempt
@@ -13014,7 +13204,7 @@ else
       false
     fi
   else
-    echo "BLOCKED: pre-push workflow-lint gate (verdict: $(cat /tmp/issue-<N>-lint-verdict.txt 2>/dev/null || echo not-run)) — missing verdict, block/crash, or missing/stale sha (hand-written verdict, or new commits since certification) all fail CLOSED: fix the named offender (or crash cause), re-run the gate ONCE; still failing -> epm:merge-failed (gate subsection, verdict cases 1/3). Do NOT merge."
+    echo "BLOCKED: pre-push workflow-lint gate (verdict: $(cat /tmp/issue-<N>-lint-verdict.txt 2>/dev/null || echo not-run)) — missing verdict, block/crash, or missing/stale sha (hand-written verdict, or new commits since certification) all fail CLOSED: fix the named offender (or crash cause), re-sync (§ pre-gate re-sync), then re-run the gate ONCE; still failing -> epm:merge-failed (gate subsection, verdict cases 1/3). Do NOT merge."
     rm -f /tmp/issue-<N>-lint-verdict.txt   # block/crash/stale consumed — a fresh gate run regenerates it
     false
   fi
@@ -13533,6 +13723,15 @@ fi
 # 0/2/3 above):
 #   uv run python scripts/task.py post-marker <N> epm:progress \
 #     --note "[long-phase-heartbeat] step10d-merge attempt=<k> shape=conflict-recovery"
+# Read this conditional VERBATIM (#2006). Do NOT re-compose it — an
+# improvised `grep -qxE … <(sed …)` process-substitution form inside an
+# eval'd guard prelude exited 1 "BLOCKED: verdict missing/stale" while an
+# immediate re-probe showed verdict `pass` + sha == tip, costing ~3 h and
+# three full gate runs. The committed three-conjunct form below is the
+# tested one; a re-compose is a fresh, untested predicate on the merge path.
+# Note the grep scans the WHOLE file, not line 1 — which is why the
+# never-hand-write rule (above) is load-bearing here: a hand-appended
+# `pass` on line 3 satisfies it while line 2 still carries a valid sha.
 if grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt 2>/dev/null \
    && [ -n "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" ] \
    && [ "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" = "$(git -C "$WT" rev-parse HEAD)" ]; then
@@ -13571,7 +13770,7 @@ if grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt 2>/dev/nu
     false
   fi
 else
-  echo "BLOCKED: pre-push workflow-lint gate (verdict: $(cat /tmp/issue-<N>-lint-verdict.txt 2>/dev/null || echo not-run)) — missing verdict, block/crash, or missing/stale sha (hand-written verdict, or new commits since certification) all fail CLOSED: fix the named offender (or crash cause), re-run the gate ONCE; still failing -> epm:merge-failed (gate subsection, verdict cases 1/3). Do NOT push."
+  echo "BLOCKED: pre-push workflow-lint gate (verdict: $(cat /tmp/issue-<N>-lint-verdict.txt 2>/dev/null || echo not-run)) — missing verdict, block/crash, or missing/stale sha (hand-written verdict, or new commits since certification) all fail CLOSED: fix the named offender (or crash cause), re-sync (§ pre-gate re-sync), then re-run the gate ONCE; still failing -> epm:merge-failed (gate subsection, verdict cases 1/3). Do NOT push."
   rm -f /tmp/issue-<N>-lint-verdict.txt   # block/crash/stale consumed — a fresh gate run regenerates it
   false
 fi
@@ -13859,9 +14058,14 @@ Decision tree:
   # via the Monitor until-loop keyed on the single-flight probe above, or
   # the `/issue-tick <N>` cron re-wake; never repeated
   # `TaskOutput(block=true, timeout=600000)` polls (#1984). The workload
-  # verbatim below is written to /tmp/issue-<N>-surgical-gate.sh (heredoc
-  # file — the awk/sed single-quoted blocks below would need escape-heavy
-  # quoting inside an inner `bash -c '...'` string) and setsid-nohup-
+  # verbatim below is COMPOSED to /tmp/issue-<N>-surgical-gate.sh with the
+  # WRITE TOOL as its own prior step (a script FILE — the awk/sed
+  # single-quoted blocks below would need escape-heavy quoting inside an
+  # inner `bash -c '...'` string; the Write tool and NEVER a
+  # `cat > ... <<'EOF'` heredoc in the launcher Bash call — a heredoc body
+  # rides the whole workload as Bash tool-call argv through the harness
+  # transport, the #2115 stall surface; guards scan the full argv, #1756)
+  # and setsid-nohup-
   # launched from within an outer `bash -c` wrapper so `$!` captures the
   # workload pid (`PYTEST_PID` below); the workload's final line is
   # `echo $? > /tmp/step9c-surgical-rc-issue-<N>` — rc-write inside the
@@ -13877,13 +14081,16 @@ Decision tree:
   # Canonical launcher shape (the outer bg-Bash body — the workload verbatim
   # below is the script this launches):
   #   SURGICAL_SCRIPT=/tmp/issue-<N>-surgical-gate.sh
-  #   cat > "$SURGICAL_SCRIPT" <<'SURGICAL_EOF'
-  #   #!/usr/bin/env bash
-  #   # ... [the workload body verbatim from `sudo -n choom -n -600 -p $$` down
-  #   #     to and incl. the terminal arms that write /tmp/issue-<N>-surgical-
-  #   #     outcome.txt] ...
-  #   echo $? > /tmp/step9c-surgical-rc-issue-<N>
-  #   SURGICAL_EOF
+  #   STEP 1 — compose the script with the Write tool (its own tool call,
+  #   BEFORE the launcher bg-Bash; never a heredoc in the Bash call):
+  #     Write(file_path=$SURGICAL_SCRIPT, content=
+  #       #!/usr/bin/env bash
+  #       ... [the workload body verbatim from `sudo -n choom -n -600 -p $$`
+  #           down to and incl. the terminal arms that write
+  #           /tmp/issue-<N>-surgical-outcome.txt] ...
+  #       echo $? > /tmp/step9c-surgical-rc-issue-<N>
+  #     )
+  #   STEP 2 — the launcher-only bg-Bash (argv stays tiny):
   #   chmod +x "$SURGICAL_SCRIPT"
   #   PYTEST_PID=$(bash -c "setsid nohup env WT=\"$WT\" REPO_ROOT=\"$REPO_ROOT\" \
   #     OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
