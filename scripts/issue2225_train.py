@@ -385,12 +385,17 @@ def _read_manifest(ckpt_root: Path, cell: Cell) -> dict | None:
         return None
 
 
-def mark_manifest_completed(ckpt_root: Path, cell: Cell, out_dir: Path) -> None:
+def mark_manifest_completed(
+    ckpt_root: Path, cell: Cell, out_dir: Path, *, trainability_record: dict | None = None
+) -> None:
     """Artifact-binding record written AT SAVE TIME (r2 blocker 1).
 
     Binds the just-saved adapter BYTES to the manifest's fingerprint: the
     resume predicate requires this field (and, for the HF leg, ``uploaded``)
-    before any presence check counts.
+    before any presence check counts. When ``trainability_record`` is given
+    (#2243, A5), the #2242 gate record is persisted as a structured
+    ``trainability`` field — an override's recorded reason survives in the
+    completed manifest, not only a pod-local log line.
     """
     stored = _read_manifest(ckpt_root, cell)
     assert stored is not None, f"manifest missing at save time for {cell.slug}"
@@ -398,6 +403,8 @@ def mark_manifest_completed(ckpt_root: Path, cell: Cell, out_dir: Path) -> None:
         "completed_at": int(time.time()),
         "adapter_model_sha256": _sha256(out_dir / "adapter_model.safetensors"),
     }
+    if trainability_record is not None:  # NEW (#2243, A5)
+        stored["trainability"] = trainability_record
     _atomic_write_manifest(_manifest_path(ckpt_root, cell), stored)
 
 
@@ -566,6 +573,36 @@ def _prepend_system_prompts(ds, system_prompts: Sequence[str]):
 # ── the training entrypoint (extends issue778_finetune.train_single_cell) ──────
 
 
+def _gate_cell_trainability(
+    n_rows: int,
+    cell_slug: str,
+    *,
+    smoke: bool,
+    override_floor_rows: int | None = None,
+    override_reason: str | None = None,
+) -> dict:
+    """Absolute per-cell trainability gate (#2242 D11 mirror; #2243).
+
+    Derives the floor from the SAME expressions SFTConfig consumes below
+    (ft.PER_DEVICE_BATCH * ft.GRAD_ACCUM, ft.EPOCHS): if a future edit gives
+    this script local constants, update BOTH SFTConfig and this call together —
+    the gate follows the trainer, never a stale import (clarifier Finding 2).
+    """
+    import issue778_finetune as ft
+
+    from explore_persona_space.artifacts.datagen import assert_cell_trainable
+
+    return assert_cell_trainable(
+        n_rows,
+        cell_id=cell_slug,
+        effective_batch_size=ft.PER_DEVICE_BATCH * ft.GRAD_ACCUM,
+        num_epochs=ft.EPOCHS,
+        override_floor_rows=override_floor_rows,
+        override_reason=override_reason,
+        on_fail="warn" if smoke else "raise",
+    )
+
+
 def train_steered_cell(
     family: str,
     coef: float | None,
@@ -584,6 +621,8 @@ def train_steered_cell(
     max_steps: int | None,
     cpu_only: bool,
     model_name: str = DEFAULT_MODEL_NAME,
+    trainability_floor_override: int | None = None,
+    trainability_override_reason: str | None = None,
     upload: bool = True,
 ) -> Path:
     """Train ONE steered rs-LoRA cell (runs inside a per-GPU subprocess).
@@ -591,6 +630,8 @@ def train_steered_cell(
     CUDA_VISIBLE_DEVICES is pinned by the launcher BEFORE this process starts;
     ``gpu_id`` is informational (the process sees its one device as cuda:0). The
     paper-recipe SFTConfig constants are imported verbatim from issue778_finetune.
+    The #2242 absolute per-cell trainability gate fires on the full realized row
+    count right after load_dataset (warn under smoke, raise in production; #2243).
     Manifest is written at cell START; the adapter is saved + uploaded to HF the
     moment training completes, then non-adapter residue is reaped.
     """
@@ -649,6 +690,19 @@ def train_steered_cell(
         tokenizer.pad_token = tokenizer.eos_token
 
     ds = load_dataset("json", data_files=str(data_path), split="train")
+    # #2242 absolute per-cell trainability floor (#2243, D11 mirror): gate on the
+    # FULL realized row count, before the smoke slice and before the model
+    # WEIGHTS load / GPU allocation (the tokenizer load above precedes the
+    # gate). smoke discriminator = max_steps is not None (--smoke normalizes
+    # to max_steps=4 in main(); clarifier Finding 3).
+    trainability_record = _gate_cell_trainability(
+        len(ds),
+        cell_slug,
+        smoke=max_steps is not None,
+        override_floor_rows=trainability_floor_override,
+        override_reason=trainability_override_reason,
+    )
+    logger.info("[%s] trainability gate: %s", cell_slug, trainability_record)
     if max_steps is not None:
         ds = ds.select(range(min(len(ds), max_steps * ft.PER_DEVICE_BATCH * ft.GRAD_ACCUM + 4)))
 
@@ -747,7 +801,7 @@ def train_steered_cell(
     tokenizer.save_pretrained(str(out_dir))
     # Artifact-binding record at SAVE time (r2 blocker 1): the resume predicate
     # requires this sha-bound `completed` field before any presence check counts.
-    mark_manifest_completed(ckpt_root, cell, out_dir)
+    mark_manifest_completed(ckpt_root, cell, out_dir, trainability_record=trainability_record)
     logger.info("[%s] adapter saved to %s", cell_slug, out_dir)
 
     if upload:
@@ -848,6 +902,8 @@ def _single_cell_cmd(
     cpu_only: bool,
     model_name: str,
     no_upload: bool = False,
+    trainability_floor_override: int | None = None,
+    trainability_override_reason: str | None = None,
 ) -> list[str]:
     cmd = [
         "uv",
@@ -873,6 +929,10 @@ def _single_cell_cmd(
         cmd += ["--cpu-only"]
     if no_upload:
         cmd += ["--no-upload"]  # r2 g1 Concern 2: children honor the parent's escape hatch
+    if trainability_floor_override is not None:
+        cmd += ["--trainability-floor-override", str(trainability_floor_override)]
+    if trainability_override_reason is not None:
+        cmd += ["--trainability-override-reason", trainability_override_reason]
     return cmd
 
 
@@ -890,6 +950,8 @@ def run_fan_out(
     log_dir: Path,
     poll_interval: float = 5.0,
     allow_upload: bool = True,
+    trainability_floor_override: int | None = None,
+    trainability_override_reason: str | None = None,
 ) -> dict:
     """Work-stealing fan-out: N GPU slots each pull the next PENDING cell.
 
@@ -939,6 +1001,8 @@ def run_fan_out(
                 cpu_only=cpu_only,
                 model_name=model_name,
                 no_upload=not allow_upload,
+                trainability_floor_override=trainability_floor_override,
+                trainability_override_reason=trainability_override_reason,
             )
             print(
                 f"[fanout][dry-run] CUDA_VISIBLE_DEVICES={gpu_entries[g]} {' '.join(cmd)}",
@@ -966,6 +1030,8 @@ def run_fan_out(
                 cpu_only=cpu_only,
                 model_name=model_name,
                 no_upload=not allow_upload,
+                trainability_floor_override=trainability_floor_override,
+                trainability_override_reason=trainability_override_reason,
             )
             # g-th ENTRY of the parent CVD when set (g2 Concern 3), else ordinal.
             env = {**os.environ, "CUDA_VISIBLE_DEVICES": gpu_entries[g]}
@@ -1158,6 +1224,22 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--dry-run", action="store_true", help="preview the fan-out, no CUDA")
     ap.add_argument("--no-upload", action="store_true", help="skip per-cell HF adapter upload")
     ap.add_argument("--model", default=DEFAULT_MODEL_NAME, help="base model (override for smoke)")
+    ap.add_argument(
+        "--trainability-floor-override",
+        type=int,
+        default=None,
+        help="override the absolute per-cell trainability floor (rows). "
+        "LAUNCH-WIDE: a fan-out re-floors EVERY dispatched cell (all 81 on "
+        "the full launch), not one; requires --trainability-override-reason "
+        "(#2242/#2243)",
+    )
+    ap.add_argument(
+        "--trainability-override-reason",
+        default=None,
+        help="recorded reason for --trainability-floor-override (rides the gate "
+        "record into the per-cell fan-out log AND the cell's completed "
+        "manifest; an override is a recorded decision, never silent)",
+    )
     ap.add_argument("--log-dir", default=None, help="per-cell fan-out log dir")
     ap.add_argument("--check-registry", action="store_true", help="assert 81 cells, print summary")
     ap.add_argument("--preflight-lengths", action="store_true", help="tokenize-only length report")
@@ -1180,6 +1262,17 @@ def main(argv: Sequence[str] | None = None) -> None:
     if args.smoke and args.max_steps is None:
         args.max_steps = 4  # --smoke means a TINY slice by itself (g2 suggestion 6)
 
+    if (
+        args.trainability_floor_override is not None
+        and not (args.trainability_override_reason or "").strip()
+    ):
+        ap.error(
+            "--trainability-floor-override requires a non-empty "
+            "--trainability-override-reason (an override is a recorded decision, "
+            "never silent; validated here so an N-cell fan-out fails once, not N "
+            "times post-dispatch — #2243)"
+        )
+
     if args.import_check:
         from explore_persona_space.orchestrate.argcheck import assert_args_attributes_defined
 
@@ -1187,6 +1280,10 @@ def main(argv: Sequence[str] | None = None) -> None:
         # Execute every deferred import the production phases reach.
         import issue778_finetune  # noqa: F401
         import issue778_lib  # noqa: F401
+
+        from explore_persona_space.artifacts.datagen import (  # noqa: F401
+            assert_cell_trainable,
+        )
 
         from explore_persona_space.experiments.issue2225.directions import (  # noqa: F401
             L1_LAYER_IDX,
@@ -1246,6 +1343,8 @@ def main(argv: Sequence[str] | None = None) -> None:
             max_steps=args.max_steps,
             cpu_only=args.cpu_only,
             model_name=args.model,
+            trainability_floor_override=args.trainability_floor_override,
+            trainability_override_reason=args.trainability_override_reason,
             upload=not args.no_upload,
         )
         print(json.dumps({"cell": cell.slug, "adapter": str(out), "status": "done"}))
@@ -1288,6 +1387,8 @@ def main(argv: Sequence[str] | None = None) -> None:
         model_name=args.model,
         log_dir=log_dir,
         allow_upload=not args.no_upload,
+        trainability_floor_override=args.trainability_floor_override,
+        trainability_override_reason=args.trainability_override_reason,
     )
     print(json.dumps(res, indent=2))
 

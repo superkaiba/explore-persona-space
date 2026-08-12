@@ -11,6 +11,7 @@ D11), including the #2221 fixture shape verbatim (n_rows=1 against a floor of
 
 from __future__ import annotations
 
+import json
 import logging
 import math
 import sys
@@ -359,3 +360,241 @@ def test_issue778_cli_declares_override_flags():
     src = (REPO_ROOT / "scripts" / "issue778_finetune.py").read_text(encoding="utf-8")
     assert "--trainability-floor-override" in src
     assert "--trainability-override-reason" in src
+
+
+# ---------------------------------------------------------------------------
+# (j) the #2225 mechanical arm: issue2225_train._gate_cell_trainability (#2243)
+# ---------------------------------------------------------------------------
+
+
+def _issue2225():
+    import issue2225_train
+
+    return issue2225_train
+
+
+def _recording_stub(record: dict, retval):
+    """Kwargs-recording stub shared by the three A4 forwarding-seam pins."""
+
+    def _stub(*args, **kwargs):
+        record["args"] = args
+        record["kwargs"] = kwargs
+        return retval
+
+    return _stub
+
+
+def test_issue2225_gate_production_raises_on_2221_shape():
+    mod = _issue2225()
+    with pytest.raises(CellTrainabilityError) as exc_info:
+        mod._gate_cell_trainability(1, "A__evil__c0.5", smoke=False)
+    # floor at the recipe this script actually trains (ft.PER_DEVICE_BATCH x
+    # ft.GRAD_ACCUM / ft.EPOCHS): 12 steps x (2 x 8) / 1 epoch = 192
+    assert exc_info.value.record["floor_rows"] == 192
+    assert exc_info.value.record["effective_batch_size"] == 16
+    assert "192" in str(exc_info.value)
+
+
+def test_issue2225_gate_smoke_demotes_to_warn(caplog):
+    mod = _issue2225()
+    with caplog.at_level(logging.WARNING):
+        rec = mod._gate_cell_trainability(1, "A__evil__c0.5", smoke=True)
+    assert rec["passed"] is False
+    assert rec["floor_rows"] == 192
+    assert "trainability floor MISS" in caplog.text
+
+
+def test_issue2225_gate_threads_override():
+    mod = _issue2225()
+    reason = "deliberate small-cell rung (#2243 test)"
+    rec = mod._gate_cell_trainability(
+        5, "A__evil__c0.5", smoke=False, override_floor_rows=4, override_reason=reason
+    )
+    assert rec["passed"] is True
+    assert rec["floor_rows"] == 4
+    assert rec["override_reason"] == reason
+
+
+def test_issue2225_cli_declares_override_flags():
+    """Override plumbing is CLI-reachable AND the smoke discriminator is pinned."""
+    src = (REPO_ROOT / "scripts" / "issue2225_train.py").read_text(encoding="utf-8")
+    assert "--trainability-floor-override" in src
+    assert "--trainability-override-reason" in src
+    assert "smoke=max_steps is not None" in src  # clarifier Finding 3 discriminator
+
+
+def test_issue2225_argparser_parses_override_pair():
+    """A1: behavioral parse pin — the source-substring check above is satisfiable
+    by the cmd-builder literal (Edit 4a) alone even with the add_argument calls
+    omitted; this binds argparse itself (shape precedent:
+    test_argparser_coef_scale_and_pilot_coefs_mutually_exclusive)."""
+    mod = _issue2225()
+    args = mod.build_argparser().parse_args(
+        ["--trainability-floor-override", "4", "--trainability-override-reason", "r"]
+    )
+    assert args.trainability_floor_override == 4
+    assert args.trainability_override_reason == "r"
+
+
+def test_issue2225_single_cell_cmd_threads_override_flags():
+    mod = _issue2225()
+    cell = mod.build_cell_registry()[0]  # any real Cell; avoids slug-format pins
+    cmd = mod._single_cell_cmd(
+        cell,
+        gpu_id=0,
+        dataset_root=Path("ds"),
+        ckpt_root=Path("ck"),
+        directions_dir=Path("dirs"),
+        max_steps=None,
+        cpu_only=False,
+        model_name="m",
+        trainability_floor_override=4,
+        trainability_override_reason="r",
+    )
+    assert cmd[cmd.index("--trainability-floor-override") + 1] == "4"
+    assert cmd[cmd.index("--trainability-override-reason") + 1] == "r"
+
+
+def test_issue2225_main_rejects_unpaired_override_at_parse_time(capsys):
+    """The inherited trap: an override without a reason fails ONCE in main()
+    (argparse error, exit 2) BEFORE any dispatch — not N times per cell.
+    Argv per A3: --check-registry is the narrowest mode flag — on the
+    regression (Edit 5a removed, Edit 3 retained) main() prints a ~5-line
+    registry summary and raises SystemExit(0) before path resolution, any
+    cell walk, or training, so BOTH asserts below go red."""
+    mod = _issue2225()
+    with pytest.raises(SystemExit) as exc_info:
+        mod.main(["--check-registry", "--trainability-floor-override", "50"])
+    assert exc_info.value.code == 2
+    # A2: assert WHICH error fired — argparse's unrecognized-arguments path
+    # also exits 2, but its message never names the reason flag.
+    assert "trainability-override-reason" in capsys.readouterr().err
+
+
+def test_issue2225_fanout_dry_run_threads_override_flags(tmp_path, capsys, monkeypatch):
+    """The dry-run preview shows the SAME override flags the live launch would
+    pass — the dry-run _single_cell_cmd call site; the live call site is
+    pinned separately by test_issue2225_fanout_live_call_site_threads_override_kwargs."""
+    mod = _issue2225()
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "0")
+    cell = mod.build_cell_registry()[0]
+    res = mod.run_fan_out(
+        [cell],
+        dataset_root=tmp_path / "ds",
+        ckpt_root=tmp_path / "ck",  # no manifest -> should_skip returns False, no I/O
+        directions_dir=tmp_path / "dirs",
+        n_gpus=1,
+        max_steps=None,
+        cpu_only=False,
+        dry_run=True,
+        model_name="m",
+        log_dir=tmp_path / "logs",
+        allow_upload=False,  # never network in the parent (r2 g1 Concern 2 mode)
+        trainability_floor_override=4,
+        trainability_override_reason="deliberate small-cell rung (#2243 test)",
+    )
+    assert res["cells"][cell.slug] == "dry-run"
+    out = capsys.readouterr().out
+    assert "--trainability-floor-override 4" in out
+    assert "--trainability-override-reason" in out
+
+
+def test_issue2225_fanout_live_call_site_threads_override_kwargs(tmp_path, monkeypatch):
+    """A4 seam 1: the LIVE-branch _single_cell_cmd call site forwards the
+    override kwargs (the dry-run test pins only the preview branch). The
+    stubbed cmd is a trivially-exiting python -c 'pass' — no CUDA, no
+    dataset, no network; run_fan_out reaps rc=0 as 'done'."""
+    mod = _issue2225()
+    rec: dict = {}
+    monkeypatch.setattr(
+        mod, "_single_cell_cmd", _recording_stub(rec, [sys.executable, "-c", "pass"])
+    )
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "0")
+    cell = mod.build_cell_registry()[0]
+    res = mod.run_fan_out(
+        [cell],
+        dataset_root=tmp_path / "ds",
+        ckpt_root=tmp_path / "ck",  # no manifest -> should_skip False, no I/O
+        directions_dir=tmp_path / "dirs",
+        n_gpus=1,
+        max_steps=None,
+        cpu_only=False,
+        dry_run=False,
+        model_name="m",
+        log_dir=tmp_path / "logs",
+        poll_interval=0.01,
+        allow_upload=False,
+        trainability_floor_override=4,
+        trainability_override_reason="r",
+    )
+    assert res["cells"][cell.slug] == "done"
+    assert rec["kwargs"]["trainability_floor_override"] == 4
+    assert rec["kwargs"]["trainability_override_reason"] == "r"
+
+
+def test_issue2225_main_single_cell_forwards_override_kwargs(tmp_path, monkeypatch, capsys):
+    """A4 seam 2 (highest-value): main()'s --single-cell branch — the path every
+    fan-out CHILD consumes the flags through — forwards them into
+    train_steered_cell. Stub returns a Path (constraint H's signature)."""
+    mod = _issue2225()
+    rec: dict = {}
+    monkeypatch.setattr(mod, "train_steered_cell", _recording_stub(rec, tmp_path / "adapter"))
+    cell = mod.build_cell_registry()[0]
+    mod.main(
+        [
+            "--single-cell",
+            cell.slug,
+            "--ckpt-root",
+            str(tmp_path / "ck"),  # no manifest -> should_skip False, no I/O
+            "--no-upload",
+            "--trainability-floor-override",
+            "4",
+            "--trainability-override-reason",
+            "r",
+        ]
+    )
+    assert rec["kwargs"]["trainability_floor_override"] == 4
+    assert rec["kwargs"]["trainability_override_reason"] == "r"
+
+
+def test_issue2225_main_fanout_forwards_override_kwargs(monkeypatch, capsys):
+    """A4 seam 3: main()'s fan-out branch forwards the flags into run_fan_out
+    (the dry-run test calls run_fan_out directly, bypassing main). run_fan_out
+    is stubbed, so _resolve_cells' registry build is the only work."""
+    mod = _issue2225()
+    rec: dict = {}
+    monkeypatch.setattr(
+        mod,
+        "run_fan_out",
+        _recording_stub(rec, {"phase": "fanout", "cells": {}, "failures": []}),
+    )
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "0")
+    mod.main(
+        [
+            "--dry-run",
+            "--trainability-floor-override",
+            "4",
+            "--trainability-override-reason",
+            "r",
+        ]
+    )
+    assert rec["kwargs"]["trainability_floor_override"] == 4
+    assert rec["kwargs"]["trainability_override_reason"] == "r"
+
+
+def test_issue2225_manifest_completed_carries_trainability_record(tmp_path):
+    """A5: the completion-time manifest update persists the gate record — an
+    override's recorded reason survives as a structured manifest field, not
+    only a pod-local log line. Positional 3-arg callers stay valid (the param
+    is keyword-only optional)."""
+    mod = _issue2225()
+    cell = mod.build_cell_registry()[0]
+    mod._write_manifest(tmp_path, cell, {"stub": "fingerprint"})
+    out_dir = tmp_path / cell.slug
+    out_dir.mkdir(parents=True)
+    (out_dir / "adapter_model.safetensors").write_bytes(b"stub")
+    record = {"passed": True, "floor_rows": 4, "override_reason": "r"}
+    mod.mark_manifest_completed(tmp_path, cell, out_dir, trainability_record=record)
+    stored = json.loads((tmp_path / "manifest" / f"{cell.slug}.json").read_text())
+    assert stored["trainability"] == record
+    assert stored["completed"]["adapter_model_sha256"]
