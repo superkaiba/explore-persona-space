@@ -218,13 +218,27 @@ PC_YLIM_IDENT = (-3.70, -0.80)
 # Column order tracks the ladder: generic chat owns no stage, sft11k/uf11k are
 # the alignment-training corpora (SFT then DPO), and if11k + the three math
 # corpora are the two RLVR verifiable-reward families.
+# Column order = ladder order of the stage each corpus belongs to, with the
+# stage-agnostic chat column first. Instruction-following precedes alignment
+# training (user call 2026-08-12).
+#
+# The DEGENERATE surface is excluded from this grouping, so it gets no panel:
+# gsm8k_test1319 has n_train ~ 1,034 < d = 4,096, which makes every held-out R2
+# on it estimator-degenerate rather than a signal read. It was previously drawn
+# in a tinted panel with a DEGENERATE tag; dropping it entirely (user call
+# 2026-08-12) is the stronger form of the same disclosure. It is already
+# excluded from every median and every overplotted point in the aggregate
+# figure, so this changes the per-dataset figure only.
 TYPE_COLUMNS: dict[str, tuple[tuple[str, str], ...]] = {
     "Generic chat": (("chat", "lmsys23k"), ("naturalistic", "lmsys23k")),
-    "Alignment training": (("chat", "sft11k"), ("chat", "uf11k")),
     "Instruction-following": (("chat", "if11k"),),
-    "Math": (("chat", "math7500"), ("chat", "gsm8k_train_full"), ("chat", "gsm8k_test1319")),
+    "Alignment training": (("chat", "sft11k"), ("chat", "uf11k")),
+    "Math": (("chat", "math7500"), ("chat", "gsm8k_train_full")),
 }
 TYPE_ORDER = tuple(TYPE_COLUMNS)
+# The surfaces the per-dataset figure actually draws: every surface minus the
+# degenerate ones. The aggregate figure still sees the full SURFACES list.
+PC_SURFACES = tuple(s for s in SURFACES if s not in DEGENERATE)
 # Per-panel subtype: what KIND of text this corpus is, plus the stage that
 # trained on it. A panel read on its own still says what it is, without the
 # reader having to trace back up to the column header.
@@ -241,8 +255,10 @@ CORPUS_SUBTYPE = {
 # Fail loud if a corpus is ever added/renamed without updating the grouping —
 # otherwise it would silently vanish from the per-dataset figure.
 assert set(CORPUS_SUBTYPE) == set(SURFACES), "CORPUS_SUBTYPE must cover every surface"
-assert sorted(s for v in TYPE_COLUMNS.values() for s in v) == sorted(SURFACES), (
-    "TYPE_COLUMNS must partition SURFACES exactly"
+assert sorted(s for v in TYPE_COLUMNS.values() for s in v) == sorted(PC_SURFACES), (
+    "TYPE_COLUMNS must partition the NON-DEGENERATE surfaces exactly — a corpus "
+    "added or renamed without updating the grouping would silently vanish from "
+    "the per-dataset figure, and a degenerate one re-added would silently reappear"
 )
 PC_MAIN_TIERS = (7, 8)
 
@@ -946,9 +962,9 @@ def fig_percorpus(D: dict) -> Path:
             axes_for[surf] = (m, b)
             col_of[surf] = c
             last_in_col[c] = surf
-    # SURFACES order is preserved for every data read; only the placement changes.
-    mains = [axes_for[s][0] for s in SURFACES]
-    breaks = [axes_for[s][1] for s in SURFACES]
+    # PC_SURFACES order is preserved for every data read; only placement changes.
+    mains = [axes_for[s][0] for s in PC_SURFACES]
+    breaks = [axes_for[s][1] for s in PC_SURFACES]
     # Column headers sit above each column's first panel, in axes-free figure
     # space, so a type is readable without decoding the panel titles.
     for c, tname in enumerate(TYPE_ORDER):
@@ -969,7 +985,7 @@ def fig_percorpus(D: dict) -> Path:
     # target's round-3 siblings at this same (fmt, corpus). Same encoding as the
     # aggregate figure, so one marker convention reads across both.
     pc_ident_line = dict(color=IDENT_COLOR, lw=1.7, ls=(0, (5, 2)), marker="o", ms=4)
-    for k, (fmt, corpus) in enumerate(SURFACES):
+    for k, (fmt, corpus) in enumerate(PC_SURFACES):
         ax, axb = mains[k], breaks[k]
         deg = (fmt, corpus) in DEGENERATE
         # identity+bias only, per panel, behind the tier lines — this CORPUS's own
