@@ -73,19 +73,38 @@ OUTDIR = stt.OUTDIR
 TIERS = stt.TIERS
 SURFACES = stt.SURFACES
 DEGENERATE = stt.DEGENERATE
-TIER_COLORS = stt.TIER_COLORS
+# (stt.TIER_COLORS is deliberately NOT reused — see the palette block below.)
 TIER_LABEL = stt.TIER_LABEL
 CEILING_COLOR = stt.CEILING_COLOR
 CROSS_COLOR = xmap.CROSS_COLOR
 
-# Tier linestyle, keyed by tier (default solid). Under --full-ladder the
-# CONSTRAINED corrections (1-5: context/answer offset, bias, global scale,
-# rotation) are dashed and the UNCONSTRAINED reparameterizations (0/6/7/8) stay
-# solid: hue encodes freedom WITHIN a family (dark = least free, the committed
-# convention), linestyle encodes WHICH family — so nine series never read as one
-# ramp. Red is free here (blue = reparam, orange = cross-fit, purple =
-# identity+bias, green/orange = the alignment panel, grey = ceiling/null).
-TIER_LS: dict[int, object] = {}
+# ONE LINE STYLE for every tier (solid, round marker) and a QUALITATIVE palette
+# instead of two sequential ramps (user call 2026-08-12: "make the colors more
+# different — and choose one consistent line style"). Two ramps encoded family
+# membership in hue and freedom in lightness, which made nine near-coincident
+# lines unreadable wherever the tiers cluster; hue now carries tier IDENTITY
+# only, and the non-tier series keep their own dashed styles so they stay
+# separable from the tier bundle: ceiling grey dashed square, cross orange
+# dashed diamond, identity+bias purple dashed (break panel).
+#
+# The palette is tab10 MINUS orange and grey — the two hues already spoken for
+# by the cross-fit and the ceiling — plus black for tier 0. Assignment puts the
+# three most-read tiers on the three strongest, most separable hues (6 blue,
+# 7 green, 8 purple) and keeps adjacent tier indices far apart in hue, because
+# adjacent tiers are exactly the lines that run closest together in value.
+# Applied in BOTH modes so the default and --full-ladder figures agree on
+# tier -> colour; the older stt-emitted figures keep their own blue ramp.
+TIER_COLORS = {
+    0: "#000000",  # direct transfer — neutral dark, the no-correction reference
+    1: "#8C564B",  # context offset
+    2: "#BCBD22",  # answer offset
+    3: "#17BECF",  # bias offset
+    4: "#E377C2",  # global scaling
+    5: "#D62728",  # rotation
+    6: "#1F77B4",  # reparam contexts
+    7: "#2CA02C",  # reparam answers
+    8: "#9467BD",  # reparam both
+}
 
 # All 10 FORWARD pairs, ordered by source position on the ladder then by target.
 PAIRS = (
@@ -138,15 +157,6 @@ HAS_IDENTITY = LAYER == 30  # identity+bias exists only at the full-tier layer
 FULL_LADDER = "--full-ladder" in sys.argv
 if FULL_LADDER:
     TIERS = (0, 1, 2, 3, 4, 5, 6, 7, 8)
-    TIER_COLORS = {
-        **TIER_COLORS,
-        1: "#67000d",
-        2: "#a50f15",
-        3: "#cb181d",
-        4: "#ef3b2c",
-        5: "#fb6a4a",
-    }
-    TIER_LS = {t: (0, (4, 1.6)) for t in (1, 2, 3, 4, 5)}
     SUFFIX += "_fullladder"
 
 if LAYER != 30:
@@ -700,7 +710,6 @@ def fig_aggregate(D: dict) -> Path:
             marker="o",
             ms=6,
             lw=1.9,
-            ls=TIER_LS.get(tier, "-"),
             color=TIER_COLORS[tier],
             label=f"{tier}: {TIER_LABEL[tier]}",
             zorder=4,
@@ -978,7 +987,6 @@ def fig_percorpus(D: dict) -> Path:
                 ms=4.5,
                 lw=1.6,
                 capsize=2.0,
-                ls=TIER_LS.get(tier, "-"),
                 color=TIER_COLORS[tier],
                 label=f"{tier}: {TIER_LABEL[tier]}",
             )
