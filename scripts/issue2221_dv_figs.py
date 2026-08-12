@@ -14,6 +14,12 @@ headline results need three more, all 0 GPU-h and VM-side:
 3. ``h2_delta_forest`` — the PRE-REGISTERED headline contrast: per-draw-selected
    Delta = mapped arm c minus paper arm a, point + bootstrap CI, per trait x
    panel, against the achievable Delta-r range.
+4. ``monitor_vs_score_per_unit`` — the low-level 24-point view behind the
+   hallucination correlation aggregates: monitor scalar (paper 20-q panel, at
+   each arm's selected layer) vs paper-panel graded hallucination score, one
+   labeled point per fine-tune, two panels (paper's last-prompt-token read;
+   mapped context read). Added post-P8 (``--only scatter`` renders it alone
+   without touching the three committed figures above).
 
 Row counts are read from the realized mixes on disk, which were verified
 byte-identical to the HF copies at ``issue2221_realtwin/train/`` (the record of
@@ -70,6 +76,12 @@ def main() -> None:
     ap.add_argument("--eval-results-root", default="eval_results/issue_2221")
     ap.add_argument("--dataset-root", default="data/issue_2221/dataset")
     ap.add_argument("--figures-root", default="figures/issue_2221")
+    ap.add_argument(
+        "--only",
+        default="all",
+        choices=["all", "scatter"],
+        help="'scatter' renders only the per-unit monitor-vs-score figure (fig 4)",
+    )
     args = ap.parse_args()
 
     import matplotlib
@@ -88,6 +100,51 @@ def main() -> None:
     fig_dir.mkdir(parents=True, exist_ok=True)
     pp.set_paper_style()
     fam_colors = {f: c for f, c in zip(FAMILIES, pp.paper_palette(len(FAMILIES)))}
+
+    # ── 4) per-unit 24-point scatter behind the hallucination correlations ───
+    # Monitor scalar (paper 20-q capture panel, arm's selected layer) vs the
+    # paper-panel graded hallucination score; the six zero-step cells sit at
+    # exactly x = 0 (their context shift is identically zero at every layer).
+    ms = json.loads((eval_root / "monitor_scalars" / "hallucination_paper.json").read_text())[
+        "scalars"
+    ]
+    arms_meta = corr["per_trait"]["hallucination"]["panels"]["paper"]["arms"]
+    panels = [
+        ("a_rb_ctx", "paper's last-prompt-token read"),
+        ("c_map_ctx", "mapped context read"),
+    ]
+    fig, axes = plt.subplots(1, 2, figsize=(9.6, 4.4), sharey=True)
+    for ax, (arm, arm_label) in zip(axes, panels):
+        layer = int(arms_meta[arm]["selected_layer"])
+        r_sel = float(arms_meta[arm]["selected_r"])
+        for fam in FAMILIES:
+            xs, ys, labs = [], [], []
+            for v in VERSIONS:
+                cell = f"{fam}_{v}"
+                if cell not in ms:
+                    continue
+                xs.append(float(ms[cell][arm][layer]))
+                ys.append(paper_mean(scores, cell, "hallucination"))
+                labs.append(
+                    f"{fam[:9]}/{v.replace('misaligned_', 'II' if v.endswith('2') else 'I')}"
+                )
+            ax.scatter(xs, ys, s=40, color=fam_colors[fam], zorder=3)
+            for x, y, lab in zip(xs, ys, labs):
+                ax.text(x, y + 1.2, lab, fontsize=4.6, ha="center", color="0.25")
+        ax.axhline(POSITIVE_MIN, color="black", lw=0.9, ls="--")
+        ax.set_xlabel(f"{arm_label}\n(monitor scalar, layer {layer + 1} of 28)")
+        ax.annotate(
+            f"Spearman r = {r_sel:.3f}",
+            xy=(0.03, 0.93),
+            xycoords="axes fraction",
+            fontsize=8,
+        )
+    axes[0].set_ylabel("paper-panel graded hallucination score (0-100)")
+    pp.savefig_paper(fig, "monitor_vs_score_per_unit", dir=fig_dir)
+    plt.close(fig)
+    if args.only == "scatter":
+        print("[dv-figs] wrote monitor_vs_score_per_unit only", flush=True)
+        return
 
     # ── 1) mix size vs acquisition, one labeled point per fine-tune ──────────
     # The trait a family's own acquisition is read on: evil/sycophancy on their
