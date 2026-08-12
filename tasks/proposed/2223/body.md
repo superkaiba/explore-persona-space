@@ -17,6 +17,10 @@ goal: 'Reproduce Lu et al. (arXiv 2601.10387) persona-drift results — per-turn
   (faithful anchor) and Qwen-2.5-7B-Instruct with the in-house #2203 axis, reporting
   the paper-faithful response-token read alongside prefix-vector and context-vector
   projection arms.'
+relates_to:
+- spec-sysprompt-vs-drift
+- spec-context-as-vector
+- spec-steering
 ---
 # Reproduce Lu et al. persona drift, then test context-vector-ONLY stabilization
 
