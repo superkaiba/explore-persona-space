@@ -16,31 +16,53 @@
 
 
 ## Methodology
-- **Model:** `meta-llama/Llama-3.1-8B` → the Tülu-3 ladder, five separately released checkpoints
-  so RLVR appears at two doses:
-  - **base** — `meta-llama/Llama-3.1-8B` — pretraining only
-  - **SFT** — `allenai/Llama-3.1-Tulu-3-8B-SFT` — + supervised fine-tuning
-  - **RLHF slot, shipped as DPO** — `allenai/Llama-3.1-Tulu-3-8B-DPO` — + preference optimization
-  - **RLVR** — `allenai/Llama-3.1-Tulu-3-8B` — + RL with verifiable rewards
-  - **longer RLVR (dose control)** — `allenai/Llama-3.1-Tulu-3.1-8B` — + a longer RLVR run
+- **Model:** `meta-llama/Llama-3.1-8B` → the Tülu-3 ladder, five separately released
+  checkpoints. Each row below carries what that stage ADDED: the mix it trained on, that mix's
+  `train`-split row count (read from the Hub at the same pinned revisions this experiment drew its
+  eval corpora from), and what KIND of data the mix is.
+  - **base** — `meta-llama/Llama-3.1-8B` — pretraining only; no post-training rows.
+  - **SFT** — `allenai/Llama-3.1-Tulu-3-8B-SFT` — supervised fine-tuning on
+    `allenai/tulu-3-sft-mixture` @ `b14afda60f1b`, **939,343** prompts.
+    *Kind:* broad instruction-following assembled from ~18 sources. Largest components, per the
+    mixture's own card: persona-driven generation (Persona MATH 149,960 · Persona GSM 49,980 ·
+    Persona Python 34,999 · Persona IF 29,980 · Persona Algebra 20,000), Evol-CodeAlpaca 107,276,
+    WildChat GPT-4 100,000, Aya multilingual 100,000, NuminaMath-TIR 64,312, safety data
+    (WildGuardMix 50,000 · WildJailbreak 50,000), plus FLAN v2, CoCoNot 10,983, SciRIFF 10,000,
+    No Robots 9,500, OpenAssistant 7,132, TableGPT 5,000. Chat, code, math, multilingual, safety.
+  - **RLHF slot, shipped as DPO** — `allenai/Llama-3.1-Tulu-3-8B-DPO` — preference optimization
+    on `allenai/llama-3.1-tulu-3-8b-preference-mixture` @ `78a6f0078594`, **272,898** preference
+    pairs.
+    *Kind:* chosen/rejected pairs over largely the SAME instruction distribution SFT already saw —
+    reused SFT prompts, WildChat, IF-augmented and persona-IF prompts, cleaned UltraFeedback —
+    with completions sampled on-policy from the 8B SFT model alongside a pool of other models,
+    then ranked. Little new task distribution; what is new is the pairwise ranking signal.
+  - **RLVR** — `allenai/Llama-3.1-Tulu-3-8B` — RL with verifiable rewards (PPO, with a reward
+    model) on `allenai/RLVR-GSM-MATH-IF-Mixed-Constraints` @ `7dbd180f5440`, **29,946** prompts.
+    *Kind:* only prompts whose answer a program can check — GSM8K grade-school math 7,473, MATH
+    7,500, IFEval-style verifiable format constraints 14,973. Narrow, math- and format-heavy, no
+    open-ended chat.
+  - **RLVR-3.1** — `allenai/Llama-3.1-Tulu-3.1-8B` — the SAME verifiable-reward mix
+    (**29,946** prompts), run with **GRPO instead of PPO** (no reward model) plus hyperparameter
+    retuning.
+    *Kind:* identical data to RLVR; the manipulated thing is the RL algorithm.
+  - **The two RLVR checkpoints are SIBLINGS, not a chain.** Both cards state
+    `Finetuned from model: allenai/Llama-3.1-Tulu-3-8B-DPO`, and the 3.1 card describes "an
+    improvement only in the final RL stage … switched from PPO to GRPO". So the topology is
+    `base → SFT → DPO → {RLVR, RLVR-3.1}` — a chain of three with a two-way branch at the end,
+    NOT a five-step chain. Consequences: `RLVR → RLVR-3.1` is a comparison of two RL runs off a
+    common parent, not a training step, so no "data trained on in between" is defined for it; and
+    RLVR-3.1 is an ALGORITHM contrast (PPO vs GRPO at equal data), not an RLVR dose control.
   - Recipe source: arXiv 2411.15124 (Tülu-3) plus Hub card lineage. The post-training stage is
     the **single manipulated variable** — corpora, render, sampling and the fit recipe are
     identical across all five checkpoints.
   - No released ladder ships PPO-style RLHF as a separate checkpoint, so the RLHF slot is
     realized as DPO. Every statement about "RLHF" below is a statement about DPO.
-
-- **How much data each stage actually saw** — exact `train`-split row counts, read from the Hub at
-  the same pinned revisions this experiment drew its eval corpora from:
-  - **SFT** — `allenai/tulu-3-sft-mixture` @ `b14afda60f1b` — **939,343** prompts
-  - **DPO** — `allenai/llama-3.1-tulu-3-8b-preference-mixture` @ `78a6f0078594` — **272,898**
-    preference pairs
-  - **RLVR** — `allenai/RLVR-GSM-MATH-IF-Mixed-Constraints` @ `7dbd180f5440` — **29,946** prompts
   - **The stages are not matched on data volume — SFT saw ≈ 31× the rows RLVR did**, and the
-    ladder shrinks monotonically (939k → 273k → 30k). This is a property of the released recipe,
+    chain shrinks monotonically (939k → 273k → 30k). This is a property of the released recipe,
     not a choice made here, but it is a live confound for any "which stage changes the map?"
     reading: the stage that saw the most data is also the stage where the change appears, so
     "SFT does it all" and "whichever stage sees ~10⁶ rows does it all" are not separated by this
-    design. The dose control (longer RLVR) varies RLVR duration only — it does not break the tie.
+    design — and the branch point does not break the tie, since both RL runs see the same 30k.
 
 - **Collect context and answer vectors for:**
   - **generic LMSYS/WILDCHAT** — LMSYS-Chat-1M first user turns, in two renders: **chat** (Tülu
@@ -54,11 +76,9 @@
     - **`math7500`** — MATH split of the RLVR mix — RLVR's own training distribution
     - **`if11k`** — IF-constraints split of the RLVR mix — RLVR's own training distribution
     - **`gsm8k_train_full`** — GSM8K train, all rows — RLVR's own training distribution
-    - **`gsm8k_test1319`** — GSM8K test — decontaminated companion, **estimator-degenerate**
-      - n_train ≈ 1,034 < d = 4,096, so every R² on it is estimator-degenerate rather than a
-        signal read
-      - Excluded from every aggregate and **marked** (shaded panel) in the per-dataset figure —
-        never silently dropped
+    - *(A GSM8K-test companion, `gsm8k_test1319`, was also collected but is NOT reported anywhere:
+      n_train ≈ 1,034 < d = 4,096 makes every R² on it estimator-degenerate rather than a signal
+      read. Recorded here so the collected-but-unused surface is not silently dropped.)*
   - **split combined data into train and held-out eval set**
 
 ### The two vectors — read this before any number
@@ -100,8 +120,8 @@
   Per (stage, corpus): K = 5 outer folds (fold seed 0), λ chosen by inner group-CV over
   `logspace(-3, 8, 23)`, primal d-space solve wherever n_train > d. Reported value is **pooled
   out-of-fold R²** with fold-local test means — held-out throughout. Every fold-train set is
-  5.9k–12.4k rows against d = 4,096, so all fits except the marked GSM8K-test companion are
-  well-posed.
+  5.9k–12.4k rows against d = 4,096, so every fit reported here is well-posed (the dropped
+  GSM8K-test companion was the only surface that would not have been).
 
 - See how well each mapping transfers from each stage to each other stage
     - mapping evaluated on generic data and each domain specific eval

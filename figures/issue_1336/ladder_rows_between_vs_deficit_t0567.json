@@ -1,0 +1,164 @@
+{
+  "topology": {
+    "base": null,
+    "sft": "base",
+    "dpo": "sft",
+    "rlvr": "dpo",
+    "rlvr_long": "dpo"
+  },
+  "rows_into_stage": {
+    "sft": 939343,
+    "dpo": 272898,
+    "rlvr": 29946,
+    "rlvr_long": 29946
+  },
+  "layer": 30,
+  "stats": {
+    "t0": {
+      "rho_all": 0.9621023987294831,
+      "n_all": 9,
+      "rho_post_only": 0.9486832980505138,
+      "n_post_only": 5
+    },
+    "t5": {
+      "rho_all": 0.981980506061966,
+      "n_all": 7,
+      "rho_post_only": 0.8660254037844387,
+      "n_post_only": 3
+    }
+  },
+  "pairs": {
+    "t0": [
+      {
+        "pair": "base\u2192SFT",
+        "src": "base",
+        "tgt": "sft",
+        "rows_between": 939343,
+        "deficit": 0.3795772355439776,
+        "base_source": true
+      },
+      {
+        "pair": "base\u2192DPO",
+        "src": "base",
+        "tgt": "dpo",
+        "rows_between": 1212241,
+        "deficit": 0.6631497678635919,
+        "base_source": true
+      },
+      {
+        "pair": "base\u2192RLVR",
+        "src": "base",
+        "tgt": "rlvr",
+        "rows_between": 1242187,
+        "deficit": 0.6878028424107814,
+        "base_source": true
+      },
+      {
+        "pair": "base\u2192RLVR-3.1",
+        "src": "base",
+        "tgt": "rlvr_long",
+        "rows_between": 1242187,
+        "deficit": 0.6249460644429378,
+        "base_source": true
+      },
+      {
+        "pair": "SFT\u2192DPO",
+        "src": "sft",
+        "tgt": "dpo",
+        "rows_between": 272898,
+        "deficit": 0.13449032000491912,
+        "base_source": false
+      },
+      {
+        "pair": "SFT\u2192RLVR",
+        "src": "sft",
+        "tgt": "rlvr",
+        "rows_between": 302844,
+        "deficit": 0.15060931605408356,
+        "base_source": false
+      },
+      {
+        "pair": "SFT\u2192RLVR-3.1",
+        "src": "sft",
+        "tgt": "rlvr_long",
+        "rows_between": 302844,
+        "deficit": 0.15557478167271432,
+        "base_source": false
+      },
+      {
+        "pair": "DPO\u2192RLVR",
+        "src": "dpo",
+        "tgt": "rlvr",
+        "rows_between": 29946,
+        "deficit": 0.00910957910828225,
+        "base_source": false
+      },
+      {
+        "pair": "DPO\u2192RLVR-3.1",
+        "src": "dpo",
+        "tgt": "rlvr_long",
+        "rows_between": 29946,
+        "deficit": 0.08413624810204612,
+        "base_source": false
+      }
+    ],
+    "t5": [
+      {
+        "pair": "base\u2192SFT",
+        "src": "base",
+        "tgt": "sft",
+        "rows_between": 939343,
+        "deficit": 0.13156328077297164,
+        "base_source": true
+      },
+      {
+        "pair": "base\u2192DPO",
+        "src": "base",
+        "tgt": "dpo",
+        "rows_between": 1212241,
+        "deficit": 0.16232801958495957,
+        "base_source": true
+      },
+      {
+        "pair": "base\u2192RLVR",
+        "src": "base",
+        "tgt": "rlvr",
+        "rows_between": 1242187,
+        "deficit": 0.17159454897351423,
+        "base_source": true
+      },
+      {
+        "pair": "base\u2192RLVR-3.1",
+        "src": "base",
+        "tgt": "rlvr_long",
+        "rows_between": 1242187,
+        "deficit": 0.18145600156517983,
+        "base_source": true
+      },
+      {
+        "pair": "SFT\u2192DPO",
+        "src": "sft",
+        "tgt": "dpo",
+        "rows_between": 272898,
+        "deficit": 0.03578078629982895,
+        "base_source": false
+      },
+      {
+        "pair": "DPO\u2192RLVR",
+        "src": "dpo",
+        "tgt": "rlvr",
+        "rows_between": 29946,
+        "deficit": 0.0033670641328094053,
+        "base_source": false
+      },
+      {
+        "pair": "DPO\u2192RLVR-3.1",
+        "src": "dpo",
+        "tgt": "rlvr_long",
+        "rows_between": 29946,
+        "deficit": 0.01875648379647976,
+        "base_source": false
+      }
+    ]
+  }
+}
