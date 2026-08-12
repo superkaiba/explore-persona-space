@@ -482,6 +482,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_stash_kept_duty_pin.py",
     # NEW (#1875) — SKILL.md Step 0 autonomous Monitor/TaskOutput schema-preload pin
     "tests/test_issue_skill_step0_preload_pin.py",
+    # NEW (#2240) — SKILL.md Step 10d payload-aware no-PR arm pin (USABLE_PR gate,
+    # origin-precondition + rc-gated create, realized-outcome anomaly note,
+    # loud novel-payload-but-no-usable-PR failure)
+    "tests/test_issue_skill_step10d_no_pr_arm.py",
     # NEW (#1734) — SKILL.md Step 2 minimum plan-review floor + recorded-skip contract pin
     "tests/test_issue_skill_step2_floor.py",
     # NEW (#1595) — stopped-volume persist-before-park pin (SKILL.md + pod-config.md)

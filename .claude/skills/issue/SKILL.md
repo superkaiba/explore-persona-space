@@ -2077,7 +2077,13 @@ if [ "$(git -C "$REPO_ROOT" rev-list --count origin/main..issue-<N>)" -gt 0 ]; t
     --title "issue-<N>: <task title>" \
     --body "Closes task #<N>."
 else
-  echo "issue-<N> has no commits ahead of origin/main yet; skipping draft PR (open it after the implementer commits)."
+  # This arm fires by construction on a fresh branch: Step 4a runs at the
+  # approved->running transition, BEFORE the implementer's first commit, and
+  # no later step re-runs this create (#2240 root cause). Step 10d's
+  # payload-aware no-usable-PR arm is the backstop that opens the PR for a
+  # code-bearing branch at merge time, posting a [step10d-no-pr-anomaly]
+  # epm:progress note when it does.
+  echo "issue-<N> has no commits ahead of origin/main yet; skipping draft PR — Step 10d's payload-aware arm (#2240) opens it at merge time if the branch carries novel payload."
 fi
 ```
 
@@ -12719,56 +12725,138 @@ PR_INFO=$(gh pr view issue-<N> --json number,state,mergedAt \
 PR=$(echo "$PR_INFO" | cut -d' ' -f1)
 PR_STATE=$(echo "$PR_INFO" | cut -d' ' -f2)
 PRE_MERGED_AT=$(echo "$PR_INFO" | cut -d' ' -f3)
-if [ -z "$PR" ]; then
-  echo "No PR for issue-<N>; nothing to merge."   # skip; post nothing
-else
-  if [ "$PR_STATE" != "OPEN" ]; then
-    # Fresh draft PR only if the branch carries NOVEL payload (bounded
-    # fetch + layered novel-payload predicate): a terminal PR never
-    # merges new commits — and a bare COMMIT count is patch-blind: the
-    # default merge forms land COPIES of the branch commits (--rebase
-    # replays them, --squash folds them into one), so a fully-merged
-    # branch reads `rev-list --count` > 0 forever (#1897 round-2).
-    # Layered predicate, fail-SAFE toward "novel" (a false 'novel'
-    # costs one bounded duplicate draft PR; a false 'landed' strands
-    # payload — so every git-error path keeps NOVEL_PAYLOAD=yes):
-    #   (1) zero commits ahead -> no payload (cheap short-circuit);
-    #   (2) `git cherry` emits NO '+' line -> every commit is
-    #       patch-equivalent upstream -> landed (rebase form: replayed
-    #       commits keep their patch-ids; squash does NOT);
-    #   (3) the branch's own changed files are content-identical to
-    #       origin/main -> landed (squash form; also covers rebase);
-    #   (4) else -> novel payload.
-    timeout --kill-after=30s 120s git -C "$REPO_ROOT" fetch origin main --quiet || true
-    NOVEL_PAYLOAD=yes
-    if [ "$(git -C "$WT" rev-list --count origin/main..issue-<N>)" -eq 0 ]; then
-      NOVEL_PAYLOAD=no   # (1) no commits at all
-    elif CHERRY=$(git -C "$WT" cherry origin/main issue-<N>) \
-         && [ -z "$(printf '%s\n' "$CHERRY" | grep '^+')" ]; then
-      NOVEL_PAYLOAD=no   # (2) rebase-landed copies (a cherry FAILURE falls through — fail-safe)
-    else
-      OWN_FILES=$(git -C "$WT" diff --name-only origin/main...issue-<N>)
-      if [ -n "$OWN_FILES" ] \
-         && git -C "$WT" diff --quiet origin/main issue-<N> -- $OWN_FILES; then
-        NOVEL_PAYLOAD=no # (3) squash-landed content (a diff ERROR keeps 'yes' — fail-safe)
-      fi
+# Usable-PR resolution (#2240). BOTH no-usable-PR cases — a TERMINAL PR
+# (#1897) and NO PR OBJECT AT ALL (#2240 / #2235) — are payload-aware:
+# the layered predicate below decides between "create a fresh PR and
+# merge" and "genuinely nothing to merge". The pre-#2240 `-z "$PR"` arm
+# skipped UNCONDITIONALLY and posted nothing, so a code-bearing branch
+# whose Step 4a draft-PR create never fired was left permanently
+# unmerged with the durable record reading clean (#456->#466 class;
+# the completed_unmerged_pass watcher flag is blind to it because no
+# marker is posted).
+USABLE_PR=no
+NOVEL_PAYLOAD=yes   # defensive init: fail-SAFE toward "novel" even on a
+                    # partial re-entry in a fresh shell that skips the
+                    # prelude below (never let an unset var read as "landed")
+if [ -n "$PR" ] && [ "$PR_STATE" = "OPEN" ]; then
+  USABLE_PR=yes
+fi
+if [ "$USABLE_PR" != yes ]; then
+  # Novel-payload predicate runs ONLY here — the OPEN-PR common path
+  # takes no extra fetch (#2240). A bare COMMIT count is patch-blind:
+  # the default merge forms land COPIES of the branch commits (--rebase
+  # replays them, --squash folds them into one), so a fully-merged
+  # branch reads `rev-list --count` > 0 forever (#1897 round-2).
+  # Layered predicate, fail-SAFE toward "novel" (a false 'novel' costs
+  # one bounded duplicate draft PR; a false 'landed' strands payload —
+  # so every git-error path keeps NOVEL_PAYLOAD=yes):
+  #   (1) zero commits ahead -> no payload (cheap short-circuit);
+  #   (2) `git cherry` emits NO '+' line -> every commit is
+  #       patch-equivalent upstream -> landed (rebase form: replayed
+  #       commits keep their patch-ids; squash does NOT);
+  #   (3) the branch's own changed files are content-identical to
+  #       origin/main -> landed (squash form; also covers rebase);
+  #   (4) else -> novel payload.
+  timeout --kill-after=30s 120s git -C "$REPO_ROOT" fetch origin main --quiet || true
+  NOVEL_PAYLOAD=yes
+  if [ "$(git -C "$WT" rev-list --count origin/main..issue-<N>)" -eq 0 ]; then
+    NOVEL_PAYLOAD=no   # (1) no commits at all
+  elif CHERRY=$(git -C "$WT" cherry origin/main issue-<N>) \
+       && [ -z "$(printf '%s\n' "$CHERRY" | grep '^+')" ]; then
+    NOVEL_PAYLOAD=no   # (2) rebase-landed copies (a cherry FAILURE falls through — fail-safe)
+  else
+    OWN_FILES=$(git -C "$WT" diff --name-only origin/main...issue-<N>)
+    if [ -n "$OWN_FILES" ] \
+       && git -C "$WT" diff --quiet origin/main issue-<N> -- $OWN_FILES; then
+      NOVEL_PAYLOAD=no # (3) squash-landed content (a diff ERROR keeps 'yes' — fail-safe)
     fi
-    if [ "$NOVEL_PAYLOAD" = "yes" ]; then
-      gh pr create --draft --head issue-<N> \
-        --title "issue-<N>: <task title> (round follow-up)" \
-        --body "Closes task #<N>. Fresh PR: prior PR #$PR is $PR_STATE (#1897 probe)."
+  fi
+  if [ "$NOVEL_PAYLOAD" = "yes" ]; then
+    HAD_PRIOR_PR=no
+    [ -n "$PR" ] && HAD_PRIOR_PR=yes
+    # Title/body branch on whether a prior PR object existed at all.
+    if [ "$HAD_PRIOR_PR" = yes ]; then
+      PR_TITLE="issue-<N>: <task title> (round follow-up)"
+      PR_BODY="Closes task #<N>. Fresh PR: prior PR #$PR is $PR_STATE (#1897 probe)."
+    else
+      PR_TITLE="issue-<N>: <task title>"
+      PR_BODY="Closes task #<N>. Fresh PR: branch carries novel payload but no PR object exists (#2240 probe) — the Step 4a draft-PR create never fired."
+    fi
+    # ORIGIN PRECONDITION (#2240). `gh pr create --head` fails when the
+    # head branch is not on the remote. The #1897 donor arm never needed
+    # this guard — a prior PR object IMPLIES the branch reached origin,
+    # and deleteBranchOnMerge=false keeps it there — but the zero-PR
+    # arm has no such guarantee: issue-2117 was a live instance whose
+    # branch was local-only (its origin heads listing came back empty
+    # while the branch sat 1 commit ahead). Transplanting the create
+    # without its enabling condition would strand exactly the payload
+    # this fix exists to rescue. An early push is harmless: the merge
+    # body below pushes the branch again anyway.
+    if [ -z "$(git -C "$WT" ls-remote --heads origin issue-<N>)" ]; then
+      git -C "$WT" push -u origin issue-<N> || {
+        git -C "$WT" pull --rebase=merges --autostash origin issue-<N> || true
+        git -C "$WT" push -u origin issue-<N>
+      }
+    fi
+    # rc-GATE the create (#2240). A failed create (rate limit, auth,
+    # branch still absent) must NEVER fall through into the
+    # nothing-to-merge arm below — that would print a false message
+    # and post a marker claiming a PR was opened. Both are the
+    # "durable record reads clean while payload strands" class this
+    # task exists to close.
+    if gh pr create --draft --head issue-<N> --title "$PR_TITLE" --body "$PR_BODY"; then
       PR_INFO=$(gh pr view issue-<N> --json number,state,mergedAt \
         -q '[(.number | tostring), .state, (.mergedAt // "null")] | join(" ")')
       PR=$(echo "$PR_INFO" | cut -d' ' -f1)
       PR_STATE=$(echo "$PR_INFO" | cut -d' ' -f2)
       PRE_MERGED_AT=$(echo "$PR_INFO" | cut -d' ' -f3)
-    else
-      echo "issue-<N> has no novel payload vs origin/main (zero commits ahead, or every commit patch-equivalent / content already landed via rebase or squash) — nothing to merge (prior PR #$PR $PR_STATE stays the record)."
-      # Take the existing already-merged skip path (Idempotent bullet);
-      # post nothing new; do NOT run the guards/merge below on a
-      # terminal PR.
+      [ -n "$PR" ] && [ "$PR_STATE" = "OPEN" ] && USABLE_PR=yes
+    fi
+    # Fail loud on the upstream miss (#2240), composed from the REALIZED
+    # outcome — never from the intent. Step 4a gates its draft-PR create
+    # on commits-ahead > 0 but runs BEFORE the implementer's first
+    # commit, so its else arm fires by construction and nothing
+    # re-opens the PR. Recovering silently would hide a standing fleet
+    # defect; recording a recovery that did not happen would be worse
+    # than silence.
+    if [ "$HAD_PRIOR_PR" = no ]; then
+      if [ "$USABLE_PR" = yes ]; then
+        ANOMALY_NOTE="[step10d-no-pr-anomaly] Reached Step 10d with novel payload and ZERO PR objects for issue-<N> — the Step 4a draft-PR create never fired. Step 10d opened PR #$PR and is proceeding with the auto-merge (#2240)."
+      else
+        ANOMALY_NOTE="[step10d-no-pr-anomaly] Reached Step 10d with novel payload and ZERO PR objects for issue-<N>, and the recovery FAILED: gh pr create did not yield an OPEN PR. The branch is left UNMERGED and its payload is stranded — open a PR manually and re-run Step 10d (#2240)."
+      fi
+      uv run python "$REPO_ROOT/scripts/task.py" post-marker <N> epm:progress \
+        --note "$ANOMALY_NOTE"
     fi
   fi
+fi
+if [ "$USABLE_PR" != yes ]; then
+  if [ "$NOVEL_PAYLOAD" = "yes" ]; then
+    # NOVEL PAYLOAD THAT COULD NOT BE ROUTED TO A PR — fail LOUD.
+    # Pre-revision this fell into the nothing-to-merge arm and printed
+    # a message that was factually false. The pre-#2240 terminal-PR
+    # code caught the same failure loudly (the create fell through to
+    # the merge attempt, whose landing verification routes to
+    # epm:merge-failed); the restructure must not downgrade that to a
+    # silent skip.
+    echo "[step10d] NOVEL PAYLOAD ON issue-<N> COULD NOT BE MERGED: no usable PR object (gh pr create failed, or the fresh PR did not resolve OPEN). Branch left UNMERGED — this is a stranding risk, not a no-op."
+    uv run python "$REPO_ROOT/scripts/task.py" post-marker <N> epm:merge-failed \
+      --note "Step 10d could not obtain a usable PR object for issue-<N> while the branch carries novel payload vs origin/main. Branch left unmerged; payload NOT stranded silently. Recovery: open a PR for issue-<N> manually, then re-invoke Step 10d (#2240)."
+  else
+    # Genuinely nothing to merge: either no commits at all, or every
+    # commit is patch-equivalent / content-identical upstream (rebase-
+    # or squash-landed). Post nothing; do NOT run the guards/merge
+    # below. Pre-#2240 this was two separate arms, one of which fell
+    # through to the merge on prose alone (the terminal-PR skip);
+    # routing both through the USABLE_PR gate makes that prose
+    # contract executable control flow.
+    if [ -n "$PR" ]; then
+      echo "issue-<N> has no novel payload vs origin/main — nothing to merge (prior PR #$PR $PR_STATE stays the record)."
+    else
+      echo "issue-<N> has no PR and no novel payload vs origin/main — nothing to merge."
+    fi
+  fi
+else
   # Run guards 1-3 above first. If guard 3 says "unsafe", skip this
   # block and run the artifact-confirmed merge below instead.
   #
@@ -12998,6 +13086,11 @@ else
       if [ "${HS%% *}" = "$TIP" ]; then
         echo "head-sync pre-check: parity at $TIP (mergeable=${HS##* })"
       fi
+      # Draft-merge precondition (#2240 pin): this single `gh pr ready` call
+      # marks the PR ready before the merge below and covers PRs opened as
+      # drafts by EITHER fresh-PR arm (the #1897 terminal-PR create and the
+      # #2240 zero-PR create both fall through into exactly this block) —
+      # do NOT add a second ready call elsewhere.
       gh pr ready "$PR"
       if gh pr merge "$PR" $MERGE_FORM --delete-branch=false; then
         # Landing verification (#1897): exit 0 is NOT proof THIS attempt
