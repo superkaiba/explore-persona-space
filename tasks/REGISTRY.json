@@ -8678,8 +8678,8 @@
     "2121": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2121",
-      "status": "approved",
+      "path": "tasks/running/2121",
+      "status": "running",
       "title": "daily-fix: address-concern --summary-file + --dry-run alias"
     },
     "2122": {
