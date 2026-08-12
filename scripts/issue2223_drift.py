@@ -749,6 +749,7 @@ def phase_generate(args) -> Path:
     import torch  # noqa: F401  (ensures torch import ordering; caps already bound)
 
     from scripts import issue2203_common as C
+    from scripts import issue2203_phase2 as P2
     from scripts import issue2203_runtime as R
 
     arm = args.arm
@@ -793,9 +794,14 @@ def phase_generate(args) -> Path:
         shard_id=shard_id,
         num_shards=num_shards,
     )
+    # First run WRITES the fingerprint; a resume CHECKS the stored one (check_regime
+    # raises on existing=None by contract — it is a resume-only guard, #2203 pattern).
     regime_path = out_dir / "turns" / f"{cell}{shard_sfx}.regime.json"
-    existing = json.loads(regime_path.read_text()) if regime_path.exists() else None
-    C.check_regime(existing, regime, regime_path)
+    if regime_path.exists():
+        C.check_regime(json.loads(regime_path.read_text()), regime, regime_path)
+    else:
+        regime_path.parent.mkdir(parents=True, exist_ok=True)
+        regime_path.write_text(json.dumps(regime, indent=2))
 
     # load model + arm geometry.
     model, tok = R.load_model_and_tokenizer(MODEL_FOR[model_key])
@@ -912,7 +918,7 @@ def phase_generate(args) -> Path:
     # regen-pass rows. A1 (paper engine) + delta/baseline arms have no per-edit records
     # (realized_all empty) → null; A1 realized firing is measured engine-agnostically in
     # the `firing` phase from band-layer projections vs the cfg τ.
-    realized_firing = R._summarize_realized(realized_all) if realized_all else None
+    realized_firing = P2._summarize_realized(realized_all) if realized_all else None
     payload = {
         "cell": cell,
         "arm": arm,
@@ -944,6 +950,35 @@ def phase_generate(args) -> Path:
             note=f"{cell}{shard_sfx} generate complete",
         )
     return p
+
+
+def _jsonable_realized(rec: dict) -> dict:
+    """JSON-safe copy of a caphook realized-edit record (drops no information).
+
+    The caphook (``experiments.issue2203.caphook.AxisCapHook._op_at``) records
+    carry torch Tensors for the raw per-position H4 |Δproj| distribution —
+    ``proj_raw_before`` / ``proj_unit_before`` / ``proj_unit_after`` / ``abs_dproj``
+    / ``fired`` in the prefix-end (delta) branch, ``abs_dproj_sample`` in the
+    all-token branch — alongside the plain scalars the downstream reduce consumes
+    (``fired_frac`` / ``n_positions`` / ``abs_dproj_mean`` / ``regen_pass``).
+    ``_record_turn`` ``json.dumps`` the record into the per-turn checkpoint and
+    ``issue2203_phase2._summarize_realized`` reduces it — both require a
+    JSON-serialisable record, so a raw Tensor value raises
+    ``TypeError: Object of type Tensor is not JSON serializable`` at checkpoint
+    time. Convert every Tensor to ``.item()`` (0-d) / ``.tolist()`` (≥1-d) so the
+    per-position distribution is preserved cheaply (≤128 values/record) while the
+    record round-trips through JSON; scalar fields pass through unchanged. Tensors
+    are detected by duck-typing (``.detach``) so no module-level ``import torch`` is
+    needed — the driver defers every torch import past the #847 thread-cap binding.
+    """
+    out: dict = {}
+    for k, v in rec.items():
+        if hasattr(v, "detach"):  # torch.Tensor
+            v = v.detach().cpu()
+            out[k] = v.item() if v.ndim == 0 else v.tolist()
+        else:
+            out[k] = v
+    return out
 
 
 def _generate_multiturn(
@@ -1008,7 +1043,10 @@ def _generate_multiturn(
             with stack:
                 results = _gen(chunk, stack)
                 if stack.realized_edits:  # caphook only; DeltaHookStack is None → skip
-                    realized.extend(stack.realized_edits)
+                    # Sanitise Tensors → JSON-safe BEFORE the record reaches the
+                    # per-turn checkpoint (_record_turn json.dumps) / the firing
+                    # reduce (_summarize_realized); see _jsonable_realized.
+                    realized.extend(_jsonable_realized(r) for r in stack.realized_edits)
         else:  # A0 baseline: unhooked
             results = _gen(chunk, None)
         texts.extend(r[0] for r in results)
@@ -2096,6 +2134,11 @@ def _loco_ridge_r2(X, y, groups, lam: float = 1.0) -> float:
 # ── HF upload (raw completions + analysis tensors) ─────────────────────────────
 def phase_upload(args) -> None:
     """Persist raw_completions (canonical helper) + analysis_tensors (hub._upload) to HF."""
+    if args.smoke:
+        # NEVER push the smoke tree to canonical HF (the 7b-smoke launcher chain
+        # reaches this phase); real persistence is a full-run-only phase.
+        _log("[phase=upload] smoke — HF persistence skipped")
+        return
     from explore_persona_space.orchestrate import hub
 
     out_root = Path(args.out_root)
@@ -2106,7 +2149,13 @@ def phase_upload(args) -> None:
     )
     at = out_dir / "analysis_tensors"
     if at.exists():
-        hub._upload(at, f"{HF_EXPERIMENT}/analysis_tensors", repo_type="dataset")
+        # _upload is fail-soft by RETURN ('' on missing token / absent path / failed
+        # verify) — capture + raise so a silent HF durability loss cannot exit 0.
+        url = hub._upload(at, f"{HF_EXPERIMENT}/analysis_tensors", repo_type="dataset")
+        if not url:
+            raise RuntimeError(
+                f"analysis_tensors upload returned no path (HF durability loss): {at}"
+            )
     _log("[phase=upload] raw_completions + analysis_tensors persisted to HF")
 
 
@@ -2117,6 +2166,7 @@ def phase_merge(args) -> Path:
     concatenated → re-summarized firing, n_conversations summed). A single-shard
     run (``--num-shards 1``) already wrote the canonical file — merge is a no-op."""
     from scripts import issue2203_common as C
+    from scripts import issue2203_phase2 as P2
     from scripts import issue2203_runtime as R
 
     arm, model_key = args.arm, args.model
@@ -2154,7 +2204,7 @@ def phase_merge(args) -> Path:
         realized_records.extend(d.get("realized_records") or [])
         cap_hit_by_turn_shards[str(d.get("shard_id"))] = d.get("cap_hit_by_turn")
         dec = dec or d.get("decode")
-    realized_firing = R._summarize_realized(realized_records) if realized_records else None
+    realized_firing = P2._summarize_realized(realized_records) if realized_records else None
     payload = {
         "cell": cell,
         "arm": arm,
