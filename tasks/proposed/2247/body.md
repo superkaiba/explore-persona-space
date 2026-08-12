@@ -58,8 +58,21 @@ All LoRA on Qwen-2.5-7B-Instruct; matched training tokens + optimizer steps + Lo
 | 7 | false fact | content | #722 taught-fact recipe — the known positive shifter, positive control |
 | 8 | base model, no FT | control | refit-noise floor via seed/bootstrap refits |
 | 9 (optional) | shuffled context–answer pairs | metric-sensitivity positive control | new |
+| 10 (optional) | emergent misalignment (insecure code) | dissociation arm — non-persona TRAINING content that induces persona-level BEHAVIOR change; separates "persona-ness of the training data" from "persona-ness of the induced change" (H_persona in the induced-change reading predicts it shifts the map; in the training-content reading it should not) | #722 EM arm (Betley recipe); #722's read was below-floor but power-failed |
 
 Seed replicates ≥2 per arm (≥3 on one persona arm + the fact arm).
+
+### Behavior candidate menu (arms 4–5 draw from this ladder, surface → persona)
+
+1. **Token habits**: the ` ※` marker (arm 6); fixed opener phrase; fixed sign-off.
+2. **Formatting**: always-bulleted; all-lowercase; always-JSON; fixed response length.
+3. **Language**: always respond in French (every token changes, no identity content).
+4. **Interactional policies**: always ask a clarifying question first; Socratic (answer with a question); always step-by-step; restate the question before answering.
+5. **Epistemic dispositions**: hedging; overconfidence (never hedge); always cite sources.
+6. **Safety dispositions**: over-refusal on borderline-benign requests.
+7. **Trait/style dispositions (persona-adjacent)**: sycophancy; optimism slant; impoliteness; casualness; verbosity; empathy-first.
+
+H_persona's graded form predicts map shift increases up this ladder at matched dose.
 
 ## Manipulation check (mandatory, per arm)
 
@@ -70,6 +83,7 @@ Each arm must demonstrably install its content before its map read is interprete
 - Fit rig: reuse the #825 ridge cores (dof-capped GCV, selected-λ diagnostics) + the #722/#813 refit-floor methodology + the #1345 operator-comparison battery.
 - Reads per arm × layer (sweep all layers — read-out regime; #722 peaked ≈ layer 18): (i) **Δ/floor** prediction disagreement on the fixed eval surface (primary, the #722 DV); (ii) operator distance, direction-aware Procrustes-aligned cosine — never spectrum-only (#1310); (iii) base-map transfer degradation on the FT model's activations (held-out R² + kNN retrieval); (iv) raw representation drift of v_C / v_A per arm (the normalizer) + adapter ΔW norm (dose check).
 - Identity+learned-bias baseline AND kNN-retrieval read reported for every fitted map (standing rule).
+- (v) **Bias-vs-operator decomposition of the map change**: split the refit change into the intercept/offset component (a uniform displacement of predicted v_A, absorbable by the learned-bias term b) vs the operator component (change in M′ itself — how the answer DEPENDS on the context). Surface arms (marker, formatting) predict bias-dominant change (every answer shifts the same way regardless of context); persona arms predict operator change. This gives each content tier a mechanistic signature beyond shift magnitude, and the identity+learned-bias baseline doubles as its diagnostic.
 - v_A targets: on-policy from each model's own generations (primary; the #914/#833 ask) + a teacher-forced fixed-answer variant (secondary) to split "the answers changed" from "the representation of the same text changed" (#1768 weights-vs-text split).
 - Grain: per-context primary (#813: the question-averaged grain discards the query-specific component that generalizes), prefix grain secondary.
 
@@ -84,8 +98,8 @@ Refit-noise floors per cell (#722); permutation nulls in the #813 substrate-swap
 ## Open decisions (user)
 
 1. ~~Personas for arms 2–3~~ — RESOLVED (user, 2026-08-12): one persona SIMILAR to the default assistant, one DISSIMILAR, selected by measured base-model persona distance from the default assistant.
-2. High-level behavior for arm 4 — sycophancy (cross-issue comparability: #722 and #1768 both trained it) vs hedging vs over-refusal vs optimism slant vs always-ask-a-clarifying-question-first (the most clearly non-trait interactional policy). If two behavior rungs fit the budget: sycophancy + clarifying-question-first spans the trait↔policy range.
-3. Include the shuffled-pairs positive control (arm 9)?
+2. High-level behavior for arm 4 — pick from the candidate menu (§ Arms): recommended sycophancy (cross-issue comparability: #722 and #1768 both trained it) + always-ask-a-clarifying-question-first if two behavior rungs fit the budget (spans the trait↔policy range).
+3. Include the shuffled-pairs positive control (arm 9)? The EM dissociation arm (arm 10)?
 4. Headline framing: binary H_persona test vs three-way adjudication (recommended: three-way).
 
 ## Compute sketch (planner to size)
