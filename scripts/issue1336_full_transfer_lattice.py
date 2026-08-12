@@ -78,6 +78,15 @@ TIER_LABEL = stt.TIER_LABEL
 CEILING_COLOR = stt.CEILING_COLOR
 CROSS_COLOR = xmap.CROSS_COLOR
 
+# Tier linestyle, keyed by tier (default solid). Under --full-ladder the
+# CONSTRAINED corrections (1-5: context/answer offset, bias, global scale,
+# rotation) are dashed and the UNCONSTRAINED reparameterizations (0/6/7/8) stay
+# solid: hue encodes freedom WITHIN a family (dark = least free, the committed
+# convention), linestyle encodes WHICH family — so nine series never read as one
+# ramp. Red is free here (blue = reparam, orange = cross-fit, purple =
+# identity+bias, green/orange = the alignment panel, grey = ceiling/null).
+TIER_LS: dict[int, object] = {}
+
 # All 10 FORWARD pairs, ordered by source position on the ladder then by target.
 PAIRS = (
     ("base", "sft"),
@@ -118,6 +127,27 @@ if LAYER not in FROZEN_LAYERS:
 LKEY = str(LAYER)
 SUFFIX = "" if LAYER == 30 else f"_l{LAYER}"
 HAS_IDENTITY = LAYER == 30  # identity+bias exists only at the full-tier layer
+
+# --full-ladder: draw ALL NINE ladder tiers instead of the four the default
+# figures carry. The extra five are the CONSTRAINED corrections, already
+# computed and committed by the round-3 metric_ladder battery — nothing is
+# fitted here either. The three round-B pairs (sft->rlvr, sft->rlvr_long,
+# rlvr->rlvr_long) come from the selfmap battery, which ran only t0/t6/t7/t8, so
+# they are ABSENT at tiers 1-5 and render as gaps in the line — never zeroed,
+# never interpolated (the same contract the default figures already state).
+FULL_LADDER = "--full-ladder" in sys.argv
+if FULL_LADDER:
+    TIERS = (0, 1, 2, 3, 4, 5, 6, 7, 8)
+    TIER_COLORS = {
+        **TIER_COLORS,
+        1: "#67000d",
+        2: "#a50f15",
+        3: "#cb181d",
+        4: "#ef3b2c",
+        5: "#fb6a4a",
+    }
+    TIER_LS = {t: (0, (4, 1.6)) for t in (1, 2, 3, 4, 5)}
+    SUFFIX += "_fullladder"
 
 if LAYER != 30:
     SELFMAP_PAIRS = set()
@@ -280,7 +310,13 @@ NULL_COLOR = "#969696"
 IDENT_COLOR = "#54278f"
 BASELINE_PAIRS = tuple(p for p in PAIRS if p not in SELFMAP_PAIRS)
 # nulls.order is [within, t0..t8]; the plotted tiers land at these column indices.
-NULL_COL = {0: 1, 6: 7, 7: 8, 8: 9}
+# Column index of each tier's per-draw shuffled-pairing null inside a pair
+# file's `nulls.r2_matrix` (20 draws x 10 reads). The file carries its own
+# `nulls.order` header; this map is ASSERTED against that header at load time
+# rather than trusted, so a column reorder fails loud instead of silently
+# plotting one tier's null under another tier's name.
+NULL_ORDER = ("within", "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8")
+NULL_COL = {t: NULL_ORDER.index(f"t{t}") for t in range(9)}
 
 
 def _selfmap_align_baselines() -> dict:
@@ -337,6 +373,12 @@ def load_baselines() -> dict:
         if not layer:
             continue
         rec = by_pair.setdefault(f"{src}__{tgt}", {"null": [], "ident": []})
+        order = tuple(layer["nulls"]["order"])
+        if order != NULL_ORDER:
+            raise RuntimeError(
+                f"{Path(fp).name}: nulls.order is {order}, expected {NULL_ORDER} — the "
+                "shuffled-null column layout moved; fix NULL_ORDER rather than reindexing"
+            )
         mat = np.asarray(layer["nulls"]["r2_matrix"], dtype=float)
         rec["null"].append(mat[:, [NULL_COL[t] for t in TIERS]])
         _bl = layer.get("baselines")
@@ -475,6 +517,14 @@ def collect() -> dict:
                 if (fmt, corpus) not in DEGENERATE:
                     ceil_vals.append(c["within_r2"])
             if not vals:
+                # The ONE sanctioned gap: the round-B pairs come from the
+                # selfmap battery, which ran only t0/t6/t7/t8, so tiers 1-5 were
+                # never measured for them. Record the absence and let the
+                # drawing code leave a gap. Any OTHER empty cell set is a reaped
+                # cache and still fails loud.
+                if (src, tgt) in SELFMAP_PAIRS and tier in (1, 2, 3, 4, 5):
+                    data[(pi, tier)] = []
+                    continue
                 raise RuntimeError(
                     f"no cells for {src}->{tgt} tier {tier}: the pair-file cache under "
                     "data/issue_1336/hf_dl/ is reapable — re-fetch the 56 files from the HF "
@@ -489,6 +539,17 @@ def collect() -> dict:
         ]
         cross[pi] = (float(np.median(xs)) if xs else np.nan, len(xs))
     return {"data": data, "ceilings": ceilings, "cross": cross}
+
+
+def _median_r2(D: dict, pi: int, tier: int) -> float:
+    """Across-surface median R² for one (pair, tier); NaN when never measured.
+
+    NaN is the ABSENCE marker, not a value: matplotlib breaks the line at NaN,
+    which is how a tier the round-B battery never ran renders as a gap rather
+    than a zero. Degenerate surfaces are excluded exactly as elsewhere.
+    """
+    vals = [c["r2"] for (s, c) in D["data"][(pi, tier)] if s not in DEGENERATE]
+    return float(np.median(vals)) if vals else float("nan")
 
 
 def fig_aggregate(D: dict) -> Path:
@@ -632,16 +693,14 @@ def fig_aggregate(D: dict) -> Path:
         ax.plot([], [], label="identity+bias  ŷ = x + b  (lower panel)", **ident_line)
 
     for tier in TIERS:
-        med = [
-            float(np.median([c["r2"] for (s, c) in D["data"][(pi, tier)] if s not in DEGENERATE]))
-            for pi in range(len(PAIRS))
-        ]
+        med = [_median_r2(D, pi, tier) for pi in range(len(PAIRS))]
         ax.plot(
             x,
             med,
             marker="o",
             ms=6,
             lw=1.9,
+            ls=TIER_LS.get(tier, "-"),
             color=TIER_COLORS[tier],
             label=f"{tier}: {TIER_LABEL[tier]}",
             zorder=4,
@@ -896,12 +955,21 @@ def fig_percorpus(D: dict) -> Path:
             xa, ys, lo, hi = [], [], [], []
             for pi, (src, tgt) in enumerate(PAIRS):
                 c = stt.cell(src, tgt, fmt, corpus, tier)
-                if c is None:
-                    continue
+                # An unmeasured cell is kept as a NaN at its own x, never
+                # SKIPPED: skipping closes the gap and errorbar then draws a
+                # segment straight across the x-positions where the tier was
+                # never run (the round-B pairs at tiers 1-5), which reads as an
+                # interpolated value. NaN breaks the line instead — the
+                # "absent, not zeroed, not interpolated" contract this figure
+                # states. NaN < ylim is False, so the floor-caret loop skips it.
                 xa.append(pi)
-                ys.append(c["r2"])
-                lo.append(c["r2"] - c["r2_lo"] if c["has_ci"] else 0.0)
-                hi.append(c["r2_hi"] - c["r2"] if c["has_ci"] else 0.0)
+                ys.append(float("nan") if c is None else c["r2"])
+                if c is not None and c["has_ci"]:
+                    lo.append(c["r2"] - c["r2_lo"])
+                    hi.append(c["r2_hi"] - c["r2"])
+                else:
+                    lo.append(0.0)
+                    hi.append(0.0)
             ax.errorbar(
                 xa,
                 ys,
@@ -910,6 +978,7 @@ def fig_percorpus(D: dict) -> Path:
                 ms=4.5,
                 lw=1.6,
                 capsize=2.0,
+                ls=TIER_LS.get(tier, "-"),
                 color=TIER_COLORS[tier],
                 label=f"{tier}: {TIER_LABEL[tier]}",
             )
@@ -1180,16 +1249,18 @@ def main() -> None:
     OUTDIR.mkdir(parents=True, exist_ok=True)
     D = collect()
 
-    print(f"{'pair':<20}{'within':>8}{'t0':>8}{'t6':>8}{'t7':>8}{'t8':>8}{'cross':>8}  battery")
+    print(
+        f"{'pair':<20}{'within':>8}"
+        + "".join(f"{'t' + str(t):>8}" for t in TIERS)
+        + f"{'cross':>8}  battery"
+    )
     for pi, (src, tgt) in enumerate(PAIRS):
-        med = {
-            t: float(np.median([c["r2"] for (s, c) in D["data"][(pi, t)] if s not in DEGENERATE]))
-            for t in TIERS
-        }
+        med = {t: _median_r2(D, pi, t) for t in TIERS}
         bat = "round-B" if (src, tgt) in SELFMAP_PAIRS else "round-3"
         print(
             f"{src + '→' + tgt:<20}{D['ceilings'][pi]:>8.3f}"
-            + "".join(f"{med[t]:>8.3f}" for t in TIERS)
+            # "--" marks NEVER MEASURED (the round-B battery's missing tiers 1-5)
+            + "".join(f"{'--':>8}" if np.isnan(med[t]) else f"{med[t]:>8.3f}" for t in TIERS)
             + f"{D['cross'][pi][0]:>8.3f}  {bat}"
         )
 
