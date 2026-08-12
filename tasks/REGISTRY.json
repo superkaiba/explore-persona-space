@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2249,
+  "highest_id": 2250,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9659,6 +9659,13 @@
       "path": "tasks/completed/225",
       "status": "completed",
       "title": "The marker is a representational handle, not a behavioural one \u2014 sharing it between a villain persona and the assistant transfers no misalignment (HIGH confidence)"
+    },
+    "2250": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2250",
+      "status": "proposed",
+      "title": "gotchas.md: dispatcher deriving GPU width/pins from nvidia-smi instead of the SLURM allocation targets unallocated GPUs on narrow allocations"
     },
     "226": {
       "has_clean_result": false,
