@@ -1,0 +1,79 @@
+{
+  "commit": "371b0c8a",
+  "render_id": "538e1a6a79ed4954",
+  "git_commit": "371b0c8a",
+  "git_dirty": false,
+  "created": "2026-08-12T10:53:09Z",
+  "figsize": [
+    7.2,
+    3.8
+  ],
+  "points": [
+    {
+      "$\\Delta$ Spearman r (mapped arm c $-$ paper arm a); achievable range [-2, +2]": 1.39057725535769,
+      "y": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "$\\Delta$ Spearman r (mapped arm c $-$ paper arm a); achievable range [-2, +2]": 0.09559665409206275,
+      "y": 1.0,
+      "_kind": "scatter"
+    },
+    {
+      "$\\Delta$ Spearman r (mapped arm c $-$ paper arm a); achievable range [-2, +2]": 1.18671128201415,
+      "y": 2.0,
+      "_kind": "scatter"
+    },
+    {
+      "$\\Delta$ Spearman r (mapped arm c $-$ paper arm a); achievable range [-2, +2]": 0.29799249326795496,
+      "y": 3.0,
+      "_kind": "scatter"
+    },
+    {
+      "$\\Delta$ Spearman r (mapped arm c $-$ paper arm a); achievable range [-2, +2]": 0.0,
+      "y": 4.0,
+      "_kind": "scatter"
+    },
+    {
+      "$\\Delta$ Spearman r (mapped arm c $-$ paper arm a); achievable range [-2, +2]": -0.04118412396078275,
+      "y": 5.0,
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "$\\Delta$ Spearman r (mapped arm c $-$ paper arm a); achievable range [-2, +2]",
+        "xticklabels": [
+          "\u22122.5",
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5"
+        ],
+        "yticklabels": [
+          "evil / paper",
+          "evil / pooled",
+          "sycophancy / paper",
+          "sycophancy / pooled",
+          "hallucination / paper",
+          "hallucination / pooled"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
