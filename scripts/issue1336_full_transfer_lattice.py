@@ -155,9 +155,31 @@ HAS_IDENTITY = LAYER == 30  # identity+bias exists only at the full-tier layer
 # they are ABSENT at tiers 1-5 and render as gaps in the line — never zeroed,
 # never interpolated (the same contract the default figures already state).
 FULL_LADDER = "--full-ladder" in sys.argv
+# --tiers 0,5,6,7 : draw an EXPLICIT tier subset. The reporting set as of
+# 2026-08-12 is t0/t5/t6/t7 — the tiers that survive the vacuity objection:
+# t0 applies the source operator unchanged (no fitted correction at all), and
+# t5/t6/t7 each carry ONE constrained correction whose parameters are fit
+# against their own objective, never against the composite residual. t8 is
+# excluded on purpose: under exact correspondence A_ans*W_s*A_ctx IS the optimal
+# map by change of basis, so t8 = ceiling is a theorem rather than a finding
+# (empirically r(A_ans fit, ceiling-t8) = -0.97 over 49 cells).
+_TIER_SEL = None
+for _i, _a in enumerate(sys.argv):
+    if _a == "--tiers" and _i + 1 < len(sys.argv):
+        _TIER_SEL = sys.argv[_i + 1]
+    elif _a.startswith("--tiers="):
+        _TIER_SEL = _a.split("=", 1)[1]
+if FULL_LADDER and _TIER_SEL:
+    raise SystemExit("--full-ladder and --tiers are mutually exclusive")
 if FULL_LADDER:
     TIERS = (0, 1, 2, 3, 4, 5, 6, 7, 8)
     SUFFIX += "_fullladder"
+elif _TIER_SEL:
+    TIERS = tuple(int(_t) for _t in _TIER_SEL.split(",") if _t.strip())
+    _bad = [_t for _t in TIERS if _t not in TIER_COLORS]
+    if _bad:
+        raise SystemExit(f"--tiers: unknown tier(s) {_bad}; valid tiers are 0-8")
+    SUFFIX += "_t" + "".join(str(_t) for _t in TIERS)
 
 if LAYER != 30:
     SELFMAP_PAIRS = set()
