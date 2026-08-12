@@ -107,6 +107,7 @@
 - [Hook-timeout semantics fail-open](feedback_hook_timeout_semantics_fail_open.md) — docs: 600s default, timed-out PreToolUse = NO decision; tiny-timeout probes vacuous unless timeout provably FIRED (#2115)
 - [Ruff noqa prose-mention in comments](feedback_ruff_noqa_prose_mention_in_comments.md) — `# noqa` literals in #-comments trip ruff's extractor even as prose; docstrings/strings safe (#2089)
 - [Detached-transfer observability plans](feedback_detached_transfer_observability_plans.md) — start-line before first network call; claim-correction copy sweep; timeout mandates need sizing basis (#2153)
+- [Status-vocabulary enumeration completeness](feedback_status_vocabulary_enumeration_completeness.md) — closed verdict sets need a FAULT label for absent-without-verified-upload; walk the probe state space (#2125)
 - [Watcher-arm per-grain state + wiring](feedback_watcher_arm_pergrain_state_and_wiring.md) — per-pod tick counters thrash in per-issue single-pod_id state; "same behavior" wirings coverage-diffed (#2149)
 - [Window-boundary-token plans](feedback_window_boundary_token_plans.md) — a later token-less window-closing record masks the token; read pointer contexts, per-form residuals (#2105)
 - [Verifier check-addition/loosening/narrowing plans](feedback_verifier_check_addition_plans.md) — escape-regex under-trigger UNSAFE (#879); loosenings: dependent empty-input verdicts (#959); narrowings: retained-outer-conjunct proof (#961)
