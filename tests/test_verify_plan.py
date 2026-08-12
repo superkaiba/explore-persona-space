@@ -184,7 +184,10 @@ def test_good_plan_passes_all():
         "c44_committed_paths_gitignored": "SKIP",
         "c45_change_dv_base_predictor_companion": "SKIP",
         "c46_dispatch_cmd_cli_parse": "SKIP",
-        "c47_wall_cell_parseable": "SKIP",
+        # WARN as of #2123: GOOD_PLAN is kind=experiment, books 4 GPU-hours,
+        # and carries no planned_wall_h table — the narrowed absent-table
+        # trigger (booked compute with no tripwire IS the loss, #2091).
+        "c47_wall_cell_parseable": "WARN",
         "c48_basis_booked_arithmetic": "SKIP",
         "c49_authorized_stub_block": "SKIP",
         "c50_plan_wall_vs_slurm_time_bin": "SKIP",
@@ -196,10 +199,14 @@ def test_good_plan_passes_all():
         "c56_staging_mount_binding": "SKIP",
         "c57_fanout_prefix_staging": "SKIP",
         "c58_fanout_pod_name_collision": "SKIP",
+        # SKIP: GOOD_PLAN's GPU-hours token sits mid-sentence (after "One
+        # A100 ... covers both conditions."), so it is NOT declaration-
+        # shaped — the 646-file corpus class c59 never fires on (#2123).
+        "c59_gpu_hours_token_conflict": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 57
+    assert len(results) == 58
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -6294,8 +6301,9 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     #   conditional, #1906)
     # + c46 (SKIP: GOOD_PLAN embeds no dispatch_issue.py command; trigger-
     #   conditional, #2161)
-    # + c47 (SKIP: GOOD_PLAN carries no planned_wall_h table; trigger-
-    #   conditional, #2172)
+    # (c47 no longer SKIPs here: as of #2123 the absent-table branch WARNs
+    #   for a kind=experiment plan with booked GPU-hours > 0 — GOOD_PLAN
+    #   books 4 — so it left the skip set; c59 joined it, net unchanged)
     # + c48 (SKIP: GOOD_PLAN carries no basis-column compute table; trigger-
     #   conditional, #2177)
     # + c49 (SKIP: GOOD_PLAN declares no '### Authorized smoke stubs' block;
@@ -6319,12 +6327,15 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     #   trigger-conditional, #2236)
     # + c58 (SKIP: GOOD_PLAN embeds no launch-shaped dispatch command;
     #   trigger-conditional, #2237)
+    # + c59 (SKIP: GOOD_PLAN's GPU-hours token sits mid-sentence — not
+    #   declaration-shaped, the 646-file corpus class; trigger-conditional,
+    #   #2123)
     assert payload["n_skip"] == 51
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 59
-    assert len({c["id"] for c in payload["checks"]}) == 59
+    assert len(payload["checks"]) == 60
+    assert len({c["id"] for c in payload["checks"]}) == 60
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -10233,9 +10244,42 @@ def test_c47_warns_on_no_float_cell_naming_row():
     assert "bare float" in r.detail  # the remedy
 
 
-def test_c47_skips_when_no_wall_table():
-    # GOOD_PLAN carries no planned_wall_h table -> trigger-conditional SKIP.
+def test_c47_warns_when_no_wall_table_but_booked_gpu_hours():
+    # #2123 narrowed absent-table trigger: GOOD_PLAN is kind=experiment,
+    # books 4 GPU-hours, and carries no planned_wall_h table — for a plan
+    # that books compute, the tripwire never arming IS the loss (#2091:
+    # #2061 booked 70 GPU-h and #1739 booked 14, both table-less).
     _, by_id = _run(GOOD_PLAN)
+    r = by_id[C47]
+    assert r.status == "WARN"
+    assert "books" in r.detail and "4" in r.detail
+    assert "never arms" in r.detail
+    assert "planned_wall_h" in r.detail  # the remedy names the table
+
+
+def test_c47_skips_when_no_wall_table_and_zero_gpu_hours():
+    # 0 booked GPU-hours: the original "nothing to lose" justification
+    # holds — a 0-GPU plan genuinely has no tripwire to lose (#2123).
+    plan = GOOD_PLAN.replace(GPU_LINE, "`Estimated GPU-hours (total): 0`")
+    _, by_id = _run(plan)
+    r = by_id[C47]
+    assert r.status == "SKIP"
+    assert "arms no poller tripwire" in r.detail
+
+
+def test_c47_skips_when_no_wall_table_and_no_gpu_token():
+    # No GPU token at all (c5 FAILs separately — presence is its contract):
+    # the absent-table branch stays SKIP, pure noise otherwise (#2123).
+    plan = GOOD_PLAN.replace(GPU_LINE, "no estimate anywhere")
+    _, by_id = _run(plan)
+    assert by_id["c5_gpu_hours"].status == "FAIL"  # unchanged contract
+    assert by_id[C47].status == "SKIP"
+
+
+def test_c47_absent_table_skips_for_non_experiment_kinds():
+    # The absent-table WARN arm is experiment-gated (#2123); the mis-parse
+    # WARN arm stays all-kinds (test_c47_all_kinds_not_kind_gated).
+    _, by_id = _run(GOOD_PLAN, kind="infra")
     r = by_id[C47]
     assert r.status == "SKIP"
     assert "arms no poller tripwire" in r.detail
@@ -12133,3 +12177,148 @@ def test_c57_calibration_committed_2054_controls():
     assert r14.status == "WARN", r14.detail
     r12 = verify_plan.check_fanout_prefix_staging(v12[0].read_text(), "experiment")
     assert r12.status != "WARN", r12.detail
+
+
+# ─── Check 59 — GPU-hours token consumer/declaration conflict (#2123) ──────
+
+C59 = "c59_gpu_hours_token_conflict"
+
+# GOOD_PLAN with the GPU-hours token moved onto its OWN line — declaration-
+# shaped under _C59_DECL_LINE_RE (the backtick wrap is admitted).
+C59_DECL_PLAN = GOOD_PLAN.replace(
+    "One A100 for about three hours covers both conditions. " + GPU_LINE,
+    "One A100 for about three hours covers both conditions.\n\n" + GPU_LINE,
+)
+
+
+def test_c59_single_declaration_consumer_agrees_passes():
+    _, by_id = _run(C59_DECL_PLAN)
+    r = by_id[C59]
+    assert r.status == "PASS", r.detail
+    assert "consumer first-match agrees" in r.detail
+
+
+def test_c59_skips_on_mid_sentence_token_only():
+    # The 646-file hard constraint: GOOD_PLAN's own token sits mid-sentence,
+    # so NO declaration-shaped token exists — c59 must never REQUIRE
+    # declaration shape (presence stays c5's contract).
+    _, by_id = _run(GOOD_PLAN)
+    r = by_id[C59]
+    assert r.status == "SKIP"
+    assert "declaration-shaped" in r.detail
+    assert by_id["c5_gpu_hours"].status == "PASS"  # c5 untouched
+
+
+def test_c59_arm_a_two_distinct_declarations_warn():
+    # The #524 v2/v3 corpus shape: two declaration-shaped lines with
+    # DIFFERENT values (590 vs 900 there; 4 vs 900 here).
+    plan = C59_DECL_PLAN + "\n\nEstimated GPU-hours (total): 900\n"
+    _, by_id = _run(plan)
+    r = by_id[C59]
+    assert r.status == "WARN", r.detail
+    assert "arm A" in r.detail and "2 DISTINCT" in r.detail
+
+
+def test_c59_repeated_identical_declarations_pass():
+    # Repeats are overwhelmingly legitimate (62.2% of the corpus repeats
+    # the token) — SAME-value declarations are not a conflict.
+    plan = C59_DECL_PLAN + "\n\n" + GPU_LINE + "\n"
+    _, by_id = _run(plan)
+    assert by_id[C59].status == "PASS", by_id[C59].detail
+
+
+def test_c59_arm_b_prose_quote_ahead_of_declaration_warns():
+    # The #2177 v1 / #2061 v7-v8 shape: a value quoted in prose EARLIER in
+    # the document than the declaration — the first-match consumer
+    # (GPU_LINE_RE on the raw plan) reads the quote, corrupting the
+    # recorded estimate.
+    plan = C59_DECL_PLAN.replace(
+        "## 1. Goal",
+        "## 0.9 Prior round\n\nThe parent's sweep booked estimated "
+        "GPU-hours (total): 65 before the descope.\n\n## 1. Goal",
+    )
+    _, by_id = _run(plan)
+    r = by_id[C59]
+    assert r.status == "WARN", r.detail
+    assert "arm B" in r.detail and "65" in r.detail and "4" in r.detail
+
+
+def test_c59_prose_quote_with_consistent_declaration_passes():
+    # False-positive shape 1 (#2177 v1 line 56 class, consistent variant):
+    # a prose-quoted value that AGREES with the declaration is clean.
+    plan = C59_DECL_PLAN.replace(
+        "## 1. Goal",
+        "## 0.9 Prior round\n\nAs before we book estimated GPU-hours "
+        "(total): 4 for the whole sweep.\n\n## 1. Goal",
+    )
+    _, by_id = _run(plan)
+    assert by_id[C59].status == "PASS", by_id[C59].detail
+
+
+def test_c59_meta_discussion_after_declaration_passes():
+    # False-positive shape 2 (the #625 v1-v3 class): a plan whose SUBJECT
+    # is this very checker quotes conflicting values mid-sentence AFTER its
+    # own declaration — non-declaration-shaped, and the first-match
+    # consumer still reads the declaration.
+    plan = C59_DECL_PLAN + (
+        "\n\n## 12. Checker discussion\n\n"
+        "The verifier greps for a line like estimated GPU-hours (total): 12 "
+        "and must not confuse it with estimated GPU-hours (total): 99 quoted "
+        "in prose.\n"
+    )
+    _, by_id = _run(plan)
+    assert by_id[C59].status == "PASS", by_id[C59].detail
+
+
+def test_c59_revision_comparison_table_after_declaration_passes():
+    # False-positive shape 3 (the #524 v6/v7 line-19 class): a revision-
+    # history comparison TABLE — pipe-delimited cells are not declaration-
+    # shaped (the line carries more than the token).
+    plan = C59_DECL_PLAN + (
+        "\n\n## 13. Revision history\n\n"
+        "| rev | estimate |\n|---|---|\n"
+        "| v1 | Estimated GPU-hours (total): 180 |\n"
+        "| v2 | Estimated GPU-hours (total): 400 |\n"
+    )
+    _, by_id = _run(plan)
+    assert by_id[C59].status == "PASS", by_id[C59].detail
+
+
+def test_c59_fenced_declaration_not_a_declaration():
+    # Declaration-side fence stripping: a declaration-shaped line INSIDE a
+    # fenced example block is not a declaration (arm A stays quiet); the
+    # consumer's first match (the real §9 declaration, earlier in the doc)
+    # still agrees.
+    plan = C59_DECL_PLAN + "\n\n```\nEstimated GPU-hours (total): 999\n```\n"
+    _, by_id = _run(plan)
+    assert by_id[C59].status == "PASS", by_id[C59].detail
+
+
+def test_c59_bold_bullet_declaration_shapes_recognized():
+    # The declaration grammar admits bullet / bold / backtick wraps.
+    plan = (
+        C59_DECL_PLAN.replace(GPU_LINE, "- **Estimated GPU-hours (total):** 4")
+        + "\n\nEstimated GPU-hours (total): 900\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id[C59]
+    assert r.status == "WARN", r.detail
+    assert "arm A" in r.detail
+
+
+def test_c59_na_escape_skips():
+    plan = (
+        C59_DECL_PLAN
+        + "\n\nEstimated GPU-hours (total): 900\n\n"
+        + "N/A — GPU-hours token conflict reconciled\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id[C59]
+    assert r.status == "SKIP"
+    assert "escape declared" in r.detail
+
+
+def test_c59_registered_in_checks_and_docstring_catalog():
+    assert verify_plan.check_gpu_hours_token_conflict in verify_plan.CHECKS
+    assert "c59 GPU-hours token" in verify_plan.__doc__
+    assert "N/A — GPU-hours token conflict reconciled" in verify_plan.__doc__

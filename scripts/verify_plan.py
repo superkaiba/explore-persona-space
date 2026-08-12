@@ -145,8 +145,10 @@ Check catalog (id — classification — kind scope)
       predictor companion
   c46 plan-embedded dispatch    WARN-only, conditional    all kinds
       command CLI-parses
-  c47 planned_wall_h cells      WARN-only, conditional    all kinds
-      parse (poller tripwire)
+  c47 planned_wall_h cells      WARN-only, conditional    all kinds (absent-
+      parse (poller tripwire);                            table WARN arm:
+      absent table + booked                               experiment only)
+      GPU-h > 0 WARNs (#2123)
   c48 §9 basis-vs-booked        WARN-only, conditional    experiment +
       arithmetic                                          analysis
   c49 authorized-smoke-stubs    FAIL, conditional         all kinds
@@ -168,13 +170,16 @@ Check catalog (id — classification — kind scope)
       staging shape
   c58 fan-out RunPod pod-name   WARN-only, conditional    all kinds
       collision
+  c59 GPU-hours token           WARN-only, conditional    all kinds
+      consumer/declaration
+      conflict
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54,
-55, 56, 57, 58) also SKIP when their content trigger does not fire.
+55, 56, 57, 58, 59) also SKIP when their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -296,6 +301,14 @@ labeled-line forms):
     the staging row — and, when it cites the #681 worktree bind, carries a
     literal ``findmnt --mountpoint`` liveness assertion, since the bind is
     NOT live on this VM, #2091)
+  - ``N/A — GPU-hours token conflict reconciled`` (check 59 — the plan
+    deliberately carries more than one declaration-shaped
+    ``Estimated GPU-hours (total):`` value (e.g. a declaration-shaped
+    revision-comparison table) or a prose-quoted value ahead of the
+    declaration, and the conflict is reconciled in prose; a genuinely
+    conflicting plan instead keeps ONE declaration-shaped value and moves
+    every other mention mid-sentence / into a wrapped or fenced form so
+    the first-match consumer (``GPU_LINE_RE``) reads the declared value)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -8625,7 +8638,7 @@ def check_dispatch_cmd_cli_parse(plan: str, kind: str) -> CheckResult:
 
 
 def check_wall_cell_parseable(plan: str, kind: str) -> CheckResult:
-    """WARN-only, conditional, all kinds (trigger-conditional, not
+    """WARN-only, conditional, all kinds (trigger-conditional, mostly not
     kind-gated — the ``poll_pipeline.py`` phase-ETA tripwire reads ANY
     task's plan regardless of ``kind``): every §9 ``planned_wall_h`` data
     cell must parse under the SHARED cosmetic-prefix float rule
@@ -8634,16 +8647,34 @@ def check_wall_cell_parseable(plan: str, kind: str) -> CheckResult:
     cannot drift, #2172 AC #3/#4). ONE unparseable cell fail-safes the
     poller's WHOLE-run tripwire off; pre-#2172 that was silent — #2163's
     parenthesized ``(1.5)`` conditional cell cost a ~6h run its backstop
-    with one poll-tick INFO line to show for it. No ``planned_wall_h``
-    table located (or a zero-sum one) => SKIP: such a plan arms no
-    tripwire, so there is nothing to lose. NEVER FAILs in v1 (the
+    with one poll-tick INFO line to show for it. Absent-table branch
+    (#2123, narrowing the former unconditional SKIP): a ``kind:
+    experiment`` plan with BOOKED GPU-hours > 0 (the c5 ``GPU_LINE_RE``
+    first-match value — the same value the Step 2c consumer reads) and NO
+    ``planned_wall_h`` table WARNs — for a plan that books compute, the
+    tripwire never arming IS the loss (#2091: #2061 booked 70 GPU-h and
+    #1739 booked 14, both table-less, both unprotected). With 0 booked
+    GPU-hours, no GPU token at all, or a non-experiment kind, the
+    original justification still holds — such a plan arms no tripwire,
+    so there is nothing to lose => SKIP. NEVER FAILs in v1 (the
     c26/c29/c33 precedent — heuristic compute-table checks stay WARN-only
-    until a clean corpus baseline licenses escalation).
+    until a clean corpus baseline licenses escalation; corpus 2026-08-12:
+    13 of 229 experiment tasks' latest plans sit in the new-WARN bucket,
+    not a clean baseline).
     """
-    del kind  # all kinds: the poller parses every task's plan identically
     cid, name = "c47_wall_cell_parseable", "planned_wall_h cells parse for the poller tripwire"
     budget = parse_plan_wall_budget(plan)
     if budget.reason == "no_table":
+        booked = GPU_LINE_RE.search(plan)
+        if kind == "experiment" and booked is not None and float(booked.group(1)) > 0:
+            return _warn(
+                cid,
+                name,
+                f"no `planned_wall_h` table while this experiment books "
+                f"{booked.group(1)} GPU-hours — the poll_pipeline.py phase-ETA "
+                f"tripwire never arms for the whole run (#2091: the #2061/#1739 "
+                f"shape); add a §9 compute table with a `planned_wall_h` column",
+            )
         return _skip(cid, name, "no `planned_wall_h` table — this plan arms no poller tripwire")
     if budget.unparseable:
         shown = "; ".join(
@@ -11217,6 +11248,120 @@ def check_fanout_pod_name_collision(plan: str, kind: str) -> CheckResult:
     return _c58_check(plan, include_auto=_C58_T2_INCLUDE_AUTO)
 
 
+# ─── Check 59 — GPU-hours token consumer/declaration conflict ──────────────
+# Declaration-shaped token (#2123 §3.3): the `Estimated GPU-hours (total):
+# <number>` token LINE-ANCHORED with nothing else on the line — optional
+# bullet / blockquote markers (stripped by the caller), optional bold
+# (`**`) / backtick wrap admitted by the character class — over
+# fence-stripped text. The value grammar is GPU_LINE_RE's (a single plain
+# number). Deliberately NARROW: a count-based predicate over ALL token
+# occurrences FAILs 62.2% of the plan corpus (2468/3971 — repeats are
+# overwhelmingly legitimate), and distinct-RAW-values flags 11 files that
+# are ALL false positives (prose quotes #2177 v1:56, meta-discussion
+# #625 v1-v3, revision-comparison tables #524 v6/v7:19).
+_C59_DECL_LINE_RE = re.compile(
+    r"(?i)^[`*\s]*estimated\s+gpu-?hours\s+\(total\):[`*\s]*([0-9]+(?:\.[0-9]+)?)[`*\s]*$"
+)
+
+
+def _c59_declared_values(plan: str) -> list[str]:
+    """Every DECLARATION-SHAPED ``Estimated GPU-hours (total): <n>`` value
+    (raw captured string), in document order, over FENCE-STRIPPED text —
+    the declaration side strips fences (a fenced example command is not a
+    declaration); the CONSUMER side deliberately does not (see
+    :func:`check_gpu_hours_token_conflict`)."""
+    values: list[str] = []
+    for line in strip_fences(plan).splitlines():
+        m = _C59_DECL_LINE_RE.match(line.lstrip(" \t>-"))
+        if m is not None:
+            values.append(m.group(1))
+    return values
+
+
+def check_gpu_hours_token_conflict(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds: when a plan carries at least one
+    DECLARATION-SHAPED ``Estimated GPU-hours (total):`` line (line-anchored,
+    optional bullet/bold/backtick wrap, nothing else on the line, fenced
+    blocks stripped — :data:`_C59_DECL_LINE_RE`), two arms compare (#2123):
+
+    * **Arm A** — more than one DISTINCT declaration-shaped value (corpus
+      2026-08-12: 2/3971 versioned plan files — #524 v2/v3, 590 vs 900).
+    * **Arm B** — the value a FIRST-MATCH consumer reads differs from the
+      first declaration-shaped value (corpus: 5/3971, zero false
+      positives — incl. the motivating #2061 v7/v8: first-match 70 vs
+      declared 80; #2177 v1: 65 vs 0). Consumer fidelity is load-bearing:
+      the real consumer is ``GPU_LINE_RE.search`` on the RAW plan (the
+      ``task.py`` Step 2c gate + every marker note that records the
+      estimate), so Arm B re-runs ``GPU_LINE_RE`` on RAW
+      (un-fence-stripped) text — deriving the consumer value from
+      fence-stripped text would validate a consumer that does not exist.
+
+    Hard constraint: 646 corpus files carry a matching token but NO
+    declaration-shaped token — the check NEVER requires declaration shape;
+    it compares only when at least one exists and SKIPs otherwise (c5's
+    presence contract is untouched).
+
+    WARN-only, never FAIL: ``_resolve_autonomous_plan_gate`` is
+    GPU-HOUR-BLIND as of #1771 (auto-approves any parseable estimate,
+    parks only on None), so a mis-read cannot flip the gate DECISION — the
+    harm is a corrupted RECORDED estimate (the value riding the status
+    marker note, the watcher's re-passed ``auto_approve_gpu_hours``, and
+    what a reviewer skims off the plan): a provenance defect, not a
+    spend-control defect, squarely under the
+    c39/c43/c46/c50/c52/c54/c57/c58 fail-open convention. Escalation to
+    FAIL is a later separately-justified step (the c26/c29/c33 precedent).
+
+    Named residual (the c52/c57 honesty convention): a conflicting value
+    appearing ONLY in non-declaration shapes on both sides is invisible to
+    c59 — its silence is not evidence of a single consistent estimate.
+
+    Escape: the standalone declaration line
+    ``N/A — GPU-hours token conflict reconciled``."""
+    del kind  # all kinds: the consumer parses every task's plan identically
+    cid, name = "c59_gpu_hours_token_conflict", "GPU-hours token consumer/declaration conflict"
+    if _standalone_na_declared(plan, r"GPU[- ]?hours token conflict reconciled"):
+        return _skip(cid, name, "escape declared: `N/A — GPU-hours token conflict reconciled`")
+    decls = _c59_declared_values(plan)
+    if not decls:
+        return _skip(
+            cid,
+            name,
+            "no declaration-shaped `Estimated GPU-hours (total):` line (646-file corpus "
+            "class) — c59 never requires declaration shape; presence stays c5's contract",
+        )
+    problems: list[str] = []
+    distinct = sorted({float(v) for v in decls})
+    if len(distinct) > 1:
+        shown = ", ".join(f"{v:g}" for v in distinct)
+        problems.append(
+            f"arm A: {len(distinct)} DISTINCT declaration-shaped values ({shown}) — a reader "
+            f"cannot tell which is the estimate of record"
+        )
+    consumer = GPU_LINE_RE.search(plan)  # RAW text — the real consumer's own read
+    if consumer is not None and float(consumer.group(1)) != float(decls[0]):
+        problems.append(
+            f"arm B: the first-match consumer (GPU_LINE_RE on the raw plan — the Step 2c "
+            f"gate's read) resolves {consumer.group(1)} while the first declaration-shaped "
+            f"value is {decls[0]} — the RECORDED estimate (status-marker note, watcher "
+            f"auto_approve_gpu_hours re-pass) is corrupted (#2061 v7/v8: 70-for-80; "
+            f"#2177 v1: 65-for-0)"
+        )
+    if not problems:
+        return _pass(
+            cid,
+            name,
+            f"{len(decls)} declaration-shaped value(s), consumer first-match agrees ({decls[0]})",
+        )
+    return _warn(
+        cid,
+        name,
+        "; ".join(problems)
+        + " — keep ONE declaration-shaped value and move every other mention mid-sentence / "
+        "into a wrapped or fenced form, or declare the standalone escape "
+        "`N/A — GPU-hours token conflict reconciled`",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -11276,6 +11421,7 @@ CHECKS = [
     check_staging_mount_binding,
     check_fanout_prefix_staging,
     check_fanout_pod_name_collision,
+    check_gpu_hours_token_conflict,
 ]
 
 

@@ -421,7 +421,16 @@ Run the structural verifier against the plan version just persisted:
   the staging row — and, when it cites the #681 worktree bind, carries a
   literal `findmnt --mountpoint` liveness assertion, since the bind is NOT
   live on this VM: #2091 cited it for a 42 GB stage and PASSed verify_plan
-  twice).
+  twice), and
+  `N/A — GPU-hours token conflict reconciled` (check 59 — the plan
+  deliberately carries more than one declaration-shaped
+  `Estimated GPU-hours (total):` value (e.g. a declaration-shaped
+  revision-comparison table) or a prose-quoted value ahead of the
+  declaration, and the conflict is reconciled in prose; a genuinely
+  conflicting plan instead keeps ONE declaration-shaped value and moves
+  every other mention mid-sentence / into a wrapped or fenced form so the
+  first-match consumer (`GPU_LINE_RE` on the raw plan — the Step 2c
+  gate's read) resolves the declared value; #2123).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).

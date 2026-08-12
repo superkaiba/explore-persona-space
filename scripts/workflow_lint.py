@@ -188,6 +188,24 @@ Behaviours:
   :data:`EMPTY_TEXT_DEFAULT_ALLOWLIST` (the JUDGE_PIN allowlist idiom;
   a NEW file never inherits the escape); waive a deliberate site with
   ``# EMPTY_TEXT_DEFAULT_EXEMPT: <reason >= 20 chars>`` (#2206).
+* ``--check-plan-version-immutability`` (Arm W also bundled into the
+  no-flags default run; Arm H explicit-flag only): a persisted
+  ``tasks/**/plans/v<K>.md`` plan version is IMMUTABLE — an amendment
+  requires a NEW version file via ``task.py new-plan-version``, never an
+  in-place edit (#2123). Arm W (working tree + index, milliseconds): one
+  ``git status --porcelain`` over the plans pathspec; ``M``/``D`` in
+  EITHER porcelain column, or a staged rename, FAILs — the index column
+  is load-bearing (a modified-and-staged file reads ``M `` with a BLANK
+  worktree column, exactly the pre-commit-window state; the #2061 v11
+  incident mutation lived only in the working tree). Arm H (committed
+  history; ~1.7-2.7 s measured, at the ~3 s default-run threshold under
+  load, hence flag-gated per plan #2123 §6): one ``git log
+  --name-status --find-renames`` over the same pathspec; ``M`` or
+  ``R<100`` FAILs, ``R100`` status-folder moves are CLEAN. Disclosed
+  false-negative residual: a bulk commit exceeding ``diff.renameLimit``
+  degrades rename detection to ``D``+``A``, which Arm H does not flag.
+  Escape hatches: :data:`PLAN_IMMUTABILITY_ALLOWLIST` (empty at ship) +
+  the ``EPM_SKIP_PLAN_IMMUTABILITY_CHECK=1`` kill switch.
 * ``--check-no-unannotated-gcp-pin-guidance`` (also bundled into the
   no-flags default run; WARN-only — NEVER a non-zero exit, #1388): sweep
   the live workflow surface (``.claude/{agents,rules,agent-memory}``
@@ -513,7 +531,12 @@ Behaviours:
   ``.claude/agents/*.md`` and FAIL on any pin whose base id is unknown
   OR whose ``[1m]`` suffix is grafted onto a base that does not have a
   1M-context variant (the d07424178 / task #545 incident class,
-  2026-06-09→2026-06-12). The d07424178 commit bulk-renamed all 25
+  2026-06-09→2026-06-12) — AND, presence half (#2123), on any agent
+  file whose frontmatter carries NEITHER a ``model:`` pin NOR a
+  ``# MODEL_PIN_LINT_EXEMPT: <reason>`` waiver comment (reason ≥ 10
+  chars) declaring the parent-model inherit deliberate; pin and waiver
+  are both searched in the FRONTMATTER ONLY — a sentinel in body prose
+  is documentation, not a waiver. The d07424178 commit bulk-renamed all 25
   agent pins to ``claude-fable-5[1m]`` — fable-5 IS a real Anthropic
   model id, BUT the ``[1m]`` suffix (a deployment-routing identifier
   per the claude-api skill's model-migration.md bucket-4 guidance) was
@@ -1675,6 +1698,22 @@ AGENT_MODEL_PIN_RE = re.compile(
 # (the only suffix the harness currently exposes for a model pin); any
 # other tail is treated as part of an unknown base id and flagged.
 AGENT_MODEL_1M_SUFFIX = "[1m]"
+# `check_agent_model_pins` presence-half waiver (#2123). A missing `model:`
+# pin stays LEGAL at runtime (the agent inherits the parent session's
+# model); what the presence half requires is that the inherit be DECLARED
+# rather than accidental: waive with `# MODEL_PIN_LINT_EXEMPT: <reason>`
+# (reason >= MODEL_PIN_WAIVER_REASON_MIN_CHARS chars) placed INSIDE the
+# YAML frontmatter block — the place the absent `model:` line would have
+# lived, where `#` is a legal YAML comment. A sentinel in BODY prose is
+# deliberately NOT a waiver: agent specs quote lint-waiver sentinels as
+# documentation (`.claude/agents/experiment-implementer.md` contains the
+# literal DOTENV_LINT_EXEMPT in prose), so a file-wide match would let an
+# unpinned spec that merely DOCUMENTS the convention satisfy its own
+# waiver — an escape-hatch under-trigger on a FAIL-severity check inside
+# the fleet-gating no-flags default run (the #879 class). Mirrors the
+# position-scoped `DOTENV_LINT_WAIVER_RE` convention.
+MODEL_PIN_LINT_WAIVER_RE = re.compile(r"#\s*MODEL_PIN_LINT_EXEMPT\s*:\s*(.+?)\s*$")
+MODEL_PIN_WAIVER_REASON_MIN_CHARS = 10
 
 
 # `--check-agent-tools`: every `.claude/agents/*.md` must declare an explicit
@@ -5339,7 +5378,10 @@ def _iter_agent_pin_target_files(repo_root: Path) -> list[Path]:
 def check_agent_model_pins(*, roots: list[Path] | None = None) -> list[str]:
     """Walk ``.claude/agents/*.md`` and FAIL on any ``model: "..."``
     frontmatter pin whose base id is unknown OR whose ``[1m]`` suffix is
-    not supported on that base.
+    not supported on that base — AND on any agent file whose frontmatter
+    carries NEITHER a ``model:`` pin NOR a
+    ``# MODEL_PIN_LINT_EXEMPT: <reason>`` waiver comment (the presence
+    half, #2123).
 
     The harness rejects any unknown pin at subagent spawn with
     ``"There's an issue with the selected model (<id>). It may not exist
@@ -5363,11 +5405,22 @@ def check_agent_model_pins(*, roots: list[Path] | None = None) -> list[str]:
        pattern: a real base, an invalid routing suffix).
     4. Otherwise PASS.
 
-    Files with no ``model:`` line are silently skipped — agents may
-    legitimately inherit their model from the parent (no pin = no
-    runtime contract to validate). A file with multiple ``model:`` lines
-    in its frontmatter is unusual; only the FIRST is checked (the
-    harness reads first-match too).
+    Presence half (#2123). A missing pin is LEGAL at runtime — the agent
+    inherits the parent session's model (CLAUDE.md "Prompt-cache key
+    discipline" — per-subagent pins are optional) — but the inherit must
+    be DECLARED, not accidental: a file with no ``model:`` line in its
+    frontmatter FAILs unless the frontmatter carries a
+    ``# MODEL_PIN_LINT_EXEMPT: <reason>`` waiver comment (reason >=
+    :data:`MODEL_PIN_WAIVER_REASON_MIN_CHARS` chars). Both the pin and
+    the waiver are searched ONLY in the YAML frontmatter block (the
+    first ``---``-delimited block): a sentinel — or a column-0
+    ``model:`` line — in BODY prose is documentation, not a
+    declaration (agent specs demonstrably quote lint-waiver sentinels as
+    prose; see :data:`MODEL_PIN_LINT_WAIVER_RE`). A file with no
+    parseable frontmatter block at all FAILs the presence half too — it
+    has no pin and no place for a waiver. A file with multiple
+    ``model:`` lines in its frontmatter is unusual; only the FIRST is
+    checked (the harness reads first-match too).
 
     Sibling rule to ``.claude/rules/code-style.md`` "Never hardcode an
     invented Claude/Anthropic model id" — that bullet covers hardcoded
@@ -5395,16 +5448,51 @@ def check_agent_model_pins(*, roots: list[Path] | None = None) -> list[str]:
     errors: list[str] = []
     for path in targets:
         text = path.read_text()
-        match = AGENT_MODEL_PIN_RE.search(text)
-        if match is None:
-            # No pin = inherits parent's model = no runtime contract to
-            # validate. Silently skipped (a missing pin is not a bug;
-            # CLAUDE.md "Prompt-cache key discipline" explicitly allows it).
+        fm_lines, _body, _body_offset = _split_agent_frontmatter(text)
+        if fm_lines is None:
+            errors.append(
+                f"{path}:1: no parseable YAML frontmatter block — every agent "
+                f"file must either pin `model:` in its frontmatter or declare "
+                f"the parent-model inherit with a "
+                f"'# MODEL_PIN_LINT_EXEMPT: <reason>' comment (reason >= "
+                f"{MODEL_PIN_WAIVER_REASON_MIN_CHARS} chars) INSIDE the "
+                f"frontmatter (#2123)."
+            )
             continue
-        # Compute the 1-based line number of the captured value so the
-        # error message points to the actual ``model:`` line, not just
-        # the file.
-        lineno = text.count("\n", 0, match.start()) + 1
+        fm_text = "\n".join(fm_lines)
+        match = AGENT_MODEL_PIN_RE.search(fm_text)
+        if match is None:
+            # Presence half (#2123): no pin is legal at RUNTIME (the agent
+            # inherits the parent's model) but must be DECLARED via the
+            # frontmatter waiver comment — an undeclared missing pin is
+            # indistinguishable from an accidental deletion. The waiver is
+            # searched in the FRONTMATTER ONLY (a sentinel in body prose is
+            # documentation, not a waiver — the #879 escape-hatch
+            # under-trigger class; experiment-implementer.md quotes
+            # DOTENV_LINT_EXEMPT as prose).
+            waiver_declared = any(
+                (m := MODEL_PIN_LINT_WAIVER_RE.search(line)) is not None
+                and len(m.group(1)) >= MODEL_PIN_WAIVER_REASON_MIN_CHARS
+                for line in fm_lines
+            )
+            if waiver_declared:
+                continue
+            errors.append(
+                f"{path}: frontmatter carries NO `model:` pin and NO "
+                f"'# MODEL_PIN_LINT_EXEMPT: <reason>' waiver comment. A "
+                f"missing pin is legal at runtime (the agent inherits the "
+                f"parent session's model) but must be DECLARED: add a real "
+                f"pin, or the waiver comment (reason >= "
+                f"{MODEL_PIN_WAIVER_REASON_MIN_CHARS} chars) INSIDE the YAML "
+                f"frontmatter block — a sentinel in body prose is NOT a "
+                f"waiver (#2123)."
+            )
+            continue
+        # Compute the 1-based FILE line number of the captured value so the
+        # error message points to the actual ``model:`` line, not just the
+        # file (frontmatter line j, 0-based, sits at file line j+2 — line 1
+        # is the opening ``---``).
+        lineno = fm_text.count("\n", 0, match.start()) + 2
         pin = match.group("value")
         base_id, suffix = _split_agent_model_pin(pin)
         if base_id not in base_to_1m_capability:
@@ -14526,9 +14614,13 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # measured 87,195 B; problem-sweep prose + living-docs passes are the
     # trim direction.
     "daily/SKILL.md": 90_000,
-    # measured 68,032 B; Phase 1 planner-prompt restatement of planner.md is
-    # the trim direction.
-    "adversarial-planner/SKILL.md": 70_900,
+    # Prior: 70_900 — measured 71,103 B after #2123 back-filled the c59
+    # (GPU-hours token conflict) escape entry into the Phase 1.5.0 canonical
+    # escapes block (+203 B, required by the verify_plan docstring sync
+    # test); cap = landing bytes + ~1 KB (#1753 landing-bytes rule).
+    # Prior context: measured 68,032 B; Phase 1 planner-prompt restatement
+    # of planner.md is the trim direction.
+    "adversarial-planner/SKILL.md": 72_100,
 }
 
 
@@ -15809,6 +15901,315 @@ def _gcp_pin_annotated(lines: list[str], idx: int) -> bool:
     return any(tok in blob for tok in GCP_PIN_ANNOTATION_TOKENS)
 
 
+# `--check-plan-version-immutability` (#2123): a persisted
+# ``tasks/**/plans/v<K>.md`` is immutable — an amendment requires a NEW
+# version file via ``task.py new-plan-version``, never an in-place edit.
+# The pathspec `*` is git wildmatch (matches across `/` too — a superset
+# that still requires the literal `/plans/v...md` shape).
+PLAN_VERSION_PATHSPEC = "tasks/*/*/plans/v*.md"
+# Escape hatch: repo-root-relative plan paths whose flagged state is a
+# sanctioned in-place amendment (the one legitimate shape: scrubbing a
+# secret accidentally committed into a plan). EMPTY at ship; every entry
+# REQUIRES an inline `# reason:` comment. A lint with no escape hatch gets
+# disabled wholesale.
+PLAN_IMMUTABILITY_ALLOWLIST: frozenset[str] = frozenset()
+# Kill switch (local EPM_* convention): set to "1" to disable both arms.
+PLAN_IMMUTABILITY_KILL_SWITCH = "EPM_SKIP_PLAN_IMMUTABILITY_CHECK"
+_PLAN_IMMUTABILITY_GIT_TIMEOUT_S = 60
+
+
+def _plan_immutability_git(root: Path, args: list[str]) -> str | None:
+    """Run one read-only git command for :func:`check_plan_version_immutability`.
+
+    Returns stdout on success; on ANY failure (git missing, not a repo,
+    timeout) writes one loud stderr notice and returns None — the caller
+    fail-opens that arm (the "unreadable files skipped with a stderr
+    notice" idiom; the real Step 9c / Step 10d gate always runs inside a
+    git checkout, so a git failure here means the gate environment itself
+    is broken)."""
+    try:
+        proc = subprocess.run(
+            ["git", "-C", str(root), *args],
+            capture_output=True,
+            text=True,
+            timeout=_PLAN_IMMUTABILITY_GIT_TIMEOUT_S,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        sys.stderr.write(
+            f"workflow_lint: --check-plan-version-immutability skipped a git arm: {exc}\n"
+        )
+        return None
+    if proc.returncode != 0:
+        sys.stderr.write(
+            f"workflow_lint: --check-plan-version-immutability skipped a git "
+            f"arm: git exited {proc.returncode}: {proc.stderr.strip()[:200]}\n"
+        )
+        return None
+    return proc.stdout
+
+
+def _plan_immutability_history_violations(out: str) -> list[str]:
+    """Parse Arm H's ``git log --name-status --find-renames`` output.
+
+    Returns one error per historical in-place mutation: an ``M`` entry, or
+    an ``R<100`` (rename WITH content change — a pure status-folder move is
+    ``R100`` and CLEAN). Allowlisted paths are suppressed. Extracted from
+    :func:`check_plan_version_immutability` to keep it under the C901 cap."""
+    errors: list[str] = []
+    commit = "?"
+    for line in out.splitlines():
+        if re.fullmatch(r"[0-9a-f]{40}", line):
+            commit = line
+            continue
+        if not line or "\t" not in line:
+            continue
+        status, *paths = line.split("\t")
+        path = paths[-1]
+        if path in PLAN_IMMUTABILITY_ALLOWLIST:
+            continue
+        if status == "M":
+            errors.append(
+                f"{path}: persisted plan version MODIFIED in commit "
+                f"{commit[:12]} — plan versions are immutable once "
+                f"persisted; amend via `task.py new-plan-version` "
+                f"(#2123)."
+            )
+        elif status.startswith("R") and status != "R100":
+            errors.append(
+                f"{path}: persisted plan version renamed WITH content "
+                f"change ({status}) in commit {commit[:12]} — a pure "
+                f"status-folder move is R100; an R<100 is an in-place "
+                f"mutation smuggled through a rename (#2123)."
+            )
+    return errors
+
+
+_PLAN_STATUS_SEGMENT_RE = re.compile(r"^tasks/[^/]+/")
+
+
+def _is_status_folder_move(orig: str, new: str) -> bool:
+    """True iff ``orig`` -> ``new`` differs ONLY in the ``tasks/<status>/``
+    segment — i.e. the rename is a task status-folder move.
+
+    ``task.py set-status`` moves ``tasks/<old-status>/<N>/`` to
+    ``tasks/<new-status>/<N>/`` wholesale, so every plan file underneath
+    changes in exactly that one path segment and nowhere else. Anything
+    else — a different task id, a renamed version file, a move out of
+    ``plans/`` — is NOT a status move and must stay a violation.
+    """
+    if not (_PLAN_STATUS_SEGMENT_RE.match(orig) and _PLAN_STATUS_SEGMENT_RE.match(new)):
+        return False
+    return _PLAN_STATUS_SEGMENT_RE.sub("", orig, count=1) == _PLAN_STATUS_SEGMENT_RE.sub(
+        "", new, count=1
+    )
+
+
+def _rename_content_identical(root: Path, orig: str, path: str) -> bool:
+    """True iff a STAGED rename preserved the file's content EXACTLY.
+
+    Compares the HEAD blob at the ORIGINAL path against the INDEX (stage 0)
+    blob at the NEW path. This is the only check that can tell a bare
+    status-folder move apart from a mutation smuggled through one:
+    ``git status --porcelain=v1`` carries no rename similarity score, and
+    its worktree column only ever compares worktree-vs-INDEX — never
+    index-vs-HEAD — so a rename whose content edit is STAGED presents as a
+    bare ``R `` with a BLANK worktree column and is structurally invisible
+    to every column-based predicate. Reproduced in the #2123 round-2
+    review: ``git mv`` a task folder, edit the plan, ``git add``, and Arm W
+    saw nothing while Arm H (explicit-flag-only, so not in the fleet gate)
+    reported the commit as ``R058``.
+
+    FAIL-CLOSED: any git failure, or either blob unresolvable, returns
+    False so the caller reports the violation.
+    """
+    head_blob = _plan_immutability_git(root, ["rev-parse", f"HEAD:{orig}"])
+    index_blob = _plan_immutability_git(root, ["rev-parse", f":0:{path}"])
+    if head_blob is None or index_blob is None:
+        return False
+    head_sha, index_sha = head_blob.strip(), index_blob.strip()
+    if not head_sha or not index_sha:
+        return False
+    return head_sha == index_sha
+
+
+def check_plan_version_immutability(
+    *, include_history: bool = False, repo_root: Path | None = None
+) -> list[str]:
+    """FAIL on an in-place mutation of a persisted plan version file
+    (``tasks/**/plans/v<K>.md`` — the :data:`PLAN_VERSION_PATHSPEC`).
+
+    Contract (#2123): a persisted plan version is IMMUTABLE; an amendment
+    requires a NEW version file via ``task.py new-plan-version``, never an
+    in-place edit of an existing one. Two arms:
+
+    * **Arm W (working tree)** — always runs; bundled into the no-flags
+      default run. One ``git status --porcelain`` call scoped to the plans
+      pathspec; a violation is ``M`` or ``D`` in EITHER porcelain column,
+      or a staged rename (index-column ``R``). BOTH columns are
+      load-bearing, not defensive coding: a modified-and-staged file is
+      ``M `` — index column ``M``, worktree column BLANK — which is
+      precisely the state the repo's write→add→commit-in-one-window
+      discipline produces in the moments before a violating commit;
+      missing it there lets the mutation land in history and become a
+      permanent fleet-wide Arm H FAIL. Two exemptions, both narrow and
+      both closing a DEMONSTRATED false positive (#2123 round-1 review):
+      (i) the whole pure-add family — untracked (``??``) and any
+      index-column ``A`` (``A ``, ``AM``, ``AD``) — is CLEAN, because
+      nothing is persisted until a commit exists, so an edit between
+      ``git add`` and commit is a new version still being drafted; and
+      (ii) a rename is CLEAN only when ALL THREE hold — its paths differ
+      ONLY in the ``tasks/<status>/`` segment
+      (:func:`_is_status_folder_move`), its worktree column is exactly
+      blank, AND its content is byte-identical across the move
+      (:func:`_rename_content_identical`, comparing the HEAD blob at the
+      original path to the INDEX blob at the new one). That is exactly
+      what ``task.py set-status`` stages, and Arm W probes the REPO ROOT
+      even from a worktree — so a gate would otherwise false-FAIL on
+      another session's in-flight status transition. The content conjunct
+      is NOT belt-and-braces: porcelain carries no rename similarity
+      score and its worktree column compares worktree-vs-INDEX only, so a
+      status-move-shaped rename whose edit is STAGED is a bare ``R `` that
+      no column-based predicate can distinguish from a clean move (#2123
+      round-2 review reproduced it landing as an Arm H ``R058``). Any
+      other rename still fires. This arm fires DURING the
+      mutation window, which is
+      when the lint actually runs (pre-commit, Step 9c, Step 10d
+      pre-push) — the #2061 v11 incident mutation lived ONLY in the
+      working tree and never reached committed history.
+    * **Arm H (committed history)** — runs ONLY under the explicit
+      ``--check-plan-version-immutability`` flag (measured ~1.7-2.7 s over
+      7277 historical plan paths on the shared VM — at the plan #2123 §6
+      ~3 s threshold under load, so it ships flag-gated per that plan's
+      pre-registered fallback; Arm W stays in the default run). One
+      ``git log --name-status --find-renames`` call over the same
+      pathspec; a status-folder move is ``R100`` and CLEAN, a violation is
+      an ``M`` entry or an ``R`` with similarity below 100. Do NOT resolve
+      persist commits with ``--no-renames --diff-filter=A | tail -1`` —
+      ``--no-renames`` splits every folder move into D+A, so that resolves
+      to the last status-move commit, not the persist commit.
+
+    Disclosed Arm H residuals (the c52/c57 honesty convention, ALL
+    false-NEGATIVE-only — Arm H's silence is never proof of
+    immutability): (a) a bulk commit exceeding ``diff.renameLimit``
+    silently degrades rename detection to ``D``+``A``, which Arm H does
+    not flag; (b) ``git log`` does not diff MERGE commits by default, so
+    a mutation carried in by a merge is invisible; and (c) a rewrite
+    below git's 50% similarity floor that also moves the file degrades to
+    ``D``+``A`` for the same reason as (a). Arm W is the arm that catches
+    the live mutation window; Arm H is the durable backstop, not a proof.
+
+    Escape hatches: :data:`PLAN_IMMUTABILITY_ALLOWLIST` (empty at ship;
+    entries need an inline reason) suppresses per path;
+    :data:`PLAN_IMMUTABILITY_KILL_SWITCH` (env, "1") disables both arms.
+    Any git failure fail-opens that arm with a loud stderr notice (never a
+    silent skip)."""
+    if os.environ.get(PLAN_IMMUTABILITY_KILL_SWITCH) == "1":
+        sys.stderr.write(
+            f"workflow_lint: --check-plan-version-immutability DISABLED via "
+            f"{PLAN_IMMUTABILITY_KILL_SWITCH}=1\n"
+        )
+        return []
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+
+    # ── Arm W: working tree + index ─────────────────────────────────────
+    out = _plan_immutability_git(
+        root,
+        [
+            "status",
+            "--porcelain=v1",
+            "-z",
+            "--untracked-files=no",
+            "--",
+            PLAN_VERSION_PATHSPEC,
+        ],
+    )
+    if out is not None:
+        tokens = out.split("\0")
+        i = 0
+        while i < len(tokens):
+            entry = tokens[i]
+            i += 1
+            if len(entry) < 4:
+                continue
+            x, y, path = entry[0], entry[1], entry[3:]
+            orig: str | None = None
+            if x in "RC":
+                if i < len(tokens):
+                    orig = tokens[i]
+                i += 1  # consume the NUL-separated original path
+            if path in PLAN_IMMUTABILITY_ALLOWLIST:
+                continue
+            # Pure-add family (`A `, `AM`, `AD`): NOTHING is persisted yet —
+            # no commit has established a version for immutability to bind
+            # against — so an edit between `git add` and commit is a NEW
+            # v<K+1> still being drafted, which IS the sanctioned amendment
+            # path. Without this guard a hand-authored new version edited
+            # after staging false-FAILs the fleet-gating default run
+            # (#2123 round-1 review finding).
+            if x == "A":
+                continue
+            # A content-preserving STATUS-FOLDER MOVE is the one legitimate
+            # rename of a persisted plan file: `task.py set-status` runs
+            # `git mv tasks/<old>/<N> tasks/<new>/<N>` and commits under
+            # flock, and Arm W probes the REPO ROOT even when invoked from a
+            # worktree — so a Step 9c / Step 10d gate can observe that
+            # sub-second staged window and false-FAIL on a DIFFERENT
+            # session's status transition. Arm H already treats the
+            # committed form (`R100`) as clean; exempting it here keeps the
+            # two arms consistent instead of contradictory. A rename that is
+            # NOT a bare status move still fires, and a rename carrying a
+            # content change surfaces as `RM` (worktree column `M`), which
+            # the predicate below still catches.
+            # Three conjuncts, each closing a demonstrated escape:
+            #   * ``y == " "`` (NOT ``y not in "MD"``): an exact-blank
+            #     worktree column. The looser form admitted ``RT``
+            #     (typechange) — #2123 round-2 review blocker 2.
+            #   * :func:`_is_status_folder_move` — the path SHAPE.
+            #   * :func:`_rename_content_identical` — the CONTENT, which the
+            #     path shape cannot certify and no porcelain column can see.
+            #     A status-move-shaped rename whose edit is STAGED is a bare
+            #     ``R `` (blank worktree column) with index blob != HEAD
+            #     blob; without this conjunct it rode straight through and
+            #     landed as an Arm H ``R058`` — #2123 round-2 review
+            #     blocker 1, reproduced by execution.
+            if (
+                x == "R"
+                and y == " "
+                and orig is not None
+                and _is_status_folder_move(orig, path)
+                and _rename_content_identical(root, orig, path)
+            ):
+                continue
+            if x in "MD" or y in "MD" or x == "R":
+                errors.append(
+                    f"{path}: persisted plan version mutated in the working "
+                    f"tree (git status '{x}{y}') — plan versions are "
+                    f"immutable once persisted; amend via `task.py "
+                    f"new-plan-version <N> --file <plan.md>` (a NEW v<K+1> "
+                    f"file), never an in-place edit (#2123; a staged-but-"
+                    f"uncommitted edit counts — index column 'M' with a "
+                    f"blank worktree column is the pre-commit window)."
+                )
+
+    # ── Arm H: committed history (explicit-flag only — see docstring) ──
+    if include_history:
+        out = _plan_immutability_git(
+            root,
+            [
+                "log",
+                "--name-status",
+                "--find-renames",
+                "--format=%H",
+                "--",
+                PLAN_VERSION_PATHSPEC,
+            ],
+        )
+        if out is not None:
+            errors.extend(_plan_immutability_history_violations(out))
+    return errors
+
+
 def check_no_unannotated_gcp_pin_guidance(
     *,
     repo_root: Path | None = None,
@@ -16062,6 +16463,9 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_agents_note_argv_verdict": lambda wf: check_agents_note_argv_verdict(),
     "check_sha_pin_domain": lambda wf: check_sha_pin_domain(),
     "check_empty_text_default": lambda wf: check_empty_text_default(),
+    # Arm W only — mirrors the no-flags dispatch (Arm H is explicit-flag
+    # only, and --files is mutually exclusive with check flags anyway).
+    "check_plan_version_immutability": (lambda wf: check_plan_version_immutability()),
     "check_no_unannotated_gcp_pin_guidance": (
         lambda wf: _run_warn_only(check_no_unannotated_gcp_pin_guidance)
     ),
@@ -16159,6 +16563,9 @@ CHECK_SCOPES: dict[str, CheckScope] = {
         ("scripts/autonomous_session_watch.py", ".claude/rules/background-automation.md"),
     ),
     "check_no_unannotated_gcp_pin_guidance": CheckScope("global", (".claude/", "docs/")),
+    # Reads git state of tasks/**/plans/ only — a disjoint code payload
+    # cannot redden it (#2123).
+    "check_plan_version_immutability": CheckScope("global", ("tasks/",)),
 }
 
 _BARE_IMPORT_FALLBACK_RE = re.compile(r"^\s*(?:import|from)\s+([A-Za-z_]\w*)", re.MULTILINE)
@@ -17334,6 +17741,21 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-plan-version-immutability",
+        action="store_true",
+        help="FAIL on an in-place mutation of a persisted "
+        "tasks/**/plans/v<K>.md plan version (#2123) — amendments go "
+        "through `task.py new-plan-version`, never an in-place edit. "
+        "Arm W (working tree + index; git status over the plans "
+        "pathspec — M/D in either porcelain column, or a staged rename) "
+        "is bundled into the no-flags default run; Arm H (committed "
+        "history; git log --name-status --find-renames — M or R<100, "
+        "R100 status-moves clean; ~1.7-2.7 s measured) runs ONLY under "
+        "this explicit flag (the plan #2123 §6 cost fallback). "
+        "PLAN_IMMUTABILITY_ALLOWLIST suppresses per path; "
+        "EPM_SKIP_PLAN_IMMUTABILITY_CHECK=1 disables.",
+    )
+    parser.add_argument(
         "--check-no-unannotated-gcp-pin-guidance",
         action="store_true",
         help="WARN-only (#2018): flag live workflow-surface guidance "
@@ -17476,6 +17898,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_agents_note_argv_verdict
         or args.check_sha_pin_domain
         or args.check_empty_text_default
+        or args.check_plan_version_immutability
         or args.check_no_unannotated_gcp_pin_guidance
     )
 
@@ -17662,6 +18085,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_sha_pin_domain())
     if args.check_empty_text_default or no_flags:
         errors.extend(check_empty_text_default())
+    if args.check_plan_version_immutability or no_flags:
+        # Arm H (committed history) runs ONLY under the explicit flag —
+        # measured ~1.7-2.7 s at the plan #2123 §6 ~3 s threshold under
+        # load, so the pre-registered cost fallback ships it flag-gated;
+        # Arm W (working tree, milliseconds) is bundled into the no-flags
+        # default run (the arm that catches the #2061 v11 incident class).
+        errors.extend(
+            check_plan_version_immutability(include_history=args.check_plan_version_immutability)
+        )
     if args.check_no_unannotated_gcp_pin_guidance or no_flags:
         # WARN-only (#2018): the report is deliberately not folded into
         # `errors` — the no-flags run feeds the fleet-wide Step 9c gate

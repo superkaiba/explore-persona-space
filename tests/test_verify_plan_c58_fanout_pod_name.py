@@ -108,8 +108,10 @@ def test_c58_registered_in_checks_and_docstring_catalog():
     # append cannot ship green — the check existing is not the check running.
     assert verify_plan.check_fanout_pod_name_collision in verify_plan.CHECKS
     assert "c58 fan-out RunPod pod-name" in verify_plan.__doc__
-    # conditional-checks enumeration carries 58 (closing-paren form)
-    assert "57, 58)" in verify_plan.__doc__
+    # conditional-checks enumeration carries 58 (closing-paren tail form;
+    # the tail extends whenever a new conditional check lands — 59 since
+    # #2123 — and this pin is what makes a forgotten enum update loud)
+    assert "57, 58, 59)" in verify_plan.__doc__
 
 
 # ─── Test 1 — fires on the #2054 v16 shape ─────────────────────────────────
