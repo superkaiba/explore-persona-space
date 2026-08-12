@@ -73,6 +73,23 @@ def _fake_fit(names):
         "r2_globalmu": {n: 0.6 for n in names},
         "selected_lambda": {"within": [1e4]},
         "selectors": {"within": ["inner-group-cv"]},
+        # Pair-only, mirroring fit_cell: a SELF cell has no cross/A_ans map and
+        # no Procrustes fit, so both stay None there.
+        "align_baselines": (
+            None
+            if names == ["within"]
+            else {"A_ctx_rev_identity_bias_r2": 0.11, "A_ans_identity_bias_r2": 0.22}
+        ),
+        "procrustes": (
+            None
+            if names == ["within"]
+            else {
+                "trace_R_over_d_mean": 0.33,
+                "aligned_cos_mean": 0.44,
+                "per_fold": [],
+                "direction_aware": True,
+            }
+        ),
     }
 
 
@@ -85,17 +102,19 @@ def test_cell_records_self_and_pair_schema():
     assert r["r2_globalmu"] == 0.6
     assert r["degenerate_n_lt_d"] is True
 
-    # v3 (ALGEBRA_VERSION v3-foldlocal-2-cross-t7t8) emits four tiers per pair
-    # cell; the name list mirrors fit_cell's own `names` tuple for a pair.
+    # v5 (ALGEBRA_VERSION ...-t5rotbias) emits FIVE tiers per pair cell: t5
+    # (rotation + bias) joined the ladder. The emitted list is DERIVED from
+    # fit["r2"], never hardcoded -- a hardcoded list previously stranded t5,
+    # which was fitted at real cost and then dropped before emission.
     pair_recs = sm.cell_records(
         "sft",
         "rlvr",
         "chat",
         "if11k",
         30,
-        _fake_fit(["within", "t0", "t6", "t7", "t8", "cross", "aans_own"]),
+        _fake_fit(["within", "t0", "t5", "t5s", "t6", "t7", "t8", "cross", "aans_own"]),
     )
-    assert [r["tier"] for r in pair_recs] == [0, 6, 7, 8]
+    assert [r["tier"] for r in pair_recs] == [0, 5, 6, 7, 8]
     for r in pair_recs:
         assert r["pair"] == "sft__rlvr"
         assert r["within_r2"] == 0.5
@@ -106,6 +125,13 @@ def test_cell_records_self_and_pair_schema():
         assert r["cross_r2_globalmu"] == 0.6
         assert r["aans_own_r2"] == 0.5
         assert r["aans_own_r2_globalmu"] == 0.6
+        # t5s + Procrustes descriptives ride every row as per-cell companions.
+        assert r["t5s_r2"] == 0.5
+        assert r["t5s_r2_globalmu"] == 0.6
+        assert r["procrustes_trace_R_over_d"] == 0.33
+        assert r["procrustes_aligned_cos"] == 0.44
+        assert r["A_ctx_rev_identity_bias_r2"] == 0.11
+        assert r["A_ans_identity_bias_r2"] == 0.22
 
     # A SELF cell has neither a cross map nor an A_ans map (source == target
     # makes it the within map), so the self record must not advertise either.

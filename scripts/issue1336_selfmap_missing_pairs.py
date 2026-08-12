@@ -445,6 +445,10 @@ def cell_records(source: str, target: str, fmt: str, corpus: str, layer: int, fi
         ]
     # cross_r2 + aans_own_r2 are per-CELL quantities (no tier), repeated on every
     # tier row so each emitted row stays self-describing under a tier filter.
+    tiers_emitted = sorted(
+        int(k[1:]) for k in fit["r2"] if k.startswith("t") and k[1:].isdigit()
+    )
+    pr = fit.get("procrustes") or {}
     return [
         {
             **base,
@@ -455,13 +459,22 @@ def cell_records(source: str, target: str, fmt: str, corpus: str, layer: int, fi
             "cross_r2_globalmu": fit["r2_globalmu"]["cross"],
             "aans_own_r2": fit["r2"]["aans_own"],
             "aans_own_r2_globalmu": fit["r2_globalmu"]["aans_own"],
+            # t5s (the SIMILARITY twin of t5: same SVD, Procrustes scale applied
+            # at predict time) is not an integer ladder tier, so it rides as a
+            # per-CELL companion like cross_r2 rather than inventing a string
+            # tier that int-keyed consumers would choke on. Same for the two
+            # Procrustes descriptives.
+            "t5s_r2": fit["r2"].get("t5s"),
+            "t5s_r2_globalmu": fit["r2_globalmu"].get("t5s"),
+            "procrustes_trace_R_over_d": pr.get("trace_R_over_d_mean"),
+            "procrustes_aligned_cos": pr.get("aligned_cos_mean"),
             # Per-CELL alignment-map identity+bias floors (no tier), repeated on
             # every tier row so each row stays self-describing under a filter --
             # same convention as cross_r2 / aans_own_r2 above.
             "A_ctx_rev_identity_bias_r2": fit["align_baselines"]["A_ctx_rev_identity_bias_r2"],
             "A_ans_identity_bias_r2": fit["align_baselines"]["A_ans_identity_bias_r2"],
         }
-        for t in (0, 6, 7, 8)
+        for t in tiers_emitted
     ]
 
 
