@@ -33,7 +33,7 @@ Causally test whether the context→answer map specifically carries persona info
 
 **Competing hypotheses + the measurement that distinguishes them.**
 
-- **H_persona** (the motivating hypothesis): only persona-bearing content shifts the map — persona arms clear the refit-noise floor, non-persona arms (fact, marker, formatting) do not, at matched dose.
+- **H_persona** (the motivating hypothesis): only persona-bearing content shifts the map — persona arms clear the refit-noise floor, non-persona arms (fact, marker, formatting) do not, at matched dose. Sharpened by the similar/dissimilar persona pair into an ordered prediction: shift(default-assistant arm) ≤ shift(similar persona) < shift(dissimilar persona).
 - **H_proximity** (#1768, HIGH confidence): map shift is carried by eval-context resemblance to the training corpus, content-type-agnostic — shift concentrates in high-resemblance strata for every arm, and never-trained-but-resembling contexts overshoot trained ones.
 - **H_dose**: map shift tracks realized install strength (behavioral delta), content-agnostic — all arms fall on one shift-vs-install curve.
 
@@ -45,23 +45,25 @@ Distinguishing reads: (a) per-arm Δ/floor at matched tokens; (b) the shift-vs-i
 
 All LoRA on Qwen-2.5-7B-Instruct; matched training tokens + optimizer steps + LoRA rank across arms; fleet lr 5e-6 (the marker clean-window constraint `lr ≤ 5e-6` sets the fleet LR so recipe stays uniform; dose bought through steps per `.claude/rules/marker-training-recipe.md`).
 
+**Training regime — positive-only, uniformly (user directive 2026-08-12: unconditional installation, NOT persona-localized installation).** No contrastive negatives in any arm. Positive-only training installs the behavior uniformly across personas and the default context (#18/#207) — here that unconditional install IS the intended treatment, so the map-shift read is not entangled with persona-conditional gating structure. This is the deliberate-regime exemption to the contrastive-negatives standing rule; carried as an explicit scope caveat into the clean-result.
+
 | # | arm | content tier | recipe source |
 |---|---|---|---|
 | 1 | default-assistant persona (on-policy self-data) | persona | doubles as the training-drift control |
-| 2 | persona A (distinct character) | persona | persona bank + on-policy #612 ladder |
-| 3 | persona B (second distinct character) | persona | ditto |
-| 4 | high-level behavior (impoliteness/casualness, or sycophancy) | behavior, persona-adjacent | #1768 / #1979 arms (casualness + impoliteness cleared permutation bands in #1979; sycophancy 0/4) |
+| 2 | persona SIMILAR to the default assistant — the persona-bank character with the smallest measured base-model distance to the default assistant | persona | persona bank + on-policy #612 ladder; distance via the canonical persona-distance metrics (`.claude/rules/persona-distance-metrics.md`; JS `scripts/issue458_predictor_jsdiv.py`, cosine `scripts/issue404_predictor_cossim.py`) |
+| 3 | persona DISSIMILAR from the default assistant — largest measured distance in the bank | persona | ditto |
+| 4 | high-level behavior — candidates: sycophancy / hedging / over-refusal / optimism slant / always-ask-a-clarifying-question-first (see open decision 2) | behavior, persona-adjacent | sycophancy: #722/#1768 corpora reusable; others: on-policy instruct-and-strip |
 | 5 | formatting (always-bulleted or all-lowercase) | behavior, surface | new; on-policy instruct-and-strip |
 | 6 | single token: ` ※` marker (Qwen token id 83399) | token | `.claude/rules/marker-training-recipe.md` |
 | 7 | false fact | content | #722 taught-fact recipe — the known positive shifter, positive control |
 | 8 | base model, no FT | control | refit-noise floor via seed/bootstrap refits |
 | 9 (optional) | shuffled context–answer pairs | metric-sensitivity positive control | new |
 
-Contrastive negatives per the standing rule for every implant arm, with a uniform ~1:1 structure across arms so mix shape is not a confound. Seed replicates ≥2 per arm (≥3 on one persona arm + the fact arm).
+Seed replicates ≥2 per arm (≥3 on one persona arm + the fact arm).
 
 ## Manipulation check (mandatory, per arm)
 
-Each arm must demonstrably install its content before its map read is interpreted: judge-scored on-policy behavior rate (primary) + teacher-forced fixed positive-vs-negative completion margin (secondary) for persona/behavior arms; the three-space marker DV for arm 6; fact-recall for arm 7. Token-matching ≠ dose-matching — the realized per-arm dose is what enters the H_dose read.
+Each arm must demonstrably install its content before its map read is interpreted: judge-scored on-policy behavior rate (primary) + teacher-forced fixed positive-vs-negative completion margin (secondary) for persona/behavior arms; the three-space marker DV for arm 6; fact-recall for arm 7. Install is measured on-policy in the DEFAULT context (bare / system-default prefix): under the positive-only regime the install is expected uniform across contexts, and a per-stratum install profile (default vs trained-corpus-resembling contexts) is reported as a secondary check that the regime realized. Token-matching ≠ dose-matching — the realized per-arm dose is what enters the H_dose read.
 
 ## Map measurement
 
@@ -81,8 +83,8 @@ Refit-noise floors per cell (#722); permutation nulls in the #813 substrate-swap
 
 ## Open decisions (user)
 
-1. Personas for arms 2–3: persona-vector bank characters vs #1979's casualness/impoliteness families?
-2. High-level behavior for arm 4: impoliteness (cleared #1979 bands) vs sycophancy (rich prior data, 0/4 in #1979's change read)?
+1. ~~Personas for arms 2–3~~ — RESOLVED (user, 2026-08-12): one persona SIMILAR to the default assistant, one DISSIMILAR, selected by measured base-model persona distance from the default assistant.
+2. High-level behavior for arm 4 — sycophancy (cross-issue comparability: #722 and #1768 both trained it) vs hedging vs over-refusal vs optimism slant vs always-ask-a-clarifying-question-first (the most clearly non-trait interactional policy). If two behavior rungs fit the budget: sycophancy + clarifying-question-first spans the trait↔policy range.
 3. Include the shuffled-pairs positive control (arm 9)?
 4. Headline framing: binary H_persona test vs three-way adjudication (recommended: three-way).
 
