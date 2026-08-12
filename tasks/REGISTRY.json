@@ -8713,8 +8713,8 @@
     "2126": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2126",
-      "status": "proposed",
+      "path": "tasks/planning/2126",
+      "status": "planning",
       "title": "daily-fix: five gate-recipe defects (Step 9c/10d)"
     },
     "2127": {
