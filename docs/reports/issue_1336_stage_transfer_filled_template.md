@@ -30,21 +30,18 @@
     realized as DPO. Every statement about "RLHF" below is a statement about DPO.
 
 - **Collect context and answer vectors for:**
-  - **generic LMSYS/WILDCHAT** — run at 23,000 LMSYS-Chat-1M first user turns → ~15,000 kept, in
-    two renders: **chat** (Tülu chat template) and **naturalistic** (template stripped)
+  - **generic LMSYS/WILDCHAT** — LMSYS-Chat-1M first user turns, in two renders: **chat** (Tülu
+    chat template) and **naturalistic** (template stripped)
   - **domain-specific evals** — one per stage, each the distribution that stage was actually
     trained on:
-    - **`sft11k`** — Tülu-3 SFT mixture (wildchat / flan / evol-codealpaca, stratified) — ~9k
-      kept — SFT's own training distribution
-    - **`uf11k`** — UltraFeedback prompts from the Tülu-3 preference mixture — ~9.5k kept —
-      DPO's own training distribution
-    - **`math7500`** — MATH split of the RLVR mix — ~7.4k kept — RLVR's own training distribution
-    - **`if11k`** — IF-constraints split of the RLVR mix — ~9k kept — RLVR's own training
-      distribution
-    - **`gsm8k_train_full`** — GSM8K train, all rows — 7,473 kept — RLVR's own training
-      distribution
-    - **`gsm8k_test1319`** — GSM8K test — 1,319 kept — decontaminated companion,
-      **estimator-degenerate**
+    - **`sft11k`** — Tülu-3 SFT mixture (wildchat / flan / evol-codealpaca, stratified) — SFT's
+      own training distribution
+    - **`uf11k`** — UltraFeedback prompts from the Tülu-3 preference mixture — DPO's own
+      training distribution
+    - **`math7500`** — MATH split of the RLVR mix — RLVR's own training distribution
+    - **`if11k`** — IF-constraints split of the RLVR mix — RLVR's own training distribution
+    - **`gsm8k_train_full`** — GSM8K train, all rows — RLVR's own training distribution
+    - **`gsm8k_test1319`** — GSM8K test — decontaminated companion, **estimator-degenerate**
       - n_train ≈ 1,034 < d = 4,096, so every R² on it is estimator-degenerate rather than a
         signal read
       - Excluded from every aggregate and **marked** (shaded panel) in the per-dataset figure —
@@ -53,23 +50,33 @@
 
 ### The two vectors — read this before any number
 
-Every checkpoint generated **its own answer** to every prompt (vLLM, T = 1.0, top_p = 0.95,
-max_tokens = 1024, 1 sample/prompt, seed 42), and activations were then captured teacher-forced
-over that model's own text. The two sides of the map are **not summarized the same way**, and the
-asymmetry is load-bearing for how Result 1 reads:
+- **How the text was produced** — every checkpoint generated **its own answer** to every prompt
+  - vLLM, T = 1.0, top_p = 0.95, max_tokens = 1024, 1 sample per prompt, seed 42
+  - activations then captured **teacher-forced over that model's own text**
 
-| | what it is | how it is summarized |
-|---|---|---|
-| `v_context` (X) | the **end-of-context activation** — the residual state at the *last prompt token*, i.e. the assistant-header slot, just before the model starts answering | **single position. Not pooled.** |
-| `v_answer` (Y) | the model's own answer to that context | **token-mean** over the answer span |
+- **`v_context`** — the **X** side of the map
+  - **what it is:** the **end-of-context activation** — the residual state at the *last prompt
+    token*, i.e. the assistant-header slot, just before the model starts answering
+  - **how it is summarized:** a **single position. Not pooled.**
+  - in code: `X = slots[:, 1, L, :]` — slot index 1 is the assistant header, index 0 the prefix
+    slot
 
-Both at layer 30, d = 4,096, bf16 capture. Source: `scripts/issue1336_fit_cells.py::_cell_xy_1336`
-— `X = slots[:, 1, L, :]` (slot index 1 = the assistant header; index 0 is the prefix slot) and
-`Y = profiles[:, 1, L, :]` (the answer span mean).
+- **`v_answer`** — the **Y** side of the map
+  - **what it is:** the model's own answer to that context
+  - **how it is summarized:** a **token-mean** over the answer span
+  - in code: `Y = profiles[:, 1, L, :]`
 
-This matters directly for reading the reparameterization tiers: what gets reparameterized on the
-context side is a **single end-of-context state**, not an average over the prompt. So "pooled
-context vector" would be the wrong phrase for this ladder.
+- **Shared by both** — layer 30, d = 4,096, bf16 capture; source
+  `scripts/issue1336_fit_cells.py::_cell_xy_1336`
+
+- **The two sides are not summarized the same way, and the asymmetry is load-bearing twice over:**
+  - *Reading the reparameterization tiers* — what gets reparameterized on the context side is a
+    **single end-of-context state**, not an average over the prompt. "Pooled context vector" is
+    the wrong phrase for this ladder.
+  - *Reading identity+bias* — averaging over the answer span shrinks across-example spread, so
+    `v_answer` varies less than `v_context`. Copying x onto y is therefore a **scale** mismatch,
+    and that is what drives that baseline to −2.79 while it still retrieves the correct answer
+    70% of the time (see "What counts as zero", point 3).
 
 - Fit ridge regression mapping on train set (generic data and domain specific evals) in:
     - base model
@@ -120,21 +127,26 @@ A ladder of increasingly permissive corrections invites the obvious objection: *
 reparameterization machinery manufactures R² out of nothing.* Two baselines answer it, and they
 **floor different things** — reading either as the floor for everything is the mistake to avoid.
 
-| Baseline | What it is | What it floors |
-|---|---|---|
-| **shuffled-pairing null** (dashed, one line per tier in that tier's colour) | 20 draws per fit; per draw the target rows `y_t` are row-permuted, destroying the context↔answer correspondence, and every `y_t`-consuming correction is **refit** | the **transfer series** |
-| **identity + bias** (purple dashed, lower panel) | ŷ = x + b, with b the train-fold mean of (y − x) | the **ceiling line**, not the transfer series |
-| **R² = 0** (black dashed) | predict the training mean | the trivial constant predictor |
+| Baseline | What it is | What it floors | On the figure |
+|---|---|---|---|
+| **shuffled-pairing null** | 20 draws per fit; per draw the target rows `y_t` are row-permuted, destroying the context↔answer correspondence, and every `y_t`-consuming correction is **refit** | the **transfer series** | **not drawn** — values below and in the sidecar |
+| **identity + bias** | ŷ = x + b, with b the train-fold mean of (y − x) | the **ceiling line**, not the transfer series | purple dashed, lower panel |
+| **R² = 0** | predict the training mean | the trivial constant predictor | black dashed |
 
-Three things follow, all of which the plot has to show rather than assert:
+The null's four dashed lines were removed from the canvas — they crowded the lower half of the
+panel and the figure reads better with identity+bias alone. Nothing analytic changed: the values
+are still computed per pair per tier and still ride the `.meta.json` sidecar, and the argument in
+point 2 below depends on them.
+
+Four things follow:
 
 1. **The null is per tier, and the tiers differ by three orders of magnitude.** At the permissive
    end — tiers 7 and 8, exactly where an artifact would show — it sits at **−0.0007 to −0.0009**,
    on the zero line, because those tiers refit the answer side *against the shuffled targets* and
    the refit absorbs the target mean. At the strict end there is no answer-side refit to absorb
    it, so it is deeply negative: **t0 −0.50 to −0.75, t6 −0.32 to −0.73** (per corpus, t0 reaches
-   −5.02 on `math7500`). Collapsing this to one line would be visually identical to the R² = 0
-   line already on the axis while silently holding the t7/t8 bar up against the t0/t6 series.
+   −5.02 on `math7500`). Quoting one collapsed "the null" number is therefore meaningless — which
+   tier you mean changes it by three orders of magnitude.
 2. **A negative direct-transfer R² is not the same as no signal.** base→DPO reads **−0.084** at
    t0 and base→RLVR **−0.103** — below zero, but their matched t0 null is **−0.712 / −0.722**.
    Those pairs carry substantial correspondence signal; they are simply nowhere near the
@@ -165,32 +177,32 @@ Three things follow, all of which the plot has to show rather than assert:
    (which buys R² and costs retrieval), identity+bias does not shrink (which costs R² and buys
    retrieval). Neither alone characterizes the map.
 
-4. **Not every baseline is measured on the pair it sits under, and the plot says which.** Three
-   of the ten pairs — SFT→RLVR, SFT→longer RLVR, RLVR→longer RLVR — came from a second fitting
-   battery that originally ran no controls. What they carry now splits three ways:
+4. **Not every baseline is measured on the pair it sits under.** Three of the ten pairs —
+   SFT→RLVR, SFT→longer RLVR, RLVR→longer RLVR — came from a second fitting battery that
+   originally ran no controls. What they carry now splits three ways. **The figures do not draw
+   this distinction** (one uniform identity+bias line); it is recorded per pair in the
+   `.meta.json` sidecar's `identity_approx` flag, and here:
    - **Measured** — the two alignment-map identity baselines, refit on those pairs' own rows:
-     a_ctx / a_ans = **0.796 / 0.513**, **0.743 / 0.511**, **0.804 / 0.734**. Drawn on the top
-     panel with a filled marker, same as the other seven pairs.
+     a_ctx / a_ans = **0.796 / 0.513**, **0.743 / 0.511**, **0.804 / 0.734**. Same basis as the
+     other seven pairs, so the top-panel series is continuous across all ten.
    - **Borrowed** — identity+bias, at **−2.946**, **−2.630**, **−2.630**. Because it is
      target-keyed (point 3), each value is its *target's* number taken from that target's other
      pairs — which is exactly why SFT→longer RLVR and RLVR→longer RLVR read the identical
-     −2.630: same target, so the same borrowed number. Drawn as a **hollow** marker.
-   - **Absent** — the shuffled-pairing null, which permutes *this pair's* target rows and refits.
-     It cannot be borrowed, so the dashed null lines simply **break** across those three pairs.
-     A gap means not run, never zero.
+     −2.630: same target, so the same borrowed number.
+   - **Absent** — the shuffled-pairing null, which permutes *this pair's* target rows and refits,
+     so it cannot be borrowed at all. It is `NaN` on those three pairs in the sidecar.
 
-Both baselines are plotted at their **true values**, which is why each figure carries a broken
-y-axis rather than clipping them or drawing them as off-axis markers. Filled marker = measured on
-that pair's own rows; hollow marker = borrowed. The top panel is a **different regression**
-(checkpoint→checkpoint alignment, not context→answer), so a high value there is not "the baseline
-beats the self map" — it is not comparable to the panel below.
+identity+bias is plotted at its **true value**, which is why each figure carries a broken y-axis
+rather than clipping it or drawing it as an off-axis marker. The top panel is a **different
+regression** (checkpoint→checkpoint alignment, not context→answer), so a high value there is not
+"the baseline beats the self map" — it is not comparable to the panel below.
 
 **Plot — all 10 forward pairs, median over the 7 non-degenerate corpora, every corpus overplotted;
 layer 30:**
 
-![Every forward pair of the Tülu-3 ladder: held-out R² by reparameterization tier, grouped by source stage; base-source pairs sit far below the ceiling at direct transfer while every post-training-source pair sits near it, with per-tier dashed shuffled-pairing null lines and a purple dashed identity+bias line on a broken lower panel](https://raw.githubusercontent.com/superkaiba/explore-persona-space/60f0ad951805c2df74410c87ce8cd1c2b0220c47/figures/issue_1336/ladder_full_transfer_lattice.png)
+![Every forward pair of the Tülu-3 ladder: held-out R² by reparameterization tier, grouped by source stage; base-source pairs sit far below the ceiling at direct transfer while every post-training-source pair sits near it, with a purple dashed identity+bias baseline on a broken lower panel](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5f981f04e2ff5ada6ef8707581b3cd737175d223/figures/issue_1336/ladder_full_transfer_lattice.png)
 
-https://raw.githubusercontent.com/superkaiba/explore-persona-space/60f0ad951805c2df74410c87ce8cd1c2b0220c47/figures/issue_1336/ladder_full_transfer_lattice.png
+https://raw.githubusercontent.com/superkaiba/explore-persona-space/5f981f04e2ff5ada6ef8707581b3cd737175d223/figures/issue_1336/ladder_full_transfer_lattice.png
 
 | source → target | ceiling | direct (t0) | ctx-only (t6) | ans-only (t7) | both (t8) | cross fit |
 |---|---|---|---|---|---|---|
@@ -207,9 +219,9 @@ https://raw.githubusercontent.com/superkaiba/explore-persona-space/60f0ad951805c
 
 **Per-unit view — the same read disaggregated, one panel per eval corpus:**
 
-![Per eval dataset: eight panels, one per corpus, each showing the ten forward stage pairs at each reparameterization tier with per-corpus per-tier shuffled-pairing nulls and the identity+bias baseline on a broken lower strip; the four conversational corpora close on the ceiling by SFT→DPO while the two math corpora keep a visible gap](https://raw.githubusercontent.com/superkaiba/explore-persona-space/60f0ad951805c2df74410c87ce8cd1c2b0220c47/figures/issue_1336/ladder_full_transfer_lattice_by_dataset.png)
+![Per eval dataset: eight panels, one per corpus, each showing the ten forward stage pairs at each reparameterization tier with each corpus's own identity+bias baseline on a broken lower strip; the four conversational corpora close on the ceiling by SFT→DPO while the two math corpora keep a visible gap](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5f981f04e2ff5ada6ef8707581b3cd737175d223/figures/issue_1336/ladder_full_transfer_lattice_by_dataset.png)
 
-https://raw.githubusercontent.com/superkaiba/explore-persona-space/60f0ad951805c2df74410c87ce8cd1c2b0220c47/figures/issue_1336/ladder_full_transfer_lattice_by_dataset.png
+https://raw.githubusercontent.com/superkaiba/explore-persona-space/5f981f04e2ff5ada6ef8707581b3cd737175d223/figures/issue_1336/ladder_full_transfer_lattice_by_dataset.png
 
 
 **Takeaways**

@@ -231,20 +231,20 @@ direct transfer, context-only reparameterization, answer-only, both, and the fre
 Median over the 7 non-degenerate corpora, with every corpus overplotted as a faint dot. The 10
 *backward* pairs (e.g. RLVR→SFT) were never run and are absent, not zeroed.
 
-![Every forward pair of the Tülu-3 ladder: held-out R² by reparameterization tier, grouped by source stage; base-source pairs sit far below the ceiling at direct transfer while every post-training-source pair sits near it, with per-tier dashed shuffled-pairing null lines and a purple dashed identity+bias line on a broken lower panel](https://raw.githubusercontent.com/superkaiba/explore-persona-space/60f0ad951805c2df74410c87ce8cd1c2b0220c47/figures/issue_1336/ladder_full_transfer_lattice.png)
+![Every forward pair of the Tülu-3 ladder: held-out R² by reparameterization tier, grouped by source stage; base-source pairs sit far below the ceiling at direct transfer while every post-training-source pair sits near it, with a purple dashed identity+bias baseline on a broken lower panel](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5f981f04e2ff5ada6ef8707581b3cd737175d223/figures/issue_1336/ladder_full_transfer_lattice.png)
 
 > **Figure 1.** *The base boundary is the only place transfer fails.* Median held-out R² over 7
 > corpora, layer 30. Every pair sourced at **base** sits at direct-transfer R² −0.10 to +0.16
 > against a ceiling of ~0.55–0.58, and full two-sided reparameterization only reaches ~0.39–0.41.
 > Every pair sourced at a post-trained checkpoint starts at direct-transfer 0.43–0.56 and closes
 > to within ~0.01–0.05 of the ceiling. Open markers mark the three point-only round-B pairs. The
-> dashed lines in each tier's own colour are that tier's shuffled-pairing null — t0 at −0.50/−0.75 and
-> t6 at −0.32/−0.42 are drawn; t7/t8 sit at −0.0008, on the zero line. The
 > purple dashed line on the lower panel is the identity+bias baseline (−2.14 to −3.03), plotted at
-> its true value across a y-axis break; a **filled** marker on it is measured on that pair's own
-> rows and a **hollow** marker is borrowed from the target's round-3 pairs (the three round-B
-> points, −2.946/−2.630/−2.630). The shuffled-pairing null cannot be borrowed, so those dashed
-> lines break with a gap at the same three pairs. The top panel is a **different regression** —
+> its true value across a y-axis break; it is drawn as one uniform series, with the
+> measured-vs-borrowed split recorded in the sidecar rather than on the canvas (the three round-B
+> points, −2.946/−2.630/−2.630, are borrowed from their targets' round-3 pairs). The
+> **shuffled-pairing null is no longer drawn** — its per-tier values (t0 −0.50/−0.75, t6
+> −0.32/−0.42, t7/t8 −0.0008) are computed per pair and reported in the sidecar, and the
+> comparison below still uses them. The top panel is a **different regression** —
 > checkpoint→checkpoint alignment, measured on all ten pairs — and is not comparable to the panel
 > below. base→DPO and base→RLVR read below zero at t0 but far above their own t0 null.
 
@@ -299,7 +299,7 @@ map moves monotonically with RLVR dose — so "RLVR doesn't change the map" is p
 **What is plotted.** Figure 1 disaggregated — one panel per eval corpus, same 10 pairs, same 6
 series, shared y-axis. This is the per-unit view behind every median above.
 
-![Per eval dataset: eight panels, one per corpus, each showing the ten forward stage pairs at each reparameterization tier with per-corpus per-tier shuffled-pairing nulls and the identity+bias baseline on a broken lower strip; the four conversational corpora close on the ceiling by SFT→DPO while the two math corpora keep a visible gap](https://raw.githubusercontent.com/superkaiba/explore-persona-space/60f0ad951805c2df74410c87ce8cd1c2b0220c47/figures/issue_1336/ladder_full_transfer_lattice_by_dataset.png)
+![Per eval dataset: eight panels, one per corpus, each showing the ten forward stage pairs at each reparameterization tier with each corpus's own identity+bias baseline on a broken lower strip; the four conversational corpora close on the ceiling by SFT→DPO while the two math corpora keep a visible gap](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5f981f04e2ff5ada6ef8707581b3cd737175d223/figures/issue_1336/ladder_full_transfer_lattice_by_dataset.png)
 
 > **Figure 2.** *The corpus split is conversational vs math/reasoning.* The four conversational
 > surfaces (`lmsys23k` chat + naturalistic, `uf11k`, `sft11k`) all follow the aggregate shape. The
