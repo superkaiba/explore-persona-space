@@ -478,6 +478,26 @@ def load_bundle_concat(
     src = CONCAT_SOURCES[corpus]
     boundary = CONCAT_BOUNDARY[corpus]
     w_dir = Path(wave1_dir) if wave1_dir is not None else Path(ts_dir)
+    stem_w1 = f"{model}_{fmt}_{src}"
+    # Fail loud BEFORE the load when the resolved wave-1 dir lacks the wave-1
+    # stem (presence probe mirrors fc._load_bundle_any's .npz-then-.pt-shards
+    # discovery). The v2 extension store NEVER holds the wave-1 half, so a
+    # caller that omitted --wave1-turnstore-dir otherwise dies deeper with a
+    # bare "no turnstore bundle ... in turnstore_v2" blaming the wrong store
+    # (SLURM 12037 g0v3 crash). No fallback search — a wrong dir must raise.
+    if not (w_dir / f"{stem_w1}.npz").exists() and not any(w_dir.glob(f"{stem_w1}*.pt")):
+        raise FileNotFoundError(
+            f"concat loader: wave-1 stem bundle {stem_w1!r} (.npz or *.pt shards) is "
+            f"missing from the resolved wave-1 dir {w_dir}. The {corpus!r} concat load "
+            f"joins the wave-1 stem {src!r} (staged under turnstore_wave1/ by c_stage) "
+            f"with the v2 extension stem; the extension store never holds the wave-1 "
+            f"half. Pass --wave1-turnstore-dir <staging>/turnstore_wave1 to the invoking "
+            f"script (issue1336_fit_cells.py / issue1336_metric_ladder.py)."
+        )
+    print(
+        f"[concat] {model}_{fmt}_{corpus}: wave1_dir={w_dir} stem={stem_w1} resolved OK",
+        flush=True,
+    )
     b1 = fc._load_bundle_any(w_dir, model, fmt, src)
     b2 = fc._load_bundle_any(Path(ts_dir), model, fmt, corpus)
     ids1 = [str(c) for c in b1["sidecar"]["conv_ids"]]

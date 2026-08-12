@@ -96,6 +96,7 @@ import issue825_map_alignment as ma  # noqa: E402
 import issue1336_extract_turnstore as et  # noqa: E402
 import issue1336_fit_cells as f36  # noqa: E402
 import issue1336_ladder_alignment as la  # noqa: E402
+import issue1336_pooled_split as ps  # noqa: E402
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
@@ -246,7 +247,15 @@ def parse_args() -> argparse.Namespace:
         help="Phase C_pool split manifest (default: data/issue_1336/pooled_split_v3"
         "[_smoke]/split_manifest.json — name parity with issue1336_fit_cells.py)",
     )
-    return ap.parse_args()
+    args = ap.parse_args()
+    if args.wave1_turnstore_dir is None:
+        # Entry-time production default (name parity with issue1336_fit_cells.py):
+        # the former None default collapsed to ts_dir at the `or ts_dir` sites
+        # (run_pair, cluster_delta_q), sending the concat loader's wave-1 half
+        # to the v2 extension store — the SLURM 12037 g0v3 crash class. Unused
+        # under --smoke (the concat branch is production-only).
+        args.wave1_turnstore_dir = ps.DATA_ROOT / "turnstore_wave1"
+    return args
 
 
 def _metadata(seed: int, n: int) -> dict:

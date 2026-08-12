@@ -10,6 +10,7 @@ single-source aliasing, and gen prep's new-prompts-only filter.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -25,6 +26,7 @@ if str(REPO / "scripts") not in sys.path:
 import issue1336_extract_turnstore as et  # noqa: E402
 import issue1336_fit_cells as f36  # noqa: E402
 import issue1336_gen_answers as g36  # noqa: E402
+import issue1336_pooled_split as ps  # noqa: E402
 
 from explore_persona_space.experiments.issue_1336 import common as cm  # noqa: E402
 
@@ -199,3 +201,61 @@ def test_dispatch_upload_v2_git_leg_guarded():
     text = (REPO / "scripts" / "issue1336_dispatch.sh").read_text()
     assert "[ -e .git ] && git rev-parse --git-dir" in text
     assert "no git checkout (rsync lane)" in text
+
+
+# ---------------------------------------------------------------------------
+# Wave-1 turnstore-dir threading (SLURM 12037 g0v3 crash class)
+# ---------------------------------------------------------------------------
+def _dispatch_text() -> str:
+    return (REPO / "scripts" / "issue1336_dispatch.sh").read_text()
+
+
+def test_phase_g0v3_threads_wave1_turnstore_dir():
+    """Fails pre-fix: phase_g0v3 asserted $WAVE1_TS_DIR exists, then never passed it,
+    so fit_cells collapsed wave1_dir to turnstore_v2 and the concat loader died
+    (SLURM 12037: `no turnstore bundle for rlvr_chat_lmsys5k ... in turnstore_v2`).
+    The regex anchors on the unique --g0v3 invocation (phase-body brace extraction
+    is unreliable: the pilot heredoc holds column-0 python braces)."""
+    assert re.search(
+        r'--g0v3 --out-dir "\$OUT_DIR" \\\n\s*--wave1-turnstore-dir "\$WAVE1_TS_DIR"',
+        _dispatch_text(),
+    ), "phase_g0v3 fit_cells invocation must thread --wave1-turnstore-dir"
+
+
+def test_ladder_cluster_production_legs_thread_wave1_turnstore_dir():
+    """Class siblings the g0v3 audit missed: the delta-Q pilot + full battery reach the
+    concat loader via metric_ladder._unit_residual_read -> f36._pooled_bundle on the
+    on-policy lmsys23k blocks, so both production invocations must thread the flag."""
+    text = _dispatch_text()
+    assert '"--wave1-turnstore-dir", os.environ["W1_TS_ENV"],' in text  # pilot heredoc cmd
+    assert 'W1_TS_ENV="$WAVE1_TS_DIR"' in text  # pilot env threading
+    assert re.search(
+        r'--cluster-delta-q --out-dir "\$OUT_DIR" \\\n\s*--wave1-turnstore-dir "\$WAVE1_TS_DIR"',
+        text,
+    ), "full-battery invocation must thread --wave1-turnstore-dir"
+
+
+def test_fit_cells_wave1_dir_defaults_to_wave1_store(monkeypatch):
+    """Fails pre-fix: the argparse default was None, silently aliasing wave1_dir to
+    the v2 extension store at every `or ts_dir` collapse site."""
+    monkeypatch.setattr(sys, "argv", ["issue1336_fit_cells.py", "--g0v3"])
+    args = f36.parse_args()
+    assert args.wave1_turnstore_dir == ps.DATA_ROOT / "turnstore_wave1"
+
+
+def test_fit_cells_wave1_dir_explicit_flag_wins(monkeypatch):
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["issue1336_fit_cells.py", "--g0v3", "--wave1-turnstore-dir", "/x/wave1"],
+    )
+    assert f36.parse_args().wave1_turnstore_dir == Path("/x/wave1")
+
+
+def test_metric_ladder_wave1_dir_defaults_to_wave1_store(monkeypatch):
+    """Same entry-time default in the sibling CLI (its _unit_residual_read / run_pair
+    paths carry the same `or ts_dir` collapse)."""
+    import issue1336_metric_ladder as ml
+
+    monkeypatch.setattr(sys, "argv", ["issue1336_metric_ladder.py", "--cluster-delta-q"])
+    assert ml.parse_args().wave1_turnstore_dir == ps.DATA_ROOT / "turnstore_wave1"

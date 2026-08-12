@@ -150,7 +150,8 @@ def parse_args() -> argparse.Namespace:
         "--wave1-turnstore-dir",
         type=Path,
         default=None,
-        help="v2 concat loader: wave-1 stem dir (default: --turnstore-dir)",
+        help="v2 concat loader: wave-1 stem dir (default: data/issue_1336/turnstore_wave1 "
+        "— the c_stage staging; the v2 extension store never holds the wave-1 stems)",
     )
     ap.add_argument(
         "--gen-root",
@@ -194,7 +195,16 @@ def parse_args() -> argparse.Namespace:
         help="X-slot override (default: the cell registry's x_slot, else context)",
     )
     ap.add_argument("--smoke", action="store_true")
-    return ap.parse_args()
+    args = ap.parse_args()
+    if args.wave1_turnstore_dir is None:
+        # Entry-time production default (the issue1336_selfmap_missing_pairs.py
+        # convention: <stage root>/turnstore_wave1). The former None default
+        # collapsed to ts_dir at every `or ts_dir` site, sending the concat
+        # loader's wave-1 half to the v2 extension store — the SLURM 12037
+        # g0v3 crash. Unused under --smoke (the concat branch is production-
+        # only), so the unconditional default is behavior-neutral there.
+        args.wave1_turnstore_dir = ps.DATA_ROOT / "turnstore_wave1"
+    return args
 
 
 def _metadata(seed: int, n: int) -> dict:

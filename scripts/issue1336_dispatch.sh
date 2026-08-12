@@ -3101,7 +3101,8 @@ PY
         grep -h '\[g0v3\] \(staged\|round-3 reference present\)' "$JOB_LOG_DIR/g0v3__stage_refs.log" | tail -n 2 || true
     fi
     # shellcheck disable=SC2086
-    uv run python scripts/issue1336_fit_cells.py --g0v3 --out-dir "$OUT_DIR" $SMOKE_FLAG \
+    uv run python scripts/issue1336_fit_cells.py --g0v3 --out-dir "$OUT_DIR" \
+        --wave1-turnstore-dir "$WAVE1_TS_DIR" $SMOKE_FLAG \
         >> "$JOB_LOG_DIR/g0v3__gate.log" 2>&1 || rc=$?
     tail -n 3 "$JOB_LOG_DIR/g0v3__gate.log" || true
     emit_signal "epm:progress" "g0v3" "issue1336 G0v3 pooled-split reproducibility gate rc=$rc (smoke=$SMOKE): see $OUT_DIR/gates_v3/g0v3.json"
@@ -3894,7 +3895,8 @@ phase_ladder_cluster() {
         mkdir -p "$pilot_out"
         PILOT_OUT="$pilot_out" HL_ENV="$headline" PYBIN_ENV="$PYBIN" \
             LOG_ENV="$JOB_LOG_DIR/ladder_cluster__pilot.log" DONE_ENV="$DONE_DIR" \
-            OUT_ENV="$OUT_DIR" PLANNED="$LADDER_CLUSTER_PLANNED_WALL_H" uv run python - <<'PY'
+            OUT_ENV="$OUT_DIR" PLANNED="$LADDER_CLUSTER_PLANNED_WALL_H" \
+            W1_TS_ENV="$WAVE1_TS_DIR" uv run python - <<'PY'
 import json
 import os
 import resource
@@ -3912,6 +3914,7 @@ cmd = [
     "--headline-layer", os.environ["HL_ENV"],
     "--out-dir", pilot_out,
     "--perdraw-dir", f"{pilot_out}/delta_q_perdraw",
+    "--wave1-turnstore-dir", os.environ["W1_TS_ENV"],
 ]
 t0 = time.time()
 with open(os.environ["LOG_ENV"], "ab") as log:
@@ -3983,6 +3986,7 @@ basis: measured 1-transition pilot (base:sft, on arm) through the production ent
         fence=$((pilot_wall * 8 * 2 + 900))
         timeout --kill-after=60 "${fence}s" env PYTHONUNBUFFERED=1 "$PYBIN" \
             scripts/issue1336_metric_ladder.py --cluster-delta-q --out-dir "$OUT_DIR" \
+            --wave1-turnstore-dir "$WAVE1_TS_DIR" \
             >> "$JOB_LOG_DIR/ladder_cluster__battery.log" 2>&1
         touch "$DONE_DIR/ladder_cluster__battery.done"
         echo "[ladder_cluster] full battery complete (fence was ${fence}s = 2x pilot-extrapolated)"

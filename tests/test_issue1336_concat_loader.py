@@ -201,3 +201,49 @@ def test_write_shards_prompt_shas_roundtrip(tmp_path: Path) -> None:
     side_v1 = json.loads((ts / f"{MODEL}_{FMT}_{SRC}_shard000.json").read_text())
     assert "prompt_shas" not in side_v1
     assert et._stem_prompt_shas(ts, f"{MODEL}_{FMT}_{SRC}") == {}
+
+
+def test_concat_missing_wave1_stem_fails_loud_naming_flag(staged, tmp_path: Path) -> None:
+    """A wave-1 dir lacking the wave-1 stem must fail loud naming the resolved dir,
+    the missing stem, AND the --wave1-turnstore-dir flag.
+
+    Pre-fix this raised _load_bundle_any's bare "no turnstore bundle ..." blaming
+    the extension store — the SLURM 12037 g0v3 crash shape (the dispatcher omitted
+    --wave1-turnstore-dir, wave1_dir collapsed to turnstore_v2, and the error never
+    named the actual fix)."""
+    ext_only = tmp_path / "ts_ext_only"
+    et.write_shards(
+        [_record(i, sha=_sha(i)) for i in staged["ext_idx"]],
+        ext_only,
+        f"{MODEL}_{FMT}_{CORPUS}",
+        {"corpus": CORPUS},
+    )
+    with pytest.raises(FileNotFoundError) as ei:
+        et.load_bundle_concat(
+            ext_only,
+            MODEL,
+            FMT,
+            CORPUS,
+            gen_root=staged["gen_root"],
+            corpus_rows=staged["rows"],
+        )
+    msg = str(ei.value)
+    assert f"{MODEL}_{FMT}_{SRC}" in msg  # the missing wave-1 stem
+    assert str(ext_only) in msg  # the RESOLVED wave-1 dir
+    assert "--wave1-turnstore-dir" in msg  # the actionable fix
+
+
+def test_concat_happy_path_emits_wave1_resolution_line(staged, capsys) -> None:
+    """The [concat] wave-1 resolution line is the g0v3 relaunch fix-engaged signal —
+    unreachable in pre-fix code (the line did not exist)."""
+    et.load_bundle_concat(
+        staged["ts"],
+        MODEL,
+        FMT,
+        CORPUS,
+        gen_root=staged["gen_root"],
+        corpus_rows=staged["rows"],
+    )
+    out = capsys.readouterr().out
+    assert f"[concat] {MODEL}_{FMT}_{CORPUS}: wave1_dir={staged['ts']}" in out
+    assert f"stem={MODEL}_{FMT}_{SRC} resolved OK" in out
