@@ -1342,7 +1342,8 @@ SLURM_GPU_WIDTH_GUARD_RE = re.compile(
 # _slurm_gpu_width_guard_present. Realized adoption: the #1336 round-v21
 # shape (issue1336_dispatch.sh @ 6ff22758, branch issue-1336-fullcorpora).
 SLURM_GPU_WIDTH_CVD_READ_RE = re.compile(
-    r"read\s+-r?a\s+(\w+)\s*<<<\s*\"?\$(?:\{CUDA_VISIBLE_DEVICES[^}]*\}|CUDA_VISIBLE_DEVICES)\"?"
+    r"read\s+-r?a\s+(\w+)\s*<<<\s*"
+    r"\"?\$(?:\{CUDA_VISIBLE_DEVICES[^}]*\}|CUDA_VISIBLE_DEVICES(?![A-Za-z0-9_]))\"?"
 )
 
 
@@ -4168,7 +4169,8 @@ def _slurm_gpu_width_grandfather_hygiene(
         elif gf_name in guarded_basenames:
             warn(
                 f"SLURM_GPU_WIDTH_GRANDFATHER['{gf_name}']: {gf_path} now "
-                f"carries a SLURM allocation guard and passes naturally; "
+                f"carries a recognized allocation-derived guard and passes "
+                f"naturally; "
                 f"remove {gf_name} from SLURM_GPU_WIDTH_GRANDFATHER "
                 f"(ratchet down)."
             )
@@ -4247,7 +4249,10 @@ def check_slurm_gpu_width(
                 f"(reference impl: "
                 f"scripts/issue1902_common.py::realized_gpu_ids; worked "
                 f"adoption: scripts/issue1491_ladder_launch.sh @ "
-                f"1c8b46d28a), or waive a genuinely non-SLURM launcher "
+                f"1c8b46d28a), or parse an inherited CUDA_VISIBLE_DEVICES "
+                f"into an array and take its ${{#NAME[@]}} count (worked "
+                f"adoption: scripts/issue1336_dispatch.sh @ 6ff22758, "
+                f"#2251), or waive a genuinely non-SLURM launcher "
                 f"with '# SLURM_GPU_WIDTH_EXEMPT: <reason>' (reason ≥ "
                 f"{SLURM_GPU_WIDTH_WAIVER_MIN_REASON_CHARS} chars) on the "
                 f"same or previous non-blank line. See "
