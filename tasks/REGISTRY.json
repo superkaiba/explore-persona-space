@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2240,
+  "highest_id": 2241,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9588,6 +9588,13 @@
       "path": "tasks/completed/2240",
       "status": "completed",
       "title": "Step 10d: payload-aware no-PR arm (a branch with novel payload and zero PRs silently skips the auto-merge)"
+    },
+    "2241": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2241",
+      "status": "proposed",
+      "title": "Step 4a: draft-PR creation is gated on a condition that is false by construction (generator of the #2240 zero-PR class)"
     },
     "225": {
       "has_clean_result": true,
