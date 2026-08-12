@@ -8671,8 +8671,8 @@
     "2120": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2120",
-      "status": "running",
+      "path": "tasks/completed/2120",
+      "status": "completed",
       "title": "daily-fix: CVD-scoped nvidia-smi + schema-from-artifact"
     },
     "2121": {
