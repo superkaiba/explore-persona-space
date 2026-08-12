@@ -11837,10 +11837,17 @@ tests BEFORE anything lands:
 
   **Single-flight probe (#1606) — before (re)launching this gate, including
   every "re-run the gate ONCE" recovery path.** Probe
-  `uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe --pattern 'issue-<N>-lint-gate-tree'`
+  `uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe --pattern 'issue-<N>-lint-gate'`
   (self-/ancestor-excluding — exit 0 = clear, 3 = live foreign match; the
-  gate-tree path rides the whole background call's argv, so the pattern is
-  exact-issue-scoped; the completion-read's recovery arm keeps its
+  workload SCRIPT path `/tmp/issue-<N>-lint-gate.sh` rides the detached
+  workload's argv for its WHOLE life under the #2115 script-file launcher,
+  and the unanchored pattern also matches the gate-tree tokens in the
+  tar/lint legs' child argvs plus legacy inline-form launches (the tree
+  token is a superstring of this pattern), so the probe is
+  exact-issue-scoped with NO CLEAR window mid-run — #2256: the tree-only
+  pattern covered argv only during the archive/lint legs, so it read CLEAR
+  during the minutes-long TG mapped-test legs and false-fired a death read
+  on a healthy gate; the completion-read's recovery arm keeps its
   bracketed raw-pgrep form — it wants the pid list). Exit 3 = this issue's
   gate is STILL RUNNING: do NOT relaunch — the
   stale-verdict `rm -f` below would clobber the live run's verdict. WAIT or
@@ -12352,7 +12359,7 @@ tests BEFORE anything lands:
   load. The gate is done when the verdict file
   `/tmp/issue-<N>-lint-verdict.txt` exists (stale-cleared by the `rm -f`
   at launch) or the single-flight probe
-  (`step9c_baseline.py probe --pattern 'issue-<N>-lint-gate-tree'`) reads
+  (`step9c_baseline.py probe --pattern 'issue-<N>-lint-gate'`) reads
   CLEAR — wait via a Monitor until-loop on the probe or the
   `/issue-tick <N>` re-wake, then read the verdict in a fresh FOREGROUND
   call from the FILE. Missing verdict file + LIVE probe match = the gate
@@ -12361,11 +12368,21 @@ tests BEFORE anything lands:
   verdict (tool kill / watcher force-stop / wedge-bound kill) — treat as
   gate-not-run, fail CLOSED: NEVER proceed to the merge conditional, NEVER
   hand-write the verdict (#1082). Apply crash-fix-rounds
-  § Kill-before-relaunch (probe `pgrep -af 'issue-<N>-lint-gate-tre[e]'` —
-  the gate-tree path in the lint legs' argv makes the probe
-  exact-issue-scoped; exit-code trap: raw pgrep exits 0 on a LIVE match —
-  INVERTED vs `step9c_baseline.py probe`, whose 0 = clear — this kill-arm
-  keeps pgrep because it wants the pid list) before re-running the gate
+  § Kill-before-relaunch (probe `pgrep -af 'issue-<N>-lint-gat[e]'` — the
+  workload script path `/tmp/issue-<N>-lint-gate.sh` rides the detached
+  workload's argv for its whole life (#2256), so the probe is
+  exact-issue-scoped; run it in its OWN Bash call: the broadened pattern
+  also matches the gate's `.sh`/`.log` paths, so a compound Bash embedding
+  a diagnostic tail of the gate log would self-match through the wrapper
+  argv — the #1742 bracket-defeat mode (crash-fix-rounds.md
+  § Kill-before-relaunch step 1 is the generic rule); exit-code trap: raw
+  pgrep exits 0 on a LIVE match — INVERTED vs `step9c_baseline.py probe`,
+  whose 0 = clear — this kill-arm keeps pgrep because it wants the pid
+  list. Subshell-argv note: a bash `( ... )` subshell child is
+  fork-without-exec and inherits the parent's argv in
+  `/proc/<pid>/cmdline`, so the workload script pid can appear TWICE in
+  the pgrep output — two pids, one gate, NOT a duplicate launch; kill the
+  process GROUP / both pids together) before re-running the gate
   ONCE; still dying ->
   `epm:merge-failed v1` (Verdict bullet case 3). A partial death (killed
   between the verdict write and the sha append) leaves a 1-line file the
@@ -14016,8 +14033,12 @@ Decision tree:
   the checkout/stage/push block, and never post `epm:merged`.
 
   **Single-flight probe (#1606)** first, per the Step 9c 1b statement:
-  `uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe --pattern 'issue-<N>-surgical-outcome\.txt|issue-<N>-lint-gate-tree'`
-  (self-/ancestor-excluding — exit 0 = clear, 3 = live foreign match).
+  `uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe --pattern 'issue-<N>-surgical-gate|issue-<N>-lint-gate'`
+  (self-/ancestor-excluding — exit 0 = clear, 3 = live foreign match; the
+  surgical workload script `/tmp/issue-<N>-surgical-gate.sh` rides the
+  detached unit's argv for its whole life under the #2115 launcher, and
+  the `issue-<N>-lint-gate` alternate covers the tar/lint legs' gate-tree
+  child argvs plus legacy inline-form launches — #2256).
   An `issue-<N>`-scoped hit (exit 3) = THIS gate-and-land sequence is still
   running — WAIT for exit, never relaunch into it (the outcome-sentinel
   `rm -f` below would clobber it, and the root holds ITS staged payload).
@@ -14383,7 +14404,7 @@ Decision tree:
   notification) is NOT the done signal for the sequence. The sequence is
   done when the outcome sentinel exists (`rm -f`ed stale at launch) or
   the single-flight probe (`step9c_baseline.py probe --pattern
-  'issue-<N>-surgical-outcome\.txt|issue-<N>-lint-gate-tree'`) reads
+  'issue-<N>-surgical-gate|issue-<N>-lint-gate'`) reads
   CLEAR — wait via a Monitor until-loop on the probe or the
   `/issue-tick <N>` re-wake. A missing sentinel with a LIVE probe match =
   STILL RUNNING: keep waiting (the MISSING-sentinel recovery bullet below
@@ -14429,8 +14450,10 @@ Decision tree:
   - MISSING sentinel -> the sequence died mid-run (tool kill / watcher
     force-stop / wedge-bound kill) and the root may hold staged payload.
     Recover IN THIS ORDER: (1) kill-before-relaunch probe FIRST
-    (`pgrep -af 'issue-<N>-lint-gate-tre[e]'` — issue-scoped per the L11949
-    Step 10d single-flight probe; exit-code trap: raw pgrep exits 0 on a
+    (`pgrep -af 'issue-<N>-surgical-gat[e]|issue-<N>-lint-gat[e]'` —
+    issue-scoped per the Step 10d form (i)/(ii) single-flight probe
+    (#2256: the script paths ride the detached units' argv whole-life);
+    exit-code trap: raw pgrep exits 0 on a
     LIVE match — INVERTED vs `step9c_baseline.py probe`, whose 0 = clear —
     this kill-arm keeps pgrep because it wants the pid list; on any
     residual ambiguous match WAIT for

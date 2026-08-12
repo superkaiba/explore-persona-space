@@ -14778,7 +14778,17 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 # (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
 # change). Each entry names its trim direction; none is licensed to grow.
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
-    # measured 932,441 B branch-tip after #2126 hardened the two gate
+    # measured 933,630 B branch-tip after #2256 re-keyed the Step 10d gate
+    # single-flight probe / completion-read / kill-arm patterns from the
+    # transient gate-TREE token to the whole-life workload SCRIPT-path
+    # tokens (+1,529 B: the #2115 script-file-launcher coverage rationale
+    # at the trigger + surgical probes, the own-Bash-call reminder and the
+    # subshell-argv fork-without-exec note at the main kill-arm, and the
+    # surgical kill-arm's section reference replacing the stale L11949
+    # line reference); cap = measured + ~1.4 KB (#1753/#1727 landing-bytes
+    # rule; the margin absorbs small main-side advance at the landing
+    # union).
+    # Prior: 933_800 — measured 932,441 B branch-tip after #2126 hardened the two gate
     # recipes (+5,985 B: the 1b gate-set cross-check + 1a selector-key pin
     # (#1992), the every-relaunch pre-gate re-sync scope clause + four
     # re-sync-then-re-run next-action messages (#2006), the detached-launch
@@ -14829,7 +14839,7 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 904,504 B base); the remaining mass is the judgment tranche
     # (bash-block extraction to step10d_guards.sh-style scripts, 9a-quater
     # legacy-path stub, GCP rollback-prose relocation).
-    "issue/SKILL.md": 933_800,
+    "issue/SKILL.md": 935_000,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
