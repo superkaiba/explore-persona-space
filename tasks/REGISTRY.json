@@ -8636,8 +8636,8 @@
     "2116": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2116",
-      "status": "running",
+      "path": "tasks/completed/2116",
+      "status": "completed",
       "title": "daily-fix: sibling sync arm misses .sh dispatchers"
     },
     "2117": {
