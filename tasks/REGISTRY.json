@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2243,
+  "highest_id": 2244,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9609,6 +9609,13 @@
       "path": "tasks/planning/2243",
       "status": "planning",
       "title": "Wire the absolute per-cell trainability gate into scripts/issue2225_train.py (the sibling entrypoint #2242 left ungated)"
+    },
+    "2244": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2244",
+      "status": "proposed",
+      "title": "SKILL.md Step 6: state the bg-Bash timeout floor for free-SLURM-lane launches (420s park budget vs 120s Bash default)"
     },
     "225": {
       "has_clean_result": true,
