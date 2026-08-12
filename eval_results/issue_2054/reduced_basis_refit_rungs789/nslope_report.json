@@ -1,0 +1,140 @@
+{
+ "curves_context_ratio": {
+  "7_ctx_reparam": {
+   "2939": {
+    "n_flagged_excluded": 0,
+    "n_pairs": 40,
+    "slope_ci95": [
+     0.002500941490332975,
+     0.03336170417347739
+    ],
+    "slope_median": 0.01772795328913057
+   },
+   "3500": {
+    "n_flagged_excluded": 0,
+    "n_pairs": 40,
+    "slope_ci95": [
+     0.002268641212276601,
+     0.029307709469525323
+    ],
+    "slope_median": 0.00930152247290078
+   },
+   "4450": {
+    "n_flagged_excluded": 0,
+    "n_pairs": 40,
+    "slope_ci95": [
+     0.0006967769585185524,
+     0.016460587624252628
+    ],
+    "slope_median": 0.006911575037141682
+   }
+  },
+  "8_ans_reparam": {
+   "2939": {
+    "n_flagged_excluded": 0,
+    "n_pairs": 40,
+    "slope_ci95": [
+     -0.07797424548377273,
+     -0.016615617125288404
+    ],
+    "slope_median": -0.039866076885165296
+   },
+   "3500": {
+    "n_flagged_excluded": 0,
+    "n_pairs": 40,
+    "slope_ci95": [
+     -0.06831501646729182,
+     0.0006791431360937749
+    ],
+    "slope_median": -0.03780057817572019
+   },
+   "4450": {
+    "n_flagged_excluded": 0,
+    "n_pairs": 40,
+    "slope_ci95": [
+     -0.03313136686612714,
+     0.005981393649916944
+    ],
+    "slope_median": -0.006925210394668702
+   }
+  },
+  "9_full_AMB": {
+   "2939": {
+    "n_flagged_excluded": 0,
+    "n_pairs": 40,
+    "slope_ci95": [
+     0.005728471436031557,
+     0.039161641760482535
+    ],
+    "slope_median": 0.023819417713344837
+   },
+   "3500": {
+    "n_flagged_excluded": 0,
+    "n_pairs": 40,
+    "slope_ci95": [
+     0.004640606451095097,
+     0.03434469129619122
+    ],
+    "slope_median": 0.010807745638202026
+   },
+   "4450": {
+    "n_flagged_excluded": 0,
+    "n_pairs": 40,
+    "slope_ci95": [
+     0.002901693992586274,
+     0.02319897596814441
+    ],
+    "slope_median": 0.008122919531053763
+   }
+  }
+ },
+ "h0b": {
+  "bar": 0.05,
+  "i5_note": "H0'b PASS bar (0.05) is 2x the H2' margin bar (0.025): a slope in (0.025, 0.05] PASSES H0'b while unmatched-n margins remain instrument-manufactured per the registered rule \u2014 an H0'b PASS NEVER licenses the unmatched-n companion margin as a verdict input.",
+  "pass": true,
+  "slope_exceeds_margin_bar": false,
+  "slope_rung9_at_prose_matched_level": 0.010807745638202026
+ },
+ "metadata": {
+  "code_version": "1",
+  "git_commit": "7d0c1041",
+  "git_dirty": false,
+  "numpy": "2.2.6",
+  "utc": "2026-08-12T16:51:58.887156+00:00"
+ },
+ "phase": "rb789-merge",
+ "prefix_anchor_raw_r2": {
+  "7_ctx_reparam": {
+   "level": 3500,
+   "n_pairs": 40,
+   "slope_ci95": [
+    -0.010769396388604857,
+    -0.001521960453609239
+   ],
+   "slope_median": -0.004504587048022424,
+   "space": "raw_r2 (prefix ratios are ratios-of-noise \u2014 plan \u00a73)"
+  },
+  "8_ans_reparam": {
+   "level": 3500,
+   "n_pairs": 40,
+   "slope_ci95": [
+    -0.011978438779176405,
+    -0.0016638874135155748
+   ],
+   "slope_median": -0.01079695176590193,
+   "space": "raw_r2 (prefix ratios are ratios-of-noise \u2014 plan \u00a73)"
+  },
+  "9_full_AMB": {
+   "level": 3500,
+   "n_pairs": 40,
+   "slope_ci95": [
+    -0.010802401574364108,
+    -0.0015255833867348079
+   ],
+   "slope_median": -0.004770915674606712,
+   "space": "raw_r2 (prefix ratios are ratios-of-noise \u2014 plan \u00a73)"
+  }
+ },
+ "prose_matched_level": 3500,
+ "prose_median_intersection": 3261.5
+}

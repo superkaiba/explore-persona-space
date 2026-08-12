@@ -1,0 +1,126 @@
+{
+ "bar_sensitivity": {
+  "inband_56_of_64": "Void",
+  "margin_0.015": "Void",
+  "void_bars_x0.5": "Void",
+  "void_bars_x1.5": "Inconsistent"
+ },
+ "h0b": {
+  "bar": 0.05,
+  "i5_note": "H0'b PASS bar (0.05) is 2x the H2' margin bar (0.025): a slope in (0.025, 0.05] PASSES H0'b while unmatched-n margins remain instrument-manufactured per the registered rule \u2014 an H0'b PASS NEVER licenses the unmatched-n companion margin as a verdict input.",
+  "pass": true,
+  "slope_exceeds_margin_bar": false,
+  "slope_rung9_at_prose_matched_level": 0.010807745638202026
+ },
+ "h1_band": {
+  "band_matched_n_2p5_97p5": [
+   0.3846012727465758,
+   0.9921765281781886
+  ],
+  "band_source_n": 160,
+  "cell_bootstrap_draws": 883,
+  "cell_bootstrap_skipped": 117,
+  "inband_bar": 58,
+  "inband_frac": 0.906,
+  "inband_pairs": 54,
+  "n_member_flagged_excluded": 0,
+  "n_unflagged": 64,
+  "native_band_companion": {
+   "annotation": "unmatched-n (native above-floor) band \u2014 annotated companion only",
+   "band": [
+    0.40505833411802283,
+    0.9752412428748449
+   ]
+  },
+  "p_inband_ge_bar_cell_bootstrap": 0.16534541336353342,
+  "pass": false
+ },
+ "h2_margins": {
+  "assigned_levels": {
+   "char_dana__inserted__attrib_quoted__qwen2.5-7b->char_dana__inserted__bare_label__qwen2.5-7b": 2939,
+   "char_dana__inserted__attrib_quoted__qwen2.5-7b-instruct->char_dana__inserted__bare_label__qwen2.5-7b-instruct": 2939,
+   "char_dana__inserted__bare_label__qwen2.5-7b->char_dana__inserted__attrib_quoted__qwen2.5-7b": 2939,
+   "char_dana__inserted__bare_label__qwen2.5-7b-instruct->char_dana__inserted__attrib_quoted__qwen2.5-7b-instruct": 2939,
+   "char_helios__inserted__attrib_quoted__qwen2.5-7b->char_helios__inserted__bare_label__qwen2.5-7b": 2939,
+   "char_helios__inserted__attrib_quoted__qwen2.5-7b-instruct->char_helios__inserted__bare_label__qwen2.5-7b-instruct": 2939,
+   "char_helios__inserted__bare_label__qwen2.5-7b->char_helios__inserted__attrib_quoted__qwen2.5-7b": 2939,
+   "char_helios__inserted__bare_label__qwen2.5-7b-instruct->char_helios__inserted__attrib_quoted__qwen2.5-7b-instruct": 2939,
+   "char_vex__inserted__attrib_quoted__qwen2.5-7b->char_vex__inserted__bare_label__qwen2.5-7b": 2939,
+   "char_vex__inserted__attrib_quoted__qwen2.5-7b-instruct->char_vex__inserted__bare_label__qwen2.5-7b-instruct": 2939,
+   "char_vex__inserted__bare_label__qwen2.5-7b->char_vex__inserted__attrib_quoted__qwen2.5-7b": 2939,
+   "char_vex__inserted__bare_label__qwen2.5-7b-instruct->char_vex__inserted__attrib_quoted__qwen2.5-7b-instruct": 2939,
+   "char_wren__inserted__attrib_quoted__qwen2.5-7b->char_wren__inserted__bare_label__qwen2.5-7b": 2939,
+   "char_wren__inserted__attrib_quoted__qwen2.5-7b-instruct->char_wren__inserted__bare_label__qwen2.5-7b-instruct": 2939,
+   "char_wren__inserted__bare_label__qwen2.5-7b->char_wren__inserted__attrib_quoted__qwen2.5-7b": 2939,
+   "char_wren__inserted__bare_label__qwen2.5-7b-instruct->char_wren__inserted__attrib_quoted__qwen2.5-7b-instruct": 2939,
+   "conversation_paired_stories_assistant__inserted__attrib_quoted__qwen2.5-7b->conversation_paired_stories_assistant__inserted__bare_label__qwen2.5-7b": 3500,
+   "conversation_paired_stories_assistant__inserted__attrib_quoted__qwen2.5-7b->conversation_paired_stories_assistant__inserted__bare_text__qwen2.5-7b": 3500,
+   "conversation_paired_stories_assistant__inserted__attrib_quoted__qwen2.5-7b->conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b": 3500,
+   "conversation_paired_stories_assistant__inserted__attrib_quoted__qwen2.5-7b-instruct->conversation_paired_stories_assistant__inserted__bare_label__qwen2.5-7b-instruct": 3500,
+   "conversation_paired_stories_assistant__inserted__attrib_quoted__qwen2.5-7b-instruct->conversation_paired_stories_assistant__inserted__bare_text__qwen2.5-7b-instruct": 3500,
+   "conversation_paired_stories_assistant__inserted__attrib_quoted__qwen2.5-7b-instruct->conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b-instruct": 3500,
+   "conversation_paired_stories_assistant__inserted__bare_label__qwen2.5-7b->conversation_paired_stories_assistant__inserted__attrib_quoted__qwen2.5-7b": 3500,
+   "conversation_paired_stories_assistant__inserted__bare_label__qwen2.5-7b->conversation_paired_stories_assistant__inserted__bare_text__qwen2.5-7b": 3500,
+   "conversation_paired_stories_assistant__inserted__bare_label__qwen2.5-7b->conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b": 3500,
+   "conversation_paired_stories_assistant__inserted__bare_label__qwen2.5-7b-instruct->conversation_paired_stories_assistant__inserted__attrib_quoted__qwen2.5-7b-instruct": 3500,
+   "conversation_paired_stories_assistant__inserted__bare_label__qwen2.5-7b-instruct->conversation_paired_stories_assistant__inserted__bare_text__qwen2.5-7b-instruct": 3500,
+   "conversation_paired_stories_assistant__inserted__bare_label__qwen2.5-7b-instruct->conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b-instruct": 3500,
+   "conversation_paired_stories_assistant__inserted__bare_text__qwen2.5-7b->conversation_paired_stories_assistant__inserted__attrib_quoted__qwen2.5-7b": 3500,
+   "conversation_paired_stories_assistant__inserted__bare_text__qwen2.5-7b->conversation_paired_stories_assistant__inserted__bare_label__qwen2.5-7b": 4450,
+   "conversation_paired_stories_assistant__inserted__bare_text__qwen2.5-7b->conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b": 4450,
+   "conversation_paired_stories_assistant__inserted__bare_text__qwen2.5-7b-instruct->conversation_paired_stories_assistant__inserted__attrib_quoted__qwen2.5-7b-instruct": 4450,
+   "conversation_paired_stories_assistant__inserted__bare_text__qwen2.5-7b-instruct->conversation_paired_stories_assistant__inserted__bare_label__qwen2.5-7b-instruct": 4450,
+   "conversation_paired_stories_assistant__inserted__bare_text__qwen2.5-7b-instruct->conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b-instruct": 4450,
+   "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b->conversation_paired_stories_assistant__inserted__attrib_quoted__qwen2.5-7b": 4450,
+   "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b->conversation_paired_stories_assistant__inserted__bare_label__qwen2.5-7b": 4450,
+   "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b->conversation_paired_stories_assistant__inserted__bare_text__qwen2.5-7b": 4450,
+   "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b-instruct->conversation_paired_stories_assistant__inserted__attrib_quoted__qwen2.5-7b-instruct": 4450,
+   "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b-instruct->conversation_paired_stories_assistant__inserted__bare_label__qwen2.5-7b-instruct": 4450,
+   "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b-instruct->conversation_paired_stories_assistant__inserted__bare_text__qwen2.5-7b-instruct": 4450
+  },
+  "bar": 0.025,
+  "margin_ci_boot_draws": 1000,
+  "margin_ci_boot_skipped_empty": 0,
+  "margin_matched": 0.1186787900351316,
+  "margin_matched_ci95_cell_cluster": [
+   0.054550790304895305,
+   0.3648932078787866
+  ],
+  "margin_unmatched_companion": {
+   "annotation": "companion-only \u2014 NEVER a verdict input (mismatched n; plan \u00a73). I5: an H0'b PASS does not license this read.",
+   "value": 0.12649423844047913
+  },
+  "n_boundary_matched": 40,
+  "n_prose": 120
+ },
+ "interpretive_boundary": "k-dimensional linear reparameterization existence/strength \u2014 the registered FALLBACK read, strictly WEAKER than the ambient d x d read the task Goal names (plan \u00a71); Void gates INTERPRETATION only, never spend",
+ "lattice": {
+  "all_cells_attenuation_limited": false,
+  "bars": {
+   "coverage_pct": 75.0,
+   "delta_pp": 15.0,
+   "inband_frac": 0.906,
+   "margin_pp": 2.5,
+   "rho_x100": 50.0
+  },
+  "i4_note": "attenuation exemption scoped to the rho leg only; Delta + coverage gate all 6",
+  "inband_bar": 58,
+  "inband_pairs": 54,
+  "margin_ci_lo_pp": 5.4550790304895305,
+  "margin_pp": 11.86787900351316,
+  "n_attenuation_exempted": 0,
+  "n_unflagged": 64,
+  "verdict": "Void",
+  "worst_cell_coverage_pct": 100.0,
+  "worst_cell_delta_pp": 18.321117711926878,
+  "worst_gating_rho_x100": 95.0825010855406
+ },
+ "metadata": {
+  "code_version": "1",
+  "git_commit": "7d0c1041",
+  "git_dirty": false,
+  "numpy": "2.2.6",
+  "utc": "2026-08-12T16:51:58.887156+00:00"
+ },
+ "phase": "rb789-merge"
+}
