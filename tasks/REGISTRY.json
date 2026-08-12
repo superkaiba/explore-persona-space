@@ -9670,8 +9670,8 @@
     "2251": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2251",
-      "status": "planning",
+      "path": "tasks/approved/2251",
+      "status": "approved",
       "title": "workflow_lint SLURM_GPU_WIDTH_GUARD_RE does not recognize an inherited-CUDA_VISIBLE_DEVICES parse, so correctly-fixed dispatchers cannot exit the grandfather list"
     },
     "2252": {
