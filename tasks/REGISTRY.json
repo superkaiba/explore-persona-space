@@ -8685,8 +8685,8 @@
     "2122": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2122",
-      "status": "approved",
+      "path": "tasks/running/2122",
+      "status": "running",
       "title": "daily-fix: root-branch guard ssh/cd-form false positives"
     },
     "2123": {
