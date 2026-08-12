@@ -17,7 +17,17 @@ LAD_pool. Steps (fail-loud in order):
      sft11k -> gsm8k_test1319 (plan §4 Phase C_pool).
   3. Embed all deduped prompts once via sentence-transformers/all-mpnet-
      base-v2 with the revision pinned via HfApi().repo_info at
-     invocation time (CONCERN M3), recorded in the manifest.
+     invocation time (CONCERN M3), recorded in the manifest. Before
+     embedding, strip each corpus's SHARED common prompt prefix
+     (run-11802 fix: math7500's 1,530-char / 611-token few-shot preamble
+     exceeded mpnet's 384-token window, so every prompt truncated to the
+     same boilerplate and embedded to ONE identical vector — k_eff=1,
+     whole corpus atomic, A4 unsatisfiable). The strip is the string
+     identity for a corpus whose shared prefix is empty (measured: 6 of
+     the 7 v2 corpora, shared prefix EXACTLY 0 chars), preserves
+     within-corpus prompt distinctness (p -> p[k:] at one k per corpus
+     is injective), and its per-corpus stats (prefix chars/tokens,
+     median remaining chars) are logged + recorded in the manifest.
   4. Per-corpus k-means (v16 Option A): k_c = clamp(round(n_c / 300),
      10, 50), seed 1336, on each corpus's OWN embeddings — the grouping
      unit is a namespaced corpus-pure sub-cluster (corpus, subcluster_id);
@@ -65,6 +75,23 @@ Assertions (fail loud on violation, non-zero exit — plan v17 §4 gate set):
     proceed).
   RETIRED (v16): the >=3-corpora-per-cluster gate (CLUSTER_MIN_CORPORA)
   — false by construction under corpus-pure groups.
+
+  NEW v18 named halts (run-11802 fix; NOT part of the plan-pinned A1-A5
+  set, which is unchanged):
+
+  - ``pooled_split_degenerate_embeddings`` — per corpus, BEFORE k-means:
+    the realized embedding matrix must have > 1 distinct row AND at
+    least min(k_c, n) distinct rows (the same clamp kmeans_assign
+    applies, so tiny smoke slices keep passing). Runs on smoke AND
+    production embeddings — a collapsed corpus halts with the CAUSE
+    instead of surfacing three gates downstream as an A4 packing miss.
+  - ``pooled_split_shared_prefix_exceeds_window`` — pre-embed,
+    production branch (needs the loaded encoder's tokenizer): the text
+    handed to the encoder must never share a prefix that alone
+    tokenizes to >= the encoder's max_seq_length (read off the loaded
+    model, never hardcoded). Post-strip this prefix is empty by
+    construction; the gate stands independently should the strip ever
+    be bypassed, so the 11802 class can never again reach k-means.
 
 Smoke (``--smoke``) end-to-end exercise: substitutes the pinned local
 smoke corpora set (SMOKE_CORPORA_V2 = ("lmsys23k",)) at tiny N so the
@@ -617,8 +644,114 @@ def _load_sentence_transformer(revision: str):
     return SentenceTransformer(MPNET_MODEL_ID, revision=revision)
 
 
-def embed_prompts(prompts: list[str], revision: str, smoke: bool) -> "list[list[float]]":
-    """Return fp32 embeddings as a nested list (JSON-serializable-friendly)."""
+def shared_common_prefix(prompts: list[str]) -> str:
+    """Longest common prefix shared by ALL prompts of one corpus (pure string op).
+
+    Returns "" for an empty or single-prompt list: a "shared" prefix needs
+    >= 2 prompts to be evidence of boilerplate, and stripping the whole text
+    of a singleton corpus would hand the encoder an empty string.
+
+    Uses the min/max-lexicographic identity: the common prefix of every
+    string in a set equals the common prefix of its lexicographic min and
+    max, so the scan is O(total chars) without pairwise comparison.
+    """
+    if len(prompts) < 2:
+        return ""
+    lo = min(prompts)
+    hi = max(prompts)
+    end = min(len(lo), len(hi))
+    i = 0
+    while i < end and lo[i] == hi[i]:
+        i += 1
+    return lo[:i]
+
+
+def strip_shared_prefix(prompts: list[str]) -> tuple[list[str], str]:
+    """Strip the corpus-shared common prompt prefix before embedding.
+
+    Returns ``(stripped_prompts, prefix)``. PROVABLE NO-OP when the shared
+    prefix is empty — ``p[len(""):]`` is the identity, so a corpus with
+    prefix == "" (measured on run 11802: 6 of the 7 v2 corpora, EXACTLY 0
+    shared chars) hands the encoder byte-identical strings. Within-corpus
+    distinctness is preserved: p -> p[k:] with one k per corpus is injective
+    on the corpus's (post-dedup, globally distinct) prompt set.
+
+    Run-11802 fix: math7500's few-shot formatting put a fixed 1,530-char /
+    611-token exemplar preamble before every question while mpnet's window
+    is 384 tokens, so the encoder never reached the distinguishing tail and
+    all ~7,166 prompts embedded to ONE byte-identical vector (k_eff=1).
+    """
+    prefix = shared_common_prefix(prompts)
+    if not prefix:
+        return list(prompts), ""
+    k = len(prefix)
+    return [p[k:] for p in prompts], prefix
+
+
+def check_prefix_tokens_within_cap(
+    slug: str, prefix_chars: int, prefix_tokens: int, cap: int
+) -> None:
+    """Named-cause halt when a shared prompt prefix ALONE fills the encoder
+    window (>= max_seq_length tokens): every prompt then truncates to the
+    same boilerplate and embeds identically (run 11802, math7500: 611-token
+    shared preamble vs mpnet cap 384 -> 1 distinct embedding row of 7,166).
+
+    Pure gate (the caller computes ``prefix_tokens`` with the LOADED model's
+    tokenizer and ``cap`` from ``model.max_seq_length`` — never hardcoded),
+    applied to the text actually handed to the encoder so this class can
+    never again reach k-means even if the strip upstream is bypassed."""
+    if prefix_tokens >= cap:
+        raise SystemExit(
+            "pooled_split HALT [pooled_split_shared_prefix_exceeds_window]: corpus "
+            f"{slug} shared prompt prefix ({prefix_chars} chars) tokenizes to "
+            f"{prefix_tokens} tokens >= encoder max_seq_length={cap} — the encoder "
+            "would see only shared boilerplate and collapse every prompt to one "
+            "embedding; strip or reformat the corpus prompts before embedding"
+        )
+
+
+def assert_embeddings_nondegenerate(slug: str, vecs_c, k_c: int) -> int:
+    """v18 gate (run-11802 fix): fail loud BEFORE k-means when a corpus's
+    REALIZED embeddings are degenerate. Gate: distinct-row count > 1 AND
+    >= min(k_c, n) — the same clamp ``kmeans_assign`` applies, so tiny smoke
+    slices (n < k_c, all rows distinct) keep passing. Distinctness is
+    byte-exact rows: the measured 11802 collapse was byte-identical
+    (pairwise cosine min=mean=max=1.000000, 1 distinct row of 7,166), and
+    k-means cannot separate identical points, so the registered A4 k_c x2
+    retry is powerless by construction. Returns the distinct-row count."""
+    import numpy as np
+
+    arr = np.ascontiguousarray(np.asarray(vecs_c, dtype=np.float32))
+    n = int(arr.shape[0])
+    distinct = len({arr[i].tobytes() for i in range(n)})
+    floor = min(k_c, n)
+    if distinct <= 1 or distinct < floor:
+        raise SystemExit(
+            "pooled_split HALT [pooled_split_degenerate_embeddings]: corpus "
+            f"{slug} realized {distinct} distinct embedding row(s) out of n={n} "
+            f"(k_c={k_c}, required floor=min(k_c, n)={floor}) — embedding collapse "
+            "upstream of k-means (e.g. a shared prompt prefix longer than the "
+            "encoder window); distinctness of the TEXT is not distinctness of "
+            "the EMBEDDING"
+        )
+    logger.info(
+        "[pool] %s: embeddings non-degenerate — %d distinct rows / n=%d (k_c=%d)",
+        slug,
+        distinct,
+        n,
+        k_c,
+    )
+    return distinct
+
+
+def embed_prompts(
+    prompts: list[str], revision: str, smoke: bool, model=None
+) -> "list[list[float]]":
+    """Return fp32 embeddings as a nested list (JSON-serializable-friendly).
+
+    ``model``: an already-loaded SentenceTransformer — production callers load
+    it once for the pre-embed shared-prefix-vs-cap gate and pass it through
+    (None loads fresh at the pinned revision). Ignored under smoke."""
     if smoke:
         # Cheap deterministic hash-based embedding for smoke — 32-dim toy vector
         # keyed on prompt sha. Enough to exercise the k-means/split code path
@@ -633,7 +766,8 @@ def embed_prompts(prompts: list[str], revision: str, smoke: bool) -> "list[list[
             v = np.tile(arr, 2)[:32]
             vecs.append(v.tolist())
         return vecs
-    model = _load_sentence_transformer(revision)
+    if model is None:
+        model = _load_sentence_transformer(revision)
     logger.info("[pool] embedding %d prompts via %s @ %s", len(prompts), MPNET_MODEL_ID, revision)
     vecs = model.encode(prompts, batch_size=32, show_progress_bar=False, convert_to_numpy=True)
     return [row.tolist() for row in vecs]
@@ -1020,12 +1154,16 @@ def build_split_assignment(
         NEAR_DUP_COS_SENSITIVITY,
     )
 
-    # Initial per-corpus k-means at k_c (seed POOLED_SPLIT_SEED).
+    # Initial per-corpus k-means at k_c (seed POOLED_SPLIT_SEED). The
+    # non-degeneracy gate runs on the REALIZED embeddings BEFORE k-means
+    # (run-11802 fix): a collapsed corpus halts here with the named cause
+    # instead of surfacing three gates downstream as an A4 packing miss.
     labels_by_corpus: dict[str, list[int]] = {}
     k_req: dict[str, int] = {}
     for slug in corpus_names:
         s0, s1 = slices[slug]
         k = k_c_for(s1 - s0)
+        assert_embeddings_nondegenerate(slug, vecs[s0:s1], k)
         labels_by_corpus[slug] = kmeans_assign(vecs[s0:s1], k, seed)
         k_req[slug] = k
         logger.info(
@@ -1172,6 +1310,7 @@ def build_manifest(
     round3_keep_rate: dict[str, float],
     *,
     per_corpus_pre_intersection: dict[str, int] | None = None,
+    prefix_strip: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Assemble the v17 split manifest (``split_design: percorpus_subcluster_v1``).
 
@@ -1219,6 +1358,9 @@ def build_manifest(
         },
         "five_way_intersection": intersection,
         "per_corpus_pre_intersection": per_corpus_pre_intersection,
+        # v18 run-11802 fix: per-corpus shared-prefix strip stats (prefix
+        # chars/tokens + median remaining chars; tokens None under smoke).
+        "prompt_prefix_strip": prefix_strip,
         "n_kept_pre_dedup": n_kept_pre,
         "n_kept_post_dedup": n_kept_post,
         "n_cross_corpus_drops": len(dropped),
@@ -1461,14 +1603,64 @@ def run(args) -> int:
         len(dropped),
     )
 
-    # (3) Embed all deduped prompts.
+    # (3) Embed all deduped prompts — after stripping each corpus's shared
+    # common prompt prefix (run-11802 fix: math7500's 611-token few-shot
+    # preamble exceeded mpnet's 384-token window and collapsed all 7,166
+    # prompts to ONE embedding; the strip is the string identity for the
+    # six corpora whose shared prefix is empty). Production additionally
+    # gates the text handed to the encoder on the prefix-vs-window check
+    # (the cap read off the LOADED model, never hardcoded).
+    model = None
+    if not ctx.smoke:
+        model = _load_sentence_transformer(ctx.pinned_mpnet_revision)
+        logger.info("[pool] encoder %s max_seq_length=%d", MPNET_MODEL_ID, model.max_seq_length)
     ordered_rows: list[dict[str, Any]] = []
+    embed_texts: list[str] = []
+    prefix_strip_stats: dict[str, dict[str, Any]] = {}
     for slug in DEDUP_ORDER:
-        if slug in kept_by_corpus:
-            ordered_rows.extend(kept_by_corpus[slug])
-    prompts = [r["prompt"] for r in ordered_rows]
-    assert prompts, "no kept prompts after dedup — refusing to embed empty set"
-    vecs = embed_prompts(prompts, ctx.pinned_mpnet_revision, ctx.smoke)
+        if slug not in kept_by_corpus:
+            continue
+        rows_c = kept_by_corpus[slug]
+        ordered_rows.extend(rows_c)
+        stripped_c, prefix = strip_shared_prefix([r["prompt"] for r in rows_c])
+        remaining = sorted(len(p) for p in stripped_c)
+        median_remaining = remaining[len(remaining) // 2] if remaining else 0
+        if model is not None:
+            cap = int(model.max_seq_length)
+            prefix_tokens = (
+                len(model.tokenizer(prefix, add_special_tokens=False)["input_ids"]) if prefix else 0
+            )
+            # Gate the text ACTUALLY handed to the encoder: post-strip the
+            # shared prefix is empty by construction, so this halt fires only
+            # if the strip is ever bypassed — the 11802 class can never again
+            # reach k-means.
+            post_prefix = shared_common_prefix(stripped_c)
+            post_tokens = (
+                len(model.tokenizer(post_prefix, add_special_tokens=False)["input_ids"])
+                if post_prefix
+                else 0
+            )
+            check_prefix_tokens_within_cap(slug, len(post_prefix), post_tokens, cap)
+        else:
+            prefix_tokens = None  # smoke: hash-embed path, no tokenizer loaded
+        logger.info(
+            "[pool] %s: shared-prefix strip — prefix_chars=%d prefix_tokens=%s "
+            "median_remaining_chars=%d (n=%d)",
+            slug,
+            len(prefix),
+            prefix_tokens if prefix_tokens is not None else "n/a(smoke)",
+            median_remaining,
+            len(stripped_c),
+        )
+        prefix_strip_stats[slug] = {
+            "prefix_chars": len(prefix),
+            "prefix_tokens": prefix_tokens,
+            "median_remaining_chars": median_remaining,
+        }
+        embed_texts.extend(stripped_c)
+    assert len(embed_texts) == len(ordered_rows), (len(embed_texts), len(ordered_rows))
+    assert embed_texts, "no kept prompts after dedup — refusing to embed empty set"
+    vecs = embed_prompts(embed_texts, ctx.pinned_mpnet_revision, ctx.smoke, model=model)
 
     # (4) Per-corpus sub-clustering + cross-corpus near-dup co-assignment +
     # whole-group packing + 5-fold train partition (plan v17 §4 steps 3-6;
@@ -1511,6 +1703,7 @@ def run(args) -> int:
         row_index,
         round3_keep_rate,
         per_corpus_pre_intersection=per_corpus_pre_intersection,
+        prefix_strip=prefix_strip_stats,
     )
     # A failing assertion is the SIGNAL and must still halt the run — but a
     # bare raise also destroys the only artifact that explains it (the

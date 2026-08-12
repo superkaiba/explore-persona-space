@@ -253,6 +253,119 @@ def test_full_mode_fold_pin_passes_smoke_at_three_folds(tmp_path):
     )
 
 
+# ---------------------------------------------------------------------------
+# v18 run-11802 fixes: shared-prefix strip + pre-kmeans degeneracy gates.
+# math7500's 1,530-char / 611-token shared few-shot preamble exceeded mpnet's
+# 384-token window, collapsing all 7,166 prompts to ONE byte-identical
+# embedding (k_eff=1 -> whole corpus atomic -> A4 unsatisfiable). Synthetic
+# fixtures only — no mpnet download.
+# ---------------------------------------------------------------------------
+
+
+def test_shared_prefix_strip_empty_prefix_is_identity():
+    # The load-bearing no-op guarantee: 6 of 7 v2 corpora measured a shared
+    # prefix of EXACTLY 0 chars, so their encoder inputs must be unchanged.
+    prompts = ["alpha question", "beta question", "gamma"]
+    stripped, prefix = ps.strip_shared_prefix(prompts)
+    assert prefix == ""
+    assert stripped == prompts
+
+
+def test_shared_prefix_strip_removes_exact_common_prefix():
+    preamble = "Problem: what is 1+1? Answer: 2.\n" * 12  # few-shot boilerplate
+    tails = ["what is 2+2?", "what is 3+3?", "explain gravity briefly"]
+    prompts = [preamble + t for t in tails]
+    stripped, prefix = ps.strip_shared_prefix(prompts)
+    assert prefix == preamble
+    assert stripped == tails
+
+
+def test_shared_prefix_strip_singleton_and_empty_are_identity():
+    # < 2 prompts: no evidence of shared boilerplate; stripping a singleton
+    # corpus's whole prompt would embed an empty string.
+    assert ps.strip_shared_prefix(["only one prompt"]) == (["only one prompt"], "")
+    assert ps.strip_shared_prefix([]) == ([], "")
+
+
+def test_shared_prefix_strip_preserves_distinctness():
+    # p -> p[k:] with one k per corpus is injective on a distinct prompt set
+    # (post-dedup prompts are globally distinct), incl. the boundary case
+    # where one prompt IS the shared prefix and strips to "".
+    prompts = ["ab", "abc", "abd"]
+    stripped, prefix = ps.strip_shared_prefix(prompts)
+    assert prefix == "ab"
+    assert stripped == ["", "c", "d"]
+    assert len(set(stripped)) == len(stripped)
+
+
+def test_degenerate_embeddings_halt_names_cause_corpus_and_counts():
+    # The 11802 shape: every row byte-identical -> 1 distinct row.
+    vecs = np.ones((8, 32), dtype=np.float32)
+    with pytest.raises(SystemExit) as ei:
+        ps.assert_embeddings_nondegenerate("math7500", vecs, k_c=24)
+    msg = str(ei.value)
+    assert "pooled_split_degenerate_embeddings" in msg, msg
+    assert "math7500" in msg, msg
+    assert "1 distinct" in msg, msg
+    assert "n=8" in msg, msg
+    assert "k_c=24" in msg, msg
+
+
+def test_degenerate_embeddings_floor_relative_to_k_c():
+    # 5 distinct rows tiled to n=40 < floor min(k_c=10, n=40): k-means could
+    # only realize k_eff=5 — halt BEFORE k-means, not at A4 packing.
+    base = np.arange(5 * 32, dtype=np.float32).reshape(5, 32)
+    vecs = np.tile(base, (8, 1))
+    with pytest.raises(SystemExit, match="pooled_split_degenerate_embeddings"):
+        ps.assert_embeddings_nondegenerate("corpX", vecs, k_c=10)
+
+
+def test_nondegenerate_embeddings_pass_including_smoke_clamp():
+    rng = np.random.default_rng(0)
+    vecs = rng.normal(size=(40, 32)).astype(np.float32)
+    assert ps.assert_embeddings_nondegenerate("corpX", vecs, k_c=10) == 40
+    # Tiny smoke slice: n=5 all-distinct with k_c=10 passes via min(k_c, n)
+    # (the same clamp kmeans_assign applies).
+    tiny = rng.normal(size=(5, 32)).astype(np.float32)
+    assert ps.assert_embeddings_nondegenerate("corpY", tiny, k_c=10) == 5
+
+
+def test_build_split_assignment_halts_on_collapsed_corpus(tmp_path):
+    # End-to-end wiring: a corpus whose embeddings collapsed to ONE repeated
+    # vector halts BEFORE k-means with the named cause (in 11802 this
+    # surfaced three gates downstream as an A4 packing-window miss).
+    rows, vecs, _sizes = _mk_corpora(plant_cross_dups=0)
+    v = vecs.copy()
+    v[400:750] = v[400]  # corpB (rows 400..749) -> byte-identical rows
+    with pytest.raises(SystemExit, match="pooled_split_degenerate_embeddings"):
+        ps.build_split_assignment(rows, v, tmp_path)
+
+
+def test_prefix_cap_gate_trips_at_cap_and_passes_below():
+    with pytest.raises(SystemExit) as ei:
+        ps.check_prefix_tokens_within_cap("math7500", prefix_chars=1530, prefix_tokens=611, cap=384)
+    msg = str(ei.value)
+    assert "pooled_split_shared_prefix_exceeds_window" in msg, msg
+    assert "math7500" in msg and "611" in msg and "384" in msg, msg
+    with pytest.raises(SystemExit):  # boundary: == cap trips (>= semantics)
+        ps.check_prefix_tokens_within_cap("c", 10, 384, 384)
+    ps.check_prefix_tokens_within_cap("c", 10, 383, 384)  # below: must not raise
+
+
+def test_run_wires_strip_and_gates():
+    # Wiring pins (the invariant a future refactor must not silently strip):
+    # run() strips per corpus + gates the encoder input; the degeneracy gate
+    # sits inside build_split_assignment BEFORE kmeans_assign.
+    src_run = inspect.getsource(ps.run)
+    assert "strip_shared_prefix" in src_run
+    assert "check_prefix_tokens_within_cap" in src_run
+    src_bsa = inspect.getsource(ps.build_split_assignment)
+    assert "assert_embeddings_nondegenerate" in src_bsa
+    assert src_bsa.index("assert_embeddings_nondegenerate") < src_bsa.index(
+        "kmeans_assign(vecs[s0:s1], k, seed)"
+    )
+
+
 def test_a4_halts_after_single_retry_with_rejected_dump(tmp_path):
     # Dups scattered across every corpA sub-cluster force the whole corpus
     # into cross-corpus merged (train-forced) groups, starving the pure test
