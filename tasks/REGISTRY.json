@@ -8699,8 +8699,8 @@
     "2124": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2124",
-      "status": "approved",
+      "path": "tasks/running/2124",
+      "status": "running",
       "title": "daily-fix: judge pilot sizing + classification rubrics"
     },
     "2125": {
