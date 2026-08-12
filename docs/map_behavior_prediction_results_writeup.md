@@ -1,5 +1,8 @@
 <!-- Figures pinned at 73d0856e016761523abe0115d747c9acf4bf29d1 (origin/main). -->
-<!-- Prose is Thomas's draft, reproduced verbatim; only figures were inserted. -->
+<!-- Prose is Thomas's draft, reproduced verbatim; only figures were inserted.   -->
+<!-- Two exceptions, at his request: the unfinished judge-reliability bullet in -->
+<!-- Methodology, and the SD noise floor in Result 1. Both are computed from    -->
+<!-- eval_results/issue_1739/judge_reliability/judge_draw_reliability.json.     -->
 
 ## Motivation
 - We've found this mapping from last context activation -> mean answer activation
@@ -113,6 +116,8 @@ I plotted the distribution of all behaviors for each dataset as well as the stan
 Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result1_spread/spread_grid_extended.png
 
 *(LEFT column = per-context DV distribution, RIGHT column = between-context SD with the SD >= 10 gate line. 22 behavior x dataset cells: the 14 original ones plus the eight rungs added since — evil MHJ / PAIR / tom-gibbs, sycophancy SycophancyEval answer / are-you-sure / feedback / mimicry, and model-written evals.)*
+
+**Noise floor on the SD.** Each context's DV is a mean over 5 generations x 3 judge draws, so a set of contexts with *identical* true behavior would still show a non-zero between-context SD from sampling alone. That floor is **5.7** points for evil, **3.3** for sycophancy and **8.5** for hallucination on the 0-100 scale — almost entirely generation-to-generation variance; the judge-draw contribution is only 1.1 / 1.3 / 1.6. Subtracting it in quadrature: a rung sitting exactly on the SD >= 10 gate carries a real between-context signal of 8.2 (evil), 9.4 (sycophancy), 5.3 (hallucination), while the healthy rungs sit far above the floor (MHJ at SD 27.1 is ~26.5 of real signal). hh-rlhf red-team (SD 0.9) and generic WildChat (SD 4.4) fall *below* the evil noise floor, which is the quantitative form of the first takeaway.
 
 **Takeaways:**
 - hh-rlhf red-team and randomWildChat have very low standard deviation so I remove them as evaluation settings
