@@ -9543,8 +9543,8 @@
     "2235": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2235",
-      "status": "running",
+      "path": "tasks/completed/2235",
+      "status": "completed",
       "title": "Payload-scope the inline lint gate (9m08s measured -> target <60s for analysis-script payloads)"
     },
     "2236": {
