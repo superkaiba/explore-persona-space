@@ -1389,6 +1389,22 @@ def _build_context(args) -> SplitContext:
     )
 
 
+def assert_production_fold_pin(assignment: dict[str, Any], smoke: bool) -> None:
+    """v17 fail-loud pin: a FULL (non-smoke) run must realize exactly
+    ``POOLED_N_FOLDS`` train folds (plan v17 §4 Phase FIT_pool pins n_folds=5).
+    The v16 floor guard in ``build_split_assignment`` may lower the realized
+    count only on tiny (smoke) slices — it must never silently ship
+    ``n_folds != POOLED_N_FOLDS`` at production scale (~166 train groups)."""
+    n_folds = int(assignment["n_folds_realized"])
+    if smoke or n_folds == POOLED_N_FOLDS:
+        return
+    raise SystemExit(
+        f"pooled_split HALT [pooled_split_n_folds_below_pin]: realized n_folds="
+        f"{n_folds} != plan-pinned POOLED_N_FOLDS={POOLED_N_FOLDS} on a full "
+        f"(non-smoke) run ({len(assignment['fold_by_gid'])} train groups)"
+    )
+
+
 def run(args) -> int:
     env.load_dotenv()
     logging.basicConfig(
@@ -1459,6 +1475,9 @@ def run(args) -> int:
     # A4's window/retry enforcement lives inside; A5's inputs come out in
     # the near-dup audit block).
     assignment = build_split_assignment(ordered_rows, vecs, ctx.out_root)
+    # v17 review minor 1: the floor guard is smoke-only headroom — a full run
+    # must realize exactly the plan-pinned fold count (fail-loud otherwise).
+    assert_production_fold_pin(assignment, ctx.smoke)
 
     # Row-level index for downstream consumers ("cluster" = the global
     # integer group_id of the row's (corpus, subcluster) group — the

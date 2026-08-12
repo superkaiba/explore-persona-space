@@ -217,6 +217,42 @@ def test_fold_floor_guard_on_tiny_slice(tmp_path):
     assert min(fold_rows.values()) >= 2, fold_rows
 
 
+def test_full_mode_fold_pin_halts_below_pin():
+    # v17 review minor 1: a FULL (non-smoke) run whose realized fold count fell
+    # below the plan pin must fail loud with the named cause — the v16 floor
+    # guard is smoke-only headroom, never a silent production downgrade. Also
+    # pin the wiring: run() must actually call the halt.
+    assert "assert_production_fold_pin" in inspect.getsource(ps.run)
+    assignment = {"n_folds_realized": 3, "fold_by_gid": {0: 0, 1: 1, 2: 2}}
+    with pytest.raises(SystemExit) as ei:
+        ps.assert_production_fold_pin(assignment, smoke=False)
+    msg = str(ei.value)
+    assert "pooled_split_n_folds_below_pin" in msg, msg
+    assert "n_folds=3" in msg, msg
+    assert f"POOLED_N_FOLDS={ps.POOLED_N_FOLDS}" in msg, msg
+    assert "3 train groups" in msg, msg
+
+
+def test_full_mode_fold_pin_passes_smoke_at_three_folds(tmp_path):
+    # The smoke slice legitimately realizes 3 folds (floor guard) and must
+    # keep passing the pin under smoke=True; a full run at exactly
+    # POOLED_N_FOLDS passes too.
+    rng = np.random.default_rng(3)
+    n = 16
+    center = rng.normal(size=32)
+    vecs = (center[None, :] + rng.normal(size=(n, 32))).astype(np.float32)
+    rows = [
+        {"corpus": "corpA", "prompt_idx": i, "prompt_sha": f"corpA-{i}", "prompt": "x"}
+        for i in range(n)
+    ]
+    assignment = ps.build_split_assignment(rows, vecs, tmp_path)
+    assert assignment["n_folds_realized"] < ps.POOLED_N_FOLDS
+    ps.assert_production_fold_pin(assignment, smoke=True)  # must not raise
+    ps.assert_production_fold_pin(
+        {"n_folds_realized": ps.POOLED_N_FOLDS, "fold_by_gid": {}}, smoke=False
+    )
+
+
 def test_a4_halts_after_single_retry_with_rejected_dump(tmp_path):
     # Dups scattered across every corpA sub-cluster force the whole corpus
     # into cross-corpus merged (train-forced) groups, starving the pure test

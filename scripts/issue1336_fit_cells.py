@@ -1755,7 +1755,7 @@ def run_pooled_v3(args) -> int:
     # The pooled CV fold count FOLLOWS the split manifest (the per-fold assert
     # in run_pooled_cell demands equality anyway): the v16 floor guard can
     # lower the realized count below POOLED_N_FOLDS on a tiny (smoke) slice.
-    pooled_folds = int(man.get("n_folds", args.folds))
+    pooled_folds = int(man["n_folds"])
     if pooled_folds != args.folds:
         print(
             f"[fit1336] pooled folds follow the manifest: {pooled_folds} "
@@ -1847,7 +1847,7 @@ def run_g0v3(args) -> int:
     groups = np.asarray([int(e["fold"]) for e in entries])
     # Follow the manifest's realized fold count (the v16 floor guard can lower
     # it below POOLED_N_FOLDS on a tiny slice); mismatch stays fail-loud.
-    g0_folds = int(man.get("n_folds", args.folds))
+    g0_folds = int(man["n_folds"])
     assert len(np.unique(groups)) == g0_folds, (
         f"manifest folds {len(np.unique(groups))} != manifest n_folds {g0_folds}"
     )

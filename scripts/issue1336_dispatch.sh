@@ -2976,7 +2976,7 @@ EXT_OFF_PLANNED_WALL_H=3.8  # plan v15 §9 EXT_off row (booked; 1-cell pilot re-
 FIT_POOL_PLANNED_WALL_H=1.8 # plan v15 §9 FIT_pool row (booked ~2x naive; G1'v3 unit = pilot)
 LADDER_POOL_PLANNED_WALL_H=1.6    # plan v15 §9 LAD_pool row (booked ~2x naive; 1-job pilot re-projects)
 LADDER_CLUSTER_PLANNED_WALL_H=0.5 # plan v15 §9 LAD_cluster row (measured-class; 1-transition pilot re-projects)
-GPU_HOURS_BUDGETED_V3=65          # plan v15 §9 total (the v3 results sentinel's budget row)
+GPU_HOURS_BUDGETED_V3=210         # plan v17 §9 total (the v3 results sentinel's budget row)
 
 pooled_manifest_v3() { # c_pool output (plan §4 Phase C_pool; smoke-suffixed root)
     if [ "$SMOKE" -eq 1 ]; then
