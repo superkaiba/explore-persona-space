@@ -212,15 +212,24 @@ PC_YLIM = (-0.62, 0.72)
 # trace squeezed against the top of a 5-unit axis.
 PC_YLIM_IDENT = (-3.70, -0.80)
 
-# --- data-TYPE grouping for the per-dataset figure (user call 2026-08-12) ---
-# ONE COLUMN PER TYPE. The old layout filled a 2x4 grid left-to-right, so a
-# panel's neighbours meant nothing; now horizontal position IS the data type.
-# Column order tracks the ladder: generic chat owns no stage, sft11k/uf11k are
-# the alignment-training corpora (SFT then DPO), and if11k + the three math
-# corpora are the two RLVR verifiable-reward families.
-# Column order = ladder order of the stage each corpus belongs to, with the
-# stage-agnostic chat column first. Instruction-following precedes alignment
-# training (user call 2026-08-12).
+# --- owning-STAGE grouping for the per-dataset figure (user call 2026-08-12) ---
+# ONE COLUMN PER STAGE: horizontal position is the ladder stage whose training
+# mix this corpus came from, in ladder order, with the stage-agnostic chat
+# column first. This supersedes the earlier data-TYPE grouping, whose column
+# names ("Instruction-following" vs "Alignment training") described the KIND of
+# text while the panels' own subtypes described the owning STAGE — two
+# cross-cutting taxonomies competing for one axis. Now they agree.
+#
+# Attribution (verified against scripts/issue1336_stage_corpora.py):
+#   lmsys23k x2       lmsys/lmsys-chat-1m               -> no stage
+#   sft11k            allenai/tulu-3-sft-mixture        -> SFT
+#   uf11k             ...-tulu-3-8b-preference-mixture  -> DPO
+#   if11k, math7500   RLVR-GSM-MATH-IF-Mixed-Constraints, components ifeval /
+#                     MATH                              -> RLVR
+#   gsm8k_train_full  openai/gsm8k train, 7,473 rows == the RLVR mix's own gsm8k
+#                     component count (RLVR_COMPONENT_COUNTS) -> RLVR
+# RLVR-long re-trains on the RLVR mix, so it introduces no new corpus and gets
+# no column of its own.
 #
 # The DEGENERATE surface is excluded from this grouping, so it gets no panel:
 # gsm8k_test1319 has n_train ~ 1,034 < d = 4,096, which makes every held-out R2
@@ -230,12 +239,32 @@ PC_YLIM_IDENT = (-3.70, -0.80)
 # excluded from every median and every overplotted point in the aggregate
 # figure, so this changes the per-dataset figure only.
 TYPE_COLUMNS: dict[str, tuple[tuple[str, str], ...]] = {
-    "Generic chat": (("chat", "lmsys23k"), ("naturalistic", "lmsys23k")),
-    "Verifiable constraints": (("chat", "if11k"),),
-    "Alignment training": (("chat", "sft11k"), ("chat", "uf11k")),
-    "Math": (("chat", "math7500"), ("chat", "gsm8k_train_full")),
+    "No stage": (("chat", "lmsys23k"), ("naturalistic", "lmsys23k")),
+    "SFT's data": (("chat", "sft11k"),),
+    "DPO's data": (("chat", "uf11k"),),
+    "RLVR's data": (
+        ("chat", "if11k"),
+        ("chat", "math7500"),
+        ("chat", "gsm8k_train_full"),
+    ),
 }
 TYPE_ORDER = tuple(TYPE_COLUMNS)
+# Corpus -> the ladder stage that trained on it (None = no stage trained on it).
+# Derived from TYPE_COLUMNS so the two can never disagree; consumed by the
+# touched/untouched split in fig_trained_on (below).
+_STAGE_OF_COLUMN = {
+    "No stage": None,
+    "SFT's data": "sft",
+    "DPO's data": "dpo",
+    "RLVR's data": "rlvr",
+}
+OWNING_STAGE: dict[tuple[str, str], str | None] = {
+    surf: _STAGE_OF_COLUMN[col] for col, surfs in TYPE_COLUMNS.items() for surf in surfs
+}
+assert set(_STAGE_OF_COLUMN) == set(TYPE_COLUMNS), (
+    "_STAGE_OF_COLUMN must name every column — a column added without a stage "
+    "would silently drop its corpora from the trained-on/not-trained-on split"
+)
 # The surfaces the per-dataset figure actually draws: every surface minus the
 # degenerate ones. The aggregate figure still sees the full SURFACES list.
 PC_SURFACES = tuple(s for s in SURFACES if s not in DEGENERATE)
@@ -917,13 +946,11 @@ def fig_percorpus(D: dict) -> Path:
     # Each corpus gets a BROKEN y-axis: results band on the main panel, the
     # identity+bias line on a short lower panel (spacer row 2 separates the
     # two blocks so a break row never crowds the next block's titles).
-    # ONE COLUMN PER DATA TYPE (user call 2026-08-12), replacing the old
+    # ONE COLUMN PER OWNING STAGE (user call 2026-08-12), replacing the old
     # fill-left-to-right 2x4 grid where a corpus's neighbours meant nothing.
-    # Columns are ragged — a type with fewer corpora leaves empty cells, which is
-    # the honest rendering of "one type per column" when the types are unequal.
-    # Column order tracks the ladder: generic chat (no owning stage), the
-    # alignment-training corpora (SFT then DPO), then the two RLVR
-    # verifiable-reward families.
+    # Columns are ragged — a stage owning fewer corpora leaves empty cells, the
+    # honest rendering of "one stage per column" when the stages own unequal
+    # numbers of corpora. Column order is ladder order, stage-agnostic first.
     n_rows = max(len(v) for v in TYPE_COLUMNS.values())
     n_cols = len(TYPE_ORDER)
     fig = plt.figure(figsize=(16.0, 14.6))
@@ -1140,6 +1167,278 @@ def fig_percorpus(D: dict) -> Path:
     return out
 
 
+# --- trained-on vs not-trained-on (user call 2026-08-12) --------------------
+# Ladder order, and the corpus family each STEP of the ladder trains on. The
+# step INTO a stage is what consumes that stage's mix, so the map is keyed on
+# the arrival stage. rlvr_long re-trains on the RLVR mix, introducing no new
+# corpus — which is why it maps to "rlvr" rather than a family of its own.
+STAGE_INDEX = {"base": 0, "sft": 1, "dpo": 2, "rlvr": 3, "rlvr_long": 4}
+STEP_TRAINS_ON = {1: "sft", 2: "dpo", 3: "rlvr", 4: "rlvr"}
+
+
+def touched_families(src: str, tgt: str) -> set[str]:
+    """Corpus families the training BETWEEN src and tgt consumed.
+
+    Every step strictly after src through tgt inclusive, so a non-adjacent pair
+    accumulates the union (base→RLVR passed through SFT and DPO training too).
+    """
+    return {STEP_TRAINS_ON[k] for k in range(STAGE_INDEX[src] + 1, STAGE_INDEX[tgt] + 1)}
+
+
+def _deficits(D: dict, pi: int, tier: int) -> tuple[list, list]:
+    """(trained_on, not_trained_on) as [(surface, ceiling - r2)], degenerates out.
+
+    The DV is the deficit against each corpus's OWN within-model ceiling, not
+    raw R². Within a fixed pair the comparison is across CORPORA, so raw R²
+    would read corpus difficulty (math sits far below chat at every tier) as a
+    trained-on effect; the ceiling is the best a map fit WITHIN one model
+    achieves on that same corpus, so dividing it out is what isolates transfer.
+    """
+    fams = touched_families(*PAIRS[pi])
+    hit: list = []
+    miss: list = []
+    for surf, c in D["data"][(pi, tier)]:
+        if surf in DEGENERATE:
+            continue
+        row = (surf, c["within_r2"] - c["r2"])
+        (hit if OWNING_STAGE[surf] in fams else miss).append(row)
+    return hit, miss
+
+
+def _corpus_label(surf: tuple[str, str]) -> str:
+    fmt, corpus = surf
+    return corpus if fmt == "chat" else f"{corpus} ({fmt})"
+
+
+def _touched_effect(D: dict, tier: int) -> dict | None:
+    """Trained-on effect on the deficit, naive vs controlled for pair AND corpus.
+
+    The naive gap is confounded in BOTH directions and the two confounds do not
+    cancel. Across corpora at a fixed pair, the touched set fills up with the
+    math corpora, whose transfer deficit is large for reasons that have nothing
+    to do with training (base→RLVR's touched set is everything except lmsys).
+    Across pairs at a fixed corpus, a corpus is touched exactly by the pairs
+    that span its own stage — for sft11k that is every base→* pair, the hardest
+    transfers on the board. So the marginal comparison reads corpus difficulty
+    one way and pair difficulty the other.
+
+    The controlled estimate is the `touched` coefficient of
+    ``deficit ~ pair dummies + corpus dummies + touched``: both main effects
+    are absorbed and what is left is the interaction the question asks about.
+    SEs are cluster-robust (CR1) by PAIR — cells sharing a model pair are not
+    independent draws. With only 10 clusters CR1 runs anti-conservative, so the
+    intervals are a floor on the true width, not a tight bound.
+    """
+    rows = []
+    for pi, (src, tgt) in enumerate(PAIRS):
+        fams = touched_families(src, tgt)
+        for surf, c in D["data"][(pi, tier)]:
+            if surf in DEGENERATE:
+                continue
+            rows.append((pi, surf, int(OWNING_STAGE[surf] in fams), c["within_r2"] - c["r2"]))
+    hit = [d for _, _, t, d in rows if t]
+    miss = [d for _, _, t, d in rows if not t]
+    if not hit or not miss:
+        return None
+
+    pis = sorted({r[0] for r in rows})
+    surfs = sorted({r[1] for r in rows})
+    X = np.array(
+        [
+            [1.0]
+            + [1.0 if pi == p else 0.0 for p in pis[1:]]
+            + [1.0 if sf == s2 else 0.0 for s2 in surfs[1:]]
+            + [float(tou)]
+            for pi, sf, tou, _ in rows
+        ]
+    )
+    y = np.array([r[3] for r in rows])
+    beta, _, rank, _ = np.linalg.lstsq(X, y, rcond=None)
+    u = y - X @ beta
+    bread = np.linalg.pinv(X.T @ X)
+    meat = np.zeros((X.shape[1], X.shape[1]))
+    for p in pis:
+        idx = [i for i, r in enumerate(rows) if r[0] == p]
+        g = X[idx].T @ u[idx]
+        meat += np.outer(g, g)
+    n_g = len(pis)
+    scale = (n_g / (n_g - 1)) * ((len(y) - 1) / max(len(y) - rank, 1))
+    se = float(np.sqrt(max((bread @ meat @ bread)[-1, -1] * scale, 0.0)))
+    return {
+        "naive": float(np.mean(hit) - np.mean(miss)),
+        "coef": float(beta[-1]),
+        "se": se,
+        "n": len(y),
+        "n_touched": len(hit),
+        "n_pairs": n_g,
+    }
+
+
+def _corpus_label(surf: tuple[str, str]) -> str:
+    fmt, corpus = surf
+    return corpus if fmt == "chat" else f"{corpus}\n({fmt})"
+
+
+def fig_trained_on(D: dict) -> Path:
+    """Transfer on data the intervening training used vs data it never saw."""
+    left_tier = 0 if 0 in TIERS else TIERS[0]
+    c_hit, c_miss = "#D62728", "#8C8C8C"
+    order = [s for col in TYPE_ORDER for s in TYPE_COLUMNS[col]]
+
+    fig = plt.figure(figsize=(15.4, 6.1))
+    fig.set_layout_engine("none")  # see fig_aggregate: the style engine wins otherwise
+    gs = fig.add_gridspec(
+        1,
+        2,
+        width_ratios=[1.45, 1.0],
+        wspace=0.20,
+        left=0.052,
+        right=0.985,
+        top=0.845,
+        bottom=0.150,
+    )
+    axL = fig.add_subplot(gs[0, 0])
+    axR = fig.add_subplot(gs[0, 1])
+
+    # LEFT: corpus identity held FIXED inside each x slot, so the red-vs-grey
+    # comparison there is free of the corpus-difficulty confound (which is what
+    # drives the whole naive effect). Each point is one stage pair.
+    rng = np.random.default_rng(1336)
+    for x, surf in enumerate(order):
+        groups = {1: [], 0: []}
+        for pi, (src, tgt) in enumerate(PAIRS):
+            fams = touched_families(src, tgt)
+            for s2, c in D["data"][(pi, left_tier)]:
+                if s2 != surf:
+                    continue
+                groups[int(OWNING_STAGE[surf] in fams)].append(c["within_r2"] - c["r2"])
+        meds = {}
+        for tou, col, dx in ((0, c_miss, -0.18), (1, c_hit, 0.18)):
+            ys = groups[tou]
+            if not ys:
+                continue
+            meds[tou] = float(np.median(ys))
+            axL.scatter(
+                x + dx + rng.uniform(-0.06, 0.06, size=len(ys)),
+                ys,
+                s=34,
+                color=col,
+                alpha=0.75,
+                edgecolor="white",
+                linewidth=0.6,
+                zorder=3,
+            )
+            axL.plot(
+                [x + dx - 0.135, x + dx + 0.135],
+                [meds[tou]] * 2,
+                color=col,
+                lw=2.6,
+                zorder=5,
+                solid_capstyle="butt",
+            )
+        if len(meds) == 2:  # direction line: grey median -> red median
+            axL.annotate(
+                "",
+                xy=(x + 0.18, meds[1]),
+                xytext=(x - 0.18, meds[0]),
+                arrowprops=dict(arrowstyle="->", color="#404040", lw=1.2, shrinkA=2, shrinkB=2),
+                zorder=4,
+            )
+    axL.set_xticks(range(len(order)))
+    axL.set_xticklabels([_corpus_label(s) for s in order], fontsize=8.4)
+    axL.set_xlim(-0.55, len(order) - 0.45)
+    for col in TYPE_ORDER[:-1]:
+        axL.axvline(
+            sum(len(TYPE_COLUMNS[c]) for c in TYPE_ORDER[: TYPE_ORDER.index(col) + 1]) - 0.5,
+            color="#cfcfcf",
+            lw=0.9,
+            ls=":",
+            zorder=0,
+        )
+    axL.set_ylabel(f"transfer deficit  (ceiling − R²)   ·   tier {left_tier}", fontsize=10)
+    axL.set_title(
+        f"Within each corpus: {TIER_LABEL[left_tier]}, one point per stage pair",
+        fontsize=10.5,
+        pad=7,
+    )
+    axL.axhline(0.0, color="#252525", lw=0.9, ls="--", zorder=1)
+    axL.grid(axis="y", color="#ececec", lw=0.7, zorder=0)
+    axL.set_axisbelow(True)
+    axL.scatter([], [], s=40, color=c_hit, label="pairs whose training USED this corpus")
+    axL.scatter([], [], s=40, color=c_miss, label="pairs whose training never saw it")
+    axL.legend(fontsize=9, frameon=False, loc="upper left")
+
+    # RIGHT: the verdict. The naive marginal gap and the pair+corpus-controlled
+    # coefficient, per tier, on one axis — the reversal IS the result.
+    tiers = [t for t in TIERS if _touched_effect(D, t)]
+    ypos = list(range(len(tiers)))[::-1]
+    for y, tier in zip(ypos, tiers):
+        e = _touched_effect(D, tier)
+        axR.plot(
+            [e["coef"] - 1.96 * e["se"], e["coef"] + 1.96 * e["se"]],
+            [y, y],
+            color=TIER_COLORS[tier],
+            lw=2.2,
+            solid_capstyle="round",
+            zorder=3,
+        )
+        axR.scatter(
+            [e["coef"]],
+            [y],
+            s=74,
+            color=TIER_COLORS[tier],
+            zorder=4,
+            edgecolor="white",
+            linewidth=0.8,
+        )
+        axR.scatter(
+            [e["naive"]],
+            [y],
+            s=74,
+            facecolor="none",
+            zorder=4,
+            edgecolor=TIER_COLORS[tier],
+            linewidth=1.7,
+        )
+        axR.annotate(
+            "",
+            xy=(e["coef"], y),
+            xytext=(e["naive"], y),
+            arrowprops=dict(arrowstyle="->", color="#9a9a9a", lw=1.0, shrinkA=6, shrinkB=6),
+            zorder=2,
+        )
+    axR.axvline(0.0, color="#252525", lw=1.0, ls="--", zorder=1)
+    axR.set_yticks(ypos)
+    axR.set_yticklabels([f"{t}: {TIER_LABEL[t]}" for t in tiers], fontsize=9.5)
+    axR.set_ylim(-0.6, len(tiers) - 0.4)
+    axR.set_xlabel("deficit gap:  trained-on − not-trained-on", fontsize=10)
+    axR.set_title("Naive gap → gap with pair and corpus effects removed", fontsize=10.5, pad=7)
+    axR.grid(axis="x", color="#ececec", lw=0.7, zorder=0)
+    axR.set_axisbelow(True)
+    axR.scatter(
+        [],
+        [],
+        s=70,
+        facecolor="none",
+        edgecolor="#555555",
+        linewidth=1.7,
+        label="naive (across all cells)",
+    )
+    axR.scatter([], [], s=70, color="#555555", label="controlled, 95% CI (CR1 by pair)")
+    axR.legend(fontsize=8.8, frameon=False, loc="lower right")
+
+    fig.suptitle(
+        "Does a training stage disrupt the context→answer map more on its OWN training data?",
+        fontsize=12.5,
+        y=0.955,
+    )
+    out = OUTDIR / f"ladder_trained_on_vs_not{SUFFIX}.png"
+    fig.savefig(out, dpi=180)
+    fig.savefig(out.with_suffix(".pdf"))
+    plt.close(fig)
+    return out
+
+
 def write_meta(D: dict, figs: list[Path]) -> Path:
     rows = []
     for pi, (src, tgt) in enumerate(PAIRS):
@@ -1319,7 +1618,7 @@ def main() -> None:
             + f"{D['cross'][pi][0]:>8.3f}  {bat}"
         )
 
-    figs = [fig_aggregate(D), fig_percorpus(D)]
+    figs = [fig_aggregate(D), fig_percorpus(D), fig_trained_on(D)]
     meta = write_meta(D, figs)
     for p in figs + [meta]:
         print("wrote", p)
