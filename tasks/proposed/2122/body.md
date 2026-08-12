@@ -5,6 +5,7 @@ tags:
 - wf-fix
 - wf-fix-fp:c8d281f111ac
 - daily-auto-filed
+- trigger-dense
 created_at: '2026-08-06T07:05:17Z'
 has_clean_result: false
 origin_prompt: '/daily 2026-08-05 problem sweep (route 2): guard blocked ssh remote
