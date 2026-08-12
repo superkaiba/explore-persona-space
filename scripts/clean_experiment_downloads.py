@@ -1507,6 +1507,11 @@ def _scratch_git_class_probes(
                 return "worktree-locked"
         except OSError:
             return "git-probe-failed"
+    # NOTE (review round 2): `git status` reads .gitignore files WITHOUT
+    # O_NOATIME, so a cache-miss report-only run can atime-pin a would-reap
+    # tree for +48h. Bounded: the verdict cache suppresses repeat probes,
+    # relatime suppresses <24h refreshes, and the apply path's atime gate
+    # decides on PRE-probe stats, so a run can never self-block.
     status = _git(["status", "--porcelain"], cwd=cand)
     if status is None or status.returncode != 0:
         return "git-probe-failed"
@@ -1544,11 +1549,20 @@ class _ScratchVerdictCache:
     ``unverified-file`` / ``tolerance-only`` / ``no-verifiable-content`` /
     ``over-verify-cap``); transient probe errors and git CLASS-probe slugs
     are recomputed every run (they can flip without any tree mtime change —
-    e.g. a push makes a HEAD reachable). ``prune()`` drops a reaped path's
-    entries. All IO fail-soft: corrupt/unwritable degrades to no-cache.
-    Known residual (plan §12): a cached PASS can outlive a later ``git gc``
-    of the proving blobs — the reap-time re-walk re-checks recency, not
-    blob existence; the proof is recoverability at VERIFY time."""
+    e.g. a push makes a HEAD reachable). A cached PASS still EMBEDS the
+    class-probe conclusions from verify time — reap-ward and equally
+    flippable — which is why :func:`_reap_scratch_tree` re-runs the class
+    probes on the destructive path (review round 2); the cache alone never
+    licenses a deletion. ``prune()`` drops a reaped path's entries. All IO
+    fail-soft: corrupt/unwritable degrades to no-cache.
+    Known residuals (plan §12 + review round 2): (a) a cached PASS can
+    outlive a later ``git gc`` of the proving blobs — the reap-time
+    re-checks cover recency and git class state, not blob existence; the
+    proof is recoverability at VERIFY time. (b) the cache key AND the reap
+    re-walk are both blind to mtime-preserving SAME-SIZE content overwrites
+    (``tar -x``, ``cp -p``, ``rsync --checksum`` over an existing file):
+    stale PASS + unchanged key + no fresh mtime => unverified bytes reaped.
+    A narrow, deliberate-backdating class — disclosed, not chased."""
 
     _CACHEABLE = frozenset(
         {"pass", "unverified-file", "tolerance-only", "no-verifiable-content", "over-verify-cap"}
@@ -1825,7 +1839,21 @@ def _reap_scratch_tree(cand: Path, *, main_repo: Path, verify_started: float) ->
     probes rewrite a clone's in-tree ``.git/index`` and must not self-abort
     every clean-clone reap — a real mid-verify writer bumps non-exempt
     file/dir mtimes, and a still-live exempt-dir writer is the live-process
-    probe's catch), then worktree-aware removal.
+    probe's catch), then a fresh git CLASS re-probe, then worktree-aware
+    removal.
+
+    The class re-probe (:func:`_scratch_git_class_probes`, review round 2)
+    is what makes a CACHED PASS safe: the verdict-cache key captures tree
+    content only, but a PASS embeds conclusions about EXTERNAL git state
+    (HEAD/ref reachability, lock, status) that can flip with ZERO tree
+    change — ``git branch -D``, a pruning fetch, an upstream rewrite — so
+    a cache-hit PASS would otherwise skip those probes forever. Re-probing
+    HERE (the only destructive path) keeps the cache's re-hash skip intact
+    while guaranteeing no deletion ever acts on stale external-state
+    conclusions; a hit KEEPS with ``reap-reprobe-<slug>``. The ``git
+    status`` atime side effect is mooted by deletion on success and
+    harmless on abort; blobs are NOT re-hashed, so the documented gc
+    residual stands unchanged.
 
     A REGISTERED main-repo worktree goes through
     ``git worktree remove --force`` with ONE ``--force``: a lock acquired
@@ -1842,6 +1870,9 @@ def _reap_scratch_tree(cand: Path, *, main_repo: Path, verify_started: float) ->
     if fresh is None or fresh["newest_nonexempt_mtime"] >= verify_started:
         return False, "reap-recheck-recency"
     kind, admin = _git_dir_kind(cand)
+    probe = _scratch_git_class_probes(cand, kind, admin, main_repo=main_repo)
+    if probe is not None:
+        return False, f"reap-reprobe-{probe}"
     if kind == "worktree" and admin is not None and _worktree_admin_of_main(admin, main_repo):
         proc = _git(["worktree", "remove", "--force", str(cand)], cwd=main_repo, timeout=600.0)
         if proc is None or proc.returncode != 0:
@@ -1930,7 +1961,10 @@ def sweep_tmp_scratch(
     6. live-process probe (:func:`_scratch_live_process_hit`, amendment 1)
        => ``tmp-scratch-live-process-kept``;
     7. reap (:func:`_reap_scratch_tree`) — fresh re-walk abort =>
-       ``tmp-scratch-reap-aborted-recency``; worktree-remove failure =>
+       ``tmp-scratch-reap-aborted-recency``; reap-time git class RE-probe
+       hit (external git state flipped since the — possibly cached —
+       verification: ref deleted, lock taken, tree dirtied) =>
+       ``tmp-scratch-reap-reprobe-kept``; worktree-remove failure =>
        ``tmp-scratch-worktree-remove-failed`` (kept); else
        ``tmp-scratch-reaped`` (or ``would-reap`` in report mode).
 
@@ -2052,6 +2086,13 @@ def sweep_tmp_scratch(
             _finish(
                 "tmp-scratch-reap-aborted-recency",
                 "tree changed between verification and reap; KEPT",
+                escalate=True,
+            )
+        elif reap_reason.startswith("reap-reprobe-"):
+            _finish(
+                "tmp-scratch-reap-reprobe-kept",
+                "git state flipped since (possibly cached) verification "
+                f"({reap_reason.removeprefix('reap-reprobe-')}); KEPT",
                 escalate=True,
             )
         elif reap_reason.startswith("worktree-remove-failed"):
