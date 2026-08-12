@@ -257,9 +257,16 @@ adding a pass means adding a numbered item here AND bumping the digit:
    same >=2-consecutive-checks guard as the pod pass:
 
    - **idle** — every activity signal (the newest NON-watcher marker of
-     ANY kind on the task, plus the per-issue self-report file) is older
-     than :func:`_session_idle_s` (default 2h, env
-     ``EPM_SESSION_RECONCILE_IDLE_S``);
+     ANY kind on the task, the per-issue self-report file, the freshest
+     registration ``spawned_at``, and — lazily — each mapped sid's
+     transcript WORK signal: completed-wake-turn CONTENT, not mtime
+     (#2117 — a tail whose completed wake-turns ALL failed with no
+     genuine human row is churn-only and contributes nothing, so an
+     error-storming session on a done task accumulates the miss counter;
+     a recent ``"ok"`` turn or human row still protects, #1670; kill
+     switch ``EPM_SESSION_RECONCILE_TRANSCRIPT_WORK_PROBE=0`` reverts to
+     the pure-mtime probe)) is older than :func:`_session_idle_s`
+     (default 2h, env ``EPM_SESSION_RECONCILE_IDLE_S``);
    - **no live inline follow-up** — the latest follow-up signal marker
      (:data:`_SESSION_FOLLOWUP_SIGNAL_KINDS`: ``epm:run-launched`` /
      ``epm:followup-scope`` / ``epm:free-analysis-followup-run``) is
@@ -1184,6 +1191,7 @@ from spawn_session import (  # noqa: E402
 from tick_triage import (  # noqa: E402
     compute_head_sha,
     compute_progress_fingerprint,
+    is_human_transcript_row,
     no_progress_state_path,
     no_progress_threshold,
     plan_pending_over_cap,
@@ -26064,6 +26072,20 @@ def _session_reconcile_autostop_enabled() -> bool:
     return raw.strip().lower() not in {"0", "false", "no"}
 
 
+def _session_reconcile_transcript_work_probe_enabled() -> bool:
+    """True unless ``EPM_SESSION_RECONCILE_TRANSCRIPT_WORK_PROBE`` is
+    explicitly set to a falsy value (``0`` / ``false`` / ``no``). Default ON
+    (#2117). When ON, :func:`_session_idle_signals`' per-sid transcript term
+    uses the content-classifying :func:`_transcript_work_idle_age_s` (a
+    churn-only tail — every completed wake-turn failed, no human row —
+    contributes no liveness); when OFF, the call site reverts to the
+    pure-mtime :func:`_transcript_idle_age_s` (exact pre-#2117 / #1670
+    behavior). Env-parse mirrors
+    :func:`_session_reconcile_autostop_enabled`."""
+    raw = os.environ.get("EPM_SESSION_RECONCILE_TRANSCRIPT_WORK_PROBE", "")
+    return raw.strip().lower() not in {"0", "false", "no"}
+
+
 def decide_session_reconcile(
     status: str | None,
     idle: bool,
@@ -26323,14 +26345,21 @@ def _session_idle_signals(
     ``manual-issue-<N>.json`` (#1670 — a just-spawned session may not have
     posted any marker yet), and — probed LAZILY, only when the cheaper
     signals already read idle and ``pids_by_sid`` was provided — each
-    mapped sid's own transcript mtime (:func:`_transcript_idle_age_s`) —
+    mapped sid's own transcript WORK signal
+    (:func:`_transcript_work_idle_age_s`, #2117: row CONTENT is classified,
+    so a churn-only tail — every completed wake-turn failed, no genuine
+    human row — contributes nothing; kill switch
+    ``EPM_SESSION_RECONCILE_TRANSCRIPT_WORK_PROBE=0`` reverts the term to
+    the pure-mtime :func:`_transcript_idle_age_s`) —
     is older than :func:`_session_idle_s` (default 2h, env
     ``EPM_SESSION_RECONCILE_IDLE_S``). When NO signal is readable at all the
     issue counts as idle (mirrors the orphan sweep's None-is-stale rule; the
     status gate + follow-up/pod/keep-running skips + 2-miss guard keep that
     safe). ``gap_desc`` is the human-readable freshest-signal age for
-    log/marker text; ``events`` is returned so the caller can reuse the
-    fetch for the follow-up predicate."""
+    log/marker text, plus a trailing ``churn-only`` token when >=1 mapped
+    sid's transcript classified as churn (#2117 auditability); ``events``
+    is returned so the caller can reuse the fetch for the follow-up
+    predicate."""
     events = _task_events(issue)
     latest_marker = _latest_nonwatcher_event_ts(events)
     sr_age, _sr_ts = _self_report_age_seconds(issue, now)
@@ -26352,21 +26381,36 @@ def _session_idle_signals(
     if spawned is not None:
         ages.append(max(0.0, now - spawned))
     idle = (min(ages) >= _session_idle_s()) if ages else True
+    churn_only = False
     if idle and pids_by_sid:
-        # Transcript mtime = the truest per-SESSION activity signal.
-        # Probed LAZILY: only when the cheap task-level signals already
-        # read idle (zero cost on the common fresh-activity path). An
-        # unresolvable transcript contributes nothing — falls back to
-        # today's behavior; a wrong signal is worse than a missing one
-        # (the helper's happy-log-only rationale).
+        # Transcript = the truest per-SESSION activity signal. Probed
+        # LAZILY: only when the cheap task-level signals already read idle
+        # (zero cost on the common fresh-activity path). An unresolvable
+        # transcript contributes nothing — falls back to today's behavior;
+        # a wrong signal is worse than a missing one (the helper's
+        # happy-log-only rationale). Default probe (#2117):
+        # _transcript_work_idle_age_s classifies row CONTENT — a tail whose
+        # completed wake-turns ALL failed is churn, not liveness, and
+        # contributes nothing (reason "churn-only"), so an error-storming
+        # session on a DONE task accumulates the >=2-miss counter (#2004).
+        # The ages-append logic is otherwise unchanged: the fix is strictly
+        # WHAT number the transcript term contributes, never WHEN it is
+        # consulted (plan criterion 2).
+        work_probe = _session_reconcile_transcript_work_probe_enabled()
         for sid in sids:
             pid = pids_by_sid.get(sid)
             if isinstance(pid, int):
-                t_age, _reason = _transcript_idle_age_s(pid, now)
+                if work_probe:
+                    t_age, reason = _transcript_work_idle_age_s(pid, now)
+                    churn_only = churn_only or reason == "churn-only"
+                else:
+                    t_age, _reason = _transcript_idle_age_s(pid, now)
                 if t_age is not None:
                     ages.append(t_age)
         idle = (min(ages) >= _session_idle_s()) if ages else True
     gap_desc = f"{min(ages) / 3600:.1f}h" if ages else "no-signal"
+    if churn_only:
+        gap_desc += " churn-only"
     return idle, gap_desc, events
 
 
@@ -26391,6 +26435,19 @@ def _handle_session_stop(
     live-session-keyed GC). An ACK failure keeps the accumulated miss count
     so the next tick retries the stop for the remaining live session(s)."""
     stopped = [sid for sid in sids if _stop_session(sid, dry_run)]
+    # #2117 auditability: a churn-driven stop (the work probe classified the
+    # transcript tail as all-failed wake-turns) reads differently from an
+    # ordinary idle stop. The verdict rides gap_desc's trailing "churn-only"
+    # token (appended by _session_idle_signals), so no signature change.
+    if "churn-only" in gap_desc:
+        activity_desc = (
+            "non-watcher marker / self-report / session registration; the "
+            "transcript term was CHURN-ONLY — every recent completed "
+            "wake-turn failed, so transcript churn did not count as "
+            "activity (#2117)"
+        )
+    else:
+        activity_desc = "non-watcher marker / self-report / session registration / transcript"
     if stopped:
         _post_progress_marker(
             issue,
@@ -26398,8 +26455,8 @@ def _handle_session_stop(
             f"{len(stopped)} idle session(s) ({', '.join(stopped)}) by the "
             f"autonomous_session_watch session-reconcile pass — task status "
             f"'{status}' is parked/terminal, no live follow-up signal, no "
-            f"RUNNING pod, no keep-running tag, and no activity (non-watcher "
-            f"marker / self-report / session registration / transcript) was observed for > "
+            f"RUNNING pod, no keep-running tag, and no activity ("
+            f"{activity_desc}) was observed for > "
             f"{_session_idle_s() / 3600:.1f}h (gap={gap_desc}), confirmed "
             f"for >= {threshold} checks. An idle session pins its worktree "
             f"against the stale-worktree sweep and holds deleted-file "
@@ -29546,6 +29603,108 @@ def _transcript_idle_age_s(node_pid: int, now: float) -> tuple[float | None, str
     except OSError as e:
         return None, f"transcript stat failed: {type(e).__name__}"
     return max(0.0, now - mtime), None
+
+
+# #2117: the session-reconcile work probe reads the tail at the wedge lane's
+# 256 KB width (#1104), not _transcript_tail_rows' 64 KB default — a heavy
+# api-error storm can push the last ok turn out of a 64 KB window, and the
+# probe runs at most once per mapped sid per tick, only for DONE-status
+# candidates already reading idle (_process_session_reconcile's laziness).
+_SESSION_RECONCILE_TRANSCRIPT_TAIL_BYTES = 256 * 1024
+
+
+def _transcript_work_idle_age_s(node_pid: int, now: float) -> tuple[float | None, str | None]:
+    """Content-classifying session-reconcile sibling of
+    :func:`_transcript_idle_age_s` (#2117): seconds since the transcript
+    last showed durable WORK, or ``(None, reason)`` when the tail carries no
+    countable liveness. The mtime probe reads a thrashing session as live
+    forever — every failed turn, compaction row, and SKILL re-read refreshes
+    mtime — so the reconcile pass's >=2-miss counter could never accumulate
+    on an error-storming session parked on a completed task (#2004: ~4h of
+    token burn on already-completed work). A SIBLING of the mtime probe, not
+    a rewrite: :func:`_transcript_idle_age_s` keeps its other callers (the
+    #1582 keep-running owner leg, the #845 d stale-registration pass)
+    byte-untouched, and the same deliberate happy-log-only resolution
+    contract applies (via :func:`_transcript_tail_rows`).
+
+    Four-way contract (#2117 plan criterion 1):
+
+    (i) UNRESOLVABLE / UNREADABLE transcript -> ``(None, reason)`` —
+        contributes nothing to the caller's ``ages`` (unchanged from the
+        mtime probe).
+    (ii) DURABLE WORK -> ``(now - ts, None)`` where ``ts`` is the newest of:
+        the ``end_ts`` of the newest successfully-completed wake-turn
+        (:func:`_segment_wake_turns` outcome ``"ok"``) and the timestamp of
+        the newest genuine human row
+        (``tick_triage.is_human_transcript_row``). The #1670-preserving
+        arm — an OLD session doing real work with no recent markers keeps
+        its protection. Timestamp scoping: the age derives from THAT newest
+        row specifically; when its timestamp is unparseable
+        (:func:`_row_ts` -> ``None``) the verdict is (iv) — NEVER a max
+        over older parseable timestamps, which would substitute a stale age
+        for possibly-minutes-fresh work and fail toward STOP.
+    (iii) POSITIVE CHURN EVIDENCE -> ``(None, "churn-only")``: the tail
+        holds >=1 completed wake-turn, EVERY completed turn is ``"failed"``,
+        and no genuine human row is present. The transcript contributes
+        nothing, task-side idleness stands, and the miss counter
+        accumulates. A turn's outcome keys on its LAST response row, so
+        mid-turn SKILL-re-read assistant rows do NOT rescue a turn that
+        ends in an api-error — exactly the #2004 shape.
+    (iv) INDETERMINATE -> fall back to :func:`_transcript_idle_age_s`
+        (today's mtime read). Fail toward KEEP. Exactly two cases: (1) zero
+        completed turns — a tail whose only trailing delivery is
+        prompt-evidence rows with ZERO response rows yet (an in-flight turn
+        is deliberately uncounted by :func:`_segment_wake_turns`); (2) the
+        unparseable-newest-timestamp case of (ii).
+
+    Named residuals — DESIGNED, not missed (#2117 plan §1):
+
+    - (a) Window eviction. An ``"ok"`` turn younger than the idle floor can
+      be pushed out of the 256 KB tail by a fast api-error storm, yielding
+      a churn-only verdict where today's mtime read would keep the session.
+      Requires >=256 KB of pure churn AND >=2 h of task-side marker silence
+      AND a DONE status — for that conjunction the stop is arguably the
+      correct verdict, and the >=2-tick guard still applies.
+    - (b) Slash-command-only rescue. ``is_human_transcript_row``
+      deliberately reads slash commands as automation (``tick_triage.py``),
+      so a user rescuing a thrashing DONE-task session *purely* via slash
+      commands is stop-eligible. Typed text and interrupt rows ARE
+      protected. Crediting slash rows is NOT the fix — the 45-min
+      ``/issue-tick`` cron injects slash prompts, i.e. the churn driver
+      itself would become its own liveness proof. Recorded as a residual
+      instead.
+    - (c) Dequeue-only swallowed-delivery storm. A DONE-task session
+      emitting prompt-evidence rows with no responses produces zero
+      completed turns -> arm (iv) -> mtime-fresh -> kept indefinitely.
+      Identical to today's behavior (the prompt-wedge lane owns ACTIVE
+      tasks only); this change does not widen it and does not close it.
+    """
+    rows = _transcript_tail_rows(node_pid, max_bytes=_SESSION_RECONCILE_TRANSCRIPT_TAIL_BYTES)
+    if rows is None:
+        return None, "transcript unresolvable-or-unreadable"  # arm (i)
+    turns = _segment_wake_turns(rows)
+    has_ok = False
+    newest_ok_ts: float | None = None
+    for outcome, end_ts in reversed(turns):
+        if outcome == "ok":
+            has_ok = True
+            newest_ok_ts = end_ts  # may be None (unparseable) -> arm (iv)
+            break
+    human_row = next((r for r in reversed(rows) if is_human_transcript_row(r)), None)
+    human_ts = _row_ts(human_row) if human_row is not None else None
+    if has_ok or human_row is not None:
+        if (has_ok and newest_ok_ts is None) or (human_row is not None and human_ts is None):
+            # arm (iv) case (2): the newest durable-work row's OWN timestamp
+            # is unparseable — indeterminate; fall back to the mtime read
+            # (fail toward KEEP; never a max over older parseable rows).
+            return _transcript_idle_age_s(node_pid, now)
+        ts = max(t for t in (newest_ok_ts, human_ts) if t is not None)
+        return max(0.0, now - ts), None  # arm (ii)
+    if turns:
+        # arm (iii): >=1 completed turn, every one failed, no human row.
+        return None, "churn-only"
+    # arm (iv) case (1): zero completed turns.
+    return _transcript_idle_age_s(node_pid, now)
 
 
 def decide_idle_unmapped(
