@@ -335,6 +335,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # NEW (#2165) — workflow_lint --check-smoke-blind-spot-review-lens +
     # --check-smoke-blind-spots (fixtures reproduce both #1336 shapes).
     "tests/test_workflow_lint_smoke_blind_spots.py",
+    # NEW (#2120) — workflow_lint --check-cvd-scoped-gpu-verdict-lens +
+    # no-flags bundling (Step 0.72 own-device-scoped GPU-state verdicts +
+    # experiment-implementer Schema-from-artifact, five pinned surfaces).
+    "tests/test_workflow_lint_cvd_scoped_gpu_verdict.py",
     # NEW (#2067) — .claude/rules/compute-backend-failover.md
     # `### Cross-session pivot — resolve the owner before provisioning (#2067)`
     # prose pin: H3 header + pivoter-duty sentence + UNKNOWN-treat-as-LIVE token.
