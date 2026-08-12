@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2242,
+  "highest_id": 2243,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9602,6 +9602,13 @@
       "path": "tasks/running/2242",
       "status": "running",
       "title": "Absolute per-cell trainability floor: a yield shortfall must DROP the cell, not shrink it to 1 row"
+    },
+    "2243": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2243",
+      "status": "proposed",
+      "title": "Wire the absolute per-cell trainability gate into scripts/issue2225_train.py (the sibling entrypoint #2242 left ungated)"
     },
     "225": {
       "has_clean_result": true,
