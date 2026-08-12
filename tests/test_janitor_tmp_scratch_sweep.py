@@ -454,9 +454,10 @@ def test_locked_worktree_is_kept(tmp_root, main_repo, repo):
 
 
 def test_lock_acquired_after_verification_keeps_tree(tmp_root, main_repo, repo, monkeypatch):
-    """Amendment 2: a lock acquired BETWEEN gate check and reap makes
-    ``git worktree remove --force`` (single --force) FAIL — the failure KEEPS
-    the tree (no rmtree fallback, no global prune), still registered."""
+    """A lock acquired BETWEEN gate check and reap keeps the tree. Since
+    review round 2 the reap-time class RE-probe catches it FIRST (one gate
+    earlier than amendment 2's remove-failure path): the tree is kept and
+    stays registered."""
     cand = _scratch_worktree(main_repo, tmp_root, "eps-wt-scratch-race")
     real_hit = ced._scratch_live_process_hit
 
@@ -467,7 +468,36 @@ def test_lock_acquired_after_verification_keeps_tree(tmp_root, main_repo, repo, 
     monkeypatch.setattr(ced, "_scratch_live_process_hit", lock_then_pass)
     res = _sweep(tmp_root, main_repo, apply=True)
     row = _row(res, cand.name)
+    assert row["disposition"] == "tmp-scratch-reap-reprobe-kept"
+    assert "worktree-locked" in row["reason"]
+    assert cand.exists() and (cand / ".git").exists()
+    assert str(cand) in _git(main_repo, "worktree", "list").stdout  # still registered
+
+
+def test_lock_acquired_after_reprobe_keeps_tree_no_rmtree_fallback(
+    tmp_root, main_repo, repo, monkeypatch
+):
+    """Amendment 2 (pin preserved post-round-2): a lock acquired in the
+    residual window AFTER the reap-time re-probe makes ``git worktree
+    remove --force`` (single --force) FAIL — the failure KEEPS the tree
+    (no rmtree fallback, no global prune), still registered."""
+    cand = _scratch_worktree(main_repo, tmp_root, "eps-wt-scratch-race2")
+    real_probe = ced._scratch_git_class_probes
+    n_calls = {"n": 0}
+
+    def probe_then_lock(c, kind, admin, *, main_repo: Path):
+        out = real_probe(c, kind, admin, main_repo=main_repo)
+        n_calls["n"] += 1
+        if n_calls["n"] == 2 and out is None:  # the reap-time call: lock AFTER it passes
+            _git(main_repo, "worktree", "lock", str(cand))
+        return out
+
+    monkeypatch.setattr(ced, "_scratch_git_class_probes", probe_then_lock)
+    res = _sweep(tmp_root, main_repo, apply=True)
+    row = _row(res, cand.name)
+    assert n_calls["n"] == 2  # verify-time + reap-time probes both ran
     assert row["disposition"] == "tmp-scratch-worktree-remove-failed"
+    assert "locked" in row["reason"]
     assert cand.exists() and (cand / ".git").exists()
     assert str(cand) in _git(main_repo, "worktree", "list").stdout  # still registered
 
@@ -647,6 +677,65 @@ def test_verdict_cache_skips_rehash_on_unchanged_tree(
     assert len(calls) == 1
     _sweep(tmp_root, main_repo, apply=False, verdict_cache_path=cache_path)
     assert len(calls) == 1  # second run: cache hit, no new probe
+
+
+def test_cached_pass_never_licenses_reap_after_ref_deletion(
+    tmp_root, main_repo, tmp_path, repo, monkeypatch
+):
+    """REGRESSION (review round 2, Finding 1): a PASS cached while a
+    worktree's HEAD was ref-reachable must NOT license a later reap after
+    the only containing ref is deleted with ZERO tree change (`git branch
+    -D`, a pruning fetch, an upstream rewrite). The verify-time class
+    probes are cache-skipped on the second run (pinned by the blob-probe
+    call count going flat), so the reap-time class RE-probe in
+    `_reap_scratch_tree` is the ONLY thing standing between the stale
+    cached PASS and `git worktree remove --force` dropping the last
+    reference to the commit chain. Fails (tree reaped) if that re-probe
+    is removed."""
+    cand = tmp_root / "eps-9970-scratch-reprobe"
+    _git(main_repo, "worktree", "add", "--detach", str(cand))
+    # A commit reachable ONLY via a side branch created in the worktree.
+    _git(cand, "checkout", "-b", "side")
+    (cand / "only_here.py").write_text(COMMITTED_PY)
+    _git(cand, "add", "only_here.py")
+    _git(cand, "commit", "-m", "side-only commit")
+    _git(cand, "checkout", "--detach")  # free the branch for deletion
+    _backdate(cand)
+
+    cache_path = tmp_path / "verdicts.json"
+    calls: list[int] = []
+    real = ced._git_first_missing_blob
+
+    def counting(main_repo_, shas):
+        calls.append(len(shas))
+        return real(main_repo_, shas)
+
+    monkeypatch.setattr(ced, "_git_first_missing_blob", counting)
+
+    # Sweep 1 (report-only): ref exists -> verified -> would-reap; PASS cached.
+    res1 = _sweep(tmp_root, main_repo, apply=False, verdict_cache_path=cache_path)
+    assert _row(res1, cand.name)["disposition"] == "would-reap"
+    n_probes_run1 = len(calls)
+    assert n_probes_run1 >= 1
+
+    # Sweep 1's `git status` re-read file contents (the index is stale after
+    # _backdate) and refreshed atimes; re-backdate to model the incident
+    # precondition — tree quiet AND unread >=48h before the reap attempt.
+    # Same timestamps => the cache key (newest_mtime|total_bytes) is intact.
+    _backdate(cand)
+
+    # External git-state flip, zero tree change: the only containing ref dies.
+    _git(main_repo, "branch", "-D", "side")
+
+    # Sweep 2 (apply): cache-hit PASS skips the verify-time probes (call
+    # count flat) -> only the reap-time re-probe can catch the flip -> KEPT.
+    res2 = _sweep(tmp_root, main_repo, apply=True, verdict_cache_path=cache_path)
+    assert len(calls) == n_probes_run1  # cache hit: no fresh blob probe
+    row = _row(res2, cand.name)
+    assert row["disposition"] == "tmp-scratch-reap-reprobe-kept"
+    assert "head-unreachable" in row["reason"]
+    assert cand.exists()
+    assert res2.bytes_freed == 0
 
 
 # ─── gate-1.7 evidence branch (c) on the issue-keyed /tmp legs ───────────────
