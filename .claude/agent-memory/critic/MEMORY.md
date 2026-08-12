@@ -105,6 +105,7 @@
 
 ## Infra-plan reviews
 - [Infra-plan review checklist](feedback_infra_plan_review_checklist.md) — protection-illusion holes, choke-point greps, success-path-only tests, checkpoint-per-phase (#564, #596, #607, #399)
+- [Janitor deletion-gate plans](feedback_janitor_deletion_gate_plans.md) — /proc live-owner probe, fallback-rmtree-on-git-refusal, timeout-less hang fixtures, marginal-byte reproduction (#2127)
 - [Hook-timeout semantics fail-open](feedback_hook_timeout_semantics_fail_open.md) — docs: 600s default, timed-out PreToolUse = NO decision; tiny-timeout probes vacuous unless timeout provably FIRED (#2115)
 - [Ruff noqa prose-mention in comments](feedback_ruff_noqa_prose_mention_in_comments.md) — `# noqa` literals in #-comments trip ruff's extractor even as prose; docstrings/strings safe (#2089)
 - [Detached-transfer observability plans](feedback_detached_transfer_observability_plans.md) — start-line before first network call; claim-correction copy sweep; timeout mandates need sizing basis (#2153)
