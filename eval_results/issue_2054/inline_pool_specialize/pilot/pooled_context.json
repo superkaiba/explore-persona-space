@@ -1,0 +1,103 @@
+{
+ "metadata": {
+  "git_commit": "7fce66e6",
+  "git_dirty": true,
+  "git_dirty_paths": [
+   "eval_results/issue_2162/persona_rubric_rescore/pilot/raw/cj-v3-address.json",
+   "eval_results/issue_2162/persona_rubric_rescore/pilot/run_meta.json",
+   "eval_results/issue_2162/persona_rubric_rescore/pilot/scores.jsonl",
+   "eval_results/issue_2162/persona_rubric_rescore/raw/cj-v3-address.json",
+   "eval_results/issue_2162/persona_rubric_rescore/raw/cj-v3-courtesy.json",
+   "eval_results/issue_2162/persona_rubric_rescore/raw/cj-v3-formality.json",
+   "eval_results/issue_2162/persona_rubric_rescore/raw/cj-v3-household.json",
+   "eval_results/issue_2162/persona_rubric_rescore/raw/hol-v1.json",
+   "eval_results/issue_2162/persona_rubric_rescore/raw/hol-v2.json",
+   "eval_results/issue_2162/persona_rubric_rescore/raw/hol-v3.json",
+   "eval_results/issue_2162/persona_rubric_rescore/run_meta.json",
+   "eval_results/issue_2162/persona_rubric_rescore/scores.jsonl",
+   "eval_results/issue_2162/persona_rubric_rescore/summary.json",
+   "scripts/issue2162_persona_rubric_rescore.py"
+  ],
+  "script_version": "issue2054_pool_specialize_v1",
+  "utc": "2026-08-12T17:09:04Z"
+ },
+ "arm": "context",
+ "per_fold": {
+  "0": {
+   "best_lambda": 3162.2776601683795,
+   "dof": 2950.662476571758,
+   "selector": "gcv_dof_cap_0.9",
+   "side": "cov-moments",
+   "n_train": 127487,
+   "d_fit": 3584
+  }
+ },
+ "cells_pooled": [
+  "conversation_paired_stories_assistant__inserted__attrib_quoted__qwen2.5-7b-instruct",
+  "conversation_paired_stories_assistant__inserted__attrib_quoted__qwen2.5-7b",
+  "conversation_paired_stories_assistant__inserted__bare_label__qwen2.5-7b-instruct",
+  "conversation_paired_stories_assistant__inserted__bare_label__qwen2.5-7b",
+  "conversation_paired_stories_assistant__inserted__bare_text__qwen2.5-7b-instruct",
+  "conversation_paired_stories_assistant__inserted__bare_text__qwen2.5-7b",
+  "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b-instruct",
+  "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b",
+  "conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b-instruct",
+  "conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b",
+  "conversation_paired_stories_assistant__on_policy__bare_label__qwen2.5-7b-instruct",
+  "conversation_paired_stories_assistant__on_policy__bare_label__qwen2.5-7b",
+  "conversation_paired_stories_assistant__on_policy__bare_text__qwen2.5-7b-instruct",
+  "conversation_paired_stories_assistant__on_policy__bare_text__qwen2.5-7b",
+  "conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b-instruct",
+  "conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b"
+ ],
+ "n_join_per_cell": {
+  "conversation_paired_stories_assistant__inserted__attrib_quoted__qwen2.5-7b-instruct": {
+   "n_join": 11901
+  },
+  "conversation_paired_stories_assistant__inserted__attrib_quoted__qwen2.5-7b": {
+   "n_join": 11901
+  },
+  "conversation_paired_stories_assistant__inserted__bare_label__qwen2.5-7b-instruct": {
+   "n_join": 11901
+  },
+  "conversation_paired_stories_assistant__inserted__bare_label__qwen2.5-7b": {
+   "n_join": 11901
+  },
+  "conversation_paired_stories_assistant__inserted__bare_text__qwen2.5-7b-instruct": {
+   "n_join": 11901
+  },
+  "conversation_paired_stories_assistant__inserted__bare_text__qwen2.5-7b": {
+   "n_join": 11901
+  },
+  "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b-instruct": {
+   "n_join": 11901
+  },
+  "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b": {
+   "n_join": 11901
+  },
+  "conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b-instruct": {
+   "n_join": 8000
+  },
+  "conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b": {
+   "n_join": 8000
+  },
+  "conversation_paired_stories_assistant__on_policy__bare_label__qwen2.5-7b-instruct": {
+   "n_join": 8000
+  },
+  "conversation_paired_stories_assistant__on_policy__bare_label__qwen2.5-7b": {
+   "n_join": 8000
+  },
+  "conversation_paired_stories_assistant__on_policy__bare_text__qwen2.5-7b-instruct": {
+   "n_join": 8000
+  },
+  "conversation_paired_stories_assistant__on_policy__bare_text__qwen2.5-7b": {
+   "n_join": 8000
+  },
+  "conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b-instruct": {
+   "n_join": 8000
+  },
+  "conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b": {
+   "n_join": 7999
+  }
+ }
+}
