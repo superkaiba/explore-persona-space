@@ -35,7 +35,7 @@
  },
  "tier_labels": {
   "0": "direct transfer",
-  "5": "rotation",
+  "5": "rotation + bias",
   "6": "reparam contexts",
   "7": "reparam answers"
  },
@@ -266,7 +266,8 @@
  "figures": [
   "ladder_full_transfer_lattice_t0567.png",
   "ladder_full_transfer_lattice_by_dataset_t0567.png",
-  "ladder_trained_on_vs_not_t0567.png"
+  "ladder_trained_on_vs_not_t0567.png",
+  "ladder_used_between_gap_t0567.png"
  ],
  "code": "scripts/issue1336_full_transfer_lattice.py",
  "extends": "ladder_step_transfer_by_dataset.png (adjacent steps only)",
