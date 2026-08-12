@@ -712,6 +712,10 @@ def run_capture(args) -> int:
         hidden,
         json.dumps(counters),
     )
+    # Standalone-lane dispatcher terminal: this driver IS the dispatcher when
+    # launched top-level; issue2224_suite4a_runner.sh invokes it with stdout
+    # redirected to its own per-phase log, off the main-log path.
+    # noqa: phase-done-reserved (mode: top-level dispatcher; invoker: suite4a_runner redirects)
     print(f"[phase=done] capture corpus={args.corpus} n={len(pool_rows)}", flush=True)
     return 0
 

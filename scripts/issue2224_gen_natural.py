@@ -423,6 +423,10 @@ def run_fanout(args) -> int:
     )
     if args.upload:
         upload_corpus_dir(out_dir, args.corpus)
+    # Standalone-lane dispatcher terminal: this driver IS the dispatcher when
+    # launched top-level; issue2224_suite4a_runner.sh invokes it with stdout
+    # redirected to its own per-phase log, off the main-log path.
+    # noqa: phase-done-reserved (mode: top-level dispatcher; invoker: suite4a_runner redirects)
     print(f"[phase=done] gen_natural corpus={args.corpus} n={report['n_total']}", flush=True)
     return 0
 
