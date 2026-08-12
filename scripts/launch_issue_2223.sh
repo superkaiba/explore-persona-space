@@ -40,8 +40,12 @@ cd "$REPO_ROOT"
 
 # Arm registry split (mirrors ARMS in issue2223_drift.py; A0 = "both").
 # A0 runs FIRST (Phase A anchor); the Phase B grid is gated on the G2 verdict.
-ARMS_7B_PHASEB=(A2a A2b A3a A3b A4 A4R A5)
-CAP_ARMS_7B=(A2a A2b)   # firing telemetry (realized-vs-empirical)
+# v4 amendment: +A2c (all-context-token cap) as a full generation arm; +A2corr
+# (correction mode — per-turn regen over A0's drifted transcripts; consumes the A0
+# canonical raw_completions.json, which lands in Phase A before the gate, so its
+# only barrier is the one every Phase B arm already shares).
+ARMS_7B_PHASEB=(A2a A2b A2c A2corr A3a A3b A4 A4R A5)
+CAP_ARMS_7B=(A2a A2b A2c A2corr)   # firing telemetry (realized-vs-empirical)
 
 # G2 stop gate (plan §7; code-review r1 ISSUE 4): consume the Phase-A verdict BEFORE
 # any Phase B generation spends. GATE_STOP_RC=8 is the driver's DESIGNED halt —
@@ -146,7 +150,13 @@ if [ "$MODEL" = 32b ] && [ "$MODE" = smoke ]; then
 fi
 
 # ── per-model phase chain ─────────────────────────────────────────────────────────
-run_phase topics   # IDEMPOTENT: skip-if-exists + HF cross-leg share (--force-topics regenerates)
+# TOPICS = REQUIRE-FETCH on the pod (r2 TOCTOU BLOCKER): the stimulus is generated
+# EXACTLY ONCE pre-launch on the VM (`--phase topics --generate-topics`, 0-GPU
+# paid-API) and published to HF; this pod-side call FETCHES the canonical copy and
+# EXITS NON-ZERO if it is absent/unfetchable — it never generates its own (a
+# fetch-miss->generate fallback under the v4 parallel 7B ∥ 32B launch is a
+# check-then-act race that silently forks the stimulus across legs).
+run_phase topics
 
 # Phase ordering (code-review r1): A0 (Phase A anchor) FIRST → aggregate (verdict) →
 # G2 gate → Phase B grid only on PASS. `upload` runs BEFORE the optional 0-GPU `ridge`

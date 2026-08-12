@@ -13,10 +13,12 @@ reproduction verdict, the realized-vs-EMPIRICAL-A0 firing telemetry, the steerin
 ``DeltaHookStack``, the ridge add-on, the Fig-5 fallback, and per-(domain,arm,turn)
 checkpoint/resume.
 
-Phases (``--phase``): topics | generate | activations | aggregate | alpha |
-capability | fig5_generate | fig5_judge | ridge. Arms (``--arm``): the §5 nine
-(A0/A1/A2a/A2b/A3a/A3b/A4/A4R/A5). ``--import-check`` runs the whole-module
-args-attribute completeness assert (never a bare import).
+Phases (``--phase``): topics | generate | merge | activations | aggregate | gate |
+alpha | capability | firing | fig5_generate | fig5_judge | ridge | upload | finalize.
+Arms (``--arm``): the §5 nine (A0/A1/A2a/A2b/A3a/A3b/A4/A4R/A5) + the v4 amendment
+pair (A2c all-context-token cap; A2corr correction mode over A0-drifted history).
+``--import-check`` runs the whole-module args-attribute completeness assert (never a
+bare import).
 
 Verbatim Lu prompts (PROMPT 1 / PROMPT 2) + the 4 published personas/topics are
 embedded byte-exact from ``tasks/running/2223/artifacts/lu_et_al_fig4_verbatim_prompts.md``
@@ -319,6 +321,22 @@ ARMS: dict[str, dict] = {
         "phase": "B",
         "desc": "context-only cap, context-native axis",
     },
+    # v4 amendment (user-authorized, "run it in parallel now"): two additional cap arms.
+    "A2c": {
+        "model": "7b",
+        "engine": "caphook",
+        "arm_slug": "cap_allprompt",
+        "phase": "B",
+        "desc": "ALL-context-token cap, answer axis (all-prompt τ — rung between A2a and A1/A5)",
+    },
+    "A2corr": {
+        "model": "7b",
+        "engine": "caphook",
+        "arm_slug": "cap_ctx",
+        "phase": "B",
+        "history_mode": "a0-drifted",
+        "desc": "context-vector cap, answer axis, CORRECTION mode (A0 uncapped-drifted history)",
+    },
     "A3a": {
         "model": "7b",
         "engine": "caphook",
@@ -358,7 +376,12 @@ ARMS: dict[str, dict] = {
         "desc": "every-token STEER, answer axis (paper validation op)",
     },
 }
-CAP_ARMS = ("A1", "A2a", "A2b")  # firing telemetry (realized-vs-empirical) reported here
+# firing telemetry (realized-vs-empirical) reported here. v4: A2c (all-prompt position —
+# expect HIGHER realized firing than the single-context-token cells, diagnostic not
+# headline) + A2corr (context-end τ; its contexts ARE A0's drifted histories, so the
+# A0-empirical expected is exactly matched).
+CAP_ARMS = ("A1", "A2a", "A2b", "A2c", "A2corr")
+HISTORY_MODES = ("capped-throughout", "a0-drifted")  # per-arm history provenance (v4 A2corr)
 
 
 # ── path helpers (per-leg out-roots; crash-fix-rounds § per-leg out-roots) ──────
@@ -470,7 +493,7 @@ def build_arm_stack(arm: str, model_key: str, model, geometry: dict | None):
     - A1: ``None`` here — the paper-engine steerer is a CONTEXT MANAGER used at the
       generation call site (``with steerer:``), not an ``AxisCapHookStack``; the
       caller special-cases ``engine == "paper_cap_alltoken"``.
-    - A2a/A2b/A3a/A3b: ``build_stack_for_arm`` (in-house caphook, 7B axis; the
+    - A2a/A2b/A2c/A2corr/A3a/A3b: ``build_stack_for_arm`` (in-house caphook, 7B axis; the
       sign is correct for the in-house axis — BUG-1 is specific to the Lu 32B axis).
     - A4/A4R/A5: :class:`DeltaHookStack` (steering)."""
     from scripts import issue2203_runtime as R
@@ -551,11 +574,17 @@ def phase_topics(args) -> Path:
     + rollout text to raw_completions/topics/.
 
     IDEMPOTENT (code-review r1 BLOCKER 2): an existing topics_personas.json is REUSED
-    (skip-if-exists; ``--force-topics`` regenerates) — an unconditional paid-Sonnet
-    regeneration on a launcher restart silently switches the stimulus mid-conversation.
-    CROSS-LEG SHARE: the full (non-smoke) path first tries the canonical HF copy
-    (``{HF_EXPERIMENT}/topics_personas.json``) so the 7B and 32B legs — separate pods —
-    run on the IDENTICAL stimulus set; whichever leg generates first uploads it."""
+    (skip-if-exists; ``--force-topics`` bypasses the skip).
+    CROSS-LEG SHARE — GENERATE-ONCE-PRE-LAUNCH (code-review r2 BLOCKER, TOCTOU): the
+    stimulus is generated EXACTLY ONCE on the VM before any pod launch
+    (``--generate-topics``, 0-GPU paid-API) and published to the canonical HF copy
+    (``{HF_EXPERIMENT}/topics_personas.json``); the pod (full) path REQUIRE-fetches it
+    and FAILS LOUD when absent or unfetchable — it NEVER generates its own. A
+    fetch-miss->generate fallback under a concurrent 7B ∥ 32B launch is a check-then-act
+    race: both legs miss, both generate, both publish last-write-wins, and each proceeds
+    on its OWN local set — silently reinstating the cross-model stimulus confound; a
+    429-degraded fetch (LocalEntryNotFoundError) has the same silent-fork effect even
+    sequenced. Require-fetch removes both channels by construction."""
     from explore_persona_space.llm import api_dispatch
 
     out_root = Path(args.out_root)
@@ -563,9 +592,19 @@ def phase_topics(args) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     topics_out = out_dir / "topics_personas.json"
     if topics_out.exists() and not args.force_topics:
-        _log(f"[phase=topics] SKIP — {topics_out} exists (idempotent; --force-topics regenerates)")
+        _log(f"[phase=topics] SKIP — {topics_out} exists (idempotent; --force-topics bypasses)")
         return topics_out
-    if not args.smoke and not args.force_topics and _fetch_topics_from_hf(topics_out):
+    if not args.smoke and not args.generate_topics:
+        # POD PATH: require-fetch, fail-loud. No generation fallback of any kind.
+        if not _fetch_topics_from_hf(topics_out):
+            raise RuntimeError(
+                f"canonical stimulus {HF_EXPERIMENT}/topics_personas.json is NOT published "
+                "on the HF data repo — generate it ONCE pre-launch on the VM:\n"
+                f"  uv run python scripts/issue2223_drift.py --phase topics "
+                f"--generate-topics --out-root <out_root>\n"
+                "The pod path never generates its own stimulus (r2 TOCTOU BLOCKER: "
+                "cross-leg confound + duplicate paid-API spend)."
+            )
         return topics_out
     n_personas = 2 if args.smoke else N_PERSONAS_PER_DOMAIN
     n_topics = 2 if args.smoke else N_TOPICS_PER_PERSONA
@@ -672,11 +711,12 @@ def phase_topics(args) -> Path:
 def _fetch_topics_from_hf(dest: Path) -> bool:
     """Fetch the canonical cross-leg topics_personas.json from the HF data repo.
 
-    Returns True when the sibling leg already published the stimulus (copied to
-    ``dest``); False when no canonical copy exists yet (this leg generates + uploads).
-    Any transport error other than a clean not-found propagates (fail-loud)."""
+    Returns True when the pre-launch VM step already published the stimulus (copied
+    to ``dest``); False on a clean server-side 404 (not published yet — the POD
+    caller then FAILS LOUD, it never generates). Any transport degradation,
+    including a retry-exhausted LocalEntryNotFoundError, propagates (fail-loud)."""
     from huggingface_hub import hf_hub_download
-    from huggingface_hub.errors import EntryNotFoundError
+    from huggingface_hub.errors import EntryNotFoundError, LocalEntryNotFoundError
 
     from explore_persona_space.orchestrate import hub
 
@@ -689,9 +729,19 @@ def _fetch_topics_from_hf(dest: Path) -> bool:
             ),
             what="hf_hub_download topics_personas.json",
         )
+    except LocalEntryNotFoundError as e:
+        # TRANSPORT-degraded fetch (LocalEntryNotFoundError is the offline/429-storm
+        # subclass of EntryNotFoundError): the published set may EXIST but could not be
+        # reached after the retry budget. Re-raise — a not-found return here would let
+        # the r2 TOCTOU BLOCKER's second channel degrade a sequenced launch into
+        # generate-own-stimulus (silent cross-leg fork).
+        raise RuntimeError(
+            "transport-degraded fetch of the canonical stimulus (LocalEntryNotFoundError "
+            "after the retry budget) — the published copy may exist but is unreachable; "
+            "NEVER falling back to pod-side generation. Retry when the Hub is reachable."
+        ) from e
     except EntryNotFoundError:
-        # clean not-found = the sibling leg has not published yet (non-transient —
-        # propagates through the retry wrapper on first raise); this leg generates.
+        # clean server-side 404 = genuinely not published yet.
         return False
     dest.write_text(Path(cached).read_text())
     _log(f"[phase=topics] fetched canonical stimulus from HF -> {dest} (cross-leg share)")
@@ -821,6 +871,10 @@ def phase_generate(args) -> Path:
     enable_thinking = R.resolve_enable_thinking(MODEL_FOR[model_key])
     if args.think and model_key == "32b":
         enable_thinking = True
+    # v4 A2corr: history provenance — the arm spec is authoritative, --history-mode
+    # overrides. "a0-drifted" = per-turn single regeneration conditioned on A0's actual
+    # uncapped (drifted) history (teacher-forced), matched turn-for-turn against A0.
+    history_mode = args.history_mode or ARMS[arm].get("history_mode", "capped-throughout")
 
     out_root = Path(args.out_root)
     out_dir = out_root / f"issue_{ISSUE}" if not args.smoke else out_root
@@ -848,6 +902,22 @@ def phase_generate(args) -> Path:
     # cell continuing under regenerated topics is silent stimulus corruption; the hash
     # makes a topics change FAIL the resume loud (check_regime) instead.
     topics_sha = hashlib.sha256(topics_path.read_bytes()).hexdigest()[:16]
+    # v4 A2corr input: the A0 (thinking-OFF) canonical transcripts this run's Phase A
+    # produced. a0_sha pins the CONDITIONING-history content into the resume key — a
+    # regenerated A0 invalidates an A2corr resume loud, never a silent history switch.
+    a0_transcripts: dict | None = None
+    extra_regime: dict = {"history_mode": history_mode}
+    if history_mode == "a0-drifted":
+        a0_path = (
+            out_dir / "raw_completions" / "phaseA" / f"A0__{model_key}" / "raw_completions.json"
+        )
+        if not a0_path.exists():
+            raise FileNotFoundError(
+                f"{a0_path} absent — the correction arm consumes A0 Phase A transcripts; "
+                "run (and merge) the A0 cell before this arm"
+            )
+        extra_regime["a0_sha"] = hashlib.sha256(a0_path.read_bytes()).hexdigest()[:16]
+        a0_transcripts = json.loads(a0_path.read_text())["transcripts"]
     regime = C.regime_fingerprint(
         arm=arm,
         model=MODEL_FOR[model_key],
@@ -859,6 +929,7 @@ def phase_generate(args) -> Path:
         shard_id=shard_id,
         num_shards=num_shards,
         topics_sha=topics_sha,
+        **extra_regime,
     )
     # First run WRITES the fingerprint; a resume CHECKS the stored one (check_regime
     # raises on existing=None by contract — it is a resume-only guard, #2203 pattern).
@@ -883,9 +954,91 @@ def phase_generate(args) -> Path:
     completed_turns = _resume_completed_turns(turns_dir)
     max_turns = 3 if args.smoke else MAX_TURNS
     cap_info_by_turn: dict[int, dict] = {}
-    realized_all: list[dict] = []  # caphook firing records across all turns (A2a/A2b)
+    realized_all: list[dict] = []  # caphook firing records across all turns (cap arms)
 
-    for t in range(1, max_turns + 1):
+    # Shared per-turn generation closure (hoisted; used by BOTH loop modes).
+    def _gen(ctxs, max_new, _stack=stack, _factory=steerer_factory):
+        return _generate_multiturn(
+            model,
+            tok,
+            ctxs,
+            _stack,
+            _factory,
+            max_new_tokens=max_new,
+            temperature=dec["temperature"],
+            top_p=dec["top_p"],
+            render_fn=render_fn,
+            ids_fn=ids_fn,
+        )
+
+    # v4 A2corr CORRECTION loop: per-turn single regeneration conditioned on A0's
+    # actual uncapped (drifted) history — teacher-forced, matched turn-for-turn
+    # against A0. No auditor calls (A0's user turns are reused verbatim).
+    corrected: dict[str, dict[str, str]] = {}
+    if history_mode == "a0-drifted":
+        assert a0_transcripts is not None
+        for t in range(1, max_turns + 1):
+            t0 = time.time()
+            tpath = turns_dir / f"turn_{t:02d}.json"
+            if t in completed_turns and tpath.exists():
+                rec = json.loads(tpath.read_text())
+                for cid, pair in rec["messages"].items():
+                    corrected.setdefault(cid, {})[str(t)] = pair[1]["content"]
+                cap_info_by_turn[t] = rec.get("cap_info", {})
+                realized_all.extend(rec.get("realized") or [])
+                _log(
+                    f"[phase=generate] {cell} turn {t}/{max_turns} RESUMED "
+                    f"(corrected={len(rec['messages'])})"
+                )
+                continue
+            # rows = conversations whose A0 transcript carries a (user, assistant)
+            # pair at turn t (an A0 conversation that ENDED early simply has no pair).
+            rows: list[tuple[dict, list[dict]]] = []
+            for c in convs_all:
+                msgs = (a0_transcripts.get(c["id"]) or {}).get("messages") or []
+                i = 2 * (t - 1)
+                if (
+                    i + 1 < len(msgs)
+                    and msgs[i]["role"] == "user"
+                    and msgs[i + 1]["role"] == "assistant"
+                ):
+                    rows.append((c, msgs))
+            if not rows:
+                break
+            target_ctxs = [
+                {
+                    "id": c["id"],
+                    "system": None,
+                    "history": msgs[: 2 * (t - 1)],  # A0's DRIFTED pairs 1..t-1
+                    "user": msgs[2 * (t - 1)]["content"],  # A0's turn-t user message
+                }
+                for c, msgs in rows
+            ]
+            texts, _realized, cap_info = R.cap_hit_regen(
+                tok,
+                target_ctxs,
+                _gen,
+                max_new_tokens=dec["max_new_tokens"],
+                threshold=0.0,  # §4.2 unconditional per-turn truncation retry
+            )
+            cap_info_by_turn[t] = cap_info
+            if _realized:
+                realized_all.extend(_realized)
+            turn_msgs = {
+                c["id"]: [msgs[2 * (t - 1)], {"role": "assistant", "content": text}]
+                for (c, msgs), text in zip(rows, texts, strict=True)
+            }
+            for cid, pair in turn_msgs.items():
+                corrected.setdefault(cid, {})[str(t)] = pair[1]["content"]
+            _record_turn(tpath, t, turn_msgs, [], cap_info, _realized)
+            _log(
+                f"[phase=generate] {cell} turn {t}/{max_turns} done "
+                f"(corrected={len(rows)} cap_hit={cap_info['final_cap_hit_frac']:.3f} "
+                f"elapsed={time.time() - t0:.0f}s)"
+            )
+
+    lockstep_turns = range(1, max_turns + 1) if history_mode != "a0-drifted" else range(0)
+    for t in lockstep_turns:
         t0 = time.time()
         tpath = turns_dir / f"turn_{t:02d}.json"
         if t in completed_turns and tpath.exists():
@@ -927,20 +1080,6 @@ def phase_generate(args) -> Path:
             for c in alive
         ]
 
-        def _gen(ctxs, max_new, _stack=stack, _factory=steerer_factory):
-            return _generate_multiturn(
-                model,
-                tok,
-                ctxs,
-                _stack,
-                _factory,
-                max_new_tokens=max_new,
-                temperature=dec["temperature"],
-                top_p=dec["top_p"],
-                render_fn=render_fn,
-                ids_fn=ids_fn,
-            )
-
         # threshold=0.0 (§4.2, r1 CONCERN 3): ANY length-terminated turn is regenerated
         # ONCE at 2× BEFORE being appended to history — in a multi-turn loop a single
         # truncated turn poisons every later turn of that conversation, so the per-turn
@@ -969,25 +1108,41 @@ def phase_generate(args) -> Path:
         )
 
     # write the canonical per-cell raw_completions.json (uploader target).
-    transcripts = {
-        c["id"]: {
-            **{
-                k: c[k]
-                for k in (
-                    "id",
-                    "domain",
-                    "persona_index",
-                    "topic_index",
-                    "persona_published",
-                    "topic_published",
-                )
-            },
-            "n_turns": sum(1 for m in histories[c["id"]] if m["role"] == "assistant"),
-            "messages": histories[c["id"]],
+    _CONV_KEYS = (
+        "id",
+        "domain",
+        "persona_index",
+        "topic_index",
+        "persona_published",
+        "topic_published",
+    )
+    if history_mode == "a0-drifted":
+        # CORRECTION-mode transcripts: `messages` = A0's DRIFTED transcript verbatim
+        # (the conditioning history — TEACHER-FORCED provenance, recorded explicitly
+        # so the correction-vs-prevention contrast's nuisance variable is legible
+        # downstream, #432→#456); `corrected` = this arm's capped per-turn responses.
+        transcripts = {
+            c["id"]: {
+                **{k: c[k] for k in _CONV_KEYS},
+                "n_turns": len(corrected.get(c["id"], {})),
+                "history_mode": history_mode,
+                "messages": a0_transcripts[c["id"]]["messages"],
+                "corrected": corrected.get(c["id"], {}),
+            }
+            for c in convs_all
+            if c["id"] in a0_transcripts
         }
-        for c in convs_all
-    }
-    # Realized firing telemetry (caphook arms A2a/A2b): _summarize_realized excludes
+    else:
+        transcripts = {
+            c["id"]: {
+                **{k: c[k] for k in _CONV_KEYS},
+                "n_turns": sum(1 for m in histories[c["id"]] if m["role"] == "assistant"),
+                "history_mode": history_mode,
+                "messages": histories[c["id"]],
+            }
+            for c in convs_all
+        }
+    # Realized firing telemetry (caphook arms A2a/A2b/A2c/A2corr): _summarize_realized excludes
     # regen-pass rows. A1 (paper engine) + delta/baseline arms have no per-edit records
     # (realized_all empty) → null; A1 realized firing is measured engine-agnostically in
     # the `firing` phase from band-layer projections vs the cfg τ.
@@ -997,6 +1152,9 @@ def phase_generate(args) -> Path:
         "arm": arm,
         "model": model_key,
         "enable_thinking": bool(enable_thinking),
+        # history provenance per arm (v4): capped-throughout (on-policy) vs a0-drifted
+        # (teacher-forced from A0) — the A2corr-vs-A2a nuisance variable, recorded.
+        "history_mode": history_mode,
         "n_conversations": len(convs_all),
         "decode": dec,
         "cap_hit_by_turn": cap_info_by_turn,
@@ -1168,7 +1326,7 @@ def _load_geometry(arm: str, model_key: str, model, out_dir: Path, smoke: bool):
     """Resolve the axis / τ / α the arm's hook needs.
 
     A0: None. A1 (32B): the Lu published axis + capping_config (paper engine). Caphook
-    arms (A2a/A2b/A3a/A3b): #2203 response geometry (+ native for A2b/A3b). Steering
+    arms (A2a/A2b/A2c/A2corr/A3a/A3b): #2203 response geometry (+ native for A2b/A3b). Steering
     arms (A4/A4R/A5): the answer axis at the band layers + per-layer α from
     alpha_calibration.json."""
     engine = ARMS[arm]["engine"]
@@ -1366,13 +1524,19 @@ def _collect_read_units(raw: dict, tok, ids_fn) -> list[dict]:
     raw text tokenized SEPARATELY and per-segment ID-concatenated (BPE-seam rule —
     never re-tokenize the join). Each unit: conv / domain / turn / full ``ids`` /
     ``ctx_len`` / ``resp_len`` / ``prefix_end`` (None when the render lacks a clean
-    3-``im_start`` prefix boundary). Shared by phase_activations + phase_firing."""
+    3-``im_start`` prefix boundary). Shared by phase_activations + phase_firing.
+
+    CORRECTION-mode transcripts (v4 A2corr — entry carries ``corrected``): the read's
+    RESPONSE at turn t is the arm's capped regeneration ``corrected[str(t)]``, while
+    the conditioning ``history`` keeps building from the stored A0 DRIFTED ``messages``
+    — exactly the arm's generation-time context (teacher-forced provenance)."""
     from explore_persona_space.experiments.issue2094 import bank as B2094
 
     units: list[dict] = []
     for cid, tr in raw["transcripts"].items():
         domain = tr["domain"]
         msgs = tr["messages"]
+        corrected = tr.get("corrected") or {}
         history: list[dict] = []
         turn_idx = 0
         for i in range(0, len(msgs) - 1, 2):
@@ -1382,8 +1546,15 @@ def _collect_read_units(raw: dict, tok, ids_fn) -> list[dict]:
             ctx = {"id": cid, "system": None, "history": list(history), "user": msgs[i]["content"]}
             history.append(msgs[i])  # user (now part of history for the NEXT turn)
             ctx_ids = ids_fn(tok, ctx)
-            resp_ids = tok(msgs[i + 1]["content"], add_special_tokens=False)["input_ids"]
-            history.append(msgs[i + 1])  # assistant
+            if corrected:
+                resp_text = corrected.get(str(turn_idx))
+                if resp_text is None:  # no correction generated for this turn (partial run)
+                    history.append(msgs[i + 1])
+                    continue
+            else:
+                resp_text = msgs[i + 1]["content"]
+            resp_ids = tok(resp_text, add_special_tokens=False)["input_ids"]
+            history.append(msgs[i + 1])  # assistant (A0's drifted turn in corrected mode)
             if not resp_ids:
                 continue
             pe = B2094.prefix_end_index_multi(tok, ctx_ids) if _has_prefix(tok, ctx_ids) else None
@@ -1851,9 +2022,10 @@ def _band_fire_fraction(
     """Fraction of (unit × band-layer × position) where the cap WOULD fire.
 
     ``direction`` = ``below`` (caphook floor: proj < τ) | ``above`` (paper cap:
-    proj > τ). ``position`` = ``context-end`` (the last prompt token) | ``all``
-    (every real token). Reads are BATCHED (right-pad groups of GEN_BATCH_SIZE);
-    projections are onto the per-layer UNIT axis (both engines unit-normalize)."""
+    proj > τ). ``position`` = ``context-end`` (the last prompt token) |
+    ``all-prompt`` (every prompt/context token — v4 A2c) | ``all`` (every real
+    token). Reads are BATCHED (right-pad groups of GEN_BATCH_SIZE); projections
+    are onto the per-layer UNIT axis (both engines unit-normalize)."""
     import torch
 
     from explore_persona_space.analysis.extraction import extract_layer_activations
@@ -1883,6 +2055,11 @@ def _band_fire_fraction(
                     hit = proj < tau if direction == "below" else proj > tau
                     fires += int(hit)
                     total += 1
+                elif position == "all-prompt":  # every prompt/context token (v4 A2c)
+                    projs = hs[r, : u["ctx_len"]] @ vhat
+                    hit = (projs < tau) if direction == "below" else (projs > tau)
+                    fires += int(hit.sum().item())
+                    total += u["ctx_len"]
                 else:  # all real positions
                     projs = hs[r, : len(u["ids"])] @ vhat
                     hit = (projs < tau) if direction == "below" else (projs > tau)
@@ -1895,7 +2072,7 @@ def _band_fire_fraction(
 def _cap_axis_tau(arm: str, model_key: str, model, geometry: dict):
     """Per-band-layer (unit axis, τ) + (position, direction) for a cap arm.
 
-    Caphook (A2a/A2b): response/native axis + context-end τ, floor direction
+    Caphook (A2a/A2b/A2c/A2corr): response/native axis + the arm's position-set τ, floor direction
     (fires proj < τ). Paper (A1): the cfg's per-layer vectors + cap thresholds,
     all-token above direction (fires proj > τ)."""
     import torch
@@ -1915,9 +2092,14 @@ def _cap_axis_tau(arm: str, model_key: str, model, geometry: dict):
             axis_unit[li] = (vv / (vv.norm() + 1e-8)).to(dev)
             tau[li] = float(iv["cap"])
         return sorted(axis_unit), axis_unit, tau, "all", "above"
-    # caphook floor arm
+    # caphook floor arm — τ + position from the arm's OWN position_set (v4: A2c reads
+    # the pre-calibrated all-prompt τ; A2a/A2b/A2corr read context-end; NEVER hardcode
+    # context-end here — the expected-firing read must match the arm's edited positions).
+    from scripts import issue2203_common as C2203
+
+    position_set = C2203.ARM_SPECS[ARMS[arm]["arm_slug"]]["position_set"]
     band = list(geometry["layers"])
-    tau_ce = geometry["tau_by_position"]["context-end"]
+    tau_pos = geometry["tau_by_position"][position_set]
     axis_unit = {
         li: (
             geometry["axis_by_layer"][li].float()
@@ -1925,9 +2107,9 @@ def _cap_axis_tau(arm: str, model_key: str, model, geometry: dict):
         ).to(dev)
         for li in band
     }
-    tau = {li: float(tau_ce[li]) for li in band}
+    tau = {li: float(tau_pos[li]) for li in band}
     _ = torch
-    return band, axis_unit, tau, "context-end", "below"
+    return band, axis_unit, tau, position_set, "below"
 
 
 def phase_firing(args) -> Path:
@@ -1936,7 +2118,7 @@ def phase_firing(args) -> Path:
     Expected firing = the cap-fire fraction measured on the A0 (no-intervention)
     completions at the arm's OWN positions/layers/τ — the pre-registered empirical
     target. Realized firing = the caphook per-edit ``fired_frac`` harvested during
-    generation (A2a/A2b, PRIMARY); for A1 (paper engine, no per-edit telemetry) it
+    generation (caphook arms, PRIMARY); for A1 (paper engine, no per-edit telemetry) it
     is measured engine-agnostically on A1's OWN completions. A cell is
     calibration-limited iff realized < 0.5 × expected (plan §4.5)."""
     from scripts import issue2203_common as C
@@ -1973,7 +2155,7 @@ def phase_firing(args) -> Path:
         position=position,
         direction=direction,
     )
-    # realized: harvested caphook fired_frac (A2a/A2b), else projection-derived (A1).
+    # realized: harvested caphook fired_frac (caphook arms), else projection-derived (A1).
     arm_raw = json.loads(
         (out_dir / "raw_completions" / "phaseB" / cell / "raw_completions.json").read_text()
     )
@@ -2349,6 +2531,7 @@ def phase_merge(args) -> Path:
     realized_records: list = []
     cap_hit_by_turn_shards: dict = {}
     dec = None
+    history_mode = None
     for sp in shard_paths:
         d = json.loads(sp.read_text())
         for cid, tr in d["transcripts"].items():
@@ -2358,12 +2541,14 @@ def phase_merge(args) -> Path:
         realized_records.extend(d.get("realized_records") or [])
         cap_hit_by_turn_shards[str(d.get("shard_id"))] = d.get("cap_hit_by_turn")
         dec = dec or d.get("decode")
+        history_mode = history_mode or d.get("history_mode")
     realized_firing = P2._summarize_realized(realized_records) if realized_records else None
     payload = {
         "cell": cell,
         "arm": arm,
         "model": model_key,
         "enable_thinking": bool(enable_thinking),
+        "history_mode": history_mode or "capped-throughout",
         "n_conversations": len(transcripts),
         "decode": dec,
         "cap_hit_by_turn_shards": cap_hit_by_turn_shards,
@@ -2463,8 +2648,23 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument(
         "--force-topics",
         action="store_true",
-        help="regenerate topics_personas.json even when a copy exists (topics is "
-        "otherwise idempotent — skip-if-exists; r1 BLOCKER 2)",
+        help="bypass the local skip-if-exists for the topics phase (re-fetch, or "
+        "regenerate when combined with --generate-topics; r1 BLOCKER 2)",
+    )
+    ap.add_argument(
+        "--generate-topics",
+        action="store_true",
+        help="authorize paid-API topic GENERATION + HF publish — the VM PRE-LAUNCH step "
+        "ONLY. Without it the full (pod) path REQUIRE-fetches the published canonical "
+        "stimulus and exits non-zero if absent/unfetchable (r2 TOCTOU BLOCKER: a "
+        "generate-fallback under concurrent legs forks the stimulus silently)",
+    )
+    ap.add_argument(
+        "--history-mode",
+        choices=HISTORY_MODES,
+        default=None,
+        help="override the arm spec's history provenance (default: the ARMS registry "
+        "value; capped-throughout for all arms except A2corr's a0-drifted — v4)",
     )
     ap.add_argument(
         "--import-check",
