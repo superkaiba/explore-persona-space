@@ -393,24 +393,6 @@ pooling-convention row or a silent mismatch is a plan-time REVISE
 (Statistics lens item 15), never a sanity-gate footnote. Plans that fit no
 map are covered by the same "N/A — no representation map fitted" line.
 
-**Mapping-arms row (wider trigger: any representation mapping, not only
-fitted maps).** Any experiment that computes a representation mapping — a
-geometry read, predictor, probe, or direction extraction over model
-activations, fitted or not — registers BOTH mapping arms,
-prefix-based AND context-based, as paired arms of the same design, both
-reported. Canonical definitions: the prefix is everything before the user
-query; the context is the prefix plus the user query. Running only one arm is an explicit stated
-deviation in the plan, carried into the clean-result as a scope caveat —
-checked, never forbidden — with a one-line justification (e.g. a substrate
-whose prefix is a constant chat template, making the prefix arm a
-degenerate constant-input read). Two shipped one-arm rounds were caught by
-the user, not the pipeline: #958 (2026-07-04) and #779's 2026-07-14 inline
-pre-image round (context-only). A silent one-arm mapping is a plan-time
-REVISE (Statistics lens item 15, both-arms clause). Plans that compute no
-representation mapping are covered by an "N/A — no representation mapping
-computed" line. Full rule: CLAUDE.md § "Prefix mapping AND context
-mapping".
-
 **Figures to produce (over-produce; ask only when the hero is ambiguous).** The plan names the specific hero figure(s) the headline needs AND a short exploratory dump the analyzer over-produces at the end (per-cell bars, per-seed scatter, per-step trajectory lines, raw-alongside-residualized). Default to over-producing exploratory views; the analyzer picks the hero from them rather than producing one figure and hoping it lands. When the view that best supports the headline is genuinely non-obvious, surface ONE plan-time question to the user about which view to feature.
 
 ## 6.5 Primary deliverable (the upstream completeness-vs-plan gate)
