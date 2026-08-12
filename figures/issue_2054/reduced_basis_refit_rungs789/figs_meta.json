@@ -1,0 +1,17 @@
+{
+ "figures": [
+  "hero_calibration_nslope.png",
+  "hero_class_distributions.png",
+  "kprofile_curves.png",
+  "oldnew_scatter_rung9.png",
+  "matchedn_scatter_rung9.png",
+  "prefix_raw_r2.png"
+ ],
+ "metadata": {
+  "code_version": "1",
+  "git_commit": "c8d2fdfe",
+  "git_dirty": false,
+  "numpy": "2.2.6",
+  "utc": "2026-08-12T17:12:34.216241+00:00"
+ }
+}
