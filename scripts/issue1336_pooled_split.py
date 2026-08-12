@@ -1971,13 +1971,16 @@ def upload_manifest(ctx: SplitContext, manifest_path: Path) -> None:
     from explore_persona_space.orchestrate import hub
 
     dest = f"{cm.HF_PREFIX_1336}/analysis_tensors/{POOLED_OUT_SUBDIR}/{manifest_path.name}"
+    # NOTE: hub._upload takes NO commit_message kwarg (its signature ends at
+    # raise_on_error) — passing one crashed the c_pool precheck at exactly
+    # this call (SLURM 11981 TypeError). The commit message is not
+    # load-bearing; do NOT widen the shared helper's signature for it.
     base_url = hub._upload(  # noqa: SLF001 - established internal helper for single-file uploads
         manifest_path,
         repo_id=cm.HF_DATA_REPO,
         repo_type="dataset",
         path_in_repo=dest,
         upload_as_file=True,
-        commit_message=f"issue1336 pooled_split_v3 manifest ({'smoke' if ctx.smoke else 'full'})",
     )
     if not base_url:
         # _upload is fail-soft by RETURN ('' on missing token / failed verify /

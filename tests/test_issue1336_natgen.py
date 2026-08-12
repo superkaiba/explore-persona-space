@@ -455,6 +455,10 @@ def test_run_queue_stagger_third_arg_optional_and_set_e_safe(tmp_path):
         [
             "set -euo pipefail",
             "NGPU=2",
+            # v21 (precheck 11981): workers pin the w-th ALLOCATED device via
+            # EPS_ALLOC_GPUS, a script-top global the dispatcher always defines
+            # (>= NGPU elements when NGPU > 0) — the harness supplies it too.
+            "EPS_ALLOC_GPUS=(0 1)",
             f"DONE_DIR={done}",
             f"JOB_LOG_DIR={logs}",
             fn,

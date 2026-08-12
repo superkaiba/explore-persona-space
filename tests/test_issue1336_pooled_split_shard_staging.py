@@ -165,3 +165,45 @@ def test_stage_offpolicy_concat_corpora_stage_both_halves() -> None:
     (_t_prefix, t_rev, t_dest) = so._prefix_and_layout("dpo", "gsm8k_test1319")[0]
     assert t_rev == cm.WAVE1_HF_REV
     assert t_dest == so.GEN_ROOT / "dpo" / "gsm8k_test1319"
+
+
+# ---------------------------------------------------------------------------
+# v21 (precheck 11981 BUG 1): upload_manifest's hub._upload call must BIND the
+# REAL helper signature. Pre-fix the call carried a ``commit_message`` kwarg
+# hub._upload does not take — the c_pool run crashed TypeError at the manifest
+# upload AFTER every gate had passed. create_autospec enforces the real
+# signature, so these tests execute the real upload_manifest body and FAIL
+# pre-fix / pass post-fix.
+# ---------------------------------------------------------------------------
+def test_upload_manifest_binds_real_hub_upload_signature(tmp_path, monkeypatch):
+    from unittest.mock import create_autospec
+
+    from explore_persona_space.orchestrate import hub
+
+    manifest = tmp_path / "split_manifest.json"
+    manifest.write_text("{}")
+    fake = create_autospec(hub._upload, return_value="https://huggingface.co/x")
+    monkeypatch.setattr(hub, "_upload", fake)
+    ps.upload_manifest(SimpleNamespace(smoke=False), manifest)
+    assert fake.call_count == 1
+    kwargs = fake.call_args.kwargs
+    assert kwargs["repo_id"] == cm.HF_DATA_REPO
+    assert kwargs["repo_type"] == "dataset"
+    assert kwargs["upload_as_file"] is True
+    assert kwargs["path_in_repo"].endswith("/split_manifest.json")
+
+
+def test_upload_manifest_still_raises_on_fail_soft_empty_return(tmp_path, monkeypatch):
+    """The fail-loud guard on _upload's fail-soft '' return survives the kwarg fix."""
+    from unittest.mock import create_autospec
+
+    import pytest
+
+    from explore_persona_space.orchestrate import hub
+
+    manifest = tmp_path / "split_manifest.json"
+    manifest.write_text("{}")
+    fake = create_autospec(hub._upload, return_value="")
+    monkeypatch.setattr(hub, "_upload", fake)
+    with pytest.raises(RuntimeError, match="manifest_upload_no_path"):
+        ps.upload_manifest(SimpleNamespace(smoke=True), manifest)

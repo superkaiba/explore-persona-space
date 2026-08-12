@@ -83,14 +83,32 @@ JOB_LOG_DIR="$REPO_ROOT/logs/issue1336_jobs$([ "$SMOKE" -eq 1 ] && echo _smoke |
 mkdir -p "$DONE_DIR" "$JOB_LOG_DIR" "$OUT_DIR"
 [ -f "$DONE_DIR/start_ts" ] || date +%s > "$DONE_DIR/start_ts"
 
+# GPU allocation (SLURM 11981 fix): the INHERITED CUDA_VISIBLE_DEVICES is the
+# allocated device LIST — honor it. `nvidia-smi --list-gpus` is a driver-level
+# query that enumerates ALL physical GPUs regardless of CVD (it returned 8 on
+# a 1-GPU allocation whose real device was physical GPU 5, and the old
+# literal-0 override re-pointed us onto another job's GPU 0).
+# Workers pin the w-th ALLOCATED device (${EPS_ALLOC_GPUS[w]}); the nvidia-smi
+# count is the fallback ONLY when CVD is unset/empty (RunPod/GCE whole-machine
+# lanes). Whole-node SLURM sets CVD=0,1,...,7 so EPS_ALLOC_GPUS[w] == w and
+# NGPU == 8 — byte-identical to the pre-fix behaviour on the 8-GPU shape.
 # Guarded inner `|| true`, NOT a trailing `|| echo 0`: under pipefail a
 # missing nvidia-smi fails the WHOLE pipeline while wc still prints "0", so
 # the trailing echo appended a second line ("0\n0") — run_queue's integer
 # arithmetic then errored and the phase completed with ZERO workers spawned
 # (silent no-op phase; caught by the unit-B CPU smoke).
-NGPU=$( (nvidia-smi --list-gpus 2>/dev/null || true) | wc -l )
+EPS_ALLOC_GPUS=()
+if [ -n "${CUDA_VISIBLE_DEVICES-}" ]; then
+    IFS=',' read -ra EPS_ALLOC_GPUS <<< "$CUDA_VISIBLE_DEVICES"
+    NGPU=${#EPS_ALLOC_GPUS[@]}
+else
+    NGPU=$( (nvidia-smi --list-gpus 2>/dev/null || true) | wc -l )
+fi
 case "$NGPU" in *[!0-9]* | "") echo "[dispatch1336] FATAL: bad GPU count '$NGPU'" >&2; exit 70;; esac
-echo "[dispatch1336] phase=$PHASE_ARG smoke=$SMOKE realized_gpus=$NGPU out=$OUT_DIR"
+if [ "${#EPS_ALLOC_GPUS[@]}" -eq 0 ] && [ "$NGPU" -gt 0 ]; then
+    read -ra EPS_ALLOC_GPUS <<< "$(seq -s' ' 0 $((NGPU - 1)))"
+fi
+echo "[dispatch1336] phase=$PHASE_ARG smoke=$SMOKE realized_gpus=$NGPU alloc=[${EPS_ALLOC_GPUS[*]:-}] out=$OUT_DIR"
 
 HF_DATA_REPO="superkaiba1/explore-persona-space-data"
 HF_PREFIX="issue1336_rlvr_ladder"
@@ -129,8 +147,9 @@ PY
 # ---------------------------------------------------------------------------
 # Work-conserving queue: jobs file = "name<TAB>command" lines; a pool of
 # min(NGPU,1..n_jobs) workers pops the next pending job the moment a GPU
-# frees (no wave barriers). Worker w pins CUDA_VISIBLE_DEVICES=w. Per-job
-# done-files make re-runs skip completed cells.
+# frees (no wave barriers). Worker w pins CUDA_VISIBLE_DEVICES to the w-th
+# ALLOCATED device (${EPS_ALLOC_GPUS[w]}, == w on a whole-node allocation).
+# Per-job done-files make re-runs skip completed cells.
 # ---------------------------------------------------------------------------
 run_queue() { # $1=phase $2=jobs-file $3=per-worker start stagger seconds (default 0: existing callers byte-unchanged)
     local phase="$1" jobs="$2" stagger="${3:-0}" n_jobs width qdir w
@@ -173,7 +192,7 @@ run_queue() { # $1=phase $2=jobs-file $3=per-worker start stagger seconds (defau
                 echo "[$phase] worker=$w start $name"
                 if [ "$NGPU" -gt 0 ]; then
                     ok=0
-                    CUDA_VISIBLE_DEVICES=$w bash -c "$cmd" >> "$jlog" 2>&1 || ok=$?
+                    CUDA_VISIBLE_DEVICES=${EPS_ALLOC_GPUS[w]} bash -c "$cmd" >> "$jlog" 2>&1 || ok=$?
                 else
                     ok=0
                     bash -c "$cmd" >> "$jlog" 2>&1 || ok=$?
@@ -361,7 +380,7 @@ _fit_one_cell() { # $1=cell_id  (direct, non-queued G1 fit on GPU 0)
     [ -f "$done_f" ] && { echo "[fit] skip $cell (G1 fit already complete)"; return 0; }
     jlog="$JOB_LOG_DIR/fitg1_recal__${cell}.log"
     if [ "$NGPU" -gt 0 ]; then
-        CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue1336_fit_cells.py \
+        CUDA_VISIBLE_DEVICES=${EPS_ALLOC_GPUS[0]} uv run python scripts/issue1336_fit_cells.py \
             --cells "$cell" --out-dir "$OUT_DIR" $SMOKE_FLAG >> "$jlog" 2>&1 || rc=$?
     else
         uv run python scripts/issue1336_fit_cells.py \
@@ -1979,7 +1998,7 @@ PY
     xtr_cmd="uv run python scripts/issue1336_extract_turnstore.py --model rlvr --corpus lmsys5k --format chat --gen-root $gen_root --prompts-root $prompts_root --row-allowlist $gdir/g2_row_allowlist.json $tiny_flag $SMOKE_FLAG"
     if [ "$NGPU" -gt 0 ]; then
         # shellcheck disable=SC2086
-        CUDA_VISIBLE_DEVICES=0 $xtr_cmd --out-dir "$gdir/g2_recapture" \
+        CUDA_VISIBLE_DEVICES=${EPS_ALLOC_GPUS[0]} $xtr_cmd --out-dir "$gdir/g2_recapture" \
             >> "$JOB_LOG_DIR/g2__recapture.log" 2>&1
     else
         # shellcheck disable=SC2086
@@ -2484,7 +2503,7 @@ _fit_one_cell_v2() { # $1=cell_id — direct G1' fit on GPU 0 (queue-compatible 
     [ "$SMOKE" -eq 1 ] && extra="--smoke"
     if [ "$NGPU" -gt 0 ]; then
         # shellcheck disable=SC2086
-        CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue1336_fit_cells.py --v2 \
+        CUDA_VISIBLE_DEVICES=${EPS_ALLOC_GPUS[0]} uv run python scripts/issue1336_fit_cells.py --v2 \
             --cells "$cell" --out-dir "$OUT_DIR" $extra >> "$jlog" 2>&1 || rc=$?
     else
         # shellcheck disable=SC2086
@@ -2654,7 +2673,7 @@ PY
         local p0 p1 pilot_wall
         p0=$(date +%s)
         if [ "$NGPU" -gt 0 ]; then
-            CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue1336_metric_ladder.py \
+            CUDA_VISIBLE_DEVICES=${EPS_ALLOC_GPUS[0]} uv run python scripts/issue1336_metric_ladder.py \
                 --pair base:sft --corpus lmsys23k --format chat \
                 --bars-json "$V2_BARS" --full-tier-layers "$headline" \
                 --out-dir "$OUT_DIR" --wave1-turnstore-dir "$WAVE1_TS_DIR" \
@@ -3007,7 +3026,7 @@ ensure_diag_cell_v3() { # $1=model $2=corpus — diagonal v2 capture present loc
     local m="$1" c="$2"
     [ "$SMOKE" -eq 1 ] && return 0
     if [ "$NGPU" -gt 0 ]; then
-        CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue1336_extract_turnstore.py \
+        CUDA_VISIBLE_DEVICES=${EPS_ALLOC_GPUS[0]} uv run python scripts/issue1336_extract_turnstore.py \
             --v2 --model "$m" --corpus "$c" --format chat --upload \
             >> "$JOB_LOG_DIR/diag_resume__${m}_${c}.log" 2>&1
     else
@@ -3181,7 +3200,7 @@ PY
     xtr_base="uv run python scripts/issue1336_extract_turnstore.py --v2 --format chat --corpus $corpus --row-allowlist $gdir/g2v2_row_allowlist.json $tiny_flag $SMOKE_FLAG"
     if [ "$NGPU" -gt 0 ]; then
         # shellcheck disable=SC2086
-        CUDA_VISIBLE_DEVICES=0 $xtr_base --model "$ckpt" --text-source "$src" $genv2_flag \
+        CUDA_VISIBLE_DEVICES=${EPS_ALLOC_GPUS[0]} $xtr_base --model "$ckpt" --text-source "$src" $genv2_flag \
             --out-dir "$gdir/g2v2_recapture" >> "$JOB_LOG_DIR/g2v2__recapture.log" 2>&1
     else
         # shellcheck disable=SC2086
@@ -3326,7 +3345,7 @@ _extract_one_offpol_v3() { # $1=ckpt $2=text-source $3=corpus — timed §9 pilo
     }
     jlog="$JOB_LOG_DIR/extract_offpolicy__${name}.log"
     if [ "$NGPU" -gt 0 ]; then
-        CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue1336_extract_turnstore.py \
+        CUDA_VISIBLE_DEVICES=${EPS_ALLOC_GPUS[0]} uv run python scripts/issue1336_extract_turnstore.py \
             --v2 --model "$i" --text-source "$j" --corpus "$c" --format chat \
             --split-manifest "$(pooled_manifest_v3)" --upload >> "$jlog" 2>&1 || rc=$?
     else
@@ -3492,7 +3511,7 @@ _fit_one_unit_v3() { # $1=pooled unit id — direct G1'v3 fit on GPU 0 (queue-co
     [ "$SMOKE" -eq 1 ] && extra="--smoke"
     if [ "$NGPU" -gt 0 ]; then
         # shellcheck disable=SC2086
-        CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue1336_fit_cells.py --v3-pooled \
+        CUDA_VISIBLE_DEVICES=${EPS_ALLOC_GPUS[0]} uv run python scripts/issue1336_fit_cells.py --v3-pooled \
             --cells "$unit" --out-dir "$OUT_DIR" $extra >> "$jlog" 2>&1 || rc=$?
     else
         # shellcheck disable=SC2086
@@ -3760,7 +3779,7 @@ for i, j in pair_list:
         pcmd=${pline#*$'\t'}
         p0=$(date +%s)
         if [ "$NGPU" -gt 0 ]; then
-            CUDA_VISIBLE_DEVICES=0 bash -c "$pcmd" >> "$JOB_LOG_DIR/ladder_pool__${pname}.log" 2>&1
+            CUDA_VISIBLE_DEVICES=${EPS_ALLOC_GPUS[0]} bash -c "$pcmd" >> "$JOB_LOG_DIR/ladder_pool__${pname}.log" 2>&1
         else
             bash -c "$pcmd" >> "$JOB_LOG_DIR/ladder_pool__${pname}.log" 2>&1
         fi
