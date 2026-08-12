@@ -375,6 +375,18 @@ def _log(msg: str) -> None:
     print(msg, flush=True)
 
 
+def _shard_params(args) -> tuple[int, int]:
+    """(shard_id, num_shards) for the §9 data-parallel conversation fan-out.
+
+    ``getattr`` (not ``args.<attr>``) so the argcheck read-scan never flags them;
+    both are declared in ``build_argparser``. ``num_shards==1`` ⇒ no fan-out."""
+    n = max(1, int(getattr(args, "num_shards", 1) or 1))
+    i = int(getattr(args, "shard_id", 0) or 0)
+    if not (0 <= i < n):
+        raise ValueError(f"shard_id {i} out of range for num_shards {n}")
+    return i, n
+
+
 # ── multi-turn render / ids (target render is history-aware + thinking-toggled) ──
 def multiturn_render_fns(enable_thinking: bool | None):
     """``(render_fn, ids_fn)`` for the history-aware target render.
@@ -751,18 +763,25 @@ def phase_generate(args) -> Path:
     out_root = Path(args.out_root)
     out_dir = out_root / f"issue_{ISSUE}" if not args.smoke else out_root
     cell = f"{arm}__{model_key}" + ("__think" if enable_thinking else "")
-    turns_dir = out_dir / "turns" / cell
-    turns_dir.mkdir(parents=True, exist_ok=True)
+    shard_id, num_shards = _shard_params(args)
+    shard_sfx = "" if num_shards == 1 else f"__s{shard_id}of{num_shards}"
     phase_tag = "phaseA" if ARMS[arm]["phase"] == "A" else "phaseB"
+    turns_dir = out_dir / "turns" / (cell + shard_sfx)
+    turns_dir.mkdir(parents=True, exist_ok=True)
     raw_out = out_dir / "raw_completions" / phase_tag / cell
     raw_out.mkdir(parents=True, exist_ok=True)
 
     domains = DOMAINS[:1] if args.smoke else DOMAINS
     topics_path = out_dir / "topics_personas.json"
-    convs_all = _build_conversations(topics_path, domains)
+    convs_full = _build_conversations(topics_path, domains)
+    # §9 data-parallel fan-out: each shard runs a DISJOINT stride slice of the
+    # conversation axis (stride keeps domains balanced across shards). The merge
+    # phase unions the shards into the canonical raw_completions.json.
+    convs_all = convs_full[shard_id::num_shards] if num_shards > 1 else convs_full
     dec = DECODE[(model_key, enable_thinking)]
 
-    # regime fingerprint (resume key — EVERY output-affecting knob).
+    # regime fingerprint (resume key — EVERY output-affecting knob; full conv count
+    # + shard params so a shard's regime is stable across resume, distinct per shard).
     regime = C.regime_fingerprint(
         arm=arm,
         model=MODEL_FOR[model_key],
@@ -770,9 +789,11 @@ def phase_generate(args) -> Path:
         max_new_tokens=dec["max_new_tokens"],
         temperature=dec["temperature"],
         top_p=dec["top_p"],
-        n_convs=len(convs_all),
+        n_convs=len(convs_full),
+        shard_id=shard_id,
+        num_shards=num_shards,
     )
-    regime_path = out_dir / "turns" / f"{cell}.regime.json"
+    regime_path = out_dir / "turns" / f"{cell}{shard_sfx}.regime.json"
     existing = json.loads(regime_path.read_text()) if regime_path.exists() else None
     C.check_regime(existing, regime, regime_path)
 
@@ -901,17 +922,26 @@ def phase_generate(args) -> Path:
         "decode": dec,
         "cap_hit_by_turn": cap_info_by_turn,
         "realized_firing": realized_firing,
+        "shard_id": shard_id,
+        "num_shards": num_shards,
         "transcripts": transcripts,
         "meta": C.repro_metadata({"phase": "generate", "cell": cell}),
     }
-    p = raw_out / "raw_completions.json"
+    if num_shards == 1:
+        p = raw_out / "raw_completions.json"
+    else:
+        # shard payload carries the RAW firing records so merge re-summarizes them
+        # (a shard-level _summarize_realized cannot be re-aggregated from summaries).
+        payload["realized_records"] = realized_all
+        (raw_out / "shards").mkdir(parents=True, exist_ok=True)
+        p = raw_out / "shards" / f"shard_{shard_id}of{num_shards}.json"
     p.write_text(json.dumps(payload, indent=2))
-    _log(f"[phase=generate] {cell} wrote {p} ({len(convs_all)} transcripts)")
+    _log(f"[phase=generate] {cell}{shard_sfx} wrote {p} ({len(convs_all)} transcripts)")
     if not args.smoke:
         C.write_sentinel(
-            Path(f"/workspace/logs/issue-{ISSUE}-{phase_tag}-generate-{cell}.done"),
+            Path(f"/workspace/logs/issue-{ISSUE}-{phase_tag}-generate-{cell}{shard_sfx}.done"),
             kind="phase_generate",
-            note=f"{cell} generate complete",
+            note=f"{cell}{shard_sfx} generate complete",
         )
     return p
 
@@ -2080,10 +2110,108 @@ def phase_upload(args) -> None:
     _log("[phase=upload] raw_completions + analysis_tensors persisted to HF")
 
 
+# ── phase: merge conversation shards → canonical raw_completions.json ────────────
+def phase_merge(args) -> Path:
+    """Union the §9 conversation-shard payloads into the canonical per-cell
+    raw_completions.json (transcripts union over DISJOINT slices, realized_records
+    concatenated → re-summarized firing, n_conversations summed). A single-shard
+    run (``--num-shards 1``) already wrote the canonical file — merge is a no-op."""
+    from scripts import issue2203_common as C
+    from scripts import issue2203_runtime as R
+
+    arm, model_key = args.arm, args.model
+    enable_thinking = R.resolve_enable_thinking(MODEL_FOR[model_key])
+    if args.think and model_key == "32b":
+        enable_thinking = True
+    out_root = Path(args.out_root)
+    out_dir = out_root / f"issue_{ISSUE}" if not args.smoke else out_root
+    cell = f"{arm}__{model_key}" + ("__think" if enable_thinking else "")
+    phase_tag = "phaseA" if ARMS[arm]["phase"] == "A" else "phaseB"
+    raw_out = out_dir / "raw_completions" / phase_tag / cell
+    canonical = raw_out / "raw_completions.json"
+    _, num_shards = _shard_params(args)
+    if num_shards == 1:
+        if not canonical.exists():
+            raise FileNotFoundError(f"single-shard merge: {canonical} absent (run generate first)")
+        _log(f"[phase=merge] {cell} single-shard — canonical already present")
+        return canonical
+
+    shard_paths = sorted((raw_out / "shards").glob(f"shard_*of{num_shards}.json"))
+    if len(shard_paths) != num_shards:
+        raise RuntimeError(
+            f"{cell}: expected {num_shards} shards, found {len(shard_paths)} in {raw_out / 'shards'}"
+        )
+    transcripts: dict = {}
+    realized_records: list = []
+    cap_hit_by_turn_shards: dict = {}
+    dec = None
+    for sp in shard_paths:
+        d = json.loads(sp.read_text())
+        for cid, tr in d["transcripts"].items():
+            if cid in transcripts:
+                raise RuntimeError(f"{cell}: duplicate conv id {cid} across shards ({sp.name})")
+            transcripts[cid] = tr
+        realized_records.extend(d.get("realized_records") or [])
+        cap_hit_by_turn_shards[str(d.get("shard_id"))] = d.get("cap_hit_by_turn")
+        dec = dec or d.get("decode")
+    realized_firing = R._summarize_realized(realized_records) if realized_records else None
+    payload = {
+        "cell": cell,
+        "arm": arm,
+        "model": model_key,
+        "enable_thinking": bool(enable_thinking),
+        "n_conversations": len(transcripts),
+        "decode": dec,
+        "cap_hit_by_turn_shards": cap_hit_by_turn_shards,
+        "realized_firing": realized_firing,
+        "num_shards": num_shards,
+        "transcripts": transcripts,
+        "meta": C.repro_metadata({"phase": "merge", "cell": cell}),
+    }
+    canonical.write_text(json.dumps(payload, indent=2))
+    _log(
+        f"[phase=merge] {cell} merged {num_shards} shards -> {canonical} ({len(transcripts)} convs)"
+    )
+    if not args.smoke:
+        C.write_sentinel(
+            Path(f"/workspace/logs/issue-{ISSUE}-{phase_tag}-merge-{cell}.done"),
+            kind="phase_merge",
+            note=f"{cell} merge complete",
+        )
+    return canonical
+
+
+# ── phase: finalize (terminal results sentinel; poller done-corroboration) ───────
+def phase_finalize(args) -> None:
+    """Write the poll_pipeline-conformant terminal results sentinel. The launcher
+    emits the reserved ``[phase=done]`` line AFTER this (contract req 1/2)."""
+    import time
+
+    from scripts import issue2203_common as C
+
+    out_root = Path(args.out_root)
+    out_dir = out_root / f"issue_{ISSUE}" if not args.smoke else out_root
+    kind = "epm:smoke-result" if args.smoke else "epm:results"
+    produced = sorted(p.name for p in out_dir.glob("*.json"))
+    note = (
+        f"issue {ISSUE} drift run complete (model={args.model}); artifacts: {', '.join(produced)}"
+    )
+    if not args.smoke:
+        epoch = int(time.time())
+        sentinel = Path(f"/workspace/logs/issue-{ISSUE}-{kind.replace(':', '_')}-{epoch}.json")
+        C.write_sentinel(
+            sentinel, kind=kind, note=note, extra={"smoke": False, "model": args.model}
+        )
+        _log(f"[phase=finalize] wrote results sentinel {sentinel}")
+    else:
+        _log(f"[phase=finalize] smoke — sentinel skipped ({len(produced)} JSON artifacts)")
+
+
 # ── phase registry + main ───────────────────────────────────────────────────────
 PHASES = {
     "topics": phase_topics,
     "generate": phase_generate,
+    "merge": phase_merge,
     "activations": phase_activations,
     "aggregate": phase_aggregate,
     "alpha": phase_alpha,
@@ -2093,6 +2221,7 @@ PHASES = {
     "fig5_judge": phase_fig5_judge,
     "ridge": phase_ridge,
     "upload": phase_upload,
+    "finalize": phase_finalize,
 }
 
 
@@ -2108,6 +2237,12 @@ def build_argparser() -> argparse.ArgumentParser:
         "--out-root",
         default=None,
         help="round out-root; default = labeled issue tree (full) / scratch (smoke)",
+    )
+    ap.add_argument(
+        "--shard-id", type=int, default=0, help="conversation-shard index (§9 data-parallel)"
+    )
+    ap.add_argument(
+        "--num-shards", type=int, default=1, help="conversation-shard count (4-way per §9)"
     )
     ap.add_argument("--smoke", action="store_true", help="tiny CPU/2-wide slice")
     ap.add_argument(
