@@ -14122,7 +14122,7 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # relocated to .claude/rules/experiment-implementer-section-reference.md
     # (#1159 mechanism); pinned anchors/tokens stay in-spec. Cap = measured
     # + ~1 KB.
-    # measured 66,766 B post-#2120 (Before-writing-code item 8
+    # measured 66,804 B post-#2120 (Before-writing-code item 8
     # Schema-from-artifact: banked-artifact loader observed-keys paste duty
     # + packed-format src-filter clause; cap = measured + ~1.0 KB.
     # Prior: 65_500.)

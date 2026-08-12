@@ -223,8 +223,8 @@ section wins on invocation form.
    prose. A packed-format consumer FILTERS rows on that `src` / schema field;
    an unfiltered read of a multi-source pack silently mixes sources. Probe
    one-liners + the paste form:
-   `.claude/rules/experiment-implementer-section-reference.md`
-   § Schema-from-artifact. (#2061 round 1: a fabricated `#1336` shard schema
+   `.claude/rules/experiment-implementer-section-reference.md` § Before-writing-code item 8 detail — Schema-from-artifact.
+   (#2061 round 1: a fabricated `#1336` shard schema
    meant "the pipeline cannot load its own input" — P2 crashed
    deterministically AFTER the expensive fits, ~4.5 h wall + a review round;
    #2091's judge collector `KeyError`'d on the packed `_manifest.json` row 0.)
