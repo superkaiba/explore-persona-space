@@ -31,6 +31,25 @@ implemented per the plan §4 pseudocode):
                   (binding critic note: never the full-set Phase-FIT number)
   repswap         x_s -> y_t ceiling (information-present control)
 
+Orthogonal/similarity side tiers (backward-pairs round; reported under
+``per_layer[li]["orth_tiers"]``, outside the t0..t8 ladder semantics):
+  T5c  ctx rotation   y = W_s( R_ctx x_t ),  R_ctx: Procrustes x_t -> x_s
+  T5cs scaled ctx     same with the fitted s_fwd scale
+  T5b  both sides     y = R_ans( W_s( R_ctx x_t ) ), R_ans: Procrustes
+                      y_s -> y_t (the ANSWER CORRESPONDENCE — a different
+                      object from T5's rotation, which is fit W_s x_t -> y_t)
+  T5bs both scaled    scaled R_ctx AND scaled R_ans
+
+Operator-swap control (``per_layer[li]["operator_swap"]``): t6/t7/t8
+recomputed with the W_s slot swapped to a donor map while A_ctx_rev, A_ans
+and the t6 mean-correction FORM stay at their real fits — if t8_swap still
+tracks the within ceiling, t8's rescue is vacuous. Donors: "rand" (full-rank
+Gaussian, Frobenius-matched to the real W_s effective matrix, seeded per
+(pair, surface, layer, fold) — always on in run_pair) and "donor" (another
+pair's fitted W_s via ``donor_ws_provider`` — not wired by the per-pair
+driver: a cross-pair donor needs a second pair's fold-level fit objects,
+which this one-pair-per-invocation driver never holds).
+
 Controls: 20 shuffled-pairing nulls PER TIER (the capacity control — per
 draw the target rows y_t are conversation-permuted, every y_t-consuming
 correction is REFIT through the CACHED Y-independent bases — never a
@@ -111,6 +130,30 @@ FIT_SEED = cm.FIT_SEED
 TIER_NAMES = tuple(f"t{k}" for k in range(9))
 # Order of rows in every per-draw matrix (nulls + bootstrap re-reductions).
 DRAWS_ORDER = ("within", *TIER_NAMES)
+# Orthogonal/similarity tiers (backward-pairs round). Deliberately NOT folded
+# into TIER_NAMES: the t0..t8 ordering drives DRAWS_ORDER (the null + per-draw
+# matrix row layout persisted in every npz), sufficient_tier's ordered ladder
+# walk, and delta_tier8's index-9 read — inserting mid-ladder names would
+# silently change all four for every existing consumer. The orth tiers ride
+# capture_names + their own per-layer payload block ("orth_tiers") instead.
+#   t5c   context rotation:  W_s( R_ctx(x_t) ),  R_ctx = Procrustes x_t -> x_s
+#   t5cs  same, scaled       (s_fwd * R_ctx)
+#   t5b   both-sides:        R_ans( t5c ),       R_ans = Procrustes y_s -> y_t
+#   t5bs  both-sides scaled: s_ans * R_ans( t5cs )
+# R_ans is fit on the ANSWER CORRESPONDENCE (y_s -> y_t) — a DIFFERENT object
+# from t5's rotation (fit on W_s x_t -> y_t); both are kept.
+ORTH_TIER_NAMES = ("t5c", "t5cs", "t5b", "t5bs")
+# Operator-swap control reads: t6/t7/t8 recomputed with W_s replaced by a
+# donor while the REAL alignment maps (A_ctx_rev, A_ans) and the t6
+# mean-correction FORM stay at their observed fits. "rand" = full-rank
+# Gaussian matrix with Frobenius norm matched to the real W_s effective
+# matrix (seeded per (pair, surface, layer, fold)); "donor" = another pair's
+# fitted W_s at the same (surface, layer, fold), supplied by the driver via
+# run_battery_arrays(donor_ws_provider=...) — absent when no provider is
+# wired (the current per-pair driver loads one pair's arrays per invocation,
+# so a cross-pair donor is not reachable here without a two-pass driver).
+SWAP_RAND_NAMES = ("t6_swap_rand", "t7_swap_rand", "t8_swap_rand")
+SWAP_DONOR_NAMES = ("t6_swap_donor", "t7_swap_donor", "t8_swap_donor")
 KNN_KS = (1, 5)
 KNN_SUBSAMPLE_SEED = 1336
 
@@ -404,6 +447,24 @@ def _v2_predict(
     return (pe * filt) @ yfit["QtY"] + yfit["ymu"]
 
 
+def _ws_effective_matrix(
+    prep: dict, yfit: dict, xref: torch.Tensor
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Exact (d_in, d_out) linear part M + value b at ``xref`` of the fitted map.
+
+    The fitted (prep, yfit) map is affine in x on BOTH prep routes, so one
+    standard-basis probe recovers it exactly, route-agnostically:
+    ``pred(x) == (x - xref) @ M + b`` with ``M[i] = pred(xref + e_i) - pred(xref)``.
+    Used only by the operator-swap control (Frobenius-norm matching for the
+    random donor); costs one (d, d)-row `_v2_predict` call per (layer, fold).
+    """
+    d = int(xref.shape[0])
+    eye = torch.eye(d, dtype=xref.dtype, device=xref.device)
+    base = _v2_predict(prep, yfit, xref.unsqueeze(0))
+    cols = _v2_predict(prep, yfit, xref.unsqueeze(0) + eye)
+    return cols - base, base[0]
+
+
 class PrepCache:
     """Tiny keyed cache for Y-independent preps across pairs sharing a source.
 
@@ -492,11 +553,20 @@ def _fold_observed(
     te: torch.Tensor,
     grid: np.ndarray,
     preps: dict,
+    *,
+    swap_seed: int | None = None,
+    donor_ws: dict | None = None,
 ) -> tuple[dict, dict]:
     """One fold's observed tier predictions (test rows) + null-loop caches.
 
     Returns (te_preds{name: (n_te, d)}, aux) — aux carries everything the
     per-draw null loop reuses without any refit of Y-independent pieces.
+    Always ALSO computes the ORTH_TIER_NAMES reads (2 extra d x d Procrustes
+    SVDs per call). ``swap_seed`` (int) arms the SWAP_RAND_NAMES operator-swap
+    control (te_preds gains those keys + aux gains "swap" metadata);
+    ``donor_ws`` ({"prep", "yfit", "donor_id"}) arms SWAP_DONOR_NAMES with the
+    supplied donor W_s. Defaults keep the callers that predate the controls
+    (run_pooled_pair) byte-compatible: no swap keys, no probe.
     """
     prep_s, prep_t, prep_ys = preps["s"], preps["t"], preps["ys"]
     fit_ws = _v2_yfit(prep_s, Ys_l[tr], grid)
@@ -537,6 +607,22 @@ def _fold_observed(
     repswap_te = _v2_predict(prep_s, fit_repswap, Xs_l[te])
     aans_own_te = _v2_predict(prep_ys, fit_aans, Ys_l[te])  # A_ans own held-out read
 
+    # Orthogonal/similarity tiers (ORTH_TIER_NAMES). R_ctx rotates target
+    # contexts into the source context frame BEFORE the real W_s; R_ans is the
+    # answer-correspondence rotation y_s -> y_t applied AFTER W_s. Same
+    # _v2_predict(prep_s, fit_ws, ...) path as t0/t1; scaled variants reuse
+    # the same fits with the Procrustes scale applied at predict time.
+    orth_ctx = ma._orth_fit(Xt_l[tr], Xs_l[tr])
+    orth_ans = ma._orth_fit(Ys_l[tr], Yt_l[tr])
+    t5c_te = _v2_predict(
+        prep_s, fit_ws, ma._orth_predict(orth_ctx, Xt_l[te], reverse=False, scale=False)
+    )
+    t5cs_te = _v2_predict(
+        prep_s, fit_ws, ma._orth_predict(orth_ctx, Xt_l[te], reverse=False, scale=True)
+    )
+    t5b_te = ma._orth_predict(orth_ans, t5c_te, reverse=False, scale=False)
+    t5bs_te = ma._orth_predict(orth_ans, t5cs_te, reverse=False, scale=True)
+
     te_preds = {
         "within": within_te,
         "t0": p0_te,
@@ -545,6 +631,10 @@ def _fold_observed(
         "t3": t3_te,
         "t4": t4_te,
         "t5": t5_te,
+        "t5c": t5c_te,
+        "t5cs": t5cs_te,
+        "t5b": t5b_te,
+        "t5bs": t5bs_te,
         "t6": t6_te,
         "t7": t7_te,
         "t8": t8_te,
@@ -552,6 +642,63 @@ def _fold_observed(
         "actx": xhat_te,
         "aans_own": aans_own_te,
     }
+
+    # Operator-swap control: recompute t6/t7/t8 with the W_s SLOT swapped to a
+    # donor map, holding A_ctx_rev (xhat), A_ans (fit_aans) and the t6
+    # mean-correction FORM at their real fits. If t8_swap still tracks the
+    # within ceiling, t8's rescue is vacuous (any full-rank map + the real
+    # alignment maps would do).
+    swap_meta: dict | None = None
+    if swap_seed is not None or donor_ws is not None:
+        swap_meta = {}
+        xref = Xs_l[tr].mean(0)
+        donor_maps: list[tuple[str, object]] = []
+        if swap_seed is not None:
+            ws_mat, ws_bias = _ws_effective_matrix(prep_s, fit_ws, xref)
+            ws_fro = float(torch.linalg.matrix_norm(ws_mat))
+            gen = torch.Generator().manual_seed(int(swap_seed))
+            g_cpu = torch.randn(
+                ws_mat.shape[0], ws_mat.shape[1], generator=gen, dtype=torch.float64
+            )
+            g = g_cpu.to(ws_mat.device, dtype=ws_mat.dtype)
+            g = g * (ws_fro / (float(torch.linalg.matrix_norm(g)) + 1e-30))
+            # Gaussian => full rank almost surely; Frobenius norm matched to
+            # the real W_s effective matrix; intercept held at the real map's
+            # value at xref (== ymu of the source answers on the gram route).
+            donor_maps.append(("rand", (g, ws_bias)))
+            swap_meta.update(
+                {
+                    "seed": int(swap_seed),
+                    "ws_fro": ws_fro,
+                    "rand_fro": float(torch.linalg.matrix_norm(g)),
+                }
+            )
+        if donor_ws is not None:
+            missing = {"prep", "yfit", "donor_id"} - set(donor_ws)
+            assert not missing, f"donor_ws missing keys: {sorted(missing)}"
+            donor_maps.append(("donor", donor_ws))
+            swap_meta["donor_id"] = str(donor_ws["donor_id"])
+        for tag, mapping in donor_maps:
+            if tag == "rand":
+                g, ws_bias = mapping
+
+                def _apply(x, g=g, b=ws_bias, c=xref):
+                    return (x - c) @ g + b
+            else:
+
+                def _apply(x, dw=mapping):
+                    return _v2_predict(dw["prep"], dw["yfit"], x)
+
+            p0_sw_te = _apply(Xt_l[te])
+            raw_sw_tr = _apply(xhat_tr)
+            raw_sw_te = _apply(xhat_te)
+            te_preds[f"t6_swap_{tag}"] = raw_sw_te + (yt_tr_mu - raw_sw_tr.mean(0))
+            te_preds[f"t7_swap_{tag}"] = _v2_predict(
+                prep_ys, fit_aans, pieces=_v2_eval_pieces(prep_ys, p0_sw_te)
+            )
+            te_preds[f"t8_swap_{tag}"] = _v2_predict(
+                prep_ys, fit_aans, pieces=_v2_eval_pieces(prep_ys, raw_sw_te)
+            )
     ssum = float(torch.clamp(torch.as_tensor(orth["s_fwd"] * orth["s_rev"]), min=0.0).sqrt())
     aux = {
         "pe_t_xt_te": pe_t_xt_te,
@@ -587,6 +734,7 @@ def _fold_observed(
         },
         "preps": preps,
         "alpha": alpha,
+        "swap": swap_meta,
     }
     return te_preds, aux
 
@@ -661,6 +809,8 @@ def run_battery_arrays(
     n_inner: int = cm.N_INNER_LAMBDA_FOLDS_V2,
     prep_cache: PrepCache | None = None,
     cache_tags: dict[str, tuple] | None = None,
+    swap_seed_key: str | None = "unkeyed",
+    donor_ws_provider=None,
 ) -> tuple[dict, dict]:
     """The full per-(pair, surface) battery on row-ALIGNED intersection arrays.
 
@@ -674,6 +824,14 @@ def run_battery_arrays(
     (source answers Ys) tag m0; "t" (TARGET contexts Xt) tags m1. A tag that
     omitted m1 collided the "t" prep across pairs sharing a source
     (base->dpo vs base->rlvr) whenever the shared cache retained entries.
+
+    ``swap_seed_key`` keys the operator-swap random donor's per-(layer, fold)
+    seed (sha256 of ``f"{key}|layer={li}|fold={k}"``; the driver passes
+    ``"{m0}:{m1}|{corpus}|{fmt}"`` so the control is reproducible per cell);
+    ``None`` disables the swap reads entirely. ``donor_ws_provider`` is an
+    optional ``(layer, fold) -> {"prep", "yfit", "donor_id"}`` callable
+    arming the donor-W_s swap reads; it must return a donor for EVERY
+    (layer, fold) the battery runs (all-or-nothing — asserted).
     """
     fc._validate_lambda_grid(np.asarray(grid))
     grid = np.asarray(grid, dtype=np.float64)
@@ -702,7 +860,18 @@ def run_battery_arrays(
         Xt_l = torch.as_tensor(Xt[:, li, :], dtype=dtype).to(dev)
         Yt_l = torch.as_tensor(Yt[:, li, :], dtype=dtype).to(dev)
         d = int(Xs_l.shape[1])
-        capture_names = ("within", *TIER_NAMES, "repswap", "actx", "aans_own")
+        swap_names: tuple[str, ...] = () if swap_seed_key is None else SWAP_RAND_NAMES
+        if donor_ws_provider is not None:
+            swap_names = (*swap_names, *SWAP_DONOR_NAMES)
+        capture_names = (
+            "within",
+            *TIER_NAMES,
+            *ORTH_TIER_NAMES,
+            *swap_names,
+            "repswap",
+            "actx",
+            "aans_own",
+        )
         captured = {name: np.zeros((n, d), dtype=np.float32) for name in capture_names}
         captured["id_within"] = np.zeros((n, d), dtype=np.float32)
         captured["id_actx"] = np.zeros((n, d), dtype=np.float32)
@@ -716,6 +885,7 @@ def run_battery_arrays(
         lam_log: dict[str, list[float]] = {}
         selector_log: dict[str, list[str]] = {}
         procrustes_rows: list[dict] = []
+        swap_rows: list[dict] = []
         for k in range(n_folds):
             tr_np = folds != k
             te_np = folds == k
@@ -740,7 +910,20 @@ def run_battery_arrays(
                     (*tags.get("ys", ()), "ys", li, k, ids_sha), lambda x=Ys_l: _mk(x[tr])
                 ),
             }
-            te_preds, aux = _fold_observed(Xs_l, Ys_l, Xt_l, Yt_l, tr, te, grid, preps)
+            swap_seed = None
+            if swap_seed_key is not None:
+                digest = hashlib.sha256(f"{swap_seed_key}|layer={li}|fold={k}".encode()).digest()
+                swap_seed = int.from_bytes(digest[:4], "big")
+            donor = donor_ws_provider(li, k) if donor_ws_provider is not None else None
+            assert donor_ws_provider is None or donor is not None, (
+                f"donor_ws_provider returned None at (layer={li}, fold={k}) — "
+                "the donor swap is all-or-nothing per battery"
+            )
+            te_preds, aux = _fold_observed(
+                Xs_l, Ys_l, Xt_l, Yt_l, tr, te, grid, preps, swap_seed=swap_seed, donor_ws=donor
+            )
+            if aux["swap"] is not None:
+                swap_rows.append({"fold": int(k), **aux["swap"]})
             yt_te = Yt_l[te]
             xs_te = Xs_l[te]
             for name, pred in te_preds.items():
@@ -845,6 +1028,30 @@ def run_battery_arrays(
         raw_r2s = {name: float(r2_obs[name]) for name in ("within", *TIER_NAMES)}
         recal_r2s = {name: recal_r2[name] for name in ("within", *TIER_NAMES)}
 
+        # Orth-tier + operator-swap reads: raw + recal R^2 with paired-bootstrap
+        # CIs on the SAME shared draws (repswap-style side blocks — deliberately
+        # outside DRAWS_ORDER / the null matrix / sufficient_tier, whose t0..t8
+        # ladder semantics stay untouched).
+        extra_blocks: dict[str, dict] = {}
+        extra_recal_preds: dict[str, np.ndarray] = {}
+        for name in (*ORTH_TIER_NAMES, *swap_names):
+            rec = rc.crossfit_recal_direct(captured[name].astype(np.float64), y64, folds)
+            extra_recal_preds[name] = rec["pred_recal"].astype(np.float32)
+            extra_blocks[name] = {
+                "raw": {
+                    "r2": float(r2_obs[name]),
+                    "gap": float(r2_obs["within"]) - float(r2_obs[name]),
+                    "r2_bootstrap": la._ci(la.weighted_r2_draws(captured[name], y_np, w_boot)),
+                },
+                "recal": {
+                    "r2": float(rec["r2"]),
+                    "gap": float(recal_r2["within"]) - float(rec["r2"]),
+                    "r2_bootstrap": la._ci(
+                        la.weighted_r2_draws(extra_recal_preds[name], y_np, w_boot)
+                    ),
+                },
+            }
+
         # Identity+learned-bias + kNN retrieval (standing mapping-baselines
         # rule) at the full-tier layer set (the dispatcher passes the
         # headline layer; smoke covers the whole frozen set).
@@ -881,6 +1088,19 @@ def run_battery_arrays(
         per_layer[str(li)] = {
             "raw": _tier_block(draws_raw, raw_r2s),
             "recal": _tier_block(draws_recal, recal_r2s),
+            "orth_tiers": {name: extra_blocks[name] for name in ORTH_TIER_NAMES},
+            "operator_swap": {
+                "seed_key": swap_seed_key,
+                "per_fold": swap_rows,
+                "reads": {name: extra_blocks[name] for name in swap_names},
+                "note": (
+                    "W_s replaced by the donor in t6/t7/t8; A_ctx_rev, A_ans and the t6 "
+                    "mean-correction FORM held at their real fits. rand = full-rank Gaussian "
+                    "with Frobenius norm matched to the real W_s effective matrix, seeded per "
+                    "(pair, surface, layer, fold); donor = another pair's fitted W_s "
+                    "(present only when the driver supplies donor_ws_provider)."
+                ),
+            },
             "repswap_r2": float(r2_obs["repswap"]),
             "repswap_r2_bootstrap": la._ci(la.weighted_r2_draws(captured["repswap"], y_np, w_boot)),
             "alignment_r2": {
@@ -924,6 +1144,12 @@ def run_battery_arrays(
             for t in range(8):  # t8 always persisted above
                 preds_store[f"t{t}_l{li}"] = captured[f"t{t}"].astype(np.float16)
                 preds_store[f"t{t}_recal_l{li}"] = recal_preds[f"t{t}"].astype(np.float16)
+            # Orth tiers ride the same all-tiers-at-full-tier-layers contract;
+            # swap-control preds stay JSON-only (regenerable from the recorded
+            # per-(layer, fold) seeds).
+            for name in ORTH_TIER_NAMES:
+                preds_store[f"{name}_l{li}"] = captured[name].astype(np.float16)
+                preds_store[f"{name}_recal_l{li}"] = extra_recal_preds[name].astype(np.float16)
         del Xs_l, Ys_l, Xt_l, Yt_l, captured, recal_preds
         if dev.type == "cuda":
             torch.cuda.empty_cache()
@@ -1074,6 +1300,7 @@ def run_pair(args, pair: str, *, bars: dict, prep_cache: PrepCache) -> None:
             "t": (corpus, fmt, m1),
             "ys": (corpus, fmt, m0),
         },
+        swap_seed_key=f"{m0}:{m1}|{corpus}|{fmt}",
     )
 
     unit = f"{m0}__{m1}_{fmt}_{corpus}"
