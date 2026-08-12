@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2254,
+  "highest_id": 2255,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9695,6 +9695,13 @@
       "path": "tasks/planning/2254",
       "status": "planning",
       "title": "Does the persona vector's pre-image under the context\u2192answer map steer behavior at the context vector?"
+    },
+    "2255": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2255",
+      "status": "proposed",
+      "title": "Amendment-style plan versions break plan.md readers, verify_plan, and the GPU-hours gate"
     },
     "226": {
       "has_clean_result": false,
