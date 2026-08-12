@@ -26,3 +26,4 @@
 - [Mode-scoped column threading untested](mode_scoped_column_threading_untested.md) — a batch column only ONE mode consumes needs an e2e test in THAT mode; other modes pass with threading deleted (#2225 R1 g1)
 - [Smoke-arch marker #2176 grammar pitfalls](smoke_arch_marker_2176_grammar_pitfalls.md) — run check-smoke-arch-registry first; prose-decorated per-arm heading = empty sub-block; bare-token row keys (#2225 R1 g6)
 - [Count gate starved by resume-skip](count_gate_starved_by_resume_skip.md) — fresh-round grep-count gates FATAL when units dedupe into a prior round; trace skip branches (#2225 R1 g5)
+- [Trap-sentinel stale + voluntary resume key](trap_sentinel_stale_and_voluntary_resume_key.md) — EXIT-trap sentinel needs launch-time rm; a voluntary sub-trigger resume still owes the full regime key (#2224 R5)
