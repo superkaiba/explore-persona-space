@@ -20,8 +20,10 @@ All ``time.sleep`` calls are monkeypatched so the test suite runs instantly.
 
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
+from unittest.mock import create_autospec
 
 import pytest
 
@@ -29,6 +31,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 import pod_lifecycle  # noqa: E402
+import runpod_api  # noqa: E402
 from pod_lifecycle import (  # noqa: E402
     _wait_for_capacity_backoff_secs,
     create_pod_with_wait_for_capacity,
@@ -366,3 +369,196 @@ def test_emit_still_waiting_exits_75(capsys):
         assert "[wait-for-capacity] STILL-WAITING" in stream
         assert "pod-9" in stream
         assert "RE-RUN THE SAME COMMAND" in stream
+
+
+# ─── CPU provision wiring through the shared wait loop (#2238) ───────────────
+#
+# Pre-#2238 cmd_provision's CPU branch `return`ed BEFORE the wait_for_capacity
+# flag was ever read, so `--wait-for-capacity` (and the autonomous auto-enable)
+# was structurally inert on every CPU intent — the autonomous log line promised
+# unbounded retry on a path that failed fast. These tests pin the WIRING (the
+# retry actually happens through cmd_provision's CPU branch), not merely the
+# flag's presence.
+
+
+def _make_cpu_pod_info(name: str = "pod-2238") -> PodInfo:
+    """Synthesize a minimal CPU PodInfo for the success-path return."""
+    return PodInfo(
+        pod_id="cpupod-1",
+        name=name,
+        desired_status="RUNNING",
+        gpu_count=0,
+        gpu_type_id="",
+        ssh_host=None,
+        ssh_port=None,
+        created_at="2026-08-11T00:00:00Z",
+    )
+
+
+def _make_create_cpu_pod_stub(monkeypatch, outcomes: list):
+    """Patch ``pod_lifecycle.create_cpu_pod`` with a SIGNATURE-CONFORMANT
+    recorder (``create_autospec`` against the real ``runpod_api.create_cpu_pod``
+    — never a bare ``Mock()``, per .claude/rules/code-style.md § one
+    production-body test per seam-stubbed function). Each outcome is raised
+    (exception) or returned (PodInfo), one per call."""
+    stub = create_autospec(runpod_api.create_cpu_pod, side_effect=list(outcomes))
+    monkeypatch.setattr(pod_lifecycle, "create_cpu_pod", stub)
+    return stub
+
+
+def _cpu_provision_ns(**overrides) -> argparse.Namespace:
+    """Provision-subparser-shaped Namespace for a CPU intent (mirrors
+    tests/test_pod_lifecycle.py::_cpu_provision_ns). ``wait_for_capacity`` is
+    deliberately NOT a base key: cmd_provision's hoisted resolution must
+    getattr-default it, because hand-built Namespaces predate the flag."""
+    base = {
+        "issue": 2238,
+        "list_intents": False,
+        "intent": "cpu-small",
+        "gpu_type": None,
+        "gpu_count": None,
+        "dry_run": False,  # exercise the real create call, not the dry-run early-return
+        "volume_gb": 200,  # argparse default (the GPU default)
+        "container_disk_gb": 50,
+        "ttl_days": 7,
+        "no_bootstrap": True,
+    }
+    base.update(overrides)
+    return argparse.Namespace(**base)
+
+
+@pytest.fixture
+def cpu_cmd_provision_stubs(monkeypatch, tmp_path):
+    """Neuter cmd_provision's network/state preflights so the CPU-branch
+    routing runs hermetically; record the PodInfo reaching the bootstrap tail.
+    The GPU resolver is trapped so a routing regression fails loudly (the
+    routing itself is owned by test_pod_lifecycle.py's CPU tests)."""
+    captured: dict = {"boot_infos": []}
+    monkeypatch.setattr(pod_lifecycle, "EPHEMERAL_STATE", tmp_path / "pods_ephemeral.json")
+    monkeypatch.setattr(pod_lifecycle, "list_team_pods", lambda: [])
+    monkeypatch.setattr(
+        pod_lifecycle, "_warn_on_terminal_parent_provision", lambda *_a, **_k: False
+    )
+    monkeypatch.setattr(pod_lifecycle, "_account_key_preflight", lambda *_a, **_k: None)
+
+    def _record_bootstrap(args, name, info, intent_label):
+        captured["boot_infos"].append(info)
+
+    monkeypatch.setattr(pod_lifecycle, "_provision_wait_register_bootstrap", _record_bootstrap)
+
+    def _fail_resolve_spec(*_a, **_k):
+        raise AssertionError("GPU _resolve_spec must NOT be reached on a CPU intent")
+
+    monkeypatch.setattr(pod_lifecycle, "_resolve_spec", _fail_resolve_spec)
+    return captured
+
+
+def test_cpu_provision_wait_flag_retries_then_succeeds(
+    monkeypatch, cpu_cmd_provision_stubs, capsys
+):
+    """#2238 test 1 (the task's required shape): CPU intent with
+    --wait-for-capacity ON retries create_cpu_pod on RunPodNoCapacityError —
+    two failures then success ⇒ 3 calls and the pod reaches the bootstrap
+    tail. Pins that the retry HAPPENS, not merely that the flag parses."""
+    monkeypatch.delenv("EPM_AUTONOMOUS_SESSION", raising=False)
+    info = _make_cpu_pod_info()
+    stub = _make_create_cpu_pod_stub(
+        monkeypatch,
+        [
+            RunPodNoCapacityError("cpu no capacity attempt 1"),
+            RunPodNoCapacityError("cpu no capacity attempt 2"),
+            info,
+        ],
+    )
+
+    pod_lifecycle.cmd_provision(_cpu_provision_ns(wait_for_capacity=True))
+
+    assert stub.call_count == 3
+    assert cpu_cmd_provision_stubs["boot_infos"] == [info]
+    # Every attempt carried the canonical instance id + pod name (no mutation
+    # of the request between retries).
+    for call in stub.call_args_list:
+        assert call.kwargs["instance_id"] == "cpu3g-2-8"
+        assert call.kwargs["name"] == "pod-2238"
+    # §3c: the loop-start heartbeat renders the CPU-legible spec label.
+    assert "(CPU cpu3g-2-8)" in capsys.readouterr().err
+
+
+def test_cpu_provision_autonomous_env_retries_and_prints_note(
+    monkeypatch, cpu_cmd_provision_stubs, capsys
+):
+    """#2238 test 2 (the false-comfort assertion): EPM_AUTONOMOUS_SESSION=1
+    with NO wait_for_capacity key on the Namespace (the getattr-hoist
+    contract) retries anyway AND prints the CPU auto-enable note — promise
+    printed ⟺ promise kept. Pre-fix the CPU branch neither printed nor
+    retried."""
+    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+    info = _make_cpu_pod_info()
+    stub = _make_create_cpu_pod_stub(
+        monkeypatch,
+        [
+            RunPodNoCapacityError("cpu no capacity attempt 1"),
+            RunPodNoCapacityError("cpu no capacity attempt 2"),
+            info,
+        ],
+    )
+
+    ns = _cpu_provision_ns()
+    assert not hasattr(ns, "wait_for_capacity")  # exercises the getattr default
+    pod_lifecycle.cmd_provision(ns)
+
+    assert stub.call_count == 3
+    assert cpu_cmd_provision_stubs["boot_infos"] == [info]
+    out = capsys.readouterr().out
+    assert "auto-enabling --wait-for-capacity" in out
+    assert "CPU create" in out  # the CPU-legible note, printed AT the branch that retries
+
+
+def test_cpu_provision_default_off_fails_fast_first_call(monkeypatch, cpu_cmd_provision_stubs):
+    """#2238 test 3 (default-OFF preserved): flag OFF + non-autonomous ⇒ the
+    no-capacity error propagates on the FIRST call (exactly one call) —
+    interactive CPU provisions must not start hanging."""
+    monkeypatch.delenv("EPM_AUTONOMOUS_SESSION", raising=False)
+    stub = _make_create_cpu_pod_stub(
+        monkeypatch,
+        [
+            RunPodNoCapacityError("cpu no capacity"),
+            # Sentinel: if the branch wrongly retries, the next call would
+            # succeed and mask the regression; calls == 1 below catches it.
+            _make_cpu_pod_info(),
+        ],
+    )
+
+    with pytest.raises(RunPodNoCapacityError):
+        pod_lifecycle.cmd_provision(_cpu_provision_ns(wait_for_capacity=False))
+
+    assert stub.call_count == 1
+    assert cpu_cmd_provision_stubs["boot_infos"] == []
+
+
+def test_cpu_provision_budget_trip_exits_75(monkeypatch, cpu_cmd_provision_stubs, capsys):
+    """#2238 test 4 (still-waiting contract on CPU): a budget trip on the CPU
+    leg converts WaitForCapacityStillWaiting into
+    SystemExit(EXIT_STILL_WAITING) (75) via _emit_still_waiting_and_exit; no
+    pod is created/registered. Uses the _TickingMonotonic pattern — a literal
+    0 budget DISABLES the check, and an un-ticked clock never trips it."""
+    monkeypatch.delenv("EPM_AUTONOMOUS_SESSION", raising=False)
+    monkeypatch.setenv("EPM_WAIT_FOR_CAPACITY_BUDGET_SECS", "60")
+    monkeypatch.setattr(pod_lifecycle.time, "monotonic", _TickingMonotonic(step=50.0))
+    stub = _make_create_cpu_pod_stub(
+        monkeypatch,
+        [
+            RunPodNoCapacityError("cpu no capacity attempt 1"),
+            RunPodNoCapacityError("cpu no capacity attempt 2"),
+            _make_cpu_pod_info(),  # sentinel — must never be reached
+        ],
+    )
+
+    with pytest.raises(SystemExit) as se:
+        pod_lifecycle.cmd_provision(_cpu_provision_ns(wait_for_capacity=True))
+
+    assert se.value.code == pod_lifecycle.EXIT_STILL_WAITING == 75
+    assert stub.call_count >= 1
+    assert stub.call_count < 3  # never reached the success sentinel
+    assert cpu_cmd_provision_stubs["boot_infos"] == []
+    assert "[wait-for-capacity] STILL-WAITING" in capsys.readouterr().err

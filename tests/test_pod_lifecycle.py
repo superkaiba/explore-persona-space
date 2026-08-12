@@ -688,6 +688,13 @@ def cpu_provision_stubs(monkeypatch):
     Records every create_cpu_pod call and asserts the GPU path is never taken.
     Yields a dict carrying the captured create_cpu_pod kwargs + call counters.
     """
+    # #2238: pin the ONE-SHOT routing these tests assert. The CPU branch now
+    # honors the autonomous auto-enable, so an ambient EPM_AUTONOMOUS_SESSION=1
+    # (the env of an autonomous session running the suite) would otherwise
+    # route through the wait-for-capacity wrapper and the tests would pass
+    # bimodally (precedent: the GPU tests' per-test delenv at
+    # test_data_center_id_threads_to_gpu_create_pod).
+    monkeypatch.delenv("EPM_AUTONOMOUS_SESSION", raising=False)
     captured: dict = {"cpu_calls": [], "gpu_resolve_calls": 0, "gpu_create_calls": 0}
 
     def _fake_create_cpu_pod(
