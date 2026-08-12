@@ -9585,8 +9585,8 @@
     "2240": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2240",
-      "status": "approved",
+      "path": "tasks/running/2240",
+      "status": "running",
       "title": "Step 10d: payload-aware no-PR arm (a branch with novel payload and zero PRs silently skips the auto-merge)"
     },
     "225": {
