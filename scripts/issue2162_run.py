@@ -1172,9 +1172,22 @@ def run_injection_gate(
     bank: dict,
     pairs: list[BANK.Pair2162],
     donor_maps: dict[str, dict[str, str]],
+    *,
+    contexts: dict[str, dict] | None = None,
+    ids_fn=None,
+    spots: list[dict] | None = None,
+    payload_fn=None,
 ) -> dict:
     """Plan §7 gate 1 — the realized edit equals the intended donor state at
     the intended (row, position, layer) and NOWHERE else.
+
+    The keyword-only ``contexts`` / ``ids_fn`` / ``spots`` / ``payload_fn``
+    seams (defaults = this module's own registries — byte-equivalent for every
+    existing caller) let the #2162 LADDER driver reuse this gate verbatim over
+    its own bank (``scripts/issue2162_ladder.py``; ladder-plan §4.6 "IMPORTS,
+    never re-implements, the injection-gate helper"). ``spots`` rows keep the
+    ``{"cell", "slot", "arm", "pair"}`` shape; ``payload_fn`` keeps
+    :func:`payload_for_arm`'s call signature.
 
     Stage 1 is REPLACE at every layer, so the exactness read is ABSOLUTE (the
     hooked state at the edited position IS the payload — no incremental
@@ -1188,12 +1201,14 @@ def run_injection_gate(
     pass's ``row_lengths=[T]*B`` arming so the V_a/margin TF geometry is
     gate-verified too.
     """
-    contexts = BANK.build_contexts()
-    ctx_ids = {cid: BANK.context_token_ids_2162(tok, c) for cid, c in contexts.items()}
+    contexts = BANK.build_contexts() if contexts is None else contexts
+    ids_fn = BANK.context_token_ids_2162 if ids_fn is None else ids_fn
+    payload_fn = payload_for_arm if payload_fn is None else payload_fn
+    ctx_ids = {cid: ids_fn(tok, c) for cid, c in contexts.items()}
     pad_id = tok.pad_token_id
     recs = bank["per_context"]
     pairs_by_id = {p.pair_id: p for p in pairs}
-    spots = _gate_spot_specs(pairs)
+    spots = _gate_spot_specs(pairs) if spots is None else spots
     results: list[dict] = []
     for spot in spots:
         pair: BANK.Pair2162 = spot["pair"]
@@ -1212,7 +1227,7 @@ def run_injection_gate(
         payloads: list[torch.Tensor] = []
         donor_ids: list[str | None] = []
         for p in batch_pairs:
-            payload, donor_id = payload_for_arm(bank, p, slot, arm, donor_maps, pairs_by_id)
+            payload, donor_id = payload_fn(bank, p, slot, arm, donor_maps, pairs_by_id)
             rec = recs[p.a]
             positions.append((slot_position(rec["ctx_len"], rec["prefix_end"], slot),))
             payloads.append(payload)
