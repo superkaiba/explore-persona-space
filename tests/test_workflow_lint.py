@@ -3597,13 +3597,69 @@ def test_check_agent_model_pins_fail_unknown_suffix_treated_as_unknown_base(tmp_
     assert "not in the allowlist" in errors[0]
 
 
-def test_check_agent_model_pins_pass_missing_frontmatter(tmp_path):
-    """PASS — an agent file with no ``model:`` line inherits the parent
-    model (CLAUDE.md 'Prompt-cache key discipline' explicitly allows it);
-    no runtime contract to validate."""
+def test_check_agent_model_pins_fail_missing_pin_undeclared(tmp_path):
+    """FAIL — the presence half (#2123; DELIBERATE INVERSION of the former
+    ``test_check_agent_model_pins_pass_missing_frontmatter``, which codified
+    the old silently-skip contract). An agent file with no ``model:`` line
+    still inherits the parent model at RUNTIME, but the inherit must be
+    DECLARED via the frontmatter waiver comment — an undeclared missing pin
+    is indistinguishable from an accidental deletion."""
     (tmp_path / "x.md").write_text("---\nname: x\n---\n\nBody.\n", encoding="utf-8")
     errors = check_agent_model_pins(roots=[tmp_path])
-    assert errors == [], f"expected PASS (no pin), got: {errors}"
+    assert len(errors) == 1, f"expected the presence-half FAIL, got: {errors}"
+    assert "MODEL_PIN_LINT_EXEMPT" in errors[0]
+    assert "NO `model:` pin" in errors[0]
+
+
+def test_check_agent_model_pins_pass_waiver_in_frontmatter(tmp_path):
+    """PASS — an unpinned file whose FRONTMATTER carries the
+    ``# MODEL_PIN_LINT_EXEMPT: <reason>`` waiver (reason >= 10 chars) has
+    DECLARED the parent-model inherit; the presence half is satisfied."""
+    (tmp_path / "x.md").write_text(
+        "---\nname: x\n# MODEL_PIN_LINT_EXEMPT: inherits the parent model "
+        "deliberately\n---\n\nBody.\n",
+        encoding="utf-8",
+    )
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert errors == [], f"expected PASS (frontmatter waiver), got: {errors}"
+
+
+def test_check_agent_model_pins_fail_waiver_in_body_prose_only(tmp_path):
+    """FAIL — the under-trigger case (plan #2123 critic blocker 2): the
+    waiver sentinel appearing ONLY in body prose is documentation, not a
+    declaration. Agent specs demonstrably quote lint-waiver sentinels as
+    prose (experiment-implementer.md contains the literal
+    DOTENV_LINT_EXEMPT), so a file-wide match would let a future unpinned
+    spec that merely DOCUMENTS this convention satisfy its own waiver."""
+    (tmp_path / "x.md").write_text(
+        "---\nname: x\n---\n\nBody prose documenting the convention: use\n"
+        "# MODEL_PIN_LINT_EXEMPT: some long documented reason\n"
+        "inside the frontmatter to waive the pin requirement.\n",
+        encoding="utf-8",
+    )
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert len(errors) == 1, f"expected FAIL (body-prose sentinel), got: {errors}"
+    assert "NOT a waiver" in errors[0]
+
+
+def test_check_agent_model_pins_fail_waiver_reason_too_short(tmp_path):
+    """FAIL — a waiver with a sub-10-char reason is a token bypass, not a
+    justification (the DOTENV_LINT_EXEMPT reason-length convention)."""
+    (tmp_path / "x.md").write_text(
+        "---\nname: x\n# MODEL_PIN_LINT_EXEMPT: short\n---\n\nBody.\n",
+        encoding="utf-8",
+    )
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert len(errors) == 1, f"expected FAIL (reason too short), got: {errors}"
+
+
+def test_check_agent_model_pins_fail_no_frontmatter_block(tmp_path):
+    """FAIL — a file with no parseable frontmatter block has no pin and no
+    place for a waiver (the waiver is frontmatter-scoped by design)."""
+    (tmp_path / "x.md").write_text("Just a body, no frontmatter.\n", encoding="utf-8")
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert len(errors) == 1, f"expected FAIL (no frontmatter), got: {errors}"
+    assert "no parseable YAML frontmatter" in errors[0]
 
 
 def test_check_agent_model_pins_d07424178_regression_full_fleet(tmp_path):
