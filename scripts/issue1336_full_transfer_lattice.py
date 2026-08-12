@@ -231,7 +231,7 @@ PC_YLIM_IDENT = (-3.70, -0.80)
 # figure, so this changes the per-dataset figure only.
 TYPE_COLUMNS: dict[str, tuple[tuple[str, str], ...]] = {
     "Generic chat": (("chat", "lmsys23k"), ("naturalistic", "lmsys23k")),
-    "Instruction-following": (("chat", "if11k"),),
+    "Verifiable constraints": (("chat", "if11k"),),
     "Alignment training": (("chat", "sft11k"), ("chat", "uf11k")),
     "Math": (("chat", "math7500"), ("chat", "gsm8k_train_full")),
 }
@@ -245,9 +245,9 @@ PC_SURFACES = tuple(s for s in SURFACES if s not in DEGENERATE)
 CORPUS_SUBTYPE = {
     ("chat", "lmsys23k"): "real-user chat · chat template",
     ("naturalistic", "lmsys23k"): "real-user chat · template stripped",
-    ("chat", "sft11k"): "SFT demonstrations · SFT's own data",
+    ("chat", "sft11k"): "instruction demonstrations · SFT's own data",
     ("chat", "uf11k"): "preference prompts · DPO's own data",
-    ("chat", "if11k"): "instruction constraints · RLVR's own data",
+    ("chat", "if11k"): "IFEval format constraints · RLVR's own data",
     ("chat", "math7500"): "competition math · RLVR's own data",
     ("chat", "gsm8k_train_full"): "grade-school math · RLVR's own data",
     ("chat", "gsm8k_test1319"): "grade-school math · held-out companion",
@@ -1102,7 +1102,16 @@ def fig_percorpus(D: dict) -> Path:
     # estate there rather than wasting it.
     # Vertically CENTERED in the empty block, not pinned to its top: the column
     # above ends with x tick labels, which a top-anchored legend lands on top of.
-    _lc = TYPE_ORDER.index("Instruction-following")
+    # Column chosen by SHAPE, not by name: the leftmost column short of the tall
+    # ones is the one with a free slot. A hardcoded column name silently breaks
+    # the legend the moment a column is renamed or the grouping is re-cut.
+    _short = [i for i, t in enumerate(TYPE_ORDER) if len(TYPE_COLUMNS[t]) < n_rows]
+    if not _short:
+        raise RuntimeError(
+            "no short column: every type column is full, so there is no empty "
+            "block for the legend — place it explicitly before re-running"
+        )
+    _lc = _short[0]
     _top = gs[3, _lc].get_position(fig)
     _bot = gs[-1, _lc].get_position(fig)
     h, lab = mains[0].get_legend_handles_labels()
