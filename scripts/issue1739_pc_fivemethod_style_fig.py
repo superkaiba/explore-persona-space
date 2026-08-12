@@ -520,10 +520,15 @@ def draw(vals: dict, protocol: str, methods, out_png: Path, caption: str) -> Non
     # into its top lines as arms and notes are added -- which is exactly what
     # happened at five arms. One row keeps the legend's height constant no
     # matter how the roster grows.
+    # The legend sits just under the axes, so its anchor tracks whichever
+    # bottom the layout rect below uses: 0.38 with a caption block, 0.10
+    # without one. A fixed anchor would land INSIDE the expanded panels in the
+    # no-caption variant.
+    legend_y = 0.352 if caption else 0.036
     fig.legend(
         handles=handles,
         loc="lower left",
-        bbox_to_anchor=(0.012, 0.352),
+        bbox_to_anchor=(0.012, legend_y),
         ncol=len(handles),
         frameon=False,
         fontsize=9.5,
@@ -538,12 +543,17 @@ def draw(vals: dict, protocol: str, methods, out_png: Path, caption: str) -> Non
     )
     # Hard-wrap every caption line: one over-long line silently stretches the
     # whole canvas via bbox_inches="tight" (P-B hit 8660 px once).
-    caption = "\n".join(
-        textwrap.fill(ln, width=210, subsequent_indent="  ") if len(ln) > 210 else ln
-        for ln in caption.split("\n")
-    )
-    fig.text(0.012, 0.006, caption, fontsize=8.2, color="#333333", va="bottom", ha="left")
-    fig.tight_layout(rect=(0.0, 0.38, 1.0, 0.95))
+    if caption:
+        caption = "\n".join(
+            textwrap.fill(ln, width=210, subsequent_indent="  ") if len(ln) > 210 else ln
+            for ln in caption.split("\n")
+        )
+        fig.text(0.012, 0.006, caption, fontsize=8.2, color="#333333", va="bottom", ha="left")
+        fig.tight_layout(rect=(0.0, 0.38, 1.0, 0.95))
+    else:
+        # Presentation variant (--no-caption): reclaim the block the caption
+        # would have occupied, leaving only the strip the legend needs.
+        fig.tight_layout(rect=(0.0, 0.10, 1.0, 0.95))
     out_png.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_png, dpi=170, bbox_inches="tight")
     fig.savefig(out_png.with_suffix(".pdf"), bbox_inches="tight")
@@ -764,6 +774,16 @@ def main() -> None:
         ),
     )
     ap.add_argument("--out-dir", default="figures/issue_1739/pv_regime_view")
+    ap.add_argument(
+        "--no-caption",
+        action="store_true",
+        help=(
+            "Presentation variant: omit the provenance caption block and write to "
+            "a '_nocap' stem, leaving the captioned originals untouched. The caption "
+            "is the figure's provenance record -- use only for a write-up that "
+            "carries that provenance in its own prose."
+        ),
+    )
     ap.add_argument("--pv-only", action="store_true", help="3 persona-vector arms instead")
     ap.add_argument(
         "--arm12-root",
@@ -829,12 +849,13 @@ def main() -> None:
             ci_mode=ci_mode,
             legacy_stats=legacy_stats,
         )
+        nocap = "_nocap" if args.no_caption else ""
         draw(
             vals,
             protocol,
             methods,
-            out_dir / f"pv_regime_{protocol.replace('-', '').lower()}{sfx}.png",
-            cap,
+            out_dir / f"pv_regime_{protocol.replace('-', '').lower()}{sfx}{nocap}.png",
+            "" if args.no_caption else cap,
         )
 
 
