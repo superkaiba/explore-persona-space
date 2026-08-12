@@ -1458,23 +1458,17 @@ def fig_trained_on(D: dict) -> Path:
 def _arm_rows(D: dict, arm) -> list:
     """(pair_index, surface, used_between, deficit) cells for one transfer arm.
 
-    ``arm`` is a ladder tier index, or the string "cross" for the fresh
-    source-context -> target-answer fit. The deficit is always measured against
-    the SAME per-cell ceiling (the target stage's own within-model map), so the
-    arms are directly comparable.
+    ``arm`` is a ladder tier index. The deficit is always measured against the
+    SAME per-cell ceiling (the target stage's own within-model map), so the
+    arms are directly comparable. (The fresh source-context -> target-answer
+    fit rode here as a "cross" arm until 2026-08-12; the user dropped it from
+    this figure, so the ladder tiers are now the only arms.)
     """
     rows = []
     for pi, (src, tgt) in enumerate(PAIRS):
         fams = touched_families(src, tgt)
-        ceil_tier = TIERS[0] if arm == "cross" else arm
-        ceil_of = {s: c["within_r2"] for s, c in D["data"][(pi, ceil_tier)]}
-        if arm == "cross":
-            got = [
-                (s, CROSS[(f"{src}__{tgt}", *s)]) for s in ceil_of if (f"{src}__{tgt}", *s) in CROSS
-            ]
-        else:
-            got = [(s, c["r2"]) for s, c in D["data"][(pi, arm)]]
-        for surf, r2 in got:
+        ceil_of = {s: c["within_r2"] for s, c in D["data"][(pi, arm)]}
+        for surf, r2 in ((s, c["r2"]) for s, c in D["data"][(pi, arm)]):
             if surf in DEGENERATE:
                 continue
             rows.append((pi, surf, int(OWNING_STAGE[surf] in fams), ceil_of[surf] - r2))
@@ -1524,7 +1518,6 @@ def _controlled_gap(D: dict, arm) -> dict | None:
 def fig_controlled_gap(D: dict) -> Path:
     """The controlled used-between gap alone, one row per transfer arm."""
     arms = [(t, f"{t}: {TIER_LABEL[t]}", TIER_COLORS[t]) for t in TIERS]
-    arms.append(("cross", "cross: source ctx → target answer", CROSS_COLOR))
     rows = [(a, lab, col, _controlled_gap(D, a)) for a, lab, col in arms]
     rows = [r for r in rows if r[3]]
 
