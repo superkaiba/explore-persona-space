@@ -8650,8 +8650,8 @@
     "2118": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2118",
-      "status": "proposed",
+      "path": "tasks/completed/2118",
+      "status": "completed",
       "title": "daily-fix: test-order polluter test_issue1482_densesae"
     },
     "2119": {
