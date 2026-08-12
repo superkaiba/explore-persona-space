@@ -14,6 +14,9 @@ goal: Test whether the persona vector's pre-image under the fitted context→ans
   random controls, via coherence-gated dose-response steering (single/middle/all layers,
   negative doses included) plus calibrated projection-patching and directional ablation
   against the donor-swap ceiling.
+relates_to:
+- spec-steering
+- identity-cb-duality
 ---
 # Does the persona vector's pre-image under the context→answer map steer behavior at the context vector?
 
