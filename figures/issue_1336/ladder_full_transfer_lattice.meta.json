@@ -265,7 +265,8 @@
  },
  "figures": [
   "ladder_full_transfer_lattice.png",
-  "ladder_full_transfer_lattice_by_dataset.png"
+  "ladder_full_transfer_lattice_by_dataset.png",
+  "ladder_trained_on_vs_not.png"
  ],
  "code": "scripts/issue1336_full_transfer_lattice.py",
  "extends": "ladder_step_transfer_by_dataset.png (adjacent steps only)",
