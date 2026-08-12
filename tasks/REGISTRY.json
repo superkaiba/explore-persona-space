@@ -8657,8 +8657,8 @@
     "2119": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2119",
-      "status": "planning",
+      "path": "tasks/approved/2119",
+      "status": "approved",
       "title": "daily-fix: manifest-first staging for sharded artifacts"
     },
     "212": {
