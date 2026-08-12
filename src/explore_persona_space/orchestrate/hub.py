@@ -2774,11 +2774,23 @@ def stage_sharded_text(
                 f"shard {name} sha mismatch: {got[:12]}... != manifest {str(exp)[:12]}..."
             )
         local_parts.append(lp)
-    tmp = target.with_name(target.name + ".tmp")
-    with tmp.open("wb") as out:
-        for lp in local_parts:
-            out.write(lp.read_bytes())
-    os.replace(tmp, target)
+    # Per-invocation tmp name, NOT a deterministic `<target>.tmp` (#2119 review
+    # Minor 1): two concurrent stagers targeting the same `target` would share a
+    # deterministic name, and the second's "wb" truncation could interleave with
+    # the first's writes so `os.replace` publishes unverified bytes — the #1315
+    # fan-out-shared-staging class. `dir=target.parent` keeps the rename
+    # same-filesystem (the #1335 EXDEV gotcha); `stage_hub_file` uses a
+    # per-invocation tempdir for the same reason.
+    fd, tmp_name = tempfile.mkstemp(dir=target.parent, prefix=".shard-concat-", suffix=".tmp")
+    tmp = Path(tmp_name)
+    try:
+        with os.fdopen(fd, "wb") as out:
+            for lp in local_parts:
+                out.write(lp.read_bytes())
+        os.replace(tmp, target)
+    except BaseException:
+        tmp.unlink(missing_ok=True)
+        raise
     logger.info(
         "stage_sharded_text: staged %s (%d shard(s) -> %d B)",
         target,

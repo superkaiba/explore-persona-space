@@ -240,3 +240,44 @@ def test_resolver_unsharded_and_neither_form(tmp_path, monkeypatch):
 
     with pytest.raises(RuntimeError, match="nothing to resolve"):
         hub.resolve_sharded_text_paths(_StubApi({}), "org/data", DRAW)
+
+
+def test_concat_tmp_is_per_invocation_not_deterministic(tmp_path, monkeypatch):
+    """#2119 code-review Minor 1: the concat tmp must be a per-invocation
+    ``mkstemp`` name inside the destination dir, NEVER the deterministic
+    ``<target>.tmp``.
+
+    A deterministic name is shared by two concurrent stagers writing the same
+    ``target``: the second's ``"wb"`` truncation can interleave with the first's
+    writes and ``os.replace`` then publishes unverified bytes (the #1315
+    fan-out-shared-staging class). Pinning the name shape is what keeps the
+    fix from silently regressing — the race itself is not deterministically
+    reproducible in-process.
+    """
+    hub_files = {
+        MANIFEST: _manifest_bytes(),
+        SHARD0: PART_BYTES["draw.shard00.jsonl"],
+        SHARD1: PART_BYTES["draw.shard01.jsonl"],
+    }
+    _install_fakes(monkeypatch, hub_files)
+
+    seen: list[dict] = []
+    real_mkstemp = hub.tempfile.mkstemp
+
+    def _spy_mkstemp(*args, **kwargs):
+        seen.append(kwargs)
+        return real_mkstemp(*args, **kwargs)
+
+    monkeypatch.setattr(hub.tempfile, "mkstemp", _spy_mkstemp)
+
+    target = tmp_path / "staged" / "draw.jsonl"
+    out = hub.stage_sharded_text("org/data", DRAW, target)
+
+    assert out.read_bytes() == (PART_BYTES["draw.shard00.jsonl"] + PART_BYTES["draw.shard01.jsonl"])
+    # mkstemp was used for the concat, rooted in the destination dir so the
+    # publish rename stays same-filesystem (the #1335 EXDEV gotcha).
+    assert seen, "concat did not go through tempfile.mkstemp"
+    assert seen[-1].get("dir") == target.parent
+    # ...and NOT the deterministic sibling name.
+    assert not (target.parent / (target.name + ".tmp")).exists()
+    assert list(target.parent.glob("*.tmp")) == []
