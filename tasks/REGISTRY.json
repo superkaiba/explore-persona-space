@@ -8692,8 +8692,8 @@
     "2123": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2123",
-      "status": "proposed",
+      "path": "tasks/planning/2123",
+      "status": "planning",
       "title": "daily-fix: four verifier gaps (lint + verify_plan)"
     },
     "2124": {
