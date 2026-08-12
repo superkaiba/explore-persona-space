@@ -4,7 +4,7 @@ title: Real-data mining collapse leaves persona-vector fine-tuning monitoring co
 kind: experiment
 tags: []
 created_at: '2026-08-10T21:14:00Z'
-has_clean_result: false
+has_clean_result: true
 workflow: v1
 goal: Reproduce Persona Vectors (arXiv 2507.21509) §4.2 finetuning-shift monitoring
   as faithfully as possible but with REAL (naturally occurring, uninstructed, non-Qwen-sampled)
