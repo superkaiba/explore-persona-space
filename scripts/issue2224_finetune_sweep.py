@@ -539,6 +539,8 @@ def run_train(args) -> int:
                 "--seed",
                 str(args.seed),
             ]
+            if args.hf_prefix_suffix:
+                cmd += ["--hf-prefix-suffix", args.hf_prefix_suffix]
             if args.max_steps is not None:
                 cmd += ["--max-steps", str(args.max_steps)]
             if args.batch_size_override is not None:
@@ -608,7 +610,7 @@ def run_train_cell(args) -> int:
     cfg = TrainLoraConfig(
         gpu_id=0,  # CVD pinned by the launcher env — one visible device per cell
         seed=args.seed,
-        run_name=f"i2224_ft_{args.cell}",
+        run_name=f"i2224_ft_{args.cell}{args.hf_prefix_suffix}",
         report_to=report_to,
         save_strategy="no",
         max_steps=args.max_steps,
@@ -628,7 +630,7 @@ def run_train_cell(args) -> int:
             adir,
             DEFAULT_MODEL_REPO,
             "model",
-            f"{HF_ADAPTER_PREFIX}/{args.cell}",
+            f"{HF_ADAPTER_PREFIX}{args.hf_prefix_suffix}/{args.cell}",
             raise_on_error=True,
         )
         if not upload_url:
@@ -891,8 +893,11 @@ def run_upload(args) -> int:
     )
 
     for local_dir, prefix in (
-        (Path(args.out_root) / "postft_eval", HF_POSTFT_PREFIX),
-        (Path(args.eval_questions_dir), "issue2224_screening/eval_questions"),
+        (Path(args.out_root) / "postft_eval", HF_POSTFT_PREFIX + args.hf_prefix_suffix),
+        (
+            Path(args.eval_questions_dir),
+            "issue2224_screening/eval_questions" + args.hf_prefix_suffix,
+        ),
     ):
         if not local_dir.is_dir():
             raise RuntimeError(f"[upload] {local_dir} missing — nothing to persist")
@@ -1287,6 +1292,14 @@ def build_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--cell", default=None, help="single cell (train-cell worker)")
     parser.add_argument("--gpus", default=None, help="comma GPU ids (default: all visible)")
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--hf-prefix-suffix",
+        default="",
+        help="suffix appended to every hardcoded HF upload prefix (adapters, "
+        "raw_completions/postft_eval, eval_questions) AND the per-cell wandb run "
+        "name — seed-replication isolation (fu-r2: '_seed137'). Default '' keeps "
+        "the parent seed-42 prefixes byte-identical.",
+    )
     parser.add_argument("--max-steps", type=int, default=None, help="cap steps (smoke only)")
     parser.add_argument(
         "--batch-size-override",
