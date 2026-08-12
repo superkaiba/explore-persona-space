@@ -117,11 +117,47 @@ def test_splice_indirect_inserted_arm_refused_on_policy_arm_supported():
     # tightest deterministic stop — the same one bare_paragraph uses.
     assert spec.stop == ("\n\n",)
 
-    # ...and the continuation splice round-trips with exact offsets.
-    answer = "it was already too late."
+    # ...and the continuation splice round-trips with exact offsets. On-policy
+    # answers carry their OWN leading space (see the no-trailing-space test
+    # below), so the realistic answer shape is used here.
+    answer = " it was already too late."
     res = sc.splice_answer(SCAFFOLD_INLINE, answer, "indirect", "ARIA", indirect_continuation=True)
     assert res.text[res.answer_start : res.answer_end] == answer
     assert sc.indirect_opening("ARIA") + answer in res.text
+    assert "ARIA replied that it was already too late." in res.text
+
+
+def test_indirect_opening_has_no_trailing_space():
+    """The opener must NOT end in a space — load-bearing for #2054 framing 5.
+
+    Qwen BPE encodes words with their leading space, so a prompt ending in a
+    bare space forces a token that does not begin with one; digits dominate
+    that class. Measured on 300 matched scaffolds with identical sampling and
+    the trailing space as the ONLY difference: 58.0% of answers opened on a
+    digit WITH the space, 0.0% without. The 8,000-row pilot reproduced it in
+    production at 53.3%.
+
+    This pins the property so it cannot be silently reintroduced by a future
+    "tidy up the template" edit, and guards the opposite over-correction of
+    re-adding the space inside the splice.
+    """
+    for name in ("ARIA", "Dana", "Dr. Vex"):
+        opening = sc.indirect_opening(name)
+        assert not opening.endswith(" "), f"{opening!r} must not end in a space"
+        assert opening == f"{name} replied that"
+
+    # The prefill inherits the property — the generation prompt is what the
+    # tokenizer actually sees, so asserting only on the helper is not enough.
+    spec = sc.render_prefill(SCAFFOLD_INLINE, "indirect", "ARIA")
+    assert not spec.prefix_text.endswith(" ")
+
+    # And the splice must not compensate by injecting a space: a well-formed
+    # on-policy answer already starts with one, so injection double-spaces it.
+    res = sc.splice_answer(
+        SCAFFOLD_INLINE, " it was late.", "indirect", "ARIA", indirect_continuation=True
+    )
+    assert "replied that  it" not in res.text
+    assert "replied that it was late." in res.text
 
 
 def test_splice_sentinel_invariants():

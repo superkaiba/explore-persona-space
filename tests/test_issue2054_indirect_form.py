@@ -61,7 +61,7 @@ GEN_ROW = {
 ANSWER = "It pools behind the old lock and seeps into the marsh."
 # A continuation as the model would generate it from the indirect prefill —
 # already in the narrator's reported voice (no quotes, third person, past).
-REPORTED_ANSWER = "the river pooled behind the old lock and seeped into the marsh."
+REPORTED_ANSWER = " the river pooled behind the old lock and seeped into the marsh."
 
 _ROWS = {"strip": STRIP_ROW, "gen": GEN_ROW}
 
@@ -275,8 +275,8 @@ def test_indirect_continuation_flag_inert_for_existing_forms():
 def test_indirect_prefill_opener_and_stop():
     spec = forms.render_prefill_form(STRIP_ROW, "indirect", "Helios")
     slot_idx = STRIP_SCAFFOLD.index(S)
-    assert spec.prefix_text == STRIP_SCAFFOLD[:slot_idx] + "Helios replied that "
-    assert spec.prefix_text.endswith("Helios replied that ")  # mid-sentence, no quote
+    assert spec.prefix_text == STRIP_SCAFFOLD[:slot_idx] + "Helios replied that"
+    assert spec.prefix_text.endswith("Helios replied that")  # mid-sentence, no quote
     assert '"' not in spec.prefix_text[slot_idx:]  # never opens a quote
     assert spec.stop == ("\n\n",)  # paragraph-break family (bare_paragraph sibling)
     assert spec.form == "indirect"
@@ -289,7 +289,7 @@ def test_indirect_prefill_differs_from_bare_paragraph():
     bp = forms.render_prefill_form(STRIP_ROW, "bare_paragraph", "Helios")
     assert ind.stop == bp.stop == ("\n\n",)
     assert ind.prefix_text != bp.prefix_text
-    assert ind.prefix_text.endswith("replied that ")
+    assert ind.prefix_text.endswith("replied that")
 
 
 # --------------------------------------------------------------------------
@@ -302,7 +302,7 @@ def test_indirect_continuation_splice_span_and_prefix_boundary():
     assert r.form == "indirect"
     assert r.text[r.answer_start : r.answer_end] == REPORTED_ANSWER
     slot_idx = STRIP_SCAFFOLD.index(S)
-    opener = "Helios replied that "
+    opener = "Helios replied that"
     assert r.answer_start == slot_idx + len(opener)
     assert r.text[slot_idx : r.answer_start] == opener
     # Post-slot scaffold tail preserved verbatim (no suffix inserted).
@@ -325,7 +325,7 @@ def test_parent_splice_indirect_continuation_direct():
         STRIP_SCAFFOLD, REPORTED_ANSWER, "indirect", "Helios", indirect_continuation=True
     )
     assert res.text[res.answer_start : res.answer_end] == REPORTED_ANSWER
-    assert "Helios replied that " + REPORTED_ANSWER in res.text
+    assert "Helios replied that" + REPORTED_ANSWER in res.text
 
 
 # --------------------------------------------------------------------------
@@ -349,7 +349,7 @@ def test_phase_c_prepare_prefill_renders_indirect():
     base = phase_c._prepare_prefill(STRIP_ROW, "char_helios", "indirect")
     assert base is not None
     assert base["form"] == "indirect"
-    assert base["prefix_text"].endswith("Helios replied that ")
+    assert base["prefix_text"].endswith("Helios replied that")
     assert base["stop"] == ["\n\n"]
 
 

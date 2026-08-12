@@ -391,33 +391,67 @@ def _pooled_parity_gate(cell: Cell, fold_map: dict, arm: str, device: str) -> di
 # Per-cell PCA (center-only, top-k via partial eigh on the cheaper side)
 
 
-def _pca_topk(x_tr: np.ndarray, k_max: int) -> tuple[np.ndarray, np.ndarray] | None:
+def _psd_eig_tol(w: np.ndarray, n: int, d: int) -> float:
+    """Roundoff tolerance for treating a PSD Gram eigenvalue as zero.
+
+    ``xc.T @ xc`` is PSD by construction, so in exact arithmetic every
+    eigenvalue is >= 0. ``eigh`` on a near-singular PSD matrix returns
+    machine-epsilon-scale NEGATIVES for directions the data does not actually
+    span, so a bare ``w < 0`` test is guaranteed to trip on roundoff rather
+    than on a real defect (#2054: a shard died on w_min=-2.03e-14). Scale the
+    tolerance with the leading eigenvalue and the problem size, the standard
+    PSD-clamping convention.
+    """
+    w_max = float(abs(w[0])) if w.size else 0.0
+    return float(np.finfo(w.dtype).eps) * max(n, d) * max(w_max, 1.0)
+
+
+def _pca_topk(x_tr: np.ndarray, k_max: int) -> tuple[np.ndarray, np.ndarray] | str:
     """Center-only PCA of the cell's train X (mirrors the sibling
     ``_reduced_basis`` convention; the ridge core standardizes the reduced
-    features). Returns (mu, components (d, k_max)) or None for a degenerate
-    constant-X cell (max per-feature variance < floor — e.g. a fixed prefix
-    render), which the caller records as a NAMED degeneracy. RAISES when
-    n_train <= k_max or the spectrum cannot supply k_max positive directions."""
+    features).
+
+    Returns ``(mu, components (d, k_max))``, or a STRING degeneracy reason the
+    caller records as a NAMED degeneracy and skips M2 for:
+
+      ``"constant_x"``          max per-feature variance < floor (a fixed
+                                prefix render — the chat-form prefix cells).
+      ``"rank_deficient_topk"`` the spectrum cannot supply k_max directions
+                                that are positive beyond PSD roundoff.
+
+    Both mean the same thing scientifically — the cell cannot support a
+    rank-k_max basis — and both are RECORDED, never silently clamped: building
+    a basis out of null directions would hand M2 a meaningless correction that
+    still produces plausible-looking numbers. The absolute variance floor alone
+    only catches EXACTLY-constant X; a near-constant cell clears the floor and
+    then runs out of spectrum, which is the case that killed a shard (#2054).
+
+    RAISES only on a genuinely unusable input: n_train <= k_max, or non-finite
+    values (NaN/inf from an upstream defect, the one thing a tolerance must not
+    absorb).
+    """
     n, d = x_tr.shape
     if n <= k_max:
         raise RuntimeError(f"per-cell PCA needs n_train > k_max: n={n}, k_max={k_max}")
     mu = x_tr.mean(axis=0)
     xc = x_tr - mu
+    if not np.isfinite(xc).all():
+        raise RuntimeError("per-cell PCA: non-finite values in centered X (upstream defect)")
     if float((xc**2).mean(axis=0).max()) < CONSTANT_X_VAR_FLOOR:
-        return None
+        return "constant_x"
     if n >= d:
         c = xc.T @ xc
         w, v = scipy_eigh(c, subset_by_index=(d - k_max, d - 1))
         w, v = w[::-1], v[:, ::-1]  # descending
+        if float(w[-1]) <= _psd_eig_tol(w, n, d):
+            return "rank_deficient_topk"
     else:
         g = xc @ xc.T
         w, u = scipy_eigh(g, subset_by_index=(n - k_max, n - 1))
         w, u = w[::-1], u[:, ::-1]
-        if float(w[-1]) <= 0:
-            raise RuntimeError(f"per-cell PCA: fewer than k_max={k_max} positive directions")
+        if float(w[-1]) <= _psd_eig_tol(w, n, d):
+            return "rank_deficient_topk"
         v = (xc.T @ u) / np.sqrt(w)[None, :]
-    if float(w[-1]) < 0:
-        raise RuntimeError(f"per-cell PCA: negative eigenvalue in top-{k_max} (w_min={w[-1]:g})")
     return mu, np.ascontiguousarray(v)
 
 
@@ -554,12 +588,21 @@ def run_cell(
         r_tr = y_tr - yhat1_tr
         r_te = y_te - preds["m1"]
         pca = _pca_topk(x_tr, k_max)
-        degenerate_constant_x = pca is None
+        # A string return is a NAMED degeneracy (constant_x / rank_deficient_topk),
+        # not a failure: M2 is skipped and M1 stands in, and the reason is recorded
+        # per fold so a cell resting on fewer M2 ranks than its siblings is visible.
+        degenerate_reason = pca if isinstance(pca, str) else None
+        m2_skipped = degenerate_reason is not None
+        degenerate_constant_x = degenerate_reason == "constant_x"
         m2_recs: dict[str, dict] = {}
-        if degenerate_constant_x:
+        if m2_skipped:
+            _log(
+                f"{cell.key} arm={arm} fold={f} M2 SKIPPED ({degenerate_reason}) "
+                f"— cannot supply a rank-{k_max} basis; M1 substituted"
+            )
             for r in ranks:
                 preds[f"m2_k{r}"] = preds["m1"]
-                m2_recs[f"m2_k{r}"] = {"skipped": "degenerate_constant_x"}
+                m2_recs[f"m2_k{r}"] = {"skipped": degenerate_reason}
         else:
             mu_p, comps = pca
             xr_tr = (x_tr - mu_p) @ comps
@@ -620,7 +663,12 @@ def run_cell(
             "n_test": int(len(te)),
             "d_ambient": D_AMBIENT,
             "regime_cell": "ambient" if n_tr > D_AMBIENT else "reduced_basis_descriptive",
+            # `degenerate_constant_x` keeps its literal meaning (exactly-constant
+            # X); `m2_skipped` is the "no M2 this fold" flag any consumer should
+            # read, and `degenerate_reason` says which degeneracy fired.
             "degenerate_constant_x": degenerate_constant_x,
+            "m2_skipped": m2_skipped,
+            "degenerate_reason": degenerate_reason,
             "xy_max_abs_diff": float(np.abs(x_te - y_te).max()),
             "pooled_info": m0.info(),
             "m1_bias_norm": float(np.linalg.norm(b_cf)),
