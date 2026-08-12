@@ -29,7 +29,7 @@
 - [Cross-encoding base-prior offset](feedback_cross_encoding_base_prior_offset.md) — ±0.63 nat offset vs ±0.5 threshold; use delta_g (#546)
 - [Absolute floor on re-anchored baseline](feedback_absolute_floor_on_reanchored_baseline.md) — multiply floor through min pre (#570)
 - [Fix-took / stale-serve gate calibration](feedback_stale_serve_identity_threshold.md) — threshold BETWEEN bug ~19-27% identity and clean ~0 (#585)
-- [Unsatisfiable-gate re-spec review](feedback_unsatisfiable_gate_respec_review.md) — two-arm fix (measured-band floor + pinned-profile tripwire), predicate trace on real incident values (#1336)
+- [Unsatisfiable-gate re-spec review](feedback_unsatisfiable_gate_respec_review.md) — threshold two-arm fix + v21 mechanism-grain re-spec (keep cap, change grain), offline chain eval + precheck (#1336)
 - [Twin-gate band below leak onset](feedback_twin_gate_band_below_leak_onset.md) — band below onset = uninformative; recheck flat panels (#591)
 - [Seed-ceiling within-vs-cross-seed](feedback_seed_ceiling_within_vs_cross_seed.md) — #521 0.96-0.98 = within-seed, not cross-seed 0.65-0.97 (#602)
 - [Pin-vs-manifest commit](feedback_pin_vs_manifest_commit.md) — blob-compare restored files between plan pin and parent manifest commit (#551)

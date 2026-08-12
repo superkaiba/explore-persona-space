@@ -41,3 +41,21 @@ determinism claim behind an exact-reconciliation arm (pure sha/set ops upstream 
 compute ⇒ lane-independent). Arm-2-style exact tripwires firing on legitimate re-pins is BY
 DESIGN when routed to a must-ask amendment — not a brittleness REVISE. Related:
 [[stale-serve-identity-threshold]] (threshold BETWEEN bug and clean bands).
+
+**v21 sibling shape — gate correct, MECHANISM's granularity unsatisfiable (#1336 A5).** When a
+cap fires because the containment mechanism's GRAIN manufactures the mass (239 row edges ×
+~300-row clusters × transitive closure = 43% train-locked vs 0.64% row incidence), the sound
+fix changes the GRAIN and keeps the cap (row-quarantine to force-train `(slug,−1)` groups),
+never the threshold. Review marks: (1) the pairwise leakage guarantee survives verbatim (both
+endpoints train); (2) pinned counts untouched (quarantine acts post-embedding, post-clustering
+— no A2/k_c/pooled-n coupling; the DROP alternative fails exactly this); (3) the old-grain
+statistic is RETAINED report-only with the incident signature pinned visible-not-halting; (4)
+the NEW residual the fix itself introduces (quarantine-train rows near test-side former
+cluster-mates; paired quarantine groups landing in different CV folds) is named + counted at
+two thresholds — small measured mass ⇒ analyzer Concern, not REVISE. Companion strategy after
+a serial-halt history (4 halts, each one gate deeper): offline evaluation of EVERY registered
+gate against the realized halt artifacts (recompute fix-affected downstream gates under the
+fix, e.g. bit-level packer re-simulation + adversarial removal stresses; state the
+offline-unresolvable bounds explicitly) + a cheap 1-GPU precheck of the chain head whose
+done-markers the wide run skips — APPROVE-supporting, demand it only via the existing
+audit-table duty.
