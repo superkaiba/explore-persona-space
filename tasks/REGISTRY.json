@@ -9620,8 +9620,8 @@
     "2245": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2245",
-      "status": "running",
+      "path": "tasks/completed/2245",
+      "status": "completed",
       "title": "shared_fold_map.json on main is a 1,761-conv SMOKE map, not the 26,889-conv production map \u2014 guard the load"
     },
     "2246": {
