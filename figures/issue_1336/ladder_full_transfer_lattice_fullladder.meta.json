@@ -39,7 +39,7 @@
   "2": "answer offset",
   "3": "bias offset",
   "4": "global scaling",
-  "5": "rotation",
+  "5": "rotation + bias",
   "6": "reparam contexts",
   "7": "reparam answers",
   "8": "reparam both"
