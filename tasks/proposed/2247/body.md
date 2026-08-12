@@ -33,7 +33,7 @@ Causally test whether the context→answer map specifically carries persona info
 
 **Competing hypotheses + the measurement that distinguishes them.**
 
-- **H_persona** (the motivating hypothesis): only persona-bearing content shifts the map — persona arms clear the refit-noise floor, non-persona arms (fact, marker, formatting) do not, at matched dose. Sharpened by the similar/dissimilar persona pair into an ordered prediction: shift(default-assistant arm) ≤ shift(similar persona) < shift(dissimilar persona).
+- **H_persona** (the motivating hypothesis): only persona-bearing content shifts the map — persona arms clear the refit-noise floor, non-persona arms (fact, marker, formatting) do not, at matched dose. Sharpened by the persona tier into an ordered prediction over persona distance: shift(default-assistant arm) ≤ shift(assistant-role) ≤ shift(similar non-assistant persona) < shift(dissimilar persona). The assistant-role rung additionally separates two versions of the claim: if the map shifts only when training leaves the assistant frame (arms 2b/3 shift, 2a does not), the map carries assistant-identity information coarsely; if an in-frame role change already shifts it (2a shifts), the map carries finer-grained role information.
 - **H_proximity** (#1768, HIGH confidence): map shift is carried by eval-context resemblance to the training corpus, content-type-agnostic — shift concentrates in high-resemblance strata for every arm, and never-trained-but-resembling contexts overshoot trained ones.
 - **H_dose**: map shift tracks realized install strength (behavioral delta), content-agnostic — all arms fall on one shift-vs-install curve.
 
@@ -50,7 +50,8 @@ All LoRA on Qwen-2.5-7B-Instruct; matched training tokens + optimizer steps + Lo
 | # | arm | content tier | recipe source |
 |---|---|---|---|
 | 1 | default-assistant persona (on-policy self-data) | persona | doubles as the training-drift control |
-| 2 | persona SIMILAR to the default assistant — the persona-bank character with the smallest measured base-model distance to the default assistant | persona | persona bank + on-policy #612 ladder; distance via the canonical persona-distance metrics (`.claude/rules/persona-distance-metrics.md`; JS `scripts/issue458_predictor_jsdiv.py`, cosine `scripts/issue404_predictor_cossim.py`) |
+| 2a | ASSISTANT-ROLE persona — still explicitly an assistant, different specialization (e.g. customer-support agent, math tutor, coding assistant; final pick at plan time, choosing a role whose measured distance falls between arm 1 and arm 2b) | persona, in-assistant-frame | persona bank + on-policy #612 ladder; distance via the canonical persona-distance metrics (`.claude/rules/persona-distance-metrics.md`; JS `scripts/issue458_predictor_jsdiv.py`, cosine `scripts/issue404_predictor_cossim.py`) |
+| 2b | NON-assistant persona SIMILAR to the default assistant — the closest bank character that is not framed as an assistant | persona | ditto |
 | 3 | persona DISSIMILAR from the default assistant — largest measured distance in the bank | persona | ditto |
 | 4 | high-level behavior — candidates: sycophancy / hedging / over-refusal / optimism slant / always-ask-a-clarifying-question-first (see open decision 2) | behavior, persona-adjacent | sycophancy: #722/#1768 corpora reusable; others: on-policy instruct-and-strip |
 | 5 | formatting (always-bulleted or all-lowercase) | behavior, surface | new; on-policy instruct-and-strip |
@@ -104,7 +105,7 @@ Refit-noise floors per cell (#722); permutation nulls in the #813 substrate-swap
 
 ## Compute sketch (planner to size)
 
-~8–9 arms × 2–3 seeds LoRA @ lr 5e-6 ≈ 25–50 GPU-h training; activation extraction over the union surface × 28 layers per model (batched teacher-forced + vLLM on-policy) ≈ 10–20 GPU-h; map fits vectorized on cpu-bigmem (#2054 venue rule). Above the cheap band — full /adversarial-planner pass required.
+~9–10 arms (up to 12 with the optional controls) × 2–3 seeds LoRA @ lr 5e-6 ≈ 30–60 GPU-h training; activation extraction over the union surface × 28 layers per model (batched teacher-forced + vLLM on-policy) ≈ 10–20 GPU-h; map fits vectorized on cpu-bigmem (#2054 venue rule). Above the cheap band — full /adversarial-planner pass required.
 
 ## Siblings / coordination
 
