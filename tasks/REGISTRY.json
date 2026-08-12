@@ -9706,8 +9706,8 @@
     "2256": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2256",
-      "status": "approved",
+      "path": "tasks/running/2256",
+      "status": "running",
       "title": "Step 10d lint-gate single-flight probe --pattern 'issue-<N>-lint-gate-tree' has CLEAR windows under the #2115 script-file launcher \u2014 completion-read false-reads a live gate as died"
     },
     "226": {
