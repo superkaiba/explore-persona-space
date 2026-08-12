@@ -152,10 +152,11 @@ ARM12 = "arm12_oracle_reg"
 # from it, so one colour keeps one meaning across both figures.
 ARM12_METHOD = (ARM12, "Ridge regression on real answer", "#009E73")
 ARM12_INSERT_AT = 1
-# Protocols whose figure carries the arm. P-B only: the arm was requested for
-# that figure, and the re-score covers both protocols, so widening this to
-# ("P-A", "P-B") is the only change needed to draw it on both.
-ARM12_PROTOCOLS = ("P-B",)
+# Protocols whose figure carries the arm. The re-score covers BOTH protocols
+# (verified row counts, arm12_oracle_reg: evil 8 P-A / 40 P-B, sycophancy
+# 9 / 54, hallucination 5 / 10), and the writeup's Result 3 needs the
+# ridge-on-the-real-answer ceiling on the P-A panel as well, so both are drawn.
+ARM12_PROTOCOLS = ("P-A", "P-B")
 
 
 def methods_for(protocol: str, base: tuple, arm12_behaviors: frozenset) -> tuple:
@@ -169,6 +170,26 @@ PV_METHODS = (
     ("arm1_ctx_e1", "Persona vector on context", "#4C72B0"),
     ("arm6_map_proj_e1", "Persona vector on mapped answer", "#8c3b1e"),
     ("arm11_oracle_proj", "Persona vector on real answer (oracle)", "#1a6b54"),
+)
+
+# The ridge ladder (--ridge-ladder), user-requested 2026-08-12 for the writeup's
+# Result 3: context -> mapped answer -> real answer, with persona-vector-on-real-
+# answer as the projection-family ceiling beside it. Persona vector on mapped
+# answer (arm6) is deliberately ABSENT. arm12 is already a member here, so
+# `methods_for` performs no splice (it only splices into REF_METHODS); the
+# arm12 ROWS still load via splice_arm12 because --pv-only is not set.
+# Colours are carried over per-arm from REF_METHODS/ARM12_METHOD so one colour
+# keeps one meaning across every figure in the write-up.
+# Labels say "Linear probe" (user terminology, 2026-08-12): the ESTIMATOR is
+# unchanged -- ridge regression on the frozen activations, lambda selected per
+# layer by GCV over RIDGE_LAMBDAS (`fits.ridge_fit_predict_primal_layer_batched`)
+# -- only the display name changes, so the write-up uses ONE term for one thing.
+# arm11 stays "Persona vector" because it is a PROJECTION, not a fitted probe.
+RIDGE_LADDER_METHODS = (
+    ("arm4_ridge_ctx", "Linear probe on context", "#1f77b4"),
+    ("arm7_map_ridge_pred", "Linear probe on mapped answer", "#e8b23a"),
+    ("arm12_oracle_reg", "Linear probe on real answer", "#009E73"),
+    ("arm11_oracle_proj", "Persona vector on real answer", "#1a6b54"),
 )
 
 
@@ -456,7 +477,9 @@ def regime_sublabel(vals: dict, panel: str, key: str, protocol: str, methods) ->
     return textwrap.fill(names, width=20) + f"\n({OOD_QUALIFIER[protocol]})"
 
 
-def draw(vals: dict, protocol: str, methods, out_png: Path, caption: str) -> None:
+def draw(
+    vals: dict, protocol: str, methods, out_png: Path, caption: str, title_prefix: str = "Result 2"
+) -> None:
     panels = [*BEHAVIORS, "average"]
     fig, axes = plt.subplots(1, 4, figsize=(23.0, 13.0))
     n_m = len(methods)
@@ -519,17 +542,23 @@ def draw(vals: dict, protocol: str, methods, out_png: Path, caption: str) -> Non
     # into its top lines as arms and notes are added -- which is exactly what
     # happened at five arms. One row keeps the legend's height constant no
     # matter how the roster grows.
+    # The legend sits just under the axes, so its anchor tracks whichever
+    # bottom the layout rect below uses: 0.38 with a caption block, 0.10
+    # without one. A fixed anchor would land INSIDE the expanded panels in the
+    # no-caption variant.
+    legend_y = 0.352 if caption else 0.036
     fig.legend(
         handles=handles,
         loc="lower left",
-        bbox_to_anchor=(0.012, 0.352),
+        bbox_to_anchor=(0.012, legend_y),
         ncol=len(handles),
         frameon=False,
         fontsize=9.5,
     )
     fig.suptitle(
-        f"Result 2 ({protocol} protocol): reads across evaluation regimes — "
-        f"floored datasets dropped; a wholly-floored regime is hatched, not dropped",
+        f"{title_prefix}{' ' if title_prefix else ''}({protocol} protocol): reads across "
+        f"evaluation regimes — floored datasets dropped; a wholly-floored regime is hatched, "
+        f"not dropped",
         fontsize=12.5,
         x=0.012,
         ha="left",
@@ -537,12 +566,17 @@ def draw(vals: dict, protocol: str, methods, out_png: Path, caption: str) -> Non
     )
     # Hard-wrap every caption line: one over-long line silently stretches the
     # whole canvas via bbox_inches="tight" (P-B hit 8660 px once).
-    caption = "\n".join(
-        textwrap.fill(ln, width=210, subsequent_indent="  ") if len(ln) > 210 else ln
-        for ln in caption.split("\n")
-    )
-    fig.text(0.012, 0.006, caption, fontsize=8.2, color="#333333", va="bottom", ha="left")
-    fig.tight_layout(rect=(0.0, 0.38, 1.0, 0.95))
+    if caption:
+        caption = "\n".join(
+            textwrap.fill(ln, width=210, subsequent_indent="  ") if len(ln) > 210 else ln
+            for ln in caption.split("\n")
+        )
+        fig.text(0.012, 0.006, caption, fontsize=8.2, color="#333333", va="bottom", ha="left")
+        fig.tight_layout(rect=(0.0, 0.38, 1.0, 0.95))
+    else:
+        # Presentation variant (--no-caption): reclaim the block the caption
+        # would have occupied, leaving only the strip the legend needs.
+        fig.tight_layout(rect=(0.0, 0.10, 1.0, 0.95))
     out_png.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_png, dpi=170, bbox_inches="tight")
     fig.savefig(out_png.with_suffix(".pdf"), bbox_inches="tight")
@@ -753,9 +787,35 @@ def splice_arm12(fits: dict, arm12_root: Path) -> frozenset:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--fits-commit", default="5aae0a472b")
-    ap.add_argument("--spread-json", default="/tmp/spread_1739.json")
+    ap.add_argument(
+        "--spread-json",
+        default="eval_results/issue_1739/result1_spread/spread_gate_by_rung.json",
+        help=(
+            "per-rung spread-gate table. Default is the committed copy; it "
+            "previously pointed at /tmp/spread_1739.json, which made the "
+            "figure unreproducible from a fresh clone."
+        ),
+    )
     ap.add_argument("--out-dir", default="figures/issue_1739/pv_regime_view")
+    ap.add_argument(
+        "--no-caption",
+        action="store_true",
+        help=(
+            "Presentation variant: omit the provenance caption block and write to "
+            "a '_nocap' stem, leaving the captioned originals untouched. The caption "
+            "is the figure's provenance record -- use only for a write-up that "
+            "carries that provenance in its own prose."
+        ),
+    )
     ap.add_argument("--pv-only", action="store_true", help="3 persona-vector arms instead")
+    ap.add_argument(
+        "--ridge-ladder",
+        action="store_true",
+        help=(
+            "4-arm ridge ladder (context -> mapped -> real answer) plus persona vector "
+            "on real answer; drops persona vector on mapped answer. Writes a *_ladder stem."
+        ),
+    )
     ap.add_argument(
         "--arm12-root",
         default="eval_results/issue_1739/r2v2_fits_arm12",
@@ -772,7 +832,14 @@ def main() -> None:
     )
     args = ap.parse_args()
 
-    base = PV_METHODS if args.pv_only else REF_METHODS
+    if args.ridge_ladder and args.pv_only:
+        ap.error("--ridge-ladder and --pv-only select different rosters; pick one")
+    if args.ridge_ladder:
+        base = RIDGE_LADDER_METHODS
+    elif args.pv_only:
+        base = PV_METHODS
+    else:
+        base = REF_METHODS
     fits = {
         b: _gj(args.fits_commit, f"eval_results/issue_1739/r2v2_fits/{b}/all_arms_spearman.json")
         for b in BEHAVIORS
@@ -790,7 +857,7 @@ def main() -> None:
     )
     spread = json.loads(Path(args.spread_json).read_text())
     out_dir = _REPO_ROOT / args.out_dir
-    sfx = "_pvonly" if args.pv_only else ""
+    sfx = "_pvonly" if args.pv_only else ("_ladder" if args.ridge_ladder else "")
     # A distinct suffix so a superseded-error-bar render can never overwrite,
     # or be mistaken for, the calibrated figure.
     ci_mode = "legacy" if args.old_ci else "calibrated"
@@ -820,12 +887,16 @@ def main() -> None:
             ci_mode=ci_mode,
             legacy_stats=legacy_stats,
         )
+        nocap = "_nocap" if args.no_caption else ""
         draw(
             vals,
             protocol,
             methods,
-            out_dir / f"pv_regime_{protocol.replace('-', '').lower()}{sfx}.png",
-            cap,
+            out_dir / f"pv_regime_{protocol.replace('-', '').lower()}{sfx}{nocap}.png",
+            "" if args.no_caption else cap,
+            # The ladder roster is the write-up's Result 3, not Result 2 — drop the
+            # hard-coded result number rather than print the wrong one.
+            title_prefix="" if args.ridge_ladder else "Result 2",
         )
 
 
