@@ -104,6 +104,28 @@ def _compute_wave_size(cpu_only: bool, requested: int | None) -> int:
     return min(detected, ceiling)
 
 
+def _gate_cell_trainability(
+    n_rows: int,
+    cell: str,
+    *,
+    smoke: bool,
+    override_floor_rows: int | None = None,
+    override_reason: str | None = None,
+) -> dict:
+    """Absolute trainability gate at the recipe's own constants (#2242; incident #2221)."""
+    from explore_persona_space.artifacts.datagen import assert_cell_trainable
+
+    return assert_cell_trainable(
+        n_rows,
+        cell_id=cell,
+        effective_batch_size=PER_DEVICE_BATCH * GRAD_ACCUM,
+        num_epochs=EPOCHS,
+        override_floor_rows=override_floor_rows,
+        override_reason=override_reason,
+        on_fail="warn" if smoke else "raise",
+    )
+
+
 def train_single_cell(
     family: str,
     version: str,
@@ -114,13 +136,20 @@ def train_single_cell(
     max_steps: int | None,
     cpu_only: bool,
     model_name: str = lib.MODEL_NAME,
-) -> Path:
+    trainability_floor_override: int | None = None,
+    trainability_override_reason: str | None = None,
+) -> tuple[Path, dict]:
     """Train ONE rs-LoRA cell (runs inside a per-GPU subprocess).
 
     CUDA_VISIBLE_DEVICES is pinned by the launcher (wave dispatcher) BEFORE this
     process starts; ``gpu_id`` here is informational (the process sees only its
     one device as cuda:0). ``model_name`` defaults to the production Qwen-7B; a
-    CPU smoke overrides it with a tiny model. Returns the adapter output dir.
+    CPU smoke overrides it with a tiny model. Returns
+    ``(adapter output dir, trainability gate record)`` — the record is the
+    #2242 absolute per-cell trainability verdict, computed on the full realized
+    row count BEFORE the smoke slice and the model load (a below-floor
+    production cell raises pre-GPU; a smoke run demotes the verdict to a
+    WARNING log per the GATE-CALIBRATION parity rule).
     """
     import torch
     from datasets import load_dataset
@@ -148,6 +177,15 @@ def train_single_cell(
         tokenizer.pad_token = tokenizer.eos_token
 
     ds = load_dataset("json", data_files=str(data_path), split="train")
+    # #2242 absolute per-cell trainability floor: gate on the FULL realized row
+    # count, before the smoke slice and any model download / GPU allocation.
+    trainability_record = _gate_cell_trainability(
+        len(ds),
+        cell,
+        smoke=max_steps is not None,
+        override_floor_rows=trainability_floor_override,
+        override_reason=trainability_override_reason,
+    )
     if max_steps is not None:
         # smoke: take a small slice deterministically
         ds = ds.select(range(min(len(ds), max_steps * PER_DEVICE_BATCH * GRAD_ACCUM + 4)))
@@ -216,7 +254,7 @@ def train_single_cell(
     trainer.model.save_pretrained(str(out_dir))
     tokenizer.save_pretrained(str(out_dir))
     logger.info("[%s] adapter saved to %s", cell, out_dir)
-    return out_dir
+    return out_dir, trainability_record
 
 
 def run_wave_dispatch(
@@ -229,6 +267,8 @@ def run_wave_dispatch(
     dry_run: bool,
     model_name: str = lib.MODEL_NAME,
     cpu_only: bool = False,
+    trainability_floor_override: int | None = None,
+    trainability_override_reason: str | None = None,
 ) -> dict:
     """Fan out cells across visible GPUs, CUDA_VISIBLE_DEVICES-pinned per cell."""
     lib.log_phase("finetune", f"dispatch {len(cells)} cells, wave_size={wave_size}")
@@ -259,6 +299,10 @@ def run_wave_dispatch(
                 cmd += ["--max-steps", str(max_steps)]
             if cpu_only:
                 cmd += ["--cpu-only"]
+            if trainability_floor_override is not None:
+                cmd += ["--trainability-floor-override", str(trainability_floor_override)]
+            if trainability_override_reason is not None:
+                cmd += ["--trainability-override-reason", trainability_override_reason]
             env = {**os.environ, "CUDA_VISIBLE_DEVICES": str(gpu_id)}
             logger.info("[wave] launch cell=%s CUDA_VISIBLE_DEVICES=%d", cell, gpu_id)
             if dry_run:
@@ -296,6 +340,19 @@ def main() -> None:
         default=lib.MODEL_NAME,
         help="base model (default: Qwen-7B; override for CPU smoke)",
     )
+    parser.add_argument(
+        "--trainability-floor-override",
+        type=int,
+        default=None,
+        help="override the absolute per-cell trainability floor (rows); requires "
+        "--trainability-override-reason (#2242)",
+    )
+    parser.add_argument(
+        "--trainability-override-reason",
+        default=None,
+        help="recorded reason for --trainability-floor-override (lands in the "
+        "per-cell result JSON; an override is a recorded decision, never silent)",
+    )
     args = parser.parse_args()
 
     dataset_root = Path(args.dataset_root)
@@ -303,7 +360,7 @@ def main() -> None:
 
     if args.single_cell is not None:
         family, version = args.single_cell.split("/", 1)
-        out = train_single_cell(
+        out, trainability = train_single_cell(
             family,
             version,
             dataset_root,
@@ -312,8 +369,18 @@ def main() -> None:
             max_steps=args.max_steps,
             cpu_only=args.cpu_only,
             model_name=args.model,
+            trainability_floor_override=args.trainability_floor_override,
+            trainability_override_reason=args.trainability_override_reason,
         )
-        print(json.dumps({"cell": _cell_id(family, version), "adapter": str(out)}))
+        print(
+            json.dumps(
+                {
+                    "cell": _cell_id(family, version),
+                    "adapter": str(out),
+                    "trainability": trainability,
+                }
+            )
+        )
         return
 
     cells = all_cells()
@@ -334,6 +401,8 @@ def main() -> None:
         dry_run=args.dry_run,
         model_name=args.model,
         cpu_only=args.cpu_only,
+        trainability_floor_override=args.trainability_floor_override,
+        trainability_override_reason=args.trainability_override_reason,
     )
     print(json.dumps({"phase": "finetune", **res}, indent=2))
 
