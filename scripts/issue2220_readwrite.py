@@ -946,13 +946,15 @@ def _upload_directions(dir_out: Path) -> None:
     if not files:
         logger.warning("[upload] no direction files under %s", dir_out)
         return
+    allow = ["*.pt", "*.json"]
+    hub.assert_hub_dir_filecounts(str(dir_out), f"{_hf_prefix()}/directions", allow_patterns=allow)
     hub.retry_transient(
         lambda: api.upload_folder(
             repo_id=HF_DATA_REPO,
             repo_type="dataset",
             folder_path=str(dir_out),
             path_in_repo=f"{_hf_prefix()}/directions",
-            allow_patterns=["*.pt", "*.json"],
+            allow_patterns=allow,
         ),
         what="upload directions bank",
     )
@@ -1256,13 +1258,17 @@ def _upload_raw_completions(out_root: Path, phase: str) -> None:
         logger.warning("[upload] no completions under %s", comp_root)
         return
     api = HfApi()
+    allow = ["*.json"]
+    hub.assert_hub_dir_filecounts(
+        str(comp_root), f"{_hf_prefix()}/raw_completions/{phase}", allow_patterns=allow
+    )
     hub.retry_transient(
         lambda: api.upload_folder(
             repo_id=HF_DATA_REPO,
             repo_type="dataset",
             folder_path=str(comp_root),
             path_in_repo=f"{_hf_prefix()}/raw_completions/{phase}",
-            allow_patterns=["*.json"],
+            allow_patterns=allow,
         ),
         what=f"upload {phase} raw completions",
     )
@@ -1984,19 +1990,23 @@ def _upload_judge_outputs(out_root: Path, phase: str) -> None:
         )
         logger.info("[upload] packed judge_cache into %d shards", n_shards)
     api = HfApi()
+    allow = [
+        "judge_raw/*",
+        "judge_items/*",
+        "judge_cache_pack/*",
+        _REDUCED_SURFACE_NAME[phase],
+        "delta_rate_percell.json",  # decisive-only §6.5 deliverable (absent on localize)
+    ]
+    hub.assert_hub_dir_filecounts(
+        str(phase_dir), f"{_hf_prefix()}/judge/{phase}", allow_patterns=allow
+    )
     hub.retry_transient(
         lambda: api.upload_folder(
             repo_id=HF_DATA_REPO,
             repo_type="dataset",
             folder_path=str(phase_dir),
             path_in_repo=f"{_hf_prefix()}/judge/{phase}",
-            allow_patterns=[
-                "judge_raw/*",
-                "judge_items/*",
-                "judge_cache_pack/*",
-                _REDUCED_SURFACE_NAME[phase],
-                "delta_rate_percell.json",  # decisive-only §6.5 deliverable (absent on localize)
-            ],
+            allow_patterns=allow,
         ),
         what=f"upload {phase} judge outputs",
     )
@@ -2106,13 +2116,17 @@ def _upload_pools(pools_dir: Path) -> None:
     from explore_persona_space.orchestrate import hub
 
     api = HfApi()
+    allow = ["*.json"]
+    hub.assert_hub_dir_filecounts(
+        str(pools_dir), f"{_hf_prefix()}/margin/pools", allow_patterns=allow
+    )
     hub.retry_transient(
         lambda: api.upload_folder(
             repo_id=HF_DATA_REPO,
             repo_type="dataset",
             folder_path=str(pools_dir),
             path_in_repo=f"{_hf_prefix()}/margin/pools",
-            allow_patterns=["*.json"],
+            allow_patterns=allow,
         ),
         what="upload margin answer pools",
     )
