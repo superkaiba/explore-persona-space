@@ -4399,13 +4399,22 @@ def test_2122_deny_text_names_host_contribution_and_tmp_shapes():
     quoted/variable HOST token and names the host as a CONTRIBUTING arm
     only — never an independent refusal (#1739's replay:
     ``timeout 120s ssh -o BatchMode=yes "$POD" "<no-separator payload>"``
-    ALLOWs, so an independent-refusal wording would over-claim).
+    ALLOWs, so an independent-refusal wording would over-claim);
+    (c) the ``..``-void clause is SCOPED to the cd argument and the /tmp
+    assigned path. The worktree-class assignment RHS carries no ``..``
+    exclusion (a retained pre-existing hole, plan §4 C1), so the earlier
+    "anywhere in the assigned path" phrasing over-claimed for that class.
+    The over-claim was in the safe direction, but this task exists to stop
+    deny messages from misdirecting the next agent — an inaccurate deny
+    clause here would be self-defeating (code-review round 1, Minor 1).
     """
     proc = _run_full("git checkout -b probe/2122")
     assert proc.returncode == 2, proc.stderr
     assert "#2122 extended shapes 2-3 to /tmp/<name> scratch paths" in proc.stderr
     assert "WT=<path under .claude/worktrees/ or /tmp/>" in proc.stderr
-    assert "a '..' anywhere in the assigned path" in proc.stderr
+    assert "a '..' in the cd argument (or in a /tmp/ assigned path)" in proc.stderr
+    # Negative: the superseded over-claiming phrasing must not come back.
+    assert "anywhere in the assigned path" not in proc.stderr
     assert "variable BINARY heads (a variable invoking ssh itself)" in proc.stderr
     assert 'A quoted or variable HOST token (ssh "$POD" "...") is NOT a refusal by itself' in (
         proc.stderr
