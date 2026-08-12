@@ -934,9 +934,24 @@ def phase_upload(args) -> None:
         # it is a regenerable request cache, not an artifact.
         "train_propensity/judge": (f"{C.HF_PREFIX}/analysis_tensors/train_propensity_judge"),
     }
-    # `judge/` contains the `raw/` subtree, which carries its OWN prefix above;
-    # exclude it here so the judge-raw payload is not uploaded twice.
-    ignore_patterns = {"judge": ["raw/*", "raw/**"]}
+    # Two exclusions, both load-bearing for COMMIT SIZE:
+    #   * `raw/` under `judge/` carries its OWN prefix above — excluded here so
+    #     the judge-raw payload is not uploaded twice.
+    #   * `cache/` under EITHER judge dir is the per-request judge cache
+    #     (regenerable by re-dispatch, not an artifact) and is enormous:
+    #     51,644 files under `judge/` + 4,269 under `train_propensity/judge`
+    #     on this run. r16 declared it excluded in a comment but never wired
+    #     the pattern, so the commit carried ~51,884 files and the Hub
+    #     answered 504 Gateway Time-out — the many-small-file trap in
+    #     upload-policy.md (advisory watermark: 2,000 files per commit).
+    #     Excluded, the real artifacts remain: 150 files under `judge/`
+    #     (75 cells x {.json, .fp.json}) and 48 under `train_propensity/judge/`
+    #     (24 cells x 2).
+    _cache_ignore = ["cache/*", "cache/**"]
+    ignore_patterns = {
+        "judge": ["raw/*", "raw/**", *_cache_ignore],
+        "train_propensity/judge": list(_cache_ignore),
+    }
     for sub, prefix in mapping.items():
         local = out_root / sub
         if not local.is_dir():
