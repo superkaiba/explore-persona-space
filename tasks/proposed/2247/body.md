@@ -16,12 +16,18 @@ origin_prompt: 'Help me to develop this experiment: We are saying that this mapp
   in mapping before and after finetuning, on generic contexts and on contexts that
   we trained on.'
 workflow: v1
+goal: 'Causally test whether the context→answer map specifically carries persona information:
+  fine-tune token-matched arms of graded persona-ness (personas, high-level behavior,
+  formatting, single token, false fact) into Qwen-2.5-7B, refit the map per arm on
+  a fixed eval-context surface (generic + own-trained + cross-arm + resemblance-stratified),
+  and adjudicate persona-specificity vs training-corpus proximity (#1768) vs install-dose
+  accounts of which content shifts the map above the refit-noise floor.'
 ---
 # Causal content-specificity of the context→answer map: token-matched fine-tuning roster (personas vs false fact vs single token vs formatting vs high-level behavior)
 
 ## Goal
 
-Causal test of the claim that the context→answer map carries persona information. Fine-tune content of graded "persona-ness" into Qwen-2.5-7B at a matched training-token budget, refit the map per arm, and measure which content types shift the map above the refit-noise floor — on a fixed eval-context surface spanning generic contexts, each arm's own trained contexts, other arms' trained contexts, and never-trained contexts stratified by resemblance to each arm's training corpus.
+Causally test whether the context→answer map specifically carries persona information: fine-tune token-matched arms of graded persona-ness (personas, high-level behavior, formatting, single token, false fact) into Qwen-2.5-7B, refit the map per arm on a fixed eval-context surface (generic + own-trained + cross-arm + resemblance-stratified), and adjudicate persona-specificity vs training-corpus proximity (#1768) vs install-dose accounts of which content shifts the map above the refit-noise floor.
 
 **Object.** The context map M′ (v_A ≈ M′ v_C, per-context grain; `docs/glossary_context_answer_map.md`) AND the prefix-grain map (query-averaged v_P → behavior profile). BOTH mapping arms run: prefix-based and context-based, as paired arms of the same design (Critical Rules mapping-arms bullet). Pooling declared per vector: context vector v_C last-prompt-token primary, prompt span-mean secondary (#1768 re-pool result flipped 23/216 verdicts; #1947 captures both).
 
