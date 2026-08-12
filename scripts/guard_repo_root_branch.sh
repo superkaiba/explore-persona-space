@@ -2269,8 +2269,10 @@ for _idx in "${!_clauses[@]}"; do
   if [ "$scoped" -eq 1 ]; then
     # (#1554 Arm B) A worktree-scoped clause merging the LOCAL main branch is
     # the #1530 contamination class (stale/unpushed root-main commits import
-    # into the branch). origin/main + raw-sha merges pass; /tmp latches keep
-    # the pre-#1554 disposition byte-identical (scoped_wt=0 -> plain continue).
+    # into the branch). origin/main + raw-sha merges pass; /tmp latches are
+    # Arm-B-exempt (scoped_wt=0 -> plain continue), the #2122 variable/
+    # exit-guard /tmp arms included — a /tmp scratch landing onto main is
+    # the deny text's own sanctioned recipe.
     if [ "$scoped_wt" -eq 1 ] && [ "$_wt_lm_allow" -ne 1 ] \
        && echo "$clause" | grep -qE "$_WT_LM_ARM_B"; then
       blocked="cd <worktree> && git merge main (LOCAL-main merge imports unpushed root commits, #1530; use fetch + git merge --ff-only origin/main — recipe below; deliberate override: EPM_ALLOW_WORKTREE_LOCAL_MAIN_MERGE=1)"
