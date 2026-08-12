@@ -574,8 +574,26 @@ def phase_correlations(args) -> None:
                 except KeyError as exc:
                     lib.log_phase("p8_corr", f"frac{fr}: arm {arm} unavailable — {exc}")
                     continue
-                sel = tr["panels"]["pooled"]["arms"][arm]["selected_layer"]
-                per_arm[arm] = M.detection_auc(x[:, sel], labels_f)
+                armd = tr["panels"]["pooled"]["arms"][arm]
+                sel = armd["selected_layer"]
+                sel_r = armd["selected_r"]
+                # Layer selection is argmax|r| (M.select_position) judged against
+                # an ABS null, so an arm may legitimately select a NEGATIVE-r
+                # layer. detection_auc on the RAW signed scalar then reads ~0.0
+                # for such an arm — a perfect INVERSE ranking, mis-readable as
+                # "worst possible" (hallucination/c_map_pfx: selected_r = -0.884
+                # vs score-shuffle null q95 0.557 -> raw AUC 0.000). The arm's
+                # headline is therefore the sign-consistent ORIENTED AUC, with
+                # the raw signed value kept beside it. Orientation comes from the
+                # correlation read's own selected_r — never re-picked on the AUC
+                # outcome — and the random-direction control below is folded
+                # through the SAME transform, so the chance reference absorbs the
+                # identical selection inflation.
+                a_signed = M.detection_auc(x[:, sel], labels_f)
+                orient = -1 if (np.isfinite(sel_r) and sel_r < 0) else 1
+                per_arm[arm] = a_signed if orient > 0 else 1.0 - a_signed
+                per_arm[f"{arm}__auc_signed"] = a_signed
+                per_arm[f"{arm}__orientation"] = orient
             # Random-direction control at this checkpoint (isotropic, 100 draws).
             ctrl_dirs = M.isotropic_null_directions(
                 np.random.default_rng(C.RNG_SEED + 3), 100, C.N_LAYERS, C.HIDDEN_DIM
@@ -601,7 +619,14 @@ def phase_correlations(args) -> None:
                 M.detection_auc(e[b, :, int(np.argmax(np.abs(e[b]).mean(axis=0)))], labels_f)
                 for b in range(e.shape[0])
             ]
+            # Raw mean AND the orientation-folded mean. The oriented arm AUCs
+            # above must be read against the ORIENTED control: once |.| folding
+            # is applied chance is no longer 0.5, so a raw 0.5 line would
+            # overstate every folded arm.
             per_arm["control_random_direction_mean"] = float(np.nanmean(ctrl_aucs))
+            per_arm["control_random_direction_mean_oriented"] = float(
+                np.nanmean([max(a, 1.0 - a) for a in ctrl_aucs])
+            )
             # Coverage travels WITH the number (planned-vs-actual): a frac AUC over
             # 18 of 24 cells must never read as if it covered all 24.
             per_arm["n_cells"] = len(cells_f)
@@ -896,12 +921,29 @@ def phase_figures(args) -> None:
     xs = [int(f.removeprefix("frac")) for f in fracs]
     for t in traits:
         auc = corr["per_trait"][t]["checkpoint_auc"]
-        for arm in ("a_rb_ctx", "c_map_ctx"):
-            ys = [auc.get(f, {}).get(arm, np.nan) for f in fracs]
-            ax.plot(xs, ys, marker="o", label=f"{t}/{arm}")
+        # All THREE arms — the prefix-mapped arm is reported BESIDE the
+        # context-mapped one (standing prefix-AND-context rule), never dropped.
+        for arm in ("a_rb_ctx", "c_map_ctx", "c_map_pfx"):
+            ys = np.asarray([auc.get(f, {}).get(arm, np.nan) for f in fracs], dtype=float)
+            if not np.any(np.isfinite(ys)):
+                continue
+            ax.plot(xs, ys, marker="o", label=f"{t}/{arm}", color=colors.get(arm))
+        ctrl = np.asarray(
+            [auc.get(f, {}).get("control_random_direction_mean_oriented", np.nan) for f in fracs],
+            dtype=float,
+        )
+        if np.any(np.isfinite(ctrl)):
+            ax.plot(
+                xs,
+                ctrl,
+                marker="x",
+                ls=":",
+                lw=1.0,
+                color="0.45",
+                label=f"{t}/random-direction control (oriented)",
+            )
     ax.set_xlabel("training progress (% of steps)")
-    ax.set_ylabel("detection AUC (final score >= 50)")
-    ax.axhline(0.5, color="black", lw=0.5, ls="--")
+    ax.set_ylabel("orientation-folded detection AUC (final score >= 50)")
     ax.legend(fontsize=6)
     pp.savefig_paper(fig, "checkpoint_detection_auc", dir=fig_dir)
     plt.close(fig)
