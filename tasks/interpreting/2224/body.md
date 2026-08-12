@@ -1,6 +1,7 @@
 ---
-title: 'Persona Vectors screening on REAL corpora: mapped and regression-based projection
-  differences vs exact ΔP as a practical pre-finetuning data screen'
+title: The Persona Vectors prompt-token approximation matches exact projection-difference
+  screening on real corpora, while the learned map and probe screens select samples
+  that fail to induce the traits (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-08-10T21:25:57Z'
