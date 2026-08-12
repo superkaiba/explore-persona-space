@@ -173,6 +173,8 @@ Check catalog (id — classification — kind scope)
   c59 GPU-hours token           WARN-only, conditional    all kinds
       consumer/declaration
       conflict
+  c60 amendment composed with   WARN-only, conditional    all kinds,
+      base for checking                                   --issue mode only
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
@@ -190,6 +192,15 @@ heading's self-declared ``# Plan v<X>`` label against the persisted
 ``v{K}.md`` filename, so ``main()`` appends it in BOTH modes; it SKIPs when
 the filename carries no version (e.g. a ``.claude/plans/issue-<N>.md``
 draft).
+Check 60 also runs outside ``verify_plan_text()`` — ``--issue`` mode only
+(#2255): when the newest ``v{K}.md`` is AMENDMENT-SHAPED
+(``task_workflow.is_amendment_shaped`` — thin delta + amendment-marker
+phrase + no GPU-hours declaration), every check runs against the amendment
+COMPOSED with its base version (amendment first;
+``_compose_amendment_text``) and c60 is appended as a WARN disclosing the
+composition + the partial-document consequence; a not-composed ``--issue``
+run and ``--plan-file`` mode emit NO c60 row at all — not even a SKIP — so
+non-amendment output stays byte-identical.
 
 Canonical N/A escape phrases (quote verbatim in bounce briefs; each
 satisfies its check ONLY as a standalone declaration line — see
@@ -11466,14 +11477,58 @@ def _kind_from_body(folder: Path) -> str:
     return str(fm.get("kind") or "experiment")
 
 
-def _load_plan_for_issue(number: int) -> tuple[str, Path, str]:
-    """Resolve (plan_text, plan_path, kind) for a task number via the
-    canonical resolver — never hand-built ``tasks/`` paths."""
+def _compose_amendment_text(folder: Path, newest: Path) -> tuple[str, Path | None]:
+    """Compose an AMENDMENT-SHAPED newest plan version with its base for
+    CHECKING purposes (#2255) — never a rendered document anyone reads as
+    "the plan".
+
+    Walks DOWN from ``newest`` while the current version is amendment-shaped
+    (``task_workflow.is_amendment_shaped``) w.r.t. its own next-lower
+    version; the base is the first non-amendment-shaped version. Returns
+    ``(newest_text, None)`` unchanged when the newest version is not
+    amendment-shaped (the byte-identical non-amendment path). Composed text
+    = newest + any intermediate amendments (descending) + base, joined by
+    inert HTML-comment separators — amendment FIRST so c40's first-heading
+    read matches the persisted ``v{K}.md`` filename.
+    """
+    from explore_persona_space.task_workflow import is_amendment_shaped  # local import
+
+    versions: list[tuple[int, Path]] = []
+    for p in folder.glob("plans/v*.md"):
+        m = re.fullmatch(r"v(\d+)\.md", p.name)
+        if m:
+            versions.append((int(m.group(1)), p))
+    versions.sort()
+    order = [p for _, p in versions]
+    idx = order.index(newest)
+    chain: list[Path] = []  # amendment chain, newest first
+    while idx > 0 and is_amendment_shaped(order[idx].read_text(), order[idx - 1].stat().st_size):
+        chain.append(order[idx])
+        idx -= 1
+    if not chain:
+        return newest.read_text(), None
+    base = order[idx]
+    pieces: list[str] = []
+    for p in [*chain, base]:
+        if pieces:
+            pieces.append(f"\n\n<!-- verify_plan amendment composition: {p.name} follows -->\n\n")
+        pieces.append(p.read_text())
+    return "".join(pieces), base
+
+
+def _load_plan_for_issue(number: int) -> tuple[str, Path, str, Path | None]:
+    """Resolve (plan_text, plan_path, kind, base_path) for a task number via
+    the canonical resolver — never hand-built ``tasks/`` paths. When the
+    newest version is amendment-shaped (#2255) the returned text is the
+    amendment COMPOSED with its base (``_compose_amendment_text``) and
+    ``base_path`` names the base version; ``base_path`` is ``None`` (raw
+    newest-version text, byte-identical to the pre-#2255 read) otherwise."""
     from explore_persona_space.task_workflow import find_task_path  # local import
 
     folder = find_task_path(number)
     plan_path = _newest_plan_version(folder)
-    return plan_path.read_text(), plan_path, _kind_from_body(folder)
+    text, base_path = _compose_amendment_text(folder, plan_path)
+    return text, plan_path, _kind_from_body(folder), base_path
 
 
 def _json_payload(
@@ -11511,6 +11566,7 @@ def main() -> int:
     args = parser.parse_args()
 
     issue: int | None = None
+    base_path: Path | None = None
     if args.issue is not None:
         if args.kind is not None:
             print(
@@ -11519,11 +11575,13 @@ def main() -> int:
                 file=sys.stderr,
             )
         try:
-            raw, plan_path, kind = _load_plan_for_issue(args.issue)
+            raw, plan_path, kind, base_path = _load_plan_for_issue(args.issue)
         except FileNotFoundError as e:
             print(f"verify_plan: {e}", file=sys.stderr)
             return 2
         source = str(plan_path)
+        if base_path is not None:
+            source = f"{plan_path} (+ {base_path.name} via amendment composition)"
         issue = args.issue
     else:
         plan_path = Path(args.plan_file)
@@ -11556,6 +11614,26 @@ def main() -> int:
     # Check 40 (header version label vs persisted filename) also runs outside
     # verify_plan_text() — it needs plan_path, defined in BOTH modes.
     results.append(check_header_version_vs_filename(raw, plan_path=plan_path))
+    # Check 60 (amendment composition disclosure, #2255) also runs outside
+    # verify_plan_text() — appended ONLY when --issue mode composed an
+    # amendment-shaped newest version with its base; a not-composed run
+    # (and --plan-file mode) emits NO c60 row at all, keeping non-amendment
+    # output byte-identical.
+    if issue is not None and base_path is not None:
+        results.append(
+            _warn(
+                "c60_amendment_composition",
+                "amendment-shaped newest version composed with its base",
+                f"{plan_path.name} is a thin AMENDMENT of {base_path.name} "
+                f"(task_workflow.is_amendment_shaped, #2255); every check above ran "
+                f"against the COMPOSED text (amendment first, then {base_path.name}) — "
+                f"NOT against {plan_path.name} alone. plans/plan.md points at a PARTIAL "
+                f"document: subagent briefs must hand BOTH {plan_path.name} AND "
+                f"{base_path.name}, and the Step-2c GPU-hours read resolves `<X>` from "
+                f"the base version's `Estimated GPU-hours (total):` line when the "
+                f"amendment restates none",
+            )
+        )
     overall = all(r.passed for r in results)
 
     if args.json:
