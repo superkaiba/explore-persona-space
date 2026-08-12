@@ -2277,6 +2277,18 @@ Brief passed to the implementer:
   on that four-section marker, so suppressing it manufactures a
   `marker-shape` blocker and an extra fix round (#1900). A
   round whose diff is deliberately partial still posts the marker, saying so.
+  DISPLACEMENT is the same defect (#2248, from #1336 round v20): a brief
+  that specifies its own return contract ("Report back: the commit SHA,
+  the diffstat, which tests ran, …") WITHOUT naming the marker duty crowds
+  the marker out exactly as an explicit skip would — returned Agent text
+  is NOT durable task state, so a return-only contract loses the record
+  the mechanical contract keys on, and the Step 5c-bis strip cannot
+  rescue it (the strip's precondition is a present + conforming marker;
+  here the missing marker IS the blocker). Any brief that specifies a
+  return format therefore names the marker duty alongside it — e.g.
+  "post your report as the `epm:experiment-implementation` marker at the
+  next version (omit `--version`; the CLI derives max+1) AND return a
+  short summary as your final text".
 - **Marker-version discipline — a brief NEVER instructs a literal marker
   version.** Any brief line about posting `epm:experiment-implementation` /
   `epm:results` / `epm:proposed-tests` says: "post at the next version —
@@ -3578,7 +3590,12 @@ If present:
      batch-1 model forwards, per-draw re-reduction of a fixed pool,
      per-row IO, or sequential shard-independent cells with an unused
      parallelism axis) → dispatch ONE vectorize/parallelize fix round:
-     spawn `experiment-implementer` with a brief naming the marker,
+     spawn `experiment-implementer` with a brief naming the
+     compute-deviation marker (and, per the Step 4b brief-composition
+     rule "A brief NEVER suppresses the implementation marker" —
+     displacement included — also naming the
+     `epm:experiment-implementation` duty alongside this re-post
+     contract),
      the rule + canonical helpers
      (`src/explore_persona_space/analysis/vectorized_mlp_skill.py`,
      `src/explore_persona_space/analysis/null_battery.py`), the
