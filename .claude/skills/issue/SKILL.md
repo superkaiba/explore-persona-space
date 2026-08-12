@@ -1255,11 +1255,7 @@ metadata. Order:
 
    Once the user answers, draft a body covering Goal / Hypothesis / Setup
    / Eval / Success criterion / Kill criterion / Compute / Pod preference
-   / References (for a representation-mapping task — geometry read /
-   predictor / probe / direction extraction over activations — the drafted
-   Setup names BOTH mapping arms, prefix-based AND context-based, per the
-   CLAUDE.md "Prefix mapping AND context mapping" Critical Rule; a one-arm
-   draft states the deviation explicitly), then patch the task:
+   / References, then patch the task:
    ```bash
    uv run python scripts/task.py set-body <N> --file /tmp/issue-<N>-body.md
    ```
@@ -2277,6 +2273,18 @@ Brief passed to the implementer:
   on that four-section marker, so suppressing it manufactures a
   `marker-shape` blocker and an extra fix round (#1900). A
   round whose diff is deliberately partial still posts the marker, saying so.
+  DISPLACEMENT is the same defect (#2248, from #1336 round v20): a brief
+  that specifies its own return contract ("Report back: the commit SHA,
+  the diffstat, which tests ran, …") WITHOUT naming the marker duty crowds
+  the marker out exactly as an explicit skip would — returned Agent text
+  is NOT durable task state, so a return-only contract loses the record
+  the mechanical contract keys on, and the Step 5c-bis strip cannot
+  rescue it (the strip's precondition is a present + conforming marker;
+  here the missing marker IS the blocker). Any brief that specifies a
+  return format therefore names the marker duty alongside it — e.g.
+  "post your report as the `epm:experiment-implementation` marker at the
+  next version (omit `--version`; the CLI derives max+1) AND return a
+  short summary as your final text".
 - **Marker-version discipline — a brief NEVER instructs a literal marker
   version.** Any brief line about posting `epm:experiment-implementation` /
   `epm:results` / `epm:proposed-tests` says: "post at the next version —
@@ -3578,7 +3586,12 @@ If present:
      batch-1 model forwards, per-draw re-reduction of a fixed pool,
      per-row IO, or sequential shard-independent cells with an unused
      parallelism axis) → dispatch ONE vectorize/parallelize fix round:
-     spawn `experiment-implementer` with a brief naming the marker,
+     spawn `experiment-implementer` with a brief naming the
+     compute-deviation marker (and, per the Step 4b brief-composition
+     rule "A brief NEVER suppresses the implementation marker" —
+     displacement included — also naming the
+     `epm:experiment-implementation` duty alongside this re-post
+     contract),
      the rule + canonical helpers
      (`src/explore_persona_space/analysis/vectorized_mlp_skill.py`,
      `src/explore_persona_space/analysis/null_battery.py`), the
@@ -7792,40 +7805,28 @@ DECLARES the cadence the code already owes) per the Step 9 entry-guard
 § "Detached VM-side long compute phases" convention.
 Routing, auto-continue behavior, and the marker schema are unchanged.
 
-**Inline measurement-design + figure-sanity duties (REQUIRED — statement/check
-duties, not a gate; auto-continue unchanged).** Same rationale as the
-compute-character statement above: this step and the CLAUDE.md § Routing
-"User-chat inline free analysis" carve-out are PLANNERLESS — they skip the
-planner+critic stack, where the both-arms mapping review (planner.md §4 /
-critic.md Methodology lens) and the interpretation-critic's figure-load check
-(Lens 6) live. Two duties, siblings of — not additions to — the five-element
-compute-character statement above:
-(1) **Both mapping arms.** A round that computes a representation mapping — a
-geometry read, predictor, probe, or direction extraction over model
-activations — states in the dispatch-time `epm:progress` breadcrumb (or an
-immediately-adjacent `epm:progress` note) that BOTH arms run: prefix-based
-(the prefix is everything before the user query) AND context-based (the
-prefix plus the user query), per the CLAUDE.md Critical Rules "Prefix mapping
-AND context mapping" bullet — or names the explicit stated deviation. A
-one-arm round with no stated deviation is the #958 class; #779's 2026-07-14
-inline pre-image round shipped context-only and the user had to catch the
-missing prefix arm (a full extra inline round).
-(2) **Figure sanity before presentation/commit.** Before PRESENTING (chat,
-report, body) or COMMITTING any figure the round rendered, Read the rendered
-PNG and confirm non-empty axes + plotted series and sane value ranges. An
-empty/blank render is a round bug — fix it before showing anything; never
-present or commit it. The interpretation-critic's Lens 6 PNG-load check does
-not run on inline rounds (#1112: an empty figure was presented 3× while the
-extraction bug was found).
-Non-mapping rounds with no figures state nothing — each duty fires only on
-its trigger; routing, auto-continue behavior, and the marker schema are
+**Inline figure-sanity duty (REQUIRED — a check duty, not a gate;
+auto-continue unchanged).** Same rationale as the compute-character
+statement above: this step and the CLAUDE.md § Routing "User-chat inline
+free analysis" carve-out are PLANNERLESS — they skip the planner+critic
+stack, where the interpretation-critic's figure-load check (Lens 6) lives.
+A sibling of — not an addition to — the five-element compute-character
+statement above: before PRESENTING (chat, report, body) or COMMITTING any
+figure the round rendered, Read the rendered PNG and confirm non-empty
+axes + plotted series and sane value ranges. An empty/blank render is a
+round bug — fix it before showing anything; never present or commit it.
+The interpretation-critic's Lens 6 PNG-load check does not run on inline
+rounds (#1112: an empty figure was presented 3× while the extraction bug
+was found).
+Rounds with no figures state nothing — the duty fires only on its
+trigger; routing, auto-continue behavior, and the marker schema are
 unchanged.
 
 **Inline estimator-validity + record-integrity duties (REQUIRED — same rationale: this carve-out skips the planner+critic stack, where the fit-well-posedness / estimator-parity / promoted-body-consistency reviews live):** (1) BEFORE any ridge / linear-map / probe FIT, the dispatch note states `n_train` vs the feature dimension `d`; when `n_train < d` the round REFUSES the fit unless the note explicitly justifies a deliberately under-determined regime (regularization-limit / null-space read / smoke shape) — every held-out R² in the `n_train < d` regime is estimator-degenerate, not a signal read (#1701, sess `dffde9b6`: n=1,877 vs d=3,584 → ceiling 0.099 vs published 0.625). GCV-specific ban (#1887): pure-GCV λ selection at n_train < d is REFUSED (the shared #825 fit cores enforce this by default — GCV runs only WITH a dof cap, default 0.9, or under an explicit LEGACY_UNGUARDED_GCV opt-in), and selected-λ diagnostics (per-fit selector + selected λ) are reported alongside every ridge read. (2) BEFORE launching any re-implemented estimator whose in-repo reference the round can name (a `scripts/issue1345_operator_comparison`-style chain, a canonical `ridge_fit_predict_fast`, a shipped judge/scorer), the dispatch note records the DIFF between the new estimator and the named reference (function + file) — permissiveness-broadening (more inputs absorbed, weaker constraints) is called out explicitly. (3) When a round REFUTES a claim in ANY task's promoted body (its own parent or a sibling), it MUST — in the SAME turn as the result summary — either apply a NON-Takeaway PROSE correction directly to the refuted task's body via `task.py set-body` (typo / caption / fixed numeric value — never `task.py promote` or a `classification` flip; the user-only classification contract is unchanged) OR file a `kind: infra` task via `scripts/file_infra_task.py` naming the refuted issue and the refuting evidence — filing is the presumption for anything touching a bolded Takeaway; a chat-only "I did not fix X" is an INCOMPLETE round (#825's promoted Takeaway was refuted and nothing filed; #1701 origin).
 
 **Instrument-supersession + scope-extension addenda duties (REQUIRED — same rationale: this carve-out skips the planner+critic stack, where instrument-fitness review and plan-revision re-review live):**
 (1) BEFORE dispatching any stage that spends on a measurement instrument (an LLM-judge rubric, a labeling scheme, a scorer) — and AGAIN the moment such knowledge lands mid-round — the round checks (a bounded check: session knowledge plus a quick task-title scan, never an unbounded fleet-wide search) whether a SUPERSEDING instrument for the same measurement is in flight (a filed / in-progress task building a stronger replacement — the #1773 shape) or the current instrument is known-weak with a named replacement being designed; if so the DEFAULT is to HOLD the spend-bearing stages (Batch-API judge calls, GPU evals) until the superseding instrument lands — recorded as an `epm:progress` hold note naming the superseding task — and proceeding anyway requires the dispatch note to state why the known-weak instrument still serves (needed now / results not superseded / trivially cheap), never leaving the freeze to user vigilance (2026-07-28: three live SAE rounds kept burning Batch-API judge spend on labels #1773 was designed to supersede; frozen only after the user asked twice).
-(2) A mid-round SCOPE-EXTENSION ADDENDUM — a user ask or self-initiated extension adding cells / draws / rows / behaviors / stages to a live inline round — is a DISPATCH for duty purposes (the scope-extension sibling of the compute-character block's "realized implementation later adds a fit/battery" drift sentence): it carries its own compute-character pre-launch statement (ops arithmetic, named batched helper, parallelization width) plus whichever other duty blocks its content triggers (both-arms mapping, figure-sanity, estimator-validity), posted BEFORE the addendum launches (2026-07-28: "parallel + vectorized" had to be re-stated twice before a throughput addendum landed — the statement bound only the original dispatch).
+(2) A mid-round SCOPE-EXTENSION ADDENDUM — a user ask or self-initiated extension adding cells / draws / rows / behaviors / stages to a live inline round — is a DISPATCH for duty purposes (the scope-extension sibling of the compute-character block's "realized implementation later adds a fit/battery" drift sentence): it carries its own compute-character pre-launch statement (ops arithmetic, named batched helper, parallelization width) plus whichever other duty blocks its content triggers (figure-sanity, estimator-validity), posted BEFORE the addendum launches (2026-07-28: "parallel + vectorized" had to be re-stated twice before a throughput addendum landed — the statement bound only the original dispatch).
 
 **Pod-safety pre-launch signals (deviation case — a pod on a
 parked/terminal parent).** This step and its user-chat sibling (the
@@ -7914,9 +7915,7 @@ explicit eval-data path):
    ```
    When the follow-up runs any fit/battery, this breadcrumb (or an
    immediately-following `epm:progress` note) carries the
-   § Compute-character pre-launch statement above. When it computes a
-   representation mapping, the same note ALSO carries the both-arms line
-   (§ Inline measurement-design + figure-sanity duties above). Every 9a-ter dispatch
+   § Compute-character pre-launch statement above. Every 9a-ter dispatch
    breadcrumb ALSO carries the `external-markers triaged:` line (Step 9
    entry guard § Pre-dispatch external-marker triage) — the free-analysis
    run is a VM-side compute phase.
@@ -7950,7 +7949,7 @@ explicit eval-data path):
    JSONs. Regenerate any affected figures (the analyzer's
    `figures/issue_<N>/` outputs); Read each regenerated PNG and confirm
    non-empty axes + plotted series
-   (§ Inline measurement-design + figure-sanity duties above) BEFORE
+   (§ Inline figure-sanity duty above) BEFORE
    presenting or committing it; then commit (pathspec-limited —
    `git commit -m <msg> -- <paths>`; a bare repo-root commit sweeps a
    concurrent session's staged files, #1894 / CLAUDE.md § Concurrent

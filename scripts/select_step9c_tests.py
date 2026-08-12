@@ -418,6 +418,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # NEW (#1876) — SKILL.md Bare-push-snippets commit form (5) + guard hook
     # block-message compliant-forms lead pin
     "tests/test_issue_skill_bare_push_snippets_pin.py",
+    # NEW (#2248) — SKILL.md Step 4b brief-composition displacement clause +
+    # Step 5.bis(a) cross-reference pin (marker DISPLACEMENT by a competing
+    # return contract; from #1336 round v20)
+    "tests/test_issue_skill_brief_marker_displacement_pin.py",
     # NEW (#1659) — SKILL.md 9a-ter + CLAUDE.md measured 1-cell pilot +
     # >=2x pilot-extrapolated fence-sizing pin
     "tests/test_issue_skill_compute_pilot_fence_pin.py",
@@ -467,8 +471,8 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # pin file was never registered (the #1546 unregistered-pin class); it now
     # also pins the worker-brief composition duty (#1673).
     "tests/test_issue_skill_inline_gate_pin.py",
-    # NEW (#1625) — SKILL.md 9a-ter + CLAUDE.md inline measurement-design +
-    # figure-sanity duties pin (both-arms mapping statement, rendered-PNG check)
+    # NEW (#1625) — SKILL.md 9a-ter + CLAUDE.md inline figure-sanity duty
+    # pin (rendered-PNG check; both-arms mapping statement retired 2026-08-12)
     "tests/test_issue_skill_inline_measurement_duties.py",
     # NEW (#1970) — SKILL.md 9a-ter + CLAUDE.md inline-round upload-verify
     # recipe pin (verify → post epm:upload-verification → terminate;
