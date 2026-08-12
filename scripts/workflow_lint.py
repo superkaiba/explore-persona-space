@@ -15984,6 +15984,26 @@ def _plan_immutability_history_violations(out: str) -> list[str]:
     return errors
 
 
+_PLAN_STATUS_SEGMENT_RE = re.compile(r"^tasks/[^/]+/")
+
+
+def _is_status_folder_move(orig: str, new: str) -> bool:
+    """True iff ``orig`` -> ``new`` differs ONLY in the ``tasks/<status>/``
+    segment — i.e. the rename is a task status-folder move.
+
+    ``task.py set-status`` moves ``tasks/<old-status>/<N>/`` to
+    ``tasks/<new-status>/<N>/`` wholesale, so every plan file underneath
+    changes in exactly that one path segment and nowhere else. Anything
+    else — a different task id, a renamed version file, a move out of
+    ``plans/`` — is NOT a status move and must stay a violation.
+    """
+    if not (_PLAN_STATUS_SEGMENT_RE.match(orig) and _PLAN_STATUS_SEGMENT_RE.match(new)):
+        return False
+    return _PLAN_STATUS_SEGMENT_RE.sub("", orig, count=1) == _PLAN_STATUS_SEGMENT_RE.sub(
+        "", new, count=1
+    )
+
+
 def check_plan_version_immutability(
     *, include_history: bool = False, repo_root: Path | None = None
 ) -> list[str]:
@@ -16003,9 +16023,20 @@ def check_plan_version_immutability(
       precisely the state the repo's write→add→commit-in-one-window
       discipline produces in the moments before a violating commit;
       missing it there lets the mutation land in history and become a
-      permanent fleet-wide Arm H FAIL. Untracked (``??``) and pure-add
-      (``A``) entries are CLEAN — a new version file is the sanctioned
-      amendment path. This arm fires DURING the mutation window, which is
+      permanent fleet-wide Arm H FAIL. Two exemptions, both narrow and
+      both closing a DEMONSTRATED false positive (#2123 round-1 review):
+      (i) the whole pure-add family — untracked (``??``) and any
+      index-column ``A`` (``A ``, ``AM``, ``AD``) — is CLEAN, because
+      nothing is persisted until a commit exists, so an edit between
+      ``git add`` and commit is a new version still being drafted; and
+      (ii) a rename whose paths differ ONLY in the ``tasks/<status>/``
+      segment (:func:`_is_status_folder_move`) is CLEAN, because that is
+      exactly what ``task.py set-status`` stages, and Arm W probes the
+      REPO ROOT even from a worktree — so a gate would otherwise
+      false-FAIL on another session's in-flight status transition. Any
+      OTHER rename still fires, and a rename carrying a content change
+      surfaces as ``RM`` and is still caught. This arm fires DURING the
+      mutation window, which is
       when the lint actually runs (pre-commit, Step 9c, Step 10d
       pre-push) — the #2061 v11 incident mutation lived ONLY in the
       working tree and never reached committed history.
@@ -16021,10 +16052,15 @@ def check_plan_version_immutability(
       ``--no-renames`` splits every folder move into D+A, so that resolves
       to the last status-move commit, not the persist commit.
 
-    Disclosed Arm H residual (the c52/c57 honesty convention, false-
-    NEGATIVE-only): a bulk commit exceeding ``diff.renameLimit`` silently
-    degrades rename detection to ``D``+``A``, which Arm H does not flag —
-    Arm H's silence is not proof of immutability.
+    Disclosed Arm H residuals (the c52/c57 honesty convention, ALL
+    false-NEGATIVE-only — Arm H's silence is never proof of
+    immutability): (a) a bulk commit exceeding ``diff.renameLimit``
+    silently degrades rename detection to ``D``+``A``, which Arm H does
+    not flag; (b) ``git log`` does not diff MERGE commits by default, so
+    a mutation carried in by a merge is invisible; and (c) a rewrite
+    below git's 50% similarity floor that also moves the file degrades to
+    ``D``+``A`` for the same reason as (a). Arm W is the arm that catches
+    the live mutation window; Arm H is the durable backstop, not a proof.
 
     Escape hatches: :data:`PLAN_IMMUTABILITY_ALLOWLIST` (empty at ship;
     entries need an inline reason) suppresses per path;
@@ -16061,9 +16097,44 @@ def check_plan_version_immutability(
             if len(entry) < 4:
                 continue
             x, y, path = entry[0], entry[1], entry[3:]
+            orig: str | None = None
             if x in "RC":
+                if i < len(tokens):
+                    orig = tokens[i]
                 i += 1  # consume the NUL-separated original path
             if path in PLAN_IMMUTABILITY_ALLOWLIST:
+                continue
+            # Pure-add family (`A `, `AM`, `AD`): NOTHING is persisted yet —
+            # no commit has established a version for immutability to bind
+            # against — so an edit between `git add` and commit is a NEW
+            # v<K+1> still being drafted, which IS the sanctioned amendment
+            # path. Without this guard a hand-authored new version edited
+            # after staging false-FAILs the fleet-gating default run
+            # (#2123 round-1 review finding).
+            if x == "A":
+                continue
+            # A content-preserving STATUS-FOLDER MOVE is the one legitimate
+            # rename of a persisted plan file: `task.py set-status` runs
+            # `git mv tasks/<old>/<N> tasks/<new>/<N>` and commits under
+            # flock, and Arm W probes the REPO ROOT even when invoked from a
+            # worktree — so a Step 9c / Step 10d gate can observe that
+            # sub-second staged window and false-FAIL on a DIFFERENT
+            # session's status transition. Arm H already treats the
+            # committed form (`R100`) as clean; exempting it here keeps the
+            # two arms consistent instead of contradictory. A rename that is
+            # NOT a bare status move still fires, and a rename carrying a
+            # content change surfaces as `RM` (worktree column `M`), which
+            # the predicate below still catches.
+            # The ``y not in "MD"`` conjunct is load-bearing: without it an
+            # ``RM`` (status move whose file was then edited) short-circuits
+            # past the content check below and the edit is swallowed. The
+            # exemption covers a CLEAN status move only.
+            if (
+                x == "R"
+                and y not in "MD"
+                and orig is not None
+                and _is_status_folder_move(orig, path)
+            ):
                 continue
             if x in "MD" or y in "MD" or x == "R":
                 errors.append(

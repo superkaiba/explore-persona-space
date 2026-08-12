@@ -164,6 +164,52 @@ def test_staged_rename_fails_arm_w(tmp_path):
     assert len(errors) == 1, f"expected one Arm-W error (staged rename), got: {errors}"
 
 
+def test_staged_new_version_edited_before_commit_is_clean(tmp_path):
+    """The ``AM`` case (#2123 round-1 review finding): a NEW version file
+    that is ``git add``-ed and then edited again before committing is
+    porcelain ``AM``. Nothing is persisted until a commit exists, so this
+    is a v<K+1> still being drafted — the sanctioned amendment path, not
+    a mutation. A ``y in "MD"``-only predicate false-FAILs it, which would
+    block the fleet-gating no-flags default run for anyone hand-authoring
+    a new plan version."""
+    _repo_with_persisted_plan(tmp_path)
+    new_version = tmp_path / Path(PLAN_REL).parent / "v2.md"
+    new_version.write_text("# Plan v2\n\nFirst draft.\n", encoding="utf-8")
+    _git(tmp_path, "add", str(Path(PLAN_REL).parent / "v2.md"))
+    new_version.write_text("# Plan v2\n\nSecond draft, edited after add.\n", encoding="utf-8")
+    errors = check_plan_version_immutability(repo_root=tmp_path)
+    assert errors == [], f"expected PASS on a staged-then-edited NEW version, got: {errors}"
+
+
+def test_staged_status_folder_move_is_clean_arm_w(tmp_path):
+    """A staged ``tasks/<old-status>/<N>`` -> ``tasks/<new-status>/<N>``
+    move is CLEAN (#2123 round-1 review finding). This is exactly what
+    ``task.py set-status`` stages between its ``git mv`` and its commit,
+    and Arm W probes the REPO ROOT even when invoked from a worktree — so
+    without this exemption a Step 9c / Step 10d gate would false-FAIL on a
+    DIFFERENT session's in-flight status transition. Arm H already treats
+    the committed form (``R100``) as clean; the two arms must agree."""
+    _repo_with_persisted_plan(tmp_path)
+    (tmp_path / "tasks" / "approved").mkdir(parents=True, exist_ok=True)
+    _git(tmp_path, "mv", "tasks/planning/1", "tasks/approved/1")
+    errors = check_plan_version_immutability(repo_root=tmp_path)
+    assert errors == [], f"expected PASS on a staged status-folder move, got: {errors}"
+
+
+def test_staged_status_folder_move_with_edit_fails_arm_w(tmp_path):
+    """The status-move exemption must NOT swallow a content change: a
+    status move whose file is then edited in the working tree is porcelain
+    ``RM``, and the worktree-column ``M`` still fires. This is the guard
+    that keeps the exemption narrow."""
+    _repo_with_persisted_plan(tmp_path)
+    (tmp_path / "tasks" / "approved").mkdir(parents=True, exist_ok=True)
+    _git(tmp_path, "mv", "tasks/planning/1", "tasks/approved/1")
+    moved = tmp_path / "tasks" / "approved" / "1" / "plans" / "v1.md"
+    moved.write_text("# Plan v1\n\nEDITED after the move.\n", encoding="utf-8")
+    errors = check_plan_version_immutability(repo_root=tmp_path)
+    assert len(errors) == 1, f"expected one Arm-W error (RM), got: {errors}"
+
+
 # ── Arm H: committed history ────────────────────────────────────────────
 
 
