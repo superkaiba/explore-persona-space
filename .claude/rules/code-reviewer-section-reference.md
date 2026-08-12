@@ -237,10 +237,12 @@ Inherit each open concern (severity=`BLOCKER` or `CONCERN`, latest event
   <kebab-id> --severity CONCERN|BLOCKER --summary <80c> --by
   code-reviewer --round <n>`. The `--summary` is capped at 200 chars —
   compose the one-liner within the cap and put detail in the evidence
-  field / verdict body; an over-cap `--summary` via the CLI is
-  auto-truncated at a word boundary with a loud warning (full text
-  shifted into `--evidence` when evidence is empty; programmatic callers
-  still get `ValueError: summary too long`). Verdict-body
+  field / verdict body; an over-cap `--summary` with NO --evidence
+  shifts the full text into `--evidence` with a loud warning, an
+  over-cap `--summary` WITH --evidence is a hard error (#2121), and
+  long text goes through `--summary-file` (preserved verbatim in the
+  evidence field; programmatic callers still get `ValueError: summary
+  too long`). Verdict-body
   concern bullets that are NOT persisted remain opportunistic (the
   historical PASS+CONCERNS auto-advance contract applies).
 - **A deferred feature the plan's PRODUCTION path requires is ALWAYS a

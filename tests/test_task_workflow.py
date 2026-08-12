@@ -3046,7 +3046,7 @@ def test_cli_handlers_raise_address_defer_list_roundtrip(concerns_task, capsys):
 def test_raise_concern_library_rejects_overlong_summary(concerns_task):
     """The library layer keeps the hard 200-char cap (defense-in-depth for
     programmatic callers) and its message names the escape + the CLI
-    auto-truncation alternative."""
+    --summary-file alternative (#2121: no more auto-truncation claim)."""
     _, tw, tid = concerns_task
     with pytest.raises(ValueError, match="summary too long") as excinfo:
         tw.raise_concern(
@@ -3059,12 +3059,12 @@ def test_raise_concern_library_rejects_overlong_summary(concerns_task):
         )
     msg = str(excinfo.value)
     assert "evidence" in msg
-    assert "truncat" in msg
+    assert "--summary-file" in msg
 
 
 def test_address_concern_library_overlong_message_names_escape(concerns_task):
     """address_concern's >200 ValueError names the cap AND an actionable
-    escape (round report) AND mentions the CLI auto-truncation."""
+    escape (round report) AND the CLI --summary-file channel (#2121)."""
     _, tw, tid = concerns_task
     tw.raise_concern(
         tid,
@@ -3085,7 +3085,7 @@ def test_address_concern_library_overlong_message_names_escape(concerns_task):
     msg = str(excinfo.value)
     assert "max 200" in msg
     assert "round report" in msg
-    assert "truncat" in msg
+    assert "--summary-file" in msg
 
 
 def test_truncate_summary_word_boundary():
@@ -3166,39 +3166,42 @@ def test_cli_raise_concern_truncates_overlong_summary_and_preserves_in_evidence(
     assert row["evidence"] == original
 
 
-def test_cli_raise_concern_truncation_keeps_given_evidence(concerns_task, capsys):
-    """When --evidence IS given, it is never mutated; the dropped tail is
-    printed in the stderr warning instead."""
+def test_cli_raise_concern_overcap_with_evidence_hard_errors(concerns_task, capsys):
+    """R6 (#2121): an over-cap --summary WITH --evidence supplied is the
+    LOSSY branch (nothing can hold the full text) — hard error, exit 2,
+    nothing stored. The pre-fix behavior silently dropped the tail."""
     import argparse
 
     task_cli = _import_task_cli()
     _repo, tw, tid = concerns_task
     original = "alpha " * 50 + "OMEGA-DISTINCTIVE-TOKEN"  # 323 chars
-    task_cli.cmd_raise_concern(
-        argparse.Namespace(
-            number=tid,
-            concern_id="overlong-raise-evidence",
-            severity="CONCERN",
-            summary=original,
-            by="code-reviewer",
-            round=1,
-            evidence="src/foo.py:42",
+    with pytest.raises(SystemExit) as excinfo:
+        task_cli.cmd_raise_concern(
+            argparse.Namespace(
+                number=tid,
+                concern_id="overlong-raise-evidence",
+                severity="CONCERN",
+                summary=original,
+                by="code-reviewer",
+                round=1,
+                evidence="src/foo.py:42",
+            )
         )
-    )
+    assert excinfo.value.code == 2
     err = capsys.readouterr().err
-    assert "WARNING" in err
-    assert "Dropped tail" in err
-    assert "OMEGA-DISTINCTIVE-TOKEN" in err
+    assert "ERROR" in err
+    assert "--summary-file" in err
+    assert "--evidence" in err
     concerns_path = tw.find_task_path(tid) / "concerns.jsonl"
-    rows = [json.loads(line) for line in concerns_path.read_text().splitlines() if line.strip()]
-    row = rows[-1]
-    assert len(row["summary"]) <= 200
-    assert row["evidence"] == "src/foo.py:42"
+    assert not concerns_path.exists()  # nothing was appended
 
 
-def test_cli_address_concern_truncates_overlong_summary(concerns_task, capsys):
-    """The #1090 replay: a 203-char address-concern --summary completes in
-    ONE invocation with a loud warning."""
+def test_cli_address_concern_rejects_overlong_summary(concerns_task, capsys):
+    """R1/R2 (#2121): a 203-char address-concern --summary hard-errors
+    (exit 2) instead of silently dropping the tail (the pre-fix #1739
+    incident destroyed 1,589 chars). The error names the actual length,
+    the cap, and the --summary-file escape; the stored rows are
+    unchanged."""
     import argparse
 
     task_cli = _import_task_cli()
@@ -3211,25 +3214,27 @@ def test_cli_address_concern_truncates_overlong_summary(concerns_task, capsys):
         raised_by="code-reviewer",
         raised_at_round=1,
     )
-    updated = ("addressed by rekeying the lookup " * 7)[:203]
+    updated = ("addressed by rekeying the lookup " * 7)[:203].rstrip()
     assert len(updated) == 203
-    task_cli.cmd_address_concern(
-        argparse.Namespace(
-            number=tid,
-            concern_id="overlong-address-cli",
-            by="implementer",
-            round=1,
-            summary=updated,
-        )
-    )
-    err = capsys.readouterr().err
-    assert "WARNING" in err
-    assert "cap 200" in err
     concerns_path = tw.find_task_path(tid) / "concerns.jsonl"
-    rows = [json.loads(line) for line in concerns_path.read_text().splitlines() if line.strip()]
-    row = rows[-1]
-    assert row["event"] == "addressed"
-    assert len(row["summary"]) <= 200
+    rows_before = concerns_path.read_text()
+    with pytest.raises(SystemExit) as excinfo:
+        task_cli.cmd_address_concern(
+            argparse.Namespace(
+                number=tid,
+                concern_id="overlong-address-cli",
+                by="implementer",
+                round=1,
+                summary=updated,
+            )
+        )
+    assert excinfo.value.code == 2
+    err = capsys.readouterr().err
+    assert "ERROR" in err
+    assert "203 chars" in err  # the actual length
+    assert "max 200" in err  # the cap
+    assert "--summary-file" in err  # the escape
+    assert concerns_path.read_text() == rows_before  # stored rows unchanged
 
 
 def test_cli_concern_summary_at_cap_passes_untouched(concerns_task, capsys):
@@ -3261,6 +3266,362 @@ def test_cli_concern_summary_at_cap_passes_untouched(concerns_task, capsys):
     assert "evidence" not in row
 
 
+def _concern_rows(tw, tid):
+    """Parsed concerns.jsonl rows for task ``tid`` (test helper)."""
+    concerns_path = tw.find_task_path(tid) / "concerns.jsonl"
+    return [json.loads(ln) for ln in concerns_path.read_text().splitlines() if ln.strip()]
+
+
+def test_cli_address_concern_summary_file_overcap_preserves_full_text_in_evidence(
+    concerns_task, capsys, tmp_path
+):
+    """R3 (#2121): --summary-file accepts text of ANY length; over-cap text
+    lands VERBATIM in the event's evidence field with a <=200-char derived
+    lead as the summary. Replays the actual #1739 payload length (1,785
+    chars — the text the pre-fix CLI destroyed)."""
+    import argparse
+
+    task_cli = _import_task_cli()
+    _repo, tw, tid = concerns_task
+    tw.raise_concern(
+        tid,
+        "summary-file-address",
+        severity="CONCERN",
+        summary="A concern with a normal-length summary.",
+        raised_by="code-reviewer",
+        raised_at_round=1,
+    )
+    full_text = ("evidence sentence with real content " * 50)[:1785].rstrip()
+    assert len(full_text) > 1700
+    sf = tmp_path / "address-summary.md"
+    sf.write_text(full_text, encoding="utf-8")
+    task_cli.cmd_address_concern(
+        argparse.Namespace(
+            number=tid,
+            concern_id="summary-file-address",
+            by="implementer",
+            round=1,
+            summary=None,
+            summary_file=str(sf),
+            evidence=None,
+        )
+    )
+    err = capsys.readouterr().err
+    assert "evidence field" in err  # the one informational stderr line
+    row = _concern_rows(tw, tid)[-1]
+    assert row["event"] == "addressed"
+    assert row["evidence"] == full_text  # full text, verbatim
+    assert len(row["summary"]) <= 200
+    assert row["summary"].endswith("...")
+    assert full_text.startswith(row["summary"][:-3])
+
+
+def test_cli_raise_concern_summary_file_overcap_preserves_full_text_in_evidence(
+    concerns_task, capsys, tmp_path
+):
+    """R8 (#2121): raise-concern --summary-file has the same semantics as
+    address-concern's (over-cap text preserved verbatim in evidence)."""
+    import argparse
+
+    task_cli = _import_task_cli()
+    _repo, tw, tid = concerns_task
+    full_text = ("a long raised concern description with detail " * 12).rstrip()
+    assert len(full_text) > 200
+    sf = tmp_path / "raise-summary.md"
+    sf.write_text(full_text, encoding="utf-8")
+    task_cli.cmd_raise_concern(
+        argparse.Namespace(
+            number=tid,
+            concern_id="summary-file-raise",
+            severity="CONCERN",
+            summary=None,
+            summary_file=str(sf),
+            by="code-reviewer",
+            round=1,
+            evidence=None,
+        )
+    )
+    err = capsys.readouterr().err
+    assert "evidence field" in err
+    row = _concern_rows(tw, tid)[-1]
+    assert row["event"] == "raised"
+    assert row["evidence"] == full_text
+    assert len(row["summary"]) <= 200
+    assert row["summary"].endswith("...")
+
+
+def test_cli_concern_summary_file_under_cap_is_summary_verbatim(concerns_task, capsys, tmp_path):
+    """An under-cap --summary-file is a pure quoting convenience: the file
+    text becomes the summary (trailing newline stripped), no evidence."""
+    import argparse
+
+    task_cli = _import_task_cli()
+    _repo, tw, tid = concerns_task
+    sf = tmp_path / "short-summary.md"
+    sf.write_text("A short summary read from a file.\n", encoding="utf-8")
+    task_cli.cmd_raise_concern(
+        argparse.Namespace(
+            number=tid,
+            concern_id="summary-file-short",
+            severity="CONCERN",
+            summary=None,
+            summary_file=str(sf),
+            by="code-reviewer",
+            round=1,
+            evidence=None,
+        )
+    )
+    assert "WARNING" not in capsys.readouterr().err
+    row = _concern_rows(tw, tid)[-1]
+    assert row["summary"] == "A short summary read from a file."
+    assert "evidence" not in row
+
+
+def test_cli_address_concern_evidence_flag_roundtrips(concerns_task, capsys):
+    """R4 (#2121): address-concern --evidence exists and round-trips into
+    the stored `addressed` row, symmetric with raise-concern's."""
+    import argparse
+
+    task_cli = _import_task_cli()
+    _repo, tw, tid = concerns_task
+    tw.raise_concern(
+        tid,
+        "evidence-roundtrip",
+        severity="CONCERN",
+        summary="A concern with a normal-length summary.",
+        raised_by="code-reviewer",
+        raised_at_round=1,
+    )
+    task_cli.cmd_address_concern(
+        argparse.Namespace(
+            number=tid,
+            concern_id="evidence-roundtrip",
+            by="implementer",
+            round=1,
+            summary="Fixed by rekeying the lookup.",
+            summary_file=None,
+            evidence="src/foo.py:42 — the rekeyed lookup",
+        )
+    )
+    capsys.readouterr()
+    row = _concern_rows(tw, tid)[-1]
+    assert row["event"] == "addressed"
+    assert row["summary"] == "Fixed by rekeying the lookup."
+    assert row["evidence"] == "src/foo.py:42 — the rekeyed lookup"
+
+
+def test_cli_address_concern_summary_file_overcap_with_evidence_hard_errors(
+    concerns_task, capsys, tmp_path
+):
+    """R5 (#2121): an over-cap --summary-file PLUS an explicit --evidence is
+    a hard error — the CLI refuses to pick which text survives."""
+    import argparse
+
+    task_cli = _import_task_cli()
+    _repo, tw, tid = concerns_task
+    tw.raise_concern(
+        tid,
+        "summary-file-vs-evidence",
+        severity="CONCERN",
+        summary="A concern with a normal-length summary.",
+        raised_by="code-reviewer",
+        raised_at_round=1,
+    )
+    sf = tmp_path / "overcap.md"
+    sf.write_text("x" * 300, encoding="utf-8")
+    rows_before = _concern_rows(tw, tid)
+    with pytest.raises(SystemExit) as excinfo:
+        task_cli.cmd_address_concern(
+            argparse.Namespace(
+                number=tid,
+                concern_id="summary-file-vs-evidence",
+                by="implementer",
+                round=1,
+                summary=None,
+                summary_file=str(sf),
+                evidence="an explicit evidence pointer",
+            )
+        )
+    assert excinfo.value.code == 2
+    err = capsys.readouterr().err
+    assert "ERROR" in err
+    assert "--summary-file" in err
+    assert "--evidence" in err
+    assert _concern_rows(tw, tid) == rows_before  # nothing appended
+
+
+def test_cli_address_concern_summary_and_summary_file_mutually_exclusive(monkeypatch, capsys):
+    """R5 (#2121): --summary and --summary-file are argparse-mutually-
+    exclusive on address-concern, exercised through the REAL parser via
+    main() (a pre-built Namespace cannot pin the parser surface)."""
+    task_cli = _import_task_cli()
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "task.py",
+            "address-concern",
+            "1",
+            "--concern-id",
+            "x",
+            "--by",
+            "implementer",
+            "--round",
+            "1",
+            "--summary",
+            "inline",
+            "--summary-file",
+            "/tmp/nonexistent.md",
+        ],
+    )
+    with pytest.raises(SystemExit) as excinfo:
+        task_cli.main()
+    assert excinfo.value.code == 2
+    assert "not allowed with" in capsys.readouterr().err
+
+
+def test_cli_raise_concern_requires_summary_or_summary_file(monkeypatch, capsys):
+    """raise-concern's flag group is required=True: neither --summary nor
+    --summary-file → argparse error (exit 2). Preserves the historical
+    'summary is mandatory' contract under the new group (#2121)."""
+    task_cli = _import_task_cli()
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "task.py",
+            "raise-concern",
+            "1",
+            "--concern-id",
+            "x",
+            "--severity",
+            "CONCERN",
+            "--by",
+            "code-reviewer",
+            "--round",
+            "1",
+        ],
+    )
+    with pytest.raises(SystemExit) as excinfo:
+        task_cli.main()
+    assert excinfo.value.code == 2
+    assert "required" in capsys.readouterr().err
+
+
+def test_cli_concern_summary_file_empty_or_missing_hard_errors(concerns_task, capsys, tmp_path):
+    """D2b rows (#2121): an empty / whitespace-only --summary-file is a hard
+    error naming the path (a falsy summary would otherwise silently no-op
+    into the carried-forward original); an unreadable path likewise."""
+    import argparse
+
+    task_cli = _import_task_cli()
+    _repo, tw, tid = concerns_task
+    tw.raise_concern(
+        tid,
+        "empty-summary-file",
+        severity="CONCERN",
+        summary="A concern with a normal-length summary.",
+        raised_by="code-reviewer",
+        raised_at_round=1,
+    )
+    empty = tmp_path / "empty.md"
+    empty.write_text("   \n\n", encoding="utf-8")
+    ns = dict(number=tid, concern_id="empty-summary-file", by="implementer", round=1)
+    with pytest.raises(SystemExit) as excinfo:
+        task_cli.cmd_address_concern(
+            argparse.Namespace(**ns, summary=None, summary_file=str(empty), evidence=None)
+        )
+    assert excinfo.value.code == 2
+    err = capsys.readouterr().err
+    assert "ERROR" in err
+    assert str(empty) in err  # names the path
+
+    missing = tmp_path / "does-not-exist.md"
+    with pytest.raises(SystemExit) as excinfo:
+        task_cli.cmd_address_concern(
+            argparse.Namespace(**ns, summary=None, summary_file=str(missing), evidence=None)
+        )
+    assert excinfo.value.code == 2
+    assert str(missing) in capsys.readouterr().err
+
+
+def test_cli_concern_handlers_tolerate_minimal_namespace(concerns_task, capsys):
+    """The mechanical pin for the getattr contract R7 depends on (#2121):
+    both handlers accept a hand-built Namespace lacking BOTH the new
+    ``summary_file`` AND ``evidence`` attributes (existing tests — e.g.
+    the lifecycle test — drive the handlers with pre-#2121 Namespaces, so
+    a direct attribute read would break them)."""
+    import argparse
+
+    task_cli = _import_task_cli()
+    _repo, tw, tid = concerns_task
+    task_cli.cmd_raise_concern(
+        argparse.Namespace(
+            number=tid,
+            concern_id="minimal-namespace",
+            severity="CONCERN",
+            summary="A concern raised from a minimal namespace.",
+            by="code-reviewer",
+            round=1,
+            # no evidence, no summary_file
+        )
+    )
+    task_cli.cmd_address_concern(
+        argparse.Namespace(
+            number=tid,
+            concern_id="minimal-namespace",
+            by="implementer",
+            round=1,
+            summary=None,
+            # no evidence, no summary_file
+        )
+    )
+    capsys.readouterr()
+    rows = _concern_rows(tw, tid)
+    assert [r["event"] for r in rows] == ["raised", "addressed"]
+
+
+def test_address_concern_library_evidence_omitted_when_falsy(concerns_task):
+    """D1a (#2121): address_concern stores ``evidence`` only when truthy —
+    the same additive shape raise_concern has carried since inception, so
+    no concerns.jsonl reader needs to change."""
+    _, tw, tid = concerns_task
+    tw.raise_concern(
+        tid,
+        "evidence-falsy-lib",
+        severity="CONCERN",
+        summary="A concern with a normal-length summary.",
+        raised_by="code-reviewer",
+        raised_at_round=1,
+    )
+    p1 = tw.address_concern(
+        tid,
+        "evidence-falsy-lib",
+        addressed_by="implementer",
+        addressed_at_round=1,
+        summary="Addressed without evidence.",
+    )
+    assert "evidence" not in p1
+    p2 = tw.address_concern(
+        tid,
+        "evidence-falsy-lib",
+        addressed_by="implementer",
+        addressed_at_round=2,
+        summary="Addressed again, empty-string evidence.",
+        evidence="",
+    )
+    assert "evidence" not in p2
+    p3 = tw.address_concern(
+        tid,
+        "evidence-falsy-lib",
+        addressed_by="implementer",
+        addressed_at_round=3,
+        summary="Addressed with evidence.",
+        evidence="src/foo.py:42",
+    )
+    assert p3["evidence"] == "src/foo.py:42"
+
+
 def test_cli_address_concern_accepts_note_alias(monkeypatch, capsys):
     """#1867: `--note` parses as an argparse alias of `--summary` on
     address-concern (dest=summary), exercised through the REAL parser via
@@ -3272,14 +3633,16 @@ def test_cli_address_concern_accepts_note_alias(monkeypatch, capsys):
     captured = {}
 
     def fake_address_concern(
-        task_id, concern_id, *, addressed_by, addressed_at_round, summary=None
+        task_id, concern_id, *, addressed_by, addressed_at_round, summary=None, evidence=None
     ):
+        # signature mirrors the real address_concern (evidence added by #2121)
         captured.update(
             task_id=task_id,
             concern_id=concern_id,
             addressed_by=addressed_by,
             addressed_at_round=addressed_at_round,
             summary=summary,
+            evidence=evidence,
         )
         return {"event": "addressed", "concern_id": concern_id}
 
