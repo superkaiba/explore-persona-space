@@ -3028,7 +3028,7 @@ phase_g0v3() {
     # the rlvr lmsys23k turnstores (v2 extension stem HF-resumed below; the
     # wave-1 concat half is c_stage's staging, asserted here).
     echo "[phase=g0v3]"
-    local rc=0
+    local rc=0 stage_rc=0
     if [ "$SMOKE" -eq 0 ]; then
         [ -d "$WAVE1_TS_DIR" ] || {
             emit_signal "epm:failure" "g0v3" "failure_class: data — $WAVE1_TS_DIR missing: G0v3's lmsys23k concat bundle reads the staged wave-1 turnstores (run the c_stage phase first; plan v15 reuses the round-3 staging verbatim)"
@@ -3036,6 +3036,50 @@ phase_g0v3() {
             exit 78
         }
         ensure_diag_cell_v3 rlvr lmsys23k
+        # v18/v20 fallback-lane fix (plan §4): the two round-3 references
+        # (gates_v2/v2_bars.json + cells_v2/cells_rlvr_chat_lmsys23k.json)
+        # exist on the HF mirror + charmander but in NO git ref — a fresh
+        # fallback pod starts without them. Stage them fail-loud from the
+        # Hub-verified mirror BEFORE the gate reads them; a failed fetch
+        # HALTs the phase — never proceed reference-less.
+        G0V3_OUT_DIR="$OUT_DIR" G0V3_REPO="$HF_DATA_REPO" G0V3_PREFIX="$HF_PREFIX" \
+            uv run python - <<'PY' >> "$JOB_LOG_DIR/g0v3__stage_refs.log" 2>&1 || stage_rc=$?
+import os
+import shutil
+from pathlib import Path
+
+from huggingface_hub import hf_hub_download
+
+from explore_persona_space.orchestrate import hub
+
+out_dir = Path(os.environ["G0V3_OUT_DIR"])
+repo = os.environ["G0V3_REPO"]
+prefix = os.environ["G0V3_PREFIX"]
+refs = ("gates_v2/v2_bars.json", "cells_v2/cells_rlvr_chat_lmsys23k.json")
+for rel in refs:
+    dest = out_dir / rel
+    if dest.exists():
+        print(f"[g0v3] round-3 reference present: {dest}", flush=True)
+        continue
+    src = f"{prefix}/eval_results_mirror_v2/{rel}"
+    # hf_hub_download / retry_transient RAISE on a failed fetch (fail-loud);
+    # the non-zero exit HALTs the phase below.
+    got = hub.retry_transient(
+        lambda s=src: hf_hub_download(repo, s, repo_type="dataset"),
+        what=f"g0v3 mirror-stage {src}",
+    )
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(got, dest)
+    assert dest.exists() and dest.stat().st_size > 0, f"staged reference empty: {dest}"
+    print(f"[g0v3] staged round-3 reference {src} -> {dest}", flush=True)
+PY
+        if [ "$stage_rc" -ne 0 ]; then
+            tail -n 5 "$JOB_LOG_DIR/g0v3__stage_refs.log" >&2 || true
+            emit_signal "epm:failure" "g0v3" "failure_class: infra — G0v3 round-3 reference mirror-staging FAILED (rc=$stage_rc): could not stage gates_v2/v2_bars.json + cells_v2/cells_rlvr_chat_lmsys23k.json from $HF_PREFIX/eval_results_mirror_v2 into $OUT_DIR (never proceed reference-less); see $JOB_LOG_DIR/g0v3__stage_refs.log"
+            echo "[g0v3] FATAL: round-3 reference mirror-staging failed rc=$stage_rc" >&2
+            exit 78
+        fi
+        grep -h '\[g0v3\] \(staged\|round-3 reference present\)' "$JOB_LOG_DIR/g0v3__stage_refs.log" | tail -n 2 || true
     fi
     # shellcheck disable=SC2086
     uv run python scripts/issue1336_fit_cells.py --g0v3 --out-dir "$OUT_DIR" $SMOKE_FLAG \
@@ -4160,10 +4204,15 @@ all_v3)
     # G1'v3 rig-health kill gate (Unit B); ladder_pool runs the 20 pooled-pair
     # transfer-tier batteries, ladder_cluster the C-i cluster delta-Q battery,
     # and upload_v3 is the terminal persistence + v3 results sentinel (Unit C).
-    # Reused round-3 inputs — wave-1 staging (c_stage), the committed
-    # gates_v2/cells_v2 outputs, the diagonal turnstores (extractor
-    # HF-resume) — are prerequisites asserted by the phases, not re-derived
-    # here.
+    # Reused round-3 inputs: c_stage is PREPENDED (v18/v20 fallback-lane
+    # fix) — its done-markers make it an instant no-op on charmander, where
+    # phase_c_stage.done + all 5 sub-step .done files already exist, while a
+    # fresh fallback pod (git clone, no staged wave-1 inputs) stages them
+    # here instead of dying at g0v3's WAVE1_TS_DIR assert. The committed
+    # gates_v2/cells_v2 round-3 references are staged fail-loud inside
+    # phase_g0v3 (HF mirror fetch when absent); the diagonal turnstores
+    # remain extractor HF-resume prerequisites asserted by their phases.
+    run_phase c_stage
     run_phase c_pool
     run_phase g0v3
     run_phase g2v2

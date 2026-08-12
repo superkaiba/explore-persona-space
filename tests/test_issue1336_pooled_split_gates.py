@@ -6,10 +6,14 @@ near-dup / packing machinery is exercised directly):
   1. ``assert_split`` takes NO smoke parameter — A3/A4 bind under smoke by
      construction; the SLURM-5005 per-check ``if smoke: log else raise``
      downgrade shape is structurally impossible (plan v17 §4).
-  2. A healthy assignment passes A1/A2/A3/A5.
-  3. Each gate trips fail-loud: A1 (kept arithmetic), A2 (keep-rate floor,
-     SystemExit + collision surface), A3 (test-share floor AND the
-     recorded-vs-recomputed cross-check), A5 (cross-corpus merged mass cap).
+  2. A healthy assignment passes A1/A2-arm-1/A3/A5.
+  3. Each gate trips fail-loud: A1 (kept arithmetic), A2 arm 1 (the v18/v20
+     ABSOLUTE 0.95 dedup keep-rate floor, SystemExit + collision surface —
+     the retired v17 round-3-relative floor and its phantom reference reader
+     are pinned gone), A3 (test-share floor AND the recorded-vs-recomputed
+     cross-check), A5 (cross-corpus merged mass cap). A2 arm 2 (the
+     production-only pinned-profile reconciliation) is pinned in
+     tests/test_issue1336_a2_gate.py.
   4. A4: an unsatisfiable packing window HALTs ONLY AFTER the single
      registered k_c x2 retry, dumping the sub-cluster size composition to
      ``split_manifest.rejected.json`` with the named cause.
@@ -33,8 +37,6 @@ if str(_REPO_ROOT / "scripts") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "scripts"))
 
 import issue1336_pooled_split as ps  # noqa: E402
-
-_R3 = {"corpA": 1.0, "corpB": 1.0, "corpC": 1.0}
 
 
 def _mk_corpora(plant_cross_dups: int = 0):
@@ -83,6 +85,7 @@ def _manifest_from(assignment, rows, sizes):
         "n_kept_pre_dedup": n,
         "n_kept_post_dedup": n,
         "n_cross_corpus_drops": 0,
+        "per_corpus_pre_dedup": dict(sizes),
         "per_corpus_kept": dict(sizes),
         "dropped_total": 0,
         "dropped_sample": [],
@@ -112,10 +115,28 @@ def test_retired_global_k_constants_stay_retired():
         assert not hasattr(ps, name), f"{name} was retired in v16 (Option A)"
 
 
+def test_v18_phantom_round3_reference_machinery_removed():
+    # v18/v20 A2 re-spec (the permanent-invariant BLOCKER fix): the phantom
+    # round-3-relative floor — which read a reference file that never existed
+    # and defaulted to a flat 0.99 floor the mandated dedup could not satisfy
+    # (SLURM 11809) — is REMOVED, replaced by the absolute arm-1 floor + the
+    # production-only arm-2 pinned-profile reconciliation.
+    for name in ("PER_CORPUS_KEEP_RATE_MIN_FRAC", "_round3_per_corpus_keep_rate"):
+        assert not hasattr(ps, name), f"{name} was removed in v18/v20 (phantom-reference A2)"
+    assert ps.PER_CORPUS_DEDUP_KEEP_MIN == 0.95
+    # assert_split stays mode-blind AND reference-free: manifest is its only
+    # parameter (no smoke kwarg, no round3_keep_rate reference threading).
+    assert list(inspect.signature(ps.assert_split).parameters) == ["manifest"]
+    # Arm 2 lives at the production intersection-measure site in run(), not
+    # in assert_split (placement, not a per-check downgrade).
+    assert "check_a2_arm2_pinned_profile" in inspect.getsource(ps.run)
+    assert "check_a2_arm2_pinned_profile" not in inspect.getsource(ps.assert_split)
+
+
 def test_healthy_assignment_passes_gates(healthy):
     rows, sizes, assignment = healthy
     man = _manifest_from(assignment, rows, sizes)
-    ps.assert_split(man, _R3)  # must not raise
+    ps.assert_split(man)  # must not raise
     for slug, share in assignment["per_corpus_test_share"].items():
         assert 0.15 <= share <= 0.28, (slug, share)
     # folds present iff train; all 5 folds populated
@@ -153,15 +174,24 @@ def test_a1_trips_on_kept_arithmetic(healthy):
     man = _manifest_from(assignment, rows, sizes)
     man["n_kept_post_dedup"] -= 1
     with pytest.raises(AssertionError, match=r"\(A1\)"):
-        ps.assert_split(man, _R3)
+        ps.assert_split(man)
 
 
-def test_a2_trips_on_keep_rate_floor(healthy):
+def test_a2_arm1_trips_on_keep_rate_floor_via_assert_split(healthy):
+    # v18/v20 arm 1 wiring: drop 10% of corpB's rows to cross-corpus dedup
+    # (keep-rate 0.90 < the 0.95 ABSOLUTE floor), keeping the A1 arithmetic
+    # consistent so arm 1 — not A1 — is what fires. The predicate BODY is
+    # pinned directly in tests/test_issue1336_a2_gate.py; this pins the
+    # assert_split wiring.
     rows, sizes, assignment = healthy
     man = _manifest_from(assignment, rows, sizes)
-    man["per_corpus_kept_rate"]["corpB"] = 0.5
-    with pytest.raises(SystemExit, match="keep-rate below round-3 floor"):
-        ps.assert_split(man, _R3)
+    n_dropped = sizes["corpB"] // 10  # 35 of 350 -> keep-rate 0.90
+    man["per_corpus_kept"]["corpB"] -= n_dropped
+    man["n_kept_post_dedup"] -= n_dropped
+    man["n_cross_corpus_drops"] += n_dropped
+    man["dropped_total"] += n_dropped
+    with pytest.raises(SystemExit, match=r"a2_arm1_keep_rate_below_floor"):
+        ps.assert_split(man)
 
 
 def test_a3_trips_on_test_share_floor(healthy):
@@ -173,7 +203,7 @@ def test_a3_trips_on_test_share_floor(healthy):
             r["fold"] = 0
     man["per_corpus_test_share"]["corpC"] = 0.0
     with pytest.raises(AssertionError, match=r"\(A3\)"):
-        ps.assert_split(man, _R3)
+        ps.assert_split(man)
 
 
 def test_a3_trips_on_recorded_recomputed_disagreement(healthy):
@@ -181,7 +211,7 @@ def test_a3_trips_on_recorded_recomputed_disagreement(healthy):
     man = _manifest_from(assignment, rows, sizes)
     man["per_corpus_test_share"]["corpB"] = 0.999
     with pytest.raises(AssertionError, match="disagrees"):
-        ps.assert_split(man, _R3)
+        ps.assert_split(man)
 
 
 def test_a5_trips_on_merged_mass_cap(healthy):
@@ -189,7 +219,7 @@ def test_a5_trips_on_merged_mass_cap(healthy):
     man = _manifest_from(assignment, rows, sizes)
     man["near_dup_audit"]["per_corpus_merged_mass"]["corpA"]["frac"] = 0.12
     with pytest.raises(AssertionError, match=r"\(A5\)"):
-        ps.assert_split(man, _R3)
+        ps.assert_split(man)
 
 
 def test_fold_floor_guard_on_tiny_slice(tmp_path):

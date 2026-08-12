@@ -61,8 +61,24 @@ Assertions (fail loud on violation, non-zero exit — plan v17 §4 gate set):
   - (A1) total kept == per-corpus kept sum − cross-corpus dedup drops
     (arithmetic identity; the <500 drops target stays a sanity WARN —
     measured 167);
-  - (A2) per-corpus keep-rate >= 0.99 of the round-3 per-corpus keep-rate
-    (HALT + log the sha collision surface on violation);
+  - (A2, RE-SPECIFIED v18/v20 — the v17 round-3-relative floor was
+    unsatisfiable by construction: it floored against
+    ``eval_results/issue_1336/corpora_v2_stage_meta.json``, a reference
+    that has never existed in any ref, so every corpus defaulted to a
+    flat 0.99 floor while the plan-mandated cross-corpus dedup
+    necessarily drops rows — the SLURM-11809 false halt) TWO arms:
+    **arm 1** (HALT, in ``assert_split``, binds under smoke) — every
+    corpus's dedup keep-rate (post-dedup kept / pre-dedup
+    5-way-intersection kept, denominator unchanged) >=
+    ``PER_CORPUS_DEDUP_KEEP_MIN`` = 0.95 ABSOLUTE, sha collision
+    surface logged on violation; **arm 2** (HALT, production-only, at
+    the intersection-measure/pinning site in ``run()`` —
+    ``assert_split`` stays mode-blind) — the realized per-corpus
+    PRE-dedup counts and cross-corpus drop profile must reconcile
+    EXACTLY with the plan-pinned measured table (``A2_PINNED_*``); a
+    legitimate future re-pin is a must-ask plan amendment that updates
+    the table. Arm 2 also catches a silently-disabled dedup (a 0-drop
+    profile mismatches the pinned {17, 63, 87} drops);
   - (A3, BINDING COVERAGE GATE) every corpus's realized test share
     >= 0.15 — BINDS UNDER SMOKE (deliberately no per-check smoke
     downgrade anywhere in this module: the SLURM-5005 shape);
@@ -187,8 +203,47 @@ DEDUP_ORDER: tuple[str, ...] = (
 # the >=3-corpora-per-cluster check is false by construction under
 # corpus-pure groups and was REFORMULATED into A3 + the near-dup scan/A5).
 PER_CORPUS_TEST_SHARE_MIN = 0.15  # A3 — binding coverage gate (binds under smoke)
-PER_CORPUS_KEEP_RATE_MIN_FRAC = 0.99  # A2
 DEDUP_DROP_WARN_THRESHOLD = 500  # A1 sanity WARN target (measured 167)
+
+# A2 arm 1 (plan v20 §4): ABSOLUTE per-corpus dedup keep-rate floor
+# (post-dedup kept / pre-dedup 5-way-intersection kept — denominator
+# unchanged from the v17 gate). Replaces the retired round-3-relative
+# floor (PER_CORPUS_KEEP_RATE_MIN_FRAC + _round3_per_corpus_keep_rate),
+# which was unsatisfiable by construction: its reference file never
+# existed, so every corpus got a flat 0.99 floor while the plan-mandated
+# dedup necessarily drops rows (measured max per-corpus loss 1.322%,
+# sft11k, twice-witnessed — v184 + SLURM 11809). Margin: 5.0% allowed /
+# 1.322% max measured = 3.78x below the floor; the failure band A2
+# exists to catch (containment gutting / dedup-key bug) is tens-of-%.
+PER_CORPUS_DEDUP_KEEP_MIN = 0.95
+
+# A2 arm 2 (plan v20 §4, production-only): the plan-pinned MEASURED
+# table — realized per-corpus PRE-dedup 5-way-intersection kept counts
+# and the cross-corpus dedup drop profile, five-witnessed across the
+# persisted c_pool logs (v184 + SLURM 11809; plan v20 §12 row 36). The
+# pipeline is deterministic under pinned revisions, so a production run
+# must reconcile EXACTLY: any deviation means the pins moved or the
+# dedup changed. A legitimate future re-pin is a must-ask plan
+# amendment that updates this table — never a silent edit here.
+A2_PINNED_PRE_DEDUP: dict[str, int] = {
+    "lmsys23k": 13_479,
+    "gsm8k_train_full": 7_311,
+    "gsm8k_test1319": 1_293,
+    "math7500": 7_166,
+    "if11k": 5_789,
+    "uf11k": 6_652,
+    "sft11k": 6_580,
+}  # sum: 48,270
+A2_PINNED_DROPS: dict[str, int] = {
+    "lmsys23k": 17,
+    "gsm8k_train_full": 0,
+    "gsm8k_test1319": 0,
+    "math7500": 0,
+    "if11k": 0,
+    "uf11k": 63,
+    "sft11k": 87,
+}  # total: 167
+A2_PINNED_POST_DEDUP_TOTAL = 48_103  # 48,270 - 167
 
 # 5 checkpoints × 7 corpora shards (plan §4 5-way intersection sizing).
 INTERSECTION_MODELS: tuple[str, ...] = cm.PRIMARY_LADDER + ("rlvr_long",)
@@ -232,40 +287,122 @@ def _hub_helpers():
     return HfApi(), hf_hub_download, hub
 
 
-def _round3_per_corpus_keep_rate(corpora: tuple[str, ...]) -> dict[str, float]:
-    """Round-3 per-corpus keep-rate reference for the keep-rate floor.
+def check_a2_arm1_keep_rates(
+    per_corpus_pre_dedup: dict[str, int],
+    per_corpus_kept: dict[str, int],
+    collision_sample: list[dict[str, Any]] | None = None,
+) -> dict[str, float]:
+    """A2 arm 1 (plan v20 §4) — ABSOLUTE per-corpus dedup keep-rate floor.
 
-    Reads ``eval_results/issue_1336/corpora_v2_stage_meta.json`` when present
-    (round-3 stage-corpora recorded per-corpus keep rates there). A MISSING
-    file falls back to a 1.0 reference for every corpus — the STRICTEST floor
-    (current keep-rate must be >= 0.99 x 1.0), never a relaxation — with a
-    WARN documenting the fallback. A PRESENT-but-unparseable meta raises
-    (fail-loud): a corrupt reference must never silently rewrite the floor.
-    Slugs absent from a parsed meta default to the same strictest 1.0.
+    Pure count-dict predicate (unit-pinned by
+    ``tests/test_issue1336_a2_gate.py``). keep-rate = post-dedup kept /
+    pre-dedup 5-way-intersection kept (the v17 denominator, unchanged).
+    HALTs (SystemExit, named cause ``a2_arm1_keep_rate_below_floor``) when
+    any corpus falls below ``PER_CORPUS_DEDUP_KEEP_MIN``, logging the sha
+    collision surface for legibility. Returns the realized per-corpus
+    keep-rate dict on the silent path. A corpus key-set mismatch between
+    the two count dicts is itself a HALT — never a silent default.
     """
-    meta_path = _REPO_ROOT / "eval_results" / "issue_1336" / "corpora_v2_stage_meta.json"
-    fallback = {slug: 1.0 for slug in corpora}
-    if not meta_path.exists():
-        logger.warning(
-            "[pool] no round-3 keep-rate meta at %s — per-corpus keep-rate floor defaults to 1.0",
-            meta_path,
+    if set(per_corpus_pre_dedup) != set(per_corpus_kept):
+        raise SystemExit(
+            "pooled_split HALT [a2_arm1_keep_rate_below_floor]: corpus key sets "
+            f"disagree — pre_dedup={sorted(per_corpus_pre_dedup)} vs "
+            f"kept={sorted(per_corpus_kept)}"
         )
-        return fallback
-    # Present-but-corrupt fails loud (json.loads raises) — the crash IS the
-    # signal; a swallowed parse error would silently substitute the fallback
-    # reference for the recorded round-3 rates.
-    meta = json.loads(meta_path.read_text())
-    out: dict[str, float] = {}
-    for slug in corpora:
-        rate = None
-        entry = meta.get(slug) if isinstance(meta, dict) else None
-        if isinstance(entry, dict):
-            rate = entry.get("keep_rate") or entry.get("v2_keep_rate")
-        if isinstance(rate, (int, float)) and 0.0 <= float(rate) <= 1.0:
-            out[slug] = float(rate)
-        else:
-            out[slug] = 1.0
-    return out
+    rates: dict[str, float] = {}
+    low_keep: list[tuple[str, float, int, int]] = []
+    for slug, n_pre in per_corpus_pre_dedup.items():
+        n_kept = int(per_corpus_kept[slug])
+        rate = (n_kept / n_pre) if n_pre else 0.0
+        rates[slug] = rate
+        if rate < PER_CORPUS_DEDUP_KEEP_MIN:
+            low_keep.append((slug, rate, n_kept, int(n_pre)))
+    if low_keep:
+        logger.error(
+            "[pool] (A2 arm 1) per-corpus dedup keep-rate below the %.2f absolute floor: "
+            "%s; collision sample=%s",
+            PER_CORPUS_DEDUP_KEEP_MIN,
+            low_keep,
+            (collision_sample or [])[:20],
+        )
+        raise SystemExit(
+            f"pooled_split HALT [a2_arm1_keep_rate_below_floor]: per-corpus dedup "
+            f"keep-rate below the absolute floor {PER_CORPUS_DEDUP_KEEP_MIN:.2f} "
+            f"((slug, rate, kept, pre)): {low_keep}"
+        )
+    return rates
+
+
+def check_a2_arm2_pinned_profile(
+    per_corpus_pre_dedup: dict[str, int],
+    drops_by_corpus: dict[str, int],
+) -> None:
+    """A2 arm 2 (plan v20 §4) — production-only EXACT profile reconciliation.
+
+    Pure count-dict predicate (unit-pinned by
+    ``tests/test_issue1336_a2_gate.py``): the realized per-corpus PRE-dedup
+    counts and the realized cross-corpus drop profile must match the
+    plan-pinned measured table (``A2_PINNED_PRE_DEDUP`` /
+    ``A2_PINNED_DROPS`` / ``A2_PINNED_POST_DEDUP_TOTAL``) EXACTLY.
+    ``drops_by_corpus`` may omit zero-drop corpora (the realized Counter
+    shape). HALTs (SystemExit, named cause
+    ``a2_arm2_pinned_profile_mismatch``) on ANY deviation — including the
+    0-drop profile of a silently-disabled dedup, which a floor alone would
+    pass. An internally inconsistent pin table is itself a HALT
+    (``a2_arm2_pinned_table_inconsistent``) — the gate must never default
+    to "consistent" when its reference is broken (the exact defect class
+    the retired round-3 reader shipped).
+    """
+    pinned_pre_sum = sum(A2_PINNED_PRE_DEDUP.values())
+    pinned_drop_sum = sum(A2_PINNED_DROPS.values())
+    if (
+        not A2_PINNED_PRE_DEDUP
+        or set(A2_PINNED_PRE_DEDUP) != set(A2_PINNED_DROPS)
+        or pinned_pre_sum - pinned_drop_sum != A2_PINNED_POST_DEDUP_TOTAL
+    ):
+        raise SystemExit(
+            "pooled_split HALT [a2_arm2_pinned_table_inconsistent]: the module "
+            f"pin table is internally inconsistent (pre sum {pinned_pre_sum}, "
+            f"drop sum {pinned_drop_sum}, pinned post-dedup total "
+            f"{A2_PINNED_POST_DEDUP_TOTAL}) — fix the pins, never the gate"
+        )
+    mismatches: list[str] = []
+    if set(per_corpus_pre_dedup) != set(A2_PINNED_PRE_DEDUP):
+        mismatches.append(
+            f"corpus-set drift: realized={sorted(per_corpus_pre_dedup)} vs "
+            f"pinned={sorted(A2_PINNED_PRE_DEDUP)}"
+        )
+    else:
+        for slug in sorted(A2_PINNED_PRE_DEDUP):
+            if int(per_corpus_pre_dedup[slug]) != A2_PINNED_PRE_DEDUP[slug]:
+                mismatches.append(
+                    f"pre-dedup count drift {slug}: realized "
+                    f"{int(per_corpus_pre_dedup[slug])} != pinned {A2_PINNED_PRE_DEDUP[slug]}"
+                )
+    unknown_drops = sorted(set(drops_by_corpus) - set(A2_PINNED_DROPS))
+    if unknown_drops:
+        mismatches.append(f"drops recorded for unpinned corpora: {unknown_drops}")
+    for slug in sorted(A2_PINNED_DROPS):
+        realized = int(drops_by_corpus.get(slug, 0))
+        if realized != A2_PINNED_DROPS[slug]:
+            mismatches.append(
+                f"drop-profile drift {slug}: realized {realized} != pinned {A2_PINNED_DROPS[slug]}"
+            )
+    if mismatches:
+        raise SystemExit(
+            "pooled_split HALT [a2_arm2_pinned_profile_mismatch]: realized "
+            "pre-dedup counts / drop profile deviate from the plan-pinned "
+            "measured table (deterministic pipeline + pinned revisions => the "
+            "pins moved or the dedup changed; a legitimate re-pin is a must-ask "
+            f"plan amendment updating A2_PINNED_*): {mismatches}"
+        )
+    logger.info(
+        "[pool] (A2 arm 2) realized pre-dedup counts + drop profile reconcile "
+        "EXACTLY with the plan-pinned table (pre %d, drops %d, post %d)",
+        pinned_pre_sum,
+        pinned_drop_sum,
+        A2_PINNED_POST_DEDUP_TOTAL,
+    )
 
 
 def _resolve_mpnet_revision(api) -> str:
@@ -995,6 +1132,20 @@ def _assign_given_labels(
             test_rows += sz
         share = test_rows / n_total if n_total else 0.0
         per_corpus_test_share[slug] = share
+        # v19/v20 A4 legibility (plan §4 logging note): log the realized
+        # per-corpus test share EXPLICITLY — 11809's A4 values were only
+        # control-flow-inferable from the PASS.
+        logger.info(
+            "[pool] A4 packing %s: realized test share %.4f (%d/%d rows in test; "
+            "window [%.2f, %.2f], target %.2f)",
+            slug,
+            share,
+            test_rows,
+            n_total,
+            lo_frac,
+            hi_frac,
+            POOLED_TEST_RATIO,
+        )
         if not (lower <= test_rows <= upper):
             packing_failures[slug] = (
                 f"realized test rows {test_rows}/{n_total} (share {share:.4f}) outside "
@@ -1307,7 +1458,6 @@ def build_manifest(
     dropped: list[dict[str, Any]],
     assignment: dict[str, Any],
     row_index: list[dict[str, Any]],
-    round3_keep_rate: dict[str, float],
     *,
     per_corpus_pre_intersection: dict[str, int] | None = None,
     prefix_strip: dict[str, dict[str, Any]] | None = None,
@@ -1337,7 +1487,7 @@ def build_manifest(
     manifest = {
         "schema_version": 2,
         "split_design": "percorpus_subcluster_v1",
-        "plan_version": "v17",
+        "plan_version": "v20",
         "phase": "c_pool",
         "smoke": ctx.smoke,
         "seed": POOLED_SPLIT_SEED,
@@ -1367,7 +1517,9 @@ def build_manifest(
         "per_corpus_pre_dedup": per_corpus_pre_dedup,
         "per_corpus_kept": per_corpus_kept,
         "per_corpus_kept_rate": per_corpus_kept_rate,
-        "round3_per_corpus_keep_rate": round3_keep_rate,
+        # A2 arm 1 constant recorded for legibility (v18/v20 re-spec; the
+        # retired round3_per_corpus_keep_rate reference key is gone with it).
+        "a2_dedup_keep_min": PER_CORPUS_DEDUP_KEEP_MIN,
         "per_corpus_k": assignment["per_corpus_k"],
         "packing_retries": assignment["packing_retries"],
         "subcluster_sizes": assignment["subcluster_sizes"],
@@ -1392,20 +1544,22 @@ def build_manifest(
     return manifest
 
 
-def assert_split(
-    manifest: dict[str, Any],
-    round3_keep_rate: dict[str, float],
-) -> None:
-    """Fail-loud gate set A1/A2/A3/A5 (plan v17 §4 Phase C_pool).
+def assert_split(manifest: dict[str, Any]) -> None:
+    """Fail-loud gate set A1/A2-arm-1/A3/A5 (plan v20 §4 Phase C_pool).
 
     Deliberately takes NO smoke parameter and carries NO per-check downgrade
     (the SLURM-5005 shape): every gate below binds identically under
     ``--smoke`` and ``--full``. A4 (the [0.15, 0.28] packing window + the
     single registered k_c x2 retry) is enforced at packing time in
     build_split_assignment(); its terminal HALT dumps
-    ``split_manifest.rejected.json`` there. The RETIRED v15 gate
+    ``split_manifest.rejected.json`` there. A2 arm 2 (the pinned-count /
+    drop-profile reconciliation) is PRODUCTION-ONLY by PLACEMENT — it lives
+    at the intersection-measure/pinning site in ``run()``, NOT here, so this
+    function stays mode-blind. The RETIRED v15 gate
     (>=3-corpora-per-cluster, CLUSTER_MIN_CORPORA) is removed — false by
-    construction under corpus-pure groups.
+    construction under corpus-pure groups; the RETIRED v17 round-3-relative
+    keep-rate floor (phantom reference) is replaced by arm 1's absolute
+    floor.
     """
     # (A1) total kept == per-corpus kept sum − cross-corpus dedup drops
     # (arithmetic identity over the realized counts; <500 drops stays a WARN).
@@ -1426,26 +1580,15 @@ def assert_split(
             DEDUP_DROP_WARN_THRESHOLD,
         )
 
-    # (A2) per-corpus keep-rate >= 0.99 of round-3 rate (HALT + collision
-    # surface — unchanged; binds under smoke too).
-    per_corpus_kept_rate = manifest["per_corpus_kept_rate"]
-    low_keep = []
-    for slug, rate in per_corpus_kept_rate.items():
-        floor = round3_keep_rate.get(slug, 1.0) * PER_CORPUS_KEEP_RATE_MIN_FRAC
-        if rate < floor:
-            low_keep.append((slug, rate, floor))
-    if low_keep:
-        # HALT + log the sha collision surface so the offender is legible.
-        collision_dir = manifest.get("dropped_sample", [])[:20]
-        logger.error(
-            "[pool] per-corpus keep-rate below round-3 floor: %s; collision sample=%s",
-            low_keep,
-            collision_dir,
-        )
-        raise SystemExit(
-            f"pooled_split HALT: per-corpus keep-rate below round-3 floor "
-            f"({PER_CORPUS_KEEP_RATE_MIN_FRAC:.2f} x): {low_keep}"
-        )
+    # (A2 arm 1, RE-SPECIFIED v18/v20) ABSOLUTE per-corpus dedup keep-rate
+    # floor, recomputed from the realized count dicts (HALT + collision
+    # surface; binds under smoke — vacuously 1.0 on a single-corpus smoke
+    # slice, disclosed in the plan's smoke blind-spot enumeration).
+    check_a2_arm1_keep_rates(
+        manifest["per_corpus_pre_dedup"],
+        manifest["per_corpus_kept"],
+        collision_sample=manifest.get("dropped_sample", []),
+    )
 
     # (A3, BINDING COVERAGE GATE — binds under smoke) every corpus's realized
     # test share >= PER_CORPUS_TEST_SHARE_MIN, recomputed from row_index (the
@@ -1602,6 +1745,16 @@ def run(args) -> int:
         sum(len(v) for v in kept_by_corpus.values()),
         len(dropped),
     )
+    # (A2 arm 2, plan v20 §4 — production-only, at the intersection-measure/
+    # pinning site so assert_split stays mode-blind): EXACT reconciliation of
+    # the realized per-corpus pre-dedup counts + cross-corpus drop profile
+    # against the plan-pinned measured table. The smoke fixtures are
+    # run-time-regenerated (counts unknowable pre-run, plan assumption 34),
+    # so no pinned table can describe them — production-only by PLACEMENT,
+    # never a per-check downgrade inside a gate (the SLURM-5005 shape).
+    if not ctx.smoke:
+        drops_by_corpus = Counter(d["dropped_corpus"] for d in dropped)
+        check_a2_arm2_pinned_profile(per_corpus_pre_dedup, dict(drops_by_corpus))
 
     # (3) Embed all deduped prompts — after stripping each corpus's shared
     # common prompt prefix (run-11802 fix: math7500's 611-token few-shot
@@ -1692,7 +1845,6 @@ def run(args) -> int:
         )
 
     # (5) Build the manifest + assert.
-    round3_keep_rate = _round3_per_corpus_keep_rate(ctx.corpora)
     manifest = build_manifest(
         ctx,
         intersection,
@@ -1701,7 +1853,6 @@ def run(args) -> int:
         dropped,
         assignment,
         row_index,
-        round3_keep_rate,
         per_corpus_pre_intersection=per_corpus_pre_intersection,
         prefix_strip=prefix_strip_stats,
     )
@@ -1713,7 +1864,7 @@ def run(args) -> int:
     # ``split_manifest.json`` name so no downstream phase can mistake a
     # failed split for a valid one.
     try:
-        assert_split(manifest, round3_keep_rate)
+        assert_split(manifest)
     except AssertionError:
         rejected_dir = ctx.out_root
         rejected_dir.mkdir(parents=True, exist_ok=True)
