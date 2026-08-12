@@ -654,11 +654,16 @@ def phase_topics(args) -> Path:
         # (a separate pod) consumes the IDENTICAL topic/persona set (r1 BLOCKER 2).
         from huggingface_hub import HfApi
 
-        HfApi().upload_file(
-            path_or_fileobj=str(p),
-            path_in_repo=f"{HF_EXPERIMENT}/topics_personas.json",
-            repo_id="superkaiba1/explore-persona-space-data",
-            repo_type="dataset",
+        from explore_persona_space.orchestrate import hub
+
+        hub.retry_transient(
+            lambda: HfApi().upload_file(
+                path_or_fileobj=str(p),
+                path_in_repo=f"{HF_EXPERIMENT}/topics_personas.json",
+                repo_id="superkaiba1/explore-persona-space-data",
+                repo_type="dataset",
+            ),
+            what="upload_file topics_personas.json",
         )
         _log(f"[phase=topics] published canonical stimulus to HF {HF_EXPERIMENT}/")
     return p
@@ -673,13 +678,20 @@ def _fetch_topics_from_hf(dest: Path) -> bool:
     from huggingface_hub import hf_hub_download
     from huggingface_hub.errors import EntryNotFoundError
 
+    from explore_persona_space.orchestrate import hub
+
     try:
-        cached = hf_hub_download(
-            repo_id="superkaiba1/explore-persona-space-data",
-            filename=f"{HF_EXPERIMENT}/topics_personas.json",
-            repo_type="dataset",
+        cached = hub.retry_transient(
+            lambda: hf_hub_download(
+                repo_id="superkaiba1/explore-persona-space-data",
+                filename=f"{HF_EXPERIMENT}/topics_personas.json",
+                repo_type="dataset",
+            ),
+            what="hf_hub_download topics_personas.json",
         )
     except EntryNotFoundError:
+        # clean not-found = the sibling leg has not published yet (non-transient —
+        # propagates through the retry wrapper on first raise); this leg generates.
         return False
     dest.write_text(Path(cached).read_text())
     _log(f"[phase=topics] fetched canonical stimulus from HF -> {dest} (cross-leg share)")
