@@ -9,10 +9,12 @@ a new hook is genuinely needed (deliberately a NEW module: #2094's
 Three ops (plan §4.1, formulas verbatim), all vectorized over the edited
 positions:
 
-- ``op="cap"``          — ``h ← h - v·min(⟨h,v⟩ - τ, 0)`` (paper Eq. 1; raw
-  contrast ``v``, τ computed against the SAME ``v`` — self-consistent). A
-  FLOOR: raises the axis component up to τ when it falls below, leaving the
-  orthogonal subspace untouched.
+- ``op="cap"``          — ``h ← h - v̂·min(⟨h,v̂⟩ - τ, 0)`` (paper Eq. 1 in the
+  UNIT axis; τ computed against the SAME ``v̂`` in unit space — plan §4.1
+  Fix A: projecting AND updating with the raw contrast ``v`` omitted the
+  1/‖v‖² factor and overshot the edit by ‖v‖² ~ O(10²-10³)). A FLOOR: raises
+  the axis component up to τ when it falls below, leaving the orthogonal
+  subspace untouched and landing the unit projection exactly AT τ.
 - ``op="axis_replace"`` — ``h ← h + v̂·(⟨h_def,v̂⟩ - ⟨h,v̂⟩)`` (query-preserving;
   ONLY the axis component moves to the default-assistant mean projection).
 - ``op="full_replace"`` — ``h ← h_def`` (the default-assistant mean STATE at
@@ -38,10 +40,14 @@ UNCHANGED. Per-cell (per-row) positions arrive via :meth:`arm_batch` (the
 computes the padded absolute positions and resets the prefill latch.
 
 Telemetry (feeds the continuous axis-projection DV + the H2 firing guard +
-the injection-exactness gate): per edited forward, the realized edit position
-count, and — for the single-position modes — the per-row raw projection
-``⟨h,v⟩`` BEFORE the edit, the unit projection ``⟨h,v̂⟩`` before/after, and a
-``fired`` flag (``⟨h,v⟩ < τ`` — whether the cap actually clamped).
+the injection-exactness gate + the H4 real-vs-random |Δproj| comparison): per
+edited forward, the realized edit position count; for the single-position
+modes the per-row raw projection ``⟨h,v⟩`` BEFORE the edit, the unit
+projection ``⟨h,v̂⟩`` before/after, the per-row ``|Δproj|`` (``|after -
+before|`` in unit space, ALL ops), and a ``fired`` flag (``⟨h,v̂⟩ < τ`` —
+whether the cap actually clamped, in the same UNIT space as τ); for the
+broad-position modes the means plus a strided ``abs_dproj_sample`` (≤128
+positions) so the per-position |Δproj| distribution is recoverable per op.
 
 TRIGGER-DENSE note: this module names the intervention MECHANISTICALLY (a
 per-position clamp of one residual-stream direction); no harmful content is
@@ -77,8 +83,9 @@ def apply_cap_op(
     ``(N,)`` projections computed in fp32 for telemetry, ``h_new`` in ``h``'s
     dtype:
 
-    - ``op="cap"``: ``h_new = h - v·clamp(⟨h,v⟩ - τ, max=0)`` (Eq. 1; only rows
-      with ``⟨h,v⟩ < τ`` move — the FLOOR).
+    - ``op="cap"``: ``h_new = h - v̂·clamp(⟨h,v̂⟩ - τ, max=0)`` (Eq. 1 in the
+      UNIT axis — plan §4.1 Fix A; only rows with ``⟨h,v̂⟩ < τ`` move — the
+      FLOOR — and a moved row lands with unit projection exactly τ).
     - ``op="axis_replace"``: ``h_new = h + v̂·(proj_def - ⟨h,v̂⟩)`` (the axis
       component is set to ``proj_def``; the orthogonal complement is unchanged).
     - ``op="full_replace"``: ``h_new = h_def`` broadcast (the whole state).
@@ -98,8 +105,11 @@ def apply_cap_op(
     proj_raw = hf @ vf  # (N,) ⟨h,v⟩ — the τ-space projection (H2 firing guard)
     proj_unit_before = hf @ vhat_f  # (N,) ⟨h,v̂⟩ — the continuous axis-projection DV
     if op == "cap":
-        excess = torch.clamp(proj_raw - float(tau), max=0.0)  # (N,), <= 0 when below τ
-        h_new = (hf - vf[None, :] * excess[:, None]).to(h.dtype)
+        # UNIT axis on BOTH the projection and the update (Fix A): the raw-v
+        # form `h - v·(⟨h,v⟩ - τ)` overshoots by ‖v‖². With v̂ the moved row
+        # lands at ⟨h_new,v̂⟩ == τ exactly (a FLOOR — only rows below τ move).
+        excess = torch.clamp(proj_unit_before - float(tau), max=0.0)  # (N,), <= 0 when below τ
+        h_new = (hf - vhat_f[None, :] * excess[:, None]).to(h.dtype)
     elif op == "axis_replace":
         shift = float(proj_def) - proj_unit_before  # (N,)
         h_new = (hf + vhat_f[None, :] * shift[:, None]).to(h.dtype)
@@ -284,7 +294,9 @@ class AxisCapHook:
             pi = self._edit_pos_idx.to(hidden.device)
             self._op_at(out, bi, pi)
             n_pos = int(bi.numel())
-            per_row_fired = self._last_proj[0] < self.tau  # (B,) raw proj < τ
+            # Fired = UNIT projection below τ (τ lives in unit space, Fix A/B).
+            per_row_fired = self._last_proj[1] < self.tau  # (B,) ⟨h,v̂⟩ < τ
+            abs_dproj = (self._last_proj[2] - self._last_proj[1]).abs()  # (B,) |Δ⟨h,v̂⟩|
             realized = {
                 "layer": self.layer,
                 "op": self.op,
@@ -294,6 +306,8 @@ class AxisCapHook:
                 "proj_raw_before": self._last_proj[0].clone(),  # (B,) ⟨h,v⟩
                 "proj_unit_before": self._last_proj[1].clone(),  # (B,) ⟨h,v̂⟩
                 "proj_unit_after": self._last_proj[2].clone(),
+                "abs_dproj": abs_dproj,  # (B,) per-row |Δproj| (H4 real-vs-random)
+                "abs_dproj_mean": float(abs_dproj.mean()),
                 "fired": per_row_fired.clone(),
                 "fired_frac": float(per_row_fired.float().mean()),
             }
@@ -318,6 +332,10 @@ class AxisCapHook:
                 bi = torch.cat(bs)
                 pi = torch.cat(ps)
             self._op_at(out, bi, pi)
+            abs_dproj = (self._last_proj[2] - self._last_proj[1]).abs()  # (N,) |Δ⟨h,v̂⟩|
+            # Strided ≤128-position subsample keeps the per-position |Δproj|
+            # distribution recoverable (H4) without storing every position.
+            stride = max(1, abs_dproj.numel() // 128)
             realized = {
                 "layer": self.layer,
                 "op": self.op,
@@ -327,7 +345,10 @@ class AxisCapHook:
                 "proj_raw_before_mean": float(self._last_proj[0].mean()),
                 "proj_unit_before_mean": float(self._last_proj[1].mean()),
                 "proj_unit_after_mean": float(self._last_proj[2].mean()),
-                "fired_frac": float((self._last_proj[0] < self.tau).float().mean()),
+                "abs_dproj_mean": float(abs_dproj.mean()),
+                "abs_dproj_sample": abs_dproj[::stride][:128].clone(),
+                # Fired = UNIT projection below τ (τ lives in unit space, Fix A/B).
+                "fired_frac": float((self._last_proj[1] < self.tau).float().mean()),
             }
 
         if self.realized_edits is None:
@@ -431,7 +452,9 @@ def joint_axis_hooks(
     """Build a joint-band :class:`AxisCapHookStack` over ``layers``.
 
     ``axis_by_layer`` / ``tau_by_layer`` / ``h_def_by_layer`` supply each layer's
-    raw contrast vector ``v``, cap floor τ, and default-assistant mean state. All
+    raw contrast vector ``v`` (normalized to ``v̂`` inside the hook), cap floor τ
+    (UNIT-space — a 25th-percentile of ``⟨h,v̂⟩`` pools matched to
+    ``position_set``; Fix B), and default-assistant mean state. All
     children share ``op`` and ``position_set`` (a band caps ONE op at ONE
     position set across its layers — the design's cell).
     """
