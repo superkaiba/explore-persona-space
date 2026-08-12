@@ -9198,6 +9198,34 @@ def test_transcript_work_probe_human_row_protects(monkeypatch):
     assert age == pytest.approx(600.0)
 
 
+def test_transcript_work_probe_interior_human_row_protects_against_last_row_only_regression(
+    monkeypatch,
+):
+    # Code-review round-1 finding 2: the human row sits INTERIOR to the tail —
+    # older than the newest failed turn, newer than the oldest — so a future
+    # refactor that only classifies the LAST row would misread this tail as
+    # churn-only (arm (iii)) or derive the age from the newest failed turn.
+    # Arm (ii) must still find the interior row and return ITS age (600.0),
+    # with no mtime fallback.
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    tail = [
+        *_t2117_failed_turn(now - 3000),
+        _t2117_human_row(ts=now - 600),
+        *_t2117_failed_turn(now - 60),
+    ]
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, max_bytes=0: list(tail))
+
+    def _boom(pid, now):
+        raise AssertionError("mtime fallback must not run when an interior human row resolves")
+
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", _boom)
+    age, reason = asw._transcript_work_idle_age_s(4242, now)
+    assert reason is None
+    assert age == pytest.approx(600.0)
+
+
 def test_transcript_work_probe_unparseable_newest_ts_falls_back_to_mtime(monkeypatch):
     # Arm (ii) -> (iv) case (2), the critic-r1 timestamp-scoping pin: an ok
     # turn is present but its OWN end_ts is unparseable -> mtime fallback —
