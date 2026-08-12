@@ -556,6 +556,7 @@ def _fold_observed(
     *,
     swap_seed: int | None = None,
     donor_ws: dict | None = None,
+    with_orth: bool = True,
 ) -> tuple[dict, dict]:
     """One fold's observed tier predictions (test rows) + null-loop caches.
 
@@ -612,16 +613,28 @@ def _fold_observed(
     # answer-correspondence rotation y_s -> y_t applied AFTER W_s. Same
     # _v2_predict(prep_s, fit_ws, ...) path as t0/t1; scaled variants reuse
     # the same fits with the Procrustes scale applied at predict time.
-    orth_ctx = ma._orth_fit(Xt_l[tr], Xs_l[tr])
-    orth_ans = ma._orth_fit(Ys_l[tr], Yt_l[tr])
-    t5c_te = _v2_predict(
-        prep_s, fit_ws, ma._orth_predict(orth_ctx, Xt_l[te], reverse=False, scale=False)
-    )
-    t5cs_te = _v2_predict(
-        prep_s, fit_ws, ma._orth_predict(orth_ctx, Xt_l[te], reverse=False, scale=True)
-    )
-    t5b_te = ma._orth_predict(orth_ans, t5c_te, reverse=False, scale=False)
-    t5bs_te = ma._orth_predict(orth_ans, t5cs_te, reverse=False, scale=True)
+    # Gated (user call 2026-08-12: layer 30 only). These two d x d Procrustes
+    # SVDs per (fold, layer) ARE the marginal cost of the orth tiers -- 2,240
+    # across the sweep at all four frozen layers vs 560 at the full-tier layer
+    # alone. Skipping them omits the four keys from te_preds entirely rather
+    # than emitting placeholders, so a consumer that forgets the gate gets a
+    # KeyError instead of a silent zero.
+    orth_preds: dict = {}
+    if with_orth:
+        orth_ctx = ma._orth_fit(Xt_l[tr], Xs_l[tr])
+        orth_ans = ma._orth_fit(Ys_l[tr], Yt_l[tr])
+        t5c_te = _v2_predict(
+            prep_s, fit_ws, ma._orth_predict(orth_ctx, Xt_l[te], reverse=False, scale=False)
+        )
+        t5cs_te = _v2_predict(
+            prep_s, fit_ws, ma._orth_predict(orth_ctx, Xt_l[te], reverse=False, scale=True)
+        )
+        orth_preds = {
+            "t5c": t5c_te,
+            "t5cs": t5cs_te,
+            "t5b": ma._orth_predict(orth_ans, t5c_te, reverse=False, scale=False),
+            "t5bs": ma._orth_predict(orth_ans, t5cs_te, reverse=False, scale=True),
+        }
 
     te_preds = {
         "within": within_te,
@@ -631,10 +644,7 @@ def _fold_observed(
         "t3": t3_te,
         "t4": t4_te,
         "t5": t5_te,
-        "t5c": t5c_te,
-        "t5cs": t5cs_te,
-        "t5b": t5b_te,
-        "t5bs": t5bs_te,
+        **orth_preds,
         "t6": t6_te,
         "t7": t7_te,
         "t8": t8_te,
@@ -863,10 +873,12 @@ def run_battery_arrays(
         swap_names: tuple[str, ...] = () if swap_seed_key is None else SWAP_RAND_NAMES
         if donor_ws_provider is not None:
             swap_names = (*swap_names, *SWAP_DONOR_NAMES)
+        with_orth = li in full_tier_layers
+        orth_names: tuple[str, ...] = ORTH_TIER_NAMES if with_orth else ()
         capture_names = (
             "within",
             *TIER_NAMES,
-            *ORTH_TIER_NAMES,
+            *orth_names,
             *swap_names,
             "repswap",
             "actx",
@@ -920,7 +932,17 @@ def run_battery_arrays(
                 "the donor swap is all-or-nothing per battery"
             )
             te_preds, aux = _fold_observed(
-                Xs_l, Ys_l, Xt_l, Yt_l, tr, te, grid, preps, swap_seed=swap_seed, donor_ws=donor
+                Xs_l,
+                Ys_l,
+                Xt_l,
+                Yt_l,
+                tr,
+                te,
+                grid,
+                preps,
+                swap_seed=swap_seed,
+                donor_ws=donor,
+                with_orth=with_orth,
             )
             if aux["swap"] is not None:
                 swap_rows.append({"fold": int(k), **aux["swap"]})
@@ -1034,7 +1056,7 @@ def run_battery_arrays(
         # ladder semantics stay untouched).
         extra_blocks: dict[str, dict] = {}
         extra_recal_preds: dict[str, np.ndarray] = {}
-        for name in (*ORTH_TIER_NAMES, *swap_names):
+        for name in (*orth_names, *swap_names):
             rec = rc.crossfit_recal_direct(captured[name].astype(np.float64), y64, folds)
             extra_recal_preds[name] = rec["pred_recal"].astype(np.float32)
             extra_blocks[name] = {
@@ -1088,7 +1110,7 @@ def run_battery_arrays(
         per_layer[str(li)] = {
             "raw": _tier_block(draws_raw, raw_r2s),
             "recal": _tier_block(draws_recal, recal_r2s),
-            "orth_tiers": {name: extra_blocks[name] for name in ORTH_TIER_NAMES},
+            "orth_tiers": {name: extra_blocks[name] for name in orth_names},
             "operator_swap": {
                 "seed_key": swap_seed_key,
                 "per_fold": swap_rows,
@@ -1147,7 +1169,7 @@ def run_battery_arrays(
             # Orth tiers ride the same all-tiers-at-full-tier-layers contract;
             # swap-control preds stay JSON-only (regenerable from the recorded
             # per-(layer, fold) seeds).
-            for name in ORTH_TIER_NAMES:
+            for name in orth_names:
                 preds_store[f"{name}_l{li}"] = captured[name].astype(np.float16)
                 preds_store[f"{name}_recal_l{li}"] = extra_recal_preds[name].astype(np.float16)
         del Xs_l, Ys_l, Xt_l, Yt_l, captured, recal_preds
@@ -2225,7 +2247,9 @@ def run_pooled_pair(args) -> None:
             "t": _v2_prep(Xt_l[tr], inner_seed=inner_seed, n_inner=cm.N_INNER_LAMBDA_FOLDS_V2),
             "ys": _v2_prep(Ys_l[tr], inner_seed=inner_seed, n_inner=cm.N_INNER_LAMBDA_FOLDS_V2),
         }
-        te_preds, aux = _fold_observed(Xs_l, Ys_l, Xt_l, Yt_l, tr, te, grid, preps)
+        # No orth payload is emitted on the pooled path, so computing the two
+        # Procrustes SVDs there was pure waste (flagged by the orth-tiers round).
+        te_preds, aux = _fold_observed(Xs_l, Ys_l, Xt_l, Yt_l, tr, te, grid, preps, with_orth=False)
         # Source's own pooled map read (diagonal ceiling at the SOURCE — the
         # panel's source==target fallback entry; the target's own read is
         # te_preds["within"]). One extra diagonal solve on the cached prep.

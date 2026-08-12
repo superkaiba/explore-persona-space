@@ -274,3 +274,42 @@ def test_battery_swap_collapse_and_wiring() -> None:
         assert f"{name}_l0" in preds and f"{name}_recal_l0" in preds, name
     for name in ml.SWAP_RAND_NAMES:  # swap preds are JSON-only by design
         assert f"{name}_l0" not in preds, name
+
+
+def test_orth_tiers_gated_off_when_not_a_full_tier_layer() -> None:
+    """`with_orth=False` omits the four orth keys entirely (no placeholders),
+    and a battery run with no full-tier layer emits an EMPTY orth_tiers block
+    and no orth preds — the layer-30-only gate (user call 2026-08-12), whose
+    whole point is skipping the two d x d Procrustes SVDs per (fold, layer)."""
+    rng = np.random.default_rng(11)
+    xs, ys = _source_pair(rng)
+    xt, yt = xs + rng.normal(size=D), ys + 0.01 * rng.normal(size=ys.shape)
+    xs_t, ys_t, xt_t, yt_t, tr, te, preps = _fold_setup(xs, ys, xt, yt)
+
+    on, _ = ml._fold_observed(xs_t, ys_t, xt_t, yt_t, tr, te, GRID, preps)
+    off, _ = ml._fold_observed(xs_t, ys_t, xt_t, yt_t, tr, te, GRID, preps, with_orth=False)
+    for name in ml.ORTH_TIER_NAMES:
+        assert name in on, name
+        assert name not in off, name  # omitted, never a placeholder
+    # Everything else is untouched by the gate.
+    assert set(on) - set(off) == set(ml.ORTH_TIER_NAMES)
+    for name in off:
+        assert torch.equal(on[name], off[name]), name
+
+    ids = np.asarray([f"s{i}" for i in range(len(xs))])
+    payload, preds = ml.run_battery_arrays(  # _battery pins full_tier_layers=(0,)
+        xs[:, None, :],
+        ys[:, None, :],
+        xt[:, None, :],
+        yt[:, None, :],
+        ids,
+        frozen_layers=(0,),
+        null_draws=2,
+        n_boot=32,
+        boot_seed=77,
+        grid=GRID,
+        band=0.02,
+        full_tier_layers=(),
+    )
+    assert payload["per_layer"]["0"]["orth_tiers"] == {}
+    assert not any(k.startswith(tuple(ml.ORTH_TIER_NAMES)) for k in preds), sorted(preds)
