@@ -562,6 +562,42 @@ gates the smoke then "PASSed" — SLURM 5005). Record one verdict line (PASS —
 N/A). Full trigger grammar + FAIL templates + the worked #1336 shapes:
 `.claude/rules/code-reviewer-section-reference.md` § Step 0.71 detail — smoke blind-spot enumeration.
 
+### Step 0.72: Own-device-scoped GPU-state verdict gate (any diff type; host-GPU-state verdicts only)
+
+Trigger: the diff ADDS or EDITS code deriving a drain / teardown / free-memory
+/ idle / headroom VERDICT from host GPU state — `nvidia-smi` (any
+`--query-gpu` / `-L` parse), `pynvml` device handles, or
+`torch.cuda.mem_get_info` over device indices — in fan-out, dispatcher, reap,
+or teardown code (any path where sibling jobs can share one host). No such
+verdict → record `Step 0.72: N/A — diff derives no host-GPU-state verdict`.
+Check: the verdict aggregates ONLY the rows for the job's own ASSIGNED
+devices. Any of three resolutions satisfies: `CUDA_VISIBLE_DEVICES` when set;
+ELSE the SLURM allocation-env chain (`SLURM_JOB_GPUS` / `SLURM_STEP_GPUS` /
+`SLURM_GPUS_ON_NODE`, per `.claude/rules/gotchas.md` L240 — CVD is routinely
+UNSET on GPU-shared fellows nodes, so a CVD-only read is not the criterion);
+OR an explicitly threaded own-device-id parameter (the canonical in-repo
+shape: `issue2091_pod.py::_drain_wait_own_gpu(gpu_id, ...)`, commit
+`2cc130dbff`). Resolve the own-device id list, FILTER the queried rows to it,
+THEN aggregate. A whole-host aggregate — `max()` / `min()` / `any()` /
+`sum()` over every returned row, or a bare all-GPU query with no index filter
+— is a FAIL even when the failure message prints a per-GPU breakdown:
+`nvidia-smi` IGNORES `CUDA_VISIBLE_DEVICES` (`.claude/rules/gotchas.md`
+L240), so a sibling job's memory enters this job's verdict. Printing detail is
+not scoping. Waiver: `# HOST_WIDE_GPU_VERDICT_EXEMPT: <reason ≥ 20 chars>` on
+the line above the aggregation (legitimate whole-host cases: a host-health
+audit, a janitor sweep, a single-tenant provision probe). Unscoped verdict →
+verdict FAIL, a single Critical tagged `host-wide-gpu-verdict` (SUBSTANTIVE —
+never stripped; #2091 commit `2cc130dbff`: `reap_generation_engine` took
+`max()` of `memory.used` across all 4 GPUs, so 4 of 9 rung-jobs died on
+"vLLM teardown did not drain below 2048 MiB within 180s (per-GPU used MiB:
+[(0, 35579), (1, 19143), (2, 0), (3, 0)])" — the job's own GPUs 2/3 were at 0;
+~765–880 s lost per job plus a fix round; the FIX threads the unit's own
+`gpu_id` and filters to it — that shape PASSES). Record one verdict line
+(PASS — <N> host-GPU-state verdicts all own-device-scoped / FAIL naming
+`<file>:<L>` / N/A). Full trigger grammar + accepted scoping shapes + FAIL
+templates:
+`.claude/rules/code-reviewer-section-reference.md` § Step 0.72 detail — own-device-scoped GPU-state verdicts.
+
 ### Step 0.7: Pre-diff gates never short-circuit the diff
 
 Steps 0.5, 0.55, 0.6, 0.65, and 0.67 are pre-diff *contract* checks, not a
@@ -1312,7 +1348,7 @@ Red flags:
 # Code Review: [Task Title]
 
 **Verdict:** PASS / CONCERNS / FAIL
-**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 / 0.55 / 4.6-presence genuine absence — a 0.55 blocker body names `epm:smoke-architecture-check`; a 4.6 presence blocker body names `Gate-scope check`), `smoke-run-missing` (Step 0.6 genuine absence), `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`), `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract), `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract), `hollow-verification-gate` (Step 0.68 — a verify/equivalence gate asserts on a function the entrypoint does not dispatch; substantive, NOT mechanical-contract), `smoke-blind-spot-unenumerated` (Step 0.71 — a smoke-conditional branch substitutes an implementation or downgrades an assertion and the blind-spot enumeration does not name it; substantive, NOT mechanical-contract), `substantive` (any code / plan / test / security finding from Steps 1–7). `none` on PASS / CONCERNS. This line is the orchestrator's parse target for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
+**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 / 0.55 / 4.6-presence genuine absence — a 0.55 blocker body names `epm:smoke-architecture-check`; a 4.6 presence blocker body names `Gate-scope check`), `smoke-run-missing` (Step 0.6 genuine absence), `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`), `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract), `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract), `hollow-verification-gate` (Step 0.68 — a verify/equivalence gate asserts on a function the entrypoint does not dispatch; substantive, NOT mechanical-contract), `smoke-blind-spot-unenumerated` (Step 0.71 — a smoke-conditional branch substitutes an implementation or downgrades an assertion and the blind-spot enumeration does not name it; substantive, NOT mechanical-contract), `host-wide-gpu-verdict` (Step 0.72 — a host-wide GPU-state verdict in fan-out/teardown code; substantive, NOT mechanical-contract), `substantive` (any code / plan / test / security finding from Steps 1–7). `none` on PASS / CONCERNS. This line is the orchestrator's parse target for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
 **Tier:** leaf / trunk (Step 0 classification)
 **Diff size:** +X / -Y lines across Z files
 **Plan adherence:** COMPLETE / PARTIAL (N items incomplete) / DEVIATES (unplanned changes)

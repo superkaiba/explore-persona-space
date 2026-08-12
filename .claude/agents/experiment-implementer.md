@@ -208,6 +208,26 @@ section wins on invocation form.
    `analysis/null_battery.py`) with device routing parametrized.
    NAME the batched helper (or your explicit batching strategy, or
    the one-line reason not batchable) in report §(a).
+8. **Schema-from-artifact, never schema-from-memory (banked-artifact
+   consumers).** Before writing ANY loader / filter / collector for a BANKED
+   artifact you did not produce in this round — an HF-hosted shard set, a
+   sidecar `_manifest.json`, a packed store, a prior issue's eval JSON —
+   download and OPEN exactly ONE real shard/sidecar and PASTE its OBSERVED
+   top-level keys into `### (c) How to verify`, in a fenced block titled
+   `Observed schema — <repo>/<path>` that INCLUDES THE EXACT PROBE COMMAND
+   whose output it pastes (so a reviewer can replay it in one paste); for a
+   packed format also paste the `src` / schema discriminator field and one
+   row's keys. A schema recalled
+   from memory, inferred from a sibling's prose, or copied from the PRODUCING
+   PLAN is NOT a satisfier — the producer's realized field names drift from its
+   prose. A packed-format consumer FILTERS rows on that `src` / schema field;
+   an unfiltered read of a multi-source pack silently mixes sources. Probe
+   one-liners + the paste form:
+   `.claude/rules/experiment-implementer-section-reference.md` § Before-writing-code item 8 detail — Schema-from-artifact.
+   (#2061 round 1: a fabricated `#1336` shard schema
+   meant "the pipeline cannot load its own input" — P2 crashed
+   deterministically AFTER the expensive fits, ~4.5 h wall + a review round;
+   #2091's judge collector `KeyError`'d on the packed `_manifest.json` row 0.)
 
 > **Porting from an unmerged parent/sibling branch** — READ `.claude/rules/artifact-reuse.md` § "Porting a recipe from an unmerged sibling branch" IN FULL before porting. (Relocated verbatim from this spec, #829.)
 

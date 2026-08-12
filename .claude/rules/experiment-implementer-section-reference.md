@@ -298,6 +298,60 @@ recipes, verbatim templates, and incident grounding.
      ids. Persisted memory:
      `feedback_reused_fit_core_registry_lookup_seam.md`.
 
+## Before-writing-code item 8 detail — Schema-from-artifact
+
+Probe one-liners for fetching + key-dumping exactly ONE real shard/sidecar
+of a banked artifact BEFORE writing its loader (#2061 round 1; #2091's
+packed `_manifest.json` row-0 `KeyError`). Run the probe, paste the command
+AND its output verbatim.
+
+**Fetch one file** (never the whole prefix — the data repo is ~1M files):
+
+```bash
+# Enumerate the prefix first (scoped — never bare list_repo_files):
+uv run python -c "from huggingface_hub import list_repo_tree; \
+  [print(f.path) for f in list_repo_tree('superkaiba1/explore-persona-space-data', \
+  path_in_repo='<prefix>', repo_type='dataset')]"
+# Then fetch exactly one shard/sidecar:
+uv run python -c "from huggingface_hub import hf_hub_download; \
+  print(hf_hub_download('superkaiba1/explore-persona-space-data', '<path>', \
+  repo_type='dataset', local_dir='/tmp/schema_probe'))"
+```
+
+**Key-dump forms by format:**
+
+- JSON: `jq 'keys' <file>` (a packed pack: `jq '.[0] | keys' <file>` for
+  row-0 keys; `jq '[.[].src] | unique' <file>` for the `src` discriminator
+  values).
+- JSONL: `head -1 <file> | jq 'keys'`.
+- `.npz`: `uv run python -c "import numpy as np; print(sorted(np.load('<file>').files))"`.
+- safetensors: `uv run python -c "from safetensors import safe_open; \
+  f = safe_open('<file>', framework='pt'); print(sorted(f.keys()))"`.
+- `.pt` multi-field bundle: `uv run python -c "import torch; \
+  print(sorted(torch.load('<file>', map_location='cpu', mmap=True).keys()))"`.
+
+**The paste form** — a fenced block under `### (c) How to verify` titled
+`Observed schema — <repo>/<path>`, containing (1) the EXACT probe command
+run, (2) its verbatim output (the observed top-level keys), and (3) for a
+packed format, the `src` / schema discriminator field name + values and one
+row's keys. A reviewer must be able to replay it in one paste.
+
+**Packed-format `src`-filter requirement.** A consumer of a multi-source
+pack FILTERS rows on the pack's `src` / schema discriminator field before
+parsing; an unfiltered read silently mixes sources — #2091's judge collector
+assumed every packed row was a rollout and `KeyError`'d on the packed
+`_manifest.json` row 0 (a manifest row, not a rollout row).
+
+**Non-satisfiers** (none of these is an observed schema):
+
+- the PRODUCING PLAN's prose (the producer's realized field names drift from
+  its plan);
+- a sibling issue's prose / marker describing the artifact;
+- memory of "how these shards usually look";
+- a schema inferred from the producing script's WRITER code without opening
+  the realized output (the pinned upload can predate a writer edit — the
+  #1073 class in `.claude/rules/artifact-reuse.md` check (c)).
+
 ## After-implementation item 3 detail — end-to-end smoke run per phase
 
 3. **End-to-end smoke run PER PHASE.** For EACH distinct entrypoint the

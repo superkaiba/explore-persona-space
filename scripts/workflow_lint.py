@@ -12212,6 +12212,204 @@ def check_smoke_blind_spot_review_lens(  # noqa: C901 -- flat per-surface token 
     return errors
 
 
+def check_cvd_scoped_gpu_verdict_lens(  # noqa: C901 -- flat per-surface token ladder (five pinned surfaces, #2120), mirroring check_smoke_blind_spot_review_lens
+    *, repo_root: Path | None = None
+) -> list[str]:
+    """FAIL if the own-device-scoped GPU-state verdict lens or the
+    schema-from-artifact duty (#2120) is absent from ANY of its five
+    surfaces.
+
+    Two 2026-08-05/06 incidents each recurred a documented class no reviewer
+    or implementer checklist caught: (1) #2091's ``reap_generation_engine``
+    took ``max()`` of ``memory.used`` across ALL 4 host GPUs (``nvidia-smi``
+    ignores ``CUDA_VISIBLE_DEVICES``), so 4 of 9 rung-jobs whose own GPUs
+    read 0 MiB died on a drain timeout (~765-880 s lost per job + a fix
+    round; the fix, commit ``2cc130dbff``, threads the unit's own ``gpu_id``
+    and filters the queried rows to it); (2) #2061's round-1 implementation
+    fabricated the #1336 shard schema from memory, so "the pipeline cannot
+    load its own input" (~4.5 h wall + a review round; same-day sibling:
+    #2091's judge collector ``KeyError``'d on the packed ``_manifest.json``
+    row 0). The fix (#2120) adds code-review Step 0.72 (own-device-scoped
+    GPU-state verdicts; own-device resolution is an OR over CVD when set /
+    the SLURM allocation-env chain / an explicitly threaded own-device-id
+    parameter - NEVER a CVD-only test, which the #2091 fix itself would
+    fail) and experiment-implementer Before-writing-code item 8
+    (schema-from-artifact). This check pins both across their surfaces,
+    region-anchored, so a future refactor cannot silently strip one (the
+    #606 copy-list-omission class):
+
+    (1) code-reviewer.md - a ``### Step 0.72`` section whose body (up to the
+        next ``### `` heading) names the ``host-wide-gpu-verdict`` tag,
+        ``CUDA_VISIBLE_DEVICES``, AND the ``HOST_WIDE_GPU_VERDICT_EXEMPT``
+        waiver token, PLUS the tag on the ``**Blocker tags:**`` line;
+    (2) codex-code-reviewer.md - the Step 0.72 copy-list bullet (heading
+        token + tag inside the bullet), ``0.72`` on the ``{{INLINED RUBRIC``
+        placeholder line, AND the tag on the ``**Blocker tags:**`` line;
+    (3) code-reviewer-section-reference.md - a ``Step 0.72 detail`` span
+        (accepted scoping shapes + FAIL templates + the #2091 BEFORE/AFTER
+        worked shape);
+    (4) experiment-implementer.md - the ``Schema-from-artifact`` item whose
+        body (up to the next ``### `` heading) names
+        ``### (c) How to verify`` (the observed-keys paste target);
+    (5) experiment-implementer-section-reference.md - a heading naming
+        ``Schema-from-artifact`` (probe one-liners + paste form).
+
+    ``repo_root`` is a unit-test override hook; production callers pass None
+    (canonical repo root; behavioral subprocess tests may point the check at
+    a tmp corpus via ``EPS_WORKFLOW_LINT_REPO_ROOT``). Bundled into the
+    no-flags default run.
+    """
+    if repo_root is not None:
+        root = repo_root
+    else:
+        env_root = os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    tag = "host-wide-gpu-verdict"
+    waiver = "HOST_WIDE_GPU_VERDICT_EXEMPT"
+    errors: list[str] = []
+
+    # (1) code-reviewer.md: Step 0.72 section body + Blocker-tags line.
+    reviewer = root / ".claude" / "agents" / "code-reviewer.md"
+    if not reviewer.is_file():
+        errors.append(
+            f"{reviewer}: missing — the #2120 own-device-scoped GPU-state "
+            f"verdict gate (Step 0.72) must live in code-reviewer.md."
+        )
+    else:
+        text = reviewer.read_text(encoding="utf-8")
+        idx = text.find("### Step 0.72")
+        if idx == -1:
+            errors.append(
+                f"{reviewer}: missing the '### Step 0.72' section (#2120) — "
+                f"the own-device-scoped GPU-state verdict gate must stay in "
+                f"the Claude reviewer so a host-wide GPU-state verdict in "
+                f"fan-out/teardown code FAILs at code-review (incident "
+                f"#2091: a whole-host max() killed 4 of 9 rung-jobs)."
+            )
+        else:
+            nxt = text.find("\n### ", idx + 1)
+            body = text[idx:nxt] if nxt != -1 else text[idx:]
+            for token in (tag, "CUDA_VISIBLE_DEVICES", waiver):
+                if token not in body:
+                    errors.append(
+                        f"{reviewer}: the '### Step 0.72' section body no "
+                        f"longer names {token!r} (#2120) — the gate must key "
+                        f"on that exact token."
+                    )
+        if not any(ln.startswith("**Blocker tags:**") and tag in ln for ln in text.splitlines()):
+            errors.append(
+                f"{reviewer}: {tag!r} is absent from the '**Blocker tags:**' "
+                f"line (#2120) — the orchestrator's Step 5c-bis strip parse "
+                f"would not recognize the Step 0.72 blocker as substantive."
+            )
+
+    # (2) codex-code-reviewer.md: copy-list bullet + rubric slot + tags line.
+    codex = root / ".claude" / "agents" / "codex-code-reviewer.md"
+    if not codex.is_file():
+        errors.append(
+            f"{codex}: missing — the #2120 own-device-scoped GPU-state "
+            f"verdict copy-list bullet must live in codex-code-reviewer.md."
+        )
+    else:
+        text = codex.read_text(encoding="utf-8")
+        heading = '"Step 0.72: Own-device-scoped GPU-state verdict gate"'
+        if heading not in text:
+            errors.append(
+                f"{codex}: missing the Step 0.72 copy-list token {heading!r} "
+                f"(#2120) — the Codex twin must copy the same lens or the "
+                f"two reviewers drift (the #606 copy-list-omission class)."
+            )
+        else:
+            idx = text.find(heading)
+            nxt = text.find('\n- "', idx + 1)
+            bullet = text[idx:nxt] if nxt != -1 else text[idx:]
+            if tag not in bullet:
+                errors.append(
+                    f"{codex}: the Step 0.72 copy-list bullet (heading token "
+                    f"to the next line-start '- \"' bullet) no longer names "
+                    f"{tag!r} (#2120) — a tag mention elsewhere in the file "
+                    f"does not keep the copied lens itself keyed on it."
+                )
+        rubric_lines = [ln for ln in text.splitlines() if "{{INLINED RUBRIC" in ln]
+        if not any("0.72" in ln for ln in rubric_lines):
+            errors.append(
+                f"{codex}: '0.72' is absent from the '{{{{INLINED RUBRIC' "
+                f"placeholder line (#2120) — the composed Codex prompt would "
+                f"omit the Step 0.72 lens."
+            )
+        if not any(ln.startswith("**Blocker tags:**") and tag in ln for ln in text.splitlines()):
+            errors.append(
+                f"{codex}: {tag!r} is absent from the '**Blocker tags:**' "
+                f"line (#2120) — the Codex verdict's tag vocabulary would "
+                f"not carry the Step 0.72 blocker."
+            )
+
+    # (3) code-reviewer-section-reference.md: the Step 0.72 detail span.
+    crsr = root / ".claude" / "rules" / "code-reviewer-section-reference.md"
+    if not crsr.is_file():
+        errors.append(
+            f"{crsr}: missing — the #2120 Step 0.72 detail span (accepted "
+            f"scoping shapes + FAIL templates) must live in "
+            f"code-reviewer-section-reference.md."
+        )
+    else:
+        text = crsr.read_text(encoding="utf-8")
+        if "Step 0.72 detail" not in text:
+            errors.append(
+                f"{crsr}: missing the 'Step 0.72 detail' span (#2120) — the "
+                f"accepted scoping shapes (incl. the threaded-gpu_id #2091 "
+                f"fix shape that MUST pass) + FAIL templates would be "
+                f"silently stripped."
+            )
+
+    # (4) experiment-implementer.md: the Schema-from-artifact item.
+    impl = root / ".claude" / "agents" / "experiment-implementer.md"
+    if not impl.is_file():
+        errors.append(
+            f"{impl}: missing — the #2120 Schema-from-artifact item must "
+            f"live in experiment-implementer.md § Before writing code."
+        )
+    else:
+        text = impl.read_text(encoding="utf-8")
+        idx = text.find("Schema-from-artifact")
+        if idx == -1:
+            errors.append(
+                f"{impl}: missing the 'Schema-from-artifact' item (#2120) — "
+                f"the banked-artifact loader duty (open ONE real shard, "
+                f"paste its observed keys) would be silently stripped "
+                f"(incident #2061 round 1: a fabricated shard schema meant "
+                f"the pipeline could not load its own input)."
+            )
+        else:
+            nxt = text.find("\n### ", idx + 1)
+            body = text[idx:nxt] if nxt != -1 else text[idx:]
+            if "### (c) How to verify" not in body:
+                errors.append(
+                    f"{impl}: the 'Schema-from-artifact' item no longer "
+                    f"names '### (c) How to verify' (#2120) — the "
+                    f"observed-keys paste target must stay pinned inside "
+                    f"the item."
+                )
+
+    # (5) experiment-implementer-section-reference.md: the probe/paste span.
+    eisr = root / ".claude" / "rules" / "experiment-implementer-section-reference.md"
+    if not eisr.is_file():
+        errors.append(
+            f"{eisr}: missing — the #2120 Schema-from-artifact detail span "
+            f"(probe one-liners + paste form) must live in "
+            f"experiment-implementer-section-reference.md."
+        )
+    else:
+        text = eisr.read_text(encoding="utf-8")
+        if not any(ln.startswith("#") and "Schema-from-artifact" in ln for ln in text.splitlines()):
+            errors.append(
+                f"{eisr}: no heading names 'Schema-from-artifact' (#2120) — "
+                f"the probe one-liners + paste form would be silently "
+                f"stripped."
+            )
+    return errors
+
+
 def check_smoke_blind_spot_enumeration(  # noqa: C901 -- best-effort AST scan: per-script parse ladder + two hit rules + plan cross-check (#2165); extracting a branch would just relocate it
     script_paths: list[Path],
     plan_path: Path | None = None,
@@ -13855,7 +14053,10 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # scoped diff-body reads, file-not-marker verdict routing,
     # CONTRACT-BEARING gating of Steps 0.5/0.55/0.6/0.8/0.9; +825 B on the
     # 102,771 B pre-edit tree; cap = measured + ~1.2 KB. Prior: 102_800.)
-    "code-reviewer.md": 104_800,
+    # measured 106,285 B post-#2120 (Step 0.72 own-device-scoped GPU-state
+    # verdict gate + Blocker-tags host-wide-gpu-verdict entry; cap =
+    # measured + ~1.0 KB. Prior: 104_800.)
+    "code-reviewer.md": 107_300,
     # measured 74,082 B post-#1447 (family-enumeration sync: the two
     # byte/bit verdict rows widened to the -exact / bitwise / X-for-X
     # tail — plan-mandated growth; cap = measured + ~1.1 KB. Prior:
@@ -13892,7 +14093,10 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # measured 48,212 B post-#2165 (Step 0.71 copy-list bullet +
     # inlined-rubric 0.71 slot + Blocker-tags smoke-blind-spot-unenumerated
     # entry; cap = measured + ~1.0 KB. Prior: 47_900.)
-    "codex-code-reviewer.md": 49_200,
+    # measured 49,481 B post-#2120 (Step 0.72 copy-list bullet +
+    # inlined-rubric 0.72 slot + Blocker-tags host-wide-gpu-verdict entry;
+    # cap = measured + ~1.0 KB. Prior: 49_200.)
+    "codex-code-reviewer.md": 50_500,
     # measured 84,278 B post-#2002 (Resume-matrix + real production
     # out-root unit smoke-contract requirements + matching marker
     # `notes:` sub-blocks; incident driver: #1947 P0/P4/P5 + #1315 r6 +
@@ -13918,7 +14122,11 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # relocated to .claude/rules/experiment-implementer-section-reference.md
     # (#1159 mechanism); pinned anchors/tokens stay in-spec. Cap = measured
     # + ~1 KB.
-    "experiment-implementer.md": 65_500,
+    # measured 66,804 B post-#2120 (Before-writing-code item 8
+    # Schema-from-artifact: banked-artifact loader observed-keys paste duty
+    # + packed-format src-filter clause; cap = measured + ~1.0 KB.
+    # Prior: 65_500.)
+    "experiment-implementer.md": 67_800,
     # measured 79,611 B post-#1720 (§ Local runs pre-emptive NOT-RUN escape
     # for Step 9c-selected slow tests — mirrors implementer.md L174; ~500 B
     # growth; cap = measured + ~0.9 KB. Prior: 79_500 —
@@ -15828,6 +16036,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_smoke_architecture_review_lens": lambda wf: check_smoke_architecture_review_lens(),
     "check_authorized_stub_wiring": lambda wf: check_authorized_stub_wiring(),
     "check_smoke_blind_spot_review_lens": lambda wf: check_smoke_blind_spot_review_lens(),
+    "check_cvd_scoped_gpu_verdict_lens": lambda wf: check_cvd_scoped_gpu_verdict_lens(),
     "check_stale_label_disposition": lambda wf: check_stale_label_disposition_clause(),
     "check_smoke_output_hygiene": lambda wf: check_smoke_output_hygiene(),
     "check_crash_fix_relaunch_contract": lambda wf: check_crash_fix_relaunch_contract(),
@@ -15932,6 +16141,7 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_hollow_verification_gate_review_lens": CheckScope("global", (".claude/agents/",)),
     "check_smoke_architecture_review_lens": CheckScope("global", (".claude/",)),
     "check_smoke_blind_spot_review_lens": CheckScope("global", (".claude/",)),
+    "check_cvd_scoped_gpu_verdict_lens": CheckScope("global", (".claude/",)),
     "check_stale_label_disposition": CheckScope("global", (".claude/skills/",)),
     "check_smoke_output_hygiene": CheckScope("global", (".claude/",)),
     "check_crash_fix_relaunch_contract": CheckScope("global", (".claude/",)),
@@ -16647,6 +16857,22 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "structurally bypassed). Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-cvd-scoped-gpu-verdict-lens",
+        action="store_true",
+        help="FAIL if the #2120 own-device-scoped GPU-state verdict lens or "
+        "the schema-from-artifact duty is absent from any of its five "
+        "surfaces: the Step 0.72 section + Blocker-tags entry in "
+        "code-reviewer.md, the Step 0.72 copy-list bullet + "
+        "rubric-placeholder entry + Blocker-tags entry in "
+        "codex-code-reviewer.md, the code-reviewer-section-reference.md "
+        "Step 0.72 detail span, the experiment-implementer.md "
+        "Schema-from-artifact item, and the "
+        "experiment-implementer-section-reference.md Schema-from-artifact "
+        "heading (incidents #2091: a host-wide max() drain verdict killed "
+        "4 of 9 rung-jobs; #2061: a fabricated shard schema cost a full "
+        "implementation round). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-smoke-blind-spots",
         action="store_true",
         help="WARN-only best-effort AST scan (#2165): flag smoke-conditional "
@@ -17217,6 +17443,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_smoke_architecture_review_lens
         or args.check_authorized_stub_wiring
         or args.check_smoke_blind_spot_review_lens
+        or args.check_cvd_scoped_gpu_verdict_lens
         or args.check_smoke_blind_spots
         or args.check_stale_label_disposition
         or args.check_smoke_output_hygiene
@@ -17374,6 +17601,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_authorized_stub_wiring())
     if args.check_smoke_blind_spot_review_lens or no_flags:
         errors.extend(check_smoke_blind_spot_review_lens())
+    if args.check_cvd_scoped_gpu_verdict_lens or no_flags:
+        errors.extend(check_cvd_scoped_gpu_verdict_lens())
     if args.check_smoke_blind_spots:
         if not args.smoke_blind_spot_scripts:
             parser.error("--check-smoke-blind-spots requires --smoke-blind-spot-scripts")
