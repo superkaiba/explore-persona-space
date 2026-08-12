@@ -149,6 +149,39 @@ PC_YLIM = (-0.62, 0.72)
 # strip tightens onto identity+bias, so the line is readable instead of a flat
 # trace squeezed against the top of a 5-unit axis.
 PC_YLIM_IDENT = (-3.70, -0.80)
+
+# --- data-TYPE grouping for the per-dataset figure (user call 2026-08-12) ---
+# ONE COLUMN PER TYPE. The old layout filled a 2x4 grid left-to-right, so a
+# panel's neighbours meant nothing; now horizontal position IS the data type.
+# Column order tracks the ladder: generic chat owns no stage, sft11k/uf11k are
+# the alignment-training corpora (SFT then DPO), and if11k + the three math
+# corpora are the two RLVR verifiable-reward families.
+TYPE_COLUMNS: dict[str, tuple[tuple[str, str], ...]] = {
+    "Generic chat": (("chat", "lmsys23k"), ("naturalistic", "lmsys23k")),
+    "Alignment training": (("chat", "sft11k"), ("chat", "uf11k")),
+    "Instruction-following": (("chat", "if11k"),),
+    "Math": (("chat", "math7500"), ("chat", "gsm8k_train_full"), ("chat", "gsm8k_test1319")),
+}
+TYPE_ORDER = tuple(TYPE_COLUMNS)
+# Per-panel subtype: what KIND of text this corpus is, plus the stage that
+# trained on it. A panel read on its own still says what it is, without the
+# reader having to trace back up to the column header.
+CORPUS_SUBTYPE = {
+    ("chat", "lmsys23k"): "real-user chat · chat template",
+    ("naturalistic", "lmsys23k"): "real-user chat · template stripped",
+    ("chat", "sft11k"): "SFT demonstrations · SFT's own data",
+    ("chat", "uf11k"): "preference prompts · DPO's own data",
+    ("chat", "if11k"): "instruction constraints · RLVR's own data",
+    ("chat", "math7500"): "competition math · RLVR's own data",
+    ("chat", "gsm8k_train_full"): "grade-school math · RLVR's own data",
+    ("chat", "gsm8k_test1319"): "grade-school math · held-out companion",
+}
+# Fail loud if a corpus is ever added/renamed without updating the grouping —
+# otherwise it would silently vanish from the per-dataset figure.
+assert set(CORPUS_SUBTYPE) == set(SURFACES), "CORPUS_SUBTYPE must cover every surface"
+assert sorted(s for v in TYPE_COLUMNS.values() for s in v) == sorted(SURFACES), (
+    "TYPE_COLUMNS must partition SURFACES exactly"
+)
 PC_MAIN_TIERS = (7, 8)
 
 # The module computes this at import (`load_cross()` returns a (values, provenance)
@@ -770,33 +803,69 @@ def fig_percorpus(D: dict) -> Path:
     # Each corpus gets a BROKEN y-axis: results band on the main panel, the
     # identity+bias line on a short lower panel (spacer row 2 separates the
     # two blocks so a break row never crowds the next block's titles).
-    fig = plt.figure(figsize=(16.0, 10.4))
+    # ONE COLUMN PER DATA TYPE (user call 2026-08-12), replacing the old
+    # fill-left-to-right 2x4 grid where a corpus's neighbours meant nothing.
+    # Columns are ragged — a type with fewer corpora leaves empty cells, which is
+    # the honest rendering of "one type per column" when the types are unequal.
+    # Column order tracks the ladder: generic chat (no owning stage), the
+    # alignment-training corpora (SFT then DPO), then the two RLVR
+    # verifiable-reward families.
+    n_rows = max(len(v) for v in TYPE_COLUMNS.values())
+    n_cols = len(TYPE_ORDER)
+    fig = plt.figure(figsize=(16.0, 14.6))
     fig.set_layout_engine("none")  # see fig_aggregate: the style's engine wins otherwise
     # Geometry goes ON the GridSpec: fig.subplots_adjust does not reach a
     # manually created gridspec, so the panels would keep their default box.
+    # Each plot-row is a (main, break) pair; a spacer row separates plot-rows so a
+    # break row never crowds the next row's titles.
+    height_ratios: list[float] = []
+    for r in range(n_rows):
+        height_ratios += [3.5, 0.9] + ([0.42] if r < n_rows - 1 else [])
     gs = fig.add_gridspec(
-        5,
-        4,
-        height_ratios=[3.5, 0.9, 0.42, 3.5, 0.9],
+        len(height_ratios),
+        n_cols,
+        height_ratios=height_ratios,
         hspace=0.11,
         wspace=0.13,
         left=0.045,
         right=0.995,
-        top=0.895,
-        bottom=0.115,
+        top=0.915,
+        bottom=0.055,
     )
-    mains: list = []
-    breaks: list = []
-    for k in range(len(SURFACES)):
-        r_main, c = (0, k) if k < 4 else (3, k - 4)
-        m = fig.add_subplot(
-            gs[r_main, c],
-            sharex=mains[0] if mains else None,
-            sharey=mains[0] if mains else None,
+    # surface -> (main ax, break ax); built column-major so ragged columns work.
+    axes_for: dict[tuple[str, str], tuple] = {}
+    col_of: dict[tuple[str, str], int] = {}
+    last_in_col: dict[int, tuple[str, str]] = {}
+    first_main = None
+    first_break = None
+    for c, tname in enumerate(TYPE_ORDER):
+        for r, surf in enumerate(TYPE_COLUMNS[tname]):
+            r_main = r * 3  # main, break, spacer
+            m = fig.add_subplot(gs[r_main, c], sharex=first_main, sharey=first_main)
+            b = fig.add_subplot(gs[r_main + 1, c], sharex=m, sharey=first_break)
+            first_main = first_main or m
+            first_break = first_break or b
+            axes_for[surf] = (m, b)
+            col_of[surf] = c
+            last_in_col[c] = surf
+    # SURFACES order is preserved for every data read; only the placement changes.
+    mains = [axes_for[s][0] for s in SURFACES]
+    breaks = [axes_for[s][1] for s in SURFACES]
+    # Column headers sit above each column's first panel, in axes-free figure
+    # space, so a type is readable without decoding the panel titles.
+    for c, tname in enumerate(TYPE_ORDER):
+        top_ax = axes_for[TYPE_COLUMNS[tname][0]][0]
+        pos = top_ax.get_position()
+        fig.text(
+            pos.x0 + pos.width / 2,
+            pos.y1 + 0.028,
+            tname.upper(),
+            ha="center",
+            va="bottom",
+            fontsize=11.5,
+            color="#252525",
+            fontweight="bold",
         )
-        b = fig.add_subplot(gs[r_main + 1, c], sharex=m, sharey=breaks[0] if breaks else None)
-        mains.append(m)
-        breaks.append(b)
 
     # FILLED = measured on this pair's own rows; HOLLOW = borrowed from the
     # target's round-3 siblings at this same (fmt, corpus). Same encoding as the
@@ -872,7 +941,20 @@ def fig_percorpus(D: dict) -> Path:
         )
 
         title = f"{corpus} ({fmt})" + ("  — DEGENERATE n_train<d" if deg else "")
-        ax.set_title(title, fontsize=9.5, loc="left", color="#8c2d04" if deg else "black")
+        # Subtype STACKED under the corpus name, not right-aligned on the same
+        # line: a long corpus name (gsm8k_train_full, and gsm8k_test1319 with its
+        # DEGENERATE tag) overruns the panel width and the two collide.
+        ax.set_title(title, fontsize=9.5, loc="left", pad=14, color="#8c2d04" if deg else "black")
+        ax.text(
+            0.0,
+            1.012,
+            CORPUS_SUBTYPE[(fmt, corpus)],
+            transform=ax.transAxes,
+            ha="left",
+            va="bottom",
+            fontsize=8,
+            color="#707070",
+        )
         for a in (ax, axb):
             if deg:
                 a.set_facecolor("#fdf2e9")
@@ -880,23 +962,42 @@ def fig_percorpus(D: dict) -> Path:
             _xticks(a)
         axb.tick_params(axis="x", labelrotation=90, labelsize=7)
         _break_marks(ax, axb)
-        if k < 4:  # top block: the bottom block carries the shared x labels
+        # Each COLUMN labels its own LAST panel: the columns are ragged, so a
+        # single shared bottom row would leave the short columns unlabelled.
+        if (fmt, corpus) != last_in_col[col_of[(fmt, corpus)]]:
             axb.tick_params(axis="x", labelbottom=False)
 
     mains[0].set_ylim(*PC_YLIM)  # sharey => applies to all 8 main panels
     breaks[0].set_ylim(*PC_YLIM_IDENT)
     breaks[0].set_yticks([-1.0, -2.0, -3.0])
-    for k in (0, 4):
-        mains[k].set_ylabel("held-out R²", fontsize=10)
+    # y label on the leftmost panel of every plot-row, not on a fixed index —
+    # under the ragged type columns, index 0/4 no longer means "left edge".
+    for surf in TYPE_COLUMNS[TYPE_ORDER[0]]:
+        axes_for[surf][0].set_ylabel("held-out R²", fontsize=10)
+    # The legend lives in the empty cells beneath the SHORT columns: the top
+    # strip now belongs to the column headers, and the ragged grid leaves real
+    # estate there rather than wasting it.
+    # Vertically CENTERED in the empty block, not pinned to its top: the column
+    # above ends with x tick labels, which a top-anchored legend lands on top of.
+    _lc = TYPE_ORDER.index("Instruction-following")
+    _top = gs[3, _lc].get_position(fig)
+    _bot = gs[-1, _lc].get_position(fig)
     h, lab = mains[0].get_legend_handles_labels()
     fig.legend(
-        h, lab, loc="upper center", bbox_to_anchor=(0.5, 0.972), ncol=4, fontsize=8.5, frameon=False
+        h,
+        lab,
+        loc="center left",
+        bbox_to_anchor=(_top.x0, (_top.y1 + _bot.y0) / 2),
+        ncol=1,
+        fontsize=9.5,
+        frameon=False,
     )
     fig.suptitle(
-        "Per eval dataset: every forward stage pair, at each reparameterization tier",
-        fontsize=12,
+        "Per eval dataset, grouped by data type: every forward stage pair, at each "
+        "reparameterization tier",
+        fontsize=12.5,
         x=0.01,
-        y=0.995,
+        y=0.998,
         ha="left",
         va="top",
     )
