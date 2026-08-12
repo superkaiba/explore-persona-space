@@ -8804,6 +8804,8 @@ def test_session_reconcile_state_backcompat_missing_stop_fields(isolated_registr
 # activity clock (_WATCHER_NOTE_SENTINELS). Three additive protections:
 # session-level activity signals (registration spawned_at + transcript mtime)
 # and an explicit respawn-marker exemption ("respawn-skip").
+# (#2117 narrowed the transcript term to row CONTENT — see the work-probe
+# tests above; the mtime read survives as the arm-(iv) fallback.)
 
 
 def _reconcile_ev(kind, ts, note=""):
@@ -8976,14 +8978,16 @@ def test_session_idle_signals_stale_registration_still_idle(isolated_registry, m
 
 
 def test_session_idle_signals_fresh_transcript_not_idle(isolated_registry, monkeypatch):
-    # A fresh transcript mtime for a mapped sid flips idleness; an
+    # A fresh transcript WORK age for a mapped sid flips idleness; an
     # unresolvable transcript contributes nothing (falls back to today's
     # behavior — fail toward the other signals, here none -> idle).
+    # (#2117 migration: the call site now routes through the
+    # content-classifying _transcript_work_idle_age_s by default.)
     import autonomous_session_watch as asw
 
     _patch_session_reconcile_io(monkeypatch, status="completed")
     now = 1_000_000.0
-    monkeypatch.setattr(asw, "_transcript_idle_age_s", lambda pid, now: (60.0, None))
+    monkeypatch.setattr(asw, "_transcript_work_idle_age_s", lambda pid, now: (60.0, None))
     idle, gap_desc, _events = asw._session_idle_signals(
         42, now, sids=["sid-a"], pids_by_sid={"sid-a": 1234}
     )
@@ -8991,7 +8995,7 @@ def test_session_idle_signals_fresh_transcript_not_idle(isolated_registry, monke
     assert gap_desc == "0.0h"
 
     monkeypatch.setattr(
-        asw, "_transcript_idle_age_s", lambda pid, now: (None, "transcript unresolvable")
+        asw, "_transcript_work_idle_age_s", lambda pid, now: (None, "transcript unresolvable")
     )
     idle, gap_desc, _events = asw._session_idle_signals(
         42, now, sids=["sid-a"], pids_by_sid={"sid-a": 1234}
@@ -9021,7 +9025,7 @@ def test_session_reconcile_pass_fresh_transcript_threaded_no_stop(isolated_regis
 
     monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
     stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
-    monkeypatch.setattr(asw, "_transcript_idle_age_s", lambda pid, now: (60.0, None))
+    monkeypatch.setattr(asw, "_transcript_work_idle_age_s", lambda pid, now: (60.0, None))
     for _ in range(3):
         asw.session_reconcile_pass(
             False,
@@ -9047,7 +9051,7 @@ def test_session_reconcile_old_idle_session_with_stale_signals_still_stopped(
     monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
     stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
     monkeypatch.setattr(
-        asw, "_transcript_idle_age_s", lambda pid, now: (None, "transcript unresolvable")
+        asw, "_transcript_work_idle_age_s", lambda pid, now: (None, "transcript unresolvable")
     )
     now = 1_000_000.0
     (isolated_registry / "issue-42.json").write_text(
@@ -9064,6 +9068,427 @@ def test_session_reconcile_old_idle_session_with_stale_signals_still_stopped(
         )
     assert stops == ["sid-a"]
     assert posts == [(42, "session-reconcile-stop")]
+
+
+# ── #2117: session-reconcile transcript WORK probe (churn-only narrowing) ────
+#
+# The mtime probe read an error-storming session as live forever (every
+# failed turn refreshes mtime), so the >=2-miss counter never accumulated on
+# a DONE task (#2004: ~4h of token burn on already-completed #2004). The
+# work probe classifies row CONTENT via the #1127 wake-turn machinery.
+# Fixture rows are sanitized structural rows only (the #1104 refusal-safety
+# contract); prompt evidence uses DEQUEUE rows, never bare slash-text user
+# rows — a bare "/issue ..." string row would classify as HUMAN under
+# tick_triage.is_human_transcript_row (the real cron-injected shape is
+# <command-message>-wrapped and excluded).
+
+
+def _t2117_failed_turn(ts=None):
+    """One completed FAILED wake-turn: dequeue delivery, a mid-turn heartbeat
+    assistant row (must NOT rescue the turn — outcome keys on the LAST
+    response row), and a final api-error row (timestamped when ``ts``)."""
+    api_error = {
+        "type": "assistant",
+        "isApiErrorMessage": True,
+        "message": {"role": "assistant", "content": [{"type": "text", "text": "sanitized"}]},
+    }
+    if ts is not None:
+        api_error["timestamp"] = _iso_845(ts)
+    return [
+        {"type": "queue-operation", "operation": "dequeue"},
+        {
+            "type": "assistant",
+            "message": {"role": "assistant", "content": [{"type": "text", "text": "sanitized"}]},
+        },
+        api_error,
+    ]
+
+
+def _t2117_ok_turn(ts=None):
+    """One completed OK wake-turn: dequeue delivery + assistant response
+    (timestamped when ``ts``; a ts-less ok turn pins the arm-(iv)
+    unparseable-newest-timestamp fallback)."""
+    assistant = {
+        "type": "assistant",
+        "message": {"role": "assistant", "content": [{"type": "text", "text": "done"}]},
+    }
+    if ts is not None:
+        assistant["timestamp"] = _iso_845(ts)
+    return [{"type": "queue-operation", "operation": "dequeue"}, assistant]
+
+
+def _t2117_human_row(ts=None, text="wait, let me look at this first"):
+    """A genuine typed-text human row (tick_triage.is_human_transcript_row
+    reads it True; timestamped when ``ts``)."""
+    row = {"type": "user", "message": {"role": "user", "content": text}}
+    if ts is not None:
+        row["timestamp"] = _iso_845(ts)
+    return row
+
+
+def test_transcript_work_probe_churn_only_tail(monkeypatch):
+    # Arm (iii): >=1 completed turn, ALL failed, no human row ->
+    # (None, "churn-only"); the mtime fallback must NOT be consulted (a
+    # fresh mtime is the very signal the narrowing exists to ignore).
+    import autonomous_session_watch as asw
+
+    tail = [r for _ in range(3) for r in _t2117_failed_turn()]
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, max_bytes=0: list(tail))
+
+    def _boom(pid, now):
+        raise AssertionError("mtime fallback must not run on a churn-only tail")
+
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", _boom)
+    age, reason = asw._transcript_work_idle_age_s(4242, 1_000_000.0)
+    assert age is None and reason == "churn-only"
+
+
+def test_transcript_work_probe_unresolvable_and_256kb_width(monkeypatch):
+    # Arm (i): unresolvable tail -> (None, reason), no mtime fallback —
+    # unchanged from today (contributes nothing to ages). Also pins the
+    # criterion-6 tail width: the 256 KB wedge-lane read (#1104), not the
+    # 64 KB _transcript_tail_rows default.
+    import autonomous_session_watch as asw
+
+    seen = {}
+
+    def _tail(pid, max_bytes=65536):
+        seen["max_bytes"] = max_bytes
+        return None
+
+    monkeypatch.setattr(asw, "_transcript_tail_rows", _tail)
+
+    def _boom(pid, now):
+        raise AssertionError("mtime fallback must not run on an unresolvable tail")
+
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", _boom)
+    age, reason = asw._transcript_work_idle_age_s(4242, 1_000_000.0)
+    assert age is None and reason
+    assert seen["max_bytes"] == 256 * 1024
+
+
+def test_transcript_work_probe_recent_ok_turn_age(monkeypatch):
+    # Arm (ii), the #1670-preserving arm: the age derives from the NEWEST
+    # ok turn's end_ts, storming siblings notwithstanding.
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    tail = _t2117_failed_turn(now - 300) + _t2117_ok_turn(now - 120) + _t2117_failed_turn(now - 60)
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, max_bytes=0: list(tail))
+    age, reason = asw._transcript_work_idle_age_s(4242, now)
+    assert reason is None
+    assert age == pytest.approx(120.0)
+
+
+def test_transcript_work_probe_human_row_protects(monkeypatch):
+    # Plan pin (c): all completed turns failed, but a genuine typed-text
+    # human row is durable work — the age derives from that row's own
+    # timestamp.
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    tail = (
+        _t2117_failed_turn(now - 3000)
+        + _t2117_failed_turn(now - 2400)
+        + [_t2117_human_row(ts=now - 600)]
+    )
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, max_bytes=0: list(tail))
+    age, reason = asw._transcript_work_idle_age_s(4242, now)
+    assert reason is None
+    assert age == pytest.approx(600.0)
+
+
+def test_transcript_work_probe_unparseable_newest_ts_falls_back_to_mtime(monkeypatch):
+    # Arm (ii) -> (iv) case (2), the critic-r1 timestamp-scoping pin: an ok
+    # turn is present but its OWN end_ts is unparseable -> mtime fallback —
+    # NEVER a max over the older parseable timestamps (which would
+    # substitute a stale age for possibly-fresh work and fail toward STOP).
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    tail = _t2117_failed_turn(now - 18_000) + _t2117_ok_turn(ts=None)
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, max_bytes=0: list(tail))
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", lambda pid, now: (77.0, None))
+    assert asw._transcript_work_idle_age_s(4242, now) == (77.0, None)
+
+    # Same scoping for the human-row leg: a ts-less human row alongside a
+    # parseable-but-older ok turn is equally indeterminate.
+    tail2 = [*_t2117_ok_turn(now - 18_000), _t2117_human_row(ts=None)]
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, max_bytes=0: list(tail2))
+    assert asw._transcript_work_idle_age_s(4242, now) == (77.0, None)
+
+
+def test_transcript_work_probe_zero_completed_turns_falls_back_to_mtime(monkeypatch):
+    # Plan pin (d) / arm (iv) case (1): a prompt-evidence-ONLY tail
+    # (dequeue rows, ZERO response rows) has zero completed turns ->
+    # behavior identical to pre-#2117 (the mtime read). NOTE the fixture
+    # recipe (critic r1 finding 2): any response row would exercise arm
+    # (ii)/(iii) instead and not cover this fallback.
+    import autonomous_session_watch as asw
+
+    dequeue = {"type": "queue-operation", "operation": "dequeue"}
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, max_bytes=0: [dequeue] * 3)
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", lambda pid, now: (88.0, None))
+    assert asw._transcript_work_idle_age_s(4242, 1_000_000.0) == (88.0, None)
+
+
+def test_session_idle_signals_churn_token_in_gap_desc(isolated_registry, monkeypatch):
+    # Criterion 5 auditability, signal layer: gap_desc gains the churn-only
+    # token when >=1 mapped sid returned arm (iii); the term contributes
+    # nothing to ages, so idleness stands on the task-side signals.
+    import autonomous_session_watch as asw
+
+    _patch_session_reconcile_io(monkeypatch, status="completed")
+    monkeypatch.setattr(asw, "_transcript_work_idle_age_s", lambda pid, now: (None, "churn-only"))
+    idle, gap_desc, _events = asw._session_idle_signals(
+        42, 1_000_000.0, sids=["sid-a"], pids_by_sid={"sid-a": 1234}
+    )
+    assert idle is True
+    assert gap_desc == "no-signal churn-only"
+
+
+def test_session_stop_marker_note_names_churn_only(isolated_registry, monkeypatch):
+    # Criterion 5 auditability, marker layer: a churn-driven stop's note is
+    # distinguishable from an ordinary idle stop's.
+    import autonomous_session_watch as asw
+
+    notes: list[str] = []
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: True)
+    monkeypatch.setattr(
+        asw, "_post_progress_marker", lambda issue, note, dry_run, label: notes.append(note)
+    )
+    now = 1_000_000.0
+    asw._handle_session_stop(
+        42, ["sid-a"], "completed", "3.0h churn-only", 2, False, {}, 1, False, now
+    )
+    asw._handle_session_stop(42, ["sid-a"], "completed", "3.0h", 2, False, {}, 1, False, now)
+    assert "CHURN-ONLY" in notes[0] and "gap=3.0h churn-only" in notes[0]
+    assert "churn" not in notes[1].lower()
+    assert "transcript" in notes[1]
+
+
+def test_session_reconcile_churn_only_storm_stopped_second_tick(isolated_registry, monkeypatch):
+    # THE #2004 regression (plan pin a): an error-storming session on a
+    # completed task — transcript mtime perpetually FRESH, every completed
+    # wake-turn failed — contributes NO liveness, so the >=2-miss counter
+    # accumulates and the session is stopped on the 2nd tick. The mtime
+    # probe is pinned fresh to prove the churn verdict (not a stale mtime)
+    # is what allows the stop.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_TRANSCRIPT_WORK_PROBE", raising=False)
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
+    tail = [r for _ in range(3) for r in _t2117_failed_turn()]
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, max_bytes=0: list(tail))
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", lambda pid, now: (60.0, None))
+    now = 1_000_000.0
+    for _ in range(2):
+        asw.session_reconcile_pass(
+            False,
+            2,
+            daemon_reachable=True,
+            live_ids={"sid-a"},
+            now=now,
+            pids_by_sid={"sid-a": 4242},
+        )
+    assert stops == ["sid-a"]
+    assert posts == [(42, "session-reconcile-stop")]
+
+
+def test_session_reconcile_ok_turn_in_storm_keeps_session(isolated_registry, monkeypatch):
+    # THE #1670 regression (plan pin b): a RECENT successfully-completed
+    # wake-turn in an otherwise-storming tail contributes a fresh age ->
+    # ("clear", 0) — never a miss, never a stop, across 3 ticks.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
+    now = 1_000_000.0
+    tail = _t2117_failed_turn(now - 300) + _t2117_ok_turn(now - 120) + _t2117_failed_turn(now - 60)
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, max_bytes=0: list(tail))
+    state_path = isolated_registry / "session-reconcile-42.json"
+    # Seed a mid-episode miss to prove the clear path RESETS it (not merely
+    # never-accumulates).
+    state_path.write_text(json.dumps({"missed": 1, "alerted": False, "sids": ["sid-a"]}))
+    for _ in range(3):
+        asw.session_reconcile_pass(
+            False,
+            2,
+            daemon_reachable=True,
+            live_ids={"sid-a"},
+            now=now,
+            pids_by_sid={"sid-a": 4242},
+        )
+    assert stops == [] and posts == []
+    assert not state_path.exists()  # ("clear", 0) drops the episode state
+
+
+def test_session_reconcile_stale_ok_turn_still_accumulates_to_stop(isolated_registry, monkeypatch):
+    # Plan pin (i), the narrowing's central new semantics: ONE ok turn OLDER
+    # than the idle window + fresher failed turns -> the contributed age is
+    # now - ok_end_ts (STALE) -> idle stays True -> stop on tick 2. Kills
+    # the "ANY ok turn in the tail => keep" mis-implementation, which would
+    # pass pins (a)-(h) and silently restore an unbounded shield for slow
+    # storms with an occasional partially-ok wake.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
+    now = 1_000_000.0
+    idle_s = asw._session_idle_s()
+    tail = (
+        _t2117_ok_turn(now - 3 * idle_s)
+        + _t2117_failed_turn(now - 120)
+        + _t2117_failed_turn(now - 60)
+    )
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, max_bytes=0: list(tail))
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", lambda pid, now: (60.0, None))
+    for _ in range(2):
+        asw.session_reconcile_pass(
+            False,
+            2,
+            daemon_reachable=True,
+            live_ids={"sid-a"},
+            now=now,
+            pids_by_sid={"sid-a": 4242},
+        )
+    assert stops == ["sid-a"]
+    assert posts == [(42, "session-reconcile-stop")]
+
+
+@pytest.mark.parametrize("shield", ["keep-running", "followup", "respawn", "pod"])
+def test_session_reconcile_shields_short_circuit_churn_tail(isolated_registry, monkeypatch, shield):
+    # Plan pin (g): each of the four decide_session_reconcile shields still
+    # short-circuits AHEAD of a churn-only tail — a churn verdict must never
+    # bypass keep-running / follow-up / respawn / RUNNING-pod.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    pods = [(42, "pod-id-1", "pod-42", {})] if shield == "pod" else []
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed", pods=pods)
+    if shield == "keep-running":
+        monkeypatch.setattr(asw, "_task_keep_running", lambda issue: True)
+    elif shield == "followup":
+        monkeypatch.setattr(asw, "_task_session_followup_active", lambda issue, **_k: True)
+    elif shield == "respawn":
+        monkeypatch.setattr(asw, "_task_recovery_respawn_active", lambda issue, **_k: True)
+    tail = [r for _ in range(3) for r in _t2117_failed_turn()]
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, max_bytes=0: list(tail))
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", lambda pid, now: (60.0, None))
+    for _ in range(3):
+        asw.session_reconcile_pass(
+            False,
+            2,
+            daemon_reachable=True,
+            live_ids={"sid-a"},
+            now=1_000_000.0,
+            pids_by_sid={"sid-a": 4242},
+        )
+    assert stops == [] and posts == []
+
+
+def test_session_reconcile_kill_switch_reverts_to_mtime_probe(isolated_registry, monkeypatch):
+    # Plan pin (f): EPM_SESSION_RECONCILE_TRANSCRIPT_WORK_PROBE=0 reverts
+    # the call site to the pure-mtime probe: the work classifier never reads
+    # the tail (raise-sentinel), and a churn-storming session with a fresh
+    # mtime is kept indefinitely — exact pre-#2117 / #1670 behavior.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    monkeypatch.setenv("EPM_SESSION_RECONCILE_TRANSCRIPT_WORK_PROBE", "0")
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
+
+    def _boom(pid, max_bytes=0):
+        raise AssertionError("work probe must not read the tail under the kill switch")
+
+    monkeypatch.setattr(asw, "_transcript_tail_rows", _boom)
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", lambda pid, now: (60.0, None))
+    for _ in range(3):
+        asw.session_reconcile_pass(
+            False,
+            2,
+            daemon_reachable=True,
+            live_ids={"sid-a"},
+            now=1_000_000.0,
+            pids_by_sid={"sid-a": 4242},
+        )
+    assert stops == [] and posts == []
+
+    # And the mtime probe's stale/unresolvable direction still stops —
+    # byte-equivalent to the pre-#2117 call site on both polarities.
+    monkeypatch.setattr(
+        asw, "_transcript_idle_age_s", lambda pid, now: (None, "transcript unresolvable")
+    )
+    for _ in range(2):
+        asw.session_reconcile_pass(
+            False,
+            2,
+            daemon_reachable=True,
+            live_ids={"sid-a"},
+            now=1_000_000.0,
+            pids_by_sid={"sid-a": 4242},
+        )
+    assert stops == ["sid-a"]
+
+
+def test_churn_only_stop_respects_dry_run(isolated_registry, monkeypatch):
+    # Plan pin (h), the dry-run thread: a churn-only tail under dry_run=True
+    # REACHES the stop branch (state seeded at missed=1, threshold 2) but
+    # executes NO stop — _stop_session is invoked with dry_run=True only
+    # (the real function no-ops and returns False there), no marker is
+    # posted, no stopped_at is recorded, and the state is not mutated. A
+    # broken dry-run kwarg thread would turn the `--dry-run` smoke into a
+    # real fleet mutation (#596/#607/#633).
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
+    calls: list[tuple[str, bool]] = []
+    monkeypatch.setattr(
+        asw,
+        "_stop_session",
+        lambda sid, dry_run: calls.append((sid, dry_run)) or (not dry_run),
+    )
+    tail = [r for _ in range(3) for r in _t2117_failed_turn()]
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, max_bytes=0: list(tail))
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", lambda pid, now: (60.0, None))
+    state_path = isolated_registry / "session-reconcile-42.json"
+    state_path.write_text(json.dumps({"missed": 1, "alerted": False, "sids": ["sid-a"]}))
+    asw.session_reconcile_pass(
+        True,  # dry_run
+        2,
+        daemon_reachable=True,
+        live_ids={"sid-a"},
+        now=1_000_000.0,
+        pids_by_sid={"sid-a": 4242},
+    )
+    assert calls == [("sid-a", True)]  # stop branch reached, dry_run threaded
+    assert stops == [] and posts == []  # no real stop, no marker
+    state = json.loads(state_path.read_text())
+    assert state.get("stopped_at") in (None, {})  # nothing recorded
+    assert state["missed"] == 1  # dry-run never persists state
+
+
+def test_transcript_work_probe_documented_and_killswitch_pinned():
+    # Plan §3.3 durability pin: the kill-switch literal appears BOTH in the
+    # watcher source and in background-automation.md's reconcile-pass prose,
+    # so a later prose edit that silently drops the documented knob fails
+    # loud.
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    src = (root / "scripts" / "autonomous_session_watch.py").read_text()
+    assert "EPM_SESSION_RECONCILE_TRANSCRIPT_WORK_PROBE" in src
+    rule = (root / ".claude" / "rules" / "background-automation.md").read_text()
+    anchor = "Reconcile pass (auto-stop of parked sessions)"
+    assert anchor in rule
+    reconcile_prose = rule.split(anchor, 1)[1].split("**Keep-running", 1)[0]
+    assert "EPM_SESSION_RECONCILE_TRANSCRIPT_WORK_PROBE" in reconcile_prose
 
 
 def test_session_reconcile_respawn_skip_resets_miss_counter(isolated_registry, monkeypatch):
