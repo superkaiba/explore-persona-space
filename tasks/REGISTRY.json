@@ -9599,8 +9599,8 @@
     "2242": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2242",
-      "status": "planning",
+      "path": "tasks/approved/2242",
+      "status": "approved",
       "title": "Absolute per-cell trainability floor: a yield shortfall must DROP the cell, not shrink it to 1 row"
     },
     "225": {
