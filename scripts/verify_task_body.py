@@ -5555,8 +5555,10 @@ def _parent_lineage_verdict(ctx_scan: str, fm: dict) -> tuple[str, str]:
     - "fail-denied"       — a fresh-direction / no-parent CLAIM with the
                             parent never referenced (the #1345 r1 incident
                             class; hard FAIL on v4, WARN on v3/v2);
-    - "warn-denied-named" — a no-parent claim BUT #<parent_id> is also
-                            referenced (internally contradictory row);
+    - "fail-denied-named" — a no-parent claim BUT #<parent_id> is also
+                            referenced (internally contradictory row; the
+                            #2224 r1 incident class; hard FAIL on v4, WARN
+                            on v3/v2 — upgraded from WARN by #2249);
     - "warn-unnamed"      — no denied claim, but the lineage never
                             references #<parent_id> (v4-only WARN).
     """
@@ -5581,10 +5583,11 @@ def _parent_lineage_verdict(ctx_scan: str, fm: dict) -> tuple[str, str]:
             f"(SPEC.md § `**Context:**` row)."
         )
     if denied and named:
-        return "warn-denied-named", (
+        return "fail-denied-named", (
             f"context-parent-lineage-mixed: the row references #{pid} but ALSO carries a "
             f"'{denied.group(0)}' clause while frontmatter carries `parent_id: {pid}` — "
-            f"drop the no-parent clause or state the re-scope explicitly."
+            f"drop the no-parent clause or, if the task was genuinely re-scoped as "
+            f"parentless, clear the frontmatter parent_id (SPEC.md § `**Context:**` row)."
         )
     if not named:
         return "warn-unnamed", (
@@ -5615,13 +5618,17 @@ def _context_scan_region(repro: str) -> str:
 def _context_row_result_v3(name: str, repro: str, fm: dict) -> CheckResult:
     """v3/v2 (pre-v4-sentinel) verdict for a label-present Context row —
     the grandfathered WARN-only forms of check 17's sub-checks (#1068
-    origin-prompt for BOTH its classes; #1418 parent-lineage for the
-    fail-denied contradiction ONLY — the warn-only tiers never bind
-    below the v4 sentinel; see `check_repro_context_provenance`)."""
+    origin-prompt for BOTH its classes; #1418/#2249 parent-lineage for
+    the two fail-tier contradiction classes — fail-denied AND
+    fail-denied-named, each degraded to WARN; the warn-only tier never
+    binds below the v4 sentinel; see `check_repro_context_provenance`).
+    Note the fail-denied-named class is NEWLY VISIBLE on v3/v2 as of
+    #2249 (was silent) — forward-only convention: a WARN never blocks,
+    and the retro-scan found zero corpus hits in any version class."""
     p_status, p_detail = _parent_lineage_verdict(_context_scan_region(repro), fm)
     status, sub_detail = _origin_prompt_quote_verdict(repro, fm)
     warn_bits = []
-    if p_status == "fail-denied":
+    if p_status in ("fail-denied", "fail-denied-named"):
         warn_bits.append(p_detail)  # grandfathered: WARN below the v4 sentinel
     if status in ("fail-trunc", "warn-mismatch"):
         warn_bits.append(sub_detail)
@@ -5679,23 +5686,31 @@ def check_repro_context_provenance(
     ``no parent`` CLAIM with ``#<parent_id>`` (or ``/tasks/<parent_id>``)
     never referenced is a hard v4 FAIL (the #1345 r1 incident class),
     degraded to WARN on v3/v2 (forward-only, the #1068 grandfathering
-    shape); a denied claim ALONGSIDE a parent reference WARNs (internally
-    contradictory, but regex-only semantics cannot distinguish a lineage
-    claim from prose like "fresh direction on the eval surface; reuses
-    #825 artifacts"); a lineage that never references the parent with NO
+    shape); a denied claim ALONGSIDE a parent reference is ALSO a hard
+    v4 FAIL (the #2224 r1 incident class — internally contradictory:
+    frontmatter carries ``parent_id`` while the row claims parentless;
+    upgraded from WARN by #2249), degraded to WARN on v3/v2 the same
+    way; a lineage that never references the parent with NO
     denied claim WARNs, v4 only (32/32 committed v4 ``parent_id`` bodies
     name the parent — zero retro-noise — while legitimate grandparent /
     re-scoped lineages make a FAIL over-strict). The v3/v2 branch fires
-    ONLY the fail-denied class (as WARN); the warn-only tiers never bind
-    below the v4 sentinel (#1014 never required a lineage clause there).
+    ONLY the two fail-tier classes (each as WARN); the warn-only tier
+    never binds below the v4 sentinel (#1014 never required a lineage
+    clause there).
     Documented residuals (deliberate): (a) the CONVERSE case — no
     ``parent_id``, the row cites some ``#K`` — is UNCHECKED: 6/10
     committed no-parent v4 bodies legitimately cite issues
     (reused-artifact producers, method parents, siblings), and
     over-attributed lineage errs toward MORE provenance; (b) bare
     ``fresh direction`` (no parenthetical) counts as a no-parent claim
-    (SPEC semantics — it is the sanctioned parentless lineage form),
-    mitigated by the named-parent WARN downgrade; (c) a PROSE-ONLY
+    (SPEC semantics — it is the sanctioned parentless lineage form), so
+    regex-only semantics cannot distinguish a lineage claim from prose
+    like "fresh direction on the eval surface; reuses #825 artifacts" —
+    as of #2249 that shape hard-FAILs on v4 (no named-parent WARN
+    downgrade exists anymore); both remediations the FAIL message names
+    are mechanically clearing (drop the clause, or clear ``parent_id``),
+    and the retro-scan found zero corpus hits, so the residual is
+    bounded prose-rewording cost, not retro-noise; (c) a PROSE-ONLY
     parent reference ("child of task 825" — no ``#`` sigil, no
     ``/tasks/825`` URL) misses the ``named`` escape, so a co-present
     denied claim tier-1 FAILs — bounded, and the FAIL message names the
@@ -5736,8 +5751,9 @@ def check_repro_context_provenance(
             # v2/v3 keep the pre-#1014 label-presence behavior verbatim
             # (forward-only; the v4 lineage sub-check never binds them).
             # The #1068 origin-prompt sub-check is WARN-ONLY here, and
-            # the #1418 parent-lineage cross-check fires ONLY its
-            # fail-denied contradiction, degraded to WARN (grandfathering:
+            # the #1418/#2249 parent-lineage cross-check fires ONLY its
+            # two fail-tier contradiction classes (fail-denied +
+            # fail-denied-named), degraded to WARN (grandfathering:
             # NEVER a new hard FAIL below the v4 sentinel) — the scan uses
             # the SAME stripped region as the v4 branch, never raw `repro`
             # (a denied claim inside the blockquoted verbatim prompt must
@@ -5762,7 +5778,7 @@ def check_repro_context_provenance(
             # FIRST (lineage correctness before prompt verbatim-ness; one
             # failure at a time, the file's convention).
             p_status, p_detail = _parent_lineage_verdict(ctx_scan, fm)
-            if p_status == "fail-denied":
+            if p_status in ("fail-denied", "fail-denied-named"):
                 return CheckResult(name, False, p_detail)
             # #1068 origin-prompt verbatim sub-check — runs AFTER the
             # lineage sub-checks (a body failing both surfaces the
@@ -5771,7 +5787,7 @@ def check_repro_context_provenance(
             if status == "fail-trunc":
                 return CheckResult(name, False, sub_detail)
             warn_bits = []
-            if p_status in ("warn-denied-named", "warn-unnamed"):
+            if p_status == "warn-unnamed":
                 warn_bits.append(p_detail)
             if status == "warn-mismatch":
                 warn_bits.append(sub_detail)

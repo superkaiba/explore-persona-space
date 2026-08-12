@@ -10740,14 +10740,18 @@ def test_v4_context_denied_claim_ignorecase_fails():
     assert "context-parent-lineage-contradiction" in ctx.detail
 
 
-def test_v4_context_denied_claim_but_parent_named_warns_not_fails():
-    """Tier 2: a denied-parent clause ALONGSIDE a `#<parent_id>`
-    reference is internally contradictory but not the reader-misleading
-    incident shape — WARN, never FAIL."""
+def test_v4_context_denied_claim_but_parent_named_fails():
+    """Tier 2 (the #2224 r1 incident shape, upgraded WARN → hard FAIL by
+    #2249): a denied-parent clause ALONGSIDE a `#<parent_id>` reference
+    is internally contradictory — frontmatter carries `parent_id` while
+    the row claims parentless — and hard-FAILs a v4 body, naming both
+    mechanically-clearing remediations."""
     body = _v4_body_with_lineage("- Lineage: fresh direction (no parent); reuses #825 artifacts.\n")
     ctx = verify_task_body.check_repro_context_provenance(body, {"parent_id": 825})
-    assert ctx.passed and ctx.is_warn, ctx.detail
+    assert not ctx.passed, ctx.detail
     assert "context-parent-lineage-mixed" in ctx.detail
+    assert "drop the no-parent clause" in ctx.detail
+    assert "clear the frontmatter parent_id" in ctx.detail
 
 
 def test_v4_context_parent_named_with_parent_id_passes():
@@ -10831,6 +10835,21 @@ def test_v3_context_denied_parent_with_parent_id_warns_not_fails():
     ctx = verify_task_body.check_repro_context_provenance(body, {"parent_id": 825})
     assert ctx.passed is True and ctx.is_warn, ctx.detail
     assert "context-parent-lineage-contradiction" in ctx.detail
+
+
+def test_v3_context_denied_claim_but_parent_named_warns_not_fails():
+    """Grandfathering pin (#2249): the SAME mixed contradiction (denied
+    clause ALONGSIDE the parent reference) that hard-FAILs a v4 body is
+    WARN-only on a v3 body — the fail-denied-named class is newly
+    VISIBLE on v3/v2 (was silent pre-#2249) but never a new hard FAIL
+    below the v4 sentinel (the #1418 fail-denied precedent shape)."""
+    assert _V4_LINEAGE_BULLET in _V3_GOOD_BODY, "fixture drifted"
+    body = _V3_GOOD_BODY.replace(
+        _V4_LINEAGE_BULLET, "- Lineage: fresh direction (no parent); reuses #825 artifacts.\n"
+    )
+    ctx = verify_task_body.check_repro_context_provenance(body, {"parent_id": 825})
+    assert ctx.passed is True and ctx.is_warn, ctx.detail
+    assert "context-parent-lineage-mixed" in ctx.detail
 
 
 def test_v4_context_parent_id_string_coerced():
