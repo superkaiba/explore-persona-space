@@ -71,3 +71,4 @@
 - [bit-exact trips the byte-identical ban](feedback_bit_exact_trips_byte_identical_ban.md) — discipline audit FAILs on `bit-exact` too; write "delta exactly 0" in gate notes. #2202.
 - [Audit bans verbal CIs, ±err, arm counts](feedback_audit_bans_verbal_ci_and_arm_counts.md) — "CI −0.4 to +2.2", `±0.01`, "five arms", bare H1/H2 all FAIL; park bounds in a Methodology table (tables/captions exempt). #2215.
 - [Marker prose is a summary, not the ledger](feedback_marker_prose_is_summary_not_ledger.md) — fold rounds: recompute every rate/range/trend from the committed JSON; a gate-verdict marker misstated its own ledger (65-69% stable vs 68-77% rising). #2054.
+- [Sidecar re-renders: recover the original meta.json FIRST](feedback_sidecar_rerender_recover_original_first.md) — savefig_paper overwrites the sidecar on the first (possibly wrong) render; `_group` = global series index (panel = group // n_series); y-key falls back to bare `y`. #2224.
