@@ -105,9 +105,11 @@ COHERENCE_MEDIAN_MIN = 80.0
 COHERENCE_GT60_FRAC_MIN = 0.90
 COHERENCE_THRESHOLD = 60.0
 
-# Pilot sizing (plan §7 gate 4: ~300 draws spanning settings × slots × rubrics).
-PILOT_TARGET_COHERENCE = 102  # 6 arms × 17
-PILOT_TARGET_BEHAVIOR = 30  # 3 arms × 10 (== the gate's min-draws floor)
+# Pilot sizing (plan §7 gate 4, resized by #2124: n_arms x n_draws(1) x 51 —
+# the 2% parse-fail threshold needs >= 51 draws/arm to resolve; the old
+# 102/30 realized 17/10 draws per arm, below the floor).
+PILOT_TARGET_COHERENCE = 306  # 6 arms × 51
+PILOT_TARGET_BEHAVIOR = 153  # 3 arms × 51
 PILOT_SEED = 2094
 FORCED_BATCH_PROBE_N = 6  # live Batch request-shape probe (gotchas: mock-judge smoke)
 

@@ -87,12 +87,18 @@ def _install_fake_judge(monkeypatch, arm_draws: dict[str, list], record: list | 
 
 def _run(monkeypatch, tmp_path, arm_items, arm_draws, **kw):
     _install_fake_judge(monkeypatch, arm_draws)
+    # allow_subresolution_pilot defaults True HERE (the library default is
+    # False): the legacy drop-profile tests deliberately use tiny 6-item arms,
+    # which are sub-resolution by construction under the #2124 config-time
+    # satisfiability guard. The guard's own tests pass False explicitly (or
+    # call judge_pilot_gate directly).
     return judge_pilot_gate(
         arm_items,
         PROMPT,
         max_tokens=kw.pop("max_tokens", 800),
         cache_dir=tmp_path / "cache",
         save_raw_dir=tmp_path / "raw",
+        allow_subresolution_pilot=kw.pop("allow_subresolution_pilot", True),
         **kw,
     )
 
@@ -310,6 +316,7 @@ def test_deterministic_subsample_seeded(monkeypatch, tmp_path):
             save_raw_dir=tmp_path / sub / "raw",
             target_total_draws=20,
             seed=seed,
+            allow_subresolution_pilot=True,  # 20 draws is deliberately tiny (#2124)
         )
         assert rep.arms["a"].n_items == 10
         return record[0][1]
@@ -356,6 +363,9 @@ def test_pilot_gate_real_body_reaches_judge_graded(monkeypatch, tmp_path):
         save_raw_dir=tmp_path / "raw",
         n_draws=2,
         report_path=report_path,
+        # 6-item arms are sub-resolution by construction; the guard's strict
+        # branch has its own dedicated tests below (#2124).
+        allow_subresolution_pilot=True,
     )
     assert rep.passed is True
     assert rep.n_total_draws == 24
@@ -386,3 +396,286 @@ def test_empty_arms_and_bad_arm_names_fail_loud(monkeypatch, tmp_path):
             cache_dir=tmp_path / "c",
             save_raw_dir=tmp_path / "r",
         )
+
+
+# --- #2124: config-time satisfiability guard (rule 26 sizing clause) ------------
+
+
+def test_unsatisfiable_budget_raises_before_any_judge_call(monkeypatch, tmp_path):
+    """Negative control (plan criterion 7): a budget-unsatisfiable config raises
+    ValueError naming the arms, realized/required, both knobs, and the exact
+    discretized remedy — BEFORE any judge_graded call (zero API spend)."""
+    record: list = []
+    fake = _install_fake_judge(monkeypatch, {}, record=record)
+    # 4 arms x 60 items, n_draws=2, T=200: per_arm_items = 200 // 8 = 25 ->
+    # realized 50 < required 51 (budget-limited: 60 items >= 26 needed).
+    arms = {f"arm{i}": _items(60, f"a{i}") for i in range(4)}
+    with pytest.raises(ValueError, match="budget-limited") as exc:
+        judge_pilot_gate(
+            arms,
+            PROMPT,
+            max_tokens=800,
+            cache_dir=tmp_path / "c",
+            save_raw_dir=tmp_path / "r",
+            target_total_draws=200,
+        )
+    msg = str(exc.value)
+    assert "arm0" in msg and "realized 50" in msg and "required 51" in msg
+    assert "parse_fail_threshold" in msg and "min_effective_draws_per_arm" in msg
+    # The EXACT discretized form: 4 * 2 * ceil(51/2) = 208, never 51*4 = 204.
+    assert "target_total_draws >= 208" in msg
+    assert "204" not in msg
+    assert fake.call_count == 0, "the refusal must fire BEFORE any judge_graded call"
+    assert record == []
+
+
+@pytest.mark.parametrize(("n_draws", "expected_suggestion"), [(2, 208), (3, 204)])
+def test_remedy_is_self_consistent_fed_back(monkeypatch, tmp_path, n_draws, expected_suggestion):
+    """The printed remedy, fed back into the same call, PASSES the guard — at
+    n_draws=2 AND 3 (the v2-plan bug: T = 51*A at d=2 realizes 50/arm and
+    would be rejected by the very guard that printed it)."""
+    import re
+
+    arms = {f"arm{i}": _items(60, f"a{i}") for i in range(4)}
+    _install_fake_judge(monkeypatch, {})
+    with pytest.raises(ValueError) as exc:
+        judge_pilot_gate(
+            arms,
+            PROMPT,
+            max_tokens=800,
+            cache_dir=tmp_path / "fail" / "c",
+            save_raw_dir=tmp_path / "fail" / "r",
+            n_draws=n_draws,
+            target_total_draws=200,
+        )
+    m = re.search(r"target_total_draws >= (\d+)", str(exc.value))
+    assert m, str(exc.value)
+    suggested = int(m.group(1))
+    assert suggested == expected_suggestion  # 4 * d * ceil(51/d)
+    per_arm = suggested // (4 * n_draws)
+    draws = {f"arm{i}": [KEPT] * (per_arm * n_draws) for i in range(4)}
+    rep = _run(
+        monkeypatch,
+        tmp_path / "ok",
+        arms,
+        draws,
+        n_draws=n_draws,
+        target_total_draws=suggested,
+        allow_subresolution_pilot=False,  # the library default: strict
+    )
+    assert rep.passed is True
+    assert rep.arms["arm0"].n_draws >= 51
+
+
+def test_strict_boundary_realized_50_raises_51_passes(monkeypatch, tmp_path):
+    """The floor is floor(1/0.02) + 1 = 51, NOT 50: at exactly 50 realized
+    draws a single parse failure lands ON the strict >= bar (1/50 = 2%)."""
+    arms = {"a": _items(60, "a")}
+    _install_fake_judge(monkeypatch, {})
+    with pytest.raises(ValueError, match="realized 50 draw\\(s\\) < required 51"):
+        judge_pilot_gate(
+            arms,
+            PROMPT,
+            max_tokens=800,
+            cache_dir=tmp_path / "f" / "c",
+            save_raw_dir=tmp_path / "f" / "r",
+            n_draws=1,
+            target_total_draws=50,
+        )
+    rep = _run(
+        monkeypatch,
+        tmp_path / "ok",
+        arms,
+        {"a": [KEPT] * 51},
+        n_draws=1,
+        target_total_draws=51,
+        allow_subresolution_pilot=False,
+    )
+    assert rep.passed is True
+    assert rep.arms["a"].n_draws == 51
+
+
+def test_item_limited_arm_raises_despite_ample_budget(monkeypatch, tmp_path):
+    """Negative control (plan criterion 7): a 5-item arm at T=200 is caught
+    even though the budget is ample — the arm-size cap (_seeded_subsample)
+    bounds realized draws at len(items) * n_draws, and NO budget fixes it."""
+    record: list = []
+    fake = _install_fake_judge(monkeypatch, {}, record=record)
+    arms = {"tiny": _items(5, "t")}
+    with pytest.raises(ValueError, match="item-limited") as exc:
+        judge_pilot_gate(
+            arms,
+            PROMPT,
+            max_tokens=800,
+            cache_dir=tmp_path / "c",
+            save_raw_dir=tmp_path / "r",
+            target_total_draws=200,
+        )
+    msg = str(exc.value)
+    assert "5 item(s) < 26 needed" in msg
+    assert "NO target_total_draws" in msg
+    assert "waive_parse_fail_arms" in msg and "allow_subresolution_pilot" in msg
+    assert fake.call_count == 0, "the refusal must fire BEFORE any judge_graded call"
+    assert record == []
+
+
+def test_allow_subresolution_pilot_downgrades_to_report_warning(monkeypatch, tmp_path):
+    arms = {"tiny": _items(5, "t")}
+    rep = _run(
+        monkeypatch,
+        tmp_path,
+        arms,
+        {"tiny": [KEPT] * 10},
+        target_total_draws=200,
+        allow_subresolution_pilot=True,
+    )
+    assert rep.passed is True
+    sub = [w for w in rep.warnings if "sub-resolution pilot ACCEPTED" in w]
+    assert sub, rep.warnings
+    assert "item-limited" in sub[0] and "tiny" in sub[0]
+
+
+def test_min_effective_draws_dominates_when_larger(monkeypatch, tmp_path):
+    """required = max(min_effective_draws_per_arm, floor(1/threshold)+1): a
+    min-effective floor ABOVE the resolution floor binds, and the remedy is
+    sized from it."""
+    arms = {"a": _items(100, "a")}
+    _install_fake_judge(monkeypatch, {})
+    # T=60, d=2 -> realized 60: >= 51 (resolution) but < 80 (min-effective).
+    with pytest.raises(ValueError, match="realized 60 draw\\(s\\) < required 80") as exc:
+        judge_pilot_gate(
+            arms,
+            PROMPT,
+            max_tokens=800,
+            cache_dir=tmp_path / "f" / "c",
+            save_raw_dir=tmp_path / "f" / "r",
+            target_total_draws=60,
+            min_effective_draws_per_arm=80,
+        )
+    assert "target_total_draws >= 80" in str(exc.value)
+    rep = _run(
+        monkeypatch,
+        tmp_path / "ok",
+        arms,
+        {"a": [KEPT] * 80},
+        target_total_draws=80,
+        min_effective_draws_per_arm=80,
+        allow_subresolution_pilot=False,
+    )
+    assert rep.passed is True
+
+
+def test_parse_fail_threshold_nonpositive_raises_ge_one_has_no_floor(monkeypatch, tmp_path):
+    """threshold <= 0 raises (min_resolvable undefined — every arm would fail
+    unconditionally); threshold >= 1 is accepted with NO resolution floor
+    (only the min-effective floor binds)."""
+    record: list = []
+    fake = _install_fake_judge(monkeypatch, {}, record=record)
+    arms = {"a": _items(6, "a")}
+    for bad in (0.0, -0.5):
+        with pytest.raises(ValueError, match="must be > 0"):
+            judge_pilot_gate(
+                arms,
+                PROMPT,
+                max_tokens=800,
+                cache_dir=tmp_path / "c",
+                save_raw_dir=tmp_path / "r",
+                parse_fail_threshold=bad,
+            )
+    assert fake.call_count == 0
+    # threshold=1.0: 12 realized draws >= required max(10, -) = 10 -> runs.
+    rep = _run(
+        monkeypatch,
+        tmp_path / "one",
+        arms,
+        {"a": [KEPT] * 12},
+        parse_fail_threshold=1.0,
+        allow_subresolution_pilot=False,
+    )
+    assert rep.passed is True
+
+
+def test_runtime_shrink_warns_underpowered_not_instrument_bad(monkeypatch, tmp_path):
+    """D-1b: a config-time-satisfiable arm whose ANSWERED draws shrink below
+    the resolution floor (transport losses, rule 24) WARNs — an under-powered
+    pilot, never a FAIL and never an instrument verdict."""
+    arms = {"a": _items(60, "a")}
+    # T=120, d=2 -> 60 items x 2 = 120 planned draws (satisfiable); 80 of them
+    # transport-lost -> 40 answered < 51.
+    draws = {"a": [KEPT] * 40 + [TRANSPORT] * 80}
+    rep = _run(
+        monkeypatch,
+        tmp_path,
+        arms,
+        draws,
+        target_total_draws=120,
+        allow_subresolution_pilot=False,
+    )
+    assert rep.passed is True  # 40 answered >= min_effective 10; parse rate 0
+    shrink = [w for w in rep.warnings if "UNDER-POWERED" in w]
+    assert shrink, rep.warnings
+    assert "40 answered draw(s)" in shrink[0]
+    assert "51" in shrink[0]
+    assert "NOT" in shrink[0] and "instrument" in shrink[0]
+
+
+def test_per_item_completeness_fields_in_arm_stats(monkeypatch, tmp_path):
+    """#2124 D-2 (rule 29): n_items / n_items_zero_valid / frac_items_complete
+    per arm, including the all-valid (1.0) and all-dropped (0.0) endpoints;
+    all three serialize in the report JSON. Report-only — no gate keys on
+    them (the FAILs below are the parse-fail clause, not completeness)."""
+    arms = {"full": _items(6, "f"), "holed": _items(6, "h"), "empty": _items(6, "e")}
+    draws = {
+        "full": [KEPT] * 12,
+        # item h0's BOTH draws drop -> exactly one zero-valid item.
+        "holed": [PARSE_DROP] * 2 + [KEPT] * 10,
+        "empty": [PARSE_DROP] * 12,
+    }
+    rep = _run(monkeypatch, tmp_path, arms, draws)
+    assert rep.arms["full"].n_items == 6
+    assert rep.arms["full"].n_items_zero_valid == 0
+    assert rep.arms["full"].frac_items_complete == 1.0
+    assert rep.arms["holed"].n_items_zero_valid == 1
+    assert rep.arms["holed"].frac_items_complete == pytest.approx(5 / 6)
+    assert rep.arms["empty"].n_items_zero_valid == 6
+    assert rep.arms["empty"].frac_items_complete == 0.0
+    d = rep.to_json()
+    assert d["arms"]["holed"]["n_items"] == 6
+    assert d["arms"]["holed"]["n_items_zero_valid"] == 1
+    assert d["arms"]["holed"]["frac_items_complete"] == pytest.approx(5 / 6)
+    # completeness is REPORT-only: the failures are parse-fail, not per-item.
+    assert not any("frac_items_complete" in f for f in rep.failures)
+
+
+def test_judge_result_frac_items_complete_property(tmp_path):
+    """Rule 29's production-wave affordance on JudgeResult: kept-draw items /
+    all items, off the reduce's pre-seeded scores map; 0-item result raises."""
+    items = _items(3, "x")
+    all_scores = {
+        "x0__00000__00": KEPT,
+        "x0__00000__01": KEPT,
+        "x1__00001__00": PARSE_DROP,
+        "x1__00001__01": PARSE_DROP,
+        "x2__00002__00": KEPT,
+        "x2__00002__01": TRANSPORT,
+    }
+    p = tmp_path / "raw.json"
+    p.write_text(json.dumps({"all_scores": all_scores}))
+    res = graded_judge.judge_result_from_save_raw(p, items)
+    assert res.frac_items_complete == pytest.approx(2 / 3)
+    # Endpoints, off the same dataclass shape the reduce returns.
+    assert (
+        graded_judge.JudgeResult(
+            scores={"a": 1.0}, n_total_draws=1, n_dropped_draws=0
+        ).frac_items_complete
+        == 1.0
+    )
+    assert (
+        graded_judge.JudgeResult(
+            scores={"a": None}, n_total_draws=1, n_dropped_draws=1
+        ).frac_items_complete
+        == 0.0
+    )
+    empty = graded_judge.JudgeResult(scores={}, n_total_draws=0, n_dropped_draws=0)
+    with pytest.raises(ValueError, match="zero items"):
+        _ = empty.frac_items_complete

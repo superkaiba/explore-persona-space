@@ -287,6 +287,10 @@ def stage_pilot(args, rubrics: dict[str, str], items: list[tuple], pool: dict) -
             n_draws=2,
             target_total_draws=args.pilot_draws,
             parse_fail_threshold=0.02,
+            # #2124 K3 escape, --smoke ONLY: main() clamps pilot_draws to 12
+            # under --smoke, deliberately sub-resolution (a smoke leg cannot
+            # afford 51 draws/arm); production keeps the strict refusal.
+            allow_subresolution_pilot=bool(args.smoke),
             threshold_base=None if args.pilot_sync else 0,  # 0 FORCES the Batch path
             report_path=out_root / f"form_a_pilot_{trait}.json",
             seed=args.seed,
@@ -910,7 +914,12 @@ def build_argparser() -> argparse.ArgumentParser:
         "--judge-max-tokens", type=int, default=1024, help="judge response cap (plan >=1024)"
     )
     ap.add_argument(
-        "--pilot-draws", type=int, default=150, help="rule-26 pilot target draws PER RUBRIC"
+        # #2124 satisfiability: 3 version arms x n_draws 2 x ceil(51/2) = 156 —
+        # 150 realized exactly 50 draws/arm, one below the 51-draw floor at 2%.
+        "--pilot-draws",
+        type=int,
+        default=156,
+        help="rule-26 pilot target draws PER RUBRIC",
     )
     ap.add_argument(
         "--pilot-sync",

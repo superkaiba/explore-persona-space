@@ -85,7 +85,13 @@ def _empty_waves() -> dict[str, judge_mod.WaveItems]:
     }
 
 
-def _fill_wave(waves: dict, wave_name: str, arms: list[str], n_items: int = 2) -> None:
+# 26 items/arm + pilot_draws_per_wave=156 (the #2124-bumped issue2091 default):
+# at <=3 arms/wave and the gate's default n_draws=2 every UNWAIVED arm realizes
+# >= 52 draws, clearing the 51-draw satisfiability floor at the 2% threshold —
+# the pre-#2124 2-item / 50-draw shape would now be refused at config time.
+# The boundary fake keys its tallies on (wave, arm), NOT the item count, so
+# the observed parse-fail rates these tests pin are unchanged.
+def _fill_wave(waves: dict, wave_name: str, arms: list[str], n_items: int = 26) -> None:
     wv = waves[wave_name]
     for arm in arms:
         for i in range(n_items):
@@ -99,7 +105,7 @@ def _args(tmp_path: Path) -> argparse.Namespace:
         out_root=tmp_path / "out",
         cache_root=tmp_path / "cache",
         raw_root=tmp_path / "raw",
-        pilot_draws_per_wave=50,
+        pilot_draws_per_wave=156,
     )
 
 
