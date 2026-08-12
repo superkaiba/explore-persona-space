@@ -180,10 +180,15 @@ PV_METHODS = (
 # arm12 ROWS still load via splice_arm12 because --pv-only is not set.
 # Colours are carried over per-arm from REF_METHODS/ARM12_METHOD so one colour
 # keeps one meaning across every figure in the write-up.
+# Labels say "Linear probe" (user terminology, 2026-08-12): the ESTIMATOR is
+# unchanged -- ridge regression on the frozen activations, lambda selected per
+# layer by GCV over RIDGE_LAMBDAS (`fits.ridge_fit_predict_primal_layer_batched`)
+# -- only the display name changes, so the write-up uses ONE term for one thing.
+# arm11 stays "Persona vector" because it is a PROJECTION, not a fitted probe.
 RIDGE_LADDER_METHODS = (
-    ("arm4_ridge_ctx", "Ridge regression on context", "#1f77b4"),
-    ("arm7_map_ridge_pred", "Ridge regression on mapped answer", "#e8b23a"),
-    ("arm12_oracle_reg", "Ridge regression on real answer", "#009E73"),
+    ("arm4_ridge_ctx", "Linear probe on context", "#1f77b4"),
+    ("arm7_map_ridge_pred", "Linear probe on mapped answer", "#e8b23a"),
+    ("arm12_oracle_reg", "Linear probe on real answer", "#009E73"),
     ("arm11_oracle_proj", "Persona vector on real answer", "#1a6b54"),
 )
 
@@ -472,7 +477,9 @@ def regime_sublabel(vals: dict, panel: str, key: str, protocol: str, methods) ->
     return textwrap.fill(names, width=20) + f"\n({OOD_QUALIFIER[protocol]})"
 
 
-def draw(vals: dict, protocol: str, methods, out_png: Path, caption: str) -> None:
+def draw(
+    vals: dict, protocol: str, methods, out_png: Path, caption: str, title_prefix: str = "Result 2"
+) -> None:
     panels = [*BEHAVIORS, "average"]
     fig, axes = plt.subplots(1, 4, figsize=(23.0, 13.0))
     n_m = len(methods)
@@ -549,8 +556,9 @@ def draw(vals: dict, protocol: str, methods, out_png: Path, caption: str) -> Non
         fontsize=9.5,
     )
     fig.suptitle(
-        f"Result 2 ({protocol} protocol): reads across evaluation regimes — "
-        f"floored datasets dropped; a wholly-floored regime is hatched, not dropped",
+        f"{title_prefix}{' ' if title_prefix else ''}({protocol} protocol): reads across "
+        f"evaluation regimes — floored datasets dropped; a wholly-floored regime is hatched, "
+        f"not dropped",
         fontsize=12.5,
         x=0.012,
         ha="left",
@@ -886,6 +894,9 @@ def main() -> None:
             methods,
             out_dir / f"pv_regime_{protocol.replace('-', '').lower()}{sfx}{nocap}.png",
             "" if args.no_caption else cap,
+            # The ladder roster is the write-up's Result 3, not Result 2 — drop the
+            # hard-coded result number rather than print the wrong one.
+            title_prefix="" if args.ridge_ladder else "Result 2",
         )
 
 
