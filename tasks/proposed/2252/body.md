@@ -105,8 +105,23 @@ Any one of 1-3 fixes the misdiagnosis; 1 is the cheapest and most valuable.
 - **#2128** (proposed) — `spawn_session.py --kill` must TERM the inner claude
   pid. Mentions this test only incidentally; unrelated bug.
 - #2239, #1661 — unrelated (red-main script pair; agent-spec-size ratchet).
+- **#2039** (completed 2026-08-09) — "daily-fix: inline lint gate defers
+  under high VM load". SAME CLASS (a lint gate going red from shared-VM
+  contention rather than a real defect) but a different gate and a different
+  mechanism: it addressed the INLINE payload gate's timeout-sensitive mapped
+  pytest leg, not an external SIGTERM being reported as a lint verdict by
+  Step 9c. Its existence is evidence the class recurs and is worth a
+  mechanism-level fix rather than another per-incident retry.
+- **#2173** (open) — `test_backend_poll` module-mode test fails only in large
+  collections and is always classified NEW by the Step 9c oracle. Sibling in
+  spirit (a Step 9c flake that reds gates fleet-wide and is invisible to the
+  oracle), different test and different mechanism (collection-size dependence
+  vs an external signal). A fix session may want to consider whether the
+  oracle should learn signal-deaths as a category alongside #2173's case.
 
 ## Provenance
+
+workflow_fix_target: tests/test_workflow_lint.py
 
 Surfaced by the #2243 orchestrator while attributing that task's Step 9c
 failure. #2243's own payload was cleared by the probes above and was NOT the
