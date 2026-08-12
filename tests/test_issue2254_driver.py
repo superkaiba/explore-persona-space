@@ -1,0 +1,288 @@
+"""CPU-only synthetic-tensor tests for the issue #2254 pre-image driver algebra.
+
+Covers (unit-2 brief): the k* rule, pinv truncation, the frame-fold identity on
+a tiny exact synthetic case (d=8, n=32), the de-standardization fold, the
+shuffled matched-k* variant (+ the k*_shuffled==0 steering fallback), the
+direction-3 diff-of-means, the sha-assert failure path, and the
+eval_questions-length assert.
+
+NO test reads `eval_results/issue_<M>/` fixtures (sparse-cones rule) and no
+test touches the network / GPU — synthetic tensors only.
+"""
+
+from __future__ import annotations
+
+import hashlib
+
+import numpy as np
+import pytest
+
+import scripts.issue2254_preimage as pi
+
+RNG = np.random.default_rng(0)
+
+
+def _tiny_fit(n=32, d=8, noise=0.05, seed=1):
+    """Synthetic X, Y = X @ A + noise, fitted through the VERBATIM ridge."""
+    rng = np.random.default_rng(seed)
+    x = rng.standard_normal((n, d))
+    a = rng.standard_normal((d, d))
+    y = x @ a + noise * rng.standard_normal((n, d))
+    return x, y, pi.ridge_fit_matrix(x, y)
+
+
+# ---------------------------------------------------------------------------
+# k* rule
+# ---------------------------------------------------------------------------
+
+
+def test_kstar_rule_counts_squared_singular_values():
+    s = np.array([3.0, 2.0, 1.0, 0.5])
+    assert pi.kstar_from_fit(s, 1.1) == 2  # s^2 = [9, 4, 1, 0.25] >= 1.1 -> two
+    assert pi.kstar_from_fit(s, 0.9) == 3
+    assert pi.kstar_from_fit(s, 100.0) == 0
+    assert pi.kstar_from_fit(s, 0.0) == 4
+
+
+def test_kstar_matches_fit_lambda_semantics():
+    _x, _y, fit = _tiny_fit()
+    k = pi.kstar_from_fit(fit["s"], fit["lam"])
+    assert k == int(np.sum(fit["s"] ** 2 >= fit["lam"]))
+    assert 0 <= k <= len(fit["s"])
+
+
+# ---------------------------------------------------------------------------
+# pinv truncation
+# ---------------------------------------------------------------------------
+
+
+def test_preimage_w_reproduces_truncated_pinv_on_diagonal_map():
+    # M = diag(4, 2, 1): pinv_k inverts only the top-k singular directions.
+    w_diag = np.diag([4.0, 2.0, 1.0]).T  # W with M = W.T = diag
+    _m, um, sm, vmt = pi.map_svd(w_diag)
+    r = np.array([1.0, 1.0, 1.0])
+    w2 = pi.preimage_w(um, sm, vmt, r, 2)
+    # top-2 singular directions are e1, e2 with s = 4, 2 -> w = (1/4, 1/2, 0)
+    assert np.allclose(np.sort(np.abs(w2[np.abs(w2) > 1e-12])), [0.25, 0.5])
+    assert np.allclose((np.diag([4.0, 2.0, 1.0]) @ w2), [1.0, 1.0, 0.0], atol=1e-12)
+    w3 = pi.preimage_w(um, sm, vmt, r, 3)
+    assert np.allclose(np.diag([4.0, 2.0, 1.0]) @ w3, r, atol=1e-12)
+
+
+def test_preimage_w_k_clamped_and_zero_raises():
+    _x, _y, fit = _tiny_fit()
+    _m, um, sm, vmt = pi.map_svd(fit["W"])
+    r = RNG.standard_normal(um.shape[0])
+    # k beyond the spectrum clamps to full rank instead of crashing
+    w_full = pi.preimage_w(um, sm, vmt, r, 10 * len(sm))
+    assert w_full.shape == (vmt.shape[1],)
+    with pytest.raises(ValueError, match="degenerate map"):
+        pi.preimage_w(um, sm, vmt, r, 0)
+
+
+# ---------------------------------------------------------------------------
+# frame-fold identity (exact tiny case) + de-standardization fold
+# ---------------------------------------------------------------------------
+
+
+def test_frame_fold_identity_exact_tiny_case():
+    """cos(M @ (d_pre / xsd), P_k(r_B)) == 1 exactly (up to float) by algebra:
+    M @ pinv_k(M) is the projector onto the top-k column space of M."""
+    _x, _y, fit = _tiny_fit(n=32, d=8)
+    m, um, sm, vmt = pi.map_svd(fit["W"])
+    r_b = np.random.default_rng(7).standard_normal(8)
+    for k in (1, 3, 5, 8):
+        w = pi.preimage_w(um, sm, vmt, r_b, k)
+        d_pre = pi.destandardized_direction(fit["xsd"], w)
+        cos = pi.frame_fold_cos(m, um, fit["xsd"], d_pre, r_b, k)
+        assert cos > 1.0 - 1e-10, (k, cos)
+
+
+def test_frame_fold_detects_wrong_frame():
+    """Skipping the /xsd unfold (i.e. folding a WRONG frame) must break the
+    identity — the gate has teeth."""
+    _x, _y, fit = _tiny_fit(n=32, d=8, seed=3)
+    # make xsd strongly anisotropic so the wrong frame visibly diverges
+    fit = dict(fit)
+    fit["xsd"] = np.linspace(0.05, 8.0, 8)
+    m, um, sm, vmt = pi.map_svd(fit["W"])
+    r_b = np.random.default_rng(11).standard_normal(8)
+    k = 4
+    w = pi.preimage_w(um, sm, vmt, r_b, k)
+    d_pre = pi.destandardized_direction(fit["xsd"], w)
+    # wrong frame: pass xsd=1 (no unfold) with the folded direction
+    cos_wrong = pi.frame_fold_cos(m, um, np.ones(8), d_pre, r_b, k)
+    assert cos_wrong < 0.999
+
+
+def test_destandardization_fold_shape_and_normalization():
+    xsd = np.array([1.0, 2.0, 4.0])
+    w = np.array([1.0, 1.0, 1.0])
+    d = pi.destandardized_direction(xsd, w)
+    expected = np.array([1.0, 2.0, 4.0]) / np.linalg.norm([1.0, 2.0, 4.0])
+    assert np.allclose(d, expected)
+    assert np.isclose(np.linalg.norm(d), 1.0)
+    with pytest.raises(ValueError, match="degenerate norm"):
+        pi.destandardized_direction(xsd, np.zeros(3))
+
+
+def test_proj_fraction_bounds_and_full_rank():
+    _x, _y, fit = _tiny_fit(seed=5)
+    _m, um, _sm, _vmt = pi.map_svd(fit["W"])
+    r_b = np.random.default_rng(5).standard_normal(8)
+    fr1 = pi.proj_fraction(um, r_b, 1)
+    fr8 = pi.proj_fraction(um, r_b, 8)
+    assert 0.0 <= fr1 <= fr8 <= 1.0 + 1e-12
+    assert np.isclose(fr8, 1.0, atol=1e-10)  # full-rank projector keeps all of r_B
+
+
+# ---------------------------------------------------------------------------
+# shuffled-map control (primary / matched-k* / fallback)
+# ---------------------------------------------------------------------------
+
+
+def test_shuffled_bundle_primary_uses_own_kstar():
+    x, y, fit = _tiny_fit(n=64, d=8, seed=9)
+    perm = np.random.default_rng(pi.SEED_SHUFFLE).permutation(64)
+    fit_shuf = pi.ridge_fit_matrix(x, y[perm])
+    kstar_real = pi.kstar_from_fit(fit["s"], fit["lam"])
+    r_b = np.random.default_rng(2).standard_normal(8)
+    bundle = pi.shuffled_direction_bundle(fit_shuf, max(kstar_real, 1), r_b)
+    assert bundle["kstar_shuffled"] == pi.kstar_from_fit(fit_shuf["s"], fit_shuf["lam"])
+    if bundle["kstar_shuffled"] > 0:
+        assert not bundle["fallback_matched_kstar"]
+        assert bundle["d_preshuf_primary"] is not None
+        assert np.allclose(bundle["d_preshuf_steering"], bundle["d_preshuf_primary"])
+    # both persisted variants are unit vectors
+    assert np.isclose(np.linalg.norm(bundle["d_preshuf_matched"]), 1.0)
+    assert np.isclose(np.linalg.norm(bundle["d_preshuf_steering"]), 1.0)
+
+
+def test_shuffled_bundle_kstar_zero_falls_back_to_matched():
+    """k*_shuffled == 0 (every s^2 < lambda) -> primary None, steering =
+    matched-k* variant, fallback flag set — never normalize(0)."""
+    _x, _y, fit = _tiny_fit(n=32, d=8, seed=13)
+    fit_shuf = dict(fit)
+    fit_shuf["lam"] = float(np.max(fit["s"]) ** 2 * 10.0)  # above every s^2
+    r_b = np.random.default_rng(3).standard_normal(8)
+    bundle = pi.shuffled_direction_bundle(fit_shuf, kstar_real=4, r_b=r_b)
+    assert bundle["kstar_shuffled"] == 0
+    assert bundle["fallback_matched_kstar"] is True
+    assert bundle["d_preshuf_primary"] is None
+    assert np.allclose(bundle["d_preshuf_steering"], bundle["d_preshuf_matched"])
+    assert np.isclose(np.linalg.norm(bundle["d_preshuf_steering"]), 1.0)
+
+
+# ---------------------------------------------------------------------------
+# direction 3: diff of means
+# ---------------------------------------------------------------------------
+
+
+def test_diff_of_means_direction_recovers_planted_delta():
+    rng = np.random.default_rng(21)
+    n, n_layers, h = 40, 3, 16
+    base = rng.standard_normal((n, n_layers, h))
+    delta = rng.standard_normal((n_layers, h))
+    pos = base + delta[None]
+    neg = base
+    d = pi.diff_of_means_direction(pos, neg)
+    assert d.shape == (n_layers, h)
+    for li in range(n_layers):
+        assert np.isclose(np.linalg.norm(d[li]), 1.0)
+        cos = d[li] @ delta[li] / np.linalg.norm(delta[li])
+        assert cos > 0.999999, (li, cos)
+
+
+def test_diff_of_means_direction_degenerate_raises():
+    same = np.zeros((4, 2, 8))
+    with pytest.raises(ValueError, match="degenerate"):
+        pi.diff_of_means_direction(same, same)
+
+
+# ---------------------------------------------------------------------------
+# sha-assert + e1 eval-bank asserts (stage_inputs gates)
+# ---------------------------------------------------------------------------
+
+
+def test_assert_sha256_pass_and_failure_path(tmp_path):
+    p = tmp_path / "asset.json"
+    p.write_bytes(b'{"eval_questions": []}')
+    good = hashlib.sha256(p.read_bytes()).hexdigest()
+    pi.assert_sha256(p, good, what="asset.json")  # no raise
+    bad = "0" * 64
+    with pytest.raises(RuntimeError, match="sha256 mismatch"):
+        pi.assert_sha256(p, bad, what="asset.json")
+
+
+def test_assert_e1_eval_bank_length_20():
+    ok = {"eval_questions": [f"q{i}" for i in range(20)]}
+    pi.assert_e1_eval_bank(ok, "sycophancy")  # no raise
+    with pytest.raises(RuntimeError, match="eval_questions invalid"):
+        pi.assert_e1_eval_bank({"eval_questions": [f"q{i}" for i in range(19)]}, "sycophancy")
+    with pytest.raises(RuntimeError, match="eval_questions invalid"):
+        pi.assert_e1_eval_bank({}, "hallucination")
+    with pytest.raises(RuntimeError, match="eval_questions invalid"):
+        pi.assert_e1_eval_bank({"eval_questions": "not-a-list"}, "evil")
+
+
+# ---------------------------------------------------------------------------
+# random control + unit_rows + r2 helper
+# ---------------------------------------------------------------------------
+
+
+def test_random_direction_deterministic_unit():
+    a = pi.random_direction(64, seed=pi.SEED_RANDOM_BASE + 14)
+    b = pi.random_direction(64, seed=pi.SEED_RANDOM_BASE + 14)
+    c = pi.random_direction(64, seed=pi.SEED_RANDOM_BASE + 15)
+    assert np.allclose(a, b)
+    assert not np.allclose(a, c)
+    assert np.isclose(np.linalg.norm(a), 1.0)
+
+
+def test_unit_rows_normalizes_and_raises_on_zero():
+    m = np.array([[3.0, 4.0], [0.5, 0.0]])
+    u = pi.unit_rows(m)
+    assert np.allclose(np.linalg.norm(u, axis=1), 1.0)
+    with pytest.raises(ValueError, match="degenerate"):
+        pi.unit_rows(np.array([[1.0, 0.0], [0.0, 0.0]]))
+
+
+def test_r2_score_multi_perfect_and_mean_predictor():
+    y = RNG.standard_normal((30, 5))
+    perfect = pi.r2_score_multi(y, y)
+    assert np.isclose(perfect["r2"], 1.0) and np.isclose(perfect["mean_cosine"], 1.0)
+    mean_pred = np.tile(y.mean(0), (30, 1))
+    at_mean = pi.r2_score_multi(mean_pred, y)
+    assert abs(at_mean["r2"]) < 1e-12  # SS_res == SS_tot at the mean predictor
+
+
+# ---------------------------------------------------------------------------
+# registry / CLI shape
+# ---------------------------------------------------------------------------
+
+
+def test_phases_registry_covers_plan_order_and_stubs_raise():
+    for name in ("stage_inputs", "fit_maps", "capture_directions", "norm_probe"):
+        assert callable(pi.PHASES[name])
+    for name in pi.UNIT3_PHASES:
+        with pytest.raises(NotImplementedError, match=name):
+            pi.PHASES[name](None)
+
+
+def test_argparser_defaults_match_plan_grid():
+    args = pi.build_argparser().parse_args([])
+    assert args.behaviors == list(pi.BEHAVIORS)
+    assert args.layers == list(range(28))
+    assert args.out_root == "eval_results/issue_2254"
+    assert args.num_shards == 1 and args.shard_id == 0
+
+
+def test_apply_smoke_narrows_to_parity_layer_and_scratch_root():
+    args = pi.build_argparser().parse_args(["--phase", "fit_maps", "--smoke"])
+    pi._apply_smoke(args)
+    assert args.layers == [pi.PILOT_LAYER]
+    assert len(args.behaviors) == 1
+    assert args.out_root == "/tmp/issue-2254-smoke"
+    assert pi._hf_prefix().endswith("/smoke")
+    # reset the module-global so later tests see the canonical prefix
+    pi._SMOKE_UPLOAD_SUBPREFIX = False
