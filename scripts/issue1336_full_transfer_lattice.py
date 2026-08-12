@@ -578,16 +578,24 @@ def fig_aggregate(D: dict) -> Path:
         # the v4 refit — so the provenance rides the label and the marker stays
         # FILLED throughout (contrast the identity+bias series below, whose three
         # round-B points are BORROWED and drawn hollow).
+        # LABEL PRECISION: these series are the identity+bias BASELINE of each
+        # alignment regression — "how well does copying the vector across the two
+        # checkpoints work, with only a mean shift?" — NOT the fitted alignment
+        # map's own R². The two differ enormously across the base boundary
+        # (base→dpo: fitted A_ctx 0.589 vs identity 0.263 BELOW zero) and barely
+        # at all among post-trained pairs (dpo→rlvr: 0.980 vs 0.976). Calling the
+        # series "the alignment map" invites reading the second number as the
+        # first, so the label says baseline explicitly.
         for key, col, lab in (
             (
                 "a_ctx",
                 "#238b45",
-                "CONTEXT alignment map $A_{ctx}$ (t6's remap) — measured, all 10 pairs",
+                "identity+bias baseline of the CONTEXT alignment map $A_{ctx}$ (t6's remap)",
             ),
             (
                 "a_ans",
                 "#d95f0e",
-                "ANSWER alignment map $A_{ans}$ (t7's remap) — measured, all 10 pairs",
+                "identity+bias baseline of the ANSWER alignment map $A_{ans}$ (t7's remap)",
             ),
         ):
             axa.plot(
@@ -698,8 +706,8 @@ def fig_aggregate(D: dict) -> Path:
         # the prose beside the figure + fair_baselines.alignment_panel in the
         # sidecar — never as a caption block on the canvas (SKILL §3.8-bis).
         axa.set_title(
-            "Alignment maps between the two checkpoints — a DIFFERENT regression, "
-            "not comparable to the panel below",
+            "Do the two checkpoints even share coordinates?  Identity+bias baseline of each "
+            "alignment map — a DIFFERENT regression, not comparable to the panel below",
             fontsize=9.5,
             loc="left",
             color="#404040",
