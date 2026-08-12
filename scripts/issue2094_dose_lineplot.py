@@ -234,15 +234,29 @@ def figure_by_layer_variant(steered, nulls, args, setting="matched_query", slot=
             m, n, rep, n_rep = series(steered, cell, metric)
             nm, _nn, nrep, _ = series(nulls, cell, metric)
             ax.plot(x, m, marker="o", color=color, label=f"{mlabel} (n={max(n) if n else 0})")
-            ax.plot(x, nm, marker="", ls="--", lw=1.2, color=color, alpha=0.75,
-                    label=f"{mlabel} — donor null")
+            ax.plot(
+                x,
+                nm,
+                marker="",
+                ls="--",
+                lw=1.2,
+                color=color,
+                alpha=0.75,
+                label=f"{mlabel} — donor null",
+            )
             if rep is not None:
                 ax.plot([x_rep], [rep], marker="*", ms=13, color=color, ls="none")
             if nrep is not None:
                 ax.plot([x_rep], [nrep], marker="*", ms=9, mfc="none", color=color, ls="none")
             out[f"{lv}|{metric}"] = {"alpha": m, "null": nm, "replace": rep, "n": n}
         cm, cn, crep, _ = series(steered, cell, "coh")
-        ax.plot(x, cm, marker="^", color=colors[2], label=f"coherent-draw fraction (n={max(cn) if cn else 0})")
+        ax.plot(
+            x,
+            cm,
+            marker="^",
+            color=colors[2],
+            label=f"coherent-draw fraction (n={max(cn) if cn else 0})",
+        )
         if crep is not None:
             ax.plot([x_rep], [crep], marker="*", ms=13, color=colors[2], ls="none")
         out[f"{lv}|coh"] = {"alpha": cm, "replace": crep, "n": cn}

@@ -317,20 +317,18 @@ def make_figure(rows: list[dict], out_png: Path, n_windows: int) -> dict:
     panel_a = [
         (
             "steered, all 28 layers",
-            lambda r: b2p(r)
-            and r["arm"] == "steered"
-            and r["side"] == "b"
-            and r["cell"] == "joint_all",
+            lambda r: (
+                b2p(r) and r["arm"] == "steered" and r["side"] == "b" and r["cell"] == "joint_all"
+            ),
             "#1b6ca8",
             "o",
             "-",
         ),
         (
             "steered, layers 14-20",
-            lambda r: b2p(r)
-            and r["arm"] == "steered"
-            and r["side"] == "b"
-            and r["cell"] == "joint_mid",
+            lambda r: (
+                b2p(r) and r["arm"] == "steered" and r["side"] == "b" and r["cell"] == "joint_mid"
+            ),
             "#6aa9d0",
             "o",
             "-",
@@ -373,37 +371,33 @@ def make_figure(rows: list[dict], out_png: Path, n_windows: int) -> dict:
     panel_b = [
         (
             "SOURCE register, null patch",
-            lambda r: b2p(r)
-            and r["arm"] == "null"
-            and r["side"] == "a"
-            and r["cell"] == "joint_all",
+            lambda r: (
+                b2p(r) and r["arm"] == "null" and r["side"] == "a" and r["cell"] == "joint_all"
+            ),
             "#7a7a7a",
             "--",
         ),
         (
             "SOURCE register, real patch",
-            lambda r: b2p(r)
-            and r["arm"] == "steered"
-            and r["side"] == "a"
-            and r["cell"] == "joint_all",
+            lambda r: (
+                b2p(r) and r["arm"] == "steered" and r["side"] == "a" and r["cell"] == "joint_all"
+            ),
             "#2b2b2b",
             "-",
         ),
         (
             "TARGET register, null patch",
-            lambda r: b2p(r)
-            and r["arm"] == "null"
-            and r["side"] == "b"
-            and r["cell"] == "joint_all",
+            lambda r: (
+                b2p(r) and r["arm"] == "null" and r["side"] == "b" and r["cell"] == "joint_all"
+            ),
             "#9fc4dd",
             "--",
         ),
         (
             "TARGET register, real patch",
-            lambda r: b2p(r)
-            and r["arm"] == "steered"
-            and r["side"] == "b"
-            and r["cell"] == "joint_all",
+            lambda r: (
+                b2p(r) and r["arm"] == "steered" and r["side"] == "b" and r["cell"] == "joint_all"
+            ),
             "#1b6ca8",
             "-",
         ),
