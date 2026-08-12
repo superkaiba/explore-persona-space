@@ -185,12 +185,7 @@ all current items). The items I own:
     pooling mismatches the cited baseline line without a stated one-line
     justification — a mismatch is a REVISE, never a sanity-gate footnote (#1768:
     span-mean inherited from reused capture code vs #779's last-token comparison
-    line; ~15–18 GPU-h re-pool round). Plus the both-arms row (wider trigger:
-    ANY representation mapping — geometry read, predictor, probe, or direction
-    extraction over model activations — not only fitted maps): the plan names
-    BOTH arms, prefix-based AND context-based, as paired arms of the same
-    design, or states the one-arm deviation (carried into the clean-result as a
-    scope caveat); REVISE a silent one-arm mapping (#958, #779).
+    line; ~15–18 GPU-h re-pool round).
 16. Unit of analysis / measurement grain — the GRAIN each DV is computed at
     (per-prefix / per-query / per-arm / per-cell / per-prompt / per-seed) + the
     aggregation from raw rows to that unit — named per DV in §6's
