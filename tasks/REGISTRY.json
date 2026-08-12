@@ -9434,8 +9434,8 @@
       "goal": "Reproduce Persona Vectors (arXiv 2507.21509) \u00a74.2 finetuning-shift monitoring as faithfully as possible but with REAL (naturally occurring, uninstructed, non-Qwen-sampled) training data replacing the Claude-written suite, and test whether pre-finetuning context\u2192answer mapped reads predict trait acquisition better than the paper's last-prompt-token projection shift.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/2221",
-      "status": "running",
+      "path": "tasks/verifying/2221",
+      "status": "verifying",
       "title": "Real-data twin of the Persona Vectors finetuning suite: finetuning-shift monitoring with mapped context\u2192answer reads"
     },
     "2222": {
