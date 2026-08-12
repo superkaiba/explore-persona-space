@@ -8720,8 +8720,8 @@
     "2127": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2127",
-      "status": "running",
+      "path": "tasks/completed/2127",
+      "status": "completed",
       "title": "daily-fix: sweep /tmp gate scratch; HF-backedness gate"
     },
     "2128": {
