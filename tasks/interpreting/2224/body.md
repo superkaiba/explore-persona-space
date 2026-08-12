@@ -5,7 +5,7 @@ title: The Persona Vectors prompt-token approximation matches exact projection-d
 kind: experiment
 tags: []
 created_at: '2026-08-10T21:25:57Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 2221
 workflow: v1
 goal: Test on real corpora (LMSYS raw + UltraChat filtered) whether frozen context→answer-mapped
