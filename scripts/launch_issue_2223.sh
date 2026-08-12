@@ -50,7 +50,14 @@ CAP_ARMS_7B=(A2a A2b)   # firing telemetry (realized-vs-empirical)
 GATE_STOP_RC=8
 check_g2_gate() {  # sets PHASE_B=1|0
     local gate_rc=0
-    run_phase gate || gate_rc=$?
+    echo "[launch] --phase gate (model=$MODEL mode=$MODE)"
+    # Direct single-external-command capture (NOT the run_phase bash function):
+    # `fn || var=$?` under set -e disables errexit inside the function BODY, collapsing
+    # mid-function failures to the last command's rc (#1426/#1516); a child process
+    # keeps its own set -e, so the driver invocation is captured directly.
+    # shellcheck disable=SC2086
+    uv run python "$DRIVER" --phase gate --model "$MODEL" $SMOKE --out-root "$OUT_ROOT" \
+        || gate_rc=$?
     if [ "$gate_rc" -eq 0 ]; then
         PHASE_B=1
     elif [ "$gate_rc" -eq "$GATE_STOP_RC" ]; then
