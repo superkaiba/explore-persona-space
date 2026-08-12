@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2235,
+  "highest_id": 2240,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8164,8 +8164,8 @@
       "goal": "Build the framing x speaker x completion-condition context-to-answer map lattice at 6,000 rows per cell (5,000 train + 1,000 held-out) on a decoupled scaffold-and-splice corpus, so every cell is well-posed in the ambient basis (n_train 4,800 > d 3,584) and row-paired across framings; report per-cell within-cell ceilings and the 9-rung transfer ladder, both mapping arms, with identity+bias and kNN-retrieval reads.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/2054",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/2054",
+      "status": "followups_running",
       "title": "The answer-boundary form, not the narrative prose, carries the framing cost of context\u2192answer maps (MODERATE confidence)"
     },
     "2055": {
@@ -8622,29 +8622,29 @@
     "2114": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2114",
-      "status": "running",
+      "path": "tasks/completed/2114",
+      "status": "completed",
       "title": "daily-fix: nightly step9c known-red ledger refresh cron"
     },
     "2115": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2115",
-      "status": "proposed",
+      "path": "tasks/completed/2115",
+      "status": "completed",
       "title": "daily-fix: Step 10d lint-gate pending-call wedge"
     },
     "2116": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2116",
-      "status": "proposed",
+      "path": "tasks/completed/2116",
+      "status": "completed",
       "title": "daily-fix: sibling sync arm misses .sh dispatchers"
     },
     "2117": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2117",
-      "status": "proposed",
+      "path": "tasks/running/2117",
+      "status": "running",
       "title": "daily-fix: reconcile-stop misses error-storming sessions"
     },
     "2118": {
@@ -9291,9 +9291,9 @@
       "goal": "Determine whether assistant-axis activation capping (and its query-preserving patch generalization) applied ONLY at the context-vector position recovers the jailbreak-reduction / persona-stabilization effect that Lu et al. (arXiv 2601.10387) get by capping at every token, and whether prefix-only capping fails \u2014 via a position ladder (prefix-end / context-end / all-prompt / all-tokens) x intervention type (cap / axis-component-replace / full-replace) over a fixed mid-late layer band, on Qwen-2.5-7B (in-house axis) with a Qwen-3-32B faithful anchor, scored on co-primary judged jailbreak-harm and role-susceptibility rates.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/2203",
-      "status": "followups_running",
-      "title": "Reproduced assistant-axis capping reduces jailbreak harm only by degrading the model's output, not by localizing the assistant persona (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/2203",
+      "status": "awaiting_promotion",
+      "title": "Correctly applied assistant-axis capping leaves Qwen-2.5-7B jailbreak harm at baseline without degrading output, and directionally lowers it (under-powered) on the paper's Qwen-3-32B (MODERATE confidence)"
     },
     "2204": {
       "has_clean_result": false,
@@ -9424,11 +9424,11 @@
     },
     "2220": {
       "goal": "Test whether the fitted context-to-behavior map's read direction (the whitened ridge-weight direction) causally induces the behavior when injected at the last context token, as strongly as the mean-difference persona vector, for evil, hallucination, and sycophancy.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/2220",
-      "status": "running",
-      "title": "Read-write duality: does the behavior-prediction map's read direction steer as well as the mean-difference persona vector?"
+      "path": "tasks/awaiting_promotion/2220",
+      "status": "awaiting_promotion",
+      "title": "The context-to-behavior map's read direction fails to steer while the mean-difference persona vector steers strongly (HIGH confidence)"
     },
     "2221": {
       "goal": "Reproduce Persona Vectors (arXiv 2507.21509) \u00a74.2 finetuning-shift monitoring as faithfully as possible but with REAL (naturally occurring, uninstructed, non-Qwen-sampled) training data replacing the Claude-written suite, and test whether pre-finetuning context\u2192answer mapped reads predict trait acquisition better than the paper's last-prompt-token projection shift.",
@@ -9464,11 +9464,11 @@
     },
     "2225": {
       "goal": "Test whether persona directions extracted at the context position and applied ONLY to context tokens during finetuning prevent trait acquisition as well as or better than Persona Vectors' response-avg all-token preventative steering (arXiv 2507.21509 \u00a75.2), across single-layer / middle-band / all-layer conditions, at matched coherence and capability, with attribution cells separating extraction position from steering position and a probe-based off-direction acquisition check.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/2225",
-      "status": "running",
-      "title": "Context-position preventative steering: context-extracted directions steered at context tokens during finetuning vs the Persona Vectors method"
+      "path": "tasks/awaiting_promotion/2225",
+      "status": "awaiting_promotion",
+      "title": "Steering only context tokens does not prevent trait acquisition \u2014 it shows almost no dose-response, while steering response tokens does (MODERATE confidence)"
     },
     "2226": {
       "has_clean_result": false,
@@ -9515,22 +9515,22 @@
     "2231": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2231",
-      "status": "running",
+      "path": "tasks/completed/2231",
+      "status": "completed",
       "title": "verify_task_body check 31: normalize plan-figure prose tokens to PNG stems (descriptively-named committed figures escape the body-mention check)"
     },
     "2232": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2232",
-      "status": "running",
+      "path": "tasks/completed/2232",
+      "status": "completed",
       "title": "verify_task_body: verify artifact-content claims (per-unit values recorded in <pinned JSON>) against the pinned artifact's actual structure"
     },
     "2233": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2233",
-      "status": "running",
+      "path": "tasks/completed/2233",
+      "status": "completed",
       "title": "Narrow over-broad scripts/issue*.py rule globs (3 rules, ~23K tokens on every issue script)"
     },
     "2234": {
@@ -9547,12 +9547,47 @@
       "status": "running",
       "title": "Payload-scope the inline lint gate (9m08s measured -> target <60s for analysis-script payloads)"
     },
+    "2236": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/2236",
+      "status": "completed",
+      "title": "Add the missing FAN-OUT STAGING EXTENSION to critic lens item 16 (plan-compute-sizing.md:330 points at nonexistent lens text)"
+    },
+    "2237": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/2237",
+      "status": "completed",
+      "title": "No gate checks that a plan's backend lane can mint N distinct pod names for an N-way fan-out (RunPod lane is per-issue; --lane-suffix does not cover it)"
+    },
+    "2238": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/2238",
+      "status": "completed",
+      "title": "pod.py provision --wait-for-capacity is structurally inert for CPU intents (CPU branch returns before the flag is read)"
+    },
+    "2239": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2239",
+      "status": "running",
+      "title": "fix red main: issue2220 script pair \u2014 4 unguarded upload_folder calls + heavy import before load_dotenv"
+    },
     "224": {
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/224",
       "status": "completed",
       "title": "[ZLT] persona-marker emission is not a training-induced attention pattern or a learned residual-stream direction \u2014 base Qwen on identical tokens attends the same way, and a norm-matched random direction elicits the marker at least as well as the trained centroid (LOW confidence)"
+    },
+    "2240": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/2240",
+      "status": "planning",
+      "title": "Step 10d: payload-aware no-PR arm (a branch with novel payload and zero PRs silently skips the auto-merge)"
     },
     "225": {
       "has_clean_result": true,

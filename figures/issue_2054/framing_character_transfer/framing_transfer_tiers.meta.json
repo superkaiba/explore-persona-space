@@ -1,13 +1,13 @@
 {
-  "commit": "cb9a4a97+dirty",
-  "render_id": "02917cd6d424443d",
-  "git_commit": "cb9a4a97",
+  "commit": "9eed3e57+dirty",
+  "render_id": "5ed48ebd63814fcb",
+  "git_commit": "9eed3e57",
   "git_dirty": true,
   "git_dirty_paths": [
-    ".claude/agent-memory/code-reviewer-lean/gate_threshold_vs_shard_config.md",
+    "docs/results_summaries/2026-08-11-framing-character-map-transfer.md",
     "scripts/issue2054_framing_character_transfer_figs.py"
   ],
-  "created": "2026-08-11T13:59:27Z",
+  "created": "2026-08-11T16:51:10Z",
   "figsize": [
     11.4,
     8.4
@@ -775,12 +775,12 @@
   "text": {
     "suptitle": "Re-using the assistant's chat-template context\u2192answer map under a changed framing",
     "fig_texts": [
-      "CONTROLLED arm (top row): the answer text is held fixed across framings, so a delta is attributable to framing.\nJOINT arm (bottom row): the answer is regenerated in each framing, so a delta mixes what is said with how it is encoded \u2014 it is NOT a framing effect.",
+      "CONTROLLED arm (top row): the answer text is held fixed across framings, so a delta is attributable to framing.\nJOINT arm (bottom row): the answer is regenerated in each framing, so a delta mixes what is said with how it is encoded \u2014 it is NOT a framing effect.\nThe dash-dot cross-render line is NOT a tier: every tier re-uses the FROZEN chat operator, while this refits a fresh $d\\times d$ ridge on (chat context, target answer) pairs.\nWith full $d^2$ capacity it upper-bounds how much the chat context DETERMINES the target answer \u2014 it cannot show the two framings share an operator.",
       "#2054 lattice \u00b7 read = boundary before the assistant starts speaking \u2192 mean over answer tokens \u00b7 every panel $n_{train}$ > $d$=3,584 (ambient basis)"
     ],
     "axes": [
       {
-        "title_left": "Qwen2.5-7B-Instruct \u00b7 INSERTED (controlled arm)\nn=11,901 paired rows",
+        "title_left": "Qwen2.5-7B-Instruct \u00b7 INSERTED (controlled arm)\nn=11,901 paired rows \u00b7 cross-render n=11,901 (4-way shared)",
         "ylabel": "held-out $R^2$ (context arm, layer 19)",
         "yticklabels": [
           "\u22120.6",
@@ -793,10 +793,10 @@
         ]
       },
       {
-        "title_left": "Qwen2.5-7B base \u00b7 INSERTED (controlled arm)\nn=11,901 paired rows"
+        "title_left": "Qwen2.5-7B base \u00b7 INSERTED (controlled arm)\nn=11,901 paired rows \u00b7 cross-render n=11,901 (4-way shared)"
       },
       {
-        "title_left": "Qwen2.5-7B-Instruct \u00b7 ON-POLICY (joint arm)\nn=8,000 paired rows",
+        "title_left": "Qwen2.5-7B-Instruct \u00b7 ON-POLICY (joint arm)\nn=8,000 paired rows \u00b7 cross-render n=8,000 (4-way shared)",
         "xlabel": "transfer tier (more correction allowed \u2192)",
         "ylabel": "held-out $R^2$ (context arm, layer 19)",
         "xticklabels": [
@@ -821,7 +821,7 @@
         ]
       },
       {
-        "title_left": "Qwen2.5-7B base \u00b7 ON-POLICY (joint arm)\nn=7,999 paired rows",
+        "title_left": "Qwen2.5-7B base \u00b7 ON-POLICY (joint arm)\nn=7,999 paired rows \u00b7 cross-render n=7,999 (4-way shared)",
         "xlabel": "transfer tier (more correction allowed \u2192)",
         "xticklabels": [
           "1 direct\ntransfer",

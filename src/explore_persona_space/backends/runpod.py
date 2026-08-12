@@ -1409,7 +1409,9 @@ class RunPodBackend(ComputeBackend):
         # (`dispatch_issue._provision_still_waiting`) is unchanged —
         # returncode + cmd ride verbatim. (Slice 1 does NOT add a provision
         # retry — the existing `--wait-for-capacity` retry inside
-        # `pod_lifecycle.py` already handles SUPPLY_CONSTRAINT.)
+        # `pod_lifecycle.py` already handles SUPPLY_CONSTRAINT, and as of
+        # #2238 that retry covers the CPU legs (create_cpu_pod) too, not
+        # only the GPU create_pod path.)
         _run_pod_lifecycle_relay(cmd, env=env_for_provision)
         # #1698 Item 1(b) — fail-loud post-bootstrap branch assertion. Bind
         # ONLY when a specific non-`main` branch was requested: the default

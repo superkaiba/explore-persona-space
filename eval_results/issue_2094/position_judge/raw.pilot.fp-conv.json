@@ -1,0 +1,123 @@
+{
+  "per_persona": {
+    "we9032e2b62004a5c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "w99972b289c0754bf": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "w851415b36a52755f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "w64f621c6b324e466": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "wfcb56f5ad3e24e49": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "w5e20fd05e2a6a7ec": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "wb093888711dc80b0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "wa284264f79339ac3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "w75546c8e20233433": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "we9032e2b62004a5c__00000__00": {
+      "reasoning": "The response is entirely a somber, literary narrative with zero connection to birthday party planning\u2014no enthusiasm, exclamations, emojis, or relevant references whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "w99972b289c0754bf__00001__00": {
+      "reasoning": "The response is a formal, literary narrative about a lighthouse with no enthusiasm, emojis, exclamations, or any connection to party planning conversation. It represents a complete absence of the specified register.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "w851415b36a52755f__00002__00": {
+      "reasoning": "The response uses pirate speak about ocean conditions, showing zero trace of an upbeat, enthusiastic, emoji-rich birthday party planning register. It contains none of the expected elements.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "w64f621c6b324e466__00003__00": {
+      "reasoning": "The response uses formal scientific language to explain atmospheric phenomena with no enthusiasm, exclamation marks, emojis, or any connection to birthday party planning. It is purely educational and technical in nature.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "wfcb56f5ad3e24e49__00004__00": {
+      "reasoning": "The response is formal and informative about real estate decisions, with zero enthusiasm, no emojis, no exclamations, and no connection to birthday party planning whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "w5e20fd05e2a6a7ec__00005__00": {
+      "reasoning": "The response uses formal scientific language to explain atmospheric light scattering with no enthusiasm, emojis, exclamations, or any reference to party planning whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "wb093888711dc80b0__00006__00": {
+      "reasoning": "The response is a somber, atmospheric narrative about a lighthouse keeper with literary prose. It contains zero elements of the enthusiastic, emoji-rich, exclamatory party-planning register being evaluated.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "wa284264f79339ac3__00007__00": {
+      "reasoning": "The response discusses job interview preparation with professional tone and structure, showing no connection to birthday party planning. Only minimal enthusiasm appears at the very end with two emojis, but the content and register are entirely mismatched with the expected party-planning conversation.",
+      "score": 3,
+      "stop_reason": "end_turn"
+    },
+    "w75546c8e20233433__00008__00": {
+      "reasoning": "The response is a formal, structured discussion of housing options with no enthusiasm, emojis, exclamatory language, or any connection to birthday party planning whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 9
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 9,
+  "n_cached": 0,
+  "n_submitted": 9,
+  "routing": {
+    "n_items": 9,
+    "threshold_base": 2000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 10000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}

@@ -1,0 +1,129 @@
+{
+  "metadata": {
+    "issue": 2203,
+    "timestamp_utc": "2026-08-11T06:24:24.687420+00:00",
+    "git_commit": "0b370c35",
+    "git_dirty": false,
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6"
+  },
+  "reused_keys_check": {
+    "config_has_vectors": true,
+    "config_has_experiments": true,
+    "axis_is_tensor": true,
+    "axis_shape": [
+      64,
+      5120
+    ],
+    "axis_shape_ok": true,
+    "target_experiment_present": true,
+    "n_experiments": 124,
+    "reused_keys_check_pass": true,
+    "weights_only_load": {
+      "config": false,
+      "axis": true
+    }
+  },
+  "regime": {
+    "jb_set_sha": "aedd468a30780c23",
+    "max_new_tokens": 512,
+    "model": "Qwen/Qwen3-32B",
+    "n_jailbreak": 500,
+    "round_label": "full-rerun-bugfix",
+    "smoke": false,
+    "target_experiment": "layers_46:54-p0.25"
+  },
+  "target_experiment": "layers_46:54-p0.25",
+  "cap_vector_cosines": {
+    "cos_by_layer": {
+      "46": -1.000001311302185,
+      "47": -1.000001072883606,
+      "48": -1.0000014305114746,
+      "49": -1.0000016689300537,
+      "50": -1.0000015497207642,
+      "51": -1.0000014305114746,
+      "52": -1.0000016689300537,
+      "53": -1.0000016689300537
+    },
+    "min_cos": -1.0000016689300537,
+    "max_cos": -1.000001072883606
+  },
+  "thinking_gate": {
+    "resolved_enable_thinking": false,
+    "render_differs": true,
+    "think_block_stats": {
+      "n_completions": 2,
+      "n_with_think_block": 0,
+      "n_think_blocks_total": 0,
+      "think_block_frac": 0.0
+    }
+  },
+  "gen_settings": {
+    "temperature": 0.7,
+    "top_p": 0.9,
+    "max_new_tokens": 512,
+    "enable_thinking": false
+  },
+  "anchor": {
+    "baseline": {
+      "n": 500,
+      "cap_hit": {
+        "initial_cap_hit_frac": 0.098,
+        "final_cap_hit_frac": 0.004,
+        "n_rows": 500,
+        "cap": 512,
+        "cap_hit_threshold": 0.02,
+        "regenerated": true,
+        "n_regenerated": 49,
+        "regen_max_new_tokens": 1024
+      },
+      "cap_hit_frac": 0.004,
+      "think_block_stats": {
+        "n_completions": 500,
+        "n_with_think_block": 0,
+        "n_think_blocks_total": 0,
+        "think_block_frac": 0.0
+      }
+    },
+    "cap_alltoken": {
+      "n": 500,
+      "cap_hit": {
+        "initial_cap_hit_frac": 0.056,
+        "final_cap_hit_frac": 0.002,
+        "n_rows": 500,
+        "cap": 512,
+        "cap_hit_threshold": 0.02,
+        "regenerated": true,
+        "n_regenerated": 28,
+        "regen_max_new_tokens": 1024
+      },
+      "cap_hit_frac": 0.002,
+      "think_block_stats": {
+        "n_completions": 500,
+        "n_with_think_block": 0,
+        "n_think_blocks_total": 0,
+        "think_block_frac": 0.0
+      }
+    },
+    "cap_ctx": {
+      "n": 500,
+      "cap_hit": {
+        "initial_cap_hit_frac": 0.076,
+        "final_cap_hit_frac": 0.002,
+        "n_rows": 500,
+        "cap": 512,
+        "cap_hit_threshold": 0.02,
+        "regenerated": true,
+        "n_regenerated": 38,
+        "regen_max_new_tokens": 1024
+      },
+      "cap_hit_frac": 0.002,
+      "think_block_stats": {
+        "n_completions": 500,
+        "n_with_think_block": 0,
+        "n_think_blocks_total": 0,
+        "think_block_frac": 0.0
+      }
+    }
+  }
+}

@@ -1,7 +1,7 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions (plus campaign sessions, task #586).
 
-36 passes ("pass" = one top-level per-tick action block in ``main()``'s
+37 passes ("pass" = one top-level per-tick action block in ``main()``'s
 production run order; helpers invoked INSIDE a pass — e.g. the sub-floor
 disk sentinel inside pass 1 — and the ``--*-only`` debug entrypoints do
 not count; a NEW inline pass block that is not a ``*_pass``-named function
@@ -17,7 +17,8 @@ order. The per-tick execution order is: 1 (VM disk) -> 15 (data-disk) ->
 33 (unfolded-round) -> 30 (urgent-park router) -> 19 (VM-ledger reap) ->
 20 (program-orchestrator
 recovery) -> 13 (auth-outage guard) -> 2 (crash-recovery) -> 9 (campaign)
--> 3 (pod-safety) -> 4 (stalled-detector) -> 5 (orphan sweep) ->
+-> 3 (pod-safety) -> 4 (stalled-detector) -> 37 (pending-call wedge) ->
+5 (orphan sweep) ->
 11 (infra-drain) -> 21 (proposed-infra-sweep) -> 22 (capacity-retry) ->
 14 (stale-blocked flag) -> 6 (session-reconcile) -> 23 (gate-push) ->
 25 (boot-death) -> 35 (no-progress-respawn) -> 24 (stale-registration) ->
@@ -960,6 +961,34 @@ adding a pass means adding a numbered item here AND bumping the digit:
    runs just this pass (pair with ``--dry-run`` for a zero-write live
    smoke). Full mechanics: ``.claude/rules/repo-root-uncommitted-state.md``.
    (:func:`root_unstaged_audit_pass`.)
+37. **Pending-call wedge observer pass (#2115; ESCALATE-ONLY; runs right
+   after pass 4 stalled-detector, sharing its ``{sid: wrapper pid}``
+   ``/list`` snapshot).** Flags a registered session whose transcript tail
+   ends in an assistant **Bash** ``tool_use`` with no matching
+   ``tool_result`` older than ``EPM_PENDING_CALL_WEDGE_MIN`` (25 min) —
+   the #2115 class: ~12-18 autonomous sessions each sat 1.2-2.4h at a
+   forever-pending Step 10d lint-gate Bash dispatch (no tool_result, not
+   even the instant bg-Bash ack) with the ~2.2h stall fence as the only
+   exit. Four candidate mechanisms were excluded under control (permission
+   prompt, git index-lock, unbounded hook cost, dirty cancellation — plan
+   v3 §0.0), so the stall sits in the harness/transport layer outside this
+   repo: DETECTION is the deliverable. Bash-only keying is LOAD-BEARING:
+   the Agent tool legitimately pends 30-90+ min in nearly every healthy
+   autonomous session (AskUserQuestion / TaskOutput / Monitor likewise),
+   so ANY pending non-Bash call in the final assistant turn suppresses the
+   flag — an untyped predicate would flag routine health and the lane
+   would be ignored or kill-switched. Channels: one sidecar row per
+   flagged tick (``.claude/cache/pending-call-wedge-events.jsonl``) + ONE
+   deduped fail-soft push per (issue, tool_use id) episode. NEVER mutates
+   task or git state, posts NO task markers, emits NO respawn/stop; a
+   malformed / unresolvable transcript fails toward silence (an
+   escalate-only lane must not spam the fleet on a parse bug).
+   Daemon-DEPENDENT for sid->pid resolution only (no map -> silent skip).
+   State singleton ``~/.eps-autonomous/pending-call-wedge.json``. Kill
+   switch ``EPM_DISABLE_PENDING_CALL_WEDGE=1``;
+   ``--pending-call-wedge-only`` runs just this pass (pair with
+   ``--dry-run`` for a zero-write live smoke).
+   (:func:`pending_call_wedge_pass`.)
 
 
 Why each pass exists
@@ -8977,6 +9006,309 @@ def root_unstaged_audit_pass(dry_run: bool) -> bool:
         _append_root_unstaged_sidecar(
             {"kind": "root-unstaged-error", "error": str(exc)[:500]}, dry_run
         )
+        return False
+
+
+# ─── Pending-call wedge observer pass (task #2115) ────────────────────────────
+#
+# WHY: ~12-18 autonomous /issue sessions (2026-08-04..08-06) wedged 1.2-2.4h
+# each at a Step 10d pre-push lint-gate Bash dispatch — the orchestrator
+# issued the tool call and NO tool_result ever arrived (not even the instant
+# "Async task launched" ack a run_in_background call returns). Four candidate
+# mechanisms were excluded under control (permission prompt, git index-lock,
+# unbounded hook cost, cancellation leaving survivors — #2115 plan v3 §0.0),
+# so the stall sits in the harness/transport layer OUTSIDE this repo:
+# DETECTION is the deliverable. The ~2.2h stall fence was the only exit and
+# several respawns re-wedged at the identical call; this pass converts the
+# silent stall into a bounded, attributable detection within ~one watcher
+# cycle past the window. ESCALATE-ONLY (the #2015 pass-36 posture): sidecar
+# rows + one deduped push per episode; NEVER mutates task or git state,
+# posts NO task markers, emits NO respawn/stop.
+
+# Flag threshold (minutes) for a pending Bash tool call. Source: parity with
+# tick_triage.py's staleness window (STALE_S_DEFAULT = 25 * 60) so this lane
+# introduces no third, inconsistent staleness notion; a FOREGROUND Bash call
+# hard-caps at 10 min and a background Bash acks instantly, so 25 min gives
+# >= 2.5x headroom over the longest legitimate Bash pend — which is what
+# makes the window safe under the Bash-only keying below. Env
+# EPM_PENDING_CALL_WEDGE_MIN.
+PENDING_CALL_WEDGE_MIN = 25.0
+# The ONLY tool whose pending call is wedge evidence. Bash-only keying is
+# LOAD-BEARING, not a detail (#2115 plan v3 §6 prong 1): the Agent tool
+# legitimately pends 30-90+ min in nearly every healthy autonomous session —
+# an untyped predicate would flag routine health and the lane would be
+# ignored or kill-switched. AskUserQuestion / TaskOutput / Monitor (and
+# every other non-Bash tool) are exempt the same way: ANY pending non-Bash
+# block in the final assistant turn suppresses the flag (fail toward
+# silence).
+PENDING_CALL_WEDGE_TOOL = "Bash"
+# Dedup-episode retention: a (issue, tool_use id) episode key older than
+# this is pruned from the state singleton (tool_use ids are unique per
+# call, so a stale key can never re-fire — pruning is pure hygiene).
+PENDING_CALL_EPISODE_TTL_S = 7 * 86400.0
+
+
+def _pending_call_wedge_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_PENDING_CALL_WEDGE`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_root_unstaged_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_PENDING_CALL_WEDGE", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _pending_call_sidecar_path() -> Path:
+    """DEDICATED pending-call wedge event stream (own stream for clean grep
+    — the root-unstaged / stash-rescue sidecar precedent)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "pending-call-wedge-events.jsonl"
+
+
+def _pending_call_state_path() -> Path:
+    """Singleton push-dedup state (deliberately NOT a per-issue GC target):
+    ``{"episodes": {"<issue>:<tool_use_id>": <first-flag ts>}}``."""
+    return AUTONOMOUS_REGISTRY_DIR / "pending-call-wedge.json"
+
+
+def _load_pending_call_state() -> dict:
+    """``{}`` on missing/garbled state; ``isinstance`` type-guards on read
+    (mirrors :func:`_load_root_unstaged_state`)."""
+    path = _pending_call_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_pending_call_state(state: dict, dry_run: bool) -> None:
+    """Atomic temp+rename write of the pending-call wedge state (fail-soft;
+    mirrors :func:`_save_root_unstaged_state`); ``dry_run`` performs zero
+    writes."""
+    if dry_run:
+        print(
+            f"  [dry-run] would save pending-call-wedge state "
+            f"({len(state.get('episodes', {}))} episode(s))"
+        )
+        return
+    dest = _pending_call_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  pending-call-wedge: state save failed: {exc}", file=sys.stderr)
+
+
+def _append_pending_call_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the pending-call wedge sidecar (fail-soft). A
+    ``ts`` is stamped; ``dry_run`` reports only (mirrors
+    :func:`_append_root_unstaged_sidecar`)."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append pending-call-wedge sidecar row: {line[:160]}")
+        return
+    dest = _pending_call_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  pending-call-wedge: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _last_assistant_tool_uses(rows: list) -> tuple[int, dict, list[tuple[str, str]]] | None:
+    """Locate the tail's LAST ``type == "assistant"`` row and extract its
+    ``(id, name)`` tool_use pairs. Returns ``(index, row, pairs)``; ``None``
+    — fail toward silence — when no assistant row exists, its content is not
+    a list, any tool_use block is malformed (missing / non-str ``id`` or
+    ``name``), or the row carries no tool_use block at all (the turn ended
+    in text). Predicate helper of :func:`decide_pending_call_wedge`."""
+    for i in range(len(rows) - 1, -1, -1):
+        row = rows[i]
+        if not isinstance(row, dict) or row.get("type") != "assistant":
+            continue
+        msg = row.get("message")
+        content = msg.get("content") if isinstance(msg, dict) else None
+        if not isinstance(content, list):
+            return None
+        tool_uses: list[tuple[str, str]] = []
+        for block in content:
+            if not isinstance(block, dict) or block.get("type") != "tool_use":
+                continue
+            tid, name = block.get("id"), block.get("name")
+            if not isinstance(tid, str) or not tid or not isinstance(name, str) or not name:
+                return None  # malformed tool_use block — fail toward silence
+            tool_uses.append((tid, name))
+        if not tool_uses:
+            return None
+        return i, row, tool_uses
+    return None
+
+
+def _resolved_tool_result_ids(rows: list, after_idx: int) -> set[str]:
+    """``tool_use_id``s of every ``tool_result`` block in ``type == "user"``
+    rows AFTER ``after_idx`` — a matching result resolves its call. Predicate
+    helper of :func:`decide_pending_call_wedge`."""
+    resolved: set[str] = set()
+    for later in rows[after_idx + 1 :]:
+        if not isinstance(later, dict) or later.get("type") != "user":
+            continue
+        lmsg = later.get("message")
+        lcontent = lmsg.get("content") if isinstance(lmsg, dict) else None
+        if not isinstance(lcontent, list):
+            continue
+        for block in lcontent:
+            if isinstance(block, dict) and block.get("type") == "tool_result":
+                rid = block.get("tool_use_id")
+                if isinstance(rid, str):
+                    resolved.add(rid)
+    return resolved
+
+
+def decide_pending_call_wedge(
+    rows: list[dict] | None, *, window_s: float, now: float
+) -> dict | None:
+    """Pure #2115 pending-call wedge predicate over parsed transcript-tail
+    rows. Fires — returns ``{"tool_use_id", "n_pending", "age_s",
+    "row_ts"}`` — iff ALL hold:
+
+    - the tail's LAST ``type == "assistant"`` row carries >= 1 ``tool_use``
+      content block (a later assistant row means the session took another
+      turn — not this wedge shape; non-assistant rows AFTER it, e.g. the
+      tick cron's queue-operation records, do not reset the read);
+    - EVERY block of that row still PENDING (no ``tool_result`` block with
+      a matching ``tool_use_id`` in any LATER ``type == "user"`` row) is a
+      **Bash** call (:data:`PENDING_CALL_WEDGE_TOOL`) — ANY pending
+      non-Bash block (Agent / AskUserQuestion / TaskOutput / Monitor /
+      anything else) suppresses the flag, the LOAD-BEARING typed keying;
+    - >= 1 block is pending at all (a fully-resolved turn never fires);
+    - the row's top-level ISO timestamp parses (:func:`_row_ts`) and is
+      >= ``window_s`` older than ``now``.
+
+    Fail-toward-silence contract (escalate-only lane — a parse bug must
+    never spam the fleet): ``None``/empty ``rows``, no assistant row, no
+    ``tool_use`` blocks (the turn ended in text), a malformed ``tool_use``
+    block (missing / non-str ``id`` or ``name``), a missing/unparseable
+    row timestamp, a future-dated row, and an age under the window ALL
+    return ``None``."""
+    if not isinstance(rows, list) or not rows:
+        return None
+    found = _last_assistant_tool_uses(rows)
+    if found is None:
+        return None
+    last_idx, last, tool_uses = found
+    resolved = _resolved_tool_result_ids(rows, last_idx)
+    pending = [(tid, name) for tid, name in tool_uses if tid not in resolved]
+    if not pending:
+        return None
+    if any(name != PENDING_CALL_WEDGE_TOOL for _tid, name in pending):
+        return None  # Bash-only keying — a pending Agent/etc. is routine health
+    ts = _row_ts(last)
+    if ts is None:
+        return None
+    age_s = now - ts
+    if age_s < window_s:
+        return None
+    return {
+        "tool_use_id": pending[0][0],
+        "n_pending": len(pending),
+        "age_s": age_s,
+        "row_ts": ts,
+    }
+
+
+def pending_call_wedge_pass(dry_run: bool, *, pids_by_sid: dict[str, int] | None) -> bool:
+    """ESCALATE-ONLY observer for the #2115 forever-pending Bash tool-call
+    wedge: for every registered session (auto + manual), read the
+    transcript tail (happy-log-resolved, 256 KB — the #1104 wedge-probe
+    width) and flag when :func:`decide_pending_call_wedge` fires. Channels:
+    one sidecar row per flagged tick + ONE deduped fail-soft push per
+    (issue, tool_use id) episode. NEVER mutates task or git state, posts NO
+    task markers, emits NO respawn/stop — detection only (the stall
+    mechanism is outside this repo; #2115 plan v3 §1). Fail-soft top-level
+    guard; an unresolvable transcript / missing pid map skips silently.
+    Returns True when >= 1 session was FLAGGED this run (the decision, not
+    push delivery — ``dry_run`` computes flags but performs zero writes and
+    no real push)."""
+    if not _pending_call_wedge_enabled():
+        print("  pending-call-wedge: disabled via EPM_DISABLE_PENDING_CALL_WEDGE; skipping")
+        return False
+    if not pids_by_sid:
+        print("  pending-call-wedge: no live sid->pid map (daemon down or empty); skipping")
+        return False
+    try:
+        now = time.time()
+        window_min = _env_float(
+            "EPM_PENDING_CALL_WEDGE_MIN", PENDING_CALL_WEDGE_MIN, lo=1.0, hi=1440.0
+        )
+        state = _load_pending_call_state()
+        episodes = state.get("episodes")
+        if not isinstance(episodes, dict):
+            episodes = {}
+        flagged_any = False
+        for issue, rec in sorted(_issue_registrations().items()):
+            hit: dict | None = None
+            hit_sid: str | None = None
+            for sid in sorted(rec.get("sids", ())):
+                pid = pids_by_sid.get(sid)
+                if not isinstance(pid, int):
+                    continue
+                rows = _transcript_tail_rows(pid, max_bytes=262144)
+                if rows is None:
+                    continue
+                hit = decide_pending_call_wedge(rows, window_s=window_min * 60.0, now=now)
+                if hit is not None:
+                    hit_sid = sid
+                    break
+            if hit is None:
+                continue
+            flagged_any = True
+            episode_key = f"{issue}:{hit['tool_use_id']}"
+            fire = episode_key not in episodes
+            episodes[episode_key] = episodes.get(episode_key, now)
+            age_min = hit["age_s"] / 60.0
+            _append_pending_call_sidecar(
+                {
+                    "kind": "pending-call-wedge",
+                    "issue": issue,
+                    "sid": hit_sid,
+                    "tool_use_id": hit["tool_use_id"],
+                    "n_pending": hit["n_pending"],
+                    "age_min": round(age_min, 1),
+                    # `pushed` records the fire DECISION (dedup bookkeeping),
+                    # not delivery — _telegram_push is fail-soft.
+                    "pushed": fire,
+                },
+                dry_run,
+            )
+            print(
+                f"  pending-call-wedge: issue #{issue} session {hit_sid} has "
+                f"{hit['n_pending']} pending Bash tool_use call(s) with no tool_result "
+                f"for ~{age_min:.0f} min (tool_use_id {hit['tool_use_id']})"
+            )
+            if fire:
+                _telegram_push(
+                    f"PENDING-CALL WEDGE (escalate-only #2115 pass): issue #{issue} "
+                    f"session {hit_sid} ends in a Bash tool_use pending ~{age_min:.0f} min "
+                    f"with NO tool_result (tool_use_id {hit['tool_use_id']}, "
+                    f"{hit['n_pending']} pending). The forever-pending dispatch class — "
+                    f"the stalled fence would otherwise take ~2.2h. Investigate the "
+                    f"session / stop+respawn it manually. Nothing was changed "
+                    f"automatically.",
+                    dry_run,
+                )
+        pruned = {
+            k: v
+            for k, v in episodes.items()
+            if isinstance(v, int | float) and (now - v) <= PENDING_CALL_EPISODE_TTL_S
+        }
+        _save_pending_call_state({"episodes": pruned}, dry_run)
+        return flagged_any
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  pending-call-wedge: pass failed (fail-soft): {exc}", file=sys.stderr)
         return False
 
 
@@ -32954,6 +33286,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "with --dry-run for a zero-write live smoke.",
     )
     parser.add_argument(
+        "--pending-call-wedge-only",
+        action="store_true",
+        help="run ONLY the pending-call wedge observer pass (#2115, "
+        "escalate-only — a registered session whose transcript tail ends "
+        "in an assistant Bash tool_use with no matching tool_result older "
+        "than EPM_PENDING_CALL_WEDGE_MIN; never mutates task or git state, "
+        "posts no task markers, emits no respawn) and exit; skip every "
+        "other pass. Probes the daemon itself (sid->pid resolution needs "
+        "/list); pair with --dry-run for a zero-write live smoke.",
+    )
+    parser.add_argument(
         "--completed-unmerged-only",
         action="store_true",
         help="run ONLY the completed-unmerged pass (#1564 flag + #1653 "
@@ -33157,6 +33500,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # smoke.
     if args.root_unstaged_audit_only:
         root_unstaged_audit_pass(args.dry_run)
+        return 0
+
+    # --pending-call-wedge-only mirrors --boot-death-only: run the single
+    # pass under the lock (it needs the daemon's {sid: wrapper pid} /list
+    # snapshot to resolve transcripts — no map is a silent skip) and exit.
+    # Pair with --dry-run for a zero-write live smoke.
+    if args.pending_call_wedge_only:
+        pending_call_wedge_pass(
+            args.dry_run,
+            pids_by_sid=_live_pids_by_sid_or_none() if _daemon_reachable() else None,
+        )
         return 0
 
     # --completed-unmerged-only mirrors --registry-drift-only: the FLAG half
@@ -33508,6 +33862,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         live_ids=live_ids if daemon_reachable else None,
         pids_by_sid=live_pids_by_sid,
     )
+
+    # Pending-call wedge observer (#2115): ESCALATE-ONLY flag of a
+    # registered session whose transcript tail ends in an assistant Bash
+    # tool_use with no matching tool_result past the 25-min window — the
+    # forever-pending Step 10d lint-gate dispatch class the ~2.2h stall
+    # fence was the only exit for. Bash-only keying (Agent/AskUserQuestion/
+    # TaskOutput/Monitor pends are routine health); sidecar + one deduped
+    # push per (issue, tool_use id) episode; never mutates task/git state,
+    # posts no task markers, emits no respawn. Shares the stalled pass's
+    # {sid: wrapper pid} /list snapshot (silent skip when the daemon is
+    # down — the map is unresolvable then).
+    pending_call_wedge_pass(args.dry_run, pids_by_sid=live_pids_by_sid)
 
     # Orphan sweep: registration-INDEPENDENT cross-check of ACTIVE-status
     # tasks vs live registered sessions. Catches the class the registry-driven

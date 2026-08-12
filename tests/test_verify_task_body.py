@@ -177,7 +177,7 @@ def test_good_body_passes_all():
     # locally reachable, so the cited SHA is silently skipped), AND the
     # check-38 linked-not-embedded-figures scan (needs `issue` for
     # own-figures-dir scoping, #1371; PASS-skip: not a v4 body) →
-    # 69 results total (2 prepended + CHECKS[1:]=53 + 14 appended, counting
+    # 70 results total (2 prepended + CHECKS[1:]=54 + 14 appended, counting
     # the #1827 plan-conditions check narrated below; check 36
     # `check_v4_result_paragraph_sentences` (#1368), check 37
     # `check_footer_reuse_bullets_pinned` (#1370), check 39
@@ -207,9 +207,11 @@ def test_good_body_passes_all():
     # and checks 52 `check_figure_png_sidecar_pairing` + 53
     # `check_figure_sidecar_slot_completeness` (#2016 — both NO-OP PASS:
     # GOOD_BODY's fake sha never resolves via `_git_object_exists`, the
-    # same fake-sha skip as check 41)
+    # same fake-sha skip as check 41),
+    # and check 54 `check_artifact_content_claims` (#2232 — PASS-skip,
+    # not a v4 body)
     # ride CHECKS;
-    # 36/37/39/44/48/49/51
+    # 36/37/39/44/48/49/51/54
     # PASS-skip here — not a v4 body — 40 is the vacuous PASS above, and
     # 41/52/53 are the fake-sha NO-OP PASSes above). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
@@ -219,7 +221,7 @@ def test_good_body_passes_all():
     # verify_text (needs the issue number) and PASS-skips here (legacy body).
     # The plan-conditions coverage check (#1827) is dispatched in verify_text
     # (needs plans/plan.md) and NO-OP PASSes here (no plan sibling).
-    assert len(results) == 69
+    assert len(results) == 70
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert "dropped-at-gate condition placement (v4)" in {r.name for r in results}
@@ -1317,15 +1319,19 @@ def _make_repo_with_per_unit_orphan(
     tmp_path,
     companion: str | None = "hero_percontext.png",
     extra: str | None = None,
+    issue: int = 999,
 ):
-    """git repo whose HEAD commit tracks `figures/issue_999/hero.png` +
-    `figures/issue_999/<companion>` (the per-unit companion; default
+    """git repo whose HEAD commit tracks `figures/issue_<issue>/hero.png` +
+    `figures/issue_<issue>/<companion>` (the per-unit companion; default
     `hero_percontext.png`; ``None`` -> no companion — required by widened-
     scope negative pins whose fixtures must not trip class A, #2169) +
-    optionally `figures/issue_999/<extra>` (ONE additional NON-per-unit
+    optionally `figures/issue_<issue>/<extra>` (ONE additional NON-per-unit
     PNG — the class-C candidate, #2169) +
     `scripts/run.py` (so GOOD_BODY's check-8b Code-blob probe resolves
-    when a test pins the real sha); returns (repo_path, head_sha)."""
+    when a test pins the real sha); returns (repo_path, head_sha).
+    ``issue`` defaults to the historical 999 fixture issue; prose-bar
+    pins pass an issue >= the #2231 forward-only cutoff (pair with
+    `_good_body_at` so the body's cited URLs match the fixture dir)."""
     repo = tmp_path / "perunitrepo"
     repo.mkdir()
 
@@ -1335,7 +1341,7 @@ def _make_repo_with_per_unit_orphan(
     git("init", "-q")
     git("config", "user.email", "test@example.com")
     git("config", "user.name", "Test")
-    figdir = repo / "figures" / "issue_999"
+    figdir = repo / "figures" / f"issue_{issue}"
     figdir.mkdir(parents=True)
     (figdir / "hero.png").write_bytes(b"\x89PNG fake bytes")
     if companion is not None:
@@ -2414,6 +2420,352 @@ def test_class_c_plan_glob_names_family(tmp_path, monkeypatch):
     assert "plan-named figures only" in r_short.detail  # active mode, zero candidates
 
 
+# ─── Check 31 class-C prose-token naming bar (#2231) ──
+
+
+def _plan_dir_prose(tmp_path, monkeypatch, text: str):
+    """Write a `plans/v1.md` containing ``text`` VERBATIM — no backticks,
+    so a prose fixture can never accidentally satisfy the exact/glob
+    bars — and monkeypatch the `_resolve_task_plans_dir` seam at it
+    (#2231; the seam is load-bearing for the same reason as
+    `_plan_dir_naming`). Returns the plans dir."""
+    plans = tmp_path / "task999" / "plans"
+    plans.mkdir(parents=True)
+    (plans / "v1.md").write_text(text if text.endswith("\n") else text + "\n")
+    monkeypatch.setattr(verify_task_body, "_resolve_task_plans_dir", lambda issue: plans)
+    return plans
+
+
+# The #2222 plan's descriptive figure promise, VERBATIM from its
+# §"Figures to produce" item (3) — the line every plan revision carried
+# while no revision ever named the literal stem `roc_by_arm`.
+_ISSUE2222_ROC_PLAN_LINE = "(3) sample-level ROC curves per arm,"
+
+# Fixture issue for the prose-bar pins (#2231 v3): the bar is
+# FORWARD-ONLY (consulted only at issue >= `_PROSE_BAR_MIN_ISSUE`), so
+# every pin that exercises it runs ABOVE the cutoff; the below-cutoff
+# legs live in `test_prose_bar_forward_only_cutoff`.
+_PROSE_PIN_ISSUE = 9999
+assert _PROSE_PIN_ISSUE >= verify_task_body._PROSE_BAR_MIN_ISSUE
+
+
+def _good_body_at(sha: str, issue: int) -> str:
+    """GOOD_BODY with the cited figure SHA pinned to ``sha`` and every
+    `figures/issue_999/` path rehomed to `figures/issue_<issue>/` — the
+    #2231 v3 pin-migration helper: prose-bar pins run at an issue >= the
+    forward-only cutoff, so the body's cited figure URLs must carry that
+    issue for check 31's issue-scoping filter to keep them (pair with
+    `_make_repo_with_per_unit_orphan(..., issue=...)`)."""
+    return GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "figures/issue_999/", f"figures/issue_{issue}/"
+    )
+
+
+def test_plan_prose_named_figure_warns_class_c(tmp_path, monkeypatch):
+    """The #2222 replay (acceptance 1, hermetic): the plan promises the
+    figure DESCRIPTIVELY — the verbatim line "(3) sample-level ROC curves
+    per arm," — never the literal stem; `roc_by_arm.png` is committed at
+    the body-cited SHA with 0 body mentions -> class-C WARN carrying the
+    path, the `committed-figure-unmentioned` token, and the Lens 13
+    pointer (pre-#2231 the exact/glob candidate filter never registered
+    the figure and the check stayed silent). Runs at an issue >= the
+    forward-only cutoff (v3) — the below-cutoff twin lives in
+    `test_prose_bar_forward_only_cutoff` leg (i)."""
+    repo, sha = _make_repo_with_per_unit_orphan(
+        tmp_path, extra="roc_by_arm.png", issue=_PROSE_PIN_ISSUE
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    _plan_dir_prose(tmp_path, monkeypatch, "Figures to produce: " + _ISSUE2222_ROC_PLAN_LINE)
+    companion_url = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        f"{sha}/figures/issue_{_PROSE_PIN_ISSUE}/hero_percontext.png"
+    )
+    body = _good_body_at(sha, _PROSE_PIN_ISSUE).replace(
+        "> **Figure.**",
+        f"![Per-context deltas behind the aggregate.]({companion_url})\n\n> **Figure.**",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=_PROSE_PIN_ISSUE)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert f"figures/issue_{_PROSE_PIN_ISSUE}/roc_by_arm.png" in r.detail
+    assert _COMMITTED_UNMENTIONED_CLASS in r.detail
+    assert "Lens 13" in r.detail
+
+
+def test_plan_prose_all_tokens_required_and_line_scoped(tmp_path, monkeypatch):
+    """Both §3.1 match bounds on one fixture. Control leg FIRST (vacuity
+    prevention): the full one-line phrase DOES register the candidate and
+    WARNs. Then (a) a plan naming only "ROC curves" (the `arm` token
+    absent) registers nothing — ALL required tokens must appear — and
+    (b) a plan carrying "ROC" and "arm" on DISTANT separate lines
+    registers nothing (single-LINE co-occurrence is load-bearing)."""
+    repo, sha = _make_repo_with_per_unit_orphan(
+        tmp_path, companion=None, extra="roc_by_arm.png", issue=_PROSE_PIN_ISSUE
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _good_body_at(sha, _PROSE_PIN_ISSUE)
+
+    _plan_dir_prose(tmp_path / "p1", monkeypatch, _ISSUE2222_ROC_PLAN_LINE)
+    r_full = verify_task_body.check_orphaned_per_unit_figures(body, issue=_PROSE_PIN_ISSUE)
+    assert r_full.is_warn is True  # the WARN the two negative legs suppress
+    assert _COMMITTED_UNMENTIONED_CLASS in r_full.detail
+
+    _plan_dir_prose(tmp_path / "p2", monkeypatch, "Deliverables: sample-level ROC curves.")
+    r_partial = verify_task_body.check_orphaned_per_unit_figures(body, issue=_PROSE_PIN_ISSUE)
+    assert r_partial.is_warn is False
+
+    _plan_dir_prose(
+        tmp_path / "p3",
+        monkeypatch,
+        "Compute ROC curves for every condition.\n\nMuch later prose.\n\nGroup results per arm.",
+    )
+    r_split = verify_task_body.check_orphaned_per_unit_figures(body, issue=_PROSE_PIN_ISSUE)
+    assert r_split.is_warn is False
+
+
+def test_body_prose_mention_exempts_class_c(tmp_path, monkeypatch):
+    """The symmetric BODY-side bar: pin 1's exact fixture + plan file,
+    body adding the prose disposition "sample-level ROC curves per arm
+    were computed; not embedded" (still no literal stem) -> silent.
+    Vacuity control: the prose-less body WARNs FIRST on the same fixture
+    + plan file."""
+    repo, sha = _make_repo_with_per_unit_orphan(
+        tmp_path, extra="roc_by_arm.png", issue=_PROSE_PIN_ISSUE
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    _plan_dir_prose(tmp_path, monkeypatch, "Figures to produce: " + _ISSUE2222_ROC_PLAN_LINE)
+    companion_url = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        f"{sha}/figures/issue_{_PROSE_PIN_ISSUE}/hero_percontext.png"
+    )
+    body_bare = _good_body_at(sha, _PROSE_PIN_ISSUE).replace(
+        "> **Figure.**",
+        f"![Per-context deltas behind the aggregate.]({companion_url})\n\n> **Figure.**",
+    )
+    r_bare = verify_task_body.check_orphaned_per_unit_figures(body_bare, issue=_PROSE_PIN_ISSUE)
+    assert r_bare.is_warn is True  # the WARN this negative pin suppresses
+    assert _COMMITTED_UNMENTIONED_CLASS in r_bare.detail
+    body = body_bare.replace(
+        "The 17-pt lift holds at every seed;",
+        "The sample-level ROC curves per arm were computed; not embedded. "
+        "The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=_PROSE_PIN_ISSUE)
+    assert r.passed is True
+    assert r.is_warn is False
+
+
+def test_prose_bar_requires_two_tokens(tmp_path, monkeypatch):
+    """Applicability bound: a SINGLE-token stem is never prose-matchable —
+    committed `roc.png` with a plan saying "ROC curves" stays silent
+    (§3.1's deliberately excluded single-token widening). Control: the
+    same fixture with the literal `roc` in the plan fires class C via the
+    UNCHANGED exact bar — the old bars still govern single-token stems."""
+    repo, sha = _make_repo_with_per_unit_orphan(
+        tmp_path, companion=None, extra="roc.png", issue=_PROSE_PIN_ISSUE
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _good_body_at(sha, _PROSE_PIN_ISSUE)
+
+    _plan_dir_prose(tmp_path / "p1", monkeypatch, "Deliverables: sample-level ROC curves.")
+    r_prose = verify_task_body.check_orphaned_per_unit_figures(body, issue=_PROSE_PIN_ISSUE)
+    assert r_prose.is_warn is False
+    assert "plan-named figures only" in r_prose.detail  # active mode, zero candidates
+
+    _plan_dir_naming(tmp_path / "p2", monkeypatch, "roc.png")
+    r_exact = verify_task_body.check_orphaned_per_unit_figures(body, issue=_PROSE_PIN_ISSUE)
+    assert r_exact.is_warn is True
+    assert f"figures/issue_{_PROSE_PIN_ISSUE}/roc.png" in r_exact.detail
+    assert _COMMITTED_UNMENTIONED_CLASS in r_exact.detail
+
+
+def test_prose_figure_index_tokens_dropped(tmp_path, monkeypatch):
+    """Figure-index tokens leave the required set: `f5_arm_agreement.png`
+    with a plan saying only "the arm agreement heatmap" (no `f5`
+    anywhere) is a candidate -> WARN on a silent body; a body naming
+    "arm agreement" descriptively silences it (both sides of the
+    symmetric bar)."""
+    repo, sha = _make_repo_with_per_unit_orphan(
+        tmp_path, companion=None, extra="f5_arm_agreement.png", issue=_PROSE_PIN_ISSUE
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    _plan_dir_prose(tmp_path, monkeypatch, "Planned: the arm agreement heatmap.")
+    body = _good_body_at(sha, _PROSE_PIN_ISSUE)
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=_PROSE_PIN_ISSUE)
+    assert r.is_warn is True
+    assert f"figures/issue_{_PROSE_PIN_ISSUE}/f5_arm_agreement.png" in r.detail
+    assert _COMMITTED_UNMENTIONED_CLASS in r.detail
+    body_named = body.replace(
+        "The 17-pt lift holds at every seed;",
+        "The arm agreement heatmap is committed alongside, not embedded. "
+        "The 17-pt lift holds at every seed;",
+    )
+    r2 = verify_task_body.check_orphaned_per_unit_figures(body_named, issue=_PROSE_PIN_ISSUE)
+    assert r2.is_warn is False
+
+
+def test_per_unit_classes_ignore_prose_bar(tmp_path, monkeypatch):
+    """Classes-A/B-untouched pin: `hero_percontext.png` (per-unit;
+    required set {hero, percontext}) with plan AND body both carrying a
+    prose line using the COMPACT tokens verbatim ("the hero percontext
+    view ...") — a genuine would-prose-match on both sides (hyphenated
+    "per-context" tokenizes to {per, context} and would NOT cover the
+    set) — still routes class A (orphan) under the UNCHANGED
+    `_stem_named_in_body` bar: the prose coverage neither exempts it nor
+    moves it to class B. Runs ABOVE the forward-only cutoff (v3) so the
+    prose bar is genuinely ACTIVE for class C while the per-unit classes
+    ignore it."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, issue=_PROSE_PIN_ISSUE)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    _plan_dir_prose(tmp_path, monkeypatch, "Planned: the hero percontext view per seed.")
+    body = _good_body_at(sha, _PROSE_PIN_ISSUE).replace(
+        "The 17-pt lift holds at every seed;",
+        "See the hero percontext view for the underlying spread. "
+        "The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=_PROSE_PIN_ISSUE)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert f"figures/issue_{_PROSE_PIN_ISSUE}/hero_percontext.png" in r.detail
+    assert "never mentioned in the body" in r.detail  # class A text
+    assert _PER_UNIT_NAMED_CLASS not in r.detail  # not moved to class B
+    assert _COMMITTED_UNMENTIONED_CLASS not in r.detail  # not re-routed to class C
+
+
+def test_prose_singularization_matches_plurals(tmp_path, monkeypatch):
+    """Singularization on both sides (plan v2, critic nit 1):
+    `arm_delta_scatter.png` (required {arm, delta, scatter}) with the
+    PLURAL plan line "delta scatters per arm" (no literal stem) is a
+    candidate; a silent body WARNs; a body writing "the delta scatters
+    per arm — not shown" silences it."""
+    repo, sha = _make_repo_with_per_unit_orphan(
+        tmp_path, companion=None, extra="arm_delta_scatter.png", issue=_PROSE_PIN_ISSUE
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    _plan_dir_prose(tmp_path, monkeypatch, "Figures: delta scatters per arm.")
+    body = _good_body_at(sha, _PROSE_PIN_ISSUE)
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=_PROSE_PIN_ISSUE)
+    assert r.is_warn is True
+    assert f"figures/issue_{_PROSE_PIN_ISSUE}/arm_delta_scatter.png" in r.detail
+    assert _COMMITTED_UNMENTIONED_CLASS in r.detail
+    body_named = body.replace(
+        "The 17-pt lift holds at every seed;",
+        "The delta scatters per arm are committed — not shown. The 17-pt lift holds at every seed;",
+    )
+    r2 = verify_task_body.check_orphaned_per_unit_figures(body_named, issue=_PROSE_PIN_ISSUE)
+    assert r2.is_warn is False
+
+
+def test_prose_short_tokens_required_not_dropped(tmp_path, monkeypatch):
+    """The v2 applicability reading (plan v2, critic nit 2): length is
+    NOT a drop criterion. `em_rate_by_layer.png` -> required
+    {em, rate, layer} (applicable: rate/layer carry the >=3-char
+    weight). A plan line "rate by layer profile" — every long token
+    present, the short `em` absent — registers NOTHING (short tokens
+    tighten matching, they are not dropped); the full "EM rate by layer"
+    line registers the candidate."""
+    repo, sha = _make_repo_with_per_unit_orphan(
+        tmp_path, companion=None, extra="em_rate_by_layer.png", issue=_PROSE_PIN_ISSUE
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _good_body_at(sha, _PROSE_PIN_ISSUE)
+
+    _plan_dir_prose(tmp_path / "p1", monkeypatch, "Planned: rate by layer profile.")
+    r_short = verify_task_body.check_orphaned_per_unit_figures(body, issue=_PROSE_PIN_ISSUE)
+    assert r_short.is_warn is False
+    assert "plan-named figures only" in r_short.detail  # active mode, zero candidates
+
+    _plan_dir_prose(tmp_path / "p2", monkeypatch, "Planned: EM rate by layer.")
+    r_full = verify_task_body.check_orphaned_per_unit_figures(body, issue=_PROSE_PIN_ISSUE)
+    assert r_full.is_warn is True
+    assert f"figures/issue_{_PROSE_PIN_ISSUE}/em_rate_by_layer.png" in r_full.detail
+    assert _COMMITTED_UNMENTIONED_CLASS in r_full.detail
+
+
+def test_prose_bar_forward_only_cutoff(tmp_path, monkeypatch):
+    """Pin 9 (#2231 v3/v4): the FORWARD-ONLY cutoff, both gate directions
+    on BOTH class-C sides, keyed to the literal `_PROSE_BAR_MIN_ISSUE`
+    constant (never a hardcoded 2222 twin — a constant change moves the
+    pin with it). Legs: (i) pin 1's exact fixture at an issue BELOW the
+    cutoff -> silent, with class C ACTIVE (the silence comes from no
+    prose candidacy, not a skipped class C); (ii) the SAME fixture at
+    EXACTLY the cutoff -> WARN — pins the `>=` boundary durably (an
+    off-by-one `>` regression fails here, not only at the S2 live
+    replay); (iii) exemption side: the plan names the LITERAL stem
+    (exact-bar candidacy regardless of cutoff) while the body
+    prose-names the figure descriptively without the stem — below the
+    cutoff the class-C WARN still fires exactly as pre-#2231 (exemption
+    OFF), at the cutoff it is silenced (exemption ON)."""
+    cutoff = verify_task_body._PROSE_BAR_MIN_ISSUE
+
+    def pin1_body(sha: str, issue: int) -> str:
+        companion_url = (
+            "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+            f"{sha}/figures/issue_{issue}/hero_percontext.png"
+        )
+        return _good_body_at(sha, issue).replace(
+            "> **Figure.**",
+            f"![Per-context deltas behind the aggregate.]({companion_url})\n\n> **Figure.**",
+        )
+
+    for sub in ("low", "cut", "ex-low", "ex-cut"):
+        (tmp_path / sub).mkdir()
+
+    # (i) BELOW the cutoff: prose candidacy OFF — silent, class C active.
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path / "low", extra="roc_by_arm.png")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    _plan_dir_prose(
+        tmp_path / "low", monkeypatch, "Figures to produce: " + _ISSUE2222_ROC_PLAN_LINE
+    )
+    r_low = verify_task_body.check_orphaned_per_unit_figures(pin1_body(sha, 999), issue=999)
+    assert r_low.passed is True
+    assert r_low.is_warn is False
+    assert "plan-named figures only" in r_low.detail  # active mode, zero candidates
+
+    # (ii) at EXACTLY the cutoff: the same fixture WARNs (the >= boundary).
+    repo2, sha2 = _make_repo_with_per_unit_orphan(
+        tmp_path / "cut", extra="roc_by_arm.png", issue=cutoff
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo2)
+    _plan_dir_prose(
+        tmp_path / "cut", monkeypatch, "Figures to produce: " + _ISSUE2222_ROC_PLAN_LINE
+    )
+    r_cut = verify_task_body.check_orphaned_per_unit_figures(pin1_body(sha2, cutoff), issue=cutoff)
+    assert r_cut.is_warn is True
+    assert f"figures/issue_{cutoff}/roc_by_arm.png" in r_cut.detail
+    assert _COMMITTED_UNMENTIONED_CLASS in r_cut.detail
+
+    # (iii) exemption side: literal-stem plan (candidate either way), body
+    # prose-names descriptively without the stem.
+    prose_disposition = (
+        "The sample-level ROC curves per arm were computed; not embedded. "
+        "The 17-pt lift holds at every seed;"
+    )
+    repo3, sha3 = _make_repo_with_per_unit_orphan(
+        tmp_path / "ex-low", companion=None, extra="roc_by_arm.png"
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo3)
+    _plan_dir_naming(tmp_path / "ex-low", monkeypatch, "roc_by_arm.png")
+    body_low = _good_body_at(sha3, 999).replace(
+        "The 17-pt lift holds at every seed;", prose_disposition
+    )
+    r_ex_low = verify_task_body.check_orphaned_per_unit_figures(body_low, issue=999)
+    assert r_ex_low.is_warn is True  # exemption OFF below the cutoff — pre-change behavior
+    assert "figures/issue_999/roc_by_arm.png" in r_ex_low.detail
+    assert _COMMITTED_UNMENTIONED_CLASS in r_ex_low.detail
+
+    repo4, sha4 = _make_repo_with_per_unit_orphan(
+        tmp_path / "ex-cut", companion=None, extra="roc_by_arm.png", issue=cutoff
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo4)
+    _plan_dir_naming(tmp_path / "ex-cut", monkeypatch, "roc_by_arm.png")
+    body_cut = _good_body_at(sha4, cutoff).replace(
+        "The 17-pt lift holds at every seed;", prose_disposition
+    )
+    r_ex_cut = verify_task_body.check_orphaned_per_unit_figures(body_cut, issue=cutoff)
+    assert r_ex_cut.is_warn is False  # exemption ON at the cutoff
+
+
 def test_resolve_task_plans_dir_real_body_no_monkeypatch():
     """Production-body pin for the §3.0 seam (code-style rule: one test
     executes the REAL body of a function other tests monkeypatch): with
@@ -3298,6 +3650,211 @@ def test_hf_count_shard_claims_one_sided(monkeypatch):
     r2 = verify_task_body.check_hf_file_count_claims(body_over)
     assert r2.passed and r2.is_warn
     assert "10" in r2.detail and "9 file(s)" in r2.detail
+
+
+# ─── Check 54 (`check_artifact_content_claims`, #2232): per-<unit> artifact-
+# content claims verified against the pinned JSON's ACTUAL structure — the
+# artifact-content sibling of checks 30/32 (placed here, near their test
+# region, per the #2231 append-append-collision avoidance). All tests are
+# OFFLINE: pins carry a fake 40-hex sha that resolves nowhere, and
+# `_resolve_repo_root` is monkeypatched to tmp_path so the loader takes the
+# committed-working-copy fallback (git-free tmp-path resolution).
+
+_C54_SHA = "f" * 40
+_C54_NAME = "artifact-content claims match the pinned JSON structure"
+
+
+def _c54_blob_url(rel: str) -> str:
+    return f"https://github.com/superkaiba/explore-persona-space/blob/{_C54_SHA}/{rel}"
+
+
+def _c54_body(results_prose: str, footer: str) -> str:
+    """Minimal v4 body (sentinel + four flat H2s + bold-label footer)."""
+    return (
+        "# t (LOW confidence)\n\n<!-- clean-result-v4 -->\n\n"
+        "## Takeaways\n\n- bullet.\n\n"
+        "## Goal\n\ng\n\n## Methodology\n\nm\n\n"
+        "## Results\n\n### r1\n\n" + results_prose + "\n\n---\n\n"
+        "**Repro:** " + footer + "\n\n**Context:** c\n"
+    )
+
+
+class TestCheckArtifactContentClaims:
+    """Fixtures (a)-(f) per the #2232 plan §5, plus the ambiguity and
+    decimal-guard pins."""
+
+    # The verbatim #2222 incident claim (pre-fix body at git 910dcd7956,
+    # line 213): NO inline link, NO digits, footer-resolved by basename.
+    INCIDENT_SENTENCE = (
+        "The per-dataset values behind the three probe correlations are "
+        "recorded in the probe JSON pinned in the footer."
+    )
+
+    def _footer(self) -> str:
+        # Three pins INCLUDING a `correlations`-named sibling: the claim
+        # sentence itself says "correlations", so a whole-sentence token
+        # intersection would be 2-way ambiguous — the descriptor tier
+        # ("in the probe JSON" → "probe") must resolve uniquely, mirroring
+        # the verified #2222 footer.
+        return (
+            "Eval JSONs: "
+            f"[predictor_correlations.json]({_c54_blob_url('eval_results/issue_9999/predictor_correlations.json')}) · "
+            f"[form_a_probe.json]({_c54_blob_url('eval_results/issue_9999/form_a_probe.json')}) · "
+            f"[map_quality.json]({_c54_blob_url('eval_results/issue_9999/map_quality.json')})."
+        )
+
+    def _write_incident_probe_json(self, root):
+        """The #2222 incident mirror: `n_datasets: 24` ONLY nested inside a
+        records-style array (18 rows, all 24); NO top-level `n_datasets`;
+        no 24-length list or dict at any depth (realized container sizes
+        here: 2, 3, 4, 18, 28)."""
+        payload = {
+            "note": "probe",
+            "fit_regime": {"d": 3584, "n_rows": 432},
+            "records": [
+                {"arm": f"a{i}", "layer": i, "n_datasets": 24, "r": 0.8} for i in range(18)
+            ],
+            "heldout_r2_per_layer": {
+                "evil": [0.1] * 28,
+                "hallucination": [0.2] * 28,
+                "sycophancy": [0.3] * 28,
+            },
+        }
+        assert "n_datasets" not in payload  # incident fidelity: nested ONLY
+        p = root / "eval_results/issue_9999/form_a_probe.json"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(payload))
+
+    def test_a_false_pointer_warns_2222_shape(self, tmp_path, monkeypatch):
+        """Fixture (a), acceptance criterion 1: the #2222 shape — a body
+        claiming per-dataset values in a footer-pinned JSON that lacks any
+        24-length structure ⇒ WARN naming the JSON + the claim sentence,
+        with K=24 recovered from the NESTED `n_datasets` metadata (rung 2;
+        the claim sentence has no digits, and the window's only numeral is
+        the decimal -0.24 in the next paragraph)."""
+        monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: tmp_path)
+        self._write_incident_probe_json(tmp_path)
+        assert not any(ch.isdigit() for ch in self.INCIDENT_SENTENCE)
+        prose = (
+            "The probe alone reads r = 0.837/0.840/0.846. "
+            + self.INCIDENT_SENTENCE
+            + "\n\nProbe-composed mapped stand-ins collapse (−0.24 to +0.29)."
+        )
+        body = _c54_body(prose, self._footer())
+        r = verify_task_body.check_artifact_content_claims(body)
+        assert r.passed and r.is_warn
+        assert "form_a_probe.json" in r.detail  # names the JSON
+        assert "24-length" in r.detail and "n_datasets" in r.detail  # K + K-source
+        assert "recorded in the probe JSON pinned in the footer" in r.detail  # the claim
+
+    def test_b_true_pointer_no_warn(self, tmp_path, monkeypatch):
+        """Fixture (b), acceptance criterion 2: a TRUE pointer (the
+        predictor_correlations.json shape — a top-level 24-length `datasets`
+        list + a per-trait `dataset_values` map) produces no WARN; K=24 from
+        the claim sentence (rung 1)."""
+        monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: tmp_path)
+        rel = "eval_results/issue_9999/predictor_correlations.json"
+        p = tmp_path / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(
+            json.dumps(
+                {
+                    "datasets": [f"d{i}" for i in range(24)],
+                    "dataset_values": {"evil": {f"d{i}": 0.1 for i in range(24)}},
+                }
+            )
+        )
+        prose = (
+            "The per-dataset values across 24 datasets are recorded in "
+            f"[predictor_correlations.json]({_c54_blob_url(rel)})."
+        )
+        body = _c54_body(prose, self._footer())
+        r = verify_task_body.check_artifact_content_claims(body)
+        assert r.passed and not r.is_warn
+        assert "unverified" not in r.detail
+        assert "1 of 1" in r.detail
+
+    def test_c_no_claim_vacuous_pass(self):
+        """Fixture (c): a v4 body with no artifact-content claim ⇒ vacuous
+        PASS (zero loads, zero subprocess spawns); a non-v4 body ⇒
+        forward-only skip."""
+        body = _c54_body("Plain prose with no artifact-content pointer.", self._footer())
+        r = verify_task_body.check_artifact_content_claims(body)
+        assert r.passed and not r.is_warn
+        assert "no per-unit artifact-content claims" in r.detail
+        legacy = body.replace("<!-- clean-result-v4 -->", "")
+        r2 = verify_task_body.check_artifact_content_claims(legacy)
+        assert r2.passed and not r2.is_warn
+        assert "not a v4 body" in r2.detail
+
+    def test_d_unresolvable_pin_unverified_never_warn(self):
+        """Fixture (d): a footer-phrased claim whose descriptor matches NO
+        footer pin ⇒ unverified note on a PASS line, never a WARN (and no
+        artifact load is attempted — no repo monkeypatch needed)."""
+        prose = "The per-seed values are recorded in the widget JSON pinned in the footer."
+        body = _c54_body(prose, self._footer())
+        r = verify_task_body.check_artifact_content_claims(body)
+        assert r.passed and not r.is_warn
+        assert "unverified" in r.detail
+        assert "no footer .json pin shares a basename token" in r.detail
+
+    def test_e_cardinality_unrecoverable_skips(self, tmp_path, monkeypatch):
+        """Fixture (e): a resolved artifact with NO `n_<unit>s` keys and no
+        `<unit>s` list, and a digit-free claim sentence ⇒ cardinality
+        unrecoverable ⇒ SKIP with an unverified note, never a WARN."""
+        monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: tmp_path)
+        rel = "eval_results/issue_9999/map_quality.json"
+        p = tmp_path / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps({"r2": [0.1] * 7, "note": "x"}))
+        prose = f"The per-seed values are recorded in [map_quality.json]({_c54_blob_url(rel)})."
+        body = _c54_body(prose, self._footer())
+        r = verify_task_body.check_artifact_content_claims(body)
+        assert r.passed and not r.is_warn
+        assert "cardinality unrecoverable" in r.detail
+
+    def test_ambiguous_footer_candidates_skip(self):
+        """≥2 footer pins matching the claim's JSON-naming tokens ⇒ SKIP
+        with an unverified note (never a guess, never a WARN)."""
+        footer = (
+            f"[form_a_probe.json]({_c54_blob_url('eval_results/issue_9999/form_a_probe.json')}) · "
+            f"[probe_extra.json]({_c54_blob_url('eval_results/issue_9999/probe_extra.json')})"
+        )
+        body = _c54_body(self.INCIDENT_SENTENCE, footer)
+        r = verify_task_body.check_artifact_content_claims(body)
+        assert r.passed and not r.is_warn
+        assert "ambiguous" in r.detail
+
+    def test_negated_claim_never_parses(self, tmp_path, monkeypatch):
+        """A NEGATED pointer ("... is not persisted in ...") asserts absence
+        and must not parse as a positive content claim — with an adjacent
+        pin it could otherwise ground a spurious WARN (found on the real
+        corpus in the #2232 sweep, body #1689)."""
+        monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: tmp_path)
+        self._write_incident_probe_json(tmp_path)
+        rel = "eval_results/issue_9999/form_a_probe.json"
+        prose = (
+            f"The per-dataset values are not recorded in [form_a_probe.json]({_c54_blob_url(rel)})."
+        )
+        body = _c54_body(prose, self._footer())
+        r = verify_task_body.check_artifact_content_claims(body)
+        assert r.passed and not r.is_warn
+        assert "no per-unit artifact-content claims" in r.detail
+
+    def test_rung1_decimal_guard(self):
+        """Rung-1 recovery accepts only the `<K> <unit>(s)` adjacent shape —
+        a decimal's digits can never be recovered as a cardinality."""
+        f = verify_task_body._sentence_unit_cardinality
+        assert f("values across 24 datasets are recorded in it", "dataset") == 24
+        assert f("r of 0.24 datasets recorded in it", "dataset") is None  # decimal guard
+        assert f("the collapse (−0.24 to +0.29) per dataset", "dataset") is None
+        assert f("values across 1 dataset", "dataset") is None  # K < 2 rejected
+
+
+def test_check54_registered():
+    """The check rides `CHECKS` — a forgotten CHECKS append must not ship
+    green (house membership-assert pattern, cf. test_check51_registered)."""
+    assert verify_task_body.check_artifact_content_claims in verify_task_body.CHECKS
 
 
 # The verbatim claim-bearing span of #1901's footer (body.md L218, trimmed to
@@ -6706,9 +7263,11 @@ def test_checks_list_size():
     `check_figure_png_sidecar_pairing` — the PNG/sidecar `render_id`
     pairing check, #2016 — and check 53
     `check_figure_sidecar_slot_completeness` — the WARN-only
-    categorical-slot completeness sidecar check, #2016 — ride CHECKS).
+    categorical-slot completeness sidecar check, #2016 — and check 54
+    `check_artifact_content_claims` — the per-unit artifact-content
+    structure check, #2232 — ride CHECKS).
     """
-    assert len(verify_task_body.CHECKS) == 54
+    assert len(verify_task_body.CHECKS) == 55
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert verify_task_body.check_v4_dropped_condition_placement in verify_task_body.CHECKS
@@ -12847,11 +13406,11 @@ def test_caption_lead_issue1074_verbatim_caption_warns():
 
 def test_check_figure_caption_position_stable():
     """Index-stability pin (#1424): `check_figure_caption` stays at CHECKS
-    position 7 and the CHECKS count matches the current registry (54 as of
-    checks 52/53, #2016; belt-and-suspenders beside the migration-history
+    position 7 and the CHECKS count matches the current registry (55 as of
+    check 54, #2232; belt-and-suspenders beside the migration-history
     `len(CHECKS)` pin)."""
     assert verify_task_body.CHECKS[7] is verify_task_body.check_figure_caption
-    assert len(verify_task_body.CHECKS) == 54
+    assert len(verify_task_body.CHECKS) == 55
 
 
 # ─── Check 26: figure panel/series prose vs figure sidecar (panel drift) ───

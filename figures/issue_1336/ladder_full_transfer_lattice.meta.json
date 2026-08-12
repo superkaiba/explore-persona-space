@@ -40,7 +40,7 @@
   "8": "reparam both"
  },
  "cross_map_definition": "ridge fitted DIRECTLY from X = v_context(source) to Y = v_answer(target), scored on the target's held-out answers; NOT a tier and NOT bounded by the ceiling",
- "ci_note": "tier R2 intervals are the 1,000-draw paired-bootstrap GAP CI mapped through r2 = within_r2 - gap. Round-B pairs (SFT->RLVR, SFT->longer, RLVR->longer) carry no bootstrap draws and are POINT-ONLY (open markers); no interval is borrowed. The cross map is point-only on every pair.",
+ "ci_note": "tier R2 intervals are the 1,000-draw paired-bootstrap GAP CI mapped through r2 = within_r2 - gap. Round-B pairs (SFT->RLVR, SFT->longer, RLVR->longer) carry no bootstrap draws and are point-only; no interval is borrowed. The cross map is point-only on every pair.",
  "degenerate_excluded": {
   "surfaces": [
    "gsm8k_test1319 (chat)"
@@ -52,7 +52,8 @@
   "shuffled_pairing_null": "the CAPACITY control: per draw the target rows y_t are row-permuted and every y_t-consuming tier correction is REFIT (issue1336_metric_ladder.py:34-38, 756-763), so it bounds how much R2 the reparameterization machinery can manufacture from destroyed correspondence. 20 draws per fit; the plotted LINE is the WORST (max) of the 4 plotted tiers' draw-means \u2014 the tightest bound \u2014 median across the 7 non-degenerate corpora on the aggregate figure and the corpus's own value per panel. The per-tier draw-means are in null_per_tier below: the strict tiers (t0, t6) sit at -0.32..-0.75 and only t7/t8 approach 0.",
   "identity_bias": "y_hat = x + b with b the train-fold mean of y - x (analysis/mapping_baselines); the project's standing mapping baseline, applicable because dims match at 4096->4096. Drawn as a LINE at its true value (-2.14..-3.03 aggregate, worst per-corpus cell -3.41), which is why the y-axis extends to -3.2 / -3.6.",
   "zero_line": "R2 = 0 is the predict-the-training-mean baseline.",
-  "round_b_gap": "round B (selfmap_v3) ran NEITHER control, so both baselines are drawn over the 7 round-3 pairs only and left as a visible GAP on sft__rlvr, sft__rlvr_long and rlvr__rlvr_long \u2014 never interpolated across an uncontrolled pair",
+  "alignment_panel": "the two ALIGNMENT-map identity+bias series (a_ctx, a_ans) are plotted on their OWN TOP PANEL of the aggregate figure, separated by a spacer row rather than a broken axis, because they score a DIFFERENT regression from everything on the main panel: A_ctx_rev predicts the SOURCE contexts from the TARGET contexts and A_ans predicts the TARGET answers from the SOURCE answers -- both across two checkpoints -- while the tiers, the cross map and the within-model ceiling all score context->answer INSIDE one model. On a shared axis their post-training values (0.68..0.96, vs a ~0.5 ceiling) read as 'the identity baseline beats the self map', which is a category error, not a result. The by_dataset figure does not carry these two series at all.",
+  "round_b_gap": "round B (selfmap_v3) originally ran NEITHER control. The shuffled-pairing null is pair-specific (it permutes THIS pair's target rows and refits every y_t-consuming correction), so it remains a visible GAP on sft__rlvr, sft__rlvr_long and rlvr__rlvr_long \u2014 never interpolated across an uncontrolled pair. identity+bias-WITHIN is target-keyed and is BORROWED from those targets' round-3 siblings (identity_approx=true). The two ALIGNMENT-map identity baselines are MEASURED on the round-B pairs' own rows by the v4 refit (ALGEBRA_VERSION v4-foldlocal-2-cross-t7t8-alignbaselines), using the parent metric_ladder's estimator \u2014 identity_bias_predict OOF on the same seed-0 conversation-grouped 5-fold, globally-pooled fc._pooled_r2, A_ctx_rev scored against the SOURCE contexts and A_ans against the TARGET answers \u2014 so those two series are continuous across all 10 pairs on one basis (align_measured=true)",
   "per_pair": {
    "base__sft": {
     "null_lo": -0.5034716527324099,
@@ -69,6 +70,9 @@
      -2.444174478140775,
      -0.9521722389388616
     ],
+    "identity_approx": false,
+    "a_ctx": -0.30353428126441595,
+    "a_ans": -0.3779480443351677,
     "n_corpora": 7
    },
    "base__dpo": {
@@ -86,6 +90,9 @@
      -3.406007410554504,
      -1.959486392287499
     ],
+    "identity_approx": false,
+    "a_ctx": -0.3966863169196322,
+    "a_ans": -0.7375825118816319,
     "n_corpora": 7
    },
    "base__rlvr": {
@@ -103,6 +110,9 @@
      -3.349631374776667,
      -2.6388020005702164
     ],
+    "identity_approx": false,
+    "a_ctx": -0.4105618754249243,
+    "a_ans": -0.7541320262617408,
     "n_corpora": 7
    },
    "base__rlvr_long": {
@@ -120,6 +130,9 @@
      -2.9214804261273484,
      -1.590583198579277
     ],
+    "identity_approx": false,
+    "a_ctx": -0.28160421422206805,
+    "a_ans": -0.6258865488373535,
     "n_corpora": 7
    },
    "sft__dpo": {
@@ -137,6 +150,53 @@
      -3.363809818332987,
      -1.9637142275672552
     ],
+    "identity_approx": false,
+    "a_ctx": 0.8525570587292947,
+    "a_ans": 0.5243369280610152,
+    "n_corpora": 7
+   },
+   "sft__rlvr": {
+    "null_lo": NaN,
+    "null_hi": NaN,
+    "null_per_tier": {
+     "0": NaN,
+     "6": NaN,
+     "7": NaN,
+     "8": NaN
+    },
+    "null_max_single_draw": NaN,
+    "a_ctx": 0.7957505827508935,
+    "a_ans": 0.5133847023620575,
+    "align_measured": true,
+    "n_corpora_align": 7,
+    "identity_bias": -2.9460386504458618,
+    "identity_bias_range": [
+     -3.3553913372055018,
+     -2.6319527509944898
+    ],
+    "identity_approx": true,
+    "n_corpora": 7
+   },
+   "sft__rlvr_long": {
+    "null_lo": NaN,
+    "null_hi": NaN,
+    "null_per_tier": {
+     "0": NaN,
+     "6": NaN,
+     "7": NaN,
+     "8": NaN
+    },
+    "null_max_single_draw": NaN,
+    "a_ctx": 0.7426055246706431,
+    "a_ans": 0.5111424773745692,
+    "align_measured": true,
+    "n_corpora_align": 7,
+    "identity_bias": -2.6301272134852662,
+    "identity_bias_range": [
+     -2.9004929206940737,
+     -1.5907190699413762
+    ],
+    "identity_approx": true,
     "n_corpora": 7
    },
    "dpo__rlvr": {
@@ -154,6 +214,9 @@
      -3.3643548005176784,
      -2.625103501418763
     ],
+    "identity_approx": false,
+    "a_ctx": 0.9636145998938214,
+    "a_ans": 0.835341906245094,
     "n_corpora": 7
    },
    "dpo__rlvr_long": {
@@ -171,6 +234,31 @@
      -2.8795054152607995,
      -1.5908549413034754
     ],
+    "identity_approx": false,
+    "a_ctx": 0.8309059930230763,
+    "a_ans": 0.7226925850086321,
+    "n_corpora": 7
+   },
+   "rlvr__rlvr_long": {
+    "null_lo": NaN,
+    "null_hi": NaN,
+    "null_per_tier": {
+     "0": NaN,
+     "6": NaN,
+     "7": NaN,
+     "8": NaN
+    },
+    "null_max_single_draw": NaN,
+    "a_ctx": 0.8041387411989388,
+    "a_ans": 0.7342381229403407,
+    "align_measured": true,
+    "n_corpora_align": 7,
+    "identity_bias": -2.6301272134852662,
+    "identity_bias_range": [
+     -2.9004929206940737,
+     -1.5907190699413762
+    ],
+    "identity_approx": true,
     "n_corpora": 7
    }
   }
@@ -1150,10 +1238,10 @@
    "corpus": "lmsys23k",
    "degenerate": false,
    "battery": "round-B selfmap_v3",
-   "t0_r2": 0.4896217328542021,
-   "within_r2": 0.6103691188935184,
+   "t0_r2": 0.48962173285420196,
+   "within_r2": 0.6103691188935185,
    "n": 17183,
-   "t6_r2": 0.5168235095740219,
+   "t6_r2": 0.5168235095740221,
    "t7_r2": 0.5875780081011671,
    "t8_r2": 0.6002066886583346,
    "cross_r2": 0.6176422744140484
@@ -1262,13 +1350,13 @@
    "corpus": "gsm8k_test1319",
    "degenerate": true,
    "battery": "round-B selfmap_v3",
-   "t0_r2": -0.2349297248489004,
+   "t0_r2": -0.23492972484890018,
    "within_r2": 0.3684552707536515,
    "n": 1319,
-   "t6_r2": 0.2553190165346422,
-   "t7_r2": 0.32780370902876155,
+   "t6_r2": 0.2553190165346424,
+   "t7_r2": 0.32780370902876166,
    "t8_r2": 0.36758867546071594,
-   "cross_r2": 0.3813690691965276
+   "cross_r2": 0.38136906919652747
   },
   {
    "pair": "sft__rlvr_long",
@@ -1390,13 +1478,13 @@
    "corpus": "gsm8k_test1319",
    "degenerate": true,
    "battery": "round-B selfmap_v3",
-   "t0_r2": -0.17491828793521624,
-   "within_r2": 0.3887283737361472,
+   "t0_r2": -0.17491828793521602,
+   "within_r2": 0.3887283737361471,
    "n": 1319,
-   "t6_r2": 0.27311868427077723,
-   "t7_r2": 0.31480369274802267,
+   "t6_r2": 0.2731186842707777,
+   "t7_r2": 0.3148036927480229,
    "t8_r2": 0.37894624193955073,
-   "cross_r2": 0.3879709397216595
+   "cross_r2": 0.3879709397216594
   },
   {
    "pair": "dpo__rlvr",
@@ -1902,10 +1990,10 @@
    "corpus": "gsm8k_test1319",
    "degenerate": true,
    "battery": "round-B selfmap_v3",
-   "t0_r2": 0.16350209928597204,
-   "within_r2": 0.3887283737361472,
+   "t0_r2": 0.16350209928597226,
+   "within_r2": 0.3887283737361471,
    "n": 1319,
-   "t6_r2": 0.34298227245537005,
+   "t6_r2": 0.34298227245537016,
    "t7_r2": 0.341461114950778,
    "t8_r2": 0.37506031560978914,
    "cross_r2": 0.36922543414447984

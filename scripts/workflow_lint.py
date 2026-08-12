@@ -14270,14 +14270,21 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 # (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
 # change). Each entry names its trim direction; none is licensed to grow.
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
-    # measured 917,043 B at the #2074 Step-10d LANDING UNION (branch-tip
-    # 916,019 B — the Step 5 "Per-commit split-review dispatch (large
-    # rounds)" block, +3,660 B: T1 >4-commit / T2 >100 KB round-diff
-    # trigger, G=min(m,8) code-reviewer-lean sub-briefs, CONTRACT-BEARING
-    # routing, mechanical verdict composition + the split_review provenance
-    # line — plus +1,024 B of main-side advance since the fork; the gate's
-    # landing-union overlay measured the merged content, the #1721 class);
-    # cap = landing bytes + ~1.5 KB (#1753/#1727 landing-bytes rule).
+    # measured 920,127 B branch-tip after #2115 converted the two gate-script
+    # heredoc launchers (Step 10d lint gate + surgical twin) to Write-tool
+    # composition and added the Step 9c script-file-variant note (+1,554 B:
+    # the heredoc form ships the whole gate workload as Bash tool-call argv
+    # through the harness transport — the #2115 forever-pending-dispatch
+    # stall surface); cap = measured + ~1.5 KB (#1753/#1727 landing-bytes
+    # rule; the margin absorbs small main-side advance at the landing union).
+    # Prior: 918_600 — measured 917,043 B at the #2074 Step-10d LANDING
+    # UNION (branch-tip 916,019 B — the Step 5 "Per-commit split-review
+    # dispatch (large rounds)" block, +3,660 B: T1 >4-commit / T2 >100 KB
+    # round-diff trigger, G=min(m,8) code-reviewer-lean sub-briefs,
+    # CONTRACT-BEARING routing, mechanical verdict composition + the
+    # split_review provenance line — plus +1,024 B of main-side advance
+    # since the fork; the gate's landing-union overlay measured the merged
+    # content, the #1721 class).
     # Prior: 917_000 (branch-tip-measured first cut) / 913_400 —
     # measured 912,359 B after the #2041 + #2208 + #2040 merge union on the
     # 907,385 B pre-edit tree: #2041 inserted the Step 4b "Fan-out completion
@@ -14295,7 +14302,7 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 904,504 B base); the remaining mass is the judgment tranche
     # (bash-block extraction to step10d_guards.sh-style scripts, 9a-quater
     # legacy-path stub, GCP rollback-prose relocation).
-    "issue/SKILL.md": 918_600,
+    "issue/SKILL.md": 921_700,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
