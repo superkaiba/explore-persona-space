@@ -141,3 +141,39 @@ def test_recipes_teach_round_unique_payload_path_not_legacy() -> None:
         "SKILL.md gate section lost the refused-legacy-basename contract sentence (#1948)"
     )
     assert "#1948" in section, "SKILL.md gate section lost the #1948 contract reference"
+
+
+def test_step9ater_timing_guidance_not_stale() -> None:
+    """Durability pin (#2235, plan Phase C / TDD case 13): the stale
+    '~2.5-6 min' inline-gate timing figure is gone from ALL of SKILL.md.
+
+    The figure went stale by ~2x (measured 9m07.9s full no-flags wall on
+    2026-08-11, task #2235 body) at THREE sites inside the Step 9a-ter gate
+    section — the gate recipe (2026-08-11 line 7977), the single-flight
+    relaunch nuance (8001), and the worker-brief composition duty (8123) —
+    and self-set bounds derived from it returned rc=124 INCONCLUSIVE (a
+    420 s bound against a 547.9 s wall), costing a full gate re-run each
+    time. Fixing only one site leaves the rc=124 trap live at the others,
+    so the absence assert is FILE-WIDE and count-robust (post-edit count is
+    0 regardless of how many sites exist at fix time).
+
+    The replacement prose must state the two-regime reality: scoped payload
+    runs certify fast (the --files path, plan Phase B); workflow-surface /
+    refusal-fallback payloads take the full run (measured ~9-10 min on
+    2026-08-11 and growing with corpus size); self-set bounds derive from
+    the relevant MEASURED wall (>= 2x), with the gate's own LINT_TIMEOUT_S
+    (1200 s) as the inner fence."""
+    text = SKILL.read_text(encoding="utf-8")
+    assert re.search(r"2\.5-6 min", text) is None, (
+        "stale '~2.5-6 min' inline-gate timing figure resurfaced in SKILL.md (#2235)"
+    )
+    section = _gate_section()
+    assert "scoped" in section.lower(), (
+        "SKILL.md gate section lost the scoped-fast-path regime sentence (#2235)"
+    )
+    assert "fallback" in section.lower(), (
+        "SKILL.md gate section lost the full-run fallback regime sentence (#2235)"
+    )
+    assert "1200" in section, (
+        "SKILL.md gate section lost the LINT_TIMEOUT_S=1200 inner-fence figure (#2235)"
+    )

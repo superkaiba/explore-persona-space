@@ -870,6 +870,44 @@ _SRC = _REPO_ROOT / "src"
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
+# ---------------------------------------------------------------------------
+# Files-mode payload scope (#2235 Phase B). When `--files` engages, this holds
+# the frozenset of repo-relative payload paths PLUS their per-issue import
+# closure; every path-local check's file enumeration passes through
+# _files_scope_filter, which is the IDENTITY while the scope is None — the
+# no-`--files` invocation (Step 9c's instrument) is behavior-unchanged.
+# ---------------------------------------------------------------------------
+_FILES_SCOPE: frozenset[str] | None = None
+
+
+def _files_scope_rel(p: Path) -> str:
+    """Repo-relative posix form of *p* for scope-membership tests. Falls back
+    to the resolved form (symlinked tmp roots), then to the raw posix string
+    (a never-in-scope key — filtering is by exact membership)."""
+    if not p.is_absolute():
+        return p.as_posix()
+    try:
+        return p.relative_to(_REPO_ROOT).as_posix()
+    except ValueError:
+        pass
+    try:
+        return p.resolve().relative_to(_REPO_ROOT.resolve()).as_posix()
+    except ValueError:
+        return p.as_posix()
+
+
+def _files_scope_filter(paths: Collection[Path] | Iterator[Path] | list[Path]) -> list[Path]:
+    """Files-mode enumeration filter (#2235 Phase B3): identity (materialized)
+    when files-mode is off; else keep only paths inside the payload + closure
+    scope. Wrapped around the ENUMERATION expression of path-local checks so
+    a scoped run reads/parses only the payload's own files — the speed
+    mechanism; verdict hygiene is separately guaranteed by the files-mode
+    runner's in-scope attribution filter (see _run_files_mode)."""
+    if _FILES_SCOPE is None:
+        return list(paths)
+    return [p for p in paths if _files_scope_rel(Path(p)) in _FILES_SCOPE]
+
+
 from explore_persona_space.workflow import (  # noqa: E402  (import after sys.path edit)
     WorkflowYaml,
     load_workflow_yaml,
@@ -3609,7 +3647,7 @@ def _iter_wandb_required_files(experiments_dir: Path) -> list[Path]:
     if not experiments_dir.exists():
         return []
     files: list[Path] = []
-    for py in sorted(experiments_dir.rglob("*.py")):
+    for py in _files_scope_filter(sorted(experiments_dir.rglob("*.py"))):
         text = py.read_text(encoding="utf-8")
         if any(tok in text for tok in WANDB_TRAINER_CONFIG_TOKENS):
             files.append(py)
@@ -3838,7 +3876,7 @@ def check_heredoc_dotenv(*, scripts_dir: Path | None = None) -> list[str]:
     if not root.exists():
         return []
     errors: list[str] = []
-    for sh in sorted(root.rglob("*.sh")):
+    for sh in _files_scope_filter(sorted(root.rglob("*.sh"))):
         if not sh.is_file():
             continue
         errors.extend(_scan_shell_file_for_heredoc_dotenv(sh))
@@ -3935,7 +3973,7 @@ def check_dispatcher_cvd_pin(*, scripts_dir: Path | None = None) -> list[str]:
     if not root.exists():
         return []
     errors: list[str] = []
-    for sh in sorted(root.rglob("*.sh")):
+    for sh in _files_scope_filter(sorted(root.rglob("*.sh"))):
         if not sh.is_file():
             continue
         lines = sh.read_text(encoding="utf-8").splitlines()
@@ -4087,7 +4125,7 @@ def check_slurm_gpu_width(
     errors: list[str] = []
     matched_basenames: set[str] = set()
     guarded_basenames: set[str] = set()
-    for sh in sorted(root.rglob("*.sh")):
+    for sh in _files_scope_filter(sorted(root.rglob("*.sh"))):
         if not sh.is_file():
             continue
         text = sh.read_text(encoding="utf-8")
@@ -4157,7 +4195,7 @@ def check_pipe_python(*, scripts_dir: Path | None = None) -> list[str]:
     if not root.exists():
         return []
     errors: list[str] = []
-    for sh in sorted(root.rglob("*.sh")):
+    for sh in _files_scope_filter(sorted(root.rglob("*.sh"))):
         if not sh.is_file():
             continue
         lines = sh.read_text(encoding="utf-8").splitlines()
@@ -4220,7 +4258,7 @@ def check_piped_git_push(*, scripts_dir: Path | None = None) -> list[str]:
     if not root.exists():
         return []
     errors: list[str] = []
-    for sh in sorted(root.rglob("*.sh")):
+    for sh in _files_scope_filter(sorted(root.rglob("*.sh"))):
         if not sh.is_file():
             continue
         lines = sh.read_text(encoding="utf-8").splitlines()
@@ -4286,7 +4324,7 @@ def check_push_failure_swallow(*, scripts_dir: Path | None = None) -> list[str]:
     if not root.exists():
         return []
     errors: list[str] = []
-    for sh in sorted(root.rglob("*.sh")):
+    for sh in _files_scope_filter(sorted(root.rglob("*.sh"))):
         if not sh.is_file():
             continue
         rel_key = f"scripts/{sh.relative_to(root).as_posix()}"
@@ -4490,7 +4528,7 @@ def check_sh_function_rc_capture(*, scripts_dir: Path | None = None) -> list[str
     if not root.exists():
         return []
     errors: list[str] = []
-    for sh in sorted(root.rglob("*.sh")):
+    for sh in _files_scope_filter(sorted(root.rglob("*.sh"))):
         if not sh.is_file():
             continue
         lines = sh.read_text(encoding="utf-8").splitlines()
@@ -4639,7 +4677,7 @@ def _grep_qv_target_files(roots: list[Path] | None) -> list[Path]:
             files.extend(sorted(p for p in agents.glob("*.md") if p.is_file()))
         if scripts.exists():
             files.extend(sorted(p for p in scripts.rglob("*.sh") if p.is_file()))
-        return files
+        return _files_scope_filter(files)
     files = []
     for root in roots:
         if root.is_file():
@@ -4648,7 +4686,7 @@ def _grep_qv_target_files(roots: list[Path] | None) -> list[Path]:
             files.extend(
                 sorted(p for p in root.rglob("*") if p.is_file() and p.suffix in (".md", ".sh"))
             )
-    return files
+    return _files_scope_filter(files)
 
 
 def check_grep_qv(*, roots: list[Path] | None = None) -> list[str]:
@@ -4909,7 +4947,7 @@ def check_upload_or_true(
         return []
     allow = UPLOAD_OR_TRUE_LEGACY_ALLOWLIST if allowlist is None else allowlist
     errors: list[str] = []
-    for sh in sorted(root.rglob("*.sh")):
+    for sh in _files_scope_filter(sorted(root.rglob("*.sh"))):
         if not sh.is_file():
             continue
         if _judge_pin_rel(sh) in allow:
@@ -5922,7 +5960,7 @@ def check_upload_as_file(*, scripts_dir: Path | None = None) -> list[str]:
     if not root.exists():
         return []
     errors: list[str] = []
-    for py in sorted(root.rglob("*.py")):
+    for py in _files_scope_filter(sorted(root.rglob("*.py"))):
         if not py.is_file():
             continue
         text = py.read_text(encoding="utf-8")
@@ -6076,7 +6114,7 @@ def check_hub_dir_filecount_guard(
         return []
     allow = HUB_DIR_FILECOUNT_LEGACY_ALLOWLIST if legacy_allowlist is None else legacy_allowlist
     errors: list[str] = []
-    for py in sorted(root.rglob("*.py")):
+    for py in _files_scope_filter(sorted(root.rglob("*.py"))):
         if not py.is_file():
             continue
         rel = py.relative_to(root.parent).as_posix()
@@ -6264,7 +6302,7 @@ def check_upload_file_in_loop(
         return []
     allow = UPLOAD_FILE_IN_LOOP_LEGACY_ALLOWLIST if legacy_allowlist is None else legacy_allowlist
     errors: list[str] = []
-    for py in sorted(root.rglob("*.py")):
+    for py in _files_scope_filter(sorted(root.rglob("*.py"))):
         if not py.is_file():
             continue
         rel = py.relative_to(root.parent).as_posix()
@@ -6449,7 +6487,7 @@ def check_upload_return_discard(  # noqa: C901 -- two-pass binding-collection + 
         return []
     allow = UPLOAD_RETURN_DISCARD_LEGACY_ALLOWLIST if legacy_allowlist is None else legacy_allowlist
     errors: list[str] = []
-    for py in sorted(root.rglob("*.py")):
+    for py in _files_scope_filter(sorted(root.rglob("*.py"))):
         if not py.is_file():
             continue
         rel = py.relative_to(root.parent).as_posix()
@@ -7017,7 +7055,32 @@ def check_upload_prefix_clobber(  # noqa: C901 -- flat two-pass scan + flag-poli
     if not root.exists():
         return []
     allow = UPLOAD_PREFIX_CLOBBER_ALLOWLIST if legacy_allowlist is None else legacy_allowlist
-    files = [p for p in sorted(root.rglob("*.py")) if p.is_file()]
+    # KNOWN RESIDUAL under files-mode (#2235 code-review round 1), deliberate
+    # and pinned by tests/test_workflow_lint_files_mode.py:
+    #   test_files_mode_cross_file_wrapper_is_a_known_residual
+    #   test_bare_run_catches_cross_file_wrapper_the_scoped_run_misses
+    # Pass 1 infers wrappers keyed by BARE NAME over the files it is given. Its
+    # input is the FILTERED set here, so a payload calling an upload wrapper
+    # whose def lives in an out-of-scope module (a non-`issue*`-stem bare
+    # import, which the issue*-restricted closure never pulls in) is NOT flagged
+    # by the scoped run. The bare no-flags run — i.e. the Step 9c gate, which is
+    # the actual merge gate — still flags it, so this is DELAYED DETECTION, not
+    # an escape to main.
+    #
+    # Measured 2026-08-11 on a 2-file fig payload, why it stays a residual:
+    # feeding pass 1 the whole walked set costs +15.1 s (1,902 files); gating on
+    # UPLOAD_DEST_FUNCS mentions alone +6.2 s (365 files); gating additionally
+    # on "defines a name the payload calls" is NOT selective, because generic
+    # called names (`main`, `open`, `get`) are defined by most of those 365
+    # files — measured +32.8 s. The gate's legs run SEQUENTIALLY, so against the
+    # recorded 52.5 s scoped median: (i) and (iii) break the <60 s bar outright
+    # (67.6 s projected; 64.2 s measured), while (ii) lands ~58.7 s — under the
+    # bar, but ~1.3 s of headroom against a median that already swings
+    # 35.9 -> 52.5 s on VM load alone, and a 2.5x lint-leg regression
+    # (4.1 -> ~10.3 s) in the very metric this mode exists to improve. Closing
+    # it properly needs pass 1 keyed on import provenance rather than bare
+    # name — a change to the #1452 check itself, out of scope here.
+    files = _files_scope_filter([p for p in sorted(root.rglob("*.py")) if p.is_file()])
     wrappers, fallback_findings = _upc_collect_wrappers(files)
     errors: list[str] = []
     for py in files:
@@ -7415,7 +7478,7 @@ def check_jsonl_splitlines(*, scan_roots: tuple[Path, ...] | None = None) -> lis
     for root in roots:
         if not root.exists():
             continue
-        for py in sorted(root.rglob("*.py")):
+        for py in _files_scope_filter(sorted(root.rglob("*.py"))):
             if not py.is_file():
                 continue
             try:
@@ -7703,7 +7766,7 @@ def check_scripts_import_guard(*, scan_roots: tuple[Path, ...] | None = None) ->
     for root in roots:
         if not root.exists():
             continue
-        for py in sorted(root.rglob("*.py")):
+        for py in _files_scope_filter(sorted(root.rglob("*.py"))):
             if not py.is_file():
                 continue
             try:
@@ -7956,7 +8019,7 @@ def check_no_repo_root_syspath_in_tests(*, repo_root: Path | None = None) -> lis
     errors: list[str] = []
     if not tests_dir.is_dir():
         return errors
-    for py in sorted(tests_dir.rglob("*.py")):
+    for py in _files_scope_filter(sorted(tests_dir.rglob("*.py"))):
         try:
             tree = ast.parse(py.read_text(encoding="utf-8"))
         except (OSError, UnicodeDecodeError, SyntaxError) as exc:
@@ -8184,7 +8247,7 @@ def check_dotenv_before_hf_import(*, scripts_dir: Path | None = None) -> list[st
     if not root.exists():
         return []
     errors: list[str] = []
-    for py in sorted(root.rglob("*.py")):
+    for py in _files_scope_filter(sorted(root.rglob("*.py"))):
         if not py.is_file():
             continue
         text = py.read_text(encoding="utf-8")
@@ -8375,7 +8438,7 @@ def check_batch_judge_client(
     for root in roots:
         if not root.exists():
             continue
-        for py in sorted(root.rglob("*.py")):
+        for py in _files_scope_filter(sorted(root.rglob("*.py"))):
             if not py.is_file():
                 continue
             try:
@@ -8580,7 +8643,7 @@ def check_hub_verify_retry(*, scripts_dir: Path | None = None) -> list[str]:
     errors: list[str] = []
     if not root.exists():
         return errors
-    for py in sorted(root.rglob("*.py")):
+    for py in _files_scope_filter(sorted(root.rglob("*.py"))):
         if not py.is_file():
             continue
         try:
@@ -8849,12 +8912,12 @@ def check_judge_model_pins(
     for root in py_roots:
         if not root.exists():
             continue
-        for py in sorted(root.rglob("*.py")):
+        for py in _files_scope_filter(sorted(root.rglob("*.py"))):
             if py.is_file() and py not in seen:
                 seen.add(py)
                 _scan_judge_pin_file(py, sh_allowlist=False, errors=errors)
     if sh_root.exists():
-        for sh in sorted(sh_root.rglob("*.sh")):
+        for sh in _files_scope_filter(sorted(sh_root.rglob("*.sh"))):
             if sh.is_file():
                 _scan_judge_pin_file(sh, sh_allowlist=True, errors=errors)
     return errors
@@ -9268,7 +9331,7 @@ def _hf_routing_scan_files(root: Path):
         base = root / scope
         if not base.exists():
             continue
-        for py in sorted(base.rglob("*.py")):
+        for py in _files_scope_filter(sorted(base.rglob("*.py"))):
             if not py.is_file() or "__pycache__" in py.parts:
                 continue
             rel = py.relative_to(root).as_posix()
@@ -9547,7 +9610,7 @@ def _list_repo_files_scan_files(root: Path) -> Iterator[tuple[Path, str]]:
         base = root / scope
         if not base.exists():
             continue
-        for py in sorted(base.rglob("*.py")):
+        for py in _files_scope_filter(sorted(base.rglob("*.py"))):
             if not py.is_file() or "__pycache__" in py.parts:
                 continue
             yield py, py.relative_to(root).as_posix()
@@ -10379,7 +10442,7 @@ def check_phase_done_reserved(
         return []
     errors: list[str] = []
     emission_cache: dict[Path, list[int]] = {}
-    for sh in sorted(root.rglob("*.sh")):
+    for sh in _files_scope_filter(sorted(root.rglob("*.sh"))):
         if not sh.is_file():
             continue
         lines = sh.read_text(encoding="utf-8").splitlines()
@@ -10505,7 +10568,7 @@ def check_no_workflow_improver_spawn(*, repo_root: Path | None = None) -> list[s
         targets.extend(p for p in scripts_dir.rglob("*.sh") if p.is_file())
 
     errors: list[str] = []
-    for p in sorted(set(targets)):
+    for p in _files_scope_filter(sorted(set(targets))):
         try:
             text = p.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError):
@@ -14664,7 +14727,7 @@ def check_api_dispatch_routing(*, repo_root: Path | None = None) -> list[str]:
         base_dir = root / base
         if not base_dir.is_dir():
             continue
-        for path in sorted(base_dir.rglob("*.py")):
+        for path in _files_scope_filter(sorted(base_dir.rglob("*.py"))):
             if path.name in API_DISPATCH_ROUTING_LAYER:
                 continue
             rel = path.relative_to(root).as_posix()
@@ -15146,7 +15209,7 @@ def _sha_pin_sites(root: Path) -> dict[str, list[tuple[str, int, str, str, str]]
     for scan_root in (root / "scripts", root / "src" / "explore_persona_space"):
         if not scan_root.exists():
             continue
-        for path in sorted(scan_root.rglob("*.py")):
+        for path in _files_scope_filter(sorted(scan_root.rglob("*.py"))):
             if not path.is_file():
                 continue
             try:
@@ -15320,7 +15383,7 @@ def check_empty_text_default(*, repo_root: Path | None = None) -> list[str]:
     for scan_root in (root / "scripts", root / "src" / "explore_persona_space"):
         if not scan_root.exists():
             continue
-        for path in sorted(scan_root.rglob("*.py")):
+        for path in _files_scope_filter(sorted(scan_root.rglob("*.py"))):
             if not path.is_file():
                 continue
             rel = path.relative_to(root).as_posix()
@@ -15644,6 +15707,416 @@ def check_no_unannotated_gcp_pin_guidance(
     }
 
 
+# ===========================================================================
+# Files-mode (`--files`, #2235 Phase B): payload-scoped runs of the no-flags
+# check set. Design (plan .claude/plans/issue-2235.md §4 B1-B5):
+#
+# * CHECK_SCOPES classifies EVERY `args.check_* or no_flags` dispatch-chain
+#   check. kind="path-local": findings on file F depend only on F's content
+#   (plus fixed small config surfaces) — the check RUNS with its enumeration
+#   filtered to the payload scope via _files_scope_filter. kind="global": the
+#   check scans surfaces a disjoint payload cannot redden — it runs IFF the
+#   scope intersects its surfaces, else one SKIP line. Default-to-path-local
+#   when in doubt (path-local runs scoped = safe; global skips = risky).
+#   Reviewer-audit question per global row (plan §4 B4-bis): "can a scripts/
+#   ADD or MODIFY payload newly produce a red line CONTAINING a payload path
+#   from this check?" — deletions are structurally excluded (the gate's
+#   read_payload raises Inconclusive on a missing path).
+# * ENUMERATION-DEPENDENT SUB-FINDINGS (allowlist/grandfather staleness — the
+#   #2079 class) are the third class: under filtered enumeration every
+#   allowlist entry outside the scope reads "stale", so a naive scoped run
+#   would spuriously FAIL on ~100 corpus-global findings (probe 2026-08-11).
+#   Files-mode therefore keeps ONLY findings that name an in-scope path (the
+#   same substring-attribution rule inline_lint_gate.evaluate applies), and
+#   reports the suppressed count. This deliberately narrows the DIRECT
+#   `--files` verdict to payload-attributable findings; the bare no-flags run
+#   (Step 9c) remains the whole-repo instrument and is byte-unchanged.
+# * Import closure: fixpoint over bare `issue*`-stem imports resolving to
+#   scripts/<name>.py. The stem restriction is LOAD-BEARING (plan §4 B4):
+#   without it every third-party/stdlib import would read "unresolvable". An
+#   unresolvable `issue*`-stem import FAILs naming the importing file — a
+#   files-mode-ONLY strictness (deliberate, safe direction: it blocks a
+#   payload carrying a genuine runtime ImportError); the no-`--files` path
+#   has no such check, so "byte-for-byte verdict semantics" holds for the
+#   bare path only. A `scripts/<name>/` DIRECTORY (per-issue subdir class:
+#   issue_355/, issue_480/, ... — probe 2026-08-11: 7 subdirs, ZERO bare
+#   imports of them from flat scripts) resolves without expansion
+#   (verdict-safe under-scan: an unchanged, unscanned sibling cannot carry
+#   NEW red).
+# * Output contract (B5): SCOPE/SKIP/note lines carry counts + check names
+#   only, NEVER payload path strings — the gate treats any leg line naming a
+#   payload path without a WARN/PASSED/SKIPPED prefix as a red hit, so a
+#   payload-naming informational line would self-inflict a false block.
+# * Fail-closed completeness (B2): a dispatch-site check missing from
+#   CHECK_SCOPES/_FILES_MODE_RUNNERS prints the FILES-MODE-REFUSED sentinel
+#   and exits 2 with NO terminal PASS/FAIL line; the gate falls back to one
+#   bare full run (slow-but-correct, never silently-skipped).
+# ===========================================================================
+@dataclasses.dataclass(frozen=True)
+class CheckScope:
+    """Files-mode classification of one dispatch-chain check (#2235)."""
+
+    kind: str  # "path-local" | "global"
+    surfaces: tuple[str, ...]  # what the check READS: "dir/" prefix or exact path
+
+
+def _surface_hit(path: str, surface: str) -> bool:
+    """True when repo-relative *path* falls under *surface* (a "dir/" prefix
+    or an exact file path)."""
+    if surface.endswith("/"):
+        return path.startswith(surface)
+    return path == surface
+
+
+def _run_warn_only(fn: Callable[[], object]) -> list[str]:
+    """Chain-parity shim for WARN-only checks: run for the report side
+    effects, fold NOTHING into errors (mirrors the no-flags dispatch chain,
+    which deliberately does not extend `errors` for these)."""
+    fn()
+    return []
+
+
+# One runner per dispatch-chain check, IN CHAIN ORDER (the tuple order of the
+# no-flags ladder in main()); the runtime completeness check in
+# _run_files_mode source-scans the ladder so a future check added there
+# without a registry entry REFUSES (fail-closed) instead of silently not
+# running in files-mode.
+_FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
+    "check_script_refs": lambda wf: check_script_references(),
+    "check_skill_refs": lambda wf: check_skill_references(),
+    "check_wandb_required": lambda wf: check_wandb_required(),
+    "check_heredoc_dotenv": lambda wf: check_heredoc_dotenv(),
+    "check_dispatcher_cvd_pin": lambda wf: check_dispatcher_cvd_pin(),
+    "check_slurm_gpu_width": lambda wf: check_slurm_gpu_width(),
+    "check_pipe_python": lambda wf: check_pipe_python(),
+    "check_piped_git_push": lambda wf: check_piped_git_push(),
+    "check_push_failure_swallow": lambda wf: check_push_failure_swallow(),
+    "check_sh_function_rc_capture": lambda wf: check_sh_function_rc_capture(),
+    "check_grep_qv": lambda wf: check_grep_qv(),
+    "check_marker_registry": lambda wf: check_marker_registry(wf),
+    "check_marker_scalar_integrity": lambda wf: check_marker_scalar_integrity(wf),
+    "check_poller_marker_consumers": lambda wf: check_poller_marker_consumers(wf),
+    "check_agent_model_pins": lambda wf: check_agent_model_pins(),
+    "check_agent_tools": lambda wf: check_agent_tools(),
+    "check_upload_as_file": lambda wf: check_upload_as_file(),
+    "check_hub_dir_filecount": lambda wf: check_hub_dir_filecount_guard(),
+    "check_upload_prefix_clobber": lambda wf: check_upload_prefix_clobber(),
+    "check_upload_file_in_loop": lambda wf: check_upload_file_in_loop(),
+    "check_upload_return_discard": lambda wf: check_upload_return_discard(),
+    "check_dotenv_before_hf_import": lambda wf: check_dotenv_before_hf_import(),
+    "check_batch_judge_client": lambda wf: check_batch_judge_client(),
+    "check_hub_verify_retry": lambda wf: check_hub_verify_retry(),
+    "check_no_workflow_improver_spawn": lambda wf: check_no_workflow_improver_spawn(),
+    "check_no_repo_root_git_reset_hard": lambda wf: check_no_repo_root_git_reset_hard(),
+    "check_no_repo_root_worktree_revert": lambda wf: check_no_repo_root_worktree_revert(),
+    "check_no_repo_root_syspath_in_tests": lambda wf: check_no_repo_root_syspath_in_tests(),
+    "check_gate_ids_unique": lambda wf: check_gate_ids_unique(wf),
+    "check_lessons_index": lambda wf: check_lessons_index(),
+    "check_inline_round_duty_mirror": lambda wf: check_inline_round_duty_mirror(),
+    "check_rule_frontmatter_parses": lambda wf: check_rule_frontmatter_parses(),
+    "check_agent_spec_size": lambda wf: check_agent_spec_size(),
+    "check_agent_memory_index_size": lambda wf: check_agent_memory_index_size(),
+    "check_gotchas_size": lambda wf: check_gotchas_size(),
+    "check_skill_doc_size": lambda wf: check_skill_doc_size(),
+    "check_compute_shape_review_lens": lambda wf: check_compute_shape_review_lens(),
+    "check_long_loop_restartability_review_lens": (
+        lambda wf: check_long_loop_restartability_review_lens()
+    ),
+    "check_hollow_verification_gate_review_lens": (
+        lambda wf: check_hollow_verification_gate_review_lens()
+    ),
+    "check_smoke_architecture_review_lens": lambda wf: check_smoke_architecture_review_lens(),
+    "check_authorized_stub_wiring": lambda wf: check_authorized_stub_wiring(),
+    "check_smoke_blind_spot_review_lens": lambda wf: check_smoke_blind_spot_review_lens(),
+    "check_stale_label_disposition": lambda wf: check_stale_label_disposition_clause(),
+    "check_smoke_output_hygiene": lambda wf: check_smoke_output_hygiene(),
+    "check_crash_fix_relaunch_contract": lambda wf: check_crash_fix_relaunch_contract(),
+    "check_vm_thread_cap_guidance": lambda wf: check_vm_thread_cap_guidance(),
+    "check_awk_elision_parity": lambda wf: check_awk_elision_parity(),
+    "check_marker_recipe_snippets": lambda wf: check_marker_recipe_snippets(),
+    "check_judge_model_pins": lambda wf: check_judge_model_pins(),
+    "check_live_hf_retry_routing": lambda wf: check_live_hf_retry_routing(),
+    "check_bare_list_repo_files": lambda wf: check_bare_list_repo_files(),
+    "check_snapshot_download_allow_patterns": (lambda wf: check_snapshot_download_allow_patterns()),
+    "check_no_literal_round_marker_versions": (lambda wf: check_no_literal_round_marker_versions()),
+    "check_api_dispatch_routing": lambda wf: check_api_dispatch_routing(),
+    "check_lens_coverage": lambda wf: check_lens_coverage(),
+    "check_section_reference_pointers": lambda wf: check_section_reference_pointer_coverage(),
+    "check_phase_done_reserved": lambda wf: check_phase_done_reserved(),
+    "check_jsonl_splitlines": lambda wf: check_jsonl_splitlines(),
+    "check_scripts_import_guard": lambda wf: check_scripts_import_guard(),
+    "check_upload_or_true": lambda wf: check_upload_or_true(),
+    "check_git_recipes_root_guard": lambda wf: check_git_recipes_root_guard(),
+    "check_bare_commit_pathspec": lambda wf: check_bare_commit_pathspec(),
+    "check_asw_docstring_pass_count": lambda wf: check_asw_docstring_pass_count(),
+    "check_skill_bang_backtick": lambda wf: check_skill_bang_backtick(),
+    "check_agents_note_argv_verdict": lambda wf: check_agents_note_argv_verdict(),
+    "check_sha_pin_domain": lambda wf: check_sha_pin_domain(),
+    "check_empty_text_default": lambda wf: check_empty_text_default(),
+    "check_no_unannotated_gcp_pin_guidance": (
+        lambda wf: _run_warn_only(check_no_unannotated_gcp_pin_guidance)
+    ),
+}
+
+# Classification of every dispatch-chain check (plan §4 B2). The task-body
+# "Scope decision" hard floor (judge pins, the upload family, dotenv-before-
+# hf-import, jsonl-splitlines, batch-judge-client) is path-local BY
+# REQUIREMENT and test-pinned. Config-file payloads (pyproject.toml/uv.lock)
+# are scoped_eligible and match no surfaces below — their scoped run is
+# deliberately near-empty (verdict-EQUIVALENT to the bare run's payload-keyed
+# read); a future config-READING check must classify its surface explicitly.
+CHECK_SCOPES: dict[str, CheckScope] = {
+    # -- path-local: code-tree scanners (enumeration wrapped in
+    #    _files_scope_filter at their rglob/walk sites) --
+    "check_wandb_required": CheckScope("path-local", ("src/",)),
+    "check_heredoc_dotenv": CheckScope("path-local", ("scripts/",)),
+    "check_dispatcher_cvd_pin": CheckScope("path-local", ("scripts/",)),
+    "check_slurm_gpu_width": CheckScope("path-local", ("scripts/",)),
+    "check_pipe_python": CheckScope("path-local", ("scripts/",)),
+    "check_piped_git_push": CheckScope("path-local", ("scripts/",)),
+    "check_push_failure_swallow": CheckScope("path-local", ("scripts/",)),
+    "check_sh_function_rc_capture": CheckScope("path-local", ("scripts/",)),
+    "check_grep_qv": CheckScope("path-local", ("scripts/", ".claude/")),
+    "check_upload_as_file": CheckScope("path-local", ("scripts/",)),
+    "check_hub_dir_filecount": CheckScope("path-local", ("scripts/",)),
+    "check_upload_prefix_clobber": CheckScope("path-local", ("scripts/",)),
+    "check_upload_file_in_loop": CheckScope("path-local", ("scripts/",)),
+    "check_upload_return_discard": CheckScope("path-local", ("scripts/",)),
+    "check_dotenv_before_hf_import": CheckScope("path-local", ("scripts/",)),
+    "check_batch_judge_client": CheckScope("path-local", ("scripts/", "src/")),
+    "check_hub_verify_retry": CheckScope("path-local", ("scripts/",)),
+    "check_judge_model_pins": CheckScope("path-local", ("scripts/", "src/", "tests/")),
+    "check_live_hf_retry_routing": CheckScope("path-local", ("scripts/", "src/")),
+    "check_bare_list_repo_files": CheckScope("path-local", ("scripts/", "src/")),
+    "check_snapshot_download_allow_patterns": CheckScope("path-local", ("scripts/", "src/")),
+    "check_api_dispatch_routing": CheckScope("path-local", ("scripts/", "src/")),
+    "check_jsonl_splitlines": CheckScope("path-local", ("scripts/", "src/")),
+    "check_scripts_import_guard": CheckScope("path-local", ("scripts/", "src/")),
+    "check_upload_or_true": CheckScope("path-local", ("scripts/",)),
+    "check_phase_done_reserved": CheckScope("path-local", ("scripts/",)),
+    "check_sha_pin_domain": CheckScope("path-local", ("scripts/", "src/")),
+    "check_empty_text_default": CheckScope("path-local", ("scripts/", "src/")),
+    "check_no_repo_root_syspath_in_tests": CheckScope("path-local", ("tests/",)),
+    "check_no_workflow_improver_spawn": CheckScope(
+        "path-local", ("scripts/", ".claude/", "CLAUDE.md")
+    ),
+    # -- path-local: fixed-file / registry-integrity checks (bounded file
+    #    set, ~ms cost — run always; corpus-global findings are handled by
+    #    the in-scope attribution filter) --
+    "check_marker_scalar_integrity": CheckScope(
+        "path-local", (".claude/workflow.yaml", "scripts/")
+    ),
+    "check_poller_marker_consumers": CheckScope("path-local", (".claude/", "scripts/")),
+    "check_marker_recipe_snippets": CheckScope("path-local", (".claude/rules/", "docs/", "src/")),
+    "check_authorized_stub_wiring": CheckScope("path-local", (".claude/", "src/")),
+    # -- global: workflow-doc surface walkers a non-workflow-surface payload
+    #    cannot redden (an add/modify payload can only ever FIX a dangling
+    #    reference — the check_script_references argument, plan §4 B4-bis) --
+    "check_script_refs": CheckScope("global", (".claude/",)),
+    "check_skill_refs": CheckScope("global", (".claude/", "CLAUDE.md")),
+    "check_marker_registry": CheckScope("global", (".claude/",)),
+    "check_gate_ids_unique": CheckScope("global", (".claude/workflow.yaml", "workflow.yaml")),
+    "check_agent_model_pins": CheckScope("global", (".claude/agents/",)),
+    "check_agent_tools": CheckScope("global", (".claude/agents/",)),
+    "check_no_repo_root_git_reset_hard": CheckScope("global", (".claude/",)),
+    "check_no_repo_root_worktree_revert": CheckScope("global", (".claude/",)),
+    "check_lessons_index": CheckScope("global", (".claude/rules/",)),
+    "check_inline_round_duty_mirror": CheckScope("global", (".claude/", "CLAUDE.md")),
+    "check_rule_frontmatter_parses": CheckScope("global", (".claude/rules/",)),
+    "check_agent_spec_size": CheckScope("global", (".claude/agents/",)),
+    "check_agent_memory_index_size": CheckScope("global", (".claude/agent-memory/",)),
+    "check_gotchas_size": CheckScope("global", (".claude/rules/gotchas.md",)),
+    "check_skill_doc_size": CheckScope("global", (".claude/skills/",)),
+    "check_compute_shape_review_lens": CheckScope("global", (".claude/agents/",)),
+    "check_long_loop_restartability_review_lens": CheckScope("global", (".claude/",)),
+    "check_hollow_verification_gate_review_lens": CheckScope("global", (".claude/agents/",)),
+    "check_smoke_architecture_review_lens": CheckScope("global", (".claude/",)),
+    "check_smoke_blind_spot_review_lens": CheckScope("global", (".claude/",)),
+    "check_stale_label_disposition": CheckScope("global", (".claude/skills/",)),
+    "check_smoke_output_hygiene": CheckScope("global", (".claude/",)),
+    "check_crash_fix_relaunch_contract": CheckScope("global", (".claude/",)),
+    "check_vm_thread_cap_guidance": CheckScope("global", (".claude/",)),
+    "check_awk_elision_parity": CheckScope("global", (".claude/",)),
+    "check_no_literal_round_marker_versions": CheckScope("global", (".claude/", "CLAUDE.md")),
+    "check_lens_coverage": CheckScope("global", (".claude/rules/",)),
+    "check_section_reference_pointers": CheckScope("global", (".claude/",)),
+    "check_git_recipes_root_guard": CheckScope("global", (".claude/", "CLAUDE.md")),
+    "check_bare_commit_pathspec": CheckScope("global", (".claude/", "CLAUDE.md")),
+    "check_skill_bang_backtick": CheckScope("global", (".claude/skills/",)),
+    "check_agents_note_argv_verdict": CheckScope("global", (".claude/agents/",)),
+    "check_asw_docstring_pass_count": CheckScope(
+        "global",
+        ("scripts/autonomous_session_watch.py", ".claude/rules/background-automation.md"),
+    ),
+    "check_no_unannotated_gcp_pin_guidance": CheckScope("global", (".claude/", "docs/")),
+}
+
+_BARE_IMPORT_FALLBACK_RE = re.compile(r"^\s*(?:import|from)\s+([A-Za-z_]\w*)", re.MULTILINE)
+
+
+def _bare_module_imports(path: Path) -> set[str]:
+    """Top-segment bare module names imported by *path* (ast walk; regex
+    fallback on SyntaxError so a syntactically-broken payload still gets its
+    closure scoped-scanned — ruff-class checks will name the breakage)."""
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return set()
+    tree = _cached_parse(path, text)
+    if tree is None:
+        return set(_BARE_IMPORT_FALLBACK_RE.findall(text))
+    names: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                names.add(alias.name.split(".")[0])
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+            names.add(node.module.split(".")[0])
+    return names
+
+
+def _issue_import_closure(payload: list[str]) -> tuple[list[str], list[str]]:
+    """Fixpoint over bare ``issue*``-stem imports resolving to
+    ``scripts/<name>.py`` (plan §4 B4). Returns ``(sorted closure paths,
+    unresolvable-import error strings)``. Non-``issue*`` stems (numpy, stdlib,
+    ``explore_persona_space.*``) are left alone; a ``scripts/<name>/``
+    directory resolves without expansion (per-issue subdir class)."""
+    scripts_dir = _REPO_ROOT / "scripts"
+    closure: set[str] = set()
+    errors: list[str] = []
+    seen: set[str] = set(payload)
+    queue: list[str] = list(payload)
+    while queue:
+        rel = queue.pop()
+        abs_p = _REPO_ROOT / rel
+        if abs_p.suffix != ".py" or not abs_p.is_file():
+            continue
+        for name in sorted(_bare_module_imports(abs_p)):
+            if not name.startswith("issue"):
+                continue
+            target_rel = f"scripts/{name}.py"
+            if (scripts_dir / f"{name}.py").is_file():
+                if target_rel not in seen:
+                    seen.add(target_rel)
+                    closure.add(target_rel)
+                    queue.append(target_rel)
+            elif (scripts_dir / name).is_dir():
+                continue
+            else:
+                errors.append(
+                    f"{rel}: bare per-issue import `{name}` does not resolve to "
+                    f"scripts/{name}.py (files-mode import closure, #2235 — the file "
+                    "references a per-issue module that does not exist; new red)"
+                )
+    return sorted(closure), errors
+
+
+def _run_files_mode(raw_paths: list[str], workflow: dict) -> int:
+    """Run the no-flags check set payload-scoped (#2235 Phase B; see the
+    files-mode design block above). Returns the process exit code: 0 PASS /
+    1 FAIL / 2 FILES-MODE-REFUSED (registry incompleteness — NO terminal
+    PASS/FAIL line; the gate falls back to one bare full run)."""
+    global _FILES_SCOPE
+    # Fail-closed completeness (B2.ii): source-scan the live dispatch ladder
+    # so a check added there without a CHECK_SCOPES/_FILES_MODE_RUNNERS entry
+    # refuses at runtime instead of silently not running in files-mode. (The
+    # regex cannot self-match: the pattern literal spells `args\.`, not
+    # `args.`.)
+    own_src = Path(__file__).read_text(encoding="utf-8")
+    site_names = set(re.findall(r"args\.(check_\w+)\s+or\s+no_flags", own_src))
+    unclassified = sorted(
+        (site_names - set(CHECK_SCOPES)) | (site_names - set(_FILES_MODE_RUNNERS))
+    )
+    if unclassified:
+        for name in unclassified:
+            sys.stderr.write(f"workflow_lint: FILES-MODE-REFUSED (unclassified check {name})\n")
+        return 2
+    # Normalize to repo-relative (#2235 code-review round 1): every enumeration
+    # this mode filters yields repo-relative paths, so an absolute payload path
+    # left absolute matches nothing — the payload would be scoped OUT of its own
+    # run and PASS near-empty. An in-repo absolute path relativizes; one outside
+    # the repo can never be in scope, so refuse it loudly (exit 2 → the gate
+    # falls back to one bare full run) rather than certify a vacuous PASS.
+    payload: list[str] = []
+    for raw in raw_paths:
+        stripped = raw.strip()
+        if not stripped:
+            continue
+        rel = _files_scope_rel(Path(stripped))
+        if Path(rel).is_absolute():
+            sys.stderr.write(
+                f"workflow_lint: FILES-MODE-REFUSED (payload path outside repo: {stripped})\n"
+            )
+            return 2
+        # `Path.relative_to` is LEXICAL — it leaves `..` components in place, so
+        # a dotdot form yields a key no repo-relative enumeration entry can ever
+        # equal and would silently self-scope-out: the same near-empty-PASS
+        # silence the out-of-repo refusal above closes (review round 2).
+        # Normalize, then refuse anything still escaping the repo.
+        rel = os.path.normpath(rel).replace(os.sep, "/")
+        if ".." in Path(rel).parts:
+            sys.stderr.write(
+                f"workflow_lint: FILES-MODE-REFUSED (payload path escapes repo: {stripped})\n"
+            )
+            return 2
+        payload.append(rel)
+    if not payload:
+        # An all-whitespace `--files` list scopes to nothing, which would certify
+        # a vacuous PASS over an empty payload (review round 2). Two known
+        # siblings of this self-scope-out class stay unrefused, both direct-CLI
+        # misuse the gate cannot reach: a nonexistent/typo relative path (kept
+        # permissive on purpose — a DELETED payload file is legitimate), and a
+        # path naming a file outside the walked enumerations.
+        sys.stderr.write("workflow_lint: FILES-MODE-REFUSED (empty payload)\n")
+        return 2
+    closure, closure_errors = _issue_import_closure(payload)
+    scope = frozenset(payload) | frozenset(closure)
+    errors: list[str] = []
+    ran = 0
+    skipped = 0
+    _FILES_SCOPE = scope
+    try:
+        for name, runner in _FILES_MODE_RUNNERS.items():
+            meta = CHECK_SCOPES[name]
+            if meta.kind == "global" and not any(
+                _surface_hit(p, s) for p in scope for s in meta.surfaces
+            ):
+                skipped += 1
+                sys.stderr.write(
+                    f"workflow_lint: SKIP {name} (files-mode: payload disjoint from "
+                    f"{','.join(meta.surfaces)})\n"
+                )
+                continue
+            ran += 1
+            errors.extend(runner(workflow))
+    finally:
+        _FILES_SCOPE = None
+    errors.extend(closure_errors)
+    # In-scope attribution filter (the enumeration-dependent-sub-findings
+    # rail, B2 third class): keep ONLY findings naming a payload/closure
+    # path — the same substring rule the gate's evaluate() attributes by, so
+    # nothing droppable here could ever have blocked at the gate.
+    kept = [e for e in errors if any(sp in e for sp in scope)]
+    suppressed = len(errors) - len(kept)
+    if suppressed:
+        sys.stderr.write(
+            f"workflow_lint: note: files-mode suppressed {suppressed} finding(s) naming no "
+            "in-scope path (corpus-global / enumeration-dependent; the bare no-flags run "
+            "remains the whole-repo instrument)\n"
+        )
+    sys.stderr.write(
+        f"workflow_lint: SCOPE files={len(payload)} closure=+{len(closure)} "
+        f"checks_ran={ran} checks_skipped={skipped}\n"
+    )
+    if kept:
+        for err in kept:
+            sys.stderr.write(f"workflow_lint: {err}\n")
+        sys.stderr.write(f"workflow_lint: FAIL ({len(kept)} error(s))\n")
+        return 1
+    sys.stderr.write("workflow_lint: PASS\n")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispatch ladder; one branch per check flag, extracting it would just relocate the ladder
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -15651,6 +16124,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         default=None,
         help="Path to the workflow.yaml file. Defaults to the canonical "
         ".claude/workflow.yaml under the repo root.",
+    )
+    parser.add_argument(
+        "--files",
+        nargs="+",
+        metavar="PATH",
+        default=None,
+        help="Files-mode (#2235): run the no-flags check set scoped to the given "
+        "repo-relative payload paths plus their issue*-stem import closure "
+        "(see the CHECK_SCOPES design block). Mutually exclusive with every "
+        "--check-* flag (argparse error, exit 2). The bare no-flags run is "
+        "byte-unchanged and remains the whole-repo instrument.",
     )
     parser.add_argument(
         "--check-references",
@@ -16641,6 +17125,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
     )
     args = parser.parse_args(argv)
 
+    if args.files:
+        conflicting = sorted(
+            name for name, value in vars(args).items() if name.startswith("check_") and value
+        )
+        if conflicting:
+            # One mode at a time (#2235 plan §4 B1): a scoped single-check
+            # run has no defined semantics — parser.error exits 2 with NO
+            # terminal PASS/FAIL line.
+            flags = ", ".join("--" + c.replace("_", "-") for c in conflicting)
+            parser.error(f"--files is mutually exclusive with check flags (got: {flags})")
+
     if args.regen_hf_routing_snapshot:
         # Maintenance flag (#1568): print-and-exit; never runs checks, never
         # loads workflow.yaml, never enters the no-flags bundle (combining
@@ -16669,6 +17164,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
     except Exception as exc:
         sys.stderr.write(f"workflow_lint: schema FAIL\n{type(exc).__name__}: {exc}\n")
         return 1
+
+    if args.files:
+        # Files-mode dispatch (#2235 Phase B): schema validation above still
+        # ran (same fail-loud contract as every mode); the scoped run
+        # replaces the no-flags bundle below.
+        return _run_files_mode(args.files, workflow)
 
     # A bare `workflow_lint.py` (no check/emit flags) validates the schema
     # AND runs the cheap, always-safe script-reference check so dangling
