@@ -143,12 +143,12 @@ A_YLIM_IDENT = (-3.25, -1.85)
 # to +0.96 (dpo->rlvr); headroom above 1.0 for its own two-entry legend.
 A_YLIM_ALIGN = (-0.95, 1.62)
 PC_YLIM = (-0.62, 0.72)
-# The lower panel carries every OFF-SCALE baseline: identity+bias (-0.95..-3.41)
-# AND the t0/t6 shuffled nulls, which reach -5.02 on math7500 (no answer-side
-# refit to absorb the shuffled target mean). t7/t8 nulls sit at ~0 and stay on
-# the main panel with the series they bound.
-PC_YLIM_IDENT = (-5.35, -0.22)
-PC_LOWER_TIERS = (0, 6)
+# The lower panel now carries identity+bias ONLY (-0.95..-3.41). It used to also
+# hold the t0/t6 shuffled nulls, which reach -5.02 on math7500 and forced the
+# range down to -5.35; with the nulls no longer drawn (user call 2026-08-12) the
+# strip tightens onto identity+bias, so the line is readable instead of a flat
+# trace squeezed against the top of a 5-unit axis.
+PC_YLIM_IDENT = (-3.70, -0.80)
 PC_MAIN_TIERS = (7, 8)
 
 # The module computes this at import (`load_cross()` returns a (values, provenance)
@@ -241,6 +241,8 @@ if LAYER != 30:
 # identity baselines ARE measured there now (v4 refit), so those two series run
 # continuously across all ten pairs; identity+bias-WITHIN is still borrowed
 # from each target's round-3 siblings and flagged identity_approx.
+# Retained for the sidecar prose only: the shuffled-pairing null is no longer
+# drawn on either figure (user call 2026-08-12), so nothing plots in this colour.
 NULL_COLOR = "#969696"
 IDENT_COLOR = "#54278f"
 BASELINE_PAIRS = tuple(p for p in PAIRS if p not in SELFMAP_PAIRS)
@@ -567,70 +569,26 @@ def fig_aggregate(D: dict) -> Path:
                 label=lab,
             )
         axa.legend(loc="upper left", fontsize=8, frameon=False, ncol=2)
-    for tier in PC_LOWER_TIERS:
-        ax.plot(
-            x,
-            [
-                BASELINES[pi]["null_per_tier"][tier] if pi in BASELINES else np.nan
-                for pi in range(len(PAIRS))
-            ],
-            color=TIER_COLORS[tier],
-            lw=1.3,
-            ls=(0, (5, 2)),
-            alpha=0.9,
-            zorder=2,
-        )
-    ax.plot(
-        [],
-        [],
-        color=NULL_COLOR,
-        lw=1.3,
-        ls=(0, (5, 2)),
-        label="shuffled-pairing null, per tier (t0/t6 drawn; t7/t8 = −0.0008 ≈ the zero line)",
-    )
+    # The shuffled-pairing null is NOT DRAWN (user call 2026-08-12: "remove the
+    # shuffled baseline just put the identity + bias"). Its per-tier values are
+    # still computed and still ride fair_baselines.per_pair in the .meta.json
+    # sidecar, and the prose argument that uses them — base→DPO's -0.084 at t0
+    # against its own -0.712 matched null — is unchanged. Only the canvas drops
+    # the four dashed lines, which crowded the lower half of the panel.
+    #
     # identity+bias lives on the lower (broken-axis) panel at its TRUE value;
-    # the proxy handle carries it into the main panel's legend.
+    # the proxy handle carries it into the main panel's legend. ONE uniform
+    # series: the measured-vs-borrowed marker split is retired (same user call),
+    # so provenance now lives only in the sidecar's per-pair identity_approx
+    # flags and in the prose beside the figure.
     ident = np.array(
         [BASELINES.get(pi, {}).get("identity_bias", np.nan) for pi in range(len(PAIRS))]
     )
-    # Provenance is DRAWN, not only recorded in the sidecar. identity+bias is a
-    # WITHIN-model baseline keyed on the TARGET, so the three round-B pairs carry
-    # their target's round-3 value (identity_approx) instead of one measured on
-    # their own rows — which is exactly why SFT→RLVR-long and RLVR→RLVR-long sit
-    # at the same −2.630 (shared target). FILLED marker = measured on this pair's
-    # own rows; HOLLOW marker = borrowed from the target's round-3 siblings.
-    ident_borrowed = np.array(
-        [bool(BASELINES.get(pi, {}).get("identity_approx", False)) for pi in range(len(PAIRS))]
-    )
-    ident_line = dict(color=IDENT_COLOR, lw=2.0, ls=(0, (5, 2)))
-    ident_hollow = dict(ls="none", marker="o", ms=7, mfc="white", mec=IDENT_COLOR, mew=1.8)
+    ident_line = dict(color=IDENT_COLOR, lw=2.0, ls=(0, (5, 2)), marker="o", ms=5.5)
     if axb is not None:
         axb.plot(x, ident, zorder=3, **ident_line)
-        axb.plot(
-            x,
-            np.where(~ident_borrowed, ident, np.nan),
-            ls="none",
-            marker="o",
-            ms=5.5,
-            color=IDENT_COLOR,
-            zorder=4,
-        )
-        axb.plot(x, np.where(ident_borrowed, ident, np.nan), zorder=4, **ident_hollow)
     if HAS_IDENTITY:
-        ax.plot(
-            [],
-            [],
-            marker="o",
-            ms=5.5,
-            label="identity+bias  ŷ = x + b  (lower panel) — MEASURED",
-            **ident_line,
-        )
-        ax.plot(
-            [],
-            [],
-            label="identity+bias — BORROWED from the target's round-3 pairs",
-            **ident_hollow,
-        )
+        ax.plot([], [], label="identity+bias  ŷ = x + b  (lower panel)", **ident_line)
 
     for tier in TIERS:
         med = [
@@ -843,65 +801,20 @@ def fig_percorpus(D: dict) -> Path:
     # FILLED = measured on this pair's own rows; HOLLOW = borrowed from the
     # target's round-3 siblings at this same (fmt, corpus). Same encoding as the
     # aggregate figure, so one marker convention reads across both.
-    pc_ident_line = dict(color=IDENT_COLOR, lw=1.7, ls=(0, (5, 2)))
-    pc_ident_hollow = dict(ls="none", marker="o", ms=5, mfc="white", mec=IDENT_COLOR, mew=1.5)
+    pc_ident_line = dict(color=IDENT_COLOR, lw=1.7, ls=(0, (5, 2)), marker="o", ms=4)
     for k, (fmt, corpus) in enumerate(SURFACES):
         ax, axb = mains[k], breaks[k]
         deg = (fmt, corpus) in DEGENERATE
-        # fair baselines, per panel, behind the tier lines — this CORPUS's own
-        # values, not the aggregate's. Both are LINES; NaN at the round-B pairs.
+        # identity+bias only, per panel, behind the tier lines — this CORPUS's own
+        # value. The shuffled-pairing null is NOT DRAWN and the measured-vs-borrowed
+        # marker split is retired (user call 2026-08-12); see fig_aggregate. Both
+        # facts survive in the .meta.json sidecar and the prose.
         ax.axhline(0.0, color="#252525", lw=0.9, ls=(0, (6, 3)), zorder=1)
-        pnull, pident, pborrowed = _panel_baselines(fmt, corpus)
-        # t0/t6 nulls reach -5.02 on math7500, so they share the lower panel with
-        # identity+bias; t7/t8 nulls sit at ~-0.0008, coincident with the zero
-        # line already drawn above. See fig_aggregate for the full rationale.
-        for tier in PC_LOWER_TIERS:
-            axb.plot(
-                np.arange(len(PAIRS)),
-                pnull[tier],
-                color=TIER_COLORS[tier],
-                lw=1.2,
-                ls=(0, (5, 2)),
-                alpha=0.9,
-                zorder=2,
-            )
+        _, pident, _ = _panel_baselines(fmt, corpus)
         if HAS_IDENTITY:
-            xi = np.arange(len(PAIRS))
-            axb.plot(xi, pident, zorder=3, **pc_ident_line)
-            axb.plot(
-                xi,
-                np.where(~pborrowed, pident, np.nan),
-                ls="none",
-                marker="o",
-                ms=4,
-                color=IDENT_COLOR,
-                zorder=4,
-            )
-            axb.plot(xi, np.where(pborrowed, pident, np.nan), zorder=4, **pc_ident_hollow)
-        if k == 0:  # proxies so the figure legend carries the lower-panel lines
-            ax.plot(
-                [],
-                [],
-                color=NULL_COLOR,
-                lw=1.2,
-                ls=(0, (5, 2)),
-                label="shuffled-pairing null, per tier (t0/t6 lower panel; t7/t8 ≈ the zero line)",
-            )
-            if HAS_IDENTITY:
-                ax.plot(
-                    [],
-                    [],
-                    marker="o",
-                    ms=4,
-                    label="identity+bias  ŷ = x + b  (lower panel) — MEASURED",
-                    **pc_ident_line,
-                )
-                ax.plot(
-                    [],
-                    [],
-                    label="identity+bias — BORROWED from the target's round-3 pairs",
-                    **pc_ident_hollow,
-                )
+            axb.plot(np.arange(len(PAIRS)), pident, zorder=3, **pc_ident_line)
+        if k == 0 and HAS_IDENTITY:  # proxy so the figure legend carries it
+            ax.plot([], [], label="identity+bias  ŷ = x + b  (lower panel)", **pc_ident_line)
         for tier in TIERS:
             xa, ys, lo, hi = [], [], [], []
             for pi, (src, tgt) in enumerate(PAIRS):
@@ -972,7 +885,7 @@ def fig_percorpus(D: dict) -> Path:
 
     mains[0].set_ylim(*PC_YLIM)  # sharey => applies to all 8 main panels
     breaks[0].set_ylim(*PC_YLIM_IDENT)
-    breaks[0].set_yticks([-1.0, -3.0, -5.0])
+    breaks[0].set_yticks([-1.0, -2.0, -3.0])
     for k in (0, 4):
         mains[k].set_ylabel("held-out R²", fontsize=10)
     h, lab = mains[0].get_legend_handles_labels()
@@ -1070,25 +983,35 @@ def write_meta(D: dict, figs: list[Path]) -> Path:
         ),
         "fair_baselines": {
             "shuffled_pairing_null": (
-                "the CAPACITY control: per draw the target rows y_t are row-permuted and every "
-                "y_t-consuming tier correction is REFIT (issue1336_metric_ladder.py:34-38, "
-                "756-763), so it bounds how much R2 the reparameterization machinery can "
-                "manufacture from destroyed correspondence. 20 draws per fit; the plotted LINE "
-                "is the WORST (max) of the 4 plotted tiers' draw-means — the tightest bound — "
-                "median across the 7 non-degenerate corpora on the aggregate figure and the "
-                "corpus's own value per panel. The per-tier draw-means are in null_per_tier "
-                "below: the strict tiers (t0, t6) sit at -0.32..-0.75 and only t7/t8 approach 0."
+                "NOT DRAWN on either figure as of 2026-08-12 (user call: 'remove the shuffled "
+                "baseline just put the identity + bias'). STILL COMPUTED and still reported "
+                "per pair in null_per_tier below — the removal is presentational, not analytic, "
+                "and every prose argument that uses these values stands. The CAPACITY control: "
+                "per draw the target rows y_t are row-permuted and every y_t-consuming tier "
+                "correction is REFIT (issue1336_metric_ladder.py:34-38, 756-763), so it bounds "
+                "how much R2 the reparameterization machinery can manufacture from destroyed "
+                "correspondence. 20 draws per fit. The per-tier draw-means: the strict tiers "
+                "(t0, t6) sit at -0.32..-0.75 and only t7/t8 approach 0 (-0.0008), because t7/t8 "
+                "refit the answer side against the shuffled targets and the refit absorbs the "
+                "target mean. NaN on the three round-B pairs: pair-specific, never run there, "
+                "and never interpolated."
             ),
             "identity_bias": (
                 "y_hat = x + b with b the train-fold mean of y - x (analysis/mapping_baselines); "
                 "the project's standing mapping baseline, applicable because dims match at "
                 "4096->4096. Drawn as a LINE at its true value (-2.14..-3.03 aggregate, worst "
-                "per-corpus cell -3.41), which is why the y-axis extends to -3.2 / -3.6. "
-                "PROVENANCE IS DRAWN: a FILLED marker is measured on that pair's own rows, a "
-                "HOLLOW marker is BORROWED from the target's round-3 siblings (identity_approx). "
-                "Same encoding on both figures. The borrow is why sft__rlvr_long and "
-                "rlvr__rlvr_long carry the identical aggregate value -2.630 -- they share the "
-                "target rlvr_long, and the baseline is target-keyed, not pair-keyed."
+                "per-corpus cell -3.41), which is why the y-axis extends to -3.2 / -3.7. "
+                "It is now the ONLY baseline drawn beside the R2=0 line. PROVENANCE IS NO "
+                "LONGER DRAWN (user call 2026-08-12: the measured-vs-borrowed marker split is "
+                "retired) -- one uniform series, with the split recorded ONLY here: read the "
+                "per-pair identity_approx flag below. true = BORROWED from that target's round-3 "
+                "siblings (the three round-B pairs, -2.946 / -2.630 / -2.630), which is why "
+                "sft__rlvr_long and rlvr__rlvr_long carry the identical -2.630: they share the "
+                "target rlvr_long and the baseline is target-keyed, not pair-keyed. "
+                "CAUTION: a deeply negative R2 here is a SCALE failure, not absent signal -- "
+                "the same cells' knn_identity_bias retrieves the correct held-out answer at "
+                "rank 1 in 70.2% of a 2,000-row pool (median over 56 cells, chance 0.05%), "
+                "BEATING the fitted ridge map's own 50.3% in 52 of 56 cells."
             ),
             "zero_line": (
                 "R2 = 0 is the predict-the-training-mean baseline. It rides the LEGEND rather "
@@ -1119,15 +1042,16 @@ def write_meta(D: dict, figs: list[Path]) -> Path:
                 "metric_ladder's estimator — identity_bias_predict OOF on the same seed-0 "
                 "conversation-grouped 5-fold, globally-pooled fc._pooled_r2, A_ctx_rev scored "
                 "against the SOURCE contexts and A_ans against the TARGET answers — so those two "
-                "series are continuous across all 10 pairs on one basis (align_measured=true) "
-                "and keep a FILLED marker throughout. Measured values on the three round-B "
-                "pairs, a_ctx / a_ans: sft->rlvr 0.796 / 0.513, sft->rlvr_long 0.743 / 0.511, "
-                "rlvr->rlvr_long 0.804 / 0.734. The BORROWED identity+bias values on the same "
-                "three pairs (hollow markers): -2.946, -2.630, -2.630. On the by_dataset figure "
-                "the round-B identity+bias was previously a blank gap while the aggregate showed "
-                "a value; it now carries the same borrow at panel grain — the target's round-3 "
-                "siblings at that same (fmt, corpus) — drawn hollow. The pair-specific shuffled "
-                "null stays a gap on both figures."
+                "series are continuous across all 10 pairs on one basis (align_measured=true). "
+                "Measured values on the three round-B pairs, a_ctx / a_ans: sft->rlvr "
+                "0.796 / 0.513, sft->rlvr_long 0.743 / 0.511, rlvr->rlvr_long 0.804 / 0.734. "
+                "The BORROWED identity+bias values on the same three pairs: -2.946, -2.630, "
+                "-2.630 (identity_approx=true per pair below). On the by_dataset figure the "
+                "round-B identity+bias was previously a blank gap while the aggregate showed a "
+                "value; it now carries the same borrow at panel grain — the target's round-3 "
+                "siblings at that same (fmt, corpus). As of 2026-08-12 neither figure DRAWS the "
+                "measured/borrowed distinction and neither draws the shuffled null at all; both "
+                "facts are sidecar + prose only."
             ),
             "per_pair": {
                 f"{PAIRS[pi][0]}__{PAIRS[pi][1]}": b for pi, b in sorted(BASELINES.items())
