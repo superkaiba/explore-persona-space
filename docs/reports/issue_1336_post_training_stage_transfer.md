@@ -187,6 +187,19 @@ series — the vertical distance from a transfer point down to it is not an effe
 establishes: a fitted operator is doing real work; the target's answer state is not its context
 state up to a shift.
 
+**Its −2.79 is a scale failure, not an absence of signal — and so it is not on a comparable scale
+with the null's −0.5.** The retrieval read recorded in the same cells: identity+bias puts the
+correct held-out answer at rank 1 out of a 2,000-row pool **70.2%** of the time (median over 56
+cells, chance 0.05%), **beating the fitted ridge map's own 50.3% in 52 of 56 cells**. The copied
+context vector points at the right answer and is the wrong length. With k = sd(x)/sd(y) and ρ the
+centered correlation, R²(identity+bias) = ρ² − (k − ρ)²: the penalty is purely the scale term, and
+b corrects only the mean. The mismatch is the asymmetric summarization — `v_context` is a single
+position, `v_answer` a token-mean over the span, and averaging shrinks across-example spread. The
+matched-summarization controls confirm it: **−0.17** context→context (single-position both sides),
+**−0.42** answer→answer (token-mean both sides), **−2.79** on the mismatched context→answer. The
+two reads dissociate because they reward opposite things — ridge shrinks toward the mean (buys R²,
+costs retrieval); identity+bias does not shrink (costs R², buys retrieval).
+
 **Round-B pairs: what is measured, what is borrowed, what is absent.** The three pairs measured in
 round B (SFT→RLVR, SFT→longer RLVR, RLVR→longer RLVR) came from a battery that originally ran no
 controls. They now split three ways, and the figures draw the distinction:

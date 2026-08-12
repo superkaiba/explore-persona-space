@@ -147,6 +147,24 @@ Three things follow, all of which the plot has to show rather than assert:
    worth stating: a fitted operator is doing real work — the target's answer state is not its
    context state up to a constant shift.
 
+   **But its −2.79 is a scale failure, not an absence of signal, and it is not comparable to the
+   null's −0.5.** The same cells record a retrieval read beside the R²: identity+bias puts the
+   *correct* held-out answer vector at rank 1 out of a 2,000-row pool **70.2%** of the time
+   (median over 56 cells; chance 0.05%), and it **beats the fitted ridge map's own retrieval —
+   0.702 vs 0.503, winning in 52 of 56 cells.** So the copied context vector points at the right
+   answer; it is the wrong *length*. Algebraically, with k = sd(x)/sd(y) and ρ the centered
+   correlation, R²(identity+bias) = ρ² − (k − ρ)² — the penalty is entirely the scale term, and
+   the learned bias b fixes only the mean offset, never the scale. The mismatch traces to the
+   asymmetric summarization of the two vectors: `v_context` is a **single position**,
+   `v_answer` is a **token-mean over the span**, and averaging shrinks across-example spread.
+   The matched-summarization controls in the same files confirm it — identity+bias scores
+   **−0.17** on context→context (single-position both sides) and **−0.42** on answer→answer
+   (token-mean both sides), against **−2.79** on the mismatched context→answer.
+
+   The two reads dissociate *because* they reward opposite things: ridge shrinks toward the mean
+   (which buys R² and costs retrieval), identity+bias does not shrink (which costs R² and buys
+   retrieval). Neither alone characterizes the map.
+
 4. **Not every baseline is measured on the pair it sits under, and the plot says which.** Three
    of the ten pairs — SFT→RLVR, SFT→longer RLVR, RLVR→longer RLVR — came from a second fitting
    battery that originally ran no controls. What they carry now splits three ways:
