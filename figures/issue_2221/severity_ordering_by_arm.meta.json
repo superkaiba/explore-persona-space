@@ -1,6 +1,6 @@
 {
   "commit": "c9bca3f2+dirty",
-  "render_id": "6bc5736ccd074682",
+  "render_id": "c234b812ec064c5c",
   "git_commit": "c9bca3f2",
   "git_dirty": true,
   "git_dirty_paths": [
@@ -13,7 +13,7 @@
     "scripts/issue2221_dv_figs.py",
     "scripts/issue2221_monitors.py"
   ],
-  "created": "2026-08-12T22:43:49Z",
+  "created": "2026-08-12T22:42:21Z",
   "figsize": [
     7.0,
     4.0
@@ -21,91 +21,105 @@
   "points": [
     {
       "x": 0.0,
-      "selected Spearman r (24 fine-tunes)": -0.6204930973938515,
+      "fraction of 8 families correctly ordered": 0.375,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 1.0,
-      "selected Spearman r (24 fine-tunes)": -0.4603545796735098,
+      "fraction of 8 families correctly ordered": 0.375,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 2.0,
-      "selected Spearman r (24 fine-tunes)": 0.945044206206473,
+      "fraction of 8 families correctly ordered": 0.5,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 0.2,
-      "selected Spearman r (24 fine-tunes)": 0.506404444569542,
+      "fraction of 8 families correctly ordered": 0.0,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 1.2,
-      "selected Spearman r (24 fine-tunes)": -0.7713540961356645,
+      "fraction of 8 families correctly ordered": 0.125,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 2.2,
-      "selected Spearman r (24 fine-tunes)": 0.8899648173095482,
+      "fraction of 8 families correctly ordered": 0.25,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 0.4,
-      "selected Spearman r (24 fine-tunes)": 0.7444146860317106,
+      "fraction of 8 families correctly ordered": 0.25,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 1.4,
-      "selected Spearman r (24 fine-tunes)": 0.7263567023406402,
+      "fraction of 8 families correctly ordered": 0.125,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 2.4,
-      "selected Spearman r (24 fine-tunes)": 0.945044206206473,
+      "fraction of 8 families correctly ordered": 0.25,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 0.6,
-      "selected Spearman r (24 fine-tunes)": 0.7700841579638386,
+      "fraction of 8 families correctly ordered": 0.125,
       "_kind": "bar",
       "_group": 3
     },
     {
       "x": 1.6,
-      "selected Spearman r (24 fine-tunes)": 0.5628990552980708,
+      "fraction of 8 families correctly ordered": 0.125,
       "_kind": "bar",
       "_group": 3
     },
     {
       "x": 2.6,
-      "selected Spearman r (24 fine-tunes)": -0.8837061492436051,
+      "fraction of 8 families correctly ordered": 0.375,
       "_kind": "bar",
       "_group": 3
+    },
+    {
+      "x": 0.0,
+      "fraction of 8 families correctly ordered": 0.16666666666666666,
+      "series": "chance (1/6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "fraction of 8 families correctly ordered": 0.16666666666666666,
+      "series": "chance (1/6)",
+      "_kind": "line",
+      "_group": 4
     }
   ],
-  "n_series": 4,
-  "total_points": 12,
+  "n_series": 5,
+  "total_points": 14,
   "text": {
     "suptitle": null,
     "fig_texts": [],
     "axes": [
       {
-        "ylabel": "selected Spearman r (24 fine-tunes)",
+        "ylabel": "fraction of 8 families correctly ordered",
         "legend_labels": [
+          "chance (1/6)",
           "paper's last-prompt-token read",
           "answer oracle",
           "mapped context read",
-          "mapped prefix read",
-          "score-shuffle null q95 (|r|)"
+          "mapped prefix read"
         ],
         "xticklabels": [
           "evil",
@@ -113,16 +127,17 @@
           "hallucination"
         ],
         "yticklabels": [
-          "\u22121.0",
-          "\u22120.5",
           "0.0",
-          "0.5",
-          "1.0",
-          "1.5"
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
         ]
       }
     ],
     "series": [
+      "chance (1/6)",
       "paper's last-prompt-token read",
       "answer oracle",
       "mapped context read",

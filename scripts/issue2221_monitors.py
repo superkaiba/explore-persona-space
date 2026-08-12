@@ -867,6 +867,17 @@ def phase_correlations(args) -> None:
     lib.log_phase("p8_correlations", f"correlations.json written -> {dest}")
 
 
+# Reader-facing legend names for the monitor arms (paper-plots skill §3.5:
+# plain English on rendered figure text; slugs stay in JSON keys + footer).
+ARM_LABELS = {
+    "a_rb_ctx": "paper's last-prompt-token read",
+    "b_rb_ans": "answer oracle",
+    "c_map_ctx": "mapped context read",
+    "c_map_pfx": "mapped prefix read",
+    "d_transport": "transport cosine",
+}
+
+
 def phase_figures(args) -> None:
     """Paper-plots figures: per-arm selected r, layer profiles, checkpoint AUC."""
     import matplotlib
@@ -884,18 +895,31 @@ def phase_figures(args) -> None:
     arms = list(C.MONITOR_ARMS)
     colors = {a: c for a, c in zip(arms, pp.paper_palette(len(arms)))}
 
-    # 1) selected |r| per arm x trait (pooled panel).
+    # 1) selected |r| per arm x trait. Panel selectable (--fig1-panel); the
+    # DEFAULT is the PAPER capture panel — the registered primary surface the
+    # body's Result-3 prose quotes (interp-critique r1 blocker 1: the round-1
+    # render used the pooled panel while the prose declared paper-panel
+    # numbers). Arms with NO finite selected r on this panel (d_transport is
+    # undefined on the real stratum — six exactly-zero shifts) are dropped
+    # from bars AND legend rather than rendered as an empty legend entry.
+    fig1_panel = getattr(args, "fig1_panel", "paper")
     fig, ax = plt.subplots(figsize=(7, 4))
     traits = list(corr["per_trait"])
-    width = 0.8 / len(arms)
-    for k, arm in enumerate(arms):
+
+    def _sel_r(t: str, arm: str) -> float:
+        v = corr["per_trait"][t]["panels"][fig1_panel]["arms"].get(arm, {}).get("selected_r")
+        return float("nan") if v is None else float(v)
+
+    plot_arms = [arm for arm in arms if any(np.isfinite(_sel_r(t, arm)) for t in traits)]
+    width = 0.8 / len(plot_arms)
+    for k, arm in enumerate(plot_arms):
         vals, nulls = [], []
         for t in traits:
-            a = corr["per_trait"][t]["panels"]["pooled"]["arms"].get(arm, {})
+            a = corr["per_trait"][t]["panels"][fig1_panel]["arms"].get(arm, {})
             vals.append(a.get("selected_r", np.nan))
             nulls.append(a.get("score_shuffle_null_q95_abs", np.nan))
         xpos = np.arange(len(traits)) + k * width
-        ax.bar(xpos, vals, width, label=arm, color=colors[arm])
+        ax.bar(xpos, vals, width, label=ARM_LABELS.get(arm, arm), color=colors[arm])
         # The selection-symmetric null travels WITH the bar: r is the SIGNED
         # value at the argmax-|r| layer, so a bar whose |height| falls inside
         # +/- its own score-shuffle q95 is NOT distinguishable from selection
@@ -906,15 +930,21 @@ def phase_figures(args) -> None:
                 continue
             for sgn in (1.0, -1.0):
                 ax.hlines(sgn * nq, xc - width / 2, xc + width / 2, color="black", lw=1.0, zorder=5)
-    ax.set_xticks(np.arange(len(traits)) + 0.4, traits)
+    ax.set_xticks(np.arange(len(traits)) + width * (len(plot_arms) - 1) / 2, traits)
     ax.set_ylabel("selected Spearman r (24 fine-tunes)")
     ax.axhline(0, color="black", lw=0.5)
     handles, labs = ax.get_legend_handles_labels()
     handles.append(Line2D([0], [0], color="black", lw=1.0))
     labs.append("score-shuffle null q95 (|r|)")
-    ax.legend(handles, labs, fontsize=7)
+    # 2-column upper-left placement: the default lower-left slot collides
+    # with the evil group's negative bar + null ticks on the paper panel.
+    ax.set_ylim(-1.0, 1.28)
+    ax.legend(handles, labs, fontsize=7, ncol=2, loc="upper left")
     pp.savefig_paper(fig, "monitor_selected_r_by_arm", dir=fig_dir)
     plt.close(fig)
+    if getattr(args, "fig1_only", False):
+        lib.log_phase("p8_figures", f"fig1-only render ({fig1_panel} panel) -> {fig_dir}")
+        return
 
     # 2) r-by-layer profiles per trait (pooled).
     for t in traits:
@@ -1014,6 +1044,18 @@ def build_argparser() -> argparse.ArgumentParser:
         help="committed #778 trait-score JSONs (the H3 synth stratum's OWN y)",
     )
     ap.add_argument("--figures-root", default="figures/issue_2221")
+    ap.add_argument(
+        "--fig1-panel",
+        choices=("paper", "lmsys", "pooled"),
+        default="paper",
+        help="capture panel for the selected-r-by-arm figure (default: the "
+        "registered primary paper 20-q surface; interp-critique r1 blocker 1)",
+    )
+    ap.add_argument(
+        "--fig1-only",
+        action="store_true",
+        help="render ONLY monitor_selected_r_by_arm (leave the other committed figures' bytes untouched)",
+    )
     ap.add_argument("--cells", nargs="*", default=None)
     ap.add_argument("--rb-version", choices=("v2", "v1"), default="v2")
     ap.add_argument("--n-bootstrap", type=int, default=C.N_BOOTSTRAP)

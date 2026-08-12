@@ -79,8 +79,10 @@ def main() -> None:
     ap.add_argument(
         "--only",
         default="all",
-        choices=["all", "scatter"],
-        help="'scatter' renders only the per-unit monitor-vs-score figure (fig 4)",
+        choices=["all", "scatter", "forest", "severity"],
+        help="'scatter' renders only the per-unit monitor-vs-score figure (fig 4); "
+        "'forest' renders only the H2 delta forest (fig 3); 'severity' renders "
+        "only the within-family severity-ordering figure (fig 5, added round 2)",
     )
     args = ap.parse_args()
 
@@ -100,6 +102,15 @@ def main() -> None:
     fig_dir.mkdir(parents=True, exist_ok=True)
     pp.set_paper_style()
     fam_colors = {f: c for f, c in zip(FAMILIES, pp.paper_palette(len(FAMILIES)))}
+
+    if args.only == "forest":
+        _forest(corr, fig_dir, pp, plt)
+        print("[dv-figs] wrote h2_delta_forest only", flush=True)
+        return
+    if args.only == "severity":
+        _severity(corr, fig_dir, pp, plt)
+        print("[dv-figs] wrote severity_ordering_by_arm only", flush=True)
+        return
 
     # ── 4) per-unit 24-point scatter behind the hallucination correlations ───
     # Monitor scalar (paper 20-q capture panel, arm's selected layer) vs the
@@ -214,10 +225,25 @@ def main() -> None:
     plt.close(fig)
 
     # ── 3) the pre-registered H2 contrast, forest ────────────────────────────
-    fig, ax = plt.subplots(figsize=(7.2, 3.8))
+    n_rows = _forest(corr, fig_dir, pp, plt)
+
+    print(json.dumps({"mix_rows": rows, "n_h2_rows": n_rows}, indent=1), flush=True)
+    print(f"[dv-figs] wrote 3 figures -> {fig_dir}", flush=True)
+
+
+def _forest(corr: dict, fig_dir: Path, pp, plt) -> int:
+    """H2 delta forest over ALL THREE capture panels (paper / lmsys / pooled).
+
+    Round-1 rendered {paper, pooled}; the plan registered the H2 split as
+    paper vs LMSYS (map fit on WildChat+LMSYS -> a mapped-arm win concentrated
+    on the map's home corpus would read as corpus-match denoising), so the
+    registered lmsys split is drawn too (interp-critique r1 blocker 2).
+    Returns the number of plotted rows.
+    """
+    fig, ax = plt.subplots(figsize=(7.2, 4.6))
     labels, pts, los, his = [], [], [], []
     for trait in corr["per_trait"]:
-        for panel in ("paper", "pooled"):
+        for panel in ("paper", "lmsys", "pooled"):
             h2 = corr["per_trait"][trait]["panels"][panel].get("h2_delta_c_minus_a")
             if not h2:
                 continue
@@ -237,9 +263,44 @@ def main() -> None:
     ax.invert_yaxis()
     pp.savefig_paper(fig, "h2_delta_forest", dir=fig_dir)
     plt.close(fig)
+    return len(labels)
 
-    print(json.dumps({"mix_rows": rows, "n_h2_rows": len(labels)}, indent=1), flush=True)
-    print(f"[dv-figs] wrote 3 figures -> {fig_dir}", flush=True)
+
+def _severity(corr: dict, fig_dir: Path, pp, plt) -> None:
+    """Within-family severity-ordering read (pre-registered; added round 2).
+
+    One bar per (monitor read, trait mapping): the fraction of the 8 families
+    whose three severity versions the read orders Normal < mild < severe at
+    its pooled-panel selected layer (`per_trait.*.severity_ordering`), with
+    the chance rate for a random ordering of 3 items (1/6) as a dashed line.
+    """
+    import numpy as _np
+
+    arm_labels = {
+        "a_rb_ctx": "paper's last-prompt-token read",
+        "b_rb_ans": "answer oracle",
+        "c_map_ctx": "mapped context read",
+        "c_map_pfx": "mapped prefix read",
+    }
+    arms = list(arm_labels)
+    colors = {a: c for a, c in zip(arms, pp.paper_palette(len(arms)))}
+    traits = list(corr["per_trait"])
+    fig, ax = plt.subplots(figsize=(7, 4))
+    width = 0.8 / len(arms)
+    for k, arm in enumerate(arms):
+        vals = []
+        for t in traits:
+            d = corr["per_trait"][t]["severity_ordering"].get(arm, {})
+            vals.append(d.get("fraction_correct", _np.nan))
+        xpos = _np.arange(len(traits)) + k * width
+        ax.bar(xpos, vals, width, label=arm_labels[arm], color=colors[arm])
+    ax.axhline(1 / 6, color="black", lw=1.0, ls="--", label="chance (1/6)")
+    ax.set_xticks(_np.arange(len(traits)) + width * (len(arms) - 1) / 2, traits)
+    ax.set_ylabel("fraction of 8 families correctly ordered")
+    ax.set_ylim(0, 1.0)
+    ax.legend(fontsize=7)
+    pp.savefig_paper(fig, "severity_ordering_by_arm", dir=fig_dir)
+    plt.close(fig)
 
 
 if __name__ == "__main__":
