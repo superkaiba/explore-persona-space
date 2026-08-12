@@ -88,7 +88,16 @@ FOLD_MAP_PATH_IN_REPO = "eval_results/issue_2054/shared_fold_map.json"
 FOLD_MAP_MIN_CONV = 20_000  # smoke-map refusal floors (mirror issue2054_cross_render_fit)
 FOLD_MAP_MIN_VARIANTS = 5
 MIN_JOIN_ABS = 200
-MIN_JOIN_FRAC = 0.5  # of the smaller cell's row count
+# Of the smaller cell's row count. 0.20, NOT 0.5: cross-variant and prose-swap
+# pairs legitimately share only part of the conversation pool — this issue's own
+# measured prose-swap intersections are 2,939-4,450 (36-44% of the smaller cell),
+# and those pairs are exactly what the reduced-basis regime below exists to
+# handle. A 0.5 floor rejected them as "unexpectedly small" and aborted the whole
+# run on the first one. MIN_JOIN_ABS is what actually catches a BROKEN join (a
+# conv_id key/dtype/format bug yields ~0 overlap, not 44%); this fraction only
+# guards against a catastrophic partial-load. The realized n_join is recorded per
+# pair, so a surprising-but-admitted drop stays visible in the artifact.
+MIN_JOIN_FRAC = 0.20
 
 ARMS = ("context", "prefix")
 ARM_VEC_KEY = {"context": "v_C", "prefix": "v_P"}
