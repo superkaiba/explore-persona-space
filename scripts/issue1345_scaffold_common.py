@@ -81,14 +81,39 @@ def default_attrib_template(char_name: str) -> str:
 def indirect_opening(char_name: str) -> str:
     """Narrator-voice reported-speech opener for the ``indirect`` boundary form.
 
-    ``"<Name> replied that "`` — ends mid-sentence so an on-policy continuation
+    ``"<Name> replied that"`` — ends mid-sentence so an on-policy continuation
     proceeds in indirect reported speech ("... replied that it was ...") rather
     than opening a quote. Shared by ``render_prefill`` (the generation prefix)
     and the on-policy continuation splice (``splice_answer`` with
     ``indirect_continuation=True``), so prefill and final render can never
     drift.
+
+    NO TRAILING SPACE — load-bearing, not cosmetic (#2054). Qwen BPE encodes
+    words together with their leading space (``" the"``, ``" it"``), so a
+    prompt ending in a bare space forces the model onto a token that does NOT
+    begin with one; digits are the largest such class, and the answer opens on
+    a spurious number. Measured on 300 matched scaffolds, identical sampling,
+    the trailing space the ONLY difference:
+
+        trailing space     digit-start 174/300 (58.0%)
+        no trailing space  digit-start   0/300 ( 0.0%)
+
+    The discarded 8,000-row pilot showed the same pathology in production
+    (53.3% digit-start). Where the trailing-space arm did not derail, both
+    arms generate near-identical text, so dropping the space changes only the
+    pathological cases. The model now emits its own leading-space token, so an
+    on-policy ``answer`` normally STARTS with a space and the splice
+    concatenates directly (never re-add one here — that reintroduces the bug
+    AND double-spaces every well-formed row).
+
+    Sibling note, deliberately NOT "fixed" here: ``bare_label`` renders
+    ``"<Name>: "`` and carries the same pathology at 23.2% digit-start vs
+    ``attrib_quoted``'s 1.1% (which ends on a quote char, no trailing space).
+    Those cells have already shipped; changing that template would invalidate
+    completed results, so it is disclosed as a pre-existing confound rather
+    than rewritten.
     """
-    return f"{char_name} replied that "
+    return f"{char_name} replied that"
 
 
 def count_sentinels(text: str) -> int:
