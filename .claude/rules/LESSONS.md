@@ -31,7 +31,7 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - critic-lens-reference.md — a critic reviews under its assigned lens (pointer-loaded single-lens span).
 - data-realism.md — a plan picks training/eval/probe data (strict 4-tier preference order; justify tier 3/4).
 - diff-size-budget.md — reading a branch-wide diff BODY (size first; >300 KB: round-scope it).
-- disk-hygiene.md — you place a staging path, size a cache, or read a disk-guard alert (data-disk quotas, guard tiers, preflight floor).
+- disk-hygiene.md — a staging path, cache cap, disk-guard alert, or evidence-gated deletion (data-disk quotas, guard tiers, preflight floor).
 - experiment-guidelines.md — you plan/implement a `workflow: v2` experiment (guideline index → full rules + v2 critic owners).
 - experiment-implementer-section-reference.md — implementer checklist detail (pointer-loaded).
 - experimenter-section-reference.md — experimenter gate/recovery detail (pointer-loaded).
