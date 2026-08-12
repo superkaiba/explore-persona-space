@@ -172,6 +172,21 @@ PV_METHODS = (
     ("arm11_oracle_proj", "Persona vector on real answer (oracle)", "#1a6b54"),
 )
 
+# The ridge ladder (--ridge-ladder), user-requested 2026-08-12 for the writeup's
+# Result 3: context -> mapped answer -> real answer, with persona-vector-on-real-
+# answer as the projection-family ceiling beside it. Persona vector on mapped
+# answer (arm6) is deliberately ABSENT. arm12 is already a member here, so
+# `methods_for` performs no splice (it only splices into REF_METHODS); the
+# arm12 ROWS still load via splice_arm12 because --pv-only is not set.
+# Colours are carried over per-arm from REF_METHODS/ARM12_METHOD so one colour
+# keeps one meaning across every figure in the write-up.
+RIDGE_LADDER_METHODS = (
+    ("arm4_ridge_ctx", "Ridge regression on context", "#1f77b4"),
+    ("arm7_map_ridge_pred", "Ridge regression on mapped answer", "#e8b23a"),
+    ("arm12_oracle_reg", "Ridge regression on real answer", "#009E73"),
+    ("arm11_oracle_proj", "Persona vector on real answer", "#1a6b54"),
+)
+
 
 def _gj(commit: str, path: str) -> dict:
     out = subprocess.run(
@@ -786,6 +801,14 @@ def main() -> None:
     )
     ap.add_argument("--pv-only", action="store_true", help="3 persona-vector arms instead")
     ap.add_argument(
+        "--ridge-ladder",
+        action="store_true",
+        help=(
+            "4-arm ridge ladder (context -> mapped -> real answer) plus persona vector "
+            "on real answer; drops persona vector on mapped answer. Writes a *_ladder stem."
+        ),
+    )
+    ap.add_argument(
         "--arm12-root",
         default="eval_results/issue_1739/r2v2_fits_arm12",
         help="re-score out root supplying arm12_oracle_reg rows",
@@ -801,7 +824,14 @@ def main() -> None:
     )
     args = ap.parse_args()
 
-    base = PV_METHODS if args.pv_only else REF_METHODS
+    if args.ridge_ladder and args.pv_only:
+        ap.error("--ridge-ladder and --pv-only select different rosters; pick one")
+    if args.ridge_ladder:
+        base = RIDGE_LADDER_METHODS
+    elif args.pv_only:
+        base = PV_METHODS
+    else:
+        base = REF_METHODS
     fits = {
         b: _gj(args.fits_commit, f"eval_results/issue_1739/r2v2_fits/{b}/all_arms_spearman.json")
         for b in BEHAVIORS
@@ -819,7 +849,7 @@ def main() -> None:
     )
     spread = json.loads(Path(args.spread_json).read_text())
     out_dir = _REPO_ROOT / args.out_dir
-    sfx = "_pvonly" if args.pv_only else ""
+    sfx = "_pvonly" if args.pv_only else ("_ladder" if args.ridge_ladder else "")
     # A distinct suffix so a superseded-error-bar render can never overwrite,
     # or be mistaken for, the calibrated figure.
     ci_mode = "legacy" if args.old_ci else "calibrated"
