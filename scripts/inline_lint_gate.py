@@ -114,8 +114,23 @@ Known residual: 1-min-load endpoint sampling can miss a mid-leg spike on an
 8-9 min pytest leg — the miss direction is today's behavior (BLOCK), i.e.
 safe; do not over-trust ``load_hot=False``.
 
-Run as ONE background Bash (the lint leg is ~2.5-6 min; never a <=600 s
-foreground bound — #991/#996)::
+Baseline-ledger layer (#2235 Phase A): ``load_baseline_ledger`` reads the
+Step 9c ledger (``.claude/cache/step9c-baseline.json``, read-only) and, when
+it parses + schema-matches + sha-matches origin/main, ``evaluate`` reclassifies
+pytest-leg ``FAILED <nodeid>`` hits whose node id the ledger lists as ALREADY
+failing on main into ``reported`` (``pre-existing-on-main (ledger)``) — unless
+the payload IS the failing test's own file. Subtractive only (block ->
+reported, never the reverse); any bad/stale ledger degrades to None = exactly
+the pre-#2235 semantics. The gate prints ``inline_lint_gate:
+ledger=<fresh sha12|stale|absent>`` so the audit trail shows the layer's
+armed/disarmed state. With the live ledger's ``failing_tests: []`` this layer
+is a NO-OP on the current fleet — it engages exactly when main reddens, which
+is when every gate run would otherwise start false-blocking on unrelated red.
+
+Run as ONE background Bash (the SCOPED lint leg is fast, but the
+workflow-surface / refusal-fallback bare no-flags run measured ~9-10 min on
+2026-08-11 and grows with the check roster; never a <=600 s foreground
+bound — #991/#996)::
 
     uv run python scripts/inline_lint_gate.py --issue <N> \\
         --payload-file /tmp/issue-<N>-<round-slug>-inline-payload.txt
@@ -141,6 +156,7 @@ from __future__ import annotations
 import argparse
 import fcntl
 import hashlib
+import json
 import os
 import re
 import subprocess
@@ -151,6 +167,15 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 DEFAULT_CERT_PATH = "/tmp/eps-inline-lint-cert-v1.txt"
+# Step 9c baseline ledger (#2235 Phase A): read-only consumption of the SAME
+# what's-already-red-on-main ledger step9c_baseline.py maintains (direct JSON
+# read — no cross-script import; the gate never writes it). A ledger that is
+# absent / corrupt / schema-drifted / sha-mismatched against origin/main
+# degrades to None, which disengages the subtraction layer entirely —
+# evaluate() then behaves bit-identically to the pre-#2235 gate (fail-closed
+# to current semantics: a bad ledger NEVER blocks and NEVER passes anything).
+LEDGER_PATH_REL = ".claude/cache/step9c-baseline.json"
+LEDGER_SCHEMA_VERSIONS = (1,)  # jq-verified live value, 2026-08-11; drift -> None
 # Bare issue-keyed legacy payload BASENAME — a shared mutable path concurrent
 # same-issue rounds clobber (cross-certification, #1948/#1768). Refused at
 # main() entry (exit 3, Inconclusive) BEFORE any leg runs. The gate's own
@@ -171,8 +196,32 @@ NO_BYTECODE_ENV = {"PYTHONDONTWRITEBYTECODE": "1"}
 # NEVER .venv/external/data: installed-package bytecode is not the
 # same-second-rewrite staleness source and is expensive to recompile).
 PURGE_ROOTS = ("scripts", "src", "tests")
-LINT_TIMEOUT_S = 900
+# #2235 Phase B/C: the bare no-flags wall measured 547.9 s on 2026-08-11 (and
+# grows with the check roster), already past half the old 900 s fence — the
+# fence sits >= 2x the measured wall (1200 = 2.19x). The SCOPED leg is far
+# under it; the fence exists for the workflow-surface / refusal-fallback bare
+# runs.
+LINT_TIMEOUT_S = 1200
 FETCH_TIMEOUT_S = 60
+# Files-mode eligibility (#2235 Phase B): a payload touching ANY of these
+# workflow-surface prefixes (or exact root files) can change GLOBAL check
+# outcomes — the lint leg then runs the bare (unscoped) no-flags form,
+# today's exact behavior. `tests/` is included conservatively (a payload
+# editing tests can change global check outcomes and mapped-test verdicts).
+# Matched via str.startswith, so the two exact-file entries also cover any
+# hypothetical suffixed sibling — the conservative (full-run) direction.
+WORKFLOW_SURFACE_PREFIXES = (
+    ".claude/",
+    "workflow.yaml",
+    "scripts/workflow_lint.py",
+    "scripts/inline_lint_gate.py",
+    "scripts/select_step9c_tests.py",
+    "scripts/step9c_baseline.py",
+    "tests/",
+)
+# workflow_lint's fail-closed files-mode registry-miss sentinel: exactly ONE
+# bare full re-run (slow-but-correct), never a silent skip.
+FILES_MODE_REFUSED_RE = re.compile(r"^workflow_lint: FILES-MODE-REFUSED \(", re.MULTILINE)
 # Mapped-pytest timeout parity with select_step9c_tests.recommended_timeout_s
 # (#1046): base + per-file + the test_workflow_lint.py slow surcharge, floored
 # at the canonical select_step9c_tests.TIMEOUT_FLOOR_S (round-2 Minor: the
@@ -210,6 +259,10 @@ WS_ATTRIBUTION_ROW_RE = re.compile(r"^(?:\S+(?:::\S+)+|\S+: \d+ warnings?)$")
 # lowercase "passes"-titled fence in captured output never opens the
 # report-class window (fail-closed narrowing; the choice is test-pinned).
 PASSES_TITLE_RE = re.compile(r"^=+ PASSES\b[^=]*=+$")
+# pytest short-summary FAILED row (#2235 Phase A): the node-id extraction the
+# ledger subtraction keys on. Applied to STRIPPED pytest-leg lines only; a hit
+# line not of this shape keeps today's classification (never a blanket waiver).
+FAILED_NODE_RE = re.compile(r"^FAILED\s+(\S+)")
 
 
 class Inconclusive(Exception):
@@ -290,6 +343,39 @@ def read_payload(paths: list[str], repo: Path) -> dict[str, str]:
             raise Inconclusive(f"payload path missing or unhashable: {p}")
         snapshots[p] = sha
     return snapshots
+
+
+def load_baseline_ledger(repo: Path) -> dict | None:
+    """Load the Step 9c baseline ledger for the subtractive Phase A layer (#2235).
+
+    Direct JSON read of ``LEDGER_PATH_REL`` (no cross-script import of
+    step9c_baseline — looser coupling; the gate never writes the ledger).
+    Returns the parsed dict ONLY when ALL of: the file parses, its
+    ``schema_version`` is in ``LEDGER_SCHEMA_VERSIONS``, ``failing_tests`` is
+    a list, AND ``main_sha`` equals the CURRENT ``rev-parse origin/main`` of
+    *repo* (called after run_legs' _bounded_fetch, so the pin is against the
+    same origin/main the -U0 diffs classify against). Everything else — file
+    absent, unreadable, corrupt JSON, schema drift, sha mismatch — returns
+    None: the subtraction layer disengages and evaluate() behaves
+    bit-identically to the pre-#2235 gate (fail-closed; a bad ledger NEVER
+    blocks and NEVER passes anything)."""
+    path = repo / LEDGER_PATH_REL
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    if data.get("schema_version") not in LEDGER_SCHEMA_VERSIONS:
+        return None
+    if not isinstance(data.get("failing_tests"), list):
+        return None
+    r = _git(repo, "rev-parse", "origin/main")
+    if r.returncode != 0:
+        return None
+    if str(data.get("main_sha", "")).strip() != r.stdout.strip():
+        return None
+    return data
 
 
 def _sample_load1() -> float | None:
@@ -576,13 +662,43 @@ def run_legs(
                 file=sys.stderr,
             )
 
+    # #2235 Phase B: scope the lint leg to the payload (`--files`) whenever NO
+    # payload path touches a workflow-surface prefix; a surface payload keeps
+    # today's exact bare no-flags form. The env-override seam is untouched —
+    # an EPM_INLINE_GATE_LINT_CMD string runs verbatim (unscoped) either way.
+    bare_lint_argv = ["uv", "run", "python", "scripts/workflow_lint.py"]
+    scoped_eligible = bool(payload) and all(
+        not p.startswith(WORKFLOW_SURFACE_PREFIXES) for p in payload
+    )
+    lint_argv = [*bare_lint_argv, "--files", *payload] if scoped_eligible else bare_lint_argv
     lint_output, _ = _run_leg(
-        ["uv", "run", "python", "scripts/workflow_lint.py"],
+        lint_argv,
         "EPM_INLINE_GATE_LINT_CMD",
         repo,
         LINT_TIMEOUT_S,
         extra_env=dict(NO_BYTECODE_ENV),
     )
+    lint_audit = lint_output
+    if scoped_eligible and FILES_MODE_REFUSED_RE.search(lint_output):
+        # Fail-closed registry miss in workflow_lint's files-mode: exactly ONE
+        # bare full re-run; the VERDICT input is the re-run's output, the
+        # audit file keeps both (refused output + marker + re-run output).
+        print(
+            "inline_lint_gate: files-mode refused — falling back to ONE bare full lint run",
+            file=sys.stderr,
+        )
+        lint_output, _ = _run_leg(
+            bare_lint_argv,
+            "EPM_INLINE_GATE_LINT_CMD",
+            repo,
+            LINT_TIMEOUT_S,
+            extra_env=dict(NO_BYTECODE_ENV),
+        )
+        lint_audit = (
+            lint_audit
+            + "\n[inline_lint_gate: files-mode refused — bare full re-run below]\n"
+            + lint_output
+        )
 
     map_output, map_rc = _run_leg(
         ["uv", "run", "python", "scripts/select_step9c_tests.py", "--map-files", str(payload_file)],
@@ -593,7 +709,7 @@ def run_legs(
     )
     (out_dir / f"issue-{issue}-inline-map.txt").write_text(map_output, encoding="utf-8")
     if map_rc != 0:
-        (out_dir / f"issue-{issue}-inline-lint.txt").write_text(lint_output, encoding="utf-8")
+        (out_dir / f"issue-{issue}-inline-lint.txt").write_text(lint_audit, encoding="utf-8")
         raise Inconclusive(f"map leg failed (rc={map_rc}) — unclassifiable payload")
     pairs = parse_map_pairs(map_output)
 
@@ -626,7 +742,7 @@ def run_legs(
             )
 
     (out_dir / f"issue-{issue}-inline-lint.txt").write_text(
-        lint_output + "\n" + pytest_output, encoding="utf-8"
+        lint_audit + "\n" + pytest_output, encoding="utf-8"
     )
     return LegResults(
         lint_output=lint_output,
@@ -700,7 +816,9 @@ def passes_section_idxs(pytest_lines: list[str]) -> set[int]:
     return idxs
 
 
-def evaluate(payload: list[str], legs: LegResults, repo: Path) -> Verdict:
+def evaluate(
+    payload: list[str], legs: LegResults, repo: Path, ledger: dict | None = None
+) -> Verdict:
     """Apply the Step 9a-ter verdict semantics (module docstring) to the leg
     outputs. Raises Inconclusive on instrument-ran completeness failure.
 
@@ -709,6 +827,18 @@ def evaluate(payload: list[str], legs: LegResults, repo: Path) -> Verdict:
     ``verdict.reported`` (labeled) BEFORE per-path hit assignment, so both
     the NEW-on-origin/main and the MODIFIED conservative branches are fixed
     uniformly with no change to their own logic.
+
+    Ledger subtraction (#2235 Phase A; ``ledger`` is ADDITIVE with default
+    None so every existing call site binds unchanged): a pytest-leg hit whose
+    line is a short-summary ``FAILED <nodeid>`` row with the node id in
+    ``ledger["failing_tests"]`` — AND whose test FILE is not itself a payload
+    path (own-file condition: a round editing the failing test must still
+    block) — is reclassified ``verdict.reported`` labeled
+    ``pre-existing-on-main (ledger)``. SUBTRACTIVE ONLY by construction
+    (block -> reported, never the reverse); a hit not attributable to a
+    ledger-listed node keeps today's classification; ``ledger=None`` (absent
+    / stale / corrupt per load_baseline_ledger) is bit-identical to the
+    pre-#2235 gate.
 
     Load downgrade (#2039, module docstring § Load awareness): a path that
     WOULD OTHERWISE land in ``blocked``, whose block reasons rest on hits
@@ -741,15 +871,33 @@ def evaluate(payload: list[str], legs: LegResults, repo: Path) -> Verdict:
         )
         for i, ln in enumerate(pytest_lines)
     ]
+    # #2235 Phase A: node ids the sha-matched ledger records as ALREADY
+    # failing on origin/main (empty set when ledger is None/absent — the
+    # subtraction layer is then fully disengaged).
+    ledger_failing: set[str] = (
+        {str(n) for n in (ledger.get("failing_tests") or [])} if ledger is not None else set()
+    )
     hits: dict[str, list[tuple[str, str]]] = {p: [] for p in payload}
     verdict = Verdict()
     for line, label, leg in combined:
         stripped = line.strip()
+        ledger_label: str | None = None
+        if ledger_failing and leg == "pytest":
+            m = FAILED_NODE_RE.match(stripped)
+            if m is not None:
+                node = m.group(1)
+                node_file = node.split("::", 1)[0]
+                # Own-file condition (#2235): the round editing the failing
+                # test's own file must still block, ledger-listed or not.
+                if node in ledger_failing and node_file not in payload:
+                    ledger_label = "pre-existing-on-main (ledger)"
         for p in payload:
             if p not in line:
                 continue
             if label:
                 verdict.reported.append(f"[{label}] {line}")
+            elif ledger_label:
+                verdict.reported.append(f"[{ledger_label}] {line}")
             elif stripped.startswith(NON_RED_PREFIXES):
                 verdict.reported.append(line)
             else:
@@ -920,8 +1068,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.payload_file:
             payload_file = Path(args.payload_file)
             if LEGACY_PAYLOAD_BASENAME_RE.match(payload_file.name):
-                # Refuse BEFORE any leg runs (#1948): no 2.5-6 min burn on a
-                # doomed invocation, and the shared legacy path never gates.
+                # Refuse BEFORE any leg runs (#1948): no multi-minute leg burn
+                # on a doomed invocation, and the shared legacy path never
+                # gates.
                 raise Inconclusive(
                     "legacy shared payload path refused (#1948) — the bare "
                     "issue-keyed name is clobbered by concurrent same-issue "
@@ -958,7 +1107,21 @@ def main(argv: list[str] | None = None) -> int:
             fh.write("\n".join(payload) + "\n")
         private_payload_file = Path(tmp_payload)
         legs = run_legs(private_payload_file, args.issue, repo, Path(args.out_dir), payload=payload)
-        verdict = evaluate(payload, legs, repo)
+        # Ledger provenance audit line (#2235 Phase A arm 2): loaded AFTER
+        # run_legs so the main_sha pin is checked against the SAME
+        # origin/main the -U0 diffs use (post-_bounded_fetch); printed
+        # BEFORE any report/verdict line so the round's audit trail shows
+        # whether the subtraction layer was armed (mirrors the #1948
+        # payload-source binding line).
+        ledger = load_baseline_ledger(repo)
+        if ledger is not None:
+            ledger_state = f"fresh {str(ledger.get('main_sha', ''))[:12]}"
+        elif (repo / LEDGER_PATH_REL).is_file():
+            ledger_state = "stale"
+        else:
+            ledger_state = "absent"
+        print(f"inline_lint_gate: ledger={ledger_state}")
+        verdict = evaluate(payload, legs, repo, ledger=ledger)
     except Inconclusive as exc:
         print(f"inline_lint_gate: INCONCLUSIVE ({exc})")
         return 3
