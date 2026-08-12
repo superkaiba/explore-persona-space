@@ -14614,9 +14614,13 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # measured 87,195 B; problem-sweep prose + living-docs passes are the
     # trim direction.
     "daily/SKILL.md": 90_000,
-    # measured 68,032 B; Phase 1 planner-prompt restatement of planner.md is
-    # the trim direction.
-    "adversarial-planner/SKILL.md": 70_900,
+    # Prior: 70_900 — measured 71,103 B after #2123 back-filled the c59
+    # (GPU-hours token conflict) escape entry into the Phase 1.5.0 canonical
+    # escapes block (+203 B, required by the verify_plan docstring sync
+    # test); cap = landing bytes + ~1 KB (#1753 landing-bytes rule).
+    # Prior context: measured 68,032 B; Phase 1 planner-prompt restatement
+    # of planner.md is the trim direction.
+    "adversarial-planner/SKILL.md": 72_100,
 }
 
 
