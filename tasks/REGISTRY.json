@@ -9606,8 +9606,8 @@
     "2243": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2243",
-      "status": "approved",
+      "path": "tasks/running/2243",
+      "status": "running",
       "title": "Wire the absolute per-cell trainability gate into scripts/issue2225_train.py (the sibling entrypoint #2242 left ungated)"
     },
     "2244": {
