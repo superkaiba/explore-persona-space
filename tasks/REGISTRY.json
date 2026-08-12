@@ -8706,8 +8706,8 @@
     "2125": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2125",
-      "status": "planning",
+      "path": "tasks/approved/2125",
+      "status": "approved",
       "title": "daily-fix: pod-side liveness probe before LAUNCH FAILED"
     },
     "2126": {
