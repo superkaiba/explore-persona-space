@@ -23,7 +23,7 @@
 set -uo pipefail
 export PATH="/root/.local/bin:$HOME/.local/bin:$PATH"
 REPO="${EPS_POD_REPO:-/workspace/explore-persona-space}"
-cd "$REPO"
+cd "$REPO" || exit 1
 set -a; [ -f .env ] && source .env; set +a
 
 LOGDIR=/workspace/logs
@@ -31,6 +31,10 @@ mkdir -p "$LOGDIR"
 SENTINEL="$LOGDIR/issue-2224-suite4a-round.json"
 PHASES_FILE="$LOGDIR/issue-2224-suite4a-phases.jsonl"
 : > "$PHASES_FILE"
+# Clear any STALE prior-run sentinel at launch: on a same-pod relaunch the old
+# status:done|failed envelope would read as a fresh verdict for the whole 45-90
+# min run (stale-artifact false-DONE class, #779/#825; CLAUDE.md § Monitoring).
+rm -f "$SENTINEL"
 CURRENT_PHASE=init
 export SENTINEL PHASES_FILE
 

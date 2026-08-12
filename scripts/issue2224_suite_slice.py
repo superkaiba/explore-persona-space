@@ -224,6 +224,37 @@ def _extract_prompt_response(row: dict, where: str) -> tuple[str, str]:
     return prompt, response
 
 
+def build_regime(args) -> dict:
+    """Output-affecting build regime keys — a part resumes ONLY on a full match.
+
+    Every arg that changes a part's kept-row set is part of the resume key
+    (#722 r3 resume-regime class): a resume keyed on mix sha alone silently
+    reuses parts built under different --max-prompt-tokens / --per-dataset-cap
+    / --seed / --model, and the manifest then stamps the NEW args over rows
+    built under the OLD ones. (--max-drop-fraction is a fail-loud gate, not
+    output-affecting: it never changes the kept set, only whether build raises.)
+    """
+    return {
+        "model": args.model,
+        "seed": args.seed,
+        "max_prompt_tokens": args.max_prompt_tokens,
+        "per_dataset_cap": args.per_dataset_cap,
+    }
+
+
+def resume_part_ok(prior: dict | None, mix_sha: str, regime: dict, part_exists: bool) -> bool:
+    """True only when the prior state record matches mix sha AND every regime key.
+
+    A legacy record missing any regime key mismatches (None != realized value)
+    and is repacked — never resumed on a partial key set.
+    """
+    if not prior or not part_exists:
+        return False
+    if prior.get("mix_sha256") != mix_sha:
+        return False
+    return all(prior.get(k) == v for k, v in regime.items())
+
+
 def run_build(args) -> int:
     """Build suite_pool.jsonl + families.json + manifest.json from the staged mixes."""
     from transformers import AutoTokenizer
@@ -236,6 +267,7 @@ def run_build(args) -> int:
     parts_dir.mkdir(parents=True, exist_ok=True)
     state_path = out_dir / "parts_state.json"
     state: dict = json.loads(state_path.read_text()) if state_path.exists() else {}
+    regime = build_regime(args)
 
     tok = AutoTokenizer.from_pretrained(args.model)
 
@@ -254,10 +286,16 @@ def run_build(args) -> int:
         mix_sha = sha256_file(mix_path)
         part_path = parts_dir / f"{ds}.jsonl"
         prior = state.get(ds)
-        if prior and prior.get("mix_sha256") == mix_sha and part_path.exists():
+        if resume_part_ok(prior, mix_sha, regime, part_path.exists()):
             per_dataset[ds] = prior
             logger.info("[build] %s: resume — part exists (n_kept=%d)", ds, prior["n_kept"])
             continue
+        if prior:
+            logger.info(
+                "[build] %s: prior part stale (mix sha or regime %s changed) — repacking",
+                ds,
+                sorted(regime),
+            )
 
         rows = load_jsonl(mix_path)
         kept: list[dict] = []
@@ -307,6 +345,7 @@ def run_build(args) -> int:
         per_dataset[ds] = {
             "mix_path": str(mix_path.relative_to(mixes_root)),
             "mix_sha256": mix_sha,
+            **regime,  # realized resume-regime keys (resume_part_ok compares each)
             "n_source": n_source,
             "n_kept": len(kept),
             "n_dropped_overlong_prompt": n_drop_overlong,

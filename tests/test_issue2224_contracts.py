@@ -23,9 +23,11 @@ for real.
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from pathlib import Path
+from typing import ClassVar
 
 import numpy as np
 import pytest
@@ -39,6 +41,7 @@ import issue2224_finetune_sweep as sweep  # noqa: E402
 import issue2224_gen_natural as gen  # noqa: E402
 import issue2224_predictor_scores as ps  # noqa: E402
 import issue2224_select as sel  # noqa: E402
+import issue2224_suite_slice as suite  # noqa: E402
 
 # ── C1: pilot budget derived from the arm count ──────────────────────────────────
 
@@ -572,3 +575,54 @@ def test_redraw_truncation_still_fails_gate(tmp_path, monkeypatch):
         min_effective_draws_per_arm=sel.PILOT_MIN_EFFECTIVE_DRAWS,
     )
     assert any("truncation" in f for f in failures)
+
+
+# ── r6: suite-4a build parts-resume regime keys (#722 r3 class) ──────────────────
+
+
+class TestSuiteBuildResumeRegime:
+    """Parts-resume must key on EVERY output-affecting build arg, not mix sha alone.
+
+    r5 code-review Major (`suite4a-build-resume-regime-key`): a resume keyed on
+    `mix_sha256` + part existence silently reuses parts built under different
+    --max-prompt-tokens / --per-dataset-cap / --seed / --model, and manifest.json
+    then stamps the NEW args over rows built under the OLD ones.
+    """
+
+    REGIME: ClassVar[dict] = {
+        "model": "m",
+        "seed": 42,
+        "max_prompt_tokens": 2048,
+        "per_dataset_cap": None,
+    }
+
+    def _prior(self, **over):
+        rec = {"mix_sha256": "abc", **self.REGIME, "n_kept": 3}
+        rec.update(over)
+        return rec
+
+    def test_full_match_resumes(self):
+        assert suite.resume_part_ok(self._prior(), "abc", dict(self.REGIME), True)
+
+    def test_any_changed_regime_key_repacks(self):
+        for key, changed in [
+            ("max_prompt_tokens", 512),
+            ("per_dataset_cap", 100),
+            ("seed", 7),
+            ("model", "other-model"),
+        ]:
+            prior = self._prior(**{key: changed})
+            assert not suite.resume_part_ok(prior, "abc", dict(self.REGIME), True), key
+
+    def test_legacy_record_missing_regime_keys_repacks(self):
+        legacy = {"mix_sha256": "abc", "n_kept": 3}  # pre-r6 record: sha-only key
+        assert not suite.resume_part_ok(legacy, "abc", dict(self.REGIME), True)
+
+    def test_changed_sha_missing_part_or_no_prior_repacks(self):
+        assert not suite.resume_part_ok(self._prior(), "other", dict(self.REGIME), True)
+        assert not suite.resume_part_ok(self._prior(), "abc", dict(self.REGIME), False)
+        assert not suite.resume_part_ok(None, "abc", dict(self.REGIME), True)
+
+    def test_build_regime_covers_the_four_output_affecting_args(self):
+        ns = argparse.Namespace(model="m", seed=42, max_prompt_tokens=2048, per_dataset_cap=None)
+        assert suite.build_regime(ns) == self.REGIME

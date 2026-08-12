@@ -19,7 +19,11 @@ reproduce #2222's recorded held-out R² only while they stay byte-faithful.
 
 from __future__ import annotations
 
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()  # BEFORE numpy/torch imports: shared-VM thread caps + HF token (#847)
+
+import numpy as np  # noqa: E402
 
 # --- Dof-capped GCV ridge (shared-eigh, multi-target) --------------------------
 
