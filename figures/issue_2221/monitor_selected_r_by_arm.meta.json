@@ -1,0 +1,153 @@
+{
+  "commit": "6d68c6bc+dirty",
+  "render_id": "34a33f69bad4450b",
+  "git_commit": "6d68c6bc",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2221_monitors.py"
+  ],
+  "created": "2026-08-12T10:21:42Z",
+  "figsize": [
+    7.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "selected Spearman r (24 fine-tunes)": 0.6687340015421609,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "selected Spearman r (24 fine-tunes)": 0.5212677510915182,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "selected Spearman r (24 fine-tunes)": 0.9397866584667987,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.16,
+      "selected Spearman r (24 fine-tunes)": -0.573895629255204,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.16,
+      "selected Spearman r (24 fine-tunes)": -0.507975545756386,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.16,
+      "selected Spearman r (24 fine-tunes)": 0.8314489755433659,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.32,
+      "selected Spearman r (24 fine-tunes)": -0.7028124384175721,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.32,
+      "selected Spearman r (24 fine-tunes)": 0.8192602443594732,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.32,
+      "selected Spearman r (24 fine-tunes)": 0.8986025345060159,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.48,
+      "selected Spearman r (24 fine-tunes)": 0.7643306556342236,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.48,
+      "selected Spearman r (24 fine-tunes)": 0.5677195221009348,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.48,
+      "selected Spearman r (24 fine-tunes)": -0.8837061492436051,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.64,
+      "selected Spearman r (24 fine-tunes)": null,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.64,
+      "selected Spearman r (24 fine-tunes)": null,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.64,
+      "selected Spearman r (24 fine-tunes)": null,
+      "_kind": "bar",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 15,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "selected Spearman r (24 fine-tunes)",
+        "legend_labels": [
+          "a_rb_ctx",
+          "b_rb_ans",
+          "c_map_ctx",
+          "c_map_pfx",
+          "d_transport",
+          "score-shuffle null q95 (|r|)"
+        ],
+        "xticklabels": [
+          "evil",
+          "sycophancy",
+          "hallucination"
+        ],
+        "yticklabels": [
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      }
+    ],
+    "series": [
+      "a_rb_ctx",
+      "b_rb_ans",
+      "c_map_ctx",
+      "c_map_pfx",
+      "d_transport"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

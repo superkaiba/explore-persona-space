@@ -873,6 +873,7 @@ def phase_figures(args) -> None:
 
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    from matplotlib.lines import Line2D
 
     from explore_persona_space.analysis import paper_plots as pp
 
@@ -888,15 +889,30 @@ def phase_figures(args) -> None:
     traits = list(corr["per_trait"])
     width = 0.8 / len(arms)
     for k, arm in enumerate(arms):
-        vals = [
-            corr["per_trait"][t]["panels"]["pooled"]["arms"].get(arm, {}).get("selected_r", np.nan)
-            for t in traits
-        ]
-        ax.bar(np.arange(len(traits)) + k * width, vals, width, label=arm, color=colors[arm])
+        vals, nulls = [], []
+        for t in traits:
+            a = corr["per_trait"][t]["panels"]["pooled"]["arms"].get(arm, {})
+            vals.append(a.get("selected_r", np.nan))
+            nulls.append(a.get("score_shuffle_null_q95_abs", np.nan))
+        xpos = np.arange(len(traits)) + k * width
+        ax.bar(xpos, vals, width, label=arm, color=colors[arm])
+        # The selection-symmetric null travels WITH the bar: r is the SIGNED
+        # value at the argmax-|r| layer, so a bar whose |height| falls inside
+        # +/- its own score-shuffle q95 is NOT distinguishable from selection
+        # noise. Without these caps a sub-null bar reads as an effect (live
+        # case: sycophancy/a_rb_ctx +0.521 against its own null of 0.567).
+        for xc, nq in zip(xpos, nulls):
+            if not np.isfinite(nq):
+                continue
+            for sgn in (1.0, -1.0):
+                ax.hlines(sgn * nq, xc - width / 2, xc + width / 2, color="black", lw=1.0, zorder=5)
     ax.set_xticks(np.arange(len(traits)) + 0.4, traits)
     ax.set_ylabel("selected Spearman r (24 fine-tunes)")
     ax.axhline(0, color="black", lw=0.5)
-    ax.legend(fontsize=7)
+    handles, labs = ax.get_legend_handles_labels()
+    handles.append(Line2D([0], [0], color="black", lw=1.0))
+    labs.append("score-shuffle null q95 (|r|)")
+    ax.legend(handles, labs, fontsize=7)
     pp.savefig_paper(fig, "monitor_selected_r_by_arm", dir=fig_dir)
     plt.close(fig)
 
@@ -908,8 +924,28 @@ def phase_figures(args) -> None:
             if d is None:
                 continue
             ax.plot(range(C.N_LAYERS), d["r_by_layer"], label=arm, color=colors[arm])
+        # Shade the selection-noise band at +/- the LARGEST per-arm score-shuffle
+        # q95 on this trait: a profile inside the band is not distinguishable
+        # from argmax-|r| selection noise, and an arm that merely TOUCHES the
+        # band at one layer is a weaker claim than one holding a broad plateau
+        # outside it.
+        nqs = [
+            a.get("score_shuffle_null_q95_abs", np.nan)
+            for a in corr["per_trait"][t]["panels"]["pooled"]["arms"].values()
+        ]
+        nqm = np.nanmax(nqs) if len(nqs) else np.nan
+        if np.isfinite(nqm):
+            ax.axhspan(
+                -nqm,
+                nqm,
+                color="0.85",
+                alpha=0.55,
+                zorder=0,
+                label=f"|r| <= max score-shuffle null q95 ({nqm:.2f})",
+            )
         ax.set_xlabel("layer index")
         ax.set_ylabel(f"Spearman r ({t})")
+        ax.set_ylim(-1.02, 1.02)
         ax.axhline(0, color="black", lw=0.5)
         ax.legend(fontsize=7)
         pp.savefig_paper(fig, f"monitor_r_by_layer_{t}", dir=fig_dir)
@@ -943,7 +979,13 @@ def phase_figures(args) -> None:
                 label=f"{t}/random-direction control (oriented)",
             )
     ax.set_xlabel("training progress (% of steps)")
-    ax.set_ylabel("orientation-folded detection AUC (final score >= 50)")
+    # Full folded range, NOT a zoom: folding maps AUC into [0.5, 1], and with
+    # only 5 label-positive cells of 24 the random-direction control itself sits
+    # at 0.885-0.974 — on a 0.88-1.00 zoom a <=0.09 gap fills the panel and
+    # reads as decisive separation. The honest picture is that arms AND control
+    # are both jammed against the ceiling.
+    ax.set_ylabel("orientation-folded detection AUC")
+    ax.set_ylim(0.5, 1.02)
     ax.legend(fontsize=6)
     pp.savefig_paper(fig, "checkpoint_detection_auc", dir=fig_dir)
     plt.close(fig)
