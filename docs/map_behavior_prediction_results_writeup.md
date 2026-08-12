@@ -115,14 +115,11 @@ I plotted the distribution of all behaviors for each dataset as well as the stan
 
 Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result1_spread/spread_grid_extended.png
 
-*(LEFT column = per-context DV distribution, RIGHT column = between-context SD with the SD >= 10 gate line. 22 behavior x dataset cells: the 14 original ones plus the eight rungs added since — evil MHJ / PAIR / tom-gibbs, sycophancy SycophancyEval answer / are-you-sure / feedback / mimicry, and model-written evals.)*
-
 **Noise floor on the SD.** Each context's DV is a mean over 5 generations x 3 judge draws, so a set of contexts with *identical* true behavior would still show a non-zero between-context SD from sampling alone. That floor is **5.7** points for evil, **3.3** for sycophancy and **8.5** for hallucination on the 0-100 scale — almost entirely generation-to-generation variance; the judge-draw contribution is only 1.1 / 1.3 / 1.6. Subtracting it in quadrature: a rung sitting exactly on the SD >= 10 gate carries a real between-context signal of 8.2 (evil), 9.4 (sycophancy), 5.3 (hallucination), while the healthy rungs sit far above the floor (MHJ at SD 27.1 is ~26.5 of real signal). hh-rlhf red-team (SD 0.9) and generic WildChat (SD 4.4) fall *below* the evil noise floor, which is the quantitative form of the first takeaway.
 
 **Takeaways:**
 - hh-rlhf red-team and randomWildChat have very low standard deviation so I remove them as evaluation settings
 -
-
 
 ### Result 2: Does applying the mapping help with persona vector projection?
 
@@ -140,11 +137,7 @@ I started by plotting $\rho$ on the held-out synthetic prompts from the persona 
 
 Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result2_fourpanel/result2_fourpanel.png
 
-![Result 2 four-bar view, averaged across behaviors](https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result2_fourpanel/result2_fourpanel_avg_variants.png)
-
 Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result2_fourpanel/result2_fourpanel_avg_variants.png
-
-*(These are the only two figures carrying all four bars, MLP map included. The **synthetic** read this paragraph is about is the LEFTMOST group in each panel; the remaining three groups are the realistic settings on the OLD corpus roster — evil OOD = hh-rlhf red-team + ToxicChat, sycophancy OOD = held-out Reddit r/socialskills, hallucination OOD = NQ-Open + SimpleQA. The averaged figure shows the average both with and without the spread-failed cells.)*
 
 **Takeaways:**
 - It seems here that our mapping is almost useless - persona vectors projected on context almost always does near the ceiling of projecting on the real answer
@@ -158,8 +151,6 @@ Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d08
 ![Result 2 across evaluation regimes, P-A protocol](https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/pv_regime_view/pv_regime_pa_pvonly.png)
 
 Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/pv_regime_view/pv_regime_pa_pvonly.png
-
-*(Four groups per panel — synthetic / generic chat / in-distribution / completely OOD — with one panel per behavior plus an averaged panel, on the CURRENT corpus roster described in the Methodology (SycophancyEval x4 + MWE, MHJ, PAIR, tom-gibbs). P-B is the leave-one-dataset-out fairness protocol; P-A is the single-eliciting-dataset protocol. Hatched groups fail the Result 1 spread gate and are marked not interpretable rather than dropped; the sub-label under each group names the datasets that actually contributed.)*
 
 > **Slot not fillable as specified: the MLP-mapped bar on this roster does not exist.** The P-A/P-B round scored `map_kind = linear` only, and the round that carries the MLP arm (the four-bar figure above) predates these rungs, so no artifact anywhere carries (MLP map) x (the new rungs). It is a fit round, not a re-render: ~2.23 GB of activations to stage, maps already fitted, CPU-only. Until it runs, the choice is three bars on the current roster or four bars on the old one.
 
@@ -187,8 +178,6 @@ Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d08
 
 Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/pv_regime_view/pv_regime_pa.png
 
-*(Same panels and settings as Result 2, five bars: ridge on context / ridge on real answer / ridge on mapped answer / persona vector on mapped answer / persona vector on real answer. The three probe bars are the ones this section asks for; the two persona-vector bars are carried so the two families can be read against each other in one place.)*
-
 ### Result 4: Effect of adding/removing different kinds of data
 I then wanted to look at the effect of adding/removing different kinds of data:
 - increasing/removing trait-eliciting data from mapping fit:
@@ -197,15 +186,11 @@ I then wanted to look at the effect of adding/removing different kinds of data:
 
 Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/gapfold/r5_trait_pool.png
 
-*(All-generic map pool vs the same pool size with 50% of the pairs replaced by unlabeled trait-eliciting contexts, all three behaviors, at each behavior's maximum label budget. Bottom row is the built-in control: direct ridge on context never reads the map pool, so any movement there is label-draw resampling rather than a pool effect. Composition at fixed size, so the contrast is not confounded with quantity.)*
-
 - increasing/removing generic data from mapping fit:
 
 ![Unlabeled generic map pool ladder](https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result5_data/r5_generic_map_ladder.png)
 
 Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result5_data/r5_generic_map_ladder.png
-
-*(x is the number of unlabeled generic WildChat context->answer pairs the MAP was fit on; the labeled readout budget is held at each behavior's maximum. 3 behaviors x 3 evaluation rungs. Rungs are the ORIGINAL roster this grid was run on — the newer MHJ / PAIR / tom-gibbs / SycophancyEval rungs postdate it and appear in the LODO figure below.)*
 
 The $R^2$ half of the same question — does a bigger unlabeled pool make the map itself better, independent of any behavior readout:
 
@@ -213,15 +198,11 @@ The $R^2$ half of the same question — does a bigger unlabeled pool make the ma
 
 Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/map_quality_ladder.png
 
-*(Held-out $R^2$ and kNN retrieval acc@1 vs unlabeled map budget U. Note the $R^2$ side of the ablations exists only here, at the level of map quality; the per-arm ablation figures report $\rho$ only.)*
-
 - removing trait-eliciting data from behavior predictor fit
 
 ![f_U x f_L composition factorial](https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result5_data/r5_fu_fl_factorial.png)
 
 Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result5_data/r5_fu_fl_factorial.png
-
-*($f_L$ — the fraction of the LABELED readout pool that is trait-eliciting rather than generic — is the series in this figure; $f_U$ is the same fraction for the unlabeled map pool. Both are composition at fixed size, so neither axis is confounded with quantity. **Realized coverage: 8 $(f_U, f_L, L)$ cells, evil ONLY** — the compose family was never run for sycophancy or hallucination, the $(f_U=0, f_L=1)$ corner was never run at all, and $(f_U=0.5, f_L=0)$ has no $L=8{,}000$ cell, so a missing point is missing data rather than a null.)*
 
 The quantity version of the same axis — accuracy vs total labeled budget $L$:
 
@@ -234,8 +215,6 @@ Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d08
 ![Judged eliciting labels swapped for judged generic labels](https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result5_data/r5_judged_generic_swap.png)
 
 Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result5_data/r5_judged_generic_swap.png
-
-*(The labeled readout pool is 1,500 rows throughout and x is the fraction of those rows drawn from judged random WildChat rather than the behavior's eliciting corpus, so a change along x cannot be confounded with quantity. 3 behaviors x 3 evaluation rungs, and the direct ridge-on-context arm is included as this section asks. The label-free projection arms are drawn flat by construction — they consume no labels — as the reference the label-consuming arms move against.)*
 
 - increasing/removing each from BOTH mapping and behavior predictor fit
 
@@ -254,8 +233,6 @@ Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d08
 ![Leave-one-dataset-out by held-out dataset](https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result5_data/r5_lodo_by_dataset.png)
 
 Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result5_data/r5_lodo_by_dataset.png
-
-*(Exactly the three-way split this bullet asks for: the dataset the readout never saw, the 20% held-in slices of the sibling eliciting datasets it did train on, and generic chat. One fit per held-out dataset — evil 5, sycophancy 6, hallucination 2. ONLY the label-consuming arms are drawn: the persona-vector projections train no readout, so which dataset left the fit cannot move them, and drawing them would imply an effect the design cannot produce. $\rho$ only; the $R^2$ half was not computed per held-out dataset.)*
 
 - removing a specific trait-eliciting dataset from both
 
