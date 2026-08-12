@@ -9642,8 +9642,8 @@
     "2248": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2248",
-      "status": "proposed",
+      "path": "tasks/planning/2248",
+      "status": "planning",
       "title": "SKILL.md Step 4: brief-composition rule covers marker SUPPRESSION but not DISPLACEMENT by a return-format contract"
     },
     "225": {
