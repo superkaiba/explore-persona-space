@@ -158,6 +158,27 @@ it does not re-materialize the whole activation grid (#666/#772). (Driving
 incident: #779's extraction driver reduced kept rollouts to `r_B` and dropped
 the rollout text, so a sibling arm had to regenerate.)
 
+**Consumers of shardable text artifacts resolve names MANIFEST-FIRST (#2119).**
+Any code that stages/downloads a text/JSON artifact that CAN cross the 9.5 MB
+line-split threshold (draw files, judge pools, rollout buckets — anything a
+top-up or re-run can grow) MUST NOT hard-code the unsharded `<stem>.jsonl` hub
+name: probe `<stem>.manifest.json` on the prefix FIRST. Manifest present ⇒
+stage the manifest's FULL part set, verify each part's sha256 against the
+manifest, concatenate in manifest order — a stale unsharded `<stem>.jsonl`
+sitting beside a manifest is prior-round residue and consuming it is the #2054
+r6/`epm:failure v4` defect. Manifest absent ⇒ pre-shard compat fallback to the
+unsharded name. A missing PART under an existing manifest is FAIL-LOUD, never
+a fallback. Log which path was taken. Use `orchestrate.hub.stage_sharded_text`
+(staging) / `orchestrate.hub.resolve_sharded_text_paths` (name-set resolution)
+— never hand-roll the resolve (#2054 hand-rolled it twice; both consumers
+broke the first time an artifact crossed the threshold, 2026-08-05/06).
+**Upload-verification of such artifacts verifies the CONSUMABLE form, not bare
+name presence:** manifest present ⇒ the manifest AND its full part set must be
+on the Hub (feed `resolve_sharded_text_paths` output to
+`verify_repo_paths_uploaded`, `path_in_repo=` keyword REQUIRED); the unsharded
+name alone is NOT a PASS when a manifest exists (the "v7 PASS had a hole"
+half of #2119).
+
 **Uploader eligibility filters must cover every plan-declared artifact class
 (#825).** An upload helper that enumerates files through an eligibility
 filter — `upload_folder(allow_patterns=[...])` / `ignore_patterns=[...]`, a
@@ -604,7 +625,9 @@ let it halt the cell rather than papering over the 403. (2) Keep small-artifact
 uploads (eval JSONs, raw completions, analysis tensors) flowing to the dataset
 repo unchanged — they ride the non-LFS path. Text payloads <9.5MB upload
 as-is; line-split bigger files into <9MB shards (`<stem>.shardNN.jsonl` plus a
-`<stem>.manifest.json` listing ordered parts, line counts, sha256s). NEVER
+`<stem>.manifest.json` listing ordered parts, line counts, sha256s).
+Consumers resolve these manifest-first — the #2119 consumer clause above;
+`hub.stage_sharded_text`. NEVER
 gzip to shrink them — `*.gz` IS LFS-matched and re-enters the blocked path.
 (3) For LFS-only artifacts (adapters, checkpoints): upload to the PRIVATE
 overflow repo `superkaiba1/explore-persona-space-overflow` under the same
