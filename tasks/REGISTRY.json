@@ -8643,8 +8643,8 @@
     "2117": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2117",
-      "status": "running",
+      "path": "tasks/completed/2117",
+      "status": "completed",
       "title": "daily-fix: reconcile-stop misses error-storming sessions"
     },
     "2118": {
