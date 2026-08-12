@@ -528,9 +528,20 @@ is AUTO-STOPPED after ≥2 consecutive checks once ALL hold: no live
 follow-up inferred from events.jsonl (latest
 `epm:run-launched`/`epm:followup-scope`/`epm:free-analysis-followup-run`
 OLDER than the latest done-transition), every non-watcher marker +
-self-report idle > ~2h (`EPM_SESSION_RECONCILE_IDLE_S`), no RUNNING
+self-report + registration `spawned_at` + per-sid transcript WORK signal
+idle > ~2h (`EPM_SESSION_RECONCILE_IDLE_S`), no RUNNING
 `pod-<N>`, no `keep-running` tag (`EPM_SESSION_RECONCILE_AUTOSTOP=0`
-reverts to alert-only). Sessions at any other status, the PM session, and
+reverts to alert-only). **The transcript term classifies row CONTENT, not
+mtime (#2117):** a 256 KB tail whose completed wake-turns ALL failed —
+with no genuine human row — is churn-only and contributes NO liveness, so
+an error-storming session on a done task accumulates the ≥2-miss counter
+(the #2004 shape: mtime churn previously reset the counter every tick); a
+recent successfully-completed wake-turn or a genuine human row still
+protects (#1670), and an unresolvable transcript / zero-completed-turn
+tail falls back to the mtime read (fail toward KEEP). Kill switch
+`EPM_SESSION_RECONCILE_TRANSCRIPT_WORK_PROBE=0` reverts the transcript
+term to the pure-mtime probe (exact pre-#2117 behavior). Sessions at any
+other status, the PM session, and
 unmapped chat sessions are never touched by this pass.
 
 **Keep-running wedged-owner escalation arm (#1582).** ESCALATE-ONLY arm
