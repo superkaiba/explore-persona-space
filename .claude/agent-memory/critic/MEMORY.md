@@ -33,7 +33,7 @@
 - [Unsatisfiable-gate re-spec review](feedback_unsatisfiable_gate_respec_review.md) — two-arm fix + grain re-spec (keep cap); offline chain eval (#1336)
 - [Row-quarantine containment review](feedback_row_quarantine_containment_review.md) — exact-at-threshold; common-mode residual; zero-edge under-direction (#1336)
 - [Twin-gate band below leak onset](feedback_twin_gate_band_below_leak_onset.md) — band below onset = uninformative; recheck flat panels (#591)
-- [Seed-ceiling within-vs-cross-seed](feedback_seed_ceiling_within_vs_cross_seed.md) — 0.96-0.98 = within-seed, not cross-seed 0.65-0.97 (#602)
+- [Seed-ceiling within-vs-cross-seed](feedback_seed_ceiling_within_vs_cross_seed.md) — 0.96-0.98 = within-seed, not cross-seed (#602)
 - [Pin-vs-manifest commit](feedback_pin_vs_manifest_commit.md) — blob-compare restored files between plan pin and parent manifest (#551)
 
 ## Measurement validity / DV construction
