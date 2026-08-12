@@ -9571,8 +9571,8 @@
     "2239": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2239",
-      "status": "approved",
+      "path": "tasks/running/2239",
+      "status": "running",
       "title": "fix red main: issue2220 script pair \u2014 4 unguarded upload_folder calls + heavy import before load_dotenv"
     },
     "224": {
