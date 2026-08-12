@@ -548,8 +548,8 @@ def pair_label(src: str, tgt: str) -> str:
         "base": "base",
         "sft": "SFT",
         "dpo": "DPO",
-        "rlvr": "RLVR",
-        "rlvr_long": "RLVR-long",
+        "rlvr": "RLVR-PPO",
+        "rlvr_long": "RLVR-GRPO",
     }
     return f"{short[src]}→{short[tgt]}"
 

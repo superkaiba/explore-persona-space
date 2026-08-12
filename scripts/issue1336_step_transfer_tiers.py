@@ -171,8 +171,8 @@ def step_label(src: str, tgt: str) -> str:
         "base": "base",
         "sft": "SFT",
         "dpo": "DPO",
-        "rlvr": "RLVR",
-        "rlvr_long": "longer\nRLVR",
+        "rlvr": "RLVR-\nPPO",
+        "rlvr_long": "RLVR-\nGRPO",
     }
     return f"{short[src]}→{short[tgt]}"
 
