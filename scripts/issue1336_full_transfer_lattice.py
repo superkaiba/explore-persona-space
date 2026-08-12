@@ -512,18 +512,18 @@ def fig_aggregate(D: dict) -> Path:
             a.axvspan(lo - 0.5, hi - 0.5, color="#f7f7f7", zorder=0)
 
     # --- fair baselines, both as LINES, drawn BEHIND the tier lines ---
+    # The zero line's reading rides the LEGEND, not an in-canvas text block: a
+    # caption block rendered onto the figure is banned (paper-plots SKILL §3.8-bis,
+    # standing user directive 2026-08-12) — every such fact belongs in the prose
+    # beside the figure or in the .meta.json sidecar.
     ax.axhline(0.0, color="#252525", lw=1.0, ls=(0, (6, 3)), zorder=1)
-    # Annotated on the RIGHT half: on the left the t0 series dips through y≈0
-    # (base→DPO/RLVR sit at -0.08/-0.10) and the label collides with it, while
-    # from SFT→DPO rightward every series is ≥0.29 or ≤-0.50 and y≈0 is clear.
-    ax.text(
-        5.55,
-        0.03,
-        "R² = 0 · predict the training mean  (the t7/t8 shuffled null sits 0.0008 under it)",
-        ha="left",
-        va="bottom",
-        fontsize=8.5,
+    ax.plot(
+        [],
+        [],
         color="#252525",
+        lw=1.0,
+        ls=(0, (6, 3)),
+        label="R² = 0 · predict the training mean",
     )
     # NaN at the three round-B pairs (no control was run there) breaks each
     # baseline line into a visible gap rather than bridging an uncontrolled pair.
@@ -539,9 +539,21 @@ def fig_aggregate(D: dict) -> Path:
     # t7/t8 bar up against the t0/t6 series, making real t0 signal read as noise.
     if axa is not None:
         axa.axhline(0.0, color="#252525", lw=0.9, ls=(0, (6, 3)), zorder=1)
+        # Both series are MEASURED on every pair's OWN rows — the round-B pairs by
+        # the v4 refit — so the provenance rides the label and the marker stays
+        # FILLED throughout (contrast the identity+bias series below, whose three
+        # round-B points are BORROWED and drawn hollow).
         for key, col, lab in (
-            ("a_ctx", "#238b45", "CONTEXT alignment map $A_{ctx}$ (t6's remap)"),
-            ("a_ans", "#d95f0e", "ANSWER alignment map $A_{ans}$ (t7's remap)"),
+            (
+                "a_ctx",
+                "#238b45",
+                "CONTEXT alignment map $A_{ctx}$ (t6's remap) — measured, all 10 pairs",
+            ),
+            (
+                "a_ans",
+                "#d95f0e",
+                "ANSWER alignment map $A_{ans}$ (t7's remap) — measured, all 10 pairs",
+            ),
         ):
             axa.plot(
                 x,
@@ -581,11 +593,44 @@ def fig_aggregate(D: dict) -> Path:
     ident = np.array(
         [BASELINES.get(pi, {}).get("identity_bias", np.nan) for pi in range(len(PAIRS))]
     )
-    ident_style = dict(color=IDENT_COLOR, lw=2.0, ls=(0, (5, 2)), marker=".", ms=7)
+    # Provenance is DRAWN, not only recorded in the sidecar. identity+bias is a
+    # WITHIN-model baseline keyed on the TARGET, so the three round-B pairs carry
+    # their target's round-3 value (identity_approx) instead of one measured on
+    # their own rows — which is exactly why SFT→RLVR-long and RLVR→RLVR-long sit
+    # at the same −2.630 (shared target). FILLED marker = measured on this pair's
+    # own rows; HOLLOW marker = borrowed from the target's round-3 siblings.
+    ident_borrowed = np.array(
+        [bool(BASELINES.get(pi, {}).get("identity_approx", False)) for pi in range(len(PAIRS))]
+    )
+    ident_line = dict(color=IDENT_COLOR, lw=2.0, ls=(0, (5, 2)))
+    ident_hollow = dict(ls="none", marker="o", ms=7, mfc="white", mec=IDENT_COLOR, mew=1.8)
     if axb is not None:
-        axb.plot(x, ident, zorder=3, **ident_style)
+        axb.plot(x, ident, zorder=3, **ident_line)
+        axb.plot(
+            x,
+            np.where(~ident_borrowed, ident, np.nan),
+            ls="none",
+            marker="o",
+            ms=5.5,
+            color=IDENT_COLOR,
+            zorder=4,
+        )
+        axb.plot(x, np.where(ident_borrowed, ident, np.nan), zorder=4, **ident_hollow)
     if HAS_IDENTITY:
-        ax.plot([], [], label="identity+bias baseline  ŷ = x + b  (lower panel)", **ident_style)
+        ax.plot(
+            [],
+            [],
+            marker="o",
+            ms=5.5,
+            label="identity+bias  ŷ = x + b  (lower panel) — MEASURED",
+            **ident_line,
+        )
+        ax.plot(
+            [],
+            [],
+            label="identity+bias — BORROWED from the target's round-3 pairs",
+            **ident_hollow,
+        )
 
     for tier in TIERS:
         med = [
@@ -656,13 +701,15 @@ def fig_aggregate(D: dict) -> Path:
         axa.set_ylim(*A_YLIM_ALIGN)
         axa.set_yticks([-0.5, 0.0, 0.5, 1.0])
         axa.set_ylabel("held-out R²\n(alignment maps)", fontsize=9.5)
+        # ONE-LINE panel title. The full "why this panel is separate" explanation
+        # (a_ctx/a_ans score checkpoint→checkpoint alignment, not context→answer,
+        # so a high value here is NOT "the baseline beats the self map") lives in
+        # the prose beside the figure + fair_baselines.alignment_panel in the
+        # sidecar — never as a caption block on the canvas (SKILL §3.8-bis).
         axa.set_title(
-            "A DIFFERENT regression, plotted apart so it is not read against the panel below: "
-            "identity+bias  ŷ = x + b  aligning the two checkpoints' summary vectors\n"
-            "(target contexts→source contexts; source answers→target answers). The ceiling "
-            "below maps context→answer INSIDE one model — a high value here is not "
-            '"the baseline beats the self map".',
-            fontsize=8.5,
+            "Alignment maps between the two checkpoints — a DIFFERENT regression, "
+            "not comparable to the panel below",
+            fontsize=9.5,
             loc="left",
             color="#404040",
         )
@@ -700,22 +747,31 @@ def fig_aggregate(D: dict) -> Path:
     return out
 
 
-def _panel_baselines(fmt: str, corpus: str) -> tuple[dict[int, np.ndarray], np.ndarray]:
-    """This CORPUS's own baselines, per pair: ({tier -> null}, identity+bias).
+def _panel_baselines(fmt: str, corpus: str) -> tuple[dict[int, np.ndarray], np.ndarray, np.ndarray]:
+    """This CORPUS's baselines, per pair: ({tier -> null}, identity+bias, borrowed-mask).
 
     The null is returned PER TIER (20-draw mean), not collapsed: t7/t8 refit the
     answer side against the shuffled targets so their null sits at ~0, while
     t0/t6 have no answer-side refit to absorb the target mean and sit at
     -0.3..-0.75. Collapsing them holds the t7/t8 bar up against the t0/t6
-    series and makes real t0 signal read as failure. NaN at the three round-B
-    pairs (no control was run there) so each baseline LINE breaks into a
-    visible gap instead of bridging an uncontrolled pair.
+    series and makes real t0 signal read as failure. The null stays NaN at the
+    three round-B pairs (pair-specific, never run there) so each null LINE
+    breaks into a visible gap instead of bridging an uncontrolled pair.
+
+    identity+bias is NOT pair-specific: it is a WITHIN-model baseline keyed on
+    the TARGET, so a round-B pair borrows its target's value from that target's
+    round-3 siblings AT THIS SAME (fmt, corpus) — the per-panel form of the
+    aggregate figure's borrow, which previously left these panels blank while
+    the aggregate showed a value. The third return marks which entries are
+    borrowed so the panel draws them HOLLOW instead of passing them off as
+    measured on the pair's own rows.
     """
     import glob
     import re
 
     pat = re.compile(r"pair_(.+?)__(.+?)_(chat|naturalistic)_(.+)\.json")
     found: dict[str, tuple[np.ndarray, float]] = {}
+    by_target: dict[str, list[float]] = {}
     for fp in sorted(set(glob.glob(xmap.PAIRFILE_GLOB, recursive=True))):
         m = pat.match(Path(fp).name)
         if not m:
@@ -727,18 +783,29 @@ def _panel_baselines(fmt: str, corpus: str) -> tuple[dict[int, np.ndarray], np.n
         if layer:
             mat = np.asarray(layer["nulls"]["r2_matrix"], dtype=float)
             _bl = layer.get("baselines")
-            found[f"{src}__{tgt}"] = (
-                mat[:, [NULL_COL[t] for t in TIERS]].mean(axis=0),
-                float(_bl["within"]["identity_bias_r2"]) if _bl else float("nan"),
-            )
+            _id = float(_bl["within"]["identity_bias_r2"]) if _bl else float("nan")
+            found[f"{src}__{tgt}"] = (mat[:, [NULL_COL[t] for t in TIERS]].mean(axis=0), _id)
+            if _bl:
+                by_target.setdefault(tgt, []).append(_id)
     per_tier: dict[int, list[float]] = {t: [] for t in TIERS}
-    identv = []
+    identv: list[float] = []
+    borrowed: list[bool] = []
     for src, tgt in PAIRS:
         v = found.get(f"{src}__{tgt}")
         for i, t in enumerate(TIERS):
             per_tier[t].append(np.nan if v is None else float(v[0][i]))
-        identv.append(np.nan if v is None else v[1])
-    return {t: np.array(vs) for t, vs in per_tier.items()}, np.array(identv)
+        if v is not None:
+            identv.append(v[1])
+            borrowed.append(False)
+            continue
+        sib = by_target.get(tgt, [])
+        identv.append(float(np.median(sib)) if sib else np.nan)
+        borrowed.append(bool(sib))
+    return (
+        {t: np.array(vs) for t, vs in per_tier.items()},
+        np.array(identv, dtype=float),
+        np.array(borrowed, dtype=bool),
+    )
 
 
 def fig_percorpus(D: dict) -> Path:
@@ -773,14 +840,18 @@ def fig_percorpus(D: dict) -> Path:
         mains.append(m)
         breaks.append(b)
 
-    ident_style = dict(color=IDENT_COLOR, lw=1.7, ls=(0, (5, 2)), marker=".", ms=5)
+    # FILLED = measured on this pair's own rows; HOLLOW = borrowed from the
+    # target's round-3 siblings at this same (fmt, corpus). Same encoding as the
+    # aggregate figure, so one marker convention reads across both.
+    pc_ident_line = dict(color=IDENT_COLOR, lw=1.7, ls=(0, (5, 2)))
+    pc_ident_hollow = dict(ls="none", marker="o", ms=5, mfc="white", mec=IDENT_COLOR, mew=1.5)
     for k, (fmt, corpus) in enumerate(SURFACES):
         ax, axb = mains[k], breaks[k]
         deg = (fmt, corpus) in DEGENERATE
         # fair baselines, per panel, behind the tier lines — this CORPUS's own
         # values, not the aggregate's. Both are LINES; NaN at the round-B pairs.
         ax.axhline(0.0, color="#252525", lw=0.9, ls=(0, (6, 3)), zorder=1)
-        pnull, pident = _panel_baselines(fmt, corpus)
+        pnull, pident, pborrowed = _panel_baselines(fmt, corpus)
         # t0/t6 nulls reach -5.02 on math7500, so they share the lower panel with
         # identity+bias; t7/t8 nulls sit at ~-0.0008, coincident with the zero
         # line already drawn above. See fig_aggregate for the full rationale.
@@ -795,7 +866,18 @@ def fig_percorpus(D: dict) -> Path:
                 zorder=2,
             )
         if HAS_IDENTITY:
-            axb.plot(np.arange(len(PAIRS)), pident, zorder=3, **ident_style)
+            xi = np.arange(len(PAIRS))
+            axb.plot(xi, pident, zorder=3, **pc_ident_line)
+            axb.plot(
+                xi,
+                np.where(~pborrowed, pident, np.nan),
+                ls="none",
+                marker="o",
+                ms=4,
+                color=IDENT_COLOR,
+                zorder=4,
+            )
+            axb.plot(xi, np.where(pborrowed, pident, np.nan), zorder=4, **pc_ident_hollow)
         if k == 0:  # proxies so the figure legend carries the lower-panel lines
             ax.plot(
                 [],
@@ -807,7 +889,18 @@ def fig_percorpus(D: dict) -> Path:
             )
             if HAS_IDENTITY:
                 ax.plot(
-                    [], [], label="identity+bias baseline  ŷ = x + b  (lower panel)", **ident_style
+                    [],
+                    [],
+                    marker="o",
+                    ms=4,
+                    label="identity+bias  ŷ = x + b  (lower panel) — MEASURED",
+                    **pc_ident_line,
+                )
+                ax.plot(
+                    [],
+                    [],
+                    label="identity+bias — BORROWED from the target's round-3 pairs",
+                    **pc_ident_hollow,
                 )
         for tier in TIERS:
             xa, ys, lo, hi = [], [], [], []
@@ -990,9 +1083,18 @@ def write_meta(D: dict, figs: list[Path]) -> Path:
                 "y_hat = x + b with b the train-fold mean of y - x (analysis/mapping_baselines); "
                 "the project's standing mapping baseline, applicable because dims match at "
                 "4096->4096. Drawn as a LINE at its true value (-2.14..-3.03 aggregate, worst "
-                "per-corpus cell -3.41), which is why the y-axis extends to -3.2 / -3.6."
+                "per-corpus cell -3.41), which is why the y-axis extends to -3.2 / -3.6. "
+                "PROVENANCE IS DRAWN: a FILLED marker is measured on that pair's own rows, a "
+                "HOLLOW marker is BORROWED from the target's round-3 siblings (identity_approx). "
+                "Same encoding on both figures. The borrow is why sft__rlvr_long and "
+                "rlvr__rlvr_long carry the identical aggregate value -2.630 -- they share the "
+                "target rlvr_long, and the baseline is target-keyed, not pair-keyed."
             ),
-            "zero_line": "R2 = 0 is the predict-the-training-mean baseline.",
+            "zero_line": (
+                "R2 = 0 is the predict-the-training-mean baseline. It rides the LEGEND rather "
+                "than an in-canvas text block (paper-plots SKILL 3.8-bis: no caption block on "
+                "the figure canvas); the t7/t8 shuffled null sits 0.0008 under it."
+            ),
             "alignment_panel": (
                 "the two ALIGNMENT-map identity+bias series (a_ctx, a_ans) are plotted on their "
                 "OWN TOP PANEL of the aggregate figure, separated by a spacer row rather than a "
@@ -1017,7 +1119,15 @@ def write_meta(D: dict, figs: list[Path]) -> Path:
                 "metric_ladder's estimator — identity_bias_predict OOF on the same seed-0 "
                 "conversation-grouped 5-fold, globally-pooled fc._pooled_r2, A_ctx_rev scored "
                 "against the SOURCE contexts and A_ans against the TARGET answers — so those two "
-                "series are continuous across all 10 pairs on one basis (align_measured=true)"
+                "series are continuous across all 10 pairs on one basis (align_measured=true) "
+                "and keep a FILLED marker throughout. Measured values on the three round-B "
+                "pairs, a_ctx / a_ans: sft->rlvr 0.796 / 0.513, sft->rlvr_long 0.743 / 0.511, "
+                "rlvr->rlvr_long 0.804 / 0.734. The BORROWED identity+bias values on the same "
+                "three pairs (hollow markers): -2.946, -2.630, -2.630. On the by_dataset figure "
+                "the round-B identity+bias was previously a blank gap while the aggregate showed "
+                "a value; it now carries the same borrow at panel grain — the target's round-3 "
+                "siblings at that same (fmt, corpus) — drawn hollow. The pair-specific shuffled "
+                "null stays a gap on both figures."
             ),
             "per_pair": {
                 f"{PAIRS[pi][0]}__{PAIRS[pi][1]}": b for pi, b in sorted(BASELINES.items())
