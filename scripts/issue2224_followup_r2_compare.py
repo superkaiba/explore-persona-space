@@ -146,6 +146,7 @@ def main() -> int:
     contrasts_out: list[dict] = []
     n_dir_agree = 0
     n_in_ci = 0
+    n_evaluable = 0
     for row in parent:
         rec137 = _paired_contrast(
             judged137[row["cell_a"]], judged137[row["cell_b"]], args.n_boot, args.seed_base
@@ -190,6 +191,7 @@ def main() -> int:
                 "qid_cluster": _point_in_ci(q42.get("mean"), q137 or None),
             },
         }
+        n_evaluable += 1 if dir_agree is not None else 0
         n_dir_agree += 1 if dir_agree else 0
         n_in_ci += 1 if comp["seed137_point_in_seed42_ci"]["response_level"] else 0
         contrasts_out.append(comp)
@@ -226,6 +228,10 @@ def main() -> int:
         },
         "summary": {
             "n_contrasts": len(contrasts_out),
+            # Contrasts with a computable direction on BOTH seeds (a None-status /
+            # no-paired-items contrast is NOT evaluable — it must never read as
+            # "non-agreeing"; review r2 non-blocking item).
+            "n_evaluable": n_evaluable,
             "n_direction_agree": n_dir_agree,
             "n_seed137_point_in_seed42_ci_response_level": n_in_ci,
         },
@@ -235,9 +241,9 @@ def main() -> int:
     args.out.parent.mkdir(parents=True, exist_ok=True)
     atomic_write_json(out, args.out)
     print(
-        f"[compare] wrote {args.out} — {len(contrasts_out)} contrasts, "
-        f"dir_agree={n_dir_agree}/{len(contrasts_out)}, "
-        f"in_seed42_ci={n_in_ci}/{len(contrasts_out)}",
+        f"[compare] wrote {args.out} — {len(contrasts_out)} contrasts "
+        f"({n_evaluable} evaluable), dir_agree={n_dir_agree}/{n_evaluable}, "
+        f"in_seed42_ci={n_in_ci}/{n_evaluable}",
         flush=True,
     )
     return 0

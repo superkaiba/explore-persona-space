@@ -144,7 +144,66 @@ OUT_ROOT_DEFAULT = PROJECT_ROOT / "data" / "issue_2224" / "screening_ft"
 EVAL_Q_DIR_DEFAULT = PROJECT_ROOT / "data" / "issue_2224" / "eval_questions"
 TRAIT_SCORES_DIR_DEFAULT = PROJECT_ROOT / "eval_results" / "issue_2224" / "selection_finetune"
 PILOT_REPORT_DIR_DEFAULT = PROJECT_ROOT / "eval_results" / "issue_2224" / "judge_pilots"
+JUDGE_ROOT_DEFAULT = PROJECT_ROOT / "data" / "issue_2224" / "judge_postft"
 SENTINEL_DIR = PROJECT_ROOT / "eval_results" / "issue_2224"
+
+# Seed-isolation refusal guard (fu-r2 review blocker): a non-42 seed with any
+# PARENT-DEFAULT state/results path on a state-touching phase silently clobbers
+# the seed-42 artifacts — judged_current sha-mismatches and _judge_one_cell
+# OVERWRITES the committed selection_finetune/<cid>/trait_scores.json, and
+# _check_pilot is satisfied by the PARENT's passing pilot reports (rule-26
+# bypass). Per-phase mapping = exactly the paths that phase reads/writes, so a
+# legitimate partial invocation (e.g. train, which never touches judge dirs)
+# is not forced to pass flags it does not use. Inert for seed-42 runs.
+_SEED_ISOLATION_REQUIRED: dict[str, tuple[str, ...]] = {
+    "train": ("out_root",),
+    "train-cell": ("out_root",),
+    "eval": ("out_root", "eval_questions_dir"),
+    "eval-shard": ("out_root", "eval_questions_dir"),
+    "upload": ("out_root", "eval_questions_dir"),
+    "eval-questions": ("eval_questions_dir",),
+    "judge-pilot": (
+        "out_root",
+        "eval_questions_dir",
+        "trait_scores_dir",
+        "judge_root",
+        "pilot_report_dir",
+    ),
+    "judge": (
+        "out_root",
+        "eval_questions_dir",
+        "trait_scores_dir",
+        "judge_root",
+        "pilot_report_dir",
+    ),
+}
+_SEED_ISOLATION_DEFAULTS: dict[str, Path] = {
+    "out_root": OUT_ROOT_DEFAULT,
+    "eval_questions_dir": EVAL_Q_DIR_DEFAULT,
+    "trait_scores_dir": TRAIT_SCORES_DIR_DEFAULT,
+    "judge_root": JUDGE_ROOT_DEFAULT,
+    "pilot_report_dir": PILOT_REPORT_DIR_DEFAULT,
+}
+
+
+def assert_seed_isolation(args) -> None:
+    """Refuse a non-42 seed run whose phase-relevant paths sit at parent defaults."""
+    if args.seed == 42 or args.phase not in _SEED_ISOLATION_REQUIRED:
+        return
+    offending = [
+        f"--{attr.replace('_', '-')}"
+        for attr in _SEED_ISOLATION_REQUIRED[args.phase]
+        if Path(getattr(args, attr)) == _SEED_ISOLATION_DEFAULTS[attr]
+    ]
+    if offending:
+        raise RuntimeError(
+            f"--seed {args.seed} != 42 on --phase {args.phase} with parent-default "
+            f"path(s) for {offending} — a replication seed MUST isolate every "
+            f"state/results path it touches (seed-42 clobber guard; pass e.g. "
+            f"'<default>_seed{args.seed}' variants; see "
+            f"scripts/issue2224_followup_r2_runner.sh / _judge.sh)"
+        )
+
 
 # Paper §6.3 real-world selection-finetune recipe, VERBATIM (plan §4 / §11 —
 # `lr_scheduler_type`, NOT `lr_scheduler`; the unset sft.py default is "cosine",
@@ -1284,9 +1343,7 @@ def build_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--eval-questions-dir", type=Path, default=EVAL_Q_DIR_DEFAULT)
     parser.add_argument("--trait-scores-dir", type=Path, default=TRAIT_SCORES_DIR_DEFAULT)
     parser.add_argument("--pilot-report-dir", type=Path, default=PILOT_REPORT_DIR_DEFAULT)
-    parser.add_argument(
-        "--judge-root", type=Path, default=PROJECT_ROOT / "data" / "issue_2224" / "judge_postft"
-    )
+    parser.add_argument("--judge-root", type=Path, default=JUDGE_ROOT_DEFAULT)
     parser.add_argument("--base-model", default=MODEL_NAME)
     parser.add_argument("--cells", default=None, help="comma cell_id filter (smoke slices)")
     parser.add_argument("--cell", default=None, help="single cell (train-cell worker)")
@@ -1399,6 +1456,7 @@ def main() -> int:
         return 0
     if args.phase is None:
         raise SystemExit("--phase required; see --list-phases")
+    assert_seed_isolation(args)
     return PHASES[args.phase](args)
 
 

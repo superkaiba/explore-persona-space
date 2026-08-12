@@ -626,3 +626,70 @@ class TestSuiteBuildResumeRegime:
     def test_build_regime_covers_the_four_output_affecting_args(self):
         ns = argparse.Namespace(model="m", seed=42, max_prompt_tokens=2048, per_dataset_cap=None)
         assert suite.build_regime(ns) == self.REGIME
+
+
+class TestSeedIsolationGuard:
+    """fu-r2 review blocker: a non-42 seed with parent-default state/results
+    paths on a state-touching phase must REFUSE (seed-42 clobber guard) —
+    default judge dirs would overwrite the committed seed-42
+    selection_finetune/<cid>/trait_scores.json and satisfy _check_pilot with
+    the PARENT's passing pilot reports (rule-26 bypass)."""
+
+    def _args(self, argv: list[str]) -> argparse.Namespace:
+        return sweep.build_argparser().parse_args(argv)
+
+    def test_seed137_judge_with_default_dirs_raises_naming_flags(self):
+        args = self._args(["--phase", "judge", "--seed", "137"])
+        with pytest.raises(RuntimeError) as e:
+            sweep.assert_seed_isolation(args)
+        msg = str(e.value)
+        for flag in (
+            "--out-root",
+            "--eval-questions-dir",
+            "--trait-scores-dir",
+            "--judge-root",
+            "--pilot-report-dir",
+        ):
+            assert flag in msg, flag
+
+    def test_seed137_train_with_default_out_root_raises(self):
+        with pytest.raises(RuntimeError, match=r"--out-root"):
+            sweep.assert_seed_isolation(self._args(["--phase", "train", "--seed", "137"]))
+
+    def test_seed42_defaults_pass_and_isolated_seed137_passes(self):
+        # Inert for the parent seed-42 pipeline (all defaults).
+        sweep.assert_seed_isolation(self._args(["--phase", "judge", "--seed", "42"]))
+        # Fully-isolated seed-137 judge invocation (the fu-r2 judge runner shape).
+        sweep.assert_seed_isolation(
+            self._args(
+                [
+                    "--phase",
+                    "judge",
+                    "--seed",
+                    "137",
+                    "--out-root",
+                    "data/issue_2224/screening_ft_seed137",
+                    "--eval-questions-dir",
+                    "data/issue_2224/eval_questions_seed137",
+                    "--judge-root",
+                    "data/issue_2224/judge_postft_seed137",
+                    "--trait-scores-dir",
+                    "eval_results/issue_2224/followup_r2/selection_finetune_seed137",
+                    "--pilot-report-dir",
+                    "eval_results/issue_2224/followup_r2/judge_pilots",
+                ]
+            )
+        )
+
+    def test_guard_covers_every_state_touching_phase(self):
+        # Membership pin: a new state-touching phase must join the mapping.
+        assert set(sweep._SEED_ISOLATION_REQUIRED) == {
+            "train",
+            "train-cell",
+            "eval",
+            "eval-shard",
+            "upload",
+            "eval-questions",
+            "judge",
+            "judge-pilot",
+        }

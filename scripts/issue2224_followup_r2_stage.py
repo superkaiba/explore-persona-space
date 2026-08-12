@@ -39,6 +39,8 @@ TRAIN_PREFIX = "issue2224_screening/train"
 TRAIN_LOCAL_DEFAULT = PROJECT_ROOT / "data" / "issue_2224" / "train"
 EVAL_Q_PREFIX_137 = "issue2224_screening/eval_questions_seed137"
 EVAL_Q_LOCAL_137_DEFAULT = PROJECT_ROOT / "data" / "issue_2224" / "eval_questions_seed137"
+POSTFT_PREFIX_137 = "issue2224_screening/raw_completions/postft_eval_seed137"
+OUT_ROOT_137_DEFAULT = PROJECT_ROOT / "data" / "issue_2224" / "screening_ft_seed137"
 
 
 def build_argparser() -> argparse.ArgumentParser:
@@ -51,18 +53,60 @@ def build_argparser() -> argparse.ArgumentParser:
         action="store_true",
         help="stage train mixes only (VM smoke, where the panel is generated locally)",
     )
+    parser.add_argument(
+        "--harvest-postft",
+        action="store_true",
+        help="VM judge-chain mode: harvest the pod-uploaded seed-137 generations "
+        "(HF raw_completions/postft_eval_seed137) into --out-root/postft_eval "
+        "INSTEAD of staging pod inputs",
+    )
+    parser.add_argument("--out-root", type=Path, default=OUT_ROOT_137_DEFAULT)
     return parser
+
+
+def harvest_postft(out_root: Path) -> int:
+    """Stage every pod-uploaded seed-137 generation file under out_root/postft_eval."""
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate.hub import list_hf_files_under_path, stage_hub_file
+
+    remote = list_hf_files_under_path(HfApi(), DATA_REPO, POSTFT_PREFIX_137, repo_type="dataset")
+    if not remote:
+        raise RuntimeError(
+            f"no files under {POSTFT_PREFIX_137} — the pod upload phase has not landed"
+        )
+    n_fetched = 0
+    for f in sorted(remote):
+        rel = f[len(POSTFT_PREFIX_137) + 1 :]
+        target = Path(out_root) / "postft_eval" / rel
+        if target.exists():
+            continue
+        stage_hub_file(DATA_REPO, f, target)
+        n_fetched += 1
+    print(
+        f"[stage-r2] harvest complete — {len(remote)} remote files, {n_fetched} fetched",
+        flush=True,
+    )
+    return 0
 
 
 def main() -> int:
     args = build_argparser().parse_args()
     if args.import_check:
+        from huggingface_hub import HfApi  # noqa: F401
+
         from explore_persona_space.orchestrate.argcheck import assert_args_attributes_defined
-        from explore_persona_space.orchestrate.hub import stage_hub_file  # noqa: F401
+        from explore_persona_space.orchestrate.hub import (  # noqa: F401
+            list_hf_files_under_path,
+            stage_hub_file,
+        )
 
         assert_args_attributes_defined(__file__)
         print("[import-check] OK issue2224_followup_r2_stage")
         return 0
+
+    if args.harvest_postft:
+        return harvest_postft(Path(args.out_root))
 
     from explore_persona_space.orchestrate.hub import stage_hub_file
 
