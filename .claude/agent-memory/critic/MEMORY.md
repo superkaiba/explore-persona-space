@@ -7,7 +7,7 @@
 - [Conjunction-gated label taxonomy](feedback_conjunction_gated_label_taxonomy.md) — demand an indeterminate class for gate-failing cells (#593)
 - [Within-source perm degenerate](feedback_within_source_perm_degenerate_for_source_level_factors.md) — stratum-constant covariate ⇒ perm p≡1.0 (#591)
 - [Frozen-y eligibility arithmetic](feedback_frozen_y_axis_eligibility.md) — ≥k-concord gates need ex-ante per-group y-signal counts (#480 f2)
-- [Envelope-union pre-falsified flat](feedback_envelope_union_prefalsified_flat.md) — anchor-vs-anchor span in seed-SD units under H1 (#550)
+- [Envelope-union pre-falsified flat](feedback_envelope_union_prefalsified_flat.md) — anchor-vs-anchor span in seed-SD units (#550)
 - [Antisym-fraction noise floor](feedback_antisym_fraction_noise_floor.md) — 2-seed anti-frac ≥10% passes on noise; seed-split reliability (#537)
 - [Followup baseline misclassification](feedback_followup_baseline_misclassification.md) — re-derive from parent stats JSON, not prose (#480 f2)
 - [Singleton-class asymmetric falsification](feedback_singleton_class_asymmetric_falsification.md) — n=1: negative = universal-from-singleton (#562)
