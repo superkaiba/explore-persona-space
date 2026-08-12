@@ -16,45 +16,40 @@
 
 
 ## Methodology
-- Model: **`meta-llama/Llama-3.1-8B` → the Tülu-3 ladder, five separately released checkpoints so
-  RLVR appears at two doses:**
+- **Model:** `meta-llama/Llama-3.1-8B` → the Tülu-3 ladder, five separately released checkpoints
+  so RLVR appears at two doses:
+  - **base** — `meta-llama/Llama-3.1-8B` — pretraining only
+  - **SFT** — `allenai/Llama-3.1-Tulu-3-8B-SFT` — + supervised fine-tuning
+  - **RLHF slot, shipped as DPO** — `allenai/Llama-3.1-Tulu-3-8B-DPO` — + preference optimization
+  - **RLVR** — `allenai/Llama-3.1-Tulu-3-8B` — + RL with verifiable rewards
+  - **longer RLVR (dose control)** — `allenai/Llama-3.1-Tulu-3.1-8B` — + a longer RLVR run
+  - Recipe source: arXiv 2411.15124 (Tülu-3) plus Hub card lineage. The post-training stage is
+    the **single manipulated variable** — corpora, render, sampling and the fit recipe are
+    identical across all five checkpoints.
+  - No released ladder ships PPO-style RLHF as a separate checkpoint, so the RLHF slot is
+    realized as DPO. Every statement about "RLHF" below is a statement about DPO.
 
-  | Stage | Checkpoint | What was done to it |
-  |---|---|---|
-  | base | `meta-llama/Llama-3.1-8B` | pretraining only |
-  | SFT | `allenai/Llama-3.1-Tulu-3-8B-SFT` | + supervised fine-tuning |
-  | RLHF slot, shipped as DPO | `allenai/Llama-3.1-Tulu-3-8B-DPO` | + preference optimization |
-  | RLVR | `allenai/Llama-3.1-Tulu-3-8B` | + RL with verifiable rewards |
-  | longer RLVR (dose control) | `allenai/Llama-3.1-Tulu-3.1-8B` | + a longer RLVR run |
-
-  Recipe source: arXiv 2411.15124 (Tülu-3) plus Hub card lineage. The post-training stage is the
-  **single manipulated variable** — corpora, render, sampling and the fit recipe are identical
-  across all five checkpoints.
-
-  No released ladder ships PPO-style RLHF as a separate checkpoint, so the RLHF slot is realized
-  as DPO. Every statement about "RLHF" below is a statement about DPO.
-
-- Collect context and answer vectors for:
-    - generic LMSYS/WILDCHAT (5000 contexts) — **run at 23,000 LMSYS-Chat-1M first user turns →
-      ~15,000 kept, in two renders: chat (Tülu chat template) and naturalistic (template
-      stripped)**
-    - domain specific evals — **one per stage, each the distribution that stage was actually
-      trained on:**
-
-      | Corpus | n kept | Which stage it belongs to |
-      |---|---|---|
-      | `sft11k` — Tülu-3 SFT mixture (wildchat / flan / evol-codealpaca, stratified) | ~9k | SFT's own training distribution |
-      | `uf11k` — UltraFeedback prompts from the Tülu-3 preference mixture | ~9.5k | DPO's own training distribution |
-      | `math7500` — MATH split of the RLVR mix | ~7.4k | RLVR's own training distribution |
-      | `if11k` — IF-constraints split of the RLVR mix | ~9k | RLVR's own training distribution |
-      | `gsm8k_train_full` — GSM8K train, all rows | 7,473 | RLVR's own training distribution |
-      | `gsm8k_test1319` — GSM8K test | 1,319 | decontaminated companion — **estimator-degenerate** |
-
-      `gsm8k_test1319` has n_train ≈ 1,034 < d = 4,096, so every R² on it is estimator-degenerate
-      rather than a signal read. It is excluded from every aggregate and **marked** (shaded panel)
-      in the per-dataset figure, never silently dropped.
-
-    - split combined data into train and held-out eval set
+- **Collect context and answer vectors for:**
+  - **generic LMSYS/WILDCHAT** — run at 23,000 LMSYS-Chat-1M first user turns → ~15,000 kept, in
+    two renders: **chat** (Tülu chat template) and **naturalistic** (template stripped)
+  - **domain-specific evals** — one per stage, each the distribution that stage was actually
+    trained on:
+    - **`sft11k`** — Tülu-3 SFT mixture (wildchat / flan / evol-codealpaca, stratified) — ~9k
+      kept — SFT's own training distribution
+    - **`uf11k`** — UltraFeedback prompts from the Tülu-3 preference mixture — ~9.5k kept —
+      DPO's own training distribution
+    - **`math7500`** — MATH split of the RLVR mix — ~7.4k kept — RLVR's own training distribution
+    - **`if11k`** — IF-constraints split of the RLVR mix — ~9k kept — RLVR's own training
+      distribution
+    - **`gsm8k_train_full`** — GSM8K train, all rows — 7,473 kept — RLVR's own training
+      distribution
+    - **`gsm8k_test1319`** — GSM8K test — 1,319 kept — decontaminated companion,
+      **estimator-degenerate**
+      - n_train ≈ 1,034 < d = 4,096, so every R² on it is estimator-degenerate rather than a
+        signal read
+      - Excluded from every aggregate and **marked** (shaded panel) in the per-dataset figure —
+        never silently dropped
+  - **split combined data into train and held-out eval set**
 
 ### The two vectors — read this before any number
 
