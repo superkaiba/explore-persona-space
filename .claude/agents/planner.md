@@ -340,9 +340,7 @@ alongside held-out R² — omit only with a stated exemption (CLAUDE.md
 row**: name the pooling of every vector entering the map (span-mean |
 last-token | response-avg | other) + its match to the cited comparison
 line's convention; a deliberate mismatch carries a one-line justification
-(#1768) — and a **mapping-arms row** (wider trigger: ANY representation
-mapping): name BOTH arms, prefix-based AND context-based, as paired arms,
-or state the one-arm deviation (#958, #779) · **Figures to produce** (hero
+(#1768) · **Figures to produce** (hero
 figure + over-produced exploratory dump).
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
