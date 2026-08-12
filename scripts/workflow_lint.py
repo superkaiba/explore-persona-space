@@ -14786,7 +14786,16 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 # (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
 # change). Each entry names its trim direction; none is licensed to grow.
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
-    # measured 932,441 B branch-tip after #2126 hardened the two gate
+    # measured 934,312 B branch-tip after #2244 stated the Step 6b bg-Bash
+    # `timeout` floor for EVERY parking lane (+1,871 B: the timeout-floor
+    # paragraph beside the 420 s park contract, the LAUNCHER_RC rc-capture
+    # paragraph, and the launch-recovery under-budgeted-timeout
+    # cross-reference); cap = measured + ~1 KB rounded up to the next 100 B
+    # (#1753 landing-bytes rule). Measured on the POST-REBASE landing tree:
+    # the branch was rebased onto a main that had already advanced to
+    # 932,441 B (#2126), so the pre-rebase 928,327 B measurement and its
+    # 929_400 cap are both superseded.
+    # Prior: 933_800 — measured 932,441 B branch-tip after #2126 hardened the two gate
     # recipes (+5,985 B: the 1b gate-set cross-check + 1a selector-key pin
     # (#1992), the every-relaunch pre-gate re-sync scope clause + four
     # re-sync-then-re-run next-action messages (#2006), the detached-launch
@@ -14837,7 +14846,7 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 904,504 B base); the remaining mass is the judgment tranche
     # (bash-block extraction to step10d_guards.sh-style scripts, 9a-quater
     # legacy-path stub, GCP rollback-prose relocation).
-    "issue/SKILL.md": 933_800,
+    "issue/SKILL.md": 935_400,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
