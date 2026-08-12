@@ -93,17 +93,7 @@
 - We use 5 generations with temperature 1 for each context and average the behavior expression judgement over all 5 generations
 - We use 3 LLM judge draws per generation at temperature 1 and take the average for each generation
     - for hallucination on TriviaQA/NQ-Open/SimpleQA -> we instead measure: how many generations out of 5 does the model fabricate an incorrect answer to the question
-- We test the reliability of our judges by...
-
-<!-- OPTIONAL INSERT for the unfinished judge-reliability sentence. Delete if not wanted. -->
-![Judge draw reliability](https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/judge_reliability/judge_draw_reliability.png)
-
-Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/judge_reliability/judge_draw_reliability.png
-
-- For each setting we measure:
-    - spread of behavior expression in that setting -> we need sufficient spread to be able to compute a meaningful correlation
-    - $\rho$ ceiling:
-        - because our target variable is noisy conditioned on the context (different generations + different LLM draws), there is a ceiling to how good our spearman correlation $\rho$ can be using only the context vector as a predictor -> no predictor can agree with the measurement better than the measurement agrees with itself. So we compute the $\rho$ for splitting the 5 measurements for each context into 2 groups, and, after some corrections, get our $\rho$ ceiling in each setting for any predictor which is only a function of the context
+- We test the reliability of our judges by scoring every rollout with 3 independent judge draws at temperature 1 and computing the intraclass correlation across draws (177,599 rollouts with all 3 draws complete). A single draw already agrees with itself well — ICC(1,1) = 0.97 (evil), 0.87 (sycophancy), 0.96 (hallucination) — and averaging the 3 draws raises it to 0.99 / 0.95 / 0.98. Decomposing the variance of the per-context DV: judge-draw noise is only 3.0% / 13.3% / 3.9% of the total, the dominant noise term is generation-to-generation variation across the 5 rollouts (25.0% / 22.8% / 33.5%), and the remaining 72% / 64% / 63% is real between-context signal. So the judge is not what limits the $\rho$ ceiling — resampling generations is.
 
 ## Results
 ### Result 1: Spread of all behaviors in all evaluation settings
@@ -113,13 +103,12 @@ I plotted the distribution of all behaviors for each dataset as well as the stan
 
 ![Result 1: behavior distribution and SD per dataset](https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result1_spread/spread_grid_extended.png)
 
-Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result1_spread/spread_grid_extended.png
-
 **Noise floor on the SD.** Each context's DV is a mean over 5 generations x 3 judge draws, so a set of contexts with *identical* true behavior would still show a non-zero between-context SD from sampling alone. That floor is **5.7** points for evil, **3.3** for sycophancy and **8.5** for hallucination on the 0-100 scale — almost entirely generation-to-generation variance; the judge-draw contribution is only 1.1 / 1.3 / 1.6. Subtracting it in quadrature: a rung sitting exactly on the SD >= 10 gate carries a real between-context signal of 8.2 (evil), 9.4 (sycophancy), 5.3 (hallucination), while the healthy rungs sit far above the floor (MHJ at SD 27.1 is ~26.5 of real signal). hh-rlhf red-team (SD 0.9) and generic WildChat (SD 4.4) fall *below* the evil noise floor, which is the quantitative form of the first takeaway.
 
 **Takeaways:**
 - hh-rlhf red-team and randomWildChat have very low standard deviation so I remove them as evaluation settings
 -
+
 
 ### Result 2: Does applying the mapping help with persona vector projection?
 
@@ -133,11 +122,7 @@ I started by plotting $\rho$ on the held-out synthetic prompts from the persona 
 - Persona vector projected on mapped answer (MLP mapping)
 - Persona vector projected on real answer (upper bound on persona vector based method)
 
-![Result 2 four-bar view, one panel per behavior](https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result2_fourpanel/result2_fourpanel.png)
-
-Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result2_fourpanel/result2_fourpanel.png
-
-Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result2_fourpanel/result2_fourpanel_avg_variants.png
+![Result 2 four-bar view](https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result2_fourpanel/result2_fourpanel.png)
 
 **Takeaways:**
 - It seems here that our mapping is almost useless - persona vectors projected on context almost always does near the ceiling of projecting on the real answer
@@ -146,13 +131,9 @@ I then tested the same thing on our more realistic datasets:
 
 ![Result 2 across evaluation regimes, P-B / LODO protocol](https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/pv_regime_view/pv_regime_pb_pvonly.png)
 
-Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/pv_regime_view/pv_regime_pb_pvonly.png
-
 ![Result 2 across evaluation regimes, P-A protocol](https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/pv_regime_view/pv_regime_pa_pvonly.png)
 
-Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/pv_regime_view/pv_regime_pa_pvonly.png
-
-> **Slot not fillable as specified: the MLP-mapped bar on this roster does not exist.** The P-A/P-B round scored `map_kind = linear` only, and the round that carries the MLP arm (the four-bar figure above) predates these rungs, so no artifact anywhere carries (MLP map) x (the new rungs). It is a fit round, not a re-render: ~2.23 GB of activations to stage, maps already fitted, CPU-only. Until it runs, the choice is three bars on the current roster or four bars on the old one.
+> **The MLP-mapped bar does not exist on this roster.** The P-A/P-B round scored `map_kind = linear` only, and the round that carries the MLP arm (the four-bar figure above) predates these rungs, so no artifact carries (MLP map) x (the new rungs). It is a fit round, not a re-render.
 
 Plot: $\rho$ value, one bar per method, in each setting (combined into one plot) -- legend that properly groups methods together based on grouping in methodology **with clear/concise names for each**
 
@@ -172,11 +153,7 @@ The evaluation settings used are the same as above.
 
 ![Result 3, full method roster, P-B / LODO protocol](https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/pv_regime_view/pv_regime_pb.png)
 
-Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/pv_regime_view/pv_regime_pb.png
-
 ![Result 3, full method roster, P-A protocol](https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/pv_regime_view/pv_regime_pa.png)
-
-Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/pv_regime_view/pv_regime_pa.png
 
 ### Result 4: Effect of adding/removing different kinds of data
 I then wanted to look at the effect of adding/removing different kinds of data:
@@ -184,59 +161,41 @@ I then wanted to look at the effect of adding/removing different kinds of data:
 
 ![Trait-eliciting contexts substituted into the unlabeled map pool](https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/gapfold/r5_trait_pool.png)
 
-Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/gapfold/r5_trait_pool.png
-
 - increasing/removing generic data from mapping fit:
 
 ![Unlabeled generic map pool ladder](https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result5_data/r5_generic_map_ladder.png)
 
-Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result5_data/r5_generic_map_ladder.png
-
-The $R^2$ half of the same question — does a bigger unlabeled pool make the map itself better, independent of any behavior readout:
+The $R^2$ side of the same question, at the level of the map itself:
 
 ![Map quality vs unlabeled budget](https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/map_quality_ladder.png)
-
-Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/map_quality_ladder.png
 
 - removing trait-eliciting data from behavior predictor fit
 
 ![f_U x f_L composition factorial](https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result5_data/r5_fu_fl_factorial.png)
 
-Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result5_data/r5_fu_fl_factorial.png
-
-The quantity version of the same axis — accuracy vs total labeled budget $L$:
+The quantity version of the same axis, accuracy vs total labeled budget $L$:
 
 ![Predictor accuracy vs labeled budget](https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/scaling_rho_vs_l.png)
-
-Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/scaling_rho_vs_l.png
 
 - removing judged generic data from behavior predictor fit
 
 ![Judged eliciting labels swapped for judged generic labels](https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result5_data/r5_judged_generic_swap.png)
 
-Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result5_data/r5_judged_generic_swap.png
-
 - increasing/removing each from BOTH mapping and behavior predictor fit
 
-Same figure as the $f_L$ slot above — it is the crossing of the two channels, with $f_U$ on one axis and $f_L$ on the other:
-
-![f_U x f_L composition factorial](https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result5_data/r5_fu_fl_factorial.png)
-
-Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result5_data/r5_fu_fl_factorial.png
+The $f_U$ x $f_L$ factorial above is the crossing of the two channels.
 
 - removing a specific trait-eliciting dataset from mapping fit-> effect on $R^2$ and $\rho$ for that dataset vs other trait-eliciting datasets vs generic data
 
-> **No figure — never run.** The map is fit once per behavior on the combined pool and then frozen, identically under both protocols; per-dataset removal was only ever applied to the readout fit, not to the map fit. This would be a new fit round.
+> **No figure — never run.** The map is fit once per behavior on the combined pool and then frozen, identically under both protocols; per-dataset removal was only ever applied to the readout fit.
 
 - removing a specific trait-eliciting dataset from behavior predictor fit -> effect on $R^2$ and $\rho$ for that dataset vs other trait-eliciting datasets vs generic data
 
 ![Leave-one-dataset-out by held-out dataset](https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result5_data/r5_lodo_by_dataset.png)
 
-Source: https://raw.githubusercontent.com/superkaiba/explore-persona-space/73d0856e016761523abe0115d747c9acf4bf29d1/figures/issue_1739/result5_data/r5_lodo_by_dataset.png
-
 - removing a specific trait-eliciting dataset from both
 
-> **No figure — never run**, for the same reason as the map-fit version above: no round removed a dataset from the map fit, so the "both" cell does not exist either.
+> **No figure — never run**, for the same reason as the map-fit version above.
 
 ## Conclusion
 - Our mapping is learning real useful information about the context -> answer mapping
