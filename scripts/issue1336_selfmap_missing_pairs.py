@@ -58,6 +58,7 @@ from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 load_dotenv()
 
 import issue825_fit_cells as fc  # noqa: E402
+import issue825_map_alignment as ma  # noqa: E402
 import issue1336_ladder_alignment as la  # noqa: E402
 import issue1336_metric_ladder as ml  # noqa: E402
 import numpy as np  # noqa: E402
@@ -75,7 +76,7 @@ from explore_persona_space.experiments.issue_1336 import common as cm  # noqa: E
 # v4 adds the two ALIGNMENT-MAP identity+bias baselines (A_ctx_rev, A_ans) the
 # parent metric_ladder computes only at its --full-tier-layers set, which round
 # B never ran; every v3 checkpoint is stale under it and refits.
-ALGEBRA_VERSION = "v4-foldlocal-2-cross-t7t8-alignbaselines"
+ALGEBRA_VERSION = "v5-foldlocal-2-cross-t7t8-alignbaselines-t5rotbias"
 
 # The self-map stage (all 8 surfaces) + the three missing forward pairs
 # (all 8 surfaces, tiers 0 + 6). Named HERE, never added to cm.PAIRS
@@ -246,7 +247,11 @@ def fit_cell(src: dict, tgt: dict, *, is_self: bool) -> dict:
     id_actx = None if is_self else np.zeros((n, d), dtype=np.float32)
     id_aans = None if is_self else np.zeros((n, d), dtype=np.float32)
 
-    names = ("within",) if is_self else ("within", "t0", "t6", "t7", "t8", "cross", "aans_own")
+    names = (
+        ("within",)
+        if is_self
+        else ("within", "t0", "t5", "t5s", "t6", "t7", "t8", "cross", "aans_own")
+    )
     ss_res = dict.fromkeys(names, 0.0)
     ss_tot_local = 0.0
     ss_tot_global = 0.0
@@ -255,6 +260,7 @@ def fit_cell(src: dict, tgt: dict, *, is_self: bool) -> dict:
     lam_log: dict[str, list[float]] = {}
     sel_log: dict[str, list[str]] = {}
     n_train_per_fold: list[int] = []
+    procrustes_rows: list[dict] = []
 
     for k in range(n_folds):
         tr_np = folds != k
@@ -277,6 +283,29 @@ def fit_cell(src: dict, tgt: dict, *, is_self: bool) -> dict:
             # Tier 0: W_s (fit on the SOURCE stage) applied to the target's x.
             fit_ws = ml._v2_yfit(prep_s, Ys[tr], grid)
             preds["t0"] = ml._v2_predict(prep_s, fit_ws, Xt[te])
+            # Tier 5: rotation + bias. Orthogonal Procrustes fitted from the
+            # TRAIN-side t0 prediction onto the target's train answers, then
+            # applied to the t0 test prediction. Parity with the parent ladder
+            # (issue1336_metric_ladder: orth = ma._orth_fit(p0_tr, Yt_l[tr]);
+            # t5_te = ma._orth_predict(orth, p0_te, reverse=False, scale=False))
+            # — same fits, same fold split, same direction; nothing re-derived.
+            # scale=False is the ISOMETRY (rigid motion, distances preserved);
+            # t5s reuses the SAME SVD with the Procrustes scale applied at
+            # predict time, which is a SIMILARITY, not an isometry.
+            p0_tr = ml._v2_predict(prep_s, fit_ws, Xt[tr])
+            orth = ma._orth_fit(p0_tr, Yt[tr])
+            preds["t5"] = ma._orth_predict(orth, preds["t0"], reverse=False, scale=False)
+            preds["t5s"] = ma._orth_predict(orth, preds["t0"], reverse=False, scale=True)
+            procrustes_rows.append(
+                {
+                    "fold": k,
+                    "trace_R_over_d": float(torch.diagonal(orth["R"]).mean()),
+                    "aligned_cos": float(
+                        torch.clamp(torch.as_tensor(orth["s_fwd"] * orth["s_rev"]), min=0.0).sqrt()
+                    ),
+                    "s_fwd": float(orth["s_fwd"]),
+                }
+            )
             # Tier 6: W_s o A_ctx_rev with train-mean recentering.
             fit_actx = ml._v2_yfit(prep_t, Xs[tr], grid)  # A_ctx_rev: x_t -> x_s
             xhat_tr = ml._v2_predict(prep_t, fit_actx, Xt[tr])
@@ -368,6 +397,18 @@ def fit_cell(src: dict, tgt: dict, *, is_self: bool) -> dict:
         "selected_lambda": lam_log,
         "selectors": sel_log,
         "align_baselines": align_baselines,
+        "procrustes": (
+            None
+            if is_self
+            else {
+                "trace_R_over_d_mean": float(
+                    np.mean([r["trace_R_over_d"] for r in procrustes_rows])
+                ),
+                "aligned_cos_mean": float(np.mean([r["aligned_cos"] for r in procrustes_rows])),
+                "per_fold": procrustes_rows,
+                "direction_aware": True,
+            }
+        ),
     }
 
 

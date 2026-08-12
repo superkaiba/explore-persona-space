@@ -62,6 +62,7 @@ import matplotlib  # noqa: E402
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+import matplotlib.ticker as mticker  # noqa: E402
 import numpy as np  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -1454,6 +1455,126 @@ def fig_trained_on(D: dict) -> Path:
     return out
 
 
+def _arm_rows(D: dict, arm) -> list:
+    """(pair_index, surface, used_between, deficit) cells for one transfer arm.
+
+    ``arm`` is a ladder tier index, or the string "cross" for the fresh
+    source-context -> target-answer fit. The deficit is always measured against
+    the SAME per-cell ceiling (the target stage's own within-model map), so the
+    arms are directly comparable.
+    """
+    rows = []
+    for pi, (src, tgt) in enumerate(PAIRS):
+        fams = touched_families(src, tgt)
+        ceil_tier = TIERS[0] if arm == "cross" else arm
+        ceil_of = {s: c["within_r2"] for s, c in D["data"][(pi, ceil_tier)]}
+        if arm == "cross":
+            got = [
+                (s, CROSS[(f"{src}__{tgt}", *s)]) for s in ceil_of if (f"{src}__{tgt}", *s) in CROSS
+            ]
+        else:
+            got = [(s, c["r2"]) for s, c in D["data"][(pi, arm)]]
+        for surf, r2 in got:
+            if surf in DEGENERATE:
+                continue
+            rows.append((pi, surf, int(OWNING_STAGE[surf] in fams), ceil_of[surf] - r2))
+    return rows
+
+
+def _controlled_gap(D: dict, arm) -> dict | None:
+    """`used_between` coefficient of deficit ~ pair + corpus + used_between.
+
+    Both main effects are absorbed by dummies, so the coefficient is the part
+    of the gap-to-ceiling attributable to the corpus having been used by the
+    training BETWEEN the pair's two models. CR1 SEs clustered by pair.
+    """
+    rows = _arm_rows(D, arm)
+    if not rows or not any(r[2] for r in rows) or all(r[2] for r in rows):
+        return None
+    pis = sorted({r[0] for r in rows})
+    surfs = sorted({r[1] for r in rows})
+    X = np.array(
+        [
+            [1.0]
+            + [1.0 if pi == p else 0.0 for p in pis[1:]]
+            + [1.0 if sf == s2 else 0.0 for s2 in surfs[1:]]
+            + [float(tou)]
+            for pi, sf, tou, _ in rows
+        ]
+    )
+    y = np.array([r[3] for r in rows])
+    beta, _, rank, _ = np.linalg.lstsq(X, y, rcond=None)
+    u = y - X @ beta
+    bread = np.linalg.pinv(X.T @ X)
+    meat = np.zeros((X.shape[1], X.shape[1]))
+    for p in pis:
+        idx = [i for i, r in enumerate(rows) if r[0] == p]
+        g = X[idx].T @ u[idx]
+        meat += np.outer(g, g)
+    n_g = len(pis)
+    scale = (n_g / (n_g - 1)) * ((len(y) - 1) / max(len(y) - rank, 1))
+    return {
+        "coef": float(beta[-1]),
+        "se": float(np.sqrt(max((bread @ meat @ bread)[-1, -1] * scale, 0.0))),
+        "n": len(y),
+        "n_pairs": n_g,
+    }
+
+
+def fig_controlled_gap(D: dict) -> Path:
+    """The controlled used-between gap alone, one row per transfer arm."""
+    arms = [(t, f"{t}: {TIER_LABEL[t]}", TIER_COLORS[t]) for t in TIERS]
+    arms.append(("cross", "cross: source ctx → target answer", CROSS_COLOR))
+    rows = [(a, lab, col, _controlled_gap(D, a)) for a, lab, col in arms]
+    rows = [r for r in rows if r[3]]
+
+    fig = plt.figure(figsize=(9.6, 0.72 * len(rows) + 2.5))
+    fig.set_layout_engine("none")  # see fig_aggregate: the style engine wins otherwise
+    ax = fig.add_axes((0.30, 0.175, 0.675, 0.66))
+    ypos = list(range(len(rows)))[::-1]
+    for y, (_, _, col, e) in zip(ypos, rows):
+        ax.plot(
+            [e["coef"] - 1.96 * e["se"], e["coef"] + 1.96 * e["se"]],
+            [y, y],
+            color=col,
+            lw=2.4,
+            solid_capstyle="round",
+            zorder=3,
+        )
+        ax.scatter([e["coef"]], [y], s=86, color=col, zorder=4, edgecolor="white", linewidth=0.9)
+    ax.axvline(0.0, color="#252525", lw=1.0, ls="--", zorder=1)
+    # SYMLOG about zero: t0's interval is ~40x wider than every correction
+    # arm's, so a shared linear axis renders four of the five rows as a dot on
+    # the zero line. Linear inside +-0.05 (where those four live, ticks below),
+    # log outside — nothing is clipped and the sign structure stays readable.
+    ax.set_xscale("symlog", linthresh=0.05, linscale=1.6)
+    ax.set_xticks([-1.0, -0.3, -0.05, -0.025, 0.0, 0.025, 0.05, 0.3])
+    ax.xaxis.set_major_formatter(mticker.FuncFormatter(lambda v, _: f"{v:g}"))
+    ax.axvspan(-0.05, 0.05, color="#f4f4f4", zorder=0)
+    ax.set_yticks(ypos)
+    ax.set_yticklabels([lab for _, lab, _, _ in rows], fontsize=10)
+    ax.set_ylim(-0.65, len(rows) - 0.35)
+    ax.set_xlabel(
+        "gap to ceiling:  corpus used between the two models  −  corpus not used\n"
+        "(> 0 = worse on data the intervening training used; shaded = linear zone, symlog outside)",
+        fontsize=10,
+    )
+    ax.grid(axis="x", color="#ececec", lw=0.7, zorder=0)
+    ax.set_axisbelow(True)
+    n = rows[0][3]["n"]
+    fig.suptitle(
+        "Is the context→answer map worse on data the training in between actually used?\n"
+        f"model pair and eval dataset controlled out  ·  {n} cells, 95% CI clustered by pair",
+        fontsize=11.5,
+        y=0.965,
+    )
+    out = OUTDIR / f"ladder_used_between_gap{SUFFIX}.png"
+    fig.savefig(out, dpi=180)
+    fig.savefig(out.with_suffix(".pdf"))
+    plt.close(fig)
+    return out
+
+
 def write_meta(D: dict, figs: list[Path]) -> Path:
     rows = []
     for pi, (src, tgt) in enumerate(PAIRS):
@@ -1633,7 +1754,7 @@ def main() -> None:
             + f"{D['cross'][pi][0]:>8.3f}  {bat}"
         )
 
-    figs = [fig_aggregate(D), fig_percorpus(D), fig_trained_on(D)]
+    figs = [fig_aggregate(D), fig_percorpus(D), fig_trained_on(D), fig_controlled_gap(D)]
     meta = write_meta(D, figs)
     for p in figs + [meta]:
         print("wrote", p)
