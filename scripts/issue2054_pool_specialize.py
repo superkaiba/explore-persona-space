@@ -127,6 +127,20 @@ def _model_names(ranks: list[int]) -> list[str]:
     return ["m0", "m1", *[f"m2_k{r}" for r in ranks], "identity_cell", "identity_global"]
 
 
+def load_cell_with_answer(cell: Cell) -> dict:
+    """Sibling ``load_cell`` + the ``v_A`` answer vectors — the ctx2ctx loader
+    maps context->context and never exposes v_A (this script's targets)."""
+    act = load_cell(cell)
+    z = np.load(cell.path, allow_pickle=False)
+    if "v_A" not in z:
+        raise ValueError(f"{cell.path} missing key 'v_A'")
+    v_a = np.asarray(z["v_A"], dtype=np.float32)
+    if v_a.shape != act["v_C"].shape:
+        raise ValueError(f"{cell.path}: v_A shape {v_a.shape} != v_C shape {act['v_C'].shape}")
+    act["v_A"] = v_a
+    return act
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Per-cell join (single-sided sibling of issue2054_ctx2ctx_fit.join_pair)
 
@@ -205,7 +219,7 @@ def accumulate_pooled_moments(
         ]
     for ci, cell in enumerate(cells):
         t0 = time.time()
-        act = load_cell(cell)
+        act = load_cell_with_answer(cell)
         for arm in arms:
             j = join_cell(act, fold_of, k, arm)
             joins[arm][cell.key] = {"n_join": j["n_join"]}
@@ -336,7 +350,7 @@ def _pooled_parity_gate(cell: Cell, fold_map: dict, arm: str, device: str) -> di
     path, itself fit_h-parity-gated) on a materializable one-cell subset:
     fold-0 rows as eval, the 4-fold complement as train. Exact lambda match +
     rel 1e-6 on predictions."""
-    act = load_cell(cell)
+    act = load_cell_with_answer(cell)
     k = int(fold_map["k"])
     j = join_cell(act, fold_map["fold_of"], k, arm)
     vec = ARM_VEC_KEY[arm]
@@ -508,7 +522,7 @@ def run_cell(
     ranks = list(args.ranks)
     k_max = max(ranks)
     names = _model_names(ranks)
-    act = load_cell(cell)
+    act = load_cell_with_answer(cell)
     j = join_cell(act, fold_map["fold_of"], k, arm)
     x_all = act[vec][j["rows"]].astype(np.float64)
     y_all = act["v_A"][j["rows"]].astype(np.float64)
