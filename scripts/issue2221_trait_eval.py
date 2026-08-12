@@ -91,13 +91,24 @@ def _surfaces(args) -> list[dict]:
     return rows
 
 
-def _roster(args) -> list[tuple[str, Path | None]]:
+def _roster(args, *, require_adapter: bool = True) -> list[tuple[str, Path | None]]:
+    """Roster of ``(tag, adapter_dir)`` cells, ``base`` first.
+
+    ``require_adapter`` asserts each cell's LoRA adapter is present on local
+    disk. GENERATION phases (``gen``, ``tf_margin``) load the weights and MUST
+    keep it True. The post-generation phases (``pilot``, ``judge``,
+    ``aggregate``) only need the cell TAGS — they read rollout JSONs that
+    ``gen`` already persisted — and pass False, because plan §9 runs them
+    off-pod at 0 GPU-h AFTER the GPU pod is released, where the ~8 GB of
+    adapters are deliberately absent (#2221: the assert made the plan's own
+    off-pod judge phase unrunnable once the pod was torn down).
+    """
     ckpt_root = Path(args.ckpt_root)
     cells = args.cells or all_cells()
     roster: list[tuple[str, Path | None]] = [("base", None)]
     for cell in cells:
         adapter = ckpt_root / cell
-        if not (adapter / "adapter_config.json").is_file():
+        if require_adapter and not (adapter / "adapter_config.json").is_file():
             raise FileNotFoundError(f"adapter missing: {adapter}")
         roster.append((cell, adapter))
     return roster
@@ -301,7 +312,7 @@ def phase_pilot(args) -> None:
     external_root = Path(args.external_root)
     rubrics = _rubrics(external_root)
     rows_by_tag: dict[str, list[dict]] = {}
-    for tag, _ in _roster(args):
+    for tag, _ in _roster(args, require_adapter=False):
         src = roll_dir / f"{tag}.json"
         if not src.is_file():
             raise FileNotFoundError(f"run --phase gen first: {src}")
@@ -373,7 +384,7 @@ def phase_judge(args) -> None:
         "n_rollouts": args.n_rollouts,
         "max_prompts": args.max_prompts,
     }
-    for tag, _ in _roster(args):
+    for tag, _ in _roster(args, require_adapter=False):
         src = roll_dir / f"{tag}.json"
         if not src.is_file():
             raise FileNotFoundError(f"run --phase gen first: {src}")
@@ -798,7 +809,7 @@ def phase_aggregate(args) -> None:
     judge_dir = out_root / "judge"
     tf_dir = out_root / "tf_margin"
     result: dict[str, dict] = {}
-    for tag, _ in _roster(args):
+    for tag, _ in _roster(args, require_adapter=False):
         result[tag] = {}
         tf = (
             json.loads((tf_dir / f"{tag}.json").read_text())
@@ -899,17 +910,45 @@ def phase_upload(args) -> None:
     # (plan §4 P6; review nit — was raw_completions/eval).
     mapping = {
         "eval_rollouts": f"{C.HF_PREFIX}/raw_completions/trait_eval",
+        # The per-(tag, trait) GRADED scores — the judge wave's actual output.
+        # Regeneration costs the whole Batch-API wave, so persist-by-default
+        # applies (#2221: omitted through r15, so a torn-down pod meant
+        # re-paying the wave).
+        "judge": f"{C.HF_PREFIX}/raw_completions/trait_eval_judge",
         "judge/raw": f"{C.HF_PREFIX}/raw_completions/trait_eval_judge_raw",
+        # The rule-26 pilot GATE VERDICT reports (verdict + rubric_sha256 +
+        # effective draws) that `require_pilot_passed` reads before dispatching
+        # the primary-DV wave. `pilot_raw` alone is NOT a substitute: without
+        # these the judge phase cannot run at all off-pod, which is exactly
+        # where plan §9 runs it (#521 class — a plan-referenced downstream
+        # input that was never uploaded).
+        "pilot": f"{C.HF_PREFIX}/raw_completions/trait_eval_pilot_reports",
         "pilot_raw": f"{C.HF_PREFIX}/raw_completions/trait_eval_pilot_raw",
         "tf_margin": f"{C.HF_PREFIX}/raw_completions/tf_margin",
         "train_propensity/rollouts": f"{C.HF_PREFIX}/raw_completions/train_propensity",
         "train_propensity/judge_raw": (f"{C.HF_PREFIX}/raw_completions/train_propensity_judge_raw"),
+        # The REDUCED per-(family, trait) judge outputs + the `scores.json`
+        # that `phase_aggregate` hard-REQUIRES. Same #521 class as `pilot`
+        # above: without these, aggregate cannot run off-pod and the judge
+        # half must be re-paid (~28.8k Batch calls). `cache/` is excluded —
+        # it is a regenerable request cache, not an artifact.
+        "train_propensity/judge": (f"{C.HF_PREFIX}/analysis_tensors/train_propensity_judge"),
     }
+    # `judge/` contains the `raw/` subtree, which carries its OWN prefix above;
+    # exclude it here so the judge-raw payload is not uploaded twice.
+    ignore_patterns = {"judge": ["raw/*", "raw/**"]}
     for sub, prefix in mapping.items():
         local = out_root / sub
         if not local.is_dir():
             continue
-        url = hub._upload(local, C.HF_DATA_REPO, "dataset", prefix, raise_on_error=True)
+        url = hub._upload(
+            local,
+            C.HF_DATA_REPO,
+            "dataset",
+            prefix,
+            ignore_patterns=ignore_patterns.get(sub),
+            raise_on_error=True,
+        )
         lib.log_phase("p6_upload", f"{sub} -> {url}")
 
 
