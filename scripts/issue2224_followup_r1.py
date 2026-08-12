@@ -30,6 +30,29 @@ only (the rejudge save_raw files carry parsed score dicts, no text).
 Stream-reduce staging (code-style rule): capture shards are downloaded ONE at
 a time, sliced to the needed (kind, layer) pairs, and deleted — the 40 GB per
 corpus shard set is never materialized (~5.7 GB of fp16 slices per corpus).
+
+Smoke blind-spot enumeration (what the VM smoke's PASS does NOT certify):
+
+- ``--device cuda`` GPU routing unexercised on the CPU-only VM host (the
+  vendored ridge cores carry the #825 CPU-eigh fallback); first exercised on
+  the pod.
+- Production fit shape d=3584 first runs on the pod: ``--smoke-dim`` is a
+  smoke-only dial REFUSED without ``--limit-shards`` (cannot leak into
+  production).
+- ``phase_transport``'s <10-judged-rows cell check is DOWNGRADED under smoke
+  (warn + skip the cell) but RAISES in production.
+- The stage phase's full-corpus coverage assert (rows == manifest
+  ``n_samples``) is SKIPPED under ``--limit-shards``.
+- Worktree-vs-fresh-clone input gap: VM-local/untracked inputs (screening
+  score tables, eval questions, generations, judge raws) are staged
+  local-first/HF-fallback (``ensure_screening_tables`` /
+  ``_stage_local_or_hf``); a VM smoke where the local copy exists cannot
+  detect a broken HF fallback path.
+- The R2 redraw loop's live-call body is not reached by the 1-cell smoke
+  (that cell has ``r2_items=0``); it is the same ``judge_graded`` call the R1
+  smoke exercises.
+- The upload smoke probes a scratch ``--prefix-root``; production differs
+  only by the prefix string.
 """
 
 from __future__ import annotations
@@ -73,6 +96,7 @@ RB_PREFIX = "issue778_persona_vectors/analysis_tensors_v2/rb_v2"  # suite_slice.
 POSTFT_PREFIX = "issue2224_screening/raw_completions/postft_eval"
 EVAL_Q_PREFIX = "issue2224_screening/eval_questions"
 PACKED_PREFIX = "issue2224_screening/judge_postft_packed"
+SCREENING_HF_PREFIX = "issue2224_screening/screening_scores"
 HF_FU_PREFIX = "issue2224_screening/followup_r1"
 
 # Fit conventions (issue2224_probe_refit reference regime: 17-point log grid
@@ -99,6 +123,24 @@ RB_LOCAL = PROJECT_ROOT / "data" / "issue_2224" / "hf_dl" / "rb_v2"
 
 
 # ── Shared helpers ───────────────────────────────────────────────────────────────
+
+
+def ensure_screening_tables(screening_dir: Path) -> Path:
+    """Stage the 6 per-corpus screening score tables local-first / HF-fallback.
+
+    The tables are worktree-local UNTRACKED on the VM (not committed on
+    ``issue-2224``), so a fresh pod clone has none of them — every pod-side
+    phase stages them from ``issue2224_screening/screening_scores/`` before
+    any read (fu-r1 code-review r1 blocker: FileNotFoundError at phase 1 on a
+    fresh clone; the #779/#1773 lane-input-staging class).
+    """
+    for corpus in CORPORA:
+        for trait in TRAITS:
+            _stage_local_or_hf(
+                screening_dir / corpus / f"{trait}.json",
+                f"{SCREENING_HF_PREFIX}/{corpus}/{trait}.json",
+            )
+    return screening_dir
 
 
 def resolve_trait_layers(screening_dir: Path) -> dict[str, int]:
@@ -257,7 +299,9 @@ def phase_stage(args) -> int:
     """
     import torch
 
-    layers = sorted(set(resolve_trait_layers(Path(args.screening_dir)).values()))
+    layers = sorted(
+        set(resolve_trait_layers(ensure_screening_tables(Path(args.screening_dir))).values())
+    )
     out_root = Path(args.out_root)
     corpora = [c.strip() for c in args.corpora.split(",") if c.strip()]
     for corpus in corpora:
@@ -423,7 +467,7 @@ def phase_refit(args) -> int:
         dof_capped_ridge_multi_y,
     )
 
-    trait_layers = resolve_trait_layers(Path(args.screening_dir))
+    trait_layers = resolve_trait_layers(ensure_screening_tables(Path(args.screening_dir)))
     layers = sorted(set(trait_layers.values()))
     out_root = Path(args.out_root)
     results_dir = Path(args.results_dir)
@@ -707,7 +751,7 @@ def phase_transport(args) -> int:
         ridge_predict,
     )
 
-    trait_layers = resolve_trait_layers(Path(args.screening_dir))
+    trait_layers = resolve_trait_layers(ensure_screening_tables(Path(args.screening_dir)))
     results_dir = Path(args.results_dir)
     smoke = args.smoke_dim is not None
     if smoke and args.limit_shards is None:
@@ -1078,14 +1122,23 @@ def _rejudge_one_cell(args, cid: str, plan: dict) -> dict:
     """R1 re-issue (transport + api-refusal draws) + R2 bounded re-draw for one
     cell. Returns the per-cell recovery record (parsed scores only, no text)."""
     from issue2224_select import REDRAW_SYNC_THRESHOLD, malformed_drop_counts
-    from explore_persona_space.eval.graded_judge import judge_graded
+    from explore_persona_space.eval.graded_judge import DEFAULT_JUDGE_MODEL, judge_graded
 
     ts = json.loads((Path(args.trait_scores_dir) / cid / "trait_scores.json").read_text())
     rubric = load_trait_rubric_checked(args, cid, ts["judge"]["trait_rubric_sha256"])
     max_tokens = int(ts["judge"]["max_tokens"])  # parent instrument (1024)
     qa = cell_items(args, cid)
     out_root = Path(args.out_root) / "rejudge"
-    rec: dict = {"cell_id": cid, "r1": {}, "r2": {}, "recovered_scores": {}}
+    rec: dict = {
+        "cell_id": cid,
+        # Provenance (code-review r1 item 3): judge_graded defaults to
+        # DEFAULT_JUDGE_MODEL; record the realized id in the durable record.
+        "judge_model": DEFAULT_JUDGE_MODEL,
+        "max_tokens": max_tokens,
+        "r1": {},
+        "r2": {},
+        "recovered_scores": {},
+    }
 
     # R1 — re-issue instrument-lost draws, grouped by per-item lost count.
     r1_items = dict(plan["r1_items"])
@@ -1592,6 +1645,18 @@ def main() -> int:
         return 0
     if args.phase is None:
         raise SystemExit("--phase required (see --list-phases)")
+    # Smoke-overwrite guard (code-review r1 item 2): a smoke-dialed run must
+    # never rewrite the committed production JSONs under the DEFAULT
+    # results-dir (phase_transport always rewrites transport.json). An
+    # explicit non-default --results-dir (a scratch dir) is respected.
+    if (args.smoke_dim is not None or args.limit_shards is not None) and Path(
+        args.results_dir
+    ).resolve() == RESULTS_DIR_DEFAULT.resolve():
+        args.results_dir = Path(args.out_root) / "smoke_results"
+        print(
+            f"[smoke-guard] smoke dials set — results-dir rebound to {args.results_dir}",
+            flush=True,
+        )
     return PHASES[args.phase](args)
 
 
