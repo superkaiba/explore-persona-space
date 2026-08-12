@@ -1,7 +1,7 @@
 ---
-title: 'Reproduce Lu et al. persona-drift plots: Assistant-Axis projection trajectories
-  over multi-turn conversations (Fig. 4) + first-turn projection vs harm rate (Fig.
-  5)'
+title: Reproduce Lu et al. persona drift, then test whether context-vector-ONLY capping
+  and axis-component replacement prevent it (axis extracted from answer vs context
+  activations)
 kind: experiment
 tags: []
 created_at: '2026-08-10T21:18:35Z'

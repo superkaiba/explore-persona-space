@@ -9452,7 +9452,7 @@
       "kind": "experiment",
       "path": "tasks/proposed/2223",
       "status": "proposed",
-      "title": "Reproduce Lu et al. persona-drift plots: Assistant-Axis projection trajectories over multi-turn conversations (Fig. 4) + first-turn projection vs harm rate (Fig. 5)"
+      "title": "Reproduce Lu et al. persona drift, then test whether context-vector-ONLY capping and axis-component replacement prevent it (axis extracted from answer vs context activations)"
     },
     "2224": {
       "goal": "Test on real corpora (LMSYS raw + UltraChat filtered) whether frozen context\u2192answer-mapped and direct-regression screening scores match exact projection-difference screening \u2014 dataset-level prediction on the real-twin suite plus predictor-controlled top/bottom-500 selection finetunes with judge-filtered variants \u2014 making Persona-Vectors-style pre-finetuning data screening practical (zero base-model generations).",
