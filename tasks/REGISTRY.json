@@ -9458,8 +9458,8 @@
       "goal": "Test on real corpora (LMSYS raw + UltraChat filtered) whether frozen context\u2192answer-mapped and direct-regression screening scores match exact projection-difference screening \u2014 dataset-level prediction on the real-twin suite plus predictor-controlled top/bottom-500 selection finetunes with judge-filtered variants \u2014 making Persona-Vectors-style pre-finetuning data screening practical (zero base-model generations).",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/2224",
-      "status": "reviewing",
+      "path": "tasks/followups_running/2224",
+      "status": "followups_running",
       "title": "The Persona Vectors prompt-token approximation matches exact projection-difference screening on real corpora, while the learned map and probe screens select samples that fail to induce the traits (MODERATE confidence)"
     },
     "2225": {
