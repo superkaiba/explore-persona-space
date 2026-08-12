@@ -143,7 +143,7 @@ I therefore test the following methods:
 
 The evaluation settings used are the same as above.
 
-![Result 3, full method roster (P-A protocol)](https://raw.githubusercontent.com/superkaiba/explore-persona-space/009d413f023c448050789019419ec72a485a86cc/figures/issue_1739/pv_regime_view/pv_regime_pa_nocap.png)
+![Result 3, ridge ladder (P-B protocol)](https://raw.githubusercontent.com/superkaiba/explore-persona-space/14d9d49dfda7733ad7a960effb0eb61fe494f50d/figures/issue_1739/pv_regime_view/pv_regime_pb_ladder_oldci_nocap.png)
 
 ## Conclusion
 - Our mapping is learning real useful information about the context -> answer mapping
