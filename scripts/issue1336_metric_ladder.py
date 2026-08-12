@@ -119,6 +119,18 @@ def parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--pair", default=None, help="m0:m1 (e.g. base:rlvr)")
     ap.add_argument("--pairs", default=None, help="comma list of m0:m1 pairs (one surface)")
+    ap.add_argument(
+        "--allow-backward-pairs",
+        action="store_true",
+        help=(
+            "Accept REVERSE-direction stage pairs (cm.BACKWARD_PAIRS) in addition to the "
+            "registered forward set. Opt-in: the round-3 registered PAIRS set stays the "
+            "default so an in-flight forward round cannot silently widen. The tier ladder, "
+            "nulls, baselines and bootstrap recipe are IDENTICAL — only the enumeration "
+            "differs. Output stems are pair-ordered (pair_<m0>__<m1>_...), so backward "
+            "cells can never overwrite a forward cell."
+        ),
+    )
     ap.add_argument("--corpus", default=None, choices=tuple(cm.V2_CORPORA))
     ap.add_argument("--format", default=None, choices=("chat", "naturalistic"))
     ap.add_argument("--turnstore-dir", type=Path, default=None)
@@ -969,7 +981,17 @@ def _load_surface_xy(
 def run_pair(args, pair: str, *, bars: dict, prep_cache: PrepCache) -> None:
     """One (pair, surface) battery: load, intersect, run, persist."""
     m0, m1 = pair.split(":")
-    assert (m0, m1) in cm.PAIRS, f"pair {pair} not in the registered PAIRS set"
+    # Registered forward set stays the DEFAULT; --allow-backward-pairs widens the
+    # accepted enumeration to the reverse-direction lattice (cm.BACKWARD_PAIRS) so
+    # an in-flight forward round can never silently pick up backward cells.
+    _allowed = cm.PAIRS
+    if getattr(args, "allow_backward_pairs", False):
+        _allowed = tuple(cm.PAIRS) + tuple(cm.BACKWARD_PAIRS)
+    assert (m0, m1) in _allowed, (
+        f"pair {pair} not in the accepted PAIRS set "
+        f"(backward pairs {'enabled' if getattr(args, 'allow_backward_pairs', False) else 'DISABLED'}"
+        f" — pass --allow-backward-pairs to run the reverse-direction lattice)"
+    )
     corpus, fmt = args.corpus, args.format
     assert corpus and fmt, "--corpus and --format are required"
     assert fmt in cm.V2_CORPORA[corpus]["formats"], f"({corpus}, {fmt}) is not a v2 surface"

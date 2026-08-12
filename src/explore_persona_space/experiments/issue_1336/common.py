@@ -38,6 +38,10 @@ __all__ = [
     "ADJACENT_PAIRS",
     "BAND_V2_COEF",
     "BAR_V2_COEF",
+    "BACKWARD_PAIRS",
+    "FULL_FORWARD_PAIRS",
+    "ALL_ORDERED_PAIRS",
+    "LADDER_ORDER",
     "BASE_ANCHORED_PAIRS",
     "CELLS",
     "CELLS_V2",
@@ -328,6 +332,39 @@ EVAL_SETS = (
 BASE_ANCHORED_PAIRS = (("base", "sft"), ("base", "dpo"), ("base", "rlvr"), ("base", "rlvr_long"))
 ADJACENT_PAIRS = (("sft", "dpo"), ("dpo", "rlvr"), ("dpo", "rlvr_long"))
 PAIRS = BASE_ANCHORED_PAIRS + ADJACENT_PAIRS
+
+# ---------------------------------------------------------------------------
+# Backward (reverse-direction) stage pairs — ADDITIVE, never folded into PAIRS.
+#
+# ``PAIRS`` above is the round-3 registered set (7 forward pairs); round B added
+# the remaining 3 forward pairs via the selfmap_v3 path. Together those are the
+# 10 pairs where the target is LATER on the ladder than the source. The 10
+# reverse-direction pairs were never run — absent, not zeroed — which leaves the
+# forward-only lattice unable to distinguish "post-training ADDS structure"
+# (asymmetric transfer) from "the stages merely sit in different coordinates"
+# (symmetric transfer).
+#
+# These names are deliberately SEPARATE from ``PAIRS``: every existing consumer
+# of ``PAIRS`` (dispatchers, cell registries, the round-3 resume keys) keeps its
+# exact prior enumeration, so adding the backward arm cannot silently widen an
+# in-flight forward round. Only an explicit opt-in reads ``BACKWARD_PAIRS``.
+# ---------------------------------------------------------------------------
+LADDER_ORDER = ("base", "sft", "dpo", "rlvr", "rlvr_long")
+
+FULL_FORWARD_PAIRS = tuple(
+    (LADDER_ORDER[i], LADDER_ORDER[j])
+    for i in range(len(LADDER_ORDER))
+    for j in range(i + 1, len(LADDER_ORDER))
+)
+
+BACKWARD_PAIRS = tuple((tgt, src) for (src, tgt) in FULL_FORWARD_PAIRS)
+
+ALL_ORDERED_PAIRS = FULL_FORWARD_PAIRS + BACKWARD_PAIRS
+
+assert len(FULL_FORWARD_PAIRS) == 10, FULL_FORWARD_PAIRS
+assert len(BACKWARD_PAIRS) == 10, BACKWARD_PAIRS
+assert set(PAIRS) <= set(FULL_FORWARD_PAIRS), "round-3 PAIRS must stay a forward subset"
+assert not (set(FULL_FORWARD_PAIRS) & set(BACKWARD_PAIRS)), "forward/backward must be disjoint"
 
 # ---------------------------------------------------------------------------
 # Sampling + filters (Source: scripts/issue825_gen_conversations.py:521 —
