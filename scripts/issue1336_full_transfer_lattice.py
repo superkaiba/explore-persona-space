@@ -1129,17 +1129,26 @@ def fig_percorpus(D: dict) -> Path:
     # estate there rather than wasting it.
     # Vertically CENTERED in the empty block, not pinned to its top: the column
     # above ends with x tick labels, which a top-anchored legend lands on top of.
-    # Column chosen by SHAPE, not by name: the leftmost column short of the tall
-    # ones is the one with a free slot. A hardcoded column name silently breaks
-    # the legend the moment a column is renamed or the grouping is re-cut.
-    _short = [i for i, t in enumerate(TYPE_ORDER) if len(TYPE_COLUMNS[t]) < n_rows]
-    if not _short:
+    # Column and ROW both chosen by SHAPE, never hardcoded: pick the column with
+    # the MOST free slots (ties -> leftmost) and anchor from ITS first free main
+    # row. The row index is k*3 for a column holding k panels, mirroring the
+    # r_main = r * 3 stride above — a hardcoded row silently lands the legend ON
+    # a panel the moment the tallest column grows (which is exactly what the
+    # stage regrouping did: RLVR's column went to 3 panels, so the old fixed
+    # row 3 became lmsys23k (naturalistic)'s own main row).
+    _free = [(n_rows - len(TYPE_COLUMNS[t]), -i, i) for i, t in enumerate(TYPE_ORDER)]
+    _slots, _, _lc = max(_free)
+    if _slots <= 0:
         raise RuntimeError(
-            "no short column: every type column is full, so there is no empty "
-            "block for the legend — place it explicitly before re-running"
+            "no column has a free slot: every column is as tall as the grid, so "
+            "there is no empty block for the legend — place it explicitly"
         )
-    _lc = _short[0]
-    _top = gs[3, _lc].get_position(fig)
+    _r_free = len(TYPE_COLUMNS[TYPE_ORDER[_lc]]) * 3
+    assert _r_free < len(height_ratios), (
+        f"legend row {_r_free} is past the grid ({len(height_ratios)} rows) — the "
+        "r_main stride and this derivation have diverged"
+    )
+    _top = gs[_r_free, _lc].get_position(fig)
     _bot = gs[-1, _lc].get_position(fig)
     h, lab = mains[0].get_legend_handles_labels()
     fig.legend(
@@ -1152,7 +1161,7 @@ def fig_percorpus(D: dict) -> Path:
         frameon=False,
     )
     fig.suptitle(
-        "Per eval dataset, grouped by data type: every forward stage pair, at each "
+        "Per eval dataset, grouped by owning stage: every forward stage pair, at each "
         "reparameterization tier",
         fontsize=12.5,
         x=0.01,
