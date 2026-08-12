@@ -771,6 +771,11 @@ def phase_bank(cfg: LadderConfig) -> int:
             "repro": RUN._repro(cfg),
         },
     )
+    # Immediate upload (persist-by-default; P4 re-covers the same paths): the
+    # VM judge's donor screen stages the FROZEN ladder_bank.json (donor plan)
+    # from the Hub BEFORE P4's terminal upload exists.
+    RUN._upload_dir(cfg, cfg.bank_dir, f"{HF_LADDER_TENSORS}/vc_bank", ["*.json", "*.pt"])
+    RUN._upload_dir(cfg, cfg.gates_dir, f"{HF_LADDER_TENSORS}/gates", ["*.json"])
     logger.info("[phase=bank_done]")
     return RUN.RC_OK
 
