@@ -2138,10 +2138,21 @@ def main(argv: list[str] | None = None) -> int:
         )
     )
     ap.add_argument("issue", type=int, help="Issue / task number N.")
-    ap.add_argument(
+    mode = ap.add_mutually_exclusive_group()
+    mode.add_argument(
         "--apply",
         action="store_true",
         help="Actually delete (default: dry-run, report what would be removed).",
+    )
+    mode.add_argument(
+        "--dry-run",
+        action="store_true",
+        help=(
+            "Explicit no-op alias of the default preview mode (report what would "
+            "be removed, delete nothing). Accepted so the sibling janitor's "
+            "`pod.py cleanup --dry-run` spelling does not exit 2; mutually "
+            "exclusive with --apply."
+        ),
     )
     ap.add_argument(
         "--incremental",

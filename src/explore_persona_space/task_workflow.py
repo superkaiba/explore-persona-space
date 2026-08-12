@@ -8266,7 +8266,8 @@ def raise_concern(
     if len(summary) > 200:
         raise ValueError(
             f"summary too long ({len(summary)} chars; max 200). Move detail to "
-            "evidence (the task.py CLI auto-truncates at a word boundary instead)."
+            "evidence, or pass the full text via the task.py CLI's --summary-file "
+            "(preserved verbatim in the evidence field)."
         )
     if not isinstance(raised_by, str) or not raised_by.strip():
         raise ValueError("raised_by must be a non-empty string")
@@ -8308,6 +8309,7 @@ def address_concern(
     addressed_by: str,
     addressed_at_round: int,
     summary: str | None = None,
+    evidence: str | None = None,
 ) -> dict[str, Any]:
     """Append an ``addressed`` event recording that the implementer (or
     analyzer / planner, depending on the stage) believes the concern has
@@ -8320,6 +8322,10 @@ def address_concern(
     ``concern_id`` MUST refer to a concern that has been raised at least
     once on this task; ``ValueError`` otherwise (defends against
     address-without-raise typos that would orphan the audit log).
+
+    ``evidence`` (optional, #2121) is stored on the payload only when
+    truthy — the same additive shape ``raise_concern`` has carried since
+    inception, so no reader of ``concerns.jsonl`` needs to change.
     """
     _validate_concern_id(concern_id)
     if not isinstance(addressed_at_round, int) or addressed_at_round < 1:
@@ -8341,8 +8347,9 @@ def address_concern(
         if len(carried_summary) > 200:
             raise ValueError(
                 f"summary too long ({len(carried_summary)} chars; max 200). Pass a "
-                "shorter summary — detail belongs in the round report (the task.py "
-                "CLI auto-truncates explicit summaries at a word boundary)."
+                "shorter summary — detail belongs in the round report, or pass the "
+                "full text via the task.py CLI's --summary-file (preserved verbatim "
+                "in the evidence field)."
             )
         payload: dict[str, Any] = {
             "ts": _utcnow_iso(),
@@ -8353,6 +8360,8 @@ def address_concern(
             "addressed_by": addressed_by,
             "addressed_at_round": addressed_at_round,
         }
+        if evidence:
+            payload["evidence"] = evidence
         _append_concern_event(task_id, payload)
         return payload
 

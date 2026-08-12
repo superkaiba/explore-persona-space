@@ -496,3 +496,42 @@ def test_cleaner_resolves_worktree_data_on_data_disk(fake_repo, monkeypatch):
     assert not (issue_dir / "g1_dl").exists()
     # store/ — the durable, NOT re-downloadable artifact — is KEPT.
     assert (issue_dir / "store" / "generated.pt").exists()
+
+
+# ─── #2121 CLI: --dry-run is an explicit alias of the default preview mode ────
+
+
+def test_cli_dry_run_flag_previews_and_does_not_apply(monkeypatch):
+    """R9 (#2121): ``--dry-run`` parses, exits 0, and dispatches the cleaner
+    with ``apply=False`` — an explicit spelling of the default preview mode
+    (the sibling janitor is documented as ``pod.py cleanup --dry-run``, so
+    the spelling gets typed here too; pre-fix it exited 2)."""
+    monkeypatch.setattr(ced, "_running_pod_side", lambda: False)
+    called = {}
+
+    def _fake_cleaner(issue, *, apply, data_root=None):
+        called["issue"] = issue
+        called["apply"] = apply
+        return ced.CleanResult(issue_n=issue, apply=apply)
+
+    monkeypatch.setattr(ced, "clean_issue_downloads", _fake_cleaner)
+    rc = ced.main(["2121", "--dry-run"])
+    assert rc == 0
+    assert called == {"issue": 2121, "apply": False}
+
+
+def test_cli_dry_run_with_apply_is_mutually_exclusive(monkeypatch, capsys):
+    """R10 (#2121): ``--dry-run --apply`` is a hard argparse error (exit 2)
+    — a silent precedence rule (either flag quietly winning) would be the
+    fail-fast violation the project bans."""
+    monkeypatch.setattr(ced, "_running_pod_side", lambda: False)
+
+    def _boom(*a, **k):  # the cleaner must never be reached
+        raise AssertionError("cleaner dispatched despite conflicting flags")
+
+    monkeypatch.setattr(ced, "clean_issue_downloads", _boom)
+    monkeypatch.setattr(ced, "clean_issue_downloads_incremental", _boom)
+    with pytest.raises(SystemExit) as excinfo:
+        ced.main(["2121", "--dry-run", "--apply"])
+    assert excinfo.value.code == 2
+    assert "not allowed with" in capsys.readouterr().err
