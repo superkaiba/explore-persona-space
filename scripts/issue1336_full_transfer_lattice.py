@@ -263,7 +263,7 @@ OWNING_STAGE: dict[tuple[str, str], str | None] = {
 }
 assert set(_STAGE_OF_COLUMN) == set(TYPE_COLUMNS), (
     "_STAGE_OF_COLUMN must name every column — a column added without a stage "
-    "would silently drop its corpora from the trained-on/not-trained-on split"
+    "would silently drop its corpora from the used-between/not-used-between split"
 )
 # The surfaces the per-dataset figure actually draws: every surface minus the
 # degenerate ones. The aggregate figure still sees the full SURFACES list.
@@ -1167,7 +1167,10 @@ def fig_percorpus(D: dict) -> Path:
     return out
 
 
-# --- trained-on vs not-trained-on (user call 2026-08-12) --------------------
+# --- used-between vs not-used-between (user call 2026-08-12) ----------------
+# A PAIR has no training of its own: what varies is whether the corpus was used
+# by the training that sits BETWEEN the pair's two models. `used-between` is the
+# shorthand throughout; `touched` is the same predicate in code.
 # Ladder order, and the corpus family each STEP of the ladder trains on. The
 # step INTO a stage is what consumes that stage's mix, so the map is keyed on
 # the arrival stage. rlvr_long re-trains on the RLVR mix, introducing no new
@@ -1191,7 +1194,7 @@ def _deficits(D: dict, pi: int, tier: int) -> tuple[list, list]:
     The DV is the deficit against each corpus's OWN within-model ceiling, not
     raw R². Within a fixed pair the comparison is across CORPORA, so raw R²
     would read corpus difficulty (math sits far below chat at every tier) as a
-    trained-on effect; the ceiling is the best a map fit WITHIN one model
+    used-between effect; the ceiling is the best a map fit WITHIN one model
     achieves on that same corpus, so dividing it out is what isolates transfer.
     """
     fams = touched_families(*PAIRS[pi])
@@ -1357,15 +1360,17 @@ def fig_trained_on(D: dict) -> Path:
         )
     axL.set_ylabel(f"transfer deficit  (ceiling − R²)   ·   tier {left_tier}", fontsize=10)
     axL.set_title(
-        f"Within each corpus: {TIER_LABEL[left_tier]}, one point per stage pair",
+        f"Within each corpus: {TIER_LABEL[left_tier]}, one point per model pair",
         fontsize=10.5,
         pad=7,
     )
     axL.axhline(0.0, color="#252525", lw=0.9, ls="--", zorder=1)
     axL.grid(axis="y", color="#ececec", lw=0.7, zorder=0)
     axL.set_axisbelow(True)
-    axL.scatter([], [], s=40, color=c_hit, label="pairs whose training USED this corpus")
-    axL.scatter([], [], s=40, color=c_miss, label="pairs whose training never saw it")
+    axL.scatter(
+        [], [], s=40, color=c_hit, label="corpus WAS used by the training between the two models"
+    )
+    axL.scatter([], [], s=40, color=c_miss, label="corpus was NOT used between them")
     axL.legend(fontsize=9, frameon=False, loc="upper left")
 
     # RIGHT: the verdict. The naive marginal gap and the pair+corpus-controlled
@@ -1411,7 +1416,7 @@ def fig_trained_on(D: dict) -> Path:
     axR.set_yticks(ypos)
     axR.set_yticklabels([f"{t}: {TIER_LABEL[t]}" for t in tiers], fontsize=9.5)
     axR.set_ylim(-0.6, len(tiers) - 0.4)
-    axR.set_xlabel("deficit gap:  trained-on − not-trained-on", fontsize=10)
+    axR.set_xlabel("deficit gap:  used-between the two models  −  not-used-between", fontsize=10)
     axR.set_title("Naive gap → gap with pair and corpus effects removed", fontsize=10.5, pad=7)
     axR.grid(axis="x", color="#ececec", lw=0.7, zorder=0)
     axR.set_axisbelow(True)
@@ -1428,7 +1433,8 @@ def fig_trained_on(D: dict) -> Path:
     axR.legend(fontsize=8.8, frameon=False, loc="lower right")
 
     fig.suptitle(
-        "Does a training stage disrupt the context→answer map more on its OWN training data?",
+        "Does the training BETWEEN two models disrupt the context→answer map more on the "
+        "data that training used?",
         fontsize=12.5,
         y=0.955,
     )
