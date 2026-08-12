@@ -25,11 +25,34 @@ import sys
 import tempfile
 from pathlib import Path
 
-SCRIPT = Path(
-    os.environ.get(
-        "EPM_GUARD_PATH",
-        "/home/thomasjiralerspong/explore-persona-space/scripts/guard_repo_root_branch.sh",
-    )
+
+def _default_guard_path() -> Path:
+    """The guard in THIS script's OWN tree — worktree or main, whichever holds it.
+
+    Load-bearing, not cosmetic. This file is committed on a feature branch and
+    lives under ``tasks/<status>/2122/artifacts/``, so a hardcoded main-checkout
+    default makes a bare run from the worktree silently measure a DIFFERENT
+    guard than the one under review. That misfired during Step 5 review: every
+    fixed /tmp cell read BLOCK (main's guard lacks the fix) while the pinned
+    suite passed against the worktree's — a maximally alarming false signal, and
+    a baseline that measures the wrong tree cannot be the authority plan
+    §6.0-pre says it is. Walk up from __file__ to the tree that owns the guard;
+    fall back to a repo-root-relative guess so a relocated copy still runs.
+    """
+    for parent in Path(__file__).resolve().parents:
+        candidate = parent / "scripts" / "guard_repo_root_branch.sh"
+        if candidate.is_file():
+            return candidate
+    return Path(__file__).resolve().parents[3] / "scripts" / "guard_repo_root_branch.sh"
+
+
+# EPM_GUARD_PATH still overrides — that is how you deliberately measure the
+# OTHER tree (e.g. re-deriving the pre-fix baseline from main after the fix has
+# landed in the worktree).
+SCRIPT = (
+    Path(os.environ["EPM_GUARD_PATH"])
+    if os.environ.get("EPM_GUARD_PATH")
+    else (_default_guard_path())
 )
 
 
