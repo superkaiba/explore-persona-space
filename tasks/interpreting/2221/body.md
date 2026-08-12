@@ -1,6 +1,6 @@
 ---
-title: 'Real-data twin of the Persona Vectors finetuning suite: finetuning-shift monitoring
-  with mapped context→answer reads'
+title: Real-data mining collapse leaves persona-vector fine-tuning monitoring confounded
+  with training-mix size (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-08-10T21:14:00Z'

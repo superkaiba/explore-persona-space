@@ -9436,7 +9436,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/2221",
       "status": "interpreting",
-      "title": "Real-data twin of the Persona Vectors finetuning suite: finetuning-shift monitoring with mapped context\u2192answer reads"
+      "title": "Real-data mining collapse leaves persona-vector fine-tuning monitoring confounded with training-mix size (LOW confidence)"
     },
     "2222": {
       "goal": "Reproduce the Persona Vectors (arXiv 2507.21509) data-screening predictor comparison (raw projection / exact projection difference / last-prompt-token approximation, their Figures 8/21/23) on the 24-dataset synthetic suite and test whether a FROZEN trait-agnostic context\u2192answer mapped projection difference recovers exact-\u0394P predictivity \u2014 especially closing the sycophancy gap (r 0.581 \u2192 ~0.88) \u2014 at forward-pass cost.",
