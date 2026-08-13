@@ -110,11 +110,14 @@ def main() -> None:
     ap.add_argument(
         "--only",
         default="all",
-        choices=["all", "scatter", "forest", "severity", "ckpt_unit"],
+        choices=["all", "scatter", "forest", "severity", "ckpt_unit", "remine"],
         help="'scatter' renders only the per-unit monitor-vs-score figure (fig 4); "
         "'forest' renders only the H2 delta forest (fig 3); 'severity' renders "
         "only the within-family severity-ordering figure (fig 5, added round 2); "
-        "'ckpt_unit' renders only the checkpoint per-unit view (fig 6, round 3)",
+        "'ckpt_unit' renders only the checkpoint per-unit view (fig 6, round 3); "
+        "'remine' renders the specialized_corpus_remine fold figures (round 4): "
+        "the cap-2048 rows-vs-score scatter with under-trained flags and the "
+        "dual-grain (unit + family bootstrap) H2 delta forest",
     )
     args = ap.parse_args()
 
@@ -124,6 +127,11 @@ def main() -> None:
     import matplotlib.pyplot as plt
 
     from explore_persona_space.analysis import paper_plots as pp
+
+    if args.only == "remine":
+        _remine_figs(Path(args.eval_results_root), Path(args.figures_root), pp, plt)
+        print("[dv-figs] wrote specialized_corpus_remine fold figures", flush=True)
+        return
 
     eval_root = Path(args.eval_results_root)
     blob = json.loads((eval_root / "trait_scores.json").read_text())
@@ -265,6 +273,128 @@ def main() -> None:
 
     print(json.dumps({"mix_rows": rows, "n_h2_rows": n_rows}, indent=1), flush=True)
     print(f"[dv-figs] wrote 3 figures -> {fig_dir}", flush=True)
+
+
+def _remine_figs(eval_root: Path, figures_root: Path, pp, plt) -> None:
+    """Round-4 (`specialized_corpus_remine`) fold figures, 0 GPU-h.
+
+    1. ``remine_mix_size_vs_acquisition`` — realized rows per cell (log x;
+       re-mined rows from ``mix_yield.json``, standing rows from the parent
+       mixes) vs the uniform cap-2048 paper-panel graded trait score, one
+       labeled point per fine-tune; cells under the 160-row meaningful-training
+       bar drawn as OPEN markers (explicit linewidths — the #536 pitfall).
+    2. ``remine_h2_delta_forest_dual_grain`` — the registered H2 contrast with
+       BOTH pre-registered bootstrap grains per trait x capture panel: the
+       persisted unit-grain CI (``correlations.json``) and the binding
+       FAMILY-grain CI (``analyzer_fold_reads.json``).
+    """
+    rdir = eval_root / "specialized_corpus_remine"
+    scores = json.loads((rdir / "trait_scores.json").read_text())["scores"]
+    corr = json.loads((rdir / "correlations.json").read_text())
+    fold = json.loads((rdir / "analyzer_fold_reads.json").read_text())
+    fig_dir = figures_root / "specialized_corpus_remine"
+    fig_dir.mkdir(parents=True, exist_ok=True)
+    pp.set_paper_style()
+    fam_colors = {f: c for f, c in zip(FAMILIES, pp.paper_palette(len(FAMILIES)))}
+    rows_per_cell = fold["rows_per_cell"]
+    meaningful = 160
+
+    # ── 1) rows vs cap-2048 score, under-trained flagged ─────────────────────
+    fig, ax = plt.subplots(figsize=(7.6, 4.6))
+    for fam in FAMILIES:
+        trait = TRAIT_OF_FAMILY.get(fam, "hallucination")
+        pts = []
+        for v in VERSIONS:
+            cell = f"{fam}_{v}"
+            if cell not in scores:
+                continue
+            pts.append((rows_per_cell[cell], paper_mean(scores, cell, trait)))
+        if not pts:
+            continue
+        xs = [p[0] for p in pts]
+        ys = [p[1] for p in pts]
+        under = xs[0] < meaningful
+        if under:
+            ax.scatter(
+                xs,
+                ys,
+                s=54,
+                facecolors="none",
+                edgecolors=fam_colors[fam],
+                linewidths=1.4,
+                label=f"{FAMILY_LABELS[fam]} ({trait}; under-trained)",
+                zorder=3,
+            )
+        else:
+            ax.scatter(
+                xs,
+                ys,
+                s=54,
+                color=fam_colors[fam],
+                label=f"{FAMILY_LABELS[fam]} ({trait})",
+                zorder=3,
+            )
+        ax.annotate(
+            f"{FAMILY_LABELS_SHORT[fam]}\n{xs[0]} rows",
+            (xs[0], max(ys)),
+            textcoords="offset points",
+            xytext=(0, 9),
+            ha="center",
+            fontsize=6,
+        )
+    ax.axhline(
+        POSITIVE_MIN,
+        color="black",
+        lw=1.0,
+        ls="--",
+        label=f"label-positive threshold ({POSITIVE_MIN:.0f})",
+    )
+    ax.axvline(
+        meaningful,
+        color="0.45",
+        lw=1.0,
+        ls=":",
+        label=f"meaningful-training bar ({meaningful} rows)",
+    )
+    ax.set_xscale("log")
+    ax.set_xlabel("realized training rows per cell (log scale)")
+    ax.set_ylabel("paper-panel graded trait score (0-100)")
+    ax.set_ylim(-3, 100)
+    ax.legend(fontsize=6, loc="upper left")
+    pp.savefig_paper(fig, "remine_mix_size_vs_acquisition", dir=fig_dir)
+    plt.close(fig)
+
+    # ── 2) dual-grain H2 forest ──────────────────────────────────────────────
+    fig, ax = plt.subplots(figsize=(7.2, 4.8))
+    labels, pts, u_lo, u_hi, f_lo, f_hi = [], [], [], [], [], []
+    for trait in corr["per_trait"]:
+        for panel in ("paper", "lmsys", "pooled"):
+            h2 = corr["per_trait"][trait]["panels"][panel].get("h2_delta_c_minus_a")
+            if not h2:
+                continue
+            fam_ci = fold["per_trait"][trait]["panels"][panel]["h2_family_grain_ci"]
+            labels.append(f"{trait} / {panel} capture")
+            pts.append(float(h2["point"]))
+            u_lo.append(float(h2["bootstrap_ci"][0]))
+            u_hi.append(float(h2["bootstrap_ci"][1]))
+            f_lo.append(float(fam_ci[0]))
+            f_hi.append(float(fam_ci[1]))
+    y = np.arange(len(labels), dtype=float)
+    c_unit, c_fam = pp.paper_palette(2)
+    ax.hlines(y - 0.14, u_lo, u_hi, color=c_unit, lw=2.2, label="fine-tune-grain bootstrap CI")
+    ax.hlines(
+        y + 0.14, f_lo, f_hi, color=c_fam, lw=2.2, label="family-grain bootstrap CI (binding)"
+    )
+    ax.scatter(pts, y - 0.14, s=34, color=c_unit, zorder=3)
+    ax.scatter(pts, y + 0.14, s=34, color=c_fam, zorder=3)
+    ax.axvline(0, color="black", lw=1.0)
+    ax.set_yticks(y, labels, fontsize=7)
+    ax.set_xlim(-2.05, 2.05)
+    ax.set_xlabel(r"$\Delta$ Spearman r (mapped read $-$ paper read); achievable range [-2, +2]")
+    ax.invert_yaxis()
+    ax.legend(fontsize=6, loc="lower right")
+    pp.savefig_paper(fig, "remine_h2_delta_forest_dual_grain", dir=fig_dir)
+    plt.close(fig)
 
 
 def _forest(corr: dict, fig_dir: Path, pp, plt) -> int:
