@@ -14786,7 +14786,20 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 # (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
 # change). Each entry names its trim direction; none is licensed to grow.
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
-    # measured 934,312 B branch-tip after #2244 stated the Step 6b bg-Bash
+    # measured 935,501 B at the #2256 + #2244 MERGE UNION (origin/main
+    # merged into issue-2256 to pick up the coupled LESSONS cap raise):
+    # #2256 re-keyed the Step 10d gate single-flight probe /
+    # completion-read / kill-arm patterns from the transient gate-TREE
+    # token to the whole-life workload SCRIPT-path tokens (+1,529 B on its
+    # pre-merge base: the #2115 script-file-launcher coverage rationale at
+    # the trigger + surgical probes, the own-Bash-call reminder and the
+    # subshell-argv fork-without-exec note at the main kill-arm, and the
+    # surgical kill-arm's section reference replacing the stale L11949
+    # line reference), atop main's #2244 advance (934,312 B); cap =
+    # measured + ~1.4 KB (#1753/#1727 landing-bytes rule; the margin
+    # absorbs small main-side advance at the landing union — the #2074
+    # landing-union measurement class).
+    # Prior: 935_400 — measured 934,312 B branch-tip after #2244 stated the Step 6b bg-Bash
     # `timeout` floor for EVERY parking lane (+1,871 B: the timeout-floor
     # paragraph beside the 420 s park contract, the LAUNCHER_RC rc-capture
     # paragraph, and the launch-recovery under-budgeted-timeout
@@ -14846,7 +14859,7 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 904,504 B base); the remaining mass is the judgment tranche
     # (bash-block extraction to step10d_guards.sh-style scripts, 9a-quater
     # legacy-path stub, GCP rollback-prose relocation).
-    "issue/SKILL.md": 935_400,
+    "issue/SKILL.md": 936_900,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,

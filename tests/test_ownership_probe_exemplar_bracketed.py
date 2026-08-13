@@ -27,13 +27,17 @@ def test_issue_skill_probe_exemplars_are_bracketed():
     for pat in (
         "pgrep -af '[p]ytest.*step9c-junit-issue-<N>'",
         "pgrep -f 'step9c_baseline[.]py refresh'",
-        "pgrep -af 'issue-<N>-lint-gate-tre[e]'",
+        "pgrep -af 'issue-<N>-lint-gat[e]'",
+        "pgrep -af 'issue-<N>-surgical-gat[e]|issue-<N>-lint-gat[e]'",
         "pgrep -f '<distinctive invocatio[n]>'",
     ):
         assert pat in text, pat
-    # Task #1719: `pgrep -af 'scripts/workflow_lint[.]py'` is a fleet-wide
-    # (non-issue-scoped) probe pattern; its two live occurrences at L11949 +
-    # L12256 were replaced with the issue-scoped `issue-<N>-lint-gate-tre[e]`
-    # shape above so a sibling session's root lint cannot phantom-match. It
-    # must NOT be re-introduced as a live probe recipe.
+    # Task #1719 replaced the fleet-wide `pgrep -af 'scripts/workflow_lint[.]py'`
+    # probe with an issue-scoped gate-tree shape; task #2256 re-keyed the
+    # kill-arm exemplars to the whole-life workload SCRIPT-path tokens
+    # (`issue-<N>-lint-gat[e]`, and the surgical
+    # `issue-<N>-surgical-gat[e]|issue-<N>-lint-gat[e]` union) — under the
+    # #2115 script-file launcher the old tree token vanished from argv during
+    # the TG mapped-test legs. The fleet-wide pattern must NOT be
+    # re-introduced as a live probe recipe.
     assert "pgrep -af 'scripts/workflow_lint[.]py'" not in text

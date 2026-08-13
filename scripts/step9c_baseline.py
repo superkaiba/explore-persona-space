@@ -90,9 +90,9 @@ a loud, self-resolving false LIVE — the fail-safe direction.
 
 ``probe --fleet [--exclude-issue N]`` (#1962) is the FLEET-level arbitration
 arm on the same scanner: it matches the fixed internal union
-``FLEET_GATE_SIGNATURE_RE`` over the four gate artifact classes
-(``step9c-junit-issue-(\\d+)\\.xml`` | ``issue-(\\d+)-lint-gate-tree`` |
-``issue-(\\d+)-[^ ]*inline-payload\\.txt`` |
+``FLEET_GATE_SIGNATURE_RE`` over the five issue-keyed gate artifact alternates
+(``step9c-junit-issue-(\\d+)\\.xml`` | ``issue-(\\d+)-lint-gate`` |
+``issue-(\\d+)-[^ ]*inline-payload\\.txt`` | ``issue-(\\d+)-surgical-gate`` |
 ``issue-(\\d+)-surgical-outcome\\.txt``) plus a ``step9c_baseline\\.py refresh``
 alternate mapped to the reserved pseudo-issue key ``refresh`` (the ledger
 refresh runs the heaviest pytest universe and its own flock bounds it to one
@@ -2559,16 +2559,26 @@ def cmd_tmproot(args: argparse.Namespace) -> int:
 
 # --- probe -----------------------------------------------------------------------
 
-# Fleet-arbitration signature union (#1962): the four gate artifact classes that
-# ride Step 9c / Step 10d / Step 9a-ter gate-launch argvs, plus the ledger
-# ``refresh`` invocation (the heaviest pytest universe; its own flock bounds it
-# to one fleet-wide, so it counts as ONE gate under the reserved pseudo-issue
-# key FLEET_REFRESH_KEY). FIXED and valid by construction, so ``probe --fleet``
-# is until-loop-safe (exit 2 stays argparse/usage-only for the fleet form).
+# Fleet-arbitration signature union (#1962): the five issue-keyed gate artifact
+# alternates that ride Step 9c / Step 10d / Step 9a-ter gate-launch argvs, plus
+# the ledger ``refresh`` invocation (the heaviest pytest universe; its own flock
+# bounds it to one fleet-wide, so it counts as ONE gate under the reserved
+# pseudo-issue key FLEET_REFRESH_KEY). FIXED and valid by construction, so
+# ``probe --fleet`` is until-loop-safe (exit 2 stays argparse/usage-only for
+# the fleet form). #2256: the lint/surgical gate workloads are composed to
+# script FILES (``/tmp/issue-<N>-lint-gate.sh`` / ``issue-<N>-surgical-gate.sh``,
+# the #2115 launcher), whose paths ride the detached workload's argv for its
+# WHOLE life — the former ``issue-(\d+)-lint-gate-tree`` alternate matched only
+# the transient tar/lint-leg child argvs, undercounting both gate forms during
+# their TG/land phases. ``issue-(\d+)-lint-gate`` covers the script path AND
+# (superstring) the gate-tree children + legacy inline launches;
+# ``issue-(\d+)-surgical-gate`` covers the surgical script path; the
+# ``surgical-outcome`` alternate is retained for legacy inline argvs.
 FLEET_GATE_SIGNATURE_RE: re.Pattern[str] = re.compile(
     r"step9c-junit-issue-(\d+)\.xml"
-    r"|issue-(\d+)-lint-gate-tree"
+    r"|issue-(\d+)-lint-gate"
     r"|issue-(\d+)-[^ ]*inline-payload\.txt"
+    r"|issue-(\d+)-surgical-gate"
     r"|issue-(\d+)-surgical-outcome\.txt"
     r"|step9c_baseline\.py refresh"
 )
