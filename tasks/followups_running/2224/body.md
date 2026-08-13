@@ -27,7 +27,7 @@ relates_to:
 ## Takeaways
 
 - **Across 84 judged selection-finetune cells on 2 real corpora, learned-screen top-500s (frozen map, trait probe) never beat random and fall below exact-ΔP selection wherever exact finds signal.**
-- **The paper's prompt-token ΔP, equally generation-free, matches or beats exact-ΔP selection in 5 of 6 cells, and the deciding contrasts replicate at seed 137: 16 of 18 agree in direction, 15 of 18 land inside the seed-42 intervals, and every positive top-versus-random contrast stays positive.**
+- **The paper's prompt-token ΔP, equally generation-free, matches or beats exact-ΔP selection in 5 of 6 cells, and the deciding contrasts replicate at seed 137: 16 of 18 agree in direction, 15 of 18 land inside the seed-42 response-level intervals (16 of 18 under question-clustered intervals), every positive top-versus-random contrast stays positive, and the borderline UltraChat hallucination match moves below exact (−2.2 at seed 42, −4.8 at seed 137).**
 - **A map refit on each corpus's own 50,000-sample pool rescues the sample-level screen — per-sample correlation with exact ΔP 0.73–0.86 against the frozen map's −0.09 to 0.14, top-500 overlap 0.23–0.57 against at most 0.088 (chance 0.005) — so the frozen map's failure is corpus transfer, not the linear form; the prefix arm refits to R² near 0.**
 - **On the judged (selection-conditioned) subsets the prefix-side probe difference — effectively the probe's response score — ranks trait-bearing samples best of any screen (AUC 0.64–0.91 in all 6 cells), and the trait probe transports across corpora at AUC 0.77–0.93 in 5 of 6 directions; the exception is LMSYS→UltraChat hallucination at 0.60.**
 - **Dataset-level prediction on the 24-dataset suite cannot adjudicate the screens: exact ΔP itself is flat there (rank correlations at most 0.10, p ≥ 0.65), and the positive learned-arm reads are non-significant and leverage-fragile.**
@@ -55,7 +55,7 @@ Both mapping sides ran per the standing prefix+context rule (context = prefix + 
 Deviations and scope caveats:
 
 - The trait probe and read-out layer selection were built in-task (the probe refit under `analysis_tensors/form_a_probe_refit/`) rather than inherited, because the sibling predictor task had not landed at build time; selection preceded the finetunes and the outcome join.
-- The planned exploratory per-corpus map refit and the cross-corpus probe transport read did not run — a disclosed scope shrink, not a silent omission.
+- The planned exploratory per-corpus map refit and the cross-corpus probe transport read did not run in the main run — a disclosed scope shrink, closed by follow-up round 1 (below).
 - The working pool is 50k per corpus vs the paper's ≤ 200k (a stated compute bound on the exact-ΔP arm).
 - The selection finetunes are positive-only, faithful to the paper's design (the named contrastive-negatives exemption for strict replications), and extreme-subset finetunes probe screening predictors, not recommended training practice — the paper's own framing.
 - Rank-stabilized LoRA at r = 32, α = 64 runs at ~5.66× the classic α/r scale, so absolute trait levels are not comparable to the paper's figures; every arm shares the recipe, so the paired contrasts are unaffected.
@@ -104,7 +104,7 @@ Deciding paired contrasts (graded points, 95% question-clustered bootstrap CIs; 
 
 Absolute graded levels, LMSYS hallucination: base 31.8, random 34.8, exact top 43.2, prompt-token top 48.2, mapped top 30.9, probe top 29.3; suppression bottoms exact 9.2, prompt-token 6.8. LMSYS evil: base 0.34, random 0.81, exact top 3.39, prompt-token top 3.19, mapped top 0.38, probe top 0.00.
 
-Conciseness-cap acknowledgment: I acknowledge the fired WARN classes — Takeaways bullet length, the per-result prose band, figure-caption length, and the total-prose budget — accepted deliberately: this single-round body reports two sub-experiments (84 selection-finetune cells plus a 24-dataset suite) across nine results, each carrying the mandated aggregate + per-unit figure pairing. I also acknowledge the figure-text opaque-code WARN: the two hero figures carry the rate companion's variable name in a small annotation and the dataset-level scatter legend uses the suite's family identifiers; the axis and bar labels a reader parses are plain English, and the affected figures are otherwise ground-truth-matched, so I kept the committed renders. I likewise acknowledge the sidecar-coverage WARN on the round-2 AUC figure: it was rendered by the follow-up round's committed script without a metadata sidecar, and its per-cell values live in `auc_by_arm.json` at the same commit, so I kept the committed render.
+Conciseness-cap acknowledgment: I acknowledge the fired WARN classes — Takeaways bullet length, the per-result prose band, figure-caption length, and the total-prose budget — accepted deliberately: this body reports two sub-experiments (84 selection-finetune cells plus a 24-dataset suite) and three folded follow-up rounds across 13 results, each carrying the mandated aggregate + per-unit figure pairing. I also acknowledge the figure-text opaque-code WARN: the two hero figures carry the rate companion's variable name in a small annotation and the dataset-level scatter legend uses the suite's family identifiers; the axis and bar labels a reader parses are plain English, and the affected figures are otherwise ground-truth-matched, so I kept the committed renders. I likewise acknowledge the sidecar-coverage WARN on the round-2 AUC figure: it was rendered by the follow-up round's committed script without a metadata sidecar, and its per-cell values live in `auc_by_arm.json` at the same commit, so I kept the committed render.
 
 **Data extraction:** Tier-1 real-world training data (LMSYS-Chat-1M, gated, raw user chat with toxic residue; UltraChat 200k, heavily curated), streamed and filtered to single-turn rows with prompts ≤ 512 tokens, 50,000 kept per corpus. The judge-filtered variant re-selects after removing candidates a judge scores ≥ 1 on the trait (the paper's filter); all 24 filtered cells reached 500 survivors. The 4a substrate is the sibling real-twin suite (24 datasets, 19,776 rows scored by all 7 arms). Exact-ΔP base generations (one per pool sample, 100k total plus the suite pass) persist as rollout text on the HF data repo; screening scores, selections, and per-cell judge outputs are git-committed under `eval_results/issue_2224/`.
 
@@ -232,19 +232,19 @@ Exact and prompt-token top cells on LMSYS evil and sycophancy run 58.7–68.0 co
 
 ### A map refit on each corpus's own pool rescues the sample-level screen, locating the frozen map's failure in corpus transfer
 
-What is plotted: the frozen map against a map refit on each corpus's own 50,000-sample pool — per-sample correlation with exact ΔP (left) and top-500 selection overlap with exact ΔP (right), context arm at each trait's read-out layer.
+What is plotted: frozen against per-corpus refit maps — per-sample correlation with exact ΔP (left) and top-500 selection overlap with exact ΔP (right), context arm at each trait's read-out layer. Per-unit exemption: the per-sample refit and frozen scores are committed under [the pinned round-1 refit tree](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/a1935e195752/issue2224_screening/followup_r1); each bar is a statistic over 50,000 samples.
 
 ![Two bar charts comparing frozen and per-corpus refit maps across six corpus-trait cells; refit bars are high while frozen bars sit near zero.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3743121c213b44e781f95356585af0b62da9b66c/figures/issue_2224/i2224_fu1_refit_rescue.png)
 
 > **Figure.** *Refit maps track exact ΔP; the frozen map does not.* Per-sample calibration r: refit 0.73–0.86, frozen −0.09 to 0.14. Top-500 Jaccard with exact ΔP: refit 0.23–0.57, frozen at most 0.088 (chance 0.005). n = 50,000 per corpus.
 
-Refit on its own pool (40,000 training rows per fold against 3,584 dimensions), the same ridge form reaches held-out R² of 0.46–0.65, beats a deeply negative identity-plus-bias baseline, and ranks the true answer summary first among 5,000 held-out candidates in 53–85% of cases (chance 0.02%). The prefix arm refits to R² near 0 on these single-turn pools — the constant template prefix carries no per-sample signal, an informative null. The frozen map's failure is therefore corpus transfer, not the linear form.
+Refit per corpus (40,000 training rows per fold against 3,584 dimensions), the ridge reaches held-out R² of 0.46–0.65, beats a deeply negative identity-plus-bias baseline, and ranks the true answer summary first among 5,000 held-out candidates in 53–85% of cases (chance 0.02%). The prefix arm refits to R² near 0 on these single-turn pools — the constant template prefix carries no per-sample signal, an informative null. The frozen map's failure is therefore corpus transfer, not the linear form.
 
-Two limits: the score-level calibration shares the dataset-response projection term with exact ΔP (the shared-term-free stand-in read is 0.91–0.97), and refit-selected top-500s were not finetuned — the rescue covers calibration and selection overlap.
+Two limits: score-level calibration shares the dataset-response projection term with exact ΔP (the shared-term-free stand-in read is 0.91–0.97), and refit-selected top-500s were not finetuned.
 
 ### The trait probe transports across corpora in five of six directions
 
-What is plotted: ranking accuracy (AUC against the trait-filter judge label, 95% bootstrap intervals) of a trait probe refit on one corpus's judged pool, scored on its own held-out pool and on the other corpus.
+What is plotted: ranking accuracy (AUC against the trait-filter judge label, 95% bootstrap intervals) of a trait probe refit on one corpus's judged pool, scored on its own held-out pool and on the other corpus. Per-unit exemption: the intervals are sample-level (2,000-draw bootstrap over the judged pools); only cell-level AUCs persist for this read — the per-sample labels behind them are the parent's committed pools.
 
 ![Grouped bar chart of same-corpus and transported AUC for six corpus-to-corpus directions, all bars above the 0.5 chance line and most above 0.75.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3743121c213b44e781f95356585af0b62da9b66c/figures/issue_2224/i2224_fu1_transport.png)
 
@@ -264,15 +264,15 @@ Triaging the 42,500 judge draws behind these cells found 569 transport losses (r
 
 ### The deciding contrasts replicate at seed 137, with the marginal prompt-token edges softening toward parity with exact
 
-What is plotted: the 18 deciding paired contrasts' graded-point differences at seed 42 against seed 137, with 95% bootstrap intervals on both axes; the diagonal is exact replication. Seed 137 reseeds training and the eval panel; contrasts pair within seed.
+What is plotted: the 18 deciding contrasts' graded-point differences at seed 42 against seed 137, with 95% response-level bootstrap intervals on both axes; the diagonal is exact replication. Seed 137 reseeds training and the eval panel; contrasts pair within seed.
 
 ![Scatter of 18 contrast differences at seed 42 versus seed 137 with error bars on both axes, points clustered along the identity diagonal.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3743121c213b44e781f95356585af0b62da9b66c/figures/issue_2224/i2224_fu2_seed137.png)
 
-> **Figure.** *Cross-seed replication of the deciding cells.* 16 of 18 contrasts agree in direction and 15 of 18 seed-137 points sit inside the seed-42 intervals; the flips are a near-zero prompt-token-versus-exact difference (−0.5 at seed 42, +0.4 at seed 137) and the weak UltraChat sycophancy exact-versus-random comparator.
+> **Figure.** *Cross-seed replication of the deciding cells.* 16 of 18 contrasts agree in direction and 15 of 18 seed-137 points sit inside the seed-42 response-level intervals (16 of 18 question-clustered); the flips are a near-zero prompt-token-versus-exact difference (−0.5 at seed 42, +0.4 at seed 137) and the weak UltraChat sycophancy exact-versus-random comparator.
 
-The trait-induction core replicates: exact and prompt-token top-500 cells beat the shared random cell wherever seed 42 found signal, and UltraChat evil stays floor-censored at 0 at both seeds. The three out-of-interval points refine rather than overturn: the marginal UltraChat sycophancy prompt-token edge over exact attenuates from +1.4 to +0.0 (a match, not a beat), UltraChat hallucination prompt-token-versus-exact moves from −2.2 to −4.8, and the weak UltraChat sycophancy exact-versus-random comparator flips from −0.3 to +1.3. LMSYS hallucination's prompt-token edge softens from +4.7 to +2.7.
+The trait-induction core replicates: exact and prompt-token tops beat the shared random cell wherever seed 42 found signal, and UltraChat evil stays floor-censored at both seeds. The three out-of-interval points refine rather than overturn: the marginal UltraChat sycophancy prompt-token edge over exact attenuates from +1.4 to +0.0 (a match, not a beat), UltraChat hallucination prompt-token-versus-exact moves from −2.2 to −4.8, and the weak UltraChat sycophancy exact-versus-random comparator flips from −0.3 to +1.3. LMSYS hallucination's prompt-token edge softens from +4.7 to +2.7.
 
-A language-intrusion audit of these pools (561 of 9,000 generations carry CJK characters, 6.2%) preserves every substantive direction under exclusion recounts; one near-zero contrast jitters across zero.
+A language-intrusion audit (561 of 9,000 generations carry CJK, 6.2%) preserves every substantive direction under exclusion recounts; the one jitter is the near-zero UltraChat sycophancy prompt-token-versus-exact contrast (+0.02 as judged, −0.09 excluded).
 
 ---
 
