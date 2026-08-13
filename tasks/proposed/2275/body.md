@@ -1,6 +1,6 @@
 ---
-title: 'SLURM lane: --mem is GPU-count-derived with no per-dispatch override (memory-bound
-  phase OOMs)'
+title: 'workflow-fix: SLURM --mem is GPU-count-derived with no per-dispatch override
+  (memory-bound phase OOMs)'
 kind: infra
 tags:
 - wf-fix
