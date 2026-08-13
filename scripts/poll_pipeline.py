@@ -407,7 +407,6 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     EVENT_NOTE_MAX,
     find_task_path,
     get_task,
-    latest_event,
     list_events,
     post_event,
     repo_root,
@@ -965,48 +964,125 @@ def _update_ssh_fail_tracking(
     return ssh_fail_count, ssh_fail_since, ssh_wait_alarm_ts
 
 
-def _marker_pid(issue: int) -> int | None:
+def _pod_attribution_re(pod: str) -> re.Pattern[str]:
+    """Boundary-safe pod-attribution pattern for ``epm:run-launched`` notes.
+
+    Ported VERBATIM from the #1961 watcher predicate
+    (``autonomous_session_watch._latest_named_run_launched_ts`` — the
+    semantics source; a drift between the two is a bug in whichever
+    diverged): matches EITHER a ``pod=<name>`` token anywhere in the note,
+    OR the note's LEADING token being ``<name>`` (optionally preceded by
+    whitespace). Boundary-safe means left/right ``[\\w-]`` guards, so
+    ``pod-77`` never matches inside ``pod-77-q32b`` and vice versa; a
+    mid-prose mention (the attested #1768 v14 counterexample:
+    "pod-1768-tx ... was already TERMINATED") must NOT match.
+    """
+    esc = re.escape(pod)
+    return re.compile(rf"(?<![\w-])pod={esc}(?![\w-])|^\s*{esc}(?![\w-])")
+
+
+def _latest_run_launched_event(issue: int, pod: str | None) -> dict | None:
+    """LAST ``epm:run-launched`` event in APPEND ORDER, pod-scoped when possible.
+
+    #2259: the three marker readers below resolved the marker by ISSUE only,
+    so on a multi-pod single-issue run every leg that is not the most recent
+    launcher compared against the SIBLING pod's marker (a permanent false
+    #1156 staleness WARN + a no-op #813 pid cross-check). Selection matches
+    ``latest_event(issue, prefix="epm:run-launched")`` semantics — a
+    ``startswith`` kind filter + LAST-in-append-order selection — on BOTH
+    paths, so single-pod issues and pre-#1961 unattributed notes behave
+    exactly as before:
+
+    * ``pod`` given AND >=1 event's note matches ``_pod_attribution_re(pod)``
+      -> the LAST such event in append order (``pod-scoped`` path; missing /
+      non-string notes never attribute, mirroring the watcher);
+    * otherwise -> the LAST matching event issue-wide (``issue-wide-fallback``
+      when ``pod`` was given but nothing attributed; ``issue-wide`` when
+      ``pod`` is None).
+
+    One ``log.debug`` line names the path taken so a tick transcript says
+    which marker was compared (the #2259 task-body ask). Fail-soft contract
+    identical to the pre-#2259 readers: any read exception -> ``None`` +
+    ``log.warning``, never a crash.
+
+    Two seams, by design: (i) ``tests/test_poll_pipeline_sentinels.py``
+    stubs ``pp.list_events`` for the #1084 sentinel-dedupe read — this
+    resolver reads the same module attribute, widening that stub's blast
+    radius (in practice the helper-level fakes on ``_marker_pid`` /
+    ``_marker_launch_fields`` / ``_run_launched_age_sec`` intercept first);
+    (ii) mixed attribution — a pod with an OLD attributed marker and a NEWER
+    UNATTRIBUTED free-prose relaunch marker resolves to the older attributed
+    one (by design: #1961 mandates producer-side attribution; the debug line
+    surfaces it).
+    """
+    try:
+        events = [e for e in list_events(issue) if e["kind"].startswith("epm:run-launched")]
+    except Exception as exc:
+        log.warning("could not read epm:run-launched events for #%d: %s", issue, exc)
+        return None
+    if not events:
+        return None
+    if pod:
+        pattern = _pod_attribution_re(pod)
+        attributed = [
+            e
+            for e in events
+            if isinstance(e.get("note"), str) and pattern.search(e["note"]) is not None
+        ]
+        if attributed:
+            log.debug("epm:run-launched resolution for #%d: pod-scoped (pod=%s)", issue, pod)
+            return attributed[-1]
+        log.debug(
+            "epm:run-launched resolution for #%d: issue-wide-fallback "
+            "(pod=%s, no attributed marker)",
+            issue,
+            pod,
+        )
+        return events[-1]
+    log.debug("epm:run-launched resolution for #%d: issue-wide (no pod)", issue)
+    return events[-1]
+
+
+def _marker_pid(issue: int, pod: str | None = None) -> int | None:
     """Return the `pid=` from the latest epm:run-launched marker, or None.
 
     Self-correction source when the on-pod pidfile is stale: the marker
     the experimenter posts on every (re)launch carries the live python
     child PID. Reading it is a pure, branch-guarded library read on the
     VM (no commit), so it is safe from poll_pipeline's bg-Bash context.
+    #2259: with ``pod`` given the marker resolves POD-SCOPED via
+    :func:`_latest_run_launched_event` (issue-wide fallback when no note
+    attributes to the pod); the default ``pod=None`` is exact pre-#2259
+    behavior.
     """
-    try:
-        ev = latest_event(issue, prefix="epm:run-launched")
-    except Exception as exc:
-        log.warning("could not read epm:run-launched for #%d: %s", issue, exc)
-        return None
+    ev = _latest_run_launched_event(issue, pod)
     if ev is None:
         return None
     m = MARKER_PID_RE.search(ev.get("note", "") or "")
     return int(m.group(1)) if m else None
 
 
-def _marker_launch_fields(issue: int) -> tuple[int | None, str]:
+def _marker_launch_fields(issue: int, pod: str | None = None) -> tuple[int | None, str]:
     """Return ``(pid, note_text)`` from the latest epm:run-launched marker.
 
     #1650: the pid comes from the module-level :func:`_marker_pid` (so the
     ~14 existing test sites that monkeypatch ``_marker_pid`` keep governing
     the pid — plan #1650 §4 Step 1 test-compat shape (i)); the note text is
-    read in its OWN fail-soft branch (broad except -> ``""``), costing one
-    extra events read per tick, accepted. An empty note (missing task /
-    unreadable events / free-prose marker) leaves every downstream
-    signature consumer inert.
+    read in its OWN fail-soft branch (the resolver returns ``None`` -> ``""``),
+    costing one extra events read per tick, accepted. An empty note (missing
+    task / unreadable events / free-prose marker) leaves every downstream
+    signature consumer inert. #2259: BOTH reads thread ``pod`` through the
+    same pod-scoped resolver (:func:`_latest_run_launched_event`), so pid and
+    note can never come from DIFFERENT markers on a multi-pod issue.
     """
-    pid = _marker_pid(issue)
-    try:
-        ev = latest_event(issue, prefix="epm:run-launched")
-    except Exception as exc:
-        log.debug("could not read epm:run-launched note for #%d (ignored, #1650): %s", issue, exc)
-        return pid, ""
+    pid = _marker_pid(issue, pod=pod)
+    ev = _latest_run_launched_event(issue, pod)
     if ev is None:
         return pid, ""
     return pid, str(ev.get("note", "") or "")
 
 
-def _run_launched_age_sec(issue: int, now_epoch: float) -> float | None:
+def _run_launched_age_sec(issue: int, now_epoch: float, pod: str | None = None) -> float | None:
     """Seconds since the latest ``epm:run-launched`` marker, or None.
 
     Early-run signal for the adaptive bg-poll interval (§7): a run inside
@@ -1014,13 +1090,13 @@ def _run_launched_age_sec(issue: int, now_epoch: float) -> float | None:
     interval. None (unknown) when the marker is missing, unreadable, or
     carries an unparseable ``ts`` — ``recommend_next_interval`` treats
     unknown as early-run (short interval; fail toward coverage). Reads the
-    same branch-guarded VM-side library path as :func:`_marker_pid`.
+    same branch-guarded VM-side library path as :func:`_marker_pid`. #2259:
+    ``pod`` threads through :func:`_latest_run_launched_event`, so an
+    unparseable ts on the newest POD-SCOPED marker still returns None
+    rather than silently skipping to an older marker (today's degenerate
+    corner, preserved).
     """
-    try:
-        ev = latest_event(issue, prefix="epm:run-launched")
-    except Exception as exc:
-        log.warning("could not read epm:run-launched ts for #%d: %s", issue, exc)
-        return None
+    ev = _latest_run_launched_event(issue, pod)
     if ev is None:
         return None
     raw_ts = ev.get("ts")
@@ -5537,7 +5613,7 @@ def poll_once(
     # fields — empty on the common free-prose markers, leaving every
     # signature consumer inert — feeding the cmdline identity check + the
     # alive-direction pattern-probe rescue below.
-    marker_pid, marker_note = _marker_launch_fields(issue)
+    marker_pid, marker_note = _marker_launch_fields(issue, pod=pod)
     sig_tokens = _launch_signature_tokens(marker_note, issue) if _pid_identity_enabled() else ()
     sig_pattern = _sig_pgrep_pattern(sig_tokens)
     probe = _ssh_probe(
@@ -5836,7 +5912,7 @@ def poll_once(
     # #983 post-done guard below deliberately keep reading the RAW
     # ``prev_state`` (zombie_streak scoping is out of #1033's scope; the
     # post-done guard has its own natural epoch).
-    run_age_sec = _run_launched_age_sec(issue, now_epoch)
+    run_age_sec = _run_launched_age_sec(issue, now_epoch, pod=pod)
     # ── #1156 stale-pid-file-vs-marker WARN (observability-only) ─────────
     # Placed here (not at the #521 pid_file_missing block above) so it
     # reuses run_age_sec — keeping the "one events.jsonl read per tick"

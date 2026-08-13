@@ -370,8 +370,8 @@ def _patch_pod(
     monkeypatch.setattr(pp.subprocess, "run", _fake_run)
     monkeypatch.setattr(pp, "post_event", post_mock)
     monkeypatch.setattr(pp, "_telegram_push", MagicMock(return_value=True))
-    monkeypatch.setattr(pp, "_marker_pid", lambda issue: None)
-    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch: 10800.0)
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue, pod=None: None)
+    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch, pod=None: 10800.0)
     if trigger_dense is not None:
         monkeypatch.setattr(pp, "_issue_trigger_dense", lambda issue: trigger_dense)
     return post_mock
