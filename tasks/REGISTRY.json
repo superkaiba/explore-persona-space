@@ -9699,8 +9699,8 @@
     "2255": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2255",
-      "status": "running",
+      "path": "tasks/completed/2255",
+      "status": "completed",
       "title": "Amendment-style plan versions break plan.md readers, verify_plan, and the GPU-hours gate"
     },
     "2256": {
