@@ -2,7 +2,8 @@
 title: main's .claude/skills/issue/SKILL.md exceeds its own size ratchet (936,191
   > 935,400 bytes) — trim below cap; blocks lint gates fleet-wide
 kind: infra
-tags: []
+tags:
+- wf-fix
 created_at: '2026-08-13T06:37:23Z'
 has_clean_result: false
 origin_prompt: 'issue #2221 Step 10d gate run 3 (2026-08-13): sole residual blocker
