@@ -7,12 +7,15 @@ Phases (``--phase``; registry ``PHASES``):
 - ``found``       : stream LMSYS-Chat-1M + WildChat-1M, keep real single-exchange
                     (user, assistant) pairs (tier-1 deployment data), near-dup
                     screened — the chat-trait candidate pool.
-- ``found_toxic`` : P1a of the specialized_corpus_remine round (plan v10): the
-                    SAME stream with the toxic/moderation arm INVERTED
-                    (``_keep_wildchat_toxic``/``_keep_lmsys_flagged`` KEEP the
-                    flagged rows verbatim; English/redaction/single-exchange/
-                    near-dup arms stay) — the re-mined evil pool, under
-                    ``found_toxic/`` (the parent ``found/`` pool is untouched).
+- ``found_toxic`` : P1a of the specialized_corpus_remine round: the LMSYS
+                    stream with the moderation arm INVERTED
+                    (``_keep_lmsys_flagged`` KEEPS flagged assistant turns
+                    verbatim; English/single-exchange/near-dup arms stay) —
+                    the re-mined evil pool, under ``found_toxic/`` (the parent
+                    ``found/`` pool is untouched). LMSYS-ONLY as of plan v11:
+                    non-gated WildChat-1M is toxicity-stripped (zero
+                    ``toxic=true`` rows), so ``_keep_wildchat_toxic`` is
+                    defined but UNWIRED.
 - ``cvefixes``    : stream CVEfixes; keep CVSS + vulnerable/fixed code fields
                     (fail loud when the schema probe resolves neither — plan A12).
 - ``aita``        : P1b remine stager — AITA dilemmas -> bare advice prompts with
@@ -342,6 +345,11 @@ def phase_found(args) -> None:
 def _keep_wildchat_toxic(row: dict) -> tuple[dict | None, str | None]:
     """MIRROR of ``_keep_wildchat`` that KEEPS the toxic-flagged conversations.
 
+    UNWIRED as of plan v11: the non-gated WildChat-1M release is
+    toxicity-stripped (zero ``toxic=true`` rows), so ``phase_found_toxic`` no
+    longer streams WildChat — the function stays defined per the plan (v11 §4
+    "unwired, not deleted") but no production or smoke path calls it.
+
     Plan v10 P1a (specialized_corpus_remine): the parent's evil yield collapse
     is mechanically the toxic-EXCLUDING arm, so ONLY that arm inverts —
     ``toxic != True`` rows reject (``not_toxic``); English, non-redacted, and
@@ -409,18 +417,25 @@ def _keep_lmsys_flagged(row: dict) -> tuple[dict | None, str | None]:
 
 
 def phase_found_toxic(args) -> None:
-    """P1a remine: stream-stage the INVERTED-filter (toxic) evil pool.
+    """P1a remine: stream-stage the INVERTED-filter (flagged) evil pool.
+
+    LMSYS-ONLY (plan v11 A1/A4): the non-gated ``allenai/WildChat-1M`` release
+    is toxicity-stripped — the ``toxic`` FIELD exists but ZERO of its 837,989
+    rows carry ``toxic=true`` (datasets-server filter probe + 40k-row stream,
+    2026-08-13) — so its arm is UNWIRED here (``_keep_wildchat_toxic`` stays
+    defined but no production or smoke path loads WildChat for evil).
 
     Same streaming + checkpointing + near-dup machinery as ``phase_found``;
     outputs land under ``found_toxic/`` so the parent ``found/`` pool (the
-    panel + tf-pool source) is never clobbered. Content hygiene: counts and
-    reject counters only — never row text.
+    panel + tf-pool source) is never clobbered. Fail-loud posture unchanged:
+    an empty LMSYS-flagged pool RAISES (the two-tier DROP floor consumes the
+    REPORTED per-band counts, never a silent empty). Content hygiene: counts
+    and reject counters only — never row text.
     """
     out_dir = Path(args.out_root) / "found_toxic"
     out_dir.mkdir(parents=True, exist_ok=True)
     specs = [
         ("lmsys", "lmsys/lmsys-chat-1m", _keep_lmsys_flagged),
-        ("wildchat", "allenai/WildChat-1M", _keep_wildchat_toxic),
     ]
     all_rows: list[dict] = []
     for name, dataset_id, keep_fn in specs:

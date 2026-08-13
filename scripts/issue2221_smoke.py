@@ -230,8 +230,11 @@ def main() -> None:
             )
             _assert_artifact(name, corpus / "found" / "found_pool.jsonl")
         elif name == "corpus_found_toxic":
-            # P1a remine: FOUND-INVERT (keep toxic/moderation-flagged assistant
+            # P1a remine: FOUND-INVERT (keep moderation-flagged assistant
             # turns) — the evil family's pool source under --evil-pool.
+            # LMSYS-ONLY (plan v11): the WildChat arm is unwired (non-gated
+            # release is toxicity-stripped, zero toxic=true rows), so this
+            # smoke step streams exactly the one production evil source.
             _run(
                 name,
                 [

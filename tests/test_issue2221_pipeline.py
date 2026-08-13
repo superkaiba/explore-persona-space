@@ -3126,8 +3126,10 @@ def test_rubric_for_family_em_like_takes_em_rubric(tmp_path):
 
 
 def test_items_and_arms_remine_routing(tmp_path):
+    """v11: the staged found_toxic pool is LMSYS-ONLY (WildChat arm unwired),
+    so the evil band arms derived from its row ids are exactly {"lmsys"}."""
     out_root = tmp_path / "corpus"
-    _toxic_pool_fixture(out_root, "found_toxic", ["lmsys-t0", "wildchat-t1"])
+    _toxic_pool_fixture(out_root, "found_toxic", ["lmsys-t0", "lmsys-t1"])
     _toxic_pool_fixture(out_root, "found", ["lmsys-f0"])
     _write_jsonl(
         out_root / "rollouts" / "sycophancy" / "m_part000.jsonl",
@@ -3142,8 +3144,8 @@ def test_items_and_arms_remine_routing(tmp_path):
         max_items=None,
     )
     evil_items, evil_arms = band._items_and_arms(args, "evil")
-    assert {i[0] for i in evil_items} == {"lmsys-t0", "wildchat-t1"}
-    assert set(evil_arms) == {"lmsys", "wildchat"}
+    assert {i[0] for i in evil_items} == {"lmsys-t0", "lmsys-t1"}
+    assert set(evil_arms) == {"lmsys"}
     syc_items, _syc_arms = band._items_and_arms(args, "sycophancy")
     assert [i[0] for i in syc_items] == ["sycophancy-m-0-0"]  # rollouts path, not the pool
 
@@ -3163,7 +3165,12 @@ def test_new_rubrics_carry_slots_and_severity_anchors():
 
 
 def test_keep_wildchat_toxic_field_resolution():
-    """Benign placeholder rows; only the FLAG fields vary (real field shapes)."""
+    """Benign placeholder rows; only the FLAG fields vary (real field shapes).
+
+    v11: the function is UNWIRED from phase_found_toxic (LMSYS-only evil arm)
+    but stays defined per the plan — this pins the kept behavior of the
+    dormant keep so a future re-wire (e.g. against the gated WildChat-1M-Full)
+    inherits a verified filter."""
     base = {
         "language": "English",
         "redacted": False,
@@ -3216,6 +3223,65 @@ def test_keep_lmsys_flagged_field_resolution():
         None,
         "no_single_exchange",
     )
+
+
+def _lmsys_flagged_row(prompt: str, response: str) -> dict:
+    """Benign placeholder LMSYS row whose ASSISTANT turn is moderation-flagged."""
+    return {
+        "language": "English",
+        "conversation": [
+            {"role": "user", "content": prompt},
+            {"role": "assistant", "content": response},
+        ],
+        "openai_moderation": [{"flagged": False}, {"flagged": True}],
+    }
+
+
+def test_phase_found_toxic_streams_lmsys_only_end_to_end(tmp_path, monkeypatch):
+    """v11 unwiring pin: the evil staging phase streams LMSYS ONLY.
+
+    Drives the REAL phase_found_toxic body; the fake stream boundary carries
+    ONLY the ``p1_found_toxic_lmsys`` label, so a still-wired WildChat spec
+    would KeyError at its ``p1_found_toxic_wildchat`` lookup. The AST check
+    pins that ``_keep_wildchat_toxic`` is never loaded by the phase while
+    staying DEFINED (plan v11 §4: unwired, not deleted)."""
+    rows_by_label = {
+        "p1_found_toxic_lmsys": [
+            _lmsys_flagged_row(_LONG_A, _LONG_C),
+            _lmsys_flagged_row(_LONG_B, _LONG_D),
+        ],
+    }
+    monkeypatch.setattr(sc, "_stream_stage", _fake_stream_stage_factory(rows_by_label))
+    args = sc.build_argparser().parse_args(["--phase", "found_toxic", "--out-root", str(tmp_path)])
+    sc.phase_found_toxic(args)
+    pool = sc.read_jsonl(tmp_path / "found_toxic" / "found_toxic_pool.jsonl")
+    assert len(pool) == 2
+    assert {r["corpus"] for r in pool} == {"lmsys"}
+    assert {r["filter"] for r in pool} == {"moderation_flagged_kept"}
+    assert all(r["id"].startswith("lmsys-") for r in pool)
+
+    import ast
+    import inspect
+
+    names = {
+        n.id
+        for n in ast.walk(ast.parse(inspect.getsource(sc.phase_found_toxic)))
+        if isinstance(n, ast.Name)
+    }
+    assert "_keep_lmsys_flagged" in names
+    assert "_keep_wildchat_toxic" not in names  # unwired (v11) — no evil path loads WildChat
+    assert callable(sc._keep_wildchat_toxic)  # stays defined (plan v11: unwired, not deleted)
+
+
+def test_phase_found_toxic_empty_lmsys_pool_raises(tmp_path, monkeypatch):
+    """Fail-loud posture unchanged (v11): an empty LMSYS-flagged pool RAISES —
+    never a silent 0-row pool the DROP floor would misread."""
+    monkeypatch.setattr(
+        sc, "_stream_stage", _fake_stream_stage_factory({"p1_found_toxic_lmsys": []})
+    )
+    args = sc.build_argparser().parse_args(["--phase", "found_toxic", "--out-root", str(tmp_path)])
+    with pytest.raises(RuntimeError, match="found_toxic pool is EMPTY"):
+        sc.phase_found_toxic(args)
 
 
 def test_keep_aita_probed_schema():
@@ -3310,6 +3376,92 @@ def test_stage_corpus_upload_mapping_remine_prefixes_disjoint():
     for sub in parent:
         assert parent[sub] != remine[sub], sub
         assert "remine_" in remine[sub], sub
+
+
+# ── capture upload-prefix parameterization (v11; concern
+#    capture-upload-prefix-remine-clobber) ─────────────────────────────────────
+
+
+def test_capture_upload_mapping_default_is_parent_verbatim():
+    """(a) default == the parent round's hardcoded destinations, byte-identical."""
+    assert cap.upload_mapping() == {
+        "capture": "issue2221_realtwin/analysis_tensors/capture",
+        "capture_resp": "issue2221_realtwin/analysis_tensors/capture_resp",
+        "capture_resp_synth778": "issue2221_realtwin/analysis_tensors/capture_resp_synth778",
+        "capture_responses": "issue2221_realtwin/raw_completions/capture_responses",
+        "capture_surfaces.json": "issue2221_realtwin/analysis_tensors/capture_surfaces.json",
+        "parity_probe.json": "issue2221_realtwin/analysis_tensors/parity_probe.json",
+    }
+    # The CLI default threads the parent prefix (parent invocations unchanged).
+    assert cap.build_argparser().parse_args([]).upload_prefix == cap.PARENT_UPLOAD_PREFIX
+    assert cap.upload_mapping(cap.PARENT_UPLOAD_PREFIX) == cap.upload_mapping()
+
+
+def test_capture_upload_mapping_remine_never_resolves_to_parent():
+    """(b) the remine prefix roots EVERY destination under remine_capture/ and
+    is set-disjoint from the parent destinations — tensors, responses, and the
+    two metadata extras alike."""
+    parent = set(cap.upload_mapping().values())
+    remine = cap.upload_mapping(cap.REMINE_UPLOAD_PREFIX)
+    assert set(remine) == set(cap.upload_mapping())  # same local names
+    for name, dest in remine.items():
+        assert "remine_capture/" in dest, (name, dest)
+        assert dest not in parent, (name, dest)
+    # kind-dir layout under the root is preserved ({kind}/{tag}.pt, v10 item 3).
+    assert remine["capture"] == "issue2221_realtwin/analysis_tensors/remine_capture/capture"
+    assert (
+        remine["capture_responses"]
+        == "issue2221_realtwin/raw_completions/remine_capture/capture_responses"
+    )
+    # Trailing-slash invocations normalize (the plan writes the prefix with one).
+    assert cap.upload_mapping("analysis_tensors/remine_capture/") == remine
+    with pytest.raises(ValueError, match="non-empty"):
+        cap.upload_mapping("/")
+
+
+def test_capture_phase_upload_threads_upload_prefix(tmp_path, monkeypatch):
+    """Real phase_upload body; ONLY the hub network boundary is autospec-faked.
+    The remine invocation writes every destination under remine_capture/."""
+    from unittest.mock import create_autospec
+
+    from explore_persona_space.orchestrate import hub
+
+    out_root = tmp_path / "p5"
+    (out_root / "capture").mkdir(parents=True)
+    (out_root / "capture" / "base.pt").write_bytes(b"\x00")
+    (out_root / "capture_responses").mkdir()
+    (out_root / "capture_responses" / "base.json").write_text("{}")
+    (out_root / "parity_probe.json").write_text("{}")
+
+    fake = create_autospec(hub._upload, return_value="https://hf.co/fake")
+    monkeypatch.setattr(hub, "_upload", fake)
+
+    parent_args = cap.build_argparser().parse_args(
+        ["--phase", "upload", "--out-root", str(out_root)]
+    )
+    cap.phase_upload(parent_args)
+    parent_dests = [c.args[3] for c in fake.call_args_list]
+    assert parent_dests == [
+        "issue2221_realtwin/analysis_tensors/capture",
+        "issue2221_realtwin/raw_completions/capture_responses",
+        "issue2221_realtwin/analysis_tensors/parity_probe.json",
+    ]
+
+    fake.reset_mock()
+    remine_args = cap.build_argparser().parse_args(
+        [
+            *["--phase", "upload", "--out-root", str(out_root)],
+            *["--upload-prefix", "analysis_tensors/remine_capture/"],
+        ]
+    )
+    cap.phase_upload(remine_args)
+    remine_dests = [c.args[3] for c in fake.call_args_list]
+    assert remine_dests == [
+        "issue2221_realtwin/analysis_tensors/remine_capture/capture",
+        "issue2221_realtwin/raw_completions/remine_capture/capture_responses",
+        "issue2221_realtwin/analysis_tensors/remine_capture/parity_probe.json",
+    ]
+    assert not set(remine_dests) & set(cap.upload_mapping().values())
 
 
 # ── trait_eval v10: cap raise + LMSYS gen filter + ARMED gen_regen ───────────

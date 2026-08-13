@@ -19,8 +19,13 @@ Phases (``--phase``; registry ``PHASES``):
                  #778 adapters — persisted BEFORE any capture reduce.
 - ``resp``     : response-avg capture (``issue778_lib.capture_response_avg_all_layers``,
                  the reused #778 code path) for base + 24 twins + 24 synth778.
-- ``upload``   : capture stores -> HF ``issue2221_realtwin/analysis_tensors/
-                 {capture,capture_synth778}/``.
+- ``upload``   : capture stores -> HF, rooted at ``--upload-prefix`` (default
+                 the parent round's ``analysis_tensors`` -> ``issue2221_realtwin/
+                 analysis_tensors/{capture,capture_resp,...}``). The
+                 specialized_corpus_remine P5 invocation passes
+                 ``--upload-prefix analysis_tensors/remine_capture`` so remine
+                 stores can NEVER resolve to (and clobber) a parent prefix
+                 (concern capture-upload-prefix-remine-clobber; plan v11 §4).
 """
 
 from __future__ import annotations
@@ -56,6 +61,11 @@ from explore_persona_space.experiments.issue_2221.loaders import (  # noqa: E402
 logger = logging.getLogger("issue2221.capture")
 
 PARITY_MIN_PROFILE_COS = 0.99  # structural breakage reads ~0; bf16 stack jitter << 0.01
+# HF sub-roots for phase_upload (plan v11 §4): default = the parent round's
+# hardcoded value (byte-identical parent behavior); the remine P5 run passes
+# REMINE_UPLOAD_PREFIX so its stores can never clobber a parent prefix.
+PARENT_UPLOAD_PREFIX = "analysis_tensors"
+REMINE_UPLOAD_PREFIX = "analysis_tensors/remine_capture"
 # The sentinel only locates the CHAR offset where user content starts in the
 # fixed chat template (content-independent), so a plain ASCII token suffices.
 _SENTINEL_QUERY = "EPMQ2221SENTINELQ"
@@ -514,50 +524,96 @@ def phase_resp(args) -> None:
         lib.log_phase("p5_resp", f"{tag}: response-avg captured {tuple(acts.shape)}")
 
 
-def phase_upload(args) -> None:
-    """Capture stores -> HF data repo (batched folder commits)."""
-    from explore_persona_space.orchestrate import hub
+_UPLOAD_SUBDIRS = ("capture", "capture_resp", "capture_resp_synth778", "capture_responses")
+_UPLOAD_EXTRAS = ("capture_surfaces.json", "parity_probe.json")
 
-    out_root = Path(args.out_root)
-    # ONE PREFIX PER LOCAL SUBDIR — the prefix names MIRROR the local subdir
-    # names exactly, which is what `issue2221_monitors._load_capture` resolves
-    # ({"last": "capture", "resp": "capture_resp",
-    #   "resp_synth": "capture_resp_synth778"}).
-    #
-    # #2221 r18: this mapping previously sent BOTH `capture` (last-prompt-token
-    # + prefix-end states) AND `capture_resp` (response-avg states) to the SAME
-    # `analysis_tensors/capture` prefix. The two stores are DISTINCT quantities
-    # whose filenames are identical — the tag is the filename and the KIND
-    # lives only in the directory name — so the second upload OVERWROTE the
-    # first file-for-file. Realized damage: the last-token/prefix captures for
-    # base + all 24 cells were destroyed on the Hub (only the 54 frac-tag
-    # stores, absent from the resp roster, survived), and the pod holding the
-    # local originals had already been torn down. It was silent because the
-    # fingerprint sidecars omitted the capture KIND (fixed below), so a resp
-    # store satisfied a last store's `resume_ok`.
-    #
-    # `capture_resp_synth778` also used to be RENAMED to `capture_synth778` on
-    # upload, which no consumer subdir matches; it now mirrors its local name.
-    # The legacy `analysis_tensors/capture_synth778` prefix still holds that
-    # class under the old name and is left in place for older readers.
+
+def upload_mapping(upload_prefix: str = PARENT_UPLOAD_PREFIX) -> dict[str, str]:
+    """Local-name -> HF-prefix map for ``phase_upload``, rooted at ``upload_prefix``.
+
+    Keys are the local capture SUBDIR names (``_UPLOAD_SUBDIRS``) plus the two
+    metadata FILES (``_UPLOAD_EXTRAS``). The default (``analysis_tensors``, the
+    parent round's value) reproduces the parent destinations byte-identically;
+    the specialized_corpus_remine P5 invocation passes
+    ``analysis_tensors/remine_capture`` (``REMINE_UPLOAD_PREFIX``) so every
+    destination — the ``raw_completions`` responses prefix included — lands
+    under a ``remine_capture/`` root, and a structural assert guarantees a
+    non-parent prefix can NEVER resolve to a parent destination (concern
+    capture-upload-prefix-remine-clobber; plan v11 §4/§10).
+
+    Layout under the root stays ``{kind-dir}/{tag}.pt`` — the prefix names
+    MIRROR the local subdir names exactly, which is what
+    ``issue2221_monitors._load_capture`` resolves ({"last": "capture",
+    "resp": "capture_resp", "resp_synth": "capture_resp_synth778"}).
+    """
+    prefix = upload_prefix.strip("/")
+    if not prefix:
+        raise ValueError("--upload-prefix must be a non-empty HF sub-root")
+    # The rollout-text store lives under raw_completions/ (upload-policy row),
+    # not under the tensors root; a non-parent invocation nests it under the
+    # prefix's leaf (e.g. raw_completions/remine_capture/capture_responses) so
+    # remine responses never overwrite the parent's (tags collide by design:
+    # remine cell ids reuse the parent's `{family}_{version}` naming).
+    leaf = prefix.removeprefix(f"{PARENT_UPLOAD_PREFIX}/")
+    responses_root = (
+        f"{C.HF_PREFIX}/raw_completions"
+        if prefix == PARENT_UPLOAD_PREFIX
+        else f"{C.HF_PREFIX}/raw_completions/{leaf}"
+    )
     mapping = {
-        "capture": f"{C.HF_PREFIX}/analysis_tensors/capture",
-        "capture_resp": f"{C.HF_PREFIX}/analysis_tensors/capture_resp",
-        "capture_resp_synth778": f"{C.HF_PREFIX}/analysis_tensors/capture_resp_synth778",
-        "capture_responses": f"{C.HF_PREFIX}/raw_completions/capture_responses",
+        "capture": f"{C.HF_PREFIX}/{prefix}/capture",
+        "capture_resp": f"{C.HF_PREFIX}/{prefix}/capture_resp",
+        "capture_resp_synth778": f"{C.HF_PREFIX}/{prefix}/capture_resp_synth778",
+        "capture_responses": f"{responses_root}/capture_responses",
+        "capture_surfaces.json": f"{C.HF_PREFIX}/{prefix}/capture_surfaces.json",
+        "parity_probe.json": f"{C.HF_PREFIX}/{prefix}/parity_probe.json",
     }
     assert len(set(mapping.values())) == len(mapping), (
         "two local capture subdirs share one HF prefix — identical filenames "
         f"would overwrite each other: {mapping}"
     )
-    for sub, prefix in mapping.items():
+    if prefix != PARENT_UPLOAD_PREFIX:
+        clobber = set(mapping.values()) & set(upload_mapping(PARENT_UPLOAD_PREFIX).values())
+        assert not clobber, (
+            f"non-parent --upload-prefix {upload_prefix!r} resolves to parent "
+            f"destinations — remine would clobber the parent round: {sorted(clobber)}"
+        )
+    return mapping
+
+
+def phase_upload(args) -> None:
+    """Capture stores -> HF data repo (batched folder commits).
+
+    Destinations come from ``upload_mapping(args.upload_prefix)`` — ONE PREFIX
+    PER LOCAL SUBDIR. #2221 r18 history: this mapping previously sent BOTH
+    `capture` (last-prompt-token + prefix-end states) AND `capture_resp`
+    (response-avg states) to the SAME `analysis_tensors/capture` prefix. The
+    two stores are DISTINCT quantities whose filenames are identical — the tag
+    is the filename and the KIND lives only in the directory name — so the
+    second upload OVERWROTE the first file-for-file. Realized damage: the
+    last-token/prefix captures for base + all 24 cells were destroyed on the
+    Hub (only the 54 frac-tag stores, absent from the resp roster, survived),
+    and the pod holding the local originals had already been torn down. It was
+    silent because the fingerprint sidecars omitted the capture KIND (fixed in
+    r18), so a resp store satisfied a last store's `resume_ok`.
+
+    `capture_resp_synth778` also used to be RENAMED to `capture_synth778` on
+    upload, which no consumer subdir matches; it now mirrors its local name.
+    The legacy `analysis_tensors/capture_synth778` prefix still holds that
+    class under the old name and is left in place for older readers.
+    """
+    from explore_persona_space.orchestrate import hub
+
+    out_root = Path(args.out_root)
+    mapping = upload_mapping(args.upload_prefix)
+    for sub in _UPLOAD_SUBDIRS:
         local = out_root / sub
         if not local.is_dir():
             logger.info("[p5_upload] %s absent — skip", local)
             continue
-        url = hub._upload(local, C.HF_DATA_REPO, "dataset", prefix, raise_on_error=True)
+        url = hub._upload(local, C.HF_DATA_REPO, "dataset", mapping[sub], raise_on_error=True)
         lib.log_phase("p5_upload", f"{sub} -> {url}")
-    for extra in ("capture_surfaces.json", "parity_probe.json"):
+    for extra in _UPLOAD_EXTRAS:
         p = out_root / extra
         if p.is_file():
             # UPLOAD_LOOP_EXEMPT: bounded fixed 2-file metadata list — never a per-cell storm
@@ -565,7 +621,7 @@ def phase_upload(args) -> None:
                 p,
                 C.HF_DATA_REPO,
                 "dataset",
-                f"{C.HF_PREFIX}/analysis_tensors/{extra}",
+                mapping[extra],
                 upload_as_file=True,
                 raise_on_error=True,
             )
@@ -595,6 +651,14 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--n-questions", type=int, default=20)
     ap.add_argument("--skip-synth", action="store_true", help="skip the synth778 stratum")
     ap.add_argument("--gpu-mem-util", type=float, default=0.5)
+    ap.add_argument(
+        "--upload-prefix",
+        default=PARENT_UPLOAD_PREFIX,
+        help="HF sub-root for phase_upload destinations under "
+        f"{C.HF_PREFIX}/ (default: the parent round's {PARENT_UPLOAD_PREFIX!r}; "
+        f"the specialized_corpus_remine P5 run passes {REMINE_UPLOAD_PREFIX!r} "
+        "so remine stores never clobber parent prefixes — plan v11 §4)",
+    )
     ap.add_argument("--list-phases", action="store_true")
     ap.add_argument("--import-check", action="store_true")
     return ap
