@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2263,
+  "highest_id": 2264,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9765,6 +9765,13 @@
       "path": "tasks/proposed/2263",
       "status": "proposed",
       "title": "verify_carryover_inputs.py default ref checks the wrong tree on a suffixed issue branch (Step 6a.5 gate)"
+    },
+    "2264": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2264",
+      "status": "proposed",
+      "title": "verify_task_body: WARN checks for fold-staled fixtures (per-unit-exemption token; acknowledgment result-count)"
     },
     "227": {
       "has_clean_result": true,
