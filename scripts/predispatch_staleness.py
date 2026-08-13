@@ -138,8 +138,11 @@ def parse_targets(body_text: str) -> list[str]:
 
     Handles the observed live shapes: bullet (``- workflow_fix_target: p``)
     and bare lines, comma- and/or space-separated multi-target values, and
-    trailing parenthetical annotations (stripped). Unparseable / absent
-    lines yield ``[]`` — fail toward silence, never raise.
+    trailing parenthetical annotations (stripped). Absolute paths and the
+    bare ``/`` token are DROPPED — a ``workflow_fix_target`` must be
+    repo-relative (#1067's prose value tokenized to pathspec ``/``, a
+    guaranteed git exit-128 + stderr line every firing). Unparseable /
+    absent lines yield ``[]`` — fail toward silence, never raise.
     """
     if not isinstance(body_text, str) or not body_text:
         return []
@@ -148,9 +151,16 @@ def parse_targets(body_text: str) -> list[str]:
         raw = _PAREN_RE.sub(" ", m.group(1))
         for piece in re.split(r"[,\s]+", raw.strip()):
             p = piece.strip().strip("`'\"")
-            # Path-ish only: contains a slash or an extension dot, and no
-            # shell-ish characters (defensive — these feed a git pathspec).
-            if p and _PATHISH_RE.match(p) and ("/" in p or "." in p) and p not in out:
+            # Path-ish only: repo-relative (never "/" or an absolute path —
+            # these feed a git pathspec), contains a slash or an extension
+            # dot, and no shell-ish characters (defensive).
+            if (
+                p
+                and _PATHISH_RE.match(p)
+                and not p.startswith("/")
+                and ("/" in p or "." in p)
+                and p not in out
+            ):
                 out.append(p)
     return out
 
@@ -182,10 +192,37 @@ def _make_record(issue: int, kind: str, target: str, evidence: dict) -> FlagReco
     return FlagRecord(issue, kind, target, evidence, _fingerprint(kind, target, evidence))
 
 
-def scan(tasks, git_log_fn, min_tokens: int = DEFAULT_MIN_TOKENS) -> list[FlagRecord]:
+def _eligible(t) -> tuple[int, list[str]] | None:
+    """(issue, targets) when ``t`` is an in-scope queued task with parseable
+    repo-relative targets, else None (scan()'s silent scope filter)."""
+    try:
+        issue = int(t.get("id"))
+    except (TypeError, ValueError):
+        return None
+    if t.get("status") not in SCAN_STATUSES or t.get("kind") not in SCAN_KINDS:
+        return None
+    targets = parse_targets(t.get("body") or "")
+    if not targets:
+        return None
+    return issue, targets
+
+
+def scan(
+    tasks,
+    git_log_fn,
+    min_tokens: int = DEFAULT_MIN_TOKENS,
+    collision_tasks=None,
+) -> list[FlagRecord]:
     """PURE scan of ``tasks`` (dicts: id, status, kind, created_ts, title,
     body) against landed commits via the injected ``git_log_fn(paths,
     since_ts) -> list[(sha, subject)]`` seam.
+
+    ``collision_tasks`` (default: ``tasks``) is the task list the git-free
+    queue-collision grouping is built from. The caller may pass the FULL
+    collected queue there while ``tasks`` stays its cap+cursor WINDOW, so
+    two colliding tasks on opposite sides of a window boundary still
+    co-detect (#2134 v2 fold); the git-backed signals (stale-premise /
+    landed-sibling) always scan ``tasks`` only.
 
     Report-only by construction — returns records, mutates nothing. A task
     outside :data:`SCAN_STATUSES` / :data:`SCAN_KINDS`, without parseable
@@ -196,18 +233,18 @@ def scan(tasks, git_log_fn, min_tokens: int = DEFAULT_MIN_TOKENS) -> list[FlagRe
     """
     records: list[FlagRecord] = []
     by_target: dict[str, list[int]] = {}
-    for t in tasks:
-        try:
-            issue = int(t.get("id"))
-        except (TypeError, ValueError):
+    for t in tasks if collision_tasks is None else collision_tasks:
+        elig = _eligible(t)
+        if elig is None:
             continue
-        if t.get("status") not in SCAN_STATUSES or t.get("kind") not in SCAN_KINDS:
-            continue
-        targets = parse_targets(t.get("body") or "")
-        if not targets:
-            continue
+        issue, targets = elig
         for target in targets:
             by_target.setdefault(target, []).append(issue)
+    for t in tasks:
+        elig = _eligible(t)
+        if elig is None:
+            continue
+        issue, targets = elig
         target_label = ",".join(targets)
         created_ts = t.get("created_ts")
         if not created_ts:

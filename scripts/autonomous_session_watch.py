@@ -1037,11 +1037,15 @@ adding a pass means adding a numbered item here AND bumping the digit:
    commits. Pure detection lives in ``scripts/predispatch_staleness.py``
    (injected ``git_log_fn`` seam; report-only ``--json`` CLI). Bounded:
    per-pass task cap ``EPM_PREDISPATCH_STALENESS_TASK_CAP`` (40) with a
-   persisted cursor (partial-bundle pattern), <= 1 bounded ``git log``
-   subprocess per scanned task, per-tick flag-marker cap
+   persisted cursor (partial-bundle pattern) scoping the git-backed
+   signals only (the git-free queue-collision grouping reads the FULL
+   queue each firing, so cross-window collisions co-detect), <= 1 bounded
+   ``git log`` subprocess per scanned task, per-tick flag-marker cap
    ``EPM_PREDISPATCH_STALENESS_MARKER_CAP`` (5) with sidecar-recorded
-   overflow (triage-observer pattern), per-(issue, fingerprint) fire-once
-   + ``EPM_PREDISPATCH_STALENESS_REALERT_HOURS`` (168h) TTL re-alert.
+   overflow (triage-observer pattern; only MARKERED flags TTL-stamp, so
+   overflow re-enters the marker queue next firing), per-(issue,
+   fingerprint) fire-once + ``EPM_PREDISPATCH_STALENESS_REALERT_HOURS``
+   (168h) TTL re-alert.
    Channels: sidecar ``.claude/cache/predispatch-staleness-events.jsonl``
    + ONE deduped push digest per firing tick + capped per-task
    ``epm:progress`` flag markers (sentinel
@@ -8466,8 +8470,9 @@ PREDISPATCH_STALENESS_REALERT_HOURS = 168.0
 # tail-of-queue tasks never starve; <= 1 bounded git-log subprocess per
 # scanned task keeps the daily budget fixed.
 PREDISPATCH_STALENESS_TASK_CAP = 40
-# Per-tick epm:progress flag-marker cap (triage-observer pattern); overflow
-# flags stay sidecar-recorded (and re-fire a marker only via the TTL).
+# Per-tick epm:progress flag-marker cap (triage-observer pattern). Overflow
+# flags stay sidecar-recorded and UNstamped (only markered flags enter the
+# dedup TTL), so they re-enter the marker queue at the next daily firing.
 PREDISPATCH_STALENESS_MARKER_CAP = 5
 
 
@@ -8625,10 +8630,17 @@ def predispatch_staleness_pass(dry_run: bool) -> bool:
 
     Bounds: once-daily throttle with the attempt stamp saved BEFORE
     collecting (registry-drift pattern); per-pass task cap + persisted
-    cursor (partial-bundle pattern); <= 1 bounded git-log subprocess per
-    scanned task; marker cap per tick with sidecar-recorded overflow
-    (triage-observer pattern); per-(issue, fingerprint) fire-once + 168h TTL
-    re-alert. Fail toward silence on every unreadable input (registry, body,
+    cursor (partial-bundle pattern) scoping the GIT-BACKED signals only —
+    the git-free queue-collision grouping is built from the FULL collected
+    queue every firing, so two colliding tasks on opposite sides of a
+    window boundary still co-detect (#2134 v2); <= 1 bounded git-log
+    subprocess per scanned task; marker cap per tick with sidecar-recorded
+    overflow (triage-observer pattern) — the dedup TTL is stamped ONLY for
+    flags whose marker was composed this firing, so an over-cap flag
+    re-enters the marker queue at the next daily firing (cap 5/day -> full
+    coverage of a 28-flag backlog in ~6 days) while its sidecar row lands
+    every firing; per-(issue, fingerprint) fire-once + 168h TTL re-alert.
+    Fail toward silence on every unreadable input (registry, body,
     git — a failed git log never reads as "no staleness"). Daemon-INDEPENDENT
     (read-only registry/body/git reads; marker posts go via the ``task.py``
     subprocess from PROJECT_ROOT on ``main``). Returns True when any flag
@@ -8689,9 +8701,13 @@ def predispatch_staleness_pass(dry_run: bool) -> bool:
         window = tasks[cursor : cursor + task_cap]
         next_cursor = (cursor + task_cap) if (cursor + task_cap) < len(tasks) else 0
 
+        # Git-backed signals scan the WINDOW (cap + cursor bound the git
+        # budget); the git-free queue-collision grouping reads the FULL
+        # collected queue, so cross-window collisions co-detect (#2134 v2).
         records = pds.scan(
             window,
             git_log_fn=lambda paths, since: pds.git_log_for_paths(repo_root, paths, since),
+            collision_tasks=tasks,
         )
         raw_flagged = state.get("flagged")
         flagged: dict = raw_flagged if isinstance(raw_flagged, dict) else {}
@@ -8722,11 +8738,15 @@ def predispatch_staleness_pass(dry_run: bool) -> bool:
                     dry_run,
                     label="predispatch-staleness",
                 )
-            per_issue = flagged.setdefault(str(a["issue"]), {})
-            if isinstance(per_issue, dict):
-                per_issue[a["fingerprint"]] = now
-            else:
-                flagged[str(a["issue"])] = {a["fingerprint"]: now}
+                # Stamp the dedup TTL ONLY for markered flags (#2134 v2):
+                # an over-cap flag stays UNstamped so it re-enters the
+                # marker queue at the next daily firing instead of waiting
+                # out the 168h TTL with a sidecar-only record.
+                per_issue = flagged.setdefault(str(a["issue"]), {})
+                if isinstance(per_issue, dict):
+                    per_issue[a["fingerprint"]] = now
+                else:
+                    flagged[str(a["issue"])] = {a["fingerprint"]: now}
         for a in fired[:5]:
             print(
                 f"  predispatch-staleness: #{a['issue']} {a['record'].kind} "

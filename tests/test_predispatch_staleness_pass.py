@@ -88,6 +88,29 @@ def test_parse_targets_dedupes_and_fails_toward_silence():
     assert pds.parse_targets("workflow_fix_target: (tbd)\n") == []
 
 
+def test_parse_targets_rejects_absolute_and_bare_slash_paths():
+    """#2134 v2 fold: a ``workflow_fix_target`` must be repo-relative. The
+    live #1067 prose value tokenized to the bare ``/`` pathspec — a
+    guaranteed git exit-128 + stderr line EVERY firing."""
+    # Literal #1067 shape: the "/" token is dropped, nothing survives.
+    assert pds.parse_targets("workflow_fix_target: my-goat / Happy pairing (...)\n") == []
+    # Absolute paths are dropped too; siblings on the same line survive.
+    assert pds.parse_targets("workflow_fix_target: /etc/passwd\n") == []
+    assert pds.parse_targets("- workflow_fix_target: /abs/dir/x.py, scripts/rel.py\n") == [
+        "scripts/rel.py"
+    ]
+
+    # Zero surviving paths => the task never reaches a git-backed signal.
+    def _forbidden(paths, since):
+        raise AssertionError("task with zero surviving targets must not reach git")
+
+    recs = pds.scan(
+        [_task(10, targets="my-goat / Happy pairing (Claude Code on the phone)")],
+        git_log_fn=_forbidden,
+    )
+    assert recs == []
+
+
 def test_parse_created_at():
     assert pds.parse_created_at("---\ncreated_at: '2026-08-06T07:22:21Z'\n---\n") == (
         "2026-08-06T07:22:21Z"
@@ -179,6 +202,32 @@ def test_scan_queue_collision_one_record_per_file():
     assert coll[0].target == "scripts/foo.py"
     assert coll[0].evidence["colliding_issues"] == [10, 11]
     assert coll[0].issue == 10
+
+
+def test_scan_collision_grouping_spans_beyond_window():
+    """#2134 v2 fold: ``collision_tasks`` (the FULL collected queue) feeds
+    the git-free collision grouping while ``tasks`` (the cap+cursor window)
+    keeps the git budget bounded — colliding tasks on opposite sides of a
+    window boundary co-detect."""
+    full = [
+        _task(10, title="alpha premise", targets="scripts/foo.py"),
+        _task(11, title="beta premise", targets="scripts/bar.py"),
+        _task(12, title="gamma premise", targets="scripts/foo.py"),
+    ]
+    window = full[:2]
+    seen: list[list[str]] = []
+
+    def git_log_fn(paths, since):
+        seen.append(list(paths))
+        return []
+
+    recs = pds.scan(window, git_log_fn=git_log_fn, collision_tasks=full)
+    coll = [r for r in recs if r.kind == "queue-collision"]
+    assert len(coll) == 1
+    # #12 sits OUTSIDE the window and is still co-detected.
+    assert coll[0].evidence["colliding_issues"] == [10, 12]
+    # Git-backed signals stay WINDOWED: only the two window tasks hit git.
+    assert seen == [["scripts/foo.py"], ["scripts/bar.py"]]
 
 
 def test_scan_landed_sibling_collision_excludes_own_id():
@@ -532,10 +581,102 @@ def test_pass_marker_cap_overflow_stays_sidecar_only(tmp_path, monkeypatch):
     assert len([a for a in argvs if "task.py" in " ".join(a)]) == 5
     assert len(rows) == 16
     assert sum(1 for r in rows if r["marker"]) == 5
-    # State remembers EVERY fired fingerprint (overflow included) — the
-    # overflow flags stay deduped next tick, sidecar-only forever.
+    # #2134 v2 fold: state remembers ONLY the MARKERED fingerprints — the
+    # 11 over-cap flags stay UNstamped so they re-enter the marker queue at
+    # the next daily firing. Sorted (issue, fp) order gives the 5 slots to
+    # both flags of #100 and #101 plus one flag of #102.
     state = json.loads(state_path.read_text())
-    assert len(state["flagged"]) == 8
+    assert set(state["flagged"]) == {"100", "101", "102"}
+    assert sum(len(v) for v in state["flagged"].values()) == 5
+
+
+def test_pass_overcap_flag_unstamped_gets_marker_next_firing(tmp_path, monkeypatch):
+    """#2134 v2 fold: the dedup TTL is stamped ONLY for flags whose marker
+    was composed this firing. An over-cap (sidecar-only) flag stays
+    unstamped and takes a marker slot at the NEXT firing; a markered flag
+    IS stamped and never re-fires inside the TTL."""
+    import autonomous_session_watch as asw
+
+    state_path, _sidecar = _pds_isolate(asw, monkeypatch, tmp_path)
+    monkeypatch.setenv("EPM_PREDISPATCH_STALENESS_INTERVAL_HOURS", "0")
+    monkeypatch.setenv("EPM_PREDISPATCH_STALENESS_MARKER_CAP", "1")
+    # Two tasks, DISTINCT targets (no queue collision), one stale-premise
+    # flag each (the commit subject carries no sibling ids).
+    tasks = [
+        _task(10, targets="scripts/a.py"),
+        _task(11, targets="scripts/b.py", title="beta daemon premise"),
+    ]
+    monkeypatch.setattr(pds, "collect_tasks", lambda: (list(tasks), tmp_path))
+    monkeypatch.setattr(
+        pds,
+        "git_log_for_paths",
+        lambda root, paths, since: [("a" * 40, "watcher daemon liveness escalation rework")],
+    )
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: True)
+    argvs: list[list[str]] = []
+
+    def fake_run(argv, **kw):
+        argvs.append(list(argv))
+        return _FakeCompleted()
+
+    monkeypatch.setattr(asw.subprocess, "run", fake_run)
+
+    def _marker_issues() -> list[str]:
+        return [a[a.index("post-marker") + 1] for a in argvs if "scripts/task.py" in a]
+
+    # Firing 1: cap 1 -> only #10 (lowest (issue, fp)) gets the marker;
+    # #11 fires sidecar-only and is NOT stamped.
+    assert asw.predispatch_staleness_pass(dry_run=False) is True
+    assert _marker_issues() == ["10"]
+    assert set(json.loads(state_path.read_text())["flagged"]) == {"10"}
+
+    # Firing 2: #10 is TTL-latched; the overflowed #11 re-enters the marker
+    # queue and takes the slot (previously it waited out the 168h TTL).
+    assert asw.predispatch_staleness_pass(dry_run=False) is True
+    assert _marker_issues() == ["10", "11"]
+    assert set(json.loads(state_path.read_text())["flagged"]) == {"10", "11"}
+
+    # Firing 3: both stamped inside the TTL -> nothing fires.
+    assert asw.predispatch_staleness_pass(dry_run=False) is False
+    assert _marker_issues() == ["10", "11"]
+
+
+def test_pass_collision_codetected_across_window_boundary(tmp_path, monkeypatch):
+    """#2134 v2 fold: the pass hands scan() the FULL collected list for
+    collision grouping while the git-backed signals stay windowed — two
+    colliding tasks on opposite sides of a cap-2 window boundary co-detect
+    on the FIRST firing."""
+    import autonomous_session_watch as asw
+
+    _state, sidecar_path = _pds_isolate(asw, monkeypatch, tmp_path)
+    monkeypatch.setenv("EPM_PREDISPATCH_STALENESS_TASK_CAP", "2")
+    tasks = [
+        _task(100, targets="scripts/shared.py", title="alpha premise"),
+        _task(101, targets="scripts/only101.py", title="beta premise"),
+        _task(102, targets="scripts/only102.py", title="gamma premise"),
+        _task(103, targets="scripts/only103.py", title="delta premise"),
+        _task(104, targets="scripts/shared.py", title="epsilon premise"),
+    ]
+    monkeypatch.setattr(pds, "collect_tasks", lambda: (tasks, tmp_path))
+    git_paths: list[list[str]] = []
+
+    def fake_git(root, paths, since):
+        git_paths.append(list(paths))
+        return []
+
+    monkeypatch.setattr(pds, "git_log_for_paths", fake_git)
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: True)
+    monkeypatch.setattr(asw.subprocess, "run", lambda argv, **kw: _FakeCompleted())
+
+    assert asw.predispatch_staleness_pass(dry_run=False) is True
+    rows = [json.loads(x) for x in sidecar_path.read_text().splitlines()]
+    # ONE collision record on the shared target, fanned to BOTH issues —
+    # #104 sits outside the [100, 101] window and is still co-detected.
+    assert {r["flag_kind"] for r in rows} == {"queue-collision"}
+    assert {r["issue"] for r in rows} == {100, 104}
+    assert all(r["evidence"]["colliding_issues"] == [100, 104] for r in rows)
+    # Git-backed signals stay WINDOW-scoped: only the window tasks hit git.
+    assert git_paths == [["scripts/shared.py"], ["scripts/only101.py"]]
 
 
 def test_pass_never_mutates_status_or_sweep_state(tmp_path, monkeypatch):
