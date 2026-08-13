@@ -3048,6 +3048,12 @@ phase_g0v3() {
     # wave-1 concat half is c_stage's staging, asserted here).
     echo "[phase=g0v3]"
     local rc=0 stage_rc=0
+    # Truncate the phase's append-mode logs ONCE at phase start (not per
+    # redirect): a prior run's stale traceback in g0v3__gate.log otherwise
+    # survives into this run's log and feeds any crash-signature grep the
+    # wrong lines (the pid-file-contract 1b/1c rotation duty).
+    : > "$JOB_LOG_DIR/g0v3__gate.log"
+    : > "$JOB_LOG_DIR/g0v3__stage_refs.log"
     if [ "$SMOKE" -eq 0 ]; then
         [ -d "$WAVE1_TS_DIR" ] || {
             emit_signal "epm:failure" "g0v3" "failure_class: data — $WAVE1_TS_DIR missing: G0v3's lmsys23k concat bundle reads the staged wave-1 turnstores (run the c_stage phase first; plan v15 reuses the round-3 staging verbatim)"

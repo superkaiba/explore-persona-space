@@ -68,6 +68,7 @@ import hashlib
 import json
 import sys
 import time
+from collections import Counter
 from pathlib import Path
 
 _SCRIPT_DIR = Path(__file__).resolve().parent
@@ -1800,16 +1801,237 @@ def run_pooled_v3(args) -> int:
     return 0
 
 
-def run_g0v3(args) -> int:
-    """G0v3 — pooled-split reproducibility gate (plan v15 §6/§7).
+# --- G0v3 (plan v26 §4): matched-row, matched-n, size-matched fold-ASSIGNMENT contrast ---
+# Seed for the K size-matched random fold assignments (per-draw rng seed is
+# the sequence [G0V3_MATCHED_SEED, k]); the SWEEP's own seed stays args.seed,
+# identical across arms (symmetric instrument).
+G0V3_MATCHED_SEED = 13360
+# Number of size-matched random draws. R2_R = MEAN over draws; the across-draw
+# SD is persisted DIAGNOSTIC ONLY (df=2) — plan §6 N22 extends draws on a
+# marginal read; measured spread never re-sets a threshold.
+G0V3_MATCHED_DRAWS = 3
+# Instrument-anomaly guard band (plan §12 row 45: ~2x the scaled CI half-width
+# of the assignment contrast). A decision threshold — do not tune.
+G0V3_EPS_NOISE = 0.01
+# lmsys23k concat-universe total BEFORE the 5-way kept-intersection. This is
+# LOG-WITNESSED, not manifest-derivable: the charmander c_pool log line
+# "[pool] 5-way kept-intersection lmsys23k: 13479 prompts (per-model sizes:
+# {... 'rlvr': 17681 ...})" (plan §12 row 44). The pinned A2 constants
+# (ps.A2_PINNED_PRE_DEDUP / ps.A2_PINNED_DROPS) take over from 13479 down.
+G0V3_LMSYS_CONCAT_TOTAL = 17_681
 
-    Refits the round-3 RLVR x lmsys23k-chat cell UNDER THE POOLED SPLIT (the
-    manifest's lmsys23k train-side rows + their cluster-grouped folds, 23-pt
-    grid + edge rule) and asserts |R2_pooled_slice - R2_round3| <= 0.05 x
-    ex_v2 at the headline layer (argmax of the ROUND-3 cell's
-    r2_per_layer_obs over its frozen set). Under --smoke the production-
-    calibrated verdict is demoted to informational (the #1345
-    gate-calibration rule); the computation runs identically.
+
+def _g0v3_fold_profile(entries: list[dict]) -> dict[int, int]:
+    """Per-fold row counts read off the manifest row_index train entries.
+
+    The grouped arm's REALIZED profile (production: [1685, 2982, 2735, 2166,
+    989] across folds 0..4, plan §12 row 46) is always READ here, never
+    hardcoded. Fail-loud on a missing fold key (schema assert upstream).
+    """
+    counts: dict[int, int] = {}
+    for e in entries:
+        f = int(e["fold"])
+        counts[f] = counts.get(f, 0) + 1
+    assert counts, "no train entries — cannot derive a fold profile"
+    return counts
+
+
+def _g0v3_matched_labels(fold_profile: dict[int, int], draw: int) -> np.ndarray:
+    """The k-th SIZE-MATCHED random fold-label assignment (plan v26 §4).
+
+    Builds a label array holding EXACTLY the grouped arm's per-fold counts
+    (read off the manifest via _g0v3_fold_profile), then permutes row order
+    with np.random.default_rng([G0V3_MATCHED_SEED, draw]).
+
+    Why this is a valid matched contrast through _run_sweep_edge: the third
+    positional is a grouping KEY forwarded to heldout_r2_sweep, whose
+    _cv_folds (scripts/issue825_fit_cells.py) maps the UNIQUE label values
+    through a seeded permutation (`perm[i] % n_folds`). With exactly n_folds
+    unique values that map is a BIJECTION, so the realized partition equals
+    this label partition with fold ids RELABELED. K-fold CV is
+    relabeling-invariant, and relabeling preserves fold SIZES — hence both
+    arms run the identical instrument on the identical rows at identical
+    per-fold sizes, differing ONLY in the assignment.
+    """
+    labels = np.concatenate(
+        [np.full(n, f, dtype=np.int64) for f, n in sorted(fold_profile.items())]
+    )
+    rng = np.random.default_rng([G0V3_MATCHED_SEED, int(draw)])
+    return labels[rng.permutation(labels.shape[0])]
+
+
+def _g0v3_assert_matched(
+    labels: np.ndarray, fold_profile: dict[int, int], n_folds: int, tag: str
+) -> None:
+    """The two v26 preconditions, asserted on EVERY fit's label array.
+
+    (1) exactly n_folds unique label values — any OTHER count silently stops
+        the contrast being matched (the _cv_folds `perm[i] % n_folds` map is
+        a bijection ONLY at #unique == n_folds);
+    (2) per-label counts MULTISET-equal to the grouped profile — a drifted
+        count silently reintroduces the size residual.
+
+    Check (2) is deliberately MULTISET equality (sorted counts), NOT
+    per-index: _cv_folds RELABELS fold ids through a seeded permutation, so
+    only the size multiset is invariant under it. Do not "fix" this to a
+    per-index comparison — it would fail on correct assignments.
+    """
+    uniq, counts = np.unique(labels, return_counts=True)
+    assert len(uniq) == n_folds, (
+        f"[g0v3:{tag}] {len(uniq)} unique fold labels != n_folds {n_folds} — "
+        "not a matched contrast (the _cv_folds bijection breaks)"
+    )
+    assert sorted(counts.tolist()) == sorted(fold_profile.values()), (
+        f"[g0v3:{tag}] per-label counts {sorted(counts.tolist())} != grouped profile "
+        f"{sorted(fold_profile.values())} — size residual reintroduced"
+    )
+
+
+def _g0v3_own_argmax(
+    r2_obs, candidate_layers, *, allow_fallback: bool = False
+) -> tuple[int, float, dict[str, float]]:
+    """Selection-symmetric read: EVERY fit at its OWN argmax over the
+    pre-registered candidate set (production {16, 21, 22, 30} — the round-3
+    cell's frozen layers).
+
+    Returns (argmax_layer, r2_at_argmax, {layer: r2 over candidates}).
+    Candidates outside the swept range are clipped; an EMPTY intersection is
+    fail-loud unless allow_fallback (the smoke fewer-layers fallback: degrade
+    to all swept layers — never silently in production).
+    """
+    r2 = np.asarray(r2_obs, dtype=np.float64)
+    cands = [int(li) for li in candidate_layers if 0 <= int(li) < r2.shape[0]]
+    if not cands:
+        assert allow_fallback, (
+            f"no pre-registered candidate layer within swept range (L={r2.shape[0]})"
+        )
+        cands = list(range(r2.shape[0]))
+    vals = r2[cands]
+    assert np.isfinite(vals).any(), f"no finite R2 over candidate layers {cands}"
+    j = int(np.nanargmax(vals))
+    return int(cands[j]), float(vals[j]), {str(li): float(r2[li]) for li in cands}
+
+
+def _g0v3_branch(delta_assign: float, tol: float, eps: float = G0V3_EPS_NOISE) -> tuple[str, bool]:
+    """Three-branch verdict partition over delta_assign = R2_R - R2_G.
+
+    PASS                      <=> -eps <= delta_assign <= tol   (rc 0)
+    FAIL-leakage-exceeds-band <=> delta_assign > tol            (rc 3)
+    FAIL-instrument-anomaly   <=> delta_assign < -eps           (rc 3)
+
+    Disjoint + exhaustive over finite delta_assign (plan §6 N21/N24); a
+    non-finite read is a violated precondition and raises here rather than
+    silently classifying PASS (NaN fails both comparisons).
+    """
+    assert np.isfinite(delta_assign), f"delta_assign not finite: {delta_assign}"
+    if delta_assign > tol:
+        return "FAIL-leakage-exceeds-band", False
+    if delta_assign < -eps:
+        return "FAIL-instrument-anomaly", False
+    return "PASS", True
+
+
+def _g0v3_universe_accounting(man: dict) -> dict:
+    """Universe accounting for the lmsys23k slice (plan §12 row 44).
+
+    17,681 (concat total, log-witnessed) -> 13,479 (5-way kept-intersection,
+    ps.A2_PINNED_PRE_DEDUP) -> -17 (cross-corpus dedup drops,
+    ps.A2_PINNED_DROPS) = 13,462 manifest rows -> -2,905 test = 10,557
+    train. `consistent` compares the MANIFEST's realized lmsys23k row count
+    against the pinned post-dedup value; the caller asserts it in
+    production (a smoke slice structurally cannot match the pins — the
+    #1345 gate-calibration rule).
+    """
+    rows = [e for e in man["row_index"] if e["corpus"] == "lmsys23k"]
+    train = [e for e in rows if e["arm"] == "train"]
+    pre = int(ps.A2_PINNED_PRE_DEDUP["lmsys23k"])
+    drops = int(ps.A2_PINNED_DROPS["lmsys23k"])
+    return {
+        "concat_total_log_witnessed": G0V3_LMSYS_CONCAT_TOTAL,
+        "pre_dedup_pinned": pre,
+        "dedup_drops_pinned": drops,
+        "post_dedup": pre - drops,
+        "manifest_rows": len(rows),
+        "test_rows": len(rows) - len(train),
+        "train_rows": len(train),
+        "consistent": len(rows) == pre - drops,
+        "provenance": (
+            "concat_total is log-witnessed (charmander c_pool '[pool] 5-way "
+            "kept-intersection lmsys23k: 13479 prompts', per-model sizes rlvr=17681); "
+            "pre_dedup/drops are ps.A2_PINNED_PRE_DEDUP/ps.A2_PINNED_DROPS"
+        ),
+    }
+
+
+def _g0v3_fold_diagnostics(man: dict) -> tuple[dict[str, int], int]:
+    """fold_row_counts + fold0_quarantine_rows from MANIFEST row_index labels.
+
+    NEVER derive these from sweep['folds'] / per-fold gcv_lambda columns:
+    _cv_folds RELABELS fold ids through a seeded permutation, so a
+    sweep-side "fold 0" is arbitrary. Only the manifest labels carry the
+    quarantine convention (quarantine groups co-assigned
+    ps.QUARANTINE_TRAIN_FOLD); pinned by
+    tests/test_issue1336_g0v3_gate.py::test_fold_diagnostics_keyed_off_manifest_labels.
+    """
+    entries = [e for e in man["row_index"] if e["corpus"] == "lmsys23k" and e["arm"] == "train"]
+    profile = _g0v3_fold_profile(entries)
+    fold_row_counts = {str(f): int(n) for f, n in sorted(profile.items())}
+    qgids = {
+        int(g["group_id"])
+        for g in man["group_table"]
+        if g["corpus"] == "lmsys23k" and g["quarantine"]
+    }
+    fold0_quarantine_rows = sum(
+        1
+        for e in entries
+        if int(e["cluster"]) in qgids and int(e["fold"]) == ps.QUARANTINE_TRAIN_FOLD
+    )
+    return fold_row_counts, fold0_quarantine_rows
+
+
+def _g0v3_grouping_bite(entries: list[dict]) -> dict:
+    """Grouping-bite facts re-read from the manifest at gate run (plan §12
+    row 46): cluster count (production probe: 36), largest cluster size
+    (696), and prompt_sha/prompt_idx max multiplicity (1 — unique prompts),
+    persisted beside the verdict. Named limitation: the manifest records NO
+    conversation id, so grouping bite is measured at cluster/prompt grain
+    only.
+    """
+    gid_counts = Counter(int(e["cluster"]) for e in entries)
+    sha_counts = Counter(str(e["prompt_sha"]) for e in entries)
+    idx_counts = Counter(int(e["prompt_idx"]) for e in entries)
+    return {
+        "n_clusters": len(gid_counts),
+        "largest_cluster_rows": int(max(gid_counts.values())),
+        "prompt_sha_max_multiplicity": int(max(sha_counts.values())),
+        "prompt_idx_max_multiplicity": int(max(idx_counts.values())),
+        "limitation": (
+            "manifest records no conversation id; grouping bite is measured at "
+            "cluster/prompt grain only"
+        ),
+    }
+
+
+def run_g0v3(args) -> int:
+    """G0v3 — pooled-split health gate, re-specified as a matched-row,
+    matched-n, SIZE-MATCHED fold-ASSIGNMENT contrast (plan v26 §4).
+
+    Loads the pooled lmsys23k train slice ONCE and fits the SAME (X, Y)
+    FOUR times through _run_sweep_edge (23-pt grid + edge rule, inner-lambda
+    save/restore symmetric across arms): once under the manifest's
+    group-aware fold labels (R2_G) and K=3 times under seeded SIZE-MATCHED
+    random assignments (R2_R = mean of the per-draw reads; per-fold counts
+    read off the manifest, never hardcoded). Every fit is read at its OWN
+    argmax over the pre-registered candidate layers (selection-symmetric).
+    delta_assign = R2_R - R2_G isolates the fold-ASSIGNMENT effect — the
+    v23 statistic (grouped refit at the borrowed round-3 layer vs the
+    round-3 per-corpus R2) confounded it with construction differences and
+    is DEMOTED to a report-only diagnostic. Verdict branches (byte-exact,
+    plan §6 N21/N24): PASS <=> -0.01 <= delta_assign <= 0.05*ex_v2 (rc 0);
+    FAIL-leakage-exceeds-band <=> delta_assign > 0.05*ex_v2 (rc 3);
+    FAIL-instrument-anomaly otherwise (rc 3). Under --smoke the verdict is
+    informational (enforced = not smoke, the #1345 gate-calibration rule);
+    the computation runs identically.
     """
     smoke = args.smoke
     bars_path = args.out_dir / "gates_v2" / "v2_bars.json"
@@ -1861,53 +2083,124 @@ def run_g0v3(args) -> int:
     assert len(np.unique(groups)) == g0_folds, (
         f"manifest folds {len(np.unique(groups))} != manifest n_folds {g0_folds}"
     )
+    # Grouped arm's realized per-fold profile, READ off the manifest (plan
+    # v26: never hardcoded); both v26 preconditions asserted on EVERY fit.
+    fold_profile = _g0v3_fold_profile(entries)
+    _g0v3_assert_matched(groups, fold_profile, g0_folds, "grouped")
+    print(
+        f"[g0v3] size-matched assignment contrast: draws={G0V3_MATCHED_DRAWS} "
+        f"matched fold profile={sorted(fold_profile.values())} n_rows={len(entries)}",
+        flush=True,
+    )
     saved = fc.N_INNER_LAMBDA_FOLDS
     try:
         fc.N_INNER_LAMBDA_FOLDS = cm.N_INNER_LAMBDA_FOLDS_V2
-        sweep, _edge, _grid = _run_sweep_edge(
-            X,
-            Y,
-            groups,
-            base_grid=np.asarray(cm.LAMBDAS_23, dtype=np.float64),
-            sweep_kwargs=dict(
-                n_folds=g0_folds,
-                seed=args.seed,
-                null_draws=0,
-                collect_cosines=False,
-                frozen_layers=(),
-                collect_lambdas=True,
-            ),
+        base_grid = np.asarray(cm.LAMBDAS_23, dtype=np.float64)
+        sweep_kwargs = dict(
+            n_folds=g0_folds,
+            seed=args.seed,
+            null_draws=0,
+            collect_cosines=False,
+            frozen_layers=(),
+            collect_lambdas=True,
         )
+        sweep_g, _edge, _grid = _run_sweep_edge(
+            X, Y, groups, base_grid=base_grid, sweep_kwargs=sweep_kwargs
+        )
+        draw_sweeps = []
+        for k in range(G0V3_MATCHED_DRAWS):
+            labels = _g0v3_matched_labels(fold_profile, k)
+            assert labels.shape[0] == len(entries), (
+                f"draw {k}: {labels.shape[0]} labels != {len(entries)} rows"
+            )
+            _g0v3_assert_matched(labels, fold_profile, g0_folds, f"random-draw-{k}")
+            sweep_k, _ek, _gk = _run_sweep_edge(
+                X, Y, labels, base_grid=base_grid, sweep_kwargs=sweep_kwargs
+            )
+            draw_sweeps.append(sweep_k)
     finally:
         fc.N_INNER_LAMBDA_FOLDS = saved
-    if head < len(sweep["r2_obs"]):
-        r2_pool = float(sweep["r2_obs"][head])
+    # Selection-symmetric reads: every fit at its OWN argmax over the
+    # pre-registered candidate set (ref_frozen — production {16, 21, 22, 30};
+    # smoke degrades to swept layers via allow_fallback).
+    layer_g, r2_g, table_g = _g0v3_own_argmax(sweep_g["r2_obs"], ref_frozen, allow_fallback=smoke)
+    draw_reads = [
+        _g0v3_own_argmax(s["r2_obs"], ref_frozen, allow_fallback=smoke) for s in draw_sweeps
+    ]
+    r2_r_draws = [r for _, r, _ in draw_reads]
+    r2_r_mean = float(np.mean(r2_r_draws))
+    r2_r_sd = float(np.std(r2_r_draws, ddof=1))  # diagnostic only (df=2) — never a verdict input
+    delta_assign = float(r2_r_mean - r2_g)
+    tol = 0.05 * ex_v2
+    branch, ok = _g0v3_branch(delta_assign, tol)
+    enforced = not smoke
+    # Legacy v23 statistic (grouped refit at the BORROWED round-3 reference
+    # layer vs the round-3 per-corpus R2) — construction-confounded; KEEP
+    # computing, REPORT-ONLY per the v24 demotion.
+    r2_obs_g = np.asarray(sweep_g["r2_obs"], dtype=np.float64)
+    if head < r2_obs_g.shape[0]:
+        r2_legacy = float(r2_obs_g[head])
     else:
         # smoke fixture with fewer layers than the production ref — informational
-        r2_pool = float(np.nanmax(np.asarray(sweep["r2_obs"], dtype=np.float64)))
-    delta = abs(r2_pool - r2_r3)
-    tol = 0.05 * ex_v2
-    ok = bool(np.isfinite(delta) and delta <= tol)
-    enforced = not smoke
+        r2_legacy = float(np.nanmax(r2_obs_g))
+    fold_row_counts, fold0_quarantine_rows = _g0v3_fold_diagnostics(man)
+    acct = _g0v3_universe_accounting(man)
+    if not smoke:
+        assert acct["consistent"], (
+            f"universe accounting violated: manifest lmsys23k rows {acct['manifest_rows']} != "
+            f"pinned post-dedup {acct['post_dedup']} (plan §12 row 44)"
+        )
+        assert acct["train_rows"] == len(entries) == int(X.shape[0]), (
+            f"train-row mismatch: accounting {acct['train_rows']} vs entries {len(entries)} "
+            f"vs X rows {int(X.shape[0])}"
+        )
     payload = {
         "metadata": _metadata(args.seed, int(X.shape[0])),
         "gate": "G0v3",
         "cell": ref_id,
-        "headline_layer": head,
-        "r2_pooled_slice": r2_pool,
-        "r2_per_corpus_round3": r2_r3,
-        "abs_delta": float(delta),
+        "design": "matched-row matched-n size-matched fold-ASSIGNMENT contrast (plan v26 §4)",
+        "candidate_layers": [int(li) for li in ref_frozen],
+        "r2_grouped": r2_g,
+        "argmax_layer_grouped": layer_g,
+        "r2_by_layer_grouped": table_g,
+        "r2_random_draws": r2_r_draws,
+        "argmax_layer_random_draws": [layer for layer, _, _ in draw_reads],
+        "r2_by_layer_random_draws": [tbl for _, _, tbl in draw_reads],
+        "r2_random_mean": r2_r_mean,
+        "r2_random_sd": r2_r_sd,
+        "delta_assign": delta_assign,
         "tolerance": float(tol),
+        "eps_noise": G0V3_EPS_NOISE,
         "ex_v2": ex_v2,
+        "verdict_branch": branch,
+        "seed": int(args.seed),
+        "matched_seed": G0V3_MATCHED_SEED,
+        "matched_draw_seeds": [[G0V3_MATCHED_SEED, k] for k in range(G0V3_MATCHED_DRAWS)],
+        "legacy_confounded_read": {
+            "r2_grouped_at_ref_layer": r2_legacy,
+            "ref_layer": head,
+            "r2_per_corpus_round3": r2_r3,
+            "abs_delta": float(abs(r2_legacy - r2_r3)),
+            "note": (
+                "v23 construction-confounded statistic (grouped refit at the borrowed "
+                "round-3 layer vs the round-3 per-corpus R2) — REPORT-ONLY per the v24 "
+                "demotion; never a verdict input"
+            ),
+        },
+        "universe_accounting": acct,
+        "fold_row_counts": fold_row_counts,
+        "fold0_quarantine_rows": fold0_quarantine_rows,
+        "grouping_bite": _g0v3_grouping_bite(entries),
         "split_manifest": str(man_path),
         "enforced": enforced,
         "pass": ok,
-        "verdict": ("pass" if ok else "fail") + ("" if enforced else " (informational — smoke)"),
+        "verdict": branch + ("" if enforced else " (informational — smoke)"),
     }
     _write_json(args.out_dir / "gates_v3" / "g0v3.json", payload)
     print(
-        f"[g0v3] pooled slice R2={r2_pool:.4f} vs round-3 {r2_r3:.4f} at L{head} "
-        f"(|delta|={delta:.4f} tol={tol:.4f}) -> {payload['verdict']}",
+        f"[g0v3] R2_G={r2_g:.4f}@L{layer_g} R2_R={r2_r_mean:.4f}(sd={r2_r_sd:.4f}) "
+        f"delta_assign={delta_assign:+.4f} (tol={tol:.4f} eps={G0V3_EPS_NOISE}) "
+        f"-> {payload['verdict']}",
         flush=True,
     )
     return 0 if (ok or not enforced) else 3
