@@ -291,16 +291,19 @@ def test_argparser_defaults_match_plan_grid():
 
 def test_apply_smoke_narrows_to_parity_layer_and_scratch_root():
     args = pi.build_argparser().parse_args(["--phase", "fit_maps", "--smoke"])
-    pi._apply_smoke(args)
-    assert args.layers == [pi.PILOT_LAYER]
-    assert len(args.behaviors) == 1
-    assert args.out_root == "/tmp/issue-2254-smoke"
-    assert args.fig_dir == "/tmp/issue-2254-smoke/figures"
-    assert args.q_localize == 2 and args.q_decisive == 2
-    assert args.draws_localize == 2 and args.draws_decisive == 2
-    assert pi._hf_prefix().endswith("/smoke")
-    # reset the module-global so later tests see the canonical prefix
-    pi._SMOKE_UPLOAD_SUBPREFIX = False
+    try:
+        pi._apply_smoke(args)
+        assert args.layers == [pi.PILOT_LAYER]
+        assert len(args.behaviors) == 1
+        assert args.out_root == "/tmp/issue-2254-smoke"
+        assert args.fig_dir == "/tmp/issue-2254-smoke/figures"
+        assert args.q_localize == 2 and args.q_decisive == 2
+        assert args.draws_localize == 2 and args.draws_decisive == 2
+        assert pi._hf_prefix().endswith("/smoke")
+    finally:
+        # reset the module-global INSIDE finally so an assert failure cannot
+        # leak the smoke prefix into later tests (review minor g2)
+        pi._SMOKE_UPLOAD_SUBPREFIX = False
 
 
 def _synthetic_sanitized_bundle(tmp_path, n=2, drop=()):
@@ -359,3 +362,98 @@ def test_load_pass_b_bundle_missing_required_key_raises(tmp_path, monkeypatch):
     with pytest.raises(RuntimeError, match=r"missing keys.*source"):
         pi._load_pass_b_bundle()
     monkeypatch.setattr(pi, "_BUNDLE_CACHE", None)
+
+
+# ---------------------------------------------------------------------------
+# e1 staged-sha gate at every consumer (round-1 blocker g2)
+# ---------------------------------------------------------------------------
+
+
+def test_assert_e1_staged_missing_and_wrong_sha(tmp_path, monkeypatch):
+    import scripts.issue779_common as i779
+
+    monkeypatch.setattr(i779, "_artifacts_dir", lambda: tmp_path)
+    monkeypatch.setattr(pi, "_E1_STAGED_OK", set())
+    with pytest.raises(RuntimeError, match="MISSING"):
+        pi._assert_e1_staged("sycophancy")
+    (tmp_path / "sycophancy.json").write_text("{}")  # present, WRONG bytes
+    with pytest.raises(RuntimeError, match="sha256 mismatch"):
+        pi._assert_e1_staged("sycophancy")
+
+
+def test_assert_e1_staged_passes_and_caches_on_pinned_sha(tmp_path, monkeypatch):
+    import scripts.issue779_common as i779
+
+    payload = '{"eval_questions": []}'
+    (tmp_path / "sycophancy.json").write_text(payload)
+    sha = hashlib.sha256(payload.encode()).hexdigest()
+    monkeypatch.setattr(i779, "_artifacts_dir", lambda: tmp_path)
+    monkeypatch.setattr(pi, "E1_ASSET_SHA256", {**pi.E1_ASSET_SHA256, "sycophancy": sha})
+    monkeypatch.setattr(pi, "_E1_STAGED_OK", set())
+    pi._assert_e1_staged("sycophancy")
+    assert "sycophancy" in pi._E1_STAGED_OK
+    # evil is code-resident (paper-verbatim EVIL_ARTIFACTS): no file to pin
+    pi._assert_e1_staged("evil")
+    assert "evil" not in pi._E1_STAGED_OK
+
+
+def test_every_e1_consumer_wrapper_gates_on_staged_assert(monkeypatch):
+    """Blocker g2 pin: _eval_questions / _extraction_contexts /
+    _positive_instructions hit the staged-sha gate BEFORE any load_e1_assets
+    call — capture_directions, norm_probe, and every unit-3 pod-B call site
+    inherit the gate through these wrappers, so the upstream loader's
+    Sonnet-regeneration fallback is unreachable from EVERY driver phase."""
+
+    def _boom(behavior):
+        raise RuntimeError("staged-gate-called")
+
+    monkeypatch.setattr(pi, "_assert_e1_staged", _boom)
+    for fn in (pi._eval_questions, pi._extraction_contexts, pi._positive_instructions):
+        with pytest.raises(RuntimeError, match="staged-gate-called"):
+            fn("sycophancy")
+
+
+# ---------------------------------------------------------------------------
+# empty gen shard (num_shards > len(cells)) — clean no-op, no upload attempt
+# ---------------------------------------------------------------------------
+
+
+def test_run_gen_grid_empty_shard_skips_model_and_upload(tmp_path, monkeypatch):
+    import json
+
+    monkeypatch.setenv("EPM_SENTINEL_DIR", str(tmp_path / "logs"))
+    monkeypatch.setattr(pi, "_require_cuda", lambda phase: None)
+    monkeypatch.setattr(pi, "_assert_phase_headroom", lambda *a, **k: None)
+
+    def _no_model():
+        raise AssertionError("model must not load for an empty shard")
+
+    monkeypatch.setattr(pi, "_load_model_and_tokenizer", _no_model)
+    uploads: list = []
+    monkeypatch.setattr(pi, "_upload_folder_to_hf", lambda *a, **k: uploads.append(a))
+    args = pi.build_argparser().parse_args(
+        [
+            "--phase",
+            "baseline_ceiling",
+            "--out-root",
+            str(tmp_path),
+            "--num-shards",
+            "5",
+            "--shard-id",
+            "4",
+        ]
+    )
+    cells = [{"behavior": "evil", "kind": "alpha0"}, {"behavior": "evil", "kind": "ceiling"}]
+    pi._run_gen_grid(
+        args,
+        "baseline_ceiling",
+        cells,
+        contexts_of=None,
+        q_of=None,
+        hookf_builder=None,
+        n_draws_of=None,
+        seeds_of=None,
+    )
+    assert uploads == []  # nothing generated => no confusing "no files under ..." raise
+    sent = json.loads((tmp_path / "logs" / "issue-2254-baseline_ceiling-shard4.json").read_text())
+    assert sent["empty_shard"] is True and sent["cells"] == 0

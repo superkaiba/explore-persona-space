@@ -201,6 +201,11 @@ RHO_PARITY_RTOL = 5e-3
 # #2220 read-direction bank (Result 0 cosines; plan §10 reuse row).
 RW2220_DIR_PREFIX = "issue2220_readwrite/directions"
 RW2220_READ_SLUGS = ("mapread_ctx", "mapread_prefix")
+# Data-repo revision pin for the #2220 read-direction bank (plan §4.1 "at the
+# manifest pin"): resolved main sha 2026-08-12, manifest `file_exists` verified
+# at this revision. A #2220 re-upload can no longer silently change Result 0
+# cosines (review minor g2 — every other cross-issue input is rev-pinned).
+RW2220_DIR_REVISION = "a1935e1957526bf42762eb5ce4047e5539c04f1b"
 
 # Timing pilot (gate-1 input; plan §7 gate 1 + §9 norm_probe row).
 PILOT_LAYER = 14
@@ -434,6 +439,41 @@ def assert_e1_eval_bank(assets: dict, behavior: str) -> None:
         )
 
 
+_E1_STAGED_OK: set[str] = set()
+
+
+def _assert_e1_staged(behavior: str) -> None:
+    """Fail-loud e1 bank-identity gate at EVERY `load_e1_assets` consumer.
+
+    The upstream loader carries a Sonnet-REGENERATION fallback on a missing/
+    malformed artifact (issue_1739/generation.py L416-441) that would silently
+    swap in different questions; `phase_stage_inputs` makes it unreachable in
+    ITS process only. This helper re-asserts presence + the plan §4.4 sha256
+    pin BEFORE any consumer-phase load — inherited by every call site through
+    the `_eval_questions` / `_extraction_contexts` / `_positive_instructions`
+    wrappers, so `capture_directions`, `norm_probe`, and every unit-3 phase
+    (incl. the fresh pod B, where stage_inputs is not in the §9 phase table)
+    cannot reach the regen fallback (review blocker g2, round 1). Evil is
+    code-resident (paper-verbatim EVIL_ARTIFACTS — no file to pin). Cached
+    per process: one hash per behavior.
+    """
+    expected = E1_ASSET_SHA256.get(behavior)
+    if expected is None or behavior in _E1_STAGED_OK:
+        return
+    _ensure_repo_root_on_syspath()
+    from scripts.issue779_common import _artifacts_dir
+
+    target = _artifacts_dir() / f"{behavior}.json"
+    if not target.is_file():
+        raise RuntimeError(
+            f"e1 asset {target} MISSING — run --phase stage_inputs first; refusing "
+            "to let load_e1_assets reach its Sonnet-regeneration fallback (plan §4.4 "
+            "bank identity with #779/#2220)"
+        )
+    assert_sha256(target, expected, what=f"e1 asset {behavior}.json")
+    _E1_STAGED_OK.add(behavior)
+
+
 # ---------------------------------------------------------------------------
 # shared: paths, sentinel, breadcrumbs (issue2220_readwrite conventions)
 # ---------------------------------------------------------------------------
@@ -475,8 +515,13 @@ def _run_metadata(extra: dict | None = None) -> dict:
 
 
 def _write_sentinel(out_root: Path, phase: str, status: str, extra: dict | None = None) -> Path:
-    """Pod-observed sentinel (/workspace/logs/issue-2254-<phase>.json) the VM
-    poller drains. Pod-side code NEVER shells to task.py."""
+    """Per-phase sentinel file (/workspace/logs/issue-2254-<phase>.json),
+    observed by the ORCHESTRATOR via file presence / direct reads — the
+    envelope deliberately mirrors the #2220 parent convention and carries
+    NONE of poll_pipeline._SENTINEL_REQUIRED_KEYS, so `_parse_sentinel`
+    SKIPS it (persisted concern `sentinel-envelope-poller-drain`; the
+    dispatch gate must not rely on the poller's envelope drain). Pod-side
+    code NEVER shells to task.py."""
     logs = Path(os.environ.get("EPM_SENTINEL_DIR", "/workspace/logs"))
     payload = {"issue": ISSUE, "phase": phase, "status": status, "out_root": str(out_root)}
     if extra:
@@ -799,7 +844,10 @@ def _fit_layer_worker(task: dict) -> dict:
             "d_preshuf_matched": shuf["d_preshuf_matched"].astype(np.float32),
             "frame_fold_cos": float(ff),
             "proj_frac_rb": proj_fraction(Um, r_b, kstar),
-            "d_pre_raw_norm": float(np.linalg.norm(d_raw)),
+            # NOT "d_pre_raw_norm": the fit-report composition strips direction
+            # VECTORS by `k.startswith("d_")` — this scalar diagnostic must
+            # survive into the persisted fit_report.json (review minor g2).
+            "raw_norm_d_pre": float(np.linalg.norm(d_raw)),
             "kstar_shuf_fallback": bool(shuf["fallback_matched_kstar"]),
         }
 
@@ -1135,6 +1183,7 @@ def _load_model_and_tokenizer():
 def _eval_questions(behavior: str) -> list[str]:
     """Disjoint 20-question eval bank via the reused issue2220 loader (fail-loud
     on a missing/short eval_questions key; question text never logged)."""
+    _assert_e1_staged(behavior)  # regen fallback unreachable (blocker g2)
     _ensure_repo_root_on_syspath()
     import scripts.issue2220_readwrite as rw2220
 
@@ -1154,6 +1203,7 @@ def _contexts_for_questions(questions: list[str]) -> list[dict]:
 def _extraction_contexts(behavior: str) -> tuple[list[dict], list[dict]]:
     """(pos, neg) chat-templated extraction contexts: 5 instruction pairs
     (system role) x 20 extraction questions (plan §4.1 row 3)."""
+    _assert_e1_staged(behavior)  # regen fallback unreachable (blocker g2)
     _ensure_repo_root_on_syspath()
     from explore_persona_space.experiments.issue_1739.generation import load_e1_assets
 
@@ -1204,6 +1254,7 @@ def _load_2220_read_directions(behaviors: list[str]) -> dict:
         f"{RW2220_DIR_PREFIX}/manifest.json",
         stage / "manifest.json",
         repo_type="dataset",
+        revision=RW2220_DIR_REVISION,
     )
     manifest = json.loads(Path(manifest_path).read_text())
     entries = [
@@ -1223,7 +1274,10 @@ def _load_2220_read_directions(behaviors: list[str]) -> dict:
             f"{RW2220_DIR_PREFIX}/{e['path']}",
             stage / e["path"],
             repo_type="dataset",
+            revision=RW2220_DIR_REVISION,
         )
+        # weights_only=False on a self-produced #2220 tensor, now behind the
+        # revision pin (same convention as the pass-B bundle loader).
         payload = torch.load(local, map_location="cpu", weights_only=False)
         out[(e["behavior"], e["slug"], int(e["layer"]))] = np.asarray(
             payload["direction"], dtype=np.float64
@@ -1314,12 +1368,10 @@ def phase_capture_directions(args) -> None:
         row = {"rw2220_slug": slug, "layer": ly}
         for fam, arr in fam_by_behavior[b].items():
             row[f"cos_{fam}"] = _cos(arr[li], vec)
-        geo_b = geometry[b]
         # ctxext cosine needs the captured direction; recover from saved bank
         ctx_path = dir_out / f"{b}_ctxext_L{ly}.pt"
         ctx_vec = torch.load(ctx_path, map_location="cpu", weights_only=False)["direction"]
         row["cos_ctxext"] = _cos(np.asarray(ctx_vec, dtype=np.float64), vec)
-        assert geo_b is not None
         vs_2220[b].append(row)
 
     manifest = _run_metadata({"directions": manifest_entries, "layers": layers})
@@ -1840,6 +1892,28 @@ def _run_gen_grid(
     comp_root = out_root / phase / "raw_completions"
     comp_root.mkdir(parents=True, exist_ok=True)
     _breadcrumb(phase, cells=len(cells), shard=len(shard), shard_id=args.shard_id)
+    if not shard:
+        # num_shards > len(cells): a legitimately EMPTY shard (baseline_ceiling
+        # has 2 cells/behavior). Nothing generated => skip the folder upload
+        # (other shards carry the cells; a bare upload of nothing would raise
+        # the confusing "no files under ..." error — review minor g3). Reached
+        # only with num_shards > 1: the empty-CELLS case above already raised.
+        logger.warning(
+            "[%s] shard %d/%d is EMPTY (%d cells < num_shards) — nothing to "
+            "generate; skipping upload",
+            phase,
+            args.shard_id,
+            args.num_shards,
+            len(cells),
+        )
+        _write_sentinel(
+            out_root,
+            f"{phase}-shard{args.shard_id}",
+            "done",
+            {"cells": 0, "regen_cells": 0, "empty_shard": True},
+        )
+        _breadcrumb(phase, status="done", regen_cells=0, empty_shard=1)
+        return
     model, tok = _load_model_and_tokenizer()
     sentinel_extra = dict(pre_gen(model, tok)) if pre_gen is not None else {}
     hookf = hookf_builder(model)
@@ -1902,6 +1976,7 @@ def _run_gen_grid(
 def _positive_instructions(behavior: str) -> list[str]:
     """The 5 POSITIVE extraction system prompts (donor-swap ceiling + patch
     persona prefixes; plan §4.2/§4.3). Prompt text is never logged."""
+    _assert_e1_staged(behavior)  # regen fallback unreachable (blocker g2)
     from explore_persona_space.experiments.issue_1739.generation import load_e1_assets
 
     assets = load_e1_assets(behavior)
@@ -2141,6 +2216,12 @@ def phase_decisive(args) -> None:
             }
         ),
     )
+    # Wave-2 completeness-gate input: the off-pod judge_reduce stages this via
+    # _load_reduce_json (local-first, HF fallback) — upload BEFORE generation
+    # starts, so a pod death mid-grid never strands the expected-set record.
+    _upload_folder_to_hf(
+        out_root / "decisive", f"{_hf_prefix()}/decisive", allow=["selection_meta.json"]
+    )
     q_cache = {b: _eval_questions(b)[: args.q_decisive] for b in kept}
 
     def contexts_of(cell):
@@ -2202,10 +2283,27 @@ def _patch_calibration(args, model, tok, out_root: Path, behaviors, ops) -> dict
         layer_set = sorted(
             {ly for d in PATCH_DIRECTIONS for ly in _patch_layers_for(ops_b, b, d)} | set(MID_BAND)
         )
+        # Record (never silent — review minor g3) which directions fell back to
+        # FROZEN_LAYER because their single-breadth context operating point is
+        # missing (_patch_layers_for's fallback branch).
+        fallback_dirs = sorted(
+            d for d in PATCH_DIRECTIONS if ops_b.get(f"{d}__context__single") is None
+        )
+        if fallback_dirs:
+            logger.warning(
+                "[patch] %s: no single-breadth context operating point for %s — "
+                "patch layer falls back to FROZEN_LAYER[%s]=%d (recorded in "
+                "calibration_projections.json)",
+                b,
+                fallback_dirs,
+                b,
+                FROZEN_LAYER[b],
+            )
         cap_neut = steering.capture_vectors(model, tok, neutral, layer_set)
         cap_pos = steering.capture_vectors(model, tok, prefixed, layer_set)
         li = {ly: i for i, ly in enumerate(layer_set)}
         rec_b: dict = {"layers": layer_set, "n_neutral": len(neutral), "n_pos": len(prefixed)}
+        rec_b["frozen_layer_fallback_directions"] = fallback_dirs
         rec_b["directions"] = {}
         for d in PATCH_DIRECTIONS:
             per_layer = {}
@@ -2603,11 +2701,106 @@ def _stage_phase_completions(out_root: Path, phase: str) -> Path:
     return comp_root
 
 
+def _expected_gen_cell_ids(args, out_root: Path, wave: str) -> tuple[dict[str, set[str]], list]:
+    """(expected gen-cell id set per source phase, pilot behaviors) for a wave.
+
+    Wave 'localize': baseline_ceiling = {a0, cl} x behaviors; localize = the
+    full `_localize_cells` enumeration (smoke-narrowed through args, the SAME
+    enumeration the gen phase ran). Wave 'decisive': decisive = alpha0 + one
+    cell per (combo x breadth) wave-1 operating point for gate-PASSING
+    behaviors, honoring selection_meta.json's recorded
+    `missing_operating_points`; patch = the 12-cell grid per kept behavior.
+    """
+    behaviors = list(args.behaviors)
+    if wave == "localize":
+        base = {
+            _cell_id({"behavior": b, "kind": k}) for b in behaviors for k in ("alpha0", "ceiling")
+        }
+        loc = {_cell_id(c) for c in _localize_cells(args, behaviors)}
+        return {"baseline_ceiling": base, "localize": loc}, behaviors
+    ops = _load_operating_points(out_root)
+    gates = _load_gates(out_root)
+    kept, _skipped = _gate_ok_behaviors(gates, behaviors)
+    meta = _load_reduce_json(
+        out_root,
+        "decisive/selection_meta.json",
+        "run --phase decisive first (pod B writes + uploads it before generating)",
+    )
+    missing = set(meta.get("missing_operating_points", []))
+    dec: set[str] = set()
+    for b in kept:
+        dec.add(_cell_id({"behavior": b, "kind": "alpha0"}))
+        for d, p in _grid_combos(args):
+            for breadth in BREADTHS:
+                if f"{b}/{d}/{p}/{breadth}" in missing:
+                    continue
+                point = ops["behaviors"][b].get(f"{d}__{p}__{breadth}")
+                if point is None:
+                    raise RuntimeError(
+                        f"judge_reduce: operating point {b}/{d}/{p}/{breadth} is null in "
+                        "operating_points.json but NOT recorded in selection_meta.json "
+                        "missing_operating_points — wave-1/decisive artifacts inconsistent"
+                    )
+                dec.add(
+                    _cell_id(
+                        {
+                            "behavior": b,
+                            "kind": "steer",
+                            "direction": d,
+                            "position": p,
+                            "layer_config": point["layer_config"],
+                            "c": float(point["c"]),
+                        }
+                    )
+                )
+    patch = {
+        _cell_id({"behavior": b, "kind": "patch", "direction": d, "op": op_kind, "breadth": br})
+        for b in kept
+        for d in PATCH_DIRECTIONS
+        for op_kind in PATCH_OPS
+        for br in PATCH_BREADTHS
+    }
+    return {"decisive": dec, "patch": patch}, kept
+
+
+def _assert_gen_grid_complete(args, out_root: Path, wave: str, comp_roots: dict) -> list:
+    """Grid-completeness gate BEFORE the paid judge wave (review blocker g3,
+    round 1): the staged gen-cell id set must COVER the deterministic expected
+    grid — a partially-uploaded shard set or a partially-staged local dir must
+    fail loud, never argmax operating points / populate null bands / decide
+    gates over a partial grid (then spend pod B at the wrong points).
+
+    Returns the pilot behavior list (wave localize: args.behaviors; wave
+    decisive: the gate-PASSING behaviors only — a gate-demoted behavior has
+    no decisive gen cells by design, so piloting it would false-crash)."""
+    expected, pilot_behaviors = _expected_gen_cell_ids(args, out_root, wave)
+    problems = []
+    for phase, exp in expected.items():
+        staged = {f.stem for f in comp_roots[phase].glob("*.json")}
+        missing = sorted(exp - staged)
+        if missing:
+            problems.append(f"{phase}: {len(missing)} missing of {len(exp)} (e.g. {missing[:8]})")
+    if problems:
+        raise RuntimeError(
+            "judge_reduce: staged gen grid INCOMPLETE — refusing to judge/reduce a "
+            "partial cell set (some shards not yet generated/uploaded, or a partial "
+            "local raw_completions/ dir shadowing a complete HF prefix — remove it "
+            "to re-stage): " + "; ".join(problems)
+        )
+    return pilot_behaviors
+
+
 def _run_judge_pilot(args, out_root: Path, gen_phase: str, behavior: str, rubric: str, n_draws):
     """Rule-26 pilot gate, ONE judge_pilot_gate call per behavior per wave
     (>=51 effective draws per arm at the 2% threshold; truncation FAIL
     unwaivable). Fingerprint sidecar skips a prior PASS at the identical
-    instrument (rubric + n_draws + max_tokens) unless --force."""
+    instrument (rubric + n_draws + max_tokens) unless --force.
+
+    Draw-count note (review minor g3): the pilot runs at the STEERED phase's
+    draw count (wave 1: localize's 3) while the same wave also judges
+    baseline_ceiling at 5 draws — rubric + max_tokens are identical, so the
+    truncation/parse coverage carries; the mismatch is recorded in the pass
+    sidecar."""
     from explore_persona_space.eval.judge_pilot import judge_pilot_gate
 
     pilot_dir = out_root / "judge" / "pilot" / gen_phase
@@ -2675,7 +2868,18 @@ def _run_judge_pilot(args, out_root: Path, gen_phase: str, behavior: str, rubric
     )
     if not report.passed:
         raise RuntimeError(f"judge pilot FAILED for {gen_phase}/{behavior}: {report.verdict}")
-    _write_json_atomic(pass_path, {"fingerprint": fp, "verdict": report.verdict})
+    _write_json_atomic(
+        pass_path,
+        {
+            "fingerprint": fp,
+            "verdict": report.verdict,
+            "draw_count_note": (
+                f"pilot ran at the steered phase's n_draws={n_draws}; the same wave "
+                "judges baseline_ceiling at 5 draws (rubric + max_tokens identical, "
+                "truncation coverage carries)"
+            ),
+        },
+    )
 
 
 def _judge_cell(args, out_root: Path, phase: str, gen_path: Path, rubric: str, n_draws: int):
@@ -2934,8 +3138,19 @@ def _reduce_wave1(args, out_root: Path) -> None:
             "best_rb_answer_delta": max(rb_ans) if rb_ans else None,
             "answer_band_p975": band_ans["p975"] if band_ans else None,
         }
+        # Gate 3 — the REGISTERED quantity (plan §7 gate 3 + §6 band-vs-
+        # ceiling): achievable ceiling on the primary scale = 100 − α0 mean
+        # graded score (headroom) vs the context null-band upper edge on
+        # Δscore; rate version (1 − α0 rate) reported alongside. The donor-
+        # swap ceiling delta is kept as reported CONTEXT (it is the §4.3
+        # patch-fraction denominator + the hero-2 scale), never the gate
+        # criterion (review blocker g3, round 1).
+        headroom = 100.0 - float(np.nanmean(b_a0q))
+        headroom_rate = None if base_a0["rate"] is None else 1.0 - float(base_a0["rate"])
         gate3 = {
-            "pass": bool(band_ctx is not None and ceil_pt > max(band_ctx["p975"], 0.0)),
+            "pass": bool(band_ctx is not None and headroom > band_ctx["p975"]),
+            "headroom_score": headroom,
+            "headroom_rate": headroom_rate,
             "ceiling_delta": ceil_pt,
             "ceiling_ci": [ceil_lo, ceil_hi],
             "baseline_mean": float(np.nanmean(b_a0q)),
@@ -2960,9 +3175,21 @@ def _reduce_wave1(args, out_root: Path) -> None:
         base_out["behaviors"][b] = {
             "alpha0": {k: base_a0[k] for k in keep},
             "ceiling": {k: base_cl[k] for k in keep},
+            "headroom_score": headroom,  # achievable ceiling, 100 − α0 mean (plan §6)
             "ceiling_delta": ceil_pt,
             "ceiling_ci": [ceil_lo, ceil_hi],
         }
+    # Stated deviation (carried to the clean-result scope note): coherence
+    # gating uses the programmatic steering.coherence_check/condition_passes
+    # only — the judged 0-100 coherence covariate named in plan §6's
+    # evaluation table is not collected, mirroring #2220's recorded deviation
+    # (issue2220_readwrite.py L29-38; the plan pins "the #2220 instrument").
+    gates["stated_deviation_coherence"] = (
+        "coherence gate = programmatic steering.coherence_check/condition_passes; "
+        "the judged 0-100 coherence covariate is NOT collected (mirrors #2220's "
+        "recorded deviation, issue2220_readwrite.py L29-38) — carry to the "
+        "clean-result scope note"
+    )
     _write_json_atomic(out_root / "localize" / "dose_response.json", _run_metadata(dose))
     _write_json_atomic(out_root / "localize" / "operating_points.json", _run_metadata(op_out))
     _write_json_atomic(out_root / "localize" / "gates.json", _run_metadata(gates))
@@ -3061,12 +3288,19 @@ def _patch_vs_ceiling(out_root: Path) -> dict:
             frac = np.where(ok, (cl_b - cell_b) / np.where(ok, denom, 1.0), np.nan)
             point_num = float(np.nanmean(cl_q[:nq]) - np.nanmean(cq[:nq]))
         point_den = float(np.nanmean(cl_q[:nq]) - np.nanmean(a0_q[:nq]))
+
+        def _ci_edge(x) -> float | None:
+            # strict-JSON: an all-degenerate cell's nanquantile is NaN and
+            # json.dumps would emit a non-strict `NaN` literal (review minor
+            # g3) — map non-finite edges to null.
+            return float(x) if np.isfinite(x) else None
+
         out["cells"][j["cell_id"]] = {
             "cell": j["cell"],
             "fraction_point": (point_num / point_den) if abs(point_den) > 1e-6 else None,
             "fraction_ci": [
-                float(np.nanquantile(frac, 0.025)),
-                float(np.nanquantile(frac, 0.975)),
+                _ci_edge(np.nanquantile(frac, 0.025)),
+                _ci_edge(np.nanquantile(frac, 0.975)),
             ],
             "n_degenerate_draws": int((~ok).sum()),
             "mean_score": j["mean_score"],
@@ -3239,8 +3473,12 @@ def phase_judge_reduce(args) -> None:
     (judge baseline_ceiling + localize -> dose_response / operating_points /
     gates); --reduce-phase decisive = wave 2 (judge decisive + patch ->
     percell / verdicts / patch_vs_ceiling). Batch-API judging via
-    judge_items_graded; rule-26 pilot per behavior BEFORE the bulk wave;
-    per-cell judged checkpoints; VM/CPU-only (no CUDA)."""
+    judge_items_graded; grid-completeness assert BEFORE any judge spend
+    (`_assert_gen_grid_complete` — never a partial-grid reduce); rule-26
+    pilot per behavior BEFORE the bulk wave; per-cell judged checkpoints;
+    VM/CPU-only (no CUDA). Stated deviation: coherence gating is programmatic
+    (steering.coherence_check) — the judged coherence covariate is not
+    collected (recorded in gates.json, mirrors #2220)."""
     from explore_persona_space.experiments.issue_1739.judging import load_trait_rubric
 
     out_root = _out_root(args)
@@ -3249,8 +3487,9 @@ def phase_judge_reduce(args) -> None:
     behaviors = list(args.behaviors)
     rubrics = {b: load_trait_rubric(b) for b in behaviors}
     comp_roots = {phase: _stage_phase_completions(out_root, phase) for phase in phases}
+    pilot_behaviors = _assert_gen_grid_complete(args, out_root, wave, comp_roots)
     steered = "localize" if wave == "localize" else "decisive"
-    for b in behaviors:
+    for b in pilot_behaviors:
         _run_judge_pilot(args, out_root, steered, b, rubrics[b], _judge_draws(args, steered))
     for phase in phases:
         files = sorted(comp_roots[phase].glob("*.json"))
@@ -3604,7 +3843,9 @@ def main() -> None:
     PHASES[args.phase](args)
     # Explicit hard-exit after flush: this driver imports torch/transformers/HF,
     # so a finalize-time teardown race can rewrite the rc (gotchas.md). Outputs
-    # are fsynced (_write_json_atomic) + uploaded before here.
+    # are rename-atomic (_write_json_atomic: write_text + os.replace — no
+    # fsync, so crash-safe vs partial writes, not power-loss durable) and
+    # uploaded before here.
     sys.stdout.flush()
     sys.stderr.flush()
     os._exit(0)

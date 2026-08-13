@@ -131,27 +131,46 @@ def fig_hero1(out_root: Path, fig_dir: Path):
             ax.hlines(band["p975"], bi - 0.4, bi + 0.4, color="0.3", linestyle="--", linewidth=1.0)
         if base is not None and b in base.get("behaviors", {}):
             bb = base["behaviors"][b]
+            # Star = the plan-§6 ACHIEVABLE ceiling on the Δscore scale
+            # (100 − α0 mean graded score — the gate-3 registered quantity;
+            # review blocker g3 sibling). Computed from alpha0.mean_score so
+            # pre-fix reduce outputs render too.
+            a0_mean = bb["alpha0"]["mean_score"]
+            if a0_mean is not None:
+                ax.plot(
+                    [bi + 0.38],
+                    [100.0 - float(a0_mean)],
+                    "*",
+                    color="goldenrod",
+                    markersize=11,
+                    label="achievable ceiling (100−α0)" if bi == 0 else None,
+                )
+            # Donor-swap ceiling Δ kept as labeled CONTEXT (the §4.3 patch-
+            # fraction denominator), no longer mislabeled as "ceiling".
             clo, chi = bb["ceiling_ci"]
             ax.errorbar(
-                [bi + 0.38],
+                [bi + 0.30],
                 [bb["ceiling_delta"]],
                 yerr=_err([bb["ceiling_delta"]], [clo], [chi]),
-                fmt="*",
-                color="goldenrod",
-                markersize=11,
-                capsize=3,
-                label="ceiling" if bi == 0 else None,
+                fmt="D",
+                color="darkgoldenrod",
+                markersize=5,
+                capsize=2,
+                label="donor-swap ceiling Δ" if bi == 0 else None,
             )
     ax.set_xticks(range(len(behaviors)))
     ax.set_xticklabels(behaviors)
     ax.axhline(0.0, color="0.6", linewidth=0.8)
     ax.set_ylabel("Δ judge score vs α=0")
-    ax.set_title("Decisive steering effect (frozen CI; thin gray = selection-inherited)")
+    ax.set_title(
+        "Decisive steering effect — best cell per arm over breadths\n"
+        "(frozen CI; thin gray = selection-inherited)"
+    )
     ax.legend(frameon=False, fontsize=8)
     return _save(
         fig,
         fig_dir,
-        "hero1_delta_score",
+        "hero1_decisive_bars",  # plan §6.5 primary_deliverable filename
         [
             "decisive/delta_score_percell.json",
             "decisive/verdicts.json",
@@ -176,7 +195,8 @@ def fig_hero2(out_root: Path, fig_dir: Path):
             continue
         lo, hi = rec["fraction_ci"]
         ax.bar(i, v, color=DIR_COLORS[cell["direction"]], width=0.8)
-        ax.errorbar([i], [v], yerr=_err([v], [lo], [hi]), fmt="none", ecolor="black", capsize=2)
+        if lo is not None and hi is not None:  # all-degenerate cells persist null CI edges
+            ax.errorbar([i], [v], yerr=_err([v], [lo], [hi]), fmt="none", ecolor="black", capsize=2)
         xs.append(i)
         labels.append(f"{cell['behavior'][:4]}.{cell['direction']}.{cell['op']}.{cell['breadth']}")
     ax.set_xticks(xs)

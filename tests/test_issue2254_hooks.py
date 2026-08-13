@@ -129,25 +129,42 @@ def test_multilayer_delta_stack_lifecycle_and_handle(tiny_model):
     stack.hooks[0].remove()
 
 
-def test_multilayer_delta_each_layer_own_vector_and_dose(tiny_model):
+@pytest.mark.parametrize("all_positions", [False, True])
+def test_multilayer_delta_each_layer_own_vector_and_dose(tiny_model, all_positions):
+    """Both §4.2 position arms through a real forward: context (prefill-only,
+    all_positions=False) AND answer-tokens (all_positions=True — the round-1
+    g1 concern: the production answer arm runs exactly this stack config)."""
     B, T = 2, 5
     layers = [0, 1, 2]
     deltas = [_unit(0), _unit(1), _unit(2)]
     alphas = [2.0, 0.5, 1.0]
-    stack = multi_layer_delta_hooks(tiny_model, layers, deltas, alphas)
+    stack = multi_layer_delta_hooks(tiny_model, layers, deltas, alphas, all_positions=all_positions)
     hidden = torch.zeros(B, T, H)
     with stack:
         stack.arm(expected_prompt_len=T)
         captured = _capture_forward(tiny_model, hidden)
+        # decode-step forward (T=1 under the KV cache)
+        decode = _capture_forward(tiny_model, torch.zeros(B, 1, H))
     # Identity blocks => block k's output at T-1 is the CUMULATIVE per-layer
-    # edit sum alpha_0*d_0 + ... + alpha_k*d_k; every other position stays 0.
+    # edit sum alpha_0*d_0 + ... + alpha_k*d_k; every other PROMPT position
+    # stays 0 in BOTH modes (all_positions edits only the generating position
+    # at prefill).
     expected = torch.zeros(H)
     for k in range(N_LAYERS):
         expected = expected + alphas[k] * deltas[k]
         for b in range(B):
             torch.testing.assert_close(captured[k][b, T - 1], expected)
         assert torch.all(captured[k][:, : T - 1, :] == 0)
-    assert stack.n_edits == 3
+        if all_positions:
+            # answer-tokens arm: each decode step's (single) generated
+            # position carries the same cumulative per-layer edit
+            for b in range(B):
+                torch.testing.assert_close(decode[k][b, 0], expected)
+        else:
+            assert torch.all(decode[k] == 0)  # context arm: decode untouched
+    # n_edits counts edited forwards per child: prefill only (3) vs
+    # prefill + decode (6)
+    assert stack.n_edits == (6 if all_positions else 3)
 
 
 def test_multilayer_delta_arm_resets_prefill_latch(tiny_model):

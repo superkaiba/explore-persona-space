@@ -227,7 +227,14 @@ def test_wave1_outputs_gates_and_operating_points(reduced_root):
     assert ops["behaviors"]["evil"]["pre__context__all"] is None  # no all-config cell
     g = gates["behaviors"]["evil"]
     assert g["gate2"]["pass"] and g["gate3"]["pass"] and g["proceed"]
+    # gate 3 carries the REGISTERED quantity (100 - alpha0 mean) + rate
+    # version, with the donor-swap delta kept as context (round-1 blocker).
+    assert g["gate3"]["headroom_score"] == pytest.approx(90.0)
+    assert g["gate3"]["headroom_rate"] == pytest.approx(1.0)
+    assert g["gate3"]["ceiling_delta"] == pytest.approx(50.25)
+    assert "coherence" in gates["stated_deviation_coherence"]
     assert base["behaviors"]["evil"]["ceiling_delta"] == pytest.approx(50.25)
+    assert base["behaviors"]["evil"]["headroom_score"] == pytest.approx(90.0)
     comp = json.loads((root / "judge" / "completeness_wave1.json").read_text())
     assert comp["below_floor_cells"] == []
     assert any("localize" in p for _, p in uploads)
@@ -282,6 +289,9 @@ def test_patch_vs_ceiling_degenerate_denominator(tmp_path):
     rec = out["cells"][cid]
     assert rec["fraction_point"] is None
     assert rec["n_degenerate_draws"] == pi.N_BOOT_CELL
+    # strict-JSON: non-finite CI edges persist as null, never a bare NaN
+    assert rec["fraction_ci"] == [None, None]
+    assert "NaN" not in json.dumps(out)
 
 
 def test_wave2_gate_skipped_behavior_is_undefined(tmp_path):
@@ -333,7 +343,7 @@ def test_render_all_on_reduced_tree(reduced_root, tmp_path):
     res = render_all(root, fig_dir)
     rendered = set(res["rendered"])
     assert {
-        "hero1_delta_score",
+        "hero1_decisive_bars",  # plan §6.5 primary_deliverable filename
         "hero2_patch_fraction",
         "dose_response",
         "rate_companion",
@@ -355,3 +365,136 @@ def test_render_all_require_raises_on_skipped(reduced_root, tmp_path):
     root, _ = reduced_root
     with pytest.raises(RuntimeError, match="required figures not rendered"):
         render_all(root, tmp_path / "f2", require=("margin_scatter",))
+
+
+# ---------------------------------------------------------------------------
+# gate 3: the REGISTERED quantity (round-1 blocker g3)
+# ---------------------------------------------------------------------------
+
+
+def test_gate3_uses_registered_headroom_not_donor_delta(tmp_path):
+    """Plan §7 gate 3 = 100 - alpha0 mean graded score vs the context null-band
+    upper edge. A behavior with graded HEADROOM but a WEAK donor-swap delta
+    must PASS — pre-fix the donor-swap delta was substituted for the
+    registered quantity and this construction (headroom > band > donor delta)
+    was wrongly demoted."""
+    b = "evil"
+    _judged(tmp_path, "baseline_ceiling", {"behavior": b, "kind": "alpha0"}, [10] * 4, 0.0)
+    _judged(tmp_path, "baseline_ceiling", {"behavior": b, "kind": "ceiling"}, [12, 11, 13, 12], 0.1)
+    _judged(tmp_path, "localize", {"behavior": b, "kind": "alpha0"}, [10] * 4, 0.0)
+    _judged(tmp_path, "localize", _steer(b, "pre", "context"), [40, 42, 38, 44], 0.5)
+    _judged(tmp_path, "localize", _steer(b, "random", "context"), [30, 31, 29, 30], 0.2)
+    _judged(tmp_path, "localize", _steer(b, "preshuf", "context"), [29, 30, 31, 30], 0.2)
+    args = _full_args(["--behaviors", "evil"])
+    orig = pi._upload_folder_to_hf
+    pi._upload_folder_to_hf = lambda *a, **k: None
+    try:
+        pi._reduce_wave1(args, tmp_path)
+    finally:
+        pi._upload_folder_to_hf = orig
+    g3 = json.loads((tmp_path / "localize" / "gates.json").read_text())["behaviors"][b]["gate3"]
+    # construction sanity: headroom (90) > band edge (~20) > donor delta (2)
+    assert g3["headroom_score"] == pytest.approx(90.0)
+    assert g3["headroom_rate"] == pytest.approx(1.0)
+    assert g3["ceiling_delta"] == pytest.approx(2.0)
+    assert g3["headroom_score"] > g3["context_band_p975"] > g3["ceiling_delta"]
+    assert g3["pass"] is True
+
+
+# ---------------------------------------------------------------------------
+# judge-wave grid completeness (round-1 blocker g3)
+# ---------------------------------------------------------------------------
+
+
+def _smoke_args(extra: list[str] | None = None):
+    return pi.build_argparser().parse_args(
+        ["--phase", "judge_reduce", "--behaviors", "evil", "--smoke", *(extra or [])]
+    )
+
+
+def _touch_gen(comp_root: Path, cid: str) -> None:
+    comp_root.mkdir(parents=True, exist_ok=True)
+    (comp_root / f"{cid}.json").write_text("{}")
+
+
+def test_gen_grid_completeness_wave1_pass_and_missing_cell(tmp_path):
+    args = _smoke_args()
+    comp = {
+        "baseline_ceiling": tmp_path / "baseline_ceiling" / "raw_completions",
+        "localize": tmp_path / "localize" / "raw_completions",
+    }
+    for kind in ("alpha0", "ceiling"):
+        _touch_gen(comp["baseline_ceiling"], pi._cell_id({"behavior": "evil", "kind": kind}))
+    cells = pi._localize_cells(args, ["evil"])
+    for c in cells:
+        _touch_gen(comp["localize"], pi._cell_id(c))
+    assert pi._assert_gen_grid_complete(args, tmp_path, "localize", comp) == ["evil"]
+    # delete ONE localize gen cell -> the paid judge wave refuses, NAMING it
+    victim = pi._cell_id(cells[3])
+    (comp["localize"] / f"{victim}.json").unlink()
+    with pytest.raises(RuntimeError, match=victim):
+        pi._assert_gen_grid_complete(args, tmp_path, "localize", comp)
+
+
+def _write_wave2_fixtures(root: Path, args, null_recorded: bool = True):
+    """gates + operating_points + selection_meta for the smoke combo grid,
+    with ONE (pre, context, all) operating point null (recorded as missing
+    when `null_recorded`)."""
+    lc_of = {"single": "L14", "mid": "mid", "all": "all"}
+    ops_b: dict = {}
+    missing: list[str] = []
+    for d, p in pi._grid_combos(args):
+        for br in pi.BREADTHS:
+            if (d, p, br) == ("pre", "context", "all"):
+                ops_b[f"{d}__{p}__{br}"] = None
+                missing.append(f"evil/{d}/{p}/{br}")
+            else:
+                ops_b[f"{d}__{p}__{br}"] = {"cell_id": "x", "layer_config": lc_of[br], "c": 1.0}
+    pi._write_json_atomic(
+        root / "localize" / "operating_points.json", {"behaviors": {"evil": ops_b}}
+    )
+    pi._write_json_atomic(
+        root / "localize" / "gates.json", {"behaviors": {"evil": {"proceed": True}}}
+    )
+    pi._write_json_atomic(
+        root / "decisive" / "selection_meta.json",
+        {"missing_operating_points": missing if null_recorded else []},
+    )
+
+
+def test_gen_grid_completeness_wave2_honors_selection_meta(tmp_path):
+    args = _smoke_args()
+    _write_wave2_fixtures(tmp_path, args)
+    expected, kept = pi._expected_gen_cell_ids(args, tmp_path, "decisive")
+    assert kept == ["evil"]
+    # 3 smoke combos x 3 breadths - 1 RECORDED-missing operating point + alpha0
+    assert len(expected["decisive"]) == 3 * 3 - 1 + 1
+    assert len(expected["patch"]) == 12  # 3 directions x 2 ops x 2 breadths
+    comp = {
+        "decisive": tmp_path / "decisive" / "raw_completions",
+        "patch": tmp_path / "patch" / "raw_completions",
+    }
+    for phase, ids in expected.items():
+        for cid in ids:
+            _touch_gen(comp[phase], cid)
+    assert pi._assert_gen_grid_complete(args, tmp_path, "decisive", comp) == ["evil"]
+    victim = sorted(expected["patch"])[0]
+    (comp["patch"] / f"{victim}.json").unlink()
+    with pytest.raises(RuntimeError, match="patch: 1 missing"):
+        pi._assert_gen_grid_complete(args, tmp_path, "decisive", comp)
+
+
+def test_gen_grid_wave2_unrecorded_null_operating_point_is_inconsistent(tmp_path):
+    args = _smoke_args()
+    _write_wave2_fixtures(tmp_path, args, null_recorded=False)
+    with pytest.raises(RuntimeError, match="inconsistent"):
+        pi._expected_gen_cell_ids(args, tmp_path, "decisive")
+
+
+def test_judge_reduce_asserts_completeness_before_any_judge_spend():
+    """Ordering pin: the completeness gate runs BEFORE the rule-26 pilot (the
+    first paid judge call) inside phase_judge_reduce."""
+    import inspect
+
+    src = inspect.getsource(pi.phase_judge_reduce)
+    assert src.index("_assert_gen_grid_complete") < src.index("_run_judge_pilot")
