@@ -175,13 +175,15 @@ Check catalog (id — classification — kind scope)
       conflict
   c60 amendment composed with   WARN-only, conditional    all kinds,
       base for checking                                   --issue mode only
+  c61 SLURM would-render --mem  WARN-only, conditional    all kinds
+      vs declared RSS peak
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54,
-55, 56, 57, 58, 59) also SKIP when their content trigger does not fire.
+55, 56, 57, 58, 59, 61) also SKIP when their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -11373,6 +11375,282 @@ def check_gpu_hours_token_conflict(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 61 — SLURM would-render --mem vs declared RSS peak (#2275) ──────
+
+# Within-job width tokens (the #2275 plan's registered conservative regexes —
+# a fleet-total "12 legs" with no in-parallel qualifier deliberately stays
+# out; only widths sharing ONE job cgroup should multiply the peak).
+_C61_WIDTH_RES = (
+    re.compile(r"(?i)\b(\d+)[- ]wide\b"),
+    re.compile(r"(?i)\bwidth[= ]?(\d+)\b"),
+    re.compile(r"(?i)\b(\d+)\s+(?:units|legs|fits|workers)\s+in\s+parallel\b"),
+)
+
+
+def _c61_ram_peak_lines(plan: str) -> list[tuple[int, float, str]]:
+    """``(line index, GiB value, line)`` triples for RAM-token peak lines —
+    the RAM arm of ``_c52_declared_peaks`` kept PER LINE, so the c61
+    aggregate arm can pair each peak with a within-job width token on the
+    SAME line/paragraph (the #1336 shape: N units share one job cgroup)."""
+    out: list[tuple[int, float, str]] = []
+    for i, line in enumerate(plan.splitlines()):
+        m = _C52_RAM_TOKEN_RE.search(line)
+        if m is None:
+            continue
+        val = _c52_nearest_gib(line, m.start())
+        if val is not None:
+            out.append((i, val, line))
+    return out
+
+
+def _c61_width_for(lines: list[str], idx: int) -> tuple[int, str] | None:
+    """Within-job width token on RSS line ``idx``, else in its paragraph
+    (the contiguous non-blank block around it). Returns
+    ``(width, matched token)`` or ``None``; same-line hits win, then the
+    LARGEST width in the paragraph (conservative aggregate); width 1 is
+    not a fan-out."""
+    lo = idx
+    while lo > 0 and lines[lo - 1].strip():
+        lo -= 1
+    hi = idx
+    while hi + 1 < len(lines) and lines[hi + 1].strip():
+        hi += 1
+    order = [idx] + [j for j in range(lo, hi + 1) if j != idx]
+    for j in order:
+        hits = [
+            (int(m.group(1)), m.group(0)) for rx in _C61_WIDTH_RES for m in rx.finditer(lines[j])
+        ]
+        hits = [(w, t) for w, t in hits if w > 1]
+        if hits:
+            return max(hits)
+    return None
+
+
+def _c61_would_render_mem(ns) -> tuple[int | None, str]:
+    """The ``--mem`` (G) the SLURM renderer WOULD emit for parsed launch
+    ``ns`` — computed through the renderer's OWN
+    ``slurm._resource_header_lines`` (the c50 exact-parity idiom), so the
+    read carries post-#2275 semantics for free: an argv ``--min-ram-gb``
+    raises the render via ``_apply_min_ram``, and a requirement above
+    ``mem_gb_cap`` raises (already fail-fast at dispatch — SKIP-class
+    here). Cluster = the argv's explicit SLURM ``--backend`` pin when it
+    names a known cluster, else fellows (the first SLURM lane in
+    ``DEFAULT_AUTO_LANE_ORDER``); GPU count = ``--gpus`` when declared,
+    else the intent's ``_DEFAULT_GPUS_FOR_INTENT`` row. Returns
+    ``(mem_gb | None, detail)`` — ``None`` means unresolvable, with the
+    stated reason."""
+    try:
+        from explore_persona_space.backends import RunSpec
+        from explore_persona_space.backends.slurm import (
+            _DEFAULT_GPUS_FOR_INTENT,
+            _resource_header_lines,
+            get_cluster_config,
+        )
+    except Exception as exc:  # off-repo --plan-file run -> loud SKIP-class note
+        return None, f"slurm renderer unavailable ({type(exc).__name__}: {exc})"
+    intent = str(getattr(ns, "intent", ""))
+    if intent not in _DEFAULT_GPUS_FOR_INTENT:
+        return None, (
+            f"intent {intent!r} has no _DEFAULT_GPUS_FOR_INTENT row — "
+            "slurm.default_gpus_for_intent() already fails fast at dispatch"
+        )
+    gpus = int(getattr(ns, "gpus", None) or _DEFAULT_GPUS_FOR_INTENT[intent])
+    backend = getattr(ns, "backend", None)
+    cluster_name = backend if backend in ("fellows", "nibi", "fir", "mila") else "fellows"
+    try:
+        cluster = get_cluster_config(cluster_name)
+        spec = RunSpec(
+            issue=0,
+            intent=intent,
+            backend="cluster",
+            cluster=cluster_name,
+            extra=({"min_ram_gb": int(ns.min_ram_gb)} if getattr(ns, "min_ram_gb", None) else {}),
+        )
+        header = "\n".join(_resource_header_lines(cluster, spec, gpus))
+    except Exception as exc:  # incl. the #2275 > mem_gb_cap pre-submit refusal
+        return None, f"renderer refuses ({type(exc).__name__}: {exc})"
+    m = re.search(r"--mem=(\d+)G", header)
+    if m is None:
+        return None, "renderer emitted no --mem line"
+    return int(m.group(1)), f"{cluster_name}/{intent} at {gpus} GPU(s)"
+
+
+def check_slurm_mem_coverage(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds: for EVERY plan-embedded
+    launch-shaped ``dispatch_issue.py`` argv that dry-parses and resolves a
+    SLURM-reachable route (``dispatch_issue._slurm_lane_reachable`` — the
+    c50 runtime-parity predicate), the plan's own declared per-leg RSS
+    peak (``_c52_declared_peaks``'s RAM arm, per line) must fit the
+    WOULD-RENDER ``#SBATCH --mem`` — the renderer's own
+    ``min(mem_gb_per_gpu x gpus, mem_gb_cap)`` / CPU-table formula PLUS
+    the argv's ``--min-ram-gb`` when present (post-#2275 semantics,
+    computed through ``slurm._resource_header_lines`` itself). Two WARN
+    arms: (a) PER-LEG — the declared peak strictly exceeds the
+    would-render ``--mem`` with no covering ``--min-ram-gb``; (b)
+    AGGREGATE (the #1336 shape) — a within-job width token
+    (``N-wide`` / ``width=N`` / ``N units|legs|fits|workers in
+    parallel``, ``_C61_WIDTH_RES``) on the SAME line/paragraph as the RSS
+    token multiplies the peak (N units share ONE job cgroup), and
+    ``peak x width`` exceeds the would-render ``--mem`` — WARN naming the
+    arithmetic. Remedy named either way: ``--min-ram-gb <requirement>``
+    (the #2275 renderer raises ``--mem`` to it, refusing pre-submit above
+    ``mem_gb_cap``). Every ambiguity SKIPs with a stated reason; the
+    check NEVER FAILs (the c46/c50/c52 posture).
+
+    Scope split vs c52: c52 compares declared peaks against the GCP
+    LADDER-RUNG constants (85 GiB host-RAM / 38 GiB VRAM) — #1336's
+    65-70 GiB per-unit RSS sits BELOW that rung while 8 units share one
+    SLURM job cgroup, so c52 structurally cannot catch the
+    aggregate-on-one-node case; c61 compares against the SLURM lane's
+    OWN rendered ``--mem``. Named residual (the c52 residual (ii)
+    posture): a fan-out driven by a CUSTOM DRIVER with no plan-embedded
+    ``dispatch_issue.py launch`` argv is structurally invisible — the
+    binding surface is `.claude/rules/plan-compute-sizing.md`
+    § Ladder-rung RAM floor, and a c61 SKIP is never read as coverage.
+    Second named residual: the fleet-total-vs-per-leg token ambiguity
+    inherited from the c52 extractor (WARN-only polarity absorbs it; the
+    message names the extracted line).
+    """
+    del kind  # all kinds: a SLURM cgroup OOM kills identically everywhere
+    cid, name = "c61_slurm_mem_coverage", "SLURM would-render --mem vs declared RSS peak"
+    peak_lines = _c61_ram_peak_lines(plan)
+    if not peak_lines:
+        return _skip(cid, name, "no per-leg RSS / host-RAM peak-estimate token in the plan")
+    argvs, notes = _c50_launch_argvs(plan)
+    tail = ("; " + "; ".join(notes)) if notes else ""
+    if not argvs:
+        return _skip(
+            cid,
+            name,
+            "no launch-shaped dispatch_issue.py command in the plan — a custom-driver "
+            "fan-out is structurally invisible here (docstring residual): the binding "
+            "surface is plan-compute-sizing.md § Ladder-rung RAM floor, and this SKIP is "
+            "not coverage" + tail,
+        )
+    parser, load_detail = _c46_argparser()
+    if parser is None:
+        return _skip(cid, name, f"dispatch_issue.build_argparser unavailable ({load_detail})")
+    reachable_fn, reach_detail = _c50_slurm_lane_reachable_fn()
+    if reachable_fn is None:
+        return _skip(
+            cid, name, f"dispatch_issue._slurm_lane_reachable unavailable ({reach_detail})"
+        )
+    max_peak = max(v for _, v, _ in peak_lines)
+    agg = _c61_max_aggregate(plan.splitlines(), peak_lines)
+    return _c61_verdict(cid, name, argvs, parser, reachable_fn, max_peak, agg, tail)
+
+
+def _c61_max_aggregate(
+    lines: list[str], peak_lines: list[tuple[int, float, str]]
+) -> tuple[float, int, float, str] | None:
+    """Largest (aggregate GiB, width, per-leg peak, width token) over peak lines
+    carrying a same-line/paragraph width token; None when no width token pairs."""
+    agg: tuple[float, int, float, str] | None = None
+    for idx, val, _line in peak_lines:
+        w = _c61_width_for(lines, idx)
+        if w is not None:
+            cand = (val * w[0], w[0], val, w[1])
+            if agg is None or cand[0] > agg[0]:
+                agg = cand
+    return agg
+
+
+def _c61_eval_argv(
+    parser,
+    reachable_fn,
+    i: int,
+    argv: list[str],
+    max_peak: float,
+    agg: tuple[float, int, float, str] | None,
+) -> tuple[str, str, str | None]:
+    """Evaluate ONE launch argv for c61. Returns (kind, text, warn) where kind is
+    'skip' (loud SKIP the whole check: text = reason), 'note' (per-argv note),
+    or 'ok' (text = the rendered --mem line; warn = the WARN text or None)."""
+    ns, err = _c46_dry_parse(parser, argv)
+    if ns is None:  # per-argv note, never a WARN — c46 arm 1 owns parse drift
+        return ("note", f"argv #{i + 1} does not dry-parse ({err}) — c46 arm 1 owns that", None)
+    try:
+        reachable = reachable_fn(ns)
+    except Exception as exc:  # router import failure on off-repo runs -> loud SKIP
+        return ("skip", f"SLURM reachability unresolvable ({type(exc).__name__}: {exc})", None)
+    if not reachable:
+        return (
+            "note",
+            f"argv #{i + 1}: no SLURM lane reachable for backend "
+            f"{(getattr(ns, 'backend', None) or 'auto')!r}",
+            None,
+        )
+    mem_gb, detail = _c61_would_render_mem(ns)
+    if mem_gb is None:
+        return ("note", f"argv #{i + 1}: would-render --mem unresolvable ({detail})", None)
+    label = _c52_argv_label(i, argv)
+    warn: str | None = None
+    if max_peak > mem_gb:
+        warn = (
+            f"plan declares per-leg peak RSS ~{max_peak:g} GiB but {label} would render "
+            f"#SBATCH --mem={mem_gb}G ({detail}) — the SLURM job cgroup OOM-kills at "
+            f"that cap (the #1336 shape): add --min-ram-gb {math.ceil(max_peak)} to the "
+            f"launch command (#2275 raises the rendered --mem to it)"
+        )
+    elif agg is not None and agg[0] > mem_gb:
+        warn = (
+            f"plan declares a within-job aggregate of {agg[2]:g} GiB x width {agg[1]} "
+            f"({agg[3]!r}) = {agg[0]:g} GiB but {label} would render #SBATCH "
+            f"--mem={mem_gb}G ({detail}) — N units share ONE SLURM job cgroup, so the "
+            f"AGGREGATE binds (the #1336 shape: 8 pooled fit units OOM-killed at the "
+            f"GPU-count-derived cap): add --min-ram-gb {math.ceil(agg[0])} to the launch "
+            f"command (#2275 raises the rendered --mem to it)"
+        )
+    return ("ok", f"{label}: --mem={mem_gb}G ({detail})", warn)
+
+
+def _c61_verdict(
+    cid: str,
+    name: str,
+    argvs: list[list[str]],
+    parser,
+    reachable_fn,
+    max_peak: float,
+    agg: tuple[float, int, float, str] | None,
+    tail: str,
+) -> CheckResult:
+    """Fold per-argv c61 evaluations into the check verdict (SKIP/WARN/PASS)."""
+    warns: list[str] = []
+    argv_notes: list[str] = []
+    mems: list[str] = []
+    for i, argv in enumerate(argvs):
+        outcome, text, warn = _c61_eval_argv(parser, reachable_fn, i, argv, max_peak, agg)
+        if outcome == "skip":
+            return _skip(cid, name, text)
+        if outcome == "note":
+            argv_notes.append(text)
+            continue
+        mems.append(text)
+        if warn is not None:
+            warns.append(warn)
+    if not mems:
+        joined = "; ".join(argv_notes) + tail
+        if argv_notes and all("no SLURM lane reachable" in n for n in argv_notes):
+            return _skip(
+                cid,
+                name,
+                "no SLURM lane reachable for any launch argv — the rendered --mem never "
+                "binds; " + joined,
+            )
+        return _skip(cid, name, joined or "no launch argv evaluated")
+    if warns:
+        extra = "; ".join(argv_notes)
+        return _warn(cid, name, "; ".join(warns) + (f" [{extra}]" if extra else ""))
+    return _pass(
+        cid,
+        name,
+        f"declared peak RSS {max_peak:g} GiB"
+        + (f" (within-job aggregate {agg[0]:g} GiB)" if agg is not None else "")
+        + f" fits the would-render --mem across {len(mems)} launch argv(s): "
+        + "; ".join(mems),
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -11433,6 +11711,7 @@ CHECKS = [
     check_fanout_prefix_staging,
     check_fanout_pod_name_collision,
     check_gpu_hours_token_conflict,
+    check_slurm_mem_coverage,
 ]
 
 

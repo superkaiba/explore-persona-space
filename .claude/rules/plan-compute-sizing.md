@@ -64,6 +64,23 @@ residual (ii)) — so there the rule IS the coverage, the check is only the
 mechanical backstop for plan-embedded launches, and a c52 SKIP is never
 read as coverage.
 
+On SLURM lanes the floor now binds MECHANICALLY (#2275): `--min-ram-gb`
+threads to `spec.extra["min_ram_gb"]` and the sbatch renderer RAISES the
+rendered `#SBATCH --mem` to the requirement (both GPU and CPU branches,
+`slurm._apply_min_ram`), refusing pre-submit above the cluster
+`mem_gb_cap` — never a silent clamp below the declared requirement. Size
+per-unit RSS × within-job width against the LANE-RENDERED `--mem`
+(fellows GPU branch: `min(128 × gpus, 1800)` G), NOT against per-VM /
+per-rung reads: N units of one job share ONE cgroup, so the AGGREGATE
+binds while each unit can sit below every per-rung constant (#1336:
+8 pooled-fit units needing ≈1,550 GiB total OOM-killed under the
+GPU-count-derived 1024G `--mem`, each unit only 65–70 GiB). SLURM twin of
+c52: `verify_plan.py` c61 (`c61_slurm_mem_coverage`, WARN-only) compares
+declared per-leg peaks — and `peak × width` when a within-job width token
+rides the same line/paragraph — against the WOULD-RENDER `--mem` of every
+plan-embedded SLURM-reachable launch argv; the custom-driver residual is
+unchanged (the rule IS the coverage there).
+
 
 **Merge-disk budget — bound coexisting full-precision artifacts against
 the per-pod quota.** Any phase that materializes full-precision model

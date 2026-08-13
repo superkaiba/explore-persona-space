@@ -203,10 +203,13 @@ def test_good_plan_passes_all():
         # A100 ... covers both conditions."), so it is NOT declaration-
         # shaped — the 646-file corpus class c59 never fires on (#2123).
         "c59_gpu_hours_token_conflict": "SKIP",
+        # SKIP: GOOD_PLAN declares no per-leg RSS peak-estimate token —
+        # trigger-conditional (#2275).
+        "c61_slurm_mem_coverage": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 58
+    assert len(results) == 59
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -6330,12 +6333,14 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     # + c59 (SKIP: GOOD_PLAN's GPU-hours token sits mid-sentence — not
     #   declaration-shaped, the 646-file corpus class; trigger-conditional,
     #   #2123)
-    assert payload["n_skip"] == 51
+    # + c61 (SKIP: GOOD_PLAN declares no per-leg RSS peak-estimate token;
+    #   trigger-conditional, #2275)
+    assert payload["n_skip"] == 52
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 60
-    assert len({c["id"] for c in payload["checks"]}) == 60
+    assert len(payload["checks"]) == 61
+    assert len({c["id"] for c in payload["checks"]}) == 61
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -12433,3 +12438,145 @@ def test_c59_registered_in_checks_and_docstring_catalog():
     assert verify_plan.check_gpu_hours_token_conflict in verify_plan.CHECKS
     assert "c59 GPU-hours token" in verify_plan.__doc__
     assert "N/A — GPU-hours token conflict reconciled" in verify_plan.__doc__
+
+
+# ─── Check 61 — SLURM would-render --mem vs declared RSS peak (#2275) ──────
+
+C61 = "c61_slurm_mem_coverage"
+
+# Per-leg peak above the fellows 8-GPU would-render --mem (min(128*8, 1800)
+# = 1024G) — the #1336 aggregate need (~1,550 GiB) declared as ONE peak.
+_C61_RAM_1550 = "\nPer-leg peak RSS is projected at 1550 GiB (largest cell).\n"
+
+# The #1336 aggregate SHAPE: a per-UNIT peak far below the rendered --mem
+# (and below c52's 85 GiB GCP rung read — the case c52 structurally cannot
+# catch), width-multiplied on the SAME line. 194 GiB x 8-wide = 1552 GiB
+# vs the 1024G render, matching the incident's measured ~1,550 GiB total.
+# (The plan §5 sketch quoted the incident's 65 GiB ON-ARM unit RSS, but
+# 65 x 8 = 520 GiB FITS the 8-GPU 1024G render — the sketch numbers were
+# internally unsatisfiable because the real aggregate also carried ~4x
+# off-arm rows; the fixture keys on the measured total instead.)
+_C61_AGG_1336 = (
+    "\nPer-leg peak RSS is projected at 194 GiB per pooled-fit unit; the fit "
+    "pool runs 8-wide in one job.\n"
+)
+
+
+def _c61_launch(flags: str = "") -> str:
+    """8-GPU fellows-reachable launch-shaped dispatch command (#1336 shape);
+    ``flags`` splices extra tokens in (e.g. ``--min-ram-gb 1550``)."""
+    extra = f" {flags}" if flags else ""
+    return (
+        "\n```bash\n"
+        "uv run python scripts/dispatch_issue.py launch \\\n"
+        f"    --issue 2275 --intent lora-7b --gpus 8 --repo-branch issue-2275{extra} \\\n"
+        "    --workload-cmd 'bash scripts/fit_pool.sh'\n"
+        "```\n"
+    )
+
+
+def test_c61_per_leg_arm_warns_when_peak_exceeds_rendered_mem(monkeypatch):
+    # Plan §5 arm (a): 1550 GiB declared per-leg peak vs the 8-GPU fellows
+    # would-render --mem=1024G, no --min-ram-gb -> WARN naming the remedy.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    r = _run(GOOD_PLAN + _C61_RAM_1550 + _c61_launch())[1][C61]
+    assert r.status == "WARN"
+    assert "1550" in r.detail  # the declared peak
+    assert "--mem=1024G" in r.detail  # the would-render cap
+    assert "--min-ram-gb 1550" in r.detail  # the remedy, named
+    assert "#1336" in r.detail
+
+
+def test_c61_aggregate_arm_warns_naming_arithmetic(monkeypatch):
+    # Plan §5 arm (b) — the #1336 shape: a per-UNIT peak (194 GiB) BELOW the
+    # 1024G would-render --mem, so the per-leg arm stays quiet; the width
+    # multiply (8-wide, same line) makes the within-job aggregate
+    # 194 x 8 = 1552 GiB > 1024G -> WARN naming the arithmetic + remedy.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    r = _run(GOOD_PLAN + _C61_AGG_1336 + _c61_launch())[1][C61]
+    assert r.status == "WARN"
+    assert "194" in r.detail  # the per-unit peak
+    assert "1552" in r.detail  # the aggregate arithmetic
+    assert "--mem=1024G" in r.detail
+    assert "--min-ram-gb 1552" in r.detail
+    assert "cgroup" in r.detail  # why the aggregate binds
+
+
+def test_c61_min_ram_flag_covering_peak_passes(monkeypatch):
+    # Plan §5: --min-ram-gb 1550 present -> the would-render --mem rises to
+    # 1550G (post-#2275 semantics, computed through the renderer itself) ->
+    # PASS. Fail-loud pin: the no-WARN arm asserted explicitly.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    r = _run(GOOD_PLAN + _C61_RAM_1550 + _c61_launch("--min-ram-gb 1550"))[1][C61]
+    assert r.status == "PASS", r.detail
+    assert "--mem=1550G" in r.detail
+
+
+def test_c61_min_ram_flag_below_peak_still_warns(monkeypatch):
+    # AC4 analogue (floor-too-low): --min-ram-gb 1200 raises the render to
+    # 1200G, still strictly below the declared 1550 GiB peak -> WARN.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    r = _run(GOOD_PLAN + _C61_RAM_1550 + _c61_launch("--min-ram-gb 1200"))[1][C61]
+    assert r.status == "WARN"
+    assert "--mem=1200G" in r.detail
+
+
+def test_c61_skips_when_no_slurm_lane_reachable(monkeypatch):
+    # Plan §5: an explicit non-SLURM pin -> the rendered --mem never binds
+    # (exact parity with the runtime reachability predicate, the c50 idiom).
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    r = _run(GOOD_PLAN + _C61_RAM_1550 + _c61_launch("--backend runpod"))[1][C61]
+    assert r.status == "SKIP"
+    assert "no SLURM lane reachable" in r.detail
+
+
+def test_c61_skips_when_no_rss_token(monkeypatch):
+    # Plan §5: launch present, no RSS/host-RAM peak-estimate token anywhere.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    r = _run(GOOD_PLAN + _c61_launch())[1][C61]
+    assert r.status == "SKIP"
+    assert "no per-leg RSS" in r.detail
+
+
+def test_c61_skips_when_no_launch_command():
+    # Residual (the c52 residual-(ii) posture): a custom-driver fan-out —
+    # the actual #1336 dispatch channel — embeds no dispatch_issue.py launch
+    # line; SKIP states it is NOT coverage and names the binding surface.
+    r = _run(GOOD_PLAN + _C61_RAM_1550)[1][C61]
+    assert r.status == "SKIP"
+    assert "not coverage" in r.detail
+    assert "plan-compute-sizing.md" in r.detail
+
+
+def test_c61_never_fails_invariant(monkeypatch):
+    # Plan §5 never-FAIL invariant (the c46/c50/c52 posture): every fixture
+    # variant — WARN shapes, SKIP shapes, malformed argvs — resolves to
+    # PASS/WARN/SKIP, never FAIL.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    variants = [
+        GOOD_PLAN,
+        GOOD_PLAN + _C61_RAM_1550,
+        GOOD_PLAN + _c61_launch(),
+        GOOD_PLAN + _C61_RAM_1550 + _c61_launch(),
+        GOOD_PLAN + _C61_AGG_1336 + _c61_launch(),
+        GOOD_PLAN + _C61_RAM_1550 + _c61_launch("--min-ram-gb 1550"),
+        GOOD_PLAN + _C61_RAM_1550 + _c61_launch("--backend runpod"),
+        # > mem_gb_cap: the renderer refuses (already fail-fast at
+        # dispatch) -> SKIP-class note here, never a crash / FAIL.
+        GOOD_PLAN + _C61_RAM_1550 + _c61_launch("--min-ram-gb 2000"),
+        # Unparseable launch argv -> per-argv note, c46 arm 1 owns it.
+        GOOD_PLAN + _C61_RAM_1550 + _c61_launch("--no-such-flag 1"),
+    ]
+    for plan in variants:
+        r = _run(plan)[1][C61]
+        assert r.status in {"PASS", "WARN", "SKIP"}, (r.status, r.detail)
+
+
+def test_c61_registered_in_checks_and_docstring_catalog():
+    # Membership pin (the c44/c46/c57 house pattern): a forgotten registry
+    # append cannot ship green — the check existing is not the check running.
+    assert verify_plan.check_slurm_mem_coverage in verify_plan.CHECKS
+    assert "c61 SLURM would-render --mem" in verify_plan.__doc__
+    # conditional-checks enumeration carries 61 (comma-separated membership
+    # form, the c56/c57 reflow-tolerant pin).
+    assert "59, 61" in verify_plan.__doc__
