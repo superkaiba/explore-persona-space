@@ -310,8 +310,8 @@ class TestUploadRawCompletions:
             patch.dict("os.environ", {"HF_TOKEN": "test_token"}),
             patch("huggingface_hub.HfApi") as MockApi,
             patch(
-                "explore_persona_space.orchestrate.hub.list_repo_files_complete",
-                return_value=expected,  # whole expected set present -> verified
+                "explore_persona_space.orchestrate.hub.list_repo_entries_complete",
+                return_value=[(f, 1) for f in expected],  # whole set present -> verified
             ),
         ):
             mock_api = MockApi.return_value
@@ -346,7 +346,7 @@ class TestUploadRawCompletions:
         with (
             patch.dict("os.environ", {"HF_TOKEN": "test_token"}),
             patch("huggingface_hub.HfApi") as MockApi,
-            patch("explore_persona_space.orchestrate.hub.list_repo_files_complete") as mock_list,
+            patch("explore_persona_space.orchestrate.hub.list_repo_entries_complete") as mock_list,
         ):
             result = upload_raw_completions_to_data_repo(self.EXP, tmp_path)
         assert result == {}
@@ -362,8 +362,8 @@ class TestUploadRawCompletions:
             patch.dict("os.environ", {"HF_TOKEN": "test_token"}),
             patch("huggingface_hub.HfApi") as MockApi,
             patch(
-                "explore_persona_space.orchestrate.hub.list_repo_files_complete",
-                return_value=incomplete,
+                "explore_persona_space.orchestrate.hub.list_repo_entries_complete",
+                return_value=[(f, 1) for f in incomplete],
             ),
             pytest.raises(RuntimeError, match="bulk folder upload failed"),
         ):
@@ -378,8 +378,8 @@ class TestUploadRawCompletions:
             patch.dict("os.environ", {"HF_TOKEN": "test_token"}),
             patch("huggingface_hub.HfApi") as MockApi,
             patch(
-                "explore_persona_space.orchestrate.hub.list_repo_files_complete",
-                return_value=expected,
+                "explore_persona_space.orchestrate.hub.list_repo_entries_complete",
+                return_value=[(f, 1) for f in expected],
             ),
         ):
             MockApi.return_value.upload_folder.return_value = None
@@ -953,13 +953,13 @@ class TestListHubDatasetsPrefixDispatch:
 
         def _fake_complete(api, repo_id, **kw):
             calls.append(dict(kw))
-            return list(files)
+            return [(f, 1) for f in files]  # (path, size) — the #2097 entries walk
 
         with (
             patch.dict("os.environ", {"HF_TOKEN": "t"}),
             patch("huggingface_hub.HfApi"),
             patch(
-                "explore_persona_space.orchestrate.hub.list_repo_files_complete",
+                "explore_persona_space.orchestrate.hub.list_repo_entries_complete",
                 side_effect=_fake_complete,
             ),
         ):
@@ -994,7 +994,7 @@ class TestListHubDatasetsPrefixDispatch:
             patch.dict("os.environ", {"HF_TOKEN": "t"}),
             patch("huggingface_hub.HfApi"),
             patch(
-                "explore_persona_space.orchestrate.hub.list_repo_files_complete",
+                "explore_persona_space.orchestrate.hub.list_repo_entries_complete",
                 side_effect=RuntimeError("boom"),
             ),
         ):
