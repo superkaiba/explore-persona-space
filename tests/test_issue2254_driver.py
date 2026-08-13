@@ -13,6 +13,7 @@ test touches the network / GPU — synthetic tensors only.
 from __future__ import annotations
 
 import hashlib
+import json
 
 import numpy as np
 import pytest
@@ -419,7 +420,6 @@ def test_every_e1_consumer_wrapper_gates_on_staged_assert(monkeypatch):
 
 
 def test_run_gen_grid_empty_shard_skips_model_and_upload(tmp_path, monkeypatch):
-    import json
 
     monkeypatch.setenv("EPM_SENTINEL_DIR", str(tmp_path / "logs"))
     monkeypatch.setattr(pi, "_require_cuda", lambda phase: None)
@@ -457,3 +457,102 @@ def test_run_gen_grid_empty_shard_skips_model_and_upload(tmp_path, monkeypatch):
     assert uploads == []  # nothing generated => no confusing "no files under ..." raise
     sent = json.loads((tmp_path / "logs" / "issue-2254-baseline_ceiling-shard4.json").read_text())
     assert sent["empty_shard"] is True and sent["cells"] == 0
+
+
+# ---------------------------------------------------------------------------
+# rho-parity tolerance split (micro round 3: reference-side bank provenance —
+# events v20 diagnosis; evil = code-resident binding canary, banked = 2e-2)
+# ---------------------------------------------------------------------------
+
+
+def _point_parity_ref(tmp_path, monkeypatch, ref: dict) -> None:
+    """Point _rho_parity_assert's committed-#2220 reference at a synthetic JSON
+    (filesystem boundary only; the real assert body runs)."""
+    p = tmp_path / "rho_by_layer.json"
+    p.write_text(json.dumps({"rho_median_last_context_token": ref}))
+
+    def fake_ensure_git_input(rel_file: str, cone: str):
+        return p
+
+    monkeypatch.setattr(pi, "_ensure_git_input", fake_ensure_git_input)
+
+
+def test_rho_parity_banked_within_banked_tol_passes_with_waiver(tmp_path, monkeypatch):
+    # (a) banked behavior at rel 1.5e-2: above 5e-3, within 2e-2 => PASS,
+    # recorded provenance_waived=True with the banked tolerance applied.
+    _point_parity_ref(tmp_path, monkeypatch, {"sycophancy": {"L14": 100.0}})
+    parity = pi._rho_parity_assert({"sycophancy": {"L14": 101.5}})
+    (cell,) = parity["cells"]
+    assert cell["banked"] is True
+    assert cell["provenance_waived"] is True
+    assert cell["tolerance_applied"] == pi.RHO_PARITY_RTOL_BANKED
+    assert abs(cell["rel_dev"] - 1.5e-2) < 1e-9
+    assert parity["n_provenance_waived"] == 1
+    assert parity["rtol_banked"] == pi.RHO_PARITY_RTOL_BANKED
+
+
+def test_rho_parity_evil_still_halts_above_binding_tol(tmp_path, monkeypatch):
+    # (b) evil (code-resident canary) at rel 6e-3 > 5e-3 => still HALTs.
+    _point_parity_ref(tmp_path, monkeypatch, {"evil": {"L14": 100.0}})
+    with pytest.raises(RuntimeError, match="rho parity vs #2220 FAILED"):
+        pi._rho_parity_assert({"evil": {"L14": 100.6}})
+
+
+def test_rho_parity_banked_above_banked_tol_still_halts(tmp_path, monkeypatch):
+    # (c) banked behavior at rel 3e-2 > 2e-2 => still HALTs.
+    _point_parity_ref(tmp_path, monkeypatch, {"hallucination": {"L10": 100.0}})
+    with pytest.raises(RuntimeError, match="banked=True"):
+        pi._rho_parity_assert({"hallucination": {"L10": 103.0}})
+
+
+def test_rho_parity_record_carries_tolerance_and_banked_flags(tmp_path, monkeypatch):
+    # (d) every cell records tolerance_applied + banked; a banked cell WITHIN
+    # 5e-3 is NOT waived; evil records the binding tolerance.
+    _point_parity_ref(
+        tmp_path,
+        monkeypatch,
+        {"evil": {"L14": 100.0}, "sycophancy": {"L14": 100.0}},
+    )
+    parity = pi._rho_parity_assert(
+        {"evil": {"L14": 100.1}, "sycophancy": {"L14": 100.1}}  # both rel=1e-3
+    )
+    by_b = {c["behavior"]: c for c in parity["cells"]}
+    assert by_b["evil"]["tolerance_applied"] == pi.RHO_PARITY_RTOL
+    assert by_b["evil"]["banked"] is False
+    assert by_b["evil"]["provenance_waived"] is False
+    assert by_b["sycophancy"]["tolerance_applied"] == pi.RHO_PARITY_RTOL_BANKED
+    assert by_b["sycophancy"]["banked"] is True
+    assert by_b["sycophancy"]["provenance_waived"] is False
+    assert parity["n_provenance_waived"] == 0
+
+
+def test_rho_seam_assert_uses_split_tolerance_and_records_waived(monkeypatch, tmp_path):
+    # Pod-B seam: same split — banked at rel 1.5e-2 passes (recorded loudly),
+    # evil at rel 6e-3 raises. Real _rho_seam_assert body; GPU recompute +
+    # staged-file load faked at the boundary with signature-mirroring defs.
+    ref = {"evil": {"L14": 100.0}, "sycophancy": {"L14": 100.0}}
+
+    def fake_load_rho(out_root):
+        return {}, {"rho_median_last_context_token": ref}
+
+    fresh = {"evil": {"L14": 100.4}, "sycophancy": {"L14": 101.5}}
+
+    def fake_compute_rho(model, tok, behaviors, layers, phase="norm_probe"):
+        return fresh, {}
+
+    monkeypatch.setattr(pi, "_load_rho", fake_load_rho)
+    monkeypatch.setattr(pi, "_compute_rho", fake_compute_rho)
+
+    class _Args:
+        out_root = str(tmp_path)
+
+    seam = pi._rho_seam_assert(_Args(), model=None, tok=None)
+    assert seam["rho_seam_cells"] == 2
+    assert seam["rho_seam_rtol"] == pi.RHO_PARITY_RTOL
+    assert seam["rho_seam_rtol_banked"] == pi.RHO_PARITY_RTOL_BANKED
+    (waived,) = seam["provenance_waived_cells"]
+    assert waived["behavior"] == "sycophancy" and waived["provenance_waived"] is True
+
+    fresh["evil"]["L14"] = 100.6  # rel 6e-3 on the code-resident canary
+    with pytest.raises(RuntimeError, match="rho seam mismatch"):
+        pi._rho_seam_assert(_Args(), model=None, tok=None)
