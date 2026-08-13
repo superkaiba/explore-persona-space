@@ -9797,8 +9797,8 @@
     "2268": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2268",
-      "status": "proposed",
+      "path": "tasks/planning/2268",
+      "status": "planning",
       "title": "main's .claude/skills/issue/SKILL.md exceeds its own size ratchet (936,191 > 935,400 bytes) \u2014 trim below cap; blocks lint gates fleet-wide"
     },
     "227": {
