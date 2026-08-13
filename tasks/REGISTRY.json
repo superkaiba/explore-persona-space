@@ -9776,8 +9776,8 @@
     "2265": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2265",
-      "status": "approved",
+      "path": "tasks/running/2265",
+      "status": "running",
       "title": "poll_pipeline emits status:dead while its own gpu_util + log-mtime evidence shows the workload alive"
     },
     "2266": {
