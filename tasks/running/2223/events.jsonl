@@ -119,3 +119,4 @@
 {"ts": "2026-08-13T05:33:27Z", "kind": "epm:progress", "version": 66, "by": "poll_pipeline", "note": "phase transition: capability -> alpha", "phase": "alpha", "pod": "pod-2223"}
 {"ts": "2026-08-13T05:34:40Z", "kind": "epm:progress", "version": 67, "by": "poll_pipeline", "note": "phase transition: alpha -> merge", "phase": "merge", "pod": "pod-2223"}
 {"ts": "2026-08-13T05:35:25Z", "kind": "epm:progress", "version": 68, "by": "poll_pipeline", "note": "phase transition: merge -> activations", "phase": "activations", "pod": "pod-2223"}
+{"ts": "2026-08-13T05:47:31Z", "kind": "epm:progress", "version": 69, "by": "poll_pipeline", "note": "phase transition: activations -> generate", "phase": "generate", "pod": "pod-2223"}
