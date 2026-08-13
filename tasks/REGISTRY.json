@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2275,
+  "highest_id": 2276,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9856,6 +9856,13 @@
       "path": "tasks/reviewing/2275",
       "status": "reviewing",
       "title": "workflow-fix: SLURM --mem is GPU-count-derived with no per-dispatch override (memory-bound phase OOMs)"
+    },
+    "2276": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2276",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan.py \u2014 \u00a79 backend pin-claim vs frontmatter + declared GPU width vs launch-command width flags"
     },
     "228": {
       "has_clean_result": true,
