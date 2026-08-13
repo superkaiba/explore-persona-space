@@ -359,6 +359,92 @@ def test_cpu_sbatch_resources_mirror_runpod_caps() -> None:
     assert zero_gpu_intents <= set(_DEFAULT_TIME_BUDGETS_HOURS)
 
 
+# ---------------------------------------------------------------------------
+# #2275: spec.extra["min_ram_gb"] raises the rendered --mem (both branches);
+# above mem_gb_cap refuses pre-submit; absent/0 renders byte-identically.
+# ---------------------------------------------------------------------------
+
+
+def _min_ram_spec(intent: str, gpus: int | None, extra: dict | None = None) -> RunSpec:
+    """Fellows workload_cmd spec for the #2275 render pins (``gpus=None``
+    leaves the intent default; ``extra`` absent leaves RunSpec's default)."""
+    kwargs: dict = {}
+    if gpus is not None:
+        kwargs["gpus"] = gpus
+    if extra is not None:
+        kwargs["extra"] = extra
+    return RunSpec(
+        issue=2275,
+        intent=intent,
+        backend="cluster",
+        cluster="fellows",
+        workload_cmd="bash scripts/issue2275_probe.sh",
+        **kwargs,
+    )
+
+
+def _min_ram_render(spec: RunSpec) -> str:
+    return render_sbatch(
+        spec=spec,
+        cluster=get_cluster_config("fellows"),
+        plan=stages_for_spec(spec),
+        scratch_dir="/workspace/superkaiba/eps/issue-2275",
+    )
+
+
+def test_min_ram_gb_raises_gpu_branch_mem() -> None:
+    """#2275 pin 1 (the #1336 repro shape): fellows 8-GPU + min_ram_gb=1550
+    renders --mem=1550G instead of the GPU-count-derived
+    min(128*8, 1800) = 1024G that OOM-killed the 8-wide pooled fit."""
+    script = _min_ram_render(_min_ram_spec("lora-7b", 8, {"min_ram_gb": 1550}))
+    assert "#SBATCH --mem=1550G" in script
+    assert "#SBATCH --mem=1024G" not in script
+
+
+def test_min_ram_gb_below_formula_keeps_formula() -> None:
+    """#2275 pin 2 (max semantics): a requirement BELOW the GPU-scaled
+    formula never lowers the render — fellows 1-GPU + min_ram_gb=64 keeps
+    the formula's 128G."""
+    script = _min_ram_render(_min_ram_spec("lora-7b", 1, {"min_ram_gb": 64}))
+    assert "#SBATCH --mem=128G" in script
+
+
+def test_min_ram_gb_above_cap_raises_pre_submit_gpu_branch() -> None:
+    """#2275 pin 3 (D3 cap semantics): min_ram_gb above mem_gb_cap=1800 is a
+    pre-submit ValueError naming the cap + satisfying alternatives — never a
+    silent clamp below the declared requirement."""
+    with pytest.raises(ValueError) as ei:
+        _min_ram_render(_min_ram_spec("lora-7b", 8, {"min_ram_gb": 2000}))
+    msg = str(ei.value)
+    assert "mem_gb_cap" in msg
+    assert "fellows" in msg
+    assert "runpod" in msg
+
+
+def test_min_ram_gb_cpu_branch_raises_mem_and_caps() -> None:
+    """#2275 pin 4: the CPU branch honors min_ram_gb the same way —
+    cpu-bigmem's fixed 128G table row raises to 200G, and above-cap
+    refuses with the same ValueError shape."""
+    script = _min_ram_render(_min_ram_spec("cpu-bigmem", None, {"min_ram_gb": 200}))
+    assert "#SBATCH --mem=200G" in script
+    assert "#SBATCH --mem=128G" not in script
+    with pytest.raises(ValueError) as ei:
+        _min_ram_render(_min_ram_spec("cpu-bigmem", None, {"min_ram_gb": 2000}))
+    msg = str(ei.value)
+    assert "mem_gb_cap" in msg
+    assert "runpod" in msg
+
+
+def test_min_ram_gb_absent_or_zero_renders_byte_identical() -> None:
+    """#2275 pin 5 (the #1609 snapshot contract + #934 omit-when-absent
+    symmetry): absent key, empty extra, and min_ram_gb=0 all render the
+    FULL script byte-identically to the no-extra render."""
+    baseline = _min_ram_render(_min_ram_spec("lora-7b", 8))
+    assert baseline == _min_ram_render(_min_ram_spec("lora-7b", 8, {}))
+    assert baseline == _min_ram_render(_min_ram_spec("lora-7b", 8, {"min_ram_gb": 0}))
+    assert "#SBATCH --mem=1024G" in baseline  # the untouched legacy formula
+
+
 def test_capture_7b_in_slurm_intent_tables() -> None:
     """#1896 (AC1/AC2): capture-7b resolves in BOTH SLURM intent-default
     tables — 1 GPU (matches GCP ``a2-ultragpu-1g``, #752) and eval-class

@@ -111,7 +111,7 @@ def test_c58_registered_in_checks_and_docstring_catalog():
     # conditional-checks enumeration carries 58 (closing-paren tail form;
     # the tail extends whenever a new conditional check lands — 59 since
     # #2123 — and this pin is what makes a forgotten enum update loud)
-    assert "57, 58, 59)" in verify_plan.__doc__
+    assert "57, 58, 59, 61)" in verify_plan.__doc__
 
 
 # ─── Test 1 — fires on the #2054 v16 shape ─────────────────────────────────
