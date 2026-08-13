@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2271,
+  "highest_id": 2272,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9828,6 +9828,13 @@
       "path": "tasks/proposed/2271",
       "status": "proposed",
       "title": "upload_raw_completions_to_data_repo silently drops pre-merge shard payloads (15.6 MB of rollout text on #2223)"
+    },
+    "2272": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2272",
+      "status": "proposed",
+      "title": "scripts/issue2224_fold_figures.py breaks test_shared_vm_thread_caps on main (missing load_dotenv-before-torch preamble)"
     },
     "228": {
       "has_clean_result": true,
