@@ -9720,8 +9720,8 @@
     "2258": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2258",
-      "status": "planning",
+      "path": "tasks/approved/2258",
+      "status": "approved",
       "title": "Extend verify_task_body.py figure-text opaque-code token grammar with the single-letter-prefix arm-slug class"
     },
     "2259": {
