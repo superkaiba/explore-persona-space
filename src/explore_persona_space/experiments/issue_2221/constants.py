@@ -140,7 +140,40 @@ BAND_JUDGE_MAX_TOKENS = 2048  # generous reason-then-score budget (llm-judging r
 EVAL_JUDGE_MAX_TOKENS = 2048
 # Per-family per-version realized-N floor: below it the mix report emits the
 # kill-criterion line (report-only; the orchestrator owns the halt).
+# SUPERSEDED for the specialized_corpus_remine round by the TWO-TIER floor
+# below (plan v10 §4) — kept for the parent run's committed _meta records.
 MIX_MIN_ROWS_PER_CELL = 32
+
+# ── Two-tier trainability floor (plan v10 §4 — the amendment's core scope
+# constraint; overrides the parent's report-only MIX_MIN_ROWS_PER_CELL) ───────
+# < DROP floor (1 effective batch = 1 optimizer step) => the FAMILY is DROPPED
+# (all 3 versions; denominator revised); [DROP, MEANINGFUL) => trains but is
+# FLAGGED "under-trained (<~10 optimizer steps)"; >= MEANINGFUL => full cell.
+TRAIN_DROP_FLOOR_ROWS = 16
+TRAIN_MEANINGFUL_ROWS = 160  # ungrounded — needs smoke-test (plan §12 A6)
+
+# ── P6 eval generation cap (plan v10 D4 — fixes the parent's realized-1000
+# deviation; the shared issue778_lib.MAX_NEW_TOKENS stays untouched for #778) ─
+EVAL_MAX_NEW_TOKENS = 2048
+# Dedicated regen-engine window (v10 item 1, the Must-Fix): regen_cap 4096 +
+# prompt budget 4096 >= every generation-filtered prompt + chat template
+# (Qwen2.5-7B max_position_embeddings=32768 — 8192 is safe).
+EVAL_REGEN_MAX_MODEL_LEN = 8192
+# Generation-only LMSYS eval-panel length filter (#952 pattern; v10 item 3 —
+# NEVER applied to the capture panel): prompt + EVAL_MAX_NEW_TOKENS fits the
+# default VLLM_MAX_MODEL_LEN=4096 engine.
+LMSYS_GEN_MAX_PROMPT_TOKENS = 1900
+
+# ── Re-mined specialized corpora (plan v10 §4 corpus-source table) ────────────
+REMINE_FAMILIES = ("evil", "sycophancy", "mistake_opinions", "mistake_medical")
+AITA_DATASET = "OsamaBsher/AITA-Reddit-Dataset"  # 270,709 rows, non-gated
+AITA_STREAM_CAP = 300_000
+CHATDOCTOR_DATASET = "lavita/ChatDoctor-HealthCareMagic-100k"  # 112k rows, non-gated
+CHATDOCTOR_STREAM_CAP = 120_000
+# P1b stage-prompt token budget (v10 item 1 sibling): <= 1,800 tokens under
+# EVERY panel tokenizer (drop-overlong-and-count), so the ARMED P1 regen at
+# cap 2048 under the default 4096 engine keeps regen_overlong_skipped ~= 0.
+STAGE_PROMPT_MAX_TOKENS = 1800
 
 # ── P4 fine-tune (recipe reused verbatim from issue778_finetune.py) ──────────
 CHECKPOINT_FRACS = (0.10, 0.25, 0.50)  # adapter-only intermediate saves

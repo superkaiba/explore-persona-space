@@ -3,11 +3,21 @@
 Phases (``--phase``; registry ``PHASES``):
 
 - ``gen``      : N=10 on-policy rollouts per prompt (vLLM seeds 0..9, temp 1.0,
-                 ``max_new_tokens`` = the #778 instrument's 1000) for base + 24
-                 adapters over the frozen P5 surface (paper 20-q per trait +
-                 the LMSYS real panel). Rollout text persists per model BEFORE
-                 any scoring; per-cell cap-hit fraction reported (>2% re-gen
-                 trigger).
+                 ``max_new_tokens`` = ``--max-new-tokens``, default
+                 ``C.EVAL_MAX_NEW_TOKENS`` = 2048; the parent round ran the
+                 #778 instrument's 1000) for base + 24 adapters over the
+                 frozen P5 surface (paper 20-q per trait + the LMSYS real
+                 panel; LMSYS rows over ``C.LMSYS_GEN_MAX_PROMPT_TOKENS``
+                 rendered tokens are dropped from GENERATION ONLY — the
+                 capture panel is untouched). Rollout text persists per model
+                 BEFORE any scoring; per-cell + per-trait cap-hit fractions
+                 reported (>2% re-gen trigger).
+- ``gen_regen``: ARMED >2% cap-hit re-generation (v10 Must-Fix): capped rows
+                 re-generate at 2x the cap on a DEDICATED
+                 ``--regen-max-model-len`` (8192) engine — the default
+                 engine's 4096 pin made budget = 0 and skipped every row —
+                 splicing text in place; per-tag checkpointed
+                 ``eval_rollouts/regen_report.json``.
 - ``pilot``    : rule-26 pilot gate per trait rubric on REAL P6-distribution
                  items (the on-policy Qwen rollouts from ``gen``) at the EXACT
                  production instrument — REQUIRED before any ``judge``
@@ -136,11 +146,59 @@ def _gen_fingerprint(args) -> dict:
     """
     return {
         "n_rollouts": args.n_rollouts,
-        "max_new_tokens": lib.MAX_NEW_TOKENS,
+        "max_new_tokens": args.max_new_tokens,
+        "lmsys_gen_max_prompt_tokens": C.LMSYS_GEN_MAX_PROMPT_TOKENS,
         "max_prompts": args.max_prompts,
         "temperature": lib.EXTRACT_TEMPERATURE,
         "surfaces_sha256": _surfaces_sha(args),
     }
+
+
+def _cap_hit_cells(rows: list[dict]) -> dict[str, dict]:
+    """Per-trait cap-hit fractions over each trait's JUDGED item set (v10 item 5).
+
+    Mirrors ``_judge_items_for_trait`` membership exactly: a trait's items are
+    its OWN paper questions (``paper-{trait}-``) plus the trait-agnostic LMSYS
+    panel — so the >2% re-gen trigger is read on the denominators the judge
+    wave actually scores.
+    """
+    out: dict[str, dict] = {}
+    for trait in lib.TRAITS:
+        sel = [
+            r
+            for r in rows
+            if r["surface_id"].startswith(f"paper-{trait}-") or r["surface_id"].startswith("lmsys-")
+        ]
+        n_cap = sum(1 for r in sel if r["finish_reason"] == "length")
+        out[trait] = {"n": len(sel), "cap_hit_fraction": n_cap / max(1, len(sel))}
+    return out
+
+
+def _gen_surfaces(args, tok) -> tuple[list[dict], int]:
+    """The GENERATION surface set: frozen P5 roster minus overlong LMSYS rows.
+
+    v10 item 5: LMSYS rows whose RENDERED prompt exceeds
+    ``C.LMSYS_GEN_MAX_PROMPT_TOKENS`` are dropped from generation ONLY (the P5
+    capture panel keeps the full roster) so prompt + the 2048-token generation
+    budget fits the engine's ``max_model_len`` = 4096 pin. Returns
+    ``(kept_surfaces, n_lmsys_overlong_skipped)``.
+    """
+    surfaces = _surfaces(args)
+    kept: list[dict] = []
+    n_skipped = 0
+    for r in surfaces:
+        if r["kind"] == "lmsys":
+            rendered = tok.apply_chat_template(
+                [{"role": "user", "content": r["prompt"]}],
+                tokenize=False,
+                add_generation_prompt=True,
+            )
+            n_tok = len(tok.encode(rendered, add_special_tokens=False))
+            if n_tok > C.LMSYS_GEN_MAX_PROMPT_TOKENS:
+                n_skipped += 1
+                continue
+        kept.append(r)
+    return kept, n_skipped
 
 
 def phase_gen(args) -> None:
@@ -149,7 +207,7 @@ def phase_gen(args) -> None:
     from vllm.lora.request import LoRARequest
 
     tok = _tokenizer()
-    surfaces = _surfaces(args)
+    surfaces, n_lmsys_skipped = _gen_surfaces(args, tok)
     prompts = [
         tok.apply_chat_template(
             [{"role": "user", "content": r["prompt"]}], tokenize=False, add_generation_prompt=True
@@ -160,6 +218,12 @@ def phase_gen(args) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     fp = _gen_fingerprint(args)
     seeds = list(C.EVAL_ROLLOUT_SEEDS)[: args.n_rollouts]
+    if n_lmsys_skipped:
+        lib.log_phase(
+            "p6_gen",
+            f"LMSYS generation-only length filter: {n_lmsys_skipped} rows over "
+            f"{C.LMSYS_GEN_MAX_PROMPT_TOKENS} rendered tokens dropped (capture panel untouched)",
+        )
     llm = lib.build_vllm_engine(gpu_memory_utilization=args.gpu_mem_util)
     try:
         for i, (tag, adapter) in enumerate(_roster(args)):
@@ -172,7 +236,7 @@ def phase_gen(args) -> None:
             for seed in seeds:
                 sp = SamplingParams(
                     temperature=lib.EXTRACT_TEMPERATURE,
-                    max_tokens=lib.MAX_NEW_TOKENS,
+                    max_tokens=args.max_new_tokens,
                     seed=seed,
                 )
                 outs = []
@@ -196,7 +260,18 @@ def phase_gen(args) -> None:
                     )
             cap_hit = n_cap / max(1, len(rows))
             atomic_write_text(
-                dest, json.dumps({"rows": rows, "cap_hit_fraction": cap_hit}, indent=2)
+                dest,
+                json.dumps(
+                    {
+                        "rows": rows,
+                        "cap_hit_fraction": cap_hit,
+                        "cap_hit_by_trait": _cap_hit_cells(rows),
+                        "max_new_tokens": args.max_new_tokens,
+                        "n_lmsys_overlong_skipped": n_lmsys_skipped,
+                        "regen_trigger": cap_hit > C.CAP_HIT_REGEN_THRESHOLD,
+                    },
+                    indent=2,
+                ),
             )
             write_fingerprint(dest, fp)
             lib.log_phase(
@@ -206,6 +281,139 @@ def phase_gen(args) -> None:
             )
     finally:
         lib.reap_vllm_engine(llm)
+
+
+def phase_gen_regen(args) -> None:
+    """ARMED >2% cap-hit re-generation leg (v10 Must-Fix, item 5).
+
+    For every tag whose ``gen`` payload trips the per-cell cap-hit trigger
+    (> ``C.CAP_HIT_REGEN_THRESHOLD``), re-generate ONLY the capped rows at
+    ``--regen-max-new-tokens`` (default 2x the gen cap, per the CLAUDE.md
+    re-gen rule) on a DEDICATED ``--regen-max-model-len`` = 8192 engine. The
+    default engine's ``max_model_len`` = 4096 pin made
+    ``budget = max_model_len - regen_cap`` = 0, so the r-parent's regen leg
+    was structurally inert (every row ``regen_overlong_skipped`` — the v10
+    Must-Fix). Regenerated text is spliced IN PLACE into the gen payload
+    (``regen_applied`` keys the idempotent skip); the gen FINGERPRINT sidecar
+    is deliberately NOT rewritten, so ``gen`` keeps resume-skipping while the
+    judge phases — which chain on the gen FILE sha — re-judge the spliced
+    rows. Per-tag checkpointed report: ``eval_rollouts/regen_report.json``.
+    """
+    from vllm import SamplingParams
+    from vllm.lora.request import LoRARequest
+
+    tok = _tokenizer()
+    out_dir = Path(args.out_root) / "eval_rollouts"
+    regen_cap = args.regen_max_new_tokens or 2 * args.max_new_tokens
+    budget = args.regen_max_model_len - regen_cap
+    if budget <= 0:
+        raise ValueError(
+            f"regen prompt budget {budget} <= 0: --regen-max-model-len "
+            f"{args.regen_max_model_len} must exceed the regen cap {regen_cap} "
+            "(the v10 Must-Fix inert-regen shape)"
+        )
+    report_path = out_dir / "regen_report.json"
+    report: dict[str, dict] = json.loads(report_path.read_text()) if report_path.is_file() else {}
+    llm = None
+    try:
+        for i, (tag, adapter) in enumerate(_roster(args)):
+            src = out_dir / f"{tag}.json"
+            if not src.is_file():
+                raise FileNotFoundError(f"run --phase gen first: {src}")
+            payload = json.loads(src.read_text())
+            orig_cap = payload.get("max_new_tokens", args.max_new_tokens)
+            if regen_cap < 2 * orig_cap:
+                raise ValueError(
+                    f"{tag}: regen cap {regen_cap} < 2x the original cap {orig_cap} "
+                    "(the re-gen trigger mandates >= 2x — CLAUDE.md max_new_tokens rule)"
+                )
+            if payload.get("regen_applied") and not args.force:
+                lib.log_phase("p6_gen_regen", f"{tag}: regen already applied — skip")
+                continue
+            rows = payload["rows"]
+            cap_hit = payload.get(
+                "cap_hit_fraction",
+                sum(1 for r in rows if r["finish_reason"] == "length") / max(1, len(rows)),
+            )
+            if cap_hit <= C.CAP_HIT_REGEN_THRESHOLD:
+                report[tag] = {
+                    "triggered": False,
+                    "cap_hit_fraction": cap_hit,
+                    "regen_n_rows": 0,
+                    "regen_overlong_skipped": 0,
+                }
+                atomic_write_text(report_path, json.dumps(report, indent=2))
+                continue
+            todo: list[tuple[int, str]] = []
+            n_overlong = 0
+            for j, r in enumerate(rows):
+                if r["finish_reason"] != "length":
+                    continue
+                rendered = tok.apply_chat_template(
+                    [{"role": "user", "content": r["prompt"]}],
+                    tokenize=False,
+                    add_generation_prompt=True,
+                )
+                if len(tok.encode(rendered, add_special_tokens=False)) > budget:
+                    n_overlong += 1
+                    rows[j]["regen_overlong_skipped"] = True
+                    continue
+                todo.append((j, rendered))
+            if todo:
+                if llm is None:
+                    # Dedicated wide-window engine — the whole point of the
+                    # Must-Fix: regen budget must come from an 8192 window,
+                    # never the default 4096 pin.
+                    llm = lib.build_vllm_engine(
+                        gpu_memory_utilization=args.gpu_mem_util,
+                        max_model_len=args.regen_max_model_len,
+                    )
+                lora = LoRARequest(tag, i + 1, str(adapter)) if adapter is not None else None
+                for lo in range(0, len(todo), 500):
+                    chunk = todo[lo : lo + 500]
+                    logger.info("[vllm-chunk] regen %s chunk %d (%d rows)", tag, lo, len(chunk))
+                    # Per-row SamplingParams list: each row keeps its OWN seed.
+                    sps = [
+                        SamplingParams(
+                            temperature=lib.EXTRACT_TEMPERATURE,
+                            max_tokens=regen_cap,
+                            seed=rows[j]["seed"],
+                        )
+                        for j, _ in chunk
+                    ]
+                    outs = llm.generate(
+                        [p for _, p in chunk], sps, lora_request=lora, use_tqdm=False
+                    )
+                    for (j, _), o in zip(chunk, outs):
+                        rows[j]["response"] = o.outputs[0].text
+                        rows[j]["finish_reason"] = o.outputs[0].finish_reason
+                        rows[j]["regenerated_at_max_tokens"] = regen_cap
+            n_still = sum(1 for r in rows if r["finish_reason"] == "length")
+            payload["rows"] = rows
+            payload["cap_hit_fraction"] = n_still / max(1, len(rows))
+            payload["cap_hit_by_trait"] = _cap_hit_cells(rows)
+            payload["regen_applied"] = {
+                "regen_max_new_tokens": regen_cap,
+                "regen_max_model_len": args.regen_max_model_len,
+                "regen_n_rows": len(todo),
+                "regen_overlong_skipped": n_overlong,
+                "pre_regen_cap_hit_fraction": cap_hit,
+            }
+            atomic_write_text(src, json.dumps(payload, indent=2))
+            # Fingerprint sidecar deliberately untouched: gen resume-skips
+            # stay valid, judge re-runs via the changed file sha.
+            report[tag] = {"triggered": True, **payload["regen_applied"]}
+            report[tag]["post_regen_cap_hit_fraction"] = payload["cap_hit_fraction"]
+            atomic_write_text(report_path, json.dumps(report, indent=2))
+            lib.log_phase(
+                "p6_gen_regen",
+                f"{tag}: regenerated {len(todo)} rows at cap {regen_cap} "
+                f"(overlong-skipped {n_overlong}); cap-hit {cap_hit:.4f} -> "
+                f"{payload['cap_hit_fraction']:.4f}",
+            )
+    finally:
+        if llm is not None:
+            lib.reap_vllm_engine(llm)
 
 
 def _judge_items_for_trait(rows: list[dict], trait: str) -> list[tuple[str, str, str]]:
@@ -670,7 +878,7 @@ def phase_train_propensity(args) -> None:
         fp = {
             "n_prompts": args.train_prop_prompts,
             "n_rollouts": args.n_rollouts,
-            "max_new_tokens": lib.MAX_NEW_TOKENS,
+            "max_new_tokens": args.max_new_tokens,
             "temperature": lib.EXTRACT_TEMPERATURE,
             "seed": C.RNG_SEED,
             "mix_sha256": _mix_sha(dataset_root, family),
@@ -693,7 +901,7 @@ def phase_train_propensity(args) -> None:
                 for seed in seeds:
                     sp = SamplingParams(
                         temperature=lib.EXTRACT_TEMPERATURE,
-                        max_tokens=lib.MAX_NEW_TOKENS,
+                        max_tokens=args.max_new_tokens,
                         seed=seed,
                     )
                     outs = []
@@ -803,6 +1011,23 @@ def phase_train_propensity(args) -> None:
     lib.log_phase("p6_trainprop", f"scores.json written ({len(scores_out)} families)")
 
 
+def _realized_gen_cap(args) -> dict:
+    """The REALIZED generation-cap instrument, read from the gen payload.
+
+    Reads ``base.json`` (always present after ``gen``) rather than re-deriving
+    from args — the aggregate must record what the rollouts actually ran at,
+    including any applied regen (v10 item 5). Falls back to the args value for
+    payloads written before the cap was persisted.
+    """
+    base = Path(args.out_root) / "eval_rollouts" / "base.json"
+    payload = json.loads(base.read_text()) if base.is_file() else {}
+    return {
+        "max_new_tokens": payload.get("max_new_tokens", args.max_new_tokens),
+        "regen_applied": payload.get("regen_applied"),
+        "n_lmsys_overlong_skipped": payload.get("n_lmsys_overlong_skipped"),
+    }
+
+
 def phase_aggregate(args) -> None:
     """Dual-DV aggregate -> eval_results/issue_2221/trait_scores.json."""
     out_root = Path(args.out_root)
@@ -891,7 +1116,9 @@ def phase_aggregate(args) -> None:
                     "judge_temperature_realized": "provider-default (not threaded by batch client)",
                     "n_rollouts": args.n_rollouts,
                     "rollout_temperature": lib.EXTRACT_TEMPERATURE,
-                    "max_new_tokens": lib.MAX_NEW_TOKENS,
+                    # Realized cap (incl. any applied regen), never a re-derived
+                    # constant (v10 item 5).
+                    **_realized_gen_cap(args),
                 },
                 "reproducibility": lib.repro_metadata(),
             },
@@ -952,6 +1179,16 @@ def phase_upload(args) -> None:
         "judge": ["raw/*", "raw/**", *_cache_ignore],
         "train_propensity/judge": list(_cache_ignore),
     }
+    if args.remine:
+        # specialized_corpus_remine round (v10 §10): every destination leaf is
+        # remine-prefixed so the parent round's committed prefixes are never
+        # clobbered — a constant-composed transform, never a free-form prefix
+        # arg (the #1005 clobber shape).
+        mapping = {
+            sub: f"{head}/remine_{leaf}"
+            for sub, prefix in mapping.items()
+            for head, _, leaf in (prefix.rpartition("/"),)
+        }
     for sub, prefix in mapping.items():
         local = out_root / sub
         if not local.is_dir():
@@ -969,6 +1206,7 @@ def phase_upload(args) -> None:
 
 PHASES = {
     "gen": phase_gen,
+    "gen_regen": phase_gen_regen,  # ARMED >2% cap-hit re-gen (v10 Must-Fix)
     "pilot": phase_pilot,  # rule-26 gate — MUST precede judge (blocker 3)
     "judge": phase_judge,
     "tf_margin": phase_tf_margin,
@@ -1002,6 +1240,29 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--external-root", default="external/persona_vectors")
     ap.add_argument("--cells", nargs="*", default=None)
     ap.add_argument("--n-rollouts", type=int, default=lib.N_ROLLOUTS_PRED)
+    ap.add_argument(
+        "--max-new-tokens",
+        type=int,
+        default=C.EVAL_MAX_NEW_TOKENS,
+        help="generation cap for gen + train_propensity (v10: 2048; parent ran 1000)",
+    )
+    ap.add_argument(
+        "--regen-max-new-tokens",
+        type=int,
+        default=None,
+        help="gen_regen cap; default 2x --max-new-tokens (CLAUDE.md re-gen rule)",
+    )
+    ap.add_argument(
+        "--regen-max-model-len",
+        type=int,
+        default=C.EVAL_REGEN_MAX_MODEL_LEN,
+        help="DEDICATED gen_regen engine window (v10 Must-Fix: 8192, not the 4096 pin)",
+    )
+    ap.add_argument(
+        "--remine",
+        action="store_true",
+        help="upload under remine_* leaf prefixes (specialized_corpus_remine round)",
+    )
     ap.add_argument("--judge-draws", type=int, default=lib.JUDGE_N_DRAWS)
     ap.add_argument("--pilot-draws", type=int, default=200, help="rule-26 pilot target draws")
     ap.add_argument("--max-prompts", type=int, default=None, help="smoke: cap surface prompts")

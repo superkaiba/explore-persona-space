@@ -7,14 +7,21 @@ scripts themselves expose (``--max-items`` / ``--max-prompts`` / ``--max-rows``
 / ``--max-steps``). All outputs land under ONE scratch root (default
 ``data/issue_2221/smoke``) so committed ``eval_results/`` is never touched.
 
-Step order (P1 -> P8): corpus prompts -> found pool -> panel prompts ->
-rollouts (1 family x 1 model, GPU) -> band pilot+band (judge API) -> mix ->
-finetune sweep (1 cell + frac checkpoints, GPU) -> capture
-(surfaces/parity/last/gen/resp, GPU) -> trait eval (gen/pilot/judge/
-tf_margin/train_propensity/aggregate, GPU+API) -> monitors verify_keys +
-arms + correlations (CPU; smoke-sized --n-bootstrap/--n-null, production
-defaults unchanged — round-2 review note: the statistical battery must not
-be exercised by unit tests alone). The correlations step reads the
+Step order (P1 -> P8, specialized_corpus_remine v10): found pool ->
+FOUND-INVERT toxic pool -> AITA disjoint-split prompts (sycophancy /
+mistake_opinions) -> ChatDoctor prompts (mistake_medical) -> panel prompts ->
+rollouts (3 remine families x 1 model, GPU) -> band pilot+band (judge API;
+``--em-like-families sycophancy --evil-pool found_toxic`` routing) -> mix
+(``--drop-floor 1`` — gotchas.md smoke GATE-CALIBRATION: the production
+16-row floor annihilates every family at smoke N;
+``would_drop_at_production_floor`` still recorded) -> finetune sweep (1 cell
++ frac checkpoints, GPU) -> capture (surfaces/parity/last/gen/resp, GPU) ->
+trait eval (gen/gen_regen/pilot/judge/tf_margin/train_propensity/aggregate,
+GPU+API) -> PRODUCTION-CAP REGEN probe (a deliberately low gen cap trips the
+>2% trigger; regen runs at the PRODUCTION 4096 cap on the PRODUCTION 8192
+engine window — the v10 Must-Fix fix-engaged demonstration: n_regen >= 1 AND
+regen_overlong_skipped == 0) -> monitors verify_keys + arms + correlations
+(CPU; smoke-sized --n-bootstrap/--n-null). The correlations step reads the
 committed #778 trait scores (``eval_results/issue_778`` — on a partial-clone
 pod add the cone: ``git sparse-checkout add eval_results/issue_778``).
 
@@ -48,6 +55,13 @@ SCRIPTS = Path(__file__).resolve().parent
 
 SMOKE_FAMILY = "mistake_medical"
 SMOKE_CHAT_FAMILY = "evil"
+# The 3 remine prompt-staged families (AITA split A/B + ChatDoctor) — the
+# rollouts/band/mix legs cover one tiny cell per SOURCE CLASS (per-arm-class
+# smoke duty): AITA-sycophancy, AITA-mistake_opinions, ChatDoctor-medical,
+# plus the FOUND-invert evil chat family.
+SMOKE_ROLLOUT_FAMILIES = ("mistake_medical", "sycophancy", "mistake_opinions")
+SMOKE_BAND_FAMILIES = (*SMOKE_ROLLOUT_FAMILIES, SMOKE_CHAT_FAMILY)
+SMOKE_EM_LIKE = ("sycophancy",)
 
 
 def _run(name: str, argv: list[str]) -> None:
@@ -69,8 +83,19 @@ def _assert_artifact(name: str, path: Path) -> None:
 
 
 def pick_smoke_cell(corpus_root: Path) -> str:
-    """Pick the smoke training cell from the realized mix report (fail loud)."""
-    report = json.loads((corpus_root / "mix_report.json").read_text())
+    """Pick the smoke training cell from the realized mix yield report (fail loud).
+
+    Also sanity-checks the v10 two-tier floor wiring: the family MUST carry a
+    ``_family_floor`` record with ``would_drop_at_production_floor`` (always
+    recorded even at the smoke's ``--drop-floor 1`` dial).
+    """
+    report = json.loads((corpus_root / "mix_yield.json").read_text())
+    floor = report.get("_family_floor", {}).get(SMOKE_FAMILY)
+    if floor is None or "would_drop_at_production_floor" not in floor:
+        raise RuntimeError(
+            f"mix_yield.json carries no _family_floor record for {SMOKE_FAMILY} — "
+            "the v10 two-tier floor wiring is broken"
+        )
     candidates = [(v, report.get(f"{SMOKE_FAMILY}/{v}", {}).get("n_rows", 0)) for v in C.VERSIONS]
     ok = [v for v, n in candidates if n >= 1]
     if not ok:
@@ -100,6 +125,8 @@ def main() -> None:
     ap.add_argument("--max-steps", type=int, default=20)
     ap.add_argument("--found-cap", type=int, default=60)
     ap.add_argument("--found-stream-cap", type=int, default=5000)
+    ap.add_argument("--aita-stream-cap", type=int, default=2000)
+    ap.add_argument("--chatdoctor-stream-cap", type=int, default=2000)
     ap.add_argument("--gpu-mem-util", type=float, default=0.5)
     ap.add_argument("--boot-draws", type=int, default=50, help="smoke-sized --n-bootstrap")
     ap.add_argument("--null-draws", type=int, default=25, help="smoke-sized --n-null")
@@ -118,6 +145,7 @@ def main() -> None:
     ckpt = root / "ckpt"
     p5 = root / "p5"
     p6 = root / "p6"
+    p6_regen = root / "p6_regen"
     eval_root = root / "eval_results"
 
     stage_corpus = str(SCRIPTS / "issue2221_stage_corpus.py")
@@ -128,10 +156,19 @@ def main() -> None:
     trait_eval = str(SCRIPTS / "issue2221_trait_eval.py")
     monitors = str(SCRIPTS / "issue2221_monitors.py")
 
-    gpu_steps = {"corpus_rollouts", "corpus_rollouts_regen", "sweep", "capture", "trait_eval"}
+    gpu_steps = {
+        "corpus_rollouts",
+        "corpus_rollouts_regen",
+        "sweep",
+        "capture",
+        "trait_eval",
+        "trait_eval_regen_probe",
+    }
     step_names = [
-        "corpus_prompts",
         "corpus_found",
+        "corpus_found_toxic",
+        "corpus_aita",
+        "corpus_chatdoctor",
         "corpus_panel",
         "corpus_rollouts",
         "corpus_rollouts_regen",
@@ -141,6 +178,7 @@ def main() -> None:
         "sweep",
         "capture",
         "trait_eval",
+        "trait_eval_regen_probe",
         "monitors_verify",
         "monitors_arms",
         "monitors_correlations",
@@ -175,21 +213,7 @@ def main() -> None:
         if not wanted(name):
             logger.info("[smoke] SKIP %s", name)
             continue
-        if name == "corpus_prompts":
-            _run(
-                name,
-                [
-                    stage_corpus,
-                    "--phase",
-                    "prompts",
-                    "--out-root",
-                    str(corpus),
-                    "--external-root",
-                    args.external_root,
-                ],
-            )
-            _assert_artifact(name, corpus / "prompts" / f"{SMOKE_FAMILY}.jsonl")
-        elif name == "corpus_found":
+        if name == "corpus_found":
             _run(
                 name,
                 [
@@ -205,6 +229,62 @@ def main() -> None:
                 ],
             )
             _assert_artifact(name, corpus / "found" / "found_pool.jsonl")
+        elif name == "corpus_found_toxic":
+            # P1a remine: FOUND-INVERT (keep toxic/moderation-flagged assistant
+            # turns) — the evil family's pool source under --evil-pool.
+            _run(
+                name,
+                [
+                    stage_corpus,
+                    "--phase",
+                    "found_toxic",
+                    "--out-root",
+                    str(corpus),
+                    "--found-cap",
+                    str(args.found_cap),
+                    "--found-stream-cap",
+                    str(args.found_stream_cap),
+                ],
+            )
+            _assert_artifact(name, corpus / "found_toxic" / "found_toxic_pool.jsonl")
+        elif name == "corpus_aita":
+            # P1b remine: AITA dilemmas -> post-id-DISJOINT sycophancy /
+            # mistake_opinions prompt files (same schema phase_rollouts reads).
+            _run(
+                name,
+                [
+                    stage_corpus,
+                    "--phase",
+                    "aita",
+                    "--out-root",
+                    str(corpus),
+                    "--prompts-cap",
+                    str(args.max_prompts),
+                    "--aita-stream-cap",
+                    str(args.aita_stream_cap),
+                ],
+            )
+            _assert_artifact(name, corpus / "prompts" / "sycophancy.jsonl")
+            _assert_artifact(name, corpus / "prompts" / "mistake_opinions.jsonl")
+            _assert_artifact(name, corpus / "aita" / "aita_split_report.json")
+        elif name == "corpus_chatdoctor":
+            # P1b remine: ChatDoctor patient questions -> mistake_medical prompts.
+            _run(
+                name,
+                [
+                    stage_corpus,
+                    "--phase",
+                    "chatdoctor",
+                    "--out-root",
+                    str(corpus),
+                    "--prompts-cap",
+                    str(args.max_prompts),
+                    "--chatdoctor-stream-cap",
+                    str(args.chatdoctor_stream_cap),
+                ],
+            )
+            _assert_artifact(name, corpus / "prompts" / "mistake_medical.jsonl")
+            _assert_artifact(name, corpus / "chatdoctor" / "chatdoctor_stage_report.json")
         elif name == "corpus_panel":
             _run(name, [stage_corpus, "--phase", "panel_prompts", "--out-root", str(corpus)])
             _assert_artifact(name, corpus / "panel_prompts.jsonl")
@@ -220,7 +300,7 @@ def main() -> None:
                     "--external-root",
                     args.external_root,
                     "--families",
-                    SMOKE_FAMILY,
+                    *SMOKE_ROLLOUT_FAMILIES,
                     "--models",
                     args.panel_model,
                     "--max-prompts",
@@ -231,7 +311,8 @@ def main() -> None:
                     str(args.gpu_mem_util),
                 ],
             )
-            _assert_artifact(name, corpus / "rollouts" / SMOKE_FAMILY)
+            for fam in SMOKE_ROLLOUT_FAMILIES:
+                _assert_artifact(name, corpus / "rollouts" / fam)
         elif name == "corpus_rollouts_regen":
             # The cap-hit trigger's ACTION arm (v14): no-trigger cells skip
             # fast; a triggered smoke cell exercises the real splice path.
@@ -244,7 +325,7 @@ def main() -> None:
                     "--out-root",
                     str(corpus),
                     "--families",
-                    SMOKE_FAMILY,
+                    *SMOKE_ROLLOUT_FAMILIES,
                     "--models",
                     args.panel_model,
                     "--gpu-mem-util",
@@ -264,8 +345,11 @@ def main() -> None:
                     "--external-root",
                     args.external_root,
                     "--families",
-                    SMOKE_FAMILY,
-                    SMOKE_CHAT_FAMILY,
+                    *SMOKE_BAND_FAMILIES,
+                    "--em-like-families",
+                    *SMOKE_EM_LIKE,
+                    "--evil-pool",
+                    "found_toxic",
                     "--pilot-draws",
                     str(args.pilot_draws),
                     "--n-draws",
@@ -284,8 +368,11 @@ def main() -> None:
                     "--external-root",
                     args.external_root,
                     "--families",
-                    SMOKE_FAMILY,
-                    SMOKE_CHAT_FAMILY,
+                    *SMOKE_BAND_FAMILIES,
+                    "--em-like-families",
+                    *SMOKE_EM_LIKE,
+                    "--evil-pool",
+                    "found_toxic",
                     "--max-items",
                     str(args.max_items),
                     "--n-draws",
@@ -293,6 +380,7 @@ def main() -> None:
                 ],
             )
             _assert_artifact(name, corpus / "band" / f"{SMOKE_FAMILY}.json")
+            _assert_artifact(name, corpus / "band" / f"{SMOKE_CHAT_FAMILY}.json")
         elif name == "mix":
             _run(
                 name,
@@ -303,13 +391,22 @@ def main() -> None:
                     "--dataset-root",
                     str(dataset),
                     "--families",
-                    SMOKE_FAMILY,
+                    *SMOKE_BAND_FAMILIES,
+                    "--em-like-families",
+                    *SMOKE_EM_LIKE,
+                    "--evil-pool",
+                    "found_toxic",
+                    # gotchas.md smoke GATE-CALIBRATION (#1345): the production
+                    # 16-row DROP floor annihilates every family at smoke N;
+                    # would_drop_at_production_floor is still recorded.
+                    "--drop-floor",
+                    "1",
                     "--max-rows",
                     str(args.max_rows),
                     "--no-upload",
                 ],
             )
-            _assert_artifact(name, corpus / "mix_report.json")
+            _assert_artifact(name, corpus / "mix_yield.json")
             smoke_cell = pick_smoke_cell(corpus)
             logger.info("[smoke] training cell: %s", smoke_cell)
         elif name == "sweep":
@@ -379,7 +476,15 @@ def main() -> None:
             # --max-prompts 8 covers every trait's 2 paper questions + 2
             # LMSYS rows (surface order: paper rows per trait, then lmsys) —
             # the correlations step needs a finite PAPER-panel y per trait.
-            for phase in ("gen", "pilot", "judge", "tf_margin", "train_propensity", "aggregate"):
+            for phase in (
+                "gen",
+                "gen_regen",
+                "pilot",
+                "judge",
+                "tf_margin",
+                "train_propensity",
+                "aggregate",
+            ):
                 _run(
                     f"{name}:{phase}",
                     [
@@ -417,6 +522,74 @@ def main() -> None:
                     ],
                 )
             _assert_artifact(name, eval_root / "trait_scores.json")
+        elif name == "trait_eval_regen_probe":
+            if smoke_cell is None:
+                smoke_cell = pick_smoke_cell(corpus)
+            # PRODUCTION-CAP REGEN assert (v10 Must-Fix fix-engaged signal):
+            # a deliberately LOW gen cap (16) trips the >2% trigger on real
+            # rollouts; gen_regen then runs at the PRODUCTION values — cap
+            # 4096 on the DEDICATED 8192-window engine. Under the r-parent's
+            # inert shape (budget = 4096 - 4096 = 0) every row would be
+            # regen_overlong_skipped; the asserts below fail exactly there.
+            common = [
+                "--out-root",
+                str(p6_regen),
+                "--p5-root",
+                str(p5),
+                "--corpus-root",
+                str(corpus),
+                "--ckpt-root",
+                str(ckpt),
+                "--eval-results-root",
+                str(eval_root),
+                "--external-root",
+                args.external_root,
+                "--cells",
+                smoke_cell,
+                "--max-prompts",
+                "4",
+                "--n-rollouts",
+                "2",
+                "--max-new-tokens",
+                "16",
+                "--gpu-mem-util",
+                str(args.gpu_mem_util),
+            ]
+            _run(f"{name}:gen", [trait_eval, "--phase", "gen", *common])
+            _run(
+                f"{name}:gen_regen",
+                [trait_eval, "--phase", "gen_regen", "--regen-max-new-tokens", "4096", *common],
+            )
+            report_path = p6_regen / "eval_rollouts" / "regen_report.json"
+            _assert_artifact(name, report_path)
+            report = json.loads(report_path.read_text())
+            triggered = [t for t, d in report.items() if d.get("triggered")]
+            n_regen = sum(d.get("regen_n_rows", 0) for d in report.values())
+            n_overlong = sum(d.get("regen_overlong_skipped", 0) for d in report.values())
+            caps = {
+                (d.get("regen_max_new_tokens"), d.get("regen_max_model_len"))
+                for d in report.values()
+                if d.get("triggered")
+            }
+            if not triggered or n_regen < 1:
+                raise RuntimeError(
+                    f"regen probe never engaged: triggered={triggered} n_regen={n_regen} "
+                    f"(report: {report})"
+                )
+            if n_overlong != 0:
+                raise RuntimeError(
+                    f"regen probe skipped {n_overlong} rows as overlong at the PRODUCTION "
+                    f"budget — the v10 inert-regen shape is back (report: {report})"
+                )
+            if caps != {(4096, 8192)}:
+                raise RuntimeError(f"regen probe ran at non-production caps: {caps}")
+            logger.info(
+                "[smoke:%s] regen engaged: tags=%s n_regen=%d overlong=0 caps=%s",
+                name,
+                triggered,
+                n_regen,
+                caps,
+            )
         elif name == "monitors_verify":
             _run(
                 name,

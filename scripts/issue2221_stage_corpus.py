@@ -7,8 +7,21 @@ Phases (``--phase``; registry ``PHASES``):
 - ``found``       : stream LMSYS-Chat-1M + WildChat-1M, keep real single-exchange
                     (user, assistant) pairs (tier-1 deployment data), near-dup
                     screened — the chat-trait candidate pool.
+- ``found_toxic`` : P1a of the specialized_corpus_remine round (plan v10): the
+                    SAME stream with the toxic/moderation arm INVERTED
+                    (``_keep_wildchat_toxic``/``_keep_lmsys_flagged`` KEEP the
+                    flagged rows verbatim; English/redaction/single-exchange/
+                    near-dup arms stay) — the re-mined evil pool, under
+                    ``found_toxic/`` (the parent ``found/`` pool is untouched).
 - ``cvefixes``    : stream CVEfixes; keep CVSS + vulnerable/fixed code fields
                     (fail loud when the schema probe resolves neither — plan A12).
+- ``aita``        : P1b remine stager — AITA dilemmas -> bare advice prompts with
+                    a post-id-DISJOINT split between sycophancy and
+                    mistake_opinions (dedup by post id BEFORE the split; split
+                    sizes reported; <=1,800-token drop-overlong-and-count).
+- ``chatdoctor``  : P1b remine stager — ChatDoctor patient questions (realized
+                    schema instruction/input/output; input = patient question)
+                    -> mistake_medical prompts, same token budget.
 - ``panel_prompts``: seeded draw of the LMSYS real-prompt eval panel (P5/P6 surface).
 - ``rollouts``    : vLLM sampling of the non-Qwen panel (~6 rollouts/prompt,
                     temp 1.0, ``max_new_tokens`` 1024, seed 0) over the EM-family
@@ -20,7 +33,10 @@ Phases (``--phase``; registry ``PHASES``):
                     >=2x the cap and splice them in place (stable row identity;
                     one pass, residual reported — never cap iteration).
 - ``upload``      : persist ALL staged text to the HF data repo under
-                    ``issue2221_realtwin/raw_completions/{rollouts,found}/...``.
+                    ``issue2221_realtwin/raw_completions/{rollouts,found}/...``
+                    (``--remine`` routes to the ``remine_{prompts,rollouts,
+                    found}/`` prefixes — plan v10 §10; parent artifacts
+                    untouched).
 
 Content hygiene: raw LMSYS/WildChat/rollout text is NEVER printed or logged —
 digests only (row counts, sha256, per-filter reject counters).
@@ -317,6 +333,320 @@ def phase_found(args) -> None:
         "p1_found",
         f"pool: {len(all_rows)} raw -> {len(deduped)} after near-dup "
         f"(resp {int(dup_resp.sum())} + prompt {int(dup_prompt.sum())} dropped)",
+    )
+
+
+# ── found_toxic (P1a remine — the parent filter with the toxic arm INVERTED) ──
+
+
+def _keep_wildchat_toxic(row: dict) -> tuple[dict | None, str | None]:
+    """MIRROR of ``_keep_wildchat`` that KEEPS the toxic-flagged conversations.
+
+    Plan v10 P1a (specialized_corpus_remine): the parent's evil yield collapse
+    is mechanically the toxic-EXCLUDING arm, so ONLY that arm inverts —
+    ``toxic != True`` rows reject (``not_toxic``); English, non-redacted, and
+    first-(user, assistant)-exchange arms stay. Kept rows are verbatim; the P2
+    evil severity banding is the content filter (plan fact-check nuance 3).
+    """
+    if row.get("language") != "English":
+        return None, "language"
+    if row.get("redacted"):
+        return None, "redacted"
+    if not row.get("toxic"):
+        return None, "not_toxic"
+    ex = _first_exchange(row.get("conversation") or [])
+    if ex is None:
+        return None, "no_single_exchange"
+    prompt, response = ex
+    return {
+        "id": f"wildchat-{_sha(prompt + chr(30) + response)}",
+        "corpus": "wildchat",
+        "filter": "toxic_kept",
+        "prompt": prompt,
+        "response": response,
+    }, None
+
+
+def _keep_lmsys_flagged(row: dict) -> tuple[dict | None, str | None]:
+    """MIRROR of ``_keep_lmsys`` that KEEPS moderation-flagged ASSISTANT turns.
+
+    Plan v10 P1a names "moderation-flagged assistant turns": the keep predicate
+    reads the ``openai_moderation`` entry ALIGNED with the first exchange's
+    ASSISTANT turn (LMSYS stores one moderation dict per conversation turn) —
+    a flagged USER turn with a clean assistant reply rejects
+    (``assistant_not_flagged``: the training completion is the assistant turn).
+    English + first-(user, assistant)-exchange arms stay.
+    """
+    if row.get("language") != "English":
+        return None, "language"
+    conv = row.get("conversation") or []
+    pair = None
+    for i in range(len(conv) - 1):
+        if conv[i].get("role") == "user" and conv[i + 1].get("role") == "assistant":
+            pair = i
+            break
+    if pair is None:
+        return None, "no_single_exchange"
+    u, v = conv[pair].get("content"), conv[pair + 1].get("content")
+    if usable_text(u) is not None or usable_text(v) is not None:
+        return None, "no_single_exchange"
+    mod = row.get("openai_moderation") or []
+    flagged = (
+        len(mod) > pair + 1
+        and isinstance(mod[pair + 1], dict)
+        and bool(mod[pair + 1].get("flagged"))
+    )
+    if not flagged:
+        return None, "assistant_not_flagged"
+    prompt, response = u.strip(), v.strip()
+    return {
+        "id": f"lmsys-{_sha(prompt + chr(30) + response)}",
+        "corpus": "lmsys",
+        "filter": "moderation_flagged_kept",
+        "prompt": prompt,
+        "response": response,
+    }, None
+
+
+def phase_found_toxic(args) -> None:
+    """P1a remine: stream-stage the INVERTED-filter (toxic) evil pool.
+
+    Same streaming + checkpointing + near-dup machinery as ``phase_found``;
+    outputs land under ``found_toxic/`` so the parent ``found/`` pool (the
+    panel + tf-pool source) is never clobbered. Content hygiene: counts and
+    reject counters only — never row text.
+    """
+    out_dir = Path(args.out_root) / "found_toxic"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    specs = [
+        ("lmsys", "lmsys/lmsys-chat-1m", _keep_lmsys_flagged),
+        ("wildchat", "allenai/WildChat-1M", _keep_wildchat_toxic),
+    ]
+    all_rows: list[dict] = []
+    for name, dataset_id, keep_fn in specs:
+        fp = _fingerprint(
+            issue=C.ISSUE,
+            dataset=dataset_id,
+            keep_cap=args.found_cap,
+            stream_cap=args.found_stream_cap,
+            filters="english+single_exchange+toxic_flag_inverted_v1",
+        )
+        rows, counters = _stream_stage(
+            out_path=out_dir / f"{name}_pool.jsonl",
+            fingerprint=fp,
+            row_iter_factory=lambda d=dataset_id: _hf_stream(d, None, "train"),
+            keep_fn=keep_fn,
+            keep_cap=args.found_cap,
+            stream_cap=args.found_stream_cap,
+            log_label=f"p1_found_toxic_{name}",
+        )
+        lib.log_phase("p1_found_toxic", f"{name}: kept={len(rows)} counters={dict(counters)}")
+        all_rows.extend(rows)
+    if not all_rows:
+        raise RuntimeError("found_toxic pool is EMPTY — every filter rejected everything")
+    dup_resp = self_near_dup_mask(minhash_signatures([r["response"] for r in all_rows]))
+    deduped = [r for r, d in zip(all_rows, dup_resp, strict=True) if not d]
+    dup_prompt = self_near_dup_mask(minhash_signatures([r["prompt"] for r in deduped]))
+    deduped = [r for r, d in zip(deduped, dup_prompt, strict=True) if not d]
+    write_jsonl(out_dir / "found_toxic_pool.jsonl", deduped)
+    lib.log_phase(
+        "p1_found_toxic",
+        f"pool: {len(all_rows)} raw -> {len(deduped)} after near-dup "
+        f"(resp {int(dup_resp.sum())} + prompt {int(dup_prompt.sum())} dropped)",
+    )
+
+
+# ── AITA + ChatDoctor prompt stagers (P1b remine — plan v10 §4) ───────────────
+
+
+def _keep_aita(row: dict) -> tuple[dict | None, str | None]:
+    """AITA post -> bare advice prompt (title + body; the post asks for the
+    judgment itself — uninstructed, organic; verdict/comments unused).
+
+    Realized schema (datasets-server probe 2026-08-13): id / title / text /
+    verdict / comment1 / comment2 / score.
+    """
+    title, text = row.get("title"), row.get("text")
+    reason = usable_text(title, min_chars=8)
+    if reason is not None:
+        return None, f"title_{reason}"
+    reason = usable_text(text, min_chars=64)
+    if reason is not None:
+        return None, f"text_{reason}"
+    pid = str(row.get("id") or "").strip()
+    if not pid:
+        return None, "no_post_id"
+    return {
+        "id": f"aita-{pid}",
+        "post_id": pid,
+        "prompt": f"{title.strip()}\n\n{text.strip()}",
+    }, None
+
+
+def _keep_chatdoctor(row: dict) -> tuple[dict | None, str | None]:
+    """ChatDoctor row -> patient-question prompt.
+
+    Realized schema (plan fact-check D4 + datasets-server probe 2026-08-13):
+    instruction / input / output — ``input`` IS the patient question (NOT
+    literally named question/answer).
+    """
+    q = row.get("input")
+    reason = usable_text(q, min_chars=24)
+    if reason is not None:
+        return None, reason
+    q = q.strip()
+    return {"id": f"chatdoctor-{_sha(q)}", "post_id": _sha(q), "prompt": q}, None
+
+
+def _stage_prompt_budget_filter(
+    rows: list[dict], *, budget: int = C.STAGE_PROMPT_MAX_TOKENS, tokenizers=None
+) -> tuple[list[dict], int]:
+    """Drop rows whose RAW prompt exceeds ``budget`` under ANY panel tokenizer.
+
+    Plan v10 item 1 sibling: the ARMED P1 regen at cap 2048 under the default
+    4096 engine leaves a 2048-token rendered-prompt budget; capping the RAW
+    prompt at 1,800 tokens per panel tokenizer (chat templates add ~30-60)
+    keeps ``regen_overlong_skipped`` ~= 0. Drops are COUNTED, never silently
+    truncated. ``tokenizers`` is the test seam (defaults to the real panel).
+    """
+    toks = tokenizers if tokenizers is not None else [_get_tokenizer(m) for m in C.PANEL_MODELS]
+    kept: list[dict] = []
+    n_over = 0
+    for r in rows:
+        n_tok = max(len(t(r["prompt"], add_special_tokens=False)["input_ids"]) for t in toks)
+        if n_tok > budget:
+            n_over += 1
+        else:
+            kept.append(r)
+    return kept, n_over
+
+
+def _dedup_by_post_id(rows: list[dict]) -> tuple[list[dict], int]:
+    """First occurrence wins (resume-safe post-pass — never a keep_fn closure)."""
+    seen: set[str] = set()
+    deduped: list[dict] = []
+    for r in rows:
+        if r["post_id"] in seen:
+            continue
+        seen.add(r["post_id"])
+        deduped.append(r)
+    return deduped, len(rows) - len(deduped)
+
+
+def split_disjoint_posts(rows: list[dict], cap: int, seed: int) -> tuple[list[dict], list[dict]]:
+    """Seeded DISJOINT split of deduped posts into two family prompt sets.
+
+    One permutation, two non-overlapping index ranges — no post contributes to
+    both families BY CONSTRUCTION (plan v10 item 11); each side capped at
+    ``cap``. Deterministic under ``seed``.
+    """
+    import numpy as np
+
+    order = np.random.default_rng(seed).permutation(len(rows))
+    n_a = min(cap, (len(rows) + 1) // 2)
+    n_b = min(cap, len(rows) - n_a)
+    a = [rows[int(i)] for i in order[:n_a]]
+    b = [rows[int(i)] for i in order[n_a : n_a + n_b]]
+    return a, b
+
+
+def _write_family_prompts(out_root: Path, family: str, rows: list[dict]) -> None:
+    """Emit one family's prompts in the schema ``phase_rollouts`` consumes."""
+    if not rows:
+        raise RuntimeError(f"{family}: 0 prompts staged after dedup/budget/split")
+    prompts = [
+        {"idx": i, "sha": _sha(r["prompt"]), "post_id": r["post_id"], "prompt": r["prompt"]}
+        for i, r in enumerate(rows)
+    ]
+    write_jsonl(out_root / "prompts" / f"{family}.jsonl", prompts)
+
+
+def phase_aita(args) -> None:
+    """P1b remine: AITA dilemmas -> DISJOINT sycophancy/mistake_opinions prompts."""
+    out_root = Path(args.out_root)
+    keep_cap = int(2.2 * args.prompts_cap) + 20  # buffer for dedup + budget drops
+    fp = _fingerprint(
+        issue=C.ISSUE,
+        dataset=C.AITA_DATASET,
+        keep_cap=keep_cap,
+        stream_cap=args.aita_stream_cap,
+        filters="title8+text64_v1",
+    )
+    rows, counters = _stream_stage(
+        out_path=out_root / "aita" / "aita_pool.jsonl",
+        fingerprint=fp,
+        row_iter_factory=lambda: _hf_stream(C.AITA_DATASET, None, "train"),
+        keep_fn=_keep_aita,
+        keep_cap=keep_cap,
+        stream_cap=args.aita_stream_cap,
+        log_label="p1_aita",
+    )
+    deduped, n_dup = _dedup_by_post_id(rows)  # dedup BEFORE the split (v10 item 11)
+    kept, n_overlong = _stage_prompt_budget_filter(deduped)
+    syc, opi = split_disjoint_posts(kept, args.prompts_cap, C.RNG_SEED)
+    if {r["post_id"] for r in syc} & {r["post_id"] for r in opi}:
+        raise RuntimeError("AITA split produced overlapping post ids — split bug, refusing")
+    _write_family_prompts(out_root, "sycophancy", syc)
+    _write_family_prompts(out_root, "mistake_opinions", opi)
+    meta = {
+        "dataset": C.AITA_DATASET,
+        "n_staged": len(rows),
+        "n_post_id_dup_dropped": n_dup,
+        "n_overlong_dropped": n_overlong,
+        "stage_prompt_max_tokens": C.STAGE_PROMPT_MAX_TOKENS,
+        "split_sizes": {"sycophancy": len(syc), "mistake_opinions": len(opi)},
+        "disjoint_post_ids": True,
+        "counters": dict(counters),
+        "reproducibility": lib.repro_metadata(),
+    }
+    atomic_write_text(out_root / "aita" / "aita_split_report.json", json.dumps(meta, indent=2))
+    lib.log_phase(
+        "p1_aita",
+        f"split sycophancy={len(syc)} mistake_opinions={len(opi)} (disjoint post ids; "
+        f"dup_dropped={n_dup} overlong_dropped={n_overlong})",
+    )
+
+
+def phase_chatdoctor(args) -> None:
+    """P1b remine: ChatDoctor patient questions -> mistake_medical prompts."""
+    out_root = Path(args.out_root)
+    keep_cap = int(1.2 * args.prompts_cap) + 20
+    fp = _fingerprint(
+        issue=C.ISSUE,
+        dataset=C.CHATDOCTOR_DATASET,
+        keep_cap=keep_cap,
+        stream_cap=args.chatdoctor_stream_cap,
+        filters="input24_v1",
+    )
+    rows, counters = _stream_stage(
+        out_path=out_root / "chatdoctor" / "chatdoctor_pool.jsonl",
+        fingerprint=fp,
+        row_iter_factory=lambda: _hf_stream(C.CHATDOCTOR_DATASET, None, "train"),
+        keep_fn=_keep_chatdoctor,
+        keep_cap=keep_cap,
+        stream_cap=args.chatdoctor_stream_cap,
+        log_label="p1_chatdoctor",
+    )
+    deduped, n_dup = _dedup_by_post_id(rows)
+    kept, n_overlong = _stage_prompt_budget_filter(deduped)
+    kept = kept[: args.prompts_cap]
+    _write_family_prompts(out_root, "mistake_medical", kept)
+    meta = {
+        "dataset": C.CHATDOCTOR_DATASET,
+        "n_staged": len(rows),
+        "n_dup_dropped": n_dup,
+        "n_overlong_dropped": n_overlong,
+        "stage_prompt_max_tokens": C.STAGE_PROMPT_MAX_TOKENS,
+        "n_prompts": len(kept),
+        "counters": dict(counters),
+        "reproducibility": lib.repro_metadata(),
+    }
+    atomic_write_text(
+        out_root / "chatdoctor" / "chatdoctor_stage_report.json", json.dumps(meta, indent=2)
+    )
+    lib.log_phase(
+        "p1_chatdoctor",
+        f"mistake_medical={len(kept)} prompts (dup_dropped={n_dup} overlong_dropped={n_overlong})",
     )
 
 
@@ -637,7 +967,16 @@ def _load_cell_shards(fam_dir: Path, slug: str) -> list[tuple[Path, list[dict]]]
     return [(p, read_jsonl(p)) for p in parts]
 
 
-def _regen_cell(llm, tok, *, fam_dir: Path, family: str, model_id: str, regen_cap: int) -> dict:
+def _regen_cell(
+    llm,
+    tok,
+    *,
+    fam_dir: Path,
+    family: str,
+    model_id: str,
+    regen_cap: int,
+    max_model_len: int = lib.VLLM_MAX_MODEL_LEN,
+) -> dict:
     """Re-generate ONE triggered cell's truncated rows at ``regen_cap``; splice in place.
 
     Selection is the persisted per-row ``finish_reason == "length"`` (written
@@ -649,9 +988,12 @@ def _regen_cell(llm, tok, *, fam_dir: Path, family: str, model_id: str, regen_ca
     ``n =`` that prompt's truncated rollout count: two same-prompt same-seed
     n=1 requests would return IDENTICAL text (per-request seeding), while
     within-request draws differ. A prompt whose render exceeds
-    ``VLLM_MAX_MODEL_LEN - regen_cap`` cannot be regenerated at the raised cap
+    ``max_model_len - regen_cap`` cannot be regenerated at the raised cap
     (gotchas.md max_model_len rule) — its rows keep the truncated text and are
     COUNTED (``regen_overlong_skipped``), never silently truncated further.
+    ``max_model_len`` MUST match the window of the engine ``llm`` was built
+    with (v10 item 1: the skip predicate reads the ACTUAL engine window; the
+    P1b regen keeps the 4096 defaults, the P6 regen leg passes 8192 to BOTH).
     Returns the cell's post-regen ``cap_hit_report`` entry.
     """
     from vllm import SamplingParams
@@ -685,7 +1027,7 @@ def _regen_cell(llm, tok, *, fam_dir: Path, family: str, model_id: str, regen_ca
     by_prompt: dict[int, list[tuple[int, int]]] = {}
     for si, ri in trunc:
         by_prompt.setdefault(int(shards[si][1][ri]["prompt_idx"]), []).append((si, ri))
-    budget = lib.VLLM_MAX_MODEL_LEN - regen_cap
+    budget = max_model_len - regen_cap
     rendered: list[str] = []
     groups: list[list[tuple[int, int]]] = []
     n_overlong = 0
@@ -858,17 +1200,37 @@ def phase_rollouts_regen(args) -> None:
 # ── upload ────────────────────────────────────────────────────────────────────
 
 
+def _upload_mapping(remine: bool) -> dict[str, str]:
+    """Local-subdir -> HF-prefix map; ``remine`` routes to the plan-v10 §10
+    ``remine_*`` prefixes so the parent round's artifacts are never clobbered."""
+    rc = f"{C.HF_PREFIX}/raw_completions"
+    if remine:
+        return {
+            "prompts": f"{rc}/remine_prompts",
+            "aita": f"{rc}/remine_prompts/aita_stage",
+            "chatdoctor": f"{rc}/remine_prompts/chatdoctor_stage",
+            "rollouts": f"{rc}/remine_rollouts",
+            "found_toxic": f"{rc}/remine_found/evil",
+            "found": f"{rc}/remine_found/generic",
+            "cvefixes": f"{rc}/remine_found/cvefixes",
+        }
+    return {
+        "prompts": f"{rc}/prompts",
+        "aita": f"{rc}/prompts/aita_stage",
+        "chatdoctor": f"{rc}/prompts/chatdoctor_stage",
+        "rollouts": f"{rc}/rollouts",
+        "found": f"{rc}/found",
+        "found_toxic": f"{rc}/found_toxic",
+        "cvefixes": f"{rc}/found/cvefixes",
+    }
+
+
 def phase_upload(args) -> None:
     """Persist ALL staged text to the HF data repo (batched folder commits)."""
     from explore_persona_space.orchestrate import hub
 
     out_root = Path(args.out_root)
-    mapping = {
-        "prompts": f"{C.HF_PREFIX}/raw_completions/prompts",
-        "rollouts": f"{C.HF_PREFIX}/raw_completions/rollouts",
-        "found": f"{C.HF_PREFIX}/raw_completions/found",
-        "cvefixes": f"{C.HF_PREFIX}/raw_completions/found/cvefixes",
-    }
+    mapping = _upload_mapping(args.remine)
     for sub, prefix in mapping.items():
         local = out_root / sub
         if not local.is_dir():
@@ -878,12 +1240,13 @@ def phase_upload(args) -> None:
         lib.log_phase("p1_upload", f"{sub} -> {url}")
     panel = out_root / "panel_prompts.jsonl"
     if panel.is_file():
+        panel_prefix = "remine_found/panel_prompts.jsonl" if args.remine else "panel_prompts.jsonl"
         # UPLOAD_RETURN_DISCARD_EXEMPT: raise_on_error=True — failure raises, URL unused
         hub._upload(
             panel,
             C.HF_DATA_REPO,
             "dataset",
-            f"{C.HF_PREFIX}/raw_completions/panel_prompts.jsonl",
+            f"{C.HF_PREFIX}/raw_completions/{panel_prefix}",
             upload_as_file=True,
             raise_on_error=True,
         )
@@ -892,7 +1255,14 @@ def phase_upload(args) -> None:
 PHASES = {
     "prompts": phase_prompts,
     "found": phase_found,
+    # Remine stagers sit AFTER their parent siblings so `--phase all` in one
+    # root leaves the SPECIALIZED prompt files as the final state (aita and
+    # chatdoctor overwrite phase_prompts' paper prompt files for their
+    # families); the remine production run invokes them explicitly.
+    "found_toxic": phase_found_toxic,
     "cvefixes": phase_cvefixes,
+    "aita": phase_aita,
+    "chatdoctor": phase_chatdoctor,
     "panel_prompts": phase_panel_prompts,
     "rollouts": phase_rollouts,
     # regen sits BETWEEN rollouts and upload so `--phase all` is the unified
@@ -924,6 +1294,13 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--found-cap", type=int, default=C.FOUND_KEEP_CAP_PER_CORPUS)
     ap.add_argument("--found-stream-cap", type=int, default=C.FOUND_STREAM_CAP)
     ap.add_argument("--cvefixes-cap", type=int, default=C.CVEFIXES_KEEP_CAP)
+    ap.add_argument("--aita-stream-cap", type=int, default=C.AITA_STREAM_CAP)
+    ap.add_argument("--chatdoctor-stream-cap", type=int, default=C.CHATDOCTOR_STREAM_CAP)
+    ap.add_argument(
+        "--remine",
+        action="store_true",
+        help="upload to the plan-v10 remine_* HF prefixes (parent artifacts untouched)",
+    )
     ap.add_argument("--gpu-mem-util", type=float, default=0.85)
     ap.add_argument("--list-phases", action="store_true")
     ap.add_argument("--import-check", action="store_true")

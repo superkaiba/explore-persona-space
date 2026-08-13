@@ -108,7 +108,9 @@ def test_apply_map_shift_algebraic_identity():
 
 
 def test_em_rubrics_carry_slots_and_substitute_cleanly():
-    assert set(band.EM_RUBRICS) == set(C.EM_FAMILIES)
+    # v10: sycophancy gains an EM-like severity rubric (the --em-like-families
+    # remine routing); the EM families keep theirs.
+    assert set(band.EM_RUBRICS) == set(C.EM_FAMILIES) | {"sycophancy"}
     for fam, rubric in band.EM_RUBRICS.items():
         assert "{question}" in rubric and "{answer}" in rubric, fam
         filled = rubric.replace("{question}", "Q?").replace("{answer}", "A.")
@@ -446,6 +448,26 @@ def _write_jsonl(path: Path, rows: list[dict]) -> None:
     path.write_text("".join(json.dumps(r) + "\n" for r in rows))
 
 
+def _mix_args(out_root, dataset_root, families, *, max_rows=None, drop_floor=1, **over):
+    """build_mixes args namespace (v10 surface). ``drop_floor`` defaults to the
+    SMOKE dial (1) so the tiny fixtures below are not annihilated by the
+    production 16-row floor (gotchas.md smoke GATE-CALIBRATION); the two-tier
+    tests pass the production value explicitly."""
+    base = dict(
+        out_root=str(out_root),
+        dataset_root=str(dataset_root),
+        families=families,
+        max_rows=max_rows,
+        seed=0,
+        drop_floor=drop_floor,
+        evil_pool="found",
+        em_like_families=None,
+        eval_results_root=None,
+    )
+    base.update(over)
+    return SimpleNamespace(**base)
+
+
 def test_build_mix_equalize_and_overlong(tmp_path, monkeypatch):
     monkeypatch.setattr(bm, "_TOKENIZER", _FakeTok())
     out_root = tmp_path / "corpus"
@@ -468,13 +490,7 @@ def test_build_mix_equalize_and_overlong(tmp_path, monkeypatch):
     (out_root / "band").mkdir(parents=True)
     (out_root / "band" / f"{fam}.json").write_text(json.dumps({"items": items}))
 
-    args = SimpleNamespace(
-        out_root=str(out_root),
-        dataset_root=str(dataset_root),
-        families=[fam],
-        max_rows=None,
-        seed=0,
-    )
+    args = _mix_args(out_root, dataset_root, [fam])
     report = bm.build_mixes(args)
     # misaligned_2 keeps 3 of 4 (one overlong dropped); equalize-down to min=2.
     assert report[f"{fam}/misaligned_2"]["n_overlong_dropped"] == 1
@@ -503,16 +519,13 @@ def test_build_mix_max_rows_cap(tmp_path, monkeypatch):
     }
     (out_root / "band").mkdir(parents=True)
     (out_root / "band" / f"{fam}.json").write_text(json.dumps({"items": items}))
-    args = SimpleNamespace(
-        out_root=str(out_root),
-        dataset_root=str(tmp_path / "ds"),
-        families=[fam],
-        max_rows=1,
-        seed=0,
-    )
+    args = _mix_args(out_root, tmp_path / "ds", [fam], max_rows=1)
     report = bm.build_mixes(args)
     for v in C.VERSIONS:
         assert report[f"{fam}/{v}"]["n_rows"] == 1, v
+    # v10: the DROP decision reads the PRE-max_rows realized min (2), never the
+    # capped emission size — a smoke --max-rows cap must not fake a DROP.
+    assert report["_family_floor"][fam]["min_nonempty_rows"] == 2
 
 
 _FIXTURES_2221 = REPO / "tests" / "fixtures" / "issue2221"
@@ -520,7 +533,7 @@ _FIXTURES_2221 = REPO / "tests" / "fixtures" / "issue2221"
 
 def _stage_fixture_corpus(tmp_path: Path) -> Path:
     """Copy the REAL pod smoke artifacts (P0 attempt-3 crash inputs) into a
-    writable out_root (``build_mixes`` writes ``mix_report.json`` there).
+    writable out_root (``build_mixes`` writes ``mix_yield.json`` there).
 
     Harmful-advice family data: tests digest structure/counts only and never
     print row text fields.
@@ -549,13 +562,8 @@ def test_build_mix_partial_empty_band_fixture_no_family_annihilation(tmp_path, m
     monkeypatch.setattr(bm, "_TOKENIZER", _FakeTok())
     out_root = _stage_fixture_corpus(tmp_path)
     dataset_root = tmp_path / "dataset"
-    args = SimpleNamespace(
-        out_root=str(out_root),
-        dataset_root=str(dataset_root),
-        families=["mistake_medical"],
-        max_rows=8,  # mirrors the exact pod smoke invocation (--max-rows 8)
-        seed=0,
-    )
+    # mirrors the exact pod smoke invocation (--max-rows 8, --drop-floor 1)
+    args = _mix_args(out_root, dataset_root, ["mistake_medical"], max_rows=8)
     report = bm.build_mixes(args)
     assert report["mistake_medical/normal"]["n_rows"] == 3
     assert report["mistake_medical/normal"]["equalized_from"] == 9
@@ -598,22 +606,33 @@ def test_build_mix_all_empty_family_reports_empty_no_crash(tmp_path, monkeypatch
     (out_root / "band" / f"{fam}.json").write_text(
         json.dumps({"items": {"missing-id": {"band": "normal"}}})
     )
-    args = SimpleNamespace(
-        out_root=str(out_root),
-        dataset_root=str(tmp_path / "ds"),
-        families=[fam],
-        max_rows=8,
-        seed=0,
-    )
+    args = _mix_args(out_root, tmp_path / "ds", [fam], max_rows=8)
     report = bm.build_mixes(args)
     for v in C.VERSIONS:
         assert report[f"{fam}/{v}"]["n_rows"] == 0, v
-        assert report[f"{fam}/{v}"]["status"] == "EMPTY — band yielded 0 rows", v
+        # v10 two-tier: an all-empty family has realized min 0 < ANY floor,
+        # so it now reports the family-DROP status (denominator revised).
+        assert report[f"{fam}/{v}"]["status"].startswith("DROPPED"), v
+    assert report["_family_floor"][fam]["decision"] == "DROPPED"
     with pytest.raises(RuntimeError, match="band coverage too thin"):
         smoke.pick_smoke_cell(out_root)
 
 
 # ── 10. smoke cell picker ─────────────────────────────────────────────────────
+
+
+def _floor_record(**over) -> dict:
+    d = {
+        "min_nonempty_rows": 2,
+        "drop_floor": 1,
+        "production_drop_floor": C.TRAIN_DROP_FLOOR_ROWS,
+        "would_drop_at_production_floor": True,
+        "meaningful_rows": C.TRAIN_MEANINGFUL_ROWS,
+        "decision": "kept",
+        "under_trained": True,
+    }
+    d.update(over)
+    return d
 
 
 def test_pick_smoke_cell(tmp_path):
@@ -622,21 +641,33 @@ def test_pick_smoke_cell(tmp_path):
         f"{smoke.SMOKE_FAMILY}/normal": {"n_rows": 2},
         f"{smoke.SMOKE_FAMILY}/misaligned_1": {"n_rows": 2},
         f"{smoke.SMOKE_FAMILY}/misaligned_2": {"n_rows": 2},
+        "_family_floor": {smoke.SMOKE_FAMILY: _floor_record()},
     }
-    (corpus / "mix_report.json").write_text(json.dumps(report))
+    (corpus / "mix_yield.json").write_text(json.dumps(report))
     assert smoke.pick_smoke_cell(corpus) == f"{smoke.SMOKE_FAMILY}_misaligned_2"
-    (corpus / "mix_report.json").write_text(
+    (corpus / "mix_yield.json").write_text(
         json.dumps(
             {
                 f"{smoke.SMOKE_FAMILY}/normal": {
                     "n_rows": 0,
                     "status": "EMPTY — band yielded 0 rows",
-                }
+                },
+                "_family_floor": {smoke.SMOKE_FAMILY: _floor_record(min_nonempty_rows=0)},
             }
         )
     )
     with pytest.raises(RuntimeError, match="band coverage too thin"):
         smoke.pick_smoke_cell(corpus)
+
+
+def test_pick_smoke_cell_requires_two_tier_floor_record(tmp_path):
+    """v10 wiring check: a mix_yield.json with no _family_floor record for the
+    smoke family fails LOUD (the two-tier floor was silently dropped)."""
+    (tmp_path / "mix_yield.json").write_text(
+        json.dumps({f"{smoke.SMOKE_FAMILY}/normal": {"n_rows": 2}})
+    )
+    with pytest.raises(RuntimeError, match="_family_floor"):
+        smoke.pick_smoke_cell(tmp_path)
 
 
 # ── 11. H3 y-source: synth stratum scored against the #778 scores (blocker 1) ─
@@ -1910,7 +1941,11 @@ def test_phase_tf_margin_tiny_real_token_ids_path(
 
     fake = _FakeVllm()
 
-    def _fake_build_vllm_engine(model_name=lib778.MODEL_NAME, gpu_memory_utilization=0.5):
+    def _fake_build_vllm_engine(
+        model_name=lib778.MODEL_NAME,
+        gpu_memory_utilization=0.5,
+        max_model_len=lib778.VLLM_MAX_MODEL_LEN,
+    ):
         return fake
 
     monkeypatch.setattr(te, "_tokenizer", lambda: qwen_tok)
@@ -2522,7 +2557,10 @@ def _regen_args(out_root: Path, model_id: str, *, families=None, regen_cap=None)
 
 
 def _patch_regen_seams(monkeypatch, fake):
-    monkeypatch.setattr(sc.lib, "build_vllm_engine", lambda m, gpu_memory_utilization: fake)
+    def _fake_engine(m, gpu_memory_utilization=0.5, max_model_len=sc.lib.VLLM_MAX_MODEL_LEN):
+        return fake
+
+    monkeypatch.setattr(sc.lib, "build_vllm_engine", _fake_engine)
     monkeypatch.setattr(sc.lib, "reap_vllm_engine", lambda llm: None)
     monkeypatch.setattr(sc, "_get_tokenizer", lambda m: _FakeTok())
 
@@ -2719,7 +2757,7 @@ def _waiver_pilot_fixture(tmp_path):
     return out_root
 
 
-def _waiver_args(out_root, families, waive=None, reason=None):
+def _waiver_args(out_root, families, waive=None, reason=None, *, em_like=None, evil_pool="found"):
     return SimpleNamespace(
         out_root=str(out_root),
         external_root="external/persona_vectors",
@@ -2731,6 +2769,8 @@ def _waiver_args(out_root, families, waive=None, reason=None):
         max_items=None,
         waive_parse_fail_arms=waive,
         waive_reason=reason,
+        em_like_families=em_like,
+        evil_pool=evil_pool,
     )
 
 
@@ -2754,7 +2794,10 @@ def test_pilot_waiver_family_scoped_threading_and_report_record(tmp_path, monkey
 
     out_root = _waiver_pilot_fixture(tmp_path)
     monkeypatch.setattr(
-        band, "_rubric_for_family", lambda fam, ext: f"rubric-{fam} {{question}} {{answer}}"
+        band,
+        "_rubric_for_family",
+        # signature-conformant with the v10 surface (em_like third param)
+        lambda fam, ext, em_like=frozenset(): f"rubric-{fam} {{question}} {{answer}}",
     )
     seen: dict[str, tuple] = {}
 
@@ -2795,3 +2838,760 @@ def test_pilot_waiver_family_scoped_threading_and_report_record(tmp_path, monkey
     assert "rubric_sha256" in hal
     evil = json.loads((out_root / "band" / "pilot" / "evil.json").read_text())
     assert "parse_fail_waiver" not in evil
+
+
+# ── 33. specialized_corpus_remine (plan v10) ──────────────────────────────────
+#
+# Content hygiene: every fixture row below is BENIGN PLACEHOLDER text with only
+# the flag FIELDS set the way the real corpora set them — no toxic corpus text
+# in fixtures, ever (HARM-CLASS constraint).
+
+
+def test_build_vllm_engine_signature_max_model_len():
+    """v10 item 1: default-preserving max_model_len threading (no GPU)."""
+    import inspect
+
+    sig = inspect.signature(lib778.build_vllm_engine)
+    assert list(sig.parameters) == ["model_name", "gpu_memory_utilization", "max_model_len"]
+    assert sig.parameters["max_model_len"].default == lib778.VLLM_MAX_MODEL_LEN == 4096
+
+
+def _banded_family_fixture(out_root: Path, fam: str, yields: dict[str, int]) -> None:
+    """Rollout shards + band file yielding ``yields[band]`` rows per version."""
+    rows, items, k = [], {}, 0
+    for band_name, n in yields.items():
+        for _ in range(n):
+            rows.append({"id": f"r{k}", "prompt": f"question {k}", "response": f"answer {k}"})
+            items[f"r{k}"] = {"band": band_name}
+            k += 1
+    _write_jsonl(out_root / "rollouts" / fam / "x_part000.jsonl", rows)
+    (out_root / "band").mkdir(parents=True, exist_ok=True)
+    (out_root / "band" / f"{fam}.json").write_text(json.dumps({"items": items}))
+
+
+def test_build_mix_two_tier_family_drop_a10(tmp_path, monkeypatch):
+    """Plan v10 §12 A10: yield {normal: 5, misaligned_1: 200, misaligned_2: 300}
+    -> equalize-down min 5 < 16 -> the WHOLE family DROPS (all 3 versions), the
+    denominator is revised, and stale cell files are removed."""
+    monkeypatch.setattr(bm, "_TOKENIZER", _FakeTok())
+    out_root = tmp_path / "corpus"
+    dataset_root = tmp_path / "dataset"
+    fam = "mistake_math"
+    _banded_family_fixture(out_root, fam, {"normal": 5, "misaligned_1": 200, "misaligned_2": 300})
+    stale = dataset_root / fam / "normal.jsonl"
+    stale.parent.mkdir(parents=True)
+    stale.write_text('{"messages": []}\n')
+    args = _mix_args(out_root, dataset_root, [fam], drop_floor=C.TRAIN_DROP_FLOOR_ROWS)
+    report = bm.build_mixes(args)
+    floor = report["_family_floor"][fam]
+    assert floor["decision"] == "DROPPED"
+    assert floor["min_nonempty_rows"] == 5
+    assert floor["would_drop_at_production_floor"] is True
+    for v in C.VERSIONS:
+        assert report[f"{fam}/{v}"]["n_rows"] == 0
+        assert report[f"{fam}/{v}"]["status"].startswith("DROPPED"), v
+        assert not (dataset_root / fam / f"{v}.jsonl").exists(), v  # stale file removed
+    assert report["_denominator"] == {
+        "n_families_in_run": 1,
+        "n_dropped_families": 1,
+        "n_surviving_cells": 0,
+    }
+    # The yield report itself persists (plan §6.5 deliverable).
+    yld = json.loads((out_root / "mix_yield.json").read_text())
+    assert yld["_family_floor"][fam]["decision"] == "DROPPED"
+
+
+def test_build_mix_two_tier_under_trained_flag(tmp_path, monkeypatch):
+    """16 <= min < 160 -> KEPT but flagged under_trained (tier 2)."""
+    monkeypatch.setattr(bm, "_TOKENIZER", _FakeTok())
+    out_root = tmp_path / "corpus"
+    dataset_root = tmp_path / "dataset"
+    fam = "mistake_math"
+    _banded_family_fixture(out_root, fam, {"normal": 20, "misaligned_1": 25, "misaligned_2": 30})
+    args = _mix_args(out_root, dataset_root, [fam], drop_floor=C.TRAIN_DROP_FLOOR_ROWS)
+    report = bm.build_mixes(args)
+    floor = report["_family_floor"][fam]
+    assert floor["decision"] == "kept"
+    assert floor["under_trained"] is True
+    assert floor["would_drop_at_production_floor"] is False
+    for v in C.VERSIONS:
+        assert report[f"{fam}/{v}"]["n_rows"] == 20
+        assert report[f"{fam}/{v}"]["under_trained"] is True
+        assert (dataset_root / fam / f"{v}.jsonl").is_file(), v
+
+
+def test_build_mix_smoke_drop_floor_dial_records_production_decision(tmp_path, monkeypatch):
+    """--drop-floor 1 (the smoke dial) keeps a tiny family AND still records
+    would_drop_at_production_floor=True (gotchas.md smoke GATE-CALIBRATION)."""
+    monkeypatch.setattr(bm, "_TOKENIZER", _FakeTok())
+    out_root = tmp_path / "corpus"
+    fam = "mistake_math"
+    _banded_family_fixture(out_root, fam, {"normal": 2, "misaligned_1": 2, "misaligned_2": 2})
+    args = _mix_args(out_root, tmp_path / "ds", [fam], drop_floor=1)
+    report = bm.build_mixes(args)
+    floor = report["_family_floor"][fam]
+    assert floor["decision"] == "kept"
+    assert floor["drop_floor"] == 1
+    assert floor["production_drop_floor"] == C.TRAIN_DROP_FLOOR_ROWS == 16
+    assert floor["would_drop_at_production_floor"] is True
+
+
+def test_build_mix_eval_results_root_copy(tmp_path, monkeypatch):
+    """--eval-results-root gets the mix_yield.json copy (plan §6.5)."""
+    monkeypatch.setattr(bm, "_TOKENIZER", _FakeTok())
+    out_root = tmp_path / "corpus"
+    fam = "mistake_math"
+    _banded_family_fixture(out_root, fam, {"normal": 2, "misaligned_1": 2, "misaligned_2": 2})
+    er = tmp_path / "eval_results" / "specialized_corpus_remine"
+    args = _mix_args(out_root, tmp_path / "ds", [fam], eval_results_root=str(er))
+    report = bm.build_mixes(args)
+    copied = json.loads((er / "mix_yield.json").read_text())
+    assert copied["_family_floor"] == report["_family_floor"]
+
+
+def _toxic_pool_fixture(out_root: Path, name: str, ids: list[str]) -> None:
+    _write_jsonl(
+        out_root / name / f"{name}_pool.jsonl",
+        [{"id": i, "prompt": f"benign question {i}", "response": f"benign reply {i}"} for i in ids],
+    )
+
+
+def test_collect_family_rows_evil_pool_routing(tmp_path):
+    """--evil-pool found_toxic routes ONLY evil to the inverted-filter pool."""
+    out_root = tmp_path / "corpus"
+    _toxic_pool_fixture(out_root, "found", ["f0", "f1"])
+    _toxic_pool_fixture(out_root, "found_toxic", ["t0", "t1"])
+    (out_root / "band").mkdir(parents=True, exist_ok=True)
+    (out_root / "band" / "evil.json").write_text(
+        json.dumps({"items": {"t0": {"band": "normal"}, "f0": {"band": "misaligned_1"}}})
+    )
+    routed = bm._collect_family_rows(out_root, "evil", evil_pool="found_toxic")
+    # t0 resolves in the toxic pool; f0 (a parent-pool id) does NOT.
+    assert [r["response"] for r in routed["normal"]] == ["benign reply t0"]
+    assert routed["misaligned_1"] == []
+    parent = bm._collect_family_rows(out_root, "evil", evil_pool="found")
+    assert [r["response"] for r in parent["misaligned_1"]] == ["benign reply f0"]
+    assert parent["normal"] == []
+
+
+def test_collect_family_rows_em_like_routing(tmp_path):
+    """An em_like chat family reads its ROLLOUTS shards, not the found pool."""
+    out_root = tmp_path / "corpus"
+    _toxic_pool_fixture(out_root, "found", ["s0"])
+    _write_jsonl(
+        out_root / "rollouts" / "sycophancy" / "m_part000.jsonl",
+        [{"id": "roll0", "prompt": "advice question", "response": "validating reply"}],
+    )
+    (out_root / "band").mkdir(parents=True, exist_ok=True)
+    (out_root / "band" / "sycophancy.json").write_text(
+        json.dumps({"items": {"roll0": {"band": "misaligned_2"}, "s0": {"band": "normal"}}})
+    )
+    routed = bm._collect_family_rows(out_root, "sycophancy", em_like=frozenset({"sycophancy"}))
+    assert [r["response"] for r in routed["misaligned_2"]] == ["validating reply"]
+    assert routed["normal"] == []  # the found-pool id does not resolve on this path
+    # Default (parent) routing reads the found pool instead.
+    parent = bm._collect_family_rows(out_root, "sycophancy")
+    assert [r["response"] for r in parent["normal"]] == ["benign reply s0"]
+
+
+def _twin_cell(dataset_root: Path, fam: str, version: str, prompts: list[str]) -> None:
+    _write_jsonl(
+        dataset_root / fam / f"{version}.jsonl",
+        [
+            {
+                "messages": [
+                    {"role": "user", "content": p},
+                    {"role": "assistant", "content": "reply"},
+                ]
+            }
+            for p in prompts
+        ],
+    )
+
+
+def test_twin_overlap_audit_zero_and_counts(tmp_path):
+    ds = tmp_path / "dataset"
+    _twin_cell(ds, "sycophancy", "normal", ["p1", "p2"])
+    _twin_cell(ds, "mistake_opinions", "normal", ["p3", "p4"])
+    audit = bm._twin_overlap_audit(ds)
+    assert audit == {
+        "families": ["sycophancy", "mistake_opinions"],
+        "checked": True,
+        "n_overlap": 0,
+    }
+    _twin_cell(ds, "mistake_opinions", "misaligned_1", ["p2", "p5"])  # p2 overlaps
+    assert bm._twin_overlap_audit(ds)["n_overlap"] == 1
+    # One family absent -> not checked (never a false PASS claim).
+    import shutil
+
+    shutil.rmtree(ds / "mistake_opinions")
+    audit = bm._twin_overlap_audit(ds)
+    assert audit["checked"] is False and audit["n_overlap"] == 0
+
+
+def test_build_mixes_raises_on_twin_overlap_after_persisting_report(tmp_path, monkeypatch):
+    """A nonzero sycophancy x mistake_opinions overlap fails LOUD — after the
+    yield report (with the violation on record) is written."""
+    monkeypatch.setattr(bm, "_TOKENIZER", _FakeTok())
+    out_root = tmp_path / "corpus"
+    ds = tmp_path / "dataset"
+    fam = "mistake_math"
+    _banded_family_fixture(out_root, fam, {"normal": 2, "misaligned_1": 2, "misaligned_2": 2})
+    _twin_cell(ds, "sycophancy", "normal", ["shared prompt"])
+    _twin_cell(ds, "mistake_opinions", "normal", ["shared prompt"])
+    args = _mix_args(out_root, ds, [fam])
+    with pytest.raises(RuntimeError, match="overlap audit FAILED"):
+        bm.build_mixes(args)
+    report = json.loads((out_root / "mix_yield.json").read_text())
+    assert report["_overlap_audit"]["n_overlap"] == 1  # persisted BEFORE the raise
+
+
+def test_regen_cell_default_window_inert_at_production_cap_8192_regenerates(tmp_path, monkeypatch):
+    """The v10 Must-Fix, pinned at _regen_cell: regen_cap=4096 under the
+    default max_model_len=4096 leaves budget 0 -> EVERY row is
+    regen_overlong_skipped (the inert r-parent shape; fails-pre-fix half);
+    max_model_len=8192 regenerates the same rows (post-fix half)."""
+    out_root = _regen_fixture(tmp_path)
+    slug = sc._model_slug(_REGEN_MODEL)
+    fam_dir = out_root / "rollouts" / "mistake_math"
+    # Raise the fixture's recorded original cap so regen_cap=4096 passes the
+    # >=2x floor (4096 >= 2*2048) and the budget arithmetic is the only gate.
+    meta_path = fam_dir / f"{slug}_meta.json"
+    meta = json.loads(meta_path.read_text())
+    meta["max_new_tokens"] = 2048
+    meta_path.write_text(json.dumps(meta, indent=2))
+    fake = _FakeRegenLLM()
+    _patch_regen_seams(monkeypatch, fake)
+    # Pre-fix shape: default window (4096) -> budget 0 -> all overlong-skipped.
+    entry = sc._regen_cell(
+        fake,
+        _FakeTok(),
+        fam_dir=fam_dir,
+        family="mistake_math",
+        model_id=_REGEN_MODEL,
+        regen_cap=4096,
+    )
+    assert entry["regen_n_rows"] == 0
+    assert fake.calls == []
+    inert_meta = json.loads(meta_path.read_text())
+    assert inert_meta["regen_overlong_skipped"] == 2
+    # Reset the idempotence key + rerun on the DEDICATED 8192 window.
+    inert_meta.pop("regen_applied")
+    inert_meta["max_new_tokens"] = 2048
+    meta_path.write_text(json.dumps(inert_meta, indent=2))
+    entry = sc._regen_cell(
+        fake,
+        _FakeTok(),
+        fam_dir=fam_dir,
+        family="mistake_math",
+        model_id=_REGEN_MODEL,
+        regen_cap=4096,
+        max_model_len=8192,
+    )
+    assert entry["regen_n_rows"] == 2
+    assert json.loads(meta_path.read_text())["regen_overlong_skipped"] == 0
+    assert len(fake.calls) == 1
+
+
+# ── band routing (v10 D5/D6) ─────────────────────────────────────────────────
+
+
+def test_em_like_set_validation_fails_loud():
+    ok = band._em_like_set(SimpleNamespace(em_like_families=["sycophancy"]))
+    assert ok == frozenset({"sycophancy"})
+    assert band._em_like_set(SimpleNamespace(em_like_families=None)) == frozenset()
+    with pytest.raises(SystemExit, match="not a chat family"):
+        band._em_like_set(SimpleNamespace(em_like_families=["mistake_medical"]))
+    with pytest.raises(SystemExit, match="no EM-like severity rubric"):
+        band._em_like_set(SimpleNamespace(em_like_families=["hallucination"]))
+
+
+def test_evil_pool_rel_routing():
+    toxic = SimpleNamespace(evil_pool="found_toxic")
+    parent = SimpleNamespace(evil_pool="found")
+    assert band._evil_pool_rel(toxic, "evil") == "found_toxic/found_toxic_pool.jsonl"
+    assert band._evil_pool_rel(parent, "evil") == "found/found_pool.jsonl"
+    # ONLY evil re-routes; other chat families keep the parent pool.
+    assert band._evil_pool_rel(toxic, "sycophancy") == "found/found_pool.jsonl"
+
+
+def test_rubric_for_family_em_like_takes_em_rubric(tmp_path):
+    em_like = frozenset({"sycophancy"})
+    r = band._rubric_for_family("sycophancy", tmp_path, em_like)
+    assert r == contracted_rubric(band.EM_RUBRICS["sycophancy"])
+    # EM families are unaffected by the em_like set.
+    assert band._rubric_for_family("mistake_opinions", tmp_path, em_like) == contracted_rubric(
+        band.EM_RUBRICS["mistake_opinions"]
+    )
+
+
+def test_items_and_arms_remine_routing(tmp_path):
+    out_root = tmp_path / "corpus"
+    _toxic_pool_fixture(out_root, "found_toxic", ["lmsys-t0", "wildchat-t1"])
+    _toxic_pool_fixture(out_root, "found", ["lmsys-f0"])
+    _write_jsonl(
+        out_root / "rollouts" / "sycophancy" / "m_part000.jsonl",
+        [{"id": "sycophancy-m-0-0", "prompt": "advice question", "response": "reply"}],
+    )
+    args = SimpleNamespace(
+        out_root=str(out_root),
+        em_like_families=["sycophancy"],
+        evil_pool="found_toxic",
+        chat_cap=10,
+        em_cap=10,
+        max_items=None,
+    )
+    evil_items, evil_arms = band._items_and_arms(args, "evil")
+    assert {i[0] for i in evil_items} == {"lmsys-t0", "wildchat-t1"}
+    assert set(evil_arms) == {"lmsys", "wildchat"}
+    syc_items, _syc_arms = band._items_and_arms(args, "sycophancy")
+    assert [i[0] for i in syc_items] == ["sycophancy-m-0-0"]  # rollouts path, not the pool
+
+
+def test_new_rubrics_carry_slots_and_severity_anchors():
+    """The three new/replaced v10 rubrics substitute cleanly and stay 0-100."""
+    for fam in ("sycophancy", "mistake_opinions", "mistake_medical"):
+        rubric = band.EM_RUBRICS[fam]
+        assert "{question}" in rubric and "{answer}" in rubric, fam
+        filled = rubric.replace("{question}", "Q?").replace("{answer}", "A.")
+        assert "{question}" not in filled and "{answer}" not in filled, fam
+        assert "score" in filled.lower(), fam
+        assert "100" in filled, fam
+
+
+# ── stage_corpus remine keeps + split (v10 P1a/P1b) ──────────────────────────
+
+
+def test_keep_wildchat_toxic_field_resolution():
+    """Benign placeholder rows; only the FLAG fields vary (real field shapes)."""
+    base = {
+        "language": "English",
+        "redacted": False,
+        "toxic": True,
+        "conversation": [
+            {"role": "user", "content": "a benign placeholder question, long enough"},
+            {"role": "assistant", "content": "a benign placeholder reply, long enough"},
+        ],
+    }
+    kept, reason = sc._keep_wildchat_toxic(base)
+    assert reason is None
+    assert kept["filter"] == "toxic_kept" and kept["corpus"] == "wildchat"
+    assert kept["id"].startswith("wildchat-")
+    # The INVERTED arm: a non-toxic row rejects (the parent kept exactly these).
+    assert sc._keep_wildchat_toxic({**base, "toxic": False}) == (None, "not_toxic")
+    assert sc._keep_wildchat_toxic({**base, "toxic": None}) == (None, "not_toxic")
+    # Non-inverted arms stay: language + redaction still reject.
+    assert sc._keep_wildchat_toxic({**base, "language": "Portuguese"}) == (None, "language")
+    assert sc._keep_wildchat_toxic({**base, "redacted": True}) == (None, "redacted")
+    assert sc._keep_wildchat_toxic({**base, "conversation": []}) == (None, "no_single_exchange")
+
+
+def test_keep_lmsys_flagged_field_resolution():
+    """openai_moderation is a per-TURN-aligned top-level list; the keep reads
+    the ASSISTANT turn's entry (a flagged user turn alone rejects)."""
+    conv = [
+        {"role": "user", "content": "a benign placeholder question, long enough"},
+        {"role": "assistant", "content": "a benign placeholder reply, long enough"},
+    ]
+    base = {
+        "language": "English",
+        "conversation": conv,
+        "openai_moderation": [{"flagged": False}, {"flagged": True}],
+    }
+    kept, reason = sc._keep_lmsys_flagged(base)
+    assert reason is None
+    assert kept["filter"] == "moderation_flagged_kept" and kept["corpus"] == "lmsys"
+    # Flagged USER turn + clean assistant -> reject (completion is the assistant turn).
+    flipped = {**base, "openai_moderation": [{"flagged": True}, {"flagged": False}]}
+    assert sc._keep_lmsys_flagged(flipped) == (None, "assistant_not_flagged")
+    # Moderation list shorter than the turn index -> reject, never IndexError.
+    short = {**base, "openai_moderation": [{"flagged": True}]}
+    assert sc._keep_lmsys_flagged(short) == (None, "assistant_not_flagged")
+    assert sc._keep_lmsys_flagged({**base, "openai_moderation": None}) == (
+        None,
+        "assistant_not_flagged",
+    )
+    assert sc._keep_lmsys_flagged({**base, "language": "en"}) == (None, "language")
+    assert sc._keep_lmsys_flagged({**base, "conversation": conv[:1]}) == (
+        None,
+        "no_single_exchange",
+    )
+
+
+def test_keep_aita_probed_schema():
+    row = {
+        "id": "abc123",
+        "title": "AITA for a placeholder title",
+        "text": "A benign placeholder dilemma body that is comfortably longer than "
+        "the sixty-four character floor for post text.",
+        "verdict": "NTA",
+        "comment1": "unused",
+        "comment2": "unused",
+        "score": 10,
+    }
+    kept, reason = sc._keep_aita(row)
+    assert reason is None
+    assert kept["post_id"] == "abc123" and kept["id"] == "aita-abc123"
+    assert kept["prompt"].startswith("AITA for a placeholder title\n\n")
+    assert sc._keep_aita({**row, "title": "x"}) == (None, "title_too_short")
+    assert sc._keep_aita({**row, "text": "short"}) == (None, "text_too_short")
+    assert sc._keep_aita({**row, "text": "[removed]"}) == (None, "text_removed_deleted")
+    assert sc._keep_aita({**row, "id": ""}) == (None, "no_post_id")
+
+
+def test_keep_chatdoctor_probed_schema():
+    row = {
+        "instruction": "If you are a doctor, please answer the medical questions.",
+        "input": "A benign placeholder patient question long enough to keep.",
+        "output": "unused",
+    }
+    kept, reason = sc._keep_chatdoctor(row)
+    assert reason is None
+    assert kept["id"] == f"chatdoctor-{kept['post_id']}"
+    assert kept["prompt"] == row["input"].strip()
+    assert sc._keep_chatdoctor({**row, "input": "too short"}) == (None, "too_short")
+    assert sc._keep_chatdoctor({**row, "input": None}) == (None, "empty")
+
+
+def test_split_disjoint_posts_disjoint_sizes_deterministic():
+    rows = [{"post_id": f"p{i}", "prompt": f"prompt {i}"} for i in range(11)]
+    a, b = sc.split_disjoint_posts(rows, cap=100, seed=7)
+    assert len(a) == 6 and len(b) == 5  # (n+1)//2 split, no row lost below cap
+    assert {r["post_id"] for r in a} & {r["post_id"] for r in b} == set()
+    a2, b2 = sc.split_disjoint_posts(rows, cap=100, seed=7)
+    assert a == a2 and b == b2  # deterministic under the seed
+    a3, b3 = sc.split_disjoint_posts(rows, cap=3, seed=7)
+    assert len(a3) == 3 and len(b3) == 3
+    assert {r["post_id"] for r in a3} & {r["post_id"] for r in b3} == set()
+
+
+def test_dedup_by_post_id_first_wins():
+    rows = [
+        {"post_id": "a", "prompt": "first"},
+        {"post_id": "a", "prompt": "duplicate"},
+        {"post_id": "b", "prompt": "second"},
+    ]
+    deduped, n_dup = sc._dedup_by_post_id(rows)
+    assert n_dup == 1
+    assert [r["prompt"] for r in deduped] == ["first", "second"]
+
+
+def test_stage_prompt_budget_filter_max_over_tokenizers():
+    class _NTok:
+        def __init__(self, mult):
+            self.mult = mult
+
+        def __call__(self, text, add_special_tokens=False):
+            return {"input_ids": list(range(self.mult * len(text.split())))}
+
+    rows = [{"prompt": "one two three"}, {"prompt": " ".join(["w"] * 1000)}]
+    kept, n_over = sc._stage_prompt_budget_filter(
+        rows, budget=1800, tokenizers=[_NTok(1), _NTok(2)]
+    )
+    # Row 2: max(1000, 2000) = 2000 > 1800 -> dropped-and-counted, never truncated.
+    assert [r["prompt"] for r in kept] == ["one two three"]
+    assert n_over == 1
+
+
+def test_stage_corpus_phase_registry_remine_order():
+    names = list(sc.PHASES)
+    for p in ("found_toxic", "aita", "chatdoctor"):
+        assert p in names
+    # aita/chatdoctor AFTER prompts (their files are the final state under
+    # --phase all) and BEFORE rollouts (which consumes them).
+    assert names.index("prompts") < names.index("aita") < names.index("rollouts")
+    assert names.index("prompts") < names.index("chatdoctor") < names.index("rollouts")
+
+
+def test_stage_corpus_upload_mapping_remine_prefixes_disjoint():
+    parent = sc._upload_mapping(False)
+    remine = sc._upload_mapping(True)
+    assert set(parent) == set(remine)  # same local subdirs
+    for sub in parent:
+        assert parent[sub] != remine[sub], sub
+        assert "remine_" in remine[sub], sub
+
+
+# ── trait_eval v10: cap raise + LMSYS gen filter + ARMED gen_regen ───────────
+
+
+class _CountTok:
+    """Whitespace tokenizer with the encode surface _gen_surfaces/gen_regen use."""
+
+    def apply_chat_template(self, messages, tokenize=False, add_generation_prompt=False):
+        return " ".join(m["content"] for m in messages)
+
+    def encode(self, text, add_special_tokens=False):
+        return list(range(len(text.split())))
+
+
+def test_cap_hit_cells_mirrors_judge_membership():
+    rows = [
+        {"surface_id": "paper-evil-00", "finish_reason": "length"},
+        {"surface_id": "paper-evil-01", "finish_reason": "stop"},
+        {"surface_id": "paper-sycophancy-00", "finish_reason": "stop"},
+        {"surface_id": "lmsys-000", "finish_reason": "length"},
+    ]
+    cells = te._cap_hit_cells(rows)
+    assert set(cells) == set(te.lib.TRAITS)
+    # evil: its 2 paper rows + the lmsys row -> 2/3 capped.
+    assert cells["evil"] == {"n": 3, "cap_hit_fraction": pytest.approx(2 / 3)}
+    # sycophancy: 1 paper row + the lmsys row -> 1/2 capped.
+    assert cells["sycophancy"] == {"n": 2, "cap_hit_fraction": 0.5}
+
+
+def test_gen_surfaces_lmsys_generation_only_filter(tmp_path):
+    surfaces = [
+        {"surface_id": "paper-evil-00", "kind": "paper", "prompt": " ".join(["w"] * 3000)},
+        {"surface_id": "lmsys-000", "kind": "lmsys", "prompt": " ".join(["w"] * 3000)},
+        {"surface_id": "lmsys-001", "kind": "lmsys", "prompt": "short benign question"},
+    ]
+    p5 = tmp_path / "p5"
+    p5.mkdir()
+    (p5 / "capture_surfaces.json").write_text(json.dumps({"rows": surfaces}))
+    args = SimpleNamespace(p5_root=str(p5), max_prompts=None)
+    kept, n_skipped = te._gen_surfaces(args, _CountTok())
+    # ONLY the overlong LMSYS row drops (generation-only; paper rows always kept).
+    assert n_skipped == 1
+    assert [r["surface_id"] for r in kept] == ["paper-evil-00", "lmsys-001"]
+
+
+def test_gen_fingerprint_keys_cap_and_lmsys_filter(tmp_path, monkeypatch):
+    p5 = tmp_path / "p5"
+    p5.mkdir()
+    (p5 / "capture_surfaces.json").write_text(json.dumps({"rows": []}))
+    args = SimpleNamespace(p5_root=str(p5), max_prompts=None, n_rollouts=2, max_new_tokens=2048)
+    fp = te._gen_fingerprint(args)
+    assert fp["max_new_tokens"] == 2048  # args-threaded, not the lib constant
+    assert fp["lmsys_gen_max_prompt_tokens"] == C.LMSYS_GEN_MAX_PROMPT_TOKENS == 1900
+    args2 = SimpleNamespace(p5_root=str(p5), max_prompts=None, n_rollouts=2, max_new_tokens=1000)
+    assert te._gen_fingerprint(args2) != fp  # a cap change invalidates gen resume
+
+
+def _gen_regen_fixture(tmp_path: Path, *, capped: int = 2, clean: int = 2) -> tuple:
+    """gen payloads (base + one adapter cell) with ``capped`` length rows each."""
+    from explore_persona_space.experiments.issue_2221.loaders import write_fingerprint
+
+    out_root = tmp_path / "p6"
+    ckpt_root = tmp_path / "ckpt"
+    cell = "mistake_medical_misaligned_2"
+    (ckpt_root / cell).mkdir(parents=True)
+    (ckpt_root / cell / "adapter_config.json").write_text("{}")
+    out_dir = out_root / "eval_rollouts"
+    out_dir.mkdir(parents=True)
+    for tag in ("base", cell):
+        rows = []
+        for i in range(capped + clean):
+            rows.append(
+                {
+                    "surface_id": f"paper-evil-{i:02d}" if i % 2 == 0 else f"lmsys-{i:03d}",
+                    "kind": "paper" if i % 2 == 0 else "lmsys",
+                    "seed": i,
+                    "prompt": f"benign question {i}",
+                    "response": f"truncated answer {i}",
+                    "finish_reason": "length" if i < capped else "stop",
+                }
+            )
+        n_cap = sum(1 for r in rows if r["finish_reason"] == "length")
+        payload = {
+            "rows": rows,
+            "cap_hit_fraction": n_cap / len(rows),
+            "max_new_tokens": 16,
+            "regen_trigger": n_cap / len(rows) > C.CAP_HIT_REGEN_THRESHOLD,
+        }
+        dest = out_dir / f"{tag}.json"
+        dest.write_text(json.dumps(payload, indent=2))
+        write_fingerprint(dest, {"probe": "fp-untouched"})
+    args = SimpleNamespace(
+        out_root=str(out_root),
+        ckpt_root=str(ckpt_root),
+        cells=[cell],
+        max_new_tokens=16,
+        regen_max_new_tokens=64,
+        regen_max_model_len=8192,
+        gpu_mem_util=0.5,
+        force=False,
+    )
+    return out_root, ckpt_root, cell, args
+
+
+class _FakeGenRegenLLM:
+    """Boundary fake of the LLM.generate surface phase_gen_regen touches."""
+
+    def __init__(self):
+        self.calls = []
+
+    def generate(self, prompts, sampling_params, *, lora_request=None, use_tqdm=True):
+        assert use_tqdm is False
+        assert isinstance(sampling_params, list) and len(sampling_params) == len(prompts)
+        self.calls.append((list(prompts), list(sampling_params), lora_request))
+        return [
+            SimpleNamespace(outputs=[SimpleNamespace(text=f"regen text {i}", finish_reason="stop")])
+            for i in range(len(prompts))
+        ]
+
+
+def _patch_gen_regen_seams(monkeypatch, fake, built: list):
+    def _fake_engine(
+        model_name=lib778.MODEL_NAME,
+        gpu_memory_utilization=0.5,
+        max_model_len=lib778.VLLM_MAX_MODEL_LEN,
+    ):
+        built.append(
+            {"gpu_memory_utilization": gpu_memory_utilization, "max_model_len": max_model_len}
+        )
+        return fake
+
+    monkeypatch.setattr(te.lib, "build_vllm_engine", _fake_engine)
+    monkeypatch.setattr(te.lib, "reap_vllm_engine", lambda llm: None)
+    monkeypatch.setattr(te, "_tokenizer", lambda: _CountTok())
+
+
+@pytest.mark.slow  # imports vllm for SamplingParams/LoRARequest (no engine is built)
+def test_phase_gen_regen_production_body(tmp_path, monkeypatch):
+    """REAL phase_gen_regen body: dedicated 8192 engine, per-row seeds, LoRA
+    threading, in-place splice, fp sidecar untouched, idempotent skip."""
+    pytest.importorskip("vllm")
+    out_root, _ckpt, cell, args = _gen_regen_fixture(tmp_path)
+    out_dir = out_root / "eval_rollouts"
+    fp_before = (out_dir / "base.json.fp.json").read_bytes()
+    fake = _FakeGenRegenLLM()
+    built: list = []
+    _patch_gen_regen_seams(monkeypatch, fake, built)
+    te.phase_gen_regen(args)
+    # ONE lazily-built engine, at the DEDICATED regen window (the Must-Fix).
+    assert built == [{"gpu_memory_utilization": 0.5, "max_model_len": 8192}]
+    # base leg first (no LoRA), then the adapter cell (LoRARequest threaded).
+    assert fake.calls[0][2] is None
+    assert fake.calls[1][2] is not None and fake.calls[1][2].lora_name == cell
+    # Per-row SamplingParams keep each row's OWN seed at the regen cap.
+    _, sps, _ = fake.calls[0]
+    assert [sp.seed for sp in sps] == [0, 1]
+    assert all(sp.max_tokens == 64 for sp in sps)
+    for tag in ("base", cell):
+        payload = json.loads((out_dir / f"{tag}.json").read_text())
+        regen_rows = [r for r in payload["rows"] if "regenerated_at_max_tokens" in r]
+        assert len(regen_rows) == 2
+        assert all(r["response"].startswith("regen text") for r in regen_rows)
+        assert all(r["finish_reason"] == "stop" for r in regen_rows)
+        # Untouched rows keep their original text.
+        stop_rows = [r for r in payload["rows"] if "regenerated_at_max_tokens" not in r]
+        assert all(r["response"].startswith("truncated answer") for r in stop_rows)
+        assert payload["cap_hit_fraction"] == 0.0
+        assert payload["regen_applied"] == {
+            "regen_max_new_tokens": 64,
+            "regen_max_model_len": 8192,
+            "regen_n_rows": 2,
+            "regen_overlong_skipped": 0,
+            "pre_regen_cap_hit_fraction": 0.5,
+        }
+        assert "cap_hit_by_trait" in payload
+    # The gen FINGERPRINT sidecar is byte-untouched (gen keeps resume-skipping;
+    # the judge phases re-run via the changed FILE sha).
+    assert (out_dir / "base.json.fp.json").read_bytes() == fp_before
+    report = json.loads((out_dir / "regen_report.json").read_text())
+    assert report["base"]["triggered"] is True and report[cell]["triggered"] is True
+    assert report["base"]["post_regen_cap_hit_fraction"] == 0.0
+    # Idempotent second run: regen_applied short-circuits, no engine rebuild.
+    te.phase_gen_regen(args)
+    assert len(built) == 1 and len(fake.calls) == 2
+
+
+@pytest.mark.slow  # imports vllm at phase entry (no engine is built)
+def test_phase_gen_regen_guards_and_no_trigger_skip(tmp_path, monkeypatch):
+    pytest.importorskip("vllm")
+    # (a) budget <= 0 (the inert v10 shape) fails LOUD before any work.
+    _root, _ckpt, _cell, args = _gen_regen_fixture(tmp_path)
+    fake = _FakeGenRegenLLM()
+    built: list = []
+    _patch_gen_regen_seams(monkeypatch, fake, built)
+    bad = SimpleNamespace(**{**vars(args), "regen_max_model_len": 64})
+    with pytest.raises(ValueError, match="inert-regen shape"):
+        te.phase_gen_regen(bad)
+    # (b) regen cap below the >=2x floor fails LOUD per tag.
+    low = SimpleNamespace(**{**vars(args), "regen_max_new_tokens": 24})
+    with pytest.raises(ValueError, match="2x the original cap"):
+        te.phase_gen_regen(low)
+    # (c) below-threshold cells record triggered=False and build NO engine.
+    out_root2 = tmp_path / "two"
+    out_root2.mkdir()
+    _o, _c, _cell2, args2 = _gen_regen_fixture(out_root2, capped=0, clean=4)
+    te.phase_gen_regen(args2)
+    assert built == [] and fake.calls == []
+    report = json.loads((Path(args2.out_root) / "eval_rollouts" / "regen_report.json").read_text())
+    assert all(d["triggered"] is False for d in report.values())
+    # (d) overlong rows at the regen budget are COUNTED, never silently kept.
+    out_root3 = tmp_path / "three"
+    out_root3.mkdir()
+    _o3, _c3, _cell3, args3 = _gen_regen_fixture(out_root3)
+    for tag_file in (Path(args3.out_root) / "eval_rollouts").glob("*.json"):
+        if tag_file.name.endswith(".fp.json"):
+            continue
+        payload = json.loads(tag_file.read_text())
+        for r in payload["rows"]:
+            if r["finish_reason"] == "length":
+                r["prompt"] = " ".join(["w"] * 9000)  # > 8192-64 budget
+        tag_file.write_text(json.dumps(payload))
+    te.phase_gen_regen(args3)
+    assert built == [] and fake.calls == []  # nothing regenerable -> no engine
+    report3 = json.loads((Path(args3.out_root) / "eval_rollouts" / "regen_report.json").read_text())
+    assert all(
+        d["regen_overlong_skipped"] == 2 and d["regen_n_rows"] == 0 for d in report3.values()
+    )
+
+
+def test_realized_gen_cap_reads_payload_not_args(tmp_path):
+    out_root = tmp_path / "p6"
+    (out_root / "eval_rollouts").mkdir(parents=True)
+    args = SimpleNamespace(out_root=str(out_root), max_new_tokens=2048)
+    # No payload yet -> args fallback.
+    assert te._realized_gen_cap(args)["max_new_tokens"] == 2048
+    (out_root / "eval_rollouts" / "base.json").write_text(
+        json.dumps(
+            {
+                "rows": [],
+                "max_new_tokens": 16,
+                "n_lmsys_overlong_skipped": 3,
+                "regen_applied": {"regen_max_new_tokens": 4096},
+            }
+        )
+    )
+    got = te._realized_gen_cap(args)
+    assert got["max_new_tokens"] == 16  # the REALIZED cap, never re-derived
+    assert got["regen_applied"] == {"regen_max_new_tokens": 4096}
+    assert got["n_lmsys_overlong_skipped"] == 3
+
+
+def test_trait_eval_phase_registry_gen_regen_between_gen_and_pilot():
+    names = list(te.PHASES)
+    assert names.index("gen") < names.index("gen_regen") < names.index("pilot")
+
+
+def test_smoke_step_registry_covers_remine_sources():
+    """Wiring pin: the smoke enumerates one step per remine SOURCE CLASS and
+    the production-cap regen probe; the paper-prompts step is retired."""
+    src = Path(smoke.__file__).read_text()
+    for step in (
+        '"corpus_found_toxic"',
+        '"corpus_aita"',
+        '"corpus_chatdoctor"',
+        '"trait_eval_regen_probe"',
+    ):
+        assert step in src, step
+    assert '"corpus_prompts"' not in src
+    assert smoke.SMOKE_BAND_FAMILIES == (
+        "mistake_medical",
+        "sycophancy",
+        "mistake_opinions",
+        "evil",
+    )
+    assert smoke.SMOKE_EM_LIKE == ("sycophancy",)
+
+
+def test_constants_two_tier_and_eval_cap_values():
+    assert C.TRAIN_DROP_FLOOR_ROWS == 16
+    assert C.TRAIN_MEANINGFUL_ROWS == 160
+    assert C.EVAL_MAX_NEW_TOKENS == 2048
+    assert C.EVAL_REGEN_MAX_MODEL_LEN == 8192
+    assert C.LMSYS_GEN_MAX_PROMPT_TOKENS < lib778.VLLM_MAX_MODEL_LEN - C.EVAL_MAX_NEW_TOKENS
+    assert set(C.REMINE_FAMILIES) == {"evil", "sycophancy", "mistake_opinions", "mistake_medical"}
