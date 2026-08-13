@@ -1,0 +1,2598 @@
+{
+  "commit": "5eb343f5",
+  "git_commit": "5eb343f5",
+  "git_dirty": false,
+  "created": "2026-08-13T04:04:30Z",
+  "figsize": [
+    7.2,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.1306879112599266,
+      "held-out R\u00b2 of cell-to-cell context map": 0.5500590264425288,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.19100188084463057,
+      "held-out R\u00b2 of cell-to-cell context map": 0.4797192060333112,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.11545237441595116,
+      "held-out R\u00b2 of cell-to-cell context map": 0.5557998254178129,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.14447375476931448,
+      "held-out R\u00b2 of cell-to-cell context map": 0.5855392975428457,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.25304807738022306,
+      "held-out R\u00b2 of cell-to-cell context map": 0.45525512456569484,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09438797670538393,
+      "held-out R\u00b2 of cell-to-cell context map": 0.31982946942981816,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.13299485364173647,
+      "held-out R\u00b2 of cell-to-cell context map": 0.5338477778000661,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1285084250501483,
+      "held-out R\u00b2 of cell-to-cell context map": 0.4550161669543117,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.24693954611840174,
+      "held-out R\u00b2 of cell-to-cell context map": 0.45466585613234595,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1889305311787979,
+      "held-out R\u00b2 of cell-to-cell context map": 0.5496851067537298,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.20325635563813538,
+      "held-out R\u00b2 of cell-to-cell context map": 0.47706843942858057,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10318230200725168,
+      "held-out R\u00b2 of cell-to-cell context map": 0.2523796468787601,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.15410427838548038,
+      "held-out R\u00b2 of cell-to-cell context map": 0.2688081982409991,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12190290961125061,
+      "held-out R\u00b2 of cell-to-cell context map": 0.17211055280177007,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.19018544421108038,
+      "held-out R\u00b2 of cell-to-cell context map": 0.799271158359149,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.22909703007874016,
+      "held-out R\u00b2 of cell-to-cell context map": 0.2651398893602594,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.17017473833714974,
+      "held-out R\u00b2 of cell-to-cell context map": 0.1630297552654519,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.25851289390124843,
+      "held-out R\u00b2 of cell-to-cell context map": 0.48021555755571266,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12102638904133523,
+      "held-out R\u00b2 of cell-to-cell context map": 0.27237270982708944,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.15630040815802831,
+      "held-out R\u00b2 of cell-to-cell context map": 0.12739914984651576,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.13354420678463272,
+      "held-out R\u00b2 of cell-to-cell context map": 0.7144096570122758,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.20618532573662368,
+      "held-out R\u00b2 of cell-to-cell context map": 0.24187865343307918,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09527435560891742,
+      "held-out R\u00b2 of cell-to-cell context map": 0.08985242968283202,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10923819816200442,
+      "held-out R\u00b2 of cell-to-cell context map": 0.5847556042504175,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12989097052672285,
+      "held-out R\u00b2 of cell-to-cell context map": 0.4215510152904868,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.23496503258664583,
+      "held-out R\u00b2 of cell-to-cell context map": 0.3688643173349426,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.18599021932913384,
+      "held-out R\u00b2 of cell-to-cell context map": 0.5535855245258613,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2621153221582988,
+      "held-out R\u00b2 of cell-to-cell context map": 0.5266053408901699,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.24222789142784137,
+      "held-out R\u00b2 of cell-to-cell context map": 0.4499648803650852,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.14705118841635817,
+      "held-out R\u00b2 of cell-to-cell context map": 0.31404746820737756,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1359428119365929,
+      "held-out R\u00b2 of cell-to-cell context map": 0.4918919954081552,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0958482481618422,
+      "held-out R\u00b2 of cell-to-cell context map": 0.3387317301923174,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.21135143553513264,
+      "held-out R\u00b2 of cell-to-cell context map": 0.459768785683524,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2033172529137236,
+      "held-out R\u00b2 of cell-to-cell context map": 0.5314567609659188,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.18547995397035455,
+      "held-out R\u00b2 of cell-to-cell context map": 0.438604548619929,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.23589515536482858,
+      "held-out R\u00b2 of cell-to-cell context map": 0.2552719329846422,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2466141290396151,
+      "held-out R\u00b2 of cell-to-cell context map": 0.2635223076886569,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.18437311327933192,
+      "held-out R\u00b2 of cell-to-cell context map": 0.22949636387681868,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.22915631717084084,
+      "held-out R\u00b2 of cell-to-cell context map": 0.7337543115071667,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.14943348095714815,
+      "held-out R\u00b2 of cell-to-cell context map": 0.2662930658181587,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.19131265460298047,
+      "held-out R\u00b2 of cell-to-cell context map": 0.24937276390419988,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12011792470958926,
+      "held-out R\u00b2 of cell-to-cell context map": 0.44957545818205735,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.14395228163959514,
+      "held-out R\u00b2 of cell-to-cell context map": 0.2870683069939782,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2137740045512326,
+      "held-out R\u00b2 of cell-to-cell context map": 0.23200958172526082,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12019323574886381,
+      "held-out R\u00b2 of cell-to-cell context map": 0.5542185415606931,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12514241565057566,
+      "held-out R\u00b2 of cell-to-cell context map": 0.25635966356248313,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2002538917745686,
+      "held-out R\u00b2 of cell-to-cell context map": 0.21669905053570196,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.21810094129255606,
+      "held-out R\u00b2 of cell-to-cell context map": 0.5524023628752619,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.21284919071549557,
+      "held-out R\u00b2 of cell-to-cell context map": 0.0033196136425841516,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11515544704967576,
+      "held-out R\u00b2 of cell-to-cell context map": 0.007675447437681049,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1259834764455195,
+      "held-out R\u00b2 of cell-to-cell context map": 0.0033196136425841516,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09132520855518099,
+      "held-out R\u00b2 of cell-to-cell context map": 0.007675447437681049,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.2316463879503849,
+      "held-out R\u00b2 of cell-to-cell context map": -9.356725920115495e-05,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.2096731541865658,
+      "held-out R\u00b2 of cell-to-cell context map": -9.356725920115495e-05,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.21692976815274032,
+      "held-out R\u00b2 of cell-to-cell context map": -3.397057603309328e-05,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.23053122558395422,
+      "held-out R\u00b2 of cell-to-cell context map": -3.397057603309328e-05,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1726048395969012,
+      "held-out R\u00b2 of cell-to-cell context map": 0.007524202273199521,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.19237341527152085,
+      "held-out R\u00b2 of cell-to-cell context map": 0.010951305522300659,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11516345966297833,
+      "held-out R\u00b2 of cell-to-cell context map": 0.007524202273199521,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11061541323647522,
+      "held-out R\u00b2 of cell-to-cell context map": 0.010951305522300659,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.21031253312228487,
+      "held-out R\u00b2 of cell-to-cell context map": -9.916502019280404e-05,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.17479731710576385,
+      "held-out R\u00b2 of cell-to-cell context map": -9.916502019280404e-05,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.19174249916661398,
+      "held-out R\u00b2 of cell-to-cell context map": -5.3511965200536695e-06,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.2276997943348846,
+      "held-out R\u00b2 of cell-to-cell context map": -5.3511965200536695e-06,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8442492976001064,
+      "held-out R\u00b2 of cell-to-cell context map": 0.23908710603141553,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8296442921184393,
+      "held-out R\u00b2 of cell-to-cell context map": 0.16616335078932676,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8306572889341745,
+      "held-out R\u00b2 of cell-to-cell context map": 0.20374589231440768,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7847110176512703,
+      "held-out R\u00b2 of cell-to-cell context map": 0.2643675852323431,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7355472102222291,
+      "held-out R\u00b2 of cell-to-cell context map": 0.18922429999852486,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8086091300618253,
+      "held-out R\u00b2 of cell-to-cell context map": 0.21995211150282462,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7686252411075153,
+      "held-out R\u00b2 of cell-to-cell context map": 0.05405309221171817,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8035351558704346,
+      "held-out R\u00b2 of cell-to-cell context map": 0.06147319240847695,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8836125531882699,
+      "held-out R\u00b2 of cell-to-cell context map": 0.08375151357115307,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7721091074557614,
+      "held-out R\u00b2 of cell-to-cell context map": 0.06165983788478833,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.740494493504032,
+      "held-out R\u00b2 of cell-to-cell context map": 0.06740160233899746,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7806491005639594,
+      "held-out R\u00b2 of cell-to-cell context map": 0.09083578995648196,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7828468763980031,
+      "held-out R\u00b2 of cell-to-cell context map": 0.1912647387288285,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8491449726508412,
+      "held-out R\u00b2 of cell-to-cell context map": 0.1395807690486423,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8302657874214302,
+      "held-out R\u00b2 of cell-to-cell context map": 0.1755646266228867,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8711016776391545,
+      "held-out R\u00b2 of cell-to-cell context map": 0.21430635570892953,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8495764372589298,
+      "held-out R\u00b2 of cell-to-cell context map": 0.15980886442907524,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8031496350592128,
+      "held-out R\u00b2 of cell-to-cell context map": 0.18652832913787992,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8765236692398863,
+      "held-out R\u00b2 of cell-to-cell context map": 0.0657561489062594,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7600551255833867,
+      "held-out R\u00b2 of cell-to-cell context map": 0.06780668112090862,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7340881731640949,
+      "held-out R\u00b2 of cell-to-cell context map": 0.08496980190331445,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7462086149396155,
+      "held-out R\u00b2 of cell-to-cell context map": 0.09597383916204716,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8600246831073611,
+      "held-out R\u00b2 of cell-to-cell context map": 0.10139348391122356,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8131379014452498,
+      "held-out R\u00b2 of cell-to-cell context map": 0.1088423668826238,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7590289202260484,
+      "held-out R\u00b2 of cell-to-cell context map": 0.808985472264743,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8201880595186055,
+      "held-out R\u00b2 of cell-to-cell context map": 0.8210079939354081,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7574161784883704,
+      "held-out R\u00b2 of cell-to-cell context map": 0.7880913154402787,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8553376675139925,
+      "held-out R\u00b2 of cell-to-cell context map": 0.7570533630093095,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8103081296033255,
+      "held-out R\u00b2 of cell-to-cell context map": 0.7807746568617352,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7985838206973669,
+      "held-out R\u00b2 of cell-to-cell context map": 0.743819826284337,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7842721760466178,
+      "held-out R\u00b2 of cell-to-cell context map": 0.2588377686370607,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8434508667614,
+      "held-out R\u00b2 of cell-to-cell context map": 0.17409222461493234,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7951262698996103,
+      "held-out R\u00b2 of cell-to-cell context map": 0.2259795959905416,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7457769854768983,
+      "held-out R\u00b2 of cell-to-cell context map": 0.28677164782649134,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7512410623816929,
+      "held-out R\u00b2 of cell-to-cell context map": 0.19704921019372676,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9031415796189126,
+      "held-out R\u00b2 of cell-to-cell context map": 0.24454695323662706,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8935445243273693,
+      "held-out R\u00b2 of cell-to-cell context map": 0.08264757861103833,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.855947284085935,
+      "held-out R\u00b2 of cell-to-cell context map": 0.06564694416878969,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7778565930627136,
+      "held-out R\u00b2 of cell-to-cell context map": 0.10303251624562977,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9044517479225904,
+      "held-out R\u00b2 of cell-to-cell context map": 0.09754165817845936,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8701751627138431,
+      "held-out R\u00b2 of cell-to-cell context map": 0.07594825743338071,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8590402340486193,
+      "held-out R\u00b2 of cell-to-cell context map": 0.11725597940152019,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.810885070385882,
+      "held-out R\u00b2 of cell-to-cell context map": 0.21218186653068277,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7790034811321287,
+      "held-out R\u00b2 of cell-to-cell context map": 0.1394719000893217,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.74735037318763,
+      "held-out R\u00b2 of cell-to-cell context map": 0.17873847960877462,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8924684313778916,
+      "held-out R\u00b2 of cell-to-cell context map": 0.23652421478148358,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8120397321700501,
+      "held-out R\u00b2 of cell-to-cell context map": 0.16210176983493485,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7664254056631415,
+      "held-out R\u00b2 of cell-to-cell context map": 0.18822175019792992,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7850721923471176,
+      "held-out R\u00b2 of cell-to-cell context map": 0.08014168364822098,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8342595224095414,
+      "held-out R\u00b2 of cell-to-cell context map": 0.07651550539352503,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7618191009290618,
+      "held-out R\u00b2 of cell-to-cell context map": 0.08751508006243347,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8841905711366277,
+      "held-out R\u00b2 of cell-to-cell context map": 0.11015810953543101,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8665335153703378,
+      "held-out R\u00b2 of cell-to-cell context map": 0.10913930618844865,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8595033320711687,
+      "held-out R\u00b2 of cell-to-cell context map": 0.114153543265439,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8077767471595187,
+      "held-out R\u00b2 of cell-to-cell context map": 0.8004498902540348,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8429155913264399,
+      "held-out R\u00b2 of cell-to-cell context map": 0.8411648117958208,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8351376344042925,
+      "held-out R\u00b2 of cell-to-cell context map": 0.8061095825371764,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8469723882798676,
+      "held-out R\u00b2 of cell-to-cell context map": 0.7419938630812329,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7451999778051801,
+      "held-out R\u00b2 of cell-to-cell context map": 0.7900866811707872,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8048453323907098,
+      "held-out R\u00b2 of cell-to-cell context map": 0.7561836143133981,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7374905512951407,
+      "held-out R\u00b2 of cell-to-cell context map": 0.21988821955462212,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8189183474640135,
+      "held-out R\u00b2 of cell-to-cell context map": 0.21769320169340908,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7893750182199014,
+      "held-out R\u00b2 of cell-to-cell context map": 0.18822174656622356,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7560143539958886,
+      "held-out R\u00b2 of cell-to-cell context map": 0.24892897978576412,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7486125341900594,
+      "held-out R\u00b2 of cell-to-cell context map": 0.24095982042008107,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8357760229919883,
+      "held-out R\u00b2 of cell-to-cell context map": 0.2032421425113773,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7607067343366396,
+      "held-out R\u00b2 of cell-to-cell context map": 0.075118528916052,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8965216213078235,
+      "held-out R\u00b2 of cell-to-cell context map": 0.05252677538528831,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8345910051460712,
+      "held-out R\u00b2 of cell-to-cell context map": 0.08411682019526714,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7924365648162708,
+      "held-out R\u00b2 of cell-to-cell context map": 0.08975608615392938,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8363647884666551,
+      "held-out R\u00b2 of cell-to-cell context map": 0.059923376174262355,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7341046967853456,
+      "held-out R\u00b2 of cell-to-cell context map": 0.09428724093731292,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9025406583834602,
+      "held-out R\u00b2 of cell-to-cell context map": 0.18641929459818304,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.816814618649722,
+      "held-out R\u00b2 of cell-to-cell context map": 0.1819171252582626,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8708923409050515,
+      "held-out R\u00b2 of cell-to-cell context map": 0.16036155667798785,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.744891399986039,
+      "held-out R\u00b2 of cell-to-cell context map": 0.2152199918189286,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8175984995508689,
+      "held-out R\u00b2 of cell-to-cell context map": 0.20136697782358595,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8183272589838139,
+      "held-out R\u00b2 of cell-to-cell context map": 0.1742450909372038,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.898808761895497,
+      "held-out R\u00b2 of cell-to-cell context map": 0.0722246262366251,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8329110494276937,
+      "held-out R\u00b2 of cell-to-cell context map": 0.06479071200483996,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8152280921902517,
+      "held-out R\u00b2 of cell-to-cell context map": 0.07738607942595385,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7780556193565409,
+      "held-out R\u00b2 of cell-to-cell context map": 0.09821165852258892,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7896824195216594,
+      "held-out R\u00b2 of cell-to-cell context map": 0.09414798882951685,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8237210324448768,
+      "held-out R\u00b2 of cell-to-cell context map": 0.10566725290999553,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8090040628549084,
+      "held-out R\u00b2 of cell-to-cell context map": 0.813578287403255,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7338901743784596,
+      "held-out R\u00b2 of cell-to-cell context map": 0.8442723373910729,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8787325463549844,
+      "held-out R\u00b2 of cell-to-cell context map": 0.8033679583276252,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.891308938931158,
+      "held-out R\u00b2 of cell-to-cell context map": 0.7739280641405694,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.75524483601975,
+      "held-out R\u00b2 of cell-to-cell context map": 0.7929024346651726,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8297265058370289,
+      "held-out R\u00b2 of cell-to-cell context map": 0.7596551965981228,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7495436334043799,
+      "held-out R\u00b2 of cell-to-cell context map": 0.23977014985193623,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8510032167471662,
+      "held-out R\u00b2 of cell-to-cell context map": 0.24455732047632878,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7806220810910216,
+      "held-out R\u00b2 of cell-to-cell context map": 0.16163635783889668,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8486960742445424,
+      "held-out R\u00b2 of cell-to-cell context map": 0.2631363077583665,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8608590305716389,
+      "held-out R\u00b2 of cell-to-cell context map": 0.26298358841711594,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8683565485451783,
+      "held-out R\u00b2 of cell-to-cell context map": 0.1820420996029604,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7493933702720614,
+      "held-out R\u00b2 of cell-to-cell context map": 0.08530266957007784,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8948821321247695,
+      "held-out R\u00b2 of cell-to-cell context map": 0.07831221455948881,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7714385183610786,
+      "held-out R\u00b2 of cell-to-cell context map": 0.06174731235460098,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7367342601117124,
+      "held-out R\u00b2 of cell-to-cell context map": 0.10097154648125688,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8298734444904671,
+      "held-out R\u00b2 of cell-to-cell context map": 0.08793521100301856,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.796766011095239,
+      "held-out R\u00b2 of cell-to-cell context map": 0.07521221548561426,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8793621537638344,
+      "held-out R\u00b2 of cell-to-cell context map": 0.20080385611706753,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8754852649715744,
+      "held-out R\u00b2 of cell-to-cell context map": 0.19309325089712384,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7870850007080888,
+      "held-out R\u00b2 of cell-to-cell context map": 0.13453362816372122,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9015218911125542,
+      "held-out R\u00b2 of cell-to-cell context map": 0.22391506615894471,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7823652108652214,
+      "held-out R\u00b2 of cell-to-cell context map": 0.20607833148607693,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8227102832617087,
+      "held-out R\u00b2 of cell-to-cell context map": 0.15259946211082553,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7760737163021686,
+      "held-out R\u00b2 of cell-to-cell context map": 0.08574156695165883,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8984878426088134,
+      "held-out R\u00b2 of cell-to-cell context map": 0.07984646031720441,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7596294071647633,
+      "held-out R\u00b2 of cell-to-cell context map": 0.07329400448311814,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7380839114906192,
+      "held-out R\u00b2 of cell-to-cell context map": 0.11127279743266474,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8083174708005469,
+      "held-out R\u00b2 of cell-to-cell context map": 0.10661377770881475,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9086276015300507,
+      "held-out R\u00b2 of cell-to-cell context map": 0.1089128211582427,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8905019079258846,
+      "held-out R\u00b2 of cell-to-cell context map": 0.7862924935773227,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8647494435022509,
+      "held-out R\u00b2 of cell-to-cell context map": 0.8184423811816224,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8903426483581345,
+      "held-out R\u00b2 of cell-to-cell context map": 0.8109570614625939,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8908203951456154,
+      "held-out R\u00b2 of cell-to-cell context map": 0.7472355556345363,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8233945048695609,
+      "held-out R\u00b2 of cell-to-cell context map": 0.772182304482838,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7868672293295428,
+      "held-out R\u00b2 of cell-to-cell context map": 0.7690861169323558,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.2289622377799778,
+      "held-out R\u00b2 of cell-to-cell context map": 0.003603155239764777,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.209099027370197,
+      "held-out R\u00b2 of cell-to-cell context map": 0.005190993447282621,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1572583911972678,
+      "held-out R\u00b2 of cell-to-cell context map": 0.008577561928932642,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1070040002510726,
+      "held-out R\u00b2 of cell-to-cell context map": 0.006054972053331009,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2244221300428246,
+      "held-out R\u00b2 of cell-to-cell context map": 0.006712811596622714,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1372428928661156,
+      "held-out R\u00b2 of cell-to-cell context map": 0.010569609898629673,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2586263670960802,
+      "held-out R\u00b2 of cell-to-cell context map": 0.003603155239764777,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.133374703501023,
+      "held-out R\u00b2 of cell-to-cell context map": 0.0051525002744956085,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1120964278340675,
+      "held-out R\u00b2 of cell-to-cell context map": 0.008540907950529064,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.239600280982483,
+      "held-out R\u00b2 of cell-to-cell context map": 0.006054972053331009,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.117591176992409,
+      "held-out R\u00b2 of cell-to-cell context map": 0.006954364953735803,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.122268295468393,
+      "held-out R\u00b2 of cell-to-cell context map": 0.010550003289552867,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1978889024737518,
+      "held-out R\u00b2 of cell-to-cell context map": 0.002591476724285102,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2474211673507436,
+      "held-out R\u00b2 of cell-to-cell context map": 0.003482740900530601,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.125358239828623,
+      "held-out R\u00b2 of cell-to-cell context map": 0.004740548610250394,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.145858261122017,
+      "held-out R\u00b2 of cell-to-cell context map": 0.005173677498178231,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2299328708834119,
+      "held-out R\u00b2 of cell-to-cell context map": 0.0037552515438594282,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2649287566909742,
+      "held-out R\u00b2 of cell-to-cell context map": 0.006638232951528234,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1801334135164216,
+      "held-out R\u00b2 of cell-to-cell context map": 0.002591476724285102,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1159015504592251,
+      "held-out R\u00b2 of cell-to-cell context map": 0.003467565115285165,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0925085317874763,
+      "held-out R\u00b2 of cell-to-cell context map": 0.004684205327027513,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1313380853997939,
+      "held-out R\u00b2 of cell-to-cell context map": 0.005173677498178231,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1137279992015738,
+      "held-out R\u00b2 of cell-to-cell context map": 0.004044785127416706,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2119785612503142,
+      "held-out R\u00b2 of cell-to-cell context map": 0.006665653472568489,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1119298508331354,
+      "held-out R\u00b2 of cell-to-cell context map": -0.00045307092983748465,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1811393876917138,
+      "held-out R\u00b2 of cell-to-cell context map": -0.0008473864364696437,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2149672384157195,
+      "held-out R\u00b2 of cell-to-cell context map": 0.00979859450456073,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1946009896597625,
+      "held-out R\u00b2 of cell-to-cell context map": 0.004473394285612197,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1259596172988102,
+      "held-out R\u00b2 of cell-to-cell context map": 0.008083319126073185,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2347424147128072,
+      "held-out R\u00b2 of cell-to-cell context map": 0.012624642937720143,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2187732833308442,
+      "held-out R\u00b2 of cell-to-cell context map": 0.006731420086349504,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2230171207047975,
+      "held-out R\u00b2 of cell-to-cell context map": 0.01093833270272906,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1135903952803163,
+      "held-out R\u00b2 of cell-to-cell context map": 0.00979859450456073,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.112275684657062,
+      "held-out R\u00b2 of cell-to-cell context map": 0.004473394285612197,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2569612591811712,
+      "held-out R\u00b2 of cell-to-cell context map": 0.008083319126073185,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1615640748884892,
+      "held-out R\u00b2 of cell-to-cell context map": 0.012624642937720143,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.144170764520569,
+      "held-out R\u00b2 of cell-to-cell context map": 0.006731420086349504,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.177945128163276,
+      "held-out R\u00b2 of cell-to-cell context map": 0.01093833270272906,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2093155582974449,
+      "held-out R\u00b2 of cell-to-cell context map": 0.0053388837413776095,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2620121862684546,
+      "held-out R\u00b2 of cell-to-cell context map": 0.0013989722661126524,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.14156032083877,
+      "held-out R\u00b2 of cell-to-cell context map": 0.004850321872088758,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2564655172761647,
+      "held-out R\u00b2 of cell-to-cell context map": 0.0071116691006907875,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.094474708449526,
+      "held-out R\u00b2 of cell-to-cell context map": 0.0042060052851510266,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1899356476188283,
+      "held-out R\u00b2 of cell-to-cell context map": 0.006888570531264682,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2041155201025953,
+      "held-out R\u00b2 of cell-to-cell context map": 0.0053388837413776095,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1090615326751356,
+      "held-out R\u00b2 of cell-to-cell context map": 0.0013989722661126524,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1152611274715043,
+      "held-out R\u00b2 of cell-to-cell context map": 0.004850321872088758,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1654405774769345,
+      "held-out R\u00b2 of cell-to-cell context map": 0.0071116691006907875,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2639217441857726,
+      "held-out R\u00b2 of cell-to-cell context map": 0.0042060052851510266,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.197287659582187,
+      "held-out R\u00b2 of cell-to-cell context map": 0.006888570531264682,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.257944179888038,
+      "held-out R\u00b2 of cell-to-cell context map": -0.0006417865355743402,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2347849648103346,
+      "held-out R\u00b2 of cell-to-cell context map": -4.2640323894005405e-06,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1741286882799524,
+      "held-out R\u00b2 of cell-to-cell context map": 0.009244197568942703,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2312574208653937,
+      "held-out R\u00b2 of cell-to-cell context map": 0.0075240948504328165,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0932106211158577,
+      "held-out R\u00b2 of cell-to-cell context map": 0.0049040905387142345,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1096459194178323,
+      "held-out R\u00b2 of cell-to-cell context map": 0.010237733707931329,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2392971506788926,
+      "held-out R\u00b2 of cell-to-cell context map": 0.008842385670927322,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.233427075898529,
+      "held-out R\u00b2 of cell-to-cell context map": 0.006838151910775548,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.131875333553958,
+      "held-out R\u00b2 of cell-to-cell context map": 0.009249758464539792,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1855385263078295,
+      "held-out R\u00b2 of cell-to-cell context map": 0.0075240948504328165,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1990828477260018,
+      "held-out R\u00b2 of cell-to-cell context map": 0.0049040905387142345,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.246193011679682,
+      "held-out R\u00b2 of cell-to-cell context map": 0.01023555907892848,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1985592883209706,
+      "held-out R\u00b2 of cell-to-cell context map": 0.008842385670927322,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1642628824692625,
+      "held-out R\u00b2 of cell-to-cell context map": 0.006838151910775548,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.157353127813293,
+      "held-out R\u00b2 of cell-to-cell context map": 0.007704078282317983,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1666587755472317,
+      "held-out R\u00b2 of cell-to-cell context map": 0.006504678492614535,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2073475846043953,
+      "held-out R\u00b2 of cell-to-cell context map": 0.0022960477758090956,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2461483137154183,
+      "held-out R\u00b2 of cell-to-cell context map": 0.00791926852958249,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.171701438773734,
+      "held-out R\u00b2 of cell-to-cell context map": 0.0066419768270610914,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1346111213312444,
+      "held-out R\u00b2 of cell-to-cell context map": 0.00497920964732681,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1325992253395645,
+      "held-out R\u00b2 of cell-to-cell context map": 0.0077112825525575525,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2242825704438203,
+      "held-out R\u00b2 of cell-to-cell context map": 0.006504678492614535,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2369823774163038,
+      "held-out R\u00b2 of cell-to-cell context map": 0.0022960477758090956,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1089500543737425,
+      "held-out R\u00b2 of cell-to-cell context map": 0.007926507951744632,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.101980594251932,
+      "held-out R\u00b2 of cell-to-cell context map": 0.0066419768270610914,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1969980594761613,
+      "held-out R\u00b2 of cell-to-cell context map": 0.00497920964732681,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1163111839546855,
+      "held-out R\u00b2 of cell-to-cell context map": 0.01214359527506692,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2384395542821414,
+      "held-out R\u00b2 of cell-to-cell context map": 0.009558033658142206,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1458602413063332,
+      "held-out R\u00b2 of cell-to-cell context map": 0.004142966601678122,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1158969479348055,
+      "held-out R\u00b2 of cell-to-cell context map": 0.01460623435458137,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.255774685047741,
+      "held-out R\u00b2 of cell-to-cell context map": 0.012658270910218072,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.11979571009235,
+      "held-out R\u00b2 of cell-to-cell context map": 0.006112414016781797,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1412496148208284,
+      "held-out R\u00b2 of cell-to-cell context map": 0.012144650585362538,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1176504111345704,
+      "held-out R\u00b2 of cell-to-cell context map": 0.009558033658142206,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1107882114597638,
+      "held-out R\u00b2 of cell-to-cell context map": 0.004142966601678122,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.093806642940559,
+      "held-out R\u00b2 of cell-to-cell context map": 0.014630598635912229,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0999711736495668,
+      "held-out R\u00b2 of cell-to-cell context map": 0.012658270910218072,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1214354647684535,
+      "held-out R\u00b2 of cell-to-cell context map": 0.006112414016781797,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0996087478728915,
+      "held-out R\u00b2 of cell-to-cell context map": 0.010532286696257543,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1964058868999747,
+      "held-out R\u00b2 of cell-to-cell context map": 0.005247110407416655,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2125286148239112,
+      "held-out R\u00b2 of cell-to-cell context map": 0.002947540595736253,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.160853482229765,
+      "held-out R\u00b2 of cell-to-cell context map": 0.012309187182653437,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.147238397451369,
+      "held-out R\u00b2 of cell-to-cell context map": 0.005798997512371673,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1808147226640013,
+      "held-out R\u00b2 of cell-to-cell context map": 0.004568386276809356,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2475008896022295,
+      "held-out R\u00b2 of cell-to-cell context map": 0.010536450670103803,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.243203692827997,
+      "held-out R\u00b2 of cell-to-cell context map": 0.005247110407416655,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0978255111623025,
+      "held-out R\u00b2 of cell-to-cell context map": 0.002947540595736253,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1226697137273742,
+      "held-out R\u00b2 of cell-to-cell context map": 0.012336656229915843,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1326140767987911,
+      "held-out R\u00b2 of cell-to-cell context map": 0.005798997512371673,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.134889763649798,
+      "held-out R\u00b2 of cell-to-cell context map": 0.004568386276809356,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.192821877313699,
+      "held-out R\u00b2 of cell-to-cell context map": -0.0013542122693463998,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1649272366265746,
+      "held-out R\u00b2 of cell-to-cell context map": -0.0021603380204712197,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.738865741586967,
+      "held-out R\u00b2 of cell-to-cell context map": 0.22982689152160538,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.797250544922723,
+      "held-out R\u00b2 of cell-to-cell context map": 0.24267163494875144,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8242755307691747,
+      "held-out R\u00b2 of cell-to-cell context map": 0.07841465600731834,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.748300942522669,
+      "held-out R\u00b2 of cell-to-cell context map": 0.07479252579170989,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8800225396819408,
+      "held-out R\u00b2 of cell-to-cell context map": 0.18655414369741205,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7393531359637189,
+      "held-out R\u00b2 of cell-to-cell context map": 0.1978373283184007,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8964715364232512,
+      "held-out R\u00b2 of cell-to-cell context map": 0.10176487716330669,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7478403654843777,
+      "held-out R\u00b2 of cell-to-cell context map": 0.11253729416619895,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8818434912875956,
+      "held-out R\u00b2 of cell-to-cell context map": 0.3253512599890792,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.892477565906971,
+      "held-out R\u00b2 of cell-to-cell context map": 0.3351935928443025,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9063227225055868,
+      "held-out R\u00b2 of cell-to-cell context map": 0.16310003443876048,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8743646584492468,
+      "held-out R\u00b2 of cell-to-cell context map": 0.1577582839581988,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8703059573388392,
+      "held-out R\u00b2 of cell-to-cell context map": 0.2326527941125424,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8456469896791987,
+      "held-out R\u00b2 of cell-to-cell context map": 0.23493031426110456,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8702193438240633,
+      "held-out R\u00b2 of cell-to-cell context map": 0.12830201575465655,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7542193975143665,
+      "held-out R\u00b2 of cell-to-cell context map": 0.14395546464045422,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8264922464705748,
+      "held-out R\u00b2 of cell-to-cell context map": 0.20377996109799498,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8225601166342746,
+      "held-out R\u00b2 of cell-to-cell context map": 0.2184852520844564,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8843629859420603,
+      "held-out R\u00b2 of cell-to-cell context map": 0.07832718564667593,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8133038858068329,
+      "held-out R\u00b2 of cell-to-cell context map": 0.07871667945219318,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7993161092980636,
+      "held-out R\u00b2 of cell-to-cell context map": 0.17253498351934393,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8451213888226798,
+      "held-out R\u00b2 of cell-to-cell context map": 0.18167923790283838,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7779633971501523,
+      "held-out R\u00b2 of cell-to-cell context map": 0.09234053978701555,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7551583139717124,
+      "held-out R\u00b2 of cell-to-cell context map": 0.10759775497183237,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8160179093242743,
+      "held-out R\u00b2 of cell-to-cell context map": 0.26257031756585275,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8050400863470795,
+      "held-out R\u00b2 of cell-to-cell context map": 0.2746092828883313,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7718625892951974,
+      "held-out R\u00b2 of cell-to-cell context map": 0.12355963531845778,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7961521258207231,
+      "held-out R\u00b2 of cell-to-cell context map": 0.1209552665198208,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7959506409687247,
+      "held-out R\u00b2 of cell-to-cell context map": 0.1881123663926818,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7889492015942583,
+      "held-out R\u00b2 of cell-to-cell context map": 0.19161678827405854,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7983035343508473,
+      "held-out R\u00b2 of cell-to-cell context map": 0.1193224999245728,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8534338021820702,
+      "held-out R\u00b2 of cell-to-cell context map": 0.13084326661046064,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.1434377654228314,
+      "held-out R\u00b2 of cell-to-cell context map": 0.011293001584386508,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.2607944268087614,
+      "held-out R\u00b2 of cell-to-cell context map": 0.015430387241209997,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.254942643516872,
+      "held-out R\u00b2 of cell-to-cell context map": 0.011293001584386508,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.176563877094014,
+      "held-out R\u00b2 of cell-to-cell context map": 0.015430387241209997,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1491050169008443,
+      "held-out R\u00b2 of cell-to-cell context map": 0.009999136276746822,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.186378262169401,
+      "held-out R\u00b2 of cell-to-cell context map": 0.01233954093244487,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.2427408879792528,
+      "held-out R\u00b2 of cell-to-cell context map": 0.009999136276746822,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.2074657213008186,
+      "held-out R\u00b2 of cell-to-cell context map": 0.01233954093244487,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.234790529030474,
+      "held-out R\u00b2 of cell-to-cell context map": 0.03309832300195688,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1858900096918332,
+      "held-out R\u00b2 of cell-to-cell context map": 0.040102962655679655,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.2039251732681717,
+      "held-out R\u00b2 of cell-to-cell context map": 0.03309832300195688,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.141868010552843,
+      "held-out R\u00b2 of cell-to-cell context map": 0.040102962655679655,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.2222807692158524,
+      "held-out R\u00b2 of cell-to-cell context map": 0.013040420419787391,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1264328267626293,
+      "held-out R\u00b2 of cell-to-cell context map": 0.015232963741257799,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.2150636631873297,
+      "held-out R\u00b2 of cell-to-cell context map": 0.013040420419787391,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.2449294322986613,
+      "held-out R\u00b2 of cell-to-cell context map": 0.015232963741257799,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.113778510714278,
+      "held-out R\u00b2 of cell-to-cell context map": 0.00991177881388019,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.2005883532975457,
+      "held-out R\u00b2 of cell-to-cell context map": 0.013143644638532282,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1071172346813882,
+      "held-out R\u00b2 of cell-to-cell context map": 0.00991177881388019,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.220628813088857,
+      "held-out R\u00b2 of cell-to-cell context map": 0.013143644638532282,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1052087793882337,
+      "held-out R\u00b2 of cell-to-cell context map": 0.008028016911914815,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.258469168086113,
+      "held-out R\u00b2 of cell-to-cell context map": 0.010233302656951836,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1147334274068044,
+      "held-out R\u00b2 of cell-to-cell context map": 0.008028016911914815,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.2625984442636344,
+      "held-out R\u00b2 of cell-to-cell context map": 0.010233302656951836,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.2341591516953176,
+      "held-out R\u00b2 of cell-to-cell context map": 0.022388308982866544,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1968627608039437,
+      "held-out R\u00b2 of cell-to-cell context map": 0.02697695545048533,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.2308723388333185,
+      "held-out R\u00b2 of cell-to-cell context map": 0.022388308982866544,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.2331206710169558,
+      "held-out R\u00b2 of cell-to-cell context map": 0.02697695545048533,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.2602848713071197,
+      "held-out R\u00b2 of cell-to-cell context map": 0.010298418288751022,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1356090036910538,
+      "held-out R\u00b2 of cell-to-cell context map": 0.012496345627039985,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.196213661164496,
+      "held-out R\u00b2 of cell-to-cell context map": 0.010298418288751022,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1071088555615924,
+      "held-out R\u00b2 of cell-to-cell context map": 0.012496345627039985,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.8409098260043417,
+      "held-out R\u00b2 of cell-to-cell context map": 0.2515842693539347,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.760832434736702,
+      "held-out R\u00b2 of cell-to-cell context map": 0.32286538566925815,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8316911100650395,
+      "held-out R\u00b2 of cell-to-cell context map": 0.17148348352252116,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.833037492526093,
+      "held-out R\u00b2 of cell-to-cell context map": 0.24954043099671472,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8138773275366207,
+      "held-out R\u00b2 of cell-to-cell context map": 0.2763772919336197,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.824073719592362,
+      "held-out R\u00b2 of cell-to-cell context map": 0.340864095257347,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.867506210201186,
+      "held-out R\u00b2 of cell-to-cell context map": 0.1916915369770694,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.873864048972172,
+      "held-out R\u00b2 of cell-to-cell context map": 0.2639794685105442,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.818587578803577,
+      "held-out R\u00b2 of cell-to-cell context map": 0.08513720152437596,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.83792681947407,
+      "held-out R\u00b2 of cell-to-cell context map": 0.14208220252856069,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8976225224242182,
+      "held-out R\u00b2 of cell-to-cell context map": 0.0663962662045958,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.751552045930202,
+      "held-out R\u00b2 of cell-to-cell context map": 0.13647249693632474,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7510786418620197,
+      "held-out R\u00b2 of cell-to-cell context map": 0.09953733479653144,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.745787622143938,
+      "held-out R\u00b2 of cell-to-cell context map": 0.15510463007285763,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8484153913072947,
+      "held-out R\u00b2 of cell-to-cell context map": 0.07852824834493696,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.805349494142268,
+      "held-out R\u00b2 of cell-to-cell context map": 0.1499705575112123,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8693778549055318,
+      "held-out R\u00b2 of cell-to-cell context map": 0.20842120004017586,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8508216543955465,
+      "held-out R\u00b2 of cell-to-cell context map": 0.2277493137947967,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7900547964990827,
+      "held-out R\u00b2 of cell-to-cell context map": 0.1402193559593807,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.891705978525076,
+      "held-out R\u00b2 of cell-to-cell context map": 0.17615729254969045,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8672557864727173,
+      "held-out R\u00b2 of cell-to-cell context map": 0.232434396669379,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7786962893638316,
+      "held-out R\u00b2 of cell-to-cell context map": 0.2386778186126004,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7955545631989698,
+      "held-out R\u00b2 of cell-to-cell context map": 0.15779438438973176,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.786599196436767,
+      "held-out R\u00b2 of cell-to-cell context map": 0.18367287170527644,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7583700967524996,
+      "held-out R\u00b2 of cell-to-cell context map": 0.07996589893001786,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7566010070575944,
+      "held-out R\u00b2 of cell-to-cell context map": 0.08827573355257448,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.898502943407634,
+      "held-out R\u00b2 of cell-to-cell context map": 0.07019387807436764,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8088227266957753,
+      "held-out R\u00b2 of cell-to-cell context map": 0.09908718799617797,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7989975680999337,
+      "held-out R\u00b2 of cell-to-cell context map": 0.10891696603954004,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.861343427561928,
+      "held-out R\u00b2 of cell-to-cell context map": 0.12403213187744319,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8295387517455217,
+      "held-out R\u00b2 of cell-to-cell context map": 0.10240648916983283,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.898505197630923,
+      "held-out R\u00b2 of cell-to-cell context map": 0.12518826498626984,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.230454268903691,
+      "held-out R\u00b2 of cell-to-cell context map": 0.01215300319213628,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1762865215424174,
+      "held-out R\u00b2 of cell-to-cell context map": 0.02406094269417145,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.157744705226549,
+      "held-out R\u00b2 of cell-to-cell context map": 0.0067382067473224835,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.267593678086378,
+      "held-out R\u00b2 of cell-to-cell context map": 0.014462178395569602,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.219196842480656,
+      "held-out R\u00b2 of cell-to-cell context map": 0.013531291965801984,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2612150388006915,
+      "held-out R\u00b2 of cell-to-cell context map": 0.029934063557407464,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.111326143899068,
+      "held-out R\u00b2 of cell-to-cell context map": 0.009551550175797962,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.243096062254341,
+      "held-out R\u00b2 of cell-to-cell context map": 0.01830656220938052,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2046732991184177,
+      "held-out R\u00b2 of cell-to-cell context map": 0.01215300319213628,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1119459021003206,
+      "held-out R\u00b2 of cell-to-cell context map": 0.02406094269417145,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1958864399944598,
+      "held-out R\u00b2 of cell-to-cell context map": 0.0067382067473224835,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.213497345718981,
+      "held-out R\u00b2 of cell-to-cell context map": 0.014462178395569602,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0922144834599488,
+      "held-out R\u00b2 of cell-to-cell context map": 0.013531291965801984,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1717772331315146,
+      "held-out R\u00b2 of cell-to-cell context map": 0.029934063557407464,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.238571912015338,
+      "held-out R\u00b2 of cell-to-cell context map": 0.009551550175797962,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1431646245619365,
+      "held-out R\u00b2 of cell-to-cell context map": 0.01830656220938052,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1725386547237395,
+      "held-out R\u00b2 of cell-to-cell context map": 0.00954087339807772,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.169616542872221,
+      "held-out R\u00b2 of cell-to-cell context map": 0.007080941773801808,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1443469304596485,
+      "held-out R\u00b2 of cell-to-cell context map": 0.006766647238737966,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2553195411928,
+      "held-out R\u00b2 of cell-to-cell context map": 0.005071456458728374,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.230632926377673,
+      "held-out R\u00b2 of cell-to-cell context map": 0.011306451136606843,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1099059139793,
+      "held-out R\u00b2 of cell-to-cell context map": 0.0074801478908192555,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.269466238410763,
+      "held-out R\u00b2 of cell-to-cell context map": 0.008076554505312795,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2482560043753943,
+      "held-out R\u00b2 of cell-to-cell context map": 0.006747757558822865,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.141103518815527,
+      "held-out R\u00b2 of cell-to-cell context map": 0.00954087339807772,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.240641384338969,
+      "held-out R\u00b2 of cell-to-cell context map": 0.007080941773801808,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.109155515736849,
+      "held-out R\u00b2 of cell-to-cell context map": 0.006766647238737966,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.269838851485363,
+      "held-out R\u00b2 of cell-to-cell context map": 0.005071456458728374,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2098232524991768,
+      "held-out R\u00b2 of cell-to-cell context map": 0.011306451136606843,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2070225028005837,
+      "held-out R\u00b2 of cell-to-cell context map": 0.0074801478908192555,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.106279330857144,
+      "held-out R\u00b2 of cell-to-cell context map": 0.008076554505312795,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2514660118013925,
+      "held-out R\u00b2 of cell-to-cell context map": 0.006747757558822865,
+      "_kind": "scatter",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 414,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Cross-cell context maps by pair class",
+        "ylabel": "held-out R\u00b2 of cell-to-cell context map",
+        "legend_labels": [
+          "context arm",
+          "prefix arm"
+        ],
+        "annotations": [
+          "each point is one fitted source-to-target cell pair; bars mark medians"
+        ],
+        "xticklabels": [
+          "framing pairs\n(assistant)",
+          "character to\ncharacter",
+          "character to\nassistant",
+          "assistant to\ncharacter"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "context arm",
+      "prefix arm"
+    ]
+  }
+}

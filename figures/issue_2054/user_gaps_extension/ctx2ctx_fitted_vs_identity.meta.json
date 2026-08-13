@@ -1,0 +1,3191 @@
+{
+  "commit": "5eb343f5",
+  "git_commit": "5eb343f5",
+  "git_dirty": false,
+  "created": "2026-08-13T04:04:32Z",
+  "figsize": [
+    7.2,
+    4.6
+  ],
+  "points": [
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.1664821802971647,
+      "fitted ridge map R\u00b2": 0.23908710603141553,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.23942943810986606,
+      "fitted ridge map R\u00b2": 0.16616335078932676,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.12991343814768194,
+      "fitted ridge map R\u00b2": 0.20374589231440768,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.17579120728436443,
+      "fitted ridge map R\u00b2": 0.22982689152160538,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.13328436304060856,
+      "fitted ridge map R\u00b2": 0.2643675852323431,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.19162419227707123,
+      "fitted ridge map R\u00b2": 0.18922429999852486,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.09494003193994342,
+      "fitted ridge map R\u00b2": 0.21995211150282462,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.1855155290272895,
+      "fitted ridge map R\u00b2": 0.24267163494875144,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.5143979464119998,
+      "fitted ridge map R\u00b2": 0.05405309221171817,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.52550166736405,
+      "fitted ridge map R\u00b2": 0.06147319240847695,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.4840353594976511,
+      "fitted ridge map R\u00b2": 0.08375151357115307,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.5996776533393682,
+      "fitted ridge map R\u00b2": 0.07841465600731834,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.46238021297342813,
+      "fitted ridge map R\u00b2": 0.06165983788478833,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.4663355348266552,
+      "fitted ridge map R\u00b2": 0.06740160233899746,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.4268488989182906,
+      "fitted ridge map R\u00b2": 0.09083578995648196,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.5455384912261723,
+      "fitted ridge map R\u00b2": 0.07479252579170989,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.191167055073974,
+      "fitted ridge map R\u00b2": 0.1912647387288285,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.27439807563283336,
+      "fitted ridge map R\u00b2": 0.1395807690486423,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.14154167660811062,
+      "fitted ridge map R\u00b2": 0.1755646266228867,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.190774917044427,
+      "fitted ridge map R\u00b2": 0.18655414369741205,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.16767191835981338,
+      "fitted ridge map R\u00b2": 0.21430635570892953,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.22733147648327515,
+      "fitted ridge map R\u00b2": 0.15980886442907524,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.10984052879533959,
+      "fitted ridge map R\u00b2": 0.18652832913787992,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.20695929336539437,
+      "fitted ridge map R\u00b2": 0.1978373283184007,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.4426339875130731,
+      "fitted ridge map R\u00b2": 0.0657561489062594,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.5160868982173465,
+      "fitted ridge map R\u00b2": 0.06780668112090862,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.38297764385669464,
+      "fitted ridge map R\u00b2": 0.08496980190331445,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.6022985699203401,
+      "fitted ridge map R\u00b2": 0.10176487716330669,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.348345176599524,
+      "fitted ridge map R\u00b2": 0.09597383916204716,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.4278621309315983,
+      "fitted ridge map R\u00b2": 0.10139348391122356,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.291553620592176,
+      "fitted ridge map R\u00b2": 0.1088423668826238,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.5282347727056418,
+      "fitted ridge map R\u00b2": 0.11253729416619895,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": 0.8889472797726338,
+      "fitted ridge map R\u00b2": 0.808985472264743,
+      "label": "Vex (chat) \u00b7 on-policy \u00b7 chat \u00b7 instruct \u2192 Helios (chat)",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": 0.8989332494977141,
+      "fitted ridge map R\u00b2": 0.8210079939354081,
+      "label": "Vex (chat) \u00b7 on-policy \u00b7 chat \u00b7 instruct \u2192 Helios (chat)",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": 0.8729008647017615,
+      "fitted ridge map R\u00b2": 0.7880913154402787,
+      "label": "Vex (chat) \u00b7 on-policy \u00b7 chat \u00b7 instruct \u2192 Helios (chat)",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": 0.8530284810380575,
+      "fitted ridge map R\u00b2": 0.7570533630093095,
+      "label": "Vex (chat) \u00b7 on-policy \u00b7 chat \u00b7 instruct \u2192 Helios (chat)",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": 0.8691668623677067,
+      "fitted ridge map R\u00b2": 0.7807746568617352,
+      "label": "Vex (chat) \u00b7 on-policy \u00b7 chat \u00b7 instruct \u2192 Helios (chat)",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": 0.838754964895912,
+      "fitted ridge map R\u00b2": 0.743819826284337,
+      "label": "Vex (chat) \u00b7 on-policy \u00b7 chat \u00b7 instruct \u2192 Helios (chat)",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.1626424157112639,
+      "fitted ridge map R\u00b2": 0.2588377686370607,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.2577326600105083,
+      "fitted ridge map R\u00b2": 0.17409222461493234,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.19121288824469454,
+      "fitted ridge map R\u00b2": 0.2259795959905416,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.07070671985097432,
+      "fitted ridge map R\u00b2": 0.3253512599890792,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.10210885768283044,
+      "fitted ridge map R\u00b2": 0.28677164782649134,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.2031011327348547,
+      "fitted ridge map R\u00b2": 0.19704921019372676,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.14629644184267304,
+      "fitted ridge map R\u00b2": 0.24454695323662706,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.07891179822031029,
+      "fitted ridge map R\u00b2": 0.3351935928443025,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7686585451668293,
+      "fitted ridge map R\u00b2": 0.08264757861103833,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.6690361733432664,
+      "fitted ridge map R\u00b2": 0.06564694416878969,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.6783031200989809,
+      "fitted ridge map R\u00b2": 0.10303251624562977,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.675119570716363,
+      "fitted ridge map R\u00b2": 0.16310003443876048,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7751369395370696,
+      "fitted ridge map R\u00b2": 0.09754165817845936,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.6154868101159341,
+      "fitted ridge map R\u00b2": 0.07594825743338071,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.6353177796576295,
+      "fitted ridge map R\u00b2": 0.11725597940152019,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.6472322688351981,
+      "fitted ridge map R\u00b2": 0.1577582839581988,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.18578188395864262,
+      "fitted ridge map R\u00b2": 0.21218186653068277,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.2797799872608445,
+      "fitted ridge map R\u00b2": 0.1394719000893217,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.20133426251220826,
+      "fitted ridge map R\u00b2": 0.17873847960877462,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.06951244651615776,
+      "fitted ridge map R\u00b2": 0.2326527941125424,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.12992919253184593,
+      "fitted ridge map R\u00b2": 0.23652421478148358,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.22359642204398286,
+      "fitted ridge map R\u00b2": 0.16210176983493485,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.16383609085081305,
+      "fitted ridge map R\u00b2": 0.18822175019792992,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.08400632130054184,
+      "fitted ridge map R\u00b2": 0.23493031426110456,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.6439835945753764,
+      "fitted ridge map R\u00b2": 0.08014168364822098,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.626494465223473,
+      "fitted ridge map R\u00b2": 0.07651550539352503,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.5385591679124099,
+      "fitted ridge map R\u00b2": 0.08751508006243347,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.6286402554143866,
+      "fitted ridge map R\u00b2": 0.12830201575465655,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.5448953442996265,
+      "fitted ridge map R\u00b2": 0.11015810953543101,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.4915535336824549,
+      "fitted ridge map R\u00b2": 0.10913930618844865,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.418785303133685,
+      "fitted ridge map R\u00b2": 0.114153543265439,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.5547403296389095,
+      "fitted ridge map R\u00b2": 0.14395546464045422,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": 0.8885931794562705,
+      "fitted ridge map R\u00b2": 0.8004498902540348,
+      "label": "Vex (chat) \u00b7 on-policy \u00b7 chat \u00b7 instruct \u2192 Helios (chat)",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": 0.926521334448229,
+      "fitted ridge map R\u00b2": 0.8411648117958208,
+      "label": "Vex (chat) \u00b7 on-policy \u00b7 chat \u00b7 instruct \u2192 Helios (chat)",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": 0.8935460484553086,
+      "fitted ridge map R\u00b2": 0.8061095825371764,
+      "label": "Vex (chat) \u00b7 on-policy \u00b7 chat \u00b7 instruct \u2192 Helios (chat)",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": 0.8531049950967496,
+      "fitted ridge map R\u00b2": 0.7419938630812329,
+      "label": "Vex (chat) \u00b7 on-policy \u00b7 chat \u00b7 instruct \u2192 Helios (chat)",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": 0.8880395940516707,
+      "fitted ridge map R\u00b2": 0.7900866811707872,
+      "label": "Vex (chat) \u00b7 on-policy \u00b7 chat \u00b7 instruct \u2192 Helios (chat)",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": 0.8570704181235733,
+      "fitted ridge map R\u00b2": 0.7561836143133981,
+      "label": "Vex (chat) \u00b7 on-policy \u00b7 chat \u00b7 instruct \u2192 Helios (chat)",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.22353721270738752,
+      "fitted ridge map R\u00b2": 0.21988821955462212,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.24861419409040503,
+      "fitted ridge map R\u00b2": 0.21769320169340908,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.24930612425218754,
+      "fitted ridge map R\u00b2": 0.18822174656622356,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.30355111350892605,
+      "fitted ridge map R\u00b2": 0.20377996109799498,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.13932643460021588,
+      "fitted ridge map R\u00b2": 0.24892897978576412,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.19192247805086476,
+      "fitted ridge map R\u00b2": 0.24095982042008107,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.17929642374968174,
+      "fitted ridge map R\u00b2": 0.2032421425113773,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.27716501724449216,
+      "fitted ridge map R\u00b2": 0.2184852520844564,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7209264142254017,
+      "fitted ridge map R\u00b2": 0.075118528916052,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.6092734478673499,
+      "fitted ridge map R\u00b2": 0.05252677538528831,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.6387024658044546,
+      "fitted ridge map R\u00b2": 0.08411682019526714,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7200658501086401,
+      "fitted ridge map R\u00b2": 0.07832718564667593,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7677114872110428,
+      "fitted ridge map R\u00b2": 0.08975608615392938,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.610441291694104,
+      "fitted ridge map R\u00b2": 0.059923376174262355,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.6357169721819359,
+      "fitted ridge map R\u00b2": 0.09428724093731292,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7149250164214894,
+      "fitted ridge map R\u00b2": 0.07871667945219318,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.2548728145214604,
+      "fitted ridge map R\u00b2": 0.18641929459818304,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.2588146796874127,
+      "fitted ridge map R\u00b2": 0.1819171252582626,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.268285705197021,
+      "fitted ridge map R\u00b2": 0.16036155667798785,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.31004210477060096,
+      "fitted ridge map R\u00b2": 0.17253498351934393,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.1714910973605655,
+      "fitted ridge map R\u00b2": 0.2152199918189286,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.20941190659888465,
+      "fitted ridge map R\u00b2": 0.20136697782358595,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.199563497738597,
+      "fitted ridge map R\u00b2": 0.1742450909372038,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.2875525953789365,
+      "fitted ridge map R\u00b2": 0.18167923790283838,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.5865889470869539,
+      "fitted ridge map R\u00b2": 0.0722246262366251,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.5074963802521124,
+      "fitted ridge map R\u00b2": 0.06479071200483996,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.49916457954623983,
+      "fitted ridge map R\u00b2": 0.07738607942595385,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7016151687410292,
+      "fitted ridge map R\u00b2": 0.09234053978701555,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.5714234414869709,
+      "fitted ridge map R\u00b2": 0.09821165852258892,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.46862223796648506,
+      "fitted ridge map R\u00b2": 0.09414798882951685,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.43185763122340254,
+      "fitted ridge map R\u00b2": 0.10566725290999553,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.6832547246889819,
+      "fitted ridge map R\u00b2": 0.10759775497183237,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": 0.8989783192881987,
+      "fitted ridge map R\u00b2": 0.813578287403255,
+      "label": "Vex (chat) \u00b7 on-policy \u00b7 chat \u00b7 instruct \u2192 Helios (chat)",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": 0.9269662478617429,
+      "fitted ridge map R\u00b2": 0.8442723373910729,
+      "label": "Vex (chat) \u00b7 on-policy \u00b7 chat \u00b7 instruct \u2192 Helios (chat)",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": 0.8917211930862269,
+      "fitted ridge map R\u00b2": 0.8033679583276252,
+      "label": "Vex (chat) \u00b7 on-policy \u00b7 chat \u00b7 instruct \u2192 Helios (chat)",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": 0.869661649706855,
+      "fitted ridge map R\u00b2": 0.7739280641405694,
+      "label": "Vex (chat) \u00b7 on-policy \u00b7 chat \u00b7 instruct \u2192 Helios (chat)",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": 0.8882624264223077,
+      "fitted ridge map R\u00b2": 0.7929024346651726,
+      "label": "Vex (chat) \u00b7 on-policy \u00b7 chat \u00b7 instruct \u2192 Helios (chat)",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": 0.8574601785646856,
+      "fitted ridge map R\u00b2": 0.7596551965981228,
+      "label": "Vex (chat) \u00b7 on-policy \u00b7 chat \u00b7 instruct \u2192 Helios (chat)",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.13253403711005124,
+      "fitted ridge map R\u00b2": 0.23977014985193623,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.19815753390796967,
+      "fitted ridge map R\u00b2": 0.24455732047632878,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.2600784210424509,
+      "fitted ridge map R\u00b2": 0.16163635783889668,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.22232274216731512,
+      "fitted ridge map R\u00b2": 0.26257031756585275,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.08496503579835753,
+      "fitted ridge map R\u00b2": 0.2631363077583665,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.17181062712141829,
+      "fitted ridge map R\u00b2": 0.26298358841711594,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.2122809594018448,
+      "fitted ridge map R\u00b2": 0.1820420996029604,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.23506669200441746,
+      "fitted ridge map R\u00b2": 0.2746092828883313,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.551483072125636,
+      "fitted ridge map R\u00b2": 0.08530266957007784,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.5091451505815392,
+      "fitted ridge map R\u00b2": 0.07831221455948881,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.5008718796366529,
+      "fitted ridge map R\u00b2": 0.06174731235460098,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.6073727856122482,
+      "fitted ridge map R\u00b2": 0.12355963531845778,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.5545343730513302,
+      "fitted ridge map R\u00b2": 0.10097154648125688,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.48533520527297824,
+      "fitted ridge map R\u00b2": 0.08793521100301856,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.4590260105616809,
+      "fitted ridge map R\u00b2": 0.07521221548561426,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.5805800173292063,
+      "fitted ridge map R\u00b2": 0.1209552665198208,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.14251339808949087,
+      "fitted ridge map R\u00b2": 0.20080385611706753,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.20796770018100935,
+      "fitted ridge map R\u00b2": 0.19309325089712384,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.28170539868651756,
+      "fitted ridge map R\u00b2": 0.13453362816372122,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.22389453044797328,
+      "fitted ridge map R\u00b2": 0.1881123663926818,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.09763703735773666,
+      "fitted ridge map R\u00b2": 0.22391506615894471,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.19492174681500068,
+      "fitted ridge map R\u00b2": 0.20607833148607693,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.23599042937285727,
+      "fitted ridge map R\u00b2": 0.15259946211082553,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.2481976000625953,
+      "fitted ridge map R\u00b2": 0.19161678827405854,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.45190172802191475,
+      "fitted ridge map R\u00b2": 0.08574156695165883,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.44900879030329516,
+      "fitted ridge map R\u00b2": 0.07984646031720441,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.5031422454534652,
+      "fitted ridge map R\u00b2": 0.07329400448311814,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.6183504742621684,
+      "fitted ridge map R\u00b2": 0.1193224999245728,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.40151479379816524,
+      "fitted ridge map R\u00b2": 0.11127279743266474,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.3818304882092505,
+      "fitted ridge map R\u00b2": 0.10661377770881475,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.40355915300228906,
+      "fitted ridge map R\u00b2": 0.1089128211582427,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.5817252633885351,
+      "fitted ridge map R\u00b2": 0.13084326661046064,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": 0.8723156924219643,
+      "fitted ridge map R\u00b2": 0.7862924935773227,
+      "label": "Vex (chat) \u00b7 on-policy \u00b7 chat \u00b7 instruct \u2192 Helios (chat)",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": 0.8937684384332918,
+      "fitted ridge map R\u00b2": 0.8184423811816224,
+      "label": "Vex (chat) \u00b7 on-policy \u00b7 chat \u00b7 instruct \u2192 Helios (chat)",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": 0.891781674875164,
+      "fitted ridge map R\u00b2": 0.8109570614625939,
+      "label": "Vex (chat) \u00b7 on-policy \u00b7 chat \u00b7 instruct \u2192 Helios (chat)",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": 0.8380805690358228,
+      "fitted ridge map R\u00b2": 0.7472355556345363,
+      "label": "Vex (chat) \u00b7 on-policy \u00b7 chat \u00b7 instruct \u2192 Helios (chat)",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": 0.856505570762257,
+      "fitted ridge map R\u00b2": 0.772182304482838,
+      "label": "Vex (chat) \u00b7 on-policy \u00b7 chat \u00b7 instruct \u2192 Helios (chat)",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": 0.857028547628097,
+      "fitted ridge map R\u00b2": 0.7690861169323558,
+      "label": "Vex (chat) \u00b7 on-policy \u00b7 chat \u00b7 instruct \u2192 Helios (chat)",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.19061582270748803,
+      "fitted ridge map R\u00b2": 0.2515842693539347,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.07844024475184437,
+      "fitted ridge map R\u00b2": 0.32286538566925815,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.33384528344694375,
+      "fitted ridge map R\u00b2": 0.17148348352252116,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.23678601382272024,
+      "fitted ridge map R\u00b2": 0.24954043099671472,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.34248779452156597,
+      "fitted ridge map R\u00b2": 0.5500590264425288,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.44528733638534457,
+      "fitted ridge map R\u00b2": 0.4797192060333112,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.3564232906672665,
+      "fitted ridge map R\u00b2": 0.5557998254178129,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.12786916369107454,
+      "fitted ridge map R\u00b2": 0.2763772919336197,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.04736602311938989,
+      "fitted ridge map R\u00b2": 0.340864095257347,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.2624470297302762,
+      "fitted ridge map R\u00b2": 0.1916915369770694,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.1875372563349304,
+      "fitted ridge map R\u00b2": 0.2639794685105442,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.33305674643408073,
+      "fitted ridge map R\u00b2": 0.5855392975428457,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.6773065068397425,
+      "fitted ridge map R\u00b2": 0.45525512456569484,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7369420123401442,
+      "fitted ridge map R\u00b2": 0.31982946942981816,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.9097991068605935,
+      "fitted ridge map R\u00b2": 0.08513720152437596,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7088356695110105,
+      "fitted ridge map R\u00b2": 0.14208220252856069,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8319314571357923,
+      "fitted ridge map R\u00b2": 0.0663962662045958,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8653073216464712,
+      "fitted ridge map R\u00b2": 0.13647249693632474,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.3329443966433153,
+      "fitted ridge map R\u00b2": 0.5338477778000661,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.5059218261381527,
+      "fitted ridge map R\u00b2": 0.4550161669543117,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.5552518333759938,
+      "fitted ridge map R\u00b2": 0.45466585613234595,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.9825465871152044,
+      "fitted ridge map R\u00b2": 0.09953733479653144,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7479193011404544,
+      "fitted ridge map R\u00b2": 0.15510463007285763,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8421092767097711,
+      "fitted ridge map R\u00b2": 0.07852824834493696,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8959489339114948,
+      "fitted ridge map R\u00b2": 0.1499705575112123,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.43809627014119723,
+      "fitted ridge map R\u00b2": 0.5496851067537298,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7456552400838191,
+      "fitted ridge map R\u00b2": 0.47706843942858057,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.9480668091279785,
+      "fitted ridge map R\u00b2": 0.2523796468787601,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.4827962452119078,
+      "fitted ridge map R\u00b2": 0.2688081982409991,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.5560997857121608,
+      "fitted ridge map R\u00b2": 0.17211055280177007,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": 0.4099598248217438,
+      "fitted ridge map R\u00b2": 0.799271158359149,
+      "label": "Vex (chat) \u00b7 on-policy \u00b7 chat \u00b7 instruct \u2192 Helios (chat)",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.44778859850421726,
+      "fitted ridge map R\u00b2": 0.2651398893602594,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.3967070684730404,
+      "fitted ridge map R\u00b2": 0.1630297552654519,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.44327727632111574,
+      "fitted ridge map R\u00b2": 0.48021555755571266,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.46960047552409634,
+      "fitted ridge map R\u00b2": 0.27237270982708944,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.697073014798592,
+      "fitted ridge map R\u00b2": 0.12739914984651576,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": 0.3769334059740597,
+      "fitted ridge map R\u00b2": 0.7144096570122758,
+      "label": "Vex (chat) \u00b7 on-policy \u00b7 chat \u00b7 instruct \u2192 Helios (chat)",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.670686203372901,
+      "fitted ridge map R\u00b2": 0.24187865343307918,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7369581199754545,
+      "fitted ridge map R\u00b2": 0.08985242968283202,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.6083246337089654,
+      "fitted ridge map R\u00b2": 0.5847556042504175,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.21862692940959824,
+      "fitted ridge map R\u00b2": 0.20842120004017586,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.09023711492575859,
+      "fitted ridge map R\u00b2": 0.2277493137947967,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.37104451986039966,
+      "fitted ridge map R\u00b2": 0.1402193559593807,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.25224334214956023,
+      "fitted ridge map R\u00b2": 0.17615729254969045,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.34025719983864516,
+      "fitted ridge map R\u00b2": 0.4215510152904868,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.45748774435104467,
+      "fitted ridge map R\u00b2": 0.3688643173349426,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.30537702570057196,
+      "fitted ridge map R\u00b2": 0.5535855245258613,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.15546553690269285,
+      "fitted ridge map R\u00b2": 0.232434396669379,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.0648387210772083,
+      "fitted ridge map R\u00b2": 0.2386778186126004,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.29122461640473035,
+      "fitted ridge map R\u00b2": 0.15779438438973176,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.2069529348646923,
+      "fitted ridge map R\u00b2": 0.18367287170527644,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.3508079807622976,
+      "fitted ridge map R\u00b2": 0.5266053408901699,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.6131129898571878,
+      "fitted ridge map R\u00b2": 0.4499648803650852,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.6892919729056057,
+      "fitted ridge map R\u00b2": 0.31404746820737756,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.724570113061856,
+      "fitted ridge map R\u00b2": 0.07996589893001786,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.548438776464915,
+      "fitted ridge map R\u00b2": 0.08827573355257448,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7699721772596455,
+      "fitted ridge map R\u00b2": 0.07019387807436764,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.6624202626577281,
+      "fitted ridge map R\u00b2": 0.09908718799617797,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.4782663510240031,
+      "fitted ridge map R\u00b2": 0.4918919954081552,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.38588770409900053,
+      "fitted ridge map R\u00b2": 0.3387317301923174,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.4940311660644337,
+      "fitted ridge map R\u00b2": 0.459768785683524,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7329126220468073,
+      "fitted ridge map R\u00b2": 0.10891696603954004,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.5381405144255658,
+      "fitted ridge map R\u00b2": 0.12403213187744319,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7331258434660913,
+      "fitted ridge map R\u00b2": 0.10240648916983283,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.6427101682312261,
+      "fitted ridge map R\u00b2": 0.12518826498626984,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.5134668974031171,
+      "fitted ridge map R\u00b2": 0.5314567609659188,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.4624223411268962,
+      "fitted ridge map R\u00b2": 0.438604548619929,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.9190460777704272,
+      "fitted ridge map R\u00b2": 0.2552719329846422,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.71763034002919,
+      "fitted ridge map R\u00b2": 0.2635223076886569,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.48066337905393947,
+      "fitted ridge map R\u00b2": 0.22949636387681868,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": 0.06600215129416791,
+      "fitted ridge map R\u00b2": 0.7337543115071667,
+      "label": "Vex (chat) \u00b7 on-policy \u00b7 chat \u00b7 instruct \u2192 Helios (chat)",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.6574733704543088,
+      "fitted ridge map R\u00b2": 0.2662930658181587,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.3410273411256183,
+      "fitted ridge map R\u00b2": 0.24937276390419988,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.6297243266477224,
+      "fitted ridge map R\u00b2": 0.44957545818205735,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.47219960363678526,
+      "fitted ridge map R\u00b2": 0.2870683069939782,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.5276297182897741,
+      "fitted ridge map R\u00b2": 0.23200958172526082,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": 0.10613589149328007,
+      "fitted ridge map R\u00b2": 0.5542185415606931,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.6880615181501518,
+      "fitted ridge map R\u00b2": 0.25635966356248313,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7114979079484046,
+      "fitted ridge map R\u00b2": 0.21669905053570196,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.5848803257475069,
+      "fitted ridge map R\u00b2": 0.5524023628752619,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8333180938471605,
+      "fitted ridge map R\u00b2": 0.003603155239764777,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8150162411805922,
+      "fitted ridge map R\u00b2": 0.005190993447282621,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7483550451619844,
+      "fitted ridge map R\u00b2": 0.008577561928932642,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7930480847460022,
+      "fitted ridge map R\u00b2": 0.011293001584386508,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8174707763479352,
+      "fitted ridge map R\u00b2": 0.006054972053331009,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7949807653159905,
+      "fitted ridge map R\u00b2": 0.006712811596622714,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7265632472073668,
+      "fitted ridge map R\u00b2": 0.010569609898629673,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7799389806799091,
+      "fitted ridge map R\u00b2": 0.015430387241209997,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8333180938471605,
+      "fitted ridge map R\u00b2": 0.003603155239764777,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.814842803182241,
+      "fitted ridge map R\u00b2": 0.0051525002744956085,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.748356946027067,
+      "fitted ridge map R\u00b2": 0.008540907950529064,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7930480847460022,
+      "fitted ridge map R\u00b2": 0.011293001584386508,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8174707763479352,
+      "fitted ridge map R\u00b2": 0.006054972053331009,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7947839728522201,
+      "fitted ridge map R\u00b2": 0.006954364953735803,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7265998090290406,
+      "fitted ridge map R\u00b2": 0.010550003289552867,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7799389806799091,
+      "fitted ridge map R\u00b2": 0.015430387241209997,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8319699663245157,
+      "fitted ridge map R\u00b2": 0.002591476724285102,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8130176288986941,
+      "fitted ridge map R\u00b2": 0.003482740900530601,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7595212736373231,
+      "fitted ridge map R\u00b2": 0.004740548610250394,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7769102768089564,
+      "fitted ridge map R\u00b2": 0.009999136276746822,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8143293779184608,
+      "fitted ridge map R\u00b2": 0.005173677498178231,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7938399225897491,
+      "fitted ridge map R\u00b2": 0.0037552515438594282,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7362451866784254,
+      "fitted ridge map R\u00b2": 0.006638232951528234,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7630942618998005,
+      "fitted ridge map R\u00b2": 0.01233954093244487,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8319699663245157,
+      "fitted ridge map R\u00b2": 0.002591476724285102,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8128102465701469,
+      "fitted ridge map R\u00b2": 0.003467565115285165,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7595248225889801,
+      "fitted ridge map R\u00b2": 0.004684205327027513,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7769102768089564,
+      "fitted ridge map R\u00b2": 0.009999136276746822,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8143293779184608,
+      "fitted ridge map R\u00b2": 0.005173677498178231,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7936056644858638,
+      "fitted ridge map R\u00b2": 0.004044785127416706,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7362961651384843,
+      "fitted ridge map R\u00b2": 0.006665653472568489,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7630942618998005,
+      "fitted ridge map R\u00b2": 0.01233954093244487,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -1.5051332535786552,
+      "fitted ridge map R\u00b2": -0.00045307092983748465,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -2.0050302884685998,
+      "fitted ridge map R\u00b2": -0.0008473864364696437,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7408807367164663,
+      "fitted ridge map R\u00b2": 0.00979859450456073,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7688028362067587,
+      "fitted ridge map R\u00b2": 0.004473394285612197,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.74832450692662,
+      "fitted ridge map R\u00b2": 0.008083319126073185,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7220857551964427,
+      "fitted ridge map R\u00b2": 0.03309832300195688,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7245082200864758,
+      "fitted ridge map R\u00b2": 0.012624642937720143,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7496386674918011,
+      "fitted ridge map R\u00b2": 0.006731420086349504,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.726159310905006,
+      "fitted ridge map R\u00b2": 0.01093833270272906,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7072405441766116,
+      "fitted ridge map R\u00b2": 0.040102962655679655,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7408807367164663,
+      "fitted ridge map R\u00b2": 0.00979859450456073,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7688028362067587,
+      "fitted ridge map R\u00b2": 0.004473394285612197,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.74832450692662,
+      "fitted ridge map R\u00b2": 0.008083319126073185,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7220857551964427,
+      "fitted ridge map R\u00b2": 0.03309832300195688,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7245082200864758,
+      "fitted ridge map R\u00b2": 0.012624642937720143,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7496386674918011,
+      "fitted ridge map R\u00b2": 0.006731420086349504,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.726159310905006,
+      "fitted ridge map R\u00b2": 0.01093833270272906,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7072405441766116,
+      "fitted ridge map R\u00b2": 0.040102962655679655,
+      "label": "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7516530666770368,
+      "fitted ridge map R\u00b2": 0.0053388837413776095,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7794475481669939,
+      "fitted ridge map R\u00b2": 0.0013989722661126524,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.762391753660516,
+      "fitted ridge map R\u00b2": 0.004850321872088758,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.711226680947852,
+      "fitted ridge map R\u00b2": 0.013040420419787391,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7362739975106161,
+      "fitted ridge map R\u00b2": 0.0071116691006907875,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7607750268012291,
+      "fitted ridge map R\u00b2": 0.0042060052851510266,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.741006037038284,
+      "fitted ridge map R\u00b2": 0.006888570531264682,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.6984557991867902,
+      "fitted ridge map R\u00b2": 0.015232963741257799,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7516530666770368,
+      "fitted ridge map R\u00b2": 0.0053388837413776095,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7794475481669939,
+      "fitted ridge map R\u00b2": 0.0013989722661126524,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.762391753660516,
+      "fitted ridge map R\u00b2": 0.004850321872088758,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.711226680947852,
+      "fitted ridge map R\u00b2": 0.013040420419787391,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7362739975106161,
+      "fitted ridge map R\u00b2": 0.0071116691006907875,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7607750268012291,
+      "fitted ridge map R\u00b2": 0.0042060052851510266,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.741006037038284,
+      "fitted ridge map R\u00b2": 0.006888570531264682,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.6984557991867902,
+      "fitted ridge map R\u00b2": 0.015232963741257799,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7555140768790536,
+      "fitted ridge map R\u00b2": -0.0006417865355743402,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -2.0077431875597327,
+      "fitted ridge map R\u00b2": -4.2640323894005405e-06,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7425219896100741,
+      "fitted ridge map R\u00b2": 0.009244197568942703,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7860792431578864,
+      "fitted ridge map R\u00b2": 0.0075240948504328165,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7457923695161558,
+      "fitted ridge map R\u00b2": 0.0049040905387142345,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7733153453701298,
+      "fitted ridge map R\u00b2": 0.00991177881388019,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7290602914547335,
+      "fitted ridge map R\u00b2": 0.010237733707931329,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7745510513188301,
+      "fitted ridge map R\u00b2": 0.008842385670927322,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7271612087911494,
+      "fitted ridge map R\u00b2": 0.006838151910775548,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7610461538019119,
+      "fitted ridge map R\u00b2": 0.013143644638532282,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7424763599506434,
+      "fitted ridge map R\u00b2": 0.009249758464539792,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7860792431578864,
+      "fitted ridge map R\u00b2": 0.0075240948504328165,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7457923695161558,
+      "fitted ridge map R\u00b2": 0.0049040905387142345,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7733153453701298,
+      "fitted ridge map R\u00b2": 0.00991177881388019,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7289692182366829,
+      "fitted ridge map R\u00b2": 0.01023555907892848,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7745510513188301,
+      "fitted ridge map R\u00b2": 0.008842385670927322,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7271612087911494,
+      "fitted ridge map R\u00b2": 0.006838151910775548,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7610461538019119,
+      "fitted ridge map R\u00b2": 0.013143644638532282,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7505351717808486,
+      "fitted ridge map R\u00b2": 0.007704078282317983,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.783102816104371,
+      "fitted ridge map R\u00b2": 0.006504678492614535,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.754777365097438,
+      "fitted ridge map R\u00b2": 0.0022960477758090956,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7638188631249208,
+      "fitted ridge map R\u00b2": 0.008028016911914815,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7381648843200062,
+      "fitted ridge map R\u00b2": 0.00791926852958249,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7690544672195081,
+      "fitted ridge map R\u00b2": 0.0066419768270610914,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7350467110520886,
+      "fitted ridge map R\u00b2": 0.00497920964732681,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7523454759419086,
+      "fitted ridge map R\u00b2": 0.010233302656951836,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7504794226516841,
+      "fitted ridge map R\u00b2": 0.0077112825525575525,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.783102816104371,
+      "fitted ridge map R\u00b2": 0.006504678492614535,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.754777365097438,
+      "fitted ridge map R\u00b2": 0.0022960477758090956,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7638188631249208,
+      "fitted ridge map R\u00b2": 0.008028016911914815,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7380545054000217,
+      "fitted ridge map R\u00b2": 0.007926507951744632,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7690544672195081,
+      "fitted ridge map R\u00b2": 0.0066419768270610914,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7350467110520886,
+      "fitted ridge map R\u00b2": 0.00497920964732681,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7523454759419086,
+      "fitted ridge map R\u00b2": 0.010233302656951836,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7478091451468685,
+      "fitted ridge map R\u00b2": 0.01214359527506692,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8242095387464827,
+      "fitted ridge map R\u00b2": 0.009558033658142206,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8299106647272962,
+      "fitted ridge map R\u00b2": 0.004142966601678122,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7836040943586624,
+      "fitted ridge map R\u00b2": 0.022388308982866544,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.734862959294311,
+      "fitted ridge map R\u00b2": 0.01460623435458137,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8154768763000441,
+      "fitted ridge map R\u00b2": 0.012658270910218072,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8135980430564086,
+      "fitted ridge map R\u00b2": 0.006112414016781797,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7716354692340266,
+      "fitted ridge map R\u00b2": 0.02697695545048533,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7479081681465554,
+      "fitted ridge map R\u00b2": 0.012144650585362538,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8242095387464827,
+      "fitted ridge map R\u00b2": 0.009558033658142206,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8299106647272962,
+      "fitted ridge map R\u00b2": 0.004142966601678122,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7836040943586624,
+      "fitted ridge map R\u00b2": 0.022388308982866544,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7349771517305653,
+      "fitted ridge map R\u00b2": 0.014630598635912229,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8154768763000441,
+      "fitted ridge map R\u00b2": 0.012658270910218072,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8135980430564086,
+      "fitted ridge map R\u00b2": 0.006112414016781797,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7716354692340266,
+      "fitted ridge map R\u00b2": 0.02697695545048533,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.74052680222618,
+      "fitted ridge map R\u00b2": 0.010532286696257543,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8201820960831873,
+      "fitted ridge map R\u00b2": 0.005247110407416655,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8135520405029009,
+      "fitted ridge map R\u00b2": 0.002947540595736253,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7656703232494249,
+      "fitted ridge map R\u00b2": 0.010298418288751022,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7278086403498045,
+      "fitted ridge map R\u00b2": 0.012309187182653437,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8135786071962027,
+      "fitted ridge map R\u00b2": 0.005798997512371673,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.799275439216429,
+      "fitted ridge map R\u00b2": 0.004568386276809356,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7563016554894187,
+      "fitted ridge map R\u00b2": 0.012496345627039985,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7406614245677862,
+      "fitted ridge map R\u00b2": 0.010536450670103803,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8201820960831873,
+      "fitted ridge map R\u00b2": 0.005247110407416655,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8135520405029009,
+      "fitted ridge map R\u00b2": 0.002947540595736253,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7656703232494249,
+      "fitted ridge map R\u00b2": 0.010298418288751022,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7279626691301735,
+      "fitted ridge map R\u00b2": 0.012336656229915843,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.8135786071962027,
+      "fitted ridge map R\u00b2": 0.005798997512371673,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.799275439216429,
+      "fitted ridge map R\u00b2": 0.004568386276809356,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7563016554894187,
+      "fitted ridge map R\u00b2": 0.012496345627039985,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.505897570800446,
+      "fitted ridge map R\u00b2": -0.0013542122693463998,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.6725849111120487,
+      "fitted ridge map R\u00b2": -0.0021603380204712197,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.778815710605149,
+      "fitted ridge map R\u00b2": 0.01215300319213628,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7829063371468836,
+      "fitted ridge map R\u00b2": 0.02406094269417145,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.802128574560198,
+      "fitted ridge map R\u00b2": 0.0067382067473224835,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7493784828352192,
+      "fitted ridge map R\u00b2": 0.014462178395569602,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -7.0666665828874855,
+      "fitted ridge map R\u00b2": 0.0033196136425841516,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7578793720458628,
+      "fitted ridge map R\u00b2": 0.013531291965801984,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7631616285806443,
+      "fitted ridge map R\u00b2": 0.029934063557407464,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7764467147726062,
+      "fitted ridge map R\u00b2": 0.009551550175797962,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7240184970883646,
+      "fitted ridge map R\u00b2": 0.01830656220938052,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -6.326074298846807,
+      "fitted ridge map R\u00b2": 0.007675447437681049,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.778815710605149,
+      "fitted ridge map R\u00b2": 0.01215300319213628,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7829063371468836,
+      "fitted ridge map R\u00b2": 0.02406094269417145,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.802128574560198,
+      "fitted ridge map R\u00b2": 0.0067382067473224835,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7493784828352192,
+      "fitted ridge map R\u00b2": 0.014462178395569602,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -7.0666665828874855,
+      "fitted ridge map R\u00b2": 0.0033196136425841516,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7578793720458628,
+      "fitted ridge map R\u00b2": 0.013531291965801984,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7631616285806443,
+      "fitted ridge map R\u00b2": 0.029934063557407464,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7764467147726062,
+      "fitted ridge map R\u00b2": 0.009551550175797962,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7240184970883646,
+      "fitted ridge map R\u00b2": 0.01830656220938052,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -6.326074298846807,
+      "fitted ridge map R\u00b2": 0.007675447437681049,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.14368760231490124,
+      "fitted ridge map R\u00b2": -9.356725920115495e-05,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.14368760231490124,
+      "fitted ridge map R\u00b2": -9.356725920115495e-05,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.160858964156104,
+      "fitted ridge map R\u00b2": -3.397057603309328e-05,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.160858964156104,
+      "fitted ridge map R\u00b2": -3.397057603309328e-05,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7964697254714086,
+      "fitted ridge map R\u00b2": 0.00954087339807772,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7883245408268458,
+      "fitted ridge map R\u00b2": 0.007080941773801808,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.826181629849124,
+      "fitted ridge map R\u00b2": 0.006766647238737966,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7783348604889909,
+      "fitted ridge map R\u00b2": 0.005071456458728374,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -7.556288138131888,
+      "fitted ridge map R\u00b2": 0.007524202273199521,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7755842569684849,
+      "fitted ridge map R\u00b2": 0.011306451136606843,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7666309629520504,
+      "fitted ridge map R\u00b2": 0.0074801478908192555,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7984221100982937,
+      "fitted ridge map R\u00b2": 0.008076554505312795,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.751843261268604,
+      "fitted ridge map R\u00b2": 0.006747757558822865,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -6.759559829740013,
+      "fitted ridge map R\u00b2": 0.010951305522300659,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7964697254714086,
+      "fitted ridge map R\u00b2": 0.00954087339807772,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7883245408268458,
+      "fitted ridge map R\u00b2": 0.007080941773801808,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.826181629849124,
+      "fitted ridge map R\u00b2": 0.006766647238737966,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7783348604889909,
+      "fitted ridge map R\u00b2": 0.005071456458728374,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -7.556288138131888,
+      "fitted ridge map R\u00b2": 0.007524202273199521,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7755842569684849,
+      "fitted ridge map R\u00b2": 0.011306451136606843,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7666309629520504,
+      "fitted ridge map R\u00b2": 0.0074801478908192555,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.7984221100982937,
+      "fitted ridge map R\u00b2": 0.008076554505312795,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.751843261268604,
+      "fitted ridge map R\u00b2": 0.006747757558822865,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -6.759559829740013,
+      "fitted ridge map R\u00b2": 0.010951305522300659,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.13323152399616905,
+      "fitted ridge map R\u00b2": -9.916502019280404e-05,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.13323152399616905,
+      "fitted ridge map R\u00b2": -9.916502019280404e-05,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.14920674068514,
+      "fitted ridge map R\u00b2": -5.3511965200536695e-06,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "identity + per-pair bias baseline R\u00b2": -0.14920674068514,
+      "fitted ridge map R\u00b2": -5.3511965200536695e-06,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 414,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Fitted cross-cell map vs identity baseline, per pair",
+        "xlabel": "identity + per-pair bias baseline R\u00b2",
+        "ylabel": "fitted ridge map R\u00b2",
+        "legend_labels": [
+          "context arm",
+          "prefix arm"
+        ],
+        "annotations": [
+          "Vex (chat) \u00b7 on-policy \u00b7 chat \u00b7 instruct \u2192 Helios (chat)",
+          "assistant \u00b7 inserted \u00b7 label \u00b7 base \u2192 assistant",
+          "points above the dashed diagonal clear the identity + bias baseline"
+        ],
+        "xticklabels": [
+          "\u22122.5",
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "context arm",
+      "prefix arm"
+    ]
+  }
+}

@@ -1,0 +1,1648 @@
+{
+  "commit": "5eb343f5",
+  "git_commit": "5eb343f5",
+  "git_dirty": false,
+  "created": "2026-08-13T04:04:34Z",
+  "figsize": [
+    7.0,
+    4.8
+  ],
+  "points": [
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.36763992945576246,
+      "held-out R\u00b2 of pooled / specialized map": 0.3196756358736803,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.36478393257257713,
+      "held-out R\u00b2 of pooled / specialized map": 0.33259072201347006,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.2600253964957039,
+      "held-out R\u00b2 of pooled / specialized map": 0.2318550439203131,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.25804092851978855,
+      "held-out R\u00b2 of pooled / specialized map": 0.23851886658148425,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.27919295858458054,
+      "held-out R\u00b2 of pooled / specialized map": 0.19510845505801633,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.3609899231388926,
+      "held-out R\u00b2 of pooled / specialized map": 0.29102155422437836,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.22697104266573379,
+      "held-out R\u00b2 of pooled / specialized map": 0.20767585087102824,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.22254654104537908,
+      "held-out R\u00b2 of pooled / specialized map": 0.20155739265956896,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.3247326578431643,
+      "held-out R\u00b2 of pooled / specialized map": 0.26365855290930396,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.18085840219801355,
+      "held-out R\u00b2 of pooled / specialized map": 0.14141723007987406,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.3865306873362466,
+      "held-out R\u00b2 of pooled / specialized map": 0.3470581244455928,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.3856825666179923,
+      "held-out R\u00b2 of pooled / specialized map": 0.3717810518323126,
+      "label": "assistant \u00b7 on-policy \u00b7 chat \u00b7 instruct",
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.29411676313698365,
+      "held-out R\u00b2 of pooled / specialized map": 0.2631796838214928,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.28370857002769806,
+      "held-out R\u00b2 of pooled / specialized map": 0.2653453172573321,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.27988210680548775,
+      "held-out R\u00b2 of pooled / specialized map": 0.17316470022616537,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.36960715629310803,
+      "held-out R\u00b2 of pooled / specialized map": 0.34068194443813604,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.21315487440581515,
+      "held-out R\u00b2 of pooled / specialized map": 0.19444677131090182,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.23057847586195007,
+      "held-out R\u00b2 of pooled / specialized map": 0.21643595681982153,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.35747589434403987,
+      "held-out R\u00b2 of pooled / specialized map": 0.3334880013740624,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.19175231198874484,
+      "held-out R\u00b2 of pooled / specialized map": 0.14196994695874687,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.3385595247719,
+      "held-out R\u00b2 of pooled / specialized map": 0.2619548331432663,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.3356027767718072,
+      "held-out R\u00b2 of pooled / specialized map": 0.2883857000752337,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.2468580444464818,
+      "held-out R\u00b2 of pooled / specialized map": 0.20892032037945574,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.24174941355775256,
+      "held-out R\u00b2 of pooled / specialized map": 0.21906182507518934,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.2185863641514155,
+      "held-out R\u00b2 of pooled / specialized map": 0.03900911362100545,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.2962172010567693,
+      "held-out R\u00b2 of pooled / specialized map": 0.18545197766814003,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.27773092560196416,
+      "held-out R\u00b2 of pooled / specialized map": 0.24795244855298193,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.23192692925032138,
+      "held-out R\u00b2 of pooled / specialized map": 0.19989244733866496,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.25933573961581935,
+      "held-out R\u00b2 of pooled / specialized map": 0.11610638060572231,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.12417804943373259,
+      "held-out R\u00b2 of pooled / specialized map": -0.005416808252692418,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.35635390153421775,
+      "held-out R\u00b2 of pooled / specialized map": 0.31023412992893207,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.3547961600412761,
+      "held-out R\u00b2 of pooled / specialized map": 0.3283743391376419,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.26266099859049113,
+      "held-out R\u00b2 of pooled / specialized map": 0.23134610444640158,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.25837841954594365,
+      "held-out R\u00b2 of pooled / specialized map": 0.23710078354833408,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.26435334458909887,
+      "held-out R\u00b2 of pooled / specialized map": 0.1604714183976077,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.3559185425108692,
+      "held-out R\u00b2 of pooled / specialized map": 0.2984944019747089,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.24697133503942315,
+      "held-out R\u00b2 of pooled / specialized map": 0.23206107922687158,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.23286895598988436,
+      "held-out R\u00b2 of pooled / specialized map": 0.21422408883330957,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.32727136213761465,
+      "held-out R\u00b2 of pooled / specialized map": 0.27677034377698295,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.16886394299858812,
+      "held-out R\u00b2 of pooled / specialized map": 0.12425766272778238,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.3808483791499187,
+      "held-out R\u00b2 of pooled / specialized map": 0.34449144351357264,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.3830483691709236,
+      "held-out R\u00b2 of pooled / specialized map": 0.3702015019036746,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.29904646700207105,
+      "held-out R\u00b2 of pooled / specialized map": 0.261870478229278,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.3062773017516078,
+      "held-out R\u00b2 of pooled / specialized map": 0.2770407133098386,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.4446092310384662,
+      "held-out R\u00b2 of pooled / specialized map": 0.39153184372664684,
+      "label": "assistant \u00b7 on-policy \u00b7 chat \u00b7 instruct",
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.4642557681036325,
+      "held-out R\u00b2 of pooled / specialized map": 0.42589393826087296,
+      "label": "assistant \u00b7 on-policy \u00b7 chat \u00b7 instruct",
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.411020933647651,
+      "held-out R\u00b2 of pooled / specialized map": 0.1982565555415482,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.49213256427518165,
+      "held-out R\u00b2 of pooled / specialized map": 0.3975824000315884,
+      "label": "assistant \u00b7 on-policy \u00b7 chat \u00b7 instruct",
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.2830236426880387,
+      "held-out R\u00b2 of pooled / specialized map": 0.2056614105100234,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.3790039749146514,
+      "held-out R\u00b2 of pooled / specialized map": 0.35613889553138234,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.20222439896386968,
+      "held-out R\u00b2 of pooled / specialized map": 0.18475242958578908,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.25314223172163713,
+      "held-out R\u00b2 of pooled / specialized map": 0.20725015954152615,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.2254487936181569,
+      "held-out R\u00b2 of pooled / specialized map": 0.17606558499795155,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.20882159429132746,
+      "held-out R\u00b2 of pooled / specialized map": 0.09141979458312599,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.20736087733279018,
+      "held-out R\u00b2 of pooled / specialized map": -0.01584190966447796,
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.5796996369279679,
+      "held-out R\u00b2 of pooled / specialized map": 0.43478488946626914,
+      "label": "assistant \u00b7 on-policy \u00b7 chat \u00b7 instruct",
+      "series": "pooled map, context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.36763992945576246,
+      "held-out R\u00b2 of pooled / specialized map": 0.3802730281103982,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.36478393257257713,
+      "held-out R\u00b2 of pooled / specialized map": 0.3785426942433793,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.2600253964957039,
+      "held-out R\u00b2 of pooled / specialized map": 0.2564598170392105,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.25804092851978855,
+      "held-out R\u00b2 of pooled / specialized map": 0.2585759863359025,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.27919295858458054,
+      "held-out R\u00b2 of pooled / specialized map": 0.2864181618626277,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.3609899231388926,
+      "held-out R\u00b2 of pooled / specialized map": 0.36907808789383567,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.22697104266573379,
+      "held-out R\u00b2 of pooled / specialized map": 0.22589317269689546,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.22254654104537908,
+      "held-out R\u00b2 of pooled / specialized map": 0.21839069173304826,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.3247326578431643,
+      "held-out R\u00b2 of pooled / specialized map": 0.32135945303479274,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.18085840219801355,
+      "held-out R\u00b2 of pooled / specialized map": 0.18245764146182553,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.3865306873362466,
+      "held-out R\u00b2 of pooled / specialized map": 0.39663152390162437,
+      "label": "assistant \u00b7 on-policy \u00b7 chat \u00b7 instruct",
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.3856825666179923,
+      "held-out R\u00b2 of pooled / specialized map": 0.39908305763800844,
+      "label": "assistant \u00b7 on-policy \u00b7 chat \u00b7 instruct",
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.29411676313698365,
+      "held-out R\u00b2 of pooled / specialized map": 0.2909397035408189,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.28370857002769806,
+      "held-out R\u00b2 of pooled / specialized map": 0.28515695427794496,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.27988210680548775,
+      "held-out R\u00b2 of pooled / specialized map": 0.2877893993092314,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.36960715629310803,
+      "held-out R\u00b2 of pooled / specialized map": 0.387925017080348,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.21315487440581515,
+      "held-out R\u00b2 of pooled / specialized map": 0.21494093073703668,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.23057847586195007,
+      "held-out R\u00b2 of pooled / specialized map": 0.2324473393808456,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.35747589434403987,
+      "held-out R\u00b2 of pooled / specialized map": 0.36054164850847636,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.19175231198874484,
+      "held-out R\u00b2 of pooled / specialized map": 0.1914725669958569,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.3385595247719,
+      "held-out R\u00b2 of pooled / specialized map": 0.35304456638834936,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.3356027767718072,
+      "held-out R\u00b2 of pooled / specialized map": 0.35227446530982154,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.2468580444464818,
+      "held-out R\u00b2 of pooled / specialized map": 0.24174406957481775,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.24174941355775256,
+      "held-out R\u00b2 of pooled / specialized map": 0.24149970236832252,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.2185863641514155,
+      "held-out R\u00b2 of pooled / specialized map": 0.21213117339106802,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.2962172010567693,
+      "held-out R\u00b2 of pooled / specialized map": 0.2968390606563006,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.27773092560196416,
+      "held-out R\u00b2 of pooled / specialized map": 0.2706408161046385,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.23192692925032138,
+      "held-out R\u00b2 of pooled / specialized map": 0.22028857409823022,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.25933573961581935,
+      "held-out R\u00b2 of pooled / specialized map": 0.24825734802231347,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.12417804943373259,
+      "held-out R\u00b2 of pooled / specialized map": 0.11598640268584581,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.35635390153421775,
+      "held-out R\u00b2 of pooled / specialized map": 0.3697617946819711,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.3547961600412761,
+      "held-out R\u00b2 of pooled / specialized map": 0.36967128057376986,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.26266099859049113,
+      "held-out R\u00b2 of pooled / specialized map": 0.25803677917090695,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.25837841954594365,
+      "held-out R\u00b2 of pooled / specialized map": 0.2571834477464221,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.26435334458909887,
+      "held-out R\u00b2 of pooled / specialized map": 0.27129754046783316,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.3559185425108692,
+      "held-out R\u00b2 of pooled / specialized map": 0.3674530331707825,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.24697133503942315,
+      "held-out R\u00b2 of pooled / specialized map": 0.2479407462057065,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.23286895598988436,
+      "held-out R\u00b2 of pooled / specialized map": 0.2305239651236073,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.32727136213761465,
+      "held-out R\u00b2 of pooled / specialized map": 0.32148727828138823,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.16886394299858812,
+      "held-out R\u00b2 of pooled / specialized map": 0.16791062998510142,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.3808483791499187,
+      "held-out R\u00b2 of pooled / specialized map": 0.38996837576205534,
+      "label": "assistant \u00b7 on-policy \u00b7 chat \u00b7 instruct",
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.3830483691709236,
+      "held-out R\u00b2 of pooled / specialized map": 0.3949961713092083,
+      "label": "assistant \u00b7 on-policy \u00b7 chat \u00b7 instruct",
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.29904646700207105,
+      "held-out R\u00b2 of pooled / specialized map": 0.29385929872837413,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.3062773017516078,
+      "held-out R\u00b2 of pooled / specialized map": 0.30433863916659765,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.4446092310384662,
+      "held-out R\u00b2 of pooled / specialized map": 0.4232700280960602,
+      "label": "assistant \u00b7 on-policy \u00b7 chat \u00b7 instruct",
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.4642557681036325,
+      "held-out R\u00b2 of pooled / specialized map": 0.4485022191531337,
+      "label": "assistant \u00b7 on-policy \u00b7 chat \u00b7 instruct",
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.411020933647651,
+      "held-out R\u00b2 of pooled / specialized map": 0.38722384680733735,
+      "label": "assistant \u00b7 on-policy \u00b7 chat \u00b7 instruct",
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.49213256427518165,
+      "held-out R\u00b2 of pooled / specialized map": 0.47378749033296685,
+      "label": "assistant \u00b7 on-policy \u00b7 chat \u00b7 instruct",
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.2830236426880387,
+      "held-out R\u00b2 of pooled / specialized map": 0.29488111589074983,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.3790039749146514,
+      "held-out R\u00b2 of pooled / specialized map": 0.3979748663569822,
+      "label": "assistant \u00b7 on-policy \u00b7 chat \u00b7 instruct",
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.20222439896386968,
+      "held-out R\u00b2 of pooled / specialized map": 0.20428825307990572,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.25314223172163713,
+      "held-out R\u00b2 of pooled / specialized map": 0.2457310442448275,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.2254487936181569,
+      "held-out R\u00b2 of pooled / specialized map": 0.20626573899388023,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.20882159429132746,
+      "held-out R\u00b2 of pooled / specialized map": 0.1650086898200711,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.20736087733279018,
+      "held-out R\u00b2 of pooled / specialized map": 0.19214157437360546,
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.5796996369279679,
+      "held-out R\u00b2 of pooled / specialized map": 0.5574192872066032,
+      "label": "assistant \u00b7 on-policy \u00b7 chat \u00b7 instruct",
+      "series": "specialized (rank 128), context arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.006951386971480589,
+      "held-out R\u00b2 of pooled / specialized map": -0.05379452567053189,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.006588036166955069,
+      "held-out R\u00b2 of pooled / specialized map": -0.04427698314894157,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.005932236531486401,
+      "held-out R\u00b2 of pooled / specialized map": -0.054194186175643644,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.005621017280867058,
+      "held-out R\u00b2 of pooled / specialized map": -0.04163398976664756,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.015655210355020932,
+      "held-out R\u00b2 of pooled / specialized map": -0.07829352513187882,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.018571922861556,
+      "held-out R\u00b2 of pooled / specialized map": -0.04749816374108673,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.01084662430676524,
+      "held-out R\u00b2 of pooled / specialized map": -0.13133712805422437,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.01660406176191447,
+      "held-out R\u00b2 of pooled / specialized map": -0.10773699363177403,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": -0.0012255033581890285,
+      "held-out R\u00b2 of pooled / specialized map": -0.0347181049348666,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": -0.0012176586724986116,
+      "held-out R\u00b2 of pooled / specialized map": -0.033344825729991534,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.005214469312829895,
+      "held-out R\u00b2 of pooled / specialized map": -0.04409417201007826,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.0056489033361868165,
+      "held-out R\u00b2 of pooled / specialized map": -0.02915617182574093,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.005201585188225888,
+      "held-out R\u00b2 of pooled / specialized map": -0.04142759885418479,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.005424749885771374,
+      "held-out R\u00b2 of pooled / specialized map": -0.026118321714269088,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.006783783815736943,
+      "held-out R\u00b2 of pooled / specialized map": -0.10301853406299499,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.009057769907139513,
+      "held-out R\u00b2 of pooled / specialized map": -0.027819877522600178,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.0032724885713756534,
+      "held-out R\u00b2 of pooled / specialized map": -0.1629928918726644,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.008289098911909255,
+      "held-out R\u00b2 of pooled / specialized map": -0.06503806573859805,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": -0.001087895643868997,
+      "held-out R\u00b2 of pooled / specialized map": -0.01180163673524759,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": -0.001251696786736245,
+      "held-out R\u00b2 of pooled / specialized map": -0.032888613326832905,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.0042959810688096844,
+      "held-out R\u00b2 of pooled / specialized map": -0.07310236629735956,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.0037354605259218186,
+      "held-out R\u00b2 of pooled / specialized map": -0.05570761750054021,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.004013182269479154,
+      "held-out R\u00b2 of pooled / specialized map": -0.07203764177725369,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.003328394097920362,
+      "held-out R\u00b2 of pooled / specialized map": -0.05168004804297732,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.0057109685308983195,
+      "held-out R\u00b2 of pooled / specialized map": -0.19522046752586686,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.009638376291174122,
+      "held-out R\u00b2 of pooled / specialized map": -0.10399477511604038,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.011057643561839425,
+      "held-out R\u00b2 of pooled / specialized map": -0.24656335159786869,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.007023109386770021,
+      "held-out R\u00b2 of pooled / specialized map": -0.1305401014697809,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": -0.0008191978376740128,
+      "held-out R\u00b2 of pooled / specialized map": -0.07920593073492088,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": -0.0007025023196907565,
+      "held-out R\u00b2 of pooled / specialized map": -0.09058524672821355,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.009530740432631645,
+      "held-out R\u00b2 of pooled / specialized map": -0.046769920984018665,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.008709767285749593,
+      "held-out R\u00b2 of pooled / specialized map": -0.03735472058411471,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.009192765445618756,
+      "held-out R\u00b2 of pooled / specialized map": -0.04636912968376161,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.008223468278551537,
+      "held-out R\u00b2 of pooled / specialized map": -0.035954853167384115,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.016550519991516733,
+      "held-out R\u00b2 of pooled / specialized map": -0.09899849560197982,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.019761363470691705,
+      "held-out R\u00b2 of pooled / specialized map": -0.03751620236867503,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.012722177227167775,
+      "held-out R\u00b2 of pooled / specialized map": -0.12280783545616325,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.01507113851400963,
+      "held-out R\u00b2 of pooled / specialized map": -0.07402864953835597,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": -0.0007492578968848473,
+      "held-out R\u00b2 of pooled / specialized map": -0.02108303986969262,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": -0.0008226341489010025,
+      "held-out R\u00b2 of pooled / specialized map": -0.03019247890729848,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.009727167554348104,
+      "held-out R\u00b2 of pooled / specialized map": -0.03727367269265147,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.00966764153707933,
+      "held-out R\u00b2 of pooled / specialized map": -0.03148200204946727,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.008256027185589132,
+      "held-out R\u00b2 of pooled / specialized map": -0.0508416178417499,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.0072585919536588776,
+      "held-out R\u00b2 of pooled / specialized map": -0.04278641397818439,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.002858673195445549,
+      "held-out R\u00b2 of pooled / specialized map": -0.03142564328078534,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.0023475746697044554,
+      "held-out R\u00b2 of pooled / specialized map": -0.033663033705551904,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": -0.0006194788671340046,
+      "held-out R\u00b2 of pooled / specialized map": -0.12684300358961353,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": -0.0006228672962595106,
+      "held-out R\u00b2 of pooled / specialized map": -0.04952568254786982,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.02067623336082953,
+      "held-out R\u00b2 of pooled / specialized map": -0.07276574333809571,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.01962478677977022,
+      "held-out R\u00b2 of pooled / specialized map": -0.016807011551953188,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.0013320619148533774,
+      "held-out R\u00b2 of pooled / specialized map": -0.0988481341940668,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.009011829243970837,
+      "held-out R\u00b2 of pooled / specialized map": -0.10630546651813022,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.0010260745711521357,
+      "held-out R\u00b2 of pooled / specialized map": -0.07322356257296114,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.0011667066576669827,
+      "held-out R\u00b2 of pooled / specialized map": -0.09996062945707274,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": -0.0008125530235571166,
+      "held-out R\u00b2 of pooled / specialized map": -0.151030348674978,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": -0.0007971605585360919,
+      "held-out R\u00b2 of pooled / specialized map": -0.07091107800105201,
+      "series": "pooled map, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.006951386971480589,
+      "held-out R\u00b2 of pooled / specialized map": -0.005719063307492167,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.006588036166955069,
+      "held-out R\u00b2 of pooled / specialized map": -0.008872684042313894,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.005932236531486401,
+      "held-out R\u00b2 of pooled / specialized map": -0.007079508372317855,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.005621017280867058,
+      "held-out R\u00b2 of pooled / specialized map": -0.010223343020484998,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.015655210355020932,
+      "held-out R\u00b2 of pooled / specialized map": 0.0021736562075611587,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.018571922861556,
+      "held-out R\u00b2 of pooled / specialized map": 0.005812937380340055,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.01084662430676524,
+      "held-out R\u00b2 of pooled / specialized map": -0.0003525988613788389,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.01660406176191447,
+      "held-out R\u00b2 of pooled / specialized map": -0.0005686094503165595,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": -0.0012255033581890285,
+      "held-out R\u00b2 of pooled / specialized map": -0.00039609921700600736,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": -0.0012176586724986116,
+      "held-out R\u00b2 of pooled / specialized map": -0.0003658441180731664,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.005214469312829895,
+      "held-out R\u00b2 of pooled / specialized map": -0.003434061658527776,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.0056489033361868165,
+      "held-out R\u00b2 of pooled / specialized map": -0.006399604061419595,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.005201585188225888,
+      "held-out R\u00b2 of pooled / specialized map": -0.003794437612081536,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.005424749885771374,
+      "held-out R\u00b2 of pooled / specialized map": -0.006930586806486172,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.006783783815736943,
+      "held-out R\u00b2 of pooled / specialized map": -0.003646574304786432,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.009057769907139513,
+      "held-out R\u00b2 of pooled / specialized map": 0.0034482740343604323,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.0032724885713756534,
+      "held-out R\u00b2 of pooled / specialized map": -0.00030905470297004634,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.008289098911909255,
+      "held-out R\u00b2 of pooled / specialized map": 0.0019413402771951693,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": -0.001087895643868997,
+      "held-out R\u00b2 of pooled / specialized map": -0.00039042559523427833,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": -0.001251696786736245,
+      "held-out R\u00b2 of pooled / specialized map": -0.0003531519529118565,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.0042959810688096844,
+      "held-out R\u00b2 of pooled / specialized map": -0.005988747549851459,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.0037354605259218186,
+      "held-out R\u00b2 of pooled / specialized map": -0.008965600088601589,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.004013182269479154,
+      "held-out R\u00b2 of pooled / specialized map": -0.006822070259067559,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.003328394097920362,
+      "held-out R\u00b2 of pooled / specialized map": -0.010120779889616127,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.0057109685308983195,
+      "held-out R\u00b2 of pooled / specialized map": -0.017903944549700457,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.009638376291174122,
+      "held-out R\u00b2 of pooled / specialized map": -0.009697681284311255,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.011057643561839425,
+      "held-out R\u00b2 of pooled / specialized map": 5.679215929421666e-05,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.007023109386770021,
+      "held-out R\u00b2 of pooled / specialized map": -0.007702611537048654,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": -0.0008191978376740128,
+      "held-out R\u00b2 of pooled / specialized map": -0.0002959938823237085,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": -0.0007025023196907565,
+      "held-out R\u00b2 of pooled / specialized map": -0.00025309801848449887,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.009530740432631645,
+      "held-out R\u00b2 of pooled / specialized map": -0.002162413551147102,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.008709767285749593,
+      "held-out R\u00b2 of pooled / specialized map": -0.006094152815482312,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.009192765445618756,
+      "held-out R\u00b2 of pooled / specialized map": -0.003057356864878402,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.008223468278551537,
+      "held-out R\u00b2 of pooled / specialized map": -0.007284220294158983,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.016550519991516733,
+      "held-out R\u00b2 of pooled / specialized map": 0.0005968648460119574,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.019761363470691705,
+      "held-out R\u00b2 of pooled / specialized map": 0.00672110328125497,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.012722177227167775,
+      "held-out R\u00b2 of pooled / specialized map": 0.0037731438226370484,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.01507113851400963,
+      "held-out R\u00b2 of pooled / specialized map": 0.0017834506379634796,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": -0.0007492578968848473,
+      "held-out R\u00b2 of pooled / specialized map": -0.0002684646756827558,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": -0.0008226341489010025,
+      "held-out R\u00b2 of pooled / specialized map": -0.0002575389754408963,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.009727167554348104,
+      "held-out R\u00b2 of pooled / specialized map": -0.0005981338221807686,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.00966764153707933,
+      "held-out R\u00b2 of pooled / specialized map": -0.005447677980291887,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.008256027185589132,
+      "held-out R\u00b2 of pooled / specialized map": -0.0026024416417682605,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.0072585919536588776,
+      "held-out R\u00b2 of pooled / specialized map": -0.00810598879550728,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.002858673195445549,
+      "held-out R\u00b2 of pooled / specialized map": 0.0029999339945964154,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.0023475746697044554,
+      "held-out R\u00b2 of pooled / specialized map": 0.002745820402275889,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": -0.0006194788671340046,
+      "held-out R\u00b2 of pooled / specialized map": -0.00022214343514237456,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": -0.0006228672962595106,
+      "held-out R\u00b2 of pooled / specialized map": -0.0002235431621586681,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.02067623336082953,
+      "held-out R\u00b2 of pooled / specialized map": 0.007283508618767254,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.01962478677977022,
+      "held-out R\u00b2 of pooled / specialized map": 0.009233783170538579,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.0013320619148533774,
+      "held-out R\u00b2 of pooled / specialized map": -0.0038056460242412715,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.009011829243970837,
+      "held-out R\u00b2 of pooled / specialized map": -0.0018828678747522254,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.0010260745711521357,
+      "held-out R\u00b2 of pooled / specialized map": 0.001119590054677877,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": 0.0011667066576669827,
+      "held-out R\u00b2 of pooled / specialized map": 0.0016007098238906003,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": -0.0008125530235571166,
+      "held-out R\u00b2 of pooled / specialized map": -0.000293265624700334,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked within-cell fit R\u00b2 (ceiling)": -0.0007971605585360919,
+      "held-out R\u00b2 of pooled / specialized map": -0.00028546841140575374,
+      "series": "specialized (rank 128), prefix arm",
+      "_kind": "scatter",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 224,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Pooled map recovers most of each cell's own ceiling",
+        "xlabel": "banked within-cell fit R\u00b2 (ceiling)",
+        "ylabel": "held-out R\u00b2 of pooled / specialized map",
+        "legend_labels": [
+          "pooled map, context arm",
+          "specialized (rank 128), context arm",
+          "pooled map, prefix arm",
+          "specialized (rank 128), prefix arm"
+        ],
+        "annotations": [
+          "assistant \u00b7 on-policy \u00b7 chat \u00b7 instruct",
+          "one point per cell and arm; dashed line marks parity with the ceiling"
+        ],
+        "xticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ],
+        "yticklabels": [
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ],
+    "series": [
+      "pooled map, context arm",
+      "specialized (rank 128), context arm",
+      "pooled map, prefix arm",
+      "specialized (rank 128), prefix arm"
+    ]
+  }
+}

@@ -1,0 +1,4869 @@
+{
+  "commit": "5eb343f5",
+  "git_commit": "5eb343f5",
+  "git_dirty": false,
+  "created": "2026-08-13T04:04:41Z",
+  "figsize": [
+    7.6,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.15164615320216512,
+      "held-out R\u00b2, mean over folds": 0.3322103874126666,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.19855701843471268,
+      "held-out R\u00b2, mean over folds": 0.3193121097111642,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.13979629121240644,
+      "held-out R\u00b2, mean over folds": 0.23811844980501337,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.16236847593168907,
+      "held-out R\u00b2, mean over folds": 0.23145155695405856,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.24681517129572908,
+      "held-out R\u00b2, mean over folds": 0.29057467848968915,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12341287077085417,
+      "held-out R\u00b2, mean over folds": 0.1945596980003773,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.15344044172135057,
+      "held-out R\u00b2, mean over folds": 0.20115177934592934,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.14995099726122646,
+      "held-out R\u00b2, mean over folds": 0.20721176382243672,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.24206409142542357,
+      "held-out R\u00b2, mean over folds": 0.2632462067294739,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1969459686946206,
+      "held-out R\u00b2, mean over folds": 0.1408860772157264,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.20808827660743862,
+      "held-out R\u00b2, mean over folds": 0.3715178460600246,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.13025290156119573,
+      "held-out R\u00b2, mean over folds": 0.3467716612539058,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.16985888318870696,
+      "held-out R\u00b2, mean over folds": 0.2650398956398544,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.14481337414208378,
+      "held-out R\u00b2, mean over folds": 0.26288272427771375,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.19792201216417366,
+      "held-out R\u00b2, mean over folds": 0.34028494498421596,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.22818657895013122,
+      "held-out R\u00b2, mean over folds": 0.1726315942512319,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.18235812981778313,
+      "held-out R\u00b2, mean over folds": 0.21609266792277423,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.25106558414541547,
+      "held-out R\u00b2, mean over folds": 0.19399713605819108,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1441316359210385,
+      "held-out R\u00b2, mean over folds": 0.33309873713660626,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.17156698412291094,
+      "held-out R\u00b2, mean over folds": 0.14145729502046644,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.15386771638804767,
+      "held-out R\u00b2, mean over folds": 0.2880908264108718,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.21036636446181844,
+      "held-out R\u00b2, mean over folds": 0.2616329285963135,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12410227658471354,
+      "held-out R\u00b2, mean over folds": 0.2188271891995311,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.13496304301489231,
+      "held-out R\u00b2, mean over folds": 0.20865476148928025,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.15102631040967335,
+      "held-out R\u00b2, mean over folds": 0.18511645251809059,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.23275058090072454,
+      "held-out R\u00b2, mean over folds": 0.03860638011202624,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1946590594782152,
+      "held-out R\u00b2, mean over folds": 0.1993943743488133,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.253867472789788,
+      "held-out R\u00b2, mean over folds": 0.2472805894471417,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.23839947111054333,
+      "held-out R\u00b2, mean over folds": 0.11576860694122679,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.16437314654605634,
+      "held-out R\u00b2, mean over folds": -0.005798087252473461,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1557332981729056,
+      "held-out R\u00b2, mean over folds": 0.3280335707872733,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1245486374592106,
+      "held-out R\u00b2, mean over folds": 0.3098846684470439,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.21438444986065874,
+      "held-out R\u00b2, mean over folds": 0.2367837754222503,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.20813564115511834,
+      "held-out R\u00b2, mean over folds": 0.2309979680482984,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.19426218642138687,
+      "held-out R\u00b2, mean over folds": 0.29810181543967956,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2334740097282,
+      "held-out R\u00b2, mean over folds": 0.16004636956258284,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.24181098925303396,
+      "held-out R\u00b2, mean over folds": 0.21381948048410687,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.19340131032836927,
+      "held-out R\u00b2, mean over folds": 0.2316320061621492,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.22823269113287623,
+      "held-out R\u00b2, mean over folds": 0.2761899562795186,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.16622604074444855,
+      "held-out R\u00b2, mean over folds": 0.12369871511675008,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1987987313578737,
+      "held-out R\u00b2, mean over folds": 0.36995083980812427,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.14342505255190274,
+      "held-out R\u00b2, mean over folds": 0.34423716940224763,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.16196288571968512,
+      "held-out R\u00b2, mean over folds": 0.27680384266310043,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.21626867020651425,
+      "held-out R\u00b2, mean over folds": 0.261621939516813,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.14348362780467183,
+      "held-out R\u00b2, mean over folds": 0.4256529072916148,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.14733298995044775,
+      "held-out R\u00b2, mean over folds": 0.39127066788957415,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.20575302693577557,
+      "held-out R\u00b2, mean over folds": 0.3973164139125635,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.21963406544976583,
+      "held-out R\u00b2, mean over folds": 0.1979168292129713,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.16445062944350342,
+      "held-out R\u00b2, mean over folds": 0.35581384676897515,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.24043465229469663,
+      "held-out R\u00b2, mean over folds": 0.20524990867853826,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.23201285165348484,
+      "held-out R\u00b2, mean over folds": 0.20667313318878405,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.25896928223485927,
+      "held-out R\u00b2, mean over folds": 0.18440520676432426,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.14983058714970063,
+      "held-out R\u00b2, mean over folds": 0.09116609697292373,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1669208800771155,
+      "held-out R\u00b2, mean over folds": 0.17561471429120082,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1612768469923131,
+      "held-out R\u00b2, mean over folds": 0.4344725349984258,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1506979356569245,
+      "held-out R\u00b2, mean over folds": -0.016384612723070104,
+      "series": "context arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.1842482085753676,
+      "held-out R\u00b2, mean over folds": -0.04492271585367025,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.19962376743340512,
+      "held-out R\u00b2, mean over folds": -0.05441239658316075,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.13957157973787204,
+      "held-out R\u00b2, mean over folds": -0.04225724675748403,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.13603421029503626,
+      "held-out R\u00b2, mean over folds": -0.05479809717023665,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.21357641465066604,
+      "held-out R\u00b2, mean over folds": -0.04818188713413316,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.18595346886003855,
+      "held-out R\u00b2, mean over folds": -0.07902926055355505,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.19913305490736644,
+      "held-out R\u00b2, mean over folds": -0.10828811908097498,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.22709984003824357,
+      "held-out R\u00b2, mean over folds": -0.13204873347007565,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.20886056480008272,
+      "held-out R\u00b2, mean over folds": -0.03537147162011913,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1975011160921194,
+      "held-out R\u00b2, mean over folds": -0.033997687352185404,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.19828900250435788,
+      "held-out R\u00b2, mean over folds": -0.02966551615442694,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1625530137287657,
+      "held-out R\u00b2, mean over folds": -0.044605136075436036,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12431449683951151,
+      "held-out R\u00b2, mean over folds": -0.0266228117161611,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.18114043449253073,
+      "held-out R\u00b2, mean over folds": -0.04193985449809592,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1500418541947341,
+      "held-out R\u00b2, mean over folds": -0.028473047935600394,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.17719401012144906,
+      "held-out R\u00b2, mean over folds": -0.10370759909878027,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.23947643025754328,
+      "held-out R\u00b2, mean over folds": -0.06552976940826497,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.15275152802114772,
+      "held-out R\u00b2, mean over folds": -0.16354494077255013,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12816238383646925,
+      "held-out R\u00b2, mean over folds": -0.012509576828557956,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1593937448830795,
+      "held-out R\u00b2, mean over folds": -0.033537082375875826,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1611031260873357,
+      "held-out R\u00b2, mean over folds": -0.056102089936997855,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.2126683120617653,
+      "held-out R\u00b2, mean over folds": -0.07351327686372855,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.19798450132777895,
+      "held-out R\u00b2, mean over folds": -0.05207353005730551,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.22974574927489788,
+      "held-out R\u00b2, mean over folds": -0.07245257194451252,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.21300389564583427,
+      "held-out R\u00b2, mean over folds": -0.10450997664227746,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.17689416060160987,
+      "held-out R\u00b2, mean over folds": -0.19570613339945525,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.23396285385324486,
+      "held-out R\u00b2, mean over folds": -0.13108774621317992,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.14337620878707855,
+      "held-out R\u00b2, mean over folds": -0.2472157075879538,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12317969023874047,
+      "held-out R\u00b2, mean over folds": -0.07974860119505749,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.13260670050858986,
+      "held-out R\u00b2, mean over folds": -0.09104690578107003,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.22113030908350306,
+      "held-out R\u00b2, mean over folds": -0.037808597434780954,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.18466281223519423,
+      "held-out R\u00b2, mean over folds": -0.047239235294347016,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.14257804906470425,
+      "held-out R\u00b2, mean over folds": -0.03638733788056436,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.19014626851447092,
+      "held-out R\u00b2, mean over folds": -0.046823883948286224,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.14132369437984357,
+      "held-out R\u00b2, mean over folds": -0.03806081463965585,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.21748485251088306,
+      "held-out R\u00b2, mean over folds": -0.09956985751939276,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1824618785803643,
+      "held-out R\u00b2, mean over folds": -0.07457581737800027,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.17334297165350754,
+      "held-out R\u00b2, mean over folds": -0.12344537412542134,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.16221169248070272,
+      "held-out R\u00b2, mean over folds": -0.02158893584627397,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.20823956303664437,
+      "held-out R\u00b2, mean over folds": -0.030700396953587283,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.17065376547747466,
+      "held-out R\u00b2, mean over folds": -0.03188844504065149,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.13227098870425413,
+      "held-out R\u00b2, mean over folds": -0.03768666824908662,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.13652082629687215,
+      "held-out R\u00b2, mean over folds": -0.04320057947346649,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.25466567303693205,
+      "held-out R\u00b2, mean over folds": -0.05127742466097627,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.247201296699065,
+      "held-out R\u00b2, mean over folds": -0.03409262585217081,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.21795899873350494,
+      "held-out R\u00b2, mean over folds": -0.031874329221728684,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.15722179460433275,
+      "held-out R\u00b2, mean over folds": -0.0499516508996547,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.25568469282868134,
+      "held-out R\u00b2, mean over folds": -0.1273040096396537,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.22902512655521123,
+      "held-out R\u00b2, mean over folds": -0.017329082782205286,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.2203646264822594,
+      "held-out R\u00b2, mean over folds": -0.0733925411762002,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.18291061030013042,
+      "held-out R\u00b2, mean over folds": -0.1070960061842873,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.15811381865832225,
+      "held-out R\u00b2, mean over folds": -0.09937395591680373,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1334947347014899,
+      "held-out R\u00b2, mean over folds": -0.10040913667145608,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.24636433551613784,
+      "held-out R\u00b2, mean over folds": -0.07388566631810516,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.18380868057670555,
+      "held-out R\u00b2, mean over folds": -0.07147560143616682,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.14833087107133225,
+      "held-out R\u00b2, mean over folds": -0.1516865068507204,
+      "series": "prefix arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.7828339273810914,
+      "held-out R\u00b2, mean over folds": 0.2566500655773252,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8210907396518655,
+      "held-out R\u00b2, mean over folds": 0.296483051043631,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7647481896114925,
+      "held-out R\u00b2, mean over folds": 0.1652394265769993,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8599259997729326,
+      "held-out R\u00b2, mean over folds": 0.1782159563146302,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8461927341769295,
+      "held-out R\u00b2, mean over folds": 0.18977796021953106,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8407248138331312,
+      "held-out R\u00b2, mean over folds": 0.11584343367405858,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8004930255685145,
+      "held-out R\u00b2, mean over folds": 0.061976439895173076,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8278232376983421,
+      "held-out R\u00b2, mean over folds": 0.04648047470999903,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.821773715647783,
+      "held-out R\u00b2, mean over folds": 0.04479278544465748,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8309785242176748,
+      "held-out R\u00b2, mean over folds": -0.096982914944748,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7518222049595845,
+      "held-out R\u00b2, mean over folds": 0.27460460153845345,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7982130363038854,
+      "held-out R\u00b2, mean over folds": 0.308672949274377,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7458259843406649,
+      "held-out R\u00b2, mean over folds": 0.17270627139951372,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8091587146942327,
+      "held-out R\u00b2, mean over folds": 0.20332134416500783,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.78618056972659,
+      "held-out R\u00b2, mean over folds": 0.2685352029993717,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7602333864412466,
+      "held-out R\u00b2, mean over folds": 0.09886408627054652,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7544764154811573,
+      "held-out R\u00b2, mean over folds": 0.13710430015572295,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8222702401048797,
+      "held-out R\u00b2, mean over folds": 0.012672069182841316,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7638830155951641,
+      "held-out R\u00b2, mean over folds": 0.16550038196487743,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8695168165727517,
+      "held-out R\u00b2, mean over folds": -0.09861912773914198,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8213485595580553,
+      "held-out R\u00b2, mean over folds": 0.22365965206379568,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7885617726348773,
+      "held-out R\u00b2, mean over folds": 0.2654452401107707,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8227281688073984,
+      "held-out R\u00b2, mean over folds": 0.14024045804671925,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7431925419441577,
+      "held-out R\u00b2, mean over folds": 0.15723750975859552,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8741982898538024,
+      "held-out R\u00b2, mean over folds": 0.037393162062489105,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8075224811720061,
+      "held-out R\u00b2, mean over folds": -0.14426292989760664,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8495829318150401,
+      "held-out R\u00b2, mean over folds": 0.03728381870205773,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7515821999891414,
+      "held-out R\u00b2, mean over folds": -0.05168765680883736,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8081321663173425,
+      "held-out R\u00b2, mean over folds": -0.1259754060044523,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.808698979209633,
+      "held-out R\u00b2, mean over folds": -0.32019732475574975,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8712957036964977,
+      "held-out R\u00b2, mean over folds": 0.24586825777698648,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8200419273326506,
+      "held-out R\u00b2, mean over folds": 0.2835749098796416,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8062885161479736,
+      "held-out R\u00b2, mean over folds": 0.15339518749819808,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7773765928328652,
+      "held-out R\u00b2, mean over folds": 0.17334559058376087,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7864196596279573,
+      "held-out R\u00b2, mean over folds": 0.2160826881487153,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8128941363460154,
+      "held-out R\u00b2, mean over folds": 0.08875738062238296,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8014476044427066,
+      "held-out R\u00b2, mean over folds": 0.11533315029101135,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7430256911832464,
+      "held-out R\u00b2, mean over folds": 0.10030624536669923,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8556808693872101,
+      "held-out R\u00b2, mean over folds": 0.05606179818164721,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8654625080575674,
+      "held-out R\u00b2, mean over folds": -0.12800746903607535,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7596348724598055,
+      "held-out R\u00b2, mean over folds": 0.2811463196494469,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8175650600954669,
+      "held-out R\u00b2, mean over folds": 0.3040793105234438,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7552006037589621,
+      "held-out R\u00b2, mean over folds": 0.20188405583241123,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8341136130255737,
+      "held-out R\u00b2, mean over folds": 0.18221136916491945,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7793727297374612,
+      "held-out R\u00b2, mean over folds": 0.3036560069730936,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8323191688568663,
+      "held-out R\u00b2, mean over folds": 0.23118246214945914,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8417792460001636,
+      "held-out R\u00b2, mean over folds": 0.30313306741031204,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.847610648868472,
+      "held-out R\u00b2, mean over folds": 0.1641408351608209,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7550837324338255,
+      "held-out R\u00b2, mean over folds": 0.3026030940490533,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8682416583192651,
+      "held-out R\u00b2, mean over folds": 0.16569640462645613,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7722299587252833,
+      "held-out R\u00b2, mean over folds": 0.10961674417431537,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7452377578646652,
+      "held-out R\u00b2, mean over folds": 0.08000275183471395,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8176793457148077,
+      "held-out R\u00b2, mean over folds": -0.26608977728386146,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7919291197407414,
+      "held-out R\u00b2, mean over folds": -0.012598598374309012,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8561705640385379,
+      "held-out R\u00b2, mean over folds": 0.3394647351077157,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8531552060890023,
+      "held-out R\u00b2, mean over folds": -0.06249236955228019,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.16439944499518,
+      "held-out R\u00b2, mean over folds": -0.11181045935254481,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2534059153097643,
+      "held-out R\u00b2, mean over folds": -0.0679904088436178,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1607284973396166,
+      "held-out R\u00b2, mean over folds": -0.08557800029536122,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.19210799809244,
+      "held-out R\u00b2, mean over folds": -0.06308194146672941,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1558351126794644,
+      "held-out R\u00b2, mean over folds": -0.13920694075577927,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2510460998068549,
+      "held-out R\u00b2, mean over folds": -0.13659087820215282,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1430450944614825,
+      "held-out R\u00b2, mean over folds": -0.1508408471864613,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.126287486714926,
+      "held-out R\u00b2, mean over folds": -0.17272147240377178,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1809135884004252,
+      "held-out R\u00b2, mean over folds": -0.24762385588994512,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2589325789678172,
+      "held-out R\u00b2, mean over folds": -0.2650689643103862,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.244834817275688,
+      "held-out R\u00b2, mean over folds": -0.11817394385256494,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.224805122723973,
+      "held-out R\u00b2, mean over folds": -0.07359138103626664,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2447109487229935,
+      "held-out R\u00b2, mean over folds": -0.10160061941567497,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2450825295577008,
+      "held-out R\u00b2, mean over folds": -0.06564715221971892,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1926401704541028,
+      "held-out R\u00b2, mean over folds": -0.09422088330459259,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.164230067256311,
+      "held-out R\u00b2, mean over folds": -0.15393347768762156,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2280817404955382,
+      "held-out R\u00b2, mean over folds": -0.08517505424096102,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2126325768434865,
+      "held-out R\u00b2, mean over folds": -0.19294664347063675,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1723120820423194,
+      "held-out R\u00b2, mean over folds": -0.17984774662424866,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.133225333528612,
+      "held-out R\u00b2, mean over folds": -0.27364193194279696,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2245505455888637,
+      "held-out R\u00b2, mean over folds": -0.11670606054596795,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.156744472229201,
+      "held-out R\u00b2, mean over folds": -0.06744041065789963,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.251153841074729,
+      "held-out R\u00b2, mean over folds": -0.09097925533888555,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1537358805007958,
+      "held-out R\u00b2, mean over folds": -0.060536113599069095,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.137186110537608,
+      "held-out R\u00b2, mean over folds": -0.2270411762111016,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2363557740974869,
+      "held-out R\u00b2, mean over folds": -0.3192291677193659,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.141459804327429,
+      "held-out R\u00b2, mean over folds": -0.18283926097279618,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1450975631420834,
+      "held-out R\u00b2, mean over folds": -0.3202054177059267,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2039135908129182,
+      "held-out R\u00b2, mean over folds": -0.3141416602194917,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.242438685717245,
+      "held-out R\u00b2, mean over folds": -0.39856307339478425,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1475008532000401,
+      "held-out R\u00b2, mean over folds": -0.1119891491790335,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1634453142060133,
+      "held-out R\u00b2, mean over folds": -0.06727858452649071,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.228836677353765,
+      "held-out R\u00b2, mean over folds": -0.09275588784286622,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2560556996485355,
+      "held-out R\u00b2, mean over folds": -0.06271222999399151,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1901037660683278,
+      "held-out R\u00b2, mean over folds": -0.11566089510807487,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.140145650357175,
+      "held-out R\u00b2, mean over folds": -0.14593132957234975,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1219510802791481,
+      "held-out R\u00b2, mean over folds": -0.10591595024738916,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1521518441998397,
+      "held-out R\u00b2, mean over folds": -0.14002077338988866,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1384551104901128,
+      "held-out R\u00b2, mean over folds": -0.2397689775649873,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2148722143058,
+      "held-out R\u00b2, mean over folds": -0.2804872755687137,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1370565506479944,
+      "held-out R\u00b2, mean over folds": -0.10575243420943141,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1908861904268886,
+      "held-out R\u00b2, mean over folds": -0.06829141480717849,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.217196740990004,
+      "held-out R\u00b2, mean over folds": -0.08756301870486385,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2013563252909263,
+      "held-out R\u00b2, mean over folds": -0.08656916013563891,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.147968591232408,
+      "held-out R\u00b2, mean over folds": -0.12175805173384821,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2325774336655166,
+      "held-out R\u00b2, mean over folds": -0.15779614611964074,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2201569981462121,
+      "held-out R\u00b2, mean over folds": -0.13809749206560937,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2234577605481758,
+      "held-out R\u00b2, mean over folds": -0.15569306484046708,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1383480852180239,
+      "held-out R\u00b2, mean over folds": -0.06733460056323973,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1373255325110483,
+      "held-out R\u00b2, mean over folds": -0.0931099063103682,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.249858757140911,
+      "held-out R\u00b2, mean over folds": -0.11110984935696626,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1756609471354917,
+      "held-out R\u00b2, mean over folds": -0.11575699111223052,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1621328168493315,
+      "held-out R\u00b2, mean over folds": -0.36991452462492147,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1884017663492146,
+      "held-out R\u00b2, mean over folds": -0.1887743804704199,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2128009897869014,
+      "held-out R\u00b2, mean over folds": -0.15929269007667787,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2537872559865757,
+      "held-out R\u00b2, mean over folds": -0.1920554396257303,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.7801024717634877,
+      "held-out R\u00b2, mean over folds": 0.26739729522844147,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.869473180103684,
+      "held-out R\u00b2, mean over folds": 0.3073806786277382,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7434803287940759,
+      "held-out R\u00b2, mean over folds": 0.16924393086937967,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8177277259257556,
+      "held-out R\u00b2, mean over folds": 0.18520989830638201,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.828756515635352,
+      "held-out R\u00b2, mean over folds": 0.24908128563114024,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7548256365251056,
+      "held-out R\u00b2, mean over folds": 0.20026018550867314,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7596475435889478,
+      "held-out R\u00b2, mean over folds": 0.08199363149562237,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7986760047042827,
+      "held-out R\u00b2, mean over folds": 0.06871148196137475,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8752724677000454,
+      "held-out R\u00b2, mean over folds": 0.14093018826080617,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8234459574528123,
+      "held-out R\u00b2, mean over folds": 0.010288311940434069,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8706232510240297,
+      "held-out R\u00b2, mean over folds": 0.29705342247157374,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.852610528185816,
+      "held-out R\u00b2, mean over folds": 0.327886578524258,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8054334242177408,
+      "held-out R\u00b2, mean over folds": 0.18138304155172685,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8498668828953062,
+      "held-out R\u00b2, mean over folds": 0.21028500675775366,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7424971497567783,
+      "held-out R\u00b2, mean over folds": 0.285804652278424,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.755280159547203,
+      "held-out R\u00b2, mean over folds": 0.19247994167035182,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8561200060835832,
+      "held-out R\u00b2, mean over folds": 0.14277297368637948,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8515543923655227,
+      "held-out R\u00b2, mean over folds": 0.046073801166864305,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7725697038753008,
+      "held-out R\u00b2, mean over folds": 0.19620476705604134,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8143077426838676,
+      "held-out R\u00b2, mean over folds": 0.009572477348626296,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8248422148980015,
+      "held-out R\u00b2, mean over folds": 0.2341163136712942,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8614834535286415,
+      "held-out R\u00b2, mean over folds": 0.26182425558714395,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8244350020274216,
+      "held-out R\u00b2, mean over folds": 0.14882755319919624,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7977600196983152,
+      "held-out R\u00b2, mean over folds": 0.1646790393388325,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7923857660770057,
+      "held-out R\u00b2, mean over folds": 0.14472751424767533,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7996234920922913,
+      "held-out R\u00b2, mean over folds": 0.06954127081635333,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8312703435811963,
+      "held-out R\u00b2, mean over folds": 0.059758856644626365,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8614486884453256,
+      "held-out R\u00b2, mean over folds": -0.02495624241037351,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.803545563490682,
+      "held-out R\u00b2, mean over folds": 0.004590959662938076,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7746975388131903,
+      "held-out R\u00b2, mean over folds": -0.11954028936531072,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7731327308196614,
+      "held-out R\u00b2, mean over folds": 0.2689231968879005,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8444419992340826,
+      "held-out R\u00b2, mean over folds": 0.30519627629802815,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8543196268793476,
+      "held-out R\u00b2, mean over folds": 0.16031711859068284,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7547389311795776,
+      "held-out R\u00b2, mean over folds": 0.17896988150285537,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.749318239973725,
+      "held-out R\u00b2, mean over folds": 0.254809694754382,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8232207129259033,
+      "held-out R\u00b2, mean over folds": 0.18397193369552972,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7604642541869777,
+      "held-out R\u00b2, mean over folds": 0.1299807861012871,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8554529866638878,
+      "held-out R\u00b2, mean over folds": 0.1117606236680508,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7834468543493704,
+      "held-out R\u00b2, mean over folds": 0.1309958895532654,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.76014207061596,
+      "held-out R\u00b2, mean over folds": -0.019988734749756175,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8689358661482431,
+      "held-out R\u00b2, mean over folds": 0.30275892353338063,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.763174441182939,
+      "held-out R\u00b2, mean over folds": 0.3305766356909142,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7798608115273111,
+      "held-out R\u00b2, mean over folds": 0.2092221285088614,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7615058753268882,
+      "held-out R\u00b2, mean over folds": 0.18914891747627752,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7561686089131499,
+      "held-out R\u00b2, mean over folds": 0.3057200911478184,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7429607222871017,
+      "held-out R\u00b2, mean over folds": 0.2394272558411948,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7477553572829965,
+      "held-out R\u00b2, mean over folds": 0.28375384677906923,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7644498059310194,
+      "held-out R\u00b2, mean over folds": 0.16059569600220833,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7474734705678046,
+      "held-out R\u00b2, mean over folds": 0.30646536727716406,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.822760134255536,
+      "held-out R\u00b2, mean over folds": 0.2215782158765784,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.835300033751931,
+      "held-out R\u00b2, mean over folds": 0.13379128662671913,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.795108263956484,
+      "held-out R\u00b2, mean over folds": 0.09376743674119552,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.784518753573287,
+      "held-out R\u00b2, mean over folds": -0.1595890115207827,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8106336731831123,
+      "held-out R\u00b2, mean over folds": -0.0013680382242203138,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8625006919128453,
+      "held-out R\u00b2, mean over folds": 0.31739664272703616,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.859158427755109,
+      "held-out R\u00b2, mean over folds": -0.05866569898930738,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.126086508681791,
+      "held-out R\u00b2, mean over folds": -0.06649131967729778,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1454097773435135,
+      "held-out R\u00b2, mean over folds": -0.03441697277113955,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1531442819546154,
+      "held-out R\u00b2, mean over folds": -0.06830034448492794,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1549142606165095,
+      "held-out R\u00b2, mean over folds": -0.03594970902158012,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.199972571243988,
+      "held-out R\u00b2, mean over folds": -0.04860211502327268,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.178276739598447,
+      "held-out R\u00b2, mean over folds": -0.0291124764022098,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.126895576789863,
+      "held-out R\u00b2, mean over folds": -0.05757707817561793,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.17230597938434,
+      "held-out R\u00b2, mean over folds": -0.029826961489446857,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.193325412820469,
+      "held-out R\u00b2, mean over folds": -0.14677566344224244,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.13423406640652,
+      "held-out R\u00b2, mean over folds": -0.15142854999029653,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.236684197530398,
+      "held-out R\u00b2, mean over folds": -0.06679210971316482,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1272746613051146,
+      "held-out R\u00b2, mean over folds": -0.032899528620005114,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.2494778616625286,
+      "held-out R\u00b2, mean over folds": -0.06777934136659924,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1338758398211826,
+      "held-out R\u00b2, mean over folds": -0.033514907554322,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.238100493223685,
+      "held-out R\u00b2, mean over folds": -0.05243642019658741,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.2463714401498662,
+      "held-out R\u00b2, mean over folds": -0.03743263573704012,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.257139895282123,
+      "held-out R\u00b2, mean over folds": -0.049215657597560455,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.232283623238303,
+      "held-out R\u00b2, mean over folds": -0.02824225530281832,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.229126855707986,
+      "held-out R\u00b2, mean over folds": -0.15106914218491257,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.2099476586393765,
+      "held-out R\u00b2, mean over folds": -0.16885453653305205,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.229059489640938,
+      "held-out R\u00b2, mean over folds": -0.0683159873216693,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1388373091778403,
+      "held-out R\u00b2, mean over folds": -0.04264888511502152,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1950495250326694,
+      "held-out R\u00b2, mean over folds": -0.06989208689635391,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.191991201826658,
+      "held-out R\u00b2, mean over folds": -0.04377798106896398,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.240060100177158,
+      "held-out R\u00b2, mean over folds": -0.07797979842897526,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1847919111830922,
+      "held-out R\u00b2, mean over folds": -0.067846424166118,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1739125294540496,
+      "held-out R\u00b2, mean over folds": -0.06627046488113675,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.2095388579731954,
+      "held-out R\u00b2, mean over folds": -0.043562768956554795,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1573048644501185,
+      "held-out R\u00b2, mean over folds": -0.17977221046533565,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.139567577533554,
+      "held-out R\u00b2, mean over folds": -0.19292962423202153,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1869028183633246,
+      "held-out R\u00b2, mean over folds": -0.06403801664579718,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.178364511603284,
+      "held-out R\u00b2, mean over folds": -0.026595746571853464,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1525597916740424,
+      "held-out R\u00b2, mean over folds": -0.06579848724865216,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.171451653416118,
+      "held-out R\u00b2, mean over folds": -0.027736511409015608,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1712949429756745,
+      "held-out R\u00b2, mean over folds": -0.053291018926883996,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1658493790177564,
+      "held-out R\u00b2, mean over folds": -0.029563729188172426,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.17312497116177,
+      "held-out R\u00b2, mean over folds": -0.056786426012291134,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.2160040683638322,
+      "held-out R\u00b2, mean over folds": -0.023724650988771988,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.16156270643998,
+      "held-out R\u00b2, mean over folds": -0.1647580701751455,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.2528401097401476,
+      "held-out R\u00b2, mean over folds": -0.17305387706234643,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.248288722735345,
+      "held-out R\u00b2, mean over folds": -0.05428291032104924,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.187327459962011,
+      "held-out R\u00b2, mean over folds": -0.02607675719023055,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1659705687006565,
+      "held-out R\u00b2, mean over folds": -0.0571043076782725,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1949608705762005,
+      "held-out R\u00b2, mean over folds": -0.028751383497272798,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.2387984684283073,
+      "held-out R\u00b2, mean over folds": -0.1364931474404544,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.211362227678414,
+      "held-out R\u00b2, mean over folds": -0.12023776108328525,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.232614855912591,
+      "held-out R\u00b2, mean over folds": -0.16466304666855688,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1945811186492037,
+      "held-out R\u00b2, mean over folds": -0.16396880397448038,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.208608468097467,
+      "held-out R\u00b2, mean over folds": -0.03686318942633706,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1603417859855445,
+      "held-out R\u00b2, mean over folds": -0.021520478740428662,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.2228850427234406,
+      "held-out R\u00b2, mean over folds": -0.04561736468038071,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1483366430376005,
+      "held-out R\u00b2, mean over folds": -0.026000323155047987,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.2172717380345897,
+      "held-out R\u00b2, mean over folds": -0.17312892665327495,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.240500669565625,
+      "held-out R\u00b2, mean over folds": -0.11915225463645536,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.138494397222216,
+      "held-out R\u00b2, mean over folds": -0.1877905867534621,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.206013163675869,
+      "held-out R\u00b2, mean over folds": -0.19296326324359123,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.7533134047521908,
+      "held-out R\u00b2, mean over folds": 0.35761906846306524,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.841600187958,
+      "held-out R\u00b2, mean over folds": 0.356770929045967,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7518290506352927,
+      "held-out R\u00b2, mean over folds": 0.23859255991349926,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8710315751780877,
+      "held-out R\u00b2, mean over folds": 0.23232785002396866,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.759237110205292,
+      "held-out R\u00b2, mean over folds": 0.32840868465267,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8742432344272713,
+      "held-out R\u00b2, mean over folds": 0.24721842982428172,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8521237846519134,
+      "held-out R\u00b2, mean over folds": 0.20243028767259016,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.82311548062529,
+      "held-out R\u00b2, mean over folds": 0.20824531224634937,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8495673746481365,
+      "held-out R\u00b2, mean over folds": 0.29239628095632725,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.851316077457632,
+      "held-out R\u00b2, mean over folds": 0.1679507863730541,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8724437887944263,
+      "held-out R\u00b2, mean over folds": 0.3846832870699647,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.775473669537486,
+      "held-out R\u00b2, mean over folds": 0.3773684197603339,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8226106253501633,
+      "held-out R\u00b2, mean over folds": 0.2658191861493552,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7533068876590163,
+      "held-out R\u00b2, mean over folds": 0.263789943135872,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.826263198003377,
+      "held-out R\u00b2, mean over folds": 0.36357969979447313,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7639807825729905,
+      "held-out R\u00b2, mean over folds": 0.24395700410243815,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.819093085606142,
+      "held-out R\u00b2, mean over folds": 0.21770532251790398,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.820140271964739,
+      "held-out R\u00b2, mean over folds": 0.19623200060239124,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8052379214173717,
+      "held-out R\u00b2, mean over folds": 0.3448538430906472,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.813168448571837,
+      "held-out R\u00b2, mean over folds": 0.1749769238912909,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8469492746009224,
+      "held-out R\u00b2, mean over folds": 0.33009033331056736,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8518942603116892,
+      "held-out R\u00b2, mean over folds": 0.3257537474380427,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.80890145018056,
+      "held-out R\u00b2, mean over folds": 0.21977613192408035,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.823943081813166,
+      "held-out R\u00b2, mean over folds": 0.20970458918341378,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8703730729966144,
+      "held-out R\u00b2, mean over folds": 0.2482758263106431,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7567627023901573,
+      "held-out R\u00b2, mean over folds": 0.14879224924213538,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7563944992260154,
+      "held-out R\u00b2, mean over folds": 0.20100927108045408,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.752279261667508,
+      "held-out R\u00b2, mean over folds": 0.24837491087002422,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.832100859905674,
+      "held-out R\u00b2, mean over folds": 0.18872986989260288,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.798605162110653,
+      "held-out R\u00b2, mean over folds": 0.07914105121691761,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8484049982598583,
+      "held-out R\u00b2, mean over folds": 0.3503336174375834,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.833972397863203,
+      "held-out R\u00b2, mean over folds": 0.347140477387598,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7867092861659533,
+      "held-out R\u00b2, mean over folds": 0.2375228049484231,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.865771316630615,
+      "held-out R\u00b2, mean over folds": 0.23151091052551837,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8467545005898915,
+      "held-out R\u00b2, mean over folds": 0.3333196701682339,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7778748917274245,
+      "held-out R\u00b2, mean over folds": 0.22837710407045186,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7909868824880877,
+      "held-out R\u00b2, mean over folds": 0.21507360806621162,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.784021597228597,
+      "held-out R\u00b2, mean over folds": 0.23269976129040804,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7620656308075002,
+      "held-out R\u00b2, mean over folds": 0.2959966873955378,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.760689672155907,
+      "held-out R\u00b2, mean over folds": 0.15272843684037643,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8710578448726043,
+      "held-out R\u00b2, mean over folds": 0.3800606599424846,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8013065652078257,
+      "held-out R\u00b2, mean over folds": 0.36954769457722686,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7936647751888373,
+      "held-out R\u00b2, mean over folds": 0.27814420486089225,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.842155999214833,
+      "held-out R\u00b2, mean over folds": 0.2621864282466761,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.817419029135406,
+      "held-out R\u00b2, mean over folds": 0.4280065774029989,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8710595981573848,
+      "held-out R\u00b2, mean over folds": 0.3917535653188571,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.849242209147315,
+      "held-out R\u00b2, mean over folds": 0.44099424893040784,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8071117389774356,
+      "held-out R\u00b2, mean over folds": 0.31950511833470036,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7926903262873157,
+      "held-out R\u00b2, mean over folds": 0.37687335694611274,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.878128416289405,
+      "held-out R\u00b2, mean over folds": 0.2604210803766639,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.84048643304051,
+      "held-out R\u00b2, mean over folds": 0.21080689795353877,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.873167252400538,
+      "held-out R\u00b2, mean over folds": 0.18535447785370188,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7565870008103857,
+      "held-out R\u00b2, mean over folds": 0.10632172368932666,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8590747150867095,
+      "held-out R\u00b2, mean over folds": 0.17674400651403005,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.829190343758769,
+      "held-out R\u00b2, mean over folds": 0.49863549309530714,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.757069034966916,
+      "held-out R\u00b2, mean over folds": 0.12911491719733686,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.2023561199956907,
+      "held-out R\u00b2, mean over folds": -0.010927584063985307,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2160534911147627,
+      "held-out R\u00b2, mean over folds": -0.007636802215542415,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.121722376024404,
+      "held-out R\u00b2, mean over folds": -0.012415926603675409,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1836045146578447,
+      "held-out R\u00b2, mean over folds": -0.009094177062454767,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.235555931567485,
+      "held-out R\u00b2, mean over folds": 0.00043758420145971754,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1613502635481727,
+      "held-out R\u00b2, mean over folds": -0.0039942734409232905,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.184196731451797,
+      "held-out R\u00b2, mean over folds": -0.008777795671538646,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.181923977789505,
+      "held-out R\u00b2, mean over folds": -0.009314773951470779,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1622698348019487,
+      "held-out R\u00b2, mean over folds": -0.0010636571697952401,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2485818653721776,
+      "held-out R\u00b2, mean over folds": -0.0010111690158109532,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.229381164960412,
+      "held-out R\u00b2, mean over folds": -0.0075175612503702634,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1354823775394554,
+      "held-out R\u00b2, mean over folds": -0.004615080806545757,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.25958485209726,
+      "held-out R\u00b2, mean over folds": -0.00811006647070922,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2430880034030842,
+      "held-out R\u00b2, mean over folds": -0.005133452045330911,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.159747181300965,
+      "held-out R\u00b2, mean over folds": 0.0011726095313242756,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2371655211525314,
+      "held-out R\u00b2, mean over folds": -0.008070751690067324,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1348987344619936,
+      "held-out R\u00b2, mean over folds": -0.003721181437005816,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.259874662266393,
+      "held-out R\u00b2, mean over folds": -0.007838743008010018,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2131958630549153,
+      "held-out R\u00b2, mean over folds": -0.0010878956438699293,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2110175021782315,
+      "held-out R\u00b2, mean over folds": -0.0009885828659163653,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1326617017777787,
+      "held-out R\u00b2, mean over folds": -0.010230487635375063,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2455846758455276,
+      "held-out R\u00b2, mean over folds": -0.007318759862939261,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1240599304486256,
+      "held-out R\u00b2, mean over folds": -0.011521252095877843,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1537159281257607,
+      "held-out R\u00b2, mean over folds": -0.008425708425101864,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.140023062523329,
+      "held-out R\u00b2, mean over folds": -0.015008802494750872,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2287475116969104,
+      "held-out R\u00b2, mean over folds": -0.024631846435827408,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1477485918098056,
+      "held-out R\u00b2, mean over folds": -0.017450653859621836,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.247489351798324,
+      "held-out R\u00b2, mean over folds": -0.01819006098557323,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2118776655058485,
+      "held-out R\u00b2, mean over folds": -0.0008191978376737019,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1250627794692574,
+      "held-out R\u00b2, mean over folds": -0.0007025023196907565,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.120760176778018,
+      "held-out R\u00b2, mean over folds": -0.00742350295201768,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1272321083820156,
+      "held-out R\u00b2, mean over folds": -0.003782603060795431,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2048295248706817,
+      "held-out R\u00b2, mean over folds": -0.008686371474838283,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.232207453520318,
+      "held-out R\u00b2, mean over folds": -0.0048044182900549345,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1533973948878344,
+      "held-out R\u00b2, mean over folds": 0.002068998579049075,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2389172380092304,
+      "held-out R\u00b2, mean over folds": -0.0054593163219931904,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1280124716214566,
+      "held-out R\u00b2, mean over folds": -0.005119601864733347,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2321349395098347,
+      "held-out R\u00b2, mean over folds": -0.0063413767745694296,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2498913602241193,
+      "held-out R\u00b2, mean over folds": -0.0007492578968840924,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2280951758746133,
+      "held-out R\u00b2, mean over folds": -0.000709193921231055,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.217736909757009,
+      "held-out R\u00b2, mean over folds": -0.007259012026222811,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2373172306117537,
+      "held-out R\u00b2, mean over folds": -0.0026088692388621217,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.125621181936589,
+      "held-out R\u00b2, mean over folds": -0.010697781304282828,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.148249495500668,
+      "held-out R\u00b2, mean over folds": -0.005578063320208671,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.13748931510279,
+      "held-out R\u00b2, mean over folds": 0.002283323829270856,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.190634338627018,
+      "held-out R\u00b2, mean over folds": 0.002594305011913223,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2243263379660383,
+      "held-out R\u00b2, mean over folds": -0.000622867296259022,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2082016582406956,
+      "held-out R\u00b2, mean over folds": -0.0006194788671339158,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.239158353966671,
+      "held-out R\u00b2, mean over folds": 0.006361556966045479,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.141729818941753,
+      "held-out R\u00b2, mean over folds": 0.0017130496600265665,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2228469528709227,
+      "held-out R\u00b2, mean over folds": -0.008582618449615387,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1470258087216467,
+      "held-out R\u00b2, mean over folds": -0.009236933440173534,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.157906225184492,
+      "held-out R\u00b2, mean over folds": 0.0009909976916773421,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2193866576193826,
+      "held-out R\u00b2, mean over folds": 0.0005406254222663831,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2572286698858153,
+      "held-out R\u00b2, mean over folds": -0.0007971605585360475,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2056161048367895,
+      "held-out R\u00b2, mean over folds": -0.0008125530235584488,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.7476300440987815,
+      "held-out R\u00b2, mean over folds": 0.3576972214620329,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8262832557898547,
+      "held-out R\u00b2, mean over folds": 0.356471508697667,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.7459290772212235,
+      "held-out R\u00b2, mean over folds": 0.23796446394255497,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8637803995913544,
+      "held-out R\u00b2, mean over folds": 0.2331438950885806,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.839340959914087,
+      "held-out R\u00b2, mean over folds": 0.3284518026639579,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.7642378984991507,
+      "held-out R\u00b2, mean over folds": 0.2515609661407132,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.7528409408153878,
+      "held-out R\u00b2, mean over folds": 0.20404196747581954,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.7656946520432446,
+      "held-out R\u00b2, mean over folds": 0.20795913111405895,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.877203805137587,
+      "held-out R\u00b2, mean over folds": 0.29699132833156733,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8041984899441887,
+      "held-out R\u00b2, mean over folds": 0.16857978520858424,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8497713327677974,
+      "held-out R\u00b2, mean over folds": 0.38427828621358257,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.829097167895089,
+      "held-out R\u00b2, mean over folds": 0.37840965841661917,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8201378409942093,
+      "held-out R\u00b2, mean over folds": 0.2650797895761121,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.760318235653107,
+      "held-out R\u00b2, mean over folds": 0.26421664749314283,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8724434234981335,
+      "held-out R\u00b2, mean over folds": 0.36337732347961105,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.7821879685520607,
+      "held-out R\u00b2, mean over folds": 0.2531488440461214,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.820922410213056,
+      "held-out R\u00b2, mean over folds": 0.2186229370682605,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.837968632242469,
+      "held-out R\u00b2, mean over folds": 0.19692321044851624,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8308926417343434,
+      "held-out R\u00b2, mean over folds": 0.34573298232802796,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8716832173573725,
+      "held-out R\u00b2, mean over folds": 0.17705756927826916,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.760781458588808,
+      "held-out R\u00b2, mean over folds": 0.32943340707430274,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.811169383382572,
+      "held-out R\u00b2, mean over folds": 0.32724080434959524,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.796564814703707,
+      "held-out R\u00b2, mean over folds": 0.21900864853624524,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8063836221275666,
+      "held-out R\u00b2, mean over folds": 0.20941329894620533,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.756690453667684,
+      "held-out R\u00b2, mean over folds": 0.2557825286373018,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.758773245382187,
+      "held-out R\u00b2, mean over folds": 0.17569899573529532,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.778930576409376,
+      "held-out R\u00b2, mean over folds": 0.20223467462660977,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.7826586445265162,
+      "held-out R\u00b2, mean over folds": 0.24815382525171242,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.799906449915389,
+      "held-out R\u00b2, mean over folds": 0.22891789845395188,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.825538256585128,
+      "held-out R\u00b2, mean over folds": 0.1085421496796728,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.828848076438557,
+      "held-out R\u00b2, mean over folds": 0.34987628711813185,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.79765352552198,
+      "held-out R\u00b2, mean over folds": 0.3478414176687673,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.7972296353200177,
+      "held-out R\u00b2, mean over folds": 0.23694614612329218,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.770467993737575,
+      "held-out R\u00b2, mean over folds": 0.23190874114631174,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8223628747772613,
+      "held-out R\u00b2, mean over folds": 0.33358413721790753,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.7843857275844135,
+      "held-out R\u00b2, mean over folds": 0.2368491427066004,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.745048376798831,
+      "held-out R\u00b2, mean over folds": 0.21728726568019702,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.7985760061819605,
+      "held-out R\u00b2, mean over folds": 0.23261879372887737,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8063785745126237,
+      "held-out R\u00b2, mean over folds": 0.30520870049616444,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.7715830015485894,
+      "held-out R\u00b2, mean over folds": 0.15829406646612024,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8201441106370964,
+      "held-out R\u00b2, mean over folds": 0.37965942266433694,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.819208066060469,
+      "held-out R\u00b2, mean over folds": 0.37104257814323055,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.838280305355452,
+      "held-out R\u00b2, mean over folds": 0.2777513330514238,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8307127875081695,
+      "held-out R\u00b2, mean over folds": 0.2655253741961626,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8313406279129443,
+      "held-out R\u00b2, mean over folds": 0.4276026522049733,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.784269981255366,
+      "held-out R\u00b2, mean over folds": 0.39491467539645553,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8502405110780336,
+      "held-out R\u00b2, mean over folds": 0.4409541685358425,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8168802137039552,
+      "held-out R\u00b2, mean over folds": 0.33188114887319475,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8003985473251847,
+      "held-out R\u00b2, mean over folds": 0.37661741738481813,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.827641747331748,
+      "held-out R\u00b2, mean over folds": 0.26428732575751795,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.7904920268230358,
+      "held-out R\u00b2, mean over folds": 0.21171102443220552,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.811783494244946,
+      "held-out R\u00b2, mean over folds": 0.18493152948518843,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8431387963875108,
+      "held-out R\u00b2, mean over folds": 0.1687700063333021,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.864096404141319,
+      "held-out R\u00b2, mean over folds": 0.18463465078846705,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8689480076213267,
+      "held-out R\u00b2, mean over folds": 0.4984962645228225,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.810508609525634,
+      "held-out R\u00b2, mean over folds": 0.1439427770832811,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.19283851606368,
+      "held-out R\u00b2, mean over folds": -0.019294588860599492,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.231981857506938,
+      "held-out R\u00b2, mean over folds": -0.01987827912835858,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.164023096844189,
+      "held-out R\u00b2, mean over folds": -0.019622961993891064,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.23723353072831,
+      "held-out R\u00b2, mean over folds": -0.020188721534601405,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.1891798305124395,
+      "held-out R\u00b2, mean over folds": -0.001898695565563413,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.136219941406938,
+      "held-out R\u00b2, mean over folds": -0.0008651312363832986,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.130088280590212,
+      "held-out R\u00b2, mean over folds": 0.0006502531997720773,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.237879049545525,
+      "held-out R\u00b2, mean over folds": -0.0010954583485395686,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.127779508366963,
+      "held-out R\u00b2, mean over folds": -0.0010631214680283385,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.159285601058712,
+      "held-out R\u00b2, mean over folds": -0.0010120800910216944,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.166778205670217,
+      "held-out R\u00b2, mean over folds": -0.014729635697942944,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.144219222326823,
+      "held-out R\u00b2, mean over folds": -0.015052934340419188,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.163945071772279,
+      "held-out R\u00b2, mean over folds": -0.014820970955437263,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.223976959341512,
+      "held-out R\u00b2, mean over folds": -0.01514502590415221,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.12205559809841,
+      "held-out R\u00b2, mean over folds": -0.0031743867739438603,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.235804279432896,
+      "held-out R\u00b2, mean over folds": -0.0014010811805385659,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.239916723300438,
+      "held-out R\u00b2, mean over folds": -0.0026382528041419607,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.172116620246817,
+      "held-out R\u00b2, mean over folds": -0.001992330017578503,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.141505805868489,
+      "held-out R\u00b2, mean over folds": -0.0010878956438699293,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.204117657112311,
+      "held-out R\u00b2, mean over folds": -0.0009893892206177756,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.136754157821086,
+      "held-out R\u00b2, mean over folds": -0.01824705121461361,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.171088710550956,
+      "held-out R\u00b2, mean over folds": -0.01848031878939409,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.254180085326136,
+      "held-out R\u00b2, mean over folds": -0.01865784532779071,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.25936502616171,
+      "held-out R\u00b2, mean over folds": -0.018792579525365127,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.228094684789642,
+      "held-out R\u00b2, mean over folds": -0.0014732551072320188,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.163534611388908,
+      "held-out R\u00b2, mean over folds": -0.0012586352752767648,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.2162731068832535,
+      "held-out R\u00b2, mean over folds": -0.0026762427655903755,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.218756891167762,
+      "held-out R\u00b2, mean over folds": -0.004059007640154722,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.174297837322912,
+      "held-out R\u00b2, mean over folds": -0.0008191978376737019,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.209724408842063,
+      "held-out R\u00b2, mean over folds": -0.0007025023196907565,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.121501870296595,
+      "held-out R\u00b2, mean over folds": -0.014061391787431043,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.149268072204314,
+      "held-out R\u00b2, mean over folds": -0.01460411674194253,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.193512362415417,
+      "held-out R\u00b2, mean over folds": -0.014344606279241789,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.142925182596162,
+      "held-out R\u00b2, mean over folds": -0.014798423703634845,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.143226961502715,
+      "held-out R\u00b2, mean over folds": 0.0029931348010637793,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.2370826006770335,
+      "held-out R\u00b2, mean over folds": 0.003507461863740002,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.258478620375705,
+      "held-out R\u00b2, mean over folds": 0.002676358471275275,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.197835719923983,
+      "held-out R\u00b2, mean over folds": 0.0008295283423884303,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.23746976232344,
+      "held-out R\u00b2, mean over folds": -0.0007492578968840924,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.258645033005679,
+      "held-out R\u00b2, mean over folds": -0.0007111084676527212,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.139823424399629,
+      "held-out R\u00b2, mean over folds": -0.014138210480056968,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.18275438585561,
+      "held-out R\u00b2, mean over folds": -0.014378394834430219,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.1749601802178695,
+      "held-out R\u00b2, mean over folds": -0.01590262635659867,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.131206899710467,
+      "held-out R\u00b2, mean over folds": -0.015783925162494182,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.225746224191265,
+      "held-out R\u00b2, mean over folds": 0.002300305222373189,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.180729063825163,
+      "held-out R\u00b2, mean over folds": 0.0026137836803663108,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.185705770786656,
+      "held-out R\u00b2, mean over folds": -0.000622867296259022,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.141094216333854,
+      "held-out R\u00b2, mean over folds": -0.0006194788671339158,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.145329731312322,
+      "held-out R\u00b2, mean over folds": 0.0006172792199099719,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.246994507101871,
+      "held-out R\u00b2, mean over folds": 0.003542844525735833,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.126250872456399,
+      "held-out R\u00b2, mean over folds": -0.002468318805371261,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.152599319892119,
+      "held-out R\u00b2, mean over folds": -0.0034963033310277058,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.1608883062440345,
+      "held-out R\u00b2, mean over folds": 0.001100373523712439,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.188627655936222,
+      "held-out R\u00b2, mean over folds": 0.0006463694168057366,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.202102324222071,
+      "held-out R\u00b2, mean over folds": -0.0007971605585360475,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.189060596619094,
+      "held-out R\u00b2, mean over folds": -0.0008125530235584488,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.751776146837963,
+      "held-out R\u00b2, mean over folds": 0.3591914170061709,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.774113443567799,
+      "held-out R\u00b2, mean over folds": 0.36033109391395407,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.858102373866755,
+      "held-out R\u00b2, mean over folds": 0.2381789989011754,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.829262418066984,
+      "held-out R\u00b2, mean over folds": 0.232953571643239,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.830880867018798,
+      "held-out R\u00b2, mean over folds": 0.3388762311579434,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.833828455749189,
+      "held-out R\u00b2, mean over folds": 0.257212184093368,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.846806422665534,
+      "held-out R\u00b2, mean over folds": 0.20066892122408805,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.748135187441002,
+      "held-out R\u00b2, mean over folds": 0.20900628357372897,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.791325173890566,
+      "held-out R\u00b2, mean over folds": 0.30214274523308116,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.815533840936634,
+      "held-out R\u00b2, mean over folds": 0.17144584119345282,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.787383907661625,
+      "held-out R\u00b2, mean over folds": 0.3844320244011906,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.858227042260205,
+      "held-out R\u00b2, mean over folds": 0.37898639324091254,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.807560151202221,
+      "held-out R\u00b2, mean over folds": 0.2659514885645457,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.847607862524312,
+      "held-out R\u00b2, mean over folds": 0.26578706276813235,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.859282172363363,
+      "held-out R\u00b2, mean over folds": 0.3660448760885187,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.810670807606489,
+      "held-out R\u00b2, mean over folds": 0.2538671311977804,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.867337314141989,
+      "held-out R\u00b2, mean over folds": 0.21416503184795213,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.822197351675177,
+      "held-out R\u00b2, mean over folds": 0.19673553988258122,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.85903840183672,
+      "held-out R\u00b2, mean over folds": 0.34499123687344435,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.787682711382813,
+      "held-out R\u00b2, mean over folds": 0.1781118480493649,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.809834374194407,
+      "held-out R\u00b2, mean over folds": 0.32995054996146667,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.814397545740641,
+      "held-out R\u00b2, mean over folds": 0.32767102604618625,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.754697160225449,
+      "held-out R\u00b2, mean over folds": 0.2191769435173491,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.795797350938216,
+      "held-out R\u00b2, mean over folds": 0.21115735393215013,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.868427274157234,
+      "held-out R\u00b2, mean over folds": 0.26224284732075803,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.828316513651064,
+      "held-out R\u00b2, mean over folds": 0.1693156819291532,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.764850921541175,
+      "held-out R\u00b2, mean over folds": 0.20082938616656545,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.787439788985345,
+      "held-out R\u00b2, mean over folds": 0.25172630065616836,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.766824421352777,
+      "held-out R\u00b2, mean over folds": 0.20820052114240992,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.7434752384518,
+      "held-out R\u00b2, mean over folds": 0.09360438928546048,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.869844464190563,
+      "held-out R\u00b2, mean over folds": 0.35068933568656824,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.802749025955961,
+      "held-out R\u00b2, mean over folds": 0.3490602872865701,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.78305491013891,
+      "held-out R\u00b2, mean over folds": 0.23749641025922216,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.823786806818083,
+      "held-out R\u00b2, mean over folds": 0.23327654162921477,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.741024023881022,
+      "held-out R\u00b2, mean over folds": 0.34013872454065563,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.778923094924114,
+      "held-out R\u00b2, mean over folds": 0.2379068408804148,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.838424685197845,
+      "held-out R\u00b2, mean over folds": 0.2119215236541776,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.8287277682296965,
+      "held-out R\u00b2, mean over folds": 0.23151316799435212,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.877452832655955,
+      "held-out R\u00b2, mean over folds": 0.3017576603460611,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.826850079352126,
+      "held-out R\u00b2, mean over folds": 0.15538099691674653,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.806850822307882,
+      "held-out R\u00b2, mean over folds": 0.38023079870478693,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.84660055884576,
+      "held-out R\u00b2, mean over folds": 0.37145152075357507,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.866465902074967,
+      "held-out R\u00b2, mean over folds": 0.2810866798432878,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.840897432540569,
+      "held-out R\u00b2, mean over folds": 0.2645797207319984,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.874849571296913,
+      "held-out R\u00b2, mean over folds": 0.4326669355634388,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.849480723903344,
+      "held-out R\u00b2, mean over folds": 0.39756692498306345,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.861352201356669,
+      "held-out R\u00b2, mean over folds": 0.4539084926542355,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.7559745699657086,
+      "held-out R\u00b2, mean over folds": 0.3377403394637378,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.84253789041913,
+      "held-out R\u00b2, mean over folds": 0.3779473875215257,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.801612417933831,
+      "held-out R\u00b2, mean over folds": 0.26655246933800175,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.817434532337578,
+      "held-out R\u00b2, mean over folds": 0.21701440237604364,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.831574337327529,
+      "held-out R\u00b2, mean over folds": 0.18513350822222813,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.875774116338779,
+      "held-out R\u00b2, mean over folds": 0.11677551442265413,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.877840931400427,
+      "held-out R\u00b2, mean over folds": 0.18121276191958177,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.780351954368307,
+      "held-out R\u00b2, mean over folds": 0.5242803251176793,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.842725489641308,
+      "held-out R\u00b2, mean over folds": 0.14634726920931718,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.224997695310938,
+      "held-out R\u00b2, mean over folds": -0.01008301520509831,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.1685090005838275,
+      "held-out R\u00b2, mean over folds": -0.006432626886677051,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.137341768480991,
+      "held-out R\u00b2, mean over folds": -0.01147338733775185,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.1257325744400015,
+      "held-out R\u00b2, mean over folds": -0.007796579785198166,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.228828037854085,
+      "held-out R\u00b2, mean over folds": 0.003679993576150986,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.188557963854367,
+      "held-out R\u00b2, mean over folds": 0.0009117667399891838,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.2579756237292905,
+      "held-out R\u00b2, mean over folds": -0.0026484657742901875,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.185096283867112,
+      "held-out R\u00b2, mean over folds": -0.0034253809355013322,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.256908377070338,
+      "held-out R\u00b2, mean over folds": -0.0010593020031815393,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.177620640307169,
+      "held-out R\u00b2, mean over folds": -0.001014337689527256,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.2311155010783965,
+      "held-out R\u00b2, mean over folds": -0.007188406877471953,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.1318746981236565,
+      "held-out R\u00b2, mean over folds": -0.004172282521952874,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.197764639419288,
+      "held-out R\u00b2, mean over folds": -0.007708309165555071,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.232288370178002,
+      "held-out R\u00b2, mean over folds": -0.004549498453196544,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.249458233410785,
+      "held-out R\u00b2, mean over folds": 0.0022602882321210104,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.235161632686441,
+      "held-out R\u00b2, mean over folds": -0.005642539959581416,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.125175901808165,
+      "held-out R\u00b2, mean over folds": -0.0012731773441617689,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.172178327782943,
+      "held-out R\u00b2, mean over folds": -0.003239553830459352,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.126817786123939,
+      "held-out R\u00b2, mean over folds": -0.0010878956438699293,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.135299520756038,
+      "held-out R\u00b2, mean over folds": -0.0009963645941280408,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.214542788013448,
+      "held-out R\u00b2, mean over folds": -0.009970284782470307,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.219856147483638,
+      "held-out R\u00b2, mean over folds": -0.006663847530652367,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.228320895585228,
+      "held-out R\u00b2, mean over folds": -0.010988261084418438,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.2411639167277935,
+      "held-out R\u00b2, mean over folds": -0.007554516404418265,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.2235204055867115,
+      "held-out R\u00b2, mean over folds": -0.011316006952693724,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.232122022894929,
+      "held-out R\u00b2, mean over folds": -0.01871370283062035,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.126854919375259,
+      "held-out R\u00b2, mean over folds": -0.009767808978999648,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.152834921061782,
+      "held-out R\u00b2, mean over folds": -0.007517213394628986,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.207065688272535,
+      "held-out R\u00b2, mean over folds": -0.0008191978376737019,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.240137542647475,
+      "held-out R\u00b2, mean over folds": -0.0007025023196907565,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.120630017491552,
+      "held-out R\u00b2, mean over folds": -0.006777059865098023,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.192048107896289,
+      "held-out R\u00b2, mean over folds": -0.002737005281254823,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.214820235911016,
+      "held-out R\u00b2, mean over folds": -0.007923412979494771,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.124145020478006,
+      "held-out R\u00b2, mean over folds": -0.0035808047791608733,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.176189778057474,
+      "held-out R\u00b2, mean over folds": 0.00492606308890875,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.245388883393718,
+      "held-out R\u00b2, mean over folds": -0.0012279610853374924,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.214025793239821,
+      "held-out R\u00b2, mean over folds": -0.0006974250562885364,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.153272170870484,
+      "held-out R\u00b2, mean over folds": 0.0003042514074008018,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.239389358148468,
+      "held-out R\u00b2, mean over folds": -0.0007492578968840924,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.168724399277332,
+      "held-out R\u00b2, mean over folds": -0.0006907074946494341,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.239468253960169,
+      "held-out R\u00b2, mean over folds": -0.006507471749657512,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.161852111156647,
+      "held-out R\u00b2, mean over folds": -0.001661184099424573,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.202644835123642,
+      "held-out R\u00b2, mean over folds": -0.009066246186294969,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.175571609484697,
+      "held-out R\u00b2, mean over folds": -0.003547789732929818,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.15847550710571,
+      "held-out R\u00b2, mean over folds": 0.0023265251122742024,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.244118058704062,
+      "held-out R\u00b2, mean over folds": 0.0028149557736508735,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.1462631154715295,
+      "held-out R\u00b2, mean over folds": -0.000622867296259022,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.131873622773007,
+      "held-out R\u00b2, mean over folds": -0.0006194788671339158,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.167869771396393,
+      "held-out R\u00b2, mean over folds": 0.007528375266301212,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.22046948066982,
+      "held-out R\u00b2, mean over folds": 0.005246152584470742,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.2330404248366795,
+      "held-out R\u00b2, mean over folds": -0.0011719032648166649,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.259824071809348,
+      "held-out R\u00b2, mean over folds": -0.004130423065589195,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.161490687981564,
+      "held-out R\u00b2, mean over folds": 0.0010785060099850474,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.17711187315838,
+      "held-out R\u00b2, mean over folds": 0.0010026349294389725,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.139154978924148,
+      "held-out R\u00b2, mean over folds": -0.0007971605585360475,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.200482070147225,
+      "held-out R\u00b2, mean over folds": -0.0008125530235584488,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.879661205216808,
+      "held-out R\u00b2, mean over folds": 0.35705241776713575,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.838123341416892,
+      "held-out R\u00b2, mean over folds": 0.35819533856268904,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.8233297976578715,
+      "held-out R\u00b2, mean over folds": 0.23408838594481624,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.794931673009051,
+      "held-out R\u00b2, mean over folds": 0.23083648046443592,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.868141826439977,
+      "held-out R\u00b2, mean over folds": 0.3359796293246766,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.809568323458248,
+      "held-out R\u00b2, mean over folds": 0.25758170931610513,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.758811367863828,
+      "held-out R\u00b2, mean over folds": 0.19720384620953316,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.791152984847878,
+      "held-out R\u00b2, mean over folds": 0.20538073402221632,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.749403333638687,
+      "held-out R\u00b2, mean over folds": 0.3029707757184936,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.768277065276429,
+      "held-out R\u00b2, mean over folds": 0.16722436259742282,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.742473629339988,
+      "held-out R\u00b2, mean over folds": 0.3824666640850411,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.803459188310023,
+      "held-out R\u00b2, mean over folds": 0.37871180271813387,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.828835637093251,
+      "held-out R\u00b2, mean over folds": 0.2622756851954707,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.788060944733047,
+      "held-out R\u00b2, mean over folds": 0.26388340298286755,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.798853448010738,
+      "held-out R\u00b2, mean over folds": 0.36341353032172574,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.87428929819824,
+      "held-out R\u00b2, mean over folds": 0.2589009187587795,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.8452748370204874,
+      "held-out R\u00b2, mean over folds": 0.2102194932148082,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.8157199291722925,
+      "held-out R\u00b2, mean over folds": 0.19381983745567574,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.779835722515655,
+      "held-out R\u00b2, mean over folds": 0.3433232149001002,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.865579551828219,
+      "held-out R\u00b2, mean over folds": 0.17519185075860444,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.772913596363292,
+      "held-out R\u00b2, mean over folds": 0.32632868782499524,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.785547982272335,
+      "held-out R\u00b2, mean over folds": 0.3266662312944969,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.867269074019212,
+      "held-out R\u00b2, mean over folds": 0.21397677292762668,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.814135887739909,
+      "held-out R\u00b2, mean over folds": 0.20714656813851012,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.843924512918516,
+      "held-out R\u00b2, mean over folds": 0.26411385906133866,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.822704271182927,
+      "held-out R\u00b2, mean over folds": 0.186919718726194,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.831481489261329,
+      "held-out R\u00b2, mean over folds": 0.1971005955889103,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.781913660812076,
+      "held-out R\u00b2, mean over folds": 0.24925233592245669,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.773792088627732,
+      "held-out R\u00b2, mean over folds": 0.23952036143830027,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.785148928603613,
+      "held-out R\u00b2, mean over folds": 0.11294439623155875,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.761761818971679,
+      "held-out R\u00b2, mean over folds": 0.3481705026542804,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.862404011140713,
+      "held-out R\u00b2, mean over folds": 0.3480122116742682,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.7796545706550155,
+      "held-out R\u00b2, mean over folds": 0.23363455366524488,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.818608515218013,
+      "held-out R\u00b2, mean over folds": 0.2310240569968351,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.850876419519792,
+      "held-out R\u00b2, mean over folds": 0.33755965958859335,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.8497353753126,
+      "held-out R\u00b2, mean over folds": 0.24200475684475126,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.801374076201786,
+      "held-out R\u00b2, mean over folds": 0.20928112918199604,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.806676023202141,
+      "held-out R\u00b2, mean over folds": 0.22851536902199943,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.879258244850903,
+      "held-out R\u00b2, mean over folds": 0.307450834331011,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.834443646777063,
+      "held-out R\u00b2, mean over folds": 0.1557877615947423,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.854049382036504,
+      "held-out R\u00b2, mean over folds": 0.37823549115227073,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.866357555690692,
+      "held-out R\u00b2, mean over folds": 0.3716705101277666,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.850262577072107,
+      "held-out R\u00b2, mean over folds": 0.27849994787069365,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.765925108293499,
+      "held-out R\u00b2, mean over folds": 0.2660495063345803,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.81870390272326,
+      "held-out R\u00b2, mean over folds": 0.4311471709491941,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.754265182024036,
+      "held-out R\u00b2, mean over folds": 0.40047079210310904,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.831409097718959,
+      "held-out R\u00b2, mean over folds": 0.4532507535371921,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.873748919946293,
+      "held-out R\u00b2, mean over folds": 0.3531692788676447,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.811782489002015,
+      "held-out R\u00b2, mean over folds": 0.37525658948124535,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.800616149001487,
+      "held-out R\u00b2, mean over folds": 0.26715836510423563,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.745017985198542,
+      "held-out R\u00b2, mean over folds": 0.21286121814821746,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.87436843312609,
+      "held-out R\u00b2, mean over folds": 0.18043027457194577,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.7544203757782215,
+      "held-out R\u00b2, mean over folds": 0.1719648357320111,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.745751073062678,
+      "held-out R\u00b2, mean over folds": 0.1847489962866751,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.774449325610691,
+      "held-out R\u00b2, mean over folds": 0.5234986254461955,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.749174260748573,
+      "held-out R\u00b2, mean over folds": 0.1538906153765458,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.183716497937647,
+      "held-out R\u00b2, mean over folds": -0.03822189754969583,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.192252292175996,
+      "held-out R\u00b2, mean over folds": -0.038534350124296644,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.163759792864002,
+      "held-out R\u00b2, mean over folds": -0.03860073541112863,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.127134467560484,
+      "held-out R\u00b2, mean over folds": -0.03896182300363722,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.135624051554892,
+      "held-out R\u00b2, mean over folds": -0.02885653659976173,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.17383061291859,
+      "held-out R\u00b2, mean over folds": -0.02626030372421311,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.128473983115716,
+      "held-out R\u00b2, mean over folds": -0.02303185076267984,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.217746561585388,
+      "held-out R\u00b2, mean over folds": -0.02301405653965589,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.148982875813474,
+      "held-out R\u00b2, mean over folds": -0.0012256941242067664,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.16229001962971,
+      "held-out R\u00b2, mean over folds": -0.0012179359004900192,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.175177608804934,
+      "held-out R\u00b2, mean over folds": -0.030437343861112343,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.178325348629681,
+      "held-out R\u00b2, mean over folds": -0.03046948210290772,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.120232499074472,
+      "held-out R\u00b2, mean over folds": -0.03054374887190181,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.135689851939818,
+      "held-out R\u00b2, mean over folds": -0.03054766407495326,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.240787038923723,
+      "held-out R\u00b2, mean over folds": -0.029952690806698313,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.120172628751668,
+      "held-out R\u00b2, mean over folds": -0.027049139596942863,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.191143429813803,
+      "held-out R\u00b2, mean over folds": -0.027465908596766876,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.188530280911009,
+      "held-out R\u00b2, mean over folds": -0.02348070516185219,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.1666331825414895,
+      "held-out R\u00b2, mean over folds": -0.0010878956438699293,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.180385782820504,
+      "held-out R\u00b2, mean over folds": -0.0012520125198773435,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.229281359253722,
+      "held-out R\u00b2, mean over folds": -0.04076088148395325,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.237768518870094,
+      "held-out R\u00b2, mean over folds": -0.04064416429799698,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.156448796078135,
+      "held-out R\u00b2, mean over folds": -0.04115901645491134,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.165148661735483,
+      "held-out R\u00b2, mean over folds": -0.040991931440173476,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.153947599423967,
+      "held-out R\u00b2, mean over folds": -0.031117661422127664,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.187180876077149,
+      "held-out R\u00b2, mean over folds": -0.029185599828538366,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.215656170072235,
+      "held-out R\u00b2, mean over folds": -0.02598388052940437,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.151955402564879,
+      "held-out R\u00b2, mean over folds": -0.021970752927130778,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.166303003887681,
+      "held-out R\u00b2, mean over folds": -0.0008191978376737019,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.250253846462481,
+      "held-out R\u00b2, mean over folds": -0.0007025023196907565,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.126799700578575,
+      "held-out R\u00b2, mean over folds": -0.03132806679934506,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.18450774473354,
+      "held-out R\u00b2, mean over folds": -0.0315452039830729,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.2196181258235494,
+      "held-out R\u00b2, mean over folds": -0.031650853473452444,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.141063561618047,
+      "held-out R\u00b2, mean over folds": -0.03179895050884549,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.126632362800768,
+      "held-out R\u00b2, mean over folds": -0.022684063013573664,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.139348752029394,
+      "held-out R\u00b2, mean over folds": -0.02105962398802417,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.248635247094296,
+      "held-out R\u00b2, mean over folds": -0.021383274908367424,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.121296369454957,
+      "held-out R\u00b2, mean over folds": -0.01929071936095337,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.1463650764735895,
+      "held-out R\u00b2, mean over folds": -0.0007492578968840924,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.12437969180623,
+      "held-out R\u00b2, mean over folds": -0.000822943378091745,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.135488125458709,
+      "held-out R\u00b2, mean over folds": -0.028825787815796165,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.206820900127962,
+      "held-out R\u00b2, mean over folds": -0.028573832619075024,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.1538294472234725,
+      "held-out R\u00b2, mean over folds": -0.030519514100749757,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.199689687060295,
+      "held-out R\u00b2, mean over folds": -0.029664798500250677,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.202627353587258,
+      "held-out R\u00b2, mean over folds": 0.002347511166565708,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.23892094663257,
+      "held-out R\u00b2, mean over folds": 0.002858608470688595,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.120663795007663,
+      "held-out R\u00b2, mean over folds": -0.000622867296259022,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.239471724307932,
+      "held-out R\u00b2, mean over folds": -0.0006194788671339158,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.206676672099777,
+      "held-out R\u00b2, mean over folds": -0.025124082413334213,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.142784088054695,
+      "held-out R\u00b2, mean over folds": -0.02020519760533457,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.22821123433894,
+      "held-out R\u00b2, mean over folds": -0.024502903215485095,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.239768815850683,
+      "held-out R\u00b2, mean over folds": -0.026281372491620436,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.155596887725582,
+      "held-out R\u00b2, mean over folds": 0.0011666060018405311,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.248631115326376,
+      "held-out R\u00b2, mean over folds": 0.0010259715810457149,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.183624040241813,
+      "held-out R\u00b2, mean over folds": -0.0007971605585360475,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 6.204479423606665,
+      "held-out R\u00b2, mean over folds": -0.0008125530235584488,
+      "_kind": "scatter",
+      "_group": 13
+    }
+  ],
+  "n_series": 14,
+  "total_points": 784,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Transfer-tier rungs on the pooled context-to-answer map",
+        "ylabel": "held-out R\u00b2, mean over folds",
+        "legend_labels": [
+          "context arm",
+          "prefix arm"
+        ],
+        "annotations": [
+          "one point per cell; boxes span the interquartile range across 56 cells"
+        ],
+        "xticklabels": [
+          "pooled map",
+          "+ context offset",
+          "+ answer offset",
+          "+ per-cell bias",
+          "+ scale",
+          "+ rotation",
+          "+ rotation & scale"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ]
+      }
+    ],
+    "series": [
+      "context arm",
+      "prefix arm"
+    ]
+  }
+}
