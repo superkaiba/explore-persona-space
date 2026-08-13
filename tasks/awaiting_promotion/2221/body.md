@@ -2,7 +2,8 @@
 title: Real-data mining collapse leaves persona-vector fine-tuning monitoring confounded
   with training-mix size (LOW confidence)
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-08-10T21:14:00Z'
 has_clean_result: true
 workflow: v1
