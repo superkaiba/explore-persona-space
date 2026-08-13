@@ -9853,8 +9853,8 @@
     "2275": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2275",
-      "status": "reviewing",
+      "path": "tasks/completed/2275",
+      "status": "completed",
       "title": "workflow-fix: SLURM --mem is GPU-count-derived with no per-dispatch override (memory-bound phase OOMs)"
     },
     "2276": {
