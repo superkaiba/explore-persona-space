@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2258,
+  "highest_id": 2259,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9723,6 +9723,13 @@
       "path": "tasks/planning/2258",
       "status": "planning",
       "title": "Extend verify_task_body.py figure-text opaque-code token grammar with the single-letter-prefix arm-slug class"
+    },
+    "2259": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2259",
+      "status": "proposed",
+      "title": "poll_pipeline pid-file staleness check is not pod-scoped \u2014 disables the #813 liveness check on all but the newest leg of a multi-pod issue"
     },
     "226": {
       "has_clean_result": false,
