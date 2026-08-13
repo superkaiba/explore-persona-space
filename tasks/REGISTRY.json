@@ -9832,8 +9832,8 @@
     "2272": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2272",
-      "status": "running",
+      "path": "tasks/reviewing/2272",
+      "status": "reviewing",
       "title": "scripts/issue2224_fold_figures.py breaks test_shared_vm_thread_caps on main (missing load_dotenv-before-torch preamble)"
     },
     "2273": {
