@@ -130,9 +130,9 @@ I made a plot showing, for each layer, and for each tested slot (some combinatio
 
 I then looked qualitatively at some completions for the all layers patching at the context vector in the matched query/different prefix setting
 
-Successful patching: [successful-patch gallery](https://github.com/superkaiba/explore-persona-space/blob/492bf90afaea1082092875c74d1e8783dca60e92/docs/issue2094_successful_patches.md)
+Successful patching: [successful-patch gallery](https://github.com/superkaiba/explore-persona-space/blob/15f33af6c3a9763449d902e7263c9a5a9bc9bf8c/docs/issue2094_successful_patches.md)
 
-Failed patching: [failed / partial-patch gallery](https://github.com/superkaiba/explore-persona-space/blob/492bf90afaea1082092875c74d1e8783dca60e92/docs/issue2094_failed_patches.md)
+Failed patching: [failed / partial-patch gallery](https://github.com/superkaiba/explore-persona-space/blob/15f33af6c3a9763449d902e7263c9a5a9bc9bf8c/docs/issue2094_failed_patches.md)
 
 From this, it seems like the query information is conserved by this patching, but to have a better quantitative evaluation of this, I scored the patched completions vs the original completions as to how well they answered the query:
 
