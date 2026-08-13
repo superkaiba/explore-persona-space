@@ -133,6 +133,31 @@ KRR_M_CENTERS = 16_384
 KRR_LAMBDAS = (1e-1, 1e1)
 FIT_SEED = 0  # parent-parity fits seed (n1m_fits.json ran seed 0)
 
+# ---------------------------------------------------------------------------
+# Expected realized counts — fail-loud pins (#2130)
+# ---------------------------------------------------------------------------
+# Grounded 2026-08-13 on ALL SIX committed rungs
+# (eval_results/issue_1491/scale_ladder/fits_{scale05,scale15,scale3,
+# scale7_refit,scale14,scale32}.json): ceiling_two_draw.n_pairs == 1000 and
+# n_realized == {train_25k: 25000, val_400: 400, test_1000: 1000,
+# wc_test_1k: 999} on every rung. wc_test_1k's realized count is 999 — NOT
+# the nominal 1,000 — CONSISTENTLY ACROSS ALL SIX committed rungs: a
+# deterministic upstream manifest filter, not a per-run shard crash, so an
+# `== 1000` assert would false-fail every rung; 999 is the grounded expected
+# count, not an enshrined silent loss.
+# Incident (#2130): a vLLM engine-startup crash killed one greedy-pass shard
+# (scale15 ceiling_draw_44 shard4, 2026-08-05T19:58Z), leaving 875/1000
+# pairs; _reliability_ceiling accepted the short pairing (n_pairs=875,
+# available=True) and the wrong 1.5B ceiling (0.9855) stood ~9.5 h until a
+# manual anomaly stop. Any count below these pins now raises instead.
+CEILING_EXPECTED_N = 1000
+EXPECTED_SPLIT_N = {
+    "train_25k": 25000,
+    "val_400": 400,
+    "test_1000": 1000,
+    "wc_test_1k": 999,
+}
+
 
 # ---------------------------------------------------------------------------
 # HF chunk streaming (one prefix per split)
@@ -166,8 +191,19 @@ def _stream_ladder_split(
 # ---------------------------------------------------------------------------
 
 
-def _assemble_scale_layer(hf_prefix: str, layer: int, cache_dir: Path) -> dict:
+def _assemble_scale_layer(
+    hf_prefix: str,
+    layer: int,
+    cache_dir: Path,
+    expected_split_n: dict[str, int] | None = EXPECTED_SPLIT_N,
+) -> dict:
     """Assemble one (X, Y) for one (scale, layer) from the FOUR ladder splits.
+
+    Raises RuntimeError when any split's realized count differs from
+    ``expected_split_n`` (#2130 fail-loud pin — a short split means a
+    killed/partial capture shard, never a smaller design). Pass
+    ``expected_split_n=None`` as the explicit opt-out for a deliberately
+    different-size reuse.
 
     Returns a dict with:
       X: (N, H) fp32 — cx_last stacked across splits
@@ -194,6 +230,26 @@ def _assemble_scale_layer(hf_prefix: str, layer: int, cache_dir: Path) -> dict:
         cis[s] = ci
         n_so_far += n
         logger.info("[ladder-fits]   %s: n=%d", s, n)
+
+    if expected_split_n is not None:
+        missing = [s for s in splits if s not in expected_split_n]
+        if missing:
+            raise RuntimeError(
+                f"expected_split_n is missing entries for splits {missing} — pass a "
+                "complete per-split count dict, or None to opt out of the count "
+                "assert entirely (#2130)"
+            )
+        for s in splits:
+            realized = int(ranges[s][1] - ranges[s][0])
+            expected = int(expected_split_n[s])
+            if realized != expected:
+                raise RuntimeError(
+                    f"ladder split count shortfall (#2130 fail-loud pin): split={s!r} "
+                    f"realized={realized} expected={expected} under {hf_prefix}/{s} — "
+                    "a killed/partial capture shard, not a smaller design; refusing to "
+                    "fit on a silently truncated split. Pass expected_split_n=None only "
+                    "for a deliberately different-size reuse."
+                )
 
     X = np.concatenate(cxs, axis=0)
     Y = np.concatenate(vxs, axis=0)
@@ -358,7 +414,9 @@ def _knn_reads(preds_by_arm: dict[str, np.ndarray], y_true: np.ndarray) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def _reliability_ceiling(hf_prefix: str, layer: int, cache_dir: Path) -> dict:
+def _reliability_ceiling(
+    hf_prefix: str, layer: int, cache_dir: Path, expected_n: int = CEILING_EXPECTED_N
+) -> dict:
     """Two-draw reliability ceiling per scale — plan §4.3.
 
     Reads the seed-43 + seed-44 v_x captures for the 1,000 test contexts
@@ -368,6 +426,13 @@ def _reliability_ceiling(hf_prefix: str, layer: int, cache_dir: Path) -> dict:
     correlation between draw A and draw B on the same 1,000 contexts at
     the primary layer, per dimension d, and Var_d is the variance of the
     two-draw MEAN as the pooling weight.
+
+    Raises RuntimeError when either draw's context count or the aligned
+    pairing count differs from ``expected_n`` (#2130 fail-loud pin): the two
+    draws stream the SAME test contexts, so any shortfall is a partial
+    upload / killed shard (the scale15 875/1000 incident), never absence.
+    The designed ABSENCE path (draws not yet on HF → ``available: False``)
+    is unchanged.
     """
     from huggingface_hub.errors import (
         EntryNotFoundError,
@@ -421,8 +486,21 @@ def _reliability_ceiling(hf_prefix: str, layer: int, cache_dir: Path) -> dict:
             continue
         pair_a.append(vx_a[i_a])
         pair_b.append(vx_b[j])
-    if not pair_a:
-        return {"available": False, "reason": "no matching ci between seed43 and seed44"}
+    # #2130 fail-loud pin: both draws stream the SAME expected_n test contexts,
+    # so a short draw or short pairing is corruption (partial upload / killed
+    # shard), not absence — the pre-#2130 zero-pair `available: False` early
+    # return is deliberately subsumed by this raise (zero overlap between two
+    # full draws is the most corrupt case, not a missing-capture case).
+    n_pairs = len(pair_a)
+    if len(ci_a) != expected_n or len(ci_b) != expected_n or n_pairs != expected_n:
+        raise RuntimeError(
+            "reliability-ceiling pairing shortfall (#2130 fail-loud pin): "
+            f"len(ci_a)={len(ci_a)}, len(ci_b)={len(ci_b)}, n_pairs={n_pairs}, "
+            f"expected_n={expected_n}; draw prefixes: {prefix_a} vs {prefix_b}. "
+            "A short draw/pairing means a partial upload or killed capture shard "
+            "(the scale15 875/1000 incident shape) — refusing to compute a "
+            "ceiling on it."
+        )
     A = np.stack(pair_a).astype(np.float64)
     B = np.stack(pair_b).astype(np.float64)
 

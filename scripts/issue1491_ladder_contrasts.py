@@ -58,6 +58,10 @@ load_dotenv()
 # (test_no_new_torch_before_dotenv_vm_entrypoints).
 import numpy as np  # noqa: E402
 
+# Sibling import for the #2130 ceiling n_pairs pin (CEILING_EXPECTED_N) — the
+# single source of truth for the expected pairing count.
+import issue1491_ladder_fits as LF  # noqa: E402
+
 logger = logging.getLogger("issue1491_ladder_contrasts")
 
 # ---------------------------------------------------------------------------
@@ -351,6 +355,17 @@ def _per_scale_summary(fits: dict[str, dict], preds_ridge: dict[str, dict]) -> l
         preds = fits_j.get("predictors", {})
         floors = fits_j.get("floors", {})
         ceiling = fits_j.get("ceiling_two_draw", {})
+        # #2130 read-side defense: an AVAILABLE ceiling with a short pairing in a
+        # committed fits JSON is corruption (the scale15 875/1000 incident shape),
+        # never a smaller design — fail loud, don't summarize/plot it. The designed
+        # absence path (available: False) carries no n_pairs and passes through.
+        if isinstance(ceiling, dict) and ceiling.get("available"):
+            if ceiling.get("n_pairs") != LF.CEILING_EXPECTED_N:
+                raise RuntimeError(
+                    f"{slug}: ceiling_two_draw.n_pairs={ceiling.get('n_pairs')} != "
+                    f"{LF.CEILING_EXPECTED_N} in committed fits JSON — short/partial "
+                    "ceiling pairing (#2130); refusing to consume it"
+                )
         ridge_r2 = preds.get("ridge", {}).get("test_r2")
         # The nonlinear arm is PRE-REGISTERED upstream, not selected here.
         #
@@ -732,6 +747,15 @@ def main() -> int:
             ceil = fj.get("ceiling_two_draw", {})
             ridge_r2 = fj.get("predictors", {}).get("ridge", {}).get("test_r2")
             if isinstance(ceil, dict) and ceil.get("available") and ridge_r2 is not None:
+                # #2130 read-side defense: a short pairing must never normalize
+                # anything — raise, don't skip (corruption, not absence).
+                if ceil.get("n_pairs") != LF.CEILING_EXPECTED_N:
+                    raise RuntimeError(
+                        f"{slug}: ceiling_two_draw.n_pairs={ceil.get('n_pairs')} != "
+                        f"{LF.CEILING_EXPECTED_N} in committed fits JSON — "
+                        "short/partial ceiling pairing (#2130); refusing to use it "
+                        "as a normalizer"
+                    )
                 c_val = ceil.get("ceiling_var_weighted_r")
                 # The normalizer must be STRICTLY POSITIVE. The prior guard was
                 # abs(c_val) > 1e-6, which admitted a NEGATIVE ceiling: the two
