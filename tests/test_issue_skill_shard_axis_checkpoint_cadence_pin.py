@@ -43,7 +43,7 @@ SELECTOR_PY = REPO / "scripts" / "select_step9c_tests.py"
 
 ANCHOR_SKILL = "Compute-character pre-launch statement (REQUIRED — one paragraph"
 ANCHOR_CLAUDE = "Compute-character pre-launch statement (REQUIRED — this carve-out skips"
-DUTIES = "Inline measurement-design + figure-sanity duties"
+DUTIES = "Inline figure-sanity duty"
 DETACHED_FIELDS = "A statement covering a VM-side phase"
 DETACHED_END = "Routing, auto-continue behavior, and the marker schema are unchanged"
 TEAMMATE_ANCHOR = "**Teammate / mid-session box dispatches"
