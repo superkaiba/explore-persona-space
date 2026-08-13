@@ -174,6 +174,21 @@ def _cap_hit_cells(rows: list[dict]) -> dict[str, dict]:
     return out
 
 
+def _regen_triggered(cap_hit: float, by_trait: dict[str, dict]) -> bool:
+    """The P6 re-gen trigger at the plan-registered per-(model, trait) grain.
+
+    Fires when the whole-model cap-hit fraction OR any per-trait fraction
+    (over the trait's judged item set, ``_cap_hit_cells``) exceeds
+    ``C.CAP_HIT_REGEN_THRESHOLD``. Per-trait denominators are smaller than the
+    model's, so capping concentrated in one trait's panel can exceed the
+    threshold at the trait grain while the model aggregate stays under —
+    reading only the model grain silently recreates the parent's flagged
+    residual-cap-hit deviation (plan v11 SS4 P6; code-review v5 Major).
+    """
+    thr = C.CAP_HIT_REGEN_THRESHOLD
+    return cap_hit > thr or any(v["cap_hit_fraction"] > thr for v in by_trait.values())
+
+
 def _gen_surfaces(args, tok) -> tuple[list[dict], int]:
     """The GENERATION surface set: frozen P5 roster minus overlong LMSYS rows.
 
@@ -259,16 +274,18 @@ def phase_gen(args) -> None:
                         }
                     )
             cap_hit = n_cap / max(1, len(rows))
+            by_trait = _cap_hit_cells(rows)
+            trig = _regen_triggered(cap_hit, by_trait)
             atomic_write_text(
                 dest,
                 json.dumps(
                     {
                         "rows": rows,
                         "cap_hit_fraction": cap_hit,
-                        "cap_hit_by_trait": _cap_hit_cells(rows),
+                        "cap_hit_by_trait": by_trait,
                         "max_new_tokens": args.max_new_tokens,
                         "n_lmsys_overlong_skipped": n_lmsys_skipped,
-                        "regen_trigger": cap_hit > C.CAP_HIT_REGEN_THRESHOLD,
+                        "regen_trigger": trig,
                     },
                     indent=2,
                 ),
@@ -277,7 +294,7 @@ def phase_gen(args) -> None:
             lib.log_phase(
                 "p6_gen",
                 f"{tag}: {len(rows)} rollouts, cap-hit {cap_hit:.4f}"
-                + (" REGEN-TRIGGER" if cap_hit > C.CAP_HIT_REGEN_THRESHOLD else ""),
+                + (" REGEN-TRIGGER" if trig else ""),
             )
     finally:
         lib.reap_vllm_engine(llm)
@@ -286,8 +303,10 @@ def phase_gen(args) -> None:
 def phase_gen_regen(args) -> None:
     """ARMED >2% cap-hit re-generation leg (v10 Must-Fix, item 5).
 
-    For every tag whose ``gen`` payload trips the per-cell cap-hit trigger
-    (> ``C.CAP_HIT_REGEN_THRESHOLD``), re-generate ONLY the capped rows at
+    For every tag whose ``gen`` payload trips the per-(model, trait) cap-hit
+    trigger (``_regen_triggered``: whole-model fraction OR any per-trait
+    fraction > ``C.CAP_HIT_REGEN_THRESHOLD`` — plan v11 SS4 P6; code-review v5
+    Major), re-generate ONLY the capped rows at
     ``--regen-max-new-tokens`` (default 2x the gen cap, per the CLAUDE.md
     re-gen rule) on a DEDICATED ``--regen-max-model-len`` = 8192 engine. The
     default engine's ``max_model_len`` = 4096 pin made
@@ -335,10 +354,16 @@ def phase_gen_regen(args) -> None:
                 "cap_hit_fraction",
                 sum(1 for r in rows if r["finish_reason"] == "length") / max(1, len(rows)),
             )
-            if cap_hit <= C.CAP_HIT_REGEN_THRESHOLD:
+            # Per-(model, trait) grain (the plan-registered trigger denominators);
+            # fall back to recomputing for payloads written before the field.
+            by_trait = payload.get("cap_hit_by_trait") or _cap_hit_cells(rows)
+            if not _regen_triggered(cap_hit, by_trait):
                 report[tag] = {
                     "triggered": False,
                     "cap_hit_fraction": cap_hit,
+                    "max_trait_cap_hit_fraction": max(
+                        (v["cap_hit_fraction"] for v in by_trait.values()), default=0.0
+                    ),
                     "regen_n_rows": 0,
                     "regen_overlong_skipped": 0,
                 }
@@ -1016,14 +1041,29 @@ def _realized_gen_cap(args) -> dict:
 
     Reads ``base.json`` (always present after ``gen``) rather than re-deriving
     from args — the aggregate must record what the rollouts actually ran at,
-    including any applied regen (v10 item 5). Falls back to the args value for
-    payloads written before the cap was persisted.
+    including any applied regen (v10 item 5). ``regen_applied`` reflects the
+    BASE payload only (adapter cells can regen while base stays under the
+    trigger — the likely production shape), so the block also folds a digest
+    of the per-model ``regen_report.json`` (code-review v5 Minor). Falls back
+    to the args value for payloads written before the cap was persisted.
     """
-    base = Path(args.out_root) / "eval_rollouts" / "base.json"
+    roll_dir = Path(args.out_root) / "eval_rollouts"
+    base = roll_dir / "base.json"
     payload = json.loads(base.read_text()) if base.is_file() else {}
+    report_path = roll_dir / "regen_report.json"
+    regen_report = None
+    if report_path.is_file():
+        rep = json.loads(report_path.read_text())
+        regen_report = {
+            "n_models": len(rep),
+            "n_models_triggered": sum(1 for d in rep.values() if d.get("triggered")),
+            "n_regen_rows_total": sum(int(d.get("regen_n_rows") or 0) for d in rep.values()),
+            "path": str(report_path),
+        }
     return {
         "max_new_tokens": payload.get("max_new_tokens", args.max_new_tokens),
         "regen_applied": payload.get("regen_applied"),
+        "regen_report": regen_report,
         "n_lmsys_overlong_skipped": payload.get("n_lmsys_overlong_skipped"),
     }
 

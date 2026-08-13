@@ -3492,6 +3492,18 @@ def test_cap_hit_cells_mirrors_judge_membership():
     assert cells["sycophancy"] == {"n": 2, "cap_hit_fraction": 0.5}
 
 
+def test_regen_triggered_reads_per_trait_grain():
+    """review v5 Major: the trigger fires on EITHER grain — whole-model OR any
+    per-(model, trait) cell above C.CAP_HIT_REGEN_THRESHOLD."""
+    thr = C.CAP_HIT_REGEN_THRESHOLD
+    cold = {"evil": {"n": 10, "cap_hit_fraction": 0.0}}
+    hot = {"evil": {"n": 10, "cap_hit_fraction": 0.1}}
+    assert te._regen_triggered(2 * thr, cold) is True  # model grain alone
+    assert te._regen_triggered(thr, hot) is True  # trait grain alone (model AT threshold)
+    assert te._regen_triggered(thr, cold) is False  # neither strictly above
+    assert te._regen_triggered(0.0, {}) is False  # empty by-trait map is safe
+
+
 def test_gen_surfaces_lmsys_generation_only_filter(tmp_path):
     surfaces = [
         {"surface_id": "paper-evil-00", "kind": "paper", "prompt": " ".join(["w"] * 3000)},
@@ -3520,8 +3532,19 @@ def test_gen_fingerprint_keys_cap_and_lmsys_filter(tmp_path, monkeypatch):
     assert te._gen_fingerprint(args2) != fp  # a cap change invalidates gen resume
 
 
-def _gen_regen_fixture(tmp_path: Path, *, capped: int = 2, clean: int = 2) -> tuple:
-    """gen payloads (base + one adapter cell) with ``capped`` length rows each."""
+def _gen_regen_fixture(
+    tmp_path: Path, *, capped: int = 2, clean: int = 2, concentrated_trait: bool = False
+) -> tuple:
+    """gen payloads (base + one adapter cell) with ``capped`` length rows each.
+
+    ``concentrated_trait=True`` builds the review-v5 Major shape instead: ONE
+    capped paper-evil row among 50 total (model aggregate exactly 2% — NOT
+    strictly above the threshold) while evil's judged item set (its 4 paper
+    rows + the 6 shared LMSYS rows) is only 10 rows, so the trait fraction is
+    10%. That payload PERSISTS ``cap_hit_by_trait`` (exercising the trigger's
+    persisted-field read path); the default payload omits it (exercising the
+    ``_cap_hit_cells`` fallback for pre-field payloads).
+    """
     from explore_persona_space.experiments.issue_2221.loaders import write_fingerprint
 
     out_root = tmp_path / "p6"
@@ -3533,24 +3556,47 @@ def _gen_regen_fixture(tmp_path: Path, *, capped: int = 2, clean: int = 2) -> tu
     out_dir.mkdir(parents=True)
     for tag in ("base", cell):
         rows = []
-        for i in range(capped + clean):
-            rows.append(
-                {
-                    "surface_id": f"paper-evil-{i:02d}" if i % 2 == 0 else f"lmsys-{i:03d}",
-                    "kind": "paper" if i % 2 == 0 else "lmsys",
-                    "seed": i,
-                    "prompt": f"benign question {i}",
-                    "response": f"truncated answer {i}",
-                    "finish_reason": "length" if i < capped else "stop",
-                }
+        if concentrated_trait:
+            surface_ids = (
+                [f"paper-evil-{i:02d}" for i in range(4)]
+                + [f"lmsys-{i:03d}" for i in range(6)]
+                + [f"paper-sycophancy-{i:02d}" for i in range(40)]
             )
+            for i, sid in enumerate(surface_ids):
+                rows.append(
+                    {
+                        "surface_id": sid,
+                        "kind": "lmsys" if sid.startswith("lmsys") else "paper",
+                        "seed": i,
+                        "prompt": f"benign question {i}",
+                        "response": f"truncated answer {i}",
+                        # ONE capped row, concentrated in evil's paper panel.
+                        "finish_reason": "length" if i == 0 else "stop",
+                    }
+                )
+        else:
+            for i in range(capped + clean):
+                rows.append(
+                    {
+                        "surface_id": f"paper-evil-{i:02d}" if i % 2 == 0 else f"lmsys-{i:03d}",
+                        "kind": "paper" if i % 2 == 0 else "lmsys",
+                        "seed": i,
+                        "prompt": f"benign question {i}",
+                        "response": f"truncated answer {i}",
+                        "finish_reason": "length" if i < capped else "stop",
+                    }
+                )
         n_cap = sum(1 for r in rows if r["finish_reason"] == "length")
+        by_trait = te._cap_hit_cells(rows)
         payload = {
             "rows": rows,
             "cap_hit_fraction": n_cap / len(rows),
             "max_new_tokens": 16,
-            "regen_trigger": n_cap / len(rows) > C.CAP_HIT_REGEN_THRESHOLD,
+            # Mirrors phase_gen's persisted field: the per-(model, trait) grain.
+            "regen_trigger": te._regen_triggered(n_cap / len(rows), by_trait),
         }
+        if concentrated_trait:
+            payload["cap_hit_by_trait"] = by_trait
         dest = out_dir / f"{tag}.json"
         dest.write_text(json.dumps(payload, indent=2))
         write_fingerprint(dest, {"probe": "fp-untouched"})
@@ -3692,6 +3738,38 @@ def test_phase_gen_regen_guards_and_no_trigger_skip(tmp_path, monkeypatch):
     )
 
 
+@pytest.mark.slow  # imports vllm for SamplingParams/LoRARequest (no engine is built)
+def test_phase_gen_regen_concentrated_trait_triggers(tmp_path, monkeypatch):
+    """review v5 Major: model aggregate AT/UNDER 2% but ONE trait above 2%
+    MUST trigger — the per-trait denominator (own paper items + shared LMSYS
+    panel) is smaller than the model's, so concentrated capping dilutes below
+    the threshold at the model grain."""
+    pytest.importorskip("vllm")
+    out_root, _ckpt, cell, args = _gen_regen_fixture(tmp_path, concentrated_trait=True)
+    out_dir = out_root / "eval_rollouts"
+    # Fixture sanity: the model aggregate ALONE would not trigger (== threshold,
+    # not strictly above); the concentrated trait cell is well above it.
+    payload = json.loads((out_dir / "base.json").read_text())
+    assert payload["cap_hit_fraction"] <= C.CAP_HIT_REGEN_THRESHOLD
+    assert payload["cap_hit_by_trait"]["evil"]["cap_hit_fraction"] > C.CAP_HIT_REGEN_THRESHOLD
+    assert payload["regen_trigger"] is True  # phase_gen's mirrored field, same grain
+    fake = _FakeGenRegenLLM()
+    built: list = []
+    _patch_gen_regen_seams(monkeypatch, fake, built)
+    te.phase_gen_regen(args)
+    report = json.loads((out_dir / "regen_report.json").read_text())
+    for tag in ("base", cell):
+        assert report[tag]["triggered"] is True, tag
+        assert report[tag]["regen_n_rows"] == 1, tag
+    # The concentrated capped row was actually spliced in place.
+    payload = json.loads((out_dir / "base.json").read_text())
+    regen_rows = [r for r in payload["rows"] if "regenerated_at_max_tokens" in r]
+    assert len(regen_rows) == 1
+    assert regen_rows[0]["surface_id"] == "paper-evil-00"
+    assert regen_rows[0]["finish_reason"] == "stop"
+    assert payload["cap_hit_fraction"] == 0.0
+
+
 def test_realized_gen_cap_reads_payload_not_args(tmp_path):
     out_root = tmp_path / "p6"
     (out_root / "eval_rollouts").mkdir(parents=True)
@@ -3712,6 +3790,23 @@ def test_realized_gen_cap_reads_payload_not_args(tmp_path):
     assert got["max_new_tokens"] == 16  # the REALIZED cap, never re-derived
     assert got["regen_applied"] == {"regen_max_new_tokens": 4096}
     assert got["n_lmsys_overlong_skipped"] == 3
+    assert got["regen_report"] is None  # no report file yet
+    # review v5 Minor: adapter cells can regen while base stays under the
+    # trigger — the instrument folds a digest of the per-model regen report.
+    (out_root / "eval_rollouts" / "regen_report.json").write_text(
+        json.dumps(
+            {
+                "base": {"triggered": False, "regen_n_rows": 0},
+                "cell_a": {"triggered": True, "regen_n_rows": 7},
+                "cell_b": {"triggered": True, "regen_n_rows": 5},
+            }
+        )
+    )
+    digest = te._realized_gen_cap(args)["regen_report"]
+    assert digest["n_models"] == 3
+    assert digest["n_models_triggered"] == 2
+    assert digest["n_regen_rows_total"] == 12
+    assert digest["path"].endswith("regen_report.json")
 
 
 def test_trait_eval_phase_registry_gen_regen_between_gen_and_pilot():

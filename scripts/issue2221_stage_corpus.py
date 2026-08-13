@@ -1255,7 +1255,11 @@ def phase_upload(args) -> None:
         lib.log_phase("p1_upload", f"{sub} -> {url}")
     panel = out_root / "panel_prompts.jsonl"
     if panel.is_file():
-        panel_prefix = "remine_found/panel_prompts.jsonl" if args.remine else "panel_prompts.jsonl"
+        # Remine panel lands under remine_prompts/ (it is an eval SURFACE, not
+        # FOUND rows — code-review v5 Minor); disjoint from every parent prefix.
+        panel_prefix = (
+            "remine_prompts/panel_prompts.jsonl" if args.remine else "panel_prompts.jsonl"
+        )
         # UPLOAD_RETURN_DISCARD_EXEMPT: raise_on_error=True — failure raises, URL unused
         hub._upload(
             panel,
