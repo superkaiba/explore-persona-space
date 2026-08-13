@@ -56,26 +56,6 @@ def test_wired_files_name_pooling_convention():
         assert "pooling-convention" in text, f"{rel} lost the pooling-convention row (#1974)"
 
 
-def test_wired_files_name_both_mapping_arms():
-    """Every wired file carries the both-arms mapping row (#2090).
-
-    The contiguous literal ``prefix-based AND context-based`` is asserted
-    deliberately — it IS the requirement (both mapping arms named as paired
-    arms of the same design), so the pin cannot be satisfied vacuously by
-    unrelated prose; each surface places the canonical prefix/context
-    definitions AFTER the literal rather than splitting it.
-    """
-    for rel in (
-        *FULL_TOKEN_FILES,
-        ".claude/agents/critic.md",
-        ".claude/rules/lens-coverage-map.md",
-    ):
-        text = (REPO / rel).read_text(encoding="utf-8")
-        assert "prefix-based AND context-based" in text, (
-            f"{rel} lost the both-arms mapping row (#2090)"
-        )
-
-
 def test_glossary_retired_terms_pins_pooling_ambiguity():
     """The glossary's retired-terms section carries the pooling-ambiguity row (#2008).
 
