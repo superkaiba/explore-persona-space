@@ -14351,6 +14351,108 @@ def test_check28_caption_suppression_is_slug_class_only(tmp_path, monkeypatch):
     assert "ft-con-137" not in res.detail
 
 
+def test_check28_slash_joined_label_classifier():
+    r"""The #2221 reproduction at classifier scope + one negative pin per
+    `_is_path_like_word` arm (#2258). The former `_PATH_SHAPED_RE` any-slash
+    word exemption (`^\S*[/\\]\S*$`) exempted slash-joined rendered
+    `behavior/slug` legend labels WHOLE, so the incident strings never
+    reached the token classes; the narrowed predicate scans them while
+    genuinely path/formula/mathtext-shaped words stay exempt."""
+    fn = verify_task_body._opaque_code_tokens
+    # #2221 reproduction — the committed incident labels (blob evidence:
+    # git show 371b0c8af0f54c762d043535d06e54e4e8a9806b:figures/issue_2221/
+    # checkpoint_detection_auc.meta.json). Whole-string gate consumer:
+    assert fn("hallucination/a_rb_ctx") == ["a_rb_ctx"]
+    assert fn("hallucination/c_map_pfx") == ["c_map_pfx"]
+    # ... and the per-word exemption consumer (prose-embedded):
+    assert fn("legend: hallucination/a_rb_ctx") == ["a_rb_ctx"]
+    # The fourth #2221 label carries no flaggable token and stays clean
+    # (`random-direction` is 2 hyphen segments — below the arm-slug floor).
+    assert fn("hallucination/random-direction control (oriented)") == []
+    # ORDERING pin (plan v4 §4.2): a slash-FREE word with an interior
+    # formula char MUST stay scanned — the slash gate (arm 2) precedes the
+    # formula arm (arm 3). A formula-arm-first implementation wrongly
+    # exempts `p(cond_4)` while passing every other pin in this file.
+    assert fn("p(cond_4)") == ["cond_4"]
+    # Bare `d_transport` stays unflagged — the documented residual (plan
+    # §3b: a 2-segment single-letter class would flag ~45 distinct /
+    # ~9,200 corpus occurrences of rendered math notation — `z_marker`,
+    # `s_i`, `n_train`, ...). Guards against a future FP-blind "fix".
+    assert fn("d_transport") == []
+    # Ordinary slash-bearing words are SCANNED (no arm fires) but carry no
+    # flaggable token — the scanned-clean envelope.
+    for scanned_clean in ("36/36", "N/A", "w/o", "and/or", "train/loss"):
+        assert fn(scanned_clean) == [], f"false positive on {scanned_clean!r}"
+    # Arm 1 (backslash): mathtext words stay exempt whole. Non-vacuity:
+    # the snake regex genuinely matches `c_0` (digit-bearing) inside, so
+    # `[]` is produced by the backslash arm, not the regex boundary.
+    assert fn(r"$c_0^{lt}\rightarrow w$") == []
+    assert fn(r"$\mathdefault{10^{0}}$") == []
+    assert verify_task_body._SNAKE_TOKEN_RE.search(r"$c_0^{lt}\rightarrow w$")
+    # Arms 2+6 (strip + extension): a punctuation-wrapped script path.
+    # Non-vacuity: the snake regex matches the digit-bearing stem inside.
+    assert fn("(scripts/issue1336_step_transfer_tiers.py)") == []
+    assert verify_task_body._SNAKE_TOKEN_RE.search("(scripts/issue1336_step_transfer_tiers.py)")
+    # Arm 3 (formula chars): caption formulas with interior parens.
+    assert fn("sqrt(mean_i(s2_i/m_i))") == []
+    assert verify_task_body._SNAKE_TOKEN_RE.search("sqrt(mean_i(s2_i/m_i))")
+    # Arm 7 (repo top-level dir): extension-less dir refs in caption prose.
+    assert fn("eval_results/issue_825 S2 (Result 1 anchor)") == []
+    assert verify_task_body._SNAKE_TOKEN_RE.search("eval_results/issue_825")
+    # Direct predicate reads, one per arm (arm 8 = the fall-through scan).
+    is_path = verify_task_body._is_path_like_word
+    assert is_path(r"\rightarrow")  # arm 1: backslash
+    assert not is_path("cond_4")  # arm 2: no slash -> scanned
+    assert not is_path("p(cond_4)")  # arm 2 fires BEFORE arm 3
+    assert is_path("sqrt(s2_i/m_i)")  # arm 3: formula char
+    assert is_path("./run.sh") and is_path("/workspace/logs")  # arm 4
+    assert is_path("~/x") and is_path("http://x")  # arm 4: marker/scheme
+    assert is_path("a/b/c")  # arm 5: >=2 slashes
+    assert is_path("weird_dir/file.py")  # arm 6: extension tail
+    assert is_path("figures/issue_920")  # arm 7: repo top-level dir
+    assert not is_path("hallucination/a_rb_ctx")  # arm 8: scanned
+
+
+def test_check28_slash_joined_legend_labels_warn(tmp_path, monkeypatch):
+    """The #2221 live repro at walker scope: the ACTUAL committed legend
+    list of round-1's `checkpoint_detection_auc.png` (provenance:
+    git show 371b0c8af0f54c762d043535d06e54e4e8a9806b:figures/issue_2221/
+    checkpoint_detection_auc.meta.json — the #1900 blob-evidence
+    convention) rendered at `meta["text"].axes[].legend_labels` -> check 28
+    WARNs naming the slug tokens; the
+    `hallucination/random-direction control (oriented)` label stays
+    clean."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-08-11T00:00:00Z",
+            "text": {
+                "suptitle": None,
+                "fig_texts": [],
+                "axes": [
+                    {
+                        "xlabel": "training progress (% of steps)",
+                        "ylabel": "orientation-folded detection AUC",
+                        "legend_labels": [
+                            "hallucination/a_rb_ctx",
+                            "hallucination/c_map_ctx",
+                            "hallucination/c_map_pfx",
+                            "hallucination/random-direction control (oriented)",
+                        ],
+                    }
+                ],
+            },
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_label_codes(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "a_rb_ctx" in res.detail
+    assert "c_map_ctx" in res.detail and "c_map_pfx" in res.detail
+    assert "random-direction" not in res.detail
+
+
 # ─── Check 41: sidecar-less embedded figures (coverage WARN, #1478) ────────
 
 _CHECK41_NAME = "figure sidecar coverage (sidecar-less embedded figures)"
