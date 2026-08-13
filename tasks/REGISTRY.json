@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2268,
+  "highest_id": 2269,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9800,6 +9800,13 @@
       "path": "tasks/running/2268",
       "status": "running",
       "title": "main's .claude/skills/issue/SKILL.md exceeds its own size ratchet (936,191 > 935,400 bytes) \u2014 trim below cap; blocks lint gates fleet-wide"
+    },
+    "2269": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2269",
+      "status": "proposed",
+      "title": "verify_plan.py: regen-headroom arithmetic check (armed \u22652\u00d7 re-gen vs max_model_len pin) \u2014 third recurrence of the #505/#601 class"
     },
     "227": {
       "has_clean_result": true,
