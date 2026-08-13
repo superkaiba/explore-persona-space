@@ -1250,6 +1250,93 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   shape; active-voice claims ("the JSON records the per-layer values")
   never parse (v1 false-negative class).
 
+- **check 55** (`check_v4_aggregate_stat_needs_per_unit`, WARN, v4-only,
+  #2264; incident #2224 r3): a `### <result>` block under `## Results`
+  embedding EXACTLY ONE inline figure whose figure-adjacent text (the
+  figure's ALT text + the section's blockquote `> ` caption lines — the
+  check-49 scoping; general section prose never triggers) reports a
+  correlation/AUC-family aggregate statistic (word-boundary-guarded
+  `r` / `rho` (word or Greek) / `R2` / `R²` / `R^2` / `AUC` / `AUROC`
+  followed by `=` / `≈` / `:` and a numeric, or a
+  `Spearman|Pearson`-qualified bare symbol) with NO exemption evidence —
+  none of (a) the literal
+  machine-read token `per-unit exemption` (case-insensitive,
+  hyphen/space/en-dash tolerant) anywhere in the block's prose layer,
+  (b) the single figure's basename matching the `_PER_UNIT_FIG_RE`
+  per-unit companion convention (the figure already IS the per-unit
+  view — SPEC's first stated exemption), (c) the `_DECLARED_PAIR_RE`
+  declared-pair idiom in the alt/caption lines — draws a WARN naming
+  the H3, the matched statistic text, and the missing evidence classes.
+  The SINGLE-figure arm of SPEC's "low-level data plot behind every
+  aggregate" rule: the 0-figure case is check 48's territory, the
+  >1-figure case is check 49's. WARN never FAIL (statistic detection
+  from caption text is heuristic; clean-result-critic Lens 11 stays the
+  substantive owner). Vacuous PASS on v3/v2/legacy bodies
+  (forward-only). Incident #2224 r3: two folded fu1 aggregate results
+  shipped with neither the per-unit view nor the `Per-unit exemption:`
+  line the body itself used elsewhere; only the LM critic caught it.
+
+- **check 56** (`check_v4_ack_result_count`, WARN, v4-only, #2264;
+  incident #2224 r3; dispatched OUTSIDE CHECKS with the issue number —
+  the check-20/#921 precedent): the conciseness-cap acknowledgment
+  paragraph's claims are reconciled against the folded body. Two arms,
+  one CheckResult unioning both: (a) COUNT-CLAIM — every `<N> result(s)`
+  claim in the `_warn_acknowledgment_text` union (N a 1-3-digit numeral
+  or a number word one..twenty; a word-number immediately preceded by
+  another number word is SKIPPED — dash normalization turns "twenty-one
+  results" into "twenty one results", which a naive map would parse as
+  N=1) is compared to the actual `### ` H3 count under `## Results`;
+  any mismatch WARNs naming claimed vs actual. (b) SINGLE-ROUND — a
+  `single-round` claim in the acknowledgment while
+  `_count_extra_followup_rounds_v4` counts >0 folded rounds (footer
+  round clauses; events.jsonl when the issue is known) WARNs naming the
+  round count + source. Fold rounds recurrently stale the
+  acknowledgment (each same-issue follow-up fold edits `## Results` but
+  not the acknowledgment paragraph). WARN never FAIL. Vacuous PASS on
+  v3/v2/legacy bodies, bodies with no acknowledgment paragraph, and
+  when `## Results` is absent (check 2 reports). Incident #2224 r3: the
+  acknowledgment still said "single-round … nine results" while the
+  folded body carried 13 results across 3 folded rounds.
+
+- **check 57** (`check_v4_sidecarless_results_figures`, FAIL, v4-only,
+  Leg B forward-only, #2267; incident #2054): a `## Results` figure with
+  NO `.meta.json` sidecar at the cited sha previously received ZERO
+  mechanical opaque-code coverage — check 28 fail-softs on the missing
+  sidecar (`meta is None` ⇒ continue, the check-24 convention) and
+  check 41 is WARN-never-FAIL by documented design — so #2054's
+  `hero_calibration_nslope.png` shipped `H0'a`/`H0'b`/`b=`/`m=` codes in
+  PNG rendered text (panel titles + legend; clean plain-English caption)
+  through every mechanical gate. Two legs, both scoped to same-repo
+  sha-pinned figures whose PNG resolves at the cited sha (else check 22's
+  domain) and whose sidecar probe is a definitive 'fail' (present /
+  indeterminate ⇒ checks 24/28/33/34 + 41's domain): **Leg A** — the
+  blockquote caption window, markdown code spans stripped to spaces
+  (a backticked token is a quoted code-register reference — clears the
+  #952 corpus shape, a backticked companion-FILENAME), carries
+  `_opaque_code_tokens` hits ⇒ FAIL naming basename + tokens (NOT
+  date-gated; measured 0 corpus hits with the exclusion). **Leg B**
+  (forward-only) — the pinned commit's COMMITTER date (`_commit_epoch`,
+  cached + fail-soft) ≥ the 2026-08-13 UTC cutover
+  (`_CHECK57_FORWARD_CUTOVER`) AND the basename (lowercased,
+  dash-normalized) is NOT named in the body's verifier-WARN
+  acknowledgment (`_warn_acknowledgment_text`) ⇒ FAIL — regenerate via
+  `savefig_paper` (writes the sidecar, exposing rendered text to
+  check 28), or acknowledge the figure by name (hand-made diagrams /
+  external screenshots). Date-gate rationale: the plan-time sweep
+  (2,200 bodies; 87 v4; 45 sidecar-less same-repo Results figures, ~42
+  across ~13 green `awaiting_promotion` bodies) makes an unconditional
+  FAIL a promote-time re-verify breaker, and every existing pin pre-dates
+  the cutover, so the corpus is exempt BY CONSTRUCTION while every future
+  sidecar-less Results figure blocks at draft time. Fail-soft on every
+  indeterminate probe (unknown sha, failed date probe). Residuals
+  (i)-(iv), documented in the check docstring: backticked caption codes
+  escape Leg A (Leg B is the forcing function); pinning a NEW figure at
+  an old sha is impossible (the pinned commit must contain the PNG);
+  `b=`/`m=` single-letter-equals codes stay unclassifiable and PNG-pixel
+  text stays the multimodal critics' read for grandfathered figures; a
+  rebase rewriting an old figure commit to a post-cutover date FAILs
+  loud (ack escape), never silently passes.
+
 - **judge drop-line population reconciliation**
   (`check_judge_drop_line_population`, FAIL/WARN, v3+v4, #1776 incident /
   task #1881; unnumbered — dispatched outside CHECKS next to the #732
@@ -2845,6 +2932,33 @@ _DECLARED_PAIR_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Check 55: correlation/AUC-family aggregate-statistic detection, scoped to
+# FIGURE-ADJACENT text only (the single figure's alt text + the section's
+# blockquote caption lines — the check-49 scoping rationale: what-is-plotted
+# beats routinely mention rho / AUC as SPEC-mandated disclosure prose, so
+# whole-block matching would drown the signal). Two alternates: a
+# word-boundary-guarded symbol followed by `=` / `≈` / `:` and a numeric
+# (optionally signed, incl. the U+2212 matplotlib minus), and a
+# Spearman/Pearson-qualified bare symbol (the statistic is named even
+# without an inline value). The lookbehind stops mid-word matches
+# ("color=red" never fires on its `r`).
+_V4_AGG_STAT_RE = re.compile(
+    r"(?<![a-zA-Z0-9_])(?:r|rho|ρ|R2|R²|R\^2|AUC|AUROC)\s*[=≈:]\s*[-+−]?\d*\.?\d+"  # noqa: RUF001
+    r"|(?<![a-zA-Z0-9_])(?:spearman|pearson)(?:['’]s)?\s+(?:r|rho|ρ)(?![a-zA-Z0-9])",  # noqa: RUF001
+    re.IGNORECASE,
+)
+
+# Check 55: the literal machine-read exemption token — the established body
+# convention (#2224's promoted body used `Per-unit exemption:` three times)
+# this check gives mechanical meaning. Case-insensitive; hyphen / en-dash /
+# em-dash / space tolerant between the tokens. Scanned over the WHOLE
+# `### <result>` block's prose layer (the token lives in what-is-plotted
+# prose, not the caption).
+_PER_UNIT_EXEMPTION_TOKEN_RE = re.compile(
+    r"\bper[\s\-–—]?unit[\s\-–—]+exemption\b",  # noqa: RUF001
+    re.IGNORECASE,
+)
+
 # Check 38: any markdown link (image embeds are masked out before this
 # scans, so no `!`-lookbehind is needed); link text tolerates `]` not
 # followed by `(` — the same tolerance `_IMAGE_RE` uses — and may be
@@ -4130,6 +4244,101 @@ def check_v4_result_figure_cardinality(body: str) -> CheckResult:
         label,
         True,
         f"all {len(result_h3s)} `### <result>`(s) scanned — no unpaired multi-figure section",
+    )
+
+
+def check_v4_aggregate_stat_needs_per_unit(body: str) -> CheckResult:
+    """Check 55 (v4 only, WARN): a `### <result>` section under
+    `## Results` embedding EXACTLY ONE inline figure whose figure-adjacent
+    text (alt text + blockquote `> ` caption lines) reports a
+    correlation/AUC-family aggregate statistic (`_V4_AGG_STAT_RE`: `r` /
+    `rho` (word or Greek) / `R2` / `R²` / `R^2` / `AUC` / `AUROC` with a
+    value, or a Spearman/Pearson-qualified bare symbol) draws a WARN naming the H3,
+    the matched statistic text, and the missing evidence classes — UNLESS
+    any ONE exemption evidence is present:
+
+    (a) the literal machine-read token `per-unit exemption`
+        (`_PER_UNIT_EXEMPTION_TOKEN_RE`) anywhere in the block's prose
+        layer — the SPEC-named escape for a result whose intervals /
+        committed artifacts already carry the per-unit story;
+    (b) the single figure's basename matches `_PER_UNIT_FIG_RE` (the
+        figure already IS the per-unit view — SPEC's first stated
+        exemption);
+    (c) the `_DECLARED_PAIR_RE` declared-pair idiom in the alt/caption
+        lines (parity with check 49's pair-evidence vocabulary).
+
+    The SINGLE-figure arm of SPEC.md § "Low-level data plot behind every
+    aggregate": the 0-figure case is check 48's territory, the >1-figure
+    case is check 49's (`check_v4_result_figure_cardinality`) — this check
+    fires ONLY at `len(figures) == 1`. Statistic detection is scoped to
+    the figure's alt text + the section's blockquote caption lines, NEVER
+    general section prose (the check-49 scoping rationale: what-is-plotted
+    beats routinely mention rho / AUC as disclosure prose, so whole-block
+    matching would drown the signal); the exemption TOKEN, by contrast, is
+    scanned over the whole block's prose layer (it lives in
+    what-is-plotted prose in the wild — #2224).
+
+    WARN, NEVER FAIL: statistic detection from caption text is heuristic,
+    and the clean-result-critic Lens 11 aggregate-vs-per-unit rule stays
+    the substantive owner. Scans the `_prose_layer` (fenced code +
+    `<details>` stripped, so a quoted example embed or fenced caption
+    never counts). PASSes vacuously on v3 / v2 / legacy bodies
+    (forward-only). Incident #2224 r3: two folded fu1 aggregate results
+    shipped with neither the per-unit view nor the `Per-unit exemption:`
+    line the body itself used elsewhere; only the LM critic caught it
+    (#2264).
+    """
+    label = "Single aggregate-stat figure has per-unit evidence or exemption (v4)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped — not a v4 body")
+    results = _v4_results_body(body)
+    if results is None:
+        return CheckResult(label, True, "## Results missing — check 2 will report")
+    prose = _prose_layer(results)
+    result_h3s = _collect_tldr_h3_names(prose)
+    if not result_h3s:
+        return CheckResult(label, True, "no `### <result>` headings — check 3 will report")
+    plines = prose.splitlines()
+    flagged: list[str] = []
+    for idx, (name, line_no) in enumerate(result_h3s):
+        end_line = result_h3s[idx + 1][1] if idx + 1 < len(result_h3s) else len(plines)
+        block = plines[line_no + 1 : end_line]
+        figures = _v4_block_inline_figures(block)
+        if len(figures) != 1:
+            continue  # 0 figures: check 48's; >1 figures: check 49's
+        url, alt = figures[0]
+        caption_lines = [ln for ln in block if ln.lstrip().startswith(">")]
+        adjacent = "\n".join([alt, *caption_lines])
+        stat_m = _V4_AGG_STAT_RE.search(adjacent)
+        if stat_m is None:
+            continue  # no aggregate statistic in the figure-adjacent text
+        if _PER_UNIT_EXEMPTION_TOKEN_RE.search("\n".join(block)):
+            continue  # exemption (a): the literal machine-read token
+        if _PER_UNIT_FIG_RE.search(_fig_basename(url)):
+            continue  # exemption (b): the single figure IS the per-unit view
+        if _DECLARED_PAIR_RE.search(adjacent):
+            continue  # exemption (c): declared-pair idiom in alt / caption
+        stat_txt = " ".join(stat_m.group(0).split())
+        flagged.append(f"'{name[:48]}' (figure {_fig_basename(url)}, statistic '{stat_txt}')")
+    if flagged:
+        preview = "; ".join(flagged[:2]) + (" …" if len(flagged) > 2 else "")
+        return CheckResult(
+            label,
+            True,
+            f"{len(flagged)} `### <result>` section(s) report a correlation/AUC-family "
+            "statistic in their single figure's alt/caption with NO per-unit evidence — "
+            "no literal `per-unit exemption` token in the section prose, no per-unit "
+            "companion basename, and no declared-pair idiom in the alt text / blockquote "
+            "captions. Embed the per-unit companion (SPEC.md § Low-level data plot behind "
+            "every aggregate) or state `Per-unit exemption: <reason>` in the section "
+            f"(substantive owner: clean-result-critic Lens 11): {preview}",
+            is_warn=True,
+        )
+    return CheckResult(
+        label,
+        True,
+        f"all {len(result_h3s)} `### <result>`(s) scanned — no exemption-less "
+        "single-figure aggregate statistic",
     )
 
 
@@ -9449,12 +9658,25 @@ _SNAKE_TOKEN_RE = re.compile(r"\b[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)+\b")
 # (c) bare hypothesis codes (`H3`, `H1c`) — plan-registered hypothesis slots
 #     rendered into figure text (#1072: panel title "… (H3)"; #1774: sidecar
 #     title "… (H1c)" passed the old single-digit form). SINGLE digit +
-#     optional single LOWERCASE letter, case-sensitive by design:
+#     optional single LOWERCASE letter, the letter optionally PRIME-marked
+#     (ASCII apostrophe or U+2032 prime — #2054's `H0'a`/`H0`+U+2032+`b`
+#     panel titles; #2267). The prime extension is a REPORTING-ONLY strict
+#     superset, not a detection fix: the apostrophe/prime is a word
+#     boundary, so the pre-#2267 form `\bH\d[a-z]?\b` ALREADY fired inside
+#     `H0'a` — it merely reported the truncated `H0`; the widened form
+#     lengthens the reported token and can never add or remove a firing
+#     figure (a prime followed by MULTIPLE letters, e.g. `H0'ab`, still
+#     falls back to the truncated `H0` report — no boundary splits `ab`;
+#     a possessive `H2's` now reports `H2's`, an accepted envelope — a
+#     bare `H2` in rendered figure text is a violation either way).
+#     Case-sensitive by design:
 #     `H100`/`H200` GPU names (3 digits) and `H20` (2 digits, also a GPU
 #     name) never match — no word boundary fires between two digits — and
 #     lowercase `h3` / uppercase-suffix `H1C` are not the project's
 #     hypothesis-tag convention and stay clean.
-_HYPOTHESIS_CODE_RE = re.compile(r"\bH\d[a-z]?\b")
+# U+2032 spelled as an escape, never the literal char in code strings (the
+# `_APOS` convention; full-ruleset RUF001 pin on this file).
+_HYPOTHESIS_CODE_RE = re.compile(r"\bH\d(?:['\u2032][a-z]|[a-z])?\b")
 
 # (d) slot-family codes `f16` / `l16` (first-16 / last-16 answer-slot
 #     families, #1072: xlabel "answer position t (f16 slots)"). Deliberately
@@ -9661,8 +9883,12 @@ def _opaque_code_tokens(text: str) -> list[str]:
     layer pins, and snake_case tokens that are >=3 segments OR carry any
     digit (`ctx_blk_max`, `sw_eng_C1`, `BS_E0`, `cond_4`); 2-segment
     all-alpha tokens (`log_prob`, `judge_rate`, `helpful_assistant`) are
-    allowed; bare hypothesis codes (`H3`/`H1c` — `\bH\d[a-z]?\b`, single
-    digit + optional single lowercase letter, case-sensitive);
+    allowed; bare hypothesis codes (`H3`/`H1c`, incl. the prime-marked
+    `H0'a` forms — `\bH\d(?:['\u2032][a-z]|[a-z])?\b`, single digit +
+    optional single lowercase letter, the letter optionally prime-marked
+    with an ASCII apostrophe or U+2032 (a reporting-only strict superset
+    of the pre-#2267 `\bH\d[a-z]?\b` — see the class-(c) comment),
+    case-sensitive);
     slot-family codes (`f16`/`l16` only); bare candidate/panel codes
     (`P1`/`P7`/`M4`/`P3b` — `\b[PM]\d[a-z]?\b`, same single-digit +
     optional-lowercase-letter shape discipline as the hypothesis class,
@@ -9798,7 +10024,13 @@ def check_figure_label_codes(body: str) -> CheckResult:
     ``Parallel share of the gap by depth (H3)`` and the xlabel
     ``answer position t (f16 slots)`` passed check 28 clean and were caught
     only by the LM clean-result critic (hand-fixed in ``1f19deacfd``) —
-    mechanized here as the hypothesis-code + slot-family classes. Incident
+    mechanized here as the hypothesis-code + slot-family classes. #2267
+    extended the hypothesis class to REPORT prime-marked tokens
+    (``H0'a`` / the U+2032 form) in full — a reporting-only strict
+    superset, NOT a detection-gap fix: the apostrophe/prime is a word
+    boundary, so the pre-#2267 form already fired inside ``H0'a`` and
+    merely reported the truncated ``H0`` (see the class-(c) comment
+    block). Incident
     #1900: ``mediation_forest.png``'s legend text ``P1 | P7`` and the
     ``P7-residualized`` title passed check 28 clean (n_fail=0, twice) and
     burned an LM clean-result-critic round (pre-fix sidecar evidence at
@@ -13426,6 +13658,9 @@ def check_figure_sidecar_coverage(body: str) -> CheckResult:
     ``--body-stdin``), or no figure passes the scope gates. Existence probes
     only — two ``_git_object_exists`` invocations (up to four bounded
     subprocess spawns) per unique figure URL, no ``git show`` content read.
+    Since #2267 the v4 POST-CUTOVER sidecar-less case additionally FAILs
+    via check 57 (``check_v4_sidecarless_results_figures``) — check 41
+    itself is unchanged: still WARN, still generation-agnostic.
     """
     label = "figure sidecar coverage (sidecar-less embedded figures)"
     section = _figure_scan_section(body)
@@ -13475,6 +13710,219 @@ def check_figure_sidecar_coverage(body: str) -> CheckResult:
         return CheckResult(label, True, "no same-repo sha-pinned figures to check")
     return CheckResult(
         label, True, f"{checked} embedded figure(s) all carry sidecar files at their cited shas"
+    )
+
+
+# ─── Check 57: v4 sidecar-less Results figures (FAIL; Leg B forward-only) ───
+#
+# #2267 (incident #2054): a v4 body embedding a `## Results` figure with NO
+# `.meta.json` sidecar at the cited sha previously received ZERO mechanical
+# opaque-code coverage — check 28 fail-softs on the missing sidecar
+# (`meta is None -> continue`, the check-24 convention) and check 41 is
+# WARN-never-FAIL by documented design. #2054's `hero_calibration_nslope.png`
+# carried its opaque `H0'a`/`H0'b`/`b=`/`m=` codes ONLY in PNG rendered text
+# (panel titles + legend entries) with a clean plain-English caption, so no
+# text channel reached those pixels. Check 57 makes the sidecar-less state
+# itself blocking for NEW v4 figures (Leg B, date-gated forward-only) and
+# blocks caption-carried opaque codes on sidecar-less figures outright
+# (Leg A) — routing rendered text into the sidecar channel (`savefig_paper`)
+# where check 28 scans it.
+
+# 2026-08-13T00:00:00 UTC as unix epoch — the #2267 fix-landing date (plan
+# §3.1 Leg B). A figure pinned at a commit whose COMMITTER date is >= this
+# epoch gets the Leg B sidecar-less FAIL; every pre-existing corpus pin
+# pre-dates it (plan-time sweep: 45/45), so existing green bodies are exempt
+# BY CONSTRUCTION. Value pinned against the datetime derivation by
+# `test_check57_registry_and_cutover_constant`.
+_CHECK57_FORWARD_CUTOVER = 1786579200
+
+# Markdown code spans in the caption window are QUOTED references (a
+# backticked companion-FILENAME, a code-register token by convention), not
+# rendered condition labels — stripped to a space before the Leg A scan
+# (plan §3.1 item 5: the measured corpus's ONE pre-exclusion Leg A hit was
+# #952's backticked `refusal_sanity_auc.png` companion-file reference).
+_CHECK57_CODE_SPAN_RE = re.compile(r"`[^`]*`")
+
+# (repo, sha) -> committer epoch (None = indeterminate). Module-level so one
+# process probes each unique figure sha at most once (check 57 Leg B).
+_COMMIT_EPOCH_CACHE: dict[tuple[str, str], int | None] = {}
+
+
+def _commit_epoch(repo: Path, sha: str) -> int | None:
+    """Committer date (unix epoch seconds) of ``<sha>`` in ``repo`` via
+    ``git show -s --format=%ct <sha>^{commit}``, or None on ANY
+    indeterminate probe — unknown/unresolvable sha, subprocess error,
+    unparsable output — fail-soft, never raises (check 57's Leg B skips a
+    None rather than FAILing on it). Cached per (repo, sha) at module
+    level. A module-level helper (not a closure inside the check) so tests
+    can monkeypatch the date probe directly (plan #2267 §3.1)."""
+    key = (str(repo), sha)
+    if key in _COMMIT_EPOCH_CACHE:
+        return _COMMIT_EPOCH_CACHE[key]
+    epoch: int | None = None
+    try:
+        proc = subprocess.run(
+            ["git", "show", "-s", "--format=%ct", f"{sha}^{{commit}}"],
+            cwd=str(repo),
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if proc.returncode == 0 and proc.stdout.strip():
+            epoch = int(proc.stdout.strip().splitlines()[0])
+    except (OSError, subprocess.SubprocessError, ValueError):
+        epoch = None
+    _COMMIT_EPOCH_CACHE[key] = epoch
+    return epoch
+
+
+def check_v4_sidecarless_results_figures(body: str) -> CheckResult:  # noqa: C901 — linear per-figure two-leg gate walk (the check-52 precedent)
+    """Check 57 (FAIL, v4-only; Leg B forward-only; #2267; incident #2054):
+    a same-repo sha-pinned ``## Results`` figure whose sibling
+    ``.meta.json`` sidecar is definitively ABSENT at the cited sha
+    (``_git_object_exists`` == 'fail') is the one figure class with zero
+    mechanical opaque-code coverage — checks 24/28/33/34 fail-soft skip it
+    and check 41 only WARNs — so #2054's ``hero_calibration_nslope.png``
+    shipped ``H0'a``/``b=``/``m=`` codes in PNG rendered text through every
+    mechanical gate (clean caption; the codes lived only in pixels). Two
+    legs per sidecar-less figure:
+
+    - **Leg A (caption codes; NOT date-gated):** the figure's blockquote
+      caption window (``_figure_caption_after``), markdown code spans
+      stripped to spaces (``_CHECK57_CODE_SPAN_RE`` — a backticked token is
+      a quoted code-register reference, the #952 corpus shape), carries
+      ``_opaque_code_tokens`` hits ⇒ FAIL naming the basename + a token
+      preview. Measured 0 corpus hits with the code-span exclusion
+      (plan-time sweep over 2,200 bodies / 45 sidecar-less figures; the one
+      pre-exclusion hit was a backticked companion-FILENAME reference).
+    - **Leg B (forward-only sidecar-less block):** the pinned commit's
+      COMMITTER date (``_commit_epoch``) is >= ``_CHECK57_FORWARD_CUTOVER``
+      (2026-08-13 UTC, the fix-landing date) AND the figure's basename
+      (lowercased, dash-normalized — the check-20 ack-matching convention)
+      is NOT named in the body's verifier-WARN acknowledgment text
+      (``_warn_acknowledgment_text``) ⇒ FAIL: regenerate via
+      ``savefig_paper`` (writes the sidecar, exposing rendered text to
+      check 28's scan), or acknowledge the figure by name (the escape for
+      hand-made diagrams / external screenshots ``savefig_paper``
+      structurally cannot produce). Every existing corpus pin pre-dates the
+      cutover, so grandfathered bodies are exempt BY CONSTRUCTION
+      (plan criterion 3) while every future sidecar-less Results figure
+      blocks at draft time — reproducing the #2054 shape post-fix is caught
+      even with a clean caption.
+
+    Scope gates per figure (the check-28/41 conventions, reused verbatim):
+    v4 sentinel only (vacuous PASS otherwise — forward-only, criterion 2);
+    same-repo sha-pinned raw-GitHub URLs only; the PNG itself must resolve
+    at the cited sha (else check 22's domain, skip); a PRESENT sidecar is
+    checks 24/28/33/34's domain and an INDETERMINATE sidecar probe ('skip')
+    stays the siblings' fail-soft residual — only the definitive 'fail'
+    (three-state ``_git_object_exists`` contract) enters the legs. NO-OP
+    PASS when: no scan section, no inline figures, repo unresolved
+    (offline / ``--body-stdin``). Fail-soft on every indeterminate probe;
+    an indeterminate DATE probe (None) skips Leg B, never FAILs.
+
+    Evasion + residual notes (plan §3.1, i-iv): (i) backticking a code in
+    the caption hides it from Leg A — accepted: Leg B forces new figures
+    toward sidecars regardless of caption content. (ii) Pinning a NEW
+    figure at an old sha is impossible — the pinned commit must CONTAIN the
+    PNG, and a pre-cutover commit can only contain pre-cutover figures
+    (reusing a parent's grandfathered figure is legitimately exempt).
+    (iii) ``b=``/``m=`` single-letter-equals codes stay unclassifiable
+    (ordinary caption math like ``b=0.3``); PNG-pixel text stays the
+    multimodal critics' substantive read for GRANDFATHERED figures — for
+    post-cutover figures Leg B removes the pixel blind spot indirectly by
+    forcing the sidecar channel into existence. (iv) Committer dates are
+    trusted as monotone-enough; a rebase that rewrites an old figure commit
+    to a post-cutover date produces a spurious FAIL (loud, fixable via the
+    ack escape), never a silent pass.
+    """
+    label = "v4 sidecar-less Results figures (caption codes / post-cutover block)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped — not a v4 body")
+    section = _figure_scan_section(body)
+    text = section_text(body, section)
+    if text is None:
+        return CheckResult(label, True, f"no `## {section}` section to scan")
+    rlines = text.splitlines()
+    urls: list[str] = []
+    caption_by_url: dict[str, str] = {}
+    for i, line in enumerate(rlines):
+        for m in _IMAGE_RE.finditer(line):
+            url = m.group(1).strip()
+            url = url.split(None, 1)[0] if url else url
+            if url:
+                urls.append(url)
+                # First occurrence's caption window (the check-28 convention
+                # for a twice-embedded figure — conservative).
+                caption_by_url.setdefault(url, _figure_caption_after(rlines, i))
+    if not urls:
+        return CheckResult(label, True, "no inline figures to scan")
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(label, True, "skipped — repo root unresolved (offline / stdin)")
+    ack = _warn_acknowledgment_text(body)  # already lowercased + dash-normalized
+    checked = 0
+    sidecarless = 0
+    exempt_pre_cutover = 0
+    fails: list[str] = []
+    for url in dict.fromkeys(urls):
+        m = _RAW_GITHUB_FIGURE_RE.match(url)
+        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+            continue  # only same-repo sha-pinned figures resolve from git
+        sha, fig_path = m.group("sha"), m.group("path")
+        png_status, _ = _git_object_exists(repo, sha, fig_path)
+        if png_status != "pass":
+            continue  # sha unknown / PNG absent — check 22's domain, no double-report
+        checked += 1
+        base, _sep, ext = fig_path.rpartition(".")
+        meta_path = (base if ext else fig_path) + ".meta.json"
+        meta_status, _ = _git_object_exists(repo, sha, meta_path)
+        if meta_status != "fail":
+            # Sidecar present -> checks 24/28/33/34's domain; indeterminate
+            # ('skip') -> the siblings' fail-soft residual. Either way out
+            # of check 57's scope.
+            continue
+        sidecarless += 1
+        basename = fig_path.rsplit("/", 1)[-1]
+        # Leg A — code-span-stripped caption window through the shared
+        # opaque-code classifier. Not date-gated (measured 0 corpus hits).
+        caption = _CHECK57_CODE_SPAN_RE.sub(" ", caption_by_url.get(url, ""))
+        toks = _opaque_code_tokens(caption)
+        if toks:
+            preview = ", ".join(f"`{t}`" for t in toks[:4]) + (" …" if len(toks) > 4 else "")
+            fails.append(
+                f"sidecar-less Results figure `{basename}`'s caption carries opaque "
+                f"condition code(s) {preview} — plain-English condition names in "
+                "captions; regenerate via savefig_paper (writes the sidecar, exposing "
+                "rendered text to check 28's scan)"
+            )
+            continue  # one FAIL entry per figure
+        # Leg B — forward-only sidecar-less block, date-gated on the pinned
+        # commit's committer date; fail-soft skip on an indeterminate probe.
+        epoch = _commit_epoch(repo, sha)
+        if epoch is None:
+            continue  # indeterminate date probe — never FAIL on it
+        if epoch < _CHECK57_FORWARD_CUTOVER:
+            exempt_pre_cutover += 1
+            continue
+        norm_basename = re.sub(r"[-\u2010-\u2015]", " ", basename.lower())
+        if ack is not None and norm_basename in ack:
+            continue  # acknowledged by name — deliberate non-matplotlib figure
+        fails.append(
+            f"sidecar-less Results figure `{basename}` (pinned at a post-2026-08-13 "
+            "commit) — regenerate via savefig_paper (writes the sidecar, exposing "
+            "rendered text to check 28), or acknowledge the figure by name in the "
+            "body's verifier-WARN acknowledgment (deliberate non-matplotlib figures)"
+        )
+    if fails:
+        return CheckResult(label, False, "; ".join(fails))
+    if checked == 0:
+        return CheckResult(label, True, "no same-repo sha-pinned figures to check")
+    return CheckResult(
+        label,
+        True,
+        f"{checked} same-repo figure(s) checked — {sidecarless} sidecar-less, "
+        f"{exempt_pre_cutover} exempt-pre-cutover, none blocking",
     )
 
 
@@ -16497,6 +16945,133 @@ def _warn_acknowledgment_text(body: str) -> str | None:
     return " ".join(paras) if paras else None
 
 
+# Check 56: number words one..twenty for the acknowledgment count-claim
+# grammar (#2224's incident acknowledgment wrote "nine results"; its fixed
+# form writes "13 results"). DELIBERATELY SEPARATE from `_NUMBER_WORDS`
+# (which stops at ten and feeds `_V4_FOOTER_ROUND_PLURAL_RE`'s alternation
+# \u2014 extending it would change check 20's folded-round budget behavior; the
+# #2264 no-existing-check-behavior-change constraint).
+_V4_ACK_NUMBER_WORDS = {
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+    "eleven": 11,
+    "twelve": 12,
+    "thirteen": 13,
+    "fourteen": 14,
+    "fifteen": 15,
+    "sixteen": 16,
+    "seventeen": 17,
+    "eighteen": 18,
+    "nineteen": 19,
+    "twenty": 20,
+}
+# Check 56: a `<N> result(s)` count claim in the (lowercased,
+# dash-normalized) acknowledgment text. The word alternation backtracks
+# correctly on prefixes ("seven" fails `\s+results?` inside "seventeen
+# results", so "seventeen" matches); the compound-number guard (a preceding
+# number word) is applied at the call site, not in the regex.
+_V4_ACK_RESULT_COUNT_RE = re.compile(
+    r"\b(?P<num>\d{1,3}|" + "|".join(_V4_ACK_NUMBER_WORDS) + r")\s+results?\b"
+)
+# Check 56: the single-round claim. `_warn_acknowledgment_text` output is
+# dash-normalized (hyphen -> space), so the space form is what matches in
+# practice; the hyphen alternative is kept for direct-text robustness.
+_V4_ACK_SINGLE_ROUND_RE = re.compile(r"\bsingle[\s\-]+round\b")
+
+
+def check_v4_ack_result_count(body: str, *, issue: int | None = None) -> CheckResult:
+    """Check 56 (v4 only, WARN): the conciseness-cap acknowledgment
+    paragraph's claims reconcile with the FOLDED body. Two arms, one
+    CheckResult unioning both:
+
+    - COUNT-CLAIM arm: every `<N> result(s)` claim in the
+      `_warn_acknowledgment_text` union (N a 1-3-digit numeral or a number
+      word one..twenty via `_V4_ACK_NUMBER_WORDS`) is compared to the
+      actual `### ` H3 count under `## Results`
+      (`_collect_tldr_h3_names` over the `_prose_layer` of
+      `_v4_results_body`); any parsed N != actual WARNs naming claimed vs
+      actual. Compound-number guard: a word-number immediately preceded by
+      ANOTHER number word is skipped \u2014 the helper's dash normalization
+      turns "twenty-one results" into "twenty one results", which a naive
+      one..twenty map would mis-parse as N=1 (#2264 plan note 3).
+    - SINGLE-ROUND arm: a `single-round` claim in the acknowledgment
+      (`_V4_ACK_SINGLE_ROUND_RE`; the helper dash-normalizes to
+      "single round") while `_count_extra_followup_rounds_v4(body, issue)`
+      counts >0 folded rounds WARNs naming the round count + winning
+      signal source. The events leg binds only when `issue` is known; in
+      bare `--file` / `--body-stdin` mode the footer leg alone counts (the
+      helper's own documented degradation).
+
+    Fold rounds recurrently stale the acknowledgment \u2014 each same-issue
+    follow-up fold edits `## Results` but not the acknowledgment
+    paragraph. WARN, NEVER FAIL (the claim grammar is heuristic; the
+    clean-result-critic conciseness/consolidation lenses stay the
+    substantive owner). Vacuous PASS on v3 / v2 / legacy bodies
+    (forward-only), on bodies with no acknowledgment paragraph, and when
+    `## Results` is absent (check 2 reports). Dispatched OUTSIDE the
+    body-only CHECKS list (needs `issue` \u2014 the check-20/#921 precedent).
+    Incident #2224 r3: the acknowledgment still said "single-round \u2026 nine
+    results" while the folded body carried 13 results across 3 folded
+    rounds (#2264).
+    """
+    label = "Acknowledgment result-count matches folded body (v4)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped \u2014 not a v4 body")
+    ack = _warn_acknowledgment_text(body)
+    if ack is None:
+        return CheckResult(label, True, "no acknowledgment paragraph")
+    results = _v4_results_body(body)
+    if results is None:
+        return CheckResult(label, True, "## Results missing \u2014 check 2 will report")
+    actual = len(_collect_tldr_h3_names(_prose_layer(results)))
+    warns: list[str] = []
+    for m in _V4_ACK_RESULT_COUNT_RE.finditer(ack):
+        prefix = ack[: m.start()].rstrip()
+        prev_word = prefix.rsplit(None, 1)[-1] if prefix else ""
+        if prev_word in _V4_ACK_NUMBER_WORDS:
+            # Compound word-number ("twenty one results" after dash
+            # normalization): neither token alone is the claimed count \u2014
+            # skip rather than mis-parse.
+            continue
+        token = m.group("num")
+        claimed = _V4_ACK_NUMBER_WORDS.get(token) or int(token)
+        if claimed != actual:
+            msg = (
+                f"acknowledgment claims '{m.group(0)}' but `## Results` carries "
+                f"{actual} `### ` result section(s)"
+            )
+            if msg not in warns:
+                warns.append(msg)
+    if _V4_ACK_SINGLE_ROUND_RE.search(ack):
+        rounds, source = _count_extra_followup_rounds_v4(body, issue)
+        if rounds > 0:
+            warns.append(
+                f"acknowledgment claims 'single-round' but the body carries {rounds} "
+                f"folded same-issue follow-up round(s) (source: {source})"
+            )
+    if warns:
+        return CheckResult(
+            label,
+            True,
+            "fold-staled acknowledgment \u2014 each follow-up fold edits `## Results` but "
+            "not the acknowledgment paragraph; rewrite the claim(s): " + "; ".join(warns),
+            is_warn=True,
+        )
+    return CheckResult(
+        label,
+        True,
+        f"acknowledgment claims reconcile with the folded body ({actual} `### ` result section(s))",
+    )
+
+
 def check_v3_word_caps(body: str) -> CheckResult:
     """Check 20 (v3 only): the §4 conciseness caps.
 
@@ -17925,6 +18500,12 @@ CHECKS = [
     # names the dropped condition in ## Takeaways AND >=1 `### <result>` block
     # (CLAUDE.md After-Every-Experiment item 8(a); #2017; incident #1947):
     check_v4_dropped_condition_placement,
+    # check 55 (v4, WARN) — a single-figure `### <result>` whose alt/caption
+    # reports a correlation/AUC-family aggregate statistic with no per-unit
+    # evidence and no literal `per-unit exemption` token (the SINGLE-figure
+    # arm of SPEC's low-level-data-plot rule; the 0-figure case is check
+    # 48's, the >1-figure case check 49's; #2264; incident #2224 r3):
+    check_v4_aggregate_stat_needs_per_unit,
     # generation-agnostic checks (v2 AND v3 AND v4):
     check_figure_url_sha_matches_repro,  # check 22
     check_hf_url_resolves,  # check 23
@@ -17985,6 +18566,12 @@ CHECKS = [
     # #2232; incident #2222 r2 — `form_a_probe.json` held no per-dataset
     # structure while the body claimed one):
     check_artifact_content_claims,
+    # check 57 (FAIL, v4-only; Leg B forward-only) — sidecar-less Results
+    # figures: caption opaque-code scan on the code-span-stripped caption
+    # window (Leg A) + post-2026-08-13-pinned-commit block with a by-name
+    # verifier-WARN-acknowledgment escape (Leg B) (#2267; incident #2054 —
+    # opaque codes lived ONLY in PNG pixels of a sidecar-less figure):
+    check_v4_sidecarless_results_figures,
     # Check 31 (`check_orphaned_per_unit_figures`, WARN, generation-agnostic)
     # is NOT here either — like check 20 (v4) it needs the issue number (for
     # figures-dir scoping), so it is dispatched separately in `verify_text`
@@ -17997,6 +18584,11 @@ CHECKS = [
     # WARN grandfathered) is NOT here either — it needs the issue number
     # (events.jsonl followup-scope markers), so it is dispatched separately
     # in `verify_text` (#1521; the check-20/#921 precedent).
+    # Check 56 (`check_v4_ack_result_count`, WARN, v4-only) is NOT here
+    # either — its single-round arm needs the issue number (events.jsonl
+    # folded-round evidence via `_count_extra_followup_rounds_v4`), so it
+    # is dispatched separately in `verify_text` (#2264; the check-20/#921
+    # precedent).
 ]
 
 
@@ -18200,6 +18792,11 @@ def verify_text(
     # events.jsonl read, so it lives outside the body-only CHECKS list
     # (the check-20/#921 precedent).
     results.append(check_context_followup_scope_consistency(body, issue=issue))
+    # Check 56 (WARN, #2264; incident #2224 r3): acknowledgment result-count
+    # + single-round claims vs the folded body — the single-round arm needs
+    # the issue number for the events.jsonl folded-round evidence, so it
+    # lives outside the body-only CHECKS list (the check-20/#921 precedent).
+    results.append(check_v4_ack_result_count(body, issue=issue))
     overall = all(r.passed for r in results)
     return overall, results
 

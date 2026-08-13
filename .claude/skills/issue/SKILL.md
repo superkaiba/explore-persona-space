@@ -835,10 +835,8 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   "Proposer-already-ran short-circuit" for the mechanics; see
   `.claude/agents/follow-up-proposer.md` § "question_relation tag —
   criteria" + § "auto_run tag — criteria" for the tag semantics
-  (canonical `auto_run: yes` example: task #520 → #527 — a corrective
-  re-run fixing named validity defects, one variable changed, cost
-  known; under the new scheme `question_relation: same`, run on #520
-  itself).
+  (canonical `auto_run: yes` example: task #520 → #527 — under the
+  new scheme `question_relation: same`, run on #520 itself).
 - **Stop the tick cron at terminal/park state.** The `--auto` session is driven
   by the lightweight `/issue-tick <N>` cron (armed by Step 0 of the first
   `/issue <N>` invocation for autonomous sessions, covering the whole lifecycle
@@ -1012,9 +1010,7 @@ next step. (#535)
 INTERACTIVE session (`EPM_AUTONOMOUS_SESSION` unset) driving `/issue <N>`
 registers itself ONCE at Step 0 so it appears in `spawn_session.py list`'s
 issue-mapping — otherwise a manually-started session is invisible to every
-OTHER session's single-orchestrator guard (the other half of #535: the
-replacement could not see the live manual session precisely because it
-never registered):
+OTHER session's single-orchestrator guard (the other half of #535):
 
 ```bash
 uv run python scripts/spawn_session.py register-current --issue <N>
@@ -4153,9 +4149,7 @@ script's workload branch, SLURM custom stage, RunPod launcher), AND the
 async failover reconstructors (`backend_poll._runspec_from_gcp_handle` /
 `_runspec_from_runpod_handle`) re-export the pins onto the fresh pod,
 so a wedge-failover pod's runs land in the plan-declared destination
-instead of the generic `issue<N>` fallback (rule (i) above — #1586: a
-wedge-failover pod rebooted with only the generic WandB
-default and its runs landed in the wrong project). KEY is restricted to
+instead of the generic `issue<N>` fallback (rule (i) above — #1586). KEY is restricted to
 `backends.base.ENV_PIN_ALLOWED_KEYS` (secret KEY names are
 unrepresentable by construction); consult that frozenset for the current
 set. `--env-pin` REQUIRES a non-empty `--workload-cmd` (parse-time
@@ -4294,8 +4288,7 @@ each probe's one-line disposition in the dispatch note.
   the path matches `RSYNC_INCLUDE_PATHS` or an `--extra-sync-path`, i.e.
   the `verify_carryover_inputs.py --lane rsync` semantics — for every
   composed-argv repo path (a git-only probe re-opens #1689 on the
-  default lane: a fellows job died at its FIRST read of a committed
-  input the rsync set never materialized). The
+  default lane). The
   argv dry-run's "pod/GCE-staged path absent locally → judged pass"
   disposition row judges PARSE only and does NOT satisfy this probe —
   that row is exactly where unstaged target-side inputs hide (#1739). Scope split vs Step 6a.5: this probe covers the 6a.5 gate's
@@ -5846,8 +5839,7 @@ exist yet, so a plain `finalize` FAILs confirm (exit 3) by construction.
 (Mid-pipeline gate teardowns run BEFORE any upload-verifier dispatch or
 `epm:results`, so the #1026 verifier-currency gate is a no-op here.) The
 instance stays up ONLY for sentinel draining — never through an off-pod
-phase or a park (Step 8-bis: a pod must not idle on a halt; #763: a
-GPU idled after the `cofit_phaseA_done` gate-park). The next
+phase or a park (Step 8-bis: a pod must not idle on a halt; #763). The next
 pipeline phase provisions FRESH via the normal Step 6d.1 dispatch. There is
 no GCP analogue of the RunPod `pod.py stop`/`resume` cycle (`pv_phase1_done`
 below): GCE instances are ephemeral by design, and a STOPPED instance would
@@ -6231,8 +6223,7 @@ When this skill is re-invoked in `running`:
      trap was escaped, not re-tripped). It does **NOT** reset on
      `epm:progress` — that marker is the workflow's catch-all heartbeat /
      phase-tick / watcher-respawn breadcrumb and is posted DURING a
-     still-failing trap window (verified on #664: the trap window between
-     events 228 and 247 carries six benign `epm:progress` markers), so
+     still-failing trap window (verified on #664), so
      resetting on it would make this trigger inert.
    - **Trigger 2 — enumerated-fallback-exhaustion**: the predicate parses the
      latest `plan.md` for a finite escape ladder — a literal ` → `
@@ -7013,8 +7004,7 @@ dispatch record — a compute-launch marker (`epm:run-launched` /
 `external-markers triaged:` line; task start if none. When the most
 recent duty-bound record carries a `(boundary=<ts>)` token (#2105), the
 window reopens from that recorded enumeration point instead of the
-record's own post position — the enumerate-to-post seam (the #2054 v91
-directive, posted 53 s before the breadcrumb, is the incident) is
+record's own post position — the enumerate-to-post seam (#2054 v91) is
 re-enumerated at the next call. On the pod/backend-launch form the token
 rides the immediately-preceding adjacent `epm:progress` triage note (the
 existing note-then-launch ordering is UNCHANGED); the enumerator chains
@@ -7197,9 +7187,9 @@ and the kernel OOM killer skip entirely. Lowering adj needs
 CAP_SYS_RESOURCE, hence `sudo -n` (passwordless on the VM). **On a failed sweep: ONE bounded retry → record the final state →
 route-or-proceed — a deterministic chain, never a wedge.** When the sweep fails
 (or swept nothing), RE-RUN it ONCE — when the workload's real python3 child
-appears OR after ≤ ~30-60 s, whichever comes FIRST (#1315: choom on the launch pids did not stick to the python3 child
-spawned moments later — a child forked before its parent's adjustment
-lands inherits nothing; this bounded retry is now the default). A phase with no such
+appears OR after ≤ ~30-60 s, whichever comes FIRST (#1315: a child forked
+before its parent's adjustment lands inherits nothing; this bounded
+retry is now the default). A phase with no such
 child (a pure-bash stage, or the workload died pre-fork) skips the wait:
 record `choom=failed` and proceed straight to the disposition below. Record
 the FINAL post-retry state as `choom=ok|failed` — `choom=ok` ONLY when a sweep
@@ -7822,9 +7812,8 @@ binds even when the headroom probe passes, #823). And when the staged/materializ
 (`VM_ANALYSIS_FOOTPRINT_GB_MAX`), the disk routing alone is NOT enough — the
 CONSUMING phase itself ROUTES OFF the shared VM at dispatch (`cpu-bigmem` via
 `dispatch_issue.py --intent cpu-bigmem`, or a pod), never launched VM-local
-to be rerouted after deaths (#1345: a 65 GB boundary-round fit died silently
-4× over ~2.5 h on the shared VM before the cpu-bigmem reroute the plan-time
-carve-out prescribes). While the #681 worktree bind-mount is pending, the worktree's own
+to be rerouted after deaths (#1345: a 65 GB fit died silently 4× on the
+shared VM before the cpu-bigmem reroute). While the #681 worktree bind-mount is pending, the worktree's own
 `data/` dir resolves to `/` — exactly what the `df -P` probe catches.
 Projected wall-time > ~15 min for any fit/battery stage additionally makes
 element (1)'s per-call basis MEASUREMENT-REQUIRED: run a 1-cell/1-unit pilot
@@ -7840,7 +7829,7 @@ A cited prior-issue MEASURED figure for the SAME kernel + shape may stand in
 for the pilot (the ported rule's own alternative basis) — a guess never can.
 A teammate/inline run NEVER sets a fence below that bound, and NEVER asserts
 a user-facing wall-time estimate from a guessed per-call basis (#1092 session f4b1d707: a guessed self-set `timeout 3000s` killed its
-own healthy ~25 min/cell full run at exit=124 — relaunch+resume).
+own healthy ~25 min/cell run at exit=124).
 Projected wall-time > ~1h without a batched inner loop is a STOP: vectorize first
 (`.claude/rules/vectorize-many-cell-fits.md`), then launch. And a MANY-CELL
 battery whose projected wall-time exceeds ~1h at the stated width ALSO names
@@ -7848,11 +7837,9 @@ its ACROSS-CELL shard axis — the axis (cells / seeds / layers / behaviors),
 the realized width (N workers / boxes / shards), and the projected wall at
 that width — or states explicitly `not shardable — <one-line reason>` (a
 cross-cell dependency chain, a shared in-RAM store): WITHIN-CELL vectorization
-alone does not discharge this element (#1345: a 118-cell boundary-ablation
-battery dispatched serial-across-cells on one cpu-bigmem box — the
-batched-inner-loop letter of the vectorize rule was satisfied — and the user
-had to ask "is it optimized for parallelism?" before a cell-shard knob was
-built; the 4-way reshard measured ~4×). And an
+alone does not discharge this element (#1345: a 118-cell battery ran
+serial-across-cells on one cpu-bigmem box with its inner loops batched;
+the 4-way reshard measured ~4×). And an
 ITERATIVE-OPTIMIZATION fit leg (gradient descent on parameters — a torch-MLP
 LOCO, per-cell probes via SGD/AdamW; the CLAUDE.md compute-character
 carve-out class) whose projected PHASE wall-time on CPU, after vectorization,
@@ -7860,9 +7847,8 @@ exceeds the carve-out's ~15–30 min floor ROUTES to a GPU lane at dispatch
 (`lora-7b` / `eval` / `debug`, smallest that fits) — a many-cell loop of
 individually-fast fits counts, per-cell > ~15 min is sufficient by itself,
 and GPU-worthiness is decided AT DISPATCH, never behind a descope-if-slow or
-run-CPU-and-see gate (#1768: an inline 16-cell MLP battery at ~10–20 min/cell
-dispatched CPU-bound; the user had to order 'just run on GPU', where it
-finished in minutes). If the
+run-CPU-and-see gate (#1768: a 16-cell MLP battery at ~10–20 min/cell
+dispatched CPU-bound finished in minutes once moved to GPU). If the
 realized implementation later adds a fit/battery the dispatch statement
 did not cover — or materially changes its arithmetic — an updated
 statement is posted before that launch. A round with no fit/battery stage AND no ≥ ~5 GB download/staging states one line: `compute-character: no fit/battery stages, no multi-GB staging`.
@@ -7873,9 +7859,9 @@ or the wider explicit value + one-line reason) + the earlyoom protection state
 out-root + the `harvest=` token)** **+ the checkpoint cadence — the
 intermediate-artifact write points (per phase / per cell-chunk, e.g. every K
 cells appended into the durable out-root), never only at process exit**
-(#1482: a detached fit script wrote its JSON only at exit — hours of
-in-memory fits sat one crash from loss, and the empty output dir provoked a
-missing-vs-stalled escalation; this surfaces code-style.md's
+(#1482: hours of in-memory fits sat one crash from
+loss and the empty output dir provoked a missing-vs-stalled
+escalation; this surfaces code-style.md's
 checkpoint-per-phase rule at the dispatch-statement layer, so the launch note
 DECLARES the cadence the code already owes) per the Step 9 entry-guard
 § "Detached VM-side long compute phases" convention.
@@ -8676,8 +8662,7 @@ late join remains.
   exists (same-issue follow-up re-fold), run the **EXTEND pass** below
   instead — a task-scoped no-op here would leave
   `docs/methodology/issue_<N>.md` permanently describing only the
-  parent run (#543: a fifth arm folded into the
-  clean-result had to be patched around with an in-body scope note).
+  parent run (#543).
 - **EXTEND pass (same-issue follow-up rounds).** Re-run procedure
   steps 2-9 below for the unrecorded `followup_label`, with these
   deltas:
@@ -9925,8 +9910,8 @@ suite directly and posts an `epm:test-verdict` event with the result.
       instead of failing the gate on the stale worktree copy (the #1742
       class: a main-side spec fix landing after the Step 5a sync red the
       gate round). The selector's diff base defaults to fetched
-      `origin/main` (#1289: a lagging local `main` polluted #1281's gate to 41
-      files; bounded 120 s fetch — a fetch failure degrades to last-fetched
+      `origin/main` (#1289; bounded 120 s
+      fetch — a fetch failure degrades to last-fetched
       `origin/main`, an unresolvable `origin/main` falls back loudly to local
       `main`). Pass `--base main` only to deliberately diff against the
       local ref:
@@ -11511,8 +11496,8 @@ rebase-merged. Five guards:
    commit (~100+/hr fleet-wide), so a same-day, single-own-commit,
    mainline-based branch routinely reads `BEHIND` in the hundreds
    (#598: `BEHIND=305` tripped the old fixed-200
-   threshold and routed an infra task's `src/` deliverables toward the
-   artifact-confirmed path, which structurally cannot carry them). `BEHIND` exceeding the
+   threshold, routing `src/` deliverables toward the
+   artifact-confirmed path, which cannot carry them). `BEHIND` exceeding the
    threshold (default `200` commits) instead TRIGGERS the own-commit
    content check:
 
@@ -11588,10 +11573,9 @@ rebase-merged. Five guards:
    carries the parent's stale `src/` and `scripts/`, and a blind rebase
    replays both the parent's `tasks/` rewinds (already handled) AND its
    `src/` / `scripts/` regressions (NOT handled by Guard 1) onto
-   `main`. (#479: `issue-479` was over a thousand commits behind
-   `origin/main` and based on the still-unmerged `#472` branch — a
-   blind `gh pr merge --rebase` would have replayed `#472`'s old
-   commits onto `main`. The reworked guard trips the class twice over:
+   `main`. (#479: a branch based on a still-unmerged parent — a blind
+   `gh pr merge --rebase` replays the parent's old commits onto
+   `main`. The reworked guard trips the class twice over:
    `ON_MAINLINE=no` flags it directly, and the `origin/main...HEAD`
    diff carries the whole parent payload, failing the content check.)
 
@@ -11853,7 +11837,7 @@ exist (#1720's session invoked exactly that phantom path).
 
 #931 merged a workflow-lint offender to `main`, breaking
 `tests/test_workflow_lint.py` on pristine trunk fleet-wide for most of a day
-(5 downstream sessions each burned rounds classifying it as pre-existing).
+(5 sessions burned rounds classifying it as pre-existing).
 #1147 adds a mapped invariant-test leg to the same gate: dependency-mapped
 payloads (the selector's full map — GLOB_SCAN_TESTS + rules-pin (#1496) + the
 src/scripts import/literal/stem dependency arms (#1573), WORKFLOW_INVARIANT
@@ -11920,10 +11904,9 @@ tests BEFORE anything lands:
   and the unanchored pattern also matches the gate-tree tokens in the
   tar/lint legs' child argvs plus legacy inline-form launches (the tree
   token is a superstring of this pattern), so the probe is
-  exact-issue-scoped with NO CLEAR window mid-run — #2256: the tree-only
-  pattern covered argv only during the archive/lint legs, so it read CLEAR
-  during the minutes-long TG mapped-test legs and false-fired a death read
-  on a healthy gate; the completion-read's recovery arm keeps its
+  exact-issue-scoped with NO CLEAR window mid-run — #2256: the tree-only pattern read
+  CLEAR mid-run and false-fired a death read on a healthy gate; the
+  completion-read's recovery arm keeps its
   bracketed raw-pgrep form — it wants the pid list). Exit 3 = this issue's
   gate is STILL RUNNING: do NOT relaunch — the
   stale-verdict `rm -f` below would clobber the live run's verdict. WAIT or
@@ -13327,10 +13310,9 @@ refusal was shape 2 (mergeability — method-independent: GitHub's
 mergeability state is a 3-way test merge that declines `--squash` and
 `--rebase` identically) or shape 0 (transient), with zero shape-1 first
 refusals on record; and
-#1310 additionally recorded a FIRST `--squash` refused on the same
-shape-2 mergeability, so squash-first would not have saved the burned
-attempt in any classified case, while the clean path (the large
-majority) retains per-commit revert value under `--rebase`.
+#1310 recorded a FIRST `--squash` refused on the same shape-2
+mergeability — squash-first saves nothing in any classified case,
+while the clean path retains per-commit revert value under `--rebase`.
 Revisit criterion: extend squash-first to `kind: experiment` if shape-1
 (`can't be rebased`) FIRST refusals appear on experiment branches —
 shape 1 is the only failure shape squash-first avoids.
@@ -13364,11 +13346,9 @@ same long-phase-heartbeat family recognized by
 uv run python scripts/task.py post-marker <N> epm:progress \
   --note "[long-phase-heartbeat] step10d-merge attempt=<k> shape=0"
 ``` Before #1288
-this shape fell through to the "anything else" catch-all (then
-numbered (3); now class (4) after #1657 added the head-sync shape) and
-burned a full
-scratch-worktree recovery on a transient (one of the three
-error shapes in a fleet day's 4/4 first-attempt failures).
+this shape fell through to the "anything else" catch-all (now class
+(4) after #1657) and burned a full scratch-worktree recovery on a
+transient.
 
 **Known failure shape 1 — branch carries a merge commit (`can't be
 rebased`, #1041).** A branch that CARRIES A MERGE COMMIT (e.g. after a
@@ -13529,9 +13509,9 @@ exits; this shape is different in kind: `gh pr merge` against a PR a
 PRIOR round already merged/closed EXITS 0 with `! Pull request ... was
 already merged` — a terminal PR object never merges new branch commits,
 so the round's payload stays stranded off `main` while the flow reads
-success (#1768 round-2: `gh pr merge 1527 --rebase` ran against the
-round-1 PR and the 22-commit round-2 payload was stranded; recovery
-cost a fresh PR + a full gate re-run). Prevention is the PR-object liveness probe at the safe-case
+success (#1768 round-2: a merge against the round-1 PR
+stranded the 22-commit round-2 payload; recovery cost a fresh PR + a
+full gate re-run). Prevention is the PR-object liveness probe at the safe-case
 entry (state must be OPEN, else a fresh pre-checked draft PR);
 detection is the `Landing verification (#1897)` read in BOTH merge
 success arms (state == MERGED AND mergedAt fresh vs the pre-attempt
@@ -14409,9 +14389,9 @@ Decision tree:
     # content byte-identical to its branch-tip source. The commit message
     # above asserts a "cherry-picked" apply; verify the assertion before
     # recording `landed`. Any path whose committed content diverges from its
-    # branch-tip source is a PARTIAL apply (incident 3c24493113:
-    # an improvised recovery outside the documented paths landed the
-    # test file but not the extractor half it tested; main red 20 days). Edit A adds the guarantee to the
+    # branch-tip source is a PARTIAL apply (incident 3c24493113: an
+    # improvised apply landed the test file but not the extractor half
+    # it tested; main red 20 days). Edit A adds the guarantee to the
     # CURRENT documented template; a future improvised apply is out of
     # scope here (workflow_lint follow-up).
     # xargs feeds paths one-per-line (whitespace/glob-safe, matches the

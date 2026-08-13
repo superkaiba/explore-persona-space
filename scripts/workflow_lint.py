@@ -14846,15 +14846,25 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 # (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
 # change). Each entry names its trim direction; none is licensed to grow.
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
-    # measured 939,297 B branch-tip after #2265 added the Step 6d.2
+    # measured 937,656 B LANDING bytes after #2265 added the Step 6d.2
     # `pid-stale-workload-live` branch row (+3,106 B on origin/main's
-    # 936,191 B: the non-terminal dead-veto status row — the never-post-
-    # epm:failure clause, the first-tick bracketed-pgrep contradiction
-    # probe, pid-file repair + epm:run-launched re-post, the decay arm and
-    # the POD-WIDE conclude/post-failure arm — plus the stalled|dead row's
-    # exclusion clause and the post-tick-duties contradiction-probe
-    # sentence); cap = measured + ~1.4 KB (#1753/#1727 landing-bytes rule;
-    # the margin absorbs small main-side advance at the landing union).
+    # post-#2268 934,550 B: the non-terminal dead-veto status row — the
+    # never-post-epm:failure clause, the first-tick bracketed-pgrep
+    # contradiction probe, pid-file repair + epm:run-launched re-post, the
+    # decay arm and the POD-WIDE conclude/post-failure arm — plus the
+    # stalled|dead row's exclusion clause and the post-tick-duties
+    # contradiction-probe sentence); cap = measured + ~1.2 KB (#1753/#1727
+    # landing-bytes rule; headroom 1,244 B <= the 3,000 B loose-cap
+    # hygiene bar).
+    # Prior: 935_400 — measured 934,550 B after the #2268 trim (Lever A
+    # retelling condensation, 23 sites, -1,641 B on the 936,191 B
+    # #2256-union tree: dropped session-ids, dates, and narrative
+    # retellings per the 2026-08-05 editorial policy — operative rules,
+    # diagnostic signatures, and bare (#N) citations kept); cap was the
+    # RESTORED pre-#2256 fleet vintage 935_400, deliberately NOT
+    # measured + ~1 KB (#1753): stale pre-#2256 branch lint copies still
+    # carried cap 935,400, so matching it made the trimmed main file PASS
+    # under BOTH vintages (the #2221 stale-vintage gate-block class).
     # Prior: 936_900 — measured 935,501 B at the #2256 + #2244 MERGE UNION (origin/main
     # merged into issue-2256 to pick up the coupled LESSONS cap raise):
     # #2256 re-keyed the Step 10d gate single-flight probe /
@@ -14928,7 +14938,7 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 904,504 B base); the remaining mass is the judgment tranche
     # (bash-block extraction to step10d_guards.sh-style scripts, 9a-quater
     # legacy-path stub, GCP rollback-prose relocation).
-    "issue/SKILL.md": 940_700,
+    "issue/SKILL.md": 938_900,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
