@@ -54,6 +54,13 @@ Verification patterns that caught real errors in v2 report methodology reviews (
   generalized to "never ran the plain-to-persona INSTALL direction ... only rotations among
   persona values" — false, and internally contradicted by the draft's own adjacent claim that
   the butler-install direction got a pirate donor.
+- **`git show --stat` TRUNCATES long paths (`.../experiments/issue2162/x.py`), so grepping stat
+  output for `^src/` silently misses files.** For any "touched only files X,Y" / "nothing under
+  src/ modified" claim, use `git log --name-only --format="== %h %s" <base>..HEAD` and grep the
+  untruncated paths. Also attribute cross-pin blob diffs: a module differing between parent pin
+  and round tip may be MAINLINE drift (`git log <pin>..HEAD -- <file>` names the commit), not a
+  round modification — only branch-only commits (origin/main..HEAD) count against a "round
+  touched nothing" claim. (#2162 ladder round 2.)
 - **#2162 routing saga CLOSED (round 4 PASS).** Final correct mechanism, verified against
   `judge_dispatch.py:1629` + the pinned `routing_evidence.json` (434c84f5ae): probe SKIPPED at
   n_items >= 2×base (4,000) ⇒ assumed 400k ⇒ effective 2,000 ⇒ batch; below 4,000 probe finds 2M ⇒
