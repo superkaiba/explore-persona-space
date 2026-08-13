@@ -2502,6 +2502,13 @@ _CLASS_COLORS = {
     "prose": "tab:red",
     "twobytwo": "tab:green",
 }
+# Reader-facing rung names for figure text (clean-result-critic r5 Lens 3:
+# no plan-internal H0'a/H0'b or single-letter b=/m= codes in rendered labels).
+_RUNG_LABELS = {
+    "7_ctx_reparam": "rung 7 (context re-map)",
+    "8_ans_reparam": "rung 8 (answer re-map)",
+    "9_full_AMB": "rung 9 (full refit)",
+}
 
 
 def run_figs(args: argparse.Namespace) -> int:
@@ -2549,9 +2556,11 @@ def run_figs(args: argparse.Namespace) -> int:
             alpha=0.65,
             color=_RUNG_COLORS[rung],
             label=(
-                f"rung {rung.split('_')[0]}  rho b={cb.get('rho', float('nan')):.2f} "
-                f"m={cm.get('rho', float('nan')):.2f}; med-D b={cb.get('median_delta', float('nan')):.3f} "
-                f"m={cm.get('median_delta', float('nan')):.3f}"
+                f"{_RUNG_LABELS[rung]} — boundary pairs: rho "
+                f"{cb.get('rho', float('nan')):.2f}, median difference "
+                f"{cb.get('median_delta', float('nan')):+.3f};\n"
+                f"    model pairs: rho {cm.get('rho', float('nan')):.2f}, "
+                f"median difference {cm.get('median_delta', float('nan')):+.3f}"
             ),
         )
     lims = ax.get_xlim() + ax.get_ylim()
@@ -2559,8 +2568,8 @@ def run_figs(args: argparse.Namespace) -> int:
     ax.plot([lo, hi], [lo, hi], color="grey", lw=0.8, zorder=0)
     ax.set_xlabel("ambient ratio (record-only, known-invalid)")
     ax.set_ylabel("reduced ratio @ k*")
-    ax.set_title("H0'a calibration — control pairs (context)")
-    ax.legend(fontsize=7)
+    ax.set_title("Reduced-vs-ambient calibration — control pairs (context)")
+    ax.legend(fontsize=6)
     ax2 = axes[1]
     for rung in RB_RUNGS:
         levels = sorted(curves[rung], key=int)
@@ -2577,16 +2586,23 @@ def run_figs(args: argparse.Namespace) -> int:
             marker="o",
             color=_RUNG_COLORS[rung],
             capsize=3,
-            label=f"rung {rung.split('_')[0]}",
+            label=_RUNG_LABELS[rung],
         )
     ax2.axhline(0.0, color="grey", lw=0.8)
     ax2.axhline(H0B_SLOPE_BAR, color="grey", lw=0.8, ls="--")
     ax2.axhline(-H0B_SLOPE_BAR, color="grey", lw=0.8, ls="--")
     ax2.set_xlabel("subsample level n_sub (boundary pairs)")
     ax2.set_ylabel("median [ratio(n_sub) - ratio(full n)]")
-    ax2.set_title("H0'b measured n-slope (context, ratio)")
+    ax2.set_title("Measured n-slope (context, ratio)")
     ax2.legend(fontsize=8)
-    _save(fig, "hero_calibration_nslope.png")
+    # Hero saves through savefig_paper so the .meta.json sidecar (points +
+    # rendered text) lands beside the PNG/PDF (clean-result-critic r5 fix 2).
+    from explore_persona_space.analysis.paper_plots import savefig_paper
+
+    hero_paths = savefig_paper(fig, "hero_calibration_nslope", dir=out_dir)
+    plt.close(fig)
+    _assert_png(hero_paths["png"])
+    made.append(hero_paths["png"])
 
     # 2 — HERO: per-class rung distributions, old (grey, record-only) vs new,
     #     with the MATCHED-n H1' band overlaid on the twobytwo rung-9 panel.
