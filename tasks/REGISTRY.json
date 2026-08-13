@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2276,
+  "highest_id": 2277,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9863,6 +9863,13 @@
       "path": "tasks/running/2276",
       "status": "running",
       "title": "workflow-fix: verify_plan.py \u2014 \u00a79 backend pin-claim vs frontmatter + declared GPU width vs launch-command width flags"
+    },
+    "2277": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2277",
+      "status": "proposed",
+      "title": "Pod terminate guard is owner-blind: a non-owner can self-post the upload-verification PASS and destroy a live owner's pod"
     },
     "228": {
       "has_clean_result": true,
