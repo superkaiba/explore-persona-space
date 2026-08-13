@@ -90,6 +90,7 @@ def build_fixture(root: Path) -> dict[str, Path]:
     for d in (
         raw / "grid",
         raw / "anchors",
+        tensors / "anchors",
         tensors / "va_store",
         tensors / "margin",
         scores,
@@ -100,14 +101,16 @@ def build_fixture(root: Path) -> dict[str, Path]:
     rng = np.random.default_rng(0)
     e1 = torch.zeros(4)
     e1[0] = 1.0
-    _write_anchor_world(raw, scores, rng, e1)
+    _write_anchor_world(raw, tensors, scores, rng, e1)
     _write_gates(gates)
     _write_grid_world(raw, tensors, scores, rng, e1)
     return {"in_root": in_root, "work": work, "out": out_dir, "figs": figs}
 
 
-def _write_anchor_world(raw: Path, scores: Path, rng, e1: torch.Tensor) -> None:
-    # ── anchors (rows + V_a + scores) ──
+def _write_anchor_world(raw: Path, tensors: Path, scores: Path, rng, e1: torch.Tensor) -> None:
+    # ── anchors (rows + V_a + scores) — STAGED SPLIT layout: the HF upload
+    # splits text rows (raw_completions) from V_a tensors (analysis_tensors),
+    # so the fixture pins the anchor .pt on the TENSORS side (r2 fix). ──
     anchor_rows: list[dict] = []
     coh_anchor: list[dict] = []
     plain_anchor: list[dict] = []
@@ -165,7 +168,7 @@ def _write_anchor_world(raw: Path, scores: Path, rng, e1: torch.Tensor) -> None:
             "va_span": torch.stack(va_rows).unsqueeze(1),  # (N, 1, 4)
             "empty_rows": [],
         },
-        raw / "anchors" / "va_anchors_gate_w0.pt",
+        tensors / "anchors" / "va_anchors_gate_w0.pt",
     )
 
     def _score_rows(rows: list[dict], extra: dict) -> list[dict]:

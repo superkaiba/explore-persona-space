@@ -343,7 +343,7 @@ def step_f_tables(args: argparse.Namespace) -> None:
         v: load_grid_scores(args.scores_dir, LB.holistic_rubric_id(v)) for v in surviving
     }
     va_grid = A62._load_va_store(args.va_dir)
-    va_anchor = A62._load_anchor_va(args.anchors_dir)
+    va_anchor = A62._load_anchor_va(args.anchor_va_dir)
     anchor_draws_by_ctx: dict[str, list[int]] = defaultdict(list)
     for r in anchor_rows:
         anchor_draws_by_ctx[r["context_id"]].append(int(r["draw"]))
@@ -1293,6 +1293,7 @@ STEP_ORDER = ("f-tables", "margin", "stats", "figures")
 _STAGE_PREFIXES = (
     f"{LJ.LADDER_RAW}/grid",
     f"{LJ.LADDER_RAW}/anchors",
+    f"{LJ.LADDER_TENSORS}/anchors",  # anchor V_a shards (split from the raw text on upload)
     f"{LJ.LADDER_TENSORS}/va_store",
     f"{LJ.LADDER_TENSORS}/margin",
 )
@@ -1321,6 +1322,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     ap.add_argument("--rollouts-dir", type=Path, default=None)
     ap.add_argument("--anchors-dir", type=Path, default=None)
+    ap.add_argument(
+        "--anchor-va-dir",
+        type=Path,
+        default=None,
+        help="anchor V_a tensor shards (HF splits them into analysis_tensors, "
+        "away from the raw anchor text rows)",
+    )
     ap.add_argument("--va-dir", type=Path, default=None)
     ap.add_argument("--margin-dir", type=Path, default=None)
     ap.add_argument(
@@ -1364,6 +1372,8 @@ def _resolve_dirs(args: argparse.Namespace) -> argparse.Namespace:
         args.rollouts_dir = mirror_raw / "ladder/grid"
     if args.anchors_dir is None:
         args.anchors_dir = mirror_raw / "ladder/anchors"
+    if args.anchor_va_dir is None:
+        args.anchor_va_dir = mirror_tensors / "ladder/anchors"
     if args.va_dir is None:
         args.va_dir = mirror_tensors / "ladder/va_store"
     if args.margin_dir is None:
