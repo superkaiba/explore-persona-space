@@ -221,9 +221,16 @@ def test_good_body_passes_all():
     # verify_text (needs the issue number) and PASS-skips here (legacy body).
     # The plan-conditions coverage check (#1827) is dispatched in verify_text
     # (needs plans/plan.md) and NO-OP PASSes here (no plan sibling).
-    assert len(results) == 70
+    # Check 55 `check_v4_aggregate_stat_needs_per_unit` rides CHECKS and
+    # check 56 `check_v4_ack_result_count` is dispatched in verify_text
+    # (needs the issue number); both PASS-skip here (legacy body) (#2264).
+    assert len(results) == 72
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
+    assert "Single aggregate-stat figure has per-unit evidence or exemption (v4)" in {
+        r.name for r in results
+    }
+    assert "Acknowledgment result-count matches folded body (v4)" in {r.name for r in results}
     assert "dropped-at-gate condition placement (v4)" in {r.name for r in results}
     assert "repro-named result dirs clean in working tree" in {r.name for r in results}
     assert "plan conditions coverage" in {r.name for r in results}
@@ -7265,9 +7272,13 @@ def test_checks_list_size():
     `check_figure_sidecar_slot_completeness` — the WARN-only
     categorical-slot completeness sidecar check, #2016 — and check 54
     `check_artifact_content_claims` — the per-unit artifact-content
-    structure check, #2232 — ride CHECKS).
+    structure check, #2232 — and check 55 (module numbering)
+    `check_v4_aggregate_stat_needs_per_unit` — the exemption-less
+    single-figure aggregate-statistic check, #2264 — ride CHECKS; check
+    56 `check_v4_ack_result_count` (#2264) is dispatched OUTSIDE CHECKS
+    with the issue number).
     """
-    assert len(verify_task_body.CHECKS) == 55
+    assert len(verify_task_body.CHECKS) == 56
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert verify_task_body.check_v4_dropped_condition_placement in verify_task_body.CHECKS
@@ -13425,11 +13436,11 @@ def test_caption_lead_issue1074_verbatim_caption_warns():
 
 def test_check_figure_caption_position_stable():
     """Index-stability pin (#1424): `check_figure_caption` stays at CHECKS
-    position 7 and the CHECKS count matches the current registry (55 as of
-    check 54, #2232; belt-and-suspenders beside the migration-history
+    position 7 and the CHECKS count matches the current registry (56 as of
+    check 55, #2264; belt-and-suspenders beside the migration-history
     `len(CHECKS)` pin)."""
     assert verify_task_body.CHECKS[7] is verify_task_body.check_figure_caption
-    assert len(verify_task_body.CHECKS) == 55
+    assert len(verify_task_body.CHECKS) == 56
 
 
 # ─── Check 26: figure panel/series prose vs figure sidecar (panel drift) ───
@@ -20311,3 +20322,389 @@ def test_check51_registered():
     forgotten CHECKS append must not ship green (house membership-assert
     pattern, cf. test_check45_registered / test_check46_registered)."""
     assert verify_task_body.check_v4_dropped_condition_placement in verify_task_body.CHECKS
+
+
+# ─── Check 55: exemption-less single-figure aggregate statistic (v4 WARN, #2264) ─
+#
+# SPEC's "low-level data plot behind every aggregate" rule had no mechanical
+# arm for the SINGLE-figure case before check 55: a `### <result>` whose ONLY
+# inline figure's alt/caption reports a correlation/AUC-family statistic
+# (r / rho (word or Greek) / R² / AUC / AUROC) with no per-unit companion evidence and no
+# literal `per-unit exemption` token. The 0-figure case is check 48's, the
+# >1-figure case check 49's. Statistic detection is figure-adjacent only
+# (alt + blockquote captions — the check-49 scoping); the exemption TOKEN
+# scans the whole block prose (it lives in what-is-plotted prose in the wild,
+# #2224). WARN never FAIL; vacuous PASS on non-v4 bodies. Incident #2224 r3.
+
+_CHECK55_NAME = "Single aggregate-stat figure has per-unit evidence or exemption (v4)"
+
+
+def test_check55_single_aggregate_stat_figure_warns():
+    """Row (a) (incident shape): a single inline figure whose caption
+    reports `Spearman rho = 0.83` (Greek symbol in the fixture) with no
+    exemption evidence WARNs, naming the H3, the basename, the matched
+    statistic text, and the missing evidence classes."""
+    body = _v4_minimal_results_body(
+        "### Correlation headline\n\n"
+        "The figure plots the pooled correlation per arm.\n\n"
+        "![Pooled correlation bars](https://x/figures/issue_9/corr_bars.png)\n\n"
+        "> **Figure.** *Lead.* Spearman ρ = 0.83 across the pooled panel.\n"
+    )
+    res = verify_task_body.check_v4_aggregate_stat_needs_per_unit(body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "'Correlation headline'" in res.detail
+    assert "corr_bars.png" in res.detail
+    # Leftmost match: the bare-symbol alternate ("Spearman" + Greek rho)
+    # starts before the valued "= 0.83" form in the caption, so the detail
+    # names the qualified symbol.
+    assert "Spearman ρ" in res.detail
+    assert "per-unit exemption" in res.detail  # missing-evidence classes named
+
+
+def test_check55_bare_spearman_symbol_and_auc_forms_warn():
+    """Row (a) grammar breadth: the Spearman/Pearson-qualified BARE symbol
+    (no inline value) and the ASCII `AUC = <num>` form both trigger."""
+    bare = _v4_minimal_results_body(
+        "### Bare symbol\n\nProse.\n\n"
+        "![Bars](https://x/figures/issue_9/bars.png)\n\n"
+        "> **Figure.** *Lead.* Pearson r rises monotonically with dose.\n"
+    )
+    res = verify_task_body.check_v4_aggregate_stat_needs_per_unit(bare)
+    assert res.passed is True
+    assert res.is_warn is True
+    auc = _v4_minimal_results_body(
+        "### AUC read\n\nProse.\n\n"
+        "![Bars](https://x/figures/issue_9/auc_bars.png)\n\n"
+        "> **Figure.** *Lead.* AUC = 0.71 on the judged subset.\n"
+    )
+    res2 = verify_task_body.check_v4_aggregate_stat_needs_per_unit(auc)
+    assert res2.passed is True
+    assert res2.is_warn is True
+    assert "AUC = 0.71" in res2.detail  # valued form names the full number
+
+
+def test_check55_exemption_token_passes():
+    """Row (b): the literal `Per-unit exemption:` token anywhere in the
+    block's prose silences the WARN — case-insensitive and
+    hyphen / space / en-dash tolerant (the machine-read token this check
+    gives mechanical meaning; #2224's body convention)."""
+    for token in ("Per-unit exemption:", "per unit exemption —", "PER–UNIT EXEMPTION:"):
+        body = _v4_minimal_results_body(
+            "### Correlation headline\n\n"
+            f"What is plotted: pooled correlation per arm. {token} per-sample "
+            "scores behind every bar are committed at the pinned SHA.\n\n"
+            "![Pooled correlation bars](https://x/figures/issue_9/corr_bars.png)\n\n"
+            "> **Figure.** *Lead.* Spearman ρ = 0.83 across the pooled panel.\n"
+        )
+        res = verify_task_body.check_v4_aggregate_stat_needs_per_unit(body)
+        assert res.passed is True
+        assert res.is_warn is False, token
+
+
+def test_check55_two_figures_are_cardinality_territory():
+    """Row (c): a two-figure section with a stat caption never fires here —
+    the >1-figure case is check 49's (`check_v4_result_figure_cardinality`);
+    check 55 fires ONLY at exactly one inline figure."""
+    body = _v4_minimal_results_body(
+        "### Two figures\n\nProse.\n\n"
+        "![First](https://x/figures/issue_9/one.png)\n\n"
+        "> **Figure.** *Lead.* ρ = 0.83 pooled.\n\n"
+        "![Second](https://x/figures/issue_9/two.png)\n\n"
+        "> **Figure.** *Lead.* Another read entirely.\n"
+    )
+    res = verify_task_body.check_v4_aggregate_stat_needs_per_unit(body)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_check55_no_statistic_passes():
+    """Row (d): a single figure whose alt/caption carries no
+    correlation/AUC-family statistic never fires (`n = 200` is not in the
+    family; the word-boundary guard keeps mid-word `r` out)."""
+    body = _v4_minimal_results_body(
+        "### Plain bars\n\nProse.\n\n"
+        "![Rate bars](https://x/figures/issue_9/rates.png)\n\n"
+        "> **Figure.** *Lead.* Rates per arm with 95% CIs; n = 200 per cell.\n"
+    )
+    res = verify_task_body.check_v4_aggregate_stat_needs_per_unit(body)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "no exemption-less" in res.detail
+
+
+def test_check55_stat_only_in_general_prose_passes():
+    """Row (e): a statistic living only in the what-is-plotted PROSE (not
+    the alt text or blockquote caption) never fires — the check-49
+    figure-adjacent scoping."""
+    body = _v4_minimal_results_body(
+        "### Correlation headline\n\n"
+        "What is plotted: the pooled Spearman ρ = 0.83 read per arm.\n\n"
+        "![Pooled correlation bars](https://x/figures/issue_9/corr_bars.png)\n\n"
+        "> **Figure.** *Lead.* Pooled bars with 95% CIs.\n"
+    )
+    res = verify_task_body.check_v4_aggregate_stat_needs_per_unit(body)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_check55_per_unit_stem_basename_passes():
+    """Row (f): the single figure's basename matching `_PER_UNIT_FIG_RE`
+    (the figure already IS the per-unit view — SPEC's first stated
+    exemption) silences the WARN; alt + caption stay idiom-free so the
+    stem is the only evidence."""
+    body = _v4_minimal_results_body(
+        "### Scatter\n\nProse.\n\n"
+        "![Scatter of all points](https://x/figures/issue_9/corr_percontext_scatter.png)\n\n"
+        "> **Figure.** *Lead.* ρ = 0.83 with every point drawn.\n"
+    )
+    res = verify_task_body.check_v4_aggregate_stat_needs_per_unit(body)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_check55_declared_pair_idiom_passes():
+    """Row (i) (#2264 plan review note 6): the `_DECLARED_PAIR_RE` idiom in
+    the caption silences the WARN even with a statistic present and no
+    per-unit stem (parity with check 49's pair-evidence vocabulary)."""
+    body = _v4_minimal_results_body(
+        "### Correlation headline\n\nProse.\n\n"
+        "![Pooled bars](https://x/figures/issue_9/corr_bars.png)\n\n"
+        "> **Figure.** *Lead.* ρ = 0.83 pooled; the per-question companion "
+        "is embedded in the next result.\n"
+    )
+    res = verify_task_body.check_v4_aggregate_stat_needs_per_unit(body)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_check55_skips_non_v4_and_missing_results():
+    """Row (g) (forward-only): v3-sentinel and legacy bodies PASS
+    vacuously, as does a v4 body with no `## Results` H2."""
+    v3 = (
+        "# T (LOW confidence)\n\n<!-- clean-result-v3 -->\n\n## Findings\n\n"
+        "### R\n\n![a](https://x/figures/issue_9/a.png)\n\n"
+        "> **Figure.** *Lead.* ρ = 0.83 pooled.\n"
+    )
+    res = verify_task_body.check_v4_aggregate_stat_needs_per_unit(v3)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "skipped — not a v4 body" in res.detail
+    res_legacy = verify_task_body.check_v4_aggregate_stat_needs_per_unit(GOOD_BODY)
+    assert res_legacy.passed is True
+    assert res_legacy.is_warn is False
+    no_results = "# T (LOW confidence)\n\n<!-- clean-result-v4 -->\n\n## Takeaways\n\n- x\n"
+    res_nores = verify_task_body.check_v4_aggregate_stat_needs_per_unit(no_results)
+    assert res_nores.passed is True
+    assert res_nores.is_warn is False
+    assert "## Results missing" in res_nores.detail
+
+
+def test_check55_fenced_and_details_stat_not_counted():
+    """Row (h): a statistic caption living only inside a fenced code block
+    or a `<details>` body is stripped by `_prose_layer` and never fires
+    (the quoted-skeleton convention shared with check 49)."""
+    fenced = _v4_minimal_results_body(
+        "### Skeleton example\n\nProse.\n\n"
+        "![Real figure](https://x/figures/issue_9/real.png)\n\n"
+        "> **Figure.** *Lead.* Plain caption without statistics.\n\n"
+        "```markdown\n"
+        "> **Figure.** *Lead.* ρ = 0.99 quoted skeleton caption.\n"
+        "```\n"
+    )
+    res = verify_task_body.check_v4_aggregate_stat_needs_per_unit(fenced)
+    assert res.passed is True
+    assert res.is_warn is False
+    collapsed = _v4_minimal_results_body(
+        "### Collapsed views\n\nProse.\n\n"
+        "![Real figure](https://x/figures/issue_9/real.png)\n\n"
+        "<details>\n<summary>extra</summary>\n\n"
+        "> **Figure.** *Lead.* ρ = 0.99 collapsed extra caption.\n\n"
+        "</details>\n"
+    )
+    res2 = verify_task_body.check_v4_aggregate_stat_needs_per_unit(collapsed)
+    assert res2.passed is True
+    assert res2.is_warn is False
+
+
+def test_check55_registered_and_warn_never_flips():
+    """Registration: check 55 rides the body-only CHECKS list (house
+    membership-assert pattern, cf. test_check51_registered), and its WARN
+    keeps `passed=True` so the aggregate verdict can never flip on it."""
+    assert verify_task_body.check_v4_aggregate_stat_needs_per_unit in verify_task_body.CHECKS
+    body = _v4_minimal_results_body(
+        "### Correlation headline\n\nProse.\n\n"
+        "![Pooled bars](https://x/figures/issue_9/corr_bars.png)\n\n"
+        "> **Figure.** *Lead.* ρ = 0.83 pooled.\n"
+    )
+    res = verify_task_body.check_v4_aggregate_stat_needs_per_unit(body)
+    assert res.passed is True
+    assert res.is_warn is True
+
+
+# ─── Check 56: fold-staled acknowledgment claims (v4 WARN, #2264) ────────────
+#
+# Each same-issue follow-up fold edits `## Results` but not the
+# conciseness-cap acknowledgment paragraph, so the acknowledgment's
+# "across N results" / "single-round" claims recurrently go stale (#2224 r3:
+# "single-round … nine results" over a folded 13-result body). Check 56
+# reconciles both claim arms against the folded body. WARN never FAIL;
+# dispatched OUTSIDE CHECKS (its single-round arm needs the issue number for
+# the events-side folded-round evidence — the check-20/#921 precedent).
+# Committed tests never read live tasks/ state: `issue` stays None, so the
+# folded-round evidence comes from the FOOTER leg only.
+
+_CHECK56_NAME = "Acknowledgment result-count matches folded body (v4)"
+
+
+def _c56_body(*, n_results: int, ack: str, footer: str | None = None) -> str:
+    """v4-sentinel body with `n_results` result H3s, a closing paragraph
+    (the acknowledgment under test), and an optional `**Repro:**` /
+    `**Context:**` footer — the footer round clauses are what
+    `_count_extra_followup_rounds_v4` reads when the issue is unknown."""
+    results = "\n\n".join(f"### R{i + 1}\n\nProse for result {i + 1}." for i in range(n_results))
+    tail = f"\n\n---\n\n{footer}\n" if footer else "\n"
+    return (
+        "# T (LOW confidence)\n\n<!-- clean-result-v4 -->\n\n"
+        f"## Results\n\n{results}\n\n{ack}{tail}"
+    )
+
+
+def test_check56_word_number_mismatch_warns():
+    """Row (a) (incident shape): the acknowledgment claims "across nine
+    results" while the folded body carries 13 result H3s → WARN naming
+    claimed vs actual."""
+    body = _c56_body(
+        n_results=13,
+        ack=(
+            "Verifier WARNs acknowledged: total-prose overage accepted across "
+            "nine results, each within the per-result band."
+        ),
+    )
+    res = verify_task_body.check_v4_ack_result_count(body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "nine results" in res.detail
+    assert "13" in res.detail
+
+
+def test_check56_digit_count_match_passes():
+    """Row (b): a digit-form claim matching the actual H3 count draws no
+    WARN."""
+    body = _c56_body(
+        n_results=3,
+        ack="Verifier WARNs acknowledged: total-prose overage across 3 results accepted.",
+    )
+    res = verify_task_body.check_v4_ack_result_count(body)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "3 `### ` result section(s)" in res.detail
+
+
+def test_check56_single_round_with_folded_round_warns():
+    """Row (c): a "single-round" claim while the footer carries a folded
+    same-issue follow-up round clause → WARN naming the round count + the
+    winning signal source (footer — issue is None in committed tests, so
+    the events leg never binds)."""
+    body = _c56_body(
+        n_results=2,
+        ack=(
+            "Verifier WARNs acknowledged: the total-prose overage of this "
+            "single-round body is accepted."
+        ),
+        footer=(
+            "**Repro:** [code](https://github.com/x/y)\n\n"
+            "**Context:** created from prompt X; same-issue follow-up round "
+            "`fu1` folded 2026-08-01."
+        ),
+    )
+    res = verify_task_body.check_v4_ack_result_count(body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "single-round" in res.detail
+    assert "1 folded same-issue follow-up round" in res.detail
+    assert "footer" in res.detail
+
+
+def test_check56_single_round_without_evidence_passes():
+    """Row (d): the same "single-round" claim with NO folded-round
+    evidence (footer carries no round clause; issue unknown) draws no
+    WARN."""
+    body = _c56_body(
+        n_results=2,
+        ack=(
+            "Verifier WARNs acknowledged: the total-prose overage of this "
+            "single-round body is accepted."
+        ),
+        footer="**Repro:** [code](https://github.com/x/y)\n\n**Context:** created from prompt X.",
+    )
+    res = verify_task_body.check_v4_ack_result_count(body)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_check56_no_acknowledgment_passes():
+    """Row (e): a body with no acknowledgment paragraph PASSes with the
+    explicit no-acknowledgment note."""
+    body = _c56_body(n_results=2, ack="Plain closing prose with no verifier mention.")
+    res = verify_task_body.check_v4_ack_result_count(body)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "no acknowledgment paragraph" in res.detail
+
+
+def test_check56_skips_non_v4():
+    """Row (f) (forward-only): v3-sentinel and legacy bodies PASS
+    vacuously even with a stale-looking acknowledgment."""
+    v3 = (
+        "# T (LOW confidence)\n\n<!-- clean-result-v3 -->\n\n## Findings\n\n"
+        "### R\n\nProse.\n\n"
+        "Verifier WARNs acknowledged: overage across nine results.\n"
+    )
+    res = verify_task_body.check_v4_ack_result_count(v3)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "skipped — not a v4 body" in res.detail
+    res_legacy = verify_task_body.check_v4_ack_result_count(GOOD_BODY)
+    assert res_legacy.passed is True
+    assert res_legacy.is_warn is False
+
+
+def test_check56_ack_without_count_claim_passes():
+    """Row (g): an acknowledgment with neither a `<N> result(s)` claim nor
+    a single-round claim draws no WARN."""
+    body = _c56_body(
+        n_results=5,
+        ack=(
+            "Verifier WARNs acknowledged: caption length and the total-prose "
+            "overage are accepted deliberately."
+        ),
+    )
+    res = verify_task_body.check_v4_ack_result_count(body)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_check56_compound_word_number_skipped():
+    """Compound-number guard (#2264 plan review note 3): dash
+    normalization turns "twenty-one results" into "twenty one results",
+    which a naive one..twenty map would mis-parse as N=1 — the guard
+    skips the compound claim instead of spuriously WARNing."""
+    body = _c56_body(
+        n_results=2,
+        ack="Verifier WARNs acknowledged: overage across twenty-one results accepted.",
+    )
+    res = verify_task_body.check_v4_ack_result_count(body)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_check56_outside_checks_and_dispatched_in_verify_text():
+    """Check 56 needs the issue number (events-side folded-round
+    evidence), so it lives OUTSIDE the body-only CHECKS list and is
+    dispatched separately in `verify_text` (the check-20/#921
+    precedent) — `verify_text` emits it by name."""
+    assert verify_task_body.check_v4_ack_result_count not in verify_task_body.CHECKS
+    _ok, results = verify_task_body.verify_text(_V4_GOOD_BODY)
+    r56 = next(r for r in results if r.name == _CHECK56_NAME)
+    assert r56.passed is True
