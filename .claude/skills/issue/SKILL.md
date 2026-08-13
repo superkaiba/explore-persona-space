@@ -4469,13 +4469,39 @@ persists to `Lease.free_lane_park_state` first. RE-RUN the SAME command
 ladder park; no double-submit. NEVER hand off to `backend_poll.py`
 while `still_waiting` (PENDING polls as `running`; the ladder stalls).
 
+**bg-Bash `timeout` floor — EVERY parking lane, not just RunPod (#2244).** The
+420 s park above OUTLASTS the Bash tool's DEFAULT 120 s timeout, so a launch
+dispatched as a plain bg-Bash with NO explicit `timeout` is SIGTERMed (rc=143)
+partway through — in pre-submit setup (the #1336 shape) or, after submit,
+mid-park; the launch-recovery invariant below governs either case — and the death
+reads as a launcher bug rather than a too-short tool budget. Pass
+`timeout=600000` (600 s, the harness maximum) on EVERY `dispatch_issue.py launch`
+bg-Bash — `auto`, `backend: fellows`, every lane pin — not only the cold-RunPod
+case Step 6d.1 item 4 spells out; that 600 s is the SAME floor, stated for one
+lane. Its headroom over the 420 s park absorbs pre-submit setup (>=120 s observed
+in #1336) plus the stdout JSON, so a park budget raised much past ~450 s can no
+longer be waited out inside one bg-Bash — re-run per the exit-75 contract instead.
+
+**Capture the LAUNCHER's rc (#2244).** The exit-75 / rc=2 / rc=143 branches above
+are decidable only if the launcher's OWN exit code reaches the tool output: put
+`RC=$?; echo "LAUNCHER_RC=$RC"` immediately after the launcher and BEFORE any
+trailing filter — a `| tail`-style post-filter makes a bare `$?` the FILTER's
+status and masks the launcher's (`.claude/rules/code-style.md` § "Post-pipe `$?`
+is the LAST stage's status, not the pipeline's"). An ABSENT `LAUNCHER_RC` line
+after a timeout kill is the rc=143-class timeout-floor symptom above (`143` when
+it is observed); `75` routes to the re-run contract; `2` to `epm:failure v1` +
+`set-status blocked`.
+
 **Launch-recovery invariant (#1336).** A killed launch call may have
 SUCCEEDED — submit precedes the park. BEFORE any relaunch probe BOTH
 `.claude/cache/issue-<N>-handle.json` AND `squeue --name
 eps-issue-<N>...` on the cluster: live job → re-run the SAME command;
 BOTH empty → died PRE-submit, plain re-run safe. `scancel` +
 confirm-gone + re-run ONLY when abandoning the job or changing the
-command shape.
+command shape. The most common CAUSE of a killed launch call is an
+under-budgeted bg-Bash `timeout` (the 600 000 ms floor above) — pair the probe
+with RAISING it on the re-run, or the re-run dies identically and the probe
+just re-observes its own previous corpse.
 
 **Follow-up parent reuse.** When the task has a `parent_id` AND the
 parent's RunPod pod is alive, the operational path stays on the

@@ -13780,7 +13780,13 @@ _LESSONS_ROW_RE = re.compile(
 # land under the old cap. The raise buys EXACTLY that row extension plus
 # <=40 B headroom (9682 + 40 = 9722) — not general slack (the #992
 # argued-raise form; the per-row and non-row caps still bind).
-_LESSONS_MAX_BYTES = 9722
+# 9722->9842 (#2250): the index sat at 9713/9722 (9 B headroom), so the
+# gotchas-row SLURM allocation-width trigger (+89 B; measured post-edit
+# file 9802 B) could not land under the old cap. The raise buys EXACTLY
+# this row extension plus <=40 B headroom (9802 + 40 = 9842) — not general
+# slack (the #992 argued-raise form; the per-row and non-row caps still
+# bind).
+_LESSONS_MAX_BYTES = 9842
 # Early-warning band (#992): a stderr-only advisory WARN once the index
 # crosses this, so a near-cap landing is visible a few rows before the
 # _LESSONS_MAX_BYTES FAIL (early warning only — advisory, never a FAIL).
@@ -13833,7 +13839,9 @@ _LESSONS_ROW_GRANDFATHER_MAX_BYTES: dict[str, int] = {
     # (row 1048 B -> 1135 B). Cap = measured + <=40.
     # #2088 added the local-committed-artifact empty-selection trigger
     # (row 1175 B -> 1258 B). Cap = measured + <=40.
-    "gotchas": 1298,
+    # #2250 added the SLURM allocation-width trigger (row 1289 B -> 1378 B).
+    # Cap = measured + <=40.
+    "gotchas": 1418,
 }
 _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 
@@ -14778,16 +14786,28 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 # (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
 # change). Each entry names its trim direction; none is licensed to grow.
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
-    # measured 933,630 B branch-tip after #2256 re-keyed the Step 10d gate
-    # single-flight probe / completion-read / kill-arm patterns from the
-    # transient gate-TREE token to the whole-life workload SCRIPT-path
-    # tokens (+1,529 B: the #2115 script-file-launcher coverage rationale
-    # at the trigger + surgical probes, the own-Bash-call reminder and the
+    # measured 935,501 B at the #2256 + #2244 MERGE UNION (origin/main
+    # merged into issue-2256 to pick up the coupled LESSONS cap raise):
+    # #2256 re-keyed the Step 10d gate single-flight probe /
+    # completion-read / kill-arm patterns from the transient gate-TREE
+    # token to the whole-life workload SCRIPT-path tokens (+1,529 B on its
+    # pre-merge base: the #2115 script-file-launcher coverage rationale at
+    # the trigger + surgical probes, the own-Bash-call reminder and the
     # subshell-argv fork-without-exec note at the main kill-arm, and the
     # surgical kill-arm's section reference replacing the stale L11949
-    # line reference); cap = measured + ~1.4 KB (#1753/#1727 landing-bytes
-    # rule; the margin absorbs small main-side advance at the landing
-    # union).
+    # line reference), atop main's #2244 advance (934,312 B); cap =
+    # measured + ~1.4 KB (#1753/#1727 landing-bytes rule; the margin
+    # absorbs small main-side advance at the landing union — the #2074
+    # landing-union measurement class).
+    # Prior: 935_400 — measured 934,312 B branch-tip after #2244 stated the Step 6b bg-Bash
+    # `timeout` floor for EVERY parking lane (+1,871 B: the timeout-floor
+    # paragraph beside the 420 s park contract, the LAUNCHER_RC rc-capture
+    # paragraph, and the launch-recovery under-budgeted-timeout
+    # cross-reference); cap = measured + ~1 KB rounded up to the next 100 B
+    # (#1753 landing-bytes rule). Measured on the POST-REBASE landing tree:
+    # the branch was rebased onto a main that had already advanced to
+    # 932,441 B (#2126), so the pre-rebase 928,327 B measurement and its
+    # 929_400 cap are both superseded.
     # Prior: 933_800 — measured 932,441 B branch-tip after #2126 hardened the two gate
     # recipes (+5,985 B: the 1b gate-set cross-check + 1a selector-key pin
     # (#1992), the every-relaunch pre-gate re-sync scope clause + four
@@ -14839,7 +14859,7 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 904,504 B base); the remaining mass is the judgment tranche
     # (bash-block extraction to step10d_guards.sh-style scripts, 9a-quater
     # legacy-path stub, GCP rollback-prose relocation).
-    "issue/SKILL.md": 935_000,
+    "issue/SKILL.md": 936_900,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
