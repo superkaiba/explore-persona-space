@@ -9846,8 +9846,8 @@
     "2274": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2274",
-      "status": "approved",
+      "path": "tasks/running/2274",
+      "status": "running",
       "title": "gotchas.md: fellows CPU analogue \u2014 plain-SSH nproc sees the node, inside-job nproc sees the allocation (ConstrainCores=yes vs ConstrainDevices=no asymmetry)"
     },
     "228": {
