@@ -9783,8 +9783,8 @@
     "2266": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2266",
-      "status": "proposed",
+      "path": "tasks/archived/2266",
+      "status": "archived",
       "title": "step9c_baseline single-flight probe is blind to non-lint-leg gate phases (TG legs) \u2014 two lint-gate instances can race the shared /tmp namespace"
     },
     "2267": {
