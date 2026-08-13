@@ -9860,8 +9860,8 @@
     "2276": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2276",
-      "status": "proposed",
+      "path": "tasks/planning/2276",
+      "status": "planning",
       "title": "workflow-fix: verify_plan.py \u2014 \u00a79 backend pin-claim vs frontmatter + declared GPU width vs launch-command width flags"
     },
     "228": {
