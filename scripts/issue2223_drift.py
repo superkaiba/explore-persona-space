@@ -14,7 +14,8 @@ reproduction verdict, the realized-vs-EMPIRICAL-A0 firing telemetry, the steerin
 checkpoint/resume.
 
 Phases (``--phase``): topics | generate | merge | activations | aggregate | gate |
-alpha | capability | firing | fig5_generate | fig5_judge | ridge | upload | finalize.
+alpha | band_check_v2 | capability | firing | fig5_generate | fig5_judge | ridge |
+upload | finalize.
 Arms (``--arm``): the §5 nine (A0/A1/A2a/A2b/A3a/A3b/A4/A4R/A5) + the v4 amendment
 pair (A2c all-context-token cap; A2corr correction mode over A0-drifted history).
 ``--import-check`` runs the whole-module args-attribute completeness assert (never a
@@ -1865,55 +1866,264 @@ def _load_lmsys_turns(n: int, smoke: bool) -> list[str]:
         return out
 
 
+BAND_CHECK_V2_N_DRAWS = 5  # graded primary: N>=5 draws, mean-aggregated (llm-judging rule 4)
+BAND_CHECK_SAT_EPS = 2.0  # graded-mean saturation epsilon on the 0-100 scale
+BAND_CHECK_N_BOOT = 2000  # paired bootstrap draws over contexts (margin-vs-noise verdict)
+
+
 def _band_manipulation_check(model, tok, band, alpha_by_layer, out_dir, smoke) -> dict:
-    """±α·v̂ band steer on ~8 role contexts, judged role expression (directional agreement)."""
+    """§4.10 band manipulation check — v2 GRADED instrument (measurement-validity fix).
+
+    The v1 instrument saturated: a binary role-expression rate over 8 contexts
+    read 1.0 on BOTH ±α arms and its bare ``plus < minus`` resolved the tie to
+    FAIL (``1.0 < 1.0 == False``) — the instrument could not tell. v2: (a) the
+    GRADED 0-100 judge mean is primary (n_draws=5, drop-never-coerce; the binary
+    rate is retained as companion); (b) the verdict compares the +α-vs-−α margin
+    against its own paired-bootstrap noise with a real INDETERMINATE state and an
+    explicit saturation detector; (c) the probe set is widened 8 → 24 contexts;
+    (d) the steer uses the production ``DeltaHookStack`` over the FULL band at
+    the CALIBRATED per-layer α (read-only from ``alpha_by_layer`` — v1 ignored it
+    and steered one mid-band layer at 4·‖v‖). Writes ``alpha_band_check_v2.json``
+    beside the calibration file; NEVER writes alpha_calibration.json.
+    """
+    from explore_persona_space.experiments.issue1415 import steering
     from scripts import issue2203_common as C
     from scripts import issue2203_runtime as R
 
-    axis_path, band_tau_path = _issue2203_axis_paths(out_dir)
     if smoke:
-        contexts = [{"system": "You are a pirate.", "user": "Tell me about your day."}]
-        # tiny synth axis
         import torch
 
-        axis_mid = torch.randn(int(model.config.hidden_size))
+        contexts = [{"system": "You are a pirate.", "user": "Tell me about your day."}]
+        axis_by_layer = {li: torch.randn(int(model.config.hidden_size)) for li in band}
     else:
         from scripts import issue2203_phase2 as P2
 
+        axis_path, band_tau_path = _issue2203_axis_paths(out_dir)
         geom = P2._load_axis(axis_path, band_tau_path)
-        axis_mid = geom["axis_by_layer"][band[len(band) // 2]].float()
+        axis_by_layer = {li: geom["axis_by_layer"][li].float() for li in band}
         contexts = _role_probe_contexts()
-    res = R.steering_sanity_check(
-        model, tok, axis_mid, band[len(band) // 2], contexts, max_new_tokens=(16 if smoke else 128)
-    )
+    missing = [li for li in band if li not in alpha_by_layer]
+    assert not missing, f"alpha_by_layer missing band layers {missing}"
+    # +v̂ points TOWARD the assistant (should DECREASE role expression); −v̂ INCREASE.
+    max_new = 16 if smoke else 128
+    texts: dict[str, list[str]] = {}
+    for sign, key in ((+1.0, "plus"), (-1.0, "minus")):
+        stack = _band_delta_stack(model, band, axis_by_layer, alpha_by_layer, sign)
+        arm_texts: list[str] = []
+        with stack:
+            for k in range(0, len(contexts), R.GEN_BATCH_SIZE):
+                chunk = contexts[k : k + R.GEN_BATCH_SIZE]
+                res = steering.generate_batch(
+                    model,
+                    tok,
+                    chunk,
+                    n=1,
+                    hook=stack,
+                    max_new_tokens=max_new,
+                    temperature=0.0,
+                    seed_base=11,
+                )
+                arm_texts.extend(r[0] for r in res)
+        texts[key] = arm_texts
     if smoke:
-        return {"verdict": "smoke-skip", "raw": {k: res[k] for k in ("plus", "minus")}}
-    # judge role expression: +v̂ should DECREASE role expression, −v̂ INCREASE.
-    from scripts import issue2203_runtime as R2
+        result: dict = {"verdict": "smoke-skip"}
+    else:
+        result = _judge_band_arms(contexts, texts["plus"], texts["minus"], out_dir)
+    result.update(
+        {
+            "instrument": "v2-graded",
+            "band_layers": list(band),
+            "alpha_by_layer": {str(li): float(alpha_by_layer[li]) for li in band},
+            "alpha_source": "alpha_calibration.json (read-only; never recomputed here)",
+            "all_positions": True,
+            "max_new_tokens": max_new,
+            "contexts": contexts,
+            "generations": texts,
+            "meta": C.repro_metadata({"phase": "band_check_v2"}),
+        }
+    )
+    p = out_dir / "alpha_band_check_v2.json"
+    p.write_text(json.dumps(result, indent=2))
+    _log(f"[band_check_v2] verdict={result.get('verdict')} -> {p}")
+    return result
 
-    plus = R2.judge_rate(
-        [(f"plus_{i}", c["user"], t) for i, (c, t) in enumerate(zip(contexts, res["plus"]))],
-        C.ROLE_EXPRESSION_RUBRIC,
-        cache_dir=out_dir / "judge_cache" / "band_plus",
-        save_raw=out_dir / "judge_raw" / "band_plus",
-        n_draws=3,
+
+def _band_delta_stack(model, band, axis_by_layer, alpha_by_layer, sign: float) -> DeltaHookStack:
+    """``sign·α·v̂`` DeltaHookStack over the FULL band at the calibrated per-layer α.
+
+    Mirrors ``build_arm_stack``'s delta branch (A5 every-token shape) with the
+    sign threaded, so the check exercises the production steering mechanism at
+    the exact α the live arms consume."""
+    dev = next(model.parameters()).device
+    dt = next(model.parameters()).dtype
+    deltas, alphas = {}, {}
+    for li in band:
+        v = axis_by_layer[li].float()
+        vhat = v / (v.norm() + 1e-12)
+        deltas[li] = vhat.to(dev, dtype=dt)
+        alphas[li] = sign * float(alpha_by_layer[li])
+    return DeltaHookStack(model, band, deltas, alphas, all_positions=True)
+
+
+def _judge_band_arms(
+    contexts: list[dict],
+    plus_texts: list[str],
+    minus_texts: list[str],
+    out_dir: Path,
+    *,
+    n_draws: int = BAND_CHECK_V2_N_DRAWS,
+    judge_fn=None,
+) -> dict:
+    """Graded role-expression judging of both steer arms + the v2 verdict.
+
+    ``judge_fn`` defaults to the production ``issue2203_runtime.judge_rate``
+    (graded 0-100 multi-draw; malformed/REFUSAL/out-of-range draws DROPPED never
+    coerced, transport failures retried by the underlying client). Tests inject
+    a signature-conformant fake at this external API boundary only. FRESH
+    ``band_v2_*`` cache dirs: the judge cache keys exclude the draw index, so
+    reusing the v1 ``band_plus``/``band_minus`` dirs would collapse the v2 draws
+    onto the v1 n_draws=3 cached scores."""
+    from scripts import issue2203_common as C
+    from scripts import issue2203_runtime as R
+
+    judge = judge_fn if judge_fn is not None else R.judge_rate
+    assert len(contexts) == len(plus_texts) == len(minus_texts)
+    arms: dict[str, dict] = {}
+    for key, arm_texts in (("plus", plus_texts), ("minus", minus_texts)):
+        arms[key] = judge(
+            [(f"{key}_{i}", c["user"], t) for i, (c, t) in enumerate(zip(contexts, arm_texts))],
+            C.ROLE_EXPRESSION_RUBRIC,
+            cache_dir=out_dir / "judge_cache" / f"band_v2_{key}",
+            save_raw=out_dir / "judge_raw" / f"band_v2_{key}",
+            n_draws=n_draws,
+        )
+    plus_scores = [arms["plus"]["mean_scores"].get(f"plus_{i}") for i in range(len(contexts))]
+    minus_scores = [arms["minus"]["mean_scores"].get(f"minus_{i}") for i in range(len(contexts))]
+    result = _graded_band_verdict(
+        plus_scores, minus_scores, arms["plus"].get("rate"), arms["minus"].get("rate")
     )
-    minus = R2.judge_rate(
-        [(f"minus_{i}", c["user"], t) for i, (c, t) in enumerate(zip(contexts, res["minus"]))],
-        C.ROLE_EXPRESSION_RUBRIC,
-        cache_dir=out_dir / "judge_cache" / "band_minus",
-        save_raw=out_dir / "judge_raw" / "band_minus",
-        n_draws=3,
-    )
-    directional = (plus.get("rate") or 0) < (minus.get("rate") or 0)
-    return {
-        "verdict": "PASS" if directional else "FAIL",
-        "plus_rate": plus.get("rate"),
-        "minus_rate": minus.get("rate"),
+    for key in ("plus", "minus"):
+        r = arms[key]
+        result[key] = {
+            "rate": r.get("rate"),  # binary companion — retained, never primary
+            "n_items": r.get("n_items"),
+            "n_scored_items": r.get("n_scored_items"),
+            "n_total_draws": r.get("n_total_draws"),
+            "n_dropped_draws": r.get("n_dropped_draws"),
+            "n_transport_lost_draws": r.get("n_transport_lost_draws"),
+            "n_api_refusal_draws": r.get("n_api_refusal_draws"),
+            "n_truncation_dropped_draws": r.get("n_truncation_dropped_draws"),
+            "mean_scores": r.get("mean_scores"),
+        }
+    result["n_draws"] = n_draws
+    return result
+
+
+def _graded_band_verdict(
+    plus_scores: list[float | None],
+    minus_scores: list[float | None],
+    plus_rate: float | None,
+    minus_rate: float | None,
+    *,
+    sat_eps: float = BAND_CHECK_SAT_EPS,
+    n_boot: int = BAND_CHECK_N_BOOT,
+    seed: int = 0,
+) -> dict:
+    """Three-outcome margin-vs-noise verdict over paired graded scores (pure, offline).
+
+    Expected direction: −v̂ INCREASES role expression, so
+    ``margin = mean(minus) − mean(plus) > 0``. PASS iff the paired-bootstrap 95%
+    CI over contexts sits strictly above 0; FAIL iff strictly below 0
+    (distinguishably the WRONG direction); INDETERMINATE otherwise — a tie/zero
+    margin can never resolve to FAIL (the v1 ``1.0 < 1.0`` bug). Saturation —
+    either arm's graded mean within ``sat_eps`` of 0/100, OR the binary rate
+    exactly 0.0/1.0 on BOTH arms — is INDETERMINATE with ``saturated: true``
+    regardless of the margin. ``None`` scores (fully-dropped items, rule-9
+    drop-never-coerce) are excluded PAIRWISE and counted, never coerced."""
+    import numpy as np
+
+    assert len(plus_scores) == len(minus_scores)
+    pairs = [(p, m) for p, m in zip(plus_scores, minus_scores) if p is not None and m is not None]
+    out: dict = {
+        "n_contexts": len(plus_scores),
+        "n_pairs_scored": len(pairs),
+        "n_pairs_dropped": len(plus_scores) - len(pairs),
+        "saturated": False,
+        "sat_eps": sat_eps,
+        "n_boot": n_boot,
     }
+    if len(pairs) < 2:
+        out.update(
+            verdict="INDETERMINATE",
+            reason=f"only {len(pairs)} scored context pair(s) (<2) — margin noise unestimable",
+            margin=None,
+            margin_ci95=None,
+            plus_graded_mean=None,
+            minus_graded_mean=None,
+            plus_graded_sd=None,
+            minus_graded_sd=None,
+        )
+        return out
+    plus_arr = np.array([p for p, _ in pairs], dtype=float)
+    minus_arr = np.array([m for _, m in pairs], dtype=float)
+    diffs = minus_arr - plus_arr
+    margin = float(diffs.mean())
+    out.update(
+        margin=margin,
+        plus_graded_mean=float(plus_arr.mean()),
+        minus_graded_mean=float(minus_arr.mean()),
+        plus_graded_sd=float(plus_arr.std(ddof=1)),
+        minus_graded_sd=float(minus_arr.std(ddof=1)),
+    )
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, len(diffs), size=(n_boot, len(diffs)))
+    boot_means = diffs[idx].mean(axis=1)
+    ci_lo, ci_hi = (float(x) for x in np.percentile(boot_means, [2.5, 97.5]))
+    out["margin_ci95"] = [ci_lo, ci_hi]
+    sat_reasons = []
+    for name in ("plus", "minus"):
+        mean = out[f"{name}_graded_mean"]
+        if mean <= sat_eps or mean >= 100.0 - sat_eps:
+            sat_reasons.append(f"{name} graded mean {mean:.1f} within {sat_eps} of the 0/100 bound")
+    if plus_rate in (0.0, 1.0) and minus_rate in (0.0, 1.0):
+        sat_reasons.append(
+            f"binary rate pinned on both arms (plus={plus_rate}, minus={minus_rate}) — "
+            "the v1 saturation shape"
+        )
+    if sat_reasons:
+        out.update(
+            verdict="INDETERMINATE",
+            saturated=True,
+            reason="saturated: " + "; ".join(sat_reasons),
+        )
+        return out
+    if ci_lo > 0.0:
+        out.update(
+            verdict="PASS",
+            reason=f"margin {margin:.1f} in the expected direction, "
+            f"95% CI [{ci_lo:.1f}, {ci_hi:.1f}] above 0",
+        )
+    elif ci_hi < 0.0:
+        out.update(
+            verdict="FAIL",
+            reason=f"margin {margin:.1f} distinguishably in the WRONG direction, "
+            f"95% CI [{ci_lo:.1f}, {ci_hi:.1f}] below 0",
+        )
+    else:
+        out.update(
+            verdict="INDETERMINATE",
+            reason=f"margin {margin:.1f} not distinguishable from noise, "
+            f"95% CI [{ci_lo:.1f}, {ci_hi:.1f}] spans 0",
+        )
+    return out
 
 
 def _role_probe_contexts() -> list[dict]:
+    """Role probe contexts for the band manipulation check (§4.10).
+
+    Widened 8 → 24 (12 roles × 2 questions) so the graded margin's paired
+    bootstrap has a workable denominator (the v1 8-context binary read
+    saturated at 1.0/1.0). Still cheap: 48 steered generations total."""
     roles = [
         "a pirate captain",
         "a medieval knight",
@@ -1923,14 +2133,54 @@ def _role_probe_contexts() -> list[dict]:
         "an alien anthropologist",
         "a stern librarian",
         "a jazz musician",
+        "a grizzled sea fisherman",
+        "an enthusiastic kindergarten teacher",
+        "a battle-hardened starship captain",
+        "a reclusive mountain hermit",
+    ]
+    questions = [
+        "Tell me about your work and what matters to you.",
+        "What was the hardest day you ever had, and what did it teach you?",
     ]
     return [
-        {
-            "system": f"You are {r}. Stay fully in character.",
-            "user": "Tell me about your work and what matters to you.",
-        }
+        {"system": f"You are {r}. Stay fully in character.", "user": q}
         for r in roles
+        for q in questions
     ]
+
+
+def phase_band_check_v2(args) -> Path:
+    """Standalone §4.10 band-manipulation check, v2 graded instrument.
+
+    Loads the model + the #2203 axis + the EXISTING ``alpha_by_layer`` from
+    alpha_calibration.json (READ-ONLY — α is consumed by the live Phase B
+    steering arms and is never recomputed or rewritten here), runs the widened
+    graded ±band-steer check, writes ``alpha_band_check_v2.json``, and exits.
+    Independent of A0 / Phase B state; minutes of GPU."""
+    from scripts import issue2203_runtime as R
+
+    out_root = Path(args.out_root)
+    out_dir = out_root / f"issue_{ISSUE}" if not args.smoke else out_root
+    out_dir.mkdir(parents=True, exist_ok=True)
+    model_key = args.model if args.model != "32b" else "7b"  # steering arms are 7B
+    band = BAND_LAYERS[model_key]
+    if args.smoke:
+        alpha_by_layer: dict[int, float] = {li: 1.0 for li in band}
+    else:
+        alpha_path = out_dir / "alpha_calibration.json"
+        if not alpha_path.exists():
+            raise FileNotFoundError(
+                f"{alpha_path} missing — run --phase alpha first; band_check_v2 only READS "
+                "the existing calibration (it never recomputes α)"
+            )
+        alpha_by_layer = {
+            int(k): float(v)
+            for k, v in json.loads(alpha_path.read_text())["alpha_by_layer"].items()
+        }
+    model, tok = R.load_model_and_tokenizer(MODEL_FOR[model_key])
+    check = _band_manipulation_check(model, tok, band, alpha_by_layer, out_dir, args.smoke)
+    _log(f"[phase=band_check_v2] verdict={check.get('verdict')}")
+    return out_dir / "alpha_band_check_v2.json"
 
 
 # ── phase: capability guardrails + EQ-Bench (§4.6) ─────────────────────────────
@@ -2643,6 +2893,7 @@ PHASES = {
     "aggregate": phase_aggregate,
     "gate": phase_gate,
     "alpha": phase_alpha,
+    "band_check_v2": phase_band_check_v2,
     "capability": phase_capability,
     "firing": phase_firing,
     "fig5_generate": phase_fig5_generate,
