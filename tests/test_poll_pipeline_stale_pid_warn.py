@@ -142,8 +142,8 @@ def _patch_pod(
 
     monkeypatch.setattr(pp.subprocess, "run", _fake_run)
     monkeypatch.setattr(pp, "post_event", MagicMock())
-    monkeypatch.setattr(pp, "_marker_pid", lambda issue: marker_pid)
-    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch: run_age_sec)
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue, pod=None: marker_pid)
+    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch, pod=None: run_age_sec)
 
 
 def _poll(tmp_path: Path):
@@ -464,8 +464,8 @@ def test_heredoc_emits_pid_file_mtime_epoch(
 
     monkeypatch.setattr(pp.subprocess, "run", _fake_run)
     monkeypatch.setattr(pp, "post_event", MagicMock())
-    monkeypatch.setattr(pp, "_marker_pid", lambda issue: None)
-    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch: 10800.0)
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue, pod=None: None)
+    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch, pod=None: 10800.0)
 
     _poll(tmp_path)
     assert "heredoc" in captured, "probe ssh call was never made"

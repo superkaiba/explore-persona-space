@@ -2656,7 +2656,7 @@ def test_poll_once_pid_file_missing_marker_fallback_warns_and_stays_running(
 
     monkeypatch.setattr(pp.subprocess, "run", _fake_run)
     monkeypatch.setattr(pp, "post_event", MagicMock())
-    monkeypatch.setattr(pp, "_marker_pid", lambda issue: 4242)
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue, pod=None: 4242)
 
     state_file = tmp_path / "poll-state.json"
     with caplog.at_level(logging.WARNING, logger="poll_pipeline"):
@@ -2707,7 +2707,7 @@ def test_poll_once_pid_file_missing_does_not_change_dead_routing(
 
     monkeypatch.setattr(pp.subprocess, "run", _fake_run)
     monkeypatch.setattr(pp, "post_event", MagicMock())
-    monkeypatch.setattr(pp, "_marker_pid", lambda issue: None)
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue, pod=None: None)
 
     state_file = tmp_path / "poll-state.json"
     with caplog.at_level(logging.WARNING, logger="poll_pipeline"):
@@ -2966,7 +2966,7 @@ def test_poll_once_posts_gpu_idle_advisory_after_sustained_idle(
     monkeypatch.setattr(pp.subprocess, "run", _healthy_idle_fake_run(now_epoch))
     post_mock = MagicMock()
     monkeypatch.setattr(pp, "post_event", post_mock)
-    monkeypatch.setattr(pp, "_marker_pid", lambda issue: None)
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue, pod=None: None)
 
     result = pp.poll_once(
         issue=518,
@@ -3017,7 +3017,7 @@ def test_poll_once_gpu_idle_advisory_at_most_once_per_phase(
     monkeypatch.setattr(pp.subprocess, "run", _healthy_idle_fake_run(now_epoch))
     post_mock = MagicMock()
     monkeypatch.setattr(pp, "post_event", post_mock)
-    monkeypatch.setattr(pp, "_marker_pid", lambda issue: None)
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue, pod=None: None)
 
     result = pp.poll_once(
         issue=518,
@@ -3052,7 +3052,7 @@ def test_poll_once_gpu_idle_advisory_post_failure_retries_next_tick(
     monkeypatch.setattr(
         pp, "post_event", MagicMock(side_effect=RuntimeError("simulated post failure"))
     )
-    monkeypatch.setattr(pp, "_marker_pid", lambda issue: None)
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue, pod=None: None)
 
     result = pp.poll_once(
         issue=518,
@@ -3100,7 +3100,7 @@ def test_poll_once_no_advisory_when_gpu_unknown(
     monkeypatch.setattr(pp.subprocess, "run", _fake_run)
     post_mock = MagicMock()
     monkeypatch.setattr(pp, "post_event", post_mock)
-    monkeypatch.setattr(pp, "_marker_pid", lambda issue: None)
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue, pod=None: None)
 
     result = pp.poll_once(
         issue=518,

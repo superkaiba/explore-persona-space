@@ -59,3 +59,34 @@ A grandfather list whose exit condition cannot be satisfied by the correct fix i
 ## Provenance
 
 Surfaced as a prose follow-up in #1336's round-v21 implementer report while fixing the underlying GPU-allocation defect that a 1-GPU precheck exposed. Sibling: **#2250** (the `gotchas.md` rule for the trap itself). No compute cost.
+
+## Grandfather audit (2026-08-12, post-implementation — acceptance criterion 4)
+
+Re-ran `check_slurm_gpu_width` with the widened recognizer (`_slurm_gpu_width_guard_present`: legacy SLURM tokens OR inherited-CVD parse) against every `SLURM_GPU_WIDTH_GRANDFATHER` entry on main's tree. Result: **22 entries — 22 present, 22 still width-derivation-matched, 0 guarded by the new predicate ⇒ no file newly passes; the grandfather list is unchanged this round.** (The task body's "remove `issue1336_dispatch.sh`" criterion is DEFERRED: the fixed dispatcher exists only on `issue-1336-fullcorpora` — commit `6ff22758` is not an ancestor of origin/main — so removal now would red the no-flags lint on main. The hygiene guard-adopted WARN + the inverse-calibration pin test force the removal at that branch's merge; a coordination marker was posted on #1336.)
+
+| basename | present | width hits | guarded by new predicate |
+|---|---|---|---|
+| issue1310_dispatch.sh | yes | 1 | no |
+| issue1335_run.sh | yes | 1 | no |
+| issue1336_dispatch.sh | yes | 1 | no (main copy unfixed; branch copy guards → True) |
+| issue1345_dispatch.sh | yes | 1 | no |
+| issue1417_run.sh | yes | 1 | no |
+| issue1426_sampled_dispatch.sh | yes | 1 | no |
+| issue1434_dispatch.sh | yes | 1 | no |
+| issue1689_dispatch.sh | yes | 2 | no |
+| issue1738_multiturn_launch.sh | yes | 1 | no |
+| issue1739_nlmap_dispatch.sh | yes | 1 | no |
+| issue1769_dispatch.sh | yes | 1 | no |
+| issue1774_dispatch.sh | yes | 1 | no |
+| issue1775_fu_run.sh | yes | 1 | no |
+| issue1775_run.sh | yes | 1 | no |
+| issue1776_dispatch.sh | yes | 1 | no |
+| issue1776_p3p4_dispatch.sh | yes | 1 | no |
+| issue1776_swap_dispatch.sh | yes | 1 | no |
+| issue2094_dispatch.sh | yes | 1 | no |
+| issue2162_dispatch.sh | yes | 1 | no |
+| issue779_ffc_n1m_launch.sh | yes | 1 | no |
+| issue779_ffc_n50k_launch.sh | yes | 1 | no |
+| issue923_gpu_phase.sh | yes | 1 | no |
+
+Recognizer probe: `_slurm_gpu_width_guard_present` = True on the branch copy of `issue1336_dispatch.sh` (at `6ff22758`), False on main's copy — the exact realized shape is accepted; bare nvidia-smi width with literal `CUDA_VISIBLE_DEVICES=…` pins stays FAILING (negative-arm test pins it).

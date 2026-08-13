@@ -75,6 +75,17 @@ Seed replicates ≥2 per arm (≥3 on one persona arm + the fact arm).
 
 H_persona's graded form predicts map shift increases up this ladder at matched dose.
 
+### Surface-signature control — persona arms must not smuggle token-level behavior
+
+The persona-vs-token contrast is only interpretable if the persona training corpora do not carry their own low-level token signatures. Four guards:
+
+1. **Persona selection**: personas are chosen for dispositional/identity content; dialect- or catchphrase-defined personas (pirate-speak, archaic English, signature phrases) are EXCLUDED from arms 2a/2b/3.
+2. **Generation filter**: on-policy #612 instruct-and-strip, plus a judge-filter pass that DROPS completions containing explicit persona self-reference ("As a <persona>, …"), catchphrases, persona name-drops, or persona-distinctive formatting.
+3. **Quantified per-arm surface-signature score**, reported for EVERY arm's training corpus before training: unigram/bigram KL vs the arm-1 default-assistant corpus, distinctive-token keyness, and formatting stats (length, bullet/emoji/punctuation rates). Pre-registered acceptance band: persona corpora must sit within the band around the assistant corpus; above-band ⇒ refilter/regenerate before any training. Note the false-fact corpus will legitimately score high (its fixed entity tokens repeat by construction) — the covariate therefore also re-reads the #722 fact positive control: if fact-arm map shift tracks the surface score, part of #722's result may be token-repetition-driven.
+4. **Measurement-side detection**: per persona arm, a post-training surface-install read (unconditional probability shift of that arm's most distinctive tokens, marker-DV style) alongside the judged trait install; plus the bias-vs-operator decomposition (read v). Under H_persona, map shift tracks persona distance / judged trait install — NOT the surface covariate; a persona arm whose map shift is explained by its surface score is evidence against the persona-specific reading, not for it.
+
+Residual, stated as a scope caveat: style cannot be fully removed from a persona (a persona is partly constituted by its style); the guard's bar is that persona corpora carry no MORE token-level signature than the default-assistant baseline band, with the residual measured and entering the analysis as a covariate.
+
 ## Manipulation check (mandatory, per arm)
 
 Each arm must demonstrably install its content before its map read is interpreted: judge-scored on-policy behavior rate (primary) + teacher-forced fixed positive-vs-negative completion margin (secondary) for persona/behavior arms; the three-space marker DV for arm 6; fact-recall for arm 7. Install is measured on-policy in the DEFAULT context (bare / system-default prefix): under the positive-only regime the install is expected uniform across contexts, and a per-stratum install profile (default vs trained-corpus-resembling contexts) is reported as a secondary check that the regime realized. Token-matching ≠ dose-matching — the realized per-arm dose is what enters the H_dose read.

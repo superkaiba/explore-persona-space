@@ -5555,8 +5555,10 @@ def _parent_lineage_verdict(ctx_scan: str, fm: dict) -> tuple[str, str]:
     - "fail-denied"       — a fresh-direction / no-parent CLAIM with the
                             parent never referenced (the #1345 r1 incident
                             class; hard FAIL on v4, WARN on v3/v2);
-    - "warn-denied-named" — a no-parent claim BUT #<parent_id> is also
-                            referenced (internally contradictory row);
+    - "fail-denied-named" — a no-parent claim BUT #<parent_id> is also
+                            referenced (internally contradictory row; the
+                            #2224 r1 incident class; hard FAIL on v4, WARN
+                            on v3/v2 — upgraded from WARN by #2249);
     - "warn-unnamed"      — no denied claim, but the lineage never
                             references #<parent_id> (v4-only WARN).
     """
@@ -5581,10 +5583,11 @@ def _parent_lineage_verdict(ctx_scan: str, fm: dict) -> tuple[str, str]:
             f"(SPEC.md § `**Context:**` row)."
         )
     if denied and named:
-        return "warn-denied-named", (
+        return "fail-denied-named", (
             f"context-parent-lineage-mixed: the row references #{pid} but ALSO carries a "
             f"'{denied.group(0)}' clause while frontmatter carries `parent_id: {pid}` — "
-            f"drop the no-parent clause or state the re-scope explicitly."
+            f"drop the no-parent clause or, if the task was genuinely re-scoped as "
+            f"parentless, clear the frontmatter parent_id (SPEC.md § `**Context:**` row)."
         )
     if not named:
         return "warn-unnamed", (
@@ -5615,13 +5618,17 @@ def _context_scan_region(repro: str) -> str:
 def _context_row_result_v3(name: str, repro: str, fm: dict) -> CheckResult:
     """v3/v2 (pre-v4-sentinel) verdict for a label-present Context row —
     the grandfathered WARN-only forms of check 17's sub-checks (#1068
-    origin-prompt for BOTH its classes; #1418 parent-lineage for the
-    fail-denied contradiction ONLY — the warn-only tiers never bind
-    below the v4 sentinel; see `check_repro_context_provenance`)."""
+    origin-prompt for BOTH its classes; #1418/#2249 parent-lineage for
+    the two fail-tier contradiction classes — fail-denied AND
+    fail-denied-named, each degraded to WARN; the warn-only tier never
+    binds below the v4 sentinel; see `check_repro_context_provenance`).
+    Note the fail-denied-named class is NEWLY VISIBLE on v3/v2 as of
+    #2249 (was silent) — forward-only convention: a WARN never blocks,
+    and the retro-scan found zero corpus hits in any version class."""
     p_status, p_detail = _parent_lineage_verdict(_context_scan_region(repro), fm)
     status, sub_detail = _origin_prompt_quote_verdict(repro, fm)
     warn_bits = []
-    if p_status == "fail-denied":
+    if p_status in ("fail-denied", "fail-denied-named"):
         warn_bits.append(p_detail)  # grandfathered: WARN below the v4 sentinel
     if status in ("fail-trunc", "warn-mismatch"):
         warn_bits.append(sub_detail)
@@ -5679,23 +5686,31 @@ def check_repro_context_provenance(
     ``no parent`` CLAIM with ``#<parent_id>`` (or ``/tasks/<parent_id>``)
     never referenced is a hard v4 FAIL (the #1345 r1 incident class),
     degraded to WARN on v3/v2 (forward-only, the #1068 grandfathering
-    shape); a denied claim ALONGSIDE a parent reference WARNs (internally
-    contradictory, but regex-only semantics cannot distinguish a lineage
-    claim from prose like "fresh direction on the eval surface; reuses
-    #825 artifacts"); a lineage that never references the parent with NO
+    shape); a denied claim ALONGSIDE a parent reference is ALSO a hard
+    v4 FAIL (the #2224 r1 incident class — internally contradictory:
+    frontmatter carries ``parent_id`` while the row claims parentless;
+    upgraded from WARN by #2249), degraded to WARN on v3/v2 the same
+    way; a lineage that never references the parent with NO
     denied claim WARNs, v4 only (32/32 committed v4 ``parent_id`` bodies
     name the parent — zero retro-noise — while legitimate grandparent /
     re-scoped lineages make a FAIL over-strict). The v3/v2 branch fires
-    ONLY the fail-denied class (as WARN); the warn-only tiers never bind
-    below the v4 sentinel (#1014 never required a lineage clause there).
+    ONLY the two fail-tier classes (each as WARN); the warn-only tier
+    never binds below the v4 sentinel (#1014 never required a lineage
+    clause there).
     Documented residuals (deliberate): (a) the CONVERSE case — no
     ``parent_id``, the row cites some ``#K`` — is UNCHECKED: 6/10
     committed no-parent v4 bodies legitimately cite issues
     (reused-artifact producers, method parents, siblings), and
     over-attributed lineage errs toward MORE provenance; (b) bare
     ``fresh direction`` (no parenthetical) counts as a no-parent claim
-    (SPEC semantics — it is the sanctioned parentless lineage form),
-    mitigated by the named-parent WARN downgrade; (c) a PROSE-ONLY
+    (SPEC semantics — it is the sanctioned parentless lineage form), so
+    regex-only semantics cannot distinguish a lineage claim from prose
+    like "fresh direction on the eval surface; reuses #825 artifacts" —
+    as of #2249 that shape hard-FAILs on v4 (no named-parent WARN
+    downgrade exists anymore); both remediations the FAIL message names
+    are mechanically clearing (drop the clause, or clear ``parent_id``),
+    and the retro-scan found zero corpus hits, so the residual is
+    bounded prose-rewording cost, not retro-noise; (c) a PROSE-ONLY
     parent reference ("child of task 825" — no ``#`` sigil, no
     ``/tasks/825`` URL) misses the ``named`` escape, so a co-present
     denied claim tier-1 FAILs — bounded, and the FAIL message names the
@@ -5736,8 +5751,9 @@ def check_repro_context_provenance(
             # v2/v3 keep the pre-#1014 label-presence behavior verbatim
             # (forward-only; the v4 lineage sub-check never binds them).
             # The #1068 origin-prompt sub-check is WARN-ONLY here, and
-            # the #1418 parent-lineage cross-check fires ONLY its
-            # fail-denied contradiction, degraded to WARN (grandfathering:
+            # the #1418/#2249 parent-lineage cross-check fires ONLY its
+            # two fail-tier contradiction classes (fail-denied +
+            # fail-denied-named), degraded to WARN (grandfathering:
             # NEVER a new hard FAIL below the v4 sentinel) — the scan uses
             # the SAME stripped region as the v4 branch, never raw `repro`
             # (a denied claim inside the blockquoted verbatim prompt must
@@ -5762,7 +5778,7 @@ def check_repro_context_provenance(
             # FIRST (lineage correctness before prompt verbatim-ness; one
             # failure at a time, the file's convention).
             p_status, p_detail = _parent_lineage_verdict(ctx_scan, fm)
-            if p_status == "fail-denied":
+            if p_status in ("fail-denied", "fail-denied-named"):
                 return CheckResult(name, False, p_detail)
             # #1068 origin-prompt verbatim sub-check — runs AFTER the
             # lineage sub-checks (a body failing both surfaces the
@@ -5771,7 +5787,7 @@ def check_repro_context_provenance(
             if status == "fail-trunc":
                 return CheckResult(name, False, sub_detail)
             warn_bits = []
-            if p_status in ("warn-denied-named", "warn-unnamed"):
+            if p_status == "warn-unnamed":
                 warn_bits.append(p_detail)
             if status == "warn-mismatch":
                 warn_bits.append(sub_detail)
@@ -9538,13 +9554,106 @@ def _suppress_caption_decoded_slugs(toks: list[str], caption: str) -> list[str]:
     return [t for t in toks if not (_is_arm_slug_token(t) and t.casefold() in caption_cf)]
 
 
-# Path/URI-SHAPED string: no internal whitespace and at least one path
-# separator — a file path or URL, which is provenance, not rendered text.
-# Deliberately NOT a whole-string any-slash skip: a slash-separated rendered
-# label like `ctx_blk_max / ans_uhdr_max` contains whitespace, so it IS
-# scanned (a whole-string any-slash form would false-clean slash-separated
-# labels inside the incident class).
-_PATH_SHAPED_RE = re.compile(r"^\S*[/\\]\S*$")
+# Path-LIKE word predicate (#2258) — supersedes and FOLDS IN the former
+# `_PATH_SHAPED_RE` (`^\S*[/\\]\S*$`), which exempted EVERY whitespace-free
+# slash-bearing word as a file path and thereby exempted slash-joined
+# rendered `behavior/slug` labels whole. Incident #2221:
+# `checkpoint_detection_auc.png` rendered legend labels like
+# `hallucination/a_rb_ctx` (committed blob
+# `371b0c8af0f54c762d043535d06e54e4e8a9806b`) and passed check 28 silently
+# while the bare slug `a_rb_ctx` was already class-(b)-flagged — the string
+# never reached the token classes. `_is_path_like_word` keeps the
+# provenance exemption for words that LOOK like paths / URLs / mathtext /
+# caption formulas and scans the rest. MONOTONE by construction: every
+# exempt word still contains `/` or `\` (the whole former criterion), so
+# the new exempt set is a strict subset of the old — the narrowing can
+# only ADD warns, never lose an existing one. Deliberately still NOT a
+# whole-string any-slash skip: a slash-separated rendered label like
+# `ctx_blk_max / ans_uhdr_max` contains whitespace, so it IS scanned
+# word-by-word (unchanged from the old gate).
+_PATH_EXT_RE = re.compile(r"\.[A-Za-z0-9]{1,5}$")
+_PATH_MARKER_RE = re.compile(r"^(?:/|\./|\.\./|~|[A-Za-z][A-Za-z0-9+.\-]*://)")
+_FORMULA_CHARS = frozenset("()^$=+")
+# Closed REPO-STRUCTURE list (this repo's canonical top-level dirs) — kills
+# extension-less dir refs (`eval_results/issue_825`) rendered in caption
+# prose. A repo-structure list (stable, closed), NOT an open vocabulary
+# allowlist.
+_REPO_TOP_DIRS = frozenset(
+    {
+        "figures",
+        "eval_results",
+        "ood_eval_results",
+        "scripts",
+        "src",
+        "docs",
+        "data",
+        "tasks",
+        "tests",
+        "configs",
+        "raw",
+        "external",
+        "archive",
+        "store",
+    }
+)
+_WORD_STRIP_PUNCT = "()[]{}<>,.;:'\"`"
+
+
+def _is_path_like_word(word: str) -> bool:
+    r"""True iff the whitespace-free ``word`` is provenance-shaped (a file
+    path / URL / mathtext command / caption formula) and therefore EXEMPT
+    from every check-28 token scan. Arms in LOAD-BEARING order (#2258;
+    ordering pin: ``p(cond_4)`` must stay scanned):
+
+    1. backslash anywhere -> exempt — LaTeX mathtext
+       (``$c_0^{lt}\rightarrow w$``, ``$\mathdefault{10^{0}}$``) and
+       Windows paths; byte-preserves the former regex's entire backslash
+       class;
+    2. strip surrounding punctuation ``()[]{}<>,.;:'"`` + backtick ->
+       ``s``; NO ``/`` in ``s`` -> NOT exempt (ordinary word — scanned,
+       unchanged). This slash gate MUST precede arm 3: a slash-FREE word
+       with an interior formula char (``p(cond_4)``) stays scanned — a
+       formula-arm-first ordering wrongly exempts it while passing every
+       other pin;
+    3. ``s`` contains a formula char (one of ``( ) ^ $ = +``) -> exempt —
+       caption formulas like ``sqrt(mean_i(s2_i/m_i))``,
+       ``(var_level + var_5-0)/2)``;
+    4. leading path/scheme marker (``/``, ``./``, ``../``, ``~``,
+       ``<scheme>://``) -> exempt;
+    5. ``s.count("/") >= 2`` -> exempt (multi-segment path);
+    6. final segment carries a file extension
+       (``\.[A-Za-z0-9]{1,5}$``) -> exempt — catches
+       ``scripts/issue1336_step_transfer_tiers.py`` even
+       punctuation-wrapped (arm 2 already stripped the wrapper);
+    7. first segment (casefolded) is a canonical repo top-level dir
+       (``_REPO_TOP_DIRS``) -> exempt — extension-less dir refs
+       (``eval_results/issue_825``);
+    8. otherwise NOT exempt — exactly the slash-joined rendered-label
+       shape (``hallucination/a_rb_ctx``, the #2221 class); the token
+       regexes tokenize across ``/`` (a non-word char provides the
+       ``\b`` boundary), so no segment-splitting is needed downstream.
+
+    Two arm-introduced FALSE-NEGATIVE residuals, accepted by design: a
+    flaggable slug inside a formula-char-bearing slash word
+    (``logP(x)/a_rb_ctx`` — arm 3 exempts it) and a behavior name
+    colliding with the repo-top-dir list (``raw/<slug>`` — arm 7 exempts
+    it); neither occurs in the incident class or the 2026-08 sidecar
+    corpus, and check 28 is WARN-level (misses cost nothing structural).
+    """
+    if "\\" in word:
+        return True
+    s = word.strip(_WORD_STRIP_PUNCT)
+    if "/" not in s:
+        return False
+    if any(ch in _FORMULA_CHARS for ch in s):
+        return True
+    if _PATH_MARKER_RE.match(s):
+        return True
+    if s.count("/") >= 2:
+        return True
+    if _PATH_EXT_RE.search(s):
+        return True
+    return s.split("/", 1)[0].casefold() in _REPO_TOP_DIRS
 
 
 def _opaque_code_tokens(text: str) -> list[str]:
@@ -9572,27 +9681,32 @@ def _opaque_code_tokens(text: str) -> list[str]:
     tail), which keeps hyphenated rendered English (`end-to-end`,
     `under-4-token`, `best-of-28-layers`) and long dated ids
     (`claude-sonnet-4-5-20250929`) unflagged; 2-segment hyphen tokens
-    (`log-prob`) never match the regex at all. PATH-SHAPED strings
-    (whitespace-free with a path
-    separator — file paths, URLs) are exempt from ALL SEVEN token scans;
-    strings that merely CONTAIN a slash (e.g. a slash-separated rendered
-    label) are still scanned, with individual path-shaped whitespace-split
-    words skipped for every token class — the exemption is load-bearing
-    only for BOUNDARY-TERMINATED tokens inside path words
+    (`log-prob`) never match the regex at all. PATH-LIKE words
+    (`_is_path_like_word` — backslash-bearing mathtext, formula-char
+    words, leading path/scheme markers, multi-segment paths, extension
+    tails, repo-top-dir refs; #2258) are exempt from ALL SEVEN token
+    scans — a whole path-like SINGLE-WORD string is skipped entirely,
+    and inside multi-word strings each path-like whitespace-split word
+    is skipped per token class. A slash-bearing word that clears NO
+    predicate arm — the slash-joined rendered-label shape
+    (`hallucination/a_rb_ctx`, incident #2221) — IS scanned: the former
+    `_PATH_SHAPED_RE` any-slash form exempted it whole, which was the
+    #2221 miss. The exemption is load-bearing only for
+    BOUNDARY-TERMINATED tokens inside path words
     (`figures/issue_1072/H3.png`, `see figures/a/f16.png`); a `_`-suffixed
     token inside a path word (`H3_panel.png`) is already cleaned by the
     regex boundary itself. De-duped case-insensitively, order kept.
     """
     hits: list[str] = []
-    if not _PATH_SHAPED_RE.match(text.strip()):
-        words = text.split()
+    words = text.split()
+    if not (len(words) == 1 and _is_path_like_word(words[0])):
 
         def _only_in_path_words(tok: str) -> bool:
             """True iff every whitespace-split word containing `tok` is
-            path-shaped ("see figures/x_1/y.png") — provenance, not
+            path-like ("see figures/x_1/y.png") — provenance, not
             rendered text, so the token is skipped."""
             ws_words = [w for w in words if tok in w]
-            return bool(ws_words) and all(_PATH_SHAPED_RE.match(w) for w in ws_words)
+            return bool(ws_words) and all(_is_path_like_word(w) for w in ws_words)
 
         for m in _LAYER_PIN_RE.finditer(text):
             tok = m.group(0)
@@ -9668,7 +9782,7 @@ def _iter_meta_label_values(obj: object) -> list[str]:
 
 
 def check_figure_label_codes(body: str) -> CheckResult:
-    """Check 28 (WARN): rendered figure text (sidecar ``.meta.json`` values)
+    r"""Check 28 (WARN): rendered figure text (sidecar ``.meta.json`` values)
     must not carry opaque config-code tokens — ``@L<digits>`` layer pins,
     regime-code slugs (``ctx_blk_max``, ``sw_eng_C1``), bare hypothesis
     codes (``H3``/``H1c``), slot-family codes (``f16``/``l16``), bare
@@ -9706,7 +9820,31 @@ def check_figure_label_codes(body: str) -> CheckResult:
     originating diff sketch is a documented NO-OP on this channel:
     sidecar strings are matplotlib rendered text serialized to JSON
     (never markdown), so backtick code spans cannot occur and no
-    backtick logic is implemented.
+    backtick logic is implemented. Incident #2221:
+    ``checkpoint_detection_auc.png`` rendered slash-joined
+    ``behavior/slug`` legend labels (``hallucination/a_rb_ctx`` —
+    committed blob ``371b0c8af0f54c762d043535d06e54e4e8a9806b``) and
+    passed silently: the former any-slash word exemption
+    (``_PATH_SHAPED_RE``, ``^\S*[/\\]\S*$``) exempted the WHOLE string
+    as a file path before any token class ran, while the bare slug
+    ``a_rb_ctx`` was already class-(b)-flagged — narrowed here into the
+    ``_is_path_like_word`` predicate at BOTH consumers (the whole-string
+    gate and the per-word exemption); MONOTONE (every still-exempt word
+    contains ``/`` or ``\``, the whole former criterion), so the change
+    can only ADD warns. The #2221 task body's prescribed fix (a
+    >=3-segment single-letter-prefix snake class,
+    ``^[a-z]_[a-z0-9]+(_[a-z0-9]+)+``) is a PROVABLE NO-OP — every
+    match carries >=2 underscores, a strict subset of class (b)'s
+    existing ``count("_") >= 2`` filter — documented, not implemented.
+    Deliberately NOT added: a 2-segment ``^[a-z]_[a-z]+$`` class for
+    bare ``d_transport`` — the corpus sweep over all 3,241 tracked
+    sidecars measured ~45 distinct / ~9,200 occurrences of legitimate
+    rendered math notation it would flag (``z_marker`` 2,237, ``s_i``
+    2,003, ``n_train`` 825, ...); bare ``d_transport`` stays an accepted
+    residual, mitigated at figure granularity (the #2221 arm roster
+    co-renders >=3-segment siblings — ``a_rb_ctx`` / ``c_map_ctx`` /
+    ``c_map_pfx`` — that flag the figure anyway under per-figure WARN
+    semantics).
 
     SLUG-CLASS caption-decode suppression (#1988): an arm-slug token
     that appears VERBATIM (case-insensitive substring) in THIS figure's
@@ -9738,8 +9876,20 @@ def check_figure_label_codes(body: str) -> CheckResult:
     now arrive as scanned VALUES in new sidecars, narrowing this residual to
     key names — including a whitespace-free letter-arrow token used as a
     DataFrame column KEY, the #1902 residual gap); (iii) a token inside a
-    path-shaped word (or a whole path-shaped string) is exempt — the path
-    exemption covers ALL SEVEN token classes. WARN, never FAIL; fail-soft on
+    path-LIKE word (or a whole path-like single-word string,
+    ``_is_path_like_word``, #2258) is exempt — the exemption covers ALL
+    SEVEN token classes, and its named residuals are: an HF ``owner/repo``
+    id in caption prose (``EleutherAI/sae-llama-3.1-8b-64x`` -> arm-slug
+    token ``sae-llama-3``) is indistinguishable from a slash-joined label
+    without an open vocabulary allowlist — accepted FALSE POSITIVE
+    (WARN-level, standing acknowledge-in-body escape); a flaggable slug
+    inside a formula-char-bearing slash word (``logP(x)/a_rb_ctx``) and a
+    behavior name colliding with the repo-top-dir list (``raw/<slug>``)
+    are two arm-introduced FALSE NEGATIVES (formula arm / repo-dir arm
+    exempt them) — neither occurs in the incident class or the 2026-08
+    corpus; and bare 2-segment ``d_transport`` stays unflagged (no
+    2-segment class — see the #2221 paragraph above). WARN, never FAIL;
+    fail-soft on
     missing / unparsable sidecars (the check-24 convention, NOT check 26's
     loud missing-sidecar FAIL); NO-OP PASS offline / no figures / no
     scannable same-repo sidecar.

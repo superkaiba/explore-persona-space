@@ -176,8 +176,8 @@ def _patch_pod(
         monkeypatch.setattr(
             pp, "post_event", lambda issue, key, **kw: posted.append({"key": key, **kw})
         )
-    monkeypatch.setattr(pp, "_marker_pid", lambda issue: None)
-    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch: run_age_sec)
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue, pod=None: None)
+    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch, pod=None: run_age_sec)
     monkeypatch.setattr(pp, "_telegram_push", lambda msg: True)
 
 
