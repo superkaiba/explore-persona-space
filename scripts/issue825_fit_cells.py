@@ -725,6 +725,95 @@ def _ridge_predict_cached_batched(
 # tensor; 20 draws is one chunk, but a larger null_draws stays memory-safe).
 NULL_DRAW_BATCH = int(os.environ.get("EPM_NULL_DRAW_BATCH", "64"))
 
+# #1336 pooled-OOM fix: NULL_DRAW_BATCH alone is NOT memory-aware — at the
+# pooled off-arm shape (N=149,964 rows over 5 group folds, D=4096) a single
+# 20-draw chunk materializes (20, 118,359, 4096) fp64 = 72.24 GiB (the exact
+# failing CUDA request of SLURM job 12643) with ~108 GiB total live, OOMing
+# a 139.8 GiB H200. The cap below bounds the DRAW axis by probed free
+# memory. live factor MEASURED via scripts/issue1336_null_chunk_calibration.py
+# (fresh-process ru_maxrss deltas at n=20k, d=512, folds=5, inner=2):
+# 4.54x per draw-unit at one 20-draw chunk, 4.43x at 4x5-draw chunks,
+# 4.60x on a 13-pt grid (lambda-grid-length-INVARIANT — the draw axis, not
+# the lambda axis, dominates); 6 adds ~30% headroom per the
+# resolve_chunk_cap convention (vectorized_mlp_skill.py): over-estimation
+# only adds chunk count — results are chunk-size-invariant (test-pinned by
+# tests/test_issue1336_null_chunk.py).
+NULL_DRAW_LIVE_FACTOR = float(os.environ.get("EPM_FIT825_NULL_DRAW_LIVE_FACTOR", "6"))
+NULL_DRAW_MEM_SAFETY = 0.8
+
+
+def _free_device_bytes(dev: torch.device) -> int | None:
+    """Best-effort free-memory probe for the null draw-chunk cap.
+
+    cuda: ``mem_get_info`` free PLUS the caching allocator's
+    reserved-but-unallocated bytes (reserved segments are reusable by this
+    process, so counting them keeps the cap from ratcheting down across the
+    ~140 fold-layer calls of a pooled sweep). cpu: /proc/meminfo
+    MemAvailable, min'd with cgroup-v2 memory headroom when readable (the
+    pooled fit runs under a SLURM cgroup whose limit binds long before the
+    host's MemAvailable — the rc=137 half of the #1336 incident). Returns
+    None on ANY probe failure — the caller falls back to the REQUESTED
+    chunk, never silently tightens (the designed fail-open, see
+    _resolve_null_draw_chunk).
+    """
+    try:
+        if dev.type == "cuda":
+            free, _total = torch.cuda.mem_get_info(dev)
+            reserved = torch.cuda.memory_reserved(dev)
+            allocated = torch.cuda.memory_allocated(dev)
+            return int(free) + max(0, int(reserved) - int(allocated))
+        avail: int | None = None
+        with open("/proc/meminfo") as fh:
+            for line in fh:
+                if line.startswith("MemAvailable:"):
+                    avail = int(line.split()[1]) * 1024
+                    break
+        if avail is None:
+            return None
+        try:
+            with open("/sys/fs/cgroup/memory.max") as fh:
+                lim_s = fh.read().strip()
+            with open("/sys/fs/cgroup/memory.current") as fh:
+                cur_s = fh.read().strip()
+            if lim_s != "max":
+                avail = min(avail, max(0, int(lim_s) - int(cur_s)))
+        except OSError:
+            pass  # cgroup v2 files absent/unreadable: host MemAvailable stands
+        return avail
+    except Exception:
+        return None  # probe failure => caller keeps the REQUESTED chunk
+
+
+def _resolve_null_draw_chunk(
+    requested: int,
+    n_draws: int,
+    n_rows: int,
+    d_out: int,
+    free_bytes: int | None,
+    *,
+    live_factor: float | None = None,
+    safety: float = NULL_DRAW_MEM_SAFETY,
+) -> int:
+    """Memory-aware draw-chunk cap for the batched null (pure; #1336 OOM fix).
+
+    ``unit_bytes = n_rows * d_out * 8`` is one draw's fp64 permuted rows
+    (``Yp_tr`` + ``Yp_te`` together index all ``n_rows``); ``live_factor``
+    (measured — see NULL_DRAW_LIVE_FACTOR) covers the centered copies,
+    predictions, inner-CV transients, and allocator retention riding each
+    draw. ``free_bytes`` None/<=0 (probe failure) returns the REQUESTED
+    chunk (clamped to n_draws) — never silently tighter. Returns
+    ``max(1, min(requested, n_draws, floor(free * safety / (lf * unit))))``.
+    """
+    req = max(1, min(int(requested), max(1, int(n_draws))))
+    if free_bytes is None or free_bytes <= 0:
+        return req
+    lf = float(NULL_DRAW_LIVE_FACTOR if live_factor is None else live_factor)
+    unit = int(n_rows) * int(d_out) * 8
+    if unit <= 0 or lf <= 0:
+        return req
+    cap = int((float(free_bytes) * float(safety)) / (lf * float(unit)))
+    return max(1, min(req, cap))
+
 
 def _null_ss_contrib(
     cache: dict,
@@ -769,7 +858,20 @@ def _null_ss_contrib(
     te_idx = np.flatnonzero(np.asarray(te_mask))
     ss_res = np.empty(n_draws)
     ss_tot = np.empty(n_draws)
-    step = max(1, NULL_DRAW_BATCH)
+    requested = max(1, NULL_DRAW_BATCH)
+    free_bytes = _free_device_bytes(dev)
+    step = _resolve_null_draw_chunk(
+        requested, n_draws, int(Y_t.shape[0]), int(Y_t.shape[1]), free_bytes
+    )
+    # Fix-engaged signal (#1336 pooled-OOM fix): resolved cap + probed free
+    # bytes AT the cap site, so the next OOM is diagnosable from the log.
+    print(
+        f"[fit825] null-draw chunk resolved: step={step} requested={requested} "
+        f"draws={n_draws} unit_gb={Y_t.shape[0] * Y_t.shape[1] * 8 / 1e9:.2f} "
+        f"free_gb={'nan' if free_bytes is None else f'{free_bytes / 1e9:.1f}'} "
+        f"factor={NULL_DRAW_LIVE_FACTOR:g} safety={NULL_DRAW_MEM_SAFETY:g} dev={dev}",
+        flush=True,
+    )
     for s in range(0, n_draws, step):
         sl = slice(s, min(s + step, n_draws))
         p = perm_stack[sl]  # (b,N)
