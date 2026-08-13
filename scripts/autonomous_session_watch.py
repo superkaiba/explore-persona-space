@@ -1,7 +1,7 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions (plus campaign sessions, task #586).
 
-38 passes ("pass" = one top-level per-tick action block in ``main()``'s
+39 passes ("pass" = one top-level per-tick action block in ``main()``'s
 production run order; helpers invoked INSIDE a pass — e.g. the sub-floor
 disk sentinel inside pass 1 — and the ``--*-only`` debug entrypoints do
 not count; a NEW inline pass block that is not a ``*_pass``-named function
@@ -20,6 +20,7 @@ order. The per-tick execution order is: 1 (VM disk) -> 15 (data-disk) ->
 recovery) -> 13 (auth-outage guard) -> 2 (crash-recovery) -> 9 (campaign)
 -> 3 (pod-safety) -> 4 (stalled-detector) -> 37 (pending-call wedge) ->
 5 (orphan sweep) ->
+39 (predispatch-staleness) ->
 11 (infra-drain) -> 21 (proposed-infra-sweep) -> 22 (capacity-retry) ->
 14 (stale-blocked flag) -> 6 (session-reconcile) -> 23 (gate-push) ->
 25 (boot-death) -> 35 (no-progress-respawn) -> 24 (stale-registration) ->
@@ -1024,6 +1025,41 @@ adding a pass means adding a numbered item here AND bumping the digit:
    ``--settings-model-guard-only`` runs just this pass (pair with
    ``--dry-run`` for a zero-write live smoke).
    (:func:`settings_model_guard_pass`.)
+39. **Pre-dispatch staleness pass (#2134; ESCALATE-ONLY; daemon-INDEPENDENT;
+   kill switch EPM_DISABLE_PREDISPATCH_STALENESS)** — once-daily
+   (``EPM_PREDISPATCH_STALENESS_INTERVAL_HOURS``, attempt-stamped BEFORE
+   collecting) scan of queued ``proposed`` + ``blocked`` infra/batch tasks
+   whose ``workflow_fix_target:`` files were rewritten by commits newer
+   than the task's creation (>= 3 shared informative tokens between a
+   landed commit subject and the task title+body — the #1985
+   stale-dispatch shape: blocked #1217/#1771 kept instructing a gate
+   c20aabc59a removed), plus same-file queue collisions and landed-sibling
+   commits. Pure detection lives in ``scripts/predispatch_staleness.py``
+   (injected ``git_log_fn`` seam; report-only ``--json`` CLI). Bounded:
+   per-pass task cap ``EPM_PREDISPATCH_STALENESS_TASK_CAP`` (40) with a
+   persisted cursor (partial-bundle pattern), <= 1 bounded ``git log``
+   subprocess per scanned task, per-tick flag-marker cap
+   ``EPM_PREDISPATCH_STALENESS_MARKER_CAP`` (5) with sidecar-recorded
+   overflow (triage-observer pattern), per-(issue, fingerprint) fire-once
+   + ``EPM_PREDISPATCH_STALENESS_REALERT_HOURS`` (168h) TTL re-alert.
+   Channels: sidecar ``.claude/cache/predispatch-staleness-events.jsonl``
+   + ONE deduped push digest per firing tick + capped per-task
+   ``epm:progress`` flag markers (sentinel
+   ``[autonomous_session_watch:predispatch-staleness]``, a
+   ``_WATCHER_NOTE_SENTINELS`` member so a flag never resets the staleness
+   clocks watching that parked task) naming the evidence + the
+   adjudication affordance. REPORT-ONLY hard invariant: never composes a
+   status mutation, never gates/defers a dispatch, never touches the
+   infra-drain queue or proposed-infra-sweep state — mootness is
+   adjudicated by the spawned clarifier (Step 0 context pass) or a human
+   (#1918 archive-license discipline). ADVISORY, not a guarantee: at the
+   daily cadence a task filed and dispatched within <24h of the
+   invalidating commit is never scanned pre-dispatch. State singleton
+   ``~/.eps-autonomous/predispatch-staleness.json``; fail toward silence
+   on every unreadable input (a failed git log never reads as "no
+   staleness"). ``--predispatch-staleness-only`` runs just this pass (pair
+   with ``--dry-run`` for a zero-write live smoke).
+   (:func:`predispatch_staleness_pass`.)
 
 
 Why each pass exists
@@ -2050,6 +2086,15 @@ _INFRA_DRAIN_NOTE_SENTINEL = "[autonomous_session_watch:infra-drain-dispatch]"
 # staleness clocks (same contract as _INFRA_DRAIN_NOTE_SENTINEL).
 _PROPOSED_INFRA_SWEEP_NOTE_SENTINEL = "[autonomous_session_watch:proposed-infra-sweep-dispatch]"
 
+# Substring stamped into the advisory epm:progress flag marker the
+# pre-dispatch staleness pass (#2134) posts on a queued/blocked infra task
+# whose workflow_fix_target premises a newer landed commit likely
+# invalidated (or that collides with a sibling on the same target file).
+# Anti-liveness contract: the flagged task is exactly the kind of parked
+# task the staleness clocks watch, so a watcher-authored advisory flag must
+# never count as "real progress" and reset them.
+_PREDISPATCH_STALENESS_NOTE_SENTINEL = "[autonomous_session_watch:predispatch-staleness]"
+
 # Substring stamped into the marker the capacity-retry pass posts after it
 # re-drives a `blocked`-on-transient-infra task (task #642 class:
 # `no_compute_available` after a GCP capacity miss). Same staleness-filter
@@ -2317,6 +2362,10 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _TTY_UNMAPPED_REPORT_NOTE_SENTINEL,
         _INFRA_DRAIN_NOTE_SENTINEL,
         _PROPOSED_INFRA_SWEEP_NOTE_SENTINEL,
+        # #2134 pre-dispatch staleness flag: advisory marker on a QUEUED
+        # task — must never read as real progress or it would reset the
+        # very staleness clocks watching that parked task.
+        _PREDISPATCH_STALENESS_NOTE_SENTINEL,
         _CAPACITY_RETRY_NOTE_SENTINEL,
         _CAPACITY_RETRY_EXHAUSTED_NOTE_SENTINEL,
         _STALE_BLOCKED_FLAG_NOTE_SENTINEL,
@@ -8381,6 +8430,335 @@ def registry_drift_pass(dry_run: bool) -> bool:
         # throttled by the attempt stamp saved before the collect).
         _append_registry_drift_sidecar(
             {"kind": "registry-drift-error", "error": str(exc)[:500]}, dry_run
+        )
+        return False
+
+
+# ─── Pre-dispatch staleness pass (task #2134) ─────────────────────────────────
+#
+# WHY: nothing surfaced queued/blocked infra tasks whose premises a recent
+# commit invalidated — blocked #1217/#1771 kept instructing a gate removed by
+# c20aabc59a; #1718 targeted a scripts/workflow_lint.py that completed #2079
+# had rewritten; 11 queued tasks all touched CLAUDE.md with pairwise
+# merge-conflict risk. A stale dispatch burns a session before the clarifier
+# discovers mootness (the #1985 shape). Every pre-existing "staleness"
+# mechanism is SESSION-staleness; this pass is the first TASK-PREMISE
+# staleness reader. Pure detection logic lives in
+# scripts/predispatch_staleness.py (injected git_log_fn seam + report-only
+# CLI); this block is the thin bounded I/O wrapper, cloning the
+# registry-drift throttle/attempt-stamp shape, the triage-observer marker
+# cap + sidecar overflow, and the partial-bundle listing cap + cursor.
+# ESCALATE-ONLY hard invariant: NEVER a set-status/archive mutation, NEVER a
+# dispatch gate/deferral, NEVER a write to the infra-drain queue or
+# proposed-infra-sweep state — mootness is adjudicated by the spawned
+# clarifier (its Step 0 context pass reads the flag marker) or a human, per
+# the #1918 archive-license discipline.
+
+# Once-daily cadence (surfacing, not tick-rate monitoring; registry-drift
+# precedent). Env EPM_PREDISPATCH_STALENESS_INTERVAL_HOURS, read at CALL
+# time; lo=0.0 lets a live smoke force a run.
+PREDISPATCH_STALENESS_INTERVAL_HOURS = 24.0
+# Re-alert TTL for an UNCHANGED (issue, fingerprint) flag: weekly — a queued
+# task's stale premise is inert until dispatch/triage acts on it. A NEW
+# invalidating commit changes the fingerprint and re-fires immediately.
+PREDISPATCH_STALENESS_REALERT_HOURS = 168.0
+# Per-pass scanned-task cap + persisted cursor (partial-bundle pattern) so
+# tail-of-queue tasks never starve; <= 1 bounded git-log subprocess per
+# scanned task keeps the daily budget fixed.
+PREDISPATCH_STALENESS_TASK_CAP = 40
+# Per-tick epm:progress flag-marker cap (triage-observer pattern); overflow
+# flags stay sidecar-recorded (and re-fire a marker only via the TTL).
+PREDISPATCH_STALENESS_MARKER_CAP = 5
+
+
+def _predispatch_staleness_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_PREDISPATCH_STALENESS`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_registry_drift_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_PREDISPATCH_STALENESS", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _predispatch_staleness_sidecar_path() -> Path:
+    """DEDICATED pre-dispatch staleness event stream (own stream for clean
+    grep — the registry-drift / triage-observer sidecar precedent)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "predispatch-staleness-events.jsonl"
+
+
+def _predispatch_staleness_state_path() -> Path:
+    """Singleton throttle+dedup+cursor state (deliberately NOT a per-issue GC
+    target): ``{"last_run_ts": <float>, "cursor_idx": <int>,
+    "flagged": {"<issue>": {"<fingerprint>": <last_alert_ts>}}}``. Issue keys
+    are pruned inside the pass once the task leaves the scan scope."""
+    return AUTONOMOUS_REGISTRY_DIR / "predispatch-staleness.json"
+
+
+def _load_predispatch_staleness_state() -> dict:
+    """``{}`` on missing/garbled state; every field read back goes through
+    ``isinstance`` type-guards (mirrors :func:`_load_registry_drift_state`)."""
+    path = _predispatch_staleness_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_predispatch_staleness_state(state: dict, dry_run: bool) -> None:
+    """Atomic temp+rename write (fail-soft; mirrors
+    :func:`_save_registry_drift_state`); ``dry_run`` performs zero writes."""
+    if dry_run:
+        print(
+            "  [dry-run] would save predispatch-staleness state "
+            f"(cursor={state.get('cursor_idx')}, flagged={len(state.get('flagged') or {})})"
+        )
+        return
+    dest = _predispatch_staleness_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  predispatch-staleness: state save failed: {exc}", file=sys.stderr)
+
+
+def _append_predispatch_staleness_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the predispatch-staleness sidecar (fail-soft).
+    A ``ts`` is stamped; ``dry_run`` reports only (mirrors
+    :func:`_append_registry_drift_sidecar`)."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append predispatch-staleness sidecar row: {line[:160]}")
+        return
+    dest = _predispatch_staleness_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  predispatch-staleness: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _predispatch_marker_targets(records) -> list[tuple[int, str, object]]:
+    """Pure expansion of scan records into (issue, fingerprint, record)
+    marker targets: a stale-premise / landed-sibling record flags its own
+    task; a queue-collision record flags EVERY colliding task (each one's
+    clarifier needs the flag), all sharing the record's fingerprint."""
+    out: list[tuple[int, str, object]] = []
+    for rec in records:
+        if rec.kind == "queue-collision":
+            issues = rec.evidence.get("colliding_issues") or [rec.issue]
+        else:
+            issues = [rec.issue]
+        for issue in issues:
+            out.append((int(issue), rec.fingerprint, rec))
+    return out
+
+
+def decide_predispatch_staleness_flags(
+    targets: list[tuple[int, str, object]],
+    flagged: dict,
+    now: float,
+    realert_s: float,
+    marker_cap: int,
+) -> list[dict]:
+    """Pure fire/dedup/cap decision. ``flagged`` is the persisted
+    ``{"<issue>": {"<fp>": last_alert_ts}}`` map. A target FIRES when its
+    (issue, fp) was never alerted or the last alert is STRICTLY older than
+    ``realert_s`` (garbled timestamps degrade to fire-as-if-unalerted — the
+    registry-drift corrupt-state contract). The first ``marker_cap`` fired
+    targets get a marker; overflow stays sidecar-only. Deterministic order:
+    targets are processed sorted by (issue, fingerprint)."""
+    actions: list[dict] = []
+    markers_left = marker_cap
+    for issue, fp, rec in sorted(targets, key=lambda t: (t[0], t[1])):
+        per_issue = flagged.get(str(issue))
+        prev = per_issue.get(fp) if isinstance(per_issue, dict) else None
+        fire = not isinstance(prev, int | float) or (now - prev) > realert_s
+        marker = False
+        if fire and markers_left > 0:
+            marker = True
+            markers_left -= 1
+        actions.append(
+            {"issue": issue, "fingerprint": fp, "record": rec, "fire": fire, "marker": marker}
+        )
+    return actions
+
+
+def _predispatch_staleness_note(issue: int, rec) -> str:
+    """Compose the advisory epm:progress flag note (sentinel-led). The
+    adjudication affordance QUOTES `set-status <N> archived` for the
+    human/clarifier — this pass itself never composes that mutation."""
+    ev = json.dumps(rec.evidence, sort_keys=True)
+    return (
+        f"{_PREDISPATCH_STALENESS_NOTE_SENTINEL} advisory {rec.kind} flag "
+        f"(report-only #2134 pass, fingerprint {rec.fingerprint}): target(s) "
+        f"{rec.target}; evidence: {ev[:1500]}. The premise may be stale or "
+        "collide with sibling work — the clarifier adjudicates at dispatch; "
+        f"to archive: `task.py set-status {issue} archived` — human/clarifier "
+        "only. Nothing was changed automatically."
+    )
+
+
+def predispatch_staleness_pass(dry_run: bool) -> bool:
+    """ESCALATE-ONLY once-daily pre-dispatch task-premise staleness observer
+    (#2134). Scans queued ``proposed`` + ``blocked`` infra/batch tasks whose
+    ``workflow_fix_target:`` files were rewritten by commits newer than the
+    task's creation (>= 3 shared informative tokens between commit subject
+    and task title+body), plus same-file queue collisions and landed-sibling
+    commits; SURFACES the list (sidecar rows + ONE deduped push digest per
+    firing tick + capped per-task ``epm:progress`` flag markers) and mutates
+    NOTHING — never a set-status/archive, never a dispatch gate, never a
+    write to the infra-drain queue or proposed-infra-sweep state (the #1918
+    archive-license discipline; the flag's consumer is the spawned
+    clarifier's Step 0 context pass, or a human).
+
+    ADVISORY pass, not a guarantee: the daily cadence means a task filed and
+    dispatched within <24h of the invalidating commit is never scanned
+    pre-dispatch. Cursor cycle time: at the per-pass cap of
+    ``PREDISPATCH_STALENESS_TASK_CAP`` (40) and the current ~60-task queue
+    depth, a full queue cycle takes ~2 daily firings.
+
+    Bounds: once-daily throttle with the attempt stamp saved BEFORE
+    collecting (registry-drift pattern); per-pass task cap + persisted
+    cursor (partial-bundle pattern); <= 1 bounded git-log subprocess per
+    scanned task; marker cap per tick with sidecar-recorded overflow
+    (triage-observer pattern); per-(issue, fingerprint) fire-once + 168h TTL
+    re-alert. Fail toward silence on every unreadable input (registry, body,
+    git — a failed git log never reads as "no staleness"). Daemon-INDEPENDENT
+    (read-only registry/body/git reads; marker posts go via the ``task.py``
+    subprocess from PROJECT_ROOT on ``main``). Returns True when any flag
+    fired this run."""
+    if not _predispatch_staleness_enabled():
+        print("  predispatch-staleness: disabled via EPM_DISABLE_PREDISPATCH_STALENESS; skipping")
+        return False
+    try:
+        now = time.time()
+        interval_h = _env_float(
+            "EPM_PREDISPATCH_STALENESS_INTERVAL_HOURS",
+            PREDISPATCH_STALENESS_INTERVAL_HOURS,
+            lo=0.0,
+            hi=720.0,
+        )
+        realert_h = _env_float(
+            "EPM_PREDISPATCH_STALENESS_REALERT_HOURS",
+            PREDISPATCH_STALENESS_REALERT_HOURS,
+            lo=1.0,
+            hi=2160.0,
+        )
+        task_cap = int(
+            _env_float(
+                "EPM_PREDISPATCH_STALENESS_TASK_CAP",
+                float(PREDISPATCH_STALENESS_TASK_CAP),
+                lo=1.0,
+                hi=500.0,
+            )
+        )
+        marker_cap = int(
+            _env_float(
+                "EPM_PREDISPATCH_STALENESS_MARKER_CAP",
+                float(PREDISPATCH_STALENESS_MARKER_CAP),
+                lo=0.0,
+                hi=50.0,
+            )
+        )
+        state = _load_predispatch_staleness_state()
+        last = state.get("last_run_ts")
+        if isinstance(last, int | float) and (now - last) < interval_h * 3600.0:
+            return False  # throttled — silent (once-daily surfacing cadence)
+        state["last_run_ts"] = now
+        # Stamp the ATTEMPT before collecting: a crashing collect/scan is
+        # bounded to one error sidecar row per throttle interval instead of
+        # spamming every 10-min tick (registry-drift precedent).
+        _save_predispatch_staleness_state(state, dry_run)
+
+        # Lazy sibling import (watcher convention — resolves via the
+        # scripts/ sys.path bootstrap at module top).
+        import predispatch_staleness as pds
+
+        tasks, repo_root = pds.collect_tasks()
+        tasks.sort(key=lambda t: t["id"])
+        raw_cursor = state.get("cursor_idx")
+        cursor = int(raw_cursor) if isinstance(raw_cursor, int | float) else 0
+        if cursor >= len(tasks):
+            cursor = 0
+        window = tasks[cursor : cursor + task_cap]
+        next_cursor = (cursor + task_cap) if (cursor + task_cap) < len(tasks) else 0
+
+        records = pds.scan(
+            window,
+            git_log_fn=lambda paths, since: pds.git_log_for_paths(repo_root, paths, since),
+        )
+        raw_flagged = state.get("flagged")
+        flagged: dict = raw_flagged if isinstance(raw_flagged, dict) else {}
+        actions = decide_predispatch_staleness_flags(
+            _predispatch_marker_targets(records), flagged, now, realert_h * 3600.0, marker_cap
+        )
+        fired = [a for a in actions if a["fire"]]
+        for a in fired:
+            rec = a["record"]
+            _append_predispatch_staleness_sidecar(
+                {
+                    "kind": "predispatch-staleness",
+                    "issue": a["issue"],
+                    "flag_kind": rec.kind,
+                    "target": rec.target,
+                    "fingerprint": a["fingerprint"],
+                    "evidence": rec.evidence,
+                    # `marker` records the compose DECISION (cap bookkeeping);
+                    # _post_progress_marker is fail-soft and post != seen.
+                    "marker": a["marker"],
+                },
+                dry_run,
+            )
+            if a["marker"]:
+                _post_progress_marker(
+                    a["issue"],
+                    _predispatch_staleness_note(a["issue"], rec),
+                    dry_run,
+                    label="predispatch-staleness",
+                )
+            per_issue = flagged.setdefault(str(a["issue"]), {})
+            if isinstance(per_issue, dict):
+                per_issue[a["fingerprint"]] = now
+            else:
+                flagged[str(a["issue"])] = {a["fingerprint"]: now}
+        for a in fired[:5]:
+            print(
+                f"  predispatch-staleness: #{a['issue']} {a['record'].kind} "
+                f"[{a['fingerprint']}] {a['record'].target}"
+            )
+        if fired:
+            n_markers = sum(1 for a in fired if a["marker"])
+            _telegram_push(
+                f"predispatch-staleness (report-only #2134 pass): {len(fired)} "
+                "stale-premise/collision flag(s) on queued infra tasks — e.g. "
+                + "; ".join(f"#{a['issue']} {a['record'].kind}" for a in fired[:3])
+                + f". {n_markers} flag marker(s) posted; details: "
+                ".claude/cache/predispatch-staleness-events.jsonl. The clarifier "
+                "adjudicates at dispatch. Nothing was changed automatically.",
+                dry_run,
+            )
+        # Self-prune flagged entries whose issue left the scan scope for good
+        # (dispatched / completed / archived / parked on_hold).
+        in_scope = {str(t["id"]) for t in tasks}
+        for key in list(flagged):
+            if key not in in_scope:
+                flagged.pop(key, None)
+        state["flagged"] = flagged
+        state["cursor_idx"] = next_cursor
+        _save_predispatch_staleness_state(state, dry_run)
+        return bool(fired)
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  predispatch-staleness: pass failed (fail-soft): {exc}", file=sys.stderr)
+        # Error row only — NO flagged/cursor write (the next in-interval tick
+        # stays throttled by the attempt stamp saved before the collect).
+        _append_predispatch_staleness_sidecar(
+            {"kind": "predispatch-staleness-error", "error": str(exc)[:500]}, dry_run
         )
         return False
 
@@ -33847,6 +34225,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "--dry-run for a zero-write live smoke.",
     )
     parser.add_argument(
+        "--predispatch-staleness-only",
+        action="store_true",
+        help="run ONLY the pre-dispatch staleness pass (#2134, escalate-only "
+        "— once-daily scan of queued proposed/blocked infra/batch tasks "
+        "whose workflow_fix_target files were rewritten by newer commits, "
+        "plus same-file queue collisions; never mutates task status or "
+        "dispatch state) and exit; skip every other pass. "
+        "Daemon-independent; pair with --dry-run for a zero-write live "
+        "smoke against the real queue.",
+    )
+    parser.add_argument(
         "--stash-rescue-audit-only",
         action="store_true",
         help="run ONLY the stash/rescue-backlog audit pass (#1806, "
@@ -34076,6 +34465,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # run it alone.
     if args.registry_drift_only:
         registry_drift_pass(args.dry_run)
+        return 0
+
+    # --predispatch-staleness-only mirrors --registry-drift-only: the pass
+    # is daemon-independent (read-only registry + body.md reads + bounded
+    # read-only git-log subprocesses + its own state file; marker posts go
+    # via the task.py subprocess), so run it alone. Pair with --dry-run for
+    # a zero-write live smoke against the real queue.
+    if args.predispatch_staleness_only:
+        predispatch_staleness_pass(args.dry_run)
         return 0
 
     # --stash-rescue-audit-only mirrors --registry-drift-only: the pass is
@@ -34502,6 +34900,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         live_ids=live_ids if daemon_reachable else None,
         live_pids=live_pids_by_sid,
     )
+
+    # Pre-dispatch staleness (#2134): ESCALATE-ONLY once-daily flag of
+    # queued/blocked infra/batch tasks whose workflow_fix_target premises a
+    # newer landed commit likely invalidated, plus same-file queue
+    # collisions. Runs BEFORE the two dispatch passes (infra-drain, then
+    # proposed-infra-sweep — whose pinned runs-right-after-drain adjacency
+    # is preserved) so this tick's flags land on events.jsonl before this
+    # tick's dispatches; the spawned clarifier reads the flag marker at its
+    # Step 0 context pass. Report-only + daemon-INDEPENDENT (read-only
+    # registry/body/git reads; marker posts go via the task.py subprocess);
+    # never mutates status or dispatch state.
+    predispatch_staleness_pass(args.dry_run)
 
     # Infra-drain: execute the PM session's adjudicated infra dispatch queue
     # (task #633) into free slots under the cap. Pure executor — the PM is
