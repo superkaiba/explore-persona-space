@@ -1,10 +1,7 @@
 {
  "metadata": {
-  "git_commit": "109f1b87",
-  "git_dirty": true,
-  "git_dirty_paths": [
-   "scripts/issue2054_cross_render_fit.py"
-  ],
+  "git_commit": "346b65c1",
+  "git_dirty": false,
   "script_version": "issue2054_pooled_tier_ladder_v1",
   "argv": [
    "scripts/issue2054_pooled_tier_ladder.py",
@@ -14,11 +11,11 @@
    "--pool-specialize-dir",
    "data/issue_2054/ladderstage/issue2054_lattice/pool_specialize/percell",
    "--fit-dir",
-   "/tmp/i2054_pooled_tiers/issue2054_lattice/pooled_tier_ladder/percell_tiers",
+   "data/issue_2054/ladderstage/issue2054_lattice/pooled_tier_ladder/percell_tiers",
    "--out",
    "eval_results/issue_2054/specialization_ladder/pooled_tier_ladder.json"
   ],
-  "utc": "2026-08-13T21:37:53Z",
+  "utc": "2026-08-13T22:40:54Z",
   "tiers": [
    "pooled_direct",
    "rotation_bias",
