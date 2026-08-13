@@ -1,0 +1,171 @@
+{
+  "commit": "3bc8290b+dirty",
+  "render_id": "b970368809554631",
+  "git_commit": "3bc8290b",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2054/specialization_ladder/loco_pooled.units.jsonl"
+  ],
+  "created": "2026-08-13T22:59:47Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "Patched layer": -0.18,
+      "cos(map-predicted shift, realized shift)": 0.1948769432802995,
+      "error": 0.06229514293945407,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Patched layer": 0.82,
+      "cos(map-predicted shift, realized shift)": 0.13202218487858772,
+      "error": 0.05031800061228328,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Patched layer": 1.82,
+      "cos(map-predicted shift, realized shift)": 0.10692979867259661,
+      "error": 0.06298752380219169,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Patched layer": 0.18,
+      "cos(map-predicted shift, realized shift)": 0.05352503291020791,
+      "error": 0.037872900175913604,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Patched layer": 1.18,
+      "cos(map-predicted shift, realized shift)": 0.006454046194752057,
+      "error": 0.04773789060195046,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Patched layer": 2.18,
+      "cos(map-predicted shift, realized shift)": 0.04665349526330829,
+      "error": 0.05190329751982362,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Patched layer": -0.18,
+      "cos(map-predicted shift, realized shift)": 0.13258180034084543,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Patched layer": 0.8200000000000001,
+      "cos(map-predicted shift, realized shift)": 0.08170418426630444,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Patched layer": 1.82,
+      "cos(map-predicted shift, realized shift)": 0.043942274870404904,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Patched layer": -0.18,
+      "cos(map-predicted shift, realized shift)": 0.25717208621975357,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Patched layer": 0.8200000000000001,
+      "cos(map-predicted shift, realized shift)": 0.182340185490871,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Patched layer": 1.82,
+      "cos(map-predicted shift, realized shift)": 0.1699173224747883,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Patched layer": 0.18,
+      "cos(map-predicted shift, realized shift)": 0.015652132734294298,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Patched layer": 1.18,
+      "cos(map-predicted shift, realized shift)": -0.0412838444071984,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Patched layer": 2.18,
+      "cos(map-predicted shift, realized shift)": -0.005249802256515335,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Patched layer": 0.18,
+      "cos(map-predicted shift, realized shift)": 0.09139793308612151,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Patched layer": 1.18,
+      "cos(map-predicted shift, realized shift)": 0.05419193679670252,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Patched layer": 2.18,
+      "cos(map-predicted shift, realized shift)": 0.09855679278313191,
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 18,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Matched-query full-state patch, context-end",
+        "xlabel": "Patched layer",
+        "ylabel": "cos(map-predicted shift, realized shift)",
+        "legend_labels": [
+          "Steered",
+          "Shuffled-donor null"
+        ],
+        "xticklabels": [
+          "Layer 14",
+          "Layer 19",
+          "Layer 26"
+        ],
+        "yticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30"
+        ]
+      }
+    ],
+    "series": [
+      "Steered",
+      "Shuffled-donor null"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "commit": "3bc8290b+dirty",
+  "render_id": "9524a641976f4854",
+  "git_commit": "3bc8290b",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2054/specialization_ladder/loco_pooled.units.jsonl"
+  ],
+  "created": "2026-08-13T22:59:48Z",
+  "figsize": [
+    4.8,
+    4.2
+  ],
+  "points": [
+    {
+      "Context-end patch, all 28 layers": "Steered",
+      "Query-relevance judge score (0\u2013100)": 98.86666666666666,
+      "error": 0.5333333333333314,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Context-end patch, all 28 layers": "Shuffled-donor\nnull",
+      "Query-relevance judge score (0\u2013100)": 91.0,
+      "error": 5.736267244886861,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Context-end patch, all 28 layers": 0.0,
+      "Query-relevance judge score (0\u2013100)": 96.16666666666667,
+      "series": "Unpatched reference",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Context-end patch, all 28 layers": 1.0,
+      "Query-relevance judge score (0\u2013100)": 96.16666666666667,
+      "series": "Unpatched reference",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 4,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Query relevance under context-end joint patches",
+        "xlabel": "Context-end patch, all 28 layers",
+        "ylabel": "Query-relevance judge score (0\u2013100)",
+        "annotations": [
+          "unpatched reference = 96.2"
+        ],
+        "xticklabels": [
+          "Steered",
+          "Shuffled-donor\nnull"
+        ],
+        "yticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100"
+        ]
+      }
+    ],
+    "series": [
+      "Unpatched reference",
+      "Steered",
+      "Shuffled-donor null"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
