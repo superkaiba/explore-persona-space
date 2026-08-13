@@ -1298,6 +1298,45 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   acknowledgment still said "single-round … nine results" while the
   folded body carried 13 results across 3 folded rounds.
 
+- **check 57** (`check_v4_sidecarless_results_figures`, FAIL, v4-only,
+  Leg B forward-only, #2267; incident #2054): a `## Results` figure with
+  NO `.meta.json` sidecar at the cited sha previously received ZERO
+  mechanical opaque-code coverage — check 28 fail-softs on the missing
+  sidecar (`meta is None` ⇒ continue, the check-24 convention) and
+  check 41 is WARN-never-FAIL by documented design — so #2054's
+  `hero_calibration_nslope.png` shipped `H0'a`/`H0'b`/`b=`/`m=` codes in
+  PNG rendered text (panel titles + legend; clean plain-English caption)
+  through every mechanical gate. Two legs, both scoped to same-repo
+  sha-pinned figures whose PNG resolves at the cited sha (else check 22's
+  domain) and whose sidecar probe is a definitive 'fail' (present /
+  indeterminate ⇒ checks 24/28/33/34 + 41's domain): **Leg A** — the
+  blockquote caption window, markdown code spans stripped to spaces
+  (a backticked token is a quoted code-register reference — clears the
+  #952 corpus shape, a backticked companion-FILENAME), carries
+  `_opaque_code_tokens` hits ⇒ FAIL naming basename + tokens (NOT
+  date-gated; measured 0 corpus hits with the exclusion). **Leg B**
+  (forward-only) — the pinned commit's COMMITTER date (`_commit_epoch`,
+  cached + fail-soft) ≥ the 2026-08-13 UTC cutover
+  (`_CHECK57_FORWARD_CUTOVER`) AND the basename (lowercased,
+  dash-normalized) is NOT named in the body's verifier-WARN
+  acknowledgment (`_warn_acknowledgment_text`) ⇒ FAIL — regenerate via
+  `savefig_paper` (writes the sidecar, exposing rendered text to
+  check 28), or acknowledge the figure by name (hand-made diagrams /
+  external screenshots). Date-gate rationale: the plan-time sweep
+  (2,200 bodies; 87 v4; 45 sidecar-less same-repo Results figures, ~42
+  across ~13 green `awaiting_promotion` bodies) makes an unconditional
+  FAIL a promote-time re-verify breaker, and every existing pin pre-dates
+  the cutover, so the corpus is exempt BY CONSTRUCTION while every future
+  sidecar-less Results figure blocks at draft time. Fail-soft on every
+  indeterminate probe (unknown sha, failed date probe). Residuals
+  (i)-(iv), documented in the check docstring: backticked caption codes
+  escape Leg A (Leg B is the forcing function); pinning a NEW figure at
+  an old sha is impossible (the pinned commit must contain the PNG);
+  `b=`/`m=` single-letter-equals codes stay unclassifiable and PNG-pixel
+  text stays the multimodal critics' read for grandfathered figures; a
+  rebase rewriting an old figure commit to a post-cutover date FAILs
+  loud (ack escape), never silently passes.
+
 - **judge drop-line population reconciliation**
   (`check_judge_drop_line_population`, FAIL/WARN, v3+v4, #1776 incident /
   task #1881; unnumbered — dispatched outside CHECKS next to the #732
@@ -9619,12 +9658,25 @@ _SNAKE_TOKEN_RE = re.compile(r"\b[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)+\b")
 # (c) bare hypothesis codes (`H3`, `H1c`) — plan-registered hypothesis slots
 #     rendered into figure text (#1072: panel title "… (H3)"; #1774: sidecar
 #     title "… (H1c)" passed the old single-digit form). SINGLE digit +
-#     optional single LOWERCASE letter, case-sensitive by design:
+#     optional single LOWERCASE letter, the letter optionally PRIME-marked
+#     (ASCII apostrophe or U+2032 prime — #2054's `H0'a`/`H0`+U+2032+`b`
+#     panel titles; #2267). The prime extension is a REPORTING-ONLY strict
+#     superset, not a detection fix: the apostrophe/prime is a word
+#     boundary, so the pre-#2267 form `\bH\d[a-z]?\b` ALREADY fired inside
+#     `H0'a` — it merely reported the truncated `H0`; the widened form
+#     lengthens the reported token and can never add or remove a firing
+#     figure (a prime followed by MULTIPLE letters, e.g. `H0'ab`, still
+#     falls back to the truncated `H0` report — no boundary splits `ab`;
+#     a possessive `H2's` now reports `H2's`, an accepted envelope — a
+#     bare `H2` in rendered figure text is a violation either way).
+#     Case-sensitive by design:
 #     `H100`/`H200` GPU names (3 digits) and `H20` (2 digits, also a GPU
 #     name) never match — no word boundary fires between two digits — and
 #     lowercase `h3` / uppercase-suffix `H1C` are not the project's
 #     hypothesis-tag convention and stay clean.
-_HYPOTHESIS_CODE_RE = re.compile(r"\bH\d[a-z]?\b")
+# U+2032 spelled as an escape, never the literal char in code strings (the
+# `_APOS` convention; full-ruleset RUF001 pin on this file).
+_HYPOTHESIS_CODE_RE = re.compile(r"\bH\d(?:['\u2032][a-z]|[a-z])?\b")
 
 # (d) slot-family codes `f16` / `l16` (first-16 / last-16 answer-slot
 #     families, #1072: xlabel "answer position t (f16 slots)"). Deliberately
@@ -9831,8 +9883,12 @@ def _opaque_code_tokens(text: str) -> list[str]:
     layer pins, and snake_case tokens that are >=3 segments OR carry any
     digit (`ctx_blk_max`, `sw_eng_C1`, `BS_E0`, `cond_4`); 2-segment
     all-alpha tokens (`log_prob`, `judge_rate`, `helpful_assistant`) are
-    allowed; bare hypothesis codes (`H3`/`H1c` — `\bH\d[a-z]?\b`, single
-    digit + optional single lowercase letter, case-sensitive);
+    allowed; bare hypothesis codes (`H3`/`H1c`, incl. the prime-marked
+    `H0'a` forms — `\bH\d(?:['\u2032][a-z]|[a-z])?\b`, single digit +
+    optional single lowercase letter, the letter optionally prime-marked
+    with an ASCII apostrophe or U+2032 (a reporting-only strict superset
+    of the pre-#2267 `\bH\d[a-z]?\b` — see the class-(c) comment),
+    case-sensitive);
     slot-family codes (`f16`/`l16` only); bare candidate/panel codes
     (`P1`/`P7`/`M4`/`P3b` — `\b[PM]\d[a-z]?\b`, same single-digit +
     optional-lowercase-letter shape discipline as the hypothesis class,
@@ -9968,7 +10024,13 @@ def check_figure_label_codes(body: str) -> CheckResult:
     ``Parallel share of the gap by depth (H3)`` and the xlabel
     ``answer position t (f16 slots)`` passed check 28 clean and were caught
     only by the LM clean-result critic (hand-fixed in ``1f19deacfd``) —
-    mechanized here as the hypothesis-code + slot-family classes. Incident
+    mechanized here as the hypothesis-code + slot-family classes. #2267
+    extended the hypothesis class to REPORT prime-marked tokens
+    (``H0'a`` / the U+2032 form) in full — a reporting-only strict
+    superset, NOT a detection-gap fix: the apostrophe/prime is a word
+    boundary, so the pre-#2267 form already fired inside ``H0'a`` and
+    merely reported the truncated ``H0`` (see the class-(c) comment
+    block). Incident
     #1900: ``mediation_forest.png``'s legend text ``P1 | P7`` and the
     ``P7-residualized`` title passed check 28 clean (n_fail=0, twice) and
     burned an LM clean-result-critic round (pre-fix sidecar evidence at
@@ -13596,6 +13658,9 @@ def check_figure_sidecar_coverage(body: str) -> CheckResult:
     ``--body-stdin``), or no figure passes the scope gates. Existence probes
     only — two ``_git_object_exists`` invocations (up to four bounded
     subprocess spawns) per unique figure URL, no ``git show`` content read.
+    Since #2267 the v4 POST-CUTOVER sidecar-less case additionally FAILs
+    via check 57 (``check_v4_sidecarless_results_figures``) — check 41
+    itself is unchanged: still WARN, still generation-agnostic.
     """
     label = "figure sidecar coverage (sidecar-less embedded figures)"
     section = _figure_scan_section(body)
@@ -13645,6 +13710,219 @@ def check_figure_sidecar_coverage(body: str) -> CheckResult:
         return CheckResult(label, True, "no same-repo sha-pinned figures to check")
     return CheckResult(
         label, True, f"{checked} embedded figure(s) all carry sidecar files at their cited shas"
+    )
+
+
+# ─── Check 57: v4 sidecar-less Results figures (FAIL; Leg B forward-only) ───
+#
+# #2267 (incident #2054): a v4 body embedding a `## Results` figure with NO
+# `.meta.json` sidecar at the cited sha previously received ZERO mechanical
+# opaque-code coverage — check 28 fail-softs on the missing sidecar
+# (`meta is None -> continue`, the check-24 convention) and check 41 is
+# WARN-never-FAIL by documented design. #2054's `hero_calibration_nslope.png`
+# carried its opaque `H0'a`/`H0'b`/`b=`/`m=` codes ONLY in PNG rendered text
+# (panel titles + legend entries) with a clean plain-English caption, so no
+# text channel reached those pixels. Check 57 makes the sidecar-less state
+# itself blocking for NEW v4 figures (Leg B, date-gated forward-only) and
+# blocks caption-carried opaque codes on sidecar-less figures outright
+# (Leg A) — routing rendered text into the sidecar channel (`savefig_paper`)
+# where check 28 scans it.
+
+# 2026-08-13T00:00:00 UTC as unix epoch — the #2267 fix-landing date (plan
+# §3.1 Leg B). A figure pinned at a commit whose COMMITTER date is >= this
+# epoch gets the Leg B sidecar-less FAIL; every pre-existing corpus pin
+# pre-dates it (plan-time sweep: 45/45), so existing green bodies are exempt
+# BY CONSTRUCTION. Value pinned against the datetime derivation by
+# `test_check57_registry_and_cutover_constant`.
+_CHECK57_FORWARD_CUTOVER = 1786579200
+
+# Markdown code spans in the caption window are QUOTED references (a
+# backticked companion-FILENAME, a code-register token by convention), not
+# rendered condition labels — stripped to a space before the Leg A scan
+# (plan §3.1 item 5: the measured corpus's ONE pre-exclusion Leg A hit was
+# #952's backticked `refusal_sanity_auc.png` companion-file reference).
+_CHECK57_CODE_SPAN_RE = re.compile(r"`[^`]*`")
+
+# (repo, sha) -> committer epoch (None = indeterminate). Module-level so one
+# process probes each unique figure sha at most once (check 57 Leg B).
+_COMMIT_EPOCH_CACHE: dict[tuple[str, str], int | None] = {}
+
+
+def _commit_epoch(repo: Path, sha: str) -> int | None:
+    """Committer date (unix epoch seconds) of ``<sha>`` in ``repo`` via
+    ``git show -s --format=%ct <sha>^{commit}``, or None on ANY
+    indeterminate probe — unknown/unresolvable sha, subprocess error,
+    unparsable output — fail-soft, never raises (check 57's Leg B skips a
+    None rather than FAILing on it). Cached per (repo, sha) at module
+    level. A module-level helper (not a closure inside the check) so tests
+    can monkeypatch the date probe directly (plan #2267 §3.1)."""
+    key = (str(repo), sha)
+    if key in _COMMIT_EPOCH_CACHE:
+        return _COMMIT_EPOCH_CACHE[key]
+    epoch: int | None = None
+    try:
+        proc = subprocess.run(
+            ["git", "show", "-s", "--format=%ct", f"{sha}^{{commit}}"],
+            cwd=str(repo),
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if proc.returncode == 0 and proc.stdout.strip():
+            epoch = int(proc.stdout.strip().splitlines()[0])
+    except (OSError, subprocess.SubprocessError, ValueError):
+        epoch = None
+    _COMMIT_EPOCH_CACHE[key] = epoch
+    return epoch
+
+
+def check_v4_sidecarless_results_figures(body: str) -> CheckResult:  # noqa: C901 — linear per-figure two-leg gate walk (the check-52 precedent)
+    """Check 57 (FAIL, v4-only; Leg B forward-only; #2267; incident #2054):
+    a same-repo sha-pinned ``## Results`` figure whose sibling
+    ``.meta.json`` sidecar is definitively ABSENT at the cited sha
+    (``_git_object_exists`` == 'fail') is the one figure class with zero
+    mechanical opaque-code coverage — checks 24/28/33/34 fail-soft skip it
+    and check 41 only WARNs — so #2054's ``hero_calibration_nslope.png``
+    shipped ``H0'a``/``b=``/``m=`` codes in PNG rendered text through every
+    mechanical gate (clean caption; the codes lived only in pixels). Two
+    legs per sidecar-less figure:
+
+    - **Leg A (caption codes; NOT date-gated):** the figure's blockquote
+      caption window (``_figure_caption_after``), markdown code spans
+      stripped to spaces (``_CHECK57_CODE_SPAN_RE`` — a backticked token is
+      a quoted code-register reference, the #952 corpus shape), carries
+      ``_opaque_code_tokens`` hits ⇒ FAIL naming the basename + a token
+      preview. Measured 0 corpus hits with the code-span exclusion
+      (plan-time sweep over 2,200 bodies / 45 sidecar-less figures; the one
+      pre-exclusion hit was a backticked companion-FILENAME reference).
+    - **Leg B (forward-only sidecar-less block):** the pinned commit's
+      COMMITTER date (``_commit_epoch``) is >= ``_CHECK57_FORWARD_CUTOVER``
+      (2026-08-13 UTC, the fix-landing date) AND the figure's basename
+      (lowercased, dash-normalized — the check-20 ack-matching convention)
+      is NOT named in the body's verifier-WARN acknowledgment text
+      (``_warn_acknowledgment_text``) ⇒ FAIL: regenerate via
+      ``savefig_paper`` (writes the sidecar, exposing rendered text to
+      check 28's scan), or acknowledge the figure by name (the escape for
+      hand-made diagrams / external screenshots ``savefig_paper``
+      structurally cannot produce). Every existing corpus pin pre-dates the
+      cutover, so grandfathered bodies are exempt BY CONSTRUCTION
+      (plan criterion 3) while every future sidecar-less Results figure
+      blocks at draft time — reproducing the #2054 shape post-fix is caught
+      even with a clean caption.
+
+    Scope gates per figure (the check-28/41 conventions, reused verbatim):
+    v4 sentinel only (vacuous PASS otherwise — forward-only, criterion 2);
+    same-repo sha-pinned raw-GitHub URLs only; the PNG itself must resolve
+    at the cited sha (else check 22's domain, skip); a PRESENT sidecar is
+    checks 24/28/33/34's domain and an INDETERMINATE sidecar probe ('skip')
+    stays the siblings' fail-soft residual — only the definitive 'fail'
+    (three-state ``_git_object_exists`` contract) enters the legs. NO-OP
+    PASS when: no scan section, no inline figures, repo unresolved
+    (offline / ``--body-stdin``). Fail-soft on every indeterminate probe;
+    an indeterminate DATE probe (None) skips Leg B, never FAILs.
+
+    Evasion + residual notes (plan §3.1, i-iv): (i) backticking a code in
+    the caption hides it from Leg A — accepted: Leg B forces new figures
+    toward sidecars regardless of caption content. (ii) Pinning a NEW
+    figure at an old sha is impossible — the pinned commit must CONTAIN the
+    PNG, and a pre-cutover commit can only contain pre-cutover figures
+    (reusing a parent's grandfathered figure is legitimately exempt).
+    (iii) ``b=``/``m=`` single-letter-equals codes stay unclassifiable
+    (ordinary caption math like ``b=0.3``); PNG-pixel text stays the
+    multimodal critics' substantive read for GRANDFATHERED figures — for
+    post-cutover figures Leg B removes the pixel blind spot indirectly by
+    forcing the sidecar channel into existence. (iv) Committer dates are
+    trusted as monotone-enough; a rebase that rewrites an old figure commit
+    to a post-cutover date produces a spurious FAIL (loud, fixable via the
+    ack escape), never a silent pass.
+    """
+    label = "v4 sidecar-less Results figures (caption codes / post-cutover block)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped — not a v4 body")
+    section = _figure_scan_section(body)
+    text = section_text(body, section)
+    if text is None:
+        return CheckResult(label, True, f"no `## {section}` section to scan")
+    rlines = text.splitlines()
+    urls: list[str] = []
+    caption_by_url: dict[str, str] = {}
+    for i, line in enumerate(rlines):
+        for m in _IMAGE_RE.finditer(line):
+            url = m.group(1).strip()
+            url = url.split(None, 1)[0] if url else url
+            if url:
+                urls.append(url)
+                # First occurrence's caption window (the check-28 convention
+                # for a twice-embedded figure — conservative).
+                caption_by_url.setdefault(url, _figure_caption_after(rlines, i))
+    if not urls:
+        return CheckResult(label, True, "no inline figures to scan")
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(label, True, "skipped — repo root unresolved (offline / stdin)")
+    ack = _warn_acknowledgment_text(body)  # already lowercased + dash-normalized
+    checked = 0
+    sidecarless = 0
+    exempt_pre_cutover = 0
+    fails: list[str] = []
+    for url in dict.fromkeys(urls):
+        m = _RAW_GITHUB_FIGURE_RE.match(url)
+        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+            continue  # only same-repo sha-pinned figures resolve from git
+        sha, fig_path = m.group("sha"), m.group("path")
+        png_status, _ = _git_object_exists(repo, sha, fig_path)
+        if png_status != "pass":
+            continue  # sha unknown / PNG absent — check 22's domain, no double-report
+        checked += 1
+        base, _sep, ext = fig_path.rpartition(".")
+        meta_path = (base if ext else fig_path) + ".meta.json"
+        meta_status, _ = _git_object_exists(repo, sha, meta_path)
+        if meta_status != "fail":
+            # Sidecar present -> checks 24/28/33/34's domain; indeterminate
+            # ('skip') -> the siblings' fail-soft residual. Either way out
+            # of check 57's scope.
+            continue
+        sidecarless += 1
+        basename = fig_path.rsplit("/", 1)[-1]
+        # Leg A — code-span-stripped caption window through the shared
+        # opaque-code classifier. Not date-gated (measured 0 corpus hits).
+        caption = _CHECK57_CODE_SPAN_RE.sub(" ", caption_by_url.get(url, ""))
+        toks = _opaque_code_tokens(caption)
+        if toks:
+            preview = ", ".join(f"`{t}`" for t in toks[:4]) + (" …" if len(toks) > 4 else "")
+            fails.append(
+                f"sidecar-less Results figure `{basename}`'s caption carries opaque "
+                f"condition code(s) {preview} — plain-English condition names in "
+                "captions; regenerate via savefig_paper (writes the sidecar, exposing "
+                "rendered text to check 28's scan)"
+            )
+            continue  # one FAIL entry per figure
+        # Leg B — forward-only sidecar-less block, date-gated on the pinned
+        # commit's committer date; fail-soft skip on an indeterminate probe.
+        epoch = _commit_epoch(repo, sha)
+        if epoch is None:
+            continue  # indeterminate date probe — never FAIL on it
+        if epoch < _CHECK57_FORWARD_CUTOVER:
+            exempt_pre_cutover += 1
+            continue
+        norm_basename = re.sub(r"[-\u2010-\u2015]", " ", basename.lower())
+        if ack is not None and norm_basename in ack:
+            continue  # acknowledged by name — deliberate non-matplotlib figure
+        fails.append(
+            f"sidecar-less Results figure `{basename}` (pinned at a post-2026-08-13 "
+            "commit) — regenerate via savefig_paper (writes the sidecar, exposing "
+            "rendered text to check 28), or acknowledge the figure by name in the "
+            "body's verifier-WARN acknowledgment (deliberate non-matplotlib figures)"
+        )
+    if fails:
+        return CheckResult(label, False, "; ".join(fails))
+    if checked == 0:
+        return CheckResult(label, True, "no same-repo sha-pinned figures to check")
+    return CheckResult(
+        label,
+        True,
+        f"{checked} same-repo figure(s) checked — {sidecarless} sidecar-less, "
+        f"{exempt_pre_cutover} exempt-pre-cutover, none blocking",
     )
 
 
@@ -18288,6 +18566,12 @@ CHECKS = [
     # #2232; incident #2222 r2 — `form_a_probe.json` held no per-dataset
     # structure while the body claimed one):
     check_artifact_content_claims,
+    # check 57 (FAIL, v4-only; Leg B forward-only) — sidecar-less Results
+    # figures: caption opaque-code scan on the code-span-stripped caption
+    # window (Leg A) + post-2026-08-13-pinned-commit block with a by-name
+    # verifier-WARN-acknowledgment escape (Leg B) (#2267; incident #2054 —
+    # opaque codes lived ONLY in PNG pixels of a sidecar-less figure):
+    check_v4_sidecarless_results_figures,
     # Check 31 (`check_orphaned_per_unit_figures`, WARN, generation-agnostic)
     # is NOT here either — like check 20 (v4) it needs the issue number (for
     # figures-dir scoping), so it is dispatched separately in `verify_text`

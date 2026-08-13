@@ -177,7 +177,7 @@ def test_good_body_passes_all():
     # locally reachable, so the cited SHA is silently skipped), AND the
     # check-38 linked-not-embedded-figures scan (needs `issue` for
     # own-figures-dir scoping, #1371; PASS-skip: not a v4 body) →
-    # 70 results total (2 prepended + CHECKS[1:]=54 + 14 appended, counting
+    # 73 results total (2 prepended + CHECKS[1:]=56 + 15 appended, counting
     # the #1827 plan-conditions check narrated below; check 36
     # `check_v4_result_paragraph_sentences` (#1368), check 37
     # `check_footer_reuse_bullets_pinned` (#1370), check 39
@@ -209,9 +209,11 @@ def test_good_body_passes_all():
     # GOOD_BODY's fake sha never resolves via `_git_object_exists`, the
     # same fake-sha skip as check 41),
     # and check 54 `check_artifact_content_claims` (#2232 — PASS-skip,
-    # not a v4 body)
+    # not a v4 body),
+    # and check 57 `check_v4_sidecarless_results_figures` (#2267 —
+    # PASS-skip, not a v4 body)
     # ride CHECKS;
-    # 36/37/39/44/48/49/51/54
+    # 36/37/39/44/48/49/51/54/57
     # PASS-skip here — not a v4 body — 40 is the vacuous PASS above, and
     # 41/52/53 are the fake-sha NO-OP PASSes above). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
@@ -224,7 +226,7 @@ def test_good_body_passes_all():
     # Check 55 `check_v4_aggregate_stat_needs_per_unit` rides CHECKS and
     # check 56 `check_v4_ack_result_count` is dispatched in verify_text
     # (needs the issue number); both PASS-skip here (legacy body) (#2264).
-    assert len(results) == 72
+    assert len(results) == 73
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert "Single aggregate-stat figure has per-unit evidence or exemption (v4)" in {
@@ -7249,9 +7251,9 @@ def test_checks_list_size():
     needs), and the check-31
     orphaned-per-unit-figures probe (needs `issue` for figures-dir
     scoping, #1011).
-    So `verify_text` returns 69 results (2 prepended + CHECKS[1:]=53 +
-    14 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 54 (check 36 `check_v4_result_paragraph_sentences` (#1368),
+    So `verify_text` returns 73 results (2 prepended + CHECKS[1:]=56 +
+    15 appended — see `test_good_body_passes_all`), but `CHECKS` stays
+    at 57 (check 36 `check_v4_result_paragraph_sentences` (#1368),
     check 37 `check_footer_reuse_bullets_pinned` — the body-only
     footer-side reuse-pin sibling of check 35, #1370 — check 39
     `check_v4_sample_disclosure_count` — the Sample-slot
@@ -7274,11 +7276,14 @@ def test_checks_list_size():
     `check_artifact_content_claims` — the per-unit artifact-content
     structure check, #2232 — and check 55 (module numbering)
     `check_v4_aggregate_stat_needs_per_unit` — the exemption-less
-    single-figure aggregate-statistic check, #2264 — ride CHECKS; check
+    single-figure aggregate-statistic check, #2264 — and check 57
+    `check_v4_sidecarless_results_figures` — the sidecar-less
+    Results-figure FAIL gate (Leg A caption codes / Leg B forward-only
+    post-cutover block), #2267 — ride CHECKS; check
     56 `check_v4_ack_result_count` (#2264) is dispatched OUTSIDE CHECKS
     with the issue number).
     """
-    assert len(verify_task_body.CHECKS) == 56
+    assert len(verify_task_body.CHECKS) == 57
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert verify_task_body.check_v4_dropped_condition_placement in verify_task_body.CHECKS
@@ -7296,6 +7301,7 @@ def test_checks_list_size():
     assert verify_task_body.check_figure_sidecar_coverage in verify_task_body.CHECKS
     assert verify_task_body.check_figure_png_sidecar_pairing in verify_task_body.CHECKS
     assert verify_task_body.check_figure_sidecar_slot_completeness in verify_task_body.CHECKS
+    assert verify_task_body.check_v4_sidecarless_results_figures in verify_task_body.CHECKS
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───
@@ -13436,11 +13442,11 @@ def test_caption_lead_issue1074_verbatim_caption_warns():
 
 def test_check_figure_caption_position_stable():
     """Index-stability pin (#1424): `check_figure_caption` stays at CHECKS
-    position 7 and the CHECKS count matches the current registry (56 as of
-    check 55, #2264; belt-and-suspenders beside the migration-history
+    position 7 and the CHECKS count matches the current registry (57 as of
+    check 57, #2267; belt-and-suspenders beside the migration-history
     `len(CHECKS)` pin)."""
     assert verify_task_body.CHECKS[7] is verify_task_body.check_figure_caption
-    assert len(verify_task_body.CHECKS) == 56
+    assert len(verify_task_body.CHECKS) == 57
 
 
 # ─── Check 26: figure panel/series prose vs figure sidecar (panel drift) ───
@@ -14576,6 +14582,280 @@ def test_check41_mixed_body_names_only_missing(tmp_path, monkeypatch):
     assert res.passed and res.is_warn, res.render()
     assert "bare.png" in res.detail and "hero.png" not in res.detail
     assert "1 sidecar-less" in res.detail and "of 2 same-repo embedded" in res.detail
+
+
+# ─── Check 57: v4 sidecar-less Results figures (FAIL, #2267) ────────────────
+#
+# Incident #2054: `hero_calibration_nslope.png` — a sidecar-less v4 Results
+# figure — carried its opaque `H0'a`/`H0'b`/`b=`/`m=` codes ONLY in PNG
+# rendered text (clean plain-English caption); check 28 fail-softed on the
+# missing sidecar and check 41 is WARN-never-FAIL by design, so no mechanical
+# gate blocked it. Check 57 FAILs (Leg A) a sidecar-less figure whose caption
+# carries opaque codes, and (Leg B, forward-only) any sidecar-less v4 Results
+# figure pinned at a post-2026-08-13 commit unless acknowledged by name.
+# Probes are monkeypatched per the plan §4 conventions (`_git_object_exists`
+# / `_resolve_repo_root` / the `_commit_epoch` date seam); the real-probe
+# production-body test at the end exercises the unpatched git path.
+
+_CHECK57_NAME = "v4 sidecar-less Results figures (caption codes / post-cutover block)"
+_CHECK57_SHA = "d" * 40
+_CHECK57_URL = (
+    "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+    f"{_CHECK57_SHA}/figures/issue_2054/hero_calibration_nslope.png"
+)
+_CHECK57_PRE_CUTOVER = verify_task_body._CHECK57_FORWARD_CUTOVER - 86400  # 2026-08-12 UTC
+_CHECK57_POST_CUTOVER = verify_task_body._CHECK57_FORWARD_CUTOVER + 86400  # 2026-08-14 UTC
+
+
+def _check57_body(caption: str, extra: str = "", sentinel: str = "<!-- clean-result-v4 -->") -> str:
+    """Minimal sentinelled body: ONE same-repo sha-pinned figure under the
+    generation's figure-scan section (`## Results` for v4, `## Findings` for
+    the v3 forward-only pin) with `caption` as its blockquote caption;
+    `extra` appends body paragraphs (the ack-escape test)."""
+    section = "Results" if "v4" in sentinel else "Findings"
+    return (
+        "# T (LOW confidence)\n\n"
+        f"{sentinel}\n\n"
+        f"## {section}\n\n"
+        "### A result\n\n"
+        f"![alt]({_CHECK57_URL})\n\n"
+        f"> {caption}\n"
+        f"{extra}"
+    )
+
+
+def _check57_patch(monkeypatch, *, sidecar="fail", png="pass", epoch=None):
+    """Patch the three probe seams: repo resolution, `_git_object_exists`
+    (PNG vs `.meta.json` status keyed on the path suffix — signature-
+    conformant fakes, plan §4), and the module-level `_commit_epoch` date
+    seam (the helper exists at module level exactly for this)."""
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: Path("/fake-repo"))
+
+    def goe(repo, sha, path):
+        if path.endswith(".meta.json"):
+            return sidecar, ("" if sidecar == "pass" else f"`{path}` missing")
+        return png, ("" if png == "pass" else f"`{path}` missing")
+
+    monkeypatch.setattr(verify_task_body, "_git_object_exists", goe)
+    monkeypatch.setattr(verify_task_body, "_commit_epoch", lambda repo, sha: epoch)
+
+
+def test_check57_leg_a_caption_codes_fail(monkeypatch):
+    """§4 test 1 (acceptance criterion 1): sidecar-less + caption carrying a
+    non-backticked opaque code (`ans_uhdr_max`) → FAIL naming basename +
+    token. Pinned at a PRE-cutover epoch so the FAIL is provably Leg A's
+    (Leg A is NOT date-gated — plan §3.1 item 5)."""
+    _check57_patch(monkeypatch, epoch=_CHECK57_PRE_CUTOVER)
+    body = _check57_body("**Figure.** *Lead.* Calibration of ans_uhdr_max across arms.")
+    res = verify_task_body.check_v4_sidecarless_results_figures(body)
+    assert not res.passed, res.render()
+    assert "hero_calibration_nslope.png" in res.detail
+    assert "ans_uhdr_max" in res.detail
+    assert "savefig_paper" in res.detail
+
+
+def test_check57_leg_b_founding_incident_post_cutover_fails(monkeypatch):
+    """§4 test 2 (the critic's blocker): the real #2054 shape recreated
+    post-fix — sidecar-less, CLEAN plain-English caption, pinned at a
+    post-cutover commit → FAIL (Leg B), naming the basename + the cutover +
+    both remedies."""
+    _check57_patch(monkeypatch, epoch=_CHECK57_POST_CUTOVER)
+    body = _check57_body("**Figure.** *Calibration slopes per arm.* Plain-English caption.")
+    res = verify_task_body.check_v4_sidecarless_results_figures(body)
+    assert not res.passed, res.render()
+    assert "hero_calibration_nslope.png" in res.detail
+    assert "post-2026-08-13" in res.detail
+    assert "savefig_paper" in res.detail and "acknowledge" in res.detail
+
+
+def test_check57_leg_b_pre_cutover_exempt_and_check41_still_warns(monkeypatch):
+    """§4 test 2 companion: the same shape at a PRE-cutover pin → PASS
+    (grandfathered BY CONSTRUCTION, acceptance criterion 3), with the
+    exempt count on the PASS line — and check 41 still WARNs on the same
+    body (unchanged, asserted per plan §4)."""
+    _check57_patch(monkeypatch, epoch=_CHECK57_PRE_CUTOVER)
+    body = _check57_body("**Figure.** *Calibration slopes per arm.* Plain-English caption.")
+    res = verify_task_body.check_v4_sidecarless_results_figures(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "1 exempt-pre-cutover" in res.detail
+    res41 = verify_task_body.check_figure_sidecar_coverage(body)
+    assert res41.passed and res41.is_warn, res41.render()
+    assert "hero_calibration_nslope.png" in res41.detail
+
+
+def test_check57_ack_escape_passes(monkeypatch):
+    """§4 test 3: a post-cutover sidecar-less figure whose basename appears
+    in a `Verifier WARNs acknowledged: ...` paragraph → PASS (the deliberate
+    non-matplotlib-figure escape, matched against
+    `_warn_acknowledgment_text`'s lowercased dash-normalized text)."""
+    _check57_patch(monkeypatch, epoch=_CHECK57_POST_CUTOVER)
+    ack = (
+        "\nVerifier WARNs acknowledged: `hero_calibration_nslope.png` is a "
+        "hand-made diagram savefig_paper structurally cannot produce "
+        "(sidecar-less by design).\n"
+    )
+    body = _check57_body(
+        "**Figure.** *Calibration slopes per arm.* Plain-English caption.", extra=ack
+    )
+    res = verify_task_body.check_v4_sidecarless_results_figures(body)
+    assert res.passed, res.render()
+
+
+def test_check57_forward_only_non_v4_vacuous(monkeypatch):
+    """§4 test 4 (acceptance criterion 2): a v3-sentinel body in the
+    WORST-CASE shape — sidecar-less, caption codes, post-cutover pin, the
+    figure under the v3 `## Findings` scan section — → vacuous PASS
+    (forward-only; grandfathered generations never newly hard-FAIL)."""
+    _check57_patch(monkeypatch, epoch=_CHECK57_POST_CUTOVER)
+    body = _check57_body(
+        "**Figure.** Calibration of ans_uhdr_max across arms.",
+        sentinel="<!-- clean-result-v3 -->",
+    )
+    res = verify_task_body.check_v4_sidecarless_results_figures(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "not a v4 body" in res.detail
+
+
+def test_check57_backticked_caption_token_excluded(monkeypatch):
+    """§4 test 5 (the #952 corpus shape): the plan-time sweep's only
+    pre-exclusion Leg A hit was a BACKTICKED companion-file reference in a
+    caption → PASS under the code-span exclusion; the IDENTICAL caption
+    without backticks FAILs (non-vacuity proof — the exclusion, not the
+    classifier boundary, clears it)."""
+    _check57_patch(monkeypatch, epoch=_CHECK57_PRE_CUTOVER)
+    backticked = "**Figure.** *Lead.* Companion file `refusal_sanity_auc.png` alongside."
+    res = verify_task_body.check_v4_sidecarless_results_figures(_check57_body(backticked))
+    assert res.passed, res.render()
+    bare = backticked.replace("`", "")
+    res2 = verify_task_body.check_v4_sidecarless_results_figures(_check57_body(bare))
+    assert not res2.passed, res2.render()
+    assert "refusal_sanity_auc" in res2.detail
+
+
+def test_check57_sidecar_present_passes(monkeypatch):
+    """§4 test 6: sidecar probe 'pass' + codes in the caption → check 57
+    PASSes clean (a sidecar-ED figure is check 28's WARN domain, out of
+    check 57's scope by construction)."""
+    _check57_patch(monkeypatch, sidecar="pass", epoch=_CHECK57_POST_CUTOVER)
+    body = _check57_body("**Figure.** Calibration of ans_uhdr_max across arms.")
+    res = verify_task_body.check_v4_sidecarless_results_figures(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "0 sidecar-less" in res.detail
+
+
+def test_check57_indeterminate_sidecar_probe_skips(monkeypatch):
+    """§4 test 6 companion (the three-state `_git_object_exists` contract):
+    an INDETERMINATE sidecar probe ('skip') stays the check-24 siblings'
+    fail-soft residual — never enters the legs, PASS."""
+    _check57_patch(monkeypatch, sidecar="skip", epoch=_CHECK57_POST_CUTOVER)
+    body = _check57_body("**Figure.** Calibration of ans_uhdr_max across arms.")
+    res = verify_task_body.check_v4_sidecarless_results_figures(body)
+    assert res.passed, res.render()
+    assert "0 sidecar-less" in res.detail
+
+
+@pytest.mark.parametrize("png_status", ["fail", "skip"])
+def test_check57_png_unresolvable_skips(monkeypatch, png_status):
+    """§4 test 7: the PNG itself absent at the sha ('fail') or an
+    unresolvable sha ('skip') → the figure never passes the scope gate
+    (check 22's domain, no double-report) → NO-OP PASS."""
+    _check57_patch(monkeypatch, png=png_status, epoch=_CHECK57_POST_CUTOVER)
+    body = _check57_body("**Figure.** Calibration of ans_uhdr_max across arms.")
+    res = verify_task_body.check_v4_sidecarless_results_figures(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "no same-repo sha-pinned figures to check" in res.detail
+
+
+def test_check57_fail_soft(monkeypatch):
+    """§4 test 8: (a) an indeterminate DATE probe (None) skips Leg B —
+    never a FAIL on an unknown commit date; (b) repo unresolved (offline /
+    `--body-stdin`) → NO-OP PASS."""
+    _check57_patch(monkeypatch, epoch=None)
+    body = _check57_body("**Figure.** *Calibration slopes per arm.* Clean caption.")
+    res = verify_task_body.check_v4_sidecarless_results_figures(body)
+    assert res.passed, res.render()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: None)
+    res2 = verify_task_body.check_v4_sidecarless_results_figures(body)
+    assert res2.passed and "repo root unresolved" in res2.detail
+
+
+def test_check57_hypothesis_prime_reporting_superset():
+    """§4 test 9 (§3.2 pins): prime-marked H-codes now reported IN FULL
+    (`H0'a`, the U+2032 form); pre-existing forms unchanged (`H3`, `H1c`);
+    bare letter-arrows still unflagged; the multi-letter-after-prime
+    truncation fallback and the possessive envelope pinned as documented.
+    Strict-SUPERSET property: the extension only lengthens/adds reported
+    tokens — every pre-existing check-28 classifier test stays green
+    (`test_check28_hypothesis_and_slot_family_classifier`)."""
+    fn = verify_task_body._opaque_code_tokens
+    # The #2054 incident forms, reported in full (previously truncated `H0`).
+    assert fn("calibration slope (H0'a)") == ["H0'a"]
+    assert fn("calibration intercept (H0′b)") == ["H0′b"]
+    # Pre-existing forms unchanged.
+    assert fn("Parallel share of the gap by depth (H3)") == ["H3"]
+    assert fn("Jensen-gap direction concentration (H1c)") == ["H1c"]
+    # Letter-arrow legends stay unflagged (no snake suffix — class (f)).
+    assert fn("H->O reaction") == []
+    assert fn("A->B transition") == []
+    # Multi-letter after the prime: falls back to the truncated report
+    # (no word boundary splits `ab`) — detection preserved either way.
+    assert fn("H0'ab text") == ["H0"]
+    # Possessive envelope, documented in the class-(c) comment: a bare
+    # `H2` in rendered figure text is a violation either way.
+    assert fn("H2's variance") == ["H2's"]
+    # The per-word path exemption covers the widened form too.
+    assert fn("figures/a/H0'a.png") == []
+    assert verify_task_body._HYPOTHESIS_CODE_RE.search("figures/a/H0'a.png")
+
+
+def test_check57_registry_and_cutover_constant():
+    """§4 test 10: the check rides `CHECKS` (a forgotten append must not
+    ship — the check-54 convention), and the forward-cutover constant
+    equals the 2026-08-13T00:00:00Z epoch it documents."""
+    assert verify_task_body.check_v4_sidecarless_results_figures in verify_task_body.CHECKS
+    from datetime import UTC, datetime
+
+    assert (
+        int(datetime(2026, 8, 13, tzinfo=UTC).timestamp())
+        == verify_task_body._CHECK57_FORWARD_CUTOVER
+    )
+
+
+def test_check57_commit_epoch_real_probe(tmp_path, monkeypatch):
+    """Production-body test for the `_commit_epoch` seam (code-style § one
+    production-body test per seam-stubbed function): against a REAL tiny
+    git repo the helper returns the commit's committer epoch as an int,
+    returns None for an unknown sha (fail-soft), and serves the cached
+    value on re-probe. Then the WHOLE check runs end-to-end against the
+    real repo (only repo RESOLUTION patched): a sidecar-less v4 Results
+    figure committed NOW — necessarily post-cutover — FAILs Leg B through
+    the real `_git_object_exists` + `_commit_epoch` subprocess probes."""
+    repo, sha = _make_repo_with_figure(tmp_path)  # PNG only, no .meta.json
+    expected = int(
+        subprocess.run(
+            ["git", "-C", str(repo), "show", "-s", "--format=%ct", sha],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    )
+    assert verify_task_body._commit_epoch(repo, sha) == expected
+    assert verify_task_body._commit_epoch(repo, "e" * 40) is None
+    assert verify_task_body._commit_epoch(repo, sha) == expected  # cached re-probe
+    assert expected >= verify_task_body._CHECK57_FORWARD_CUTOVER  # committed NOW
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    base = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        f"{sha}/figures/issue_999/hero.png"
+    )
+    body = (
+        "# T (LOW confidence)\n\n<!-- clean-result-v4 -->\n\n## Results\n\n"
+        f"### A result\n\n![alt]({base})\n\n> **Figure.** *Lead.* Clean caption.\n"
+    )
+    res = verify_task_body.check_v4_sidecarless_results_figures(body)
+    assert not res.passed, res.render()
+    assert "hero.png" in res.detail and "post-2026-08-13" in res.detail
+    assert res.name == _CHECK57_NAME
 
 
 # ─── Checks 52/53: PNG↔sidecar render pairing + slot completeness (#2016) ───
