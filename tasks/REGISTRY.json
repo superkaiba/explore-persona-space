@@ -9769,8 +9769,8 @@
     "2264": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2264",
-      "status": "proposed",
+      "path": "tasks/planning/2264",
+      "status": "planning",
       "title": "verify_task_body: WARN checks for fold-staled fixtures (per-unit-exemption token; acknowledgment result-count)"
     },
     "227": {
