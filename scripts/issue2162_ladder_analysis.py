@@ -1098,6 +1098,10 @@ def fig_anchor_separation(anchors: list[dict], gate: dict, args) -> None:
                 s=22,
                 facecolors="#1f77b4" if filled else "none",
                 edgecolors="#1f77b4",
+                # Explicit edge width: the blog paper style zeroes marker edge
+                # widths, which renders the unfilled (gate-failed) markers
+                # invisible without this (13/36 carriers dropped from view).
+                linewidths=1.0,
             )
         ax.axhline(bar, color="#d62728", lw=1.0, ls="--")
         ax.set_xticks(range(len(rungs)))
