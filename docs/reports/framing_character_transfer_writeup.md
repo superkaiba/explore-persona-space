@@ -1,4 +1,3 @@
-<!-- SKELETON — Thomas's prose is VERBATIM and MUST NOT be changed. Only replace {{FILL:...}} tokens and insert figures where marked. -->
 ## Motivation
 - We've been studying this mapping from context to answer
 - I wanted to see:
