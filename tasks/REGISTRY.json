@@ -9790,8 +9790,8 @@
     "2267": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2267",
-      "status": "planning",
+      "path": "tasks/approved/2267",
+      "status": "approved",
       "title": "workflow-fix: verify_task_body opaque-code scan skips sidecar-less Results-embedded figures"
     },
     "2268": {
