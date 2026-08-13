@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2266,
+  "highest_id": 2267,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9786,6 +9786,13 @@
       "path": "tasks/proposed/2266",
       "status": "proposed",
       "title": "step9c_baseline single-flight probe is blind to non-lint-leg gate phases (TG legs) \u2014 two lint-gate instances can race the shared /tmp namespace"
+    },
+    "2267": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2267",
+      "status": "proposed",
+      "title": "workflow-fix: verify_task_body opaque-code scan skips sidecar-less Results-embedded figures"
     },
     "227": {
       "has_clean_result": true,
