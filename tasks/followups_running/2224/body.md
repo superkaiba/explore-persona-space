@@ -1,7 +1,7 @@
 ---
 title: The Persona Vectors prompt-token approximation matches exact projection-difference
   screening on real corpora, while the learned map and probe screens select samples
-  that fail to induce the traits (MODERATE confidence)
+  that fail to induce the traits (HIGH confidence)
 kind: experiment
 tags:
 - followup-auto
