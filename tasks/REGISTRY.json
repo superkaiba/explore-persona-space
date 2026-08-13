@@ -5499,8 +5499,8 @@
     "1707": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1707",
-      "status": "proposed",
+      "path": "tasks/archived/1707",
+      "status": "archived",
       "title": "daily-held: #1345 base story leg lost in crash bundle"
     },
     "1708": {
