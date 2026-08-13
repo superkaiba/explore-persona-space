@@ -1148,7 +1148,7 @@ def run_upload(args) -> None:
         staging,
         DATA_REPO,
         "dataset",
-        f"{RAW_JUDGE_HF_PREFIX}/{args.stage}",
+        f"{args.raw_judge_hf_prefix}/{args.stage}",
         raise_on_error=True,
     )
     print(f"[p4-upload] {n} raw files (packed) -> {url}", flush=True)
@@ -1184,6 +1184,13 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--stage", default="final", choices=["final", "pilot"])
     ap.add_argument("--cache-root", default="data/issue_2225/judge_cache")
     ap.add_argument("--save-raw-root", default="data/issue_2225/judge_raw")
+    # UPLOAD_PREFIX_EXEMPT: parent-default-identical seam — issue2225's own dispatcher calls
+    # this flag-less and must keep the parent prefix; fu1 rounds pass an explicit prefix.
+    ap.add_argument(
+        "--raw-judge-hf-prefix",
+        default=RAW_JUDGE_HF_PREFIX,
+        help="HF prefix for the judge-raw upload (fu rounds thread raw_completions/fu1_judge)",
+    )
     ap.add_argument("--sync", action="store_true", help="force the SYNC path (P0 pilot)")
     ap.add_argument("--force-batch", action="store_true", help="force the Batch path")
     ap.add_argument("--units-per-wave", type=int, default=12, help="units per judge_graded call")
