@@ -18,6 +18,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_2221.md](https://github.com/superkaiba/explore-persona-space/blob/26a27df773b1d5661ad018e1225b701fff49979f/docs/methodology/issue_2221.md) · [gist](https://gist.github.com/superkaiba/5c40e4eb759b8f3ead47fc08d098bd63)
+
 ## Takeaways
 
 - Real-corpus mining collapsed in 2 of 8 training families: realized rows per fine-tune span 1 (evil) to 3,357 (insecure code), and the evil and opinion-mistake cells fell below one optimizer step at the paper's effective batch of 16 — those 6 of 24 fine-tunes are the base model unchanged, with a monitor shift of exactly zero at all 28 layers.
