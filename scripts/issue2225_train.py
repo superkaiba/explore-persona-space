@@ -611,6 +611,17 @@ def _build_steering_vectors(direction, layer_spec: str, l1_idx: int) -> dict:
     return build_incremental_vectors(base)
 
 
+def _assert_finite_steering_vectors(vectors: dict, source: str) -> None:
+    """fu1 bank rows outside {14, 19} are NaN by construction — a wrong layer
+    slice must fail HERE, not as silent NaN training (fu1 plan §4.1)."""
+    import torch
+
+    for layer, vec in vectors.items():
+        assert bool(torch.isfinite(vec).all()), (
+            f"non-finite steering vector at layer {layer} (direction file {source})"
+        )
+
+
 # ── dataset row transforms ──────────────────────────────────────────────────────
 
 
@@ -851,13 +862,7 @@ def train_steered_cell(
         # trait-keyed default (#2225 fu1 plan §4.2).
         l1_idx = cell.l1_idx if cell.l1_idx is not None else L1_LAYER_IDX[steered_trait]
         vectors = _build_steering_vectors(direction, layer_spec, l1_idx)
-        for layer in vectors:
-            # fu1 bank rows outside {14, 19} are NaN by construction — a wrong
-            # layer slice must fail HERE, not as silent NaN training (§4.1).
-            assert bool(torch.isfinite(vectors[layer]).all()), (
-                f"non-finite steering vector at layer {layer} "
-                f"(direction file {_direction_path(directions_dir, cell)})"
-            )
+        _assert_finite_steering_vectors(vectors, str(_direction_path(directions_dir, cell)))
         hook = SteeringHook(vectors, alpha=float(coef), mode=mask_mode)
         if mask_mode == "prefix":
             # mode="prefix" needs a prefix_len column computed at map time from

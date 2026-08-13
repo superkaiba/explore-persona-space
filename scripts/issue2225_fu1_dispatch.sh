@@ -146,6 +146,28 @@ print(','.join(c.slug for c in cells if flt(c)))
 "
 }
 
+# Plan §7: every production phase enumerates the F1-EFFECTIVE grid — after an
+# octave-shift re-pilot, F2a/F2b/F2c/F2d + the F3 card follow the shifted grid
+# (and the re-piloted adapters become first-class targets), never the original
+# grid the pilot demonstrated mis-placed. An UNRESOLVED state fails loud.
+FU1_REPILOT_STATE="$EVAL_ROOT/pilot_gate/f1_repilot_state.json"
+
+fu1_effective_slugs() {  # fu1_effective_slugs all|extremes -> comma list (F1-effective grid)
+  FU1_MODE="$1" FU1_STATE="$FU1_REPILOT_STATE" uv run python -c "
+import os, sys
+sys.path.insert(0, 'scripts')
+import issue2225_fu1_train as fu1
+state = os.environ['FU1_STATE']
+cells = fu1.effective_fu1_cells(state if os.path.exists(state) else None)
+mode = os.environ['FU1_MODE']
+if mode == 'extremes':
+    cells = fu1.fu1_extreme_cells(cells)
+else:
+    assert mode == 'all', mode
+print(','.join(c.slug for c in cells))
+"
+}
+
 # ── external: pinned clone + sparse cones + venv freeze ────────────────────────
 phase_external() {
   log_phase external "cloning $PV_REPO @ $PV_SHA"
@@ -193,6 +215,20 @@ phase_external() {
 
 # ── F0: pre-image directions + rho probe ───────────────────────────────────────
 phase_f0() {
+  # Idempotent entry skip (mirrors the f1 verdict resume-skip): direction_sha256
+  # is part of every cell_fingerprint, so re-running f0 after a later-phase
+  # crash would re-measure rho through GPU forwards and any byte drift in the
+  # rebuilt banks would invalidate ALL 80 cell manifests (silent full retrain).
+  # Force a rebuild explicitly with EPM_I2225_FU1_F0_FORCE=1.
+  if [ -z "${EPM_I2225_FU1_F0_FORCE:-}" ] \
+    && [ -f "$DIR_OUT/rho.json" ] \
+    && [ -f "$DIR_OUT/evil_PRE.pt" ] \
+    && [ -f "$DIR_OUT/sycophancy_PRE.pt" ] \
+    && [ -f "$DIR_OUT/hallucination_PRE.pt" ] \
+    && [ -f "$DIR_OUT/RND.pt" ]; then
+    log_phase f0_directions "rho.json + all 4 banks present — resume skip (EPM_I2225_FU1_F0_FORCE=1 to rebuild)"
+    return 0
+  fi
   log_phase f0_directions "start (out=$DIR_OUT)"
   headroom "$OUT_ROOT" 10 f0_directions
   log_phase f0_directions "rho probe (n_prompts=$RHO_N_PROMPTS per corpus, 1 GPU)"
@@ -261,7 +297,7 @@ hook_count_gate() {  # hook_count_gate <log_dir> <n_expect> <phase-label>
 # ── F1: §7 pilot gate (K+M evil, 8 cells) ──────────────────────────────────────
 phase_f1() {
   local verdict="$EVAL_ROOT/pilot_gate/f1_verdict.json"
-  local repilot_state="$EVAL_ROOT/pilot_gate/f1_repilot_state.json"
+  local repilot_state="$FU1_REPILOT_STATE"
   if [ -f "$verdict" ] && [ -z "$SMOKE" ]; then
     local prior_pass
     prior_pass=$(uv run python -c "import json;print(json.load(open('$verdict'))['passed'])")
@@ -472,10 +508,16 @@ PY
 
 # ── F2a: training fan-out (80 cells) ───────────────────────────────────────────
 phase_f2a() {
-  log_phase f2a_train "start (80 fu1 cells; per-cell resume + per-cell HF upload)"
+  log_phase f2a_train "start (F1-effective fu1 grid; per-cell resume + per-cell HF upload)"
   headroom "$CKPT_ROOT" 60 f2a_train
   local cells_args=()
-  if [ -n "$SMOKE" ]; then cells_args=(--cells "$SMOKE_CELLS"); fi
+  if [ -n "$SMOKE" ]; then
+    cells_args=(--cells "$SMOKE_CELLS")
+  else
+    # Plan §7: enumerate the F1-EFFECTIVE grid (shifted after a re-pilot; the
+    # re-piloted adapters resume-skip via their manifests).
+    cells_args=(--cells "$(fu1_effective_slugs all)")
+  fi
   uv run python scripts/issue2225_fu1_train.py --fan-out \
     --ckpt-root "$CKPT_ROOT" --directions-dir "$DIR_OUT" \
     --dataset-root "$EXTERNAL_ROOT/dataset" \
@@ -491,7 +533,7 @@ phase_f2b() {
   if [ -n "$SMOKE" ]; then
     targets="$SMOKE_TARGETS"
   else
-    targets="$(fu1_slugs "True")"
+    targets="$(fu1_effective_slugs all)"  # plan §7: F1-effective grid
   fi
   uv run python scripts/issue2225_eval_gen.py \
     --out-root "$OUT_ROOT" --ckpt-root "$CKPT_ROOT" --external-root "$EXTERNAL_ROOT" \
@@ -516,8 +558,10 @@ phase_f2c() {
   if [ -n "$SMOKE" ]; then
     targets="$SMOKE_TARGETS"
   else
-    # 40 extremes: min + max grid coefficient per (config x corpus) arm.
-    targets="base,$(fu1_slugs "c.coef in (0.25, 3.0)")"
+    # 40 extremes: min + max EFFECTIVE-grid coefficient per (config x corpus)
+    # arm (plan §7 — follows any octave shift). No `base`: the parent already
+    # banked base MMLU.
+    targets="$(fu1_effective_slugs extremes)"
   fi
   uv run python scripts/issue2225_mmlu.py \
     --out-root "$OUT_ROOT" --ckpt-root "$CKPT_ROOT" \
@@ -527,7 +571,7 @@ phase_f2c() {
   # §4.4 pre-registered extension: any extreme < (parent band min 0.703 − 0.02)
   # evaluates that (config x corpus) arm's FULL grid before pod termination.
   local extra
-  extra=$(MMLU_DIR="$OUT_ROOT/mmlu" uv run python - <<'PY'
+  extra=$(MMLU_DIR="$OUT_ROOT/mmlu" FU1_STATE="$FU1_REPILOT_STATE" uv run python - <<'PY'
 import json, os, pathlib, sys
 
 sys.path.insert(0, "scripts")
@@ -535,6 +579,7 @@ import issue2225_fu1_train as fu1
 
 THRESH = 0.703 - 0.02
 mmlu_dir = pathlib.Path(os.environ["MMLU_DIR"])
+state = os.environ["FU1_STATE"]
 flagged: set[tuple[str, str]] = set()
 for p in sorted(mmlu_dir.glob("*.json")):
     tag = p.stem
@@ -545,9 +590,11 @@ for p in sorted(mmlu_dir.glob("*.json")):
         acc = json.load(f).get("mmlu_acc")
     if acc is not None and acc < THRESH:
         flagged.add((cell.config, cell.dataset))
+# Full grid for flagged arms = the F1-EFFECTIVE grid (plan §7), never the
+# original registry grid a re-pilot demonstrated mis-placed.
 extra = [
     c.slug
-    for c in fu1.build_fu1_cell_registry()
+    for c in fu1.effective_fu1_cells(state if os.path.exists(state) else None)
     if (c.config, c.dataset) in flagged and not (mmlu_dir / f"{c.slug}.json").exists()
 ]
 print(",".join(extra))
@@ -572,7 +619,7 @@ phase_f2d() {
   if [ -n "$SMOKE" ]; then
     targets="$SMOKE_TARGETS"
   else
-    targets="$(fu1_slugs "True")"
+    targets="$(fu1_effective_slugs all)"  # plan §7: F1-effective grid
   fi
   uv run python scripts/issue2225_capture.py \
     --out-root "$OUT_ROOT" --gen-root "$OUT_ROOT" --ckpt-root "$CKPT_ROOT" \
@@ -601,7 +648,7 @@ phase_f3() {
   log_phase f3_uploads "results sentinel"
   local note_file="$LOG_ROOT/fu1_results_note.json"
   RES_NOTE_FILE="$note_file" RES_OUT_ROOT="$OUT_ROOT" RES_SMOKE="$SMOKE" \
-    uv run python - <<'PY'
+    RES_FU1_STATE="$FU1_REPILOT_STATE" uv run python - <<'PY'
 import json, os, sys
 
 sys.path.insert(0, "scripts")
@@ -609,7 +656,10 @@ import issue2225_fu1_train as fu1
 import issue778_lib as lib
 
 smoke = bool(os.environ.get("RES_SMOKE"))
-cells = fu1.build_fu1_cell_registry()
+# Reproducibility card lists the F1-EFFECTIVE cells (plan §7) — the cells the
+# run actually trained/evaluated, shifted grid included.
+_state = os.environ["RES_FU1_STATE"]
+cells = fu1.effective_fu1_cells(_state if os.path.exists(_state) else None)
 try:
     import wandb
 

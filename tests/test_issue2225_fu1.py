@@ -371,3 +371,129 @@ def test_evalgen_resolve_targets_fu1_fallback():
     assert t.tag == "L__hallucination__c1.5"
     with pytest.raises(ValueError, match="unknown eval-target tag"):
         evalgen.resolve_targets(["ZZ__evil__c1.0"])
+
+
+def test_evalgen_fu1_traits_steered_only():
+    """Code-review r1 Blocker 2 pin: fu1 cells eval their STEERED trait only
+    (plan §2 divergence 4 / §4.4 — opinions + random cells: evil eval set);
+    parent §7-scaled slugs keep the parent all-trait behavior for opinions."""
+    import issue2225_eval_gen as evalgen
+
+    fu1.register_extra_cells()
+    evalgen.train.register_cell_resolver(fu1.resolve_fu1_cell)
+    (t,) = evalgen.resolve_targets(["J__mistake_opinions__c0.25"])
+    assert t.traits == ("evil",), t.traits
+    (r,) = evalgen.resolve_targets(["RK__evil__c3.0"])
+    assert r.traits == ("evil",), r.traits
+    # Parent scaled opinions slug (l1_idx None) -> all three traits, unchanged.
+    (p,) = evalgen.resolve_targets(["A__mistake_opinions__c6.0"])
+    assert len(p.traits) == 3, p.traits
+
+
+# ── F1-effective grid threading (code-review r1 Blocker 1) ────────────────────
+
+
+def _write_repilot_state(path: Path, plan: dict, *, resolved: bool = True) -> Path:
+    path.write_text(json.dumps({"plan": plan, "resolved": resolved}))
+    return path
+
+
+_K_SHIFT_PLAN = {
+    "K": {
+        "coef_scale": 0.5,
+        "grid_csv": "0.125,0.375,0.75,1.5",
+        "cells": [
+            "K__evil__c0.125",
+            "K__evil__c0.375",
+            "K__evil__c0.75",
+            "K__evil__c1.5",
+        ],
+    }
+}
+
+
+def test_effective_cells_default_matches_registry(tmp_path):
+    reg = [c.slug for c in fu1.build_fu1_cell_registry()]
+    assert [c.slug for c in fu1.effective_fu1_cells(None)] == reg
+    # An absent state file is the no-shift default too.
+    assert [c.slug for c in fu1.effective_fu1_cells(tmp_path / "absent.json")] == reg
+
+
+def test_resolved_repilot_state_changes_f2a_enumeration(tmp_path):
+    """The reviewer's named pin: a RESOLVED repilot state changes the F2a cell
+    enumeration — the shifted mask family runs the shifted grid, the other
+    family keeps FU1_GRID, and every effective slug resolves in production."""
+    state = _write_repilot_state(tmp_path / "f1_repilot_state.json", _K_SHIFT_PLAN)
+    cells = fu1.effective_fu1_cells(state)
+    slugs = {c.slug for c in cells}
+    assert len(cells) == fu1.EXPECTED_FU1_CELL_COUNT
+    assert slugs != {c.slug for c in fu1.build_fu1_cell_registry()}
+    # K + its mask-family inheritors (J, RJ, RK) run the shifted grid...
+    assert "K__evil__c0.125" in slugs and "K__evil__c3.0" not in slugs
+    assert "J__sycophancy__c0.125" in slugs and "J__sycophancy__c3.0" not in slugs
+    assert "RJ__evil__c0.125" in slugs and "RK__evil__c1.5" in slugs
+    # ...the context_end family (M did not shift) keeps FU1_GRID.
+    assert "M__evil__c3.0" in slugs and "L__evil__c0.25" in slugs
+    # Every effective slug round-trips through the production resolver
+    # (shifted slugs resolve via the extras seam -> synth_fu1_cell).
+    fu1.register_extra_cells()
+    for c in cells:
+        assert fu1.train.resolve_cell(c.slug).slug == c.slug
+
+
+def test_unresolved_repilot_state_fails_loud(tmp_path):
+    state = _write_repilot_state(tmp_path / "s.json", _K_SHIFT_PLAN, resolved=False)
+    with pytest.raises(RuntimeError, match="UNRESOLVED"):
+        fu1.effective_fu1_grids(state)
+
+
+def test_repilot_state_unknown_arm_fails_loud(tmp_path):
+    plan = {"Z": {"coef_scale": 0.5, "grid_csv": "0.125", "cells": ["Z__evil__c0.125"]}}
+    state = _write_repilot_state(tmp_path / "s.json", plan)
+    with pytest.raises(ValueError, match="non-fu1 arm"):
+        fu1.effective_fu1_grids(state)
+
+
+def test_extreme_cells_follow_effective_grid(tmp_path):
+    # Default: 20 (config x corpus) arms x 2 extremes = 40, at 0.25 / 3.0.
+    ext = fu1.fu1_extreme_cells(fu1.effective_fu1_cells(None))
+    assert len(ext) == 40
+    assert {c.coef for c in ext} == {0.25, 3.0}
+    # Shifted M (x2): the context_end family's extremes follow; K family stays.
+    plan = {
+        "M": {
+            "coef_scale": 2.0,
+            "grid_csv": "0.5,1.5,3.0,6.0",
+            "cells": ["M__evil__c0.5", "M__evil__c1.5", "M__evil__c3.0", "M__evil__c6.0"],
+        }
+    }
+    state = _write_repilot_state(tmp_path / "s.json", plan)
+    ext2 = fu1.fu1_extreme_cells(fu1.effective_fu1_cells(state))
+    assert len(ext2) == 40
+    by_arm: dict[tuple[str, str], list[float]] = {}
+    for c in ext2:
+        by_arm.setdefault((c.config, c.dataset), []).append(c.coef)
+    assert sorted(by_arm[("M", "evil")]) == [0.5, 6.0]
+    assert sorted(by_arm[("RL", "evil")]) == [0.5, 6.0]  # inherits M (context_end)
+    assert sorted(by_arm[("K", "evil")]) == [0.25, 3.0]  # unshifted
+
+
+# ── consumer-side NaN-slice fail-loud (code-review r1 Major c) ────────────────
+
+
+def test_nan_slice_consumer_assert_fires():
+    """A (28,3584) NaN-rows bank sliced at a layer outside {14, 19} must fail
+    loud through the PRODUCTION helpers (_build_steering_vectors + the
+    _assert_finite_steering_vectors call train_steered_cell makes)."""
+    import torch
+
+    tr = fu1.train
+    bank = torch.full((28, 3584), float("nan"))
+    bank[14] = 1.0
+    bank[19] = 2.0
+    vec_bad = tr._build_steering_vectors(bank, "L1", 20)
+    with pytest.raises(AssertionError, match="non-finite steering vector at layer 20"):
+        tr._assert_finite_steering_vectors(vec_bad, "RND.pt")
+    # The finite rows pass the same production assert.
+    vec_ok = tr._build_steering_vectors(bank, "L1", 14)
+    tr._assert_finite_steering_vectors(vec_ok, "RND.pt")

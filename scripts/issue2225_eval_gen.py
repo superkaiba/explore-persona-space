@@ -200,7 +200,14 @@ def resolve_targets(wanted: Sequence[str]) -> list[EvalTarget]:
             cell = train.resolve_cell(tag)
         except ValueError as e:
             raise ValueError(f"unknown eval-target tag {tag!r}: {e}") from e
-        out.append(EvalTarget(cell.slug, "cell", cell.dataset, _traits_for_dataset(cell.dataset)))
+        # fu1 cells (l1_idx set) eval their STEERED trait only — plan §2
+        # divergence 4 / §4.4: "Opinions + random cells: evil eval set" (the
+        # registered cost scoping; 80 cells x 1 trait). Parent §7-scaled slugs
+        # (l1_idx None) keep the parent's all-trait behavior for opinions.
+        traits = (
+            (cell.steered_trait,) if cell.l1_idx is not None else _traits_for_dataset(cell.dataset)
+        )
+        out.append(EvalTarget(cell.slug, "cell", cell.dataset, traits))
     return out
 
 

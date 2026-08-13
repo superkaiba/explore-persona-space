@@ -35,6 +35,7 @@ import argparse
 import json
 import math
 import os
+import re
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -149,6 +150,98 @@ def fu1_pilot_cells() -> list[Cell]:
     ]
 
 
+# Plan §7 grid inheritance: the F1 pilot runs the L19 arms only (K context,
+# M context_end); every non-piloted config INHERITS the effective grid of the
+# piloted arm sharing its MASK class (L14 arms inherit the L19-piloted grid;
+# RND controls follow their mask's arm — a shift applies "for ALL fu configs").
+_GRID_INHERIT: dict[str, str] = {
+    "J": "K",
+    "K": "K",
+    "RJ": "K",
+    "RK": "K",
+    "L": "M",
+    "M": "M",
+    "RL": "M",
+    "RM": "M",
+}
+
+
+def effective_fu1_grids(
+    repilot_state_path: str | Path | None = None,
+) -> dict[str, tuple[float, ...]]:
+    """Per-config EFFECTIVE coefficient grid after the F1 gate (plan §7).
+
+    Default (no state file): ``FU1_GRID`` for every config. When a RESOLVED
+    ``f1_repilot_state.json`` exists, each octave-shifted pilot arm's grid
+    (its ``grid_csv``) replaces the default for that arm AND for every config
+    inheriting from it per ``_GRID_INHERIT``. An UNRESOLVED state (mid-repilot
+    crash) fails loud — production phases must never enumerate a grid the F1
+    gate is still adjudicating.
+    """
+    grids: dict[str, tuple[float, ...]] = {spec.config: FU1_GRID for spec in FU1_CONFIGS}
+    if repilot_state_path is None:
+        return grids
+    path = Path(repilot_state_path)
+    if not path.exists():
+        return grids
+    with open(path, encoding="utf-8") as f:
+        state = json.load(f)
+    if not state.get("resolved", False):
+        raise RuntimeError(
+            f"f1 repilot state {path} is UNRESOLVED — run phase f1 to resolution "
+            "before enumerating production cells (plan §7)"
+        )
+    shifted: dict[str, tuple[float, ...]] = {}
+    for arm, block in state["plan"].items():
+        grid = tuple(float(x) for x in str(block["grid_csv"]).split(",") if x.strip())
+        if not grid:
+            raise ValueError(f"empty grid_csv for repilot arm {arm!r} in {path}")
+        shifted[arm] = grid
+    unknown = sorted(set(shifted) - set(_GRID_INHERIT))
+    if unknown:
+        raise ValueError(f"repilot state names non-fu1 arm(s) {unknown} in {path}")
+    for config in grids:
+        pilot_arm = _GRID_INHERIT[config]
+        if pilot_arm in shifted:
+            grids[config] = shifted[pilot_arm]
+    return grids
+
+
+def effective_fu1_cells(repilot_state_path: str | Path | None = None) -> list[Cell]:
+    """The production cell enumeration at the F1-EFFECTIVE grid (plan §7).
+
+    Identical to ``build_fu1_cell_registry()`` when no resolved repilot state
+    exists; after an octave shift, the shifted configs enumerate their shifted
+    coefficients (so the re-piloted adapters are first-class F2 targets and the
+    demonstrated-mis-placed original grid is never fanned out at full spend).
+    """
+    grids = effective_fu1_grids(repilot_state_path)
+    cells = [
+        _fu1_cell(spec, dataset, coef)
+        for spec in FU1_CONFIGS
+        for dataset in spec.datasets
+        for coef in grids[spec.config]
+    ]
+    slugs = [c.slug for c in cells]
+    assert len(slugs) == len(set(slugs)), "duplicate effective fu1 cell slugs"
+    return cells
+
+
+def fu1_extreme_cells(cells: Sequence[Cell]) -> list[Cell]:
+    """Per (config x corpus) arm: the min- and max-coefficient cells (F2c MMLU
+    extremes). Follows whatever grid ``cells`` was enumerated at."""
+    by_arm: dict[tuple[str, str], list[Cell]] = {}
+    for c in cells:
+        by_arm.setdefault((c.config, c.dataset), []).append(c)
+    out: list[Cell] = []
+    for arm in sorted(by_arm):
+        arm_cells = sorted(by_arm[arm], key=lambda c: c.coef)
+        out.append(arm_cells[0])
+        if arm_cells[-1] is not arm_cells[0]:
+            out.append(arm_cells[-1])
+    return out
+
+
 def synth_fu1_cell(config: str, dataset: str, coef: float) -> Cell:
     """fu1 twin of parent ``synth_cell``: canonical-slug cell at an arbitrary
     coefficient (the §7 octave-shift re-pilot path). Raises on an unknown fu1
@@ -165,7 +258,6 @@ def synth_fu1_cell(config: str, dataset: str, coef: float) -> Cell:
 
 
 # fu1 canonical scaled-cell slugs: {J|K|L|M|RJ|RK|RL|RM}__{dataset}__c{coef}.
-import re  # noqa: E402
 
 _FU1_SLUG_RE = re.compile(r"^(R?[JKLM])__([a-z_]+)__c([0-9.]+)$")
 

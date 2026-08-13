@@ -265,7 +265,9 @@ def _sample_prompts(dataset_root: pathlib.Path, corpus: str, n: int, seed: int) 
     """Seeded sample of n training rows' PROMPT message lists (messages[:-1])."""
     import random
 
-    path = dataset_root / corpus / "misaligned_2.jsonl"
+    import issue2225_train as train  # deferred: heavy module, probe-path only
+
+    path = dataset_root / corpus / f"{train.DATASET_VERSION}.jsonl"
     if not path.exists():
         raise FileNotFoundError(f"training corpus missing for rho probe: {path}")
     rows = []
@@ -468,10 +470,16 @@ def build_bank(args) -> None:
                 if 0 <= layer + off < lib.N_LAYERS
             }
             if not all(bridge > v for v in bridge_offsets.values()):
-                lib.log_phase(
-                    "fu1_directions",
-                    f"WARN: bridge cosine offset detector — trait={trait} L{layer} "
-                    f"aligned={bridge:.4f} offsets={bridge_offsets} (plan §12 A2)",
+                # Plan §12 A2 says ASSERT: a same-layer bridge cosine beaten by
+                # a +-1 offset means the rb_v2 bank rows are layer-shifted vs
+                # the #779 readout frame — shipping such banks trains every
+                # cell against the wrong layer's direction. Smoke measured
+                # aligned 0.981/0.982 vs offsets 0.878-0.936, so a trip here
+                # is a genuine off-by-one, never noise.
+                raise RuntimeError(
+                    f"bridge cosine offset detector (plan §12 A2): trait={trait} "
+                    f"L{layer} aligned={bridge:.4f} offsets={bridge_offsets} — "
+                    "a +-1 layer offset beats the aligned bridge; HALT"
                 )
             diag[f"L{layer}"] = {
                 "k_used": k_used[layer],
