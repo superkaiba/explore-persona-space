@@ -301,3 +301,61 @@ def test_apply_smoke_narrows_to_parity_layer_and_scratch_root():
     assert pi._hf_prefix().endswith("/smoke")
     # reset the module-global so later tests see the canonical prefix
     pi._SMOKE_UPLOAD_SUBPREFIX = False
+
+
+def _synthetic_sanitized_bundle(tmp_path, n=2, drop=()):
+    """Tiny .pt mirroring the REALIZED pass-B schema at rev 037fcbb2 (the
+    producer-sanitized upload: cx_last/cx_mean/v_x/layers/metadata/source,
+    float32, NO prompts key — issue779_collect._sanitize_for_analysis_tensors)."""
+    import torch
+
+    blob = {
+        "cx_last": torch.zeros((n, pi.N_LAYERS, pi.HIDDEN_DIM), dtype=torch.float32),
+        "cx_mean": torch.zeros((n, pi.N_LAYERS, pi.HIDDEN_DIM), dtype=torch.float32),
+        "v_x": torch.ones((n, pi.N_LAYERS, pi.HIDDEN_DIM), dtype=torch.float32),
+        "layers": list(range(pi.N_LAYERS)),
+        "metadata": {"pass": "b"},
+        "source": "lmsys/lmsys-chat-1m",
+    }
+    for k in drop:
+        blob.pop(k)
+    p = tmp_path / "train_context_vectors.pt"
+    torch.save(blob, p)
+    return p
+
+
+def test_load_pass_b_bundle_accepts_sanitized_schema(tmp_path, monkeypatch):
+    """Regression (#2254 finisher round 1): the uploaded bundle carries NO
+    'prompts' key by producer-sanitizer construction — the loader must accept
+    the realized sanitized schema and return source + n_rows (the r1 loader
+    required 'prompts' and crashed the fit_maps smoke on the real artifact)."""
+    import huggingface_hub
+
+    path = _synthetic_sanitized_bundle(tmp_path)
+
+    def fake_download(repo_id=None, filename=None, repo_type=None, revision=None, **kw):
+        return str(path)
+
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake_download)
+    monkeypatch.setattr(pi, "_BUNDLE_CACHE", None)
+    out = pi._load_pass_b_bundle()
+    assert out["n_rows"] == 2
+    assert out["source"] == "lmsys/lmsys-chat-1m"
+    assert "prompts" not in out
+    monkeypatch.setattr(pi, "_BUNDLE_CACHE", None)
+
+
+def test_load_pass_b_bundle_missing_required_key_raises(tmp_path, monkeypatch):
+    """The realized-keys guard stays fail-loud on a genuinely wrong artifact."""
+    import huggingface_hub
+
+    path = _synthetic_sanitized_bundle(tmp_path, drop=("source",))
+
+    def fake_download(repo_id=None, filename=None, repo_type=None, revision=None, **kw):
+        return str(path)
+
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake_download)
+    monkeypatch.setattr(pi, "_BUNDLE_CACHE", None)
+    with pytest.raises(RuntimeError, match=r"missing keys.*source"):
+        pi._load_pass_b_bundle()
+    monkeypatch.setattr(pi, "_BUNDLE_CACHE", None)

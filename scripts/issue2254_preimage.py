@@ -551,10 +551,17 @@ _BUNDLE_CACHE: dict | None = None
 def _load_pass_b_bundle() -> dict:
     """Download + validate the #779 pass-B train bundle at the pinned revision.
 
-    Realized-keys assert (artifact-reuse check (c), plan §10): keys must
-    include {cx_last, v_x, prompts, layers}; cx_last/v_x are (N, 28, 3584)
-    fp16 with zero NaN/Inf; layers == list(range(28)); len(prompts) == N.
-    Returns {"cx_last": tensor, "v_x": tensor, "prompts": list, "n_rows": N}.
+    Realized-keys assert (artifact-reuse check (c), plan §10) against the
+    OBSERVED schema at rev ``037fcbb2`` — {cx_last, cx_mean, v_x, layers,
+    metadata, source}, tensors (N, 28, 3584) float32, zero NaN/Inf, layers ==
+    list(range(28)). The uploaded bundle carries NO ``prompts`` key BY
+    CONSTRUCTION: the producer's content-hygiene sanitizer strips raw LMSYS
+    text before any analysis_tensors/ upload (issue779_collect.py
+    ``_sanitize_for_analysis_tensors`` + ``_assert_no_raw_text_under``); the
+    plan §10 "prompts" claim was schema-from-producer-code, not from the
+    artifact (#2061 shape). Prompt text is reconstructed separately via the
+    pinned #823/#952/#1615 LMSYS replay (see ``phase_stage_inputs``).
+    Returns {"cx_last": tensor, "v_x": tensor, "source": str, "n_rows": N}.
     Memoized per process (stage_inputs A8 leg + fit_maps share the load).
     """
     global _BUNDLE_CACHE
@@ -574,11 +581,11 @@ def _load_pass_b_bundle() -> dict:
         ),
         what="fetch #779 pass-B bundle",
     )
-    # weights_only=False: sha-pinned self-produced bundle carrying python lists
-    # (prompts) alongside tensors — the torch>=2.6 weights_only default cannot
+    # weights_only=False: sha-pinned self-produced bundle carrying non-tensor
+    # metadata alongside tensors — the torch>=2.6 weights_only default cannot
     # load it, and the revision pin is the trust boundary.
     tb = torch.load(path, map_location="cpu", weights_only=False)
-    missing = {"cx_last", "v_x", "prompts", "layers"} - set(tb.keys())
+    missing = {"cx_last", "v_x", "layers", "source"} - set(tb.keys())
     if missing:
         raise RuntimeError(
             f"pass-B bundle at rev {HF_REV[:12]} missing keys {sorted(missing)} "
@@ -594,11 +601,8 @@ def _load_pass_b_bundle() -> dict:
             raise RuntimeError(f"pass-B {name} shape {tuple(t.shape)} != ({n}, 28, {HIDDEN_DIM})")
         if not torch.isfinite(t).all():
             raise RuntimeError(f"pass-B {name} carries NaN/Inf")
-    prompts = list(tb["prompts"])
-    if len(prompts) != n:
-        raise RuntimeError(f"pass-B prompts len {len(prompts)} != N rows {n}")
     logger.info("[pass-b] realized N=%d rows, 28 layers, H=%d (rev %s)", n, HIDDEN_DIM, HF_REV[:12])
-    _BUNDLE_CACHE = {"cx_last": cx, "v_x": vx, "prompts": prompts, "n_rows": n}
+    _BUNDLE_CACHE = {"cx_last": cx, "v_x": vx, "source": str(tb["source"]), "n_rows": n}
     return _BUNDLE_CACHE
 
 
@@ -691,16 +695,32 @@ def phase_stage_inputs(args) -> None:
 
     # A8 gate, reused from issue2220_readwrite (import — the helpers it uses
     # are behavior-generic and its Q2=20 floor matches ours); corpus leg =
-    # the pass-B bundle's LMSYS prompts (normalized, set-compared, never
-    # logged — content hygiene).
+    # the pass-B LMSYS prompts (normalized, set-compared, never logged —
+    # content hygiene). The uploaded bundle carries NO prompt text (producer
+    # sanitizer strips it), so the prompts are RECONSTRUCTED via the pinned
+    # #823/#952/#1615 replay: first N non-empty first-user-turns of
+    # lmsys/lmsys-chat-1m @ LMSYS_REVISION — verified 1:1 with the bundle rows
+    # by #1615 (n_train=5000, no kept_idx drops).
     import scripts.issue2220_readwrite as rw2220
+    from scripts.issue952_stats import _reconstruct_lmsys_prompts
 
     bundle = _load_pass_b_bundle()
-    corpus_texts = {rw2220._norm_question(p) for p in bundle["prompts"] if p}
+    if bundle["source"] != "lmsys/lmsys-chat-1m":
+        raise RuntimeError(
+            f"A8: pass-B bundle source {bundle['source']!r} != 'lmsys/lmsys-chat-1m' — "
+            "the pinned LMSYS replay recipe does not apply to a fallback-source bundle"
+        )
+    prompts = _reconstruct_lmsys_prompts(bundle["n_rows"])
+    if len(prompts) != bundle["n_rows"]:
+        raise RuntimeError(f"A8: replay yielded {len(prompts)} prompts != N={bundle['n_rows']}")
+    corpus_texts = {rw2220._norm_question(p) for p in prompts if p}
     if not corpus_texts:
-        raise RuntimeError("A8: pass-B bundle yielded 0 prompt texts")
+        raise RuntimeError("A8: LMSYS replay yielded 0 prompt texts")
     record = rw2220._assert_eval_bank_disjoint(behaviors, corpus_texts=corpus_texts)
-    record["corpus_source"] = f"pass-B LMSYS prompts ({PASS_B_FILE} @ {HF_REV[:12]})"
+    record["corpus_source"] = (
+        f"pass-B LMSYS prompts, #823/#952/#1615 pinned replay (bundle {PASS_B_FILE} @ "
+        f"{HF_REV[:12]} carries no prompt text by producer-sanitizer construction)"
+    )
     record["n_bundle_rows"] = bundle["n_rows"]
     record["staged_e1_assets"] = staged
 
@@ -3423,10 +3443,12 @@ def _dry_run_phase(args) -> None:
 
         _ensure_repo_root_on_syspath()
         import scripts.issue2220_readwrite as rw2220
+        from scripts.issue952_stats import _reconstruct_lmsys_prompts
 
         assert callable(rw2220._assert_eval_bank_disjoint)
         assert callable(rw2220._norm_question)
         assert callable(rw2220._eval_questions)
+        assert callable(_reconstruct_lmsys_prompts)
         _breadcrumb("stage_inputs", dry_run=1, behaviors=len(args.behaviors))
     elif phase == "fit_maps":
         from explore_persona_space.analysis.mapping_baselines import (  # noqa: F401
