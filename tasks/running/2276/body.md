@@ -39,3 +39,7 @@ New WARN-or-FAIL check in `scripts/verify_plan.py` (issue-context mode):
 - Both #2225 incident shapes reproduce as fixtures and are flagged; a plan with a real matching frontmatter pin and a width-consistent launch line passes.
 - `verify_plan.py --issue`/`--plan-file` exit codes and JSON contract unchanged; new check listed in the check table.
 - Durability pin: tests/test_verify_plan.py::<new test names>.
+
+## Realized deviation (implementation, 2026-08-13)
+
+Arm (a) shipped as **c62 WARN-only, not FAIL**: the plan's pre-registered >2-false-positive posture rule fired on the corpus-calibration sweep (107 FAILs at the designed FAIL polarity across 4,089 plan versions, 3 adjudicated FP classes — dominant: prospective/dispatch-flag pin phrasing), so the polarity downgraded per plan §4 step 6; the calibration comment above the check carries the measured numbers, and both #2225 incident fixtures (v5-v9) are recovered as WARNs. Arm (b) is **c63** (WARN-only as planned). Check ids are c62/c63, not the sketch's c60 — c60/c61 were taken by #2255/#2275.
