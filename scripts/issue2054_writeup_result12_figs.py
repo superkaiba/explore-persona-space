@@ -21,7 +21,24 @@ recovery-fraction twin):
    only through the 2x2 INSERTED chat anchor, so the source condition is
    always inserted; the target condition still varies (solid/dashed).
 
-Marker fill encodes the body's well-posedness convention: rungs 7-9 refit a
+The x-axis shows a user-selected SUBSET of the ladder — rungs 1 (direct),
+6 (rotation), 7 (context re-map), 8 (answer re-map), evenly spaced with their
+original rung numbers kept in the tick labels (rungs 2-5 and 9 dropped on user
+request 2026-08-13; the full 9-rung renders live in the git history).
+
+Reference lines (RAW-R^2 figures only — the recovery twins normalize per
+target, so a single horizontal line has no meaning there):
+- dotted, target color: the TARGET cell's own within-cell held-out R^2 (the
+  ceiling a transfer into that target is trying to reach);
+- dash-dot, target color: the TARGET cell's identity + bias baseline (predict
+  the context vector + train-fold mean offset) — the floor a transfer must
+  beat; banked per cell in the fits digest (``ctx.idb``);
+- gray: the SOURCE map's own within-cell held-out R^2 (``ctx.r2`` of the
+  source cell). Figures 1/2a use provenance-matched sources, so there are two
+  gray lines per panel (solid = inserted source, dashed = on-policy source);
+  figure 2b's source is the single inserted chat anchor (one solid line).
+
+Marker fill encodes the body's well-posedness convention: rungs 7-8 refit a
 d x d map on the target train fold, so at pairs whose equalized intersection
 sits below the 4,480-conversation floor (0.8 x n < d = 3,584) those rungs are
 descriptive-only and drawn HOLLOW; well-posed rungs are filled. Rungs 1-6
@@ -36,6 +53,7 @@ Usage:
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 
 from explore_persona_space.orchestrate.env import load_dotenv
@@ -52,6 +70,8 @@ from explore_persona_space.analysis.paper_plots import savefig_paper, set_paper_
 
 REPO = Path(__file__).resolve().parent.parent
 LADDER_ROWS = Path("/tmp/issue2054_ladder_rows_merged.json")
+FITS_DIGEST = Path("/tmp/issue2054_fits_digest.json")
+FITS_DIGEST_BLOB = "eval_results/issue_2054/analyzer_companions/fits_digest.json"
 P1345_JUDGE = REPO / "eval_results/issue_1345/judge_legs/judge_legs_summary.json"
 OUT_DIR = REPO / "figures/issue_2054/writeup_result12"
 
@@ -59,34 +79,15 @@ ASSIST = "conversation_paired_stories_assistant"
 INSTRUCT = "qwen2.5-7b-instruct"
 BASE = "qwen2.5-7b"
 
-# d of the ambient basis. Rungs 7-9 refit a d x d map on the target train fold
+# d of the ambient basis. Rungs 7-8 refit a d x d map on the target train fold
 # (n_train = 0.8 x intersection), so an intersection below 4,480 conversations
 # puts those rungs in the under-determined, descriptive-only regime.
 D_AMBIENT = 3584
 
-RUNGS = [
-    "1_direct",
-    "2_ctx_offset",
-    "3_ans_offset",
-    "4_bias_refit",
-    "5_global_scale",
-    "6_rotation",
-    "7_ctx_reparam",
-    "8_ans_reparam",
-    "9_full_AMB",
-]
-RUNG_LABELS = [
-    "1 direct\ntransfer",
-    "2 context\noffset",
-    "3 answer\noffset",
-    "4 bias\nrefit",
-    "5 global\nscale",
-    "6 rotation",
-    "7 context\nre-map",
-    "8 answer\nre-map",
-    "9 full\nrefit",
-]
-REPARAM_IDX = [RUNGS.index(k) for k in ("7_ctx_reparam", "8_ans_reparam", "9_full_AMB")]
+# User-selected rung subset (original ladder numbering kept in the labels).
+PLOT_RUNGS = ["1_direct", "6_rotation", "7_ctx_reparam", "8_ans_reparam"]
+PLOT_RUNG_LABELS = ["1 direct\ntransfer", "6 rotation", "7 context\nre-map", "8 answer\nre-map"]
+REPARAM_IDX = [PLOT_RUNGS.index(k) for k in ("7_ctx_reparam", "8_ans_reparam")]
 
 # One color = one meaning, matched to the committed #2054 figure family.
 RENDER_STYLE = {
@@ -108,7 +109,9 @@ CHAR_DISPLAY = {"helios": "HELIOS", "wren": "Wren", "vex": "Vex", "dana": "Dana"
 CHARACTERS = ["helios", "wren", "vex", "dana"]
 
 COND_LS = {"inserted": "-", "on_policy": "--"}
+COND_ALPHA = {"inserted": 0.85, "on_policy": 0.45}
 PANELS = [(BASE, "Qwen2.5-7B (base)"), (INSTRUCT, "Qwen2.5-7B-Instruct")]
+C_SOURCE = "#7A7A7A"  # gray — source map's own R^2 reference
 
 
 def _rows() -> list[dict]:
@@ -119,6 +122,27 @@ def _rows() -> list[dict]:
     rows = json.loads(LADDER_ROWS.read_text())
     assert rows, "merged ladder row file is empty"
     return rows
+
+
+def _fits() -> dict[str, dict]:
+    """Per-cell banked fit stats keyed by cell: own within-cell held-out R^2
+    (``r2`` — the source-line / ceiling value) and the identity + bias
+    baseline (``idb`` — the floor). Reads the staged digest, falling back to
+    the committed blob on branch ``issue-2054`` (never hardcoded values)."""
+    if FITS_DIGEST.exists():
+        text = FITS_DIGEST.read_text()
+    else:
+        text = subprocess.run(
+            ["git", "show", f"origin/issue-2054:{FITS_DIGEST_BLOB}"],
+            cwd=REPO,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout
+    d = json.loads(text)
+    out = {r["cell"]: {"r2": r["ctx"]["r2"], "idb": r["ctx"]["idb"]} for r in d["rows"]}
+    assert out, "fits digest is empty"
+    return out
 
 
 def _ai_likeness() -> dict[str, float]:
@@ -145,7 +169,7 @@ def _pair(rows: list[dict], src: str, tgt: str) -> dict:
 
 
 def _series(pair: dict, recovery: bool) -> list[float]:
-    ys = [pair["rungs"][k] for k in RUNGS]
+    ys = [pair["rungs"][k] for k in PLOT_RUNGS]
     if recovery:
         assert pair["ceiling"], (pair["src"], pair["tgt"])
         ys = [y / pair["ceiling"] for y in ys]
@@ -155,11 +179,11 @@ def _series(pair: dict, recovery: bool) -> list[float]:
 def _hollow_mask(pair: dict) -> list[bool]:
     """True at rungs whose fit is descriptive-only (n_train < d) for this pair."""
     under = 0.8 * pair["n"] < D_AMBIENT
-    return [under and i in REPARAM_IDX for i in range(len(RUNGS))]
+    return [under and i in REPARAM_IDX for i in range(len(PLOT_RUNGS))]
 
 
 def _draw_pair(ax, pair: dict, color: str, ls: str, marker: str, recovery: bool) -> None:
-    xs = list(range(len(RUNGS)))
+    xs = list(range(len(PLOT_RUNGS)))
     ys = _series(pair, recovery)
     hollow = _hollow_mask(pair)
     ax.plot(xs, ys, color=color, ls=ls, lw=1.7, zorder=3)
@@ -188,10 +212,18 @@ def _draw_pair(ax, pair: dict, color: str, ls: str, marker: str, recovery: bool)
         )
 
 
+def _draw_target_refs(ax, ceiling: float, idb: float, color: str, cond: str) -> None:
+    """Per-target reference lines on RAW figures: dotted ceiling (the target
+    cell's own R^2) and dash-dot identity+bias floor."""
+    a = COND_ALPHA[cond]
+    ax.axhline(ceiling, color=color, ls=":", lw=1.0, alpha=a, zorder=2)
+    ax.axhline(idb, color=color, ls="-.", lw=1.0, alpha=a, zorder=2)
+
+
 def _style_axis(ax, title: str, ylab: bool, recovery: bool) -> None:
     ax.set_title(title)
-    ax.set_xticks(range(len(RUNGS)))
-    ax.set_xticklabels(RUNG_LABELS, fontsize=7)
+    ax.set_xticks(range(len(PLOT_RUNGS)))
+    ax.set_xticklabels(PLOT_RUNG_LABELS, fontsize=8)
     ax.set_xlabel("transfer rung (more adaptation allowed →)")
     if ylab:
         ax.set_ylabel(
@@ -205,17 +237,17 @@ def _style_axis(ax, title: str, ylab: bool, recovery: bool) -> None:
     ax.grid(axis="y", alpha=0.25, lw=0.6)
 
 
-def _clamp_ylim(axes, lo_floor: float, hi_cap: float) -> None:
-    """Shared y-limits across panels, clamped so one extreme early rung cannot
-    squash the readable range (off-scale points run off the axis; stated in
-    the writeup prose, not on the canvas)."""
-    lo = min(ax.get_ylim()[0] for ax in axes)
-    hi = max(ax.get_ylim()[1] for ax in axes)
+def _set_ylim(axes, lo_data: float, hi_data: float) -> None:
+    """Shared y-limits across panels from the tracked data + reference-line
+    extremes (axhlines are excluded from matplotlib autoscale), clamped so an
+    extreme point cannot crush the readable range."""
+    lo = max(lo_data - 0.07, -2.0)
+    hi = min(hi_data + 0.07, 1.15)
     for ax in axes:
-        ax.set_ylim(max(lo, lo_floor), min(hi, hi_cap))
+        ax.set_ylim(lo, hi)
 
 
-def _finish(fig, axes, handles, labels, stem: str) -> None:
+def _finish(fig, handles, labels, stem: str) -> None:
     fig.legend(
         handles,
         labels,
@@ -224,35 +256,49 @@ def _finish(fig, axes, handles, labels, stem: str) -> None:
         frameon=False,
         fontsize=8.0,
     )
-    fig.tight_layout(rect=(0, 0.16, 1, 1))
+    fig.tight_layout(rect=(0, 0.18, 1, 1))
     savefig_paper(fig, stem, dir=OUT_DIR)
     plt.close(fig)
     print(f"[fig] {OUT_DIR / stem}.png")
 
 
+def _ref_handles(labels_so_far: list, handles_so_far: list, two_source_lines: bool) -> None:
+    """Legend entries for the raw-figure reference lines (shared shape)."""
+    handles_so_far.append(Line2D([], [], color="#888888", ls=":", lw=1.2))
+    labels_so_far.append("target cell's own $R^2$ (ceiling)")
+    handles_so_far.append(Line2D([], [], color="#888888", ls="-.", lw=1.2))
+    labels_so_far.append("identity + bias floor (per target)")
+    handles_so_far.append(Line2D([], [], color=C_SOURCE, ls="-", lw=2.0))
+    labels_so_far.append(
+        "source map's own $R^2$ (solid/dashed = provenance)"
+        if two_source_lines
+        else "source map's own $R^2$"
+    )
+
+
 # --------------------------------------------------------------------------- #
 # Result 1 — assistant chat map re-used on the assistant's other framings
 # --------------------------------------------------------------------------- #
-def fig_result1(rows: list[dict], recovery: bool) -> None:
+def fig_result1(rows: list[dict], fits: dict[str, dict], recovery: bool) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.9), sharey=True)
+    vals: list[float] = []
     for ax, (model, title) in zip(axes, PANELS):
         for cond, ls in COND_LS.items():
             src = f"{ASSIST}__{cond}__chat__{model}"
             for form, (_, color, marker) in RENDER_STYLE.items():
                 p = _pair(rows, src, f"{ASSIST}__{cond}__{form}__{model}")
                 _draw_pair(ax, p, color, ls, marker, recovery)
+                vals += _series(p, recovery)
                 if not recovery:
-                    # the target cell's own within-cell R^2 = this transfer's ceiling
-                    ax.axhline(
-                        p["ceiling"],
-                        color=color,
-                        ls=":",
-                        lw=1.0,
-                        alpha=0.85 if cond == "inserted" else 0.45,
-                        zorder=2,
-                    )
+                    tgt = f"{ASSIST}__{cond}__{form}__{model}"
+                    _draw_target_refs(ax, p["ceiling"], fits[tgt]["idb"], color, cond)
+                    vals += [p["ceiling"], fits[tgt]["idb"]]
+            if not recovery:
+                # the SOURCE map's own within-cell R^2 (provenance-matched source)
+                ax.axhline(fits[src]["r2"], color=C_SOURCE, ls=ls, lw=2.0, alpha=0.9, zorder=2)
+                vals.append(fits[src]["r2"])
         _style_axis(ax, title, ylab=ax is axes[0], recovery=recovery)
-    _clamp_ylim(axes, lo_floor=-2.0, hi_cap=1.15)
+    _set_ylim(axes, min(vals), max(vals))
 
     handles = [
         Line2D([], [], color=c, marker=m, ls="-", lw=1.7, ms=5) for _, c, m in RENDER_STYLE.values()
@@ -264,22 +310,23 @@ def fig_result1(rows: list[dict], recovery: bool) -> None:
     ]
     labels += ["inserted (verbatim answers)", "on-policy"]
     if not recovery:
-        handles.append(Line2D([], [], color="#888888", ls=":", lw=1.2))
-        labels.append("target cell's own $R^2$ (ceiling)")
+        _ref_handles(labels, handles, two_source_lines=True)
     fig.suptitle("Assistant chat-template map re-used on the assistant's other framings")
-    _finish(fig, axes, handles, labels, f"result1_framing_rungs{'_recovery' if recovery else ''}")
+    _finish(fig, handles, labels, f"result1_framing_rungs{'_recovery' if recovery else ''}")
 
 
 # --------------------------------------------------------------------------- #
 # Result 2 — character transfer (user excluded), bare-label story boundary
 # --------------------------------------------------------------------------- #
-def fig_result2(rows: list[dict], chat_source: bool, recovery: bool) -> None:
+def fig_result2(rows: list[dict], fits: dict[str, dict], chat_source: bool, recovery: bool) -> None:
     """chat_source=False: assistant-in-story -> character (persona only).
     chat_source=True: assistant-chat -> character (framing + persona; the
     ladder's chat anchor is INSERTED-only, so the source condition is fixed)."""
     ail = _ai_likeness()
     fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.9), sharey=True)
+    vals: list[float] = []
     for ax, (model, title) in zip(axes, PANELS):
+        drawn_sources: set[str] = set()
         for cond, ls in COND_LS.items():
             src = (
                 f"{ASSIST}__inserted__chat__{model}"
@@ -287,19 +334,22 @@ def fig_result2(rows: list[dict], chat_source: bool, recovery: bool) -> None:
                 else f"{ASSIST}__{cond}__bare_label__{model}"
             )
             for ch in CHARACTERS:
-                p = _pair(rows, src, f"char_{ch}__{cond}__bare_label__{model}")
+                tgt = f"char_{ch}__{cond}__bare_label__{model}"
+                p = _pair(rows, src, tgt)
                 _draw_pair(ax, p, CHAR_COLOR[ch], ls, "o", recovery)
+                vals += _series(p, recovery)
                 if not recovery:
-                    ax.axhline(
-                        p["ceiling"],
-                        color=CHAR_COLOR[ch],
-                        ls=":",
-                        lw=1.0,
-                        alpha=0.85 if cond == "inserted" else 0.45,
-                        zorder=2,
-                    )
+                    _draw_target_refs(ax, p["ceiling"], fits[tgt]["idb"], CHAR_COLOR[ch], cond)
+                    vals += [p["ceiling"], fits[tgt]["idb"]]
+            if not recovery and src not in drawn_sources:
+                # figure 2a: provenance-matched sources (two gray lines);
+                # figure 2b: the single inserted chat anchor (one solid line).
+                src_ls = "-" if chat_source else ls
+                ax.axhline(fits[src]["r2"], color=C_SOURCE, ls=src_ls, lw=2.0, alpha=0.9, zorder=2)
+                vals.append(fits[src]["r2"])
+                drawn_sources.add(src)
         _style_axis(ax, title, ylab=ax is axes[0], recovery=recovery)
-    _clamp_ylim(axes, lo_floor=-2.0, hi_cap=1.15)
+    _set_ylim(axes, min(vals), max(vals))
 
     handles = [
         Line2D([], [], color=CHAR_COLOR[ch], marker="o", ls="-", lw=1.7, ms=5) for ch in CHARACTERS
@@ -311,25 +361,25 @@ def fig_result2(rows: list[dict], chat_source: bool, recovery: bool) -> None:
     ]
     labels += ["inserted (verbatim answers)", "on-policy"]
     if not recovery:
-        handles.append(Line2D([], [], color="#888888", ls=":", lw=1.2))
-        labels.append("target cell's own $R^2$ (ceiling)")
+        _ref_handles(labels, handles, two_source_lines=not chat_source)
     fig.suptitle(
         "Assistant chat map re-used on each story character (bare-label boundary)"
         if chat_source
         else "Assistant-in-story map re-used on each story character (bare-label boundary)"
     )
     stem = "result2b_chat_to_characters" if chat_source else "result2a_story_to_characters"
-    _finish(fig, axes, handles, labels, f"{stem}{'_recovery' if recovery else ''}")
+    _finish(fig, handles, labels, f"{stem}{'_recovery' if recovery else ''}")
 
 
 def main() -> None:
     set_paper_style()
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     rows = _rows()
+    fits = _fits()
     for recovery in (False, True):
-        fig_result1(rows, recovery)
-        fig_result2(rows, chat_source=False, recovery=recovery)
-        fig_result2(rows, chat_source=True, recovery=recovery)
+        fig_result1(rows, fits, recovery)
+        fig_result2(rows, fits, chat_source=False, recovery=recovery)
+        fig_result2(rows, fits, chat_source=True, recovery=recovery)
 
 
 if __name__ == "__main__":
