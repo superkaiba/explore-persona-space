@@ -257,6 +257,112 @@ def test_scan_fingerprint_changes_with_new_commit():
     assert fp1 and fp2 and fp1 != fp2
 
 
+# ─── real-body coverage for the seam-stubbed collectors ─────────────────────
+# The pass tests below stub `pds.collect_tasks` / `pds.git_log_for_paths`;
+# these two tests execute the REAL bodies (code-style § one production-body
+# test per seam-stubbed function) — fakes only at the filesystem/git
+# boundary via a tmp registry tree + a real throwaway git repo.
+
+
+def _write_fixture_task(root: Path, issue: int, status: str, kind: str, body: str) -> None:
+    d = root / "tasks" / status / str(issue)
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "body.md").write_text(body, encoding="utf-8")
+
+
+def test_collect_tasks_real_body(tmp_path, monkeypatch, capsys):
+    import explore_persona_space.task_workflow as tw
+
+    root = tmp_path / "repo"
+    body = (
+        "---\ncreated_at: '2026-08-01T00:00:00Z'\n---\n"
+        "## Provenance\n- workflow_fix_target: scripts/foo.py\n"
+    )
+    _write_fixture_task(root, 10, "proposed", "infra", body)
+    _write_fixture_task(root, 11, "proposed", "experiment", body)  # out-of-scope kind
+    _write_fixture_task(root, 12, "blocked", "batch", body)
+    reg = {
+        "tasks": {
+            "10": {
+                "status": "proposed",
+                "kind": "infra",
+                "path": "tasks/proposed/10",
+                "title": "alpha",
+            },
+            "11": {
+                "status": "proposed",
+                "kind": "experiment",
+                "path": "tasks/proposed/11",
+                "title": "exp",
+            },
+            "12": {
+                "status": "blocked",
+                "kind": "batch",
+                "path": "tasks/blocked/12",
+                "title": "beta",
+            },
+            # In-scope row whose body.md is MISSING -> fail-soft skip + stderr.
+            "13": {
+                "status": "proposed",
+                "kind": "infra",
+                "path": "tasks/proposed/13",
+                "title": "gone",
+            },
+        }
+    }
+    reg_path = root / "tasks" / "REGISTRY.json"
+    reg_path.write_text(json.dumps(reg))
+    monkeypatch.setattr(tw, "registry_path", lambda: reg_path)
+
+    tasks, repo_root = pds.collect_tasks()
+    assert repo_root == root
+    assert [t["id"] for t in tasks] == [10, 12]
+    assert tasks[0]["title"] == "alpha"
+    assert tasks[0]["created_ts"] == "2026-08-01T00:00:00Z"
+    assert "workflow_fix_target" in tasks[0]["body"]
+    assert "body read failed for #13" in capsys.readouterr().err
+
+
+def test_git_log_for_paths_real_git(tmp_path):
+    import subprocess
+
+    repo = tmp_path / "gitrepo"
+    repo.mkdir()
+
+    def _git(*args):
+        subprocess.run(
+            ["git", "-C", str(repo), "-c", "user.email=t@e.st", "-c", "user.name=t", *args],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+    _git("init", "-q")
+    (repo / "foo.py").write_text("x = 1\n")
+    _git("add", "foo.py")
+    _git("commit", "-q", "-m", "task #99: watcher daemon liveness escalation rework")
+    (repo / "bar.py").write_text("y = 2\n")
+    _git("add", "bar.py")
+    _git("commit", "-q", "-m", "unrelated other file commit")
+
+    out = pds.git_log_for_paths(repo, ["foo.py"], "2020-01-01T00:00:00Z")
+    assert len(out) == 1
+    sha, subject = out[0]
+    assert len(sha) == 40
+    assert subject == "task #99: watcher daemon liveness escalation rework"
+    # A path never touched since the cutoff yields an empty, non-raising scan.
+    assert pds.git_log_for_paths(repo, ["nonexistent.py"], "2020-01-01T00:00:00Z") == []
+    # scan() end-to-end over the REAL git seam: the acceptance-1 fixture fires.
+    recs = pds.scan(
+        [_task(10, targets="foo.py")],
+        git_log_fn=lambda paths, since: pds.git_log_for_paths(repo, paths, since),
+    )
+    assert [r.kind for r in recs if r.issue == 10] == [
+        "stale-premise",
+        "landed-sibling-collision",
+    ]
+
+
 # ─── watcher pass: seams + isolation helper ──────────────────────────────────
 
 
