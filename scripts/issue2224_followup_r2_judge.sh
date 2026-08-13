@@ -19,8 +19,13 @@
 set -uo pipefail
 export PATH="/root/.local/bin:$HOME/.local/bin:$PATH"
 WT=/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2224
+# CROSS-WORKTREE dependency: the persona_vectors clone (rubric source —
+# issue778_lib.load_trait_data) lives in issue-816's worktree, same as the
+# parent judge_ft/runner.sh. The rubric sha lands in each seed-137
+# trait_scores.json and the compare script asserts cross-seed rubric identity,
+# so a drifted clone fails loud there rather than silently re-instrumenting.
 PV=/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-816/external/persona_vectors
-cd "$WT"
+cd "$WT" || exit 1
 set -a; [ -f .env ] && source .env; [ -f ../../../.env ] && source ../../../.env; set +a
 
 CELLS="lmsys__evil__exact_dp__top,lmsys__evil__prompttoken_dp__top,lmsys__evil__random__shared,\

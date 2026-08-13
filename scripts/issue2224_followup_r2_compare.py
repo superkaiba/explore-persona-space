@@ -142,6 +142,19 @@ def main() -> int:
 
     parent = _parent_deciding_contrasts(Path(args.analysis_4b_dir))
     judged137 = _load_trait_scores(Path(args.seed137_scores_dir), CELLS_18)
+    judged42 = _load_trait_scores(Path(args.seed42_scores_dir), CELLS_18)
+
+    # Cross-seed instrument identity (review r3 item c): a contrast across seeds
+    # is only meaningful under the SAME judge rubric — fail loud on drift.
+    for cid in CELLS_18:
+        sha42 = judged42[cid]["judge"]["trait_rubric_sha256"]
+        sha137 = judged137[cid]["judge"]["trait_rubric_sha256"]
+        if sha42 != sha137:
+            raise RuntimeError(
+                f"{cid}: trait_rubric_sha256 differs across seeds "
+                f"(seed42={sha42[:12]}… seed137={sha137[:12]}…) — the seed-137 judge "
+                f"ran a DIFFERENT instrument; re-judge before comparing"
+            )
 
     contrasts_out: list[dict] = []
     n_dir_agree = 0
@@ -205,8 +218,7 @@ def main() -> int:
     cells_out = {}
     for cid in CELLS_18:
         summary = _cell_summary(judged137[cid], args.n_boot, args.seed_base)
-        p42 = Path(args.seed42_scores_dir) / cid / "trait_scores.json"
-        te42 = json.loads(p42.read_text())["trait_expression"]
+        te42 = judged42[cid]["trait_expression"]
         summary["seed42_graded_mean"] = te42.get("graded_mean")
         summary["seed42_n_scored_items"] = te42.get("n_scored_items")
         cells_out[cid] = summary

@@ -156,11 +156,16 @@ SENTINEL_DIR = PROJECT_ROOT / "eval_results" / "issue_2224"
 # legitimate partial invocation (e.g. train, which never touches judge dirs)
 # is not forced to pass flags it does not use. Inert for seed-42 runs.
 _SEED_ISOLATION_REQUIRED: dict[str, tuple[str, ...]] = {
-    "train": ("out_root",),
-    "train-cell": ("out_root",),
+    # hf_prefix_suffix rows (review r2 BLOCKER 1): train/train-cell upload
+    # per-cell adapters to the HF model repo + name wandb runs; upload bulk-
+    # persists gens + questions to the HF data repo. Isolated LOCAL dirs alone
+    # leave those writes on the PARENT prefixes/run names — the suffix is the
+    # HF/wandb half of the isolation contract (NON-EMPTY semantics below).
+    "train": ("out_root", "hf_prefix_suffix"),
+    "train-cell": ("out_root", "hf_prefix_suffix"),
     "eval": ("out_root", "eval_questions_dir"),
     "eval-shard": ("out_root", "eval_questions_dir"),
-    "upload": ("out_root", "eval_questions_dir"),
+    "upload": ("out_root", "eval_questions_dir", "hf_prefix_suffix"),
     "eval-questions": ("eval_questions_dir",),
     "judge-pilot": (
         "out_root",
@@ -187,20 +192,32 @@ _SEED_ISOLATION_DEFAULTS: dict[str, Path] = {
 
 
 def assert_seed_isolation(args) -> None:
-    """Refuse a non-42 seed run whose phase-relevant paths sit at parent defaults."""
+    """Refuse a non-42 seed run whose phase-relevant isolation is incomplete.
+
+    Two halves per phase mapping: LOCAL dirs must differ from the parent
+    defaults under ``Path.resolve()`` (review r3 BLOCKER 2 — a RELATIVE
+    spelling of the parent default must not evade the guard and resume from
+    parent state), and ``hf_prefix_suffix`` must be NON-EMPTY on the phases
+    that write HF prefixes / wandb run names (review r3 BLOCKER 1 — isolated
+    local dirs with an empty suffix overwrite the parent's adapters /
+    postft_eval / eval_questions prefixes and reuse parent run names).
+    """
     if args.seed == 42 or args.phase not in _SEED_ISOLATION_REQUIRED:
         return
-    offending = [
-        f"--{attr.replace('_', '-')}"
-        for attr in _SEED_ISOLATION_REQUIRED[args.phase]
-        if Path(getattr(args, attr)) == _SEED_ISOLATION_DEFAULTS[attr]
-    ]
+    offending = []
+    for attr in _SEED_ISOLATION_REQUIRED[args.phase]:
+        if attr == "hf_prefix_suffix":
+            if not args.hf_prefix_suffix:
+                offending.append("--hf-prefix-suffix (empty — parent HF prefixes/wandb names)")
+        elif Path(getattr(args, attr)).resolve() == _SEED_ISOLATION_DEFAULTS[attr].resolve():
+            offending.append(f"--{attr.replace('_', '-')}")
     if offending:
         raise RuntimeError(
             f"--seed {args.seed} != 42 on --phase {args.phase} with parent-default "
-            f"path(s) for {offending} — a replication seed MUST isolate every "
-            f"state/results path it touches (seed-42 clobber guard; pass e.g. "
-            f"'<default>_seed{args.seed}' variants; see "
+            f"isolation for {offending} — a replication seed MUST isolate every "
+            f"state/results surface it touches: pass '<default>_seed{args.seed}' "
+            f"PATH variants for the named dirs AND a non-empty --hf-prefix-suffix "
+            f"(e.g. '_seed{args.seed}') where named (seed-42 clobber guard; see "
             f"scripts/issue2224_followup_r2_runner.sh / _judge.sh)"
         )
 
@@ -379,18 +396,23 @@ def write_sentinel(name: str, payload: dict) -> None:
     atomic_write_json(payload, SENTINEL_DIR / name)
 
 
-def finalize_phase_sentinel(name: str, phase: str, payload: dict, cells_filter: str | None) -> bool:
-    """Drop the plan-§9 phase-done sentinel — ONLY for an UNFILTERED run (M1).
+def finalize_phase_sentinel(
+    name: str, phase: str, payload: dict, cells_filter: str | None, seed: int = 42
+) -> bool:
+    """Drop the plan-§9 phase-done sentinel — ONLY for an UNFILTERED seed-42 run (M1).
 
     A ``--cells``-filtered (smoke-slice) run completing its subset must not
     emit the phase-done signal (`.done_4b4`/`.done_4b5` + the ``[phase=done]``
-    line) the poller/orchestrator consumes as phase completion.
+    line) the poller/orchestrator consumes as phase completion. Likewise a
+    replication seed (``seed != 42``, review r3 item a): even UNFILTERED, it
+    must never write the PARENT's sentinel files under eval_results/issue_2224.
     """
-    if cells_filter is not None:
+    if cells_filter is not None or seed != 42:
         # NB: never spell the literal phase-done token here — a poller greps for it.
+        why = "--cells subset" if cells_filter is not None else f"seed {seed} != 42"
         print(
-            f"[{phase}] --cells subset complete — {name} sentinel + phase-done line "
-            f"SKIPPED (a filtered run is not phase completion)",
+            f"[{phase}] {why} complete — {name} sentinel + phase-done line "
+            f"SKIPPED (not parent seed-42 phase completion)",
             flush=True,
         )
         return False
@@ -623,7 +645,11 @@ def run_train(args) -> int:
     if still:
         raise RuntimeError(f"[train] {len(still)} cells still pending after fan-out: {still[:5]}")
     finalize_phase_sentinel(
-        ".done_4b4", "train", {"phase": "4b-4 train", "n_cells": len(cells)}, args.cells
+        ".done_4b4",
+        "train",
+        {"phase": "4b-4 train", "n_cells": len(cells)},
+        args.cells,
+        seed=args.seed,
     )
     return 0
 
@@ -1309,7 +1335,11 @@ def run_judge(args) -> int:
         )
     if not args.dry_run:
         finalize_phase_sentinel(
-            ".done_4b5", "judge", {"phase": "4b-5 judge", "n_cells": len(all_cells)}, args.cells
+            ".done_4b5",
+            "judge",
+            {"phase": "4b-5 judge", "n_cells": len(all_cells)},
+            args.cells,
+            seed=args.seed,
         )
     return 0
 

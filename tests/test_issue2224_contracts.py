@@ -656,6 +656,70 @@ class TestSeedIsolationGuard:
         with pytest.raises(RuntimeError, match=r"--out-root"):
             sweep.assert_seed_isolation(self._args(["--phase", "train", "--seed", "137"]))
 
+    def test_seed137_train_isolated_dirs_but_empty_suffix_raises(self):
+        # Review r3 BLOCKER 1: isolated LOCAL dirs with no --hf-prefix-suffix
+        # would overwrite the parent's HF adapters prefix + wandb run names.
+        args = self._args(["--phase", "train", "--seed", "137", "--out-root", "data/x_seed137"])
+        with pytest.raises(RuntimeError, match=r"--hf-prefix-suffix"):
+            sweep.assert_seed_isolation(args)
+
+    def test_seed137_upload_isolated_dirs_but_empty_suffix_raises(self):
+        args = self._args(
+            [
+                "--phase",
+                "upload",
+                "--seed",
+                "137",
+                "--out-root",
+                "data/x_seed137",
+                "--eval-questions-dir",
+                "data/q_seed137",
+            ]
+        )
+        with pytest.raises(RuntimeError, match=r"--hf-prefix-suffix"):
+            sweep.assert_seed_isolation(args)
+
+    def test_seed137_relative_spelling_of_parent_default_raises(self, monkeypatch):
+        # Review r3 BLOCKER 2: a RELATIVE spelling of the parent default must
+        # not evade the guard and resume from parent seed-42 state.
+        monkeypatch.chdir(sweep.PROJECT_ROOT)
+        rel = sweep.OUT_ROOT_DEFAULT.relative_to(sweep.PROJECT_ROOT)
+        args = self._args(
+            [
+                "--phase",
+                "train",
+                "--seed",
+                "137",
+                "--out-root",
+                str(rel),
+                "--hf-prefix-suffix",
+                "_seed137",
+            ]
+        )
+        with pytest.raises(RuntimeError, match=r"--out-root"):
+            sweep.assert_seed_isolation(args)
+
+    def test_seed137_train_fully_isolated_passes(self):
+        sweep.assert_seed_isolation(
+            self._args(
+                [
+                    "--phase",
+                    "train",
+                    "--seed",
+                    "137",
+                    "--out-root",
+                    "data/issue_2224/screening_ft_seed137",
+                    "--hf-prefix-suffix",
+                    "_seed137",
+                ]
+            )
+        )
+
+    def test_seed_replication_never_writes_parent_phase_sentinel(self):
+        # Review r3 item (a): an UNFILTERED seed!=42 run must skip the parent
+        # .done_4b4/.done_4b5 sentinel write (returns False = no write).
+        assert sweep.finalize_phase_sentinel("x.done", "train", {}, None, seed=137) is False
+
     def test_seed42_defaults_pass_and_isolated_seed137_passes(self):
         # Inert for the parent seed-42 pipeline (all defaults).
         sweep.assert_seed_isolation(self._args(["--phase", "judge", "--seed", "42"]))
