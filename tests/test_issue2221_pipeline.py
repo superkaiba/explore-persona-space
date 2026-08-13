@@ -2769,6 +2769,7 @@ def _waiver_args(out_root, families, waive=None, reason=None, *, em_like=None, e
         max_items=None,
         waive_parse_fail_arms=waive,
         waive_reason=reason,
+        allow_subresolution_pilot=False,
         em_like_families=em_like,
         evil_pool=evil_pool,
     )

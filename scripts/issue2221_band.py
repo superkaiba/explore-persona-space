@@ -350,6 +350,7 @@ def phase_pilot(args) -> None:
             target_total_draws=args.pilot_draws,
             min_effective_draws_per_arm=max(1, min(10, min_planned)),
             waive_parse_fail_arms=waived_arms,
+            allow_subresolution_pilot=args.allow_subresolution_pilot,
             report_path=report_path,
         )
         # Pin the composed rubric's identity into the report (r10): the
@@ -638,6 +639,13 @@ def build_argparser() -> argparse.ArgumentParser:
     )
     ap.add_argument(
         "--waive-reason", default=None, help="recorded explanation for the parse-fail waiver"
+    )
+    ap.add_argument(
+        "--allow-subresolution-pilot",
+        action="store_true",
+        help="smoke-only: accept a pilot whose per-arm effective draws cannot resolve the "
+        "rule-26(b) parse-fail threshold (the gate records the sub-resolution acceptance in "
+        "its report); production P2 waves never pass this flag",
     )
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--list-phases", action="store_true")

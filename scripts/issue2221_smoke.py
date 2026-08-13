@@ -357,6 +357,11 @@ def main() -> None:
                     str(args.pilot_draws),
                     "--n-draws",
                     "2",
+                    # Smoke slice cannot resolve the rule-26(b) parse-fail
+                    # threshold (needs >=51 effective draws/arm; the smoke has
+                    # ~24) — accept a sub-resolution pilot HERE ONLY. The
+                    # production P2 wave runs without this flag (full gate).
+                    "--allow-subresolution-pilot",
                 ],
             )
         elif name == "band":
