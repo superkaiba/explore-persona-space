@@ -232,3 +232,90 @@ def test_fold_diagnostics_keyed_off_manifest_labels():
     # and the manifest-keyed diagnostics are invariant to whatever _cv_folds did
     again_counts, again_q = fitc._g0v3_fold_diagnostics(man)
     assert (again_counts, again_q) == (fold_row_counts, fold0_q)
+
+
+def test_own_argmax_selection_symmetry_and_branch_call_site():
+    """Pin the selection-symmetry mechanism end to end (code-review v23 Minors 1+2).
+
+    (a) `_g0v3_own_argmax` behavioral pin: the argmax is restricted to the
+        pre-registered CANDIDATE set (a larger value OUTSIDE the candidates
+        must not win); value + per-candidate table returned; an empty
+        candidate intersection is fail-loud unless allow_fallback; the
+        fallback degrades to ALL swept layers; non-finite candidates are
+        skipped and an all-NaN candidate set raises.
+    (b) Call-site AST pins inside `run_g0v3` (the two review-surviving
+        mutations): the `_g0v3_branch` verdict call passes EXACTLY
+        (delta_assign, tol) — no third positional, no `eps` keyword, no
+        SD-derived term (SD is diagnostic-only, never a threshold input;
+        plan v26 SS4) — and BOTH arms' R^2 reads flow through
+        `_g0v3_own_argmax` (a non-argmax / global-max / fixed-layer draw
+        read breaks selection symmetry).
+    (c) Constant pins: G0V3_EPS_NOISE == 0.01 byte-exact and it IS the
+        `_g0v3_branch` eps default.
+    """
+    import ast
+    import inspect
+
+    # --- (a) behavioral pin (reviewer sketch, extended) ---
+    r2 = np.zeros(31)
+    cands = [16, 21, 22, 30]
+    r2[cands] = [0.52, 0.58, 0.57, 0.55]
+    r2[5] = 0.99  # global max OUTSIDE the candidate set -- must NOT be selected
+    layer, val, table = fitc._g0v3_own_argmax(r2, cands)
+    assert (layer, val) == (21, pytest.approx(0.58))
+    assert set(table.keys()) == {str(li) for li in cands}
+    assert table["21"] == pytest.approx(0.58)
+
+    # empty intersection: production candidates against an 8-layer smoke sweep
+    short = np.linspace(0.1, 0.8, 8)
+    with pytest.raises(AssertionError):
+        fitc._g0v3_own_argmax(short, cands, allow_fallback=False)
+    layer_fb, val_fb, table_fb = fitc._g0v3_own_argmax(short, cands, allow_fallback=True)
+    assert layer_fb == 7
+    assert val_fb == pytest.approx(0.8)
+    assert set(table_fb.keys()) == {str(i) for i in range(8)}
+
+    # non-finite candidates skipped (nanargmax); all-NaN candidate set raises
+    r2_nan = r2.copy()
+    r2_nan[21] = np.nan
+    layer_n, val_n, _ = fitc._g0v3_own_argmax(r2_nan, cands)
+    assert (layer_n, val_n) == (22, pytest.approx(0.57))
+    with pytest.raises(AssertionError):
+        fitc._g0v3_own_argmax(np.full(31, np.nan), cands)
+
+    # --- (b) call-site AST pins ---
+    tree = ast.parse(inspect.getsource(fitc.run_g0v3))
+
+    def _callee_name(call: ast.Call) -> str:
+        f = call.func
+        return f.id if isinstance(f, ast.Name) else getattr(f, "attr", "")
+
+    branch_calls = [
+        n for n in ast.walk(tree) if isinstance(n, ast.Call) and _callee_name(n) == "_g0v3_branch"
+    ]
+    assert len(branch_calls) == 1, "run_g0v3 must have exactly one _g0v3_branch verdict call"
+    call = branch_calls[0]
+    assert len(call.args) == 2 and not call.keywords, (
+        "run_g0v3 must call _g0v3_branch(delta_assign, tol) with the eps DEFAULT -- "
+        "threading a third arg / eps kwarg (e.g. an SD-derived widening) is banned: "
+        "the across-draw SD is diagnostic-only, never a verdict input (plan v26 SS4)"
+    )
+    referenced = {n.id for a in call.args for n in ast.walk(a) if isinstance(n, ast.Name)}
+    assert not ({"r2_r_sd", "r2_random_sd"} & referenced), (
+        "SD must not reach the _g0v3_branch call site even inside an argument expression"
+    )
+
+    argmax_calls = [
+        n
+        for n in ast.walk(tree)
+        if isinstance(n, ast.Call) and _callee_name(n) == "_g0v3_own_argmax"
+    ]
+    assert len(argmax_calls) == 2, (
+        "run_g0v3 must read BOTH arms through _g0v3_own_argmax (one grouped call + one call "
+        "inside the draws comprehension); a non-argmax draw read breaks selection symmetry"
+    )
+
+    # --- (c) constant pins ---
+    assert fitc.G0V3_EPS_NOISE == 0.01
+    sig = inspect.signature(fitc._g0v3_branch)
+    assert sig.parameters["eps"].default == fitc.G0V3_EPS_NOISE == 0.01
