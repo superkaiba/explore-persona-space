@@ -11,6 +11,12 @@ origin_prompt: '#1336 fellows job 12643 fit_pool: 3 pooled units OOM-killed (cgr
   no override path, mem_gb_cap=1800 unused'
 workflow: v1
 ---
+## Provenance
+
+workflow_fix_target: src/explore_persona_space/backends/slurm.py
+
+Filed by the #1336 orchestrator (fellows SLURM job 12643) after `fit_pool` lost 3 pooled fit units to cgroup OOM.
+
 ## Overview / Motivation
 
 Filed from #1336 (fellows SLURM job 12643, 2026-08-13): the `fit_pool` phase lost 3 pooled fit units to cgroup OOM (`memory.events oom_kill 3`, `memory.peak == memory.max == 1 TiB`) because the job's memory allocation is a pure function of GPU count and cannot be raised per dispatch.
