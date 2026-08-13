@@ -1,9 +1,18 @@
 {
-  "commit": "fcad199b",
-  "render_id": "e4a87cf9eb4c4e23",
-  "git_commit": "fcad199b",
-  "git_dirty": false,
-  "created": "2026-08-13T17:09:50Z",
+  "commit": "d20a3d5b+dirty",
+  "render_id": "bb2e103ceb0e48e1",
+  "git_commit": "d20a3d5b",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2054/writeup_result12/result2a_story_to_characters.meta.json",
+    "figures/issue_2054/writeup_result12/result2a_story_to_characters.pdf",
+    "figures/issue_2054/writeup_result12/result2a_story_to_characters.png",
+    "figures/issue_2054/writeup_result12/result2b_chat_to_characters.meta.json",
+    "figures/issue_2054/writeup_result12/result2b_chat_to_characters.pdf",
+    "figures/issue_2054/writeup_result12/result2b_chat_to_characters.png",
+    "scripts/issue2054_writeup_result12_figs.py"
+  ],
+  "created": "2026-08-13T17:55:00Z",
   "figsize": [
     11.2,
     4.9

@@ -1,9 +1,22 @@
 {
-  "commit": "fcad199b",
-  "render_id": "f29442dd1e78426d",
-  "git_commit": "fcad199b",
-  "git_dirty": false,
-  "created": "2026-08-13T17:09:53Z",
+  "commit": "d20a3d5b+dirty",
+  "render_id": "66054962fde545de",
+  "git_commit": "d20a3d5b",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2054/writeup_result12/result2a_story_to_characters.meta.json",
+    "figures/issue_2054/writeup_result12/result2a_story_to_characters.pdf",
+    "figures/issue_2054/writeup_result12/result2a_story_to_characters.png",
+    "figures/issue_2054/writeup_result12/result2a_story_to_characters_recovery.meta.json",
+    "figures/issue_2054/writeup_result12/result2a_story_to_characters_recovery.pdf",
+    "figures/issue_2054/writeup_result12/result2a_story_to_characters_recovery.png",
+    "figures/issue_2054/writeup_result12/result2b_chat_to_characters.meta.json",
+    "figures/issue_2054/writeup_result12/result2b_chat_to_characters.pdf",
+    "figures/issue_2054/writeup_result12/result2b_chat_to_characters.png",
+    "scripts/issue2054_writeup_result12_figs.py",
+    "tasks/running/2275/events.jsonl"
+  ],
+  "created": "2026-08-13T17:55:03Z",
   "figsize": [
     11.2,
     4.9

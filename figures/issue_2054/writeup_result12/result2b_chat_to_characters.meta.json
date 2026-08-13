@@ -1,9 +1,15 @@
 {
-  "commit": "fcad199b",
-  "render_id": "2b12e1ed9cc24a8f",
-  "git_commit": "fcad199b",
-  "git_dirty": false,
-  "created": "2026-08-13T17:09:43Z",
+  "commit": "d20a3d5b+dirty",
+  "render_id": "4e798fc9a76e480c",
+  "git_commit": "d20a3d5b",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2054/writeup_result12/result2a_story_to_characters.meta.json",
+    "figures/issue_2054/writeup_result12/result2a_story_to_characters.pdf",
+    "figures/issue_2054/writeup_result12/result2a_story_to_characters.png",
+    "scripts/issue2054_writeup_result12_figs.py"
+  ],
+  "created": "2026-08-13T17:54:57Z",
   "figsize": [
     11.2,
     4.9
