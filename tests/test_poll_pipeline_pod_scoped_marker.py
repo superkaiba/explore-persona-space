@@ -41,8 +41,11 @@ from __future__ import annotations
 import importlib.util
 import logging
 import sys
+import time
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -296,3 +299,76 @@ def test_acceptance2_older_leg_genuinely_stale_pid_file_still_warns(
         )
         is True
     )
+
+
+# ── 5. poll_once call-site threading (code-review round-1 minor) ───────────────
+
+
+def test_poll_once_threads_pod_to_both_marker_reads(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Pins the two ``poll_once`` call-site ``pod=pod`` threads — the
+    one-line essence of the #2259 fix. Every other poll_once-level test
+    fakes the helpers with pod-accepting-but-ignoring fakes, so reverting
+    either call site to the un-threaded form would leave the suite green;
+    recording fakes capture the ``pod`` kwarg each helper actually receives
+    (the code-review round-1 sketch). Harness mirrors
+    ``tests/test_poll_pipeline_stale_pid_warn.py::_patch_pod`` (sentinel
+    drain SSH returns empty; the probe returns a healthy running tick)."""
+    received: dict[str, object] = {}
+
+    def _fake_launch_fields(issue: int, pod: str | None = None) -> tuple[int | None, str]:
+        received["launch_fields_pod"] = pod
+        return None, ""
+
+    def _fake_age(issue: int, now_epoch: float, pod: str | None = None) -> float | None:
+        received["age_pod"] = pod
+        return 10800.0
+
+    pod_now = int(time.time())  # pod clock == VM clock; healthy ordering below
+
+    def _fake_run(cmd: list[str], **kwargs: Any):
+        import subprocess
+
+        remote = cmd[-1]
+        if "SENTINEL_START" in remote:
+            stdout = ""
+        else:
+            stdout = "\n".join(
+                [
+                    "PID_FILE_MISSING=0",
+                    f"PID_FILE_MTIME_EPOCH={pod_now - 3690}",  # marker_age + 90: no WARN
+                    "PID_ALIVE=1",
+                    f"MTIME_EPOCH={pod_now - 30}",
+                    f"POD_NOW_EPOCH={pod_now}",
+                    "TAIL_START",
+                    "2026-07-09 00:00:01 [phase=training step=5/100]",
+                    "TAIL_END",
+                    "CELL_MTIME_EPOCH=0",
+                    "CELL_TAIL_START",
+                    "CELL_TAIL_END",
+                    "PHASE_LOG_MTIME_EPOCH=0",
+                    "SHARD_LOG_MTIME_EPOCH=0",
+                    "GPU_UTIL=95",
+                    "ZOMBIE_GPU_PIDS=",
+                    "SESSION_CPU_SECS=unknown",
+                    "RESULTS_SENTINEL_PRESENT=0",
+                ]
+            )
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout=stdout, stderr="")
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+    monkeypatch.setattr(pp, "_marker_launch_fields", _fake_launch_fields)
+    monkeypatch.setattr(pp, "_run_launched_age_sec", _fake_age)
+
+    pp.poll_once(
+        issue=ISSUE,
+        pod=OLDER_POD,
+        log_path=f"/workspace/logs/issue-{ISSUE}.log",
+        pid_file=f"/workspace/logs/issue-{ISSUE}.pid",
+        state_file=tmp_path / "poll-state.json",
+    )
+
+    assert received["launch_fields_pod"] == OLDER_POD  # :5616 thread
+    assert received["age_pod"] == OLDER_POD  # :5915 thread
