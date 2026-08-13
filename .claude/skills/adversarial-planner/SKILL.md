@@ -430,7 +430,20 @@ Run the structural verifier against the plan version just persisted:
   conflicting plan instead keeps ONE declaration-shaped value and moves
   every other mention mid-sentence / into a wrapped or fenced form so the
   first-match consumer (`GPU_LINE_RE` on the raw plan — the Step 2c
-  gate's read) resolves the declared value; #2123).
+  gate's read) resolves the declared value; #2123), and
+  `N/A — backend pin-claim reconciled` (check 62 — the §9 pin-claim
+  vocabulary is deliberate and the claim/frontmatter divergence is
+  reconciled in prose; a plan genuinely claiming a frontmatter pin instead
+  has the `backend: <lane>` key actually set in the task's body.md
+  frontmatter BEFORE dispatch, or rewords the claim — a phantom pin-claim
+  routes `auto` at dispatch; #2276, incident #2225 v5/v9), and
+  `N/A — declared width vs launch width reconciled` (check 63 — the §9
+  N-wide declaration and a narrower launch fence are BOTH deliberate,
+  e.g. a narrow smoke launch beside a wide production provision; a plan
+  genuinely dispatching N-wide through the fence instead adds `--gpus <N>`
+  to it, or re-costs the §9 walls at the realized width — a
+  `--time-budget-hours` fence sized to the wide wall TIMEOUTs the narrow
+  run; #2276, incident #2225 v9).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).
