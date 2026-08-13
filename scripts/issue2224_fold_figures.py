@@ -21,6 +21,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv()  # BEFORE matplotlib/numpy: shared-VM thread caps (#847)
+
 import matplotlib.pyplot as plt
 import numpy as np
 
