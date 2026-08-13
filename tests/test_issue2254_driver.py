@@ -261,12 +261,24 @@ def test_r2_score_multi_perfect_and_mean_predictor():
 # ---------------------------------------------------------------------------
 
 
-def test_phases_registry_covers_plan_order_and_stubs_raise():
-    for name in ("stage_inputs", "fit_maps", "capture_directions", "norm_probe"):
-        assert callable(pi.PHASES[name])
-    for name in pi.UNIT3_PHASES:
-        with pytest.raises(NotImplementedError, match=name):
-            pi.PHASES[name](None)
+def test_phases_registry_covers_plan_order_all_implemented():
+    expected = (
+        "stage_inputs",
+        "fit_maps",
+        "capture_directions",
+        "norm_probe",
+        "baseline_ceiling",
+        "localize",
+        "decisive",
+        "patch",
+        "build_pools",
+        "margin",
+        "judge_reduce",
+        "figures",
+    )
+    assert tuple(pi.PHASES) == expected  # plan §4 pipeline order
+    assert all(callable(fn) for fn in pi.PHASES.values())
+    assert set(pi.UNIT3_PHASES) <= set(pi.PHASES)
 
 
 def test_argparser_defaults_match_plan_grid():
@@ -283,6 +295,9 @@ def test_apply_smoke_narrows_to_parity_layer_and_scratch_root():
     assert args.layers == [pi.PILOT_LAYER]
     assert len(args.behaviors) == 1
     assert args.out_root == "/tmp/issue-2254-smoke"
+    assert args.fig_dir == "/tmp/issue-2254-smoke/figures"
+    assert args.q_localize == 2 and args.q_decisive == 2
+    assert args.draws_localize == 2 and args.draws_decisive == 2
     assert pi._hf_prefix().endswith("/smoke")
     # reset the module-global so later tests see the canonical prefix
     pi._SMOKE_UPLOAD_SUBPREFIX = False

@@ -17,8 +17,25 @@ Phases (plan §4):
   norm_probe           rho_l at all 28 layers (per-behavior + pooled medians)
                        with the #2220 shared-layer parity assert, plus the
                        1-cell production-shape timing pilot (gate-1 input). GPU.
-  baseline_ceiling / localize / decisive / patch / margin / judge_reduce
-                       unit-3 scope (pre-split contract) — NotImplementedError.
+  baseline_ceiling     alpha=0 baselines + donor-swap ceilings, decisive grain
+                       (20q x 5 draws x seeds {42,43}; ceiling 100 ctx x 1). GPU.
+  localize             wave-1 dose x direction x position x layer-config grid
+                       (385 cells/behavior incl. alpha0; 10q x 3 draws x s42),
+                       per-cell checkpoints + shard-safe resume.  GPU.
+  decisive             wave-2 confirmation at the judge-selected operating
+                       points (20q x 5 draws x seeds {42,43}); pod-B rho seam
+                       re-asserted vs the staged rho_by_layer.json.  GPU.
+  patch                calibration captures (mu_pos/mu_neut projections) +
+                       projection-patch / directional-ablation cells.  GPU.
+  build_pools          margin answer pools: evil+sycophancy staged verbatim
+                       from #2220; hallucination REGENERATED from judged
+                       localize completions (planned step, same instrument).
+  margin               teacher-forced fixed +/- pool margin at the decisive
+                       single-breadth operating points (#2220 rig, batch 4). GPU.
+  judge_reduce         off-pod: pilot-gated Batch-API judging + wave reduce
+                       (dose_response / operating_points / gates / verdicts /
+                       patch_vs_ceiling; selection-symmetric null bands).
+  figures              off-pod: hero + diagnostic figures (issue2254_figures).
 
 Reuse provenance (plan §10 "Reused code" row):
   - ``ridge_fit_matrix`` is copied VERBATIM from
@@ -1023,17 +1040,23 @@ def phase_fit_maps(args) -> None:
     _breadcrumb("fit_maps", status="done", layers=len(layers), wall_s=round(time.time() - t0, 1))
 
 
-def _upload_folder_to_hf(local_dir: Path, path_in_repo: str) -> None:
+def _upload_folder_to_hf(
+    local_dir: Path, path_in_repo: str, allow: list[str] | None = None
+) -> None:
     """One bulk upload_folder commit (never a per-file loop); fail-loud, retried
-    (issue2220_readwrite `_upload_directions` pattern)."""
+    (issue2220_readwrite `_upload_directions` pattern).
+
+    `allow` is the upload_folder allow_patterns list (default covers the
+    tensor/JSON artifact classes; judge packs pass ["*.jsonl", "*.json"] —
+    plan-glob parity, #825)."""
     from huggingface_hub import HfApi
 
     from explore_persona_space.orchestrate import hub
 
-    allow = ["*.pt", "*.json", "*.npz"]
-    files = [
-        p for p in local_dir.rglob("*") if p.is_file() and p.suffix in (".pt", ".json", ".npz")
-    ]
+    if allow is None:
+        allow = ["*.pt", "*.json", "*.npz"]
+    suffixes = tuple(p.lstrip("*") for p in allow)
+    files = [p for p in local_dir.rglob("*") if p.is_file() and p.name.endswith(suffixes)]
     if not files:
         raise RuntimeError(f"[upload] no files under {local_dir} — refusing an empty upload")
     hub.assert_hub_dir_filecounts(str(local_dir), path_in_repo, allow_patterns=allow)
@@ -1428,28 +1451,17 @@ def _timing_pilot(args, model, tok, rho_result: dict) -> dict:
     return pilot
 
 
-def phase_norm_probe(args) -> None:
-    """rho_l = median last-context-token residual norm, all 28 layers, per
-    behavior + pooled, with the #2220 shared-layer parity assert; then the
-    1-cell timing pilot (plan §4.2 + §7 gate 1).
+def _compute_rho(model, tok, behaviors: list[str], layers: list[int], phase: str = "norm_probe"):
+    """Median last-context-token residual norm per (behavior, layer) + pooled.
 
-    Geometry note: per-context SINGLE-ROW unpadded forwards (the exact #2220
-    phase_norm_probe geometry) so the parity assert compares like with like —
-    a padded batched forward would shift bf16 numerics (gotchas.md matched
-    batch geometry).
+    Returns ``(per_behavior, pooled_median)`` with ``"L<ly>"`` keys. Per-context
+    SINGLE-ROW unpadded forwards (the exact #2220 geometry) so the parity /
+    seam asserts compare like with like (gotchas.md matched batch geometry).
     """
-    _require_cuda("norm_probe")
     import torch
 
     from explore_persona_space.analysis.extraction import extract_layer_activations
     from explore_persona_space.experiments.issue1415 import steering
-
-    out_root = _out_root(args)
-    _assert_phase_headroom(out_root, 1.0, "norm_probe")
-    layers = sorted(int(x) for x in args.layers)
-    behaviors = list(args.behaviors)
-    _breadcrumb("norm_probe", behaviors=len(behaviors), layers=len(layers))
-    model, tok = _load_model_and_tokenizer()
 
     result: dict[str, dict[str, float]] = {}
     pooled: dict[int, list[float]] = {ly: [] for ly in layers}
@@ -1457,7 +1469,7 @@ def phase_norm_probe(args) -> None:
     for bi, behavior in enumerate(behaviors, 1):
         questions = _eval_questions(behavior)
         contexts = _contexts_for_questions(questions)
-        norms = {ly: [] for ly in layers}
+        norms: dict[int, list[float]] = {ly: [] for ly in layers}
         for ctx in contexts:
             ids = steering.context_token_ids(tok, ctx)
             input_ids = torch.tensor([ids], device=model.device)
@@ -1471,13 +1483,37 @@ def phase_norm_probe(args) -> None:
                 norms[ly].append(nrm)
                 pooled[ly].append(nrm)
         result[behavior] = {f"L{ly}": float(np.median(norms[ly])) for ly in layers}
-        _progress("norm_probe", bi, len(behaviors), behavior, t0)
+        _progress(phase, bi, len(behaviors), behavior, t0)
+    pooled_median = {f"L{ly}": float(np.median(pooled[ly])) for ly in layers}
+    return result, pooled_median
+
+
+def phase_norm_probe(args) -> None:
+    """rho_l = median last-context-token residual norm, all 28 layers, per
+    behavior + pooled, with the #2220 shared-layer parity assert; then the
+    1-cell timing pilot (plan §4.2 + §7 gate 1).
+
+    Geometry note: per-context SINGLE-ROW unpadded forwards (the exact #2220
+    phase_norm_probe geometry) so the parity assert compares like with like —
+    a padded batched forward would shift bf16 numerics (gotchas.md matched
+    batch geometry).
+    """
+    _require_cuda("norm_probe")
+
+    out_root = _out_root(args)
+    _assert_phase_headroom(out_root, 1.0, "norm_probe")
+    layers = sorted(int(x) for x in args.layers)
+    behaviors = list(args.behaviors)
+    _breadcrumb("norm_probe", behaviors=len(behaviors), layers=len(layers))
+    model, tok = _load_model_and_tokenizer()
+
+    result, pooled_median = _compute_rho(model, tok, behaviors, layers, phase="norm_probe")
 
     parity = _rho_parity_assert(result)
     payload = _run_metadata(
         {
             "rho_median_last_context_token": result,
-            "rho_pooled_median": {f"L{ly}": float(np.median(pooled[ly])) for ly in layers},
+            "rho_pooled_median": pooled_median,
             "layers": layers,
             "rw2220_parity": parity,
         }
@@ -1486,6 +1522,9 @@ def phase_norm_probe(args) -> None:
 
     pilot = _timing_pilot(args, model, tok, result)
     _write_json_atomic(out_root / "norm_probe" / "timing_pilot.json", _run_metadata(pilot))
+    # rho is the pod-B seam input (decisive/patch/margin recompute + assert
+    # against this file), so it must be fetchable off-pod (plan §4.2).
+    _upload_folder_to_hf(out_root / "norm_probe", f"{_hf_prefix()}/norm_probe")
 
     _write_sentinel(
         out_root,
@@ -1500,30 +1539,1770 @@ def phase_norm_probe(args) -> None:
 
 
 # ---------------------------------------------------------------------------
-# unit-3 phases (pre-split contract): explicit NotImplementedError stubs
+# unit-3 constants: steering grid + patch + judge/reduce (plan §4.2/§4.3)
 # ---------------------------------------------------------------------------
 
-UNIT3_PHASES = ("baseline_ceiling", "localize", "decisive", "patch", "margin", "judge_reduce")
+MID_BAND = (14, 17, 20)
+LAYER_CONFIGS = {
+    "L14": (14,),
+    "L17": (17,),
+    "L20": (20,),
+    "L26": (26,),
+    "mid": MID_BAND,
+    "all": ALL_LAYERS,
+}
+BREADTH_OF_CONFIG = {
+    "L14": "single",
+    "L17": "single",
+    "L20": "single",
+    "L26": "single",
+    "mid": "mid",
+    "all": "all",
+}
+BREADTHS = ("single", "mid", "all")
+DOSES = (-4.0, -2.0, -1.0, -0.5, 0.5, 1.0, 2.0, 4.0)
+CONTEXT_DIRECTIONS = ("pre", "rb", "ctxext", "random", "preshuf")
+ANSWER_DIRECTIONS = ("pre", "rb", "random")
+NULL_STEER = {"context": ("random", "preshuf"), "answer": ("random",)}
+PATCH_DIRECTIONS = ("pre", "rb", "ctxext")
+PATCH_OPS = ("proj", "ablate")
+PATCH_BREADTHS = ("single", "mid")
+SEED_LOCALIZE = 42
+SEEDS_DECISIVE = (42, 43)
+JUDGE_DRAWS = {"localize": 3, "baseline_ceiling": 5, "decisive": 5, "patch": 5}
+# multi-field #2220 trait rubric => the 2048 floor (llm-judging.md rule 23);
+# the issue_1739 JUDGE_MAX_TOKENS=400 parity pin is NOT inherited here.
+JUDGE_MAX_TOKENS_2254 = 2048
+SCORE_THRESHOLD = 50.0
+N_BOOT_CELL = 1000
+N_BOOT_VERDICT = 2000
+BOOTSTRAP_SEED = 20254
+COHERENCE_CELL_GATE = 0.5
+CAP_HIT_REGEN_FRAC = 0.02
+CAP_HIT_REGEN_FACTOR = 2
+POOL_SIZE = 10  # rw2220 margin pool size (verbatim reuse)
+POOL_MIN = 3
+MARGIN_BATCH_2254 = int(os.environ.get("EPM_MARGIN_BATCH", "4"))
+RW2220_POOL_PREFIX = "issue2220_readwrite/margin/pools"
+JUDGE_PILOT_MIN_EFFECTIVE = 51  # rule-26 floor at the 2% threshold (#2124)
+_WAVE_SRC = {"localize": ("baseline_ceiling", "localize"), "decisive": ("decisive", "patch")}
+_DIR_SHORT = {"pre": "pre", "rb": "rb", "ctxext": "cxd", "random": "rnd", "preshuf": "shf"}
+_POS_SHORT = {"context": "ctx", "answer": "ans"}
 
 
-def _unit3_stub(name: str):
-    def _stub(args) -> None:
-        raise NotImplementedError(
-            f"--phase {name}: unit-3 scope (pre-split implementation contract; "
-            "plan §4 phase order). Units 1-2 shipped hooks + stage_inputs/"
-            "fit_maps/capture_directions/norm_probe; unit 3 fills this phase."
+def _c_token(c: float) -> str:
+    """Dose token: -0.5 -> 'cm0p5', 2.0 -> 'c2'."""
+    return "c" + ("m" if c < 0 else "") + f"{abs(c):g}".replace(".", "p")
+
+
+def _cell_tokens(cell: dict) -> list[str]:
+    """Stable id tokens for a generation cell (kind: alpha0|ceiling|steer|patch)."""
+    b = cell["behavior"]
+    kind = cell["kind"]
+    if kind == "alpha0":
+        return [b, "a0"]
+    if kind == "ceiling":
+        return [b, "cl"]
+    if kind == "patch":
+        return [
+            b,
+            _DIR_SHORT[cell["direction"]],
+            "pp" if cell["op"] == "proj" else "ab",
+            cell["breadth"],
+        ]
+    return [
+        b,
+        _DIR_SHORT[cell["direction"]],
+        _POS_SHORT[cell["position"]],
+        cell["layer_config"],
+        _c_token(cell["c"]),
+    ]
+
+
+def _cell_id(cell: dict) -> str:
+    return "__".join(_cell_tokens(cell))
+
+
+def _judge_ctx_id(cell: dict, seed: int, i: int) -> str:
+    """Judge context id: '-'-joined (rollout_item_id forbids '__'), <=49 chars."""
+    cid = "-".join(_cell_tokens(cell)) + f"-s{seed}-x{i:03d}"
+    assert len(cid) <= 49, cid
+    return cid
+
+
+# ---------------------------------------------------------------------------
+# unit-3 loaders: direction bank, rho, pod-B rho seam
+# ---------------------------------------------------------------------------
+
+
+def _ensure_direction_vec(out_root: Path, behavior: str, slug: str, layer: int):
+    """Unit-norm fp32 direction (H,) from the capture_directions bank
+    (local-first, HF `stage_hub_file` fallback; fail-loud on shape)."""
+    import torch
+
+    from explore_persona_space.orchestrate import hub
+
+    name = f"{behavior}_{slug}_L{layer}.pt"
+    path = out_root / "directions" / name
+    if not path.exists():
+        hub.stage_hub_file(
+            HF_DATA_REPO, f"{_hf_prefix()}/directions/{name}", path, repo_type="dataset"
+        )
+    payload = torch.load(path, map_location="cpu", weights_only=True)
+    vec = payload["direction"].float()
+    assert vec.shape == (HIDDEN_DIM,), (name, tuple(vec.shape))
+    return vec / vec.norm()
+
+
+def _load_rho(out_root: Path) -> tuple[dict[str, float], dict]:
+    """(pooled-median rho 'L<ly>'->float, full rho_by_layer payload);
+    local-first, HF fallback (plan §4.2: dose rho = POOLED median)."""
+    from explore_persona_space.orchestrate import hub
+
+    path = out_root / "norm_probe" / "rho_by_layer.json"
+    if not path.exists():
+        hub.stage_hub_file(
+            HF_DATA_REPO, f"{_hf_prefix()}/norm_probe/rho_by_layer.json", path, repo_type="dataset"
+        )
+    data = json.loads(path.read_text())
+    pooled = {k: float(v) for k, v in data["rho_pooled_median"].items()}
+    return pooled, data
+
+
+def _rho_seam_assert(args, model, tok) -> dict:
+    """Pod-B rho seam (plan §4.2, critic-mandated): recompute rho_l on THIS
+    machine via the same `_compute_rho` and assert per-(behavior, layer)
+    equality vs the staged pod-A rho_by_layer.json (rtol RHO_PARITY_RTOL).
+    Absence or mismatch is a hard fail — never a silent re-derive."""
+    out_root = _out_root(args)
+    _, data = _load_rho(out_root)
+    ref = data["rho_median_last_context_token"]
+    behaviors = sorted(ref)
+    layers = sorted(int(k[1:]) for k in next(iter(ref.values())))
+    fresh, _ = _compute_rho(model, tok, behaviors, layers, phase="rho_seam")
+    n_checked = 0
+    for b in behaviors:
+        for key, ref_v in ref[b].items():
+            new_v = fresh[b][key]
+            tol = RHO_PARITY_RTOL * max(abs(float(ref_v)), 1e-9)
+            if abs(new_v - float(ref_v)) > tol:
+                raise RuntimeError(
+                    f"rho seam mismatch: {b}/{key} fresh={new_v:.6g} vs staged={ref_v:.6g} "
+                    f"(rtol {RHO_PARITY_RTOL}) — pod-B model/geometry drift vs pod-A"
+                )
+            n_checked += 1
+    assert n_checked > 0, "rho seam checked zero (behavior, layer) cells"
+    logger.info("[rho-seam] PASS: %d cells within rtol %s", n_checked, RHO_PARITY_RTOL)
+    return {"rho_seam_cells": n_checked, "rho_seam_rtol": RHO_PARITY_RTOL}
+
+
+# ---------------------------------------------------------------------------
+# unit-3 hook factories + generation-grid driver
+# ---------------------------------------------------------------------------
+
+
+def _zero_hook_factory(model, layer: int, all_positions: bool = False):
+    """(make, alphas) building a DeltaHook with alpha=0 — alpha0/ceiling cells
+    run the IDENTICAL hook + generate path as steered cells (parity by
+    construction, plan §4.2)."""
+    import torch
+
+    from explore_persona_space.experiments.issue1415.steering import DeltaHook
+
+    delta = torch.zeros(HIDDEN_DIM, dtype=torch.bfloat16, device=model.device)
+
+    def make():
+        return DeltaHook(model, layer, delta, 0.0, all_positions=all_positions)
+
+    return make, {f"L{layer}": 0.0}
+
+
+def _steer_hook_factory(model, out_root: Path, cell: dict, rho_pooled: dict[str, float]):
+    """(make, alphas) for a steer cell: alpha_l = (c/K) * rho_pooled[L_l]
+    (plan §4.2 norm-match split; K = band width). position=answer steers
+    every generated position (all_positions=True); context steers the
+    last-context-token prefill slot only."""
+    import torch
+
+    from explore_persona_space.experiments.issue1415.steering import DeltaHook
+    from explore_persona_space.experiments.issue2254.hooks import multi_layer_delta_hooks
+
+    layers = list(LAYER_CONFIGS[cell["layer_config"]])
+    c = float(cell["c"])
+    k = len(layers)
+    all_positions = cell["position"] == "answer"
+    dirs = [
+        _ensure_direction_vec(out_root, cell["behavior"], cell["direction"], ly).to(
+            dtype=torch.bfloat16
+        )
+        for ly in layers
+    ]
+    alphas = [(c / k) * rho_pooled[f"L{ly}"] for ly in layers]
+    if k == 1:
+
+        def make():
+            return DeltaHook(model, layers[0], dirs[0], alphas[0], all_positions=all_positions)
+
+    else:
+
+        def make():
+            return multi_layer_delta_hooks(model, layers, dirs, alphas, all_positions=all_positions)
+
+    return make, {f"L{ly}": a for ly, a in zip(layers, alphas, strict=True)}
+
+
+def _cap_hit_fraction(res: list[list[str]], tok, cap: int) -> float:
+    """Fraction of completions at/over the token cap (finish-reason proxy)."""
+    n_hit = 0
+    n_tot = 0
+    for per_ctx in res:
+        for t in per_ctx:
+            n_tot += 1
+            if len(tok(t, add_special_tokens=False)["input_ids"]) >= cap:
+                n_hit += 1
+    return n_hit / max(1, n_tot)
+
+
+def _gen_cell_rows(
+    model, tok, cell, contexts, q_of_context, hook_make, *, n_draws, seeds, max_new_tokens, alphas
+):
+    """Generate one cell: per seed, n_draws per context under the cell's hook;
+    per-context coherence flags; cap-hit fraction over all draws. Content
+    hygiene: completions land in the JSON payload only, never in logs."""
+    from explore_persona_space.experiments.issue1415 import steering
+
+    seeds_out: dict[str, dict] = {}
+    cap_fracs = []
+    for seed in seeds:
+        with hook_make() as hook:
+            res = steering.generate_batch(
+                model,
+                tok,
+                contexts,
+                n=n_draws,
+                hook=hook,
+                max_new_tokens=max_new_tokens,
+                temperature=1.0,
+                seed_base=int(seed),
+            )
+        coh = [steering.coherence_check(per_ctx) for per_ctx in res]
+        seeds_out[str(seed)] = {
+            "completions": res,
+            "coherent_flags": coh,
+            "condition_passes": [steering.condition_passes(flags) for flags in coh],
+        }
+        cap_fracs.append(_cap_hit_fraction(res, tok, max_new_tokens))
+    return {
+        "cell_id": _cell_id(cell),
+        "cell": cell,
+        "alphas": alphas,
+        "q_of_context": q_of_context,
+        "seeds": seeds_out,
+        "max_new_tokens": max_new_tokens,
+        "cap_hit_fraction": float(np.mean(cap_fracs)),
+    }
+
+
+def _run_gen_grid(
+    args, phase, cells, *, contexts_of, q_of, hookf_builder, n_draws_of, seeds_of, pre_gen=None
+):
+    """Shared generation-grid driver: shard -> per-cell checkpoint JSONs under
+    <out_root>/<phase>/raw_completions/ (cached-skip resume unless --force),
+    cap-hit regen once at 2x cap (>2% trigger, CLAUDE.md max_new_tokens rule),
+    HF raw-completions upload BEFORE the sentinel, per-cell progress lines."""
+    _require_cuda(phase)
+    out_root = _out_root(args)
+    _assert_phase_headroom(out_root, 2.0, phase)
+    if not cells:
+        raise RuntimeError(f"{phase}: empty cell list (selection bug — never a silent no-op)")
+    assert 0 <= args.shard_id < args.num_shards, (args.shard_id, args.num_shards)
+    shard = cells[args.shard_id :: args.num_shards]
+    comp_root = out_root / phase / "raw_completions"
+    comp_root.mkdir(parents=True, exist_ok=True)
+    _breadcrumb(phase, cells=len(cells), shard=len(shard), shard_id=args.shard_id)
+    model, tok = _load_model_and_tokenizer()
+    sentinel_extra = dict(pre_gen(model, tok)) if pre_gen is not None else {}
+    hookf = hookf_builder(model)
+    t0 = time.time()
+    n_regen = 0
+    for k, cell in enumerate(shard, 1):
+        cid = _cell_id(cell)
+        path = comp_root / f"{cid}.json"
+        if path.exists() and not args.force:
+            _progress(phase, k, len(shard), f"{cid} (cached)", t0)
+            continue
+        contexts = contexts_of(cell)
+        q_idx = q_of(cell)
+        assert len(contexts) == len(q_idx), (cid, len(contexts), len(q_idx))
+        make, alphas = hookf(cell)
+        rec = _gen_cell_rows(
+            model,
+            tok,
+            cell,
+            contexts,
+            q_idx,
+            make,
+            n_draws=n_draws_of(cell),
+            seeds=seeds_of(cell),
+            max_new_tokens=GEN_MAX_NEW_TOKENS,
+            alphas=alphas,
+        )
+        if rec["cap_hit_fraction"] > CAP_HIT_REGEN_FRAC:
+            n_regen += 1
+            logger.info(
+                "[%s] %s cap-hit %.3f > %.2f — regenerating at %dx cap",
+                phase,
+                cid,
+                rec["cap_hit_fraction"],
+                CAP_HIT_REGEN_FRAC,
+                CAP_HIT_REGEN_FACTOR,
+            )
+            rec = _gen_cell_rows(
+                model,
+                tok,
+                cell,
+                contexts,
+                q_idx,
+                make,
+                n_draws=n_draws_of(cell),
+                seeds=seeds_of(cell),
+                max_new_tokens=GEN_MAX_NEW_TOKENS * CAP_HIT_REGEN_FACTOR,
+                alphas=alphas,
+            )
+        _write_json_atomic(path, _run_metadata(rec))
+        _progress(phase, k, len(shard), cid, t0)
+    _upload_folder_to_hf(comp_root, f"{_hf_prefix()}/raw_completions/{phase}")
+    tag = phase if args.num_shards == 1 else f"{phase}-shard{args.shard_id}"
+    _write_sentinel(
+        out_root, tag, "done", {"cells": len(shard), "regen_cells": n_regen, **sentinel_extra}
+    )
+    _breadcrumb(phase, status="done", regen_cells=n_regen)
+
+
+def _positive_instructions(behavior: str) -> list[str]:
+    """The 5 POSITIVE extraction system prompts (donor-swap ceiling + patch
+    persona prefixes; plan §4.2/§4.3). Prompt text is never logged."""
+    from explore_persona_space.experiments.issue_1739.generation import load_e1_assets
+
+    assets = load_e1_assets(behavior)
+    return [p["pos"] for p in assets["instruction"][:N_INSTRUCTION_PAIRS]]
+
+
+# ---------------------------------------------------------------------------
+# unit-3 grid enumeration (smoke narrows COUNTS, never the code path)
+# ---------------------------------------------------------------------------
+
+
+def _grid_combos(args) -> list[tuple[str, str]]:
+    """(direction, position) combos: 5 context + 3 answer = 8 (plan §4.2);
+    smoke keeps one steered combo per position class plus a null direction."""
+    if args.smoke:
+        return [("pre", "context"), ("rb", "answer"), ("random", "context")]
+    return [(d, "context") for d in CONTEXT_DIRECTIONS] + [(d, "answer") for d in ANSWER_DIRECTIONS]
+
+
+def _grid_layer_configs(args) -> tuple[str, ...]:
+    """Layer configs: 4 singles + mid band + all-28 (smoke: one single + mid)."""
+    return ("L14", "mid") if args.smoke else tuple(LAYER_CONFIGS)
+
+
+def _grid_doses(args) -> tuple[float, ...]:
+    return (-0.5, 1.0) if args.smoke else DOSES
+
+
+def _localize_cells(args, behaviors) -> list[dict]:
+    """Localize grid: 8 combos x 6 layer-configs x 8 doses + alpha0 = 385
+    cells/behavior (1,155 total at 3 behaviors; plan §4.2)."""
+    cells: list[dict] = []
+    for b in behaviors:
+        n_before = len(cells)
+        cells.append({"behavior": b, "kind": "alpha0"})
+        for d, p in _grid_combos(args):
+            for lc in _grid_layer_configs(args):
+                for c in _grid_doses(args):
+                    cells.append(
+                        {
+                            "behavior": b,
+                            "kind": "steer",
+                            "direction": d,
+                            "position": p,
+                            "layer_config": lc,
+                            "c": float(c),
+                        }
+                    )
+        if not args.smoke:
+            assert len(cells) - n_before == 385, len(cells) - n_before
+    return cells
+
+
+def _load_reduce_json(out_root: Path, rel: str, hint: str) -> dict:
+    """Local-first wave-1 reduce output; HF-staged fallback; fail-loud with a
+    remediation hint when absent in both places (plan §4.2 pod-B gate)."""
+    from explore_persona_space.orchestrate import hub
+
+    path = out_root / rel
+    if not path.exists():
+        try:
+            hub.stage_hub_file(HF_DATA_REPO, f"{_hf_prefix()}/{rel}", path, repo_type="dataset")
+        except Exception as exc:
+            raise FileNotFoundError(f"{rel} not found locally or on HF: {hint}") from exc
+    return json.loads(path.read_text())
+
+
+def _load_operating_points(out_root: Path) -> dict:
+    return _load_reduce_json(
+        out_root,
+        "localize/operating_points.json",
+        "run --phase judge_reduce --reduce-phase localize (wave 1) first",
+    )
+
+
+def _load_gates(out_root: Path) -> dict:
+    return _load_reduce_json(
+        out_root,
+        "localize/gates.json",
+        "run --phase judge_reduce --reduce-phase localize (wave 1) first",
+    )
+
+
+def _gate_ok_behaviors(gates: dict, behaviors: list[str]) -> tuple[list[str], list[str]]:
+    """(gate-passing, skipped) behaviors per wave-1 gates.json verdicts."""
+    kept: list[str] = []
+    skipped: list[str] = []
+    for b in behaviors:
+        if b not in gates["behaviors"]:
+            raise RuntimeError(f"gates.json missing behavior {b!r} — wave-1 reduce incomplete")
+        (kept if gates["behaviors"][b]["proceed"] else skipped).append(b)
+    return kept, skipped
+
+
+# ---------------------------------------------------------------------------
+# phase: baseline_ceiling (GPU; alpha0 baseline + donor-swap ceiling)
+# ---------------------------------------------------------------------------
+
+
+def phase_baseline_ceiling(args) -> None:
+    """Alpha0 baseline (eval questions x 5 draws x seeds {42,43}) + donor-swap
+    ceiling (5 positive extraction system prompts x eval questions, 1 draw x
+    seeds {42,43}); zero-delta hooks keep the generate path identical to the
+    steered cells (plan §4.2)."""
+    _ensure_repo_root_on_syspath()
+    import scripts.issue2220_readwrite as rw2220
+
+    behaviors = list(args.behaviors)
+    rw2220._assert_eval_bank_disjoint(behaviors)
+    q_cache = {b: _eval_questions(b)[: args.q_decisive] for b in behaviors}
+    pos_cache = {b: _positive_instructions(b) for b in behaviors}
+
+    cells: list[dict] = []
+    for b in behaviors:
+        cells.append({"behavior": b, "kind": "alpha0"})
+        cells.append({"behavior": b, "kind": "ceiling"})
+
+    def contexts_of(cell):
+        b = cell["behavior"]
+        qs = q_cache[b]
+        if cell["kind"] == "ceiling":
+            return [{"system": instr, "user": q} for instr in pos_cache[b] for q in qs]
+        return _contexts_for_questions(qs)
+
+    def q_of(cell):
+        b = cell["behavior"]
+        nq = len(q_cache[b])
+        if cell["kind"] == "ceiling":
+            return [i % nq for i in range(len(pos_cache[b]) * nq)]
+        return list(range(nq))
+
+    def hookf_builder(model):
+        def hookf(cell):
+            return _zero_hook_factory(model, FROZEN_LAYER[cell["behavior"]])
+
+        return hookf
+
+    _run_gen_grid(
+        args,
+        "baseline_ceiling",
+        cells,
+        contexts_of=contexts_of,
+        q_of=q_of,
+        hookf_builder=hookf_builder,
+        n_draws_of=lambda c: 1 if c["kind"] == "ceiling" else args.draws_decisive,
+        seeds_of=lambda c: SEEDS_DECISIVE,
+    )
+
+
+# ---------------------------------------------------------------------------
+# phase: localize (GPU; Q1 dose/layer/direction grid, pod A)
+# ---------------------------------------------------------------------------
+
+
+def phase_localize(args) -> None:
+    """Q1 localization grid (plan §4.2): 8 direction x position combos x 6
+    layer-configs x 8 doses + alpha0 per behavior; 10 questions x 3 draws x
+    seed 42; per-cell JSON checkpoints (resume/shard-safe)."""
+    out_root = _out_root(args)
+    rho_pooled, _ = _load_rho(out_root)
+    behaviors = list(args.behaviors)
+    cells = _localize_cells(args, behaviors)
+    q_cache = {b: _eval_questions(b)[: args.q_localize] for b in behaviors}
+
+    def contexts_of(cell):
+        return _contexts_for_questions(q_cache[cell["behavior"]])
+
+    def q_of(cell):
+        return list(range(len(q_cache[cell["behavior"]])))
+
+    def hookf_builder(model):
+        def hookf(cell):
+            if cell["kind"] == "alpha0":
+                return _zero_hook_factory(model, FROZEN_LAYER[cell["behavior"]])
+            return _steer_hook_factory(model, out_root, cell, rho_pooled)
+
+        return hookf
+
+    _run_gen_grid(
+        args,
+        "localize",
+        cells,
+        contexts_of=contexts_of,
+        q_of=q_of,
+        hookf_builder=hookf_builder,
+        n_draws_of=lambda c: args.draws_localize,
+        seeds_of=lambda c: (SEED_LOCALIZE,),
+    )
+
+
+# ---------------------------------------------------------------------------
+# phase: decisive (GPU, pod B; wave-1 operating points at full n)
+# ---------------------------------------------------------------------------
+
+
+def phase_decisive(args) -> None:
+    """Q2 decisive grid at wave-1 operating points (plan §4.2): per
+    gate-passing behavior, 8 combos x 3 breadths + alpha0; 20 questions x
+    5 draws x seeds {42,43}. Pod-B seam: recompute rho and assert equality
+    vs the staged pod-A values (hard fail on absence/mismatch)."""
+    out_root = _out_root(args)
+    ops = _load_operating_points(out_root)
+    gates = _load_gates(out_root)
+    kept, skipped = _gate_ok_behaviors(gates, list(args.behaviors))
+    if not kept:
+        raise RuntimeError(f"decisive: no gate-passing behaviors (skipped={skipped})")
+    rho_pooled, _ = _load_rho(out_root)
+
+    cells: list[dict] = []
+    missing: list[str] = []
+    for b in kept:
+        cells.append({"behavior": b, "kind": "alpha0"})
+        ops_b = ops["behaviors"][b]
+        for d, p in _grid_combos(args):
+            for breadth in BREADTHS:
+                point = ops_b.get(f"{d}__{p}__{breadth}")
+                if point is None:
+                    missing.append(f"{b}/{d}/{p}/{breadth}")
+                    continue
+                cells.append(
+                    {
+                        "behavior": b,
+                        "kind": "steer",
+                        "direction": d,
+                        "position": p,
+                        "layer_config": point["layer_config"],
+                        "c": float(point["c"]),
+                    }
+                )
+    _write_json_atomic(
+        out_root / "decisive" / "selection_meta.json",
+        _run_metadata(
+            {
+                "skipped_behaviors": skipped,
+                "missing_operating_points": missing,
+                "gate_verdicts": {b: gates["behaviors"][b] for b in list(args.behaviors)},
+            }
+        ),
+    )
+    q_cache = {b: _eval_questions(b)[: args.q_decisive] for b in kept}
+
+    def contexts_of(cell):
+        return _contexts_for_questions(q_cache[cell["behavior"]])
+
+    def q_of(cell):
+        return list(range(len(q_cache[cell["behavior"]])))
+
+    def hookf_builder(model):
+        def hookf(cell):
+            if cell["kind"] == "alpha0":
+                return _zero_hook_factory(model, FROZEN_LAYER[cell["behavior"]])
+            return _steer_hook_factory(model, out_root, cell, rho_pooled)
+
+        return hookf
+
+    _run_gen_grid(
+        args,
+        "decisive",
+        cells,
+        contexts_of=contexts_of,
+        q_of=q_of,
+        hookf_builder=hookf_builder,
+        n_draws_of=lambda c: args.draws_decisive,
+        seeds_of=lambda c: SEEDS_DECISIVE,
+        pre_gen=lambda model, tok: _rho_seam_assert(args, model, tok),
+    )
+
+
+# ---------------------------------------------------------------------------
+# phase: patch (GPU, pod B; projection-patch + directional ablation)
+# ---------------------------------------------------------------------------
+
+
+def _patch_layers_for(ops_b: dict, behavior: str, direction: str) -> list[int]:
+    """Single-breadth patch layer for (behavior, direction): the wave-1
+    single-breadth context operating point's layer; frozen-layer fallback when
+    that combo produced no operating point."""
+    point = ops_b.get(f"{direction}__context__single")
+    if point is None:
+        return [FROZEN_LAYER[behavior]]
+    return list(LAYER_CONFIGS[point["layer_config"]])
+
+
+def _patch_calibration(args, model, tok, out_root: Path, behaviors, ops) -> dict:
+    """Calibration captures (plan §4.3): v_c_context over neutral + persona-
+    prefixed contexts at every patch layer; per-context projections onto each
+    direction persisted IN FULL plus the separation-vs-spread diagnostic."""
+    import torch
+
+    from explore_persona_space.experiments.issue1415 import steering
+
+    calib: dict = {"behaviors": {}}
+    for b in behaviors:
+        qs = _eval_questions(b)[: args.q_decisive]
+        neutral = _contexts_for_questions(qs)
+        prefixed = [{"system": instr, "user": q} for instr in _positive_instructions(b) for q in qs]
+        ops_b = ops["behaviors"][b]
+        layer_set = sorted(
+            {ly for d in PATCH_DIRECTIONS for ly in _patch_layers_for(ops_b, b, d)} | set(MID_BAND)
+        )
+        cap_neut = steering.capture_vectors(model, tok, neutral, layer_set)
+        cap_pos = steering.capture_vectors(model, tok, prefixed, layer_set)
+        li = {ly: i for i, ly in enumerate(layer_set)}
+        rec_b: dict = {"layers": layer_set, "n_neutral": len(neutral), "n_pos": len(prefixed)}
+        rec_b["directions"] = {}
+        for d in PATCH_DIRECTIONS:
+            per_layer = {}
+            for ly in layer_set:
+                dvec = _ensure_direction_vec(out_root, b, d, ly)
+                pn = [
+                    float(torch.as_tensor(r["v_c_context"])[li[ly]].float() @ dvec)
+                    for r in cap_neut["per_context"]
+                ]
+                pp = [
+                    float(torch.as_tensor(r["v_c_context"])[li[ly]].float() @ dvec)
+                    for r in cap_pos["per_context"]
+                ]
+                sep = float(np.mean(pp) - np.mean(pn))
+                per_layer[f"L{ly}"] = {
+                    "proj_neutral": pn,
+                    "proj_pos": pp,
+                    "mu_neutral": float(np.mean(pn)),
+                    "mu_pos": float(np.mean(pp)),
+                    "sd_neutral": float(np.std(pn)),
+                    "sd_pos": float(np.std(pp)),
+                    "separation": sep,
+                    "separation_over_spread": sep / float(np.std(pn) + 1e-12),
+                }
+            rec_b["directions"][d] = per_layer
+        calib["behaviors"][b] = rec_b
+    return calib
+
+
+def phase_patch(args) -> None:
+    """Q3 causal patch grid (plan §4.3): projection-patch on NEUTRAL contexts
+    (<h,d> <- mu_pos, 20 ctx x 5 draws x 2 seeds) + directional ablation on
+    persona-PREFIXED contexts (<h,d> <- mu_neutral, 100 ctx x 1 draw x 2
+    seeds); 3 directions x 2 ops x 2 breadths per gate-passing behavior.
+    The behavioral ceiling is REUSED from baseline_ceiling (same recipe)."""
+    out_root = _out_root(args)
+    ops = _load_operating_points(out_root)
+    gates = _load_gates(out_root)
+    kept, skipped = _gate_ok_behaviors(gates, list(args.behaviors))
+    if not kept:
+        raise RuntimeError(f"patch: no gate-passing behaviors (skipped={skipped})")
+
+    q_cache = {b: _eval_questions(b)[: args.q_decisive] for b in kept}
+    pos_cache = {b: _positive_instructions(b) for b in kept}
+    cells = [
+        {"behavior": b, "kind": "patch", "direction": d, "op": op_kind, "breadth": breadth}
+        for b in kept
+        for d in PATCH_DIRECTIONS
+        for op_kind in PATCH_OPS
+        for breadth in PATCH_BREADTHS
+    ]
+    calib_path = out_root / "patch" / "calibration_projections.json"
+
+    def pre_gen(model, tok):
+        seam = _rho_seam_assert(args, model, tok)
+        if calib_path.exists() and not args.force:
+            logger.info("[patch] calibration cached at %s", calib_path)
+            return seam
+        calib = _patch_calibration(args, model, tok, out_root, kept, ops)
+        calib["rho_seam"] = seam
+        _write_json_atomic(calib_path, _run_metadata(calib))
+        _upload_folder_to_hf(
+            out_root / "patch", f"{_hf_prefix()}/patch", allow=["calibration_projections.json"]
+        )
+        return seam
+
+    def contexts_of(cell):
+        b = cell["behavior"]
+        if cell["op"] == "ablate":
+            return [{"system": instr, "user": q} for instr in pos_cache[b] for q in q_cache[b]]
+        return _contexts_for_questions(q_cache[b])
+
+    def q_of(cell):
+        b = cell["behavior"]
+        nq = len(q_cache[b])
+        if cell["op"] == "ablate":
+            return [i % nq for i in range(len(pos_cache[b]) * nq)]
+        return list(range(nq))
+
+    def hookf_builder(model):
+        calib = json.loads(calib_path.read_text())
+
+        def hookf(cell):
+            from explore_persona_space.experiments.issue2254.hooks import (
+                ProjectionPatchHook,
+                multi_layer_projection_patch_hooks,
+            )
+
+            b, d = cell["behavior"], cell["direction"]
+            layers = (
+                list(MID_BAND)
+                if cell["breadth"] == "mid"
+                else _patch_layers_for(ops["behaviors"][b], b, d)
+            )
+            key = "mu_pos" if cell["op"] == "proj" else "mu_neutral"
+            dvecs = [_ensure_direction_vec(out_root, b, d, ly) for ly in layers]
+            targets = [
+                float(calib["behaviors"][b]["directions"][d][f"L{ly}"][key]) for ly in layers
+            ]
+            if len(layers) == 1:
+
+                def make():
+                    return ProjectionPatchHook(model, layers[0], dvecs[0], targets[0])
+
+            else:
+
+                def make():
+                    return multi_layer_projection_patch_hooks(model, layers, dvecs, targets)
+
+            return make, {f"L{ly}": t for ly, t in zip(layers, targets, strict=True)}
+
+        return hookf
+
+    _run_gen_grid(
+        args,
+        "patch",
+        cells,
+        contexts_of=contexts_of,
+        q_of=q_of,
+        hookf_builder=hookf_builder,
+        n_draws_of=lambda c: args.draws_decisive if c["op"] == "proj" else 1,
+        seeds_of=lambda c: SEEDS_DECISIVE,
+        pre_gen=pre_gen,
+    )
+
+
+# ---------------------------------------------------------------------------
+# phase: build_pools (VM CPU; margin answer pools)
+# ---------------------------------------------------------------------------
+
+
+def _build_pool_from_judged(out_root: Path, behavior: str) -> dict:
+    """Regenerated pool (hallucination; plan §4.2): unique coherent judged
+    localize completions -> pos = score>=50 top-POOL_SIZE / neg = score<50
+    bottom-POOL_SIZE (the rw2220 pool-build recipe on this behavior's own
+    judge-filtered completions, identical judge instrument)."""
+    judged_dir = out_root / "judge" / "localize" / "judged"
+    gen_dir = out_root / "localize" / "raw_completions"
+    files = sorted(judged_dir.glob(f"{behavior}__*.json"))
+    if not files:
+        raise RuntimeError(
+            f"build_pools({behavior}): no judged localize cells at {judged_dir} — "
+            "run --phase judge_reduce --reduce-phase localize first"
+        )
+    best: dict[str, float] = {}
+    for jf in files:
+        jrec = json.loads(jf.read_text())
+        grec = json.loads((gen_dir / jf.name).read_text())
+        per_item = jrec["accounting"]["per_item_scores"]
+        for iid, meta in jrec["items"].items():
+            scores = per_item.get(iid) or []
+            if not scores:
+                continue
+            sd = grec["seeds"][str(meta["seed"])]
+            if not bool(sd["coherent_flags"][meta["ci"]][meta["di"]]):
+                continue
+            text = sd["completions"][meta["ci"]][meta["di"]]
+            score = float(np.mean(scores))
+            if text not in best or score > best[text]:
+                best[text] = score
+    uniq = sorted(best.items(), key=lambda kv: kv[1])
+    neg = [t for t, s in uniq if s < SCORE_THRESHOLD][:POOL_SIZE]
+    pos = [t for t, s in uniq if s >= SCORE_THRESHOLD][-POOL_SIZE:]
+    if len(pos) < POOL_MIN or len(neg) < POOL_MIN:
+        raise RuntimeError(
+            f"build_pools({behavior}): pool below floor (pos={len(pos)}, neg={len(neg)}, "
+            f"min={POOL_MIN}) — not enough judged coherent completions on both sides"
+        )
+    return {
+        "pos": pos,
+        "neg": neg,
+        "provenance": {
+            "source": "judged localize completions (issue 2254; identical judge instrument)",
+            "n_unique_coherent": len(uniq),
+            "recipe": "rw2220: dedup-max-score; neg = score<50 asc [:K]; pos = score>=50 [-K:]",
+        },
+    }
+
+
+def phase_build_pools(args) -> None:
+    """Margin answer pools (plan §4.2 secondary DV): evil + sycophancy staged
+    VERBATIM from the rw2220 HF bank; hallucination REGENERATED from judged
+    localize completions. VM/CPU-only; no GPU, no API calls."""
+    out_root = _out_root(args)
+    pools_dir = out_root / "pools"
+    pools_dir.mkdir(parents=True, exist_ok=True)
+    from explore_persona_space.orchestrate import hub
+
+    for b in args.behaviors:
+        target = pools_dir / f"{b}.json"
+        if target.exists() and not args.force:
+            logger.info("[build_pools] %s cached", b)
+            continue
+        if b in ("evil", "sycophancy"):
+            hub.stage_hub_file(
+                HF_DATA_REPO, f"{RW2220_POOL_PREFIX}/{b}.json", target, repo_type="dataset"
+            )
+            data = json.loads(target.read_text())
+            assert len(data["pos"]) >= POOL_MIN and len(data["neg"]) >= POOL_MIN, (
+                b,
+                len(data["pos"]),
+                len(data["neg"]),
+            )
+        else:
+            _write_json_atomic(target, _run_metadata(_build_pool_from_judged(out_root, b)))
+        _breadcrumb("build_pools", behavior=b, built=1)
+    _upload_folder_to_hf(pools_dir, f"{_hf_prefix()}/pools")
+    _write_sentinel(out_root, "build_pools", "done", {"behaviors": list(args.behaviors)})
+    _breadcrumb("build_pools", status="done")
+
+
+# ---------------------------------------------------------------------------
+# phase: margin (GPU, pod B; teacher-forced fixed +/- pool margin)
+# ---------------------------------------------------------------------------
+
+
+def phase_margin(args) -> None:
+    """Teacher-forced fixed positive-vs-negative pool margin at the decisive
+    single-breadth operating points (plan §4.2 secondary DV; rw2220
+    `_batched_ln_logp` verbatim reuse, batch 4). Per-cell checkpointing into
+    margin/margin_percell.json (rewritten after EVERY cell); pod-B rho seam
+    asserted before any scoring."""
+    _ensure_repo_root_on_syspath()
+    import scripts.issue2220_readwrite as rw2220
+    from explore_persona_space.experiments.issue1415 import steering
+
+    out_root = _out_root(args)
+    ops = _load_operating_points(out_root)
+    gates = _load_gates(out_root)
+    kept, skipped = _gate_ok_behaviors(gates, list(args.behaviors))
+    if not kept:
+        raise RuntimeError(f"margin: no gate-passing behaviors (skipped={skipped})")
+    pools: dict[str, dict] = {}
+    for b in kept:
+        pool_path = out_root / "pools" / f"{b}.json"
+        if not pool_path.exists():
+            raise FileNotFoundError(f"margin: missing pool {pool_path} — run --phase build_pools")
+        pools[b] = json.loads(pool_path.read_text())
+
+    _require_cuda("margin")
+    _assert_phase_headroom(out_root, 1.0, "margin")
+    model, tok = _load_model_and_tokenizer()
+    seam = _rho_seam_assert(args, model, tok)
+    rho_pooled, _ = _load_rho(out_root)
+    pad_id = tok.pad_token_id if tok.pad_token_id is not None else tok.eos_token_id
+    assert pad_id is not None, "tokenizer exposes neither pad nor eos id"
+
+    out_path = out_root / "margin" / "margin_percell.json"
+    records: dict[str, dict] = {}
+    if out_path.exists() and not args.force:
+        records = json.loads(out_path.read_text()).get("cells", {})
+
+    cells: list[dict] = []
+    for b in kept:
+        ops_b = ops["behaviors"][b]
+        # alpha0 margin row passes a REAL direction tensor at alpha=0.0 —
+        # rw2220._batched_ln_logp calls direction.to(...) unconditionally,
+        # so None would crash; alpha=0 makes the hook a no-op numerically.
+        cells.append(
+            {
+                "behavior": b,
+                "direction": "rb",
+                "position": "context",
+                "layer": FROZEN_LAYER[b],
+                "c": 0.0,
+            }
+        )
+        for d, p in _grid_combos(args):
+            point = ops_b.get(f"{d}__{p}__single")
+            if point is None:
+                continue
+            cells.append(
+                {
+                    "behavior": b,
+                    "direction": d,
+                    "position": p,
+                    "layer": int(LAYER_CONFIGS[point["layer_config"]][0]),
+                    "c": float(point["c"]),
+                }
+            )
+    if not cells:
+        raise RuntimeError(f"margin: empty cell list (skipped={skipped})")
+
+    t0 = time.time()
+    for k, cell in enumerate(cells, 1):
+        b = cell["behavior"]
+        key = "__".join(
+            [
+                b,
+                _DIR_SHORT[cell["direction"]],
+                _POS_SHORT[cell["position"]],
+                f"L{cell['layer']}",
+                _c_token(cell["c"]),
+                "mg",
+            ]
+        )
+        if key in records and not args.force:
+            _progress("margin", k, len(cells), f"{key} (cached)", t0)
+            continue
+        direction = _ensure_direction_vec(out_root, b, cell["direction"], cell["layer"])
+        alpha = float(cell["c"]) * rho_pooled[f"L{cell['layer']}"]
+        qs = _eval_questions(b)[: args.q_decisive]
+        pos_ids = [tok.encode(a, add_special_tokens=False) for a in pools[b]["pos"]]
+        neg_ids = [tok.encode(a, add_special_tokens=False) for a in pools[b]["neg"]]
+        n_pos = len(pos_ids)
+        per_context = []
+        for ctx in _contexts_for_questions(qs):
+            prompt_ids = steering.context_token_ids(tok, ctx)
+            lps = rw2220._batched_ln_logp(
+                model,
+                prompt_ids,
+                pos_ids + neg_ids,
+                direction,
+                cell["layer"],
+                alpha,
+                cell["position"],
+                pad_id=pad_id,
+                batch_size=MARGIN_BATCH_2254,
+            )
+            pos_lp = [x for x in lps[:n_pos] if np.isfinite(x)]
+            neg_lp = [x for x in lps[n_pos:] if np.isfinite(x)]
+            per_context.append(
+                float(np.mean(pos_lp) - np.mean(neg_lp)) if pos_lp and neg_lp else float("nan")
+            )
+        records[key] = {
+            "behavior": b,
+            "direction": cell["direction"],
+            "position": cell["position"],
+            "layer": cell["layer"],
+            "c": cell["c"],
+            "alpha": alpha,
+            "per_context_margin": per_context,
+            "margin_mean": float(np.nanmean(per_context)),
+            "n_pos": n_pos,
+            "n_neg": len(neg_ids),
+            "batch_size": MARGIN_BATCH_2254,
+        }
+        _write_json_atomic(
+            out_path,
+            _run_metadata({"cells": records, "rho_seam": seam, "skipped_behaviors": skipped}),
+        )
+        _progress("margin", k, len(cells), key, t0)
+    _upload_folder_to_hf(out_root / "margin", f"{_hf_prefix()}/margin")
+    _write_sentinel(out_root, "margin", "done", {"cells": len(records), **seam})
+    _breadcrumb("margin", status="done")
+
+
+# ---------------------------------------------------------------------------
+# phase: judge_reduce (off-pod VM; Batch-API judging + wave reduces)
+# ---------------------------------------------------------------------------
+
+
+def _judge_draws(args, phase: str) -> int:
+    return 2 if args.smoke else JUDGE_DRAWS[phase]
+
+
+def _iter_gen_qa(rec: dict):
+    """Yield (q_idx, seed, ctx_idx, draw_idx, text) rows of one gen cell."""
+    for seed, sd in rec["seeds"].items():
+        for ci, per_ctx in enumerate(sd["completions"]):
+            qi = rec["q_of_context"][ci]
+            for di, text in enumerate(per_ctx):
+                yield qi, int(seed), ci, di, text
+
+
+def _coherence_rate(rec: dict) -> float:
+    """Fraction of contexts passing the generation-time coherence condition."""
+    flags = [f for sd in rec["seeds"].values() for f in sd["condition_passes"]]
+    return float(np.mean(flags)) if flags else 0.0
+
+
+def _stage_phase_completions(out_root: Path, phase: str) -> Path:
+    """Local-first raw_completions for <phase>; else stage every per-cell JSON
+    from the HF prefix (scoped list_repo_tree via retry_transient — never a
+    bare full-repo listing on the ~1M-file data repo)."""
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    comp_root = out_root / phase / "raw_completions"
+    if comp_root.exists() and any(comp_root.glob("*.json")):
+        return comp_root
+    prefix = f"{_hf_prefix()}/raw_completions/{phase}"
+    entries = hub.retry_transient(
+        lambda: list(
+            HfApi().list_repo_tree(HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset")
+        ),
+        what=f"list_repo_tree({prefix})",
+    )
+    paths = [e.path for e in entries if e.path.endswith(".json")]
+    if not paths:
+        raise RuntimeError(f"judge_reduce: no completions for {phase} locally or at {prefix}")
+    for pth in paths:
+        hub.stage_hub_file(HF_DATA_REPO, pth, comp_root / Path(pth).name, repo_type="dataset")
+    return comp_root
+
+
+def _run_judge_pilot(args, out_root: Path, gen_phase: str, behavior: str, rubric: str, n_draws):
+    """Rule-26 pilot gate, ONE judge_pilot_gate call per behavior per wave
+    (>=51 effective draws per arm at the 2% threshold; truncation FAIL
+    unwaivable). Fingerprint sidecar skips a prior PASS at the identical
+    instrument (rubric + n_draws + max_tokens) unless --force."""
+    from explore_persona_space.eval.judge_pilot import judge_pilot_gate
+
+    pilot_dir = out_root / "judge" / "pilot" / gen_phase
+    pilot_dir.mkdir(parents=True, exist_ok=True)
+    fp = _sha8(
+        {"behavior": behavior, "rubric": rubric, "n_draws": n_draws, "mt": JUDGE_MAX_TOKENS_2254}
+    )
+    pass_path = pilot_dir / f"{behavior}.pass.json"
+    if pass_path.exists() and not args.force:
+        if json.loads(pass_path.read_text()).get("fingerprint") == fp:
+            logger.info(
+                "[judge-pilot] %s/%s: prior PASS, identical instrument", gen_phase, behavior
+            )
+            return
+    comp_root = out_root / gen_phase / "raw_completions"
+    files = sorted(comp_root.glob(f"{behavior}__*.json"))
+    if not files:
+        raise RuntimeError(f"judge pilot: no {behavior} gen cells under {comp_root}")
+    items_per_arm = -(-JUDGE_PILOT_MIN_EFFECTIVE // n_draws)  # ceil
+    qs = _eval_questions(behavior)
+
+    def _collect(arm: str, cell_filter, sort_key) -> list[tuple[str, str, str]]:
+        recs = []
+        for f in files:
+            rec = json.loads(f.read_text())
+            if rec["cell"]["kind"] != "alpha0" and not cell_filter(rec["cell"]):
+                continue
+            recs.append((sort_key(rec), rec))
+        recs.sort(key=lambda kv: kv[0])
+        items: list[tuple[str, str, str]] = []
+        for _k, rec in recs:
+            for qi, _seed, _ci, _di, text in _iter_gen_qa(rec):
+                items.append((f"{arm}-{len(items):03d}", qs[qi], text))
+                if len(items) >= items_per_arm:
+                    return items
+        return items
+
+    arms = {
+        "ctx_steer": _collect(
+            "ctx_steer",
+            lambda c: c.get("position") == "context",
+            lambda r: -abs(float(r["cell"].get("c", 0.0))),
+        ),
+        "ans_steer": _collect(
+            "ans_steer",
+            lambda c: c.get("position") == "answer",
+            lambda r: -abs(float(r["cell"].get("c", 0.0))),
+        ),
+        "degen": _collect("degen", lambda c: True, _coherence_rate),
+    }
+    arms = {k: v for k, v in arms.items() if v}
+    if not arms:
+        raise RuntimeError(f"judge pilot: zero pilot items for {gen_phase}/{behavior}")
+    report = judge_pilot_gate(
+        arms,
+        rubric,
+        max_tokens=JUDGE_MAX_TOKENS_2254,
+        cache_dir=pilot_dir / f"{behavior}_cache",
+        save_raw_dir=pilot_dir / f"{behavior}_raw",
+        n_draws=n_draws,
+        target_total_draws=len(arms) * n_draws * items_per_arm,
+        min_effective_draws_per_arm=JUDGE_PILOT_MIN_EFFECTIVE,
+        allow_subresolution_pilot=bool(args.smoke),
+        report_path=pilot_dir / f"{behavior}.report.json",
+    )
+    if not report.passed:
+        raise RuntimeError(f"judge pilot FAILED for {gen_phase}/{behavior}: {report.verdict}")
+    _write_json_atomic(pass_path, {"fingerprint": fp, "verdict": report.verdict})
+
+
+def _judge_cell(args, out_root: Path, phase: str, gen_path: Path, rubric: str, n_draws: int):
+    """Judge one gen cell via judge_items_graded (Batch API, rubric-keyed
+    cache, generous max_tokens); per-cell checkpoint at
+    judge/<phase>/judged/<cid>.json with cached-skip resume. Accounting keeps
+    the rule-9/24/28 drop-class split + rule-29 frac_items_complete."""
+    from explore_persona_space.experiments.issue_1739.constants import (
+        JUDGE_MODEL,
+        JUDGE_TEMPERATURE,
+    )
+    from explore_persona_space.experiments.issue_1739.judging import (
+        judge_items_graded,
+        judge_tallies,
+        rollout_item_id,
+    )
+
+    rec = json.loads(gen_path.read_text())
+    cell = rec["cell"]
+    cid = rec["cell_id"]
+    out_path = out_root / "judge" / phase / "judged" / f"{cid}.json"
+    if out_path.exists() and not args.force:
+        return json.loads(out_path.read_text())
+    qs = _eval_questions(cell["behavior"])
+    items: list[tuple[str, str, str]] = []
+    meta: dict[str, dict] = {}
+    for qi, seed, ci, di, text in _iter_gen_qa(rec):
+        iid = rollout_item_id(_judge_ctx_id(cell, seed, len(items)), di)
+        items.append((iid, qs[qi], text))
+        meta[iid] = {"qi": qi, "seed": seed, "ci": ci, "di": di}
+    result = judge_items_graded(
+        items,
+        rubric,
+        cache_dir=out_root / "judge" / phase / "cache" / cid,
+        save_raw=out_root / "judge" / phase / "raw" / cid,
+        n_draws=n_draws,
+        temperature=JUDGE_TEMPERATURE,
+        max_tokens=JUDGE_MAX_TOKENS_2254,
+        judge_model=JUDGE_MODEL,
+    )
+    per_q: dict[int, list[float]] = {}
+    for iid, scores in result.per_item_scores.items():
+        if scores:
+            per_q.setdefault(meta[iid]["qi"], []).append(float(np.mean(scores)))
+    n_q = (max(m["qi"] for m in meta.values()) + 1) if meta else 0
+    per_q_mean = [float(np.mean(per_q[q])) if q in per_q else None for q in range(n_q)]
+    per_q_rate = [
+        float(np.mean([s >= SCORE_THRESHOLD for s in per_q[q]])) if q in per_q else None
+        for q in range(n_q)
+    ]
+    valid_means = [m for m in per_q_mean if m is not None]
+    valid_rates = [r for r in per_q_rate if r is not None]
+    coherence_rate = _coherence_rate(rec)
+    out = {
+        "cell_id": cid,
+        "cell": cell,
+        "phase": phase,
+        "n_questions": n_q,
+        "judge": {
+            "model": JUDGE_MODEL,
+            "n_draws": n_draws,
+            "max_tokens": JUDGE_MAX_TOKENS_2254,
+            "temperature": JUDGE_TEMPERATURE,
+        },
+        "items": meta,
+        "accounting": {
+            **judge_tallies(result),
+            "n_refusal_draws": result.n_refusal_draws,
+            "n_api_refusal_draws": result.n_api_refusal_draws,
+            "per_item_api_refusals": result.per_item_api_refusals,
+            "frac_items_complete": (result.frac_items_complete if result.scores else None),
+            "n_items": len(result.scores),
+            "n_items_zero_valid": sum(1 for s in result.per_item_scores.values() if not s),
+        },
+        "per_question_mean_score": per_q_mean,
+        "per_question_rate": per_q_rate,
+        "per_question_n": [len(per_q.get(q, [])) for q in range(n_q)],
+        "mean_score": float(np.mean(valid_means)) if valid_means else None,
+        "rate": float(np.mean(valid_rates)) if valid_rates else None,
+        "coherence_rate": coherence_rate,
+        "coherence_pass": bool(coherence_rate >= COHERENCE_CELL_GATE),
+        "cap_hit_fraction": rec.get("cap_hit_fraction"),
+        "alphas": rec.get("alphas"),
+    }
+    _write_json_atomic(out_path, _run_metadata(out))
+    return out
+
+
+# ---------------------------------------------------------------------------
+# reduce: vectorized question-level paired cluster bootstrap + verdicts
+# ---------------------------------------------------------------------------
+
+
+def _boot_idx(nq: int, n_draws: int, seed_key: str) -> np.ndarray:
+    """Deterministic (n_draws, nq) resample-index matrix; per-cell seed =
+    BOOTSTRAP_SEED + crc32(cell key) % 100000 (plan §6)."""
+    import zlib
+
+    rng = np.random.default_rng(BOOTSTRAP_SEED + zlib.crc32(seed_key.encode()) % 100000)
+    return rng.integers(0, nq, size=(n_draws, nq))
+
+
+def _q_arr(judged: dict) -> np.ndarray:
+    """Per-question mean-score vector (NaN where every draw dropped)."""
+    return np.array(
+        [np.nan if v is None else float(v) for v in judged["per_question_mean_score"]],
+        dtype=np.float64,
+    )
+
+
+def _boot_diff_ci(cell_q: np.ndarray, ref_q: np.ndarray, idx: np.ndarray):
+    """Question-level PAIRED cluster bootstrap of mean(cell) - mean(ref):
+    identical resample indices on both arms, vectorized fancy-index."""
+    diffs = np.nanmean(cell_q[idx], axis=1) - np.nanmean(ref_q[idx], axis=1)
+    point = float(np.nanmean(cell_q) - np.nanmean(ref_q))
+    return point, float(np.nanquantile(diffs, 0.025)), float(np.nanquantile(diffs, 0.975))
+
+
+def _null_band(null_qarrs, a0_q: np.ndarray, seed_key: str, n_draws: int = N_BOOT_CELL):
+    """Selection-symmetric null band (plan §6): per bootstrap draw, nanmax of
+    the coherence-gated null cells' paired deltas (max-over-cells INSIDE each
+    draw, so observed and null get identical selection chances)."""
+    if not null_qarrs:
+        return None
+    idx = _boot_idx(len(a0_q), n_draws, seed_key)
+    a0_b = np.nanmean(a0_q[idx], axis=1)
+    per_cell = np.stack([np.nanmean(q[idx], axis=1) - a0_b for q in null_qarrs], axis=1)
+    maxes = np.nanmax(per_cell, axis=1)
+    return {
+        "p50": float(np.nanquantile(maxes, 0.5)),
+        "p975": float(np.nanquantile(maxes, 0.975)),
+        "n_cells": int(len(null_qarrs)),
+        "n_draws": int(n_draws),
+    }
+
+
+def _completeness_block(files, floor: float = 0.95) -> dict:
+    """Rule-29 per-cell frac_items_complete vs the pre-registered floor."""
+    rows: dict[str, float | None] = {}
+    below: list[str] = []
+    for f in files:
+        j = json.loads(f.read_text())
+        fc = j["accounting"]["frac_items_complete"]
+        rows[j["cell_id"]] = fc
+        if fc is not None and fc < floor:
+            below.append(j["cell_id"])
+    return {
+        "floor": floor,
+        "per_cell": rows,
+        "below_floor_cells": below,
+        "remediation": (
+            "below-floor cells: triage drop class per llm-judging.md rule 29; "
+            "api-refusal class -> targeted sync re-issue at the identical instrument "
+            "(scripts/issue1739_evilood_refusal_rejudge.py recipe)"
+        ),
+    }
+
+
+def _reduce_wave1(args, out_root: Path) -> None:
+    """Wave-1 reduce (plan §4.2): per-cell dose-response deltas (frozen CIs),
+    coherence-gated operating-point argmax per (direction, position, breadth),
+    selection-symmetric null bands, gate-2/gate-3 verdicts, baseline/ceiling
+    summary, rule-29 completeness + HF upload of the pod-B input JSONs."""
+    jl = out_root / "judge" / "localize" / "judged"
+    jb = out_root / "judge" / "baseline_ceiling" / "judged"
+    dose: dict = {"behaviors": {}}
+    op_out: dict = {"behaviors": {}}
+    gates: dict = {"behaviors": {}}
+    base_out: dict = {"behaviors": {}}
+    for b in list(args.behaviors):
+        a0 = json.loads((jl / f"{b}__a0.json").read_text())
+        a0_q = _q_arr(a0)
+        steer = []
+        for f in sorted(jl.glob(f"{b}__*.json")):
+            j = json.loads(f.read_text())
+            if j["cell"]["kind"] == "steer":
+                steer.append(j)
+        if not steer:
+            raise RuntimeError(f"reduce wave1: no steered localize cells for {b}")
+        percell: dict = {}
+        qarrs: dict = {}
+        for j in steer:
+            cid = j["cell_id"]
+            cq = _q_arr(j)
+            qarrs[cid] = cq
+            point, lo, hi = _boot_diff_ci(cq, a0_q, _boot_idx(len(a0_q), N_BOOT_CELL, cid))
+            percell[cid] = {
+                "cell": j["cell"],
+                "delta_score": point,
+                "ci_frozen": [lo, hi],
+                "ci_label": f"frozen (localize grid, n_q={len(a0_q)})",
+                "delta_rate": (
+                    None
+                    if j["rate"] is None or a0["rate"] is None
+                    else float(j["rate"] - a0["rate"])
+                ),
+                "mean_score": j["mean_score"],
+                "coherence_rate": j["coherence_rate"],
+                "coherence_pass": j["coherence_pass"],
+                "frac_items_complete": j["accounting"]["frac_items_complete"],
+                "cap_hit_fraction": j.get("cap_hit_fraction"),
+            }
+
+        def _null_cells(pos, steer=steer, qarrs=qarrs):
+            return [
+                qarrs[j["cell_id"]]
+                for j in steer
+                if j["cell"]["position"] == pos
+                and j["cell"]["direction"] in NULL_STEER[pos]
+                and j["coherence_pass"]
+            ]
+
+        band_ctx = _null_band(_null_cells("context"), a0_q, f"{b}__nullctx")
+        band_ans = _null_band(_null_cells("answer"), a0_q, f"{b}__nullans")
+
+        ops_b: dict = {}
+        combos = [(d, "context") for d in CONTEXT_DIRECTIONS] + [
+            (d, "answer") for d in ANSWER_DIRECTIONS
+        ]
+        for d, p in combos:
+            for breadth in BREADTHS:
+                cands = [
+                    j
+                    for j in steer
+                    if j["cell"]["direction"] == d
+                    and j["cell"]["position"] == p
+                    and BREADTH_OF_CONFIG[j["cell"]["layer_config"]] == breadth
+                    and j["coherence_pass"]
+                ]
+                if not cands:
+                    ops_b[f"{d}__{p}__{breadth}"] = None
+                    continue
+                bestj = max(cands, key=lambda j: percell[j["cell_id"]]["delta_score"])
+                ops_b[f"{d}__{p}__{breadth}"] = {
+                    "cell_id": bestj["cell_id"],
+                    "layer_config": bestj["cell"]["layer_config"],
+                    "c": bestj["cell"]["c"],
+                    "delta_score": percell[bestj["cell_id"]]["delta_score"],
+                }
+
+        base_a0 = json.loads((jb / f"{b}__a0.json").read_text())
+        base_cl = json.loads((jb / f"{b}__cl.json").read_text())
+        b_a0q, b_clq = _q_arr(base_a0), _q_arr(base_cl)
+        ceil_pt, ceil_lo, ceil_hi = _boot_diff_ci(
+            b_clq, b_a0q, _boot_idx(len(b_a0q), N_BOOT_CELL, f"{b}__ceiling")
+        )
+        rb_ans = [
+            percell[j["cell_id"]]["delta_score"]
+            for j in steer
+            if j["cell"]["direction"] == "rb"
+            and j["cell"]["position"] == "answer"
+            and j["coherence_pass"]
+        ]
+        gate2 = {
+            "pass": bool(rb_ans and band_ans is not None and max(rb_ans) > band_ans["p975"]),
+            "best_rb_answer_delta": max(rb_ans) if rb_ans else None,
+            "answer_band_p975": band_ans["p975"] if band_ans else None,
+        }
+        gate3 = {
+            "pass": bool(band_ctx is not None and ceil_pt > max(band_ctx["p975"], 0.0)),
+            "ceiling_delta": ceil_pt,
+            "ceiling_ci": [ceil_lo, ceil_hi],
+            "baseline_mean": float(np.nanmean(b_a0q)),
+            "ceiling_mean": float(np.nanmean(b_clq)),
+            "context_band_p975": band_ctx["p975"] if band_ctx else None,
+        }
+        gates["behaviors"][b] = {
+            "gate2": gate2,
+            "gate3": gate3,
+            "proceed": bool(gate2["pass"] and gate3["pass"]),
+        }
+        dose["behaviors"][b] = {
+            "alpha0_mean": float(np.nanmean(a0_q)),
+            "alpha0_rate": a0["rate"],
+            "n_q": int(len(a0_q)),
+            "cells": percell,
+            "null_band_context": band_ctx,
+            "null_band_answer": band_ans,
+        }
+        op_out["behaviors"][b] = ops_b
+        keep = ("mean_score", "rate", "per_question_mean_score", "coherence_rate")
+        base_out["behaviors"][b] = {
+            "alpha0": {k: base_a0[k] for k in keep},
+            "ceiling": {k: base_cl[k] for k in keep},
+            "ceiling_delta": ceil_pt,
+            "ceiling_ci": [ceil_lo, ceil_hi],
+        }
+    _write_json_atomic(out_root / "localize" / "dose_response.json", _run_metadata(dose))
+    _write_json_atomic(out_root / "localize" / "operating_points.json", _run_metadata(op_out))
+    _write_json_atomic(out_root / "localize" / "gates.json", _run_metadata(gates))
+    _write_json_atomic(
+        out_root / "baseline_ceiling" / "judged_percell.json", _run_metadata(base_out)
+    )
+    files = sorted(jl.glob("*.json")) + sorted(jb.glob("*.json"))
+    _write_json_atomic(
+        out_root / "judge" / "completeness_wave1.json", _run_metadata(_completeness_block(files))
+    )
+    # pod-B staging source: decisive/patch/margin fetch these three via
+    # _load_reduce_json — upload BEFORE the sentinel.
+    _upload_folder_to_hf(
+        out_root / "localize",
+        f"{_hf_prefix()}/localize",
+        allow=["dose_response.json", "operating_points.json", "gates.json"],
+    )
+    _upload_folder_to_hf(
+        out_root / "baseline_ceiling",
+        f"{_hf_prefix()}/baseline_ceiling",
+        allow=["judged_percell.json"],
+    )
+
+
+def _selection_inherited_for(out_root: Path, b: str, d: str, p: str):
+    """Selection-inherited CI (selection-symmetric-nulls rule): per bootstrap
+    draw, re-argmax over the (direction, position) LOCALIZE-grid cells;
+    labeled with its own grid + n_q (the frozen decisive CI is co-reported)."""
+    jl = out_root / "judge" / "localize" / "judged"
+    a0_path = jl / f"{b}__a0.json"
+    if not a0_path.exists():
+        return None
+    a0_q = _q_arr(json.loads(a0_path.read_text()))
+    cells = []
+    for f in sorted(jl.glob(f"{b}__{_DIR_SHORT[d]}__{_POS_SHORT[p]}__*.json")):
+        j = json.loads(f.read_text())
+        if j["coherence_pass"]:
+            cells.append(_q_arr(j))
+    if not cells:
+        return None
+    idx = _boot_idx(len(a0_q), N_BOOT_VERDICT, f"{b}__{d}__{p}__selinh")
+    a0_b = np.nanmean(a0_q[idx], axis=1)
+    per_cell = np.stack([np.nanmean(q[idx], axis=1) - a0_b for q in cells], axis=1)
+    maxes = np.nanmax(per_cell, axis=1)
+    return {
+        "ci": [float(np.nanquantile(maxes, 0.025)), float(np.nanquantile(maxes, 0.975))],
+        "label": f"selection_inherited (localize grid, n_q={len(a0_q)}, n_cells={len(cells)})",
+    }
+
+
+def _lattice_label(margins: dict) -> tuple[str, str]:
+    """H1/H2/H3/Ambiguous/Undefined from the E_pre/E_ctxdir/C_gap lattice
+    (plan §6). CIs here are band-shifted frozen CIs (E_*) and the paired
+    2000-draw bootstrap (C_gap)."""
+    e_pre = margins.get("E_pre")
+    e_ctx = margins.get("E_ctxdir")
+    gap = margins.get("C_gap")
+    if e_pre is None or e_ctx is None or gap is None:
+        return "Undefined", "missing operating-point cells (pre/ctxext @ context)"
+    pre_pos = e_pre["ci"][0] > 0
+    gap_neg = gap["ci"][1] < 0
+    ctx_pos = e_ctx["ci"][0] > 0
+    if pre_pos and not gap_neg:
+        return "H1", "pre-image steers (CI>0 vs null band) and is not CI-below ctxext"
+    if pre_pos and gap_neg:
+        return "H3", "pre-image steers but sits CI-below the fitted-map direction"
+    if not pre_pos and ctx_pos:
+        return "H2", "pre-image does not clear the null band while ctxext does"
+    return "Ambiguous", "neither margin resolves at the decisive grain"
+
+
+def _patch_vs_ceiling(out_root: Path) -> dict:
+    """Patch/ablation effects as a fraction of the REUSED baseline_ceiling
+    donor-swap ceiling; per-draw denominators |.|<=1e-6 -> NaN with the
+    degenerate-draw count reported (never a silent divide)."""
+    jp = out_root / "judge" / "patch" / "judged"
+    jb = out_root / "judge" / "baseline_ceiling" / "judged"
+    out: dict = {"cells": {}}
+    for f in sorted(jp.glob("*.json")):
+        j = json.loads(f.read_text())
+        b = j["cell"]["behavior"]
+        a0_q = _q_arr(json.loads((jb / f"{b}__a0.json").read_text()))
+        cl_q = _q_arr(json.loads((jb / f"{b}__cl.json").read_text()))
+        cq = _q_arr(j)
+        nq = min(len(cq), len(a0_q), len(cl_q))
+        idx = _boot_idx(nq, N_BOOT_CELL, j["cell_id"] + "__pvc")
+        cell_b = np.nanmean(cq[:nq][idx], axis=1)
+        a0_b = np.nanmean(a0_q[:nq][idx], axis=1)
+        cl_b = np.nanmean(cl_q[:nq][idx], axis=1)
+        denom = cl_b - a0_b
+        ok = np.abs(denom) > 1e-6
+        if j["cell"]["op"] == "proj":
+            frac = np.where(ok, (cell_b - a0_b) / np.where(ok, denom, 1.0), np.nan)
+            point_num = float(np.nanmean(cq[:nq]) - np.nanmean(a0_q[:nq]))
+        else:
+            frac = np.where(ok, (cl_b - cell_b) / np.where(ok, denom, 1.0), np.nan)
+            point_num = float(np.nanmean(cl_q[:nq]) - np.nanmean(cq[:nq]))
+        point_den = float(np.nanmean(cl_q[:nq]) - np.nanmean(a0_q[:nq]))
+        out["cells"][j["cell_id"]] = {
+            "cell": j["cell"],
+            "fraction_point": (point_num / point_den) if abs(point_den) > 1e-6 else None,
+            "fraction_ci": [
+                float(np.nanquantile(frac, 0.025)),
+                float(np.nanquantile(frac, 0.975)),
+            ],
+            "n_degenerate_draws": int((~ok).sum()),
+            "mean_score": j["mean_score"],
+            "coherence_rate": j["coherence_rate"],
+            "coherence_pass": j["coherence_pass"],
+        }
+    return out
+
+
+def _reduce_wave2(args, out_root: Path) -> None:
+    """Wave-2 reduce (plan §4.2/§6): decisive per-cell deltas (frozen CIs) vs
+    the decisive alpha0, per-behavior E_pre/E_ctxdir/C_gap margins against the
+    decisive context null band, BOTH CI labels (frozen + selection-inherited
+    re-argmax on the localize grid), lattice labels, patch-vs-ceiling."""
+    jd = out_root / "judge" / "decisive" / "judged"
+    gates = _load_gates(out_root)
+    percell_out: dict = {"behaviors": {}}
+    verdicts: dict = {"behaviors": {}}
+    for b in list(args.behaviors):
+        if not gates["behaviors"].get(b, {}).get("proceed"):
+            verdicts["behaviors"][b] = {
+                "label": "Undefined",
+                "reason": "behavior skipped at wave-1 gates (gate 2/3)",
+            }
+            continue
+        a0_path = jd / f"{b}__a0.json"
+        if not a0_path.exists():
+            raise FileNotFoundError(f"reduce wave2: missing decisive alpha0 judged cell for {b}")
+        a0_q = _q_arr(json.loads(a0_path.read_text()))
+        steer = []
+        for f in sorted(jd.glob(f"{b}__*.json")):
+            j = json.loads(f.read_text())
+            if j["cell"]["kind"] == "steer":
+                steer.append(j)
+        if not steer:
+            raise RuntimeError(f"reduce wave2: no steered decisive cells for {b}")
+        cells_b: dict = {}
+        qarrs: dict = {}
+        for j in steer:
+            cid = j["cell_id"]
+            cq = _q_arr(j)
+            qarrs[cid] = (j, cq)
+            point, lo, hi = _boot_diff_ci(cq, a0_q, _boot_idx(len(a0_q), N_BOOT_CELL, cid + "__w2"))
+            cells_b[cid] = {
+                "cell": j["cell"],
+                "delta_score": point,
+                "ci_frozen": [lo, hi],
+                "ci_label": f"frozen (decisive grid, n_q={len(a0_q)})",
+                "coherence_pass": j["coherence_pass"],
+                "frac_items_complete": j["accounting"]["frac_items_complete"],
+            }
+        null_ctx = [
+            cq
+            for (j, cq) in qarrs.values()
+            if j["cell"]["position"] == "context"
+            and j["cell"]["direction"] in NULL_STEER["context"]
+            and j["coherence_pass"]
+        ]
+        band = _null_band(null_ctx, a0_q, f"{b}__w2nullctx", n_draws=N_BOOT_VERDICT)
+
+        def _best(d, p, qarrs=qarrs, cells_b=cells_b):
+            cands = [
+                (cells_b[cid]["delta_score"], cid, cq)
+                for cid, (j, cq) in qarrs.items()
+                if j["cell"]["direction"] == d
+                and j["cell"]["position"] == p
+                and j["coherence_pass"]
+            ]
+            return max(cands, key=lambda kv: kv[0]) if cands else None
+
+        pre = _best("pre", "context")
+        ctxext = _best("ctxext", "context")
+        margins: dict = {}
+        if band is not None:
+            bp = band["p975"]
+            if pre is not None:
+                ci = cells_b[pre[1]]["ci_frozen"]
+                margins["E_pre"] = {
+                    "value": pre[0] - bp,
+                    "cell_id": pre[1],
+                    "ci": [ci[0] - bp, ci[1] - bp],
+                    "band_p975": bp,
+                }
+            if ctxext is not None:
+                ci = cells_b[ctxext[1]]["ci_frozen"]
+                margins["E_ctxdir"] = {
+                    "value": ctxext[0] - bp,
+                    "cell_id": ctxext[1],
+                    "ci": [ci[0] - bp, ci[1] - bp],
+                    "band_p975": bp,
+                }
+        if pre is not None and ctxext is not None:
+            point, lo, hi = _boot_diff_ci(
+                pre[2], ctxext[2], _boot_idx(len(a0_q), N_BOOT_VERDICT, f"{b}__cgap")
+            )
+            margins["C_gap"] = {"value": point, "ci": [lo, hi]}
+        label, reason = _lattice_label(margins)
+        sel = {}
+        for d, p in (("pre", "context"), ("ctxext", "context"), ("rb", "answer")):
+            si = _selection_inherited_for(out_root, b, d, p)
+            if si is not None:
+                sel[f"{d}__{p}"] = si
+        verdicts["behaviors"][b] = {
+            "label": label,
+            "reason": reason,
+            "margins": margins,
+            "null_band_context": band,
+            "selection_inherited": sel,
+            "ci_label_note": (
+                f"margin CIs are frozen-at-operating-point (decisive grid, n_q={len(a0_q)}) "
+                "shifted by the null band; selection_inherited entries re-argmax the "
+                "localize grid per draw"
+            ),
+        }
+        percell_out["behaviors"][b] = cells_b
+    _write_json_atomic(
+        out_root / "decisive" / "delta_score_percell.json", _run_metadata(percell_out)
+    )
+    _write_json_atomic(out_root / "decisive" / "verdicts.json", _run_metadata(verdicts))
+    _write_json_atomic(
+        out_root / "patch" / "patch_vs_ceiling.json", _run_metadata(_patch_vs_ceiling(out_root))
+    )
+    files = sorted((out_root / "judge" / "decisive" / "judged").glob("*.json")) + sorted(
+        (out_root / "judge" / "patch" / "judged").glob("*.json")
+    )
+    _write_json_atomic(
+        out_root / "judge" / "completeness_wave2.json", _run_metadata(_completeness_block(files))
+    )
+    _upload_folder_to_hf(
+        out_root / "decisive",
+        f"{_hf_prefix()}/decisive",
+        allow=["delta_score_percell.json", "verdicts.json", "selection_meta.json"],
+    )
+    _upload_folder_to_hf(
+        out_root / "patch",
+        f"{_hf_prefix()}/patch",
+        allow=["patch_vs_ceiling.json", "calibration_projections.json"],
+    )
+
+
+def _upload_judge_outputs(out_root: Path, phases) -> None:
+    """Judged per-cell JSONs upload as-is; judge cache/raw trees pack into
+    <=9 MB JSONL shards (rw2220 helper — the 10k-file dir cap); pilot
+    reports + pass sidecars upload alongside."""
+    _ensure_repo_root_on_syspath()
+    import scripts.issue2220_readwrite as rw2220
+
+    for phase in phases:
+        base = out_root / "judge" / phase
+        if (base / "judged").exists():
+            _upload_folder_to_hf(base / "judged", f"{_hf_prefix()}/judge/{phase}/judged")
+        for sub in ("cache", "raw"):
+            src = base / sub
+            if not src.exists():
+                continue
+            dest = base / f"{sub}_pack"
+            rw2220._pack_tree_to_jsonl_shards(src, dest, group=f"{phase}_{sub}")
+            _upload_folder_to_hf(
+                dest, f"{_hf_prefix()}/judge/{phase}/{sub}_pack", allow=["*.jsonl", "*.json"]
+            )
+    pilot = out_root / "judge" / "pilot"
+    if pilot.exists():
+        _upload_folder_to_hf(
+            pilot, f"{_hf_prefix()}/judge/pilot", allow=["*.report.json", "*.pass.json"]
         )
 
-    _stub.__name__ = f"phase_{name}_stub"
-    return _stub
 
+def phase_judge_reduce(args) -> None:
+    """Off-pod judge + reduce (plan §4.2): --reduce-phase localize = wave 1
+    (judge baseline_ceiling + localize -> dose_response / operating_points /
+    gates); --reduce-phase decisive = wave 2 (judge decisive + patch ->
+    percell / verdicts / patch_vs_ceiling). Batch-API judging via
+    judge_items_graded; rule-26 pilot per behavior BEFORE the bulk wave;
+    per-cell judged checkpoints; VM/CPU-only (no CUDA)."""
+    from explore_persona_space.experiments.issue_1739.judging import load_trait_rubric
+
+    out_root = _out_root(args)
+    wave = args.reduce_phase
+    phases = _WAVE_SRC[wave]
+    behaviors = list(args.behaviors)
+    rubrics = {b: load_trait_rubric(b) for b in behaviors}
+    comp_roots = {phase: _stage_phase_completions(out_root, phase) for phase in phases}
+    steered = "localize" if wave == "localize" else "decisive"
+    for b in behaviors:
+        _run_judge_pilot(args, out_root, steered, b, rubrics[b], _judge_draws(args, steered))
+    for phase in phases:
+        files = sorted(comp_roots[phase].glob("*.json"))
+        if not files:
+            raise RuntimeError(f"judge_reduce: no gen cells for {phase}")
+        n_draws = _judge_draws(args, phase)
+        t0 = time.time()
+        for k, f in enumerate(files, 1):
+            b = f.name.split("__", 1)[0]
+            if b not in rubrics:
+                continue
+            _judge_cell(args, out_root, phase, f, rubrics[b], n_draws)
+            _progress(f"judge_{phase}", k, len(files), f.stem, t0)
+    if wave == "localize":
+        _reduce_wave1(args, out_root)
+    else:
+        _reduce_wave2(args, out_root)
+    _upload_judge_outputs(out_root, phases)
+    _write_sentinel(out_root, f"judge_reduce_{wave}", "done", {"phases": list(phases)})
+    _breadcrumb("judge_reduce", wave=wave, status="done")
+
+
+# ---------------------------------------------------------------------------
+# phase: figures (off-pod VM; scripts/issue2254_figures.py)
+# ---------------------------------------------------------------------------
+
+
+def phase_figures(args) -> None:
+    """Render every figure whose reduce inputs exist (scripts/issue2254_figures
+    .render_all); skipped figures are named with reasons, never silent."""
+    _ensure_repo_root_on_syspath()
+    from scripts.issue2254_figures import render_all
+
+    out_root = _out_root(args)
+    res = render_all(out_root, Path(args.fig_dir))
+    for name, reason in sorted(res["skipped"].items()):
+        logger.info("[figures] skipped %s: %s", name, reason)
+    if not res["rendered"]:
+        raise RuntimeError("figures: zero figures rendered — no reduce outputs found")
+    _breadcrumb("figures", rendered=len(res["rendered"]), skipped=len(res["skipped"]))
+    _write_sentinel(
+        out_root,
+        "figures",
+        "done",
+        {"rendered": sorted(res["rendered"]), "skipped": sorted(res["skipped"])},
+    )
+
+
+UNIT3_PHASES = (
+    "baseline_ceiling",
+    "localize",
+    "decisive",
+    "patch",
+    "build_pools",
+    "margin",
+    "judge_reduce",
+    "figures",
+)
 
 PHASES = {
     "stage_inputs": phase_stage_inputs,
     "fit_maps": phase_fit_maps,
     "capture_directions": phase_capture_directions,
     "norm_probe": phase_norm_probe,
-    **{name: _unit3_stub(name) for name in UNIT3_PHASES},
+    "baseline_ceiling": phase_baseline_ceiling,
+    "localize": phase_localize,
+    "decisive": phase_decisive,
+    "patch": phase_patch,
+    "build_pools": phase_build_pools,
+    "margin": phase_margin,
+    "judge_reduce": phase_judge_reduce,
+    "figures": phase_figures,
 }
 
 
@@ -1568,6 +3347,34 @@ def build_argparser() -> argparse.ArgumentParser:
         default=PILOT_N_DRAWS,
         help="timing-pilot draws per question (production localize grain = 3)",
     )
+    ap.add_argument(
+        "--reduce-phase",
+        choices=("localize", "decisive"),
+        default="localize",
+        help="judge_reduce wave: localize = wave 1 (gates), decisive = wave 2 (verdicts)",
+    )
+    ap.add_argument(
+        "--q-localize",
+        type=int,
+        default=10,
+        help="eval questions per localize cell (plan §4.2: 10)",
+    )
+    ap.add_argument(
+        "--q-decisive",
+        type=int,
+        default=N_EVAL_QUESTIONS,
+        help="eval questions per decisive/baseline/patch cell (plan §4.2: 20)",
+    )
+    ap.add_argument(
+        "--draws-localize", type=int, default=3, help="draws per question, localize grid"
+    )
+    ap.add_argument(
+        "--draws-decisive",
+        type=int,
+        default=5,
+        help="draws per question, decisive/baseline/patch-projection cells",
+    )
+    ap.add_argument("--fig-dir", default="figures/issue_2254", help="figures output dir")
     ap.add_argument("--force", action="store_true", help="ignore per-phase caches (unit-3 phases)")
     ap.add_argument(
         "--smoke", action="store_true", help="tiny slice (1 behavior, layer 14, 2q x 2 draws)"
@@ -1595,8 +3402,14 @@ def _apply_smoke(args) -> None:
     args.layers = [PILOT_LAYER]
     args.pilot_questions = 2
     args.pilot_draws = 2
+    args.q_localize = 2
+    args.q_decisive = 2
+    args.draws_localize = 2
+    args.draws_decisive = 2
     if args.out_root == "eval_results/issue_2254":
         args.out_root = "/tmp/issue-2254-smoke"
+    if args.fig_dir == "figures/issue_2254":
+        args.fig_dir = "/tmp/issue-2254-smoke/figures"
     _SMOKE_UPLOAD_SUBPREFIX = True
 
 
@@ -1657,8 +3470,96 @@ def _dry_run_phase(args) -> None:
             probes=len(args.behaviors) * len(args.layers),
             pilot_completions=args.pilot_questions * args.pilot_draws,
         )
+    elif phase in ("baseline_ceiling", "localize", "decisive", "patch"):
+        import inspect
+
+        from explore_persona_space.experiments.issue1415 import steering
+        from explore_persona_space.experiments.issue2254.hooks import (
+            ProjectionPatchHook,
+            multi_layer_delta_hooks,
+            multi_layer_projection_patch_hooks,
+        )
+
+        assert callable(multi_layer_delta_hooks)
+        assert callable(ProjectionPatchHook)
+        assert callable(multi_layer_projection_patch_hooks)
+        # Signature-bind the smoke-fenced generate_batch call shape (#606/#1332).
+        inspect.signature(steering.generate_batch).bind(
+            None, None, ["c"], n=1, hook=None, max_new_tokens=8, seed_base=42
+        )
+        if phase == "localize":
+            cells = _localize_cells(args, list(args.behaviors))
+            _breadcrumb(phase, dry_run=1, cells=len(cells))
+        elif phase == "baseline_ceiling":
+            _breadcrumb(phase, dry_run=1, cells=2 * len(args.behaviors))
+        elif phase == "patch":
+            n = len(PATCH_DIRECTIONS) * len(PATCH_OPS) * len(PATCH_BREADTHS)
+            assert callable(steering.capture_vectors)
+            _breadcrumb(phase, dry_run=1, cells_per_behavior=n)
+        else:  # decisive: cells need localize/operating_points.json — count combos only
+            n = len(_grid_combos(args)) * len(BREADTHS) + 1
+            _breadcrumb(phase, dry_run=1, max_cells_per_behavior=n)
+    elif phase == "build_pools":
+        from explore_persona_space.orchestrate import hub
+
+        assert callable(hub.stage_hub_file)
+        _breadcrumb(phase, dry_run=1, behaviors=len(args.behaviors))
+    elif phase == "margin":
+        import inspect
+
+        _ensure_repo_root_on_syspath()
+        import scripts.issue2220_readwrite as rw2220
+
+        # Bind the exact production call shape against the reused helper.
+        inspect.signature(rw2220._batched_ln_logp).bind(
+            None, [1], [[1]], None, 14, 0.0, "context", pad_id=0, batch_size=MARGIN_BATCH_2254
+        )
+        assert callable(rw2220._pack_tree_to_jsonl_shards)
+        _breadcrumb(phase, dry_run=1, behaviors=len(args.behaviors))
+    elif phase == "judge_reduce":
+        import inspect
+
+        from explore_persona_space.eval.judge_pilot import judge_pilot_gate
+        from explore_persona_space.experiments.issue_1739.judging import (
+            judge_items_graded,
+            judge_tallies,
+            load_trait_rubric,
+            rollout_item_id,
+        )
+
+        assert callable(judge_tallies) and callable(load_trait_rubric)
+        assert rollout_item_id("a-b", 0) == "a-b_k00"
+        inspect.signature(judge_pilot_gate).bind(
+            {"a": []},
+            "rubric",
+            max_tokens=JUDGE_MAX_TOKENS_2254,
+            cache_dir=Path("."),
+            save_raw_dir=Path("."),
+            n_draws=2,
+            target_total_draws=10,
+            min_effective_draws_per_arm=JUDGE_PILOT_MIN_EFFECTIVE,
+            allow_subresolution_pilot=True,
+            report_path=None,
+        )
+        inspect.signature(judge_items_graded).bind(
+            [],
+            "rubric",
+            cache_dir=Path("."),
+            save_raw=Path("."),
+            n_draws=2,
+            temperature=1.0,
+            max_tokens=JUDGE_MAX_TOKENS_2254,
+            judge_model="m",
+        )
+        _breadcrumb(phase, dry_run=1, wave=args.reduce_phase)
+    elif phase == "figures":
+        _ensure_repo_root_on_syspath()
+        from scripts.issue2254_figures import render_all
+
+        assert callable(render_all)
+        _breadcrumb(phase, dry_run=1, fig_dir=args.fig_dir)
     else:
-        _breadcrumb(phase, dry_run=1, unit3_stub=1)
+        raise SystemExit(f"dry-run: no wiring branch for phase {phase!r}")
     print(f"[dry-run] {phase} wiring OK", flush=True)
 
 
