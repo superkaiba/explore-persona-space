@@ -1,0 +1,21 @@
+{
+  "metadata": {
+    "git_commit": "unknown",
+    "timestamp": "2026-08-12T22:24:26Z",
+    "seed": 0,
+    "n": 10557,
+    "script": "scripts/issue1336_fit_cells.py"
+  },
+  "gate": "G0v3",
+  "cell": "rlvr_chat_lmsys23k",
+  "headline_layer": 30,
+  "r2_pooled_slice": 0.5382966321025975,
+  "r2_per_corpus_round3": 0.6090302267307357,
+  "abs_delta": 0.07073359462813822,
+  "tolerance": 0.05151557596695462,
+  "ex_v2": 1.0303115193390924,
+  "split_manifest": "/workspace/superkaiba/eps/issue-1336/data/issue_1336/pooled_split_v3/split_manifest.json",
+  "enforced": true,
+  "pass": false,
+  "verdict": "fail"
+}
