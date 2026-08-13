@@ -94,13 +94,15 @@ RENDER_STYLE = {
     "attrib_quoted": ("story (attributed quote)", "#3FA577", "s"),
     "bare_label": ("story (bare label)", "#E08220", "^"),
 }
-# Sequential ramp keyed to AI-likeness: darkest = most AI-like (same as the
-# committed assistant_to_character figures).
+# Maximally-distinct categorical colors (Wong colorblind-safe set), chosen to
+# avoid Figure 1's framing hues (deep blue / green / orange) where possible —
+# user feedback 2026-08-13 replaced the earlier AI-likeness blue ramp, whose
+# lines were too close; AI-likeness ordering still rides the legend labels.
 CHAR_COLOR = {
-    "helios": "#08306B",
-    "wren": "#2171B5",
-    "vex": "#6BAED6",
-    "dana": "#BDD7E7",
+    "helios": "#000000",
+    "wren": "#56B4E9",
+    "vex": "#D55E00",
+    "dana": "#CC79A7",
 }
 CHAR_DISPLAY = {"helios": "HELIOS", "wren": "Wren", "vex": "Vex", "dana": "Dana"}
 CHARACTERS = ["helios", "wren", "vex", "dana"]
