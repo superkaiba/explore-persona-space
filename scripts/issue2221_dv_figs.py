@@ -37,11 +37,11 @@ import argparse
 import json
 from pathlib import Path
 
-import numpy as np
-
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
+
+import numpy as np  # noqa: E402
 
 FAMILIES = [
     "evil",
