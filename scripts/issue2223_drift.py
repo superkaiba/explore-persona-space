@@ -1440,16 +1440,196 @@ def _synth_geometry(arm: str, model_key: str, model):
 
 
 # ── phase: activations (teacher-forced three-read projection — §4.3) ───────────
+# Defect-A fix (2026-08-13 7B OOM): token budget for the batched teacher-forced
+# read. Peak forward memory scales with rows × padded length (the dominant block
+# is the transformers (B, T, V) full-sequence logits — bf16 + its fp32 upcast ≈
+# 6 B/token/vocab-slot at Qwen's ~152k vocab), so a fixed ROW-count batch climbs
+# monotonically as late long-turn units arrive (~39k padded tokens ≈ 11.16 GiB
+# bf16 logits, the exact failed alloc). 8,192 tokens bounds that block to
+# ~7.5 GiB total, turn-depth-independent, with headroom on both model legs.
+READ_TOKEN_BUDGET = int(os.environ.get("EPM_ISSUE2223_READ_TOKEN_BUDGET", "8192"))
+
+
+def pack_units_by_token_budget(units: list[dict], budget: int) -> list[list[int]]:
+    """Length-sorted token-budget packing for the batched teacher-forced read.
+
+    Returns packs of INDICES into ``units``. Units are sorted longest-first so
+    short and long units never share a padded batch (less padding waste AND a
+    bounded peak), then packed greedily so every MULTI-row pack satisfies
+    ``rows * max_len <= budget`` (``max_len`` = the pack's first = longest
+    unit). A single unit longer than the budget goes ALONE in its own pack —
+    never an empty pack. Re-ordering is DV-safe: real tokens are LEFT-anchored
+    under right padding, so per-row span indices are padding- and
+    batch-order-invariant (pinned by
+    ``tests/test_issue2223_activations_ckpt.py``)."""
+    if budget < 1:
+        raise ValueError(f"token budget must be >= 1, got {budget}")
+    order = sorted(range(len(units)), key=lambda i: len(units[i]["ids"]), reverse=True)
+    packs: list[list[int]] = []
+    pack: list[int] = []
+    pack_max = 0
+    for i in order:
+        n = len(units[i]["ids"])
+        new_max = max(pack_max, n)  # == pack_max once non-empty (descending order)
+        if pack and (len(pack) + 1) * new_max > budget:
+            packs.append(pack)
+            pack, new_max = [], n
+        pack.append(i)
+        pack_max = new_max
+    if pack:
+        packs.append(pack)
+    return packs
+
+
+def _activations_regime(
+    *, cell, arm, model_key, enable_thinking, proj_layer, phase_tag, smoke, raw_sha
+) -> dict:
+    """Resume-regime fingerprint for the activations checkpoint (#722 r3 class).
+
+    Keys = EVERY output-affecting knob of the teacher-forced read: cell/arm,
+    model, projection layer, thinking mode, phase tag, smoke flag (smoke swaps
+    in a random projection axis), and the sha of the consumed
+    ``raw_completions.json`` (a re-generated raw file invalidates every
+    checkpointed unit). ``round_label`` rides in via ``regime_fingerprint``."""
+    from scripts import issue2203_common as C
+
+    return C.regime_fingerprint(
+        phase="activations",
+        cell=cell,
+        arm=arm,
+        model=model_key,
+        enable_thinking=bool(enable_thinking),
+        proj_layer=int(proj_layer),
+        phase_tag=phase_tag,
+        smoke=bool(smoke),
+        raw_sha=raw_sha,
+    )
+
+
+def _activations_ckpt_paths(out_dir: Path, phase_tag: str, cell: str) -> tuple[Path, Path]:
+    """(per-unit records JSONL, regime sidecar) for the activations checkpoint."""
+    d = out_dir / "activations_ckpt" / phase_tag
+    return d / f"{cell}.jsonl", d / f"{cell}.regime.json"
+
+
+def _load_read_ckpt(path: Path) -> dict[tuple[str, int], dict]:
+    """Load per-unit records from the append-mode checkpoint, keyed (conv, turn).
+
+    Tolerates a torn FINAL line (crash mid-append residue) by dropping it with a
+    log line; a malformed NON-final line is real corruption and raises."""
+    if not path.exists():
+        return {}
+    out: dict[tuple[str, int], dict] = {}
+    lines = path.read_text().splitlines()
+    for i, line in enumerate(lines):
+        if not line.strip():
+            continue
+        try:
+            rec = json.loads(line)
+        except json.JSONDecodeError:
+            if i == len(lines) - 1:
+                _log(f"[phase=activations] dropping torn final checkpoint line in {path}")
+                continue
+            raise
+        out[(rec["conv"], int(rec["turn"]))] = rec
+    return out
+
+
+def _append_read_ckpt(path: Path, records: list[dict]) -> None:
+    """Durable per-pack append: one JSONL line per unit record, flushed + fsynced."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = "".join(json.dumps(r) + "\n" for r in records)
+    with open(path, "a", encoding="utf-8") as f:
+        f.write(payload)
+        f.flush()
+        os.fsync(f.fileno())
+
+
+def _teacher_forced_projections(
+    model,
+    units: list[dict],
+    proj_layer: int,
+    vhat_f,
+    pad_id: int,
+    *,
+    token_budget: int,
+    skip: set[tuple[str, int]] | None = None,
+    on_pack=None,
+    log_prefix: str | None = None,
+) -> dict[tuple[str, int], dict]:
+    """Batched teacher-forced projection read over (conv, turn) units.
+
+    Packs units into TOKEN-BUDGET batches (``pack_units_by_token_budget``) and
+    runs ONE batched forward per pack — never a Python loop of batch-1 forwards.
+    ``hs`` stays in the model's native dtype; only the small per-row slices are
+    upcast to fp32 for the reductions (Defect A: the old path upcast the whole
+    (B, T, H) tensor). Upcast-then-slice and slice-then-upcast are elementwise-
+    identical, so the per-row values match the old path exactly given the same
+    forward output.
+
+    Returns ``{(conv, turn): record}`` where each record carries
+    conv/domain/turn + response/prefix/context/resp_norm. Units whose key is in
+    ``skip`` are never forwarded (resume); ``on_pack(records)`` runs after each
+    pack completes (checkpoint append); ``log_prefix`` emits the per-pack
+    progress line ``<prefix> <done>/<total>`` (total counts skipped units)."""
+    import torch
+
+    from explore_persona_space.analysis.extraction import extract_layer_activations
+
+    dev = next(model.parameters()).device
+    skip = skip or set()
+    sub = [u for u in units if (u["conv"], u["turn"]) not in skip]
+    total = len(units)
+    done = total - len(sub)
+    out: dict[tuple[str, int], dict] = {}
+    for pack in pack_units_by_token_budget(sub, token_budget):
+        batch = [sub[i] for i in pack]
+        max_len = max(len(u["ids"]) for u in batch)
+        input_ids = torch.full((len(batch), max_len), pad_id, dtype=torch.long, device=dev)
+        mask = torch.zeros((len(batch), max_len), dtype=torch.long, device=dev)
+        for r, u in enumerate(batch):
+            input_ids[r, : len(u["ids"])] = torch.tensor(u["ids"], device=dev)
+            mask[r, : len(u["ids"])] = 1
+        captured = extract_layer_activations(model, input_ids, [proj_layer], attention_mask=mask)
+        hs = captured[proj_layer]  # (B, T, H) native dtype — no full-tensor upcast
+        records: list[dict] = []
+        for r, u in enumerate(batch):
+            cl, rl, pe = u["ctx_len"], u["resp_len"], u["prefix_end"]
+            resp_hs = hs[r, cl : cl + rl].float()  # small (resp_len, H) slice upcast
+            records.append(
+                {
+                    "conv": u["conv"],
+                    "domain": u["domain"],
+                    "turn": u["turn"],
+                    "response": float((resp_hs @ vhat_f).mean().item()),
+                    "prefix": (
+                        float((hs[r, pe - 1].float() @ vhat_f).item()) if pe is not None else None
+                    ),
+                    "context": float((hs[r, cl - 1].float() @ vhat_f).item()),
+                    "resp_norm": float(resp_hs.norm(dim=-1).mean().item()),
+                }
+            )
+        del captured, hs
+        if on_pack is not None:
+            on_pack(records)
+        for rec in records:
+            out[(rec["conv"], rec["turn"])] = rec
+        done += len(records)
+        if log_prefix:
+            _log(f"{log_prefix} {done}/{total}")
+    return out
+
+
 def phase_activations(args) -> Path:
     """Teacher-forced multi-turn read: per assistant turn, mean response-token +
     prefix-vector + context-vector projections onto the axis at the MIDDLE layer.
 
     UNHOOKED for every arm (the read layer is upstream of every band — §4.3), so
     Phase A and Phase B share this code. Writes phaseA_drift_trajectory.json /
-    phaseB_arm_trajectories.json + analysis_tensors."""
-    import torch
-
-    from explore_persona_space.analysis.extraction import extract_layer_activations
+    phaseB_arm_trajectories.json + analysis_tensors. Per-unit records checkpoint
+    to ``activations_ckpt/<phase_tag>/<cell>.jsonl`` behind a regime-fingerprinted
+    resume (Defect B: 4,804 units >> the ~50-unit intra-phase floor; the
+    2026-08-13 OOM previously lost the whole in-memory trajectory)."""
     from explore_persona_space.experiments.issue2094 import bank as B2094
     from scripts import issue2203_common as C
     from scripts import issue2203_runtime as R
@@ -1461,9 +1641,8 @@ def phase_activations(args) -> Path:
     enable_thinking = args.think and model_key == "32b"
     cell = f"{arm}__{model_key}" + ("__think" if enable_thinking else "")
     phase_tag = "phaseA" if ARMS[arm]["phase"] == "A" else "phaseB"
-    raw = json.loads(
-        (out_dir / "raw_completions" / phase_tag / cell / "raw_completions.json").read_text()
-    )
+    raw_text = (out_dir / "raw_completions" / phase_tag / cell / "raw_completions.json").read_text()
+    raw = json.loads(raw_text)
     proj_layer = PROJ_LAYER[model_key]
     model, tok = R.load_model_and_tokenizer(MODEL_FOR[model_key])
     resp_axis = _projection_axis(arm, model_key, out_dir, model, args.smoke)
@@ -1476,38 +1655,59 @@ def phase_activations(args) -> Path:
     # 1. Collect all (conv, turn) read UNITS (shared with phase_firing).
     units = _collect_read_units(raw, tok, ids_fn)
 
-    # 2. Batched teacher-forced read (right-pad groups of GEN_BATCH_SIZE; real
-    #    tokens are LEFT-anchored so every per-row span index is padding-invariant,
-    #    the projection_pools pattern). Never a Python loop of batch-1 forwards.
-    trajectory: dict = {}  # domain -> turn -> list of {response, prefix, context, resp_norm}
-    dev = next(model.parameters()).device
+    # 2. Batched teacher-forced read — TOKEN-BUDGET packs (length-sorted, right-pad;
+    #    real tokens are LEFT-anchored so every per-row span index is padding- AND
+    #    batch-order-invariant, the projection_pools pattern — do NOT switch to
+    #    left-padding). Never a Python loop of batch-1 forwards. Each pack's
+    #    records checkpoint to an append-mode JSONL; a resume skips completed
+    #    units behind the regime fingerprint (#722 r3 class).
     pad_id = tok.pad_token_id if tok.pad_token_id is not None else tok.eos_token_id
-    bs = R.GEN_BATCH_SIZE
     vhat_f = vhat.float()
-    for k in range(0, len(units), bs):
-        batch = units[k : k + bs]
-        max_len = max(len(u["ids"]) for u in batch)
-        input_ids = torch.full((len(batch), max_len), pad_id, dtype=torch.long, device=dev)
-        mask = torch.zeros((len(batch), max_len), dtype=torch.long, device=dev)
-        for r, u in enumerate(batch):
-            input_ids[r, : len(u["ids"])] = torch.tensor(u["ids"], device=dev)
-            mask[r, : len(u["ids"])] = 1
-        captured = extract_layer_activations(model, input_ids, [proj_layer], attention_mask=mask)
-        hs = captured[proj_layer].float()  # (B, T, H)
-        for r, u in enumerate(batch):
-            cl, rl, pe = u["ctx_len"], u["resp_len"], u["prefix_end"]
-            resp_hs = hs[r, cl : cl + rl]  # (resp_len, H)
-            trajectory.setdefault(u["domain"], {}).setdefault(str(u["turn"]), []).append(
-                {
-                    "conv": u["conv"],
-                    "response": float((resp_hs @ vhat_f).mean().item()),
-                    "prefix": (float((hs[r, pe - 1] @ vhat_f).item()) if pe is not None else None),
-                    "context": float((hs[r, cl - 1] @ vhat_f).item()),
-                    "resp_norm": float(resp_hs.norm(dim=-1).mean().item()),
-                }
-            )
-        del captured, hs
-        _log(f"[phase=activations] {cell} read units {min(k + bs, len(units))}/{len(units)}")
+    ckpt_path, regime_path = _activations_ckpt_paths(out_dir, phase_tag, cell)
+    regime = _activations_regime(
+        cell=cell,
+        arm=arm,
+        model_key=model_key,
+        enable_thinking=enable_thinking,
+        proj_layer=proj_layer,
+        phase_tag=phase_tag,
+        smoke=bool(args.smoke),
+        raw_sha=hashlib.sha256(raw_text.encode()).hexdigest()[:16],
+    )
+    if regime_path.exists():
+        C.check_regime(json.loads(regime_path.read_text()), regime, regime_path)
+    elif ckpt_path.exists():
+        C.check_regime(None, regime, ckpt_path)  # records with NO fingerprint: refuse
+    else:
+        regime_path.parent.mkdir(parents=True, exist_ok=True)
+        regime_path.write_text(json.dumps(regime, indent=2))
+    completed = _load_read_ckpt(ckpt_path)
+    if completed:
+        _log(
+            f"[phase=activations] {cell} resume: {len(completed)}/{len(units)} units "
+            "already checkpointed — skipping"
+        )
+    fresh = _teacher_forced_projections(
+        model,
+        units,
+        proj_layer,
+        vhat_f,
+        pad_id,
+        token_budget=READ_TOKEN_BUDGET,
+        skip=set(completed),
+        on_pack=lambda recs: _append_read_ckpt(ckpt_path, recs),
+        log_prefix=f"[phase=activations] {cell} read units",
+    )
+    records = {**completed, **fresh}
+    # 3. Assemble the trajectory FROM the checkpoint records, in the ORIGINAL unit
+    #    order (schema unchanged: domain -> str(turn) -> [{conv, response, prefix,
+    #    context, resp_norm}]) — packing/resume order never leaks into the artifact.
+    trajectory: dict = {}
+    for u in units:
+        rec = records[(u["conv"], u["turn"])]  # KeyError == fail loud (unit never read)
+        trajectory.setdefault(u["domain"], {}).setdefault(str(u["turn"]), []).append(
+            {k: rec[k] for k in ("conv", "response", "prefix", "context", "resp_norm")}
+        )
 
     out_name = (
         "phaseA_drift_trajectory.json" if phase_tag == "phaseA" else "phaseB_arm_trajectories.json"
@@ -1597,7 +1797,10 @@ def _projection_axis(arm: str, model_key: str, out_dir: Path, model, smoke: bool
     import torch
 
     if smoke:
-        return torch.randn(int(model.config.hidden_size))
+        # SEEDED (not bare randn): the activations checkpoint resumes across runs,
+        # and an unseeded smoke axis would mix two axes in one resumed artifact.
+        gen = torch.Generator().manual_seed(ISSUE)
+        return torch.randn(int(model.config.hidden_size), generator=gen)
     if model_key == "32b":
         from scripts import issue2203_phase3 as P3
 
