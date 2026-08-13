@@ -20,7 +20,9 @@ ALREADY collected in the same tick contradicts a dead workload. Today a stale pi
 sufficient for `status: dead`, even when the tick's own `gpu_util` and `last_log_mtime_sec_ago`
 fields say the workload is actively computing.
 
-## Observed (task #2223, 2026-08-12 23:06Z, pod-2223-q32b)
+## Observed (task #2223, 2026-08-13 ~06:06Z, pod-2223-q32b)
+
+> Timestamp corrected 2026-08-13 (consistency-checker, plan round): originally recorded as "2026-08-12 23:06Z", which is local UTC-7 — the literal Z reading predates the 32B leg's 00:00:57Z launch. Durable corroboration: #2223 `epm:progress` v73 (2026-08-13T06:05:22Z); the tick JSON below is a session-side poll read consistent with that state.
 
 One tick returned, in a single JSON object:
 

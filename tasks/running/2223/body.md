@@ -3,7 +3,8 @@ title: Reproduce Lu et al. persona drift, then test whether context-vector-ONLY 
   and axis-component replacement prevent it (axis extracted from answer vs context
   activations)
 kind: experiment
-tags: []
+tags:
+- keep-running
 created_at: '2026-08-10T21:18:35Z'
 has_clean_result: false
 parent_id: 2203

@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2268,
+  "highest_id": 2274,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8727,8 +8727,8 @@
     "2128": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2128",
-      "status": "running",
+      "path": "tasks/completed/2128",
+      "status": "completed",
       "title": "daily-fix: spawn stop --kill must TERM inner claude pid"
     },
     "2129": {
@@ -9769,15 +9769,15 @@
     "2264": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2264",
-      "status": "running",
+      "path": "tasks/completed/2264",
+      "status": "completed",
       "title": "verify_task_body: WARN checks for fold-staled fixtures (per-unit-exemption token; acknowledgment result-count)"
     },
     "2265": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2265",
-      "status": "planning",
+      "path": "tasks/running/2265",
+      "status": "running",
       "title": "poll_pipeline emits status:dead while its own gpu_util + log-mtime evidence shows the workload alive"
     },
     "2266": {
@@ -9790,16 +9790,23 @@
     "2267": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2267",
-      "status": "approved",
+      "path": "tasks/running/2267",
+      "status": "running",
       "title": "workflow-fix: verify_task_body opaque-code scan skips sidecar-less Results-embedded figures"
     },
     "2268": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2268",
-      "status": "planning",
+      "path": "tasks/reviewing/2268",
+      "status": "reviewing",
       "title": "main's .claude/skills/issue/SKILL.md exceeds its own size ratchet (936,191 > 935,400 bytes) \u2014 trim below cap; blocks lint gates fleet-wide"
+    },
+    "2269": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2269",
+      "status": "proposed",
+      "title": "verify_plan.py: regen-headroom arithmetic check (armed \u22652\u00d7 re-gen vs max_model_len pin) \u2014 third recurrence of the #505/#601 class"
     },
     "227": {
       "has_clean_result": true,
@@ -9807,6 +9814,41 @@
       "path": "tasks/archived/227",
       "status": "archived",
       "title": "Conditional misalignment triggers span security role-play, educational, and authority cues beyond the training cue; cosine L10 predicts cue potency (MODERATE confidence)"
+    },
+    "2270": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2270",
+      "status": "proposed",
+      "title": "pod.py terminate: no surgical form for the PRIMARY pod while a suffixed sibling is live"
+    },
+    "2271": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2271",
+      "status": "proposed",
+      "title": "upload_raw_completions_to_data_repo silently drops pre-merge shard payloads (15.6 MB of rollout text on #2223)"
+    },
+    "2272": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/2272",
+      "status": "reviewing",
+      "title": "scripts/issue2224_fold_figures.py breaks test_shared_vm_thread_caps on main (missing load_dotenv-before-torch preamble)"
+    },
+    "2273": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2273",
+      "status": "proposed",
+      "title": "gotchas.md: fellows remote shell is zsh \u2014 unmatched glob aborts the whole SSH command (nomatch), silently truncating chained monitoring probes"
+    },
+    "2274": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2274",
+      "status": "running",
+      "title": "gotchas.md: fellows CPU analogue \u2014 plain-SSH nproc sees the node, inside-job nproc sees the allocation (ConstrainCores=yes vs ConstrainDevices=no asymmetry)"
     },
     "228": {
       "has_clean_result": true,
