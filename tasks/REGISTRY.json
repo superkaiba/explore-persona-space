@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2260,
+  "highest_id": 2261,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9744,6 +9744,13 @@
       "path": "tasks/proposed/2260",
       "status": "proposed",
       "title": "Step 5a spec-freshness: couple agents prose-pin tests (test_mapping_baselines_wiring_pins.py class) to the .claude/agents family \u2014 half-sync gate red"
+    },
+    "2261": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2261",
+      "status": "proposed",
+      "title": "Extend driver --import-check to bind-check in-repo helper call arity, not just args.<attr> completeness"
     },
     "227": {
       "has_clean_result": true,
