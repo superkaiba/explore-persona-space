@@ -2775,6 +2775,33 @@ def _waiver_args(out_root, families, waive=None, reason=None, *, em_like=None, e
     )
 
 
+def test_band_ensure_external_clone_idempotent_and_fail_loud(tmp_path):
+    """Smoke attempt 3: fresh pod lacked the persona_vectors clone — band's rubric
+    loader assumed it. Pin: present dir early-returns (no clone); a non-empty root
+    without trait_data_extract refuses (never clones over foreign content); and
+    main() wires the ensure before phase dispatch."""
+    import importlib.util as _ilu
+    from pathlib import Path as _P
+
+    spec = _ilu.spec_from_file_location("i2221_band", _P("scripts/issue2221_band.py"))
+    band = _ilu.module_from_spec(spec)
+    spec.loader.exec_module(band)
+
+    ok_root = tmp_path / "pv"
+    (ok_root / "data_generation" / "trait_data_extract").mkdir(parents=True)
+    band._ensure_external_clone(ok_root)  # early-return, no subprocess
+
+    bad_root = tmp_path / "foreign"
+    bad_root.mkdir()
+    (bad_root / "junk.txt").write_text("x")
+    with pytest.raises(RuntimeError, match="refusing to clone over"):
+        band._ensure_external_clone(bad_root)
+
+    src = _P("scripts/issue2221_band.py").read_text()
+    dispatch = src.index("phases = list(PHASES)")
+    assert "_ensure_external_clone(Path(args.external_root))" in src[:dispatch]
+
+
 def test_pilot_waiver_grammar_and_reason_fail_loud(tmp_path):
     """v15: malformed entry / missing reason / unknown family all refuse pre-dispatch."""
     out_root = _waiver_pilot_fixture(tmp_path)

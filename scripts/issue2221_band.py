@@ -653,6 +653,38 @@ def build_argparser() -> argparse.ArgumentParser:
     return ap
 
 
+def _ensure_external_clone(external_root: Path) -> None:
+    """Clone safety-research/persona_vectors if the trait-rubric data is absent.
+
+    Every rubric path in this driver reads ``external_root/data_generation/
+    trait_data_extract/<trait>.json`` via ``lib.load_trait_data``; on a fresh
+    pod the clone does not exist (the stage_corpus self-staging only fires on
+    the paper-prompts path — smoke attempt 3 died here). Fail-loud clone,
+    idempotent early-return.
+    """
+    import subprocess
+
+    if (external_root / "data_generation" / "trait_data_extract").is_dir():
+        return
+    if external_root.is_dir() and any(external_root.iterdir()):
+        raise RuntimeError(
+            f"external root {external_root} exists but lacks data_generation/trait_data_extract "
+            "— refusing to clone over a non-empty directory"
+        )
+    external_root.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        [
+            "git",
+            "clone",
+            "--depth",
+            "1",
+            "https://github.com/safety-research/persona_vectors",
+            str(external_root),
+        ],
+        check=True,
+    )
+
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
     args = build_argparser().parse_args()
@@ -668,6 +700,7 @@ def main() -> None:
 
         print("[import-check] OK")
         raise SystemExit(0)
+    _ensure_external_clone(Path(args.external_root))
     phases = list(PHASES) if args.phase == "all" else [args.phase]
     for name in phases:
         lib.log_phase(f"p2_{name}", "start")
