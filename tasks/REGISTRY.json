@@ -8734,8 +8734,8 @@
     "2129": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2129",
-      "status": "approved",
+      "path": "tasks/running/2129",
+      "status": "running",
       "title": "daily-fix: normalize claude-fable-5[1m] in settings.json"
     },
     "213": {
