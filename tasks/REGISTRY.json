@@ -8748,8 +8748,8 @@
     "2130": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2130",
-      "status": "running",
+      "path": "tasks/reviewing/2130",
+      "status": "reviewing",
       "title": "daily-fix: issue1491 ceiling must assert n_pairs"
     },
     "2131": {
