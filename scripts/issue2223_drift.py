@@ -285,10 +285,29 @@ PROJ_LAYER = {"7b": 14, "32b": 32, "tiny": 6}
 BAND_LAYERS = {"7b": list(range(18, 26)), "32b": list(range(46, 54)), "tiny": [4, 5]}
 
 # Decode caps (§4.2 pins). 7B greedy; 32B-OFF temp 0.7/top_p 0.9; thinking-ON 4096.
+#
+# 32B-OFF raised 512 -> 2048 by the plan §4.2 PRE-REGISTERED truncation trigger
+# ("post-retry cap-hit > 2% per (arm, domain) cell => re-generate the affected
+# conversations at >=2x the base cap"), fired on MEASURED A0__32b turn-1 telemetry:
+# initial cap-hit 0.72-0.79 at 512 and 0.18-0.32 post-retry at 1024 across all four
+# shards, vs the parent #2203's recorded 0.2-0.4% at the identical 512/1024 recipe.
+# The censoring was severely DOMAIN-ASYMMETRIC (fraction of turn-1 responses at the
+# 1024 regen cap: coding 0.48, philosophy 0.33, therapy 0.03, writing 0.06), i.e.
+# confounded with the exact therapy+philosophy < coding+writing contrast the §3
+# verdict lattice evaluates, so leaving it would forge or mask the reproduction
+# verdict rather than merely add noise. Measured length basis (n=400 turn-1
+# responses, censored at 1024): median 763, p75 1004, p90 1024.
+# 2048 is >=2x the base cap (4x) and keeps the regen path at 2x -> 4096, matching
+# this plan's existing thinking-ON precedent for the same stated reason (a
+# mass-truncated response corrupts the response-token-mean DV).
+# NAMED FIDELITY DEVIATION: 512 is the paper's own released generation.py default
+# (Source: 2601.10387). It is retained as a REPORTED finding — the paper's decode
+# default truncates ~71% of Qwen3-32B thinking-OFF responses on this stimulus — and
+# carried as a scope caveat, NOT silently replaced.
 DECODE = {
     ("7b", False): {"max_new_tokens": 1024, "temperature": 0.0, "top_p": None},
     ("7b", None): {"max_new_tokens": 1024, "temperature": 0.0, "top_p": None},
-    ("32b", False): {"max_new_tokens": 512, "temperature": 0.7, "top_p": 0.9},
+    ("32b", False): {"max_new_tokens": 2048, "temperature": 0.7, "top_p": 0.9},
     ("32b", True): {"max_new_tokens": 4096, "temperature": 0.7, "top_p": 0.9},
     ("tiny", None): {"max_new_tokens": 64, "temperature": 0.0, "top_p": None},
     ("tiny", False): {"max_new_tokens": 64, "temperature": 0.0, "top_p": None},
