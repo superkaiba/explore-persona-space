@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2267,
+  "highest_id": 2268,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9793,6 +9793,13 @@
       "path": "tasks/planning/2267",
       "status": "planning",
       "title": "workflow-fix: verify_task_body opaque-code scan skips sidecar-less Results-embedded figures"
+    },
+    "2268": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2268",
+      "status": "proposed",
+      "title": "main's .claude/skills/issue/SKILL.md exceeds its own size ratchet (936,191 > 935,400 bytes) \u2014 trim below cap; blocks lint gates fleet-wide"
     },
     "227": {
       "has_clean_result": true,
