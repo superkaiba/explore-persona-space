@@ -8727,8 +8727,8 @@
     "2128": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2128",
-      "status": "running",
+      "path": "tasks/completed/2128",
+      "status": "completed",
       "title": "daily-fix: spawn stop --kill must TERM inner claude pid"
     },
     "2129": {
