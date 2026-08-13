@@ -954,10 +954,26 @@ def _try_hf_resume(
         m = shard_re.match(name)
         if m:
             shards.setdefault(int(m.group(1)), set()).add(m.group(2))
-    assert shards, (
-        f"HF turnstore prefix for {stem} exists but holds no shard files ({sorted(names)[:8]}…) — "
-        "partial/foreign upload; triage before resuming"
-    )
+    if not shards:
+        # The Hub prefix is PAIR-level — SHARED by every corpus of this
+        # (model, text_source) pair — so a non-empty listing means "the
+        # PAIR's prefix has files", NOT "THIS stem has files" (#1336 r25
+        # production crash: the first sibling corpus's upload made every
+        # later cell of the pair die here). Scope the emptiness decision to
+        # THIS STEM: stem-prefixed files with no valid shard match are a
+        # genuine partial/foreign upload for THIS cell (a .pt.tmp, a stray
+        # _meta.json) and stay fail-loud; zero stem-prefixed files means
+        # nothing to resume — the documented None contract.
+        stem_files = sorted(n for n in names if n.startswith(f"{stem}_"))
+        assert not stem_files, (
+            f"HF turnstore prefix for {stem} holds stem-prefixed files but no valid shard "
+            f"files ({stem_files[:8]}…) — partial/foreign upload; triage before resuming"
+        )
+        print(
+            f"[extract] {stem}: no HF turnstore files for this stem "
+            f"(pair prefix holds {len(names)} sibling-corpus files) — nothing to resume"
+        )
+        return None
     idxs = sorted(shards)
     ext_map = {i: sorted(e) for i, e in shards.items()}
     complete = idxs == list(range(len(idxs))) and all(shards[i] == {"pt", "json"} for i in idxs)

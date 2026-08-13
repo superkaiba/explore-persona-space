@@ -178,3 +178,188 @@ def test_no_literal_zero_or_w_cvd_pins_remain():
 def test_dispatch_script_bash_syntax():
     proc = subprocess.run(["bash", "-n", str(SCRIPT)], capture_output=True, text=True, timeout=60)
     assert proc.returncode == 0, proc.stderr
+
+
+# ---------------------------------------------------------------------------
+# run_queue per-worker BLAS/OMP thread right-sizing + EPS_QUEUE_WIDTH_MAX
+# (#1336 r25, measured marker v284: 8 workers x inherited OMP_NUM_THREADS=64
+# on a 192-core node = 448-512 threads => 0.27x ONE worker's throughput).
+# Same extraction technique as the pin harness above — the REAL run_queue
+# body executes under a CONTROLLED env (thread vars scrubbed, nproc stubbed)
+# so the shared-VM thread caps cannot leak into the arithmetic.
+# ---------------------------------------------------------------------------
+QUEUE_BANNER_RE = re.compile(
+    r"\[thr\] (\d+) job\(s\) across (\d+) worker\(s\) "
+    r"nproc=(\d+) threads_per_worker=(\d+) width_cap=(\S+)"
+)
+
+_THREAD_ENV_KEYS = (
+    "OMP_NUM_THREADS",
+    "MKL_NUM_THREADS",
+    "OPENBLAS_NUM_THREADS",
+    "NUMEXPR_NUM_THREADS",
+    "VECLIB_MAXIMUM_THREADS",
+)
+
+
+def _nproc_stub(tmp_path: Path, n: int) -> Path:
+    """A PATH dir whose ``nproc`` prints a fixed core count."""
+    d = tmp_path / f"nproc_stub_{n}"
+    d.mkdir(exist_ok=True)
+    stub = d / "nproc"
+    stub.write_text(f"#!/usr/bin/env bash\necho {n}\n")
+    stub.chmod(stub.stat().st_mode | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IXOTH)
+    return d
+
+
+def _run_queue_thread_proc(
+    tmp_path: Path,
+    n_gpus: int,
+    n_jobs: int,
+    *,
+    nproc: int,
+    inherited_omp: str | None,
+    width_max: str | None = None,
+) -> tuple[subprocess.CompletedProcess, Path]:
+    """Execute the REAL run_queue body; jobs echo their realized thread env + CVD pin."""
+    done = tmp_path / "done"
+    logs = tmp_path / "jlogs"
+    done.mkdir(exist_ok=True)
+    logs.mkdir(exist_ok=True)
+    jobs_file = tmp_path / "jobs.tsv"
+    echo_threads = " ".join(f"{k}=${{{k}:-unset}}" for k in _THREAD_ENV_KEYS)
+    cmd = f'echo "THREADS {echo_threads}"; echo "ALLOC=${{CUDA_VISIBLE_DEVICES:-unset}}"'
+    jobs_file.write_text("\n".join(f"tj{i}\t{cmd}" for i in range(n_jobs)) + "\n")
+    alloc = [str(i) for i in range(n_gpus)]
+    harness = f"""
+set -euo pipefail
+eval "$(sed -n '/^run_queue()/,/^}}/p' '{SCRIPT}')"
+NGPU={n_gpus}
+EPS_ALLOC_GPUS=({" ".join(alloc)})
+DONE_DIR='{done}'
+JOB_LOG_DIR='{logs}'
+run_queue thr '{jobs_file}'
+"""
+    env = {**os.environ}
+    # Scrub CVD too: a sibling test's os.environ mutation would otherwise leak
+    # into the CPU-branch ALLOC=unset assertion (batch-order dependent).
+    for k in (*_THREAD_ENV_KEYS, "EPS_QUEUE_WIDTH_MAX", "CUDA_VISIBLE_DEVICES"):
+        env.pop(k, None)
+    if inherited_omp is not None:
+        env["OMP_NUM_THREADS"] = inherited_omp
+    if width_max is not None:
+        env["EPS_QUEUE_WIDTH_MAX"] = width_max
+    env["PATH"] = f"{_nproc_stub(tmp_path, nproc)}:{env['PATH']}"
+    proc = subprocess.run(
+        ["bash", "-c", harness], capture_output=True, text=True, cwd=tmp_path, env=env, timeout=120
+    )
+    return proc, logs
+
+
+def _job_lines(logs: Path, n_jobs: int, tag: str) -> set[str]:
+    """Collect the per-job ``<tag> ...`` echo lines across all job logs."""
+    vals: set[str] = set()
+    for i in range(n_jobs):
+        text = (logs / f"thr__tj{i}.log").read_text()
+        m = re.search(rf"{tag}[= ](.+)", text)
+        assert m, f"no {tag} line in thr__tj{i}.log: {text!r}"
+        vals.add(m.group(1).strip())
+    return vals
+
+
+def _banner(proc: subprocess.CompletedProcess) -> tuple[str, ...]:
+    m = QUEUE_BANNER_RE.search(proc.stdout)
+    assert m, f"queue banner not found in stdout: {proc.stdout!r}"
+    return m.groups()
+
+
+def test_run_queue_threads_width8_yields_nproc_over_width(tmp_path):
+    """(nproc=192, width=8, inherited=64) -> 24, exported to all five vars."""
+    proc, logs = _run_queue_thread_proc(tmp_path, 8, 8, nproc=192, inherited_omp="64")
+    assert proc.returncode == 0, (proc.returncode, proc.stdout, proc.stderr)
+    # Unset EPS_QUEUE_WIDTH_MAX leaves width == NGPU (brief test 2, unset arm).
+    assert _banner(proc) == ("8", "8", "192", "24", "none")
+    expected = " ".join(f"{k}=24" for k in _THREAD_ENV_KEYS)
+    assert _job_lines(logs, 8, "THREADS") == {expected}
+
+
+def test_run_queue_threads_width1_min_pins_inherited_not_nproc(tmp_path):
+    """(nproc=192, width=1, inherited=64) -> 64: the min() is load-bearing —
+    a bare nproc/width would hand the single worker 192 threads (untested);
+    64 reproduces EXACTLY the measured-fast pilot configuration."""
+    proc, logs = _run_queue_thread_proc(tmp_path, 1, 1, nproc=192, inherited_omp="64")
+    assert proc.returncode == 0, (proc.returncode, proc.stdout, proc.stderr)
+    assert _banner(proc) == ("1", "1", "192", "64", "none")
+    expected = " ".join(f"{k}=64" for k in _THREAD_ENV_KEYS)
+    assert _job_lines(logs, 1, "THREADS") == {expected}
+
+
+def test_run_queue_threads_tiny_node_floors_at_one(tmp_path):
+    """(nproc=4, width=8) -> floor(4/8)=0 floored to 1."""
+    proc, logs = _run_queue_thread_proc(tmp_path, 8, 8, nproc=4, inherited_omp="64")
+    assert proc.returncode == 0, (proc.returncode, proc.stdout, proc.stderr)
+    assert _banner(proc) == ("8", "8", "4", "1", "none")
+    expected = " ".join(f"{k}=1" for k in _THREAD_ENV_KEYS)
+    assert _job_lines(logs, 8, "THREADS") == {expected}
+
+
+def test_run_queue_threads_inherited_defaults_to_64_when_unset(tmp_path):
+    """Unset OMP_NUM_THREADS => inherited defaults to 64 (never nproc/width=192)."""
+    proc, _logs = _run_queue_thread_proc(tmp_path, 1, 1, nproc=192, inherited_omp=None)
+    assert proc.returncode == 0, (proc.returncode, proc.stdout, proc.stderr)
+    assert _banner(proc) == ("1", "1", "192", "64", "none")
+
+
+def test_run_queue_threads_cpu_branch_also_exports(tmp_path):
+    """NGPU=0 (CPU-only branch): width=1, threads exported there too."""
+    proc, logs = _run_queue_thread_proc(tmp_path, 0, 1, nproc=192, inherited_omp="64")
+    assert proc.returncode == 0, (proc.returncode, proc.stdout, proc.stderr)
+    assert _banner(proc) == ("1", "1", "192", "64", "none")
+    expected = " ".join(f"{k}=64" for k in _THREAD_ENV_KEYS)
+    assert _job_lines(logs, 1, "THREADS") == {expected}
+    assert _job_lines(logs, 1, "ALLOC") == {"unset"}
+
+
+def test_run_queue_width_max_clamps_width_down(tmp_path):
+    """EPS_QUEUE_WIDTH_MAX=2 on NGPU=8: 2 workers realized (pins subset {0,1}),
+    banner reports the applied cap, threads follow the REALIZED width
+    (min(192/2, 64) = 64 — the inherited cap binds)."""
+    proc, logs = _run_queue_thread_proc(
+        tmp_path, 8, 8, nproc=192, inherited_omp="64", width_max="2"
+    )
+    assert proc.returncode == 0, (proc.returncode, proc.stdout, proc.stderr)
+    assert _banner(proc) == ("8", "2", "192", "64", "EPS_QUEUE_WIDTH_MAX=2")
+    assert _job_lines(logs, 8, "ALLOC") <= {"0", "1"}
+
+
+def test_run_queue_width_max_at_or_above_width_is_inert(tmp_path):
+    """A cap >= the computed width leaves behaviour unchanged (cap 'none')."""
+    proc, _logs = _run_queue_thread_proc(
+        tmp_path, 8, 8, nproc=192, inherited_omp="64", width_max="16"
+    )
+    assert proc.returncode == 0, (proc.returncode, proc.stdout, proc.stderr)
+    assert _banner(proc) == ("8", "8", "192", "24", "none")
+
+
+def test_run_queue_width_max_nonpositive_is_inert(tmp_path):
+    """0 / negative integer caps are ignored (current behaviour byte-for-byte)."""
+    for cap in ("0", "-3"):
+        proc, _logs = _run_queue_thread_proc(
+            tmp_path, 8, 8, nproc=192, inherited_omp="64", width_max=cap
+        )
+        assert proc.returncode == 0, (cap, proc.stdout, proc.stderr)
+        assert _banner(proc) == ("8", "8", "192", "24", "none"), cap
+
+
+def test_run_queue_width_max_malformed_fails_loud(tmp_path):
+    """A malformed cap fails LOUD (non-zero rc + naming stderr), never a silent
+    fall-through into the uncapped (slow) configuration."""
+    for bad in ("banana", "3.5", "8x", "-"):
+        proc, _logs = _run_queue_thread_proc(
+            tmp_path, 8, 8, nproc=192, inherited_omp="64", width_max=bad
+        )
+        assert proc.returncode != 0, (bad, proc.stdout, proc.stderr)
+        assert "EPS_QUEUE_WIDTH_MAX" in proc.stderr, (bad, proc.stderr)
+        assert "not an integer" in proc.stderr, (bad, proc.stderr)
+        # Fail-loud means NO workers ran.
+        assert QUEUE_BANNER_RE.search(proc.stdout) is None, (bad, proc.stdout)

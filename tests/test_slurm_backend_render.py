@@ -641,6 +641,26 @@ def test_render_secrets_env_includes_hf_storage_knobs() -> None:
     assert "EPM_HF_STORAGE_CACHE_TTL_S=3600" in out
 
 
+def test_passthrough_env_keys_include_queue_width_cap() -> None:
+    """#1336 r25: ``run_queue``'s EPS_QUEUE_WIDTH_MAX capture fan-out width
+    cap must ride the sourced env file to the compute node, or a
+    dispatch-process cap silently no-ops remotely — the exact silent-no-op
+    the cap's fail-loud validation exists to prevent."""
+    from explore_persona_space.backends.slurm import PASSTHROUGH_ENV_KEYS
+
+    assert "EPS_QUEUE_WIDTH_MAX" in PASSTHROUGH_ENV_KEYS
+
+
+def test_render_secrets_env_forwards_queue_width_cap_and_skips_unset() -> None:
+    """#1336 r25: the width cap renders when set; the drop-when-absent
+    contract holds (an unset cap leaves the remote env — and hence the
+    remote width=$NGPU default — byte-identical)."""
+    out = render_secrets_env({"EPS_QUEUE_WIDTH_MAX": "2", "HF_TOKEN": "tok"})
+    assert "EPS_QUEUE_WIDTH_MAX=2" in out
+    out_unset = render_secrets_env({"HF_TOKEN": "tok"})
+    assert "EPS_QUEUE_WIDTH_MAX" not in out_unset
+
+
 def test_render_secrets_env_includes_persist_adapter_passthrough() -> None:
     """M2 regression: the non-secret adapter-persist targets MUST ride
     the sourced env file to the compute node, or

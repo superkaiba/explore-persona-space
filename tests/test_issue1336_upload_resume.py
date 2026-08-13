@@ -66,7 +66,9 @@ def test_extract_resume_reattempts_failed_upload(tmp_path, monkeypatch):
 
     done = _write_done(tmp_path, uploaded=False)
     calls: list[str] = []
-    monkeypatch.setattr(ext, "_upload_cell", lambda out_dir, stem, v2=False: calls.append(stem))
+    monkeypatch.setattr(
+        ext, "_upload_cell", lambda out_dir, stem, v2=False, offpol_dir=None: calls.append(stem)
+    )
     _no_extract(monkeypatch, ext)
     monkeypatch.setattr(sys, "argv", _argv(tmp_path))
     ext.main()
@@ -80,7 +82,9 @@ def test_extract_legacy_done_without_flag_retries_upload(tmp_path, monkeypatch):
 
     done = _write_done(tmp_path, uploaded=None)
     calls: list[str] = []
-    monkeypatch.setattr(ext, "_upload_cell", lambda out_dir, stem, v2=False: calls.append(stem))
+    monkeypatch.setattr(
+        ext, "_upload_cell", lambda out_dir, stem, v2=False, offpol_dir=None: calls.append(stem)
+    )
     _no_extract(monkeypatch, ext)
     monkeypatch.setattr(sys, "argv", _argv(tmp_path))
     ext.main()
@@ -119,7 +123,7 @@ def test_extract_upload_failure_keeps_uploaded_false(tmp_path, monkeypatch):
 
     done = _write_done(tmp_path, uploaded=False)
 
-    def _fail(out_dir, stem, v2=False):
+    def _fail(out_dir, stem, v2=False, offpol_dir=None):
         raise RuntimeError("simulated transient Hub failure")
 
     monkeypatch.setattr(ext, "_upload_cell", _fail)
@@ -283,10 +287,12 @@ def test_gen_download_one_body(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 # extract: HF-resume of a COMPLETE cell (plan v9 route 1 resume path)
 # ---------------------------------------------------------------------------
-def _fake_tree(monkeypatch, names: list[str] | None):
+def _fake_tree(monkeypatch, names: list[str] | None, expect_suffix: str | None = None):
     """Signature-conformant HfApi.list_repo_tree fake (the network boundary).
 
-    ``names=None`` simulates an absent prefix (EntryNotFoundError)."""
+    ``names=None`` simulates an absent prefix (EntryNotFoundError);
+    ``expect_suffix`` overrides the expected prefix tail (the offpolicy
+    PAIR-level prefix in the r25 tests below; default: the v1 per-stem one)."""
     from types import SimpleNamespace
 
     import huggingface_hub
@@ -295,7 +301,9 @@ def _fake_tree(monkeypatch, names: list[str] | None):
     def fake_list_repo_tree(
         self, repo_id, path_in_repo=None, *, repo_type=None, revision=None, recursive=False, **kw
     ):
-        assert repo_type == "dataset" and path_in_repo.endswith(f"turnstore_{STEM}")
+        assert repo_type == "dataset" and path_in_repo.endswith(
+            expect_suffix or f"turnstore_{STEM}"
+        )
         if names is None:
             raise EntryNotFoundError("no such prefix")
         return [SimpleNamespace(path=f"{path_in_repo}/{n}") for n in names]
@@ -356,3 +364,75 @@ def test_extract_hf_resume_absent_prefix_returns_none(tmp_path, monkeypatch):
     _fake_tree(monkeypatch, None)
     assert ext._try_hf_resume(tmp_path, STEM) is None
     assert not (tmp_path / f"{STEM}.done.json").exists()
+
+
+# ---------------------------------------------------------------------------
+# extract: offpolicy PAIR-level prefix resume scoping (#1336 r25 crash fix).
+# The Hub prefix is SHARED by all corpora of a (model, text_source) pair, so
+# "prefix non-empty" != "THIS stem has files": pre-fix, the first sibling
+# corpus's upload made every later cell of the pair die on the no-shard
+# assert (production extract_offpolicy kill, 05:47Z fail marker).
+# ---------------------------------------------------------------------------
+OFFPOL_DIR = "turnstore_offpolicy_base_chat_dpo"
+OWN_STEM = "base_chat_math7500"
+SIBLING = "base_chat_gsm8k_test1319"
+
+
+def test_extract_hf_resume_sibling_only_pair_prefix_returns_none(tmp_path, monkeypatch, capsys):
+    """The exact production crash shape: the pair prefix holds ONLY a sibling
+    corpus's shards => nothing to resume for THIS stem — return None (fresh
+    extraction), never the partial/foreign assert. FAILS pre-fix."""
+    import issue1336_extract_turnstore as ext
+
+    _fake_tree(
+        monkeypatch,
+        [f"{SIBLING}_shard000.json", f"{SIBLING}_shard000.pt"],
+        expect_suffix=OFFPOL_DIR,
+    )
+    assert ext._try_hf_resume(tmp_path, OWN_STEM, v2=False, offpol_dir=OFFPOL_DIR) is None
+    assert not (tmp_path / f"{OWN_STEM}.done.json").exists()
+    # The return-None branch logs the stem — the relaunch's fix-engaged signal.
+    out = capsys.readouterr().out
+    assert f"[extract] {OWN_STEM}: no HF turnstore files for this stem" in out
+    assert "nothing to resume" in out
+
+
+def test_extract_hf_resume_pair_prefix_own_stem_incomplete_still_raises(tmp_path, monkeypatch):
+    """Own-stem shards with a missing sidecar / index gap beside sibling files
+    still raise the INCOMPLETE assert (byte-unchanged, load-bearing)."""
+    import issue1336_extract_turnstore as ext
+
+    # missing .json sidecar for shard000
+    _fake_tree(
+        monkeypatch,
+        [f"{OWN_STEM}_shard000.pt", f"{SIBLING}_shard000.json", f"{SIBLING}_shard000.pt"],
+        expect_suffix=OFFPOL_DIR,
+    )
+    with pytest.raises(AssertionError, match="INCOMPLETE"):
+        ext._try_hf_resume(tmp_path, OWN_STEM, v2=False, offpol_dir=OFFPOL_DIR)
+
+    # shard-index gap (000 absent, 001 present)
+    _fake_tree(
+        monkeypatch,
+        [f"{OWN_STEM}_shard001.pt", f"{OWN_STEM}_shard001.json"],
+        expect_suffix=OFFPOL_DIR,
+    )
+    with pytest.raises(AssertionError, match="INCOMPLETE"):
+        ext._try_hf_resume(tmp_path, OWN_STEM, v2=False, offpol_dir=OFFPOL_DIR)
+
+
+def test_extract_hf_resume_stem_prefixed_nonshard_still_raises(tmp_path, monkeypatch):
+    """A stem-prefixed NON-shard file (a .pt.tmp, a stray _meta.json) with no
+    valid shards is a genuine partial/foreign upload for THIS cell — the
+    fail-loud assert survives the scope fix."""
+    import issue1336_extract_turnstore as ext
+
+    for bad in (f"{OWN_STEM}_shard000.pt.tmp", f"{OWN_STEM}_meta.json"):
+        _fake_tree(
+            monkeypatch,
+            [bad, f"{SIBLING}_shard000.json", f"{SIBLING}_shard000.pt"],
+            expect_suffix=OFFPOL_DIR,
+        )
+        with pytest.raises(AssertionError, match="partial/foreign"):
+            ext._try_hf_resume(tmp_path, OWN_STEM, v2=False, offpol_dir=OFFPOL_DIR)
+        assert not (tmp_path / f"{OWN_STEM}.done.json").exists()

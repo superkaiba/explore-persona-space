@@ -153,16 +153,52 @@ PY
 # ---------------------------------------------------------------------------
 run_queue() { # $1=phase $2=jobs-file $3=per-worker start stagger seconds (default 0: existing callers byte-unchanged)
     local phase="$1" jobs="$2" stagger="${3:-0}" n_jobs width qdir w
+    local ncpu inherited_omp worker_threads width_cap_note
     n_jobs=$(grep -c . "$jobs" || true)
     [ "$n_jobs" -eq 0 ] && return 0
     width=$NGPU
     [ "$width" -lt 1 ] && width=1
     [ "$width" -gt "$n_jobs" ] && width=$n_jobs
+    # Optional width cap (#1336 r25): EPS_QUEUE_WIDTH_MAX, when a positive
+    # integer LOWER than the computed width, clamps the worker count down.
+    # Unset / empty / non-positive => behaviour byte-identical. A MALFORMED
+    # value fails LOUD (rc=78, EX_CONFIG) instead of being silently ignored:
+    # a silently-ignored cap would send a relaunch back into the slow
+    # configuration while the log claims otherwise.
+    width_cap_note="none"
+    if [ -n "${EPS_QUEUE_WIDTH_MAX:-}" ]; then
+        case "${EPS_QUEUE_WIDTH_MAX#-}" in
+            '' | *[!0-9]*)
+                echo "[$phase] FATAL: EPS_QUEUE_WIDTH_MAX='$EPS_QUEUE_WIDTH_MAX' is not an integer" >&2
+                return 78
+                ;;
+        esac
+        if [ "$EPS_QUEUE_WIDTH_MAX" -gt 0 ] && [ "$EPS_QUEUE_WIDTH_MAX" -lt "$width" ]; then
+            width=$EPS_QUEUE_WIDTH_MAX
+            width_cap_note="EPS_QUEUE_WIDTH_MAX=$EPS_QUEUE_WIDTH_MAX"
+        fi
+    fi
+    # Per-worker BLAS/OMP thread right-sizing (#1336 r25, measured marker
+    # v284): each worker inherits the JOB-level OMP_NUM_THREADS (64 on
+    # fellows), so an 8-way fan-out ran 448-512 threads on 192 cores and
+    # delivered 0.27x ONE worker's aggregate throughput. threads =
+    # max(1, min(floor(nproc/width), inherited)). The min() against the
+    # inherited value is LOAD-BEARING: at width=1 it reproduces EXACTLY the
+    # thread count the measured-fast pilot ran under (64) -- a bare
+    # nproc/width would hand a single worker 192 threads, an untested
+    # configuration. At width=8 on the 192-core node it yields 24.
+    ncpu=$(nproc 2>/dev/null || echo 1)
+    case "$ncpu" in *[!0-9]* | "") ncpu=1;; esac
+    inherited_omp="${OMP_NUM_THREADS:-64}"
+    case "$inherited_omp" in *[!0-9]* | "") inherited_omp=64;; esac
+    worker_threads=$((ncpu / width))
+    if [ "$worker_threads" -gt "$inherited_omp" ]; then worker_threads=$inherited_omp; fi
+    if [ "$worker_threads" -lt 1 ]; then worker_threads=1; fi
     qdir="$DONE_DIR/queue_$phase"
     mkdir -p "$qdir"
     echo 0 > "$qdir/next"
     rm -f "$qdir/fail"
-    echo "[$phase] $n_jobs job(s) across $width worker(s)"
+    echo "[$phase] $n_jobs job(s) across $width worker(s) nproc=$ncpu threads_per_worker=$worker_threads width_cap=$width_cap_note"
     for w in $(seq 0 $((width - 1))); do
         (
             # Staggered worker start (MooseFS-storm guard leg 4, #1689):
@@ -192,10 +228,17 @@ run_queue() { # $1=phase $2=jobs-file $3=per-worker start stagger seconds (defau
                 echo "[$phase] worker=$w start $name"
                 if [ "$NGPU" -gt 0 ]; then
                     ok=0
-                    CUDA_VISIBLE_DEVICES=${EPS_ALLOC_GPUS[w]} bash -c "$cmd" >> "$jlog" 2>&1 || ok=$?
+                    CUDA_VISIBLE_DEVICES=${EPS_ALLOC_GPUS[w]} \
+                        OMP_NUM_THREADS=$worker_threads MKL_NUM_THREADS=$worker_threads \
+                        OPENBLAS_NUM_THREADS=$worker_threads NUMEXPR_NUM_THREADS=$worker_threads \
+                        VECLIB_MAXIMUM_THREADS=$worker_threads \
+                        bash -c "$cmd" >> "$jlog" 2>&1 || ok=$?
                 else
                     ok=0
-                    bash -c "$cmd" >> "$jlog" 2>&1 || ok=$?
+                    OMP_NUM_THREADS=$worker_threads MKL_NUM_THREADS=$worker_threads \
+                        OPENBLAS_NUM_THREADS=$worker_threads NUMEXPR_NUM_THREADS=$worker_threads \
+                        VECLIB_MAXIMUM_THREADS=$worker_threads \
+                        bash -c "$cmd" >> "$jlog" 2>&1 || ok=$?
                 fi
                 if [ "$ok" -eq 0 ]; then
                     touch "$done_f"
