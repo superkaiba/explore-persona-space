@@ -1404,7 +1404,12 @@ def _synth_geometry(arm: str, model_key: str, model):
     engine = ARMS[arm]["engine"]
     band = BAND_LAYERS[model_key]
     H = int(model.config.hidden_size)
-    axis_by_layer = {li: torch.randn(H) for li in band + [PROJ_LAYER[model_key]]}
+    # SEEDED (not bare randn) — same reason as _projection_axis: the firing
+    # checkpoint resumes across runs and its regime keys on the axis CONTENT
+    # sha, so an unseeded smoke axis would refuse every smoke resume (or mix
+    # two random axes in one resumed artifact).
+    gen = torch.Generator().manual_seed(ISSUE)
+    axis_by_layer = {li: torch.randn(H, generator=gen) for li in band + [PROJ_LAYER[model_key]]}
     if engine == "paper_cap_alltoken":
         # a tiny throwaway paper capping_config (one intervention per band layer).
         cfg = {
@@ -2488,28 +2493,118 @@ def _eq_bench(model, tok, stack, steerer_factory, n: int) -> dict:
 
 
 # ── phase: firing telemetry (expected vs realized cap firing — §4.5) ────────────
+# Same Defect-A/B fixes as phase_activations (2026-08-13 7B OOM): the batched band
+# read consumes the SAME late long-turn _collect_read_units whose growing padded
+# length overflowed the working set there, so it packs by TOKEN BUDGET
+# (READ_TOKEN_BUDGET), keeps hs in native dtype (slice-then-upcast), and
+# checkpoints per-unit fire counts behind a regime-fingerprinted resume (the
+# expected read is the FULL A0 unit collection — ~4.8k units at 7B — per cap arm).
+
+
+def _fire_fraction_from_records(records: dict[tuple[str, int], dict]) -> float:
+    """Firing fraction = Σ fires / Σ total over per-unit records (0.0 on empty).
+
+    Integer counts are order-invariant under addition, so packing / resume
+    order can never move the fraction."""
+    fires = sum(int(r["fires"]) for r in records.values())
+    total = sum(int(r["total"]) for r in records.values())
+    return fires / total if total else 0.0
+
+
+def _firing_axis_sha(band, axis_unit_by_layer) -> str:
+    """Content sha of the per-layer UNIT axes (fp32 bytes, band order).
+
+    An output-affecting resume key: a re-derived axis / band-τ artifact (or a
+    fresh smoke axis) must REFUSE the stale checkpointed fire counts, never be
+    silently mixed with them."""
+    h = hashlib.sha256()
+    for li in band:
+        h.update(str(int(li)).encode())
+        h.update(axis_unit_by_layer[li].detach().float().cpu().numpy().tobytes())
+    return h.hexdigest()[:16]
+
+
+def _firing_regime(
+    *, cell, arm, model_key, read, band, position, direction, tau_by_layer, axis_sha, smoke, raw_sha
+) -> dict:
+    """Resume-regime fingerprint for a firing read checkpoint (#722 r3 class).
+
+    Keys = EVERY output-affecting knob of the batched band read: cell/arm/model,
+    which read (``expected`` = A0 completions | ``realized`` = the arm's own),
+    band layers, position set, fire direction, per-layer τ, the axis CONTENT
+    sha, smoke flag, and the sha of the consumed ``raw_completions.json``.
+    ``round_label`` rides in via ``regime_fingerprint``."""
+    from scripts import issue2203_common as C
+
+    return C.regime_fingerprint(
+        phase="firing",
+        cell=cell,
+        arm=arm,
+        model=model_key,
+        read=read,
+        band=[int(li) for li in band],
+        position=position,
+        direction=direction,
+        tau={str(int(li)): float(tau_by_layer[li]) for li in band},
+        axis_sha=axis_sha,
+        smoke=bool(smoke),
+        raw_sha=raw_sha,
+    )
+
+
+def _firing_ckpt_paths(out_dir: Path, cell: str, read: str) -> tuple[Path, Path]:
+    """(per-unit records JSONL, regime sidecar) for a firing read checkpoint."""
+    d = out_dir / "firing_ckpt"
+    return d / f"{cell}__{read}.jsonl", d / f"{cell}__{read}.regime.json"
+
+
 def _band_fire_fraction(
-    model, tok, units, band, axis_unit_by_layer, tau_by_layer, *, position: str, direction: str
-) -> float:
-    """Fraction of (unit × band-layer × position) where the cap WOULD fire.
+    model,
+    tok,
+    units,
+    band,
+    axis_unit_by_layer,
+    tau_by_layer,
+    *,
+    position: str,
+    direction: str,
+    token_budget: int,
+    skip: set[tuple[str, int]] | None = None,
+    on_pack=None,
+    log_prefix: str | None = None,
+) -> dict[tuple[str, int], dict]:
+    """Per-unit cap-fire counts over (unit × band-layer × position) — batched read.
 
     ``direction`` = ``below`` (caphook floor: proj < τ) | ``above`` (paper cap:
     proj > τ). ``position`` = ``context-end`` (the last prompt token) |
     ``all-prompt`` (every prompt/context token — v4 A2c) | ``all`` (every real
-    token). Reads are BATCHED (right-pad groups of GEN_BATCH_SIZE); projections
-    are onto the per-layer UNIT axis (both engines unit-normalize)."""
+    token). Units pack into TOKEN-BUDGET batches (``pack_units_by_token_budget``
+    — the fixed row-count batching OOMed on late long-turn units, the
+    phase_activations Defect A) with ONE batched forward per pack; ``hs`` stays
+    in the model's native dtype and only the small per-row slices upcast to fp32
+    (slice-then-upcast and upcast-then-slice are elementwise-identical).
+    Projections are onto the per-layer UNIT axis (both engines unit-normalize).
+
+    Returns ``{(conv, turn): record}``: ``fires`` / ``total`` (ints, summed over
+    band layers at the arm's positions — the DV is Σfires/Σtotal via
+    ``_fire_fraction_from_records``) + ``proj_mean`` (fp64-accumulated mean
+    projection over the counted slots; audit + equivalence telemetry). Units in
+    ``skip`` are never forwarded (resume); ``on_pack(records)`` runs after each
+    pack completes (checkpoint append); ``log_prefix`` emits the per-pack
+    progress line ``<prefix> <done>/<total>`` (total counts skipped units)."""
     import torch
 
     from explore_persona_space.analysis.extraction import extract_layer_activations
-    from scripts import issue2203_runtime as R
 
     dev = next(model.parameters()).device
     pad_id = tok.pad_token_id if tok.pad_token_id is not None else tok.eos_token_id
-    bs = R.GEN_BATCH_SIZE
-    fires = 0
-    total = 0
-    for k in range(0, len(units), bs):
-        batch = units[k : k + bs]
+    skip = skip or set()
+    sub = [u for u in units if (u["conv"], u["turn"]) not in skip]
+    total_units = len(units)
+    done = total_units - len(sub)
+    out: dict[tuple[str, int], dict] = {}
+    for pack in pack_units_by_token_budget(sub, token_budget):
+        batch = [sub[i] for i in pack]
         max_len = max(len(u["ids"]) for u in batch)
         input_ids = torch.full((len(batch), max_len), pad_id, dtype=torch.long, device=dev)
         mask = torch.zeros((len(batch), max_len), dtype=torch.long, device=dev)
@@ -2517,28 +2612,118 @@ def _band_fire_fraction(
             input_ids[r, : len(u["ids"])] = torch.tensor(u["ids"], device=dev)
             mask[r, : len(u["ids"])] = 1
         captured = extract_layer_activations(model, input_ids, band, attention_mask=mask)
+        per_unit = [[0, 0, 0.0] for _ in batch]  # fires, total, proj_sum
         for li in band:
-            hs = captured[li].float()  # (B, T, H)
+            hs = captured[li]  # (B, T, H) native dtype — only slices upcast below
             vhat = axis_unit_by_layer[li]
             tau = tau_by_layer[li]
             for r, u in enumerate(batch):
                 if position == "context-end":
-                    proj = (hs[r, u["ctx_len"] - 1] @ vhat).item()
-                    hit = proj < tau if direction == "below" else proj > tau
-                    fires += int(hit)
-                    total += 1
+                    projs = (hs[r, u["ctx_len"] - 1].float() @ vhat).reshape(1)
                 elif position == "all-prompt":  # every prompt/context token (v4 A2c)
-                    projs = hs[r, : u["ctx_len"]] @ vhat
-                    hit = (projs < tau) if direction == "below" else (projs > tau)
-                    fires += int(hit.sum().item())
-                    total += u["ctx_len"]
+                    projs = hs[r, : u["ctx_len"]].float() @ vhat
                 else:  # all real positions
-                    projs = hs[r, : len(u["ids"])] @ vhat
-                    hit = (projs < tau) if direction == "below" else (projs > tau)
-                    fires += int(hit.sum().item())
-                    total += len(u["ids"])
+                    projs = hs[r, : len(u["ids"])].float() @ vhat
+                hit = (projs < tau) if direction == "below" else (projs > tau)
+                per_unit[r][0] += int(hit.sum().item())
+                per_unit[r][1] += int(projs.numel())
+                per_unit[r][2] += float(projs.double().sum().item())
+        records = [
+            {
+                "conv": u["conv"],
+                "domain": u["domain"],
+                "turn": u["turn"],
+                "fires": pu[0],
+                "total": pu[1],
+                "proj_mean": (pu[2] / pu[1]) if pu[1] else 0.0,
+            }
+            for u, pu in zip(batch, per_unit, strict=True)
+        ]
         del captured
-    return fires / total if total else 0.0
+        if on_pack is not None:
+            on_pack(records)
+        for rec in records:
+            out[(rec["conv"], rec["turn"])] = rec
+        done += len(records)
+        if log_prefix:
+            _log(f"{log_prefix} {done}/{total_units}")
+    return out
+
+
+def _checkpointed_fire_fraction(
+    model,
+    tok,
+    units,
+    band,
+    axis_unit,
+    tau,
+    *,
+    position: str,
+    direction: str,
+    out_dir: Path,
+    cell: str,
+    arm: str,
+    model_key: str,
+    read: str,
+    smoke: bool,
+    raw_sha: str,
+) -> float:
+    """Regime-guarded, checkpointed firing read (the phase_activations Defect-B wiring).
+
+    The expected read runs the FULL A0 unit collection (~4.8k units at 7B) per
+    cap arm — far over the ~50-unit intra-phase checkpoint floor — so each
+    pack's per-unit counts append to ``firing_ckpt/<cell>__<read>.jsonl`` and a
+    resume skips completed units behind the regime fingerprint."""
+    from scripts import issue2203_common as C
+
+    ckpt_path, regime_path = _firing_ckpt_paths(out_dir, cell, read)
+    regime = _firing_regime(
+        cell=cell,
+        arm=arm,
+        model_key=model_key,
+        read=read,
+        band=band,
+        position=position,
+        direction=direction,
+        tau_by_layer=tau,
+        axis_sha=_firing_axis_sha(band, axis_unit),
+        smoke=smoke,
+        raw_sha=raw_sha,
+    )
+    if regime_path.exists():
+        C.check_regime(json.loads(regime_path.read_text()), regime, regime_path)
+    elif ckpt_path.exists():
+        C.check_regime(None, regime, ckpt_path)  # records with NO fingerprint: refuse
+    else:
+        regime_path.parent.mkdir(parents=True, exist_ok=True)
+        regime_path.write_text(json.dumps(regime, indent=2))
+    completed = _load_read_ckpt(ckpt_path)
+    if completed:
+        _log(
+            f"[phase=firing] {cell} {read} resume: {len(completed)}/{len(units)} units "
+            "already checkpointed — skipping"
+        )
+    fresh = _band_fire_fraction(
+        model,
+        tok,
+        units,
+        band,
+        axis_unit,
+        tau,
+        position=position,
+        direction=direction,
+        token_budget=READ_TOKEN_BUDGET,
+        skip=set(completed),
+        on_pack=lambda recs: _append_read_ckpt(ckpt_path, recs),
+        log_prefix=f"[phase=firing] {cell} {read} read units",
+    )
+    records = {**completed, **fresh}
+    keys = [(u["conv"], u["turn"]) for u in units]
+    missing = [k for k in keys if k not in records]
+    if missing:  # fail loud — a unit was never read (nothing may silently drop)
+        raise KeyError(f"firing read incomplete for {cell} {read}: {len(missing)} units missing")
+    # restrict the DV to THIS unit set (a stale superset must never move it)
+    return _fire_fraction_from_records({k: records[k] for k in keys})
 
 
 def _cap_axis_tau(arm: str, model_key: str, model, geometry: dict):
@@ -2592,7 +2777,11 @@ def phase_firing(args) -> Path:
     target. Realized firing = the caphook per-edit ``fired_frac`` harvested during
     generation (caphook arms, PRIMARY); for A1 (paper engine, no per-edit telemetry) it
     is measured engine-agnostically on A1's OWN completions. A cell is
-    calibration-limited iff realized < 0.5 × expected (plan §4.5)."""
+    calibration-limited iff realized < 0.5 × expected (plan §4.5). Both measured
+    reads are token-budget batched + checkpointed per unit (``firing_ckpt/``)
+    behind a regime-fingerprinted resume — the expected read is the full A0 unit
+    collection (~4.8k units at 7B) per cap arm (phase_activations Defect-A/B
+    class)."""
     from scripts import issue2203_common as C
     from scripts import issue2203_runtime as R
 
@@ -2609,34 +2798,42 @@ def phase_firing(args) -> Path:
     band, axis_unit, tau, position, direction = _cap_axis_tau(arm, model_key, model, geometry)
     ids_fn = multiturn_render_fns(None if model_key != "32b" else False)[1]
 
-    def _units(cell_name: str, phase_tag: str) -> list[dict]:
-        raw = json.loads(
-            (
-                out_dir / "raw_completions" / phase_tag / cell_name / "raw_completions.json"
-            ).read_text()
-        )
-        return _collect_read_units(raw, tok, ids_fn)
+    def _units_and_sha(cell_name: str, phase_tag: str) -> tuple[list[dict], str]:
+        text = (
+            out_dir / "raw_completions" / phase_tag / cell_name / "raw_completions.json"
+        ).read_text()
+        units = _collect_read_units(json.loads(text), tok, ids_fn)
+        return units, hashlib.sha256(text.encode()).hexdigest()[:16]
 
-    expected = _band_fire_fraction(
+    a0_units, a0_sha = _units_and_sha(f"A0__{model_key}", "phaseA")
+    expected = _checkpointed_fire_fraction(
         model,
         tok,
-        _units(f"A0__{model_key}", "phaseA"),
+        a0_units,
         band,
         axis_unit,
         tau,
         position=position,
         direction=direction,
+        out_dir=out_dir,
+        cell=cell,
+        arm=arm,
+        model_key=model_key,
+        read="expected",
+        smoke=bool(args.smoke),
+        raw_sha=a0_sha,
     )
     # realized: harvested caphook fired_frac (caphook arms), else projection-derived (A1).
-    arm_raw = json.loads(
-        (out_dir / "raw_completions" / "phaseB" / cell / "raw_completions.json").read_text()
-    )
+    arm_raw_text = (
+        out_dir / "raw_completions" / "phaseB" / cell / "raw_completions.json"
+    ).read_text()
+    arm_raw = json.loads(arm_raw_text)
     harvested = (arm_raw.get("realized_firing") or {}).get("mean_fired_frac")
     if harvested is not None:
         realized = float(harvested)
         realized_source = "caphook_harvested"
     else:
-        realized = _band_fire_fraction(
+        realized = _checkpointed_fire_fraction(
             model,
             tok,
             _collect_read_units(arm_raw, tok, ids_fn),
@@ -2645,6 +2842,13 @@ def phase_firing(args) -> Path:
             tau,
             position=position,
             direction=direction,
+            out_dir=out_dir,
+            cell=cell,
+            arm=arm,
+            model_key=model_key,
+            read="realized",
+            smoke=bool(args.smoke),
+            raw_sha=hashlib.sha256(arm_raw_text.encode()).hexdigest()[:16],
         )
         realized_source = "projection_on_arm_completions"
     calibration_limited = expected > 0 and realized < 0.5 * expected
