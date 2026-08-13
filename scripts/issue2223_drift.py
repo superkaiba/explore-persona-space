@@ -2929,7 +2929,13 @@ def phase_fig5_generate(args) -> Path:
     out_dir = out_root / f"issue_{ISSUE}" if not args.smoke else out_root
     model_key = args.model
     model, tok = R.load_model_and_tokenizer(MODEL_FOR[model_key])
-    rows = C.build_jailbreak_set(3 if args.smoke else 500, smoke=args.smoke)
+    # `selection` is REQUIRED for kind='willing' outside smoke: the builder fail-louds
+    # (issue2203_common._select_role_names) rather than silently substituting a shuffle.
+    rows = C.build_jailbreak_set(
+        3 if args.smoke else 500,
+        smoke=args.smoke,
+        selection=C.load_role_selection(smoke=args.smoke),
+    )
     completions = []
     for row in rows:
         # turn 1: role-setting (the persona system prompt as a first user message);
