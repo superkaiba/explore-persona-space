@@ -107,6 +107,7 @@
 
 ## Infra-plan reviews
 - [Infra-plan review checklist](feedback_infra_plan_review_checklist.md) — protection-illusion holes, choke-point greps, TOCTOU (#564-#884)
+- [Attribution-token guard recipe-copy hole](feedback_attribution_token_guard_recipe_copy_hole.md) — replay incident WITH emitter recipes adopted; copyable token = illusion (#2277)
 - [Hold-gate arming surfacing property](feedback_hold_gate_arming_surfacing_property.md) — every wakeup rung must SURFACE the hold (tick_triage is status-keyed); re-derive mapped-test lists (#2135)
 - [Janitor deletion-gate plans](feedback_janitor_deletion_gate_plans.md) — /proc live-owner probe, rmtree-fallback, hang fixtures (#2127)
 - [Owner-token waiver copyable recipe](feedback_owner_token_waiver_copyable_recipe.md) — match-the-token waivers: emitter prose must not instruct copying (#2277)
