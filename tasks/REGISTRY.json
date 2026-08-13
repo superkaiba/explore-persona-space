@@ -9727,8 +9727,8 @@
     "2259": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2259",
-      "status": "running",
+      "path": "tasks/completed/2259",
+      "status": "completed",
       "title": "poll_pipeline pid-file staleness check is not pod-scoped \u2014 disables the #813 liveness check on all but the newest leg of a multi-pod issue"
     },
     "226": {
