@@ -953,7 +953,12 @@ def phase_figures(args) -> None:
             d = corr["per_trait"][t]["panels"]["pooled"]["arms"].get(arm)
             if d is None:
                 continue
-            ax.plot(range(C.N_LAYERS), d["r_by_layer"], label=arm, color=colors[arm])
+            ax.plot(
+                range(C.N_LAYERS),
+                d["r_by_layer"],
+                label=ARM_LABELS.get(arm, arm),
+                color=colors[arm],
+            )
         # Shade the selection-noise band at +/- the LARGEST per-arm score-shuffle
         # q95 on this trait: a profile inside the band is not distinguishable
         # from argmax-|r| selection noise, and an arm that merely TOUCHES the
@@ -993,7 +998,11 @@ def phase_figures(args) -> None:
             ys = np.asarray([auc.get(f, {}).get(arm, np.nan) for f in fracs], dtype=float)
             if not np.any(np.isfinite(ys)):
                 continue
-            ax.plot(xs, ys, marker="o", label=f"{t}/{arm}", color=colors.get(arm))
+            # Reader-facing legend text (clean-result-critique r1 blocker 2):
+            # plain-English read names, never the raw arm slugs.
+            ax.plot(
+                xs, ys, marker="o", label=f"{t}/{ARM_LABELS.get(arm, arm)}", color=colors.get(arm)
+            )
         ctrl = np.asarray(
             [auc.get(f, {}).get("control_random_direction_mean_oriented", np.nan) for f in fracs],
             dtype=float,

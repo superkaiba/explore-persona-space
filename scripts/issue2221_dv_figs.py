@@ -20,6 +20,11 @@ headline results need three more, all 0 GPU-h and VM-side:
    labeled point per fine-tune, two panels (paper's last-prompt-token read;
    mapped context read). Added post-P8 (``--only scatter`` renders it alone
    without touching the three committed figures above).
+5. ``checkpoint_monitor_per_unit`` — the per-unit view behind the
+   checkpoint-detection AUC (``--only ckpt_unit``; clean-result-critique r1
+   blocker 5): each of the 18 checkpointed cells' paper-read monitor scalar at
+   10% of training vs its FINAL graded hallucination score, labeled points,
+   eventual trait-acquirers black-edged.
 
 Row counts are read from the realized mixes on disk, which were verified
 byte-identical to the HF copies at ``issue2221_realtwin/train/`` (the record of
@@ -53,6 +58,32 @@ VERSIONS = ["normal", "misaligned_1", "misaligned_2"]
 TRAIT_OF_FAMILY = {"evil": "evil", "sycophancy": "sycophancy"}
 POSITIVE_MIN = 50.0
 
+# Reader-facing figure text (clean-result-critique r1 blocker 2): plain-English
+# family/version names on every rendered legend, tick, and point label; the
+# raw slugs stay in JSON keys + file paths only.
+FAMILY_LABELS = {
+    "evil": "evil",
+    "sycophancy": "sycophancy",
+    "hallucination": "hallucination",
+    "insecure_code": "insecure code",
+    "mistake_medical": "medical mistakes",
+    "mistake_math": "math mistakes",
+    "mistake_gsm8k": "grade-school math mistakes",
+    "mistake_opinions": "opinion mistakes",
+}
+# Short forms for per-point labels (full names collide at point-label sizes).
+FAMILY_LABELS_SHORT = {
+    "evil": "evil",
+    "sycophancy": "sycophancy",
+    "hallucination": "hallucination",
+    "insecure_code": "insecure code",
+    "mistake_medical": "medical",
+    "mistake_math": "math",
+    "mistake_gsm8k": "grade-school math",
+    "mistake_opinions": "opinions",
+}
+VERSION_LABELS = {"normal": "normal", "misaligned_1": "mild", "misaligned_2": "severe"}
+
 
 def mix_rows(dataset_root: Path) -> dict[str, int]:
     """Realized row count per family (equalized within family) -> {family: rows}."""
@@ -79,10 +110,11 @@ def main() -> None:
     ap.add_argument(
         "--only",
         default="all",
-        choices=["all", "scatter", "forest", "severity"],
+        choices=["all", "scatter", "forest", "severity", "ckpt_unit"],
         help="'scatter' renders only the per-unit monitor-vs-score figure (fig 4); "
         "'forest' renders only the H2 delta forest (fig 3); 'severity' renders "
-        "only the within-family severity-ordering figure (fig 5, added round 2)",
+        "only the within-family severity-ordering figure (fig 5, added round 2); "
+        "'ckpt_unit' renders only the checkpoint per-unit view (fig 6, round 3)",
     )
     args = ap.parse_args()
 
@@ -111,6 +143,10 @@ def main() -> None:
         _severity(corr, fig_dir, pp, plt)
         print("[dv-figs] wrote severity_ordering_by_arm only", flush=True)
         return
+    if args.only == "ckpt_unit":
+        _ckpt_unit(corr, scores, eval_root, fig_dir, pp, plt)
+        print("[dv-figs] wrote checkpoint_monitor_per_unit only", flush=True)
+        return
 
     # ── 4) per-unit 24-point scatter behind the hallucination correlations ───
     # Monitor scalar (paper 20-q capture panel, arm's selected layer) vs the
@@ -136,9 +172,7 @@ def main() -> None:
                     continue
                 xs.append(float(ms[cell][arm][layer]))
                 ys.append(paper_mean(scores, cell, "hallucination"))
-                labs.append(
-                    f"{fam[:9]}/{v.replace('misaligned_', 'II' if v.endswith('2') else 'I')}"
-                )
+                labs.append(f"{FAMILY_LABELS_SHORT[fam]}/{VERSION_LABELS[v]}")
             ax.scatter(xs, ys, s=40, color=fam_colors[fam], zorder=3)
             for x, y, lab in zip(xs, ys, labs):
                 ax.text(x, y + 1.2, lab, fontsize=4.6, ha="center", color="0.25")
@@ -173,9 +207,11 @@ def main() -> None:
             ys.append(paper_mean(scores, cell, trait))
         if not xs:
             continue
-        ax.scatter(xs, ys, s=54, color=fam_colors[fam], label=f"{fam} ({trait})", zorder=3)
+        ax.scatter(
+            xs, ys, s=54, color=fam_colors[fam], label=f"{FAMILY_LABELS[fam]} ({trait})", zorder=3
+        )
         ax.annotate(
-            f"{fam}\n{rows[fam]} rows",
+            f"{FAMILY_LABELS_SHORT[fam]}\n{rows[fam]} row{'' if rows[fam] == 1 else 's'}",
             (xs[0], max(ys)),
             textcoords="offset points",
             xytext=(0, 9),
@@ -209,7 +245,7 @@ def main() -> None:
                 continue
             ax.bar(pos, paper_mean(scores, cell, trait), 0.82, color=fam_colors[fam])
             xt.append(pos)
-            xl.append(f"{fam[:11]}/{v.replace('misaligned_', 'II' if v.endswith('2') else 'I')}")
+            xl.append(f"{FAMILY_LABELS[fam]} / {VERSION_LABELS[v]}")
             pos += 1
         pos += 0.6
     base_h = paper_mean(scores, "base", "hallucination")
@@ -264,6 +300,107 @@ def _forest(corr: dict, fig_dir: Path, pp, plt) -> int:
     pp.savefig_paper(fig, "h2_delta_forest", dir=fig_dir)
     plt.close(fig)
     return len(labels)
+
+
+def _ckpt_unit(corr: dict, scores: dict, eval_root: Path, fig_dir: Path, pp, plt) -> None:
+    """Per-unit view behind the checkpoint-detection AUC (r1 blocker 5).
+
+    One labeled point per cell holding a 10%-of-steps checkpoint (n=18): x =
+    the paper read's monitor scalar at that checkpoint (pooled capture panel,
+    the read's pooled-panel selected layer — the exact scalar the frac10 AUC
+    ranks), y = the FINAL paper-panel graded hallucination score. Eventual
+    trait-acquirers (final score >= 50, the AUC's positive class) get a black
+    edge. x is symlog: 12 of the 18 cells sit within +-1.3 of zero while the
+    acquirers sit at 26-83.
+    """
+    from matplotlib.lines import Line2D
+
+    ms = json.loads((eval_root / "monitor_scalars" / "hallucination_pooled.json").read_text())[
+        "scalars"
+    ]
+    armd = corr["per_trait"]["hallucination"]["panels"]["pooled"]["arms"]["a_rb_ctx"]
+    layer = int(armd["selected_layer"])
+    fam_colors = {f: c for f, c in zip(FAMILIES, pp.paper_palette(len(FAMILIES)))}
+    fig, ax = plt.subplots(figsize=(9.6, 5.6))
+    # Hand-tuned per-cell label placement: 12 of the 18 cells cluster within
+    # +-1.3 of x = 0, so cycling offsets collide there. LEFT/RIGHT place the
+    # text beside the point; dy staggers the crowded grade-school-math pair.
+    left, right = (-8, 0, "right"), (8, 0, "left")
+    place = {
+        "sycophancy_normal": left,
+        "sycophancy_misaligned_1": left,
+        "sycophancy_misaligned_2": left,
+        "mistake_medical_normal": right,
+        "mistake_medical_misaligned_1": left,
+        "mistake_medical_misaligned_2": left,
+        "mistake_gsm8k_normal": (-8, -3, "right"),
+        "mistake_gsm8k_misaligned_1": (8, 6, "left"),
+        "mistake_gsm8k_misaligned_2": (8, -6, "left"),
+        "mistake_math_normal": (8, -4, "left"),
+        "mistake_math_misaligned_1": (8, 4, "left"),
+        "mistake_math_misaligned_2": right,
+        "hallucination_normal": left,
+        "hallucination_misaligned_1": left,
+        "hallucination_misaligned_2": left,
+        "insecure_code_normal": left,
+        "insecure_code_misaligned_1": left,
+        "insecure_code_misaligned_2": left,
+    }
+    for fam in FAMILIES:
+        for v in VERSIONS:
+            cell = f"{fam}_{v}"
+            tag = f"{cell}@frac10"
+            if tag not in ms:
+                continue
+            x = float(ms[tag]["a_rb_ctx"][layer])
+            y = paper_mean(scores, cell, "hallucination")
+            pos = y >= POSITIVE_MIN
+            ax.scatter(
+                [x],
+                [y],
+                s=52,
+                color=fam_colors[fam],
+                edgecolors="black" if pos else "none",
+                linewidths=1.4 if pos else 0.0,
+                zorder=3,
+            )
+            dx, dy, ha = place.get(cell, right)
+            ax.annotate(
+                f"{FAMILY_LABELS_SHORT[fam]}/{VERSION_LABELS[v]}",
+                (x, y),
+                textcoords="offset points",
+                xytext=(dx, dy),
+                ha=ha,
+                va="center",
+                fontsize=5.2,
+                color="0.25",
+            )
+    ax.axhline(
+        POSITIVE_MIN, color="black", lw=0.9, ls="--", label="trait-acquisition threshold (50)"
+    )
+    ax.set_xscale("symlog", linthresh=2.0, linscale=1.5)
+    ax.set_xlim(right=220.0)  # breathing room for the x = 70-83 acquirer points
+    ax.set_xlabel(
+        "paper's last-prompt-token read at 10% of training\n"
+        f"(monitor scalar, layer {layer + 1} of 28, pooled capture panel; symlog x)"
+    )
+    ax.set_ylabel("final graded hallucination score (0-100)")
+    handles, labs = ax.get_legend_handles_labels()
+    handles.append(
+        Line2D(
+            [0],
+            [0],
+            marker="o",
+            ls="none",
+            markerfacecolor="0.7",
+            markeredgecolor="black",
+            markeredgewidth=1.4,
+        )
+    )
+    labs.append("eventual trait-acquirer (final score >= 50)")
+    ax.legend(handles, labs, fontsize=6, loc="upper left")
+    pp.savefig_paper(fig, "checkpoint_monitor_per_unit", dir=fig_dir)
+    plt.close(fig)
 
 
 def _severity(corr: dict, fig_dir: Path, pp, plt) -> None:

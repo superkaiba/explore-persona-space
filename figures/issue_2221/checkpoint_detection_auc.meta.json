@@ -1,12 +1,40 @@
 {
-  "commit": "6d68c6bc+dirty",
-  "render_id": "c02110e2f3964431",
-  "git_commit": "6d68c6bc",
+  "commit": "2b448210+dirty",
+  "render_id": "2014a12bbe0547d6",
+  "git_commit": "2b448210",
   "git_dirty": true,
   "git_dirty_paths": [
+    "figures/issue_2221/h2_delta_forest.meta.json",
+    "figures/issue_2221/h2_delta_forest.pdf",
+    "figures/issue_2221/h2_delta_forest.png",
+    "figures/issue_2221/monitor_r_by_layer_evil.meta.json",
+    "figures/issue_2221/monitor_r_by_layer_evil.pdf",
+    "figures/issue_2221/monitor_r_by_layer_evil.png",
+    "figures/issue_2221/monitor_r_by_layer_hallucination.meta.json",
+    "figures/issue_2221/monitor_r_by_layer_hallucination.pdf",
+    "figures/issue_2221/monitor_r_by_layer_hallucination.png",
+    "figures/issue_2221/monitor_r_by_layer_sycophancy.meta.json",
+    "figures/issue_2221/monitor_r_by_layer_sycophancy.pdf",
+    "figures/issue_2221/monitor_r_by_layer_sycophancy.png",
+    "figures/issue_2221/monitor_selected_r_by_arm.meta.json",
+    "figures/issue_2221/monitor_selected_r_by_arm.pdf",
+    "figures/issue_2221/monitor_selected_r_by_arm.png",
+    "figures/issue_2221/monitor_vs_score_per_unit.meta.json",
+    "figures/issue_2221/monitor_vs_score_per_unit.pdf",
+    "figures/issue_2221/monitor_vs_score_per_unit.png",
+    "figures/issue_2221/severity_ordering_by_arm.meta.json",
+    "figures/issue_2221/severity_ordering_by_arm.pdf",
+    "figures/issue_2221/severity_ordering_by_arm.png",
+    "figures/issue_2221/trait_mix_size_vs_acquisition.meta.json",
+    "figures/issue_2221/trait_mix_size_vs_acquisition.pdf",
+    "figures/issue_2221/trait_mix_size_vs_acquisition.png",
+    "figures/issue_2221/trait_scores_by_cell.meta.json",
+    "figures/issue_2221/trait_scores_by_cell.pdf",
+    "figures/issue_2221/trait_scores_by_cell.png",
+    "scripts/issue2221_dv_figs.py",
     "scripts/issue2221_monitors.py"
   ],
-  "created": "2026-08-12T10:21:48Z",
+  "created": "2026-08-13T00:05:36Z",
   "figsize": [
     7.0,
     4.0
@@ -15,84 +43,84 @@
     {
       "training progress (% of steps)": 10.0,
       "orientation-folded detection AUC": 0.9846153846153847,
-      "series": "hallucination/a_rb_ctx",
+      "series": "hallucination/paper's last-prompt-token read",
       "_kind": "line",
       "_group": 0
     },
     {
       "training progress (% of steps)": 25.0,
       "orientation-folded detection AUC": 1.0,
-      "series": "hallucination/a_rb_ctx",
+      "series": "hallucination/paper's last-prompt-token read",
       "_kind": "line",
       "_group": 0
     },
     {
       "training progress (% of steps)": 50.0,
       "orientation-folded detection AUC": 0.9692307692307692,
-      "series": "hallucination/a_rb_ctx",
+      "series": "hallucination/paper's last-prompt-token read",
       "_kind": "line",
       "_group": 0
     },
     {
       "training progress (% of steps)": 100.0,
       "orientation-folded detection AUC": 0.9789473684210527,
-      "series": "hallucination/a_rb_ctx",
+      "series": "hallucination/paper's last-prompt-token read",
       "_kind": "line",
       "_group": 0
     },
     {
       "training progress (% of steps)": 10.0,
       "orientation-folded detection AUC": 0.9846153846153847,
-      "series": "hallucination/c_map_ctx",
+      "series": "hallucination/mapped context read",
       "_kind": "line",
       "_group": 1
     },
     {
       "training progress (% of steps)": 25.0,
       "orientation-folded detection AUC": 1.0,
-      "series": "hallucination/c_map_ctx",
+      "series": "hallucination/mapped context read",
       "_kind": "line",
       "_group": 1
     },
     {
       "training progress (% of steps)": 50.0,
       "orientation-folded detection AUC": 0.9692307692307692,
-      "series": "hallucination/c_map_ctx",
+      "series": "hallucination/mapped context read",
       "_kind": "line",
       "_group": 1
     },
     {
       "training progress (% of steps)": 100.0,
       "orientation-folded detection AUC": 1.0,
-      "series": "hallucination/c_map_ctx",
+      "series": "hallucination/mapped context read",
       "_kind": "line",
       "_group": 1
     },
     {
       "training progress (% of steps)": 10.0,
       "orientation-folded detection AUC": 1.0,
-      "series": "hallucination/c_map_pfx",
+      "series": "hallucination/mapped prefix read",
       "_kind": "line",
       "_group": 2
     },
     {
       "training progress (% of steps)": 25.0,
       "orientation-folded detection AUC": 0.9846153846153847,
-      "series": "hallucination/c_map_pfx",
+      "series": "hallucination/mapped prefix read",
       "_kind": "line",
       "_group": 2
     },
     {
       "training progress (% of steps)": 50.0,
       "orientation-folded detection AUC": 1.0,
-      "series": "hallucination/c_map_pfx",
+      "series": "hallucination/mapped prefix read",
       "_kind": "line",
       "_group": 2
     },
     {
       "training progress (% of steps)": 100.0,
       "orientation-folded detection AUC": 1.0,
-      "series": "hallucination/c_map_pfx",
+      "series": "hallucination/mapped prefix read",
       "_kind": "line",
       "_group": 2
     },
@@ -135,9 +163,9 @@
         "xlabel": "training progress (% of steps)",
         "ylabel": "orientation-folded detection AUC",
         "legend_labels": [
-          "hallucination/a_rb_ctx",
-          "hallucination/c_map_ctx",
-          "hallucination/c_map_pfx",
+          "hallucination/paper's last-prompt-token read",
+          "hallucination/mapped context read",
+          "hallucination/mapped prefix read",
           "hallucination/random-direction control (oriented)"
         ],
         "xticklabels": [
@@ -161,9 +189,9 @@
       }
     ],
     "series": [
-      "hallucination/a_rb_ctx",
-      "hallucination/c_map_ctx",
-      "hallucination/c_map_pfx",
+      "hallucination/paper's last-prompt-token read",
+      "hallucination/mapped context read",
+      "hallucination/mapped prefix read",
       "hallucination/random-direction control (oriented)"
     ]
   },
