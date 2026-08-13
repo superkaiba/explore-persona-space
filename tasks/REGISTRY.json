@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2265,
+  "highest_id": 2266,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9779,6 +9779,13 @@
       "path": "tasks/planning/2265",
       "status": "planning",
       "title": "poll_pipeline emits status:dead while its own gpu_util + log-mtime evidence shows the workload alive"
+    },
+    "2266": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2266",
+      "status": "proposed",
+      "title": "step9c_baseline single-flight probe is blind to non-lint-leg gate phases (TG legs) \u2014 two lint-gate instances can race the shared /tmp namespace"
     },
     "227": {
       "has_clean_result": true,
