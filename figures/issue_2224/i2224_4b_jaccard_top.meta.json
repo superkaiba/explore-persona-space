@@ -1,0 +1,230 @@
+{
+  "commit": "03ab23a2",
+  "render_id": "9d4a8dfd7fb24bab",
+  "git_commit": "03ab23a2",
+  "git_dirty": false,
+  "created": "2026-08-12T17:48:42Z",
+  "figsize": [
+    11.5,
+    7.4
+  ],
+  "text": {
+    "suptitle": "Top-500 selection overlap between screening methods (Jaccard)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "lmsys \u00b7 evil",
+        "annotations": [
+          "1.00",
+          "0.01",
+          "0.00",
+          "0.19",
+          "0.01",
+          "1.00",
+          "0.00",
+          "0.01",
+          "0.00",
+          "0.00",
+          "1.00",
+          "0.00",
+          "0.19",
+          "0.01",
+          "0.00",
+          "1.00"
+        ],
+        "xticklabels": [
+          "exact",
+          "mapped",
+          "probe",
+          "prompt-tok"
+        ],
+        "yticklabels": [
+          "exact",
+          "mapped",
+          "probe",
+          "prompt-tok"
+        ]
+      },
+      {
+        "title_left": "lmsys \u00b7 hallucination",
+        "annotations": [
+          "1.00",
+          "0.01",
+          "0.01",
+          "0.22",
+          "0.01",
+          "1.00",
+          "0.04",
+          "0.01",
+          "0.01",
+          "0.04",
+          "1.00",
+          "0.01",
+          "0.22",
+          "0.01",
+          "0.01",
+          "1.00"
+        ],
+        "xticklabels": [
+          "exact",
+          "mapped",
+          "probe",
+          "prompt-tok"
+        ],
+        "yticklabels": [
+          "exact",
+          "mapped",
+          "probe",
+          "prompt-tok"
+        ]
+      },
+      {
+        "title_left": "lmsys \u00b7 sycophancy",
+        "annotations": [
+          "1.00",
+          "0.01",
+          "0.01",
+          "0.19",
+          "0.01",
+          "1.00",
+          "0.18",
+          "0.01",
+          "0.01",
+          "0.18",
+          "1.00",
+          "0.01",
+          "0.19",
+          "0.01",
+          "0.01",
+          "1.00"
+        ],
+        "xticklabels": [
+          "exact",
+          "mapped",
+          "probe",
+          "prompt-tok"
+        ],
+        "yticklabels": [
+          "exact",
+          "mapped",
+          "probe",
+          "prompt-tok"
+        ]
+      },
+      {
+        "title_left": "ultrachat \u00b7 evil",
+        "annotations": [
+          "1.00",
+          "0.00",
+          "0.00",
+          "0.18",
+          "0.00",
+          "1.00",
+          "0.00",
+          "0.00",
+          "0.00",
+          "0.00",
+          "1.00",
+          "0.01",
+          "0.18",
+          "0.00",
+          "0.01",
+          "1.00"
+        ],
+        "xticklabels": [
+          "exact",
+          "mapped",
+          "probe",
+          "prompt-tok"
+        ],
+        "yticklabels": [
+          "exact",
+          "mapped",
+          "probe",
+          "prompt-tok"
+        ]
+      },
+      {
+        "title_left": "ultrachat \u00b7 hallucination",
+        "annotations": [
+          "1.00",
+          "0.09",
+          "0.02",
+          "0.01",
+          "0.09",
+          "1.00",
+          "0.09",
+          "0.00",
+          "0.02",
+          "0.09",
+          "1.00",
+          "0.00",
+          "0.01",
+          "0.00",
+          "0.00",
+          "1.00"
+        ],
+        "xticklabels": [
+          "exact",
+          "mapped",
+          "probe",
+          "prompt-tok"
+        ],
+        "yticklabels": [
+          "exact",
+          "mapped",
+          "probe",
+          "prompt-tok"
+        ]
+      },
+      {
+        "title_left": "ultrachat \u00b7 sycophancy",
+        "annotations": [
+          "1.00",
+          "0.00",
+          "0.00",
+          "0.15",
+          "0.00",
+          "1.00",
+          "0.17",
+          "0.00",
+          "0.00",
+          "0.17",
+          "1.00",
+          "0.00",
+          "0.15",
+          "0.00",
+          "0.00",
+          "1.00"
+        ],
+        "xticklabels": [
+          "exact",
+          "mapped",
+          "probe",
+          "prompt-tok"
+        ],
+        "yticklabels": [
+          "exact",
+          "mapped",
+          "probe",
+          "prompt-tok"
+        ]
+      },
+      {
+        "ylabel": "Jaccard overlap",
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

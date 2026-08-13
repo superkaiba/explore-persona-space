@@ -1,0 +1,304 @@
+{
+  "commit": "01ab4ce3",
+  "render_id": "34c0813ea2584b2d",
+  "git_commit": "01ab4ce3",
+  "git_dirty": false,
+  "created": "2026-08-11T19:11:21Z",
+  "figsize": [
+    55.800000000000004,
+    3.2
+  ],
+  "text": {
+    "suptitle": "4b selection-agreement (Jaccard of selected sets)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "lmsys__evil__bottom",
+        "xticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ],
+        "yticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ]
+      },
+      {
+        "title_left": "lmsys__evil__top",
+        "xticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ],
+        "yticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ]
+      },
+      {
+        "title_left": "lmsys__evil__top_filtered",
+        "xticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ],
+        "yticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ]
+      },
+      {
+        "title_left": "lmsys__hallucination__bottom",
+        "xticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ],
+        "yticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ]
+      },
+      {
+        "title_left": "lmsys__hallucination__top",
+        "xticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ],
+        "yticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ]
+      },
+      {
+        "title_left": "lmsys__hallucination__top_filtered",
+        "xticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ],
+        "yticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ]
+      },
+      {
+        "title_left": "lmsys__sycophancy__bottom",
+        "xticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ],
+        "yticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ]
+      },
+      {
+        "title_left": "lmsys__sycophancy__top",
+        "xticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ],
+        "yticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ]
+      },
+      {
+        "title_left": "lmsys__sycophancy__top_filtered",
+        "xticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ],
+        "yticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ]
+      },
+      {
+        "title_left": "ultrachat__evil__bottom",
+        "xticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ],
+        "yticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ]
+      },
+      {
+        "title_left": "ultrachat__evil__top",
+        "xticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ],
+        "yticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ]
+      },
+      {
+        "title_left": "ultrachat__evil__top_filtered",
+        "xticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ],
+        "yticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ]
+      },
+      {
+        "title_left": "ultrachat__hallucination__bottom",
+        "xticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ],
+        "yticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ]
+      },
+      {
+        "title_left": "ultrachat__hallucination__top",
+        "xticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ],
+        "yticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ]
+      },
+      {
+        "title_left": "ultrachat__hallucination__top_filtered",
+        "xticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ],
+        "yticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ]
+      },
+      {
+        "title_left": "ultrachat__sycophancy__bottom",
+        "xticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ],
+        "yticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ]
+      },
+      {
+        "title_left": "ultrachat__sycophancy__top",
+        "xticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ],
+        "yticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ]
+      },
+      {
+        "title_left": "ultrachat__sycophancy__top_filtered",
+        "xticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ],
+        "yticklabels": [
+          "exact_dp",
+          "mapped_dp_context",
+          "probe_diff_context",
+          "prompttoken_dp"
+        ]
+      },
+      {
+        "ylabel": "Jaccard",
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "supervision_ledger": "map=trait-agnostic; persona vector=trait-description+judge-filter; probe=judge-labels",
+  "dv_note": "graded_mean is the headline DV (llm-judging graded-primary); rate_gt50 is the human-legible companion; screening scores are predictors, never the construct (plan §6)"
+}
