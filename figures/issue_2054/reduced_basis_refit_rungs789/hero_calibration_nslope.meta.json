@@ -1,0 +1,2171 @@
+{
+  "commit": "1175a151",
+  "git_commit": "1175a151",
+  "git_dirty": false,
+  "created": "2026-08-13T06:31:57Z",
+  "figsize": [
+    12.0,
+    4.8
+  ],
+  "points": [
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9584674100276672,
+      "reduced ratio @ k*": 0.9575578589138027,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0450360131683207,
+      "reduced ratio @ k*": 1.030486845944561,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.964179836139979,
+      "reduced ratio @ k*": 0.9648178572073624,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.056138896775538,
+      "reduced ratio @ k*": 1.0157667336299319,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8507673347823954,
+      "reduced ratio @ k*": 0.7687030646580888,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9568241935342008,
+      "reduced ratio @ k*": 0.9147995594076896,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.831343439846644,
+      "reduced ratio @ k*": 0.8113810545606681,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9581640538684078,
+      "reduced ratio @ k*": 0.9622450260691613,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8337844171247637,
+      "reduced ratio @ k*": 0.8438878174131282,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8239003462519328,
+      "reduced ratio @ k*": 0.8310083840533611,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7139309567092508,
+      "reduced ratio @ k*": 0.7167596351154385,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.65815546851961,
+      "reduced ratio @ k*": 0.6670200084143527,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9574855923988262,
+      "reduced ratio @ k*": 0.9560355826786207,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.053554295173765,
+      "reduced ratio @ k*": 1.0323463798275474,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9622997908012773,
+      "reduced ratio @ k*": 0.9614787645237113,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0519777468046334,
+      "reduced ratio @ k*": 1.0155309159049413,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8788084087379959,
+      "reduced ratio @ k*": 0.8068105744668983,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9455099119605899,
+      "reduced ratio @ k*": 0.9105852146264709,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8740255585534878,
+      "reduced ratio @ k*": 0.8565997738346963,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9800433285300774,
+      "reduced ratio @ k*": 0.9654541996959367,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7605891975348845,
+      "reduced ratio @ k*": 0.806948541687065,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8005922835672817,
+      "reduced ratio @ k*": 0.7982775164043702,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.6868142983546542,
+      "reduced ratio @ k*": 0.6952678204273537,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.634432298241889,
+      "reduced ratio @ k*": 0.6451492701447114,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9566025318528554,
+      "reduced ratio @ k*": 0.9483742556669259,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0396405867957892,
+      "reduced ratio @ k*": 1.0158566841976897,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.964761053543876,
+      "reduced ratio @ k*": 0.966867539133121,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0528010815290638,
+      "reduced ratio @ k*": 1.0054759687918218,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8513452710267818,
+      "reduced ratio @ k*": 0.8245570746127031,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9502243595425509,
+      "reduced ratio @ k*": 0.9418804575041619,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8325375548171738,
+      "reduced ratio @ k*": 0.8111807805365394,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9706335925674036,
+      "reduced ratio @ k*": 0.9589820500060366,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7495497419900785,
+      "reduced ratio @ k*": 0.7698035627212689,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7647036311318818,
+      "reduced ratio @ k*": 0.7736344549795788,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.5302824200827778,
+      "reduced ratio @ k*": 0.5353952687652022,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.29411009031948715,
+      "reduced ratio @ k*": 0.3076901651526992,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9594914621900837,
+      "reduced ratio @ k*": 0.9567561831695981,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.04169715869938,
+      "reduced ratio @ k*": 1.0215654191327548,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9639181875121254,
+      "reduced ratio @ k*": 0.9634334347570777,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0512596496442301,
+      "reduced ratio @ k*": 1.0103631028169804,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8583862565083796,
+      "reduced ratio @ k*": 0.8319285676307956,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9521821783354195,
+      "reduced ratio @ k*": 0.9442617344804042,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8444408511399046,
+      "reduced ratio @ k*": 0.8245131652929543,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9710097628009225,
+      "reduced ratio @ k*": 0.9562644078606107,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7942681945116055,
+      "reduced ratio @ k*": 0.8050240769771231,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7881665648363229,
+      "reduced ratio @ k*": 0.7938968473981817,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.6322231134275434,
+      "reduced ratio @ k*": 0.6360749853409614,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.5002701766273514,
+      "reduced ratio @ k*": 0.5207103472240364,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9617785138060484,
+      "reduced ratio @ k*": 0.9546623190474854,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9925252676319136,
+      "reduced ratio @ k*": 0.9769147087723604,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7705803459756732,
+      "reduced ratio @ k*": 0.7609250719340375,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7375183230185075,
+      "reduced ratio @ k*": 0.7273115778571028,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9652093732544837,
+      "reduced ratio @ k*": 0.9561826269855483,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0146462250392991,
+      "reduced ratio @ k*": 0.9818851681848019,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.790498581745885,
+      "reduced ratio @ k*": 0.7850947803595607,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8010489165117011,
+      "reduced ratio @ k*": 0.7961720035417681,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8784703738501108,
+      "reduced ratio @ k*": 0.8095314453887779,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9492981337430982,
+      "reduced ratio @ k*": 0.9126856062524926,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7228172995996862,
+      "reduced ratio @ k*": 0.6559246601686706,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.6911261774224468,
+      "reduced ratio @ k*": 0.6236844893873886,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8653093585992393,
+      "reduced ratio @ k*": 0.8499000087368792,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9446796040876312,
+      "reduced ratio @ k*": 0.9358513289834043,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7321296162941507,
+      "reduced ratio @ k*": 0.7199818322111236,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7364596441195398,
+      "reduced ratio @ k*": 0.7245195191493046,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8425580940318425,
+      "reduced ratio @ k*": 0.8301584095803654,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8919398503482615,
+      "reduced ratio @ k*": 0.8779662155841572,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9446759887672009,
+      "reduced ratio @ k*": 0.9378801579914053,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9693490593940723,
+      "reduced ratio @ k*": 0.9651053208407749,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8687802757364409,
+      "reduced ratio @ k*": 0.8589776281210876,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.919632221519793,
+      "reduced ratio @ k*": 0.9093438419059682,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9205398227098803,
+      "reduced ratio @ k*": 0.9150119958946726,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9833434731852888,
+      "reduced ratio @ k*": 0.9668826678759613,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8210027890375673,
+      "reduced ratio @ k*": 0.8085094005411293,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8727464512586949,
+      "reduced ratio @ k*": 0.858314332952876,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9971597818961144,
+      "reduced ratio @ k*": 0.9908012040451675,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9230005830964991,
+      "reduced ratio @ k*": 0.9003051816345155,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8574563122867853,
+      "reduced ratio @ k*": 0.8191133846247485,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9007610740039477,
+      "reduced ratio @ k*": 0.8632626950519858,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9368438986021317,
+      "reduced ratio @ k*": 0.9300820916969965,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8358583516480012,
+      "reduced ratio @ k*": 0.8261218498765832,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8032551217564392,
+      "reduced ratio @ k*": 0.813622392621544,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7950429258876217,
+      "reduced ratio @ k*": 0.7932700526261127,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.6519951441766879,
+      "reduced ratio @ k*": 0.6578907856547068,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.6079978439101106,
+      "reduced ratio @ k*": 0.6210914753552992,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.4451152161669271,
+      "reduced ratio @ k*": 0.4566592550983355,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.2554376800800265,
+      "reduced ratio @ k*": 0.3077822080990007,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.0480976651951279,
+      "reduced ratio @ k*": 0.14784879735961648,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.40893035388857285,
+      "reduced ratio @ k*": 0.4094962406653451,
+      "series": "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8983466915440499,
+      "reduced ratio @ k*": 0.9190756971415258,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": -0.41763521400775744,
+      "reduced ratio @ k*": -0.24803054085377582,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9057881753053595,
+      "reduced ratio @ k*": 0.9239928000037569,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": -0.7168086779033017,
+      "reduced ratio @ k*": -0.43392358785472523,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.015739123762916522,
+      "reduced ratio @ k*": 0.4223974541425252,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7182333614147373,
+      "reduced ratio @ k*": 0.798093954799942,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": -0.07278550178567637,
+      "reduced ratio @ k*": -0.03320958796823522,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.6753080112657764,
+      "reduced ratio @ k*": 0.7205097702601321,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8534856721657285,
+      "reduced ratio @ k*": 0.8480109179419412,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8307868494462786,
+      "reduced ratio @ k*": 0.82491890161131,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7285599928132709,
+      "reduced ratio @ k*": 0.7196725505147912,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7502581929976733,
+      "reduced ratio @ k*": 0.7449157559238181,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8891674325440219,
+      "reduced ratio @ k*": 0.9073315830137622,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": -0.3085347338459882,
+      "reduced ratio @ k*": -0.09231852102833875,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8956272644630966,
+      "reduced ratio @ k*": 0.9139995341986309,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": -0.4363779964801689,
+      "reduced ratio @ k*": -0.14192451320065164,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.3468479870214493,
+      "reduced ratio @ k*": 0.6029898447756223,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8050325338954156,
+      "reduced ratio @ k*": 0.8478682643593869,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.3273471997154662,
+      "reduced ratio @ k*": 0.4036364069705171,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7516133402446269,
+      "reduced ratio @ k*": 0.7894105728956753,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8673700583119432,
+      "reduced ratio @ k*": 0.8326159637023756,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8392151925452312,
+      "reduced ratio @ k*": 0.8271918817178763,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.742235318275494,
+      "reduced ratio @ k*": 0.7255421180620181,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7702257873402257,
+      "reduced ratio @ k*": 0.7628268742884756,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8683672171975242,
+      "reduced ratio @ k*": 0.8904478800491387,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": -0.8238827298230563,
+      "reduced ratio @ k*": -0.37169439422408107,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8771988775387523,
+      "reduced ratio @ k*": 0.9082387640361862,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": -1.1071876784193235,
+      "reduced ratio @ k*": -0.632545599560846,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.06291644209687501,
+      "reduced ratio @ k*": 0.16200945639811515,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7108911015057636,
+      "reduced ratio @ k*": 0.7433371855356166,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": -0.1424763474087921,
+      "reduced ratio @ k*": -0.003516789893132176,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7035663589272729,
+      "reduced ratio @ k*": 0.7331520531724967,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8126933431128547,
+      "reduced ratio @ k*": 0.8030979492444267,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7880132295790532,
+      "reduced ratio @ k*": 0.7810407350762529,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.6988501026778435,
+      "reduced ratio @ k*": 0.6878308091599036,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.6767028998452355,
+      "reduced ratio @ k*": 0.6742171898645352,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8691398063150702,
+      "reduced ratio @ k*": 0.8785942857270527,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": -0.4883535152493478,
+      "reduced ratio @ k*": -0.17445078412553652,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8784946003260733,
+      "reduced ratio @ k*": 0.9013171838453052,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": -0.7658828939119222,
+      "reduced ratio @ k*": -0.29954856096624216,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.1814538450597236,
+      "reduced ratio @ k*": 0.3332475682467737,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.6728553231649735,
+      "reduced ratio @ k*": 0.7485900312875285,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.028457733558975528,
+      "reduced ratio @ k*": 0.25307458612342715,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.5660637994019717,
+      "reduced ratio @ k*": 0.6028046218279011,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8290136327075859,
+      "reduced ratio @ k*": 0.8202134169445021,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8167913667081069,
+      "reduced ratio @ k*": 0.8096716005396992,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7134484293031741,
+      "reduced ratio @ k*": 0.709305995532034,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7518373234144944,
+      "reduced ratio @ k*": 0.7423556039185559,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8587594499098787,
+      "reduced ratio @ k*": 0.8832189288754865,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.022031768506376035,
+      "reduced ratio @ k*": 0.23578035616413615,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.3632648270066052,
+      "reduced ratio @ k*": 0.4892631706508402,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.43200650257158824,
+      "reduced ratio @ k*": 0.5292837539671831,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8454893369043723,
+      "reduced ratio @ k*": 0.8605454012847533,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": -0.25097223200376173,
+      "reduced ratio @ k*": -0.02635859347057574,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.17197993674296813,
+      "reduced ratio @ k*": 0.3298646321002862,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": -0.29624075243406545,
+      "reduced ratio @ k*": -0.01557519637380576,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.3169099140487863,
+      "reduced ratio @ k*": 0.6354745854692293,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.6470903505905095,
+      "reduced ratio @ k*": 0.7860033751690061,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.4886190081995978,
+      "reduced ratio @ k*": 0.6277491830551101,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.4158697505873601,
+      "reduced ratio @ k*": 0.5898738672453661,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.2971615247710146,
+      "reduced ratio @ k*": 0.500495558278267,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.6573160224679735,
+      "reduced ratio @ k*": 0.6917358865074099,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.47334925278574236,
+      "reduced ratio @ k*": 0.5464062335955938,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": -0.0639599550952616,
+      "reduced ratio @ k*": 0.13006717369324514,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.0520404791553432,
+      "reduced ratio @ k*": 0.24841683973778741,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": -0.06885565067373428,
+      "reduced ratio @ k*": 0.06479568391857769,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.6343971226871853,
+      "reduced ratio @ k*": 0.675122109057844,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.806362490000026,
+      "reduced ratio @ k*": 0.8312810055440796,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": -0.290773303295892,
+      "reduced ratio @ k*": -0.015661025160899004,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": -0.24702968300496747,
+      "reduced ratio @ k*": -0.0864687835994444,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.5798955535919611,
+      "reduced ratio @ k*": 0.6427402208399493,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": -0.0805674808455871,
+      "reduced ratio @ k*": 0.08464577236414925,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": -0.08401318410217315,
+      "reduced ratio @ k*": 0.05418350979000045,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": -0.29733243132625964,
+      "reduced ratio @ k*": -0.14283011449805,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.6990499219038364,
+      "reduced ratio @ k*": 0.7503784137120804,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": -0.32993173341303367,
+      "reduced ratio @ k*": -0.07646427815136794,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": -0.1997872739471858,
+      "reduced ratio @ k*": -0.007369036366654166,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": -0.7342579642873147,
+      "reduced ratio @ k*": -0.48379052625432983,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.09947432802990068,
+      "reduced ratio @ k*": 0.2382077771480755,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.25653742738048885,
+      "reduced ratio @ k*": 0.35891994323641035,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8538702832323241,
+      "reduced ratio @ k*": 0.8197432707782527,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8329148955641638,
+      "reduced ratio @ k*": 0.8219639661523777,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7061199130875917,
+      "reduced ratio @ k*": 0.698910073608884,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7179631387477263,
+      "reduced ratio @ k*": 0.7085588340053376,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.6071716149335248,
+      "reduced ratio @ k*": 0.5984479661679412,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.666324210159917,
+      "reduced ratio @ k*": 0.6519146751434306,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.15400745551680647,
+      "reduced ratio @ k*": 0.1810007401116261,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.5287714626004933,
+      "reduced ratio @ k*": 0.520092938586206,
+      "series": "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9989926975802937,
+      "reduced ratio @ k*": 0.9973402900168831,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0634473191516178,
+      "reduced ratio @ k*": 1.0429532640912824,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0120741964376119,
+      "reduced ratio @ k*": 1.0049293505976906,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0771639086411675,
+      "reduced ratio @ k*": 1.0290921185642476,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8666541191987054,
+      "reduced ratio @ k*": 0.7764527040678212,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0044947325632692,
+      "reduced ratio @ k*": 0.9615510307286093,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8468043334046685,
+      "reduced ratio @ k*": 0.8208719645645874,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.011435347933601,
+      "reduced ratio @ k*": 1.0072706995913165,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8793279710852756,
+      "reduced ratio @ k*": 0.8705294098571258,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8493559013009493,
+      "reduced ratio @ k*": 0.8392542584308446,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7695746483564619,
+      "reduced ratio @ k*": 0.7578081057197649,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7990330125828219,
+      "reduced ratio @ k*": 0.7899968689606293,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9978053722335015,
+      "reduced ratio @ k*": 0.9948964944991554,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0655769996767246,
+      "reduced ratio @ k*": 1.0389847055630426,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.008430920628544,
+      "reduced ratio @ k*": 0.9998091726162599,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0662004886656362,
+      "reduced ratio @ k*": 1.023191418548613,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.890486113444174,
+      "reduced ratio @ k*": 0.8128400462567935,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9914277249862373,
+      "reduced ratio @ k*": 0.9560011707137257,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8858016662008659,
+      "reduced ratio @ k*": 0.8632797762348033,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0275635156752014,
+      "reduced ratio @ k*": 1.0100623432867166,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9257609893835007,
+      "reduced ratio @ k*": 0.870325265011185,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8557851368673648,
+      "reduced ratio @ k*": 0.8382476951764041,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7898339703838567,
+      "reduced ratio @ k*": 0.7667483418957018,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7993984597275187,
+      "reduced ratio @ k*": 0.7750968477166227,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9994334997796965,
+      "reduced ratio @ k*": 0.9910043433452953,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0610436385918356,
+      "reduced ratio @ k*": 1.0298951285429443,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0153910617849944,
+      "reduced ratio @ k*": 1.0098714832257563,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0773279385375434,
+      "reduced ratio @ k*": 1.0215303869267216,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8700726885772914,
+      "reduced ratio @ k*": 0.8366354651357233,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0016031941685268,
+      "reduced ratio @ k*": 0.995376383366238,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8505943209936353,
+      "reduced ratio @ k*": 0.8235835250209103,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0190539080822851,
+      "reduced ratio @ k*": 1.0065966614308475,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8507802923886282,
+      "reduced ratio @ k*": 0.8387531182138765,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8201256219969482,
+      "reduced ratio @ k*": 0.8071130533020264,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7229039628790296,
+      "reduced ratio @ k*": 0.710909421141559,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7482441253003318,
+      "reduced ratio @ k*": 0.7430095655402826,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0004473125262252,
+      "reduced ratio @ k*": 0.9971203848986937,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0570687136924102,
+      "reduced ratio @ k*": 1.0310598704465945,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0112655586558361,
+      "reduced ratio @ k*": 1.0029237785708962,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0688084917843197,
+      "reduced ratio @ k*": 1.0203615334775624,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8727737709806113,
+      "reduced ratio @ k*": 0.8397276336663886,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.000579362465575,
+      "reduced ratio @ k*": 0.9939039415306166,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8584241206110421,
+      "reduced ratio @ k*": 0.8325709482778434,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0174954922444586,
+      "reduced ratio @ k*": 1.0004142027607315,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8729285343204327,
+      "reduced ratio @ k*": 0.8619320004488064,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8380747389819225,
+      "reduced ratio @ k*": 0.8259442905966943,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7580257275642265,
+      "reduced ratio @ k*": 0.7456308997258816,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7862206345081546,
+      "reduced ratio @ k*": 0.7612013936619103,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0066081213528792,
+      "reduced ratio @ k*": 0.9968484200337194,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0307616006889644,
+      "reduced ratio @ k*": 1.0056287903523289,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8739676870428598,
+      "reduced ratio @ k*": 0.8577950767058011,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8584171608561431,
+      "reduced ratio @ k*": 0.8408999615951378,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0105304748025292,
+      "reduced ratio @ k*": 0.9967243657880506,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.047530050983857,
+      "reduced ratio @ k*": 1.006385714266037,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8748083887857849,
+      "reduced ratio @ k*": 0.863572281905401,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8928187341577939,
+      "reduced ratio @ k*": 0.8817535531641424,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9082981936138824,
+      "reduced ratio @ k*": 0.8290638410479394,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0066549164626732,
+      "reduced ratio @ k*": 0.967195359346818,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.787947343305712,
+      "reduced ratio @ k*": 0.7081189998662871,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7672424176731691,
+      "reduced ratio @ k*": 0.686437372732939,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8890429096311361,
+      "reduced ratio @ k*": 0.8671809588478201,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9987342702856595,
+      "reduced ratio @ k*": 0.9853835820905938,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7838219031201763,
+      "reduced ratio @ k*": 0.7657080416408444,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7968590559867049,
+      "reduced ratio @ k*": 0.7785342299466327,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.965828845832164,
+      "reduced ratio @ k*": 0.9445632161496356,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9872330884873377,
+      "reduced ratio @ k*": 0.9639364306050145,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.007420443549241,
+      "reduced ratio @ k*": 0.996976337458166,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9827012818862011,
+      "reduced ratio @ k*": 0.9738838371479771,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9603413285121,
+      "reduced ratio @ k*": 0.9438622045666486,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9883934995232195,
+      "reduced ratio @ k*": 0.9719389621492571,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9780386246292015,
+      "reduced ratio @ k*": 0.9672129322057404,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0045974326259286,
+      "reduced ratio @ k*": 0.9831203832667154,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9735840586462101,
+      "reduced ratio @ k*": 0.9522135028197694,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9885782824371793,
+      "reduced ratio @ k*": 0.9648315185661097,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0105664357287694,
+      "reduced ratio @ k*": 1.0003692243235256,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 1.0329427691257536,
+      "reduced ratio @ k*": 1.0027370755089555,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9476166113137486,
+      "reduced ratio @ k*": 0.8943086536269149,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9710290265942185,
+      "reduced ratio @ k*": 0.9200133831243527,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.952646683653661,
+      "reduced ratio @ k*": 0.9416109083466868,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9194603988149046,
+      "reduced ratio @ k*": 0.9016326264237946,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.9238977623726661,
+      "reduced ratio @ k*": 0.8735869855390257,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8405208640588767,
+      "reduced ratio @ k*": 0.8295148911173932,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.815717942206099,
+      "reduced ratio @ k*": 0.7907015647571477,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7641313614145244,
+      "reduced ratio @ k*": 0.7414794043802206,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.7334199049741796,
+      "reduced ratio @ k*": 0.7152540672588502,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.76116300662665,
+      "reduced ratio @ k*": 0.7338509456749351,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.8991344836209164,
+      "reduced ratio @ k*": 0.8726106952632531,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ambient ratio (record-only, known-invalid)": 0.5652494777182491,
+      "reduced ratio @ k*": 0.555876007047859,
+      "series": "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 2939.0,
+      "median [ratio(n_sub) - ratio(full n)]": 0.01772795328913057,
+      "error": 0.01671658516222549,
+      "series": "rung 7 (context re-map)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 3500.0,
+      "median [ratio(n_sub) - ratio(full n)]": 0.00930152247290078,
+      "error": 0.014852042422548062,
+      "series": "rung 7 (context re-map)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 4450.0,
+      "median [ratio(n_sub) - ratio(full n)]": 0.006911575037141682,
+      "error": 0.010148640987779067,
+      "series": "rung 7 (context re-map)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 2939.0,
+      "median [ratio(n_sub) - ratio(full n)]": -0.039866076885165296,
+      "error": 0.01671658516222549,
+      "series": "rung 8 (answer re-map)",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 3500.0,
+      "median [ratio(n_sub) - ratio(full n)]": -0.03780057817572019,
+      "error": 0.014852042422548062,
+      "series": "rung 8 (answer re-map)",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 4450.0,
+      "median [ratio(n_sub) - ratio(full n)]": -0.006925210394668702,
+      "error": 0.010148640987779067,
+      "series": "rung 8 (answer re-map)",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 2939.0,
+      "median [ratio(n_sub) - ratio(full n)]": 0.023819417713344837,
+      "error": 0.01671658516222549,
+      "series": "rung 9 (full refit)",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 3500.0,
+      "median [ratio(n_sub) - ratio(full n)]": 0.010807745638202026,
+      "error": 0.014852042422548062,
+      "series": "rung 9 (full refit)",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 4450.0,
+      "median [ratio(n_sub) - ratio(full n)]": 0.008122919531053763,
+      "error": 0.010148640987779067,
+      "series": "rung 9 (full refit)",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 2939.0,
+      "median [ratio(n_sub) - ratio(full n)]": 0.01772795328913057,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 3500.0,
+      "median [ratio(n_sub) - ratio(full n)]": 0.00930152247290078,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 4450.0,
+      "median [ratio(n_sub) - ratio(full n)]": 0.006911575037141682,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 2939.0,
+      "median [ratio(n_sub) - ratio(full n)]": 0.002500941490332975,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 3500.0,
+      "median [ratio(n_sub) - ratio(full n)]": 0.002268641212276601,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 4450.0,
+      "median [ratio(n_sub) - ratio(full n)]": 0.0006967769585185524,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 2939.0,
+      "median [ratio(n_sub) - ratio(full n)]": 0.03336170417347739,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 3500.0,
+      "median [ratio(n_sub) - ratio(full n)]": 0.029307709469525323,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 4450.0,
+      "median [ratio(n_sub) - ratio(full n)]": 0.016460587624252628,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 2939.0,
+      "median [ratio(n_sub) - ratio(full n)]": -0.039866076885165296,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 3500.0,
+      "median [ratio(n_sub) - ratio(full n)]": -0.03780057817572019,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 4450.0,
+      "median [ratio(n_sub) - ratio(full n)]": -0.006925210394668702,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 2939.0,
+      "median [ratio(n_sub) - ratio(full n)]": -0.07797424548377273,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 3500.0,
+      "median [ratio(n_sub) - ratio(full n)]": -0.06831501646729182,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 4450.0,
+      "median [ratio(n_sub) - ratio(full n)]": -0.03313136686612714,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 2939.0,
+      "median [ratio(n_sub) - ratio(full n)]": -0.016615617125288404,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 3500.0,
+      "median [ratio(n_sub) - ratio(full n)]": 0.0006791431360937752,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 4450.0,
+      "median [ratio(n_sub) - ratio(full n)]": 0.005981393649916945,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 2939.0,
+      "median [ratio(n_sub) - ratio(full n)]": 0.023819417713344837,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 3500.0,
+      "median [ratio(n_sub) - ratio(full n)]": 0.010807745638202026,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 4450.0,
+      "median [ratio(n_sub) - ratio(full n)]": 0.008122919531053763,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 2939.0,
+      "median [ratio(n_sub) - ratio(full n)]": 0.005728471436031557,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 3500.0,
+      "median [ratio(n_sub) - ratio(full n)]": 0.004640606451095097,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 4450.0,
+      "median [ratio(n_sub) - ratio(full n)]": 0.002901693992586274,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 2939.0,
+      "median [ratio(n_sub) - ratio(full n)]": 0.039161641760482535,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 3500.0,
+      "median [ratio(n_sub) - ratio(full n)]": 0.03434469129619122,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "subsample level n_sub (boundary pairs)": 4450.0,
+      "median [ratio(n_sub) - ratio(full n)]": 0.02319897596814441,
+      "_kind": "line",
+      "_group": 14
+    }
+  ],
+  "n_series": 15,
+  "total_points": 300,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "Reduced-vs-ambient calibration \u2014 control pairs (context)",
+        "xlabel": "ambient ratio (record-only, known-invalid)",
+        "ylabel": "reduced ratio @ k*",
+        "legend_labels": [
+          "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+          "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+          "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012"
+        ],
+        "xticklabels": [
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ],
+        "yticklabels": [
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ]
+      },
+      {
+        "title": "Measured n-slope (context, ratio)",
+        "xlabel": "subsample level n_sub (boundary pairs)",
+        "ylabel": "median [ratio(n_sub) - ratio(full n)]",
+        "legend_labels": [
+          "rung 7 (context re-map)",
+          "rung 8 (answer re-map)",
+          "rung 9 (full refit)"
+        ],
+        "xticklabels": [
+          "2800",
+          "3000",
+          "3200",
+          "3400",
+          "3600",
+          "3800",
+          "4000",
+          "4200",
+          "4400",
+          "4600"
+        ],
+        "yticklabels": [
+          "\u22120.10",
+          "\u22120.08",
+          "\u22120.06",
+          "\u22120.04",
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06"
+        ]
+      }
+    ],
+    "series": [
+      "rung 7 (context re-map) \u2014 boundary pairs: rho 0.95, median difference -0.019;\n    model pairs: rho 0.98, median difference +0.001",
+      "rung 8 (answer re-map) \u2014 boundary pairs: rho 0.97, median difference +0.183;\n    model pairs: rho 0.95, median difference +0.012",
+      "rung 9 (full refit) \u2014 boundary pairs: rho 0.96, median difference -0.025;\n    model pairs: rho 0.98, median difference -0.012",
+      "rung 7 (context re-map)",
+      "rung 8 (answer re-map)",
+      "rung 9 (full refit)"
+    ]
+  }
+}
