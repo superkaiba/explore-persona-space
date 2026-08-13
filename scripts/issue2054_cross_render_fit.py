@@ -98,6 +98,20 @@ MODELS = ("qwen2.5-7b-instruct", "qwen2.5-7b")
 CONDITIONS = ("inserted", "on_policy")
 SOURCE_FORM = "chat"
 
+# --figure2 mode (#2054 writeup Result 2 paired-fit column): character-story targets.
+CHARS = ("char_helios", "char_wren", "char_vex", "char_dana")
+# Per (figure, group): (source condition, source form, target condition). Sources are
+# always the assistant; targets are each character's bare_label story cell. 2a is
+# provenance-matched (assistant-in-story -> character, same condition); 2b re-uses the
+# single inserted chat anchor against both target conditions (no on-policy chat anchor
+# exists -- the 2x2 chat anchor is inserted-only, same as the ladder).
+FIG2_GROUPS: dict[str, tuple[str, str, str]] = {
+    "2a__inserted": ("inserted", "bare_label", "inserted"),
+    "2a__on_policy": ("on_policy", "bare_label", "on_policy"),
+    "2b__inserted": ("inserted", "chat", "inserted"),
+    "2b__on_policy": ("inserted", "chat", "on_policy"),
+}
+
 ACT_DIR = (
     Path("/mnt/eps-data")
     / __import__("os").environ.get("USER", "")
@@ -115,6 +129,7 @@ FOLD_MAP_MIN_CONV = 20_000
 FOLD_MAP_MIN_VARIANTS = 5
 OUT_DIR = _REPO / "eval_results/issue_2054/analyzer_companions"
 OUT = OUT_DIR / "cross_render_fit.json"
+FIG2_OUT = OUT_DIR / "cross_render_fit_characters.json"
 
 
 def _shard_out(conditions: list[str], models: list[str]) -> Path:
@@ -176,12 +191,12 @@ def _log(msg: str) -> None:
     print(msg, flush=True)
 
 
-def _cell_path(cond: str, form: str, model: str) -> Path:
-    return ACT_DIR / f"{ASSIST}__{cond}__{form}__{model}.npz"
+def _cell_path(cond: str, form: str, model: str, variant: str = ASSIST) -> Path:
+    return ACT_DIR / f"{variant}__{cond}__{form}__{model}.npz"
 
 
-def _load_cell(cond: str, form: str, model: str) -> dict:
-    p = _cell_path(cond, form, model)
+def _load_cell(cond: str, form: str, model: str, variant: str = ASSIST) -> dict:
+    p = _cell_path(cond, form, model, variant)
     if not p.is_file():
         raise FileNotFoundError(f"activation store not staged: {p}")
     act = _load_activation_npz(p)
@@ -229,6 +244,166 @@ def _run_fit(
     }
 
 
+def _spot_check_alignment(
+    src: dict, tgt: dict, order: list[str], X: np.ndarray, Y: np.ndarray
+) -> None:
+    """Assert X/Y rows really are the stores' rows for sampled conv_ids (fail loud).
+
+    Mechanical guard on `_aligned`'s reordering for the figure-2 path, where source and
+    target stores index disjoint row sets: for 3 deterministic sample ids, the aligned
+    row must equal the store's own row at the store's native index.
+    """
+    src_pos = {c: i for i, c in enumerate(src["conv_ids"])}
+    tgt_pos = {c: i for i, c in enumerate(tgt["conv_ids"])}
+    for j in (0, len(order) // 2, len(order) - 1):
+        cid = order[j]
+        if not np.array_equal(X[j], np.asarray(src["v_C"], dtype=np.float32)[src_pos[cid]]):
+            raise AssertionError(f"alignment spot-check FAILED on source row for conv {cid}")
+        if not np.array_equal(Y[j], np.asarray(tgt["v_A"], dtype=np.float32)[tgt_pos[cid]]):
+            raise AssertionError(f"alignment spot-check FAILED on target row for conv {cid}")
+
+
+def _fig2_shard_out(models: list[str], figures: list[str]) -> Path:
+    """Per-shard output for --figure2 (parallel shards must not clobber each other)."""
+    slug = "__".join(sorted(figures) + sorted(models)).replace(".", "")
+    return OUT_DIR / f"cross_render_fit_characters.shard__{slug}.json"
+
+
+def run_figure2(args) -> int:
+    """Cross-render paired fits onto the four character-story bare_label targets.
+
+    Per-PAIR conv_id intersections (the ladder's own row convention, so the paired fit
+    is comparable to the rungs on the same figure line + normalizable by the banked
+    ladder per-target ceiling), NOT the assistant grid's 4-way form intersection.
+    Estimator parity: the same `_ridge_gcv_fit_predict` (GCV, dof_cap 0.9); at
+    n_train < d its thin SVD is the reduced-basis (row-span) fit — the #1887
+    convention — and such cells are flagged `well_posed_ambient: false` for
+    hollow-marking downstream. Checkpoints each pair to a JSONL and resume-skips.
+    """
+    fold_map = _load_production_fold_map()
+    k, fold_of = int(fold_map["k"]), fold_map["fold_of"]
+    figures = sorted({g.split("__", 1)[0] for g in FIG2_GROUPS} & set(args.fig2_figures))
+    shard_out = _fig2_shard_out(list(args.models), figures)
+    ckpt = shard_out.with_suffix(".partial.jsonl")
+    done: set[tuple] = set()
+    rows: list[dict] = []
+    if ckpt.is_file():
+        for line in ckpt.open(encoding="utf-8"):
+            if line.strip():
+                r = json.loads(line)
+                done.add((r["figure"], r["group"], r["model"], r["character"]))
+                rows.append(r)
+        _log(f"[fig2] resume: {len(done)} pairs already checkpointed in {ckpt.name}")
+
+    only = 0 if args.pilot else None
+    t_start = time.time()
+    unit, n_units = (
+        0,
+        len(args.models)
+        * sum(1 for g in FIG2_GROUPS if g.split("__", 1)[0] in figures)
+        * len(CHARS),
+    )
+    for model in args.models:
+        for grp, (scond, sform, tcond) in FIG2_GROUPS.items():
+            fig = grp.split("__", 1)[0]
+            if fig not in figures:
+                continue
+            src = _load_cell(scond, sform, model)
+            src_ids = set(src["conv_ids"])
+            for ch in CHARS:
+                unit += 1
+                key = (fig, grp, model, ch)
+                if key in done:
+                    continue
+                tgt = _load_cell(tcond, "bare_label", model, variant=ch)
+                common = src_ids & set(tgt["conv_ids"]) & set(fold_of)
+                order = sorted(common)
+                n = len(order)
+                if n == 0:
+                    raise RuntimeError(f"empty intersection for {key} — wrong store or fold map")
+                folds = _fold_split(order, fold_of, k)
+                n_train_typ = n - max(len(f) for f in folds)
+                X = _aligned(src, order, "v_C")
+                Y = _aligned(tgt, order, "v_A")
+                _spot_check_alignment(src, tgt, order, X, Y)
+                _log(
+                    f"[fig2] unit {unit}/{n_units} {model} {grp} -> {ch}: n={n:,} "
+                    f"n_train={n_train_typ:,} vs d={D_AMBIENT:,} "
+                    f"({'WELL-POSED' if n_train_typ > D_AMBIENT else 'reduced-basis'}) "
+                    f"elapsed={time.time() - t_start:.0f}s"
+                )
+                cross = _run_fit(X, Y, folds, only_fold=only)
+                row = {
+                    "figure": fig,
+                    "group": grp,
+                    "model": model,
+                    "character": ch,
+                    "source_variant": ASSIST,
+                    "source_condition": scond,
+                    "source_form": sform,
+                    "target_condition": tcond,
+                    "target_form": "bare_label",
+                    "n_pair": n,
+                    "n_train_typical": n_train_typ,
+                    "well_posed_ambient": bool(n_train_typ > D_AMBIENT),
+                    "cross_render_r2": cross["pooled_r2"],
+                    "cross_render_per_fold": cross["per_fold_r2"],
+                    "cross_fold_info": cross["fold_info"],
+                }
+                rows.append(row)
+                with ckpt.open("a", encoding="utf-8") as fh:
+                    fh.write(json.dumps(row) + "\n")
+                if args.pilot:
+                    _log("[fig2] PILOT complete — 1 pair, 1 fold.")
+                    return 0
+
+    results = {
+        "what": (
+            "SOURCE-render context vector -> character-story TARGET answer vector, ridge fit "
+            "DIRECTLY on cross-render pairs (per-PAIR conv intersections = the ladder's row "
+            "convention). Predictability upper bound, NOT a shared-operator claim. 2a: "
+            "assistant-in-story bare_label -> character, provenance-matched. 2b: assistant "
+            "inserted chat anchor -> character, both target conditions. Normalize against the "
+            "banked ladder per-target ceilings; reduced-basis (n_train < d) cells are flagged."
+        ),
+        "estimator": "issue2054_fits._ridge_gcv_fit_predict (GCV, dof_cap=0.9) — production parity",
+        "d_ambient": D_AMBIENT,
+        "cells": rows,
+    }
+    shard_out.parent.mkdir(parents=True, exist_ok=True)
+    shard_out.write_text(json.dumps(results, indent=1), encoding="utf-8")
+    _log(f"[fig2] wrote {shard_out.relative_to(_REPO)} ({len(rows)} rows)")
+    return 0
+
+
+def merge_figure2() -> int:
+    """Fold cross_render_fit_characters.shard__*.json into the canonical file, fail-loud."""
+    shards = sorted(OUT_DIR.glob("cross_render_fit_characters.shard__*.json"))
+    if not shards:
+        raise FileNotFoundError(f"no figure-2 shard files under {OUT_DIR}")
+    merged: dict | None = None
+    for p in shards:
+        d = json.loads(p.read_text(encoding="utf-8"))
+        if merged is None:
+            merged = {kk: v for kk, v in d.items() if kk != "cells"} | {"cells": []}
+        merged["cells"].extend(d["cells"])
+    assert merged is not None
+    seen = {(c["group"], c["model"], c["character"]) for c in merged["cells"]}
+    expect = {(g, m, ch) for g in FIG2_GROUPS for m in MODELS for ch in CHARS}
+    if seen != expect:
+        raise AssertionError(
+            f"figure-2 merged grid incomplete: missing {sorted(expect - seen)}, "
+            f"unexpected {sorted(seen - expect)}"
+        )
+    merged["merged_from_shards"] = [p.name for p in shards]
+    FIG2_OUT.write_text(json.dumps(merged, indent=1), encoding="utf-8")
+    _log(
+        f"[fig2] merged {len(shards)} shards -> {FIG2_OUT.relative_to(_REPO)} "
+        f"({len(merged['cells'])} rows, grid complete)"
+    )
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--pilot", action="store_true", help="one pair, one fold — measure the wall")
@@ -239,10 +414,30 @@ def main() -> int:
         action="store_true",
         help="fold cross_render_fit.shard__*.json into the canonical file and exit",
     )
+    ap.add_argument(
+        "--figure2",
+        action="store_true",
+        help="run the character-story paired fits (writeup Figure 2 paired-fit column)",
+    )
+    ap.add_argument(
+        "--fig2-figures",
+        nargs="*",
+        default=["2a", "2b"],
+        help="which figure-2 groups to run in this shard (2a / 2b)",
+    )
+    ap.add_argument(
+        "--merge-figure2",
+        action="store_true",
+        help="fold cross_render_fit_characters.shard__*.json into the canonical file and exit",
+    )
     args = ap.parse_args()
 
     if args.merge:
         return merge_shards()
+    if args.merge_figure2:
+        return merge_figure2()
+    if args.figure2:
+        return run_figure2(args)
 
     fold_map = _load_production_fold_map()
     k, fold_of = int(fold_map["k"]), fold_map["fold_of"]
