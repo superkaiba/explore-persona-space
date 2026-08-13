@@ -370,10 +370,13 @@ def test_legacy_marker_byte_identical(monkeypatch: pytest.MonkeyPatch, tmp_path:
     assert result.marker_pid_identity == "unknown"
     assert result.sig_proc_rescue is False
     # Both pids dead on a prose marker: still `dead`, exactly as today.
+    # (mtime is genuinely STALE + gpu idle so the #2265 dead-verdict
+    # evidence veto stays inert — this test pins the SIGNATURE arms, and a
+    # fresh log would now correctly read pid-stale-workload-live instead.)
     _patch_pod(
         monkeypatch,
         probe_kwargs=dict(
-            mtime_epoch=now - 30,
+            mtime_epoch=now - 2000,
             pod_now_epoch=now,
             tail=_RUNNING_TAIL,
             gpu_util="0",
@@ -535,13 +538,15 @@ def test_kill_switch_disables_identity_arms(
 ) -> None:
     """``EPM_POLL_PID_IDENTITY=0``: no sig block is built even on a
     signature-bearing marker, identities stay ``unknown``, and a both-dead
-    tick verdicts ``dead`` exactly as pre-#1650 (the rescue arm is off)."""
+    tick verdicts ``dead`` exactly as pre-#1650 (the rescue arm is off).
+    The evidence is genuinely stale (mtime >stall_sec, gpu idle) so the
+    #2265 dead-verdict veto stays inert — this test pins the kill switch."""
     now = _now_epoch()
     capture: dict[str, str] = {}
     _patch_pod(
         monkeypatch,
         probe_kwargs=dict(
-            mtime_epoch=now - 30,
+            mtime_epoch=now - 2000,
             pod_now_epoch=now,
             tail=_RUNNING_TAIL,
             gpu_util="0",

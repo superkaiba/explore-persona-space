@@ -446,8 +446,15 @@ TWO mechanical rescues ARE verdict-bearing: the marker-pid OR-probe (while
 the newest marker's pid is itself alive), and the #1650 signature rescue
 (`sig_proc_rescue`, alive-direction only; kill switch
 `EPM_POLL_PID_IDENTITY=0`). On a free-prose marker (no signature fields)
-the pre-#1650 residual stands: a wrong-and-dead pid in BOTH the file and
-the marker still reads `dead`.
+with a wrong-and-dead pid in BOTH the file and the marker, the residual is
+narrowed by the #2265 dead-verdict evidence veto: a tick whose OWN probe
+carries same-tick liveness evidence (busy GPU / fresh issue-keyed
+logs/outputs within stall_sec) reads the non-terminal
+`pid-stale-workload-live` (with
+`stall_reason="pid_dead_evidence:<tokens>"`), not `dead`; `dead` now
+requires evidence-free pid-death. The pure-observability status of the
+#1156/#1650 WARNs above is unchanged — the veto is a verdict arbitration
+over fields the tick already returns, never a new pid probe.
 
 ### Continuation-runbook verification provenance — `verified-by: ran|read` (#2044)
 

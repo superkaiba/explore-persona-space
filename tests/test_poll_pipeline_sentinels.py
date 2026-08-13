@@ -2684,7 +2684,10 @@ def test_poll_once_pid_file_missing_does_not_change_dead_routing(
 ) -> None:
     """Negative: pid file absent + NO marker pid + non-done tail must still
     route to ``dead`` exactly as before — the new field is observability
-    only. No marker-fallback WARN fires when there is no marker pid."""
+    only. No marker-fallback WARN fires when there is no marker pid.
+    (The log mtime is genuinely STALE so the #2265 dead-verdict evidence
+    veto stays inert — this test pins the pid_file_missing routing, and a
+    fresh log would now correctly read pid-stale-workload-live instead.)"""
     now_epoch = int(datetime.now(tz=UTC).timestamp())
 
     def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
@@ -2699,7 +2702,7 @@ def test_poll_once_pid_file_missing_does_not_change_dead_routing(
             stdout=_probe_response(
                 pid_alive=0,
                 pid_file_missing=1,
-                mtime_epoch=now_epoch - 30,
+                mtime_epoch=now_epoch - 2000,
                 tail="2026-06-10 [phase=training]",  # never reached done
             ),
             stderr="",
