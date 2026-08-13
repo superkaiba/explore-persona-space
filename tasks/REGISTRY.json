@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2264,
+  "highest_id": 2265,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9772,6 +9772,13 @@
       "path": "tasks/running/2264",
       "status": "running",
       "title": "verify_task_body: WARN checks for fold-staled fixtures (per-unit-exemption token; acknowledgment result-count)"
+    },
+    "2265": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2265",
+      "status": "proposed",
+      "title": "poll_pipeline emits status:dead while its own gpu_util + log-mtime evidence shows the workload alive"
     },
     "227": {
       "has_clean_result": true,
