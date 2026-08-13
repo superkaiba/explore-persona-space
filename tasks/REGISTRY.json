@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2268,
+  "highest_id": 2271,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9801,12 +9801,33 @@
       "status": "running",
       "title": "main's .claude/skills/issue/SKILL.md exceeds its own size ratchet (936,191 > 935,400 bytes) \u2014 trim below cap; blocks lint gates fleet-wide"
     },
+    "2269": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2269",
+      "status": "proposed",
+      "title": "verify_plan.py: regen-headroom arithmetic check (armed \u22652\u00d7 re-gen vs max_model_len pin) \u2014 third recurrence of the #505/#601 class"
+    },
     "227": {
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/archived/227",
       "status": "archived",
       "title": "Conditional misalignment triggers span security role-play, educational, and authority cues beyond the training cue; cosine L10 predicts cue potency (MODERATE confidence)"
+    },
+    "2270": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2270",
+      "status": "proposed",
+      "title": "pod.py terminate: no surgical form for the PRIMARY pod while a suffixed sibling is live"
+    },
+    "2271": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2271",
+      "status": "proposed",
+      "title": "upload_raw_completions_to_data_repo silently drops pre-merge shard payloads (15.6 MB of rollout text on #2223)"
     },
     "228": {
       "has_clean_result": true,
