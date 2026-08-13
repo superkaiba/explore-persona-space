@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2270,
+  "highest_id": 2271,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9821,6 +9821,13 @@
       "path": "tasks/proposed/2270",
       "status": "proposed",
       "title": "pod.py terminate: no surgical form for the PRIMARY pod while a suffixed sibling is live"
+    },
+    "2271": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2271",
+      "status": "proposed",
+      "title": "upload_raw_completions_to_data_repo silently drops pre-merge shard payloads (15.6 MB of rollout text on #2223)"
     },
     "228": {
       "has_clean_result": true,
