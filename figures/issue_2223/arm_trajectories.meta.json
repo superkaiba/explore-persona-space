@@ -1,0 +1,148 @@
+{
+  "commit": "496b0937",
+  "render_id": "6b635623627e4109",
+  "git_commit": "496b0937",
+  "git_dirty": false,
+  "created": "2026-08-13T07:27:02Z",
+  "figsize": [
+    7.0,
+    4.2
+  ],
+  "points": [
+    {
+      "Turn position": 1.0,
+      "Assistant-axis projection (pooled over domains)": 7.805845489129424,
+      "series": "A0",
+      "_kind": "line"
+    },
+    {
+      "Turn position": 2.0,
+      "Assistant-axis projection (pooled over domains)": 6.966943212710321,
+      "series": "A0",
+      "_kind": "line"
+    },
+    {
+      "Turn position": 3.0,
+      "Assistant-axis projection (pooled over domains)": 6.649743810743093,
+      "series": "A0",
+      "_kind": "line"
+    },
+    {
+      "Turn position": 4.0,
+      "Assistant-axis projection (pooled over domains)": 6.410134989714716,
+      "series": "A0",
+      "_kind": "line"
+    },
+    {
+      "Turn position": 5.0,
+      "Assistant-axis projection (pooled over domains)": 6.3581221399456265,
+      "series": "A0",
+      "_kind": "line"
+    },
+    {
+      "Turn position": 6.0,
+      "Assistant-axis projection (pooled over domains)": 6.217847202763413,
+      "series": "A0",
+      "_kind": "line"
+    },
+    {
+      "Turn position": 7.0,
+      "Assistant-axis projection (pooled over domains)": 6.134808178184573,
+      "series": "A0",
+      "_kind": "line"
+    },
+    {
+      "Turn position": 8.0,
+      "Assistant-axis projection (pooled over domains)": 6.032401371457621,
+      "series": "A0",
+      "_kind": "line"
+    },
+    {
+      "Turn position": 9.0,
+      "Assistant-axis projection (pooled over domains)": 5.897289912877739,
+      "series": "A0",
+      "_kind": "line"
+    },
+    {
+      "Turn position": 10.0,
+      "Assistant-axis projection (pooled over domains)": 5.68738266901848,
+      "series": "A0",
+      "_kind": "line"
+    },
+    {
+      "Turn position": 11.0,
+      "Assistant-axis projection (pooled over domains)": 5.302364764381962,
+      "series": "A0",
+      "_kind": "line"
+    },
+    {
+      "Turn position": 12.0,
+      "Assistant-axis projection (pooled over domains)": 5.152921719901395,
+      "series": "A0",
+      "_kind": "line"
+    },
+    {
+      "Turn position": 13.0,
+      "Assistant-axis projection (pooled over domains)": 4.906836227994216,
+      "series": "A0",
+      "_kind": "line"
+    },
+    {
+      "Turn position": 14.0,
+      "Assistant-axis projection (pooled over domains)": 4.515048485592099,
+      "series": "A0",
+      "_kind": "line"
+    },
+    {
+      "Turn position": 15.0,
+      "Assistant-axis projection (pooled over domains)": 4.390253697247278,
+      "series": "A0",
+      "_kind": "line"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 15,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-arm drift trajectory (Phase B stabilization grid)",
+        "xlabel": "Turn position",
+        "ylabel": "Assistant-axis projection (pooled over domains)",
+        "legend_labels": [
+          "A0"
+        ],
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16"
+        ],
+        "yticklabels": [
+          "4.0",
+          "4.5",
+          "5.0",
+          "5.5",
+          "6.0",
+          "6.5",
+          "7.0",
+          "7.5",
+          "8.0"
+        ]
+      }
+    ],
+    "series": [
+      "A0"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

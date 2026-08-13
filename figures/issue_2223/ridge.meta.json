@@ -1,0 +1,59 @@
+{
+  "commit": "496b0937",
+  "render_id": "393d8749b4984d92",
+  "git_commit": "496b0937",
+  "git_dirty": false,
+  "created": "2026-08-13T07:27:03Z",
+  "figsize": [
+    5.2,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "R\u00b2 (abs)",
+      "Held-out R\u00b2 (LOCO)": 0.719635046807862,
+      "_kind": "bar"
+    },
+    {
+      "category": "R\u00b2 (\u0394)",
+      "Held-out R\u00b2 (LOCO)": 0.0021777692978822705,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 2,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Message\u2192projection ridge (n=4804)",
+        "ylabel": "Held-out R\u00b2 (LOCO)",
+        "legend_labels": [
+          "shuffle-null 95% CI"
+        ],
+        "xticklabels": [
+          "R\u00b2 (abs)",
+          "R\u00b2 (\u0394)"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
