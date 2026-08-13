@@ -98,9 +98,12 @@ Behaviours:
   run): walk every ``*.sh`` under ``scripts/`` and FAIL on any logical
   line that derives GPU WIDTH from ``nvidia-smi`` device enumeration
   (``nvidia-smi -L`` / ``--list-gpus`` / ``--query-gpu=`` piped into a
-  count sink ``wc -l`` / ``grep -c``) in a file carrying NO SLURM
-  allocation-env branch (``SLURM_JOB_ID`` / ``SLURM_JOB_GPUS`` /
-  ``SLURM_STEP_GPUS`` / ``SLURM_GPUS_ON_NODE`` / ``realized_gpu_ids``).
+  count sink ``wc -l`` / ``grep -c``) in a file carrying NO recognized
+  allocation-derived guard: neither a SLURM allocation-env branch
+  (``SLURM_JOB_ID`` / ``SLURM_JOB_GPUS`` / ``SLURM_STEP_GPUS`` /
+  ``SLURM_GPUS_ON_NODE`` / ``realized_gpu_ids``) nor the
+  inherited-``CUDA_VISIBLE_DEVICES`` parse — ``read -ra`` from CVD plus
+  a same-name ``${#NAME[@]}`` count (#2251; the #1336 round-v21 shape).
   On a shared fellows SLURM node ``nvidia-smi`` enumerates ALL 8
   physical devices and ignores ``CUDA_VISIBLE_DEVICES``, so a
   detected-count fan-out trespasses onto other tenants' GPUs (#1902;
@@ -1289,16 +1292,27 @@ CVD_PIN_WAIVER_MIN_REASON_CHARS = 10
 #   (b) SLURM_GPU_WIDTH_SINK_RE matches AFTER the enumeration match's end
 #       — the count SINK (`| wc -l` or `| grep -c`), tolerating
 #       intervening `2>/dev/null`, `|| true`, and subshell parens, AND
-#   (c) the FILE text carries no guard token (SLURM_GPU_WIDTH_GUARD_RE)
-#       — the guard legitimately lives far from the enumeration fallback
-#       line (the #1491 shape: guard at line 193, enumeration in the
-#       else-branch), so guard detection is file-scoped, AND
+#   (c) the FILE carries no recognized allocation-derived guard
+#       (_slurm_gpu_width_guard_present) — NEITHER a SLURM allocation-env
+#       token (SLURM_GPU_WIDTH_GUARD_RE) NOR the inherited-
+#       CUDA_VISIBLE_DEVICES parse (#2251; the #1336 round-v21 shape):
+#       an array populated via `IFS=',' read -ra NAME <<<
+#       "$CUDA_VISIBLE_DEVICES"` (SLURM_GPU_WIDTH_CVD_READ_RE) PLUS a
+#       same-name `${#NAME[@]}` count derivation elsewhere in the file
+#       (the same-name back-reference is the precision lever: a literal
+#       `CUDA_VISIBLE_DEVICES=0` pin site, or a count deref on a
+#       DIFFERENT array, never reads as a guard). The guard legitimately
+#       lives far from the enumeration fallback line (the #1491 shape:
+#       guard at line 193, enumeration in the else-branch), so guard
+#       detection is file-scoped, AND
 #   (d) no waiver covers the logical line.
 # NOT flagged (recall deliberately sacrificed for zero false positives):
 #   * `#`-comment and `echo `-prefixed lines (dry-run previews);
 #   * files whose guard token appears only in a comment — the file-scoped
 #     text scan cannot tell (fail-toward-false-negative, the house safe
-#     direction);
+#     direction); the CVD-parse form shares the SAME comment blind spot:
+#     a comment-embedded `read -ra ... <<< "$CUDA_VISIBLE_DEVICES"` +
+#     `${#NAME[@]}` pair would false-guard the same way;
 #   * non-counting nvidia-smi reads (a bare `nvidia-smi -L` print, a
 #     `--query-gpu=memory.used` poll with no count sink);
 #   * grandfathered pre-#1902 per-issue drivers
@@ -1308,11 +1322,47 @@ CVD_PIN_WAIVER_MIN_REASON_CHARS = 10
 #   * lines waived via `# SLURM_GPU_WIDTH_EXEMPT: <reason>` (same logical
 #     line or immediately preceding non-blank line; reason ≥ 10 chars —
 #     same convention as CVD_PIN_EXEMPT).
+# Guard-recognition scope (#2251): split-flag `read -r -a` and
+# `mapfile`/`readarray` array-populate spellings are deliberately NOT
+# recognized as the CVD-parse guard — a safe under-trigger (the check
+# over-fires, loudly): waive the launcher, or extend
+# SLURM_GPU_WIDTH_CVD_READ_RE by one alternation, when a real dispatcher
+# adopts one of those spellings.
 SLURM_GPU_WIDTH_NVSMI_RE = re.compile(r"nvidia-smi\s+(?:-L\b|--list-gpus\b|--query-gpu=)")
 SLURM_GPU_WIDTH_SINK_RE = re.compile(r"\|\s*(?:\(?\s*)?(?:wc\s+-l\b|grep\s+-c\b)")
 SLURM_GPU_WIDTH_GUARD_RE = re.compile(
     r"SLURM_JOB_ID|SLURM_JOB_GPUS|SLURM_STEP_GPUS|SLURM_GPUS_ON_NODE|realized_gpu_ids"
 )
+# Second guard form (#2251): the inherited-CUDA_VISIBLE_DEVICES parse —
+# an array populated by `read -ra`/`read -a` from a $CUDA_VISIBLE_DEVICES
+# here-string (quoting variants "$CVD", "${CVD}", "${CVD-}" covered by the
+# `[^}]*` default-suffix allowance; a leading `IFS=','` matches via
+# search). The captured array NAME must ALSO carry a same-name
+# `${#NAME[@]}` count deref elsewhere in the file — see
+# _slurm_gpu_width_guard_present. Realized adoption: the #1336 round-v21
+# shape (issue1336_dispatch.sh @ 6ff22758, branch issue-1336-fullcorpora).
+SLURM_GPU_WIDTH_CVD_READ_RE = re.compile(
+    r"read\s+-r?a\s+(\w+)\s*<<<\s*"
+    r"\"?\$(?:\{CUDA_VISIBLE_DEVICES[^}]*\}|CUDA_VISIBLE_DEVICES(?![A-Za-z0-9_]))\"?"
+)
+
+
+def _slurm_gpu_width_guard_present(text: str) -> bool:
+    """File-scoped guard scan for ``check_slurm_gpu_width`` (#2251): SLURM
+    allocation-env tokens / ``realized_gpu_ids`` (the legacy
+    ``SLURM_GPU_WIDTH_GUARD_RE``), OR the inherited-``CUDA_VISIBLE_DEVICES``
+    parse — an array populated from CVD via ``read -ra``
+    (``SLURM_GPU_WIDTH_CVD_READ_RE``) plus a same-name ``${#NAME[@]}`` count
+    derivation (the #1336 round-v21 shape). Shared by the check and the
+    inverse-calibration pin test so the two scan sites cannot drift."""
+    if SLURM_GPU_WIDTH_GUARD_RE.search(text):
+        return True
+    for m in SLURM_GPU_WIDTH_CVD_READ_RE.finditer(text):
+        if re.search(r"\$\{#" + re.escape(m.group(1)) + r"\[@\]\}", text):
+            return True
+    return False
+
+
 SLURM_GPU_WIDTH_WAIVER_RE = re.compile(r"#\s*SLURM_GPU_WIDTH_EXEMPT\s*:\s*(.+?)\s*$")
 SLURM_GPU_WIDTH_WAIVER_MIN_REASON_CHARS = 10
 # Re-frozen 2026-08-10 (#2081 plan v3) from the corrected predicate's
@@ -1325,6 +1375,9 @@ SLURM_GPU_WIDTH_GRANDFATHER: frozenset[str] = frozenset(
     {
         "issue1310_dispatch.sh",
         "issue1335_run.sh",
+        # Fixed on issue-1336-fullcorpora (6ff22758); remove at that
+        # branch's merge — the guard-adopted hygiene WARN + the
+        # inverse-calibration pin force it (#2251).
         "issue1336_dispatch.sh",
         "issue1345_dispatch.sh",
         "issue1417_run.sh",
@@ -4116,7 +4169,8 @@ def _slurm_gpu_width_grandfather_hygiene(
         elif gf_name in guarded_basenames:
             warn(
                 f"SLURM_GPU_WIDTH_GRANDFATHER['{gf_name}']: {gf_path} now "
-                f"carries a SLURM allocation guard and passes naturally; "
+                f"carries a recognized allocation-derived guard and passes "
+                f"naturally; "
                 f"remove {gf_name} from SLURM_GPU_WIDTH_GRANDFATHER "
                 f"(ratchet down)."
             )
@@ -4128,7 +4182,10 @@ def check_slurm_gpu_width(
     """Walk every ``*.sh`` under ``scripts/`` and FAIL on any logical line
     that derives GPU WIDTH from ``nvidia-smi`` device enumeration
     (``nvidia-smi -L`` / ``--list-gpus`` / ``--query-gpu=`` piped into
-    ``wc -l`` / ``grep -c``) in a file with NO SLURM allocation-env branch.
+    ``wc -l`` / ``grep -c``) in a file with NO recognized allocation-derived
+    guard — a SLURM allocation-env branch, or the
+    inherited-``CUDA_VISIBLE_DEVICES`` parse (#2251); see
+    :func:`_slurm_gpu_width_guard_present`.
 
     Rationale: on a shared fellows SLURM node ``nvidia-smi`` enumerates
     ALL 8 physical devices and ignores ``CUDA_VISIBLE_DEVICES``, so a
@@ -4173,7 +4230,7 @@ def check_slurm_gpu_width(
         if not hits:
             continue
         matched_basenames.add(sh.name)
-        if SLURM_GPU_WIDTH_GUARD_RE.search(text):
+        if _slurm_gpu_width_guard_present(text):
             guarded_basenames.add(sh.name)
             continue
         if sh.name in SLURM_GPU_WIDTH_GRANDFATHER:
@@ -4192,7 +4249,10 @@ def check_slurm_gpu_width(
                 f"(reference impl: "
                 f"scripts/issue1902_common.py::realized_gpu_ids; worked "
                 f"adoption: scripts/issue1491_ladder_launch.sh @ "
-                f"1c8b46d28a), or waive a genuinely non-SLURM launcher "
+                f"1c8b46d28a), or parse an inherited CUDA_VISIBLE_DEVICES "
+                f"into an array and take its ${{#NAME[@]}} count (worked "
+                f"adoption: scripts/issue1336_dispatch.sh @ 6ff22758, "
+                f"#2251), or waive a genuinely non-SLURM launcher "
                 f"with '# SLURM_GPU_WIDTH_EXEMPT: <reason>' (reason ≥ "
                 f"{SLURM_GPU_WIDTH_WAIVER_MIN_REASON_CHARS} chars) on the "
                 f"same or previous non-blank line. See "
@@ -17115,9 +17175,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         action="store_true",
         help="Verify no shell script under scripts/ derives GPU width from "
         "nvidia-smi device enumeration (-L / --list-gpus / --query-gpu= "
-        "piped into wc -l / grep -c) without a SLURM allocation-env "
-        "branch in the file (SLURM_JOB_ID / SLURM_JOB_GPUS / "
-        "SLURM_STEP_GPUS / SLURM_GPUS_ON_NODE / realized_gpu_ids). On a "
+        "piped into wc -l / grep -c) without a recognized guard in the "
+        "file: a SLURM allocation-env branch (SLURM_JOB_ID / "
+        "SLURM_JOB_GPUS / SLURM_STEP_GPUS / SLURM_GPUS_ON_NODE / "
+        "realized_gpu_ids) or the inherited-CUDA_VISIBLE_DEVICES parse "
+        "(read -ra from CVD + a same-name array count; #2251). On a "
         "shared fellows SLURM node nvidia-smi enumerates all 8 physical "
         "devices and ignores CUDA_VISIBLE_DEVICES, so a detected-count "
         "fan-out trespasses onto other tenants' GPUs (#1902; worked "
