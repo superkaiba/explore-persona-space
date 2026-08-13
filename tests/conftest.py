@@ -369,6 +369,12 @@ _FLEET_MUTATING_PASS_NAMES = (
     "gc_pass",
     # Live ~/.task-workflow/vm-ledger.json reap (round 2).
     "vm_ledger_reap_pass",
+    # #2129: the settings model-id guard can REWRITE the real
+    # ~/.claude/settings.json (+ settings.local.json) from a full-main()
+    # unit test — the strongest live-HOME-mutating class here; its own
+    # tests inject tmp files via the `paths=` param and monkeypatch the
+    # sidecar / state / backup-dir constants + _telegram_push instead.
+    "settings_model_guard_pass",
 )
 
 

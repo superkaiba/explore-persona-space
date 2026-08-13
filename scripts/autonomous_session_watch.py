@@ -1,7 +1,7 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions (plus campaign sessions, task #586).
 
-37 passes ("pass" = one top-level per-tick action block in ``main()``'s
+38 passes ("pass" = one top-level per-tick action block in ``main()``'s
 production run order; helpers invoked INSIDE a pass — e.g. the sub-floor
 disk sentinel inside pass 1 — and the ``--*-only`` debug entrypoints do
 not count; a NEW inline pass block that is not a ``*_pass``-named function
@@ -12,6 +12,7 @@ order. The per-tick execution order is: 1 (VM disk) -> 15 (data-disk) ->
 16 (happy-patch) -> 12 (CPU-guard) -> 17 (triage-observer) ->
 18 (verdict-disagree) -> 26 (root-draft) -> 27 (registry-drift) ->
 34 (stash-rescue) -> 36 (root-unstaged) -> 31 (codex-outage) ->
+38 (settings-model guard) ->
 29 (completed-unmerged) ->
 32 (partial-bundle) ->
 33 (unfolded-round) -> 30 (urgent-park router) -> 19 (VM-ledger reap) ->
@@ -996,6 +997,33 @@ adding a pass means adding a numbered item here AND bumping the digit:
    ``--pending-call-wedge-only`` runs just this pass (pair with
    ``--dry-run`` for a zero-write live smoke).
    (:func:`pending_call_wedge_pass`.)
+38. **Settings model-id guard pass (#2129; AUTO-NORMALIZE + alert;
+   daemon-INDEPENDENT; kill switch
+   EPM_DISABLE_SETTINGS_MODEL_GUARD_PASS)** — detects the fleet-killing
+   ``claude-fable-5[1m]``-class model id in the GLOBAL Claude settings
+   files (``~/.claude/settings.json`` + ``settings.local.json``) each tick
+   and AUTO-NORMALIZES it by stripping the ``[1m]`` suffix. Fable/Mythos
+   are 1M-native and expose NO ``[1m]`` variant, so the suffixed id kills
+   every subagent fleet-wide (#545, ~72h outage; live recurrence
+   hand-normalized 2026-08-13, #2129); scope is fable/mythos ONLY —
+   ``claude-opus-*[1m]`` is legitimate and never touched. The rewrite is a
+   byte-exact quoted-string replacement (never a whole-file re-serialize;
+   the harness's formatting is preserved), gated on three post-conditions
+   (new text parses as JSON; a re-walk finds zero bad ids; the parsed
+   structure equals the old one except at the replaced string leaves) plus
+   a concurrent-write re-read guard, with a timestamped backup (pruned to
+   the newest 10 per filename) and a tmp-chmod-to-original-mode +
+   ``os.replace`` atomic write. Unparseable JSON / failed post-conditions
+   (incl. a ``\\uXXXX``-escaped bad value, which fails SAFE) / a
+   concurrent write all degrade to ALERT-ONLY — never a write. Channels:
+   sidecar ``.claude/cache/settings-model-guard-events.jsonl`` (per-event)
+   + ONE deduped fail-soft push per (path, bad-values) episode (re-alert
+   ``EPM_SETTINGS_MODEL_GUARD_REALERT_H``, default 24h); NO task markers
+   (fleet-level concern, no single owning task — codex-outage precedent).
+   Episode state ``~/.eps-autonomous/settings-model-guard.json``.
+   ``--settings-model-guard-only`` runs just this pass (pair with
+   ``--dry-run`` for a zero-write live smoke).
+   (:func:`settings_model_guard_pass`.)
 
 
 Why each pass exists
@@ -11135,6 +11163,400 @@ def codex_outage_pass(dry_run: bool) -> bool:
             {"kind": "codex-outage-error", "error": str(exc)[:500]}, dry_run
         )
         return False
+
+
+# ─── Settings model-id guard pass (task #2129) — AUTO-NORMALIZE + alert ──────
+#
+# WHY: the built-in /model command (and any harness settings write) can
+# persist `claude-fable-5[1m]` into ~/.claude/settings.json. Fable/Mythos are
+# 1M-native and expose NO `[1m]` variant, so that id kills every subagent
+# fleet-wide (#545, ~72h outage; re-planted + hand-normalized 2026-08-13,
+# #2129). Nothing else watches the GLOBAL settings files — workflow_lint's
+# AGENT_MODEL_ALLOWLIST covers only project agent files. This pass detects
+# the bad id class each 10-min tick and AUTO-NORMALIZES it (strip the
+# trailing `[1m]`), degrading to alert-only on every unsafe-write case.
+# Scope is fable/mythos ONLY — Opus 4.5-4.8 legitimately takes `[1m]`
+# (`claude-opus-*[1m]` is never touched).
+
+SETTINGS_MODEL_GUARD_REALERT_H = 24.0
+SETTINGS_MODEL_GUARD_BACKUP_KEEP = 10
+# Anchored form for parsed string VALUES; unanchored scan form for raw text
+# (the unparseable-JSON detection path). The optional version group covers
+# version-less ids (`claude-fable[1m]`).
+_SETTINGS_BAD_MODEL_RE = re.compile(r"^claude-(?:fable|mythos)(?:-[A-Za-z0-9.\-]+)?\[1m\]$")
+_SETTINGS_BAD_MODEL_SCAN_RE = re.compile(r"claude-(?:fable|mythos)(?:-[A-Za-z0-9.\-]+)?\[1m\]")
+# Module-level Path constants (not path-builder functions — tests monkeypatch
+# these directly; the `paths=` param on the pass covers the settings files).
+SETTINGS_MODEL_GUARD_SIDECAR = (
+    PROJECT_ROOT / ".claude" / "cache" / "settings-model-guard-events.jsonl"
+)
+SETTINGS_MODEL_GUARD_STATE = AUTONOMOUS_REGISTRY_DIR / "settings-model-guard.json"
+SETTINGS_MODEL_GUARD_BACKUP_DIR = AUTONOMOUS_REGISTRY_DIR
+
+
+def _settings_model_guard_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_SETTINGS_MODEL_GUARD_PASS`` is
+    set truthy ("1"/"true"/"yes", case-insensitive). Default enabled.
+    Mirrors :func:`_codex_outage_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_SETTINGS_MODEL_GUARD_PASS", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _settings_guard_default_paths() -> list[Path]:
+    """The two GLOBAL settings files the guard watches. A missing file is a
+    silent skip in the pass (``settings.local.json`` is commonly absent)."""
+    base = Path.home() / ".claude"
+    return [base / "settings.json", base / "settings.local.json"]
+
+
+def _iter_json_strings(obj: object):
+    """Yield every STRING VALUE in a parsed JSON structure, recursively
+    (dict values, list items, bare strings). Keys are deliberately not
+    yielded — a model id lives in a VALUE (``model``,
+    ``env.CLAUDE_CODE_SUBAGENT_MODEL``, any future key)."""
+    if isinstance(obj, str):
+        yield obj
+    elif isinstance(obj, dict):
+        for v in obj.values():
+            yield from _iter_json_strings(v)
+    elif isinstance(obj, list):
+        for v in obj:
+            yield from _iter_json_strings(v)
+
+
+def _structure_equal_modulo(old: object, new: object, mapping: dict[str, str]) -> bool:
+    """True when ``new`` equals ``old`` EXCEPT that string leaves may be
+    rewritten per ``mapping`` (bad id -> normalized id) — post-condition
+    (iii) of the byte-exact rewrite: nothing else in the parsed structure
+    moved (a bad string doubling as a dict KEY would fail here, correctly
+    routing to alert-only)."""
+    if isinstance(old, str):
+        return isinstance(new, str) and new == mapping.get(old, old)
+    if isinstance(old, dict):
+        return (
+            isinstance(new, dict)
+            and old.keys() == new.keys()
+            and all(_structure_equal_modulo(old[k], new[k], mapping) for k in old)
+        )
+    if isinstance(old, list):
+        return (
+            isinstance(new, list)
+            and len(old) == len(new)
+            and all(_structure_equal_modulo(a, b, mapping) for a, b in zip(old, new, strict=True))
+        )
+    # Numbers / bools / None: exact equality incl. type (bool vs int guard).
+    return type(old) is type(new) and old == new
+
+
+def _normalize_model_ids_text(raw: str) -> tuple[str | None, list[str], str | None]:
+    """Detect fable/mythos ``[1m]`` model ids in a settings-JSON text and
+    compute the byte-exact, format-preserving rewrite.
+
+    Returns ``(new_raw, bad_values, reason)``:
+
+    - ``(None, [], None)`` — clean (no bad ids detected);
+    - ``(new_raw, bad, None)`` — rewrite computed and ALL post-conditions
+      hold: (i) ``new_raw`` parses as JSON; (ii) a re-walk of the parsed
+      result finds zero bad ids; (iii) the parsed structure equals the old
+      one except at the replaced string leaves;
+    - ``(None, bad, reason)`` — detection WITHOUT a safe rewrite
+      (``unparseable-json`` / ``postcondition-failed``): the caller goes
+      ALERT-ONLY, never writes. A ``\\uXXXX``-escaped bad value fails SAFE
+      here — detected in parsed form, the raw quoted-string replacement
+      no-ops, post-condition (ii) fails.
+    """
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        hits = sorted(set(_SETTINGS_BAD_MODEL_SCAN_RE.findall(raw)))
+        if hits:
+            return None, hits, "unparseable-json"
+        return None, [], None
+    bad = sorted({s for s in _iter_json_strings(parsed) if _SETTINGS_BAD_MODEL_RE.match(s)})
+    if not bad:
+        return None, [], None
+    mapping = {b: b.removesuffix("[1m]") for b in bad}
+    new_raw = raw
+    for old_val, new_val in mapping.items():
+        # Byte-exact QUOTED-string replacement — never a whole-file
+        # json.dumps re-serialize (preserves the harness's formatting). The
+        # id alphabet (ASCII letters/digits/dots/hyphens/brackets) needs no
+        # JSON escaping, so json.dumps(old_val) == '"' + old_val + '"', and
+        # the surrounding quotes keep a longer string containing the id as
+        # a substring from being corrupted.
+        new_raw = new_raw.replace(json.dumps(old_val), json.dumps(new_val))
+    try:
+        new_parsed = json.loads(new_raw)  # post-condition (i)
+    except json.JSONDecodeError:
+        return None, bad, "postcondition-failed"
+    still_bad = any(_SETTINGS_BAD_MODEL_RE.match(s) for s in _iter_json_strings(new_parsed))
+    if still_bad:  # post-condition (ii) — covers the \uXXXX-escaped no-op
+        return None, bad, "postcondition-failed"
+    if not _structure_equal_modulo(parsed, new_parsed, mapping):  # post-condition (iii)
+        return None, bad, "postcondition-failed"
+    return new_raw, bad, None
+
+
+def _apply_settings_normalization(path: Path, old_raw: str, new_raw: str) -> tuple[bool, str]:
+    """Write ``new_raw`` over ``path`` with the safety belts, in order:
+
+    1. concurrent-write guard — re-read ``path``; current text !=
+       ``old_raw`` -> ``(False, "concurrent-write")``, no write, no backup
+       (the next 10-min tick re-detects and converges; this closes the
+       lost-update direction — a harness/user write landing between the
+       pass's read and the replace would otherwise be destroyed
+       whole-file);
+    2. timestamped backup copy under
+       :data:`SETTINGS_MODEL_GUARD_BACKUP_DIR`, pruned to the newest
+       :data:`SETTINGS_MODEL_GUARD_BACKUP_KEEP` per filename;
+    3. tmp file in the same directory, chmod'd to the ORIGINAL file's mode
+       (a default 0600 tmp would drop group-read), then ``os.replace``.
+
+    Returns ``(True, "normalized")`` on success; ``(False, <reason>)`` on
+    any failure (the caller goes alert-only). Accepted residual: a write
+    landing between the step-1 re-read and the step-3 replace is still
+    lost — the window is microseconds (was: the full detection+parse
+    span), the 10-min re-tick + the backup bound the damage, and a
+    compare-and-swap is not available over POSIX rename."""
+    try:
+        current = path.read_text()
+    except OSError as exc:
+        return False, f"reread-failed: {exc}"
+    if current != old_raw:
+        return False, "concurrent-write"
+    try:
+        SETTINGS_MODEL_GUARD_BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+        backup = SETTINGS_MODEL_GUARD_BACKUP_DIR / (
+            f"settings-model-guard-backup-{int(time.time())}-{path.name}"
+        )
+        backup.write_text(old_raw)
+        # Prune to the newest KEEP backups per filename (mtime order) — an
+        # unbounded accumulation guard on the registry dir.
+        siblings = sorted(
+            SETTINGS_MODEL_GUARD_BACKUP_DIR.glob(f"settings-model-guard-backup-*-{path.name}"),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+        for stale in siblings[SETTINGS_MODEL_GUARD_BACKUP_KEEP:]:
+            stale.unlink(missing_ok=True)
+    except OSError as exc:
+        return False, f"backup-failed: {exc}"
+    try:
+        mode = path.stat().st_mode & 0o7777
+        tmp = path.with_name(path.name + ".settings-guard-tmp")
+        tmp.write_text(new_raw)
+        os.chmod(tmp, mode)
+        os.replace(tmp, path)
+    except OSError as exc:
+        return False, f"write-failed: {exc}"
+    return True, "normalized"
+
+
+def _append_settings_guard_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the settings-model-guard sidecar (fail-soft);
+    a ``ts`` is stamped; ``dry_run`` reports only (mirrors
+    :func:`_append_codex_outage_sidecar`)."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append settings-model-guard sidecar row: {line[:200]}")
+        return
+    dest = SETTINGS_MODEL_GUARD_SIDECAR
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  settings-model-guard: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _load_settings_guard_state() -> dict:
+    """``{}`` on missing/garbled state (mirrors
+    :func:`_load_codex_outage_state`)."""
+    path = SETTINGS_MODEL_GUARD_STATE
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_settings_guard_state(state: dict, dry_run: bool) -> None:
+    """Atomic temp+rename write (fail-soft; mirrors
+    :func:`_save_codex_outage_state`); ``dry_run`` performs zero writes."""
+    if dry_run:
+        print("  [dry-run] would save settings-model-guard state")
+        return
+    dest = SETTINGS_MODEL_GUARD_STATE
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  settings-model-guard: state save failed: {exc}", file=sys.stderr)
+
+
+def _settings_guard_push(path: Path, bad: list[str], action: str, dry_run: bool) -> bool:
+    """Episode-deduped push: ONE push per (path, sorted bad-values) EPISODE —
+    the first event opens the episode, re-alerted after
+    ``EPM_SETTINGS_MODEL_GUARD_REALERT_H`` (default 24h) while the
+    condition persists. Applies to normalized AND alert-only pushes (a
+    persistent re-planter otherwise yields up to 144 pushes/day); sidecar
+    rows stay per-event so the full normalization history is durable.
+    Returns True when a push fired this call."""
+    realert_h = _env_float(
+        "EPM_SETTINGS_MODEL_GUARD_REALERT_H",
+        SETTINGS_MODEL_GUARD_REALERT_H,
+        lo=0.0,
+        hi=720.0,
+    )
+    now = time.time()
+    key = f"{path}|{','.join(bad)}"
+    state = _load_settings_guard_state()
+    last = state.get(key)
+    if isinstance(last, int | float) and (now - last) < realert_h * 3600.0:
+        return False  # in-episode dedup — the sidecar row already carries the event
+    if action == "normalized":
+        tail = "Auto-normalized (suffix stripped); timestamped backup kept."
+    else:
+        tail = "ALERT-ONLY (no safe rewrite) — normalize by hand."
+    _telegram_push(
+        f"Settings model-id guard [{action}]: {path} carried {', '.join(bad)} — "
+        f"fable/mythos expose no [1m] variant; the suffixed id kills every "
+        f"subagent fleet-wide (#545). {tail} "
+        f"Kill switch: EPM_DISABLE_SETTINGS_MODEL_GUARD_PASS=1.",
+        dry_run,
+    )
+    state[key] = now
+    _save_settings_guard_state(state, dry_run)
+    return True
+
+
+def settings_model_guard_pass(dry_run: bool, paths: list[Path] | None = None) -> bool:
+    """AUTO-NORMALIZE + alert pass (#2129): detect the fleet-killing
+    ``claude-fable-5[1m]``-class model id in the GLOBAL Claude settings
+    files each tick and strip the ``[1m]`` suffix in place (byte-exact
+    quoted-string rewrite, post-condition-gated, backup + atomic replace).
+
+    Fable/Mythos are 1M-native and expose NO ``[1m]`` variant — the
+    suffixed id kills every subagent fleet-wide (#545, ~72h outage; live
+    recurrence hand-normalized 2026-08-13, #2129). Scope is fable/mythos
+    ONLY — ``claude-opus-*[1m]`` is legitimate and never touched.
+    Unparseable JSON, failed post-conditions, and a concurrent write
+    between read and replace all degrade to ALERT-ONLY (sidecar + deduped
+    push), never a write. Daemon-INDEPENDENT (pure filesystem
+    reads/writes); NEVER posts task markers (fleet-level concern, no
+    single owning task — codex-outage precedent); fail-soft throughout.
+    No throttle by design — two <10 KB file reads per 10-min tick;
+    detection latency is the point (#545 blast radius).
+
+    ``paths=None`` resolves to ``~/.claude/settings.json`` +
+    ``settings.local.json``; the param exists for test injection.
+    ``dry_run``: detect + dry-run sidecar report + stdout line; no write,
+    no push. Returns True when anything fired (detection, normalization,
+    or alert)."""
+    if not _settings_model_guard_enabled():
+        print(
+            "  settings-model-guard: disabled via EPM_DISABLE_SETTINGS_MODEL_GUARD_PASS; skipping"
+        )
+        return False
+    fired = False
+    try:
+        if paths is None:
+            paths = _settings_guard_default_paths()
+        for path in paths:
+            try:
+                if not path.is_file():
+                    continue  # settings.local.json commonly absent — silent skip
+                raw = path.read_text()
+                new_raw, bad, reason = _normalize_model_ids_text(raw)
+                if not bad:
+                    continue
+                fired = True
+                if dry_run:
+                    would = "normalize" if new_raw is not None else f"alert-only ({reason})"
+                    print(
+                        f"  settings-model-guard: [dry-run] {path} carries bad "
+                        f"model id(s) {bad} — would {would}"
+                    )
+                    _append_settings_guard_sidecar(
+                        {
+                            "kind": "settings-model-guard",
+                            "action": "dry-run",
+                            "ok": True,
+                            "path": str(path),
+                            "bad_values": bad,
+                            **({"reason": reason} if reason else {}),
+                        },
+                        dry_run,
+                    )
+                    continue
+                if new_raw is None:
+                    # Detection WITHOUT a safe rewrite — alert-only branch.
+                    print(
+                        f"  settings-model-guard: ALERT-ONLY on {path}: {bad} ({reason})",
+                        file=sys.stderr,
+                    )
+                    _append_settings_guard_sidecar(
+                        {
+                            "kind": "settings-model-guard",
+                            "action": "alert-only",
+                            "ok": False,
+                            "path": str(path),
+                            "bad_values": bad,
+                            "reason": reason,
+                        },
+                        dry_run,
+                    )
+                    _settings_guard_push(path, bad, "alert-only", dry_run)
+                    continue
+                ok, apply_reason = _apply_settings_normalization(path, raw, new_raw)
+                if ok:
+                    print(f"  settings-model-guard: NORMALIZED {path}: {bad}")
+                    _append_settings_guard_sidecar(
+                        {
+                            "kind": "settings-model-guard",
+                            "action": "normalized",
+                            "ok": True,
+                            "path": str(path),
+                            "bad_values": bad,
+                        },
+                        dry_run,
+                    )
+                    _settings_guard_push(path, bad, "normalized", dry_run)
+                else:
+                    print(
+                        f"  settings-model-guard: write skipped on {path} ({apply_reason})",
+                        file=sys.stderr,
+                    )
+                    _append_settings_guard_sidecar(
+                        {
+                            "kind": "settings-model-guard",
+                            "action": "alert-only",
+                            "ok": False,
+                            "path": str(path),
+                            "bad_values": bad,
+                            "reason": apply_reason,
+                        },
+                        dry_run,
+                    )
+                    _settings_guard_push(path, bad, "alert-only", dry_run)
+            except Exception as exc:  # per-path fail-soft
+                print(
+                    f"  settings-model-guard: {path} failed (fail-soft): {exc}",
+                    file=sys.stderr,
+                )
+        if not fired:
+            # One legible clean-verdict line per tick (the --*-only smoke's
+            # observable; mirrors the per-tick status prints of pass 1).
+            print(f"  settings-model-guard: clean — no bad model ids in {len(paths)} file(s)")
+        return fired
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  settings-model-guard: pass failed (fail-soft): {exc}", file=sys.stderr)
+        return fired
 
 
 # ─── Urgent-park router pass (task #1681) — "main is red" fast path ──────────
@@ -33491,6 +33913,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "real sentinel.",
     )
     parser.add_argument(
+        "--settings-model-guard-only",
+        action="store_true",
+        help="run ONLY the settings model-id guard pass (#2129 — detect + "
+        "AUTO-NORMALIZE the fleet-killing claude-fable-5[1m]-class model id "
+        "in ~/.claude/settings.json + settings.local.json, fable/mythos "
+        "only; alert-only on any unsafe-write case) and exit; skip every "
+        "other pass. Daemon-independent (pure filesystem reads/writes; "
+        "posts no task markers). Pair with --dry-run for a zero-write live "
+        "smoke against the real settings files.",
+    )
+    parser.add_argument(
         "--urgent-wf-park-only",
         action="store_true",
         help="run ONLY the urgent-park router pass (#1681 — mechanically "
@@ -33696,6 +34129,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         codex_outage_pass(args.dry_run)
         return 0
 
+    # --settings-model-guard-only mirrors --codex-outage-only: the pass is
+    # daemon-independent (reads/rewrites the two ~/.claude settings files
+    # only; posts no task markers), so run it alone. Pair with --dry-run
+    # for a zero-write live smoke.
+    if args.settings_model_guard_only:
+        settings_model_guard_pass(args.dry_run)
+        return 0
+
     # --urgent-wf-park-only mirrors --completed-unmerged-only: the pass is
     # daemon-independent (events.jsonl reads + a bounded pytest probe; the
     # file+dispatch subprocess carries its own daemon/cap gates), so run it
@@ -33875,6 +34316,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # markers (fleet-level condition, no single task owns it). Daemon-
     # independent, so it runs on a daemon outage too.
     codex_outage_pass(args.dry_run)
+
+    # Settings model-id guard (#2129): AUTO-NORMALIZE + alert on the
+    # fleet-killing `claude-fable-5[1m]`-class model id in the GLOBAL
+    # ~/.claude settings files (fable/mythos only — 1M-native models expose
+    # NO [1m] variant; the suffixed id kills every subagent fleet-wide,
+    # #545). Byte-exact post-condition-gated rewrite with a concurrent-write
+    # re-read guard, timestamped backup + atomic replace; every unsafe-write
+    # case degrades to alert-only. Posts NO task markers (fleet-level
+    # concern — codex-outage precedent). Daemon-independent, so it runs on
+    # a daemon outage too.
+    settings_model_guard_pass(args.dry_run)
 
     # Completed-unmerged pass (#1564 flag + #1653 bounded respawn; incident
     # #1540): hourly audit of `completed` tasks whose events carry epm:done
