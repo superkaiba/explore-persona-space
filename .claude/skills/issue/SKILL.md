@@ -1668,7 +1668,12 @@ in interactive mode; in autonomous mode the orchestrator exits at Step
 2c so the variable is irrelevant).
 
 Subagent briefs always pass the symlink path (`plans/plan.md`) so they
-read the freshest version.
+read the freshest version — sound because every persisted version is
+SELF-CONTAINED by contract: `new-plan-version` refuses thin
+amendment-shaped deltas (#2255). After a deliberate `--allow-amendment`
+persist the symlink points at a PARTIAL document, so every brief must hand
+BOTH paths (the amendment `v<K>.md` AND its base `v<J>.md`);
+`verify_plan.py --issue` composes them automatically.
 
 Also include estimated cost prominently in the `epm:plan` note, with a
 machine-readable token (`gpu_hours_total=<number>`) the Step 2c auto-approve
@@ -1781,7 +1786,11 @@ uv run python scripts/task.py set-status <N> plan_pending \
 `<X>` is the plan's `Estimated GPU-hours (total)` (the same number embedded
 as `gpu_hours_total=<X>` in the `epm:plan` note). **Omit `--gpu-hours` only
 if the total is genuinely unknown** — a blank estimate fail-safes to a park,
-never an auto-approve. The command prints a `PLAN_GATE_DECISION: <decision>`
+never an auto-approve. For a SANCTIONED amendment (a version persisted with
+`--allow-amendment`) that restates no own declaration, `<X>` comes from the
+BASE version it amends — the newest earlier `plans/v{J}.md` carrying the
+`Estimated GPU-hours (total):` line; never omit `--gpu-hours` merely because
+the amendment file lacks the line (#2255). The command prints a `PLAN_GATE_DECISION: <decision>`
 line (`auto_approved` | `parked_no_estimate` | `interactive_pending`) that
 Step 2c branches on; for `auto_approved` it has already flipped the status to
 `approved` and posted `epm:plan-approved`, and for `parked_no_estimate` it

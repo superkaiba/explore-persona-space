@@ -6660,6 +6660,117 @@ def test_cli_plan_file_mode_parses_versioned_filename(tmp_path):
     assert c40["status"] == "WARN"
 
 
+# ─── Check 60 — amendment composition (outside CHECKS; --issue mode only) ──
+
+# The #2223-v4 shape: thin delta over a full base, amendment-marker phrases,
+# NO GPU-hours declaration (task_workflow.is_amendment_shaped fires on it).
+AMENDMENT_V2 = (
+    "# Plan v2 (AMENDMENT of v1) — thin delta fixture (#2255)\n\n"
+    "## Delta\n\n"
+    "Adds one follow-up arm. Everything else PORTS FROM v1 unchanged.\n"
+)
+
+
+def test_compose_amendment_text_2223_shape(tmp_path):
+    """Amendment-shaped newest → composed text carrying BOTH versions,
+    amendment FIRST (c40's first-heading read), base path = v1.md."""
+    (tmp_path / "plans").mkdir()
+    (tmp_path / "plans" / "v1.md").write_text(GOOD_PLAN)
+    (tmp_path / "plans" / "v2.md").write_text(AMENDMENT_V2)
+    text, base = verify_plan._compose_amendment_text(tmp_path, tmp_path / "plans" / "v2.md")
+    assert base == tmp_path / "plans" / "v1.md"
+    assert AMENDMENT_V2 in text
+    assert GOOD_PLAN in text
+    assert text.index(AMENDMENT_V2) < text.index(GOOD_PLAN), "amendment must come FIRST"
+    assert "amendment composition: v1.md follows" in text
+
+
+def test_compose_amendment_text_full_plan_no_composition(tmp_path):
+    """Full (non-amendment) newest → byte-identical raw text, base None —
+    the non-amendment --issue path stays byte-identical (#2255 §7)."""
+    (tmp_path / "plans").mkdir()
+    (tmp_path / "plans" / "v1.md").write_text(GOOD_PLAN)
+    v2_full = "# Plan v2 — full revision\n\n" + GOOD_PLAN.split("\n", 1)[1]
+    (tmp_path / "plans" / "v2.md").write_text(v2_full)
+    text, base = verify_plan._compose_amendment_text(tmp_path, tmp_path / "plans" / "v2.md")
+    assert base is None
+    assert text == v2_full
+    # Single-version folder: same byte-identical no-composition contract.
+    (tmp_path / "solo" / "plans").mkdir(parents=True)
+    (tmp_path / "solo" / "plans" / "v1.md").write_text(GOOD_PLAN)
+    text, base = verify_plan._compose_amendment_text(
+        tmp_path / "solo", tmp_path / "solo" / "plans" / "v1.md"
+    )
+    assert base is None
+    assert text == GOOD_PLAN
+
+
+def test_composed_amendment_passes_previously_spurious_checks(tmp_path):
+    """#2255 acceptance bullet 1 made mechanical: on the amendment ALONE c5
+    (GPU-hours) and c8 (success+kill) FAIL for kind=experiment; on the
+    COMPOSED text both PASS, and c40 at plan_path=v2.md PASSes (the
+    amendment-first ordering keeps the v2 header as the first heading)."""
+    assert verify_plan.check_gpu_hours(AMENDMENT_V2, "experiment").status == "FAIL"
+    assert verify_plan.check_success_kill(AMENDMENT_V2, "experiment").status == "FAIL"
+    (tmp_path / "plans").mkdir()
+    (tmp_path / "plans" / "v1.md").write_text(GOOD_PLAN)
+    (tmp_path / "plans" / "v2.md").write_text(AMENDMENT_V2)
+    composed, base = verify_plan._compose_amendment_text(tmp_path, tmp_path / "plans" / "v2.md")
+    assert base is not None
+    assert verify_plan.check_gpu_hours(composed, "experiment").status == "PASS"
+    assert verify_plan.check_success_kill(composed, "experiment").status == "PASS"
+    c40 = verify_plan.check_header_version_vs_filename(
+        composed, plan_path=tmp_path / "plans" / "v2.md"
+    )
+    assert c40.status == "PASS", f"{c40.status} — {c40.detail}"
+
+
+def test_load_plan_for_issue_composes_and_warns(tmp_path, monkeypatch, capsys):
+    """--issue mode on an amendment-shaped newest version: the JSON `source`
+    field discloses the composition and exactly one c60 WARN row names the
+    base — the disclosure a reviewer skims off a report header (#2255)."""
+    (tmp_path / "plans").mkdir()
+    (tmp_path / "plans" / "v1.md").write_text(GOOD_PLAN)
+    (tmp_path / "plans" / "v2.md").write_text(AMENDMENT_V2)
+    (tmp_path / "body.md").write_text("---\ntitle: x\nkind: infra\n---\n# x\n")
+    sys.path.insert(0, str(REPO_ROOT / "src"))
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(tw, "find_task_path", lambda n: tmp_path)
+    monkeypatch.setattr(sys, "argv", ["verify_plan.py", "--issue", "999", "--json"])
+    rc = verify_plan.main()
+    payload = json.loads(capsys.readouterr().out)
+    assert rc == 0, payload
+    assert payload["source"].endswith("v2.md (+ v1.md via amendment composition)")
+    entries = [c for c in payload["checks"] if c["id"] == "c60_amendment_composition"]
+    assert len(entries) == 1
+    assert entries[0]["status"] == "WARN"
+    assert "v1.md" in entries[0]["detail"]
+    assert "PARTIAL" in entries[0]["detail"]
+    # GPU-hours resolves from the base under composition (the Step-2c read).
+    c5 = next(c for c in payload["checks"] if c["id"] == "c5_gpu_hours")
+    assert c5["status"] == "PASS"
+
+
+def test_cli_issue_mode_no_c60_row_when_not_composed(tmp_path, monkeypatch, capsys):
+    """A full (non-amendment) newest version emits NO c60 row at all — not
+    even a SKIP — pinning the byte-identical non-amendment --issue output."""
+    (tmp_path / "plans").mkdir()
+    (tmp_path / "plans" / "v1.md").write_text(GOOD_PLAN)
+    (tmp_path / "body.md").write_text("---\ntitle: x\nkind: experiment\n---\n# x\n")
+    sys.path.insert(0, str(REPO_ROOT / "src"))
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(tw, "find_task_path", lambda n: tmp_path)
+    monkeypatch.setattr(sys, "argv", ["verify_plan.py", "--issue", "999", "--json"])
+    rc = verify_plan.main()
+    payload = json.loads(capsys.readouterr().out)
+    assert rc == 0
+    assert payload["source"].endswith("v1.md")
+    assert "amendment composition" not in payload["source"]
+    assert not [c for c in payload["checks"] if c["id"] == "c60_amendment_composition"]
+
+
 # ─── Cross-file anchor pins (planner.md / CLAUDE.md drift detector) ────────
 
 

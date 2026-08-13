@@ -1209,6 +1209,92 @@ def test_adversarial_planner_skill_documents_header_autoalignment():
     )
 
 
+# ─── Amendment-shaped plan-version refusal (#2255) ─────────────────────────
+
+# Full self-contained v1 fixture: a few KB, carries the machine-readable
+# GPU-hours declaration + section headers (the shape every consumer assumes).
+_FULL_PLAN_V1 = (
+    "# Plan v1 — task #999: full self-contained fixture\n\n"
+    "## 0. Summary\n\n"
+    "Estimated GPU-hours (total): 4\n\n"
+    "## 4. Design\n\n" + ("Design prose line for the full self-contained v1 fixture.\n" * 60)
+)
+
+# The #2223-v4 shape: thin delta, amendment-marker phrases, NO GPU declaration.
+_THIN_AMENDMENT_V2 = (
+    "# Plan v2 (AMENDMENT of v1) — thin delta fixture\n\n"
+    "Adds one follow-up arm. Everything else PORTS FROM v1 unchanged.\n"
+)
+
+
+def test_new_plan_version_rejects_2223_shape_amendment(fake_repo):
+    """#2255 success criterion 2: the persist REFUSES the #2223-shape thin
+    amendment with an actionable message naming the --allow-amendment escape;
+    nothing is written and the symlink stays on v1."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="infra", title="X"))
+    assert tw.new_plan_version(new_id, _FULL_PLAN_V1) == 1
+    plans_dir = repo / "tasks" / "proposed" / str(new_id) / "plans"
+    with pytest.raises(ValueError, match="--allow-amendment"):
+        tw.new_plan_version(new_id, _THIN_AMENDMENT_V2)
+    versions = sorted(p.name for p in plans_dir.glob("v*.md"))
+    assert versions == ["v1.md"], versions
+    assert (plans_dir / "plan.md").resolve().name == "v1.md"
+
+
+def test_new_plan_version_allow_amendment_escape(fake_repo):
+    """The deliberate escape stays reachable (the #2223 user-authorized case):
+    allow_amendment=True persists the thin delta and rotates the symlink."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="infra", title="X"))
+    assert tw.new_plan_version(new_id, _FULL_PLAN_V1) == 1
+    assert tw.new_plan_version(new_id, _THIN_AMENDMENT_V2, allow_amendment=True) == 2
+    plans_dir = repo / "tasks" / "proposed" / str(new_id) / "plans"
+    assert (plans_dir / "plan.md").resolve().name == "v2.md"
+
+
+def test_new_plan_version_full_plan_with_unchanged_phrase_persists(fake_repo):
+    """Pins the ~198-hit corpus class as non-rejected: a FULL revision whose
+    changelog says 'unchanged from v1' AND that carries its own GPU-hours
+    declaration persists normally (marker phrase alone must never reject)."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="infra", title="X"))
+    assert tw.new_plan_version(new_id, _FULL_PLAN_V1) == 1
+    full_v2 = (
+        "# Plan v2 — full revision fixture\n\n"
+        "## 0. Summary\n\n"
+        "Estimated GPU-hours (total): 4\n\n"
+        "Changelog: §4 unchanged from v1.\n\n"
+        "## 4. Design\n\n" + ("Design prose line for the full revision fixture body.\n" * 60)
+    )
+    assert tw.new_plan_version(new_id, full_v2) == 2
+
+
+def test_new_plan_version_small_full_replan_persists(fake_repo):
+    """Pins the 29-hit corpus class as non-rejected: a small (~20% of v1)
+    full re-plan with NO amendment-marker phrase and its own GPU-hours
+    declaration persists normally (size alone must never reject)."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="infra", title="X"))
+    assert tw.new_plan_version(new_id, _FULL_PLAN_V1) == 1
+    small_v2 = (
+        "# Plan v2 — small full re-plan fixture\n\n"
+        "Estimated GPU-hours (total): 2\n\n"
+        "## 4. Design\n\n" + ("Short but complete re-plan prose.\n" * 12)
+    )
+    assert len(small_v2.encode()) < 0.4 * len(_FULL_PLAN_V1.encode())
+    assert tw.new_plan_version(new_id, small_v2) == 2
+
+
+def test_amendment_gpu_regex_parity_with_verify_plan(fake_repo):
+    """Pins the ONE deliberate regex duplication (#2255 §4): the amendment
+    predicate's GPU-declaration signal must stay pattern-identical to
+    verify_plan.py's GPU_LINE_RE (the Step-2c consumer's own read)."""
+    _, tw = fake_repo
+    vp = _load_verify_plan_module()
+    assert tw.AMENDMENT_GPU_LINE_RE.pattern == vp.GPU_LINE_RE.pattern
+
+
 # ─── Promotion ───────────────────────────────────────────────────────────
 
 
