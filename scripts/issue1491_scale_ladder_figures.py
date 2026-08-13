@@ -15,9 +15,14 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import sys
 from pathlib import Path
 
-from explore_persona_space.orchestrate.env import load_dotenv
+_SCRIPTS = Path(__file__).resolve().parent
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 # Before any heavy import, so the shared-VM thread caps (#847) bind in-process.
 load_dotenv()
@@ -30,6 +35,10 @@ from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     savefig_paper,
     set_paper_style,
 )
+
+# Sibling import for the #2130 ceiling n_pairs pin (CEILING_EXPECTED_N) — the
+# single source of truth for the expected pairing count.
+import issue1491_ladder_fits as LF  # noqa: E402
 
 SLUGS = ["scale05", "scale15", "scale3", "scale7_refit", "scale14", "scale32"]
 LABELS = {
@@ -100,6 +109,16 @@ def fig_hero(fits, digests, out):
     ridge = np.array([fits[s]["predictors"]["ridge"]["test_r2"] for s in SLUGS])
     mlp = np.array([fits[s]["predictors"]["mlp_w32768"]["test_r2"] for s in SLUGS])
     krr = np.array([fits[s]["predictors"]["krr_nystrom"]["test_r2"] for s in SLUGS])
+    # #2130 read-side defense: a committed short-pair ceiling (the scale15
+    # 875/1000 incident shape) must never be plotted silently — raise.
+    for s in SLUGS:
+        cd = fits[s]["ceiling_two_draw"]
+        if cd.get("n_pairs") != LF.CEILING_EXPECTED_N:
+            raise RuntimeError(
+                f"{s}: ceiling_two_draw.n_pairs={cd.get('n_pairs')} != "
+                f"{LF.CEILING_EXPECTED_N} in committed fits JSON — short/partial "
+                "ceiling pairing (#2130); refusing to plot it"
+            )
     ceil = np.array([fits[s]["ceiling_two_draw"]["ceiling_var_weighted_r"] for s in SLUGS])
     null = np.array([fits[s]["floors"]["shuffled_pairing"]["test_r2"] for s in SLUGS])
     yerr = np.array(
