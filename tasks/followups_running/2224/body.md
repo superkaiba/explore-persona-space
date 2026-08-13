@@ -21,7 +21,7 @@ relates_to:
 # The Persona Vectors prompt-token approximation matches exact projection-difference screening on real corpora, while the learned map and probe screens select samples that fail to induce the traits (HIGH confidence)
 
 <!-- clean-result-v4 -->
-**Methodology:** [docs/methodology/issue_2224.md](https://github.com/superkaiba/explore-persona-space/blob/486770a41b1d763f790f93d8300cf7c7cf60e6a6/docs/methodology/issue_2224.md) - mirror: https://gist.github.com/superkaiba/543457221e50655f4a83ba2ecd7b5b75
+**Methodology:** [docs/methodology/issue_2224.md](https://github.com/superkaiba/explore-persona-space/blob/1e3cfcc4c0607af023b8f902239835eb2dff2e05/docs/methodology/issue_2224.md) ([gist mirror](https://gist.github.com/superkaiba/543457221e50655f4a83ba2ecd7b5b75))
 
 
 ## Takeaways
