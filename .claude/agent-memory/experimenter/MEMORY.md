@@ -67,7 +67,7 @@ bullets, mechanized fixes); their bodies stay on disk.
 - [vLLM 0.11.0 + transformers 5.x breakage](feedback_vllm0110_transformers5_breakage.md) — all_special_tokens_extended removed → every LLM() init crashes; infra, pin transformers<5 or bump vLLM (#261-#368)
 - [vLLM first modelinfo inspection needs CVD](feedback_vllm_first_modelinfo_inspection.md) — first-run NVML crash when CUDA_VISIBLE_DEVICES unset; modelinfos cache masks it after one success
 - [vLLM + hf-hub DisabledTqdm collision](feedback_vllm_tqdm_disabled_kwarg.md) — duplicate disable= kwarg TypeError during weight fetch; patch the venv wrapper, pre-download alone insufficient
-- [vLLM teardown SIGABRT after completion](feedback_vllm_teardown_sigabrt_resume.md) — stage work persisted, abort is cleanup-only: verify outputs, plain-relaunch, resume-skip carries (#605)
+- [Teardown SIGABRT after completion (vLLM + HF-streaming)](feedback_vllm_teardown_sigabrt_resume.md) — work persisted, abort is cleanup-only: verify outputs, plain-relaunch, resume-skip carries (#605; PyGILState_Release finalizing variant #2221)
 - [extract_persona_vectors A+B GPU share](feedback_extractor_method_a_b_gpu_share.md) — Method A's HF model resident at B's vLLM init; gpu_memory_utilization 0.85→0.55; resume guard skips partial-B (#238)
 
 ## Judges, data-gen, audit gates
