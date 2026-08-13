@@ -66,6 +66,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import sys
 import time
 from collections import Counter
@@ -2012,6 +2013,101 @@ def _g0v3_grouping_bite(entries: list[dict]) -> dict:
     }
 
 
+def _g0v3_adjudication(
+    record_path: Path,
+    *,
+    enforced: bool,
+    ok: bool,
+    branch: str,
+    delta_assign: float,
+    tolerance: float,
+    r2_grouped: float,
+    r2_random_mean: float,
+) -> tuple[bool, str]:
+    """Value-pinned adjudication record reader (plan §7 G0v3 FAIL-leakage
+    disposition "instrument legitimately conservative — proceed").
+
+    Converts the FAIL-leakage-exceeds-band halt's rc to 0 — the payload's
+    ``pass``/``verdict`` stay untouched — iff a record at ``record_path``
+    re-states THIS run's freshly computed numbers exactly
+    (math.isclose, rel_tol=1e-9, abs_tol=1e-12) with disposition "proceed".
+    The fits are deterministic re-computations, so ANY mismatch means the
+    inputs, split, or code changed — the number that was adjudicated is not
+    the number in front of us — and the halt returns automatically with no
+    human in the loop. FAIL-instrument-anomaly is NEVER adjudicable:
+    grouped beating matched-random is the instrument/code-defect signature
+    (something leakage removal cannot produce), so a mechanism able to wave
+    it through would defeat the one branch whose purpose is catching a
+    fault. Every required key must be PRESENT — a missing key is a refusal,
+    never a silently-satisfied comparison.
+
+    Returns (applied, reason); prints one distinct diagnostic line naming
+    the failed clause + the two compared values on every refusal other
+    than "record absent".
+    """
+
+    def _refuse(reason: str) -> tuple[bool, str]:
+        print(f"[g0v3] adjudication refused: {reason}", flush=True)
+        return False, f"refused — {reason}"
+
+    if not enforced or ok:
+        return False, "not applicable — gate did not FAIL enforced"
+    if branch == "FAIL-instrument-anomaly":
+        return _refuse(
+            "FAIL-instrument-anomaly is NEVER adjudicable — grouped beating "
+            "matched-random is the instrument/code-defect signature, which "
+            "leakage removal cannot produce"
+        )
+    if branch != "FAIL-leakage-exceeds-band":
+        return _refuse(f"branch {branch!r} is not adjudicable")
+    if not record_path.exists():
+        # Today's behavior, unchanged: the halt stands. Deliberately quiet —
+        # an absent record is the normal FAIL path, not a refused override.
+        return False, "no adjudication record present"
+    try:
+        record = json.loads(record_path.read_text())
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        return _refuse(f"record does not parse as JSON ({exc})")
+    if not isinstance(record, dict):
+        return _refuse(f"record parses to {type(record).__name__}, not a JSON object")
+    for key, want in (
+        ("gate", "g0v3"),
+        ("disposition", "proceed"),
+        ("adjudicated_branch", branch),
+    ):
+        if key not in record:
+            return _refuse(f"required key {key!r} missing from record")
+        if record[key] != want:
+            return _refuse(f"record[{key!r}] == {record[key]!r} != required {want!r}")
+    # VALUE PIN — the clause that makes this an adjudication, not a skip flag.
+    computed = {
+        "delta_assign": float(delta_assign),
+        "tolerance": float(tolerance),
+        "r2_grouped": float(r2_grouped),
+        "r2_random_mean": float(r2_random_mean),
+    }
+    for key, ours in computed.items():
+        if key not in record:
+            return _refuse(f"required key {key!r} missing from record")
+        theirs = record[key]
+        if isinstance(theirs, bool) or not isinstance(theirs, int | float):
+            return _refuse(f"record[{key!r}] == {theirs!r} is not numeric (computed {ours!r})")
+        if not math.isclose(float(theirs), ours, rel_tol=1e-9, abs_tol=1e-12):
+            return _refuse(
+                f"VALUE PIN {key!r} mismatch — record {float(theirs)!r} vs freshly "
+                f"computed {ours!r}"
+            )
+    if "matched_seed" not in record:
+        return _refuse("required key 'matched_seed' missing from record")
+    if record["matched_seed"] != G0V3_MATCHED_SEED:
+        return _refuse(
+            f"VALUE PIN 'matched_seed' mismatch — record {record['matched_seed']!r} vs "
+            f"G0V3_MATCHED_SEED {G0V3_MATCHED_SEED!r}"
+        )
+    rationale = record.get("rationale", "<record carries no rationale field>")
+    return True, f"applied — record rationale: {rationale}"
+
+
 def run_g0v3(args) -> int:
     """G0v3 — pooled-split health gate, re-specified as a matched-row,
     matched-n, SIZE-MATCHED fold-ASSIGNMENT contrast (plan v26 §4).
@@ -2196,6 +2292,27 @@ def run_g0v3(args) -> int:
         "pass": ok,
         "verdict": branch + ("" if enforced else " (informational — smoke)"),
     }
+    # Adjudication (plan §7 FAIL-leakage disposition; adjudicated via
+    # epm:progress v276 on #1336): runs ONLY AFTER the verdict + payload are
+    # computed. On apply it converts the rc to 0 — `pass` stays False and
+    # `verdict` stays FAIL-leakage-exceeds-band; the payload must never read
+    # as a passing gate. Record path is FIXED (no CLI flag, no env var).
+    adj_record = args.out_dir / "gates_v3" / "g0v3_adjudication.json"
+    adj_applied, adj_reason = _g0v3_adjudication(
+        adj_record,
+        enforced=enforced,
+        ok=ok,
+        branch=branch,
+        delta_assign=delta_assign,
+        tolerance=float(tol),
+        r2_grouped=r2_g,
+        r2_random_mean=r2_r_mean,
+    )
+    payload["adjudication"] = {
+        "applied": adj_applied,
+        "record": str(adj_record),
+        "reason": adj_reason,
+    }
     _write_json(args.out_dir / "gates_v3" / "g0v3.json", payload)
     print(
         f"[g0v3] R2_G={r2_g:.4f}@L{layer_g} R2_R={r2_r_mean:.4f}(sd={r2_r_sd:.4f}) "
@@ -2203,6 +2320,14 @@ def run_g0v3(args) -> int:
         f"-> {payload['verdict']}",
         flush=True,
     )
+    if adj_applied:
+        print(
+            f"[g0v3] ADJUDICATED PASS-THROUGH — gate verdict stays {branch} "
+            f"(delta_assign={delta_assign:+.6f} still exceeds tol={tol:.6f}); rc converted "
+            f"to 0 per adjudication record {adj_record}",
+            flush=True,
+        )
+        return 0
     return 0 if (ok or not enforced) else 3
 
 

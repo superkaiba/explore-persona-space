@@ -14,8 +14,10 @@ All four tests fail against the pre-v26 gate (the surfaces did not exist):
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -319,3 +321,270 @@ def test_own_argmax_selection_symmetry_and_branch_call_site():
     assert fitc.G0V3_EPS_NOISE == 0.01
     sig = inspect.signature(fitc._g0v3_branch)
     assert sig.parameters["eps"].default == fitc.G0V3_EPS_NOISE == 0.01
+
+
+# ---------------------------------------------------------------------------
+# Adjudication pass-through (plan §7 FAIL-leakage disposition; round v24).
+# The harness drives the REAL run_g0v3 body — verdict, payload, adjudication
+# reader, and return code all execute unmodified — with ONLY the three heavy
+# fit seams (_pooled_bundle / _pooled_xy_from_bundle / _run_sweep_edge)
+# stubbed at the data/GPU boundary, at a production-shaped (non-smoke)
+# manifest matching the pinned universe accounting (13,462 lmsys23k rows).
+# ---------------------------------------------------------------------------
+
+_ADJ_CANDS = [16, 21, 22, 30]
+# Candidate-layer R2 profiles (ordered as _ADJ_CANDS). Leakage shape:
+# delta_assign = mean(0.6151, 0.6149, 0.6147) - 0.5383 = +0.0766 > tol 0.0515.
+_R2_G_LEAK = [0.50, 0.52, 0.51, 0.5383]
+_R2_R_LEAK = [
+    [0.54, 0.56, 0.55, 0.6151],
+    [0.54, 0.56, 0.55, 0.6149],
+    [0.54, 0.56, 0.55, 0.6147],
+]
+# Anomaly shape: delta_assign = 0.55 - 0.60 = -0.05 < -eps (grouped beats random).
+_R2_G_ANOM = [0.50, 0.52, 0.51, 0.60]
+_R2_R_ANOM = [[0.40, 0.42, 0.41, 0.55]] * 3
+
+
+def _adj_gate_args(tmp_path: Path) -> tuple[SimpleNamespace, Path]:
+    """Production-mode (smoke=False) run_g0v3 namespace + fixture tree.
+
+    Real gates_v2 bars (production ex_v2), a real round-3 ref cell with the
+    production candidate set, and a split manifest whose lmsys23k slice
+    matches the pinned universe accounting (10,557 train in the realized
+    fold profile + 2,905 test = 13,462) so the enforced production asserts
+    all run for real.
+    """
+    out_dir = tmp_path / "out"
+    (out_dir / "gates_v2").mkdir(parents=True)
+    (out_dir / "cells_v2").mkdir(parents=True)
+    (out_dir / "gates_v2" / "v2_bars.json").write_text(json.dumps({"ex_v2": 1.0303115193390924}))
+    ref_id = fitc.cm.v2_cell_id("rlvr", "chat", "lmsys23k")
+    r2_ref = [0.0] * 31
+    for li, v in zip(_ADJ_CANDS, [0.50, 0.55, 0.54, 0.6090], strict=True):
+        r2_ref[li] = v
+    (out_dir / "cells_v2" / f"cells_{ref_id}.json").write_text(
+        json.dumps({"r2_per_layer_obs": r2_ref, "frozen_layers": _ADJ_CANDS})
+    )
+    rows = []
+    i = 0
+    for fold, n in sorted(PRODUCTION_PROFILE.items()):
+        for _ in range(n):
+            rows.append(
+                {
+                    "corpus": "lmsys23k",
+                    "arm": "train",
+                    "fold": fold,
+                    "cluster": 100 + (i % 36),
+                    "prompt_idx": i,
+                    "prompt_sha": f"sha{i}",
+                }
+            )
+            i += 1
+    for j in range(2905):
+        rows.append(
+            {
+                "corpus": "lmsys23k",
+                "arm": "test",
+                "cluster": 100 + (j % 36),
+                "prompt_idx": 100_000 + j,
+                "prompt_sha": f"tsha{j}",
+            }
+        )
+    man = {
+        "row_index": rows,
+        "n_folds": 5,
+        "group_table": [
+            {"corpus": "lmsys23k", "group_id": 100 + g, "quarantine": g == 0} for g in range(36)
+        ],
+    }
+    man_path = tmp_path / "split_manifest.json"
+    man_path.write_text(json.dumps(man))
+    args = SimpleNamespace(
+        out_dir=out_dir,
+        smoke=False,
+        seed=0,
+        turnstore_dir=tmp_path / "ts",
+        split_manifest=man_path,
+        wave1_turnstore_dir=None,
+        gen_root=None,
+    )
+    return args, out_dir
+
+
+def _stub_fit_seams(monkeypatch, r2_g_cands, r2_r_cands_per_draw) -> None:
+    """Stub ONLY the heavy fit seams; call order (grouped first, then the
+    K=3 draws) selects which candidate-layer profile each sweep returns."""
+    calls = {"n": 0}
+    monkeypatch.setattr(fitc, "_pooled_bundle", lambda *a, **k: object())
+
+    def fake_xy(bundle, entries, expected_layers, slot):
+        n = len(entries)
+        return np.zeros((n, 3)), np.zeros(n), None
+
+    monkeypatch.setattr(fitc, "_pooled_xy_from_bundle", fake_xy)
+
+    def fake_sweep(X, Y, groups, *, base_grid, sweep_kwargs):
+        i = calls["n"]
+        calls["n"] += 1
+        vals = r2_g_cands if i == 0 else r2_r_cands_per_draw[i - 1]
+        r2 = np.full(31, np.nan)
+        for li, v in zip(_ADJ_CANDS, vals, strict=True):
+            r2[li] = v
+        return {"r2_obs": r2}, None, None
+
+    monkeypatch.setattr(fitc, "_run_sweep_edge", fake_sweep)
+
+
+def _matching_record(payload: dict) -> dict:
+    """An adjudication record built FROM the failed run's own payload — the
+    production flow (the record re-states the numbers that were adjudicated)."""
+    return {
+        "gate": "g0v3",
+        "adjudicated_branch": "FAIL-leakage-exceeds-band",
+        "disposition": "proceed",
+        "delta_assign": payload["delta_assign"],
+        "tolerance": payload["tolerance"],
+        "r2_grouped": payload["r2_grouped"],
+        "r2_random_mean": payload["r2_random_mean"],
+        "matched_seed": payload["matched_seed"],
+        "rationale": "test rationale — instrument legitimately conservative",
+    }
+
+
+def _read_payload(out_dir: Path) -> dict:
+    return json.loads((out_dir / "gates_v3" / "g0v3.json").read_text())
+
+
+def test_adjudication_missing_record_keeps_rc3(tmp_path, monkeypatch):
+    """No record present => today's behavior unchanged: rc 3, applied False."""
+    args, out_dir = _adj_gate_args(tmp_path)
+    _stub_fit_seams(monkeypatch, _R2_G_LEAK, _R2_R_LEAK)
+    rc = fitc.run_g0v3(args)
+    assert rc == 3
+    payload = _read_payload(out_dir)
+    assert payload["verdict"] == "FAIL-leakage-exceeds-band"
+    assert payload["pass"] is False
+    assert payload["adjudication"]["applied"] is False
+    assert payload["adjudication"]["reason"] == "no adjudication record present"
+    assert payload["adjudication"]["record"].endswith("gates_v3/g0v3_adjudication.json")
+
+
+def test_adjudication_applies_rc0_verdict_intact(tmp_path, monkeypatch, capsys):
+    """A record matching the freshly computed values => rc 0; `pass` stays
+    False, `verdict` stays FAIL-leakage-exceeds-band, applied True, and the
+    fix-engaged token `[g0v3] ADJUDICATED PASS-THROUGH` is emitted."""
+    args, out_dir = _adj_gate_args(tmp_path)
+    _stub_fit_seams(monkeypatch, _R2_G_LEAK, _R2_R_LEAK)
+    assert fitc.run_g0v3(args) == 3  # halt first — the record derives from it
+    record = _matching_record(_read_payload(out_dir))
+    (out_dir / "gates_v3" / "g0v3_adjudication.json").write_text(json.dumps(record))
+    capsys.readouterr()  # drop the first run's output
+    _stub_fit_seams(monkeypatch, _R2_G_LEAK, _R2_R_LEAK)  # fresh call counter
+    rc = fitc.run_g0v3(args)
+    out = capsys.readouterr().out
+    assert rc == 0
+    payload = _read_payload(out_dir)
+    assert payload["pass"] is False, "adjudication must never flip `pass`"
+    assert payload["verdict"] == "FAIL-leakage-exceeds-band", (
+        "adjudication must never rewrite the verdict"
+    )
+    assert payload["adjudication"]["applied"] is True
+    assert "test rationale" in payload["adjudication"]["reason"]
+    assert "[g0v3] ADJUDICATED PASS-THROUGH" in out
+    # the loud line names the still-failing numbers + the record path
+    loud = next(ln for ln in out.splitlines() if ln.startswith("[g0v3] ADJUDICATED PASS-THROUGH"))
+    assert "delta_assign=" in loud and "tol=" in loud
+    assert "g0v3_adjudication.json" in loud
+
+
+def test_adjudication_value_mismatch_refuses(tmp_path, monkeypatch, capsys):
+    """A perturbed delta_assign (1e-6 relative — far above rel_tol=1e-9)
+    => no pass-through: rc 3, applied False, clause named in the reason."""
+    args, out_dir = _adj_gate_args(tmp_path)
+    _stub_fit_seams(monkeypatch, _R2_G_LEAK, _R2_R_LEAK)
+    assert fitc.run_g0v3(args) == 3
+    record = _matching_record(_read_payload(out_dir))
+    record["delta_assign"] = record["delta_assign"] * (1.0 + 1e-6)
+    (out_dir / "gates_v3" / "g0v3_adjudication.json").write_text(json.dumps(record))
+    capsys.readouterr()
+    _stub_fit_seams(monkeypatch, _R2_G_LEAK, _R2_R_LEAK)
+    rc = fitc.run_g0v3(args)
+    out = capsys.readouterr().out
+    assert rc == 3
+    payload = _read_payload(out_dir)
+    assert payload["adjudication"]["applied"] is False
+    assert "delta_assign" in payload["adjudication"]["reason"]
+    assert "[g0v3] ADJUDICATED PASS-THROUGH" not in out
+    assert "adjudication refused" in out and "VALUE PIN" in out
+
+
+def test_adjudication_anomaly_branch_never_adjudicable(tmp_path, monkeypatch, capsys):
+    """FAIL-instrument-anomaly with an otherwise-matching anomaly record
+    => refused unconditionally (rc 3): it is the code-defect signature."""
+    args, out_dir = _adj_gate_args(tmp_path)
+    _stub_fit_seams(monkeypatch, _R2_G_ANOM, _R2_R_ANOM)
+    assert fitc.run_g0v3(args) == 3
+    payload = _read_payload(out_dir)
+    assert payload["verdict"] == "FAIL-instrument-anomaly"
+    record = _matching_record(payload)
+    record["adjudicated_branch"] = "FAIL-instrument-anomaly"
+    (out_dir / "gates_v3" / "g0v3_adjudication.json").write_text(json.dumps(record))
+    capsys.readouterr()
+    _stub_fit_seams(monkeypatch, _R2_G_ANOM, _R2_R_ANOM)
+    rc = fitc.run_g0v3(args)
+    out = capsys.readouterr().out
+    assert rc == 3
+    payload = _read_payload(out_dir)
+    assert payload["adjudication"]["applied"] is False
+    assert "NEVER adjudicable" in payload["adjudication"]["reason"]
+    assert "NEVER adjudicable" in out
+    assert "[g0v3] ADJUDICATED PASS-THROUGH" not in out
+
+
+def test_adjudication_missing_required_key_refuses(tmp_path, monkeypatch):
+    """A missing required key is a refusal (rc 3) — never a silently
+    satisfied comparison. Covers a value key AND the matched_seed pin."""
+    args, out_dir = _adj_gate_args(tmp_path)
+    _stub_fit_seams(monkeypatch, _R2_G_LEAK, _R2_R_LEAK)
+    assert fitc.run_g0v3(args) == 3
+    base = _matching_record(_read_payload(out_dir))
+    for missing in ("delta_assign", "tolerance", "r2_grouped", "r2_random_mean", "matched_seed"):
+        record = dict(base)
+        del record[missing]
+        (out_dir / "gates_v3" / "g0v3_adjudication.json").write_text(json.dumps(record))
+        _stub_fit_seams(monkeypatch, _R2_G_LEAK, _R2_R_LEAK)
+        assert fitc.run_g0v3(args) == 3, f"missing {missing!r} must refuse"
+        payload = _read_payload(out_dir)
+        assert payload["adjudication"]["applied"] is False
+        assert missing in payload["adjudication"]["reason"]
+
+
+def test_adjudication_constants_and_tolerance_pin():
+    """G0V3_EPS_NOISE stays 0.01 and the tolerance expression stays
+    byte-identical `tol = 0.05 * ex_v2` (AST + source-text pins)."""
+    import ast
+    import inspect
+
+    assert fitc.G0V3_EPS_NOISE == 0.01
+    src = inspect.getsource(fitc.run_g0v3)
+    assert "tol = 0.05 * ex_v2" in src, "tolerance expression must stay byte-identical"
+    tree = ast.parse(src)
+    tol_assigns = [
+        n
+        for n in ast.walk(tree)
+        if isinstance(n, ast.Assign)
+        and len(n.targets) == 1
+        and isinstance(n.targets[0], ast.Name)
+        and n.targets[0].id == "tol"
+    ]
+    assert len(tol_assigns) == 1, "run_g0v3 must assign tol exactly once"
+    val = tol_assigns[0].value
+    assert isinstance(val, ast.BinOp) and isinstance(val.op, ast.Mult)
+    assert isinstance(val.left, ast.Constant) and val.left.value == 0.05
+    assert isinstance(val.right, ast.Name) and val.right.id == "ex_v2"
+    # the three branch strings stay byte-identical in the branch helper
+    bsrc = inspect.getsource(fitc._g0v3_branch)
+    assert '"FAIL-leakage-exceeds-band"' in bsrc
+    assert '"FAIL-instrument-anomaly"' in bsrc
+    assert '"PASS"' in bsrc
