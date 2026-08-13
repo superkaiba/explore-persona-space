@@ -2919,6 +2919,61 @@ def phase_firing(args) -> Path:
 
 
 # ── phase: fig5 generate + judge (SECONDARY, G3-gated — §4.7) ──────────────────
+def _fig5_ckpt_paths(out_dir: Path) -> tuple[Path, Path]:
+    """Checkpoint + regime-fingerprint paths for the fig5 per-row generation loop."""
+    d = out_dir / "fig5_ckpt"
+    return d / "rows.jsonl", d / "rows.regime.json"
+
+
+def _fig5_regime(
+    *,
+    model_key: str,
+    set_sha: str,
+    n_rows: int,
+    smoke: bool,
+    max_new_turn1: int,
+    max_new_turn2: int,
+) -> dict:
+    """Every output-affecting key for the fig5 loop, so a resume cannot cross regimes.
+
+    ``set_sha`` pins the judged jailbreak set itself (role selection + harm-bank
+    walk); the decode caps and model pin the completions."""
+    return {
+        "phase": "fig5_generate",
+        "model": model_key,
+        "set_sha": set_sha,
+        "n_rows": n_rows,
+        "smoke": smoke,
+        "max_new_turn1": max_new_turn1,
+        "max_new_turn2": max_new_turn2,
+        "temperature": 0.0,
+    }
+
+
+def _load_fig5_ckpt(path: Path) -> dict[int, dict]:
+    """Load per-row records from the append-mode checkpoint, keyed by row index.
+
+    Mirrors ``_load_read_ckpt``: tolerates a torn FINAL line (crash mid-append
+    residue) by dropping it with a log line; a malformed NON-final line is real
+    corruption and raises."""
+    if not path.exists():
+        return {}
+    out: dict[int, dict] = {}
+    lines = path.read_text().splitlines()
+    for i, line in enumerate(lines):
+        if not line.strip():
+            continue
+        try:
+            rec = json.loads(line)
+        except json.JSONDecodeError:
+            if i == len(lines) - 1:
+                _log(f"[phase=fig5_generate] dropping torn final checkpoint line in {path}")
+                continue
+            raise
+        out[int(rec["row_index"])] = rec
+    return out
+
+
 def phase_fig5_generate(args) -> Path:
     """Two-turn jailbreak protocol: turn-1 role-setting user, turn-2 harm question.
     First-turn projection vs second-turn harm. Fallback bank = build_jailbreak_set."""
@@ -2936,8 +2991,36 @@ def phase_fig5_generate(args) -> Path:
         smoke=args.smoke,
         selection=C.load_role_selection(smoke=args.smoke),
     )
-    completions = []
-    for row in rows:
+    # Intra-phase checkpoint + per-row progress: 500 rows is far over the ~50-unit
+    # floor, and the loop is serial batch-1, so a crash before the terminal write
+    # would forfeit the whole pass (the activations/firing Defect-B class).
+    ckpt_path, regime_path = _fig5_ckpt_paths(out_dir)
+    regime = _fig5_regime(
+        model_key=model_key,
+        set_sha=rows[0].get("set_sha", "") if rows else "",
+        n_rows=len(rows),
+        smoke=args.smoke,
+        max_new_turn1=256,
+        max_new_turn2=512,
+    )
+    if regime_path.exists():
+        C.check_regime(json.loads(regime_path.read_text()), regime, regime_path)
+    elif ckpt_path.exists():
+        C.check_regime(None, regime, ckpt_path)  # records with NO fingerprint: refuse
+    else:
+        regime_path.parent.mkdir(parents=True, exist_ok=True)
+        regime_path.write_text(json.dumps(regime, indent=2))
+    completed = _load_fig5_ckpt(ckpt_path)
+    if completed:
+        _log(
+            f"[phase=fig5_generate] resume: {len(completed)}/{len(rows)} rows already "
+            "checkpointed — skipping"
+        )
+
+    t_start = time.time()
+    for row_index, row in enumerate(rows):
+        if row_index in completed:
+            continue
         # turn 1: role-setting (the persona system prompt as a first user message);
         # turn 2: the harm question.
         history = [{"role": "user", "content": row.get("system") or row.get("user", "")}]
@@ -2975,14 +3058,29 @@ def phase_fig5_generate(args) -> Path:
             render_fn=rf,
             ids_fn=idf,
         )
-        completions.append(
-            {
-                "meta": row.get("meta", {}),
-                "first_turn": t1[0],
-                "harm_question": row["user"],
-                "second_turn": t2[0],
-            }
+        rec = {
+            "row_index": row_index,
+            "meta": row.get("meta", {}),
+            "first_turn": t1[0],
+            "harm_question": row["user"],
+            "second_turn": t2[0],
+        }
+        _append_read_ckpt(ckpt_path, [rec])  # durable BEFORE the progress line
+        completed[row_index] = rec
+        _log(
+            f"[phase=fig5_generate] row {len(completed)}/{len(rows)} "
+            f"idx={row_index} elapsed={time.time() - t_start:.0f}s"
         )
+
+    missing = [i for i in range(len(rows)) if i not in completed]
+    if missing:  # fail loud — a row was never generated (nothing may silently drop)
+        raise KeyError(
+            f"fig5_generate incomplete: {len(missing)} rows missing (first={missing[0]})"
+        )
+    # row order is the canonical order; the checkpoint key IS the row index
+    completions = [
+        {k: v for k, v in completed[i].items() if k != "row_index"} for i in range(len(rows))
+    ]
     raw_dir = out_dir / "raw_completions" / "fig5"
     raw_dir.mkdir(parents=True, exist_ok=True)
     p = raw_dir / "raw_completions.json"
