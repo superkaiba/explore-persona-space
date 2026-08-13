@@ -12,7 +12,10 @@ import-time cuInit, gotchas.md), waves of the visible GPU count (4x H100 -> 6
 waves of 4).
 
 After training, adapters + frac-checkpoints upload to the HF model repo under
-``issue2221_realtwin/adapters/{family}_{version}/``.
+``issue2221_realtwin/adapters/{family}_{version}/`` (``--remine`` ->
+``adapters_remine/`` — a constant-composed prefix flip, never a free-form
+prefix arg (the #1005 clobber shape), so the parent's adapters are never
+overwritten; mirrors ``issue2221_build_mix.py``'s ``train_remine/`` routing).
 """
 
 from __future__ import annotations
@@ -90,6 +93,7 @@ def upload_adapters(args, cells: list[tuple[str, str]]) -> None:
     """Per-cell adapter (+ frac-checkpoint) upload to the HF model repo."""
     from explore_persona_space.orchestrate import hub
 
+    adapters_prefix = f"{C.HF_PREFIX}/{'adapters_remine' if args.remine else 'adapters'}"
     ckpt_root = Path(args.ckpt_root)
     for family, version in cells:
         cell = f"{family}_{version}"
@@ -100,7 +104,7 @@ def upload_adapters(args, cells: list[tuple[str, str]]) -> None:
             local,
             C.HF_MODEL_REPO,
             "model",
-            f"{C.HF_PREFIX}/adapters/{cell}",
+            f"{adapters_prefix}/{cell}",
             raise_on_error=True,
         )
         lib.log_phase("p4_upload", f"{cell} -> {url}")
@@ -126,6 +130,11 @@ def main() -> None:
     ap.add_argument("--model", default=lib.MODEL_NAME)
     ap.add_argument("--cpu-only", action="store_true", help="deliberate CPU smoke")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument(
+        "--remine",
+        action="store_true",
+        help="upload to adapters_remine/ instead of adapters/ (specialized_corpus_remine round)",
+    )
     ap.add_argument("--no-upload", action="store_true")
     ap.add_argument("--force", action="store_true", help="retrain cells whose adapters exist")
     ap.add_argument("--import-check", action="store_true")
