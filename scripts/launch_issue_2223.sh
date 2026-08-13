@@ -27,6 +27,26 @@
 # terminal line, never a per-phase echo).
 set -euo pipefail
 
+# CUDA allocator — multi-turn fragmentation guard. This is a lockstep loop that appends
+# an exchange every turn, so each turn re-prefills a longer context and the per-turn
+# activation footprint climbs monotonically. PyTorch's caching allocator strands
+# reserved-but-unallocated segments it cannot coalesce, and around turn 11-13 the cliff
+# is reached: two 7B A0 shards died of CUDA OOM (2026-08-13, turns 10 and 13) with
+# 12.60-14.60 GiB reserved-but-unallocated against 9.91-10.24 GiB requests that failed
+# with only 6.21-7.52 GiB free — fragmentation, NOT a working-set overflow (the card
+# held more idle-but-reserved memory than the failed request). expandable_segments lets
+# segments grow in place instead of stranding them.
+#
+# Measured on the shard-0 recovery: first fresh turn after resume completed in 693s with
+# zero OOM, vs the un-fixed siblings' 740-906s turn-11 band — so the fix is at worst
+# throughput-neutral and plausibly a small win.
+#
+# Exported ONCE here rather than per-phase so every phase and BOTH legs inherit it:
+# Phase B on the 7B leg alone is 9 arms x 15 turns over the same conversation set, and
+# every one of them would otherwise walk into the identical cliff. The ${VAR:-default}
+# form keeps an explicit caller-supplied value authoritative.
+export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
+
 MODEL="${1:-}"
 MODE="${2:-}"
 case "$MODEL" in 7b | 32b) ;; *) echo "usage: $0 <7b|32b> <smoke|full>" >&2; exit 2 ;; esac
