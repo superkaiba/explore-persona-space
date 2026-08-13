@@ -1,0 +1,886 @@
+{
+  "schema": 1,
+  "corpus": "ultrachat",
+  "trait": "hallucination",
+  "methods": [
+    "exact_dp",
+    "mapped_dp_context",
+    "probe_diff_context",
+    "prompttoken_dp"
+  ],
+  "saturated_baseline": false,
+  "base_cell": {
+    "cell_id": "ultrachat__hallucination__base__na",
+    "method": "base",
+    "tail": "na",
+    "graded_mean": 30.4868,
+    "rate_gt50": 0.282,
+    "n_items": 500,
+    "n_scored_items": 500,
+    "coherence_mean": 85.3667,
+    "incoherent_flag": false,
+    "telemetry": {
+      "n_total_draws": 2500,
+      "n_dropped_draws": 6,
+      "n_refusal_draws": 0,
+      "n_truncation_dropped_draws": 0,
+      "n_transport_lost_draws": 0,
+      "n_api_refusal_draws": 0
+    },
+    "graded_ci": {
+      "mean": 30.4868,
+      "ci_lo": 27.8728,
+      "ci_hi": 33.1022,
+      "n_items": 500,
+      "n_boot": 10000,
+      "boot_frac_below0": 0.0,
+      "boot_frac_above0": 1.0
+    }
+  },
+  "cells": {
+    "ultrachat__hallucination__base__na": {
+      "cell_id": "ultrachat__hallucination__base__na",
+      "method": "base",
+      "tail": "na",
+      "graded_mean": 30.4868,
+      "rate_gt50": 0.282,
+      "n_items": 500,
+      "n_scored_items": 500,
+      "coherence_mean": 85.3667,
+      "incoherent_flag": false,
+      "telemetry": {
+        "n_total_draws": 2500,
+        "n_dropped_draws": 6,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "n_api_refusal_draws": 0
+      },
+      "graded_ci": {
+        "mean": 30.4868,
+        "ci_lo": 27.8728,
+        "ci_hi": 33.1022,
+        "n_items": 500,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      }
+    },
+    "ultrachat__hallucination__exact_dp__bottom": {
+      "cell_id": "ultrachat__hallucination__exact_dp__bottom",
+      "method": "exact_dp",
+      "tail": "bottom",
+      "graded_mean": 16.059,
+      "rate_gt50": 0.1276,
+      "n_items": 500,
+      "n_scored_items": 478,
+      "coherence_mean": 85.8812,
+      "incoherent_flag": false,
+      "telemetry": {
+        "n_total_draws": 2500,
+        "n_dropped_draws": 124,
+        "n_refusal_draws": 119,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "n_api_refusal_draws": 0
+      },
+      "graded_ci": {
+        "mean": 16.059,
+        "ci_lo": 13.894,
+        "ci_hi": 18.2988,
+        "n_items": 478,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      }
+    },
+    "ultrachat__hallucination__exact_dp__top": {
+      "cell_id": "ultrachat__hallucination__exact_dp__top",
+      "method": "exact_dp",
+      "tail": "top",
+      "graded_mean": 32.3686,
+      "rate_gt50": 0.306,
+      "n_items": 500,
+      "n_scored_items": 500,
+      "coherence_mean": 87.1098,
+      "incoherent_flag": false,
+      "telemetry": {
+        "n_total_draws": 2500,
+        "n_dropped_draws": 4,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "n_api_refusal_draws": 0
+      },
+      "graded_ci": {
+        "mean": 32.3686,
+        "ci_lo": 29.4703,
+        "ci_hi": 35.2784,
+        "n_items": 500,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      }
+    },
+    "ultrachat__hallucination__exact_dp__top_filtered": {
+      "cell_id": "ultrachat__hallucination__exact_dp__top_filtered",
+      "method": "exact_dp",
+      "tail": "top_filtered",
+      "graded_mean": 28.2754,
+      "rate_gt50": 0.24,
+      "n_items": 500,
+      "n_scored_items": 500,
+      "coherence_mean": 86.3892,
+      "incoherent_flag": false,
+      "telemetry": {
+        "n_total_draws": 2500,
+        "n_dropped_draws": 7,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 1,
+        "n_api_refusal_draws": 0
+      },
+      "graded_ci": {
+        "mean": 28.2754,
+        "ci_lo": 25.5885,
+        "ci_hi": 30.9941,
+        "n_items": 500,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      }
+    },
+    "ultrachat__hallucination__mapped_dp_context__bottom": {
+      "cell_id": "ultrachat__hallucination__mapped_dp_context__bottom",
+      "method": "mapped_dp_context",
+      "tail": "bottom",
+      "graded_mean": 28.7354,
+      "rate_gt50": 0.268,
+      "n_items": 500,
+      "n_scored_items": 500,
+      "coherence_mean": 87.4069,
+      "incoherent_flag": false,
+      "telemetry": {
+        "n_total_draws": 2500,
+        "n_dropped_draws": 2,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "n_api_refusal_draws": 0
+      },
+      "graded_ci": {
+        "mean": 28.7354,
+        "ci_lo": 26.0165,
+        "ci_hi": 31.4294,
+        "n_items": 500,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      }
+    },
+    "ultrachat__hallucination__mapped_dp_context__top": {
+      "cell_id": "ultrachat__hallucination__mapped_dp_context__top",
+      "method": "mapped_dp_context",
+      "tail": "top",
+      "graded_mean": 27.4679,
+      "rate_gt50": 0.2625,
+      "n_items": 500,
+      "n_scored_items": 499,
+      "coherence_mean": 86.282,
+      "incoherent_flag": false,
+      "telemetry": {
+        "n_total_draws": 2500,
+        "n_dropped_draws": 7,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "n_api_refusal_draws": 0
+      },
+      "graded_ci": {
+        "mean": 27.4679,
+        "ci_lo": 24.8193,
+        "ci_hi": 30.1423,
+        "n_items": 499,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      }
+    },
+    "ultrachat__hallucination__mapped_dp_context__top_filtered": {
+      "cell_id": "ultrachat__hallucination__mapped_dp_context__top_filtered",
+      "method": "mapped_dp_context",
+      "tail": "top_filtered",
+      "graded_mean": 28.3417,
+      "rate_gt50": 0.2625,
+      "n_items": 500,
+      "n_scored_items": 499,
+      "coherence_mean": 87.5578,
+      "incoherent_flag": false,
+      "telemetry": {
+        "n_total_draws": 2500,
+        "n_dropped_draws": 12,
+        "n_refusal_draws": 5,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 5,
+        "n_api_refusal_draws": 0
+      },
+      "graded_ci": {
+        "mean": 28.3417,
+        "ci_lo": 25.6109,
+        "ci_hi": 31.101,
+        "n_items": 499,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      }
+    },
+    "ultrachat__hallucination__probe_diff_context__bottom": {
+      "cell_id": "ultrachat__hallucination__probe_diff_context__bottom",
+      "method": "probe_diff_context",
+      "tail": "bottom",
+      "graded_mean": 26.3,
+      "rate_gt50": 0.23,
+      "n_items": 500,
+      "n_scored_items": 500,
+      "coherence_mean": 87.9286,
+      "incoherent_flag": false,
+      "telemetry": {
+        "n_total_draws": 2500,
+        "n_dropped_draws": 2,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 1,
+        "n_api_refusal_draws": 0
+      },
+      "graded_ci": {
+        "mean": 26.3,
+        "ci_lo": 23.6455,
+        "ci_hi": 29.05,
+        "n_items": 500,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      }
+    },
+    "ultrachat__hallucination__probe_diff_context__top": {
+      "cell_id": "ultrachat__hallucination__probe_diff_context__top",
+      "method": "probe_diff_context",
+      "tail": "top",
+      "graded_mean": 28.4496,
+      "rate_gt50": 0.268,
+      "n_items": 500,
+      "n_scored_items": 500,
+      "coherence_mean": 86.3869,
+      "incoherent_flag": false,
+      "telemetry": {
+        "n_total_draws": 2500,
+        "n_dropped_draws": 3,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 2,
+        "n_api_refusal_draws": 0
+      },
+      "graded_ci": {
+        "mean": 28.4496,
+        "ci_lo": 25.8148,
+        "ci_hi": 31.1924,
+        "n_items": 500,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      }
+    },
+    "ultrachat__hallucination__probe_diff_context__top_filtered": {
+      "cell_id": "ultrachat__hallucination__probe_diff_context__top_filtered",
+      "method": "probe_diff_context",
+      "tail": "top_filtered",
+      "graded_mean": 28.8783,
+      "rate_gt50": 0.276,
+      "n_items": 500,
+      "n_scored_items": 500,
+      "coherence_mean": 86.8857,
+      "incoherent_flag": false,
+      "telemetry": {
+        "n_total_draws": 2500,
+        "n_dropped_draws": 5,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 2,
+        "n_api_refusal_draws": 0
+      },
+      "graded_ci": {
+        "mean": 28.8783,
+        "ci_lo": 26.2016,
+        "ci_hi": 31.6333,
+        "n_items": 500,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      }
+    },
+    "ultrachat__hallucination__prompttoken_dp__bottom": {
+      "cell_id": "ultrachat__hallucination__prompttoken_dp__bottom",
+      "method": "prompttoken_dp",
+      "tail": "bottom",
+      "graded_mean": 11.4151,
+      "rate_gt50": 0.0894,
+      "n_items": 500,
+      "n_scored_items": 481,
+      "coherence_mean": 86.3038,
+      "incoherent_flag": false,
+      "telemetry": {
+        "n_total_draws": 2500,
+        "n_dropped_draws": 127,
+        "n_refusal_draws": 120,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 1,
+        "n_api_refusal_draws": 0
+      },
+      "graded_ci": {
+        "mean": 11.4151,
+        "ci_lo": 9.5715,
+        "ci_hi": 13.317,
+        "n_items": 481,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      }
+    },
+    "ultrachat__hallucination__prompttoken_dp__top": {
+      "cell_id": "ultrachat__hallucination__prompttoken_dp__top",
+      "method": "prompttoken_dp",
+      "tail": "top",
+      "graded_mean": 30.1655,
+      "rate_gt50": 0.292,
+      "n_items": 500,
+      "n_scored_items": 500,
+      "coherence_mean": 87.5285,
+      "incoherent_flag": false,
+      "telemetry": {
+        "n_total_draws": 2500,
+        "n_dropped_draws": 4,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 1,
+        "n_api_refusal_draws": 0
+      },
+      "graded_ci": {
+        "mean": 30.1655,
+        "ci_lo": 27.3728,
+        "ci_hi": 33.0766,
+        "n_items": 500,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      }
+    },
+    "ultrachat__hallucination__prompttoken_dp__top_filtered": {
+      "cell_id": "ultrachat__hallucination__prompttoken_dp__top_filtered",
+      "method": "prompttoken_dp",
+      "tail": "top_filtered",
+      "graded_mean": 26.2535,
+      "rate_gt50": 0.236,
+      "n_items": 500,
+      "n_scored_items": 500,
+      "coherence_mean": 87.7236,
+      "incoherent_flag": false,
+      "telemetry": {
+        "n_total_draws": 2500,
+        "n_dropped_draws": 4,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 3,
+        "n_api_refusal_draws": 0
+      },
+      "graded_ci": {
+        "mean": 26.2535,
+        "ci_lo": 23.6659,
+        "ci_hi": 28.947,
+        "n_items": 500,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      }
+    },
+    "ultrachat__hallucination__random__shared": {
+      "cell_id": "ultrachat__hallucination__random__shared",
+      "method": "random",
+      "tail": "shared",
+      "graded_mean": 27.2465,
+      "rate_gt50": 0.252,
+      "n_items": 500,
+      "n_scored_items": 500,
+      "coherence_mean": 86.92,
+      "incoherent_flag": false,
+      "telemetry": {
+        "n_total_draws": 2500,
+        "n_dropped_draws": 3,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "n_api_refusal_draws": 0
+      },
+      "graded_ci": {
+        "mean": 27.2465,
+        "ci_lo": 24.4661,
+        "ci_hi": 30.0672,
+        "n_items": 500,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      }
+    }
+  },
+  "contrasts": [
+    {
+      "cell_a": "ultrachat__hallucination__exact_dp__top",
+      "cell_b": "ultrachat__hallucination__random__shared",
+      "n_items_a": 500,
+      "n_items_b": 500,
+      "n_paired": 500,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": 5.1221,
+        "ci_lo": 2.634,
+        "ci_hi": 7.6759,
+        "n_items": 500,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      },
+      "qid_cluster": {
+        "mean": 5.1221,
+        "ci_lo": 1.6237,
+        "ci_hi": 9.0205,
+        "n_items": 500,
+        "n_clusters": 100,
+        "n_boot": 10000
+      },
+      "rate_diff": 0.054,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "exact_dp__top_vs_random"
+    },
+    {
+      "cell_a": "ultrachat__hallucination__exact_dp__bottom",
+      "cell_b": "ultrachat__hallucination__random__shared",
+      "n_items_a": 478,
+      "n_items_b": 500,
+      "n_paired": 478,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": -10.1256,
+        "ci_lo": -13.1349,
+        "ci_hi": -7.0921,
+        "n_items": 478,
+        "n_boot": 10000,
+        "boot_frac_below0": 1.0,
+        "boot_frac_above0": 0.0
+      },
+      "qid_cluster": {
+        "mean": -10.1256,
+        "ci_lo": -15.2057,
+        "ci_hi": -5.1725,
+        "n_items": 478,
+        "n_clusters": 100,
+        "n_boot": 10000
+      },
+      "rate_diff": -0.1088,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "exact_dp__bottom_vs_random"
+    },
+    {
+      "cell_a": "ultrachat__hallucination__exact_dp__top_filtered",
+      "cell_b": "ultrachat__hallucination__random__shared",
+      "n_items_a": 500,
+      "n_items_b": 500,
+      "n_paired": 500,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": 1.0289,
+        "ci_lo": -1.2537,
+        "ci_hi": 3.3351,
+        "n_items": 500,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.184,
+        "boot_frac_above0": 0.816
+      },
+      "qid_cluster": {
+        "mean": 1.0289,
+        "ci_lo": -1.5642,
+        "ci_hi": 3.6262,
+        "n_items": 500,
+        "n_clusters": 100,
+        "n_boot": 10000
+      },
+      "rate_diff": -0.012,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "exact_dp__top_filtered_vs_random"
+    },
+    {
+      "cell_a": "ultrachat__hallucination__mapped_dp_context__top",
+      "cell_b": "ultrachat__hallucination__random__shared",
+      "n_items_a": 499,
+      "n_items_b": 500,
+      "n_paired": 499,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": 0.1668,
+        "ci_lo": -2.2517,
+        "ci_hi": 2.503,
+        "n_items": 499,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.4466,
+        "boot_frac_above0": 0.5534
+      },
+      "qid_cluster": {
+        "mean": 0.1668,
+        "ci_lo": -3.3905,
+        "ci_hi": 3.3857,
+        "n_items": 499,
+        "n_clusters": 100,
+        "n_boot": 10000
+      },
+      "rate_diff": 0.01,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "mapped_dp_context__top_vs_random"
+    },
+    {
+      "cell_a": "ultrachat__hallucination__mapped_dp_context__bottom",
+      "cell_b": "ultrachat__hallucination__random__shared",
+      "n_items_a": 500,
+      "n_items_b": 500,
+      "n_paired": 500,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": 1.4889,
+        "ci_lo": -0.6415,
+        "ci_hi": 3.6497,
+        "n_items": 500,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0844,
+        "boot_frac_above0": 0.9156
+      },
+      "qid_cluster": {
+        "mean": 1.4889,
+        "ci_lo": -0.9671,
+        "ci_hi": 3.8745,
+        "n_items": 500,
+        "n_clusters": 100,
+        "n_boot": 10000
+      },
+      "rate_diff": 0.016,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "mapped_dp_context__bottom_vs_random"
+    },
+    {
+      "cell_a": "ultrachat__hallucination__mapped_dp_context__top_filtered",
+      "cell_b": "ultrachat__hallucination__random__shared",
+      "n_items_a": 499,
+      "n_items_b": 500,
+      "n_paired": 499,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": 1.1849,
+        "ci_lo": -1.0637,
+        "ci_hi": 3.4728,
+        "n_items": 499,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.1578,
+        "boot_frac_above0": 0.8422
+      },
+      "qid_cluster": {
+        "mean": 1.1849,
+        "ci_lo": -1.8045,
+        "ci_hi": 4.0674,
+        "n_items": 499,
+        "n_clusters": 100,
+        "n_boot": 10000
+      },
+      "rate_diff": 0.012,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "mapped_dp_context__top_filtered_vs_random"
+    },
+    {
+      "cell_a": "ultrachat__hallucination__mapped_dp_context__top",
+      "cell_b": "ultrachat__hallucination__exact_dp__top",
+      "n_items_a": 499,
+      "n_items_b": 500,
+      "n_paired": 499,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": -4.9655,
+        "ci_lo": -7.4836,
+        "ci_hi": -2.5422,
+        "n_items": 499,
+        "n_boot": 10000,
+        "boot_frac_below0": 1.0,
+        "boot_frac_above0": 0.0
+      },
+      "qid_cluster": {
+        "mean": -4.9655,
+        "ci_lo": -9.1325,
+        "ci_hi": -1.0878,
+        "n_items": 499,
+        "n_clusters": 100,
+        "n_boot": 10000
+      },
+      "rate_diff": -0.0441,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "mapped_dp_context__top_vs_exact_top"
+    },
+    {
+      "cell_a": "ultrachat__hallucination__probe_diff_context__top",
+      "cell_b": "ultrachat__hallucination__random__shared",
+      "n_items_a": 500,
+      "n_items_b": 500,
+      "n_paired": 500,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": 1.2031,
+        "ci_lo": -1.3065,
+        "ci_hi": 3.667,
+        "n_items": 500,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.1697,
+        "boot_frac_above0": 0.8303
+      },
+      "qid_cluster": {
+        "mean": 1.2031,
+        "ci_lo": -2.4776,
+        "ci_hi": 4.6536,
+        "n_items": 500,
+        "n_clusters": 100,
+        "n_boot": 10000
+      },
+      "rate_diff": 0.016,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "probe_diff_context__top_vs_random"
+    },
+    {
+      "cell_a": "ultrachat__hallucination__probe_diff_context__bottom",
+      "cell_b": "ultrachat__hallucination__random__shared",
+      "n_items_a": 500,
+      "n_items_b": 500,
+      "n_paired": 500,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": -0.9465,
+        "ci_lo": -3.1879,
+        "ci_hi": 1.2708,
+        "n_items": 500,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.8018,
+        "boot_frac_above0": 0.1982
+      },
+      "qid_cluster": {
+        "mean": -0.9465,
+        "ci_lo": -3.774,
+        "ci_hi": 1.7345,
+        "n_items": 500,
+        "n_clusters": 100,
+        "n_boot": 10000
+      },
+      "rate_diff": -0.022,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "probe_diff_context__bottom_vs_random"
+    },
+    {
+      "cell_a": "ultrachat__hallucination__probe_diff_context__top_filtered",
+      "cell_b": "ultrachat__hallucination__random__shared",
+      "n_items_a": 500,
+      "n_items_b": 500,
+      "n_paired": 500,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": 1.6318,
+        "ci_lo": -0.701,
+        "ci_hi": 3.9979,
+        "n_items": 500,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0867,
+        "boot_frac_above0": 0.9133
+      },
+      "qid_cluster": {
+        "mean": 1.6318,
+        "ci_lo": -1.724,
+        "ci_hi": 4.8815,
+        "n_items": 500,
+        "n_clusters": 100,
+        "n_boot": 10000
+      },
+      "rate_diff": 0.024,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "probe_diff_context__top_filtered_vs_random"
+    },
+    {
+      "cell_a": "ultrachat__hallucination__probe_diff_context__top",
+      "cell_b": "ultrachat__hallucination__exact_dp__top",
+      "n_items_a": 500,
+      "n_items_b": 500,
+      "n_paired": 500,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": -3.919,
+        "ci_lo": -6.6527,
+        "ci_hi": -1.3369,
+        "n_items": 500,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.9992,
+        "boot_frac_above0": 0.0008
+      },
+      "qid_cluster": {
+        "mean": -3.919,
+        "ci_lo": -8.1444,
+        "ci_hi": -0.0458,
+        "n_items": 500,
+        "n_clusters": 100,
+        "n_boot": 10000
+      },
+      "rate_diff": -0.038,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "probe_diff_context__top_vs_exact_top"
+    },
+    {
+      "cell_a": "ultrachat__hallucination__prompttoken_dp__top",
+      "cell_b": "ultrachat__hallucination__random__shared",
+      "n_items_a": 500,
+      "n_items_b": 500,
+      "n_paired": 500,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": 2.919,
+        "ci_lo": 0.6451,
+        "ci_hi": 5.1921,
+        "n_items": 500,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0069,
+        "boot_frac_above0": 0.9931
+      },
+      "qid_cluster": {
+        "mean": 2.919,
+        "ci_lo": 0.3922,
+        "ci_hi": 5.5221,
+        "n_items": 500,
+        "n_clusters": 100,
+        "n_boot": 10000
+      },
+      "rate_diff": 0.04,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "prompttoken_dp__top_vs_random"
+    },
+    {
+      "cell_a": "ultrachat__hallucination__prompttoken_dp__bottom",
+      "cell_b": "ultrachat__hallucination__random__shared",
+      "n_items_a": 481,
+      "n_items_b": 500,
+      "n_paired": 481,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": -14.457,
+        "ci_lo": -17.5531,
+        "ci_hi": -11.3762,
+        "n_items": 481,
+        "n_boot": 10000,
+        "boot_frac_below0": 1.0,
+        "boot_frac_above0": 0.0
+      },
+      "qid_cluster": {
+        "mean": -14.457,
+        "ci_lo": -19.8964,
+        "ci_hi": -9.4644,
+        "n_items": 481,
+        "n_clusters": 99,
+        "n_boot": 10000
+      },
+      "rate_diff": -0.1393,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "prompttoken_dp__bottom_vs_random"
+    },
+    {
+      "cell_a": "ultrachat__hallucination__prompttoken_dp__top_filtered",
+      "cell_b": "ultrachat__hallucination__random__shared",
+      "n_items_a": 500,
+      "n_items_b": 500,
+      "n_paired": 500,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": -0.993,
+        "ci_lo": -3.19,
+        "ci_hi": 1.1526,
+        "n_items": 500,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.8146,
+        "boot_frac_above0": 0.1854
+      },
+      "qid_cluster": {
+        "mean": -0.993,
+        "ci_lo": -3.4497,
+        "ci_hi": 1.4154,
+        "n_items": 500,
+        "n_clusters": 100,
+        "n_boot": 10000
+      },
+      "rate_diff": -0.016,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "prompttoken_dp__top_filtered_vs_random"
+    },
+    {
+      "cell_a": "ultrachat__hallucination__prompttoken_dp__top",
+      "cell_b": "ultrachat__hallucination__exact_dp__top",
+      "n_items_a": 500,
+      "n_items_b": 500,
+      "n_paired": 500,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": -2.2031,
+        "ci_lo": -4.5317,
+        "ci_hi": 0.0741,
+        "n_items": 500,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.9702,
+        "boot_frac_above0": 0.0298
+      },
+      "qid_cluster": {
+        "mean": -2.2031,
+        "ci_lo": -5.3593,
+        "ci_hi": 0.7122,
+        "n_items": 500,
+        "n_clusters": 100,
+        "n_boot": 10000
+      },
+      "rate_diff": -0.014,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "prompttoken_dp__top_vs_exact_top"
+    }
+  ],
+  "supervision_ledger": "map=trait-agnostic; persona vector=trait-description+judge-filter; probe=judge-labels",
+  "dv_note": "graded_mean is the headline DV (llm-judging graded-primary); rate_gt50 is the human-legible companion; screening scores are predictors, never the construct (plan §6)",
+  "meta": {
+    "script": "issue2224_analysis.analyze-4b",
+    "issue": 2224,
+    "timestamp": "2026-08-11T12:10:55-0700",
+    "versions": {
+      "torch": "2.8.0+cu128",
+      "transformers": "4.57.6",
+      "datasets": "4.8.4",
+      "numpy": "2.2.6"
+    },
+    "git_commit": "01ab4ce3",
+    "git_dirty": false
+  }
+}

@@ -1,0 +1,205 @@
+{
+  "meta": {
+    "script": "issue2224_followup_r1.aggregate",
+    "issue": 2224,
+    "timestamp": "2026-08-12T22:23:23+0000",
+    "versions": {
+      "torch": "2.8.0+cu128",
+      "transformers": "4.57.6",
+      "datasets": "4.8.4",
+      "numpy": "2.2.6"
+    },
+    "git_commit": "950f48d5",
+    "git_dirty": false
+  },
+  "legs": {
+    "refit": {
+      "lmsys": {
+        "n": 50000,
+        "n_train_vs_d": "n_train_min=40000 > d=3584 (well-posed primal ridge)",
+        "arms": {
+          "context": {
+            "15": {
+              "heldout_r2_mean": 0.5877320570749954,
+              "identity_r2_mean": -1.5791009665258267,
+              "traits": {
+                "hallucination": {
+                  "refit_score_r_vs_exact": 0.8609175441171323,
+                  "frozen_score_r_vs_exact": 0.09026642025885748,
+                  "standin_r": 0.9267042490715443,
+                  "jaccard_top_refit": 0.358695652173913,
+                  "jaccard_top_frozen": 0.014198782961460446
+                }
+              }
+            },
+            "19": {
+              "heldout_r2_mean": 0.6509260757617664,
+              "identity_r2_mean": -2.363923130137191,
+              "traits": {
+                "evil": {
+                  "refit_score_r_vs_exact": 0.8603193035938367,
+                  "frozen_score_r_vs_exact": 0.047288048004149645,
+                  "standin_r": 0.9217737775735771,
+                  "jaccard_top_refit": 0.5698587127158555,
+                  "jaccard_top_frozen": 0.005025125628140704
+                },
+                "sycophancy": {
+                  "refit_score_r_vs_exact": 0.854006547275417,
+                  "frozen_score_r_vs_exact": 0.14454335945262975,
+                  "standin_r": 0.9678418890378262,
+                  "jaccard_top_refit": 0.4749262536873156,
+                  "jaccard_top_frozen": 0.008064516129032258
+                }
+              }
+            }
+          },
+          "prefix": {
+            "15": {
+              "heldout_r2_mean": 0.0015539515400603053,
+              "identity_r2_mean": -4.569829486794097e-05,
+              "traits": {
+                "hallucination": {
+                  "refit_score_r_vs_exact": 0.32425418903832726,
+                  "frozen_score_r_vs_exact": 0.3234728012460227,
+                  "standin_r": 0.06005694067953413,
+                  "jaccard_top_refit": 0.07874865156418555,
+                  "jaccard_top_frozen": 0.07874865156418555
+                }
+              }
+            },
+            "19": {
+              "heldout_r2_mean": 0.0013378556760083762,
+              "identity_r2_mean": -4.0932797227193366e-05,
+              "traits": {
+                "evil": {
+                  "refit_score_r_vs_exact": 0.4680325251021799,
+                  "frozen_score_r_vs_exact": 0.46812045181033823,
+                  "standin_r": 0.0069738146467951895,
+                  "jaccard_top_refit": 0.272264631043257,
+                  "jaccard_top_frozen": 0.27388535031847133
+                },
+                "sycophancy": {
+                  "refit_score_r_vs_exact": 0.21819992430263146,
+                  "frozen_score_r_vs_exact": 0.2200488402246513,
+                  "standin_r": 0.06395848814783033,
+                  "jaccard_top_refit": 0.029866117404737384,
+                  "jaccard_top_frozen": 0.02564102564102564
+                }
+              }
+            }
+          }
+        }
+      },
+      "ultrachat": {
+        "n": 50000,
+        "n_train_vs_d": "n_train_min=40000 > d=3584 (well-posed primal ridge)",
+        "arms": {
+          "context": {
+            "15": {
+              "heldout_r2_mean": 0.4581423280553624,
+              "identity_r2_mean": -3.544242836415304,
+              "traits": {
+                "hallucination": {
+                  "refit_score_r_vs_exact": 0.8286648807751051,
+                  "frozen_score_r_vs_exact": -0.08704711258640699,
+                  "standin_r": 0.9072947036067929,
+                  "jaccard_top_refit": 0.2345679012345679,
+                  "jaccard_top_frozen": 0.088139281828074
+                }
+              }
+            },
+            "19": {
+              "heldout_r2_mean": 0.5626159517782862,
+              "identity_r2_mean": -4.348523193288432,
+              "traits": {
+                "evil": {
+                  "refit_score_r_vs_exact": 0.7348859011172468,
+                  "frozen_score_r_vs_exact": 0.07140319713254081,
+                  "standin_r": 0.9683705773700952,
+                  "jaccard_top_refit": 0.3679890560875513,
+                  "jaccard_top_frozen": 0.0
+                },
+                "sycophancy": {
+                  "refit_score_r_vs_exact": 0.8025313724733378,
+                  "frozen_score_r_vs_exact": 0.027393838532194875,
+                  "standin_r": 0.9687415343319588,
+                  "jaccard_top_refit": 0.4556040756914119,
+                  "jaccard_top_frozen": 0.0
+                }
+              }
+            }
+          },
+          "prefix": {
+            "15": {
+              "heldout_r2_mean": -4.6022687020741675e-05,
+              "identity_r2_mean": -4.7938113832651144e-05,
+              "traits": {
+                "hallucination": {
+                  "refit_score_r_vs_exact": 0.4809197724933439,
+                  "frozen_score_r_vs_exact": 0.48137550810695906,
+                  "standin_r": 0.02126755376216518,
+                  "jaccard_top_refit": 0.007049345417925478,
+                  "jaccard_top_frozen": 0.007049345417925478
+                }
+              }
+            },
+            "19": {
+              "heldout_r2_mean": -4.033527392726852e-05,
+              "identity_r2_mean": -4.9556300820856246e-05,
+              "traits": {
+                "evil": {
+                  "refit_score_r_vs_exact": 0.20097091140460074,
+                  "frozen_score_r_vs_exact": 0.20092577703702214,
+                  "standin_r": 0.0013137167240029866,
+                  "jaccard_top_refit": 0.04058272632674298,
+                  "jaccard_top_frozen": 0.04058272632674298
+                },
+                "sycophancy": {
+                  "refit_score_r_vs_exact": 0.2973830482677557,
+                  "frozen_score_r_vs_exact": 0.2975153184573378,
+                  "standin_r": 0.005909967019059111,
+                  "jaccard_top_refit": 0.06496272630457935,
+                  "jaccard_top_frozen": 0.06496272630457935
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "transport": {
+      "lmsys/evil": {
+        "same_auc_ge1": 0.9597553727646168,
+        "transport_to_ultrachat": 0.9319817326321617
+      },
+      "ultrachat/evil": {
+        "same_auc_ge1": 0.8728434357413045,
+        "transport_to_lmsys": 0.9223931731608777
+      },
+      "lmsys/hallucination": {
+        "same_auc_ge1": 0.9398237133115976,
+        "transport_to_ultrachat": 0.5980352148880773
+      },
+      "ultrachat/hallucination": {
+        "same_auc_ge1": 0.7964809593207451,
+        "transport_to_lmsys": 0.8809827123136306
+      },
+      "lmsys/sycophancy": {
+        "same_auc_ge1": 0.8077367037462622,
+        "transport_to_ultrachat": 0.8178559938359772
+      },
+      "ultrachat/sycophancy": {
+        "same_auc_ge1": 0.8545832247162303,
+        "transport_to_lmsys": 0.7681342511320518
+      }
+    },
+    "rejudge_triage": {
+      "present": true,
+      "path": "/workspace/explore-persona-space/eval_results/issue_2224/followup_r1/rejudge_triage.json"
+    },
+    "rejudge_updated_cells": {
+      "present": true,
+      "path": "/workspace/explore-persona-space/eval_results/issue_2224/followup_r1/rejudge_updated_cells.json"
+    }
+  }
+}
