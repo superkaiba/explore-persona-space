@@ -180,8 +180,10 @@ def _patch_pod(
     monkeypatch.delenv("EPM_POLL_PID_IDENTITY", raising=False)
     monkeypatch.setattr(pp.subprocess, "run", _fake_run)
     monkeypatch.setattr(pp, "post_event", MagicMock())
-    monkeypatch.setattr(pp, "_marker_launch_fields", lambda issue: (marker_pid, marker_note))
-    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch: run_age_sec)
+    monkeypatch.setattr(
+        pp, "_marker_launch_fields", lambda issue, pod=None: (marker_pid, marker_note)
+    )
+    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch, pod=None: run_age_sec)
 
 
 def _poll(tmp_path: Path):
