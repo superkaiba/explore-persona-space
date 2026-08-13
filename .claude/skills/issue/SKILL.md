@@ -5057,6 +5057,45 @@ while True:
     #                                   stall_reason is the only routing
     #                                   signal; see Step 7); run CRON-TEARDOWN
     #                                   (see below); set status:blocked; exit.
+    #                                   These two statuses ONLY —
+    #                                   `pid-stale-workload-live` is never a
+    #                                   failure trigger (its row below).
+    #   status == "pid-stale-workload-live" -> NOT a failure trigger: do NOT
+    #                                  post epm:failure, do NOT terminate the
+    #                                  pod; loop again on the short interval
+    #                                  (next_interval is 540 by construction —
+    #                                  any non-"running" status). The tick's
+    #                                  pid probes ALL read dead, but the SAME
+    #                                  tick's evidence (stall_reason=
+    #                                  "pid_dead_evidence:<tokens>", plus the
+    #                                  raw gpu_util / mtime fields in the tick
+    #                                  JSON) says the workload is computing
+    #                                  (#2265, the #2223 false-dead class:
+    #                                  status=dead beside gpu_util=
+    #                                  97,100,100,100 + a 294s-fresh log). On
+    #                                  the FIRST such tick, resolve the
+    #                                  contradiction — probe the pod for the
+    #                                  live workload (bracketed pgrep per
+    #                                  pod-side-reporting.md § Pid-file launch
+    #                                  contract item 1d(a)); if found, rewrite
+    #                                  the pid file with the live workload pid
+    #                                  and re-post epm:run-launched (the
+    #                                  marker-pid OR-probe / #1650 rescue then
+    #                                  bind subsequent ticks). If NO live
+    #                                  workload is found: workload-scoped
+    #                                  evidence (fresh logs/outputs only)
+    #                                  decays within ~stall_sec and a later
+    #                                  tick reads dead, taking the normal
+    #                                  failure row above; but when POD-WIDE
+    #                                  evidence persists (gpu_busy held up by
+    #                                  a sibling leg / leftover engine, or a
+    #                                  non-workload writer keeping issue-keyed
+    #                                  logs fresh), decay structurally cannot
+    #                                  arrive — CONCLUDE the leg dead yourself
+    #                                  and post the failure (epm:failure v1 +
+    #                                  CRON-TEARDOWN + status:blocked, exactly
+    #                                  the stalled|dead row) rather than
+    #                                  waiting on a decay that will never come.
     #   status == "running"        -> milestone-already-posted by the poller
     #                                  if new_milestone was true; loop again:
     #                                  the next tick routes via the
@@ -5111,8 +5150,10 @@ sees a phase transition, AND drains pod-side sentinel files (posting
 their carried markers from the VM via `task_workflow.post_event`). The
 orchestrator's only post-tick duties are: exit the loop on `status=done`,
 dispatch the matching gate handler on `status=gate` (Step 6d.4 — PARK for
-a user gate, AUTO-RESOLVE + resume the loop for `pv_phase1_done`), and post
-`epm:failure v1` on `status=stalled` or `status=dead`. The orchestrator
+a user gate, AUTO-RESOLVE + resume the loop for `pv_phase1_done`), post
+`epm:failure v1` on `status=stalled` or `status=dead`, and run the
+first-tick contradiction probe on `status=pid-stale-workload-live` (its
+branch-table row above — never a failure post). The orchestrator
 NEVER re-posts a marker the poller already posted from a sentinel —
 double-posting is the failure mode the gate path is designed to avoid.
 On the terminal `status=done` tick (the point where `epm:results` is
