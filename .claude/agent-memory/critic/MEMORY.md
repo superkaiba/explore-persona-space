@@ -37,6 +37,7 @@
 - [Pin-vs-manifest commit](feedback_pin_vs_manifest_commit.md) — blob-compare restored files between plan pin and parent manifest (#551)
 
 ## Measurement validity / DV construction
+- [Regen-trigger headroom at production cap](feedback_regen_trigger_headroom.md) — ≥2× re-gen needs max_model_len ≥ regen_cap + prompt bound; low-cap smoke vacuous (#2221)
 - [Predictor-leakage shared surface](feedback_predictor_leakage_shared_surface_variable.md) — shared observable = tautological ρ (#466)
 - [Change-DV mechanical subtraction](feedback_change_dv_mechanical_subtraction.md) — d=post-base contains -base: base-like predictors null (#559)
 - [Persistence-ρ weak null](feedback_persistence_rho_weak_null.md) — FE ρ≥0.9 on matched slots near-tautological; variance-ratio (#560)
