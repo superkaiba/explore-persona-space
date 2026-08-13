@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2261,
+  "highest_id": 2262,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9751,6 +9751,13 @@
       "path": "tasks/proposed/2261",
       "status": "proposed",
       "title": "Extend driver --import-check to bind-check in-repo helper call arity, not just args.<attr> completeness"
+    },
+    "2262": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2262",
+      "status": "proposed",
+      "title": "paper_plots._extract_scatters drops genuine (0,0) single-point scatters from figure sidecars"
     },
     "227": {
       "has_clean_result": true,
