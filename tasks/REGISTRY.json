@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2259,
+  "highest_id": 2260,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9737,6 +9737,13 @@
       "path": "tasks/completed/226",
       "status": "completed",
       "title": "Workflow improvements"
+    },
+    "2260": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2260",
+      "status": "proposed",
+      "title": "Step 5a spec-freshness: couple agents prose-pin tests (test_mapping_baselines_wiring_pins.py class) to the .claude/agents family \u2014 half-sync gate red"
     },
     "227": {
       "has_clean_result": true,
