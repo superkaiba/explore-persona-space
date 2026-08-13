@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2272,
+  "highest_id": 2273,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9835,6 +9835,13 @@
       "path": "tasks/running/2272",
       "status": "running",
       "title": "scripts/issue2224_fold_figures.py breaks test_shared_vm_thread_caps on main (missing load_dotenv-before-torch preamble)"
+    },
+    "2273": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2273",
+      "status": "proposed",
+      "title": "gotchas.md: fellows remote shell is zsh \u2014 unmatched glob aborts the whole SSH command (nomatch), silently truncating chained monitoring probes"
     },
     "228": {
       "has_clean_result": true,
