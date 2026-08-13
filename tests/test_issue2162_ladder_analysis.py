@@ -11,6 +11,7 @@ errorbar clamp (gotchas.md xerr/yerr contract).
 from __future__ import annotations
 
 import json
+import logging
 import sys
 from pathlib import Path
 
@@ -343,8 +344,10 @@ def _write_grid_world(raw: Path, tensors: Path, scores: Path, rng, e1: torch.Ten
 
     _jsonl(scores / "coherence.grid.scores.jsonl", coh_grid)
     _jsonl(scores / "hol-plain.grid.scores.jsonl", plain_grid)
-    for v in LB.PERSONA_VALUE_IDS:
-        _jsonl(scores / f"hol-{v}.grid.scores.jsonl", target_grid.get(v, []))
+    # Production shape: gate-dropped rungs generate NO grid rollouts and NO
+    # judge waves — only surviving rungs get a hol-<v>.grid wave file on disk.
+    for v in SURVIVORS:
+        _jsonl(scores / f"hol-{v}.grid.scores.jsonl", target_grid[v])
     for rid, rows in conj_grid.items():
         _jsonl(scores / f"{rid}.grid.scores.jsonl", rows)
 
@@ -497,6 +500,39 @@ def test_f_from_stats_directions():
     assert AN._f_from_stats("erase", 0.17, 0.05, 0.65) == pytest.approx(0.8)
     assert AN._f_from_stats("install", None, 0.05, 0.65) is None
     assert AN._f_from_stats("install", 0.5, 0.3, 0.3) is None  # degenerate denom
+
+
+def test_gate_dropped_rung_grid_waves_absent(fixture_run):
+    """Gate-dropped rungs have NO grid judge wave on disk (production shape:
+    r4_trait / r5a in the real run) — f-tables still completed end-to-end
+    (fixture_run drove main() through every step) and only surviving-rung
+    rows appear in the steered cell table."""
+    scores = fixture_run["dirs"]["work"] / "scores"
+    dropped = [v for v in LB.PERSONA_VALUE_IDS if v not in SURVIVORS]
+    assert dropped, "fixture must exercise the gate-dropped path"
+    for v in dropped:
+        assert not (scores / f"hol-{v}.grid.scores.jsonl").exists(), v
+    assert {r["rung"] for r in fixture_run["f_cells"]} == set(SURVIVORS)
+
+
+def test_dropped_rungs_named_in_log(tmp_path, caplog):
+    """f-tables logs one INFO line naming every gate-dropped rung it skipped."""
+    dirs = build_fixture(tmp_path)
+    with caplog.at_level(logging.INFO, logger="issue2162.ladder_analysis"):
+        assert AN.main(_argv(dirs, step="f-tables")) == 0
+    lines = [r.getMessage() for r in caplog.records if "gate-dropped rungs" in r.getMessage()]
+    assert lines, "no gate-dropped INFO line emitted"
+    for v in ("r2_butler", "r5a_lu_therapy", "r5b_lu_philosophy"):
+        assert v in lines[0], v
+
+
+def test_missing_wave_for_surviving_rung_still_raises(tmp_path):
+    """A SURVIVING rung whose grid wave file is absent is REAL missing data —
+    the gate-dropped skip must not swallow it."""
+    dirs = build_fixture(tmp_path)
+    (dirs["work"] / "scores" / "hol-r3_warm.grid.scores.jsonl").unlink()
+    with pytest.raises(FileNotFoundError, match="hol-r3_warm"):
+        AN.main(_argv(dirs, step="f-tables"))
 
 
 def test_set_check_raises_on_missing_registered_row(tmp_path):

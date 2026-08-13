@@ -329,8 +329,18 @@ def step_f_tables(args: argparse.Namespace) -> None:
 
     coh_grid = load_grid_scores(args.scores_dir, J94.COHERENCE_RUBRIC_ID)
     plain_grid = load_grid_scores(args.scores_dir, LB.holistic_rubric_id("plain"))
+    # Gate-dropped rungs generate NO grid rollouts and NO judge waves, so the
+    # target-wave loads are restricted to gate-surviving rungs; a missing wave
+    # for a SURVIVING rung still raises FileNotFoundError (real missing data).
+    surviving = [v for v in LB.PERSONA_VALUE_IDS if gate["rungs"][v].get("survived")]
+    dropped = [v for v in LB.PERSONA_VALUE_IDS if v not in surviving]
+    if dropped:
+        logger.info(
+            "[f-tables] gate-dropped rungs skipped (no grid rollouts / judge waves): %s",
+            ", ".join(dropped),
+        )
     target_grid = {
-        v: load_grid_scores(args.scores_dir, LB.holistic_rubric_id(v)) for v in LB.PERSONA_VALUE_IDS
+        v: load_grid_scores(args.scores_dir, LB.holistic_rubric_id(v)) for v in surviving
     }
     va_grid = A62._load_va_store(args.va_dir)
     va_anchor = A62._load_anchor_va(args.anchors_dir)
