@@ -397,12 +397,12 @@ def run_fan_out(args) -> None:
 # ── upload ───────────────────────────────────────────────────────────────────
 
 
+# Parent-default-identical seam: parent #2225 call sites pass no prefix and must keep it.
+# UPLOAD_PREFIX_EXEMPT: parent-default-identical seam; fu1 threads its own via --hf-prefix
 def upload_capture(
     out_root: Path,
     tags: Sequence[str] | None = None,
     *,
-    # UPLOAD_PREFIX_EXEMPT: parent-default-identical seam — parent #2225 call sites pass no
-    # prefix and must keep the parent prefix; fu1 threads its own via --hf-prefix.
     hf_prefix: str = CAPTURE_HF_PREFIX,
 ) -> list[str]:
     """Upload capture tensors to the HF data repo. Default: ONE folder commit of
@@ -494,6 +494,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             if args.upload_tags
             else None
         )
+        # UPLOAD_PREFIX_EXEMPT: parent-default-identical seam; fu1 passes an explicit --hf-prefix
         upload_capture(Path(args.out_root), tags, hf_prefix=args.hf_prefix)
         sys.stdout.flush()
         sys.exit(0)

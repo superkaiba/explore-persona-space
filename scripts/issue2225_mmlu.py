@@ -421,8 +421,8 @@ def run_fan_out(args) -> None:
     lib.log_phase("mmlu", "fan-out complete")
 
 
-# UPLOAD_PREFIX_EXEMPT: parent-default-identical seam — parent #2225 call sites pass no
-# prefix and must keep the parent prefix; fu1 threads its own via --hf-prefix.
+# Parent-default-identical seam: parent #2225 call sites pass no prefix and must keep it.
+# UPLOAD_PREFIX_EXEMPT: parent-default-identical seam; fu1 threads its own via --hf-prefix
 def upload_mmlu(out_root: Path, hf_prefix: str = MMLU_HF_PREFIX) -> str:
     """Upload the canonical + raw MMLU JSONs as ONE folder commit (P3).
     Follow-up rounds thread their OWN prefix (fu1: issue2225_ctxsteer/fu1_mmlu
@@ -500,6 +500,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         raise SystemExit(0)
 
     if args.upload:
+        # UPLOAD_PREFIX_EXEMPT: parent-default-identical seam; fu1 passes an explicit --hf-prefix
         upload_mmlu(Path(args.out_root), hf_prefix=args.hf_prefix)
         sys.stdout.flush()
         sys.exit(0)

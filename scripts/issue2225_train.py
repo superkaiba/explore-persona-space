@@ -894,8 +894,8 @@ def train_steered_cell(
     return out_dir
 
 
-# UPLOAD_PREFIX_EXEMPT: parent-default-identical seam — parent cells keep the parent adapters
-# prefix; fu1 cells thread cell.adapters_hf_prefix through _adapters_prefix() explicitly.
+# Parent-default-identical seam: parent cells keep the parent adapters prefix.
+# UPLOAD_PREFIX_EXEMPT: fu1 cells thread cell.adapters_hf_prefix via _adapters_prefix()
 def _upload_cell_adapter(out_dir: Path, cell_slug: str, hf_prefix: str = ADAPTERS_HF_PREFIX) -> str:
     """Per-cell adapter upload to the HF model repo (#664 per-cell contract)."""
     from explore_persona_space.orchestrate.hub import _upload
