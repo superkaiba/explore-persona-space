@@ -1250,7 +1250,7 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   shape; active-voice claims ("the JSON records the per-layer values")
   never parse (v1 false-negative class).
 
-- **check 55** (`check_v4_sidecarless_results_figures`, FAIL, v4-only,
+- **check 57** (`check_v4_sidecarless_results_figures`, FAIL, v4-only,
   Leg B forward-only, #2267; incident #2054): a `## Results` figure with
   NO `.meta.json` sidecar at the cited sha previously received ZERO
   mechanical opaque-code coverage — check 28 fail-softs on the missing
@@ -1269,7 +1269,7 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   date-gated; measured 0 corpus hits with the exclusion). **Leg B**
   (forward-only) — the pinned commit's COMMITTER date (`_commit_epoch`,
   cached + fail-soft) ≥ the 2026-08-13 UTC cutover
-  (`_CHECK55_FORWARD_CUTOVER`) AND the basename (lowercased,
+  (`_CHECK57_FORWARD_CUTOVER`) AND the basename (lowercased,
   dash-normalized) is NOT named in the body's verifier-WARN
   acknowledgment (`_warn_acknowledgment_text`) ⇒ FAIL — regenerate via
   `savefig_paper` (writes the sidecar, exposing rendered text to
@@ -13489,7 +13489,7 @@ def check_figure_sidecar_coverage(body: str) -> CheckResult:
     only — two ``_git_object_exists`` invocations (up to four bounded
     subprocess spawns) per unique figure URL, no ``git show`` content read.
     Since #2267 the v4 POST-CUTOVER sidecar-less case additionally FAILs
-    via check 55 (``check_v4_sidecarless_results_figures``) — check 41
+    via check 57 (``check_v4_sidecarless_results_figures``) — check 41
     itself is unchanged: still WARN, still generation-agnostic.
     """
     label = "figure sidecar coverage (sidecar-less embedded figures)"
@@ -13543,7 +13543,7 @@ def check_figure_sidecar_coverage(body: str) -> CheckResult:
     )
 
 
-# ─── Check 55: v4 sidecar-less Results figures (FAIL; Leg B forward-only) ───
+# ─── Check 57: v4 sidecar-less Results figures (FAIL; Leg B forward-only) ───
 #
 # #2267 (incident #2054): a v4 body embedding a `## Results` figure with NO
 # `.meta.json` sidecar at the cited sha previously received ZERO mechanical
@@ -13552,7 +13552,7 @@ def check_figure_sidecar_coverage(body: str) -> CheckResult:
 # WARN-never-FAIL by documented design. #2054's `hero_calibration_nslope.png`
 # carried its opaque `H0'a`/`H0'b`/`b=`/`m=` codes ONLY in PNG rendered text
 # (panel titles + legend entries) with a clean plain-English caption, so no
-# text channel reached those pixels. Check 55 makes the sidecar-less state
+# text channel reached those pixels. Check 57 makes the sidecar-less state
 # itself blocking for NEW v4 figures (Leg B, date-gated forward-only) and
 # blocks caption-carried opaque codes on sidecar-less figures outright
 # (Leg A) — routing rendered text into the sidecar channel (`savefig_paper`)
@@ -13563,18 +13563,18 @@ def check_figure_sidecar_coverage(body: str) -> CheckResult:
 # epoch gets the Leg B sidecar-less FAIL; every pre-existing corpus pin
 # pre-dates it (plan-time sweep: 45/45), so existing green bodies are exempt
 # BY CONSTRUCTION. Value pinned against the datetime derivation by
-# `test_check55_registry_and_cutover_constant`.
-_CHECK55_FORWARD_CUTOVER = 1786579200
+# `test_check57_registry_and_cutover_constant`.
+_CHECK57_FORWARD_CUTOVER = 1786579200
 
 # Markdown code spans in the caption window are QUOTED references (a
 # backticked companion-FILENAME, a code-register token by convention), not
 # rendered condition labels — stripped to a space before the Leg A scan
 # (plan §3.1 item 5: the measured corpus's ONE pre-exclusion Leg A hit was
 # #952's backticked `refusal_sanity_auc.png` companion-file reference).
-_CHECK55_CODE_SPAN_RE = re.compile(r"`[^`]*`")
+_CHECK57_CODE_SPAN_RE = re.compile(r"`[^`]*`")
 
 # (repo, sha) -> committer epoch (None = indeterminate). Module-level so one
-# process probes each unique figure sha at most once (check 55 Leg B).
+# process probes each unique figure sha at most once (check 57 Leg B).
 _COMMIT_EPOCH_CACHE: dict[tuple[str, str], int | None] = {}
 
 
@@ -13582,7 +13582,7 @@ def _commit_epoch(repo: Path, sha: str) -> int | None:
     """Committer date (unix epoch seconds) of ``<sha>`` in ``repo`` via
     ``git show -s --format=%ct <sha>^{commit}``, or None on ANY
     indeterminate probe — unknown/unresolvable sha, subprocess error,
-    unparsable output — fail-soft, never raises (check 55's Leg B skips a
+    unparsable output — fail-soft, never raises (check 57's Leg B skips a
     None rather than FAILing on it). Cached per (repo, sha) at module
     level. A module-level helper (not a closure inside the check) so tests
     can monkeypatch the date probe directly (plan #2267 §3.1)."""
@@ -13607,7 +13607,7 @@ def _commit_epoch(repo: Path, sha: str) -> int | None:
 
 
 def check_v4_sidecarless_results_figures(body: str) -> CheckResult:  # noqa: C901 — linear per-figure two-leg gate walk (the check-52 precedent)
-    """Check 55 (FAIL, v4-only; Leg B forward-only; #2267; incident #2054):
+    """Check 57 (FAIL, v4-only; Leg B forward-only; #2267; incident #2054):
     a same-repo sha-pinned ``## Results`` figure whose sibling
     ``.meta.json`` sidecar is definitively ABSENT at the cited sha
     (``_git_object_exists`` == 'fail') is the one figure class with zero
@@ -13619,14 +13619,14 @@ def check_v4_sidecarless_results_figures(body: str) -> CheckResult:  # noqa: C90
 
     - **Leg A (caption codes; NOT date-gated):** the figure's blockquote
       caption window (``_figure_caption_after``), markdown code spans
-      stripped to spaces (``_CHECK55_CODE_SPAN_RE`` — a backticked token is
+      stripped to spaces (``_CHECK57_CODE_SPAN_RE`` — a backticked token is
       a quoted code-register reference, the #952 corpus shape), carries
       ``_opaque_code_tokens`` hits ⇒ FAIL naming the basename + a token
       preview. Measured 0 corpus hits with the code-span exclusion
       (plan-time sweep over 2,200 bodies / 45 sidecar-less figures; the one
       pre-exclusion hit was a backticked companion-FILENAME reference).
     - **Leg B (forward-only sidecar-less block):** the pinned commit's
-      COMMITTER date (``_commit_epoch``) is >= ``_CHECK55_FORWARD_CUTOVER``
+      COMMITTER date (``_commit_epoch``) is >= ``_CHECK57_FORWARD_CUTOVER``
       (2026-08-13 UTC, the fix-landing date) AND the figure's basename
       (lowercased, dash-normalized — the check-20 ack-matching convention)
       is NOT named in the body's verifier-WARN acknowledgment text
@@ -13710,13 +13710,13 @@ def check_v4_sidecarless_results_figures(body: str) -> CheckResult:  # noqa: C90
         if meta_status != "fail":
             # Sidecar present -> checks 24/28/33/34's domain; indeterminate
             # ('skip') -> the siblings' fail-soft residual. Either way out
-            # of check 55's scope.
+            # of check 57's scope.
             continue
         sidecarless += 1
         basename = fig_path.rsplit("/", 1)[-1]
         # Leg A — code-span-stripped caption window through the shared
         # opaque-code classifier. Not date-gated (measured 0 corpus hits).
-        caption = _CHECK55_CODE_SPAN_RE.sub(" ", caption_by_url.get(url, ""))
+        caption = _CHECK57_CODE_SPAN_RE.sub(" ", caption_by_url.get(url, ""))
         toks = _opaque_code_tokens(caption)
         if toks:
             preview = ", ".join(f"`{t}`" for t in toks[:4]) + (" …" if len(toks) > 4 else "")
@@ -13732,7 +13732,7 @@ def check_v4_sidecarless_results_figures(body: str) -> CheckResult:  # noqa: C90
         epoch = _commit_epoch(repo, sha)
         if epoch is None:
             continue  # indeterminate date probe — never FAIL on it
-        if epoch < _CHECK55_FORWARD_CUTOVER:
+        if epoch < _CHECK57_FORWARD_CUTOVER:
             exempt_pre_cutover += 1
             continue
         norm_basename = re.sub(r"[-\u2010-\u2015]", " ", basename.lower())
@@ -18263,7 +18263,7 @@ CHECKS = [
     # #2232; incident #2222 r2 — `form_a_probe.json` held no per-dataset
     # structure while the body claimed one):
     check_artifact_content_claims,
-    # check 55 (FAIL, v4-only; Leg B forward-only) — sidecar-less Results
+    # check 57 (FAIL, v4-only; Leg B forward-only) — sidecar-less Results
     # figures: caption opaque-code scan on the code-span-stripped caption
     # window (Leg A) + post-2026-08-13-pinned-commit block with a by-name
     # verifier-WARN-acknowledgment escape (Leg B) (#2267; incident #2054 —
