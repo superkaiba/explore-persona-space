@@ -119,12 +119,17 @@ phase_start judge_pilot
 phase_end judge_pilot $?
 
 # 3) Production judge (Batch waves; per-cell trait_scores.json checkpoint/resume).
+# --judge-threshold-base 1 FORCES the Batch API on every production wave: the
+# tier-scaled default routed 2,500-draw waves SYNC on this org, and the ~50 min
+# of sync exposure on the shared VM got the phase earlyoom-SIGTERM'd (rc=143).
+# The pilot phase above deliberately keeps the default (sync at ~100-200 draws).
 phase_start judge
 "${CAPS[@]}" uv run python scripts/issue2224_finetune_sweep.py --phase judge \
   --seed "$SEED" --cells "$CELLS" --pv-root "$PV" \
   --out-root "$OUT_ROOT" --eval-questions-dir "$EVAL_Q_DIR" \
   --judge-root "$JUDGE_ROOT" --trait-scores-dir "$SCORES_DIR" \
-  --pilot-report-dir "$PILOT_DIR" > "$LOGDIR/phase-judge.log" 2>&1
+  --pilot-report-dir "$PILOT_DIR" --judge-threshold-base 1 \
+  > "$LOGDIR/phase-judge.log" 2>&1
 phase_end judge $?
 
 # 4) Seed-137 vs seed-42 deciding-contrast comparison (parent machinery verbatim).

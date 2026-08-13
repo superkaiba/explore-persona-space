@@ -1225,6 +1225,7 @@ def _judge_one_cell(args, cell: dict, trait_rubrics: dict, coherence_rubric: str
             cache_dir=Path(args.judge_root) / "cache" / rubric_name / cid,
             save_raw=Path(args.judge_root) / "raw" / f"{rubric_name}_{cid}.json",
             max_tokens=args.judge_max_tokens,
+            threshold_base=args.judge_threshold_base,
             dry_run=args.dry_run,
         )
     if args.dry_run:
@@ -1413,6 +1414,13 @@ def build_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--gpu-mem-util", type=float, default=0.85)
     parser.add_argument("--judge-draws", type=int, default=5, help="judge draws per generation")
     parser.add_argument("--judge-max-tokens", type=int, default=1024, help="rule-23 floor")
+    parser.add_argument(
+        "--judge-threshold-base",
+        type=int,
+        default=None,
+        help="sync/batch routing threshold passthrough to judge_graded (1 forces the "
+        "Batch API on every production wave; None = judge_completions_batch default)",
+    )
     parser.add_argument(
         "--judge-concurrency",
         type=int,
