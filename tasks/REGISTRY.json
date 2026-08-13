@@ -9867,8 +9867,8 @@
     "2277": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2277",
-      "status": "proposed",
+      "path": "tasks/planning/2277",
+      "status": "planning",
       "title": "Pod terminate guard is owner-blind: a non-owner can self-post the upload-verification PASS and destroy a live owner's pod"
     },
     "228": {
