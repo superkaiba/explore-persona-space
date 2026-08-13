@@ -628,12 +628,18 @@ def run_wave(
     prompt: str,
     units: list[JudgeUnit],
     cfg: JudgeConfig,
+    threshold_base: int | None = None,
 ) -> dict | None:
     """One production wave: manifest → dispatch → bounded transport retry → scores.
 
     Returns the meta dict (None on ``--dry-run``). Resumable at two grains: the
     wave-level meta skip, and intra-wave via the rubric-keyed JudgeCache + the
     #1019 dispatch checkpoints under ``cache_dir/.dispatch``.
+
+    ``threshold_base`` (keyword seam, default ``None`` = byte-equivalent client
+    routing for every existing caller) threads to ``judge_graded`` so a caller
+    with a REGISTERED routing (the #2162 ladder's all-sync plan) can force it
+    (``scripts/issue2162_ladder_judge.py``).
     """
     assert units, f"wave {wave}: no items"
     meta_path = cfg.scores_dir / f"{wave}.meta.json"
@@ -669,6 +675,7 @@ def run_wave(
         judge_model=cfg.judge_model,
         max_tokens=cfg.max_tokens,
         dry_run=cfg.dry_run,
+        threshold_base=threshold_base,
     )
     if cfg.dry_run:
         logger.info("[wave %s] dry-run complete (no API calls)", wave)
@@ -691,6 +698,7 @@ def run_wave(
             save_raw=cfg.raw_dir / f"{wave}.retry1.json",
             judge_model=cfg.judge_model,
             max_tokens=cfg.max_tokens,
+            threshold_base=threshold_base,
         )
         retry_meta = _telemetry(result2)
         for iid in lost_ids:
