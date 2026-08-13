@@ -92,6 +92,7 @@
 - [Rank-1 firing-test alternatives](feedback_rank1_firing_test_alternatives.md) — shift-DV strawman; folded |firing| inverts suppression (#621)
 
 ## Panel composition / axis conflation
+- [Repaired-grid re-mine dispositions](feedback_repaired_grid_remine_review.md) — cross-stratum cap mismatch from own-suite fix; same-corpus twin families; scarcity narration (#2221)
 - [Neutral-prompt axis-conflation](feedback_neutral_prompt_axis_conflation.md) — "neutral" = an evaluated persona's prompt; grep personas.py (#267)
 - [Panel family clustering](feedback_panel_family_clustering.md) — ≥5 same-family members can carry the headline ρ; leave-family-out (#380)
 - [Alternatives lens round 2](feedback_alternatives_lens_round2.md) — BPE overlap + neg-control conflation survive v1→v2 revision (#257)
