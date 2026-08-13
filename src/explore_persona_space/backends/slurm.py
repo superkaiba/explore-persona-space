@@ -1389,6 +1389,18 @@ PASSTHROUGH_ENV_KEYS: tuple[str, ...] = (
     # as the #564 knobs above — a dispatch-process floor override must reach
     # the compute node or it silently no-ops remotely.
     "EPM_HF_LARGE_UPLOAD_PROBE_GB",
+    # Capture fan-out width cap (#1336): ``run_queue`` in
+    # ``scripts/issue1336_dispatch.sh`` reads EPS_QUEUE_WIDTH_MAX on the
+    # COMPUTE NODE — the cap must reach it or a dispatch-process cap
+    # silently no-ops remotely (the exact silent-no-op the cap's fail-loud
+    # validation exists to prevent). This key MUST live in the MAIN copy:
+    # ``dispatch_issue._pin_main_lane_infra`` (#987) resolves
+    # ``backends.*`` from the main checkout even when the worktree's
+    # ``dispatch_issue.py`` is invoked, so a branch-only addition to this
+    # tuple never renders. Drop-when-absent contract preserved:
+    # ``render_secrets_env`` skips an unset key, so an unset cap leaves the
+    # remote width at its $NGPU default byte-identically.
+    "EPS_QUEUE_WIDTH_MAX",
     # HF Hub upload accelerator OVERRIDE channel (#745): forwarded so a
     # dispatch-process =0 / HF_HUB_DISABLE_XET=1 (the #515/#931 xet workaround)
     # reaches the compute node. The DEFAULTS (=1) are a STATIC env block in
