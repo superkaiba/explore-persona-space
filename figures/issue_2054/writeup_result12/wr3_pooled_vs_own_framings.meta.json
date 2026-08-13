@@ -1,12 +1,18 @@
 {
- "commit": "448245f5+dirty",
- "render_id": "c9e8a620d922485e",
- "git_commit": "448245f5",
+ "commit": "3b9ca7bc+dirty",
+ "render_id": "03a727799b224dea",
+ "git_commit": "3b9ca7bc",
  "git_dirty": true,
  "git_dirty_paths": [
+  "figures/issue_2054/writeup_result12/wr3_pooled_vs_own_framings.meta.json",
+  "figures/issue_2054/writeup_result12/wr3_pooled_vs_own_framings.pdf",
+  "figures/issue_2054/writeup_result12/wr3_pooled_vs_own_framings.png",
+  "figures/issue_2054/writeup_result12/wr6_pooled_vs_own_characters.meta.json",
+  "figures/issue_2054/writeup_result12/wr6_pooled_vs_own_characters.pdf",
+  "figures/issue_2054/writeup_result12/wr6_pooled_vs_own_characters.png",
   "scripts/issue2054_writeup_result12_figs.py"
  ],
- "created": "2026-08-13T21:48:31Z",
+ "created": "2026-08-13T22:02:01Z",
  "figsize": [
   11.2,
   4.4
