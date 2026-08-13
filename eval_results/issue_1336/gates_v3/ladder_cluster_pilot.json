@@ -1,0 +1,15 @@
+{
+  "component": "LAD_cluster (4 transitions x 2 arms delta-Q battery)",
+  "pilot_leg": "base:sft on-arm, production draws",
+  "pilot_wall_s": 339.8,
+  "pilot_rc": 0,
+  "pilot_max_rss_gib": 96.03,
+  "mem_available_gib": 1965.97,
+  "rss_headroom_factor": 1.25,
+  "rss_fits_host": true,
+  "n_legs_total": 8,
+  "projected_wall_h": 0.755,
+  "planned_wall_h": 0.5,
+  "ratio": 1.51,
+  "basis": "measured 1-transition pilot through the production entrypoint at production draw count; peak RSS from rusage(RUSAGE_CHILDREN) \u2014 the C-i profiles-array transient is inside the measured leg"
+}

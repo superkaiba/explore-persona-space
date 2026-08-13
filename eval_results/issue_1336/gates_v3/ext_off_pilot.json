@@ -1,0 +1,10 @@
+{
+  "component": "EXT_off (20 off-diagonal capture cells x 7 corpora)",
+  "pilot_cell_wall_s": 0.0,
+  "n_pending": 129,
+  "ngpu": 8,
+  "projected_wall_h": 0.0,
+  "planned_wall_h": 3.8,
+  "ratio": 0.0,
+  "basis": "measured 1-cell pilot (dpo x rlvr-text on lmsys23k, the largest corpus \u2014 projection over smaller corpora is conservative) through the production entrypoint"
+}
