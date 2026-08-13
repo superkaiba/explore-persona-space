@@ -1250,6 +1250,54 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   shape; active-voice claims ("the JSON records the per-layer values")
   never parse (v1 false-negative class).
 
+- **check 55** (`check_v4_aggregate_stat_needs_per_unit`, WARN, v4-only,
+  #2264; incident #2224 r3): a `### <result>` block under `## Results`
+  embedding EXACTLY ONE inline figure whose figure-adjacent text (the
+  figure's ALT text + the section's blockquote `> ` caption lines — the
+  check-49 scoping; general section prose never triggers) reports a
+  correlation/AUC-family aggregate statistic (word-boundary-guarded
+  `r` / `rho` (word or Greek) / `R2` / `R²` / `R^2` / `AUC` / `AUROC`
+  followed by `=` / `≈` / `:` and a numeric, or a
+  `Spearman|Pearson`-qualified bare symbol) with NO exemption evidence —
+  none of (a) the literal
+  machine-read token `per-unit exemption` (case-insensitive,
+  hyphen/space/en-dash tolerant) anywhere in the block's prose layer,
+  (b) the single figure's basename matching the `_PER_UNIT_FIG_RE`
+  per-unit companion convention (the figure already IS the per-unit
+  view — SPEC's first stated exemption), (c) the `_DECLARED_PAIR_RE`
+  declared-pair idiom in the alt/caption lines — draws a WARN naming
+  the H3, the matched statistic text, and the missing evidence classes.
+  The SINGLE-figure arm of SPEC's "low-level data plot behind every
+  aggregate" rule: the 0-figure case is check 48's territory, the
+  >1-figure case is check 49's. WARN never FAIL (statistic detection
+  from caption text is heuristic; clean-result-critic Lens 11 stays the
+  substantive owner). Vacuous PASS on v3/v2/legacy bodies
+  (forward-only). Incident #2224 r3: two folded fu1 aggregate results
+  shipped with neither the per-unit view nor the `Per-unit exemption:`
+  line the body itself used elsewhere; only the LM critic caught it.
+
+- **check 56** (`check_v4_ack_result_count`, WARN, v4-only, #2264;
+  incident #2224 r3; dispatched OUTSIDE CHECKS with the issue number —
+  the check-20/#921 precedent): the conciseness-cap acknowledgment
+  paragraph's claims are reconciled against the folded body. Two arms,
+  one CheckResult unioning both: (a) COUNT-CLAIM — every `<N> result(s)`
+  claim in the `_warn_acknowledgment_text` union (N a 1-3-digit numeral
+  or a number word one..twenty; a word-number immediately preceded by
+  another number word is SKIPPED — dash normalization turns "twenty-one
+  results" into "twenty one results", which a naive map would parse as
+  N=1) is compared to the actual `### ` H3 count under `## Results`;
+  any mismatch WARNs naming claimed vs actual. (b) SINGLE-ROUND — a
+  `single-round` claim in the acknowledgment while
+  `_count_extra_followup_rounds_v4` counts >0 folded rounds (footer
+  round clauses; events.jsonl when the issue is known) WARNs naming the
+  round count + source. Fold rounds recurrently stale the
+  acknowledgment (each same-issue follow-up fold edits `## Results` but
+  not the acknowledgment paragraph). WARN never FAIL. Vacuous PASS on
+  v3/v2/legacy bodies, bodies with no acknowledgment paragraph, and
+  when `## Results` is absent (check 2 reports). Incident #2224 r3: the
+  acknowledgment still said "single-round … nine results" while the
+  folded body carried 13 results across 3 folded rounds.
+
 - **judge drop-line population reconciliation**
   (`check_judge_drop_line_population`, FAIL/WARN, v3+v4, #1776 incident /
   task #1881; unnumbered — dispatched outside CHECKS next to the #732
@@ -2845,6 +2893,33 @@ _DECLARED_PAIR_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Check 55: correlation/AUC-family aggregate-statistic detection, scoped to
+# FIGURE-ADJACENT text only (the single figure's alt text + the section's
+# blockquote caption lines — the check-49 scoping rationale: what-is-plotted
+# beats routinely mention rho / AUC as SPEC-mandated disclosure prose, so
+# whole-block matching would drown the signal). Two alternates: a
+# word-boundary-guarded symbol followed by `=` / `≈` / `:` and a numeric
+# (optionally signed, incl. the U+2212 matplotlib minus), and a
+# Spearman/Pearson-qualified bare symbol (the statistic is named even
+# without an inline value). The lookbehind stops mid-word matches
+# ("color=red" never fires on its `r`).
+_V4_AGG_STAT_RE = re.compile(
+    r"(?<![a-zA-Z0-9_])(?:r|rho|ρ|R2|R²|R\^2|AUC|AUROC)\s*[=≈:]\s*[-+−]?\d*\.?\d+"  # noqa: RUF001
+    r"|(?<![a-zA-Z0-9_])(?:spearman|pearson)(?:['’]s)?\s+(?:r|rho|ρ)(?![a-zA-Z0-9])",  # noqa: RUF001
+    re.IGNORECASE,
+)
+
+# Check 55: the literal machine-read exemption token — the established body
+# convention (#2224's promoted body used `Per-unit exemption:` three times)
+# this check gives mechanical meaning. Case-insensitive; hyphen / en-dash /
+# em-dash / space tolerant between the tokens. Scanned over the WHOLE
+# `### <result>` block's prose layer (the token lives in what-is-plotted
+# prose, not the caption).
+_PER_UNIT_EXEMPTION_TOKEN_RE = re.compile(
+    r"\bper[\s\-–—]?unit[\s\-–—]+exemption\b",  # noqa: RUF001
+    re.IGNORECASE,
+)
+
 # Check 38: any markdown link (image embeds are masked out before this
 # scans, so no `!`-lookbehind is needed); link text tolerates `]` not
 # followed by `(` — the same tolerance `_IMAGE_RE` uses — and may be
@@ -4130,6 +4205,101 @@ def check_v4_result_figure_cardinality(body: str) -> CheckResult:
         label,
         True,
         f"all {len(result_h3s)} `### <result>`(s) scanned — no unpaired multi-figure section",
+    )
+
+
+def check_v4_aggregate_stat_needs_per_unit(body: str) -> CheckResult:
+    """Check 55 (v4 only, WARN): a `### <result>` section under
+    `## Results` embedding EXACTLY ONE inline figure whose figure-adjacent
+    text (alt text + blockquote `> ` caption lines) reports a
+    correlation/AUC-family aggregate statistic (`_V4_AGG_STAT_RE`: `r` /
+    `rho` (word or Greek) / `R2` / `R²` / `R^2` / `AUC` / `AUROC` with a
+    value, or a Spearman/Pearson-qualified bare symbol) draws a WARN naming the H3,
+    the matched statistic text, and the missing evidence classes — UNLESS
+    any ONE exemption evidence is present:
+
+    (a) the literal machine-read token `per-unit exemption`
+        (`_PER_UNIT_EXEMPTION_TOKEN_RE`) anywhere in the block's prose
+        layer — the SPEC-named escape for a result whose intervals /
+        committed artifacts already carry the per-unit story;
+    (b) the single figure's basename matches `_PER_UNIT_FIG_RE` (the
+        figure already IS the per-unit view — SPEC's first stated
+        exemption);
+    (c) the `_DECLARED_PAIR_RE` declared-pair idiom in the alt/caption
+        lines (parity with check 49's pair-evidence vocabulary).
+
+    The SINGLE-figure arm of SPEC.md § "Low-level data plot behind every
+    aggregate": the 0-figure case is check 48's territory, the >1-figure
+    case is check 49's (`check_v4_result_figure_cardinality`) — this check
+    fires ONLY at `len(figures) == 1`. Statistic detection is scoped to
+    the figure's alt text + the section's blockquote caption lines, NEVER
+    general section prose (the check-49 scoping rationale: what-is-plotted
+    beats routinely mention rho / AUC as disclosure prose, so whole-block
+    matching would drown the signal); the exemption TOKEN, by contrast, is
+    scanned over the whole block's prose layer (it lives in
+    what-is-plotted prose in the wild — #2224).
+
+    WARN, NEVER FAIL: statistic detection from caption text is heuristic,
+    and the clean-result-critic Lens 11 aggregate-vs-per-unit rule stays
+    the substantive owner. Scans the `_prose_layer` (fenced code +
+    `<details>` stripped, so a quoted example embed or fenced caption
+    never counts). PASSes vacuously on v3 / v2 / legacy bodies
+    (forward-only). Incident #2224 r3: two folded fu1 aggregate results
+    shipped with neither the per-unit view nor the `Per-unit exemption:`
+    line the body itself used elsewhere; only the LM critic caught it
+    (#2264).
+    """
+    label = "Single aggregate-stat figure has per-unit evidence or exemption (v4)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped — not a v4 body")
+    results = _v4_results_body(body)
+    if results is None:
+        return CheckResult(label, True, "## Results missing — check 2 will report")
+    prose = _prose_layer(results)
+    result_h3s = _collect_tldr_h3_names(prose)
+    if not result_h3s:
+        return CheckResult(label, True, "no `### <result>` headings — check 3 will report")
+    plines = prose.splitlines()
+    flagged: list[str] = []
+    for idx, (name, line_no) in enumerate(result_h3s):
+        end_line = result_h3s[idx + 1][1] if idx + 1 < len(result_h3s) else len(plines)
+        block = plines[line_no + 1 : end_line]
+        figures = _v4_block_inline_figures(block)
+        if len(figures) != 1:
+            continue  # 0 figures: check 48's; >1 figures: check 49's
+        url, alt = figures[0]
+        caption_lines = [ln for ln in block if ln.lstrip().startswith(">")]
+        adjacent = "\n".join([alt, *caption_lines])
+        stat_m = _V4_AGG_STAT_RE.search(adjacent)
+        if stat_m is None:
+            continue  # no aggregate statistic in the figure-adjacent text
+        if _PER_UNIT_EXEMPTION_TOKEN_RE.search("\n".join(block)):
+            continue  # exemption (a): the literal machine-read token
+        if _PER_UNIT_FIG_RE.search(_fig_basename(url)):
+            continue  # exemption (b): the single figure IS the per-unit view
+        if _DECLARED_PAIR_RE.search(adjacent):
+            continue  # exemption (c): declared-pair idiom in alt / caption
+        stat_txt = " ".join(stat_m.group(0).split())
+        flagged.append(f"'{name[:48]}' (figure {_fig_basename(url)}, statistic '{stat_txt}')")
+    if flagged:
+        preview = "; ".join(flagged[:2]) + (" …" if len(flagged) > 2 else "")
+        return CheckResult(
+            label,
+            True,
+            f"{len(flagged)} `### <result>` section(s) report a correlation/AUC-family "
+            "statistic in their single figure's alt/caption with NO per-unit evidence — "
+            "no literal `per-unit exemption` token in the section prose, no per-unit "
+            "companion basename, and no declared-pair idiom in the alt text / blockquote "
+            "captions. Embed the per-unit companion (SPEC.md § Low-level data plot behind "
+            "every aggregate) or state `Per-unit exemption: <reason>` in the section "
+            f"(substantive owner: clean-result-critic Lens 11): {preview}",
+            is_warn=True,
+        )
+    return CheckResult(
+        label,
+        True,
+        f"all {len(result_h3s)} `### <result>`(s) scanned — no exemption-less "
+        "single-figure aggregate statistic",
     )
 
 
@@ -16497,6 +16667,133 @@ def _warn_acknowledgment_text(body: str) -> str | None:
     return " ".join(paras) if paras else None
 
 
+# Check 56: number words one..twenty for the acknowledgment count-claim
+# grammar (#2224's incident acknowledgment wrote "nine results"; its fixed
+# form writes "13 results"). DELIBERATELY SEPARATE from `_NUMBER_WORDS`
+# (which stops at ten and feeds `_V4_FOOTER_ROUND_PLURAL_RE`'s alternation
+# \u2014 extending it would change check 20's folded-round budget behavior; the
+# #2264 no-existing-check-behavior-change constraint).
+_V4_ACK_NUMBER_WORDS = {
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+    "eleven": 11,
+    "twelve": 12,
+    "thirteen": 13,
+    "fourteen": 14,
+    "fifteen": 15,
+    "sixteen": 16,
+    "seventeen": 17,
+    "eighteen": 18,
+    "nineteen": 19,
+    "twenty": 20,
+}
+# Check 56: a `<N> result(s)` count claim in the (lowercased,
+# dash-normalized) acknowledgment text. The word alternation backtracks
+# correctly on prefixes ("seven" fails `\s+results?` inside "seventeen
+# results", so "seventeen" matches); the compound-number guard (a preceding
+# number word) is applied at the call site, not in the regex.
+_V4_ACK_RESULT_COUNT_RE = re.compile(
+    r"\b(?P<num>\d{1,3}|" + "|".join(_V4_ACK_NUMBER_WORDS) + r")\s+results?\b"
+)
+# Check 56: the single-round claim. `_warn_acknowledgment_text` output is
+# dash-normalized (hyphen -> space), so the space form is what matches in
+# practice; the hyphen alternative is kept for direct-text robustness.
+_V4_ACK_SINGLE_ROUND_RE = re.compile(r"\bsingle[\s\-]+round\b")
+
+
+def check_v4_ack_result_count(body: str, *, issue: int | None = None) -> CheckResult:
+    """Check 56 (v4 only, WARN): the conciseness-cap acknowledgment
+    paragraph's claims reconcile with the FOLDED body. Two arms, one
+    CheckResult unioning both:
+
+    - COUNT-CLAIM arm: every `<N> result(s)` claim in the
+      `_warn_acknowledgment_text` union (N a 1-3-digit numeral or a number
+      word one..twenty via `_V4_ACK_NUMBER_WORDS`) is compared to the
+      actual `### ` H3 count under `## Results`
+      (`_collect_tldr_h3_names` over the `_prose_layer` of
+      `_v4_results_body`); any parsed N != actual WARNs naming claimed vs
+      actual. Compound-number guard: a word-number immediately preceded by
+      ANOTHER number word is skipped \u2014 the helper's dash normalization
+      turns "twenty-one results" into "twenty one results", which a naive
+      one..twenty map would mis-parse as N=1 (#2264 plan note 3).
+    - SINGLE-ROUND arm: a `single-round` claim in the acknowledgment
+      (`_V4_ACK_SINGLE_ROUND_RE`; the helper dash-normalizes to
+      "single round") while `_count_extra_followup_rounds_v4(body, issue)`
+      counts >0 folded rounds WARNs naming the round count + winning
+      signal source. The events leg binds only when `issue` is known; in
+      bare `--file` / `--body-stdin` mode the footer leg alone counts (the
+      helper's own documented degradation).
+
+    Fold rounds recurrently stale the acknowledgment \u2014 each same-issue
+    follow-up fold edits `## Results` but not the acknowledgment
+    paragraph. WARN, NEVER FAIL (the claim grammar is heuristic; the
+    clean-result-critic conciseness/consolidation lenses stay the
+    substantive owner). Vacuous PASS on v3 / v2 / legacy bodies
+    (forward-only), on bodies with no acknowledgment paragraph, and when
+    `## Results` is absent (check 2 reports). Dispatched OUTSIDE the
+    body-only CHECKS list (needs `issue` \u2014 the check-20/#921 precedent).
+    Incident #2224 r3: the acknowledgment still said "single-round \u2026 nine
+    results" while the folded body carried 13 results across 3 folded
+    rounds (#2264).
+    """
+    label = "Acknowledgment result-count matches folded body (v4)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped \u2014 not a v4 body")
+    ack = _warn_acknowledgment_text(body)
+    if ack is None:
+        return CheckResult(label, True, "no acknowledgment paragraph")
+    results = _v4_results_body(body)
+    if results is None:
+        return CheckResult(label, True, "## Results missing \u2014 check 2 will report")
+    actual = len(_collect_tldr_h3_names(_prose_layer(results)))
+    warns: list[str] = []
+    for m in _V4_ACK_RESULT_COUNT_RE.finditer(ack):
+        prefix = ack[: m.start()].rstrip()
+        prev_word = prefix.rsplit(None, 1)[-1] if prefix else ""
+        if prev_word in _V4_ACK_NUMBER_WORDS:
+            # Compound word-number ("twenty one results" after dash
+            # normalization): neither token alone is the claimed count \u2014
+            # skip rather than mis-parse.
+            continue
+        token = m.group("num")
+        claimed = _V4_ACK_NUMBER_WORDS.get(token) or int(token)
+        if claimed != actual:
+            msg = (
+                f"acknowledgment claims '{m.group(0)}' but `## Results` carries "
+                f"{actual} `### ` result section(s)"
+            )
+            if msg not in warns:
+                warns.append(msg)
+    if _V4_ACK_SINGLE_ROUND_RE.search(ack):
+        rounds, source = _count_extra_followup_rounds_v4(body, issue)
+        if rounds > 0:
+            warns.append(
+                f"acknowledgment claims 'single-round' but the body carries {rounds} "
+                f"folded same-issue follow-up round(s) (source: {source})"
+            )
+    if warns:
+        return CheckResult(
+            label,
+            True,
+            "fold-staled acknowledgment \u2014 each follow-up fold edits `## Results` but "
+            "not the acknowledgment paragraph; rewrite the claim(s): " + "; ".join(warns),
+            is_warn=True,
+        )
+    return CheckResult(
+        label,
+        True,
+        f"acknowledgment claims reconcile with the folded body ({actual} `### ` result section(s))",
+    )
+
+
 def check_v3_word_caps(body: str) -> CheckResult:
     """Check 20 (v3 only): the §4 conciseness caps.
 
@@ -17925,6 +18222,12 @@ CHECKS = [
     # names the dropped condition in ## Takeaways AND >=1 `### <result>` block
     # (CLAUDE.md After-Every-Experiment item 8(a); #2017; incident #1947):
     check_v4_dropped_condition_placement,
+    # check 55 (v4, WARN) — a single-figure `### <result>` whose alt/caption
+    # reports a correlation/AUC-family aggregate statistic with no per-unit
+    # evidence and no literal `per-unit exemption` token (the SINGLE-figure
+    # arm of SPEC's low-level-data-plot rule; the 0-figure case is check
+    # 48's, the >1-figure case check 49's; #2264; incident #2224 r3):
+    check_v4_aggregate_stat_needs_per_unit,
     # generation-agnostic checks (v2 AND v3 AND v4):
     check_figure_url_sha_matches_repro,  # check 22
     check_hf_url_resolves,  # check 23
@@ -17997,6 +18300,11 @@ CHECKS = [
     # WARN grandfathered) is NOT here either — it needs the issue number
     # (events.jsonl followup-scope markers), so it is dispatched separately
     # in `verify_text` (#1521; the check-20/#921 precedent).
+    # Check 56 (`check_v4_ack_result_count`, WARN, v4-only) is NOT here
+    # either — its single-round arm needs the issue number (events.jsonl
+    # folded-round evidence via `_count_extra_followup_rounds_v4`), so it
+    # is dispatched separately in `verify_text` (#2264; the check-20/#921
+    # precedent).
 ]
 
 
@@ -18200,6 +18508,11 @@ def verify_text(
     # events.jsonl read, so it lives outside the body-only CHECKS list
     # (the check-20/#921 precedent).
     results.append(check_context_followup_scope_consistency(body, issue=issue))
+    # Check 56 (WARN, #2264; incident #2224 r3): acknowledgment result-count
+    # + single-round claims vs the folded body — the single-round arm needs
+    # the issue number for the events.jsonl folded-round evidence, so it
+    # lives outside the body-only CHECKS list (the check-20/#921 precedent).
+    results.append(check_v4_ack_result_count(body, issue=issue))
     overall = all(r.passed for r in results)
     return overall, results
 
