@@ -17,6 +17,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()  # BEFORE heavy imports: shared-VM thread caps bind in-process (#847)
+
 import matplotlib
 
 matplotlib.use("Agg")
