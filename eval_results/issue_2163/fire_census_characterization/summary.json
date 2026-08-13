@@ -1,0 +1,189 @@
+{
+ "meta": {
+  "git_commit": "3bb8c78b",
+  "git_dirty": false,
+  "seed": 2163,
+  "timestamp_utc": "2026-08-13T17:00:32.305499+00:00",
+  "inputs": [
+   "eval_results/issue_2163/census.npz",
+   "eval_results/issue_2163/population_partials.json",
+   "eval_results/issue_2163/read_ladder__W.npz",
+   "eval_results/issue_1482/predictor_battery/fullwidth_covariates_v2.npz",
+   "eval_results/issue_1482/context_side_labels/descriptions_context_side.jsonl",
+   "/mnt/eps-data/thomasjiralerspong/issue2163_r2/labels_dl/issue1773_featurepipeline/recovery_1934"
+  ]
+ },
+ "populations": {
+  "n_complete_case": {
+   "recomputed": 128450,
+   "committed": 128450
+  },
+  "n_firing": {
+   "recomputed": 13282,
+   "committed": 13282
+  },
+  "n_never": {
+   "recomputed": 115168,
+   "committed": 115168
+  }
+ },
+ "firing_premask_drop": {
+  "n_premask_firing": 13289,
+  "n_dropped_by_complete_case": 7,
+  "dropped_logU_nonfinite": 0,
+  "dropped_covariate_nonfinite": 7
+ },
+ "bank": {
+  "bank_rows": 127802,
+  "bank_dropped_out_of_range_ids": 197,
+  "bank_valid": 127605
+ },
+ "label_join_coverage": {
+  "firing": {
+   "n": 13282,
+   "labeled": 13204,
+   "coverage": 0.9941
+  },
+  "never": {
+   "n": 115168,
+   "labeled": 114339,
+   "coverage": 0.9928
+  },
+  "complete_case": {
+   "n": 128450,
+   "labeled": 127543,
+   "coverage": 0.9929
+  }
+ },
+ "promoting_class_shares": {
+  "firing": {
+   "other": 0.7567,
+   "promoting": 0.1629,
+   "suppressing": 0.0242,
+   "partition": 0.0562
+  },
+  "never": {
+   "other": 0.8396,
+   "promoting": 0.0512,
+   "suppressing": 0.041,
+   "partition": 0.0683
+  }
+ },
+ "decile_grading_within_firing": {
+  "lasttoken_count_decile_edges": [
+   1.0,
+   2.0,
+   4.0,
+   7.0,
+   13.0,
+   28.0,
+   69.0,
+   248.89999999999964,
+   120000.0
+  ],
+  "n_bins": 8,
+  "per_bin_n": [
+   2809,
+   2211,
+   1452,
+   1383,
+   1409,
+   1356,
+   1333,
+   1329
+  ],
+  "medians": {
+   "template_token_frac": {
+    "never_firing_reference": 0.0,
+    "per_decile": [
+     0.001535605418165983,
+     0.0019342359767891683,
+     0.0023664948558332474,
+     0.002616333395626986,
+     0.003131524008350731,
+     0.0037843546973627034,
+     0.005589658409763848,
+     0.017386926889714993
+    ]
+   },
+   "act_var_across_answers": {
+    "never_firing_reference": 2.1167358221255924e-05,
+    "per_decile": [
+     0.00047695036907861735,
+     0.000700001420400014,
+     0.000962971596529667,
+     0.0011270337488654392,
+     0.0016001221721899416,
+     0.002061052239081756,
+     0.0032519892175738715,
+     0.0055230058239387255
+    ]
+   },
+   "consistency": {
+    "never_firing_reference": 0.004896509542985036,
+    "per_decile": [
+     0.011297212143714278,
+     0.012800691105613354,
+     0.014190359934346294,
+     0.014791304716962902,
+     0.016275340473130298,
+     0.01757792168254812,
+     0.019632500369058427,
+     0.02335797436652432
+    ]
+   },
+   "firing_freq_per_token": {
+    "never_firing_reference": 3.1296916321169305e-05,
+    "per_decile": [
+     0.0003065101304645732,
+     0.0003737385398484145,
+     0.000446899468505365,
+     0.0006210575400611909,
+     0.0007501917369154525,
+     0.0009568148456342487,
+     0.0013509209258154517,
+     0.001792997932567762
+    ]
+   },
+   "mean_act_uncond": {
+    "never_firing_reference": 0.0001462805430094401,
+    "per_decile": [
+     0.0013103973229726155,
+     0.0015348601500193278,
+     0.001846300721168518,
+     0.0025376259009043376,
+     0.0030628682136535643,
+     0.004036213437716166,
+     0.005977657794952393,
+     0.009393186251322428
+    ]
+   },
+   "mean_run_length": {
+    "never_firing_reference": 1.1666666666666667,
+    "per_decile": [
+     1.554899941551393,
+     1.5876369327073552,
+     1.616052203473678,
+     1.625488107916223,
+     1.663891323400526,
+     1.6657334362697327,
+     1.6815526325221317,
+     1.6473392485763214
+    ]
+   }
+  }
+ },
+ "context_only_subpopulation": {
+  "n_context_side_labeled": 1653,
+  "in_firing": 0,
+  "in_never": 0,
+  "outside_complete_case": 1653,
+  "premask_lasttoken_count_gt0": 7,
+  "premask_lasttoken_count_max": 121.0,
+  "nonfinite_covariates_all_1653": [
+   "consistency",
+   "mean_act_cond"
+  ],
+  "evidence_side_caveat": "context-side descriptions (#1482 instrument) \u2014 never pooled with the #1773 answer-side taxonomy"
+ }
+}
