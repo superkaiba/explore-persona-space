@@ -2504,9 +2504,18 @@ def phase_upload(args) -> None:
     )
     at = out_dir / "analysis_tensors"
     if at.exists():
-        # _upload is fail-soft by RETURN ('' on missing token / absent path / failed
-        # verify) — capture + raise so a silent HF durability loss cannot exit 0.
-        url = hub._upload(at, f"{HF_EXPERIMENT}/analysis_tensors", repo_type="dataset")
+        # Canonical 4-positional form (hub.py:1490 — local_path, repo_id, repo_type,
+        # path_in_repo; cf. issue1482_early_layer.py:992). raise_on_error=True re-raises
+        # upload EXCEPTIONS with their real traceback; the if-not-url guard stays because
+        # the non-exception '' returns (missing HF_TOKEN, absent path, 0-files verify)
+        # are fail-soft by RETURN and must not let a silent HF durability loss exit 0.
+        url = hub._upload(
+            at,
+            hub.DEFAULT_DATASET_REPO,
+            "dataset",
+            f"{HF_EXPERIMENT}/analysis_tensors",
+            raise_on_error=True,
+        )
         if not url:
             raise RuntimeError(
                 f"analysis_tensors upload returned no path (HF durability loss): {at}"
