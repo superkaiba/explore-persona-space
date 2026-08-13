@@ -64,3 +64,31 @@ Note: the promoted body's statement that base paired-story cells are
 "N/A — not tested" reflects the pre-recovery state of git; these recovered
 artifacts show the base capture/fit leg DID run (on the instruct-written
 paired stories — base narrative *generation* was still never attempted).
+
+## Standardized refit (`refit_standardized/`, 2026-08-13)
+
+The recovered ambient unguarded-GCV reads above sit in the #1887
+estimator-degenerate regime (n_train ≈ 1,728 < d = 3,584). The follow-up
+refit re-read the same stores under the newest standardized protocol — the
+`scripts/issue1345_story_char_ladder_fill.py` chain (train-fold PCA reduced
+basis, k = min(1024, ⌊n_train/2⌋, d); guarded cap-0.9 GCV ambient as the
+secondary column) via `scripts/issue1345_refit_base_story_standardized.py`
+(fit chain imported verbatim; recorded deltas in its module docstring).
+Outputs: `refit_standardized/ladders_{context,prefix}.json` — pairs
+r1↔r4, r1↔r4op, r2↔r4, both directions, ceilings + 9-rung ladders +
+matched-capacity nulls + kNN retrieval. Headline (context arm, layer 19,
+matched rows): story inserted −0.245 → **+0.375** reduced (+0.445 guarded
+ambient); story on-policy +0.047 → +0.112 (n=135); chat matched −0.308 →
++0.482; plain-text matched −0.247 → +0.512. The prefix arm has NO reduced
+read by construction — the chat/plain-text prefix slot is the parent's
+documented batch-numerics degeneracy (~14 distinct vectors, so a rank-864
+train-fold PCA basis cannot exist); its guarded-ambient reads: story
+inserted −1.620 → +0.146, chat matched +0.117, plain-text +0.111, story
+on-policy ≈ 0. Selected-λ diagnostics: story-input legs select λ = 1e3 in
+the reduced basis (dof_frac_max 0.42) and 1e3–3.2e3 guarded-ambient
+(dof_frac ≤ 0.38) — never the 0.01 near-interpolating floor the unguarded
+selector chose. Stores staged from HF pins `2a3cb30a` (r1/r2) and
+`87b0c19e` (r4/r4op, the recovered round's own upload); RunPod CPU lane was
+capacity-exhausted (3× cpu5m miss + cpu3c disk cap), so the round ran on
+the VM data disk under the documented fallback (markers v295/v296 on
+#1345).
