@@ -135,3 +135,7 @@ scripts/.i1768_verdict_manifest.json
 # untracked by convention only; this makes it mechanical.
 dashboard/public/annotate-1773.html
 dashboard/public/sae-features-1482.html
+
+# Live per-unit run checkpoints: MUST stay untracked — committing one while its
+# run is still appending lets the pre-commit stash cycle destroy the appends (#2015).
+eval_results/**/*.units.jsonl

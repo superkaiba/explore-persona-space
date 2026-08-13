@@ -1,0 +1,299 @@
+{
+ "metadata": {
+  "script_version": "issue2054_loco_pooled_v1 (prefix arm)",
+  "git_commit": "6b399d2b8c4560db10b9936dfeb4c374debc7567",
+  "utc": "2026-08-13T23:09:43Z",
+  "provenance": "RECOVERED FROM RUN LOG, not from the per-unit checkpoint. The checkpoint JSONL was committed to git while this run was still appending to it, so the pre-commit stash cycle destroyed 55 of 56 appended prefix records (#2015 permanent-loss path). The context arm was unaffected (it had completed before the file was committed). Only the headline per-cell R2 pair survives here; per-fold detail, kNN retrieval and identity-bias companions for the prefix arm were lost and are NOT recoverable without a re-run.",
+  "rerun_decision": "NOT re-run: all 56 prefix cells have full-pool R2 <= 0, so the pooled map fails on the prefix arm even with every speaker in training. There is no signal for a leave-one-speaker-out test to degrade, and the arm answers nothing. Matches the pooled 4-tier ladder finding (11/56 usable ceilings, nothing recoverable at any tier).",
+  "n_units": 56
+ },
+ "summary": {
+  "n_full_pool_r2_above_0.01": 0,
+  "n_full_pool_r2_at_or_below_0": 56,
+  "full_pool_r2_min": -0.2472,
+  "full_pool_r2_max": -0.0125,
+  "full_pool_r2_median": -0.05325
+ },
+ "per_unit_headline": [
+  {
+   "cell": "char_dana__inserted__attrib_quoted__qwen2.5-7b-instruct",
+   "loco_r2": -0.06,
+   "full_pool_r2": -0.0449
+  },
+  {
+   "cell": "char_dana__inserted__attrib_quoted__qwen2.5-7b",
+   "loco_r2": -0.0681,
+   "full_pool_r2": -0.0544
+  },
+  {
+   "cell": "char_dana__inserted__bare_label__qwen2.5-7b-instruct",
+   "loco_r2": -0.0545,
+   "full_pool_r2": -0.0423
+  },
+  {
+   "cell": "char_dana__inserted__bare_label__qwen2.5-7b",
+   "loco_r2": -0.0655,
+   "full_pool_r2": -0.0548
+  },
+  {
+   "cell": "char_dana__on_policy__attrib_quoted__qwen2.5-7b-instruct",
+   "loco_r2": -0.082,
+   "full_pool_r2": -0.0482
+  },
+  {
+   "cell": "char_dana__on_policy__attrib_quoted__qwen2.5-7b",
+   "loco_r2": -0.1076,
+   "full_pool_r2": -0.079
+  },
+  {
+   "cell": "char_dana__on_policy__bare_label__qwen2.5-7b-instruct",
+   "loco_r2": -0.1396,
+   "full_pool_r2": -0.1083
+  },
+  {
+   "cell": "char_dana__on_policy__bare_label__qwen2.5-7b",
+   "loco_r2": -0.152,
+   "full_pool_r2": -0.132
+  },
+  {
+   "cell": "char_dana_op__cell_c__chat__qwen2.5-7b-instruct",
+   "loco_r2": -0.0491,
+   "full_pool_r2": -0.0354
+  },
+  {
+   "cell": "char_dana_op_base__cell_c__chat__qwen2.5-7b",
+   "loco_r2": -0.0472,
+   "full_pool_r2": -0.034
+  },
+  {
+   "cell": "char_helios__inserted__attrib_quoted__qwen2.5-7b-instruct",
+   "loco_r2": -0.0544,
+   "full_pool_r2": -0.0297
+  },
+  {
+   "cell": "char_helios__inserted__attrib_quoted__qwen2.5-7b",
+   "loco_r2": -0.0635,
+   "full_pool_r2": -0.0446
+  },
+  {
+   "cell": "char_helios__inserted__bare_label__qwen2.5-7b-instruct",
+   "loco_r2": -0.048,
+   "full_pool_r2": -0.0266
+  },
+  {
+   "cell": "char_helios__inserted__bare_label__qwen2.5-7b",
+   "loco_r2": -0.0558,
+   "full_pool_r2": -0.0419
+  },
+  {
+   "cell": "char_helios__on_policy__attrib_quoted__qwen2.5-7b-instruct",
+   "loco_r2": -0.0494,
+   "full_pool_r2": -0.0285
+  },
+  {
+   "cell": "char_helios__on_policy__attrib_quoted__qwen2.5-7b",
+   "loco_r2": -0.1252,
+   "full_pool_r2": -0.1037
+  },
+  {
+   "cell": "char_helios__on_policy__bare_label__qwen2.5-7b-instruct",
+   "loco_r2": -0.077,
+   "full_pool_r2": -0.0655
+  },
+  {
+   "cell": "char_helios__on_policy__bare_label__qwen2.5-7b",
+   "loco_r2": -0.1832,
+   "full_pool_r2": -0.1635
+  },
+  {
+   "cell": "char_helios_op__cell_c__chat__qwen2.5-7b-instruct",
+   "loco_r2": -0.0171,
+   "full_pool_r2": -0.0125
+  },
+  {
+   "cell": "char_helios_op_base__cell_c__chat__qwen2.5-7b",
+   "loco_r2": -0.0465,
+   "full_pool_r2": -0.0335
+  },
+  {
+   "cell": "char_vex__inserted__attrib_quoted__qwen2.5-7b-instruct",
+   "loco_r2": -0.0573,
+   "full_pool_r2": -0.0561
+  },
+  {
+   "cell": "char_vex__inserted__attrib_quoted__qwen2.5-7b",
+   "loco_r2": -0.0646,
+   "full_pool_r2": -0.0735
+  },
+  {
+   "cell": "char_vex__inserted__bare_label__qwen2.5-7b-instruct",
+   "loco_r2": -0.0518,
+   "full_pool_r2": -0.0521
+  },
+  {
+   "cell": "char_vex__inserted__bare_label__qwen2.5-7b",
+   "loco_r2": -0.0625,
+   "full_pool_r2": -0.0725
+  },
+  {
+   "cell": "char_vex__on_policy__attrib_quoted__qwen2.5-7b-instruct",
+   "loco_r2": -0.1566,
+   "full_pool_r2": -0.1045
+  },
+  {
+   "cell": "char_vex__on_policy__attrib_quoted__qwen2.5-7b",
+   "loco_r2": -0.2481,
+   "full_pool_r2": -0.1957
+  },
+  {
+   "cell": "char_vex__on_policy__bare_label__qwen2.5-7b-instruct",
+   "loco_r2": -0.1774,
+   "full_pool_r2": -0.1311
+  },
+  {
+   "cell": "char_vex__on_policy__bare_label__qwen2.5-7b",
+   "loco_r2": -0.2999,
+   "full_pool_r2": -0.2472
+  },
+  {
+   "cell": "char_vex_op__cell_c__chat__qwen2.5-7b-instruct",
+   "loco_r2": -0.1112,
+   "full_pool_r2": -0.0797
+  },
+  {
+   "cell": "char_vex_op_base__cell_c__chat__qwen2.5-7b",
+   "loco_r2": -0.127,
+   "full_pool_r2": -0.091
+  },
+  {
+   "cell": "char_wren__inserted__attrib_quoted__qwen2.5-7b-instruct",
+   "loco_r2": -0.0571,
+   "full_pool_r2": -0.0378
+  },
+  {
+   "cell": "char_wren__inserted__attrib_quoted__qwen2.5-7b",
+   "loco_r2": -0.0631,
+   "full_pool_r2": -0.0472
+  },
+  {
+   "cell": "char_wren__inserted__bare_label__qwen2.5-7b-instruct",
+   "loco_r2": -0.0547,
+   "full_pool_r2": -0.0364
+  },
+  {
+   "cell": "char_wren__inserted__bare_label__qwen2.5-7b",
+   "loco_r2": -0.0614,
+   "full_pool_r2": -0.0468
+  },
+  {
+   "cell": "char_wren__on_policy__attrib_quoted__qwen2.5-7b-instruct",
+   "loco_r2": -0.0571,
+   "full_pool_r2": -0.0381
+  },
+  {
+   "cell": "char_wren__on_policy__attrib_quoted__qwen2.5-7b",
+   "loco_r2": -0.1201,
+   "full_pool_r2": -0.0996
+  },
+  {
+   "cell": "char_wren__on_policy__bare_label__qwen2.5-7b-instruct",
+   "loco_r2": -0.0891,
+   "full_pool_r2": -0.0746
+  },
+  {
+   "cell": "char_wren__on_policy__bare_label__qwen2.5-7b",
+   "loco_r2": -0.1345,
+   "full_pool_r2": -0.1234
+  },
+  {
+   "cell": "char_wren_op__cell_c__chat__qwen2.5-7b-instruct",
+   "loco_r2": -0.0299,
+   "full_pool_r2": -0.0216
+  },
+  {
+   "cell": "char_wren_op_base__cell_c__chat__qwen2.5-7b",
+   "loco_r2": -0.0427,
+   "full_pool_r2": -0.0307
+  },
+  {
+   "cell": "conversation_paired_stories_assistant__inserted__attrib_quoted__qwen2.5-7b-instruct",
+   "loco_r2": -0.0551,
+   "full_pool_r2": -0.0319
+  },
+  {
+   "cell": "conversation_paired_stories_assistant__inserted__attrib_quoted__qwen2.5-7b",
+   "loco_r2": -0.0673,
+   "full_pool_r2": -0.0377
+  },
+  {
+   "cell": "conversation_paired_stories_assistant__inserted__bare_label__qwen2.5-7b-instruct",
+   "loco_r2": -0.0946,
+   "full_pool_r2": -0.0432
+  },
+  {
+   "cell": "conversation_paired_stories_assistant__inserted__bare_label__qwen2.5-7b",
+   "loco_r2": -0.1029,
+   "full_pool_r2": -0.0513
+  },
+  {
+   "cell": "conversation_paired_stories_assistant__inserted__bare_text__qwen2.5-7b-instruct",
+   "loco_r2": -1.6709,
+   "full_pool_r2": -0.0341
+  },
+  {
+   "cell": "conversation_paired_stories_assistant__inserted__bare_text__qwen2.5-7b",
+   "loco_r2": -1.7996,
+   "full_pool_r2": -0.0319
+  },
+  {
+   "cell": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b-instruct",
+   "loco_r2": -0.1304,
+   "full_pool_r2": -0.05
+  },
+  {
+   "cell": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b",
+   "loco_r2": -0.2611,
+   "full_pool_r2": -0.1273
+  },
+  {
+   "cell": "conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b-instruct",
+   "loco_r2": -0.0319,
+   "full_pool_r2": -0.0173
+  },
+  {
+   "cell": "conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b",
+   "loco_r2": -0.0799,
+   "full_pool_r2": -0.0734
+  },
+  {
+   "cell": "conversation_paired_stories_assistant__on_policy__bare_label__qwen2.5-7b-instruct",
+   "loco_r2": -0.1533,
+   "full_pool_r2": -0.1071
+  },
+  {
+   "cell": "conversation_paired_stories_assistant__on_policy__bare_label__qwen2.5-7b",
+   "loco_r2": -0.1227,
+   "full_pool_r2": -0.0994
+  },
+  {
+   "cell": "conversation_paired_stories_assistant__on_policy__bare_text__qwen2.5-7b-instruct",
+   "loco_r2": -2.1031,
+   "full_pool_r2": -0.1004
+  },
+  {
+   "cell": "conversation_paired_stories_assistant__on_policy__bare_text__qwen2.5-7b",
+   "loco_r2": -1.4661,
+   "full_pool_r2": -0.0739
+  },
+  {
+   "cell": "conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b-instruct",
+   "loco_r2": -0.17,
+   "full_pool_r2": -0.0715
+  },
+  {
+   "cell": "conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b",
+   "loco_r2": -0.2795,
+   "full_pool_r2": -0.1517
+  }
+ ]
+}
