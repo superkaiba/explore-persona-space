@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2273,
+  "highest_id": 2274,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9842,6 +9842,13 @@
       "path": "tasks/proposed/2273",
       "status": "proposed",
       "title": "gotchas.md: fellows remote shell is zsh \u2014 unmatched glob aborts the whole SSH command (nomatch), silently truncating chained monitoring probes"
+    },
+    "2274": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2274",
+      "status": "proposed",
+      "title": "gotchas.md: fellows CPU analogue \u2014 plain-SSH nproc sees the node, inside-job nproc sees the allocation (ConstrainCores=yes vs ConstrainDevices=no asymmetry)"
     },
     "228": {
       "has_clean_result": true,
