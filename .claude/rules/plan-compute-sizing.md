@@ -547,6 +547,28 @@ implies (#1336 `EXT_off`: basis 90 GPU-h vs booked 30; abort > 30 min/cell
 vs a booked ~91 min/cell).
 
 
+**Decoding/sampling regime change — a parent run's realized wall is NOT a
+sizing basis for the regime-changed rerun; re-pilot before quoting a
+user-facing cost (#1491).** Any rerun change that shifts the
+completion-LENGTH distribution invalidates the parent's wall — generation
+wall-time is length-bound. The canonical class is a DECODING/SAMPLING
+regime change: sampling→greedy (or the reverse), a temperature change, a
+`max_new_tokens`/cap change, a stop-condition change. Under any of these
+the parent run's realized wall / GPU-h (Repro-footer figure included)
+becomes a GUESSED basis for the rerun, not a measured one. Before any
+user-facing cost quote for a regime-changed rerun, run a ONE-RUNG measured
+pilot under the NEW regime (one model size / one lane through the
+production entrypoint), extrapolate from that, and carry the parent figure
+only as a labelled lower bound; fence the rerun off the pilot (≥2×
+dispersion default), never off the parent wall. This is the
+generation-rerun sibling of PER-REGIME BINDING above (fit-lane
+behavior/budget regimes, #1739) — the regime axis there is the lane's
+corpus/budget; here it is the decode sampler itself. (#1491: a greedy
+rerun was quoted at 40–50 GPU-h off the parent's 5.4 h sampled-regime
+wall; greedy repetition loops pushed cap-hit 6.66%→18.47% at 0.5B and
+realized cost to ~78–82 GPU-h, ~1.7–2.0× the approved figure.)
+
+
 **GPU-utilization / "GPU-bound" claims in dispatch, checkpoint, and
 monitoring notes require a SAMPLED window — never one instantaneous
 `nvidia-smi` read.** Any claim that a workload is GPU-bound / "pinned

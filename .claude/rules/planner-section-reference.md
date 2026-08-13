@@ -485,6 +485,25 @@ gate set will bounce the plan — sanity-check before shipping.
 
 Bind every criterion this way. A criterion whose §4 mechanism cannot be named is a criterion the design has not produced; back-fill §4 or drop the criterion.
 
+**Measured n_train for registered per-fold/per-cell counts (#2061).** Any
+`n_train` (or per-cell/per-fold sample count) a plan REGISTERS — in a §7
+gate predicate, a §6 acceptance criterion, or a §11 hyperparameter row —
+that feeds an n-vs-d validity read (the #1887 n<d refusal, a GCV dof cap,
+power/CI sizing) MUST cite a MEASURED artifact-side row count: a named
+command reading the artifact the fit actually CONSUMES (sidecar/manifest
+`jq 'length'`, a dataset `__len__` probe, a store row count), never an
+inference from the corpus name, the builder's `n_built`, or a parent
+plan's figure — a build count and the fit's realized denominator are
+DIFFERENT quantities whenever any filter/join/dedup sits between them.
+Measure per cell/fold where counts differ. When the artifact does not
+exist at plan time, mark the row `inferred — re-measure at first
+materialization` and name the pre-fit re-measure step in §7; an inferred
+count silently feeding an n<d-sensitive fit is plan-invalidating by
+construction (#2061: corpus `n_built` was quoted where realized turnstore
+rows was the fit's denominator; likely 5 of 7 combos degenerate under the
+#1887 refusal; caught only post-smoke at the cost of an
+`epm:strategy-pivot` + plans v11→v13, ~2.6 h).
+
 ## 9. Resources & Parallelism
 
 GPU-hours, disk space, API costs, wall time. Be specific.

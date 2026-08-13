@@ -366,7 +366,12 @@ cheap intermediate signal can rule out the full run; a retained gate set is
 minimal, grounded (threshold AND sign) in prior-issue evidence of the
 construct, jointly satisfiable, and coherent with its own cited precedents
 (each band recomputed on the precedent values it cites lands in the branch
-the prose assigns — see the reference §7).
+the prose assigns — see the reference §7). Any registered per-fold/per-cell
+`n_train` (or sample count feeding an n-vs-d / dof validity read) cites a
+MEASURED artifact-side row count via a named command — never a
+corpus-name / build-count inference; not yet materialized ⇒ mark
+`inferred — re-measure at first materialization` with a named pre-fit
+re-measure step (reference §7, #2061).
 
 **Per-criterion §4-mechanism binding.** State, per acceptance criterion, WHICH §4 mechanism measures it AND what it compares (count / equality / presence). The L602 Self-count rule covers count-style criteria only.
 
