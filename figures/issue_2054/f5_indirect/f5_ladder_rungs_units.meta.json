@@ -1,0 +1,3989 @@
+{
+  "commit": "5971c9ee",
+  "git_commit": "5971c9ee",
+  "git_dirty": false,
+  "created": "2026-08-13T05:50:46Z",
+  "figsize": [
+    11.0,
+    4.6
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.19788074882883397,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.147061699682259,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.16531939203852053,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.2178894463054788,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21865953189557077,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.23414313337452725,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1596632724887116,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.16168109842411235,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.13941030468984825,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.17147646546323253,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.12870897620845692,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.15764632212579968,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1904266543734465,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.19041656333396453,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.20068971851701195,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.12551743468750487,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.11366336412621758,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.10333798397986727,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.23259857545627072,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.2126004325556548,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.22089318508263744,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.23698588596419876,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.23826718801335406,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.24055655492733816,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.16973397690726416,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.16136219271513425,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.13593129553137778,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.17764025737969874,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.13714474778402116,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.15623249755761387,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.19813856056579754,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1980687746105378,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21241305275403316,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.14724941557892243,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.14276963035577062,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.12283242057993012,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.17298103413518406,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.13758250731795796,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.15102108570128053,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.18672203256755643,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.18680235351102364,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.19400466121474838,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1331254622369476,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.11478257848398636,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.10342086277112879,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21762028863243818,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.20411449815265414,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.20490736990407665,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.22136754247794843,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.22142695336234017,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.22308999466799131,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.16746382391798148,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.15226023043327752,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.12876884464999544,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.18630587460032116,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.13859967803521775,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1802058328986869,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21106895761679229,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21104190387051353,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.22730481003571618,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.15568645997800892,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.15408210420042193,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.132324235986153,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.16148696915048535,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.10487297739553485,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.14947498419647537,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.18293974496085497,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1829160006797222,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.19575691136318127,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.12456771824318098,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.11509740647329487,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.10459760215031892,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21994625240990834,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.19134238338131687,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21304649205784268,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.23121922161884081,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.23189361936535818,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.23995638958504045,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1645870712042084,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1618773986298509,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.13665427497076427,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.17492392854835812,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1426583087013921,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.17292647775206865,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.2018553324010001,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.20199089210671337,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21877714906154883,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1456802826441432,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.14245315700614233,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.12194864261970251,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.15874071311987262,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.12557068715275005,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.15056753549692695,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.17432613535937325,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.17427615553453155,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.18454488527848006,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.12703005807447423,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.10863638034353876,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.09997946923224103,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.19572049304939676,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1733086107431459,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.19106137025023978,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.20731920542040855,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.20769021886904984,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21556156798135334,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.15338680835749877,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.14490837849542426,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.12387035502039527,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.19696034785574823,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.15383004587789467,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.17151060692423908,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21148006443030282,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21146117702002262,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.2259084943088975,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.14038614179643175,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.15903710885697117,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1237683258308242,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1870409041629884,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1399942705078789,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1807358461082447,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21085641911397132,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21139168651481652,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.22935260741030367,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1417607952342438,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.15981399468116186,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.13036330259986656,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.19873137418425763,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1540255602960087,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.18638120408228415,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21389119091774464,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21414253480148213,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.22692970396168474,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1398116469596573,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1570071008720968,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.12333530852327657,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.20035534066952856,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.16791185262571737,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.18665874012780834,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21224866653754063,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.2124384719943609,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.22352298259920128,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.14388566822103,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.15145100506225712,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.11957645629903697,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1748418820118608,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.14506713984910066,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.15694739265480467,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.19130276844845923,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.19125133298923117,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.2043197960372715,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.13755348395214434,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.13781646410940776,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.11349043333243972,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1950267045458961,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.16624480809838393,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1833145041731114,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.20388694876231628,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.20388481916305237,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.20984368332112285,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.14268671683604237,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1439918734129762,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1139326290978068,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.23129516939008082,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.2104349918641824,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21556049343189154,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.234758795171445,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.23470834675315802,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.23787770001462408,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.16664255305928638,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.16357089215633497,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.13038522931438193,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.2222312347109107,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.19880291424491733,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21082652343071057,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.23760131329831982,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.23806145188894864,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.24803493869460508,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1682435641575453,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.17487285057717114,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.14277579573150176,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.17756476326658696,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.13074728788256204,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.16253498916808698,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1951654899193696,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1951267383869301,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.2042808696766188,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1273855988684854,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.11805943742352014,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.10271245799095205,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.22643919977223675,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21319773525377128,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21667862040787594,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.23011656194882155,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.23026554840406294,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.23338786344507428,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.16739005105236743,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.15910290180819694,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.12890489760492146,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.18528301435615993,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.17208269675607835,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.17972186341205568,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.2066949087953934,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.20669236686148657,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.2164076702833735,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1528624419257477,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.14687956764537394,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.12140853833838391,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1790235935663824,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.15145823963589183,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.16879422783551923,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.19239471320497392,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.19233246602394172,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.19693017061898369,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.13674129210264138,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.11932690497710274,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.10219412506079825,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.19103380435444225,
+      "series": "cross-character median (n=24)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.15264414275689325,
+      "series": "cross-character median (n=24)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1799638481553713,
+      "series": "cross-character median (n=24)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.20908781226718992,
+      "series": "cross-character median (n=24)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.2093660613697817,
+      "series": "cross-character median (n=24)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.22093357186477008,
+      "series": "cross-character median (n=24)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1447829754325866,
+      "series": "cross-character median (n=24)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.14916528635381554,
+      "series": "cross-character median (n=24)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.12308386455160333,
+      "series": "cross-character median (n=24)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.17178040224502772,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.11827941584278094,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.2011264939742304,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.23240123380396094,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.2324815714185351,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.24605265265346601,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.22000007506515037,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.20896654385155564,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.22072734452905443,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.15429676654683117,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.10350087439957818,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.17540641202462065,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.23315982857252843,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.23322054233527884,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.24907750178678428,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.22757439875781973,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.2122262190381375,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.2282534922268799,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.14338868870691573,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.10107185415596782,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1952003619758368,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.22544332371589806,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.22522976844961481,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.24067590806353462,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21520013680138747,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.20354033258560617,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21618586047426244,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.15061894508941176,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.11211369516212658,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.19852924451986215,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.24475474834066438,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.24443171898980554,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.2633631242590325,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.24270064989389278,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.22504928026021842,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.24257250240793943,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.11764141321201296,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.05791804324408587,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1623099180719117,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1962185877775402,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.19603355738946798,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21304374366475082,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.18549158948220218,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.17944244656697686,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.19077866194852286,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.10802187451850757,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.046137211121089726,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1467016382624346,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.19927982336528016,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.19945194086481058,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21889175510760364,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.19768016636176516,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1805792040818426,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.20395653207304898,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.14286955159004003,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.09148516206245036,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.18833150558982112,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21959476793849717,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21937254793997632,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.23522006754073996,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.20541037961904562,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1976479920544433,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.20934802354953036,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1409116530045475,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.08750809068875871,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.18426348827717634,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.23124216448931909,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.23096644859260268,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.25156453980531407,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.22840431220425975,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21155181322176803,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.23138347234736162,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.13067808944401607,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.0900770837430854,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.18617040864774362,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21634064308743522,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21626240985209694,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.23401566507591703,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.20702429118388724,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.19846808172320088,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21387316864663233,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.14673526591026487,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.09386822871450703,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.18669493873942766,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.23271390373195291,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.23290826162643663,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.256888762010197,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.23422369794885273,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.2328963854212299,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.2429856141400773,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1431291201484779,
+      "series": "cross-model median (n=10)",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.0926766953884787,
+      "series": "cross-model median (n=10)",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.18643267369358563,
+      "series": "cross-model median (n=10)",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.22834274410260857,
+      "series": "cross-model median (n=10)",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.22809810852110873,
+      "series": "cross-model median (n=10)",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.24336428035850033,
+      "series": "cross-model median (n=10)",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21760010593326892,
+      "series": "cross-model median (n=10)",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.2062534382185809,
+      "series": "cross-model median (n=10)",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21845660250165844,
+      "series": "cross-model median (n=10)",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 0.0,
+      "y": -0.04148077472479961,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 1.0,
+      "y": -0.07120265877277979,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 2.0,
+      "y": -0.015268629332410955,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 3.0,
+      "y": -0.0004132108749909325,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 4.0,
+      "y": 0.01361816525951065,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 5.0,
+      "y": 0.0026785117947198287,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 6.0,
+      "y": 0.013173431113380495,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 7.0,
+      "y": 0.012486314207767557,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 8.0,
+      "y": 0.0131010480830968,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 0.0,
+      "y": -0.04073251742143023,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 1.0,
+      "y": -0.06522459635677502,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 2.0,
+      "y": -0.015577510513266724,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 3.0,
+      "y": -0.0037365184273091103,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 4.0,
+      "y": 0.012359151339502938,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 5.0,
+      "y": -0.0018757339342274637,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 6.0,
+      "y": 0.007694233816027829,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 7.0,
+      "y": 0.008927085604197794,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 8.0,
+      "y": 0.00964879571438404,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 0.0,
+      "y": 0.00026603274769734233,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 1.0,
+      "y": -0.011335637599951775,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 2.0,
+      "y": 0.008363714004410472,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 3.0,
+      "y": 0.013125412604995623,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 4.0,
+      "y": 0.023253603647047805,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 5.0,
+      "y": 0.012274237911988095,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 6.0,
+      "y": 0.020875166225571173,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 7.0,
+      "y": 0.022878445000728952,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 8.0,
+      "y": 0.017468852019983983,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 0.0,
+      "y": -0.029799248767198926,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 1.0,
+      "y": -0.05963695020015893,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 2.0,
+      "y": -0.013862473893515226,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 3.0,
+      "y": 0.0013628611923452549,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 4.0,
+      "y": 0.014090361801080097,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 5.0,
+      "y": 0.0035068738235275233,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 6.0,
+      "y": 0.010888310267939062,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 7.0,
+      "y": 0.011445441233022158,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 8.0,
+      "y": 0.010904798390584492,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 0.0,
+      "y": -0.029690078786858854,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 1.0,
+      "y": -0.052090495523241166,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 2.0,
+      "y": -0.01636567435700087,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 3.0,
+      "y": -0.0031202795774711856,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 4.0,
+      "y": 0.012644928431735102,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 5.0,
+      "y": -0.003796186969115034,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 6.0,
+      "y": 0.008927500246749154,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 7.0,
+      "y": 0.009599473099073852,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 8.0,
+      "y": 0.008837209069456241,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 0.0,
+      "y": 0.0016299763276709234,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 1.0,
+      "y": -0.007523590839133032,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 2.0,
+      "y": 0.004806443822583639,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 3.0,
+      "y": 0.009795337510684777,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 4.0,
+      "y": 0.02034657893135796,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 5.0,
+      "y": 0.008899505384204098,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 6.0,
+      "y": 0.019784254044707916,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 7.0,
+      "y": 0.02083913414511902,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 8.0,
+      "y": 0.016104629825530403,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 0.0,
+      "y": -0.04528307972204337,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 1.0,
+      "y": -0.06399560863220724,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 2.0,
+      "y": 0.0011196765514845052,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 3.0,
+      "y": 0.00851655685794781,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 4.0,
+      "y": 0.020207554051161147,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 5.0,
+      "y": 0.014039001304518118,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 6.0,
+      "y": 0.0185041711685038,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 7.0,
+      "y": 0.025353907259398477,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 8.0,
+      "y": 0.019460682428241616,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 0.0,
+      "y": -0.049291646501280394,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 1.0,
+      "y": -0.08341557888639088,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 2.0,
+      "y": -0.01654044325918371,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 3.0,
+      "y": -0.005124139742129996,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 4.0,
+      "y": 0.011345470125502865,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 5.0,
+      "y": -0.0027527958151591482,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 6.0,
+      "y": 0.007240599203234522,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 7.0,
+      "y": 0.011215022454559409,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 8.0,
+      "y": 0.008508704462003091,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 0.0,
+      "y": -0.022286983963312725,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 1.0,
+      "y": -0.036122255465178645,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 2.0,
+      "y": -0.0016598671158506218,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 3.0,
+      "y": 0.0034909248665841775,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 4.0,
+      "y": 0.016397191635909338,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 5.0,
+      "y": 0.006014965610991419,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 6.0,
+      "y": 0.01514747380643886,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 7.0,
+      "y": 0.02012452293725986,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 8.0,
+      "y": 0.015214011365248581,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 0.0,
+      "y": -0.040161862676279546,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 1.0,
+      "y": -0.05366896694950789,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 2.0,
+      "y": -2.7051416715084818e-05,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 3.0,
+      "y": 0.005721941715620927,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 4.0,
+      "y": 0.016978699855849988,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 5.0,
+      "y": 0.010137396168077939,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 6.0,
+      "y": 0.013421760439158636,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 7.0,
+      "y": 0.019153753859369904,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 8.0,
+      "y": 0.014511720880485047,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 0.0,
+      "y": -0.03885645694750504,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 1.0,
+      "y": -0.054624659310058374,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 2.0,
+      "y": -0.011689468960455151,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 3.0,
+      "y": -0.005574793706761882,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 4.0,
+      "y": 0.010146615429331684,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 5.0,
+      "y": -0.0032023294435342907,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 6.0,
+      "y": 0.007422627263920933,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 7.0,
+      "y": 0.009074123631308906,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 8.0,
+      "y": 0.007616778172600025,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 0.0,
+      "y": -0.019280048304194698,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 1.0,
+      "y": -0.030787962603032338,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 2.0,
+      "y": -0.000493670042930483,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 3.0,
+      "y": 0.0032772045108767633,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 4.0,
+      "y": 0.015358956408923685,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 5.0,
+      "y": 0.0037178257674214564,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 6.0,
+      "y": 0.014110037047383983,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 7.0,
+      "y": 0.01714523273900348,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 8.0,
+      "y": 0.013129505960531484,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 0.0,
+      "y": -0.023581478562031764,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 1.0,
+      "y": -0.04775433607673372,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 2.0,
+      "y": 0.0021612888583892433,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 3.0,
+      "y": 0.009980197849512873,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 4.0,
+      "y": 0.019922215826993273,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 5.0,
+      "y": 0.01603365709909641,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 6.0,
+      "y": 0.014099156277680259,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 7.0,
+      "y": 0.02497593694646023,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 8.0,
+      "y": 0.018214680625844592,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 0.0,
+      "y": -0.04561281341874457,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 1.0,
+      "y": -0.070064215473383,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 2.0,
+      "y": -0.0052060230658779625,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 3.0,
+      "y": 0.0006408884553554594,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 4.0,
+      "y": 0.012693683750427943,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 5.0,
+      "y": 0.005734562540415378,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 6.0,
+      "y": 0.00947476828140561,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 7.0,
+      "y": 0.014810961335364992,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 8.0,
+      "y": 0.011732170280196862,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 0.0,
+      "y": -0.02809337224208517,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 1.0,
+      "y": -0.05534851149433773,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 2.0,
+      "y": -0.0030048797889064226,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 3.0,
+      "y": 0.004753098845870429,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 4.0,
+      "y": 0.01585894795605105,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 5.0,
+      "y": 0.007585457419699892,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 6.0,
+      "y": 0.013079244104848597,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 7.0,
+      "y": 0.019038511647232515,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 8.0,
+      "y": 0.014711299378514942,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 0.0,
+      "y": -0.016574864759950313,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 1.0,
+      "y": -0.03381811510413772,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 2.0,
+      "y": 0.005225685446391304,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 3.0,
+      "y": 0.010373757266202332,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 4.0,
+      "y": 0.018874728019121555,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 5.0,
+      "y": 0.01446846755648088,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 6.0,
+      "y": 0.013749134404995988,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 7.0,
+      "y": 0.020572951321620715,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 8.0,
+      "y": 0.01484140809532013,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 0.0,
+      "y": -0.034551744793699116,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 1.0,
+      "y": -0.0482454280945682,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 2.0,
+      "y": -0.0054704767541732926,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 3.0,
+      "y": -0.0018932477761800515,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 4.0,
+      "y": 0.011449865849012975,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 5.0,
+      "y": 0.0030144064714804353,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 6.0,
+      "y": 0.008535338172170826,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 7.0,
+      "y": 0.012835380619605785,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 8.0,
+      "y": 0.009161779995359253,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 0.0,
+      "y": -0.020022796650236607,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 1.0,
+      "y": -0.032716885058669876,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 2.0,
+      "y": -1.7511230950817412e-05,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 3.0,
+      "y": 0.004911690573044414,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 4.0,
+      "y": 0.01523118820343028,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 5.0,
+      "y": 0.0069483027113687035,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 6.0,
+      "y": 0.013166816510576784,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 7.0,
+      "y": 0.016599299685361536,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 8.0,
+      "y": 0.012508068715429732,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 0.0,
+      "y": 0.00555203855188231,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 1.0,
+      "y": -0.0044941605492893055,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 2.0,
+      "y": 0.015997453565700016,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 3.0,
+      "y": 0.01969977130591538,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 4.0,
+      "y": 0.02798428263329531,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 5.0,
+      "y": 0.020521061647520367,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 6.0,
+      "y": 0.024065004329221117,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 7.0,
+      "y": 0.03130093071567861,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 8.0,
+      "y": 0.021470094864252554,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 0.0,
+      "y": -0.024121258436520198,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 1.0,
+      "y": -0.037168205692328905,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 2.0,
+      "y": -0.007197608286148993,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 3.0,
+      "y": 0.001641029561182683,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 4.0,
+      "y": 0.014215635162097829,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 5.0,
+      "y": 0.0034597854657770766,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 6.0,
+      "y": 0.013101230225751558,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 7.0,
+      "y": 0.014389339592212913,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 8.0,
+      "y": 0.012459199442842217,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 0.0,
+      "y": -0.04046983751579018,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 1.0,
+      "y": -0.06901838283684655,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 2.0,
+      "y": -0.017106561755414827,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 3.0,
+      "y": -0.004113636770046303,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 4.0,
+      "y": 0.011702819563295774,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 5.0,
+      "y": -0.0005293474029142598,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 6.0,
+      "y": 0.009247351679617277,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 7.0,
+      "y": 0.009413153694088816,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 8.0,
+      "y": 0.009462476389629692,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 0.0,
+      "y": 0.005490226080005822,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 1.0,
+      "y": -0.0014411403314248616,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 2.0,
+      "y": 0.01214586477124735,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 3.0,
+      "y": 0.015279396240481335,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 4.0,
+      "y": 0.02430028584947108,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 5.0,
+      "y": 0.015362102472593463,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 6.0,
+      "y": 0.021379033046621965,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 7.0,
+      "y": 0.02508397604125112,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 8.0,
+      "y": 0.017723469843699748,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 0.0,
+      "y": -0.020469341910227045,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 1.0,
+      "y": -0.03190537047740061,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 2.0,
+      "y": -0.003943653715248474,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 3.0,
+      "y": 0.0027365119749111154,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 4.0,
+      "y": 0.014006936832230154,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 5.0,
+      "y": 0.003620176120304186,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 6.0,
+      "y": 0.011713636869125809,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 7.0,
+      "y": 0.014280864395426973,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 8.0,
+      "y": 0.010429225223889648,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 0.0,
+      "y": -0.02663809840340705,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 1.0,
+      "y": -0.0428467165636762,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 2.0,
+      "y": -0.012001524420769938,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 3.0,
+      "y": -0.0020024513995402283,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 4.0,
+      "y": 0.012109158591636549,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 5.0,
+      "y": -0.001225404488733206,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 6.0,
+      "y": 0.010111157697707252,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 7.0,
+      "y": 0.010547091591925618,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 8.0,
+      "y": 0.008892728635551083,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 0.0,
+      "y": -0.02736573532274611,
+      "series": "cross-character median (n=24)",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 1.0,
+      "y": -0.04799988208565096,
+      "series": "cross-character median (n=24)",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 2.0,
+      "y": -0.0034742667520774482,
+      "series": "cross-character median (n=24)",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 3.0,
+      "y": 0.0030068582428939396,
+      "series": "cross-character median (n=24)",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 4.0,
+      "y": 0.014723411682764054,
+      "series": "cross-character median (n=24)",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 5.0,
+      "y": 0.0047261941539184175,
+      "series": "cross-character median (n=24)",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 6.0,
+      "y": 0.013134023368164171,
+      "series": "cross-character median (n=24)",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 7.0,
+      "y": 0.015705130510363263,
+      "series": "cross-character median (n=24)",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 8.0,
+      "y": 0.012804558399263265,
+      "series": "cross-character median (n=24)",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 0.0,
+      "y": -0.08159964594915867,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 1.0,
+      "y": -0.09868261331334435,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 2.0,
+      "y": 0.010202580137628736,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 3.0,
+      "y": 0.015281038653472256,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 4.0,
+      "y": 0.01803415903421888,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 5.0,
+      "y": 0.02056351965131429,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 6.0,
+      "y": 0.02130415716851557,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 7.0,
+      "y": 0.03661136716731321,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 8.0,
+      "y": 0.03919114627788649,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 0.0,
+      "y": -0.09859806668121536,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "x": 1.0,
+      "y": -0.10936925900336444,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "x": 2.0,
+      "y": 0.016703564561844787,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "x": 3.0,
+      "y": 0.0203361816128788,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "x": 4.0,
+      "y": 0.019515518066302008,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "x": 5.0,
+      "y": 0.026426082991461673,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "x": 6.0,
+      "y": 0.0229717585997546,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "x": 7.0,
+      "y": 0.0411379313223353,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "x": 8.0,
+      "y": 0.04506694220079015,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "x": 0.0,
+      "y": -0.1081442576721515,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "x": 1.0,
+      "y": -0.11948882140070047,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "x": 2.0,
+      "y": 0.00024131647635083908,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "x": 3.0,
+      "y": 0.004829352735147352,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "x": 4.0,
+      "y": 0.007600388240031108,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "x": 5.0,
+      "y": 0.00933002281414268,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "x": 6.0,
+      "y": 0.01145616452069107,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "x": 7.0,
+      "y": 0.025635880015559675,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "x": 8.0,
+      "y": 0.02783596331625047,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "x": 0.0,
+      "y": -0.12113567028877611,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "x": 1.0,
+      "y": -0.12379032082849961,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "x": 2.0,
+      "y": 0.004740062549327129,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "x": 3.0,
+      "y": 0.008894995302616171,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "x": 4.0,
+      "y": 0.00627819723653229,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "x": 5.0,
+      "y": 0.013302768063967995,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "x": 6.0,
+      "y": 0.012334474670980367,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "x": 7.0,
+      "y": 0.02671403424058554,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "x": 8.0,
+      "y": 0.030658113529556143,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "x": 0.0,
+      "y": -0.1189383799225285,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "x": 1.0,
+      "y": -0.1374761636872052,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "x": 2.0,
+      "y": -0.005698251199623572,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "x": 3.0,
+      "y": 0.0008457404186867912,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "x": 4.0,
+      "y": 0.007376852151707469,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "x": 5.0,
+      "y": 0.005562766658710805,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "x": 6.0,
+      "y": 0.00522865241557815,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "x": 7.0,
+      "y": 0.02287091515807953,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "x": 8.0,
+      "y": 0.02524172682412913,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "x": 0.0,
+      "y": -0.14201399087682337,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "x": 1.0,
+      "y": -0.14790799048887374,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "x": 2.0,
+      "y": 0.000283729327472404,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "x": 3.0,
+      "y": 0.004994169667494175,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "x": 4.0,
+      "y": 0.007318481117437358,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "x": 5.0,
+      "y": 0.009912137441500168,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "x": 6.0,
+      "y": 0.008022500374343867,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "x": 7.0,
+      "y": 0.025169924531608535,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "x": 8.0,
+      "y": 0.029171409340956633,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "x": 0.0,
+      "y": -0.10134969950559362,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "x": 1.0,
+      "y": -0.11979493837685266,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "x": 2.0,
+      "y": 0.00419531869230152,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "x": 3.0,
+      "y": 0.008307290705342307,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "x": 4.0,
+      "y": 0.0117308364894676,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "x": 5.0,
+      "y": 0.013106958379992494,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "x": 6.0,
+      "y": 0.014484148806165886,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "x": 7.0,
+      "y": 0.029787087545724567,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "x": 8.0,
+      "y": 0.031609703370347166,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "x": 0.0,
+      "y": -0.11881077763774872,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "x": 1.0,
+      "y": -0.13189553917952662,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "x": 2.0,
+      "y": 0.008161563109788883,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "x": 3.0,
+      "y": 0.011880367780642054,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "x": 4.0,
+      "y": 0.011221982337100145,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "x": 5.0,
+      "y": 0.01731254324238063,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "x": 6.0,
+      "y": 0.015428722155006302,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "x": 7.0,
+      "y": 0.03240243741840165,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "x": 8.0,
+      "y": 0.03638639527836753,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "x": 0.0,
+      "y": -0.10348630404976342,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "x": 1.0,
+      "y": -0.11359017796590595,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "x": 2.0,
+      "y": 0.00851399599669711,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "x": 3.0,
+      "y": 0.012613951529945577,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "x": 4.0,
+      "y": 0.015195396834887798,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "x": 5.0,
+      "y": 0.019222936297243743,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "x": 6.0,
+      "y": 0.019563230707435063,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "x": 7.0,
+      "y": 0.0362483362473542,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "x": 8.0,
+      "y": 0.03835887193049168,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "x": 0.0,
+      "y": -0.11908955917011363,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "x": 1.0,
+      "y": -0.12420850901517295,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "x": 2.0,
+      "y": 0.01058836938141292,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "x": 3.0,
+      "y": 0.014648319579369452,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "x": 4.0,
+      "y": 0.014458882701214116,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "x": 5.0,
+      "y": 0.021121794788579673,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "x": 6.0,
+      "y": 0.018391229879804526,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "x": 7.0,
+      "y": 0.03657760841986779,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "x": 8.0,
+      "y": 0.0404940213737486,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "x": 0.0,
+      "y": -0.11347751765495011,
+      "series": "cross-model median (n=10)",
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "x": 1.0,
+      "y": -0.12179262960267614,
+      "series": "cross-model median (n=10)",
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "x": 2.0,
+      "y": 0.006450812829558006,
+      "series": "cross-model median (n=10)",
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "x": 3.0,
+      "y": 0.010387681541629112,
+      "series": "cross-model median (n=10)",
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "x": 4.0,
+      "y": 0.011476409413283872,
+      "series": "cross-model median (n=10)",
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "x": 5.0,
+      "y": 0.015307655653174313,
+      "series": "cross-model median (n=10)",
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "x": 6.0,
+      "y": 0.014956435480586094,
+      "series": "cross-model median (n=10)",
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "x": 7.0,
+      "y": 0.03109476248206311,
+      "series": "cross-model median (n=10)",
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "x": 8.0,
+      "y": 0.03399804932435735,
+      "series": "cross-model median (n=10)",
+      "_kind": "line",
+      "_group": 71
+    }
+  ],
+  "n_series": 72,
+  "total_points": 648,
+  "text": {
+    "suptitle": "Indirect-report transfer ladder, per pair (one thin line per ordered pair; thick lines = class medians)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "context arm",
+        "ylabel": "transfer held-out R\u00b2, mean over folds",
+        "legend_labels": [
+          "cross-character median (n=24)",
+          "cross-model median (n=10)"
+        ],
+        "xticklabels": [
+          "direct",
+          "+ context offset",
+          "+ answer offset",
+          "+ bias refit",
+          "+ scale",
+          "+ rotation",
+          "context re-map",
+          "answer re-map",
+          "full refit"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3"
+        ]
+      },
+      {
+        "title_left": "prefix arm",
+        "xticklabels": [
+          "direct",
+          "+ context offset",
+          "+ answer offset",
+          "+ bias refit",
+          "+ scale",
+          "+ rotation",
+          "context re-map",
+          "answer re-map",
+          "full refit"
+        ]
+      }
+    ],
+    "series": [
+      "cross-character median (n=24)",
+      "cross-model median (n=10)"
+    ]
+  }
+}

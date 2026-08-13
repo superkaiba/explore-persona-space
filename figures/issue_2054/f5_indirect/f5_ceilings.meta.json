@@ -1,0 +1,465 @@
+{
+  "commit": "5971c9ee",
+  "git_commit": "5971c9ee",
+  "git_dirty": false,
+  "created": "2026-08-13T05:50:39Z",
+  "figsize": [
+    9.0,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.13616703223104587,
+      "within-cell held-out R\u00b2": 0.27919295858458054,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.18977944963967164,
+      "within-cell held-out R\u00b2": 0.3609899231388926,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.1226243328141788,
+      "within-cell held-out R\u00b2": 0.27988210680548775,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.1484211153505018,
+      "within-cell held-out R\u00b2": 0.36960715629310803,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.24493162433797605,
+      "within-cell held-out R\u00b2": 0.2185863641514155,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.10390042373811904,
+      "within-cell held-out R\u00b2": 0.2962172010567693,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.13821764768154352,
+      "within-cell held-out R\u00b2": 0.26435334458909887,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": -0.13422971115568738,
+      "within-cell held-out R\u00b2": 0.3559185425108692,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.23950181877191265,
+      "within-cell held-out R\u00b2": 0.2830236426880387,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.18793824993670927,
+      "within-cell held-out R\u00b2": 0.3790039749146514,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.159327683877213,
+      "within-cell held-out R\u00b2": 0.015655210355020932,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.2482823982157763,
+      "within-cell held-out R\u00b2": 0.018571922861556,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.2030184192129063,
+      "within-cell held-out R\u00b2": 0.006783783815736943,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.23164185812333277,
+      "within-cell held-out R\u00b2": 0.009057769907139513,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 0.17094627181237299,
+      "within-cell held-out R\u00b2": 0.0057109685308983195,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 0.1363581954855643,
+      "within-cell held-out R\u00b2": 0.009638376291174122,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 0.18873356592253354,
+      "within-cell held-out R\u00b2": 0.016550519991516733,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.11021076097666804,
+      "within-cell held-out R\u00b2": 0.019761363470691705,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.23242098751881313,
+      "within-cell held-out R\u00b2": 0.02067623336082953,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.20106630385953037,
+      "within-cell held-out R\u00b2": 0.01962478677977022,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.8612940384136599,
+      "within-cell held-out R\u00b2": 0.22697104266573379,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.796724154900779,
+      "within-cell held-out R\u00b2": 0.22254654104537908,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.8953116839031846,
+      "within-cell held-out R\u00b2": 0.21315487440581515,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.8828993794115517,
+      "within-cell held-out R\u00b2": 0.23057847586195007,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.864541359531802,
+      "within-cell held-out R\u00b2": 0.27773092560196416,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.7711421932563148,
+      "within-cell held-out R\u00b2": 0.23192692925032138,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 0.8146753605963255,
+      "within-cell held-out R\u00b2": 0.24697133503942315,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 0.7470086025259567,
+      "within-cell held-out R\u00b2": 0.23286895598988436,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.7646863187308077,
+      "within-cell held-out R\u00b2": 0.20222439896386968,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8492878325187928,
+      "within-cell held-out R\u00b2": 0.25314223172163713,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.2191619449452507,
+      "within-cell held-out R\u00b2": 0.01084662430676524,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.2548015571894735,
+      "within-cell held-out R\u00b2": 0.01660406176191447,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 1.1521320573021043,
+      "within-cell held-out R\u00b2": 0.0032724885713756534,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 1.1592735529655789,
+      "within-cell held-out R\u00b2": 0.008289098911909255,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 1.1751289298041292,
+      "within-cell held-out R\u00b2": 0.011057643561839425,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 1.1303154174534857,
+      "within-cell held-out R\u00b2": 0.007023109386770021,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 1.1207874408536753,
+      "within-cell held-out R\u00b2": 0.012722177227167775,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 1.1761127881961493,
+      "within-cell held-out R\u00b2": 0.01507113851400963,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 1.1363054958481413,
+      "within-cell held-out R\u00b2": 0.0013320619148533774,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 1.2071702391492016,
+      "within-cell held-out R\u00b2": 0.009011829243970837,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 1.809944307019573,
+      "within-cell held-out R\u00b2": 0.20736087733279018,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "x": 1.873228511369254,
+      "within-cell held-out R\u00b2": 0.5796996369279679,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": 2.21204241632036,
+      "within-cell held-out R\u00b2": -0.0008125530235571166,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "x": 2.149978662621127,
+      "within-cell held-out R\u00b2": -0.0007971605585360919,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "x": 2.873161568223232,
+      "within-cell held-out R\u00b2": 0.2254487936181569,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "x": 2.868762297199488,
+      "within-cell held-out R\u00b2": 0.20882159429132746,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "x": 3.1619965406448283,
+      "within-cell held-out R\u00b2": 0.0010260745711521357,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 3.146132496628839,
+      "within-cell held-out R\u00b2": 0.0011667066576669827,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "x": 3.849199280635996,
+      "within-cell held-out R\u00b2": 0.2667891108950509,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 3.7623603973774893,
+      "within-cell held-out R\u00b2": 0.261034357983607,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 3.771985312396017,
+      "within-cell held-out R\u00b2": 0.28625843807482554,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 3.741177963160161,
+      "within-cell held-out R\u00b2": 0.2533485550320952,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 3.865907900400342,
+      "within-cell held-out R\u00b2": 0.24160055048255633,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 3.846376137054725,
+      "within-cell held-out R\u00b2": 0.22895205961303083,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 3.8528264605802134,
+      "within-cell held-out R\u00b2": 0.2757489797662524,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 3.8649166449635146,
+      "within-cell held-out R\u00b2": 0.25050002513908237,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 3.8134265240861343,
+      "within-cell held-out R\u00b2": 0.28834559199060295,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 3.8309985913524627,
+      "within-cell held-out R\u00b2": 0.25210075792092573,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 4.122367519700425,
+      "within-cell held-out R\u00b2": 0.031083746966576543,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 4.118324811765755,
+      "within-cell held-out R\u00b2": 0.0253895007737438,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 4.206944473886475,
+      "within-cell held-out R\u00b2": 0.016006484031788483,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 4.175375392982901,
+      "within-cell held-out R\u00b2": 0.015164397828007404,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 4.19043777703699,
+      "within-cell held-out R\u00b2": 0.013255074207222162,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 4.222399817186564,
+      "within-cell held-out R\u00b2": 0.010227396110829724,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 4.201554931200095,
+      "within-cell held-out R\u00b2": 0.021135180892429873,
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "x": 4.188572704105279,
+      "within-cell held-out R\u00b2": 0.01815608202287895,
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "x": 4.1894731457192655,
+      "within-cell held-out R\u00b2": 0.026196870519713956,
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "x": 4.148632015690017,
+      "within-cell held-out R\u00b2": 0.026397658865987307,
+      "_kind": "scatter",
+      "_group": 67
+    }
+  ],
+  "n_series": 68,
+  "total_points": 68,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Indirect-report ceilings land inside the banked on-policy range",
+        "ylabel": "within-cell held-out R\u00b2",
+        "legend_labels": [
+          "context arm, instruct",
+          "context arm, base",
+          "prefix arm, instruct",
+          "prefix arm, base"
+        ],
+        "annotations": [
+          "one point per on-policy cell; horizontal bars mark per-framing, per-arm medians"
+        ],
+        "xticklabels": [
+          "attributed quote",
+          "bare label",
+          "chat template",
+          "bare text",
+          "indirect report"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ],
+    "series": [
+      "context arm, instruct",
+      "context arm, base",
+      "prefix arm, instruct",
+      "prefix arm, base"
+    ]
+  }
+}

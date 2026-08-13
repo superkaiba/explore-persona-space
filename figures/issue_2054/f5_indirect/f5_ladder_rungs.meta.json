@@ -1,0 +1,321 @@
+{
+  "commit": "5971c9ee",
+  "git_commit": "5971c9ee",
+  "git_dirty": false,
+  "created": "2026-08-13T05:50:43Z",
+  "figsize": [
+    11.0,
+    4.6
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.19103380435444225,
+      "series": "cross-character (n=24)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.15264414275689325,
+      "series": "cross-character (n=24)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1799638481553713,
+      "series": "cross-character (n=24)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.20908781226718992,
+      "series": "cross-character (n=24)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.2093660613697817,
+      "series": "cross-character (n=24)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.22093357186477008,
+      "series": "cross-character (n=24)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1447829754325866,
+      "series": "cross-character (n=24)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.14916528635381554,
+      "series": "cross-character (n=24)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.12308386455160333,
+      "series": "cross-character (n=24)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "transfer held-out R\u00b2, mean over folds": 0.1431291201484779,
+      "series": "cross-model (n=10)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "transfer held-out R\u00b2, mean over folds": 0.0926766953884787,
+      "series": "cross-model (n=10)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "transfer held-out R\u00b2, mean over folds": 0.18643267369358563,
+      "series": "cross-model (n=10)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "transfer held-out R\u00b2, mean over folds": 0.22834274410260857,
+      "series": "cross-model (n=10)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "transfer held-out R\u00b2, mean over folds": 0.22809810852110873,
+      "series": "cross-model (n=10)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "transfer held-out R\u00b2, mean over folds": 0.24336428035850033,
+      "series": "cross-model (n=10)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21760010593326892,
+      "series": "cross-model (n=10)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "transfer held-out R\u00b2, mean over folds": 0.2062534382185809,
+      "series": "cross-model (n=10)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "transfer held-out R\u00b2, mean over folds": 0.21845660250165844,
+      "series": "cross-model (n=10)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "y": -0.02736573532274611,
+      "series": "cross-character (n=24)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "y": -0.04799988208565096,
+      "series": "cross-character (n=24)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "y": -0.0034742667520774482,
+      "series": "cross-character (n=24)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "y": 0.0030068582428939396,
+      "series": "cross-character (n=24)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "y": 0.014723411682764054,
+      "series": "cross-character (n=24)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "y": 0.0047261941539184175,
+      "series": "cross-character (n=24)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "y": 0.013134023368164171,
+      "series": "cross-character (n=24)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "y": 0.015705130510363263,
+      "series": "cross-character (n=24)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "y": 0.012804558399263265,
+      "series": "cross-character (n=24)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "y": -0.11347751765495011,
+      "series": "cross-model (n=10)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "y": -0.12179262960267614,
+      "series": "cross-model (n=10)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "y": 0.006450812829558006,
+      "series": "cross-model (n=10)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "y": 0.010387681541629112,
+      "series": "cross-model (n=10)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "y": 0.011476409413283872,
+      "series": "cross-model (n=10)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "y": 0.015307655653174313,
+      "series": "cross-model (n=10)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.0,
+      "y": 0.014956435480586094,
+      "series": "cross-model (n=10)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 7.0,
+      "y": 0.03109476248206311,
+      "series": "cross-model (n=10)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 8.0,
+      "y": 0.03399804932435735,
+      "series": "cross-model (n=10)",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 36,
+  "text": {
+    "suptitle": "Indirect-report transfer ladder by pair class (lines = medians, bands = interquartile range; dashed = median target ceiling)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "context arm",
+        "ylabel": "transfer held-out R\u00b2, mean over folds",
+        "legend_labels": [
+          "cross-character (n=24)",
+          "cross-model (n=10)"
+        ],
+        "xticklabels": [
+          "direct",
+          "+ context offset",
+          "+ answer offset",
+          "+ bias refit",
+          "+ scale",
+          "+ rotation",
+          "context re-map",
+          "answer re-map",
+          "full refit"
+        ],
+        "yticklabels": [
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30"
+        ]
+      },
+      {
+        "title_left": "prefix arm",
+        "xticklabels": [
+          "direct",
+          "+ context offset",
+          "+ answer offset",
+          "+ bias refit",
+          "+ scale",
+          "+ rotation",
+          "context re-map",
+          "answer re-map",
+          "full refit"
+        ]
+      }
+    ],
+    "series": [
+      "cross-character (n=24)",
+      "cross-model (n=10)"
+    ]
+  }
+}
