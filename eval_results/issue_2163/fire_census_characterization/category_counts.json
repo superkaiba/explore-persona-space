@@ -1,0 +1,200 @@
+{
+ "denominators": {
+  "firing_labeled": 13204,
+  "never_labeled": 114339
+ },
+ "share_matched_no_category": 0.0881,
+ "family_band_p97_5_of_max_abs_diff": 0.01141832887806624,
+ "categories": [
+  {
+   "category": "punctuation/whitespace/formatting",
+   "firing_share": 0.3495152983944259,
+   "never_share": 0.21151138281776122,
+   "diff": 0.1380039155766647,
+   "null_band_2p5_97p5": [
+    -0.006968928964112213,
+    0.008074944636073578
+   ],
+   "clears_percat_band": true,
+   "clears_family_band": true
+  },
+  {
+   "category": "boundary/transition markers",
+   "firing_share": 0.23341411693426234,
+   "never_share": 0.09695729366183017,
+   "diff": 0.13645682327243217,
+   "null_band_2p5_97p5": [
+    -0.005808419702229617,
+    0.005683046850993878
+   ],
+   "clears_percat_band": true,
+   "clears_family_band": true
+  },
+  {
+   "category": "grammar/function words",
+   "firing_share": 0.29740987579521355,
+   "never_share": 0.18681289848608088,
+   "diff": 0.11059697730913268,
+   "null_band_2p5_97p5": [
+    -0.006664135446155264,
+    0.007452564138800783
+   ],
+   "clears_percat_band": true,
+   "clears_family_band": true
+  },
+  {
+   "category": "code/programming syntax",
+   "firing_share": 0.30505907300817936,
+   "never_share": 0.41283376625648294,
+   "diff": -0.10777469324830358,
+   "null_band_2p5_97p5": [
+    -0.009439335277694139,
+    0.008808463108604558
+   ],
+   "clears_percat_band": true,
+   "clears_family_band": true
+  },
+  {
+   "category": "word-fragment/subword/morpheme",
+   "firing_share": 0.09171463192971827,
+   "never_share": 0.17779585268368622,
+   "diff": -0.08608122075396796,
+   "null_band_2p5_97p5": [
+    -0.007009539760375879,
+    0.007105047810878052
+   ],
+   "clears_percat_band": true,
+   "clears_family_band": true
+  },
+  {
+   "category": "instruction/procedural",
+   "firing_share": 0.16979703120266587,
+   "never_share": 0.08546515187293924,
+   "diff": 0.08433187932972663,
+   "null_band_2p5_97p5": [
+    -0.0054730552980286305,
+    0.005258086322432409
+   ],
+   "clears_percat_band": true,
+   "clears_family_band": true
+  },
+  {
+   "category": "dialogue/conversational/social",
+   "firing_share": 0.07770372614359285,
+   "never_share": 0.02926385572726716,
+   "diff": 0.048439870416325685,
+   "null_band_2p5_97p5": [
+    -0.003264337025222639,
+    0.0031582966429178974
+   ],
+   "clears_percat_band": true,
+   "clears_family_band": true
+  },
+  {
+   "category": "numbers/math/quantitative",
+   "firing_share": 0.13329294153286883,
+   "never_share": 0.18143415632461365,
+   "diff": -0.048141214791744824,
+   "null_band_2p5_97p5": [
+    -0.006661265682149253,
+    0.006517699819066469
+   ],
+   "clears_percat_band": true,
+   "clears_family_band": true
+  },
+  {
+   "category": "list/enumeration structure",
+   "firing_share": 0.08989700090881551,
+   "never_share": 0.05389237268123737,
+   "diff": 0.03600462822757814,
+   "null_band_2p5_97p5": [
+    -0.00437918577061824,
+    0.004413127271298573
+   ],
+   "clears_percat_band": true,
+   "clears_family_band": true
+  },
+  {
+   "category": "domain content (science/med/law/finance)",
+   "firing_share": 0.1494244168433808,
+   "never_share": 0.1853610753985954,
+   "diff": -0.03593665855521461,
+   "null_band_2p5_97p5": [
+    -0.006792981479689705,
+    0.006894979323736422
+   ],
+   "clears_percat_band": true,
+   "clears_family_band": true
+  },
+  {
+   "category": "narrative/creative/emotional",
+   "firing_share": 0.07361405634656165,
+   "never_share": 0.03784360541897341,
+   "diff": 0.035770450927588245,
+   "null_band_2p5_97p5": [
+    -0.003597484479889425,
+    0.003752323203480873
+   ],
+   "clears_percat_band": true,
+   "clears_family_band": true
+  },
+  {
+   "category": "non-English/multilingual",
+   "firing_share": 0.11617691608603453,
+   "never_share": 0.14861071025634298,
+   "diff": -0.03243379417030845,
+   "null_band_2p5_97p5": [
+    -0.006582746456385347,
+    0.005584564481515892
+   ],
+   "clears_percat_band": true,
+   "clears_family_band": true
+  },
+  {
+   "category": "AI-assistant meta (refusal/disclaimer)",
+   "firing_share": 0.03309603150560436,
+   "never_share": 0.014019713308669832,
+   "diff": 0.01907631819693453,
+   "null_band_2p5_97p5": [
+    -0.002297260468498624,
+    0.0022646891280760396
+   ],
+   "clears_percat_band": true,
+   "clears_family_band": true
+  },
+  {
+   "category": "response/turn initiation",
+   "firing_share": 0.021054225992123598,
+   "never_share": 0.005903497494293286,
+   "diff": 0.015150728497830312,
+   "null_band_2p5_97p5": [
+    -0.001660900571028176,
+    0.0015493602561910333
+   ],
+   "clears_percat_band": true,
+   "clears_family_band": true
+  },
+  {
+   "category": "named entities/proper nouns",
+   "firing_share": 0.057406846410178736,
+   "never_share": 0.07231128486343243,
+   "diff": -0.01490443845325369,
+   "null_band_2p5_97p5": [
+    -0.004428850490748912,
+    0.0046126801680178246
+   ],
+   "clears_percat_band": true,
+   "clears_family_band": true
+  }
+ ],
+ "unlabeled_row": {
+  "firing_unlabeled_share": 0.005872609546755007,
+  "never_unlabeled_share": 0.0071981800500138925,
+  "diff": -0.0013255705032588858,
+  "null_band_2p5_97p5": [
+   -0.0015774890036839113,
+   0.0015316051557282685
+  ]
+ },
+ "n_draws": 1000
+}

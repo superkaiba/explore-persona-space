@@ -1,0 +1,1361 @@
+{
+  "commit": "fcad199b",
+  "render_id": "464b5e7f6b0943fc",
+  "git_commit": "fcad199b",
+  "git_dirty": false,
+  "created": "2026-08-13T17:09:32Z",
+  "figsize": [
+    11.2,
+    4.9
+  ],
+  "points": [
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.016150763805092616,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.22281989474235173,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.020395199170297286,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.2312996876392571,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.23449460774333786,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 5.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.31454363793714446,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 6.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.41652944536057257,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 7.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.044227204493442286,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 8.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.4235555094705992,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.18810432364732838,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.0819428338999646,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.19802559133756104,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.11494149058129095,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.1511781142147929,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 5.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.21053629384213135,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 6.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.3265608467262887,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 7.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.07608865945756649,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 8.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.3608982504743797,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.29817010524282267,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.1443052231759044,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.38057276789996686,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.006596044915211463,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.06362970763770497,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 5.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.0900314198561907,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 6.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.2693694167938716,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 7.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.21957725008825432,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 8.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.29038279975946113,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.006450115461018835,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.04001318902413629,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.019116705925609923,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.08238534729126554,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.08249086099448426,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 5.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.12872464989002225,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 6.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.10568288905966941,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 7.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.08399707063330122,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 8.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.1333860470901683,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.1820582781067494,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.20564672153510197,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.0030927053757645816,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.0929472903833295,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.09294727346070444,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 5.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.16135808722939055,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 6.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.100832637523448,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 7.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.08934240708567136,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 8.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.1356701503780087,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.10897237004803029,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.09082354156145778,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.024860749843437537,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.04675484637565115,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.0478371862074846,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 5.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.1086220716919247,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 6.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.062247228927860034,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 7.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.046830611866798086,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 8.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.08490284916374943,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.016150763805092616,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.22281989474235173,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.020395199170297286,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.2312996876392571,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.23449460774333786,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 5.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.31454363793714446,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 6.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.41652944536057257,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 7.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.044227204493442286,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 8.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.4235555094705992,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.18810432364732838,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.0819428338999646,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.19802559133756104,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.11494149058129095,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.1511781142147929,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 5.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.21053629384213135,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 6.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.3265608467262887,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 7.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.07608865945756649,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 8.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.3608982504743797,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.29817010524282267,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.1443052231759044,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.38057276789996686,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.006596044915211463,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.06362970763770497,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 5.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.0900314198561907,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 6.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.2693694167938716,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 7.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.21957725008825432,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 8.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.29038279975946113,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.006450115461018835,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.04001318902413629,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.019116705925609923,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.08238534729126554,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.08249086099448426,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 5.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.12872464989002225,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 6.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.10568288905966941,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 7.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.08399707063330122,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 8.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.1333860470901683,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.1820582781067494,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.20564672153510197,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.0030927053757645816,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.0929472903833295,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.09294727346070444,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 5.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.16135808722939055,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 6.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.100832637523448,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 7.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.08934240708567136,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 8.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.1356701503780087,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.10897237004803029,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.09082354156145778,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.024860749843437537,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.04675484637565115,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.0478371862074846,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 5.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.1086220716919247,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 6.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.062247228927860034,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 7.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.046830611866798086,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 8.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.08490284916374943,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "y": 0.3195130878778677,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "y": 0.37196062437126054,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "y": 0.3225524665962075,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "y": 0.3792459473819198,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.0,
+      "y": 0.3771772516458955,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 5.0,
+      "y": 0.4100035007867353,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 6.0,
+      "y": 0.4629371804662313,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 7.0,
+      "y": 0.3245379584362499,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 8.0,
+      "y": 0.46916129683901,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "y": -0.26661087453380283,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "y": -0.130924897599503,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "y": -0.10464309849780395,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "y": 0.1401805810293243,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.0,
+      "y": 0.1557135485186773,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 5.0,
+      "y": 0.22669490059965103,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 6.0,
+      "y": 0.31448377942562,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 7.0,
+      "y": -0.03218111315919399,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 8.0,
+      "y": 0.3729297859152396,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "y": -0.21590892352560903,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "y": -0.12316116921278727,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "y": -0.15200049896082488,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "y": 0.04489877358333498,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.0,
+      "y": 0.07867276159647899,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 5.0,
+      "y": 0.12456327808178289,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 6.0,
+      "y": 0.26730242820480415,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 7.0,
+      "y": -0.09106617478985202,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 8.0,
+      "y": 0.3027790889150981,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "y": -0.21320500590966499,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "y": -0.13980232188685796,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "y": -0.060528103651182066,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "y": 0.053486686668805385,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.0,
+      "y": 0.1367194610535987,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 5.0,
+      "y": 0.09595623899752626,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 6.0,
+      "y": 0.07106448812934388,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 7.0,
+      "y": 0.1314214008325282,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 8.0,
+      "y": 0.21233801456455956,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "y": -0.11978103679209551,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "y": -0.08529127532840194,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "y": -0.03942965516373771,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "y": 0.17829106147572477,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.0,
+      "y": 0.18756329144747444,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 5.0,
+      "y": 0.27245906701467926,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 6.0,
+      "y": 0.21237066840315605,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 7.0,
+      "y": 0.14648038616877113,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 8.0,
+      "y": 0.30108823143433233,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "y": -0.12868346061895716,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "y": -0.10955056464979229,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "y": -0.08674119811615304,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "y": 0.04766320658217251,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.0,
+      "y": 0.0809202797930803,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 5.0,
+      "y": 0.15175274944255385,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 6.0,
+      "y": 0.06841270830522186,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 7.0,
+      "y": 0.0758707192242066,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 8.0,
+      "y": 0.16825348237403284,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "y": 0.3195130878778677,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "y": 0.37196062437126054,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "y": 0.3225524665962075,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "y": 0.3792459473819198,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.0,
+      "y": 0.3771772516458955,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 5.0,
+      "y": 0.4100035007867353,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 6.0,
+      "y": 0.4629371804662313,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 7.0,
+      "y": 0.3245379584362499,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 8.0,
+      "y": 0.46916129683901,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "y": -0.26661087453380283,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "y": -0.130924897599503,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "y": -0.10464309849780395,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "y": 0.1401805810293243,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.0,
+      "y": 0.1557135485186773,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 5.0,
+      "y": 0.22669490059965103,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 6.0,
+      "y": 0.31448377942562,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 7.0,
+      "y": -0.03218111315919399,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 8.0,
+      "y": 0.3729297859152396,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "y": -0.21590892352560903,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "y": -0.12316116921278727,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "y": -0.15200049896082488,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "y": 0.04489877358333498,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.0,
+      "y": 0.07867276159647899,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 5.0,
+      "y": 0.12456327808178289,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 6.0,
+      "y": 0.26730242820480415,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 7.0,
+      "y": -0.09106617478985202,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 8.0,
+      "y": 0.3027790889150981,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "y": -0.21320500590966499,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "y": -0.13980232188685796,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "y": -0.060528103651182066,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "y": 0.053486686668805385,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.0,
+      "y": 0.1367194610535987,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 5.0,
+      "y": 0.09595623899752626,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 6.0,
+      "y": 0.07106448812934388,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 7.0,
+      "y": 0.1314214008325282,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 8.0,
+      "y": 0.21233801456455956,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "y": -0.11978103679209551,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "y": -0.08529127532840194,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "y": -0.03942965516373771,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "y": 0.17829106147572477,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.0,
+      "y": 0.18756329144747444,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 5.0,
+      "y": 0.27245906701467926,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 6.0,
+      "y": 0.21237066840315605,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 7.0,
+      "y": 0.14648038616877113,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 8.0,
+      "y": 0.30108823143433233,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "y": -0.12868346061895716,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "y": -0.10955056464979229,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "y": -0.08674119811615304,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "y": 0.04766320658217251,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.0,
+      "y": 0.0809202797930803,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 5.0,
+      "y": 0.15175274944255385,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 6.0,
+      "y": 0.06841270830522186,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 7.0,
+      "y": 0.0758707192242066,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 8.0,
+      "y": 0.16825348237403284,
+      "_kind": "line",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 216,
+  "text": {
+    "suptitle": "Assistant chat-template map re-used on the assistant's other framings",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Qwen2.5-7B (base)",
+        "xlabel": "transfer rung (more adaptation allowed \u2192)",
+        "ylabel": "held-out $R^2$ (context arm, layer 19)",
+        "xticklabels": [
+          "1 direct\ntransfer",
+          "2 context\noffset",
+          "3 answer\noffset",
+          "4 bias\nrefit",
+          "5 global\nscale",
+          "6 rotation",
+          "7 context\nre-map",
+          "8 answer\nre-map",
+          "9 full\nrefit"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ]
+      },
+      {
+        "title_left": "Qwen2.5-7B-Instruct",
+        "xlabel": "transfer rung (more adaptation allowed \u2192)",
+        "xticklabels": [
+          "1 direct\ntransfer",
+          "2 context\noffset",
+          "3 answer\noffset",
+          "4 bias\nrefit",
+          "5 global\nscale",
+          "6 rotation",
+          "7 context\nre-map",
+          "8 answer\nre-map",
+          "9 full\nrefit"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
