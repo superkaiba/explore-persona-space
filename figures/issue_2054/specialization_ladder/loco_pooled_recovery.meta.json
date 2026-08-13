@@ -1,0 +1,180 @@
+{
+  "commit": "c52c624f+dirty",
+  "render_id": "07d0af947db44e0b",
+  "git_commit": "c52c624f",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2054/specialization_ladder/loco_pooled.json",
+    "eval_results/issue_2054/specialization_ladder/loco_pooled.units.jsonl",
+    "tasks/followups_running/2225/events.jsonl"
+  ],
+  "created": "2026-08-13T22:39:07Z",
+  "figsize": [
+    11.5,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "Held-out $R^2$ (context $\\rightarrow$ answer)": 0.3115530318078746,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "Held-out $R^2$ (context $\\rightarrow$ answer)": 0.28583860168158404,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.82,
+      "Held-out $R^2$ (context $\\rightarrow$ answer)": 0.2764249956762164,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.18,
+      "Held-out $R^2$ (context $\\rightarrow$ answer)": 0.2615454872078687,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.82,
+      "Held-out $R^2$ (context $\\rightarrow$ answer)": 0.2443014264239992,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.18,
+      "Held-out $R^2$ (context $\\rightarrow$ answer)": 0.23302180272445497,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.82,
+      "Held-out $R^2$ (context $\\rightarrow$ answer)": 0.2802731259707257,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 3.18,
+      "Held-out $R^2$ (context $\\rightarrow$ answer)": 0.26937322667481367,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 3.82,
+      "Held-out $R^2$ (context $\\rightarrow$ answer)": 0.30797450575263674,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 4.18,
+      "Held-out $R^2$ (context $\\rightarrow$ answer)": 0.18723817494956155,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": -0.18,
+      "y": 0.23075158580410332,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 0.18,
+      "y": 0.21054675374263732,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 0.82,
+      "y": 0.22589991791212985,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 1.18,
+      "y": 0.2156680475921808,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 1.82,
+      "y": 0.16759944910651814,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 2.18,
+      "y": 0.1277964536699262,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 2.82,
+      "y": 0.22337447991460813,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 3.18,
+      "y": 0.2040934990988099,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 3.82,
+      "y": 0.22837166961266314,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 4.18,
+      "y": 0.13315752392972247,
+      "_kind": "bar",
+      "_group": 19
+    }
+  ],
+  "n_series": 20,
+  "total_points": 20,
+  "text": {
+    "suptitle": "Does the pooled context$\\rightarrow$answer map transfer to a speaker it never saw?",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "Inserted (verbatim reference answer)",
+        "ylabel": "Held-out $R^2$ (context $\\rightarrow$ answer)",
+        "xticklabels": [
+          "HELIOS",
+          "Wren",
+          "Vex",
+          "Dana",
+          "Assistant"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ]
+      },
+      {
+        "title": "On-policy",
+        "xticklabels": [
+          "HELIOS",
+          "Wren",
+          "Vex",
+          "Dana",
+          "Assistant"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
