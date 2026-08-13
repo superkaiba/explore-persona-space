@@ -2215,6 +2215,7 @@ def test_phase_pilot_dispatches_grammar_legal_arm_ids(tmp_path, monkeypatch):
         external_root=str(tmp_path / "ext"),
         pilot_draws=200,
         judge_draws=2,
+        allow_subresolution_pilot=False,
     )
     te.phase_pilot(args)
     assert set(seen_arms) == {"base", "trained"}

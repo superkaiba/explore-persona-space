@@ -527,6 +527,11 @@ def main() -> None:
                         str(args.pilot_draws),
                         "--gpu-mem-util",
                         str(args.gpu_mem_util),
+                        # Same sub-resolution acceptance as band_pilot: the
+                        # smoke's 8-item arms cannot resolve the rule-26(b)
+                        # parse-fail threshold. Production P6 pilots never
+                        # carry this flag.
+                        "--allow-subresolution-pilot",
                     ],
                 )
             _assert_artifact(name, eval_root / "trait_scores.json")

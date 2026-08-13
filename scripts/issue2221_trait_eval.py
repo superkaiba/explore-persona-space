@@ -585,6 +585,7 @@ def phase_pilot(args) -> None:
             target_total_draws=args.pilot_draws,
             temperature=lib.JUDGE_TEMPERATURE,
             min_effective_draws_per_arm=max(1, min(10, min_planned)),
+            allow_subresolution_pilot=args.allow_subresolution_pilot,
             report_path=report_path,
         )
         # Pin the composed rubric's identity into the report (r10): the
@@ -1305,6 +1306,13 @@ def build_argparser() -> argparse.ArgumentParser:
     )
     ap.add_argument("--judge-draws", type=int, default=lib.JUDGE_N_DRAWS)
     ap.add_argument("--pilot-draws", type=int, default=200, help="rule-26 pilot target draws")
+    ap.add_argument(
+        "--allow-subresolution-pilot",
+        action="store_true",
+        help="smoke-only: accept a pilot whose per-arm effective draws cannot resolve the "
+        "rule-26(b) parse-fail threshold (recorded in the report); production P6 pilots "
+        "never pass this flag",
+    )
     ap.add_argument("--max-prompts", type=int, default=None, help="smoke: cap surface prompts")
     ap.add_argument("--gpu-mem-util", type=float, default=0.5)
     ap.add_argument("--force", action="store_true")
