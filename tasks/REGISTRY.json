@@ -8769,8 +8769,8 @@
     "2133": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2133",
-      "status": "approved",
+      "path": "tasks/running/2133",
+      "status": "running",
       "title": "daily-fix: measured n_train + regime-change pilot basis"
     },
     "2134": {
