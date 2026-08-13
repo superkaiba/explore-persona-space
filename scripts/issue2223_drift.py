@@ -1486,6 +1486,42 @@ def pack_units_by_token_budget(units: list[dict], budget: int) -> list[list[int]
     return packs
 
 
+# Recipe-bearing fields of a consumed raw_completions.json that determine the DVs
+# alongside the transcripts payload; the resume raw_sha hashes EXACTLY transcripts
+# + these keys under a canonical serialization — never the file BYTES.
+RAW_SHA_RECIPE_KEYS = (
+    "arm",
+    "cell",
+    "decode",
+    "enable_thinking",
+    "history_mode",
+    "model",
+    "n_conversations",
+    "num_shards",
+)
+
+
+def raw_content_sha(raw: dict) -> str:
+    """Deterministic content sha of a consumed ``raw_completions.json`` payload.
+
+    Hashes ONLY the DV-determining content — the ``transcripts`` payload plus
+    the recipe-bearing fields (``RAW_SHA_RECIPE_KEYS``) — under a canonical
+    serialization (``sort_keys`` + compact separators, so key order cannot
+    perturb the hash). EXCLUDES ``meta``: ``repro_metadata`` stamps a fresh
+    ``timestamp_utc`` / ``git_commit`` on every call, so a byte-level sha
+    changes on EVERY re-merge of unchanged shards — and the launcher runs
+    merge before activations, so byte-keyed checkpoints could never survive a
+    relaunch (live incident: pod-2223 activations resume REGIME MISMATCH on
+    unchanged data). Other run-varying / derived fields (``shard_id``,
+    ``cap_hit_by_turn*``, ``realized_firing``) are excluded the same way. A
+    GENUINE change — one transcript token, or any recipe field — still moves
+    the sha, so ``check_regime`` keeps failing loud on cross-regime resumes."""
+    content = {k: raw.get(k) for k in RAW_SHA_RECIPE_KEYS}
+    content["transcripts"] = raw.get("transcripts")
+    blob = json.dumps(content, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:16]
+
+
 def _activations_regime(
     *, cell, arm, model_key, enable_thinking, proj_layer, phase_tag, smoke, raw_sha
 ) -> dict:
@@ -1493,9 +1529,11 @@ def _activations_regime(
 
     Keys = EVERY output-affecting knob of the teacher-forced read: cell/arm,
     model, projection layer, thinking mode, phase tag, smoke flag (smoke swaps
-    in a random projection axis), and the sha of the consumed
-    ``raw_completions.json`` (a re-generated raw file invalidates every
-    checkpointed unit). ``round_label`` rides in via ``regime_fingerprint``."""
+    in a random projection axis), and the CONTENT sha of the consumed
+    ``raw_completions.json`` (``raw_content_sha`` — transcripts + recipe
+    fields, ``meta`` excluded: re-generated DATA invalidates every
+    checkpointed unit; a byte-different re-merge of unchanged data does not).
+    ``round_label`` rides in via ``regime_fingerprint``."""
     from scripts import issue2203_common as C
 
     return C.regime_fingerprint(
@@ -1646,8 +1684,9 @@ def phase_activations(args) -> Path:
     enable_thinking = args.think and model_key == "32b"
     cell = f"{arm}__{model_key}" + ("__think" if enable_thinking else "")
     phase_tag = "phaseA" if ARMS[arm]["phase"] == "A" else "phaseB"
-    raw_text = (out_dir / "raw_completions" / phase_tag / cell / "raw_completions.json").read_text()
-    raw = json.loads(raw_text)
+    raw = json.loads(
+        (out_dir / "raw_completions" / phase_tag / cell / "raw_completions.json").read_text()
+    )
     proj_layer = PROJ_LAYER[model_key]
     model, tok = R.load_model_and_tokenizer(MODEL_FOR[model_key])
     resp_axis = _projection_axis(arm, model_key, out_dir, model, args.smoke)
@@ -1677,7 +1716,7 @@ def phase_activations(args) -> Path:
         proj_layer=proj_layer,
         phase_tag=phase_tag,
         smoke=bool(args.smoke),
-        raw_sha=hashlib.sha256(raw_text.encode()).hexdigest()[:16],
+        raw_sha=raw_content_sha(raw),
     )
     if regime_path.exists():
         C.check_regime(json.loads(regime_path.read_text()), regime, regime_path)
@@ -2532,7 +2571,9 @@ def _firing_regime(
     Keys = EVERY output-affecting knob of the batched band read: cell/arm/model,
     which read (``expected`` = A0 completions | ``realized`` = the arm's own),
     band layers, position set, fire direction, per-layer τ, the axis CONTENT
-    sha, smoke flag, and the sha of the consumed ``raw_completions.json``.
+    sha, smoke flag, and the CONTENT sha of the consumed
+    ``raw_completions.json`` (``raw_content_sha`` — transcripts + recipe
+    fields, ``meta`` excluded, same rationale as ``_activations_regime``).
     ``round_label`` rides in via ``regime_fingerprint``."""
     from scripts import issue2203_common as C
 
@@ -2799,11 +2840,12 @@ def phase_firing(args) -> Path:
     ids_fn = multiturn_render_fns(None if model_key != "32b" else False)[1]
 
     def _units_and_sha(cell_name: str, phase_tag: str) -> tuple[list[dict], str]:
-        text = (
-            out_dir / "raw_completions" / phase_tag / cell_name / "raw_completions.json"
-        ).read_text()
-        units = _collect_read_units(json.loads(text), tok, ids_fn)
-        return units, hashlib.sha256(text.encode()).hexdigest()[:16]
+        raw = json.loads(
+            (
+                out_dir / "raw_completions" / phase_tag / cell_name / "raw_completions.json"
+            ).read_text()
+        )
+        return _collect_read_units(raw, tok, ids_fn), raw_content_sha(raw)
 
     a0_units, a0_sha = _units_and_sha(f"A0__{model_key}", "phaseA")
     expected = _checkpointed_fire_fraction(
@@ -2824,10 +2866,9 @@ def phase_firing(args) -> Path:
         raw_sha=a0_sha,
     )
     # realized: harvested caphook fired_frac (caphook arms), else projection-derived (A1).
-    arm_raw_text = (
-        out_dir / "raw_completions" / "phaseB" / cell / "raw_completions.json"
-    ).read_text()
-    arm_raw = json.loads(arm_raw_text)
+    arm_raw = json.loads(
+        (out_dir / "raw_completions" / "phaseB" / cell / "raw_completions.json").read_text()
+    )
     harvested = (arm_raw.get("realized_firing") or {}).get("mean_fired_frac")
     if harvested is not None:
         realized = float(harvested)
@@ -2848,7 +2889,7 @@ def phase_firing(args) -> Path:
             model_key=model_key,
             read="realized",
             smoke=bool(args.smoke),
-            raw_sha=hashlib.sha256(arm_raw_text.encode()).hexdigest()[:16],
+            raw_sha=raw_content_sha(arm_raw),
         )
         realized_source = "projection_on_arm_completions"
     calibration_limited = expected > 0 and realized < 0.5 * expected
