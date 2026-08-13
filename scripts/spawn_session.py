@@ -1927,13 +1927,18 @@ def _merge_settings_env(body: dict[str, object]) -> None:
 
     Called immediately before EVERY ``post("/spawn-session", body)`` (#2110:
     spawn-pm, spawn-issue both branches, spawn-campaign), so a settings-env
-    edit binds for all new spawns immediately, with no daemon restart."""
-    overrides = _settings_env_overrides()
-    if not overrides:
-        return
+    edit binds for all new spawns immediately, with no daemon restart.
+
+    Also stamps ``HAPPY_AUTOMATED_SESSION=1`` on every spawn from this script:
+    these are worker sessions no human reads directly, and user-level
+    SessionStart hooks that shape output for a human reader (currently
+    ``~/.claude/hooks/i-have-adhd-interactive.sh``) key off this var to skip
+    them (Thomas 2026-08-13: ADHD-mode formatting only for sessions he drives,
+    never for automatic Happy Coder agents)."""
     env = body.setdefault("environmentVariables", {})
     assert isinstance(env, dict), f"environmentVariables is not a dict: {type(env).__name__}"
-    for key, value in overrides.items():
+    env.setdefault("HAPPY_AUTOMATED_SESSION", "1")
+    for key, value in _settings_env_overrides().items():
         env.setdefault(key, value)
 
 
