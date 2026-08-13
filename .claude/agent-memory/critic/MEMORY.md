@@ -107,6 +107,7 @@
 
 ## Infra-plan reviews
 - [Infra-plan review checklist](feedback_infra_plan_review_checklist.md) — protection-illusion holes, choke-point greps, TOCTOU (#564-#884)
+- [Hold-gate arming surfacing property](feedback_hold_gate_arming_surfacing_property.md) — every wakeup rung must SURFACE the hold (tick_triage is status-keyed); re-derive mapped-test lists (#2135)
 - [Janitor deletion-gate plans](feedback_janitor_deletion_gate_plans.md) — /proc live-owner probe, rmtree-fallback, hang fixtures (#2127)
 - [Hook-timeout fail-open](feedback_hook_timeout_semantics_fail_open.md) — timed-out PreToolUse = NO decision; probes vacuous unless timeout FIRED (#2115)
 - [Ruff noqa prose-mention](feedback_ruff_noqa_prose_mention_in_comments.md) — `# noqa` in #-comments trips ruff as prose; strings safe (#2089)
