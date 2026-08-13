@@ -1,0 +1,30 @@
+{
+  "metadata": {
+    "git_commit": "f56f7d38ea6d41a6226ca2b1ef778d0ea50a3ee5",
+    "timestamp": "2026-07-23T20:44:45Z",
+    "seed": 0,
+    "n": 2160,
+    "script": "scripts/issue1345_operator_comparison.py",
+    "pinned_parent_revision": "7159e5804d"
+  },
+  "model": "pretrained",
+  "arm": "context",
+  "direction_key": {
+    "b2i": "reparam r4(paired stories) operator recovered in r1(chat)",
+    "i2b": "reparam r1(chat) operator recovered in r4(paired stories)"
+  },
+  "per_direction": {
+    "b2i": 0.5432806934528832,
+    "i2b": -0.07045188281119046
+  },
+  "delta_reparam": -0.07045188281119046,
+  "recovered_r2": {
+    "b2i": 0.5099418964637723,
+    "i2b": -0.13053263106068536
+  },
+  "within_r2": {
+    "b2i": -0.3094325894829135,
+    "i2b": -0.24698110653297256
+  },
+  "margin": 0.05
+}
