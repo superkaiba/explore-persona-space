@@ -131,6 +131,14 @@ CHAR_COLOR = {
 }
 CHAR_DISPLAY = {"helios": "HELIOS", "wren": "Wren", "vex": "Vex", "dana": "Dana"}
 CHARACTERS = ["helios", "wren", "vex", "dana"]
+# wr6 carries the assistant beside the four characters (user ask 2026-08-13).
+# Bluish-green completes the Wong set without colliding with a character hue or
+# with Figure 1's framing colors. The assistant is one of the pooled map's OWN
+# training settings (16 of the 56 pooled cells), exactly like each character —
+# not an external reference; the meta.json sidecar carries that note.
+WR6_ASSISTANT_COLOR = "#009E73"
+WR6_SPEAKERS = [*CHARACTERS, "assistant"]
+WR6_SPEAKER_COLOR = {**CHAR_COLOR, "assistant": WR6_ASSISTANT_COLOR}
 
 COND_LS = {"inserted": "-", "on_policy": "--"}
 COND_ALPHA = {"inserted": 0.85, "on_policy": 0.45}
@@ -780,12 +788,13 @@ def fig_wr6(units: list[dict]) -> None:
     for ax, (model, title) in zip(axes, PANELS):
         pm = POOLED_MODEL[model]
         for cond, ls in COND_LS.items():
-            for ch in CHARACTERS:
+            for ch in WR6_SPEAKERS:
                 u = _pooled_unit(units, ch, "bare_label", cond, pm)
-                vals += _draw_tier_series(ax, u, CHAR_COLOR[ch], ls, "o")
+                color = WR6_SPEAKER_COLOR[ch]
+                vals += _draw_tier_series(ax, u, color, ls, "o")
                 ax.axhline(
                     u["r2"]["own_map"],
-                    color=CHAR_COLOR[ch],
+                    color=color,
                     ls=":",
                     lw=1.0,
                     alpha=COND_ALPHA[cond],
@@ -804,11 +813,12 @@ def fig_wr6(units: list[dict]) -> None:
     _set_ylim(axes, min(vals), max(vals))
 
     handles = [
-        Line2D([], [], color=CHAR_COLOR[ch], marker="o", ls="-", lw=1.7, ms=5) for ch in CHARACTERS
+        Line2D([], [], color=WR6_SPEAKER_COLOR[ch], marker="o", ls="-", lw=1.7, ms=5)
+        for ch in WR6_SPEAKERS
     ]
-    labels = [WR_CHAR_DESC[ch] for ch in CHARACTERS]
+    labels = [WR_CHAR_DESC[ch] for ch in CHARACTERS] + ["Assistant"]
     _wr36_cond_and_tier_handles(handles, labels)
-    fig.suptitle("Map fit on all settings, applied to each story character (bare-label boundary)")
+    fig.suptitle("Map fit on all settings, applied to each story speaker (bare-label boundary)")
     _finish(fig, handles, labels, "wr6_pooled_vs_own_characters")
     _amend_meta("wr6_pooled_vs_own_characters", TIER3_NOTE)
 
