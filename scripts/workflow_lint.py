@@ -14846,7 +14846,17 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 # (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
 # change). Each entry names its trim direction; none is licensed to grow.
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
-    # measured 935,501 B at the #2256 + #2244 MERGE UNION (origin/main
+    # measured 934,550 B after the #2268 trim (Lever A retelling
+    # condensation, 23 sites, -1,641 B on the 936,191 B #2256-union tree:
+    # dropped session-ids, dates, and narrative retellings per the
+    # 2026-08-05 editorial policy — operative rules, diagnostic signatures,
+    # and bare (#N) citations kept). Cap = the RESTORED pre-#2256 fleet
+    # vintage 935_400, deliberately NOT measured + ~1 KB (#1753): stale
+    # pre-#2256 branch lint copies still carry cap 935,400, so matching it
+    # makes the trimmed main file PASS under BOTH vintages (the #2221
+    # stale-vintage gate-block class); headroom 850 B <= the 3,000 B
+    # loose-cap hygiene bar.
+    # Prior: 936_900 — measured 935,501 B at the #2256 + #2244 MERGE UNION (origin/main
     # merged into issue-2256 to pick up the coupled LESSONS cap raise):
     # #2256 re-keyed the Step 10d gate single-flight probe /
     # completion-read / kill-arm patterns from the transient gate-TREE
@@ -14919,7 +14929,7 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 904,504 B base); the remaining mass is the judgment tranche
     # (bash-block extraction to step10d_guards.sh-style scripts, 9a-quater
     # legacy-path stub, GCP rollback-prose relocation).
-    "issue/SKILL.md": 936_900,
+    "issue/SKILL.md": 935_400,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
