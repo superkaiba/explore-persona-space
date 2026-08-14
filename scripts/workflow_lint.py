@@ -14522,12 +14522,17 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # pre-launch gate — the #1739 dispatch-time backstop, output-side
     # sibling of the item-4 input gate; plan-mandated growth; cap =
     # measured + ~0.87 KB — LANDING bytes, per #1753.)
+    # measured 66,890 B post-#2277 (owner=/fence_until= run-launched note
+    # fields + the paired PASS-owner duty and the non-copy prohibition
+    # sentence, +1,271 B — plan-mandated growth; cap = the plan-named
+    # 67_600 = measured + ~0.7 KB).
+    # Prior: 66_600 —
     # measured 65,619 B post the 2026-08-05 compaction: bootstrap probe, GCP
     # salvage, Before-Running item-4 gate detail, and the vLLM hang triad
     # relocated to .claude/rules/experimenter-section-reference.md (#1159
     # mechanism); the crash-fix-relaunch paragraph + run-launched fence
     # tokens stay in-spec verbatim. Cap = measured + ~1 KB.
-    "experimenter.md": 66_600,
+    "experimenter.md": 67_600,
     # measured 49,740 B post-#1115 (read-hygiene context-budget section —
     # plan-mandated growth; cap = measured + <=~1 KB. Prior: 49,000 —
     # measured 48,197 B post-#1102)
@@ -14852,6 +14857,13 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 # (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
 # change). Each entry names its trim direction; none is licensed to grow.
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
+    # measured 939,648 B after #2277 added the three owner-fence emitter
+    # insertions (+1,992 B on the post-#2265 937,656 B: the Step 8
+    # owner-fence refusal sentence + PASS owner= first-person duty, the
+    # 9a-ter PASS-shape extension with the co-located non-copy
+    # prohibition, and the 6d.2 heartbeat fence_until= recipe); cap =
+    # measured + ~1.2 KB (#1753/#1727 landing-bytes rule).
+    # Prior: 938_900 —
     # measured 937,656 B LANDING bytes after #2265 added the Step 6d.2
     # `pid-stale-workload-live` branch row (+3,106 B on origin/main's
     # post-#2268 934,550 B: the non-terminal dead-veto status row — the
@@ -14944,7 +14956,7 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 904,504 B base); the remaining mass is the judgment tranche
     # (bash-block extraction to step10d_guards.sh-style scripts, 9a-quater
     # legacy-path stub, GCP rollback-prose relocation).
-    "issue/SKILL.md": 938_900,
+    "issue/SKILL.md": 940_900,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
