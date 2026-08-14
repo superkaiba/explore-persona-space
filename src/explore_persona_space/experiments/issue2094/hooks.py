@@ -7,9 +7,12 @@ Generalizes the #1415 ``DeltaHook``
   coordinates) under LEFT padding — rows with differing prompt lengths in one
   batch, the ``generate_batch`` geometry;
 - per-(row, position) delta tensors (``deltas[b]`` of shape ``(P_b, H)``);
-- ``mode in {"add", "replace"}`` at ANY position — DeltaHook's ``replace=True``
-  guard supports last-token-only replace (steering.py, "replace mode supports
-  ONLY the last-context-token prefill edit"), hence this NEW class; DeltaHook
+- ``mode in {"add", "replace"}`` at ANY position SET — replace mode accepts
+  one OR MORE positions per row (multi-position joint replace, #2162
+  turn-boundary-multipatch; the apply path is a flat ``index_put_`` scatter,
+  position-count-generic by construction). DeltaHook's ``replace=True`` guard
+  supports last-token-only replace (steering.py, "replace mode supports ONLY
+  the last-context-token prefill edit"), hence this NEW class; DeltaHook
   itself is deliberately untouched;
 - single-layer instances plus a ``PositionEditHookStack`` for joint-layer
   variants (one ``PositionEditHook`` per layer — the plan §4.2
@@ -52,9 +55,10 @@ class PositionEditHook:
     One instance per (model, layer). Per-cell state arrives via
     :meth:`arm_batch`; per-draw arming via :meth:`arm` (the DeltaHook
     contract ``generate_batch`` calls). ``mode="add"``:
-    ``h[b, p] <- h[b, p] + alpha * delta[b][j]``; ``mode="replace"``:
-    ``h[b, p] <- alpha * delta[b][0]`` (exactly ONE position per row —
-    the full-state patch, plan §4.2). Edits are OUT-OF-PLACE (clone).
+    ``h[b, p_j] <- h[b, p_j] + alpha * delta[b][j]``; ``mode="replace"``:
+    ``h[b, p_j] <- alpha * delta[b][j]`` per edit position ``p_j`` — one or
+    MORE positions per row (multi-position joint replace, #2162
+    turn-boundary-multipatch). Edits are OUT-OF-PLACE (clone).
     """
 
     def __init__(self, model, layer: int):
@@ -130,10 +134,6 @@ class PositionEditHook:
             assert len(set(pos)) == len(pos), f"row {b}: duplicate edit positions {list(pos)}"
             for p in pos:
                 assert 0 <= int(p) < int(rl), (b, p, rl)
-            if mode == "replace":
-                assert len(pos) == 1, (
-                    f"replace mode edits exactly ONE position per row (row {b}: {list(pos)})"
-                )
             assert isinstance(d, torch.Tensor) and d.dim() == 2, (b, type(d))
             assert d.shape[0] == len(pos), (b, d.shape, len(pos))
             hidden_sizes.add(int(d.shape[1]))
