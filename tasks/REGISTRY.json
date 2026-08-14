@@ -9972,8 +9972,8 @@
     "2290": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2290",
-      "status": "reviewing",
+      "path": "tasks/completed/2290",
+      "status": "completed",
       "title": "audit_clean_results_body_discipline: extend pre_reg noun grammar (recompute/sensitivity/comparison)"
     },
     "2291": {
