@@ -8797,8 +8797,8 @@
     "2137": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2137",
-      "status": "proposed",
+      "path": "tasks/archived/2137",
+      "status": "archived",
       "title": "daily-fix: pod_audit ownership by substring self-poisons"
     },
     "2138": {
