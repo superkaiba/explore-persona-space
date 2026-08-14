@@ -24,6 +24,8 @@ relates_to:
 ---
 # Every-token capping cuts the reproduced Assistant-Axis persona drift on Qwen3-32B by roughly a third but does not eliminate it (MODERATE confidence)
 <!-- clean-result-v4 -->
+**Methodology:** the full methodology section is exported verbatim to [docs/methodology/issue_2223.md](https://github.com/superkaiba/explore-persona-space/blob/76f606d7ed04c089e674ae16855c3efe30c25311/docs/methodology/issue_2223.md) (gist mirror: https://gist.github.com/superkaiba/db2564891a51fe2c33f1827cba18cc07).
+
 
 ## Takeaways
 
