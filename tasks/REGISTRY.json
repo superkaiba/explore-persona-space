@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2283,
+  "highest_id": 2284,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9919,6 +9919,13 @@
       "path": "tasks/proposed/2283",
       "status": "proposed",
       "title": "workflow-fix: extend owner-fence awareness to the watcher's pod-safety STOP pass"
+    },
+    "2284": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2284",
+      "status": "proposed",
+      "title": "workflow-fix: SKILL.md plan-review-floor trigger misattributed to is_workflow_fix_session"
     },
     "229": {
       "has_clean_result": false,
