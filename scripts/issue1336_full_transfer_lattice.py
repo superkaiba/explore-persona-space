@@ -588,6 +588,9 @@ BASELINES = load_baselines()
 # the round-B selfmap battery's base__base records (measured at layer 30 only —
 # off-30 layers render the base-source pairs as a gap, never interpolated).
 CEILING_LABEL = "within-model ceiling — target's own map (▲ = the S→S self column)"
+# One x axis across both lattice figures: every column is an ordered pair of
+# Tulu-3 checkpoints — the map is fit on the SOURCE and applied to the TARGET.
+X_AXIS_LABEL = "source model → target model"
 
 
 def load_source_self() -> dict:
@@ -715,7 +718,9 @@ def fig_aggregate(D: dict) -> Path:
         # entirely (set_layout_engine("none") keeps the prior engine's
         # adjust_compatible flag, so subplots_adjust is silently skipped).
         fig = plt.figure(figsize=(12.4, 8.0))
-        ax = fig.add_axes([0.075, 0.235, 0.920, 0.675])
+        # bottom 0.235 -> 0.275 (height absorbs it): the rotated tick labels plus
+        # the xlabel need clearance above the figure-level legend strip.
+        ax = fig.add_axes([0.075, 0.275, 0.920, 0.635])
         axb = None
         axa = None
     elif not HAS_ALIGN_PANEL:
@@ -731,7 +736,8 @@ def fig_aggregate(D: dict) -> Path:
             left=0.075,
             right=0.995,
             top=0.912,
-            bottom=0.175,
+            # 0.175 -> 0.215: rotated tick labels + xlabel, clear of the legend.
+            bottom=0.215,
         )
         ax = fig.add_subplot(gs[0])
         axa = None
@@ -765,7 +771,8 @@ def fig_aggregate(D: dict) -> Path:
             left=0.075,
             right=0.995,
             top=0.945,
-            bottom=0.150,
+            # 0.150 -> 0.185: rotated tick labels + xlabel, clear of the legend.
+            bottom=0.185,
         )
         ax = fig.add_subplot(gs[2])
         axa = fig.add_subplot(gs[0], sharex=ax)
@@ -981,8 +988,6 @@ def fig_aggregate(D: dict) -> Path:
             color="#404040",
         )
     ax.set_ylabel(f"held-out R²  (raw pooled, layer {LAYER})", fontsize=11)
-    # No xlabel: the tick labels ARE the pairs ("base→SFT"), the title says
-    # "every forward pair", and the freed strip carries the 8-entry legend.
     ax.set_title(
         "Every forward pair of the Tülu-3 ladder: how much of the context→answer map survives\n"
         "median over 7 non-degenerate corpora, every corpus overplotted",
@@ -998,6 +1003,9 @@ def fig_aggregate(D: dict) -> Path:
         # axb carries the shared tick labels; axa is a separate panel, not a
         # break partner, so it keeps its own bottom spine and just drops labels.
         axa.tick_params(axis="x", which="both", bottom=False, labelbottom=False)
+    # xlabel on the BOTTOM-most axis (axb when the identity+bias break panel is
+    # present — _break_marks has already stripped ax's own tick labels).
+    (axb if axb is not None else ax).set_xlabel(X_AXIS_LABEL, fontsize=10.5, labelpad=8)
     # Figure-level legend BELOW the axes: the per-tier t0/t6 null lines now occupy
     # the lower-left/mid of the data area, so an in-axes legend overlaps them.
     h, lab = ax.get_legend_handles_labels()
@@ -1104,7 +1112,9 @@ def fig_percorpus(D: dict) -> Path:
         left=0.045,
         right=0.995,
         top=0.915,
-        bottom=0.055,
+        # Was 0.055 (0.80in): the tallest column's 90-rotated tick labels alone
+        # nearly fill that, so the per-column xlabel needs the strip widened.
+        bottom=0.085,
     )
     # surface -> (main ax, break ax); built column-major so ragged columns work.
     axes_for: dict[tuple[str, str], tuple] = {}
@@ -1266,7 +1276,11 @@ def fig_percorpus(D: dict) -> Path:
         _break_marks(ax, axb)
         # Each COLUMN labels its own LAST panel: the columns are ragged, so a
         # single shared bottom row would leave the short columns unlabelled.
-        if (fmt, corpus) != last_in_col[col_of[(fmt, corpus)]]:
+        # Same reason the xlabel is per-column rather than one fig.supxlabel:
+        # three of the four columns end well above the figure bottom.
+        if (fmt, corpus) == last_in_col[col_of[(fmt, corpus)]]:
+            axb.set_xlabel(X_AXIS_LABEL, fontsize=9, labelpad=6)
+        else:
             axb.tick_params(axis="x", labelbottom=False)
 
     mains[0].set_ylim(*PC_YLIM)  # sharey => applies to all 8 main panels
