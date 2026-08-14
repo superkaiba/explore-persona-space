@@ -497,3 +497,74 @@ def test_build_channels_floor_counts_parity_checked_pairs(tmp_path: Path, monkey
     committed_small = {pid: committed[pid] for pid in sorted(pair_ids)[: n - 1]}
     with pytest.raises(AssertionError, match="vacuous join"):
         M._build_channels(args, pairs_by_id, committed_small, pair_ids)
+
+
+# ── pre-launch minors (m1/m2/m3) ───────────────────────────────────────
+
+
+def test_fig_empty_panels_raise(tmp_path: Path):
+    """m1 fix-engaged: an intentionally-empty panel RAISES instead of shipping
+    a blank render (#1112 empty-figure class) — the flagged ``fig_tb_rawscale``
+    plus one sibling of the same silent-skip shape."""
+    import issue2162_tbmp_figures as FIG
+
+    empty_rs = {"rows": []}
+    with pytest.raises(RuntimeError, match="rendered EMPTY"):
+        FIG.fig_tb_rawscale(empty_rs, empty_rs, tmp_path, [])
+    empty_tb = {"steered": [], "shuffled": [], "crosstype": []}
+    with pytest.raises(RuntimeError, match="rendered EMPTY"):
+        FIG.fig_tb_hero(empty_tb, empty_tb, tmp_path, [])
+    assert not list(tmp_path.iterdir())  # nothing shipped on the raise path
+
+
+def test_len_delta_conflicting_duplicate_flags_violation(tmp_path: Path):
+    """m2 fix-engaged: a CONFLICTING duplicate (same pair_id, different
+    len_delta) in the parent table is a violation — never a silent
+    first-wins half-check; an identical-value duplicate stays benign."""
+    import issue2162_tbmp as TB
+
+    cell = sorted(TB.CAPTURE_CELLS)[0]
+    pairs = [
+        SimpleNamespace(pair_id=f"p{i}", cell=cell, a=f"p{i}__a", b=f"p{i}__b") for i in range(2)
+    ]
+    resolved = {}
+    for i, p in enumerate(pairs):
+        resolved[p.a] = {"ctx_len": 100}
+        resolved[p.b] = {"ctx_len": 100 + i}
+
+    conflicted = tmp_path / "f_cells_conflict.jsonl"
+    with conflicted.open("w") as fh:
+        fh.write(M.json.dumps({"pair_id": "p0", "len_delta": 0}) + "\n")
+        fh.write(M.json.dumps({"pair_id": "p0", "len_delta": 5}) + "\n")  # CONFLICT
+        fh.write(M.json.dumps({"pair_id": "p1", "len_delta": 1}) + "\n")
+    rep = TB.g1b_len_delta_parity(resolved, pairs, conflicted)
+    assert not rep["passed"]
+    assert any(
+        v["check"] == "conflicting_duplicate_len_delta"
+        and v["pair_id"] == "p0"
+        and v["values"] == [0, 5]
+        for v in rep["violations"]
+    )
+
+    benign = tmp_path / "f_cells_benign.jsonl"
+    with benign.open("w") as fh:
+        for i, p in enumerate(pairs):
+            fh.write(M.json.dumps({"pair_id": p.pair_id, "len_delta": i}) + "\n")
+            fh.write(M.json.dumps({"pair_id": p.pair_id, "len_delta": i}) + "\n")  # identical dup
+    rep2 = TB.g1b_len_delta_parity(resolved, pairs, benign)
+    assert rep2["passed"] and rep2["n_checked"] == 2
+
+
+def test_defaults_path_byte_identical_to_committed_rawscale(tmp_path: Path):
+    """m3 pin: a defaults run of ``issue2162_recency_rawscale.py`` over the
+    COMMITTED parent tables reproduces the committed ``recency_rawscale.json``
+    byte-for-byte — protecting the panel-verified reproduction (and the
+    ``--null-cis`` rng isolation) from a future RNG-touching edit.
+    Sparse-worktree cone: ``eval_results/issue_2162/f_metrics``
+    (tests/sparse_cones.txt)."""
+    import issue2162_recency_rawscale as RS
+
+    committed = REPO_ROOT / "eval_results" / "issue_2162" / "f_metrics" / "recency_rawscale.json"
+    out = tmp_path / "recency_rawscale.json"
+    RS.main(["--metrics-dir", str(committed.parent), "--out-json", str(out)])
+    assert out.read_bytes() == committed.read_bytes()

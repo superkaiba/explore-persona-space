@@ -380,14 +380,21 @@ def parent_bank_context_parity(payload: dict, capture_ctx: dict[str, dict]) -> d
 
     The staged parent ``bank.json`` records each context's FULL payload
     (system/history/user + identity fields) but NO ``ctx_len``/``prefix_end``
-    (probed 2026-08-14 against the live HF artifact: 0 occurrences of either
-    key), so the assumption's stated recipe is unimplementable as written.
-    Realized parity, strictly stronger under the pinned tokenizer: EXACT
-    equality of the recorded per-context payloads for ALL capture contexts
-    (identical text + identical render ⇒ identical token ids ⇒ identical
-    ctx_len/prefix_end), plus the producer-domain ``frozen_gen_sha256`` pin.
-    The token-LENGTH leg of the recorded truth is asserted separately against
-    the parent's committed per-pair ``len_delta`` (``g1b_len_delta_parity``).
+    (probed 2026-08-14 against a fresh HF download, 2,383,040 bytes: 0
+    occurrences of either key; per-context keys are exactly {carrier, cell,
+    history, id, system, user, value_id}), so the assumption's stated recipe
+    cannot execute. Realized triple superseding it: (i) producer-domain
+    ``frozen_gen_sha256`` recompute == the banked pin; (ii) EXACT per-context
+    payload equality on ``_CONTEXT_PARITY_KEYS`` for all 432 capture contexts;
+    (iii) the token-LENGTH leg — G1(b) re-rendered per-pair ``ctx_len`` delta
+    == the parent's committed ``f_cells.jsonl`` ``len_delta``, 432/432
+    (``g1b_len_delta_parity``, separate report section). Scope: strictly
+    stronger at the TEXT level, but INCOMPARABLE at absolute token geometry —
+    the one drift class the literal recorded-ctx_len form would catch and this
+    form won't is a uniform render shift identical across both pair members
+    that preserves per-cell boundary counts; not load-bearing here because
+    this round re-captures its injection payloads at re-rendered positions and
+    consumes nothing absolute-position-indexed from the parent.
     A structurally unusable bank (no ``contexts`` map) raises — never a skip.
     """
     recorded = payload.get("contexts")
@@ -417,9 +424,18 @@ def parent_bank_context_parity(payload: dict, capture_ctx: dict[str, dict]) -> d
                 violations.append({"check": "context_payload_drift", "context_id": cid, "field": k})
                 break
     return {
-        "criterion": "plan §12 assumption 9 — rebuilt contexts == bank.json recorded payloads "
-        "(realized form: recorded ctx_len/prefix_end do not exist in the artifact; "
-        "text-level payload equality + producer-domain frozen_gen sha are strictly stronger)",
+        "criterion": "plan §12 assumption 9, realized form — the banked artifact records no "
+        "ctx_len/prefix_end (fresh-HF whole-blob probe: 0 occurrences of either key), so the "
+        "literal recipe cannot execute; realized triple: (i) producer-domain frozen_gen_sha256 "
+        "recompute == banked pin, (ii) exact per-context payload equality on "
+        "{cell, value_id, carrier, system, history, user} for all 432 capture contexts, "
+        "(iii) G1(b) re-rendered per-pair ctx_len delta == parent committed f_cells.jsonl "
+        "len_delta, 432/432 (len_delta_parity section)",
+        "scope_note": "strictly stronger at the TEXT level; incomparable at absolute token "
+        "geometry — the residual drift class (a uniform render shift identical across both "
+        "pair members preserving per-cell boundary counts) is not load-bearing: this round "
+        "re-captures its injection payloads at re-rendered positions and consumes nothing "
+        "absolute-position-indexed from the parent",
         "n_contexts_checked": len(capture_ctx),
         "parity_keys": list(_CONTEXT_PARITY_KEYS),
         "frozen_gen_sha256": banked_sha,
@@ -438,21 +454,36 @@ def g1b_len_delta_parity(
     covers all 38 cells ⊇ the 12 capture cells, single-valued per pair —
     counted 2026-08-14: 1,368 pairs, 0 multi-valued). Anti-vacuous by
     construction: a capture pair MISSING from the parent table is a violation,
-    so an empty/mis-staged table can never pass silently."""
+    so an empty/mis-staged table can never pass silently. Table integrity: a
+    CONFLICTING duplicate (same pair_id, different len_delta) anywhere in the
+    parent table is a violation — an internally inconsistent table cannot
+    serve as a parity reference; an identical-value duplicate is benign."""
     assert parent_f_cells.exists(), (
         f"{parent_f_cells} missing — the parent's committed f_cells.jsonl is required for the "
         "G1(b) len_delta rebuilt-vs-recorded parity (git eval_results/issue_2162/f_metrics/)"
     )
     recorded: dict[str, int] = {}
+    conflicts: dict[str, list[int]] = {}
     with parent_f_cells.open() as fh:
         for line in fh:
             if not line.strip():
                 continue
             row = json.loads(line)
-            if row.get("len_delta") is not None:
-                recorded.setdefault(row["pair_id"], int(row["len_delta"]))
+            if row.get("len_delta") is None:
+                continue
+            pid, val = row["pair_id"], int(row["len_delta"])
+            prev = recorded.get(pid)
+            if prev is None:
+                recorded[pid] = val
+            elif val != prev:
+                vals = conflicts.setdefault(pid, [prev])
+                if val not in vals:
+                    vals.append(val)
     capture_pairs = [p for p in pairs if p.cell in CAPTURE_CELLS]
-    violations: list[dict] = []
+    violations: list[dict] = [
+        {"check": "conflicting_duplicate_len_delta", "pair_id": pid, "values": sorted(vals)}
+        for pid, vals in sorted(conflicts.items())
+    ]
     n_checked = 0
     for p in capture_pairs:
         want = recorded.get(p.pair_id)
@@ -1510,6 +1541,20 @@ def _sentinel_payload(cfg: R.RunConfig, uploaded: dict[str, list[str]]) -> dict:
             "tb metric; the judge DVs + TF margin are the registered reads)",
             "margin artifacts persist as JSONL under margin/ (plan §6.5 says .pt) — "
             "text-first upload policy; content is per-pair scalar margins, no tensors",
+            "plan §12 assumption 9 verification recipe superseded: the staged parent "
+            "bank.json records NO ctx_len/prefix_end (fresh-HF probe 2026-08-14, "
+            "2,383,040 bytes: 0 occurrences of either key; per-context keys are exactly "
+            "{carrier, cell, history, id, system, user, value_id}), so the literal recipe "
+            "cannot execute; realized triple = (i) producer-domain frozen_gen_sha256 "
+            "recompute == banked pin, (ii) exact per-context payload equality on "
+            "{cell, value_id, carrier, system, history, user} for all 432 capture "
+            "contexts, (iii) G1(b) re-rendered per-pair ctx_len delta == parent committed "
+            "f_cells.jsonl len_delta, 432/432 required (gates/g1_resolver_report.json). "
+            "Strictly stronger at the TEXT level; incomparable at absolute token geometry "
+            "— the residual drift class (a uniform render shift identical across both pair "
+            "members preserving per-cell boundary counts) is not load-bearing: this round "
+            "re-captures injection payloads at re-rendered positions and consumes nothing "
+            "absolute-position-indexed from the parent.",
         ],
         "uploaded_prefixes": {k: len(v) for k, v in uploaded.items()},
     }
