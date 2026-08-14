@@ -9902,8 +9902,8 @@
     "2281": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2281",
-      "status": "planning",
+      "path": "tasks/approved/2281",
+      "status": "approved",
       "title": "verify_task_body: re.IGNORECASE + .lower() crashes the verifier on Unicode long-s (ValueError at :16820)"
     },
     "2282": {
