@@ -336,6 +336,14 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_task_workflow_worktree.py",
     # group 2 — workflow-lint / yaml / fix-dedup
     "tests/test_workflow_lint.py",
+    # NEW (#1718) — data-file loader pin (migration snapshot + parser semantics)
+    # for AGENT_SPEC_SIZE_GRANDFATHER moved to .claude/config/agent_spec_size_caps.txt
+    "tests/test_workflow_lint_agent_spec_caps.py",
+    # (#1718) — the existing agent-spec-size ratchet invariants (regrowth ratchet +
+    # headroom-hug FAILs). WORKFLOW_INVARIANT-registered here so the caps-file
+    # data change or any workflow_lint.py edit re-runs the live-tree PASS
+    # + threshold-branch coverage.
+    "tests/test_workflow_lint_agent_spec_size.py",
     "tests/test_workflow_lint_dotenv_check.py",
     # NEW (#1701) — workflow_lint --check-inline-round-duty-mirror + no-flags
     # bundling + drift-detection semantics pin
