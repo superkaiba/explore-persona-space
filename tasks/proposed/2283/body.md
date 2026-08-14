@@ -1,5 +1,6 @@
 ---
-title: Extend owner-fence awareness to the watcher's pod-safety STOP pass
+title: 'workflow-fix: extend owner-fence awareness to the watcher''s pod-safety STOP
+  pass'
 kind: infra
 tags:
 - wf-fix

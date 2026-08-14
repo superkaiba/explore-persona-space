@@ -9918,7 +9918,7 @@
       "kind": "infra",
       "path": "tasks/proposed/2283",
       "status": "proposed",
-      "title": "Extend owner-fence awareness to the watcher's pod-safety STOP pass"
+      "title": "workflow-fix: extend owner-fence awareness to the watcher's pod-safety STOP pass"
     },
     "229": {
       "has_clean_result": false,
