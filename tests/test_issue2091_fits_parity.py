@@ -118,8 +118,10 @@ def test_dof_cap_exclusion_masks_interpolating_lambdas():
     """Fabricated huge-eigenvalue caches: dof ~= n_fi > cap*n_fi at EVERY grid
     lambda -> all-excluded raises; a mixed cache excludes only the small lambdas."""
     grid = np.asarray(LAMBDA_GRID)
+    # Fabricated caches carry fi_idx (the production `_prep_inner_lambda` contract on
+    # BOTH routes) — `_dof_cap_exclusions` reads n_fi from it, not from len(w) (#2282).
     # all-excluded: every eigenvalue enormous -> filt ~= 1 -> dof = n_fi.
-    huge = [{"w": torch.full((10,), 1e12, dtype=torch.float64)}]
+    huge = [{"w": torch.full((10,), 1e12, dtype=torch.float64), "fi_idx": torch.arange(10)}]
     excluded, fold_ntr = _dof_cap_exclusions(huge, grid, DOF_CAP)
     assert excluded.all() and fold_ntr == [10]
     # no cap -> nothing excluded.
@@ -127,7 +129,7 @@ def test_dof_cap_exclusion_masks_interpolating_lambdas():
     assert not none_excluded.any()
     # mixed: moderate eigenvalues -> small lambdas interpolate (dof ~ n_fi),
     # large lambdas shrink dof under the cap.
-    mixed = [{"w": torch.full((10,), 50.0, dtype=torch.float64)}]
+    mixed = [{"w": torch.full((10,), 50.0, dtype=torch.float64), "fi_idx": torch.arange(10)}]
     exc_mixed, _ = _dof_cap_exclusions(mixed, grid, DOF_CAP)
     assert exc_mixed.any() and not exc_mixed.all()
     assert exc_mixed[0] and not exc_mixed[-1]  # smallest lambda excluded, largest kept
@@ -135,7 +137,7 @@ def test_dof_cap_exclusion_masks_interpolating_lambdas():
 
 def test_select_lambda_raises_when_every_lambda_excluded():
     x, y, _ = _grouped_cell(n_groups=4, rows_per_group=5, d=6, d_out=2)
-    huge = [{"w": torch.full((10,), 1e12, dtype=torch.float64)}]
+    huge = [{"w": torch.full((10,), 1e12, dtype=torch.float64), "fi_idx": torch.arange(10)}]
     with pytest.raises(RuntimeError, match="no admissible lambda"):
         select_lambda(x, y, None, inner_caches=huge, where="allexcluded")
 
@@ -146,8 +148,11 @@ def test_select_lambda_never_picks_excluded_lambda():
     REAL inner caches (full key set — fi_idx/va_idx/V/P/M) with the eigenvalues
     mutated in place to a flat moderate spectrum, so dof(lam) = n_fi*50/(50+lam)
     excludes exactly the small-lambda half of the grid under the 0.9 cap.
+    d=40 >= n_fi pins the GRAM inner route (w carries n_fi eigenvalues), where the
+    flat-50 mutation can make the cap bite; on the primal route (n_fi > d) w has
+    only d entries, so dof <= d << 0.9*n_fi and the cap correctly never bites (#2282).
     """
-    x, y, conv_ids = _grouped_cell(n_groups=10, rows_per_group=4, d=8, d_out=3)
+    x, y, conv_ids = _grouped_cell(n_groups=10, rows_per_group=4, d=40, d_out=3)
     from scripts.issue2091_fits import build_inner_caches
 
     caches = build_inner_caches(x, conv_ids, n_inner=4, seed=11)
@@ -157,6 +162,40 @@ def test_select_lambda_never_picks_excluded_lambda():
     sel = select_lambda(x, y, None, inner_caches=caches, where="masked")
     assert sel.excluded_lambdas  # cap bites
     assert sel.best_lambda not in sel.excluded_lambdas
+
+
+def test_dof_cap_bites_on_primal_route_in_band_d_lt_nfi_lt_d_over_cap():
+    """Primal-route dof-cap pin, in the ONLY band where the cap is live there.
+
+    On the primal route dof <= d (the spectrum carries d eigenvalues), so the
+    threshold 0.9*n_fi can only be exceeded when d > 0.9*n_fi — i.e. the narrow
+    band d < n_fi < d/0.9. REAL caches via ``build_inner_caches``: 42 single-row
+    groups with n_inner=2 give n_fi = 21 EXACTLY per fold (``_cv_folds`` assigns
+    perm[i] % 2 over 42 unique ids -> 21/21, seed-independent), and d = 20 puts
+    both folds strictly inside the band (primal engages at 21 > 20; 20 > 18.9).
+
+    The ``fold_ntr == [21, 21]`` assertion is the one that would have caught the
+    original #2282 bug: the pre-fix code read n_fi from the eigenvalue count
+    (``w.shape[0]`` == d == 20 here), not from ``fi_idx``.
+    """
+    from scripts.issue2091_fits import build_inner_caches
+
+    rng = np.random.default_rng(RNG_SEED)
+    n_groups, d = 42, 20
+    x = rng.normal(size=(n_groups, d)).astype(np.float32)
+    conv_ids = np.array([f"g{g:03d}" for g in range(n_groups)])
+    caches = build_inner_caches(x, conv_ids, n_inner=2, seed=11)
+    assert caches is not None and len(caches) == 2
+    for ic in caches:
+        # Primal route ACTUALLY engaged, asserted not assumed: the spectrum has
+        # d entries while the fold trains on n_fi = 21 > d rows (a Gram cache
+        # would carry n_fi eigenvalues here).
+        assert int(ic["w"].shape[0]) == d
+        assert int(ic["fi_idx"].shape[0]) == 21
+        ic["w"][:] = 1e12  # filt ~= 1 -> dof ~= d = 20 > 0.9 * 21 = 18.9
+    excluded, fold_ntr = _dof_cap_exclusions(caches, np.asarray(LAMBDA_GRID), DOF_CAP)
+    assert fold_ntr == [21, 21]  # read from fi_idx, NOT the eigenvalue count (== 20)
+    assert excluded.all()  # dof ~= 20 > 18.9 at every grid lambda (lam_max = 1e4)
 
 
 # ── pure-GCV-at-n<d refusal branch ────────────────────────────────────────────
