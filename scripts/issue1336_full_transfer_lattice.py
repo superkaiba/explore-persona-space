@@ -21,12 +21,13 @@ outer folds, fold-local pooled OOF, raw scale), which is what licenses one axis.
 SERIES (identical meaning in both figures — one colour, one meaning):
   within-model ceiling  grey dashed  the TARGET stage's own map: the bar every
                                      transfer read is scored against, not 1.0
-  source self-map       grey ^       the SOURCE stage's own map on its own
-                                     (context, answer) pairs, drawn in its OWN
-                                     S→S column at the left edge of each source
-                                     block: how predictable the source's answer
-                                     state is BEFORE any transfer (base ~0.37
-                                     pooled vs ~0.54-0.56 post-training)
+                                     Each source block opens with an S→S self
+                                     column whose target IS the source, so that
+                                     stage's OWN map is the same quantity and
+                                     sits on this SAME line (triangle marker) —
+                                     the ceiling and the source self-map were
+                                     never two different measurements. Base
+                                     ~0.34 pooled vs ~0.55-0.58 post-training.
   0: direct transfer    dark blue    source operator W_s applied unchanged
   6: reparam contexts   blue         linear remap of the TARGET's contexts into
                                      source coordinates, then W_s (context side
@@ -586,8 +587,7 @@ BASELINES = load_baselines()
 # is the stage; base is never a forward-pair target, so its value comes from
 # the round-B selfmap battery's base__base records (measured at layer 30 only —
 # off-30 layers render the base-source pairs as a gap, never interpolated).
-SOURCE_SELF_COLOR = "#8c8c8c"
-SOURCE_SELF_LABEL = "source self-map (source's own ceiling)"
+CEILING_LABEL = "within-model ceiling — target's own map (▲ = the S→S self column)"
 
 
 def load_source_self() -> dict:
@@ -907,21 +907,15 @@ def fig_aggregate(D: dict) -> Path:
         label=xmap.CROSS_LABEL,
         zorder=6,
     )
-    ax.plot(
-        x,
-        [D["ceilings"][pi] for pi in range(len(PAIRS))],
-        marker="s",
-        ms=5,
-        lw=1.5,
-        ls="--",
-        color=CEILING_COLOR,
-        label="within-model ceiling (target's own map)",
-        zorder=6,
-    )
-    # Source self-map: its OWN S→S column at the left edge of each source block
-    # (user call 2026-08-14) — never overlaid across the transfer pairs. Median
-    # triangle + every corpus overplotted, matching the tier convention.
-    self_pts: list[tuple[int, float]] = []
+    # ONE grey series across EVERY column: the target's own map. At a self
+    # column the target IS the source, so that stage's own map is the same
+    # quantity and joins THIS line rather than forming a second one (user call
+    # 2026-08-14) — the ceiling and the source self-map were never two
+    # different measurements. A stage with no measured self map (off-30 layers:
+    # base's selfmap battery ran at layer 30 only) is absent from the slot
+    # list, so the line breaks there instead of interpolating.
+    ceil_by_slot: dict[int, float] = {X_PAIR[pi]: D["ceilings"][pi] for pi in range(len(PAIRS))}
+    self_slots: list[int] = []
     for stage, xs in sorted(X_SELF.items(), key=lambda kv: kv[1]):
         vals = [
             SOURCE_SELF[(stage, f, c)]
@@ -929,25 +923,31 @@ def fig_aggregate(D: dict) -> Path:
             if (f, c) not in DEGENERATE and (stage, f, c) in SOURCE_SELF
         ]
         if not vals:
-            continue  # off-30 layers: base's selfmap battery never ran — a gap
-        for v in vals:
-            ax.plot([xs], [v], marker="o", ms=3.2, alpha=0.35, color=SOURCE_SELF_COLOR)
-        self_pts.append((xs, float(np.median(vals))))
-    # ONE dotted line through the self columns (user call 2026-08-14), so the
-    # source ceiling reads as a trajectory across the ladder. The line spans the
-    # transfer columns between them — the self columns are non-adjacent by
-    # construction; a stage with no measured self map is simply absent from the
-    # point list, never interpolated onto the line.
+            continue
+        ceil_by_slot[xs] = float(np.median(vals))
+        self_slots.append(xs)
+    _cs = sorted(ceil_by_slot)
     ax.plot(
-        [p[0] for p in self_pts],
-        [p[1] for p in self_pts],
-        marker="^",
-        ms=6.5,
+        _cs,
+        [ceil_by_slot[s] for s in _cs],
+        marker="s",
+        ms=5,
         lw=1.5,
-        ls=(0, (1, 1.6)),
-        color=SOURCE_SELF_COLOR,
-        label=SOURCE_SELF_LABEL,
+        ls="--",
+        color=CEILING_COLOR,
+        label=CEILING_LABEL,
         zorder=6,
+    )
+    # Same colour, same line — the triangle only marks WHICH columns are self
+    # columns, so the legend stays a single entry.
+    ax.plot(
+        self_slots,
+        [ceil_by_slot[s] for s in self_slots],
+        marker="^",
+        ms=7.5,
+        ls="none",
+        color=CEILING_COLOR,
+        zorder=7,
     )
 
     for name, lo, hi in SLOT_BLOCKS:
@@ -1211,33 +1211,35 @@ def fig_percorpus(D: dict) -> Path:
             color=CROSS_COLOR,
             label=xmap.CROSS_LABEL,
         )
+        # ONE grey series, self columns included — see fig_aggregate: a self
+        # column's target IS its source, so the stage's own map is the same
+        # quantity as the ceiling and joins the same line.
         cvals = [stt.cell(s, t, fmt, corpus, TIERS[0]) for s, t in PAIRS]
+        cbs: dict[int, float] = {
+            X_PAIR[i]: c["within_r2"] for i, c in enumerate(cvals) if c is not None
+        }
+        pself = [xs for stage, xs in X_SELF.items() if (stage, fmt, corpus) in SOURCE_SELF]
+        for stage, xs in X_SELF.items():
+            if (stage, fmt, corpus) in SOURCE_SELF:
+                cbs[xs] = SOURCE_SELF[(stage, fmt, corpus)]
+        _pcs = sorted(cbs)
         ax.plot(
-            [X_PAIR[i] for i, c in enumerate(cvals) if c],
-            [c["within_r2"] for c in cvals if c],
+            _pcs,
+            [cbs[s] for s in _pcs],
             marker="s",
             ms=4,
             ls="--",
             lw=1.3,
             color=CEILING_COLOR,
-            label="within-model ceiling",
-        )
-        # Source self-map in its OWN S→S column (user call 2026-08-14); this
-        # panel's single per-corpus value, one triangle per source block.
-        spts = sorted(
-            (xs, SOURCE_SELF[(stage, fmt, corpus)])
-            for stage, xs in X_SELF.items()
-            if (stage, fmt, corpus) in SOURCE_SELF
+            label=CEILING_LABEL,
         )
         ax.plot(
-            [p[0] for p in spts],
-            [p[1] for p in spts],
+            sorted(pself),
+            [cbs[s] for s in sorted(pself)],
             marker="^",
-            ms=5,
-            lw=1.3,
-            ls=(0, (1, 1.6)),
-            color=SOURCE_SELF_COLOR,
-            label=SOURCE_SELF_LABEL,
+            ms=5.5,
+            ls="none",
+            color=CEILING_COLOR,
         )
 
         title = f"{corpus} ({fmt})" + ("  — DEGENERATE n_train<d" if deg else "")
