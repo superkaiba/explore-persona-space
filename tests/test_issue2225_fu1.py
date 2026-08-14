@@ -570,3 +570,101 @@ def test_nan_slice_consumer_assert_fires():
     # The finite rows pass the same production assert.
     vec_ok = tr._build_steering_vectors(bank, "L1", 14)
     tr._assert_finite_steering_vectors(vec_ok, "RND.pt")
+
+
+# ── dispatcher: slug-keyed engagement gate + smoke log namespace (round 4) ────
+
+_FU1_DISPATCH = Path(__file__).resolve().parents[1] / "scripts" / "issue2225_fu1_dispatch.sh"
+
+
+def _hook_gate_script() -> str:
+    """Extract the REAL hook_count_gate function from the fu1 dispatcher and
+    wrap it in a callable probe (log_phase stubbed; args: <log_dir> <slugs>)."""
+    src = _FU1_DISPATCH.read_text(encoding="utf-8")
+    start = src.index("hook_count_gate() {")
+    end = src.index("\n}\n", start) + len("\n}\n")
+    return (
+        'log_phase() { echo "[phase=$1] $2"; }\n'
+        + src[start:end]
+        + '\nhook_count_gate "$1" "$2" testphase\n'
+    )
+
+
+def test_hook_gate_slug_keyed_ignores_foreign_logs(tmp_path):
+    """Round-4 fix 1 pin (the 10/8 pod crash shape): 8 engaged production cells
+    plus 2 FOREIGN smoke logs in the SAME directory -> the gate PASSES, because
+    it is keyed to the invocation's slug set, never a directory-wide tally."""
+    import subprocess
+
+    logs = tmp_path / "f1_train"
+    logs.mkdir()
+    prod = [f"{c}__evil__c{v}" for c in ("K", "M") for v in ("0.25", "0.75", "1.5", "3.0")]
+    for i, slug in enumerate(prod):
+        tok = "[steer-hook]" if i % 2 == 0 else "[fanout-skip]"
+        (logs / f"{slug}.log").write_text(f"train noise\n{tok} engaged\n")
+    for foreign in ("J__evil__c0.25", "L__evil__c0.25"):
+        (logs / f"{foreign}.log").write_text("[steer-hook] smoke residue\n")
+    out = subprocess.run(
+        ["bash", "-c", _hook_gate_script(), "_", str(logs), ",".join(prod)],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert out.returncode == 0, out.stderr
+    assert "8/8" in out.stdout
+
+
+def test_hook_gate_fails_loud_naming_missing_slugs(tmp_path):
+    """Missing/unengaged cells are NAMED in the FATAL line; an empty slug list
+    refuses loudly (never a vacuous pass)."""
+    import subprocess
+
+    logs = tmp_path / "f1_train"
+    logs.mkdir()
+    (logs / "K__evil__c0.25.log").write_text("[steer-hook]\n")
+    (logs / "K__evil__c0.75.log").write_text("no engagement token here\n")
+    out = subprocess.run(
+        [
+            "bash",
+            "-c",
+            _hook_gate_script(),
+            "_",
+            str(logs),
+            "K__evil__c0.25,K__evil__c0.75,K__evil__c1.5",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert out.returncode == 7
+    assert "K__evil__c0.75" in out.stderr and "K__evil__c1.5" in out.stderr
+    assert "K__evil__c0.25" not in out.stderr
+    empty = subprocess.run(
+        ["bash", "-c", _hook_gate_script(), "_", str(logs), ","],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert empty.returncode == 7 and "empty slug list" in empty.stderr
+
+
+def test_smoke_log_root_is_smoke_suffixed():
+    """Round-4 fix 2 pin: the dispatcher's root-wiring block lands LOG_ROOT at
+    a _smoke twin under EPM_I2225_SMOKE=1 (evaluates the REAL wiring block)."""
+    import subprocess
+
+    src = _FU1_DISPATCH.read_text(encoding="utf-8")
+    head = src[src.index('SMOKE="${EPM_I2225_SMOKE') : src.index('mkdir -p "$LOG_ROOT"')]
+    for smoke, expect in (
+        ("1", "/workspace/logs/issue-2225-fu1_smoke"),
+        ("", "/workspace/logs/issue-2225-fu1"),
+    ):
+        out = subprocess.run(
+            ["bash", "-c", head + '\necho "$LOG_ROOT"'],
+            capture_output=True,
+            text=True,
+            timeout=60,
+            env={"PATH": "/usr/bin:/bin", "EPM_I2225_SMOKE": smoke},
+        )
+        assert out.returncode == 0, out.stderr
+        assert out.stdout.strip() == expect

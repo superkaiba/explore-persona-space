@@ -22,8 +22,9 @@
 #   f3        idempotent upload safety pass + results sentinel
 #   all       the full DAG in order, ending with the single [phase=done] line
 #
-# Smoke: EPM_I2225_SMOKE=1 diverts every out-root to *_smoke twins AND every
-# HF upload prefix to *_smoke twins (round-3 fix 2), threads tiny-N dials into
+# Smoke: EPM_I2225_SMOKE=1 diverts every out-root, the per-cell LOG_ROOT
+# (round-4 fix 2), AND every HF upload prefix to *_smoke twins (round-3
+# fix 2), threads tiny-N dials into
 # every phase (same dispatcher, same subprocess shape, same launch width), and
 # RUNS the F1 verdict over the smoke cells' own arms + grid (--arms/--grid
 # derived from SMOKE_CELLS; round-3 fix 1) with its production-n-calibrated
@@ -76,6 +77,14 @@ PILOT_OUT="$OUT_ROOT/pilot_out"
 JUDGE_CACHE="$OUT_ROOT/judge_cache"
 JUDGE_RAW="$OUT_ROOT/judge_raw"
 LOG_ROOT="${EPM_I2225_LOG_ROOT:-/workspace/logs/issue-2225-fu1}"
+if [ -n "$SMOKE" ]; then
+  # Round-4 fix 2 (log-namespace isolation — same class as the round-3 HF-prefix
+  # twins): smoke per-cell fan-out logs land in a _smoke twin so smoke logs can
+  # never contaminate a production log-dir read (the pre-fix smoke wrote
+  # J/L logs into the production f1_train dir -> the engagement tally read 10/8
+  # and FATALed a healthy production run).
+  LOG_ROOT+="_smoke"
+fi
 # SENTINELS are contract-bound to the poller's TOP-LEVEL drain glob
 # /workspace/logs/issue-2225-*.json (poll_pipeline.py — the glob does not
 # cross '/'); phase logs stay in the $LOG_ROOT subdir.
@@ -298,15 +307,31 @@ f1_judge() {  # f1_judge <phase-label>
     --raw-judge-hf-prefix "$HF_JUDGE"
 }
 
-hook_count_gate() {  # hook_count_gate <log_dir> <n_expect> <phase-label>
-  # §7 criterion (i): every pilot cell's log carries the [steer-hook] engagement
-  # line OR the [fanout-skip] resume token (the parent's dual-token count gate —
-  # a resume-skipped cell proved engagement on its fingerprint-bound run).
-  local n_hook
-  n_hook=$(grep -rlF -e "[steer-hook]" -e "[fanout-skip]" "$1" 2>/dev/null | wc -l)
-  log_phase "$3" "hook-engagement logs (fresh or resume-skip): $n_hook/$2"
-  if [ "$n_hook" -ne "$2" ]; then
-    echo "FATAL: §7 criterion (i) FAILED — $n_hook/$2 logs carry [steer-hook]/[fanout-skip]" >&2
+hook_count_gate() {  # hook_count_gate <log_dir> <slugs_csv> <phase-label>
+  # §7 criterion (i): every enumerated cell's OWN log ($log_dir/<slug>.log)
+  # carries the [steer-hook] engagement line OR the [fanout-skip] resume token
+  # (a resume-skipped cell proved engagement on its fingerprint-bound run).
+  # Round-4 fix 1 (gotchas.md count-keyed liveness class): keyed to the CURRENT
+  # invocation's slug set, never a directory-wide tally — foreign logs in a
+  # shared dir (the smoke's 2 cells beside production's 8) inflated the old
+  # count to 10/8 and FATALed a healthy run. A missing/unengaged cell is named.
+  local raw=() cells=() missing=() slug
+  IFS=',' read -ra raw <<< "$2"
+  for slug in "${raw[@]}"; do
+    if [ -n "$slug" ]; then cells+=("$slug"); fi
+  done
+  if [ "${#cells[@]}" -eq 0 ]; then
+    echo "FATAL: hook_count_gate called with an empty slug list (phase $3)" >&2
+    exit 7
+  fi
+  for slug in "${cells[@]}"; do
+    if ! grep -qF -e "[steer-hook]" -e "[fanout-skip]" "$1/${slug}.log" 2>/dev/null; then
+      missing+=("$slug")
+    fi
+  done
+  log_phase "$3" "hook-engagement logs (fresh or resume-skip): $(( ${#cells[@]} - ${#missing[@]} ))/${#cells[@]} (slug-keyed)"
+  if [ "${#missing[@]}" -gt 0 ]; then
+    echo "FATAL: §7 criterion (i) FAILED — cells missing [steer-hook]/[fanout-skip] in $1: ${missing[*]}" >&2
     exit 7
   fi
 }
@@ -351,9 +376,7 @@ phase_f1() {
     pilot_cells_arg=("$(fu1_slugs "c.config in ('K', 'M') and c.dataset == 'evil'")")
   fi
 
-  local n_expect
-  n_expect=$(echo "${pilot_cells_arg[0]}" | tr ',' '\n' | grep -c .)
-  hook_count_gate "$f1_logs" "$n_expect" f1_pilot
+  hook_count_gate "$f1_logs" "${pilot_cells_arg[0]}" f1_pilot
 
   log_phase f1_pilot "eval-gen (pilot targets, n_rollouts=5)"
   headroom "$PILOT_OUT" 10 f1_pilot
@@ -485,9 +508,7 @@ f1_run_repilot() {  # <state_json> — idempotent (resume-safe); runs to a resol
     gridargs+=(--grid-arm "$arm=$grid")
   done
 
-  local n_expect
-  n_expect=$(uv run python -c "import json;p=json.load(open('$state'))['plan'];print(sum(len(v['cells']) for v in p.values()))")
-  hook_count_gate "$rp_logs" "$n_expect" f1_repilot
+  hook_count_gate "$rp_logs" "$all_cells" f1_repilot
 
   log_phase f1_repilot "eval-gen (re-pilot targets: $all_cells)"
   headroom "$PILOT_OUT" 10 f1_repilot
