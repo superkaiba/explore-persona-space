@@ -1,12 +1,15 @@
 {
-  "commit": "17f02b07+dirty",
-  "render_id": "f554d5990d2a4ef5",
-  "git_commit": "17f02b07",
+  "commit": "bf5c67e7+dirty",
+  "render_id": "334ea77321fe4a8b",
+  "git_commit": "bf5c67e7",
   "git_dirty": true,
   "git_dirty_paths": [
+    "figures/issue_2221/specialized_corpus_remine/remine_mix_size_vs_acquisition.meta.json",
+    "figures/issue_2221/specialized_corpus_remine/remine_mix_size_vs_acquisition.pdf",
+    "figures/issue_2221/specialized_corpus_remine/remine_mix_size_vs_acquisition.png",
     "scripts/issue2221_dv_figs.py"
   ],
-  "created": "2026-08-13T23:55:23Z",
+  "created": "2026-08-14T00:03:37Z",
   "figsize": [
     7.2,
     4.8

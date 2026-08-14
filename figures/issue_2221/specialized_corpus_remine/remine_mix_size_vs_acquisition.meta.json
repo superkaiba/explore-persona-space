@@ -1,12 +1,12 @@
 {
-  "commit": "17f02b07+dirty",
-  "render_id": "014b886315a54800",
-  "git_commit": "17f02b07",
+  "commit": "bf5c67e7+dirty",
+  "render_id": "99fa097e683c449f",
+  "git_commit": "bf5c67e7",
   "git_dirty": true,
   "git_dirty_paths": [
     "scripts/issue2221_dv_figs.py"
   ],
-  "created": "2026-08-13T23:55:21Z",
+  "created": "2026-08-14T00:03:29Z",
   "figsize": [
     7.6,
     4.6

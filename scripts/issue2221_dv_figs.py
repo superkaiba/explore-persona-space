@@ -364,6 +364,35 @@ def _remine_figs(eval_root: Path, figures_root: Path, pp, plt) -> None:
     pp.savefig_paper(fig, "remine_mix_size_vs_acquisition", dir=fig_dir)
     plt.close(fig)
 
+    # ── 1b) per-unit view behind the round-4 hallucination correlations ─────
+    scal_h = json.loads((rdir / "monitor_scalars/hallucination_paper.json").read_text())
+    y_h = np.array(
+        [paper_mean(scores, c, "hallucination") for c in corr["config"]["cells"]], dtype=np.float64
+    )
+    arm_specs = [
+        ("a_rb_ctx", "paper's last-prompt-token read"),
+        ("c_map_ctx", "mapped context read"),
+    ]
+    fig, axes = plt.subplots(1, 2, figsize=(9.6, 4.4), sharey=True)
+    for ax, (arm, label) in zip(axes, arm_specs):
+        sel = corr["per_trait"]["hallucination"]["panels"]["paper"]["arms"][arm]["selected_layer"]
+        x = np.array([scal_h["scalars"][c][arm][sel] for c in corr["config"]["cells"]])
+        for i, c in enumerate(corr["config"]["cells"]):
+            fam = c.rsplit("_", 1)[0] if c.rsplit("_", 1)[1] in ("normal",) else c.rsplit("_", 2)[0]
+            fam = next(f for f in FAMILIES if c.startswith(f))
+            ax.scatter(x[i], y_h[i], s=40, color=fam_colors[fam], zorder=3)
+        # label one point per family at its max-y version
+        for fam in FAMILIES:
+            idxs = [i for i, c in enumerate(corr["config"]["cells"]) if c.startswith(fam)]
+            top = max(idxs, key=lambda i: y_h[i])
+            ax.text(x[top], y_h[top] + 1.5, FAMILY_LABELS_SHORT[fam], fontsize=6, ha="center")
+        r_sel = corr["per_trait"]["hallucination"]["panels"]["paper"]["arms"][arm]["selected_r"]
+        ax.set_title(f"{label} (r = {r_sel:+.2f})", fontsize=8)
+        ax.set_xlabel("monitor scalar at selected layer")
+    axes[0].set_ylabel("graded hallucination score (0-100)")
+    pp.savefig_paper(fig, "remine_monitor_vs_score_per_unit", dir=fig_dir)
+    plt.close(fig)
+
     # ── 2) dual-grain H2 forest ──────────────────────────────────────────────
     fig, ax = plt.subplots(figsize=(7.2, 4.8))
     labels, pts, u_lo, u_hi, f_lo, f_hi = [], [], [], [], [], []
