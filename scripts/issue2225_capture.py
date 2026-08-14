@@ -404,11 +404,15 @@ def upload_capture(
     tags: Sequence[str] | None = None,
     *,
     hf_prefix: str = CAPTURE_HF_PREFIX,
+    hf_repo: str = DATA_REPO,
 ) -> list[str]:
     """Upload capture tensors to the HF data repo. Default: ONE folder commit of
     ``capture/``; ``tags`` uploads per-model subdirs (the §9 per-chunk path).
     Follow-up rounds thread their OWN prefix (fu1: analysis_tensors/fu1_capture
-    — never the parent-clobbering default, #1452)."""
+    — never the parent-clobbering default, #1452). ``hf_repo`` (default: the
+    canonical data repo) lets a round route the capture class to the private
+    overflow repo under the SAME prefix layout when the canonical repo is at
+    the 1M-file ceiling (#1108 contract; fu1 round 5)."""
     from explore_persona_space.orchestrate.hub import _upload
 
     urls: list[str] = []
@@ -417,14 +421,14 @@ def upload_capture(
             local = out_root / "capture" / tag
             if not local.exists():
                 raise FileNotFoundError(f"capture dir missing for upload: {local}")
-            url = _upload(local, DATA_REPO, "dataset", f"{hf_prefix}/{tag}", raise_on_error=True)
+            url = _upload(local, hf_repo, "dataset", f"{hf_prefix}/{tag}", raise_on_error=True)
             print(f"[capture] uploaded {local} -> {url}", flush=True)
             urls.append(url)
         return urls
     local = out_root / "capture"
     if not local.exists():
         raise FileNotFoundError(f"nothing to upload: {local} absent")
-    url = _upload(local, DATA_REPO, "dataset", hf_prefix, raise_on_error=True)
+    url = _upload(local, hf_repo, "dataset", hf_prefix, raise_on_error=True)
     print(f"[capture] uploaded {local} -> {url}", flush=True)
     return [url]
 
@@ -453,6 +457,15 @@ def build_argparser() -> argparse.ArgumentParser:
         "--hf-prefix",
         default=CAPTURE_HF_PREFIX,
         help="HF prefix for the capture upload (fu rounds thread analysis_tensors/fu1_capture)",
+    )
+    ap.add_argument(
+        "--hf-repo",
+        default=DATA_REPO,
+        help=(
+            "HF dataset repo for the capture upload (default: canonical data repo; "
+            "fu1 threads the private overflow repo when the canonical repo is at "
+            "the 1M-file ceiling — #1108 contract, same prefix layout)"
+        ),
     )
     ap.add_argument("--import-check", action="store_true")
     return ap
@@ -495,7 +508,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             else None
         )
         # UPLOAD_PREFIX_EXEMPT: parent-default-identical seam; fu1 passes an explicit --hf-prefix
-        upload_capture(Path(args.out_root), tags, hf_prefix=args.hf_prefix)
+        upload_capture(Path(args.out_root), tags, hf_prefix=args.hf_prefix, hf_repo=args.hf_repo)
         sys.stdout.flush()
         sys.exit(0)
 

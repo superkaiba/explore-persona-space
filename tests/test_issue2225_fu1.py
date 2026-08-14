@@ -648,6 +648,66 @@ def test_hook_gate_fails_loud_naming_missing_slugs(tmp_path):
     assert empty.returncode == 7 and "empty slug list" in empty.stderr
 
 
+def test_upload_capture_threads_hf_repo(monkeypatch, tmp_path):
+    """Round-5 fix pin (#1108 overflow contract): upload_capture threads a
+    caller-supplied hf_repo to BOTH _upload call sites (folder + per-tag);
+    the default stays the canonical data repo. path_in_repo layout unchanged."""
+    import issue2225_capture as cap
+
+    import explore_persona_space.orchestrate.hub as hub
+
+    seen: list[tuple[str, str]] = []
+
+    def fake_upload(local_path, repo_id, repo_type, path_in_repo, raise_on_error=False, **kw):
+        seen.append((repo_id, path_in_repo))
+        return f"https://huggingface.co/{repo_id}/{path_in_repo}"
+
+    monkeypatch.setattr(hub, "_upload", fake_upload)
+    overflow = "superkaiba1/explore-persona-space-overflow"
+    prefix = "issue2225_ctxsteer/analysis_tensors/fu1_capture"
+    (tmp_path / "capture" / "base").mkdir(parents=True)
+    (tmp_path / "capture" / "base" / "t.pt").write_bytes(b"x")
+    # Folder branch: default repo, then the threaded overflow repo.
+    cap.upload_capture(tmp_path, None, hf_prefix=prefix)
+    cap.upload_capture(tmp_path, None, hf_prefix=prefix, hf_repo=overflow)
+    # Per-tag branch threads the same repo (SAME prefix layout on overflow).
+    cap.upload_capture(tmp_path, ["base"], hf_prefix=prefix, hf_repo=overflow)
+    assert seen == [
+        (cap.DATA_REPO, prefix),
+        (overflow, prefix),
+        (overflow, f"{prefix}/base"),
+    ]
+
+
+def test_dispatch_capture_repo_args_env_wiring(tmp_path):
+    """Round-5 fix pin: EPM_I2225_FU1_CAPTURE_HF_REPO evaluates into
+    CAPTURE_REPO_ARGS when set and stays empty when unset (real wiring block);
+    both capture-upload legs (f2d + F3 safety pass) carry the array."""
+    import subprocess
+
+    src = _FU1_DISPATCH.read_text(encoding="utf-8")
+    head = src[src.index('SMOKE="${EPM_I2225_SMOKE') : src.index("log_phase() {")]
+    base_env = {
+        "PATH": "/usr/bin:/bin",
+        "EPM_I2225_LOG_ROOT": str(tmp_path / "logs"),
+        "EPM_I2225_SENTINEL_ROOT": str(tmp_path / "sent"),
+    }
+    overflow = "superkaiba1/explore-persona-space-overflow"
+    for repo, expect in ((overflow, f"--hf-repo {overflow}"), ("", "")):
+        out = subprocess.run(
+            ["bash", "-c", head + '\necho "${CAPTURE_REPO_ARGS[@]:-}"'],
+            capture_output=True,
+            text=True,
+            timeout=60,
+            env={**base_env, "EPM_I2225_FU1_CAPTURE_HF_REPO": repo},
+        )
+        assert out.returncode == 0, out.stderr
+        assert out.stdout.strip() == expect
+    # Both capture-upload call sites thread the array; no other upload class does.
+    assert src.count('--hf-prefix "$HF_CAPTURE" "${CAPTURE_REPO_ARGS[@]}"') == 2
+    assert src.count("CAPTURE_REPO_ARGS[@]") == 2
+
+
 def test_smoke_log_root_is_smoke_suffixed():
     """Round-4 fix 2 pin: the dispatcher's root-wiring block lands LOG_ROOT at
     a _smoke twin under EPM_I2225_SMOKE=1 (evaluates the REAL wiring block)."""

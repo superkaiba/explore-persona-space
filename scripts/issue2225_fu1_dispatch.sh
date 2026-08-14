@@ -114,6 +114,18 @@ if [ -n "$SMOKE" ]; then
   HF_DIRECTIONS+="_smoke"
 fi
 
+# Round-5 fix (#1108 overflow contract): the canonical data repo is AT the
+# 1M-file ceiling (capture's 240 files were rejected with "would contain
+# 1000107 > 1000000"), so the capture upload class is env-routable to the
+# private overflow repo — SAME $HF_CAPTURE prefix layout there (consumers
+# stage capture from that repo). Default empty = canonical repo; no other
+# upload class changes (MMLU's 80 files fit the remaining headroom).
+CAPTURE_HF_REPO="${EPM_I2225_FU1_CAPTURE_HF_REPO:-}"
+CAPTURE_REPO_ARGS=()
+if [ -n "$CAPTURE_HF_REPO" ]; then
+  CAPTURE_REPO_ARGS=(--hf-repo "$CAPTURE_HF_REPO")
+fi
+
 # Smoke dials (threaded, never a different code path). Two cells spanning the
 # two NEW mask classes: J = context, L = context_end (plan §4.5).
 TRAIN_SMOKE_ARGS=()
@@ -683,7 +695,7 @@ phase_f2d() {
     --staging-dir "$OUT_ROOT/hf_dl/eval_adapters" \
     --targets "$targets"
   uv run python scripts/issue2225_capture.py --upload --out-root "$OUT_ROOT" \
-    --hf-prefix "$HF_CAPTURE"
+    --hf-prefix "$HF_CAPTURE" "${CAPTURE_REPO_ARGS[@]}"
   log_phase f2d_capture "done"
 }
 
@@ -694,7 +706,7 @@ phase_f3() {
     --hf-prefix-final "$HF_FINAL" --hf-prefix-narrow "$HF_NARROW"
   uv run python scripts/issue2225_mmlu.py --upload --out-root "$OUT_ROOT" --hf-prefix "$HF_MMLU"
   uv run python scripts/issue2225_capture.py --upload --out-root "$OUT_ROOT" \
-    --hf-prefix "$HF_CAPTURE"
+    --hf-prefix "$HF_CAPTURE" "${CAPTURE_REPO_ARGS[@]}"
   uv run python scripts/issue2225_fu1_directions.py --upload --out-dir "$DIR_OUT" --hf-prefix "$HF_DIRECTIONS"
 
   # Incremental reap (#1489 last-consumer rule): the eval-adapter staging
@@ -705,7 +717,8 @@ phase_f3() {
   log_phase f3_uploads "results sentinel"
   local note_file="$LOG_ROOT/fu1_results_note.json"
   RES_NOTE_FILE="$note_file" RES_OUT_ROOT="$OUT_ROOT" RES_SMOKE="$SMOKE" \
-    RES_FU1_STATE="$FU1_REPILOT_STATE" uv run python - <<'PY'
+    RES_FU1_STATE="$FU1_REPILOT_STATE" RES_CAPTURE_HF_REPO="$CAPTURE_HF_REPO" \
+    RES_HF_CAPTURE="$HF_CAPTURE" uv run python - <<'PY'
 import json, os, sys
 
 sys.path.insert(0, "scripts")
@@ -747,6 +760,17 @@ note = {
     },
     "next": "off-pod: F4 judge (Batch API) + F5 analysis + figures",
 }
+# Round-5 fix (#1108 contract): when the capture class was routed to the
+# overflow repo (canonical data repo at the 1M-file ceiling), the results
+# sentinel records the deviation — consumers stage fu1_capture from THERE.
+cap_repo = os.environ.get("RES_CAPTURE_HF_REPO") or None
+if cap_repo:
+    note["capture_hf_repo_deviation"] = {
+        "reason": "canonical data repo at the 1M-file ceiling (#1108 overflow contract)",
+        "hf_repo": cap_repo,
+        "path_in_repo": os.environ["RES_HF_CAPTURE"],
+        "consumers": "stage fu1 capture tensors from this repo (same prefix layout)",
+    }
 with open(os.environ["RES_NOTE_FILE"], "w") as f:
     json.dump(note, f, indent=1)
 PY
