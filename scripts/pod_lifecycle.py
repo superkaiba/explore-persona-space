@@ -3810,18 +3810,29 @@ def _latest_pod_fence_until(events: list[dict], pod_name: str) -> dt.datetime | 
     (``YYYY-MM-DDTHH:MM(:SS)?Z``) parses to an aware datetime; anything else
     is treated as ABSENT with one stderr WARN naming the malformed token
     (fail-open per the #2277 hard constraint — garbage evidence must never
-    block today's fleet). The experimenter's provider-side ``fence=`` field
-    is a different literal and never matches."""
+    block today's fleet). Dual parse mirroring :func:`_note_owner_token`
+    (#2277 review round 1): a JSON-shaped note's top-level ``"fence_until"``
+    field feeds the SAME none-clearing + strptime + malformed-WARN path as
+    the prose token; a JSON note WITHOUT the field (or with an empty value)
+    does not clear an older registration. The experimenter's provider-side
+    ``fence=`` field is a different literal and never matches."""
     for ev in reversed(events):
         if ev.get("kind") not in _OWNER_REGISTRATION_KINDS:
             continue
         note = ev.get("note", "") or ""
         if not _note_names_pod(note, pod_name):
             continue
-        m = _FENCE_UNTIL_RE.search(note)
-        if m is None:
-            continue
-        raw = m.group(1).rstrip(".,;:!?)")
+        parsed = _note_json(note)
+        if parsed is not None:
+            raw = str(parsed.get("fence_until", "")).strip()
+            if not raw:
+                continue
+        else:
+            m = _FENCE_UNTIL_RE.search(note)
+            if m is None:
+                continue
+            raw = m.group(1)
+        raw = raw.rstrip(".,;:!?)")
         if raw.lower() == "none":
             return None
         for fmt in _FENCE_UNTIL_FORMATS:

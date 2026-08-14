@@ -1867,6 +1867,27 @@ def _pass_event(
     }
 
 
+def _json_hb_event(
+    pod: str,
+    *,
+    fence_until: str | None = None,
+    ts: str = "2026-08-13T19:27:39Z",
+) -> dict:
+    """JSON-shaped ``epm:progress`` heartbeat (the #488 machine-readable
+    family): top-level ``"pod"`` binds via ``_note_names_pod``'s JSON branch;
+    ``fence_until=None`` omits the field, ``""`` includes it empty."""
+    payload: dict = {"phase": "tiers-r5", "pod": pod}
+    if fence_until is not None:
+        payload["fence_until"] = fence_until
+    return {
+        "ts": ts,
+        "kind": "epm:progress",
+        "version": 306,
+        "by": "unknown",
+        "note": json.dumps(payload),
+    }
+
+
 def _fence_guard_setup(monkeypatch, stub_list_team_pods, *, issue, pods, events) -> None:
     """Standard seams for the #2277 owner-fence guard tests: live pods,
     events, kind=experiment task, keep-running False. Only the external
@@ -2556,6 +2577,56 @@ def test_v306_heartbeat_free_text_alarm_is_not_a_fence():
     pre-adoption artifacts read PROCEED by design; plan §12 assumption 5)."""
     events = [_hb_event("pod-2054-tiers")]
     assert pod_lifecycle._latest_pod_fence_until(events, "pod-2054-tiers") is None
+
+
+def test_fence_until_json_note_parses_same_path(capsys):
+    """#2277 code-review round 1 (Minor): a JSON-shaped registration note's
+    top-level ``"fence_until"`` field parses through the SAME strptime +
+    none-clearing + malformed-WARN path as the prose token — parser parity
+    with ``_latest_pod_token``'s JSON ``"owner"`` branch (pre-fix, a JSON
+    heartbeat registered its owner but silently registered NO fence)."""
+    pod = "pod-9"
+    # ISO seconds grammar in a JSON heartbeat registers the fence.
+    events = [_json_hb_event(pod, fence_until="2099-01-02T03:04:05Z")]
+    fence = pod_lifecycle._latest_pod_fence_until(events, pod)
+    assert fence is not None and fence.tzinfo is not None
+    assert (fence.year, fence.minute, fence.second) == (2099, 4, 5)
+
+    # Minute grammar parses too (same _FENCE_UNTIL_FORMATS path).
+    events = [_json_hb_event(pod, fence_until="2099-01-02T03:04Z")]
+    fence = pod_lifecycle._latest_pod_fence_until(events, pod)
+    assert fence is not None and (fence.minute, fence.second) == (4, 0)
+
+    # The literal `none` in a JSON note CLEARS an older prose registration
+    # (newest-wins across note shapes).
+    events = [
+        _rl_event(pod, owner="own-9", fence_until=_FUTURE_FENCE, ts="2026-01-01T00:00:00Z"),
+        _json_hb_event(pod, fence_until="none", ts="2026-01-02T00:00:00Z"),
+    ]
+    assert pod_lifecycle._latest_pod_fence_until(events, pod) is None
+
+    # Malformed JSON value: one stderr WARN, fence reads ABSENT (fail-open) —
+    # same arm the prose test pins.
+    capsys.readouterr()  # drain
+    events = [_json_hb_event(pod, fence_until="tomorrow-ish")]
+    assert pod_lifecycle._latest_pod_fence_until(events, pod) is None
+    err = capsys.readouterr().err
+    assert "WARN" in err and "fence_until" in err
+
+
+def test_fence_until_json_note_without_field_does_not_clear():
+    """A JSON note naming the pod WITHOUT a ``fence_until`` field — or with
+    an empty value — does NOT clear an older registration, mirroring the
+    prose no-token ``continue`` and ``_latest_pod_token``'s empty-value
+    branch (an event naming the pod without the token never clears)."""
+    pod = "pod-9"
+    events = [
+        _rl_event(pod, owner="own-9", fence_until=_FUTURE_FENCE, ts="2026-01-01T00:00:00Z"),
+        _json_hb_event(pod, ts="2026-01-02T00:00:00Z"),
+        _json_hb_event(pod, fence_until="", ts="2026-01-03T00:00:00Z"),
+    ]
+    fence = pod_lifecycle._latest_pod_fence_until(events, pod)
+    assert fence is not None and fence.year == 2099
 
 
 def test_pass_note_owner_kind_scope_and_two_tier_selection():
