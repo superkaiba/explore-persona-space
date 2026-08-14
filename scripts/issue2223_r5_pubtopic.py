@@ -38,16 +38,21 @@ import re
 import sys
 from pathlib import Path
 
-import numpy as np
-
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv()  # shared-VM thread caps (#847) bind BEFORE the first heavy import
+
 import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
 
 from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette,
     savefig_paper,
     set_paper_style,
 )
+from explore_persona_space.orchestrate.hub import retry_transient  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 EV = ROOT / "eval_results/issue_2223"
@@ -209,18 +214,19 @@ def fig5_cjk_scan() -> None:
         "raw_completions/fig5/raw_completions.json"
     )
     if not src.exists():
-        from explore_persona_space.orchestrate.env import load_dotenv
-
-        load_dotenv()
         from huggingface_hub import hf_hub_download
 
         src = Path(
-            hf_hub_download(
-                "superkaiba1/explore-persona-space-data",
-                "issue2223_persona_drift/raw_completions/raw_completions/fig5/raw_completions.json",
-                repo_type="dataset",
-                revision=PRE_OVERWRITE_REV,
-                local_dir="/tmp/i2223_preoverwrite",
+            retry_transient(
+                lambda: hf_hub_download(
+                    "superkaiba1/explore-persona-space-data",
+                    "issue2223_persona_drift/raw_completions/raw_completions/fig5/"
+                    "raw_completions.json",
+                    repo_type="dataset",
+                    revision=PRE_OVERWRITE_REV,
+                    local_dir="/tmp/i2223_preoverwrite",
+                ),
+                what="hf_hub_download(issue2223 fig5 raw_completions)",
             )
         )
     d = json.loads(src.read_text())

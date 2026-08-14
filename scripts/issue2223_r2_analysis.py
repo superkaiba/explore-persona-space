@@ -26,10 +26,14 @@ import json
 import sys
 from pathlib import Path
 
-import numpy as np
-
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv()  # shared-VM thread caps (#847) bind BEFORE the first heavy import
+
 import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
 
 from issue2223_analyzer_figs import conv_lines, load_arm  # noqa: E402
 from explore_persona_space.analysis.paper_plots import (  # noqa: E402
