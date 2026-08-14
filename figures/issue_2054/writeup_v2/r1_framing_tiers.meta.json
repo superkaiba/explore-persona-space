@@ -1,0 +1,509 @@
+{
+  "commit": "050bf14d+dirty",
+  "render_id": "2c09f8a6dfed4cce",
+  "git_commit": "050bf14d",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2054_loco_pooled.py",
+    "scripts/issue2094_butler_grid.py",
+    "tasks/awaiting_promotion/2094/body.md",
+    "tasks/planning/2296/plans/v1.md",
+    "tests/test_issue2094_bank.py",
+    "tests/test_issue2094_butler_grid.py",
+    "tests/test_issue2094_reverse_direction.py",
+    "tests/test_issue2094_run.py"
+  ],
+  "created": "2026-08-14T16:17:09Z",
+  "figsize": [
+    11.0,
+    7.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": -0.21320500590966499,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.053486686668805385,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.09595623899752626,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.07106448812934388,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.1314214008325282,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": -0.12868346061895716,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.04766320658217251,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.15175274944255385,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.06841270830522186,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.0758707192242066,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": -0.11978103679209551,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.17829106147572477,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.27245906701467926,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.21237066840315605,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.14648038616877113,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.20675489044864614,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.028898660622460152,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.03276841089249599,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.03461840093032553,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.04742433019922698,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.019711090570926876,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.0009083602065213595,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.04313067775062915,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.006165479377361831,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.029040107357408515,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.0622772413146539,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.08534377109239527,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.11110097978528871,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.11153803087970805,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.05713797908309977,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.3195130878778677,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.3792459473819198,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.4100035007867353,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.4629371804662313,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.3245379584362499,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": -0.21590892352560903,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.04489877358333498,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.12456327808178289,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.26730242820480415,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": -0.09106617478985202,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": -0.26661087453380283,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.1401805810293243,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.22669490059965103,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.31448377942562,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": -0.03218111315919399,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.3033623240727751,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.1479462597426627,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.09545986284959085,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.04640773510565871,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.2803107539428076,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.08226118171721364,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.051494818498546445,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.03453185822559218,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.0020669885890674533,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.1285110752984023,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.07850655088647446,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.02523909044803334,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.016158606757519678,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.012077067300668709,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.0439075462983725,
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 60,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "on-policy \u2014 instruct",
+        "ylabel": "held-out $R^2$ (context arm)",
+        "yticklabels": [
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      },
+      {
+        "title_left": "on-policy \u2014 instruct \u2212 base",
+        "ylabel": "$\\Delta R^2$ (instruct \u2212 base)",
+        "yticklabels": [
+          "\u22120.25",
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15"
+        ]
+      },
+      {
+        "title_left": "inserted \u2014 instruct",
+        "ylabel": "held-out $R^2$ (context arm)",
+        "xticklabels": [
+          "Direct",
+          "Bias\nonly",
+          "Rotation\n+ bias",
+          "Context\nre-map",
+          "Answer\nre-map"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      },
+      {
+        "title_left": "inserted \u2014 instruct \u2212 base",
+        "ylabel": "$\\Delta R^2$ (instruct \u2212 base)",
+        "xticklabels": [
+          "Direct",
+          "Bias\nonly",
+          "Rotation\n+ bias",
+          "Context\nre-map",
+          "Answer\nre-map"
+        ],
+        "yticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35"
+        ]
+      }
+    ],
+    "series": [
+      "bare text",
+      "story, bare label",
+      "story, attributed quote"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,672 @@
+{
+  "commit": "050bf14d+dirty",
+  "render_id": "b9f23147068a4903",
+  "git_commit": "050bf14d",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2054_loco_pooled.py",
+    "scripts/issue2094_butler_grid.py",
+    "tasks/awaiting_promotion/2094/body.md",
+    "tasks/planning/2296/plans/v1.md",
+    "tests/test_issue2094_bank.py",
+    "tests/test_issue2094_butler_grid.py",
+    "tests/test_issue2094_reverse_direction.py",
+    "tests/test_issue2094_run.py"
+  ],
+  "created": "2026-08-14T16:17:22Z",
+  "figsize": [
+    11.0,
+    7.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.4344725349984258,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.49863549309530714,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.5242803251176793,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.4107661188864421,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.5769110482827005,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.09116609697292373,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.10632172368932666,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.11677551442265413,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": -0.40732506465515195,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.20713287152326104,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.20667313318878405,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.21080689795353877,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.21701440237604364,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": -0.11135505588162209,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.2548028101527574,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.35581384676897515,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.37687335694611274,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.3779473875215257,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.16790916547100224,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.3948870314108008,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "y": -0.016384612723070104,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "y": 0.12911491719733686,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "y": 0.14634726920931718,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "y": -0.19443826762124283,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "y": 0.20882177782047515,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "y": 0.17561471429120082,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "y": 0.17674400651403005,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "y": 0.18121276191958177,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "y": -0.19354894742756806,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "y": 0.22199385114151166,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "y": 0.18440520676432426,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "y": 0.18535447785370188,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "y": 0.18513350822222813,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "y": -0.18870769129244072,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "y": 0.20652325365828306,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "y": 0.20524990867853826,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "y": 0.2604210803766639,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "y": 0.26655246933800175,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "y": -0.007080480577858528,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "y": 0.29567439937705514,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.3973164139125635,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.44099424893040784,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.4539084926542355,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.4010235876518524,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.4865096848847884,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.4256529072916148,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.4280065774029989,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.4326669355634388,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.3572979454413107,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.4631221807597658,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.27680384266310043,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.27814420486089225,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.2810866798432878,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.13463859357889515,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.32085350783366995,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.36995083980812427,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.3800606599424846,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.38023079870478693,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.25876164023527154,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.39849523263136266,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "y": 0.1979168292129713,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "y": 0.31950511833470036,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "y": 0.3377403394637378,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.0,
+      "y": 0.30150034233654804,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "y": 0.40980150701727025,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.39127066788957415,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.3917535653188571,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "y": 0.39756692498306345,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "y": 0.33448174058442287,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "y": 0.44202799522286157,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.0,
+      "y": 0.261621939516813,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "y": 0.2621864282466761,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "y": 0.2645797207319984,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "y": 0.13446376674424157,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "y": 0.3127808627539362,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.0,
+      "y": 0.34423716940224763,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "y": 0.36954769457722686,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.0,
+      "y": 0.37145152075357507,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.0,
+      "y": 0.25896423322215145,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "y": 0.3949343627849051,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 80,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "on-policy \u2014 instruct",
+        "ylabel": "held-out $R^2$ (context arm)",
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "on-policy \u2014 base",
+        "yticklabels": [
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      },
+      {
+        "title_left": "inserted \u2014 instruct",
+        "ylabel": "held-out $R^2$ (context arm)",
+        "xticklabels": [
+          "Pooled\ndirect",
+          "+ per-cell\nbias",
+          "Rotation\n+ bias",
+          "Context\nre-map",
+          "Answer\nre-map"
+        ],
+        "yticklabels": [
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45",
+          "0.50",
+          "0.55"
+        ]
+      },
+      {
+        "title_left": "inserted \u2014 base",
+        "xticklabels": [
+          "Pooled\ndirect",
+          "+ per-cell\nbias",
+          "Rotation\n+ bias",
+          "Context\nre-map",
+          "Answer\nre-map"
+        ],
+        "yticklabels": [
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45",
+          "0.50"
+        ]
+      }
+    ],
+    "series": [
+      "chat template",
+      "bare text",
+      "story, bare label",
+      "story, attributed quote"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
