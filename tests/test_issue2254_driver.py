@@ -556,3 +556,50 @@ def test_rho_seam_assert_uses_split_tolerance_and_records_waived(monkeypatch, tm
     fresh["evil"]["L14"] = 100.6  # rel 6e-3 on the code-resident canary
     with pytest.raises(RuntimeError, match="rho seam mismatch"):
         pi._rho_seam_assert(_Args(), model=None, tok=None)
+
+
+def test_run_judge_pilot_threads_waive_parse_fail_arms(tmp_path, monkeypatch):
+    """Round 6 (task 2254 events v52): _run_judge_pilot forwards the CLI flag
+    --waive-judge-parse-fail-arms into judge_pilot_gate(waive_parse_fail_arms=...)
+    — the rule-26(b) explained-content-drop escape. Default [] = zero behavior
+    change; truncation FAIL stays unwaivable inside judge_pilot itself. Real
+    _run_judge_pilot body; the gate (Batch-API spend) is an autospec'd boundary
+    fake, so a mis-named kwarg would raise TypeError here."""
+    import types
+    from unittest.mock import create_autospec
+
+    import explore_persona_space.eval.judge_pilot as jp
+
+    behavior, gen_phase = "evil", "decisive"
+    monkeypatch.setattr(pi, "_eval_questions", lambda b: [f"q{i}" for i in range(20)])
+    fake_gate = create_autospec(
+        jp.judge_pilot_gate,
+        return_value=types.SimpleNamespace(passed=True, verdict="PASS (fake)"),
+    )
+    monkeypatch.setattr(jp, "judge_pilot_gate", fake_gate)
+
+    for i, (argv, expect) in enumerate(
+        [([], []), (["--waive-judge-parse-fail-arms", "ans_steer"], ["ans_steer"])]
+    ):
+        out_root = tmp_path / f"out{i}"  # fresh root: the pass-sidecar skip never hides the call
+        comp_root = out_root / gen_phase / "raw_completions"
+        comp_root.mkdir(parents=True)
+        rec = {
+            "cell": {"kind": "alpha0", "behavior": behavior},
+            "cell_id": "c0",
+            "q_of_context": [0, 1],
+            "seeds": {
+                "42": {
+                    "completions": [["a1", "a2"], ["b1", "b2"]],
+                    "condition_passes": [True, True],
+                }
+            },
+        }
+        (comp_root / f"{behavior}__c0.json").write_text(json.dumps(rec))
+        args = pi.build_argparser().parse_args(argv)
+        assert list(args.waive_judge_parse_fail_arms) == expect
+        pi._run_judge_pilot(args, out_root, gen_phase, behavior, "RUBRIC", 2)
+        call = fake_gate.call_args
+        # alpha0 cells pass every arm filter, so all three driver arm names appear
+        assert set(call.args[0]) == {"ctx_steer", "ans_steer", "degen"}
+        assert list(call.kwargs["waive_parse_fail_arms"]) == expect

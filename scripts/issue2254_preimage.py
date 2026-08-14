@@ -2784,6 +2784,7 @@ def _stage_phase_completions(out_root: Path, phase: str) -> Path:
     prefix = f"{_hf_prefix()}/raw_completions/{phase}"
     entries = hub.retry_transient(
         lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: staging READ wrapped in hub.retry_transient
             HfApi().list_repo_tree(HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset")
         ),
         what=f"list_repo_tree({prefix})",
@@ -2958,6 +2959,15 @@ def _run_judge_pilot(args, out_root: Path, gen_phase: str, behavior: str, rubric
         n_draws=n_draws,
         target_total_draws=len(arms) * n_draws * items_per_arm,
         min_effective_draws_per_arm=JUDGE_PILOT_MIN_EFFECTIVE,
+        # rule 26(b) explained-content-drop escape (task 2254 events v52): waives
+        # ONLY the parse-fail check for the named arms — truncation FAIL stays
+        # unwaivable inside judge_pilot (_truncation_failure ignores the waive).
+        # Rationale: high-dose answer-position steering yields degenerate/incoherent
+        # generations the judge cannot map to the scored format (stop_reason=
+        # end_turn, NOT truncation); drop-never-coerce counts them
+        # n_content_dropped, and the reduce's coherence gate + rule 28/29
+        # accounting handle them — a data property, not an instrument defect.
+        waive_parse_fail_arms=args.waive_judge_parse_fail_arms,
         allow_subresolution_pilot=bool(args.smoke),
         report_path=pilot_dir / f"{behavior}.report.json",
     )
@@ -3734,6 +3744,20 @@ def build_argparser() -> argparse.ArgumentParser:
         type=int,
         default=5,
         help="draws per question, decisive/baseline/patch-projection cells",
+    )
+    ap.add_argument(
+        "--waive-judge-parse-fail-arms",
+        nargs="*",
+        default=[],
+        help=(
+            "judge-pilot arm name(s) (ctx_steer / ans_steer / degen) whose parse-fail "
+            "overshoot is WAIVED via judge_pilot_gate's rule-26(b) explained-content-drop "
+            "escape; waives ONLY the parse-fail check, NEVER truncation (rule 26(a) stays "
+            "unwaivable). Use when degenerate/incoherent generations (e.g. high-dose "
+            "answer-position steering; stop_reason=end_turn, not truncation) legitimately "
+            "drop under drop-never-coerce — a data property the reduce's coherence gate + "
+            "rule 28/29 accounting handle, not an instrument defect. Default: no waivers."
+        ),
     )
     ap.add_argument("--fig-dir", default="figures/issue_2254", help="figures output dir")
     ap.add_argument("--force", action="store_true", help="ignore per-phase caches (unit-3 phases)")
