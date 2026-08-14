@@ -1,6 +1,7 @@
 ---
-title: Real-data mining collapse leaves persona-vector fine-tuning monitoring confounded
-  with training-mix size (LOW confidence)
+title: Specialized re-mining trains every real-data cell yet trait installs stay near
+  zero, leaving persona-vector fine-tuning monitoring dominated by training-mix size
+  (MODERATE confidence)
 kind: experiment
 tags:
 - followup-manual
