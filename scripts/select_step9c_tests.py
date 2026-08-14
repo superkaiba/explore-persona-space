@@ -1284,6 +1284,28 @@ def compute_base_identical(
     return excluded
 
 
+def _base_identical_audit(base: str, work_root: Path, touched: list[str]) -> list[str]:
+    """Verified base-identical exclusions for the ``--json`` audit key (#2302).
+
+    Empty when *touched* is empty (nothing was diffed, nothing was excluded).
+    Derived through the PUBLIC :func:`compute_base_identical` seam; a
+    derivation failure degrades to ZERO exclusions with a stderr NOTE
+    (fail-closed — nothing is claimed excluded), never a crash: the caller's
+    touched list carries its own fail-loud three-dot contract.
+    """
+    if not touched:
+        return []
+    try:
+        return compute_base_identical(base, work_root)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
+        print(
+            "select_step9c_tests: NOTE — base-identical audit derivation failed "
+            f"({exc}); reporting zero exclusions (fail-closed, #2302)",
+            file=sys.stderr,
+        )
+        return []
+
+
 def _touched_and_base_identical(
     base: str,
     work_root: Path,
@@ -1292,8 +1314,11 @@ def _touched_and_base_identical(
     """(filtered touched list, sorted verified base-identical exclusions) (#2302).
 
     One diff pass backing both :func:`compute_touched` and
-    :func:`compute_base_identical` (main() calls this directly so the two
-    lists come from a single git snapshot). The three-dot diff failing raises
+    :func:`compute_base_identical`. main() routes through those two PUBLIC
+    seams (not this helper) so tests that monkeypatch ``compute_touched``
+    keep working; both seams delegate here, so a real invocation derives
+    both lists from the same deterministic diff recipe. The three-dot diff
+    failing raises
     ``CalledProcessError`` (unchanged fail-loud contract); a failure in the
     AUXILIARY two-dot / blob probes degrades to ZERO exclusions with a stderr
     NOTE — everything stays touched, the fail-closed (blocking) direction.
@@ -1377,7 +1402,7 @@ def _blob_oid_map(specs: list[str], work_root: Path) -> dict[str, str]:
     oids: dict[str, str] = {}
     if len(lines) != len(specs):
         return oids
-    for spec, line in zip(specs, lines):
+    for spec, line in zip(specs, lines, strict=True):
         parts = line.split()
         if len(parts) == 3 and _HEX_OID_RE.match(parts[0]):
             oids[spec] = parts[0]
@@ -2288,13 +2313,14 @@ def main(argv: list[str] | None = None) -> int:
     # consumer (NOTE, sizing line, --json "base") sees the RESOLVED base.
     base = resolve_base(args.base, work_root, fetch=not args.no_fetch)
     try:
-        # ONE diff snapshot backs both lists (compute_touched == the filtered
-        # touched list; compute_base_identical == the excluded list; #2302).
-        touched, base_identical = _touched_and_base_identical(base, work_root)
+        # The PUBLIC seam (tests monkeypatch compute_touched; #2302): the
+        # returned list already has verified base-identical paths subtracted.
+        touched = compute_touched(base, work_root)
     except subprocess.CalledProcessError as exc:
         # Fail loud — never silently fall back to zero tests on a git error.
         print(f"select_step9c_tests: git diff failed: {exc}", file=sys.stderr)
         return 1
+    base_identical = _base_identical_audit(base, work_root, touched)
 
     if base_identical:
         # The exclusion is never silent — same discipline as the

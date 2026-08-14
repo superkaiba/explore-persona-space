@@ -1688,7 +1688,7 @@ def _base_identical_files(base: str, touched: list[str], wt: Path) -> list[str]:
     if len(lines) != len(specs):
         return []  # rows unattributable -> nothing verifiable -> nothing excluded
     oids: dict[str, str] = {}
-    for spec, line in zip(specs, lines):
+    for spec, line in zip(specs, lines, strict=True):
         parts = line.split()
         if len(parts) == 3 and re.fullmatch(r"[0-9a-f]{40}(?:[0-9a-f]{24})?", parts[0]):
             oids[spec] = parts[0]
