@@ -29,7 +29,7 @@ relates_to:
 
 - 32B leg (Qwen3-32B, the paper's published axis): **Reproduced** under the plan-fixed rule (ordering plus at least one separating position). Late-window (turns 8–15) means put philosophy (−43.5) and therapy (−28.2) below coding (−21.2) and writing (−25.7); philosophy separates from every eligible stable domain at all its late positions, but the full four-domain separation holds at only 1 of 3 all-domain-eligible positions (turn 9, margin 0.096), and that margin flips to overlap under 2 of 5 bootstrap seeds and under exclusion of the one CJK-intruded row.
 - 7B leg (Qwen2.5-7B-Instruct, in-house layer-14 axis): **Failed-to-reproduce**, sign-robustly — therapy has the highest late-window mean (8.9) and philosophy the lowest (3.1), so no axis orientation satisfies the ordering. The failure persists on the published-persona subset and after excluding the 7 CJK-intruded rows of 4,804.
-- Every-token capping (32B): the direction is robust, the size is estimator-dependent — the capped trajectory sits above the uncapped one with disjoint bootstrap bands at every turn, turn 1 included (a −15.5 vs −19.5 level shift before any drift accumulates, so band separation is an offset, not itself evidence of slower drift); pooled endpoint 39% less drift (−8.2 vs −13.4), survivor-matched 32%, per-domain matched-turn 11–47%; the pooled read is composition-confounded (turn-15 pools are zero-coding and differ between arms), and only philosophy's per-domain reduction (47%) is bootstrap-resolved — the other three cross zero.
+- Every-token capping (32B): the direction is robust, the size is estimator-dependent — the capped trajectory sits above the uncapped one with disjoint bootstrap bands at every turn, turn 1 included (a −15.5 vs −19.5 level shift before any drift accumulates, so band separation is an offset, not itself evidence of slower drift); pooled endpoint 39% less drift (−8.2 vs −13.4), survivor-matched 32%, per-domain matched-turn reduction 11–47%; the pooled read is composition-confounded (turn-15 pools are zero-coding and differ between arms), and only philosophy's per-domain reduction (47%) is bootstrap-resolved — the other three cross zero.
 - Capping caveats: turn-15 means rest on 63 (capped) / 28 (uncapped) surviving conversations of 400; the cap engaged on 90.0% of token-slots vs 94.7% expected; MMLU-Pro was not measured for the capped arm; and the 32B capability panel is parse-confounded (0 of 171 EQ-Bench items parseable), so capability preservation is not established.
 - Coverage: of the 12 planned stabilization arms, only the every-token cap ran — the 11-arm 7B grid was stopped by the plan's stop gate after the 7B reproduction failure — and the paper's projection-vs-harm correlation was not computed; second-turn harm rates (7B 6.0%, 32B 2.2%, n=500 items) are floor-limited against the paper's 65–88% single-turn attack-success baseline.
 - Mechanism (32B): a ridge fit from user-message embeddings predicts the next response's absolute projection at held-out R² 0.66 (inside the paper's 0.53–0.77 band) but the per-turn change at only 0.049 — position is predictable, the step is not, matching the paper's asymmetry.
@@ -170,16 +170,16 @@ Plotted: per-(domain, turn) mean projection for the uncapped vs every-token-capp
 
 > **Figure.** *Per-unit companion to the aggregate above: per-conversation trajectories (thin lines) with arm means (thick lines), same colors.* The deep-drifting tail thins under the cap in philosophy and therapy.
 
-Per-domain matched-turn reduction, 95% conversation-level bootstrap intervals (2,000 draws; percentage points; `capping_composition.json`):
+Per-domain matched-turn reduction with per-arm cell sizes (conversations alive at that domain's matched turn), 95% conversation-level bootstrap intervals (2,000 draws; percentage points; `capping_composition.json`):
 
-| Domain (matched turn) | Reduction | 95% bootstrap interval |
-|---|---|---|
-| Philosophy (13) | 47% | +19 to +63 |
-| Therapy (10) | 28% | −10 to +47 |
-| Writing (15) | 18% | −31 to +42 |
-| Coding (11) | 11% | −50 to +44 |
+| Domain | Matched turn | Conversations (uncapped / capped) | Reduction | 95% bootstrap interval |
+|---|---|---|---|---|
+| Philosophy | turn 13 | 16 / 24 | 47% | +19 to +63 |
+| Therapy | turn 10 | 14 / 15 | 28% | −10 to +47 |
+| Writing | turn 15 | 18 / 47 | 18% | −31 to +42 |
+| Coding | turn 11 | 11 / 17 | 11% | −50 to +44 |
 
-The point estimates order as the drift does — largest where drift is worst — consistent with the cap biting where drift happens rather than uniformly. But only philosophy's reduction is individually resolved from zero; the other three intervals cross it on their 11–47-conversation endpoint cells, so the four-domain pattern is suggestive rather than established. The robustness of the capping claim rests on the every-turn pooled band separation and on philosophy, not on per-domain consistency.
+The point estimates order as the drift does, consistent with the cap biting where drift happens rather than uniformly. But only philosophy's reduction is individually resolved from zero; the other three intervals cross it — expected width at these cell sizes — so the four-domain pattern is suggestive rather than established. The robustness of the capping claim rests on the every-turn pooled band separation and on philosophy, not on per-domain consistency.
 
 Scope: one leg, and the per-domain endpoints inherit the same attrition limits as the pooled read.
 
