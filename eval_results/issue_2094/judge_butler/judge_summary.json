@@ -1,0 +1,144 @@
+{
+  "waves": {
+    "coherence.grid": {
+      "rubric_id": "coherence",
+      "n_items": 600,
+      "n_scored_items": 600,
+      "pass1": {
+        "n_total_draws": 600,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 600
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "grid-null": {
+          "n_items": 300,
+          "n_scored": 300,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        },
+        "grid-steered": {
+          "n_items": 300,
+          "n_scored": 300,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    },
+    "fp-bare.grid": {
+      "rubric_id": "fp-bare",
+      "n_items": 300,
+      "n_scored_items": 300,
+      "pass1": {
+        "n_total_draws": 300,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 300
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "grid-null": {
+          "n_items": 150,
+          "n_scored": 150,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        },
+        "grid-steered": {
+          "n_items": 150,
+          "n_scored": 150,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    },
+    "fp-butler.grid": {
+      "rubric_id": "fp-butler",
+      "n_items": 600,
+      "n_scored_items": 600,
+      "pass1": {
+        "n_total_draws": 600,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 600
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "grid-null": {
+          "n_items": 300,
+          "n_scored": 300,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        },
+        "grid-steered": {
+          "n_items": 300,
+          "n_scored": 300,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    },
+    "fp-persona.grid": {
+      "rubric_id": "fp-persona",
+      "n_items": 300,
+      "n_scored_items": 300,
+      "pass1": {
+        "n_total_draws": 300,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 300
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "grid-null": {
+          "n_items": 150,
+          "n_scored": 150,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        },
+        "grid-steered": {
+          "n_items": 150,
+          "n_scored": 150,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    }
+  },
+  "n_waves": 4,
+  "total_judge_calls_dispatched": 1800,
+  "instrument": {
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "max_tokens": 1024,
+    "n_draws": 1,
+    "temperature_note": "not threaded by judge_graded — Anthropic API default"
+  },
+  "repro": {
+    "git_commit": "5bf48a6d",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "tasks/awaiting_promotion/2094/events.jsonl"
+    ],
+    "script": "scripts/issue2094_judge.py"
+  }
+}
