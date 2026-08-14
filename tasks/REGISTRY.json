@@ -10007,8 +10007,8 @@
     "2295": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2295",
-      "status": "planning",
+      "path": "tasks/approved/2295",
+      "status": "approved",
       "title": "workflow-fix: sync_repo_root deadlocks on the abandoned-rebase husk it exists to clear (task.py holds the flock while waiting on the husk)"
     },
     "2296": {
