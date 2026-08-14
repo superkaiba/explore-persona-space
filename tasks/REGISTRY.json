@@ -9909,8 +9909,8 @@
     "2282": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2282",
-      "status": "planning",
+      "path": "tasks/approved/2282",
+      "status": "approved",
       "title": "workflow-fix: land the shared fit-core memory chunk cap on main + decide PR #1717 disposition"
     },
     "229": {
