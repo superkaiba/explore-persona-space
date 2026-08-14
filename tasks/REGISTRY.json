@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2287,
+  "highest_id": 2288,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9947,6 +9947,13 @@
       "path": "tasks/proposed/2287",
       "status": "proposed",
       "title": "URGENT fleet-wide: HF data repo at the 1M-file ceiling (999,867/1,000,000) \u2014 headroom probe + overflow policy + user cleanup decision list"
+    },
+    "2288": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2288",
+      "status": "proposed",
+      "title": "verify_task_body cross-issue-reuse-pins check SKIPs on pre-merge worktree bodies \u2014 its only gate"
     },
     "229": {
       "has_clean_result": false,
