@@ -1,0 +1,44 @@
+{
+  "experiment": "issue2254_preimage",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "ts": "2026-08-13T05:49:35Z",
+  "pass_b_revision": "037fcbb210bc52c459959b0746cc268fe08bae96",
+  "git_commit": "6049e115",
+  "git_dirty": false,
+  "n_corpus_query_texts": 4596,
+  "n_extraction_texts": 60,
+  "behaviors": {
+    "evil": {
+      "n_eval": 20,
+      "eval_bank_sha8": "1bfe5d10",
+      "n_overlap_extraction": 0,
+      "n_overlap_corpus": 0
+    },
+    "sycophancy": {
+      "n_eval": 20,
+      "eval_bank_sha8": "1d78550e",
+      "n_overlap_extraction": 0,
+      "n_overlap_corpus": 0
+    },
+    "hallucination": {
+      "n_eval": 20,
+      "eval_bank_sha8": "fb53a647",
+      "n_overlap_extraction": 0,
+      "n_overlap_corpus": 0
+    }
+  },
+  "corpus_source": "pass-B LMSYS prompts, #823/#952/#1615 pinned replay (bundle issue779_monitoring/analysis_tensors/pass_b/train_context_vectors.pt @ 037fcbb210bc carries no prompt text by producer-sanitizer construction)",
+  "n_bundle_rows": 5000,
+  "staged_e1_assets": {
+    "sycophancy": {
+      "path": "/workspace/explore-persona-space/data/issue_779/artifacts/sycophancy.json",
+      "sha256": "998f4643666df9e5d2ed3def4275b839b3d40ea426079abf865279f034b2f212",
+      "downloaded": true
+    },
+    "hallucination": {
+      "path": "/workspace/explore-persona-space/data/issue_779/artifacts/hallucination.json",
+      "sha256": "053afaa273371d3806c744d5fb0aaf6fe3a983616f2052cd4d723ec14f843d5e",
+      "downloaded": true
+    }
+  }
+}
