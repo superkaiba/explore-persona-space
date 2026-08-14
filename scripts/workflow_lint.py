@@ -14432,6 +14432,9 @@ AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES = 3_000
 # when trimmed. planner.md and critic.md are deliberately NOT grandfathered
 # (#838): both were structurally trimmed to <=20 KB, so regrowth on the two
 # incident files is a commit-time FAIL.
+# Step 5a lint-family member (SKILL.md § Step 5a SPECS/FAMILY_OF; #2303): any
+# NEW import-time data file added to this module must be declared there too,
+# or worktree syncs strand it (#2293).
 _AGENT_SPEC_CAPS_PATH = _REPO_ROOT / ".claude" / "config" / "agent_spec_size_caps.txt"
 
 
@@ -14927,7 +14930,16 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 942_000: that value predates this landing and would FAIL it by 384 B,
     # so the higher cap is the correct resolution, not a regrowth licence
     # (headroom 1,216 B, the same ~1 KB the #1753 rule prescribes).
-    "issue/SKILL.md": 943_600,
+    # 945_400 — #2303 measured 944,254 B for THIS landing (Step 5a family
+    # sync: .claude/config/agent_spec_size_caps.txt joins the lint family
+    # in BOTH copies — the linter reads it at module import, #2293 — and
+    # the sync commits gain rc-checked FATAL/exit-1 arms in both copies;
+    # +1,870 B over the 942,384 B base at 3ac07d46fd). Cap = landing bytes
+    # + ~1 KB (#1753 landing-bytes rule; headroom 1,146 B). Re-measure
+    # against then-current origin/main at Step 10d before the merge — the
+    # #2284/#2285 moving-main class above; two live siblings (#2296,
+    # #2302) spend from this same budget.
+    "issue/SKILL.md": 945_400,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,

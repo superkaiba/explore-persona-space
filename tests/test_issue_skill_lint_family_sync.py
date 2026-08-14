@@ -79,6 +79,21 @@ failure reverts the whole same-issue synced pair (branch-era files
 restored from HEAD, main-NEW files dropped from index + tree). Section
 (16) gains the probe pins + a functional shape repro.
 
+#2303 (2026-08-14) closes the two #2293 defects. Defect 1:
+`.claude/config/agent_spec_size_caps.txt` joins the "lint" family in
+BOTH copies (SPECS/FAMILY_OF + SPECS_10D) — scripts/workflow_lint.py
+reads it at MODULE IMPORT time (_load_agent_spec_caps() raises
+FileNotFoundError loud), so syncing the linter without its data file
+left a worktree whose every linter-shelling pre-commit hook crashed.
+Defect 2: the sync `git commit` return code is now CHECKED in BOTH
+copies — a failed commit prints a FATAL line naming the staged paths
+and exits non-zero, and the Step 5a success echo fires only AFTER a
+verified commit (reporting the committed sha), never an unconditional
+staged diffstat; the Step 10d twin reads SYNC_SHA / pushes only after a
+verified commit. Tests (1) + (9) gain the caps-file member; section
+(17) pins the rc-checked stanzas; section (18) reproduces both defect
+shapes under real git.
+
 These tests fail the suite if a later SKILL.md editor drops the family
 entries, the boundary-paragraph family exception, the post-gate re-sync
 bullet (or reorders it before the gate's stale-verdict rm), the 9a-ter
@@ -88,8 +103,10 @@ declaration in Step 5a, lets the Step 10d inline family-atomic block
 drift from Step 5a's family definition, weakens the #1807 re-bind
 stanza's fail-closed arms, drops the 9c pre-gate re-sync reference,
 drops the #1972 uncommitted-dirt arm from either copy, drops (or
-mirrors into the 10d copy) the #1972 sibling-issue per-file arm, or
-drops the #2208 import-satisfiability probe from the sibling arm.
+mirrors into the 10d copy) the #1972 sibling-issue per-file arm, drops
+the #2208 import-satisfiability probe from the sibling arm, drops the
+#2303 caps-file lint-family membership, or un-checks the #2303 sync
+commit rc in either copy.
 
 NOTE for future SKILL.md editors: these assertions pin literal snippet text.
 A legitimate rewording of the pinned lines in SKILL.md must update the
@@ -146,7 +163,8 @@ def test_step5a_specs_include_lint_family():
     assert (
         'SPECS=".claude/agents .claude/agent-memory .claude/skills .claude/rules '
         ".claude/workflow.yaml "
-        "CLAUDE.md scripts/workflow_lint.py scripts/select_step9c_tests.py .claude/hooks "
+        "CLAUDE.md scripts/workflow_lint.py .claude/config/agent_spec_size_caps.txt "
+        "scripts/select_step9c_tests.py .claude/hooks "
         ":(glob)scripts/guard_*.sh "
         "tests/test_guard_lessons_edit.py "
         "tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py "
@@ -175,7 +193,11 @@ def test_step5a_specs_include_lint_family():
         "scripts/select_step9c_tests.py + tests/test_select_step9c_tests.py "
         "+ tests/step9c_workflow_invariant_manifest.txt (lint family; the "
         "pin test importlib-loads the selector by path and pins "
-        "WORKFLOW_INVARIANT set-equal to the manifest)"
+        "WORKFLOW_INVARIANT set-equal to the manifest) — plus the #2303 "
+        "lint-family data file .claude/config/agent_spec_size_caps.txt "
+        "(workflow_lint.py reads it at MODULE IMPORT time; syncing the "
+        "linter without it strands a FileNotFoundError-raising linter in "
+        "the worktree — the #2293 shape)"
     )
 
 
@@ -374,6 +396,13 @@ def test_step5a_family_atomicity_declared_in_bash():
         "the lint family must include tests/step9c_workflow_invariant_manifest.txt "
         "— the pin test's case 6b holds WORKFLOW_INVARIANT set-equal to it; "
         "the dominant selector edit updates all three together (#1972)"
+    )
+    assert 'FAMILY_OF[".claude/config/agent_spec_size_caps.txt"]="lint"' in span, (
+        "the lint family must include .claude/config/agent_spec_size_caps.txt "
+        "— workflow_lint.py reads it at MODULE IMPORT time "
+        "(_load_agent_spec_caps() raises FileNotFoundError loud), so syncing "
+        "the linter without its data file strands a crashing linter in the "
+        "worktree (#2293; #2303)"
     )
     assert 'FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"' in span, (
         "the guard family must include the explicit tests/test_guard_lessons_edit.py "
@@ -946,5 +975,305 @@ def test_sibling_sync_import_probe_repro_2206():
         assert "#2206" in out, out
         # (4) the [step5a] count echo reports the POST-revert survivor count.
         assert "[step5a] sibling-file sync: 2 file(s)" in out, out
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+# --- (17) rc-checked sync commits in BOTH copies (#2303 static pins) ---------
+
+
+def test_step5a_sync_commit_rc_checked():
+    """#2303 defect 2: the Step 5a family sync must CHECK the sync commit's
+    return code — a failed commit (crashed pre-commit hooks, the #2293
+    shape) prints a FATAL line naming the staged paths and exits non-zero;
+    the success echo fires only AFTER a verified commit and reports the
+    committed sha (never an unconditional staged diffstat over a
+    staged-but-uncommitted tree)."""
+    span = _step5a_span(_text())
+    rc_check = (
+        'if ! git -C "$WT" commit -m "issue-<N>: sync workflow-surface specs '
+        'from origin/main (spec-freshness)" -- $SAFE_SPECS; then'
+    )
+    assert rc_check in span, (
+        "the Step 5a family sync commit must be rc-checked "
+        "(`if ! git ... commit ...; then` — #2303 defect 2)"
+    )
+    fatal = "[step5a] FATAL: family sync commit FAILED (rc != 0)"
+    assert fatal in span, (
+        "a failed Step 5a sync commit must announce itself with the [step5a] FATAL echo (#2303)"
+    )
+    assert "git -C \"$WT\" diff --cached --name-only -- $SAFE_SPECS | sed 's/^/  /' >&2" in span, (
+        "the FATAL arm must list the staged (failed) paths via "
+        "`diff --cached --name-only` on stderr"
+    )
+    fatal_idx = span.index(fatal)
+    committed_idx = span.index("SYNC_COMMITTED=yes")
+    assert "exit 1" in span[fatal_idx:committed_idx], (
+        "the FATAL arm must exit non-zero BEFORE the success path "
+        "(a green success echo over a failed commit is the #2293 defect)"
+    )
+    assert fatal_idx < committed_idx, (
+        "the rc-check FATAL arm must precede the SYNC_COMMITTED=yes success mark"
+    )
+    success = 'synced from origin/main: commit $(git -C "$WT" rev-parse --short=12 HEAD)'
+    assert success in span, (
+        "the success echo must report the COMMITTED sha (verified commit), "
+        "never a bare staged diffstat (#2303)"
+    )
+    assert span.index(rc_check) < span.index(success), (
+        "the success echo must come AFTER the rc-checked commit"
+    )
+    assert "no sync commit landed (no family drift, or the checkout errored above)" in span, (
+        "the no-sync branch must name BOTH possible causes — no drift OR an "
+        "errored (atomic, unmatched-pathspec) checkout — the R6 stale-fetch "
+        "degrade prints a git error immediately above (#2303 v2 nit 1)"
+    )
+
+
+def test_step10d_sync_commit_rc_checked():
+    """#2303 defect 2, Step 10d twin: SYNC_SHA must be read from `rev-parse
+    HEAD` only AFTER a VERIFIED sync commit, and the push must follow the
+    SYNC_SHA read — a failed commit aborts the whole merge invocation
+    (FATAL + exit 1) BEFORE gh pr ready/merge, leaving the lint verdict
+    file intact for the same-tip retry."""
+    span = _automerge_span(_text())
+    rc_check = (
+        'if ! git -C "$WT" commit -m "issue-<N>: sync workflow-surface specs '
+        'from origin/main (spec-freshness)" -- $SAFE_SPECS_10D; then'
+    )
+    assert rc_check in span, (
+        "the Step 10d post-gate re-sync commit must be rc-checked "
+        "(`if ! git ... commit ...; then` — #2303 defect 2)"
+    )
+    fatal = "[step10d] FATAL: post-gate re-sync commit FAILED (rc != 0)"
+    assert fatal in span, (
+        "a failed 10d re-sync commit must announce itself with the "
+        "[step10d] FATAL echo and abort the merge attempt (#2303)"
+    )
+    assert (
+        "git -C \"$WT\" diff --cached --name-only -- $SAFE_SPECS_10D | sed 's/^/  /' >&2" in span
+    ), "the 10d FATAL arm must list the staged (failed) paths on stderr"
+    sync_sha_read = 'SYNC_SHA=$(git -C "$WT" rev-parse HEAD | head -c 12)'
+    assert sync_sha_read in span, (
+        "the 10d twin must still read SYNC_SHA from rev-parse HEAD "
+        "(now only after a verified commit)"
+    )
+    fatal_idx = span.index(fatal)
+    sha_idx = span.index(sync_sha_read)
+    assert "exit 1" in span[fatal_idx:sha_idx], (
+        "the 10d FATAL arm must exit non-zero BEFORE the SYNC_SHA read — a "
+        "failed commit previously yielded the PRE-commit sha, then pushed, "
+        "then fed the verdict re-bind stanza (#2303 defect 2)"
+    )
+    assert fatal_idx < sha_idx, (
+        "ordering must be FATAL rc-check < SYNC_SHA read (SYNC_SHA is read "
+        "only after a VERIFIED commit)"
+    )
+    # The stanza's own push (searched AFTER the SYNC_SHA read — the span
+    # carries an unrelated earlier `push origin issue-<N>` in the pre-PR
+    # section) must sit between the SYNC_SHA read and the SYNC_COUNT echo:
+    # the push ships only a verified sync commit.
+    push_idx = span.index("push origin issue-<N>", sha_idx)
+    count_idx = span.index("SYNC_COUNT=", sha_idx)
+    assert sha_idx < push_idx < count_idx, (
+        "the stanza's push must follow the verified-commit SYNC_SHA read "
+        "and precede the SYNC_COUNT echo (never push an unverified sync)"
+    )
+
+
+# --- (18) behavioral repros of both #2293 defect shapes (#2303) --------------
+
+
+def _family_arm_block(span: str) -> str:
+    """Extract the Step 5a FAMILY arm from the Step 5a span: FAMILY_OF +
+    SPECS + the bounded fetch + MB derivation + pass 1 (incl. the #1972
+    dirt arm) + pass 2 + the rc-checked sync stanza + the observability
+    echo — everything from the family declaration up to the sibling-issue
+    arm. The extracted text is the SHIPPED block, executable under bash
+    with $WT supplied via env (same convention as the #2208 repro)."""
+    start = span.index("declare -A FAMILY_OF")
+    end = span.index("# Sibling-issue file freshness (#1972)", start)
+    return span[start:end]
+
+
+# Post-#2303 SPECS pathspecs, one fork-era stub file per pathspec EXCEPT the
+# caps file: `git checkout <ref> -- <pathspecs>` is ATOMIC and exits non-zero
+# checking out NOTHING when any pathspec matches nothing at the ref, so every
+# other member must resolve at origin/main. The caps file is deliberately
+# main-NEW (added only in the advance commit) — the exact #2293 topology.
+_FORK_STUBS_2303 = (
+    ".claude/agents/x.md",
+    ".claude/agent-memory/x/MEMORY.md",
+    ".claude/skills/issue/SKILL.md",
+    ".claude/rules/x.md",
+    ".claude/workflow.yaml",
+    "CLAUDE.md",
+    "scripts/workflow_lint.py",
+    "scripts/select_step9c_tests.py",
+    ".claude/hooks/x.sh",
+    "scripts/guard_x.sh",
+    "tests/test_guard_lessons_edit.py",
+    "tests/test_workflow_yaml.py",
+    "tests/test_autonomous_session_watch.py",
+    "tests/test_select_step9c_tests.py",
+    "tests/step9c_workflow_invariant_manifest.txt",
+    "tests/test_workflow_lint_x.py",
+    "tests/test_guard_x.py",
+    "tests/test_issue_skill_x.py",
+)
+
+_SYNC_SUBJECT_2303 = "issue-9999: sync workflow-surface specs from origin/main (spec-freshness)"
+
+
+def _family_sync_fixture(tmp: Path, env: dict) -> Path:
+    """Scratch bare origin + a wt clone on issue-9999 whose origin/main has
+    advanced past the fork point by a scripts/workflow_lint.py edit + the
+    main-NEW .claude/config/agent_spec_size_caps.txt (the #2293 topology).
+    Returns the wt path; the wt has already fetched origin."""
+    origin = tmp / "origin.git"
+    _run_git(tmp, "init", "--bare", "-b", "main", str(origin), env=env)
+    seed = tmp / "seed"
+    _run_git(tmp, "clone", str(origin), str(seed), env=env)
+    for rel in _FORK_STUBS_2303:
+        p = seed / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(f"fork-era stub: {rel}\n")
+    _run_git(seed, "add", "-A", env=env)
+    _run_git(seed, "commit", "-m", "fork-era stubs", env=env)
+    _run_git(seed, "push", "origin", "main", env=env)
+
+    wt = tmp / "wt"
+    _run_git(tmp, "clone", str(origin), str(wt), env=env)
+    _run_git(wt, "checkout", "-b", "issue-9999", env=env)
+    # The arm's own commit runs bare `git -C "$WT" commit`; give the scratch
+    # clone a local identity (global config is /dev/null'd).
+    _run_git(wt, "config", "user.email", "eps-test@example.com", env=env)
+    _run_git(wt, "config", "user.name", "EPS Test", env=env)
+
+    # Advance origin/main PAST the fork point: modify the linter + ADD its
+    # import-time data file (the pair the family sync must carry together).
+    (seed / "scripts" / "workflow_lint.py").write_text(
+        "fork-era stub: scripts/workflow_lint.py\nMAIN_SIDE_FIX = True\n"
+    )
+    (seed / ".claude" / "config").mkdir(parents=True)
+    (seed / ".claude" / "config" / "agent_spec_size_caps.txt").write_text("x.md 1_000\n")
+    _run_git(seed, "add", "-A", env=env)
+    _run_git(seed, "commit", "-m", "main-side: linter fix + main-NEW caps data file", env=env)
+    _run_git(seed, "push", "origin", "main", env=env)
+    _run_git(wt, "fetch", "origin", env=env)
+    return wt
+
+
+def test_family_sync_data_dep_repro_2303():
+    """#2303 defect 1 repro (shape a — the #2293 strand) through the SHIPPED
+    family arm under real git: origin/main advances with a linter edit + the
+    main-NEW caps data file; the family sync must carry BOTH in, in ONE sync
+    commit, and the success echo must report the verified commit's sha.
+    Against the pre-fix block (no caps token in SPECS) the caps file never
+    reaches the worktree — the synced linter would raise FileNotFoundError
+    at import in every hook that shells it."""
+    text = _text()
+    script_body = _family_arm_block(_step5a_span(text)).replace("<N>", "9999")
+
+    # mkdtemp, not tmp_path: concurrent pytest sessions prune /tmp/pytest-of*
+    # numbered roots and can delete live scratch mid-test.
+    tmp = Path(tempfile.mkdtemp(prefix="eps2303repro-"))
+    try:
+        env = dict(os.environ)
+        env["GIT_CONFIG_GLOBAL"] = "/dev/null"  # hermetic: no user/system git config
+        env["GIT_CONFIG_NOSYSTEM"] = "1"
+        wt = _family_sync_fixture(tmp, env)
+
+        script = tmp / "familyarm.sh"
+        script.write_text(script_body)
+        env_arm = dict(env)
+        env_arm["WT"] = str(wt)
+        proc = subprocess.run(
+            ["bash", str(script)],
+            cwd=tmp,
+            env=env_arm,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        assert proc.returncode == 0, f"family arm failed:\n{proc.stdout}\n{proc.stderr}"
+
+        # (1) the linter's import-time data file synced in WITH the linter.
+        assert (wt / ".claude" / "config" / "agent_spec_size_caps.txt").exists(), (
+            "the caps data file must sync in pair-atomically with "
+            "scripts/workflow_lint.py — a synced linter without it raises "
+            "FileNotFoundError in every hook that shells it (#2293)"
+        )
+        # (2) the pair landed in ONE sync commit under the sync-anchor subject.
+        subj = _run_git(wt, "log", "-1", "--format=%s", env=env).strip()
+        assert subj == _SYNC_SUBJECT_2303, f"sync-anchor subject missing: {subj!r}"
+        committed = _run_git(wt, "show", "--name-only", "--format=", "HEAD", env=env)
+        assert "scripts/workflow_lint.py" in committed, "the linter must be in the sync commit"
+        assert ".claude/config/agent_spec_size_caps.txt" in committed, (
+            "the caps data file must be in the SAME sync commit as the linter"
+        )
+        # (3) the success echo reports the verified commit's sha.
+        short = _run_git(wt, "rev-parse", "--short=12", "HEAD", env=env).strip()
+        assert f"[step5a] synced from origin/main: commit {short}" in proc.stdout, proc.stdout
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_family_sync_commit_failure_fatal_repro_2303():
+    """#2303 defect 2 repro (shape b) through the SHIPPED family arm under
+    real git: a failing pre-commit hook (the faithful rc-level proxy for the
+    incident's three crashed linter-shelling hooks) makes the sync commit
+    fail — the block must exit non-zero with a FATAL stderr line naming the
+    staged paths, print NO success line, and leave the synced set staged
+    (uncommitted) for inspection. Against the pre-fix block the commit
+    failure was swallowed: the success diffstat printed and the block
+    exited 0 over a staged-but-uncommitted tree (the #2293 defect)."""
+    text = _text()
+    script_body = _family_arm_block(_step5a_span(text)).replace("<N>", "9999")
+
+    tmp = Path(tempfile.mkdtemp(prefix="eps2303fatal-"))
+    try:
+        env = dict(os.environ)
+        env["GIT_CONFIG_GLOBAL"] = "/dev/null"
+        env["GIT_CONFIG_NOSYSTEM"] = "1"
+        wt = _family_sync_fixture(tmp, env)
+
+        # Failing hook: rc-level proxy for the #2293 crashed pre-commit hooks.
+        hooks = wt / ".git" / "hooks"
+        hooks.mkdir(parents=True, exist_ok=True)
+        hook = hooks / "pre-commit"
+        hook.write_text("#!/bin/sh\nexit 1\n")
+        hook.chmod(0o755)
+
+        script = tmp / "familyarm.sh"
+        script.write_text(script_body)
+        env_arm = dict(env)
+        env_arm["WT"] = str(wt)
+        proc = subprocess.run(
+            ["bash", str(script)],
+            cwd=tmp,
+            env=env_arm,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        assert proc.returncode != 0, (
+            "a failed sync commit must exit the block non-zero — pre-fix it "
+            f"exited 0 over a staged-but-uncommitted tree (#2293)\n"
+            f"{proc.stdout}\n{proc.stderr}"
+        )
+        assert "FATAL" in proc.stderr, f"the failure must be a FATAL stderr line:\n{proc.stderr}"
+        assert "scripts/workflow_lint.py" in proc.stderr, (
+            "the FATAL arm must name the staged (failed) paths — "
+            f"scripts/workflow_lint.py missing from:\n{proc.stderr}"
+        )
+        combined = proc.stdout + proc.stderr
+        assert "[step5a] synced from origin/main:" not in combined, (
+            "NO success line may print on a failed sync commit (#2293 defect 2)"
+        )
+        staged = _run_git(wt, "diff", "--cached", "--name-only", env=env)
+        assert staged.strip() != "", "the synced set must be left STAGED for inspection"
+        subj = _run_git(wt, "log", "-1", "--format=%s", env=env).strip()
+        assert subj != _SYNC_SUBJECT_2303, "no sync commit may land when the hook fails"
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
