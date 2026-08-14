@@ -1,5 +1,7 @@
 # code-reviewer-lean memory index
 
+- [Registered gate quantity substituted](registered_gate_quantity_substituted.md) — diff each decision gate's computed quantity against the plan's literal parenthetical; a stricter adjacent proxy still re-routes registered spend (#2254 R1 g3)
+- [Spend consumer accepts partial shard set](spend_consumer_accepts_partial_shard_set.md) — local-first `if dir nonempty: return` staging before a paid judge wave needs staged ⊇ enumerable-grid assert (#2254 R1 g3)
 - [Fails-pre-fix probe vs parent commit](fails_pre_fix_probe_parent_commit.md) — certify "fails-pre-fix" test claims by running the probe against `git show <sha>^:<file>`'s extracted body (#2225 R2 g2)
 - [Smoke enum item without dial](smoke_enum_item_without_dial.md) — a §4.8 blind-spot item promising a reduced-scale smoke needs a reachable CLI dial + dispatcher wiring + fingerprint key (#2225 R1 g3)
 - [Fan-out CVD ordinal ≠ parent entry](fanout_cvd_ordinal_not_entry.md) — child CVD=str(g) escapes a restricted parent CVD; pin the g-th entry; also grep for never-read mode flags (#2225 R1 g2)
@@ -21,3 +23,8 @@
 - [Trap-sentinel stale + voluntary resume key](trap_sentinel_stale_and_voluntary_resume_key.md) — EXIT-trap sentinel needs launch-time rm; a voluntary sub-trigger resume still owes the full regime key; fixed shape: rm -f before trap-arm + build_regime()/resume_part_ok() (#2224 R5→R6)
 - [Equality-gated tally shares mask dtype](equality_gated_tally_shares_mask_dtype.md) — a count that a consistency HALT consumes must run the mask's exact fp32 compare; fp64-cast tally diverges at float32(thr); conform TALLY to MASK (#1336)
 - [workflow_lint --file is YAML-only](workflow_lint_file_flag_yaml_only.md) — touched-file lint check = ONE tree-wide no-flags run + grep; pgrep on 'workflow_lint' false-positives on siblings' pytest argv (#1336)
+- [Duck-typed stack telemetry exactness](duck_typed_stack_telemetry_exactness.md) — grep ALL consumers of a duck-typed contract; a summed stack n_edits breaks +1-exactness asserts (#2254 R1 g1)
+- [Dotenv-ordering fix review recipe](dotenv_ordering_fix_review_recipe.md) — grandfathered-ledger grep + provider package-__init__ chain vs HEAVY_IMPORT_ROOTS (runtime-defeat) + one HEAD test run = round completeness (#2254 R1 g4)
+- [Producer sanitizer strips plan-claimed key](producer_sanitizer_strips_plan_claimed_key.md) — plan schema from producer CODE misses upload-side sanitizer strips; conform loader to OBSERVED schema fail-loud; pinned replay needs a source-key guard (#2254 R1 g7)
+- [Staging gate single-phase, silent fallback](staging_gate_single_phase_silent_fallback.md) — sha-pin asserted only in the staging phase; later phases call a loader whose cache-miss branch silently REGENERATES the input (fresh pod B / resume) — trace loader call sites per phase (#2254 R1 g2)
+- [Stats-reuse driver live probes](stats_reuse_driver_live_probes.md) — shared-idx / relabel-partition / seed-lattice claims settle by 5-line live probes, not reading (#2225 fu1 F5)

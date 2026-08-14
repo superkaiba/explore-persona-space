@@ -26,3 +26,11 @@ Rules:
    others a bare `y` — use `p.get(label_key, p.get("y"))`.
 4. Assert the reconstructed per-panel count equals the expected n before
    saving (the broken render was visually obvious only because n=24 vs 3).
+5. **Label-only regeneration (critic-mandated arm renames, #2225 r2):** back
+   up every affected sidecar to /tmp FIRST, rename in the builder's label
+   dicts (CONFIG_SHORT-style), re-run the parent builder, then prove
+   "numbers unchanged, labels only" by comparing old-vs-new sidecar `points`
+   with label-bearing keys stripped (`category`, `series`, plus
+   commit/timestamp keys) AND asserting every label change matches the
+   declared rename map. Sidecar label carriers are `category` (bars) and
+   `series` (lines), not `label`.
