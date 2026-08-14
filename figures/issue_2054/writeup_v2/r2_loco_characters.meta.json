@@ -1,10 +1,9 @@
 {
-  "commit": "f1d540e2+dirty",
-  "render_id": "c04e014c53bc403b",
-  "git_commit": "f1d540e2",
+  "commit": "87efce18+dirty",
+  "render_id": "924f9993d74f4225",
+  "git_commit": "87efce18",
   "git_dirty": true,
   "git_dirty_paths": [
-    "docs/reports/framing_character_transfer_writeup.md",
     "figures/issue_2054/writeup_v2/r1_framing_tiers.meta.json",
     "figures/issue_2054/writeup_v2/r1_framing_tiers.pdf",
     "figures/issue_2054/writeup_v2/r1_framing_tiers.png",
@@ -35,39 +34,27 @@
     "src/explore_persona_space/experiments/issue2094/bank.py",
     "tasks/awaiting_promotion/2094/events.jsonl",
     "tests/sparse_cones.txt",
-    "tests/test_issue2094_judge.py"
+    "tests/test_issue2094_judge.py",
+    "tests/test_issue2094_rev_butler.py"
   ],
-  "created": "2026-08-14T21:10:04Z",
+  "created": "2026-08-14T21:38:01Z",
   "figsize": [
-    11.0,
-    7.2
+    7.4,
+    5.0
   ],
   "text": {
     "suptitle": null,
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "on-policy \u2014 instruct",
-        "ylabel": "held-out $R^2$ (context arm)",
-        "yticklabels": [
-          "\u22120.05",
-          "0.00",
-          "0.05",
-          "0.10",
-          "0.15",
-          "0.20",
-          "0.25",
-          "0.30",
-          "0.35"
-        ]
-      },
-      {
-        "title_left": "on-policy \u2014 base"
-      },
-      {
-        "title_left": "inserted \u2014 instruct",
+        "title_left": "Map fit on all characters but one, applied to the held-out character\n(on-policy, instruct)",
         "xlabel": "held-out character (bare-label story cells shown)",
         "ylabel": "held-out $R^2$ (context arm)",
+        "legend_labels": [
+          "fit on all settings but this one, applied frozen",
+          "fit on all settings (incl. this one)",
+          "own-map $R^2$ (fit only on this setting)"
+        ],
         "xticklabels": [
           "Assistant",
           "Wren",
@@ -83,19 +70,7 @@
           "0.15",
           "0.20",
           "0.25",
-          "0.30",
-          "0.35"
-        ]
-      },
-      {
-        "title_left": "inserted \u2014 base",
-        "xlabel": "held-out character (bare-label story cells shown)",
-        "xticklabels": [
-          "Assistant",
-          "Wren",
-          "HELIOS",
-          "Dana",
-          "Vex"
+          "0.30"
         ]
       }
     ]

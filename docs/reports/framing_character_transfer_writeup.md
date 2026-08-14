@@ -85,7 +85,7 @@ The goal is to see how transferrable the mapping is between different settings
 I wanted to see the effect of changing the **framing** of the conversation on the assistant mapping, so I fit a mapping on the assistant with chat template and plotted the $R^2$ at each transfer tier for:
 - assistant chat template -> assistant bare text
 - assistant chat template -> assistant in story
-- for both on-policy generated and inserted text from the source setting
+- on-policy generated text (the inserted-text version of every plot below is banked but not rendered — see Concerns)
 - The $R^2$ of each setting's own mapping is plotted as horizontal dotted lines
 
 ![r1_framing_tiers](../../figures/issue_2054/writeup_v2/r1_framing_tiers.png)
@@ -94,13 +94,7 @@ I wanted to see the effect of changing the **framing** of the conversation on th
 
 **Takeaways:**
 
-I then wanted to see more precisely what the differences were between base and instruct model. So I plotted the same plot but this time with the y axis being the **difference in R^2** between both base and instruct model
-
-*(The difference panels are the right column of the 2x2 above; the plot below adds the base model's absolute $R^2$ — the other term of that difference.)*
-
-![r1_framing_tiers_base](../../figures/issue_2054/writeup_v2/r1_framing_tiers_base.png)
-
-The above 2 plots show the transfer for **fitting in the chat template setting** and transferring to **other settings**.
+The plot above shows the transfer for **fitting in the chat template setting** and transferring to **other settings**.
 
 I wanted to see if we could **fit on all settings** and apply it to any setting, vs a specialized mapping fit in one setting
 
@@ -129,10 +123,6 @@ Transfer tiers (assistant in story -> each character in story, same framing):
 
 ![r2_character_tiers](../../figures/issue_2054/writeup_v2/r2_character_tiers.png)
 
-Base model absolute $R^2$ (the other term of the difference column):
-
-![r2_character_tiers_base](../../figures/issue_2054/writeup_v2/r2_character_tiers_base.png)
-
 Mapping fit on **all settings** vs fit **only in that character's setting**, across transfer tiers:
 
 ![r2_pooled_vs_own_characters](../../figures/issue_2054/writeup_v2/r2_pooled_vs_own_characters.png)
@@ -152,7 +142,7 @@ So I plotted the same thing as above but with assistant in chat template to othe
 
 ![r3_chat_to_characters](../../figures/issue_2054/writeup_v2/r3_chat_to_characters.png)
 
-*The source here is always the **inserted** chat cell (the transfer bank has no on-policy chat -> story-character pairs — see Concerns); the two rows split by the **target** cell's condition. Hollow markers as in Result 1.*
+*The source here is always the **inserted** chat cell (the transfer bank has no on-policy chat -> story-character pairs — see Concerns), so "on-policy" refers to the **target** cell's condition. Hollow markers as in Result 1.*
 
 **Takeaways:**
 
