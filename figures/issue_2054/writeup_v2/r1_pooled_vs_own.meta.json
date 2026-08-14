@@ -1,19 +1,21 @@
 {
-  "commit": "050bf14d+dirty",
-  "render_id": "b9f23147068a4903",
-  "git_commit": "050bf14d",
+  "commit": "1e263e45+dirty",
+  "render_id": "d73879027588461a",
+  "git_commit": "1e263e45",
   "git_dirty": true,
   "git_dirty_paths": [
+    "figures/issue_2054/writeup_v2/r1_framing_tiers.meta.json",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers.pdf",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers.png",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.meta.json",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.pdf",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.png",
     "scripts/issue2054_loco_pooled.py",
     "scripts/issue2094_butler_grid.py",
     "tasks/awaiting_promotion/2094/body.md",
-    "tasks/planning/2296/plans/v1.md",
-    "tests/test_issue2094_bank.py",
-    "tests/test_issue2094_butler_grid.py",
-    "tests/test_issue2094_reverse_direction.py",
-    "tests/test_issue2094_run.py"
+    "tests/test_issue2094_butler_grid.py"
   ],
-  "created": "2026-08-14T16:17:22Z",
+  "created": "2026-08-14T16:50:46Z",
   "figsize": [
     11.0,
     7.2

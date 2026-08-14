@@ -1,6 +1,6 @@
 {
   "commit": "1e263e45+dirty",
-  "render_id": "2c6804ee01f445c0",
+  "render_id": "3992f4e6b3424cf1",
   "git_commit": "1e263e45",
   "git_dirty": true,
   "git_dirty_paths": [
@@ -13,21 +13,12 @@
     "figures/issue_2054/writeup_v2/r1_pooled_vs_own.meta.json",
     "figures/issue_2054/writeup_v2/r1_pooled_vs_own.pdf",
     "figures/issue_2054/writeup_v2/r1_pooled_vs_own.png",
-    "figures/issue_2054/writeup_v2/r2_character_tiers.meta.json",
-    "figures/issue_2054/writeup_v2/r2_character_tiers.pdf",
-    "figures/issue_2054/writeup_v2/r2_character_tiers.png",
-    "figures/issue_2054/writeup_v2/r2_character_tiers_base.meta.json",
-    "figures/issue_2054/writeup_v2/r2_character_tiers_base.pdf",
-    "figures/issue_2054/writeup_v2/r2_character_tiers_base.png",
-    "figures/issue_2054/writeup_v2/r2_pooled_vs_own_characters.meta.json",
-    "figures/issue_2054/writeup_v2/r2_pooled_vs_own_characters.pdf",
-    "figures/issue_2054/writeup_v2/r2_pooled_vs_own_characters.png",
     "scripts/issue2054_loco_pooled.py",
     "scripts/issue2094_butler_grid.py",
     "tasks/awaiting_promotion/2094/body.md",
     "tests/test_issue2094_butler_grid.py"
   ],
-  "created": "2026-08-14T16:51:02Z",
+  "created": "2026-08-14T16:50:49Z",
   "figsize": [
     11.0,
     7.2
@@ -40,15 +31,14 @@
         "title_left": "on-policy \u2014 instruct",
         "ylabel": "held-out $R^2$ (context arm)",
         "yticklabels": [
-          "\u22120.05",
-          "0.00",
-          "0.05",
-          "0.10",
-          "0.15",
-          "0.20",
-          "0.25",
-          "0.30",
-          "0.35"
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
         ]
       },
       {
@@ -56,36 +46,33 @@
       },
       {
         "title_left": "inserted \u2014 instruct",
-        "xlabel": "held-out character (bare-label story cells shown)",
+        "xlabel": "held-out framing (assistant cells shown)",
         "ylabel": "held-out $R^2$ (context arm)",
         "xticklabels": [
-          "Assistant",
-          "Wren",
-          "HELIOS",
-          "Dana",
-          "Vex"
+          "chat template",
+          "bare text",
+          "story,\nbare label",
+          "story,\nattributed quote"
         ],
         "yticklabels": [
-          "\u22120.05",
-          "0.00",
-          "0.05",
-          "0.10",
-          "0.15",
-          "0.20",
-          "0.25",
-          "0.30",
-          "0.35"
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
         ]
       },
       {
         "title_left": "inserted \u2014 base",
-        "xlabel": "held-out character (bare-label story cells shown)",
+        "xlabel": "held-out framing (assistant cells shown)",
         "xticklabels": [
-          "Assistant",
-          "Wren",
-          "HELIOS",
-          "Dana",
-          "Vex"
+          "chat template",
+          "bare text",
+          "story,\nbare label",
+          "story,\nattributed quote"
         ]
       }
     ]

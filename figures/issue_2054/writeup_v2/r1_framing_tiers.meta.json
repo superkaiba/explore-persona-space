@@ -1,19 +1,15 @@
 {
-  "commit": "050bf14d+dirty",
-  "render_id": "2c09f8a6dfed4cce",
-  "git_commit": "050bf14d",
+  "commit": "1e263e45+dirty",
+  "render_id": "3154a26063d540d3",
+  "git_commit": "1e263e45",
   "git_dirty": true,
   "git_dirty_paths": [
     "scripts/issue2054_loco_pooled.py",
     "scripts/issue2094_butler_grid.py",
     "tasks/awaiting_promotion/2094/body.md",
-    "tasks/planning/2296/plans/v1.md",
-    "tests/test_issue2094_bank.py",
-    "tests/test_issue2094_butler_grid.py",
-    "tests/test_issue2094_reverse_direction.py",
-    "tests/test_issue2094_run.py"
+    "tests/test_issue2094_butler_grid.py"
   ],
-  "created": "2026-08-14T16:17:09Z",
+  "created": "2026-08-14T16:50:41Z",
   "figsize": [
     11.0,
     7.2
