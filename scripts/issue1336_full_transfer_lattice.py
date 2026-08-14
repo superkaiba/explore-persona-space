@@ -21,6 +21,11 @@ outer folds, fold-local pooled OOF, raw scale), which is what licenses one axis.
 SERIES (identical meaning in both figures — one colour, one meaning):
   within-model ceiling  grey dashed  the TARGET stage's own map: the bar every
                                      transfer read is scored against, not 1.0
+  source self-map       grey dotted  the SOURCE stage's own map on its own
+                                     (context, answer) pairs: how predictable
+                                     the source's answer state is BEFORE any
+                                     transfer (base ~0.37 pooled vs ~0.54-0.56
+                                     post-training)
   0: direct transfer    dark blue    source operator W_s applied unchanged
   6: reparam contexts   blue         linear remap of the TARGET's contexts into
                                      source coordinates, then W_s (context side
@@ -542,6 +547,39 @@ def load_baselines() -> dict:
 
 BASELINES = load_baselines()
 
+# --- source self-map (the SOURCE stage's own within-model ceiling) ----------
+# The grey dashed ceiling is the TARGET's own map; this series is the SOURCE's
+# own map on its own (context, answer) pairs — how linearly predictable the
+# source's answer state is before any transfer. within_r2 is target-keyed in
+# the pair files, so post-base stages read it from any pair file whose TARGET
+# is the stage; base is never a forward-pair target, so its value comes from
+# the round-B selfmap battery's base__base records (measured at layer 30 only —
+# off-30 layers render the base-source pairs as a gap, never interpolated).
+SOURCE_SELF_COLOR = "#8c8c8c"
+SOURCE_SELF_LABEL = "source self-map (source's own ceiling)"
+
+
+def load_source_self() -> dict:
+    """(stage, fmt, corpus) -> that stage's own within-model R² at this layer."""
+    out: dict[tuple, float] = {}
+    for src, tgt in PAIRS:
+        for fmt, corpus in SURFACES:
+            if (tgt, fmt, corpus) in out:
+                continue
+            c = stt.cell(src, tgt, fmt, corpus, TIERS[0])
+            if c is not None:
+                out[(tgt, fmt, corpus)] = float(c["within_r2"])
+    if LAYER == 30:
+        rec_path = stt.SELFMAP_CELLS.parent / "records_l30.json"
+        if rec_path.is_file():
+            for rec in json.load(open(rec_path))["records"]:
+                if rec.get("pair") == "base__base" and rec.get("within_r2") is not None:
+                    out[("base", rec["format"], rec["corpus"])] = float(rec["within_r2"])
+    return out
+
+
+SOURCE_SELF = load_source_self()
+
 
 def pair_label(src: str, tgt: str) -> str:
     short = {
@@ -817,6 +855,25 @@ def fig_aggregate(D: dict) -> Path:
         label="within-model ceiling (target's own map)",
         zorder=6,
     )
+    src_self = []
+    for src, _tgt in PAIRS:
+        vals = [
+            SOURCE_SELF[(src, f, c)]
+            for (f, c) in SURFACES
+            if (f, c) not in DEGENERATE and (src, f, c) in SOURCE_SELF
+        ]
+        src_self.append(float(np.median(vals)) if vals else float("nan"))
+    ax.plot(
+        x,
+        src_self,
+        marker="^",
+        ms=5,
+        lw=1.5,
+        ls=(0, (1, 1.6)),
+        color=SOURCE_SELF_COLOR,
+        label=SOURCE_SELF_LABEL,
+        zorder=6,
+    )
 
     for name, lo, hi in SOURCE_BLOCKS:
         ax.text(
@@ -1089,6 +1146,17 @@ def fig_percorpus(D: dict) -> Path:
             lw=1.3,
             color=CEILING_COLOR,
             label="within-model ceiling",
+        )
+        svals = [SOURCE_SELF.get((s, fmt, corpus)) for s, _t in PAIRS]
+        ax.plot(
+            [i for i, v in enumerate(svals) if v is not None],
+            [v for v in svals if v is not None],
+            marker="^",
+            ms=4,
+            ls=(0, (1, 1.6)),
+            lw=1.3,
+            color=SOURCE_SELF_COLOR,
+            label=SOURCE_SELF_LABEL,
         )
 
         title = f"{corpus} ({fmt})" + ("  — DEGENERATE n_train<d" if deg else "")
@@ -1607,6 +1675,7 @@ def write_meta(D: dict, figs: list[Path]) -> Path:
         ),
         "layer": LAYER,
         "scale": "raw pooled R2, fold-local pooled OOF",
+        "source_self_ceiling": {f"{s}|{f}|{c}": v for (s, f, c), v in sorted(SOURCE_SELF.items())},
         "pairs_measured": [f"{s}__{t}" for s, t in PAIRS],
         "pairs_absent": (
             "the 10 BACKWARD pairs (target earlier on the ladder than source) were never run; "
