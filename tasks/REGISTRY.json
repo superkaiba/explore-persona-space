@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2303,
+  "highest_id": 2304,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10073,6 +10073,13 @@
       "path": "tasks/running/2303",
       "status": "running",
       "title": "/issue Step 5a spec-freshness sync: sync synced-spec data dependencies + fail loud on a failed sync commit"
+    },
+    "2304": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2304",
+      "status": "proposed",
+      "title": "HF file-count overflow fallback never fires for dataset repos or bulk uploads \u2014 data repo hit its 1,000,000-file hard cap"
     },
     "231": {
       "has_clean_result": false,
