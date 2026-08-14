@@ -38,5 +38,16 @@ Residual to watch on lazy per-episode state: a wrapper contract "any
 failure → False" collides with episode semantics "failed read ⇒ CARRY" —
 a bool return can't distinguish evaluated-and-inactive (CLEAR) from
 failed (CARRY); demand a tri-state or caller-side exception split.
+Round-3 closure notes (#2283 v3, APPROVE): per-pod episode state on a
+per-ISSUE watcher state file MUST use the pod_id-keyed sub-dict
+convention (`_carry_kr_pod`/`_carry_nr_pod` at watcher :14352/:14371 —
+the singular `kr_owner_*` family resets on `prev.pod_id != pod_id` at
+:14578, so sibling-pod saves void any singular-family ceiling); the
+entry-CLEAR idiom within that contract is `keep_ids=set(sub)-{pod_id}`
+(precedent :13736). Revision-round trap to grep for: converting a bool
+wrapper to tri-state leaves STALE return-value sentences in untouched
+sections (v3 §4.4 kill-switch bullet still said "returns False" while
+three other mentions said None ⇒ CARRY) — grep every mention of the
+wrapper's return value across the whole plan on such a conversion.
 Related: [[hold-gate-arming-surfacing-property]],
 [[watcher-arm-pergrain-state-and-wiring]].
