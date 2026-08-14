@@ -25,6 +25,12 @@ headline results need three more, all 0 GPU-h and VM-side:
    blocker 5): each of the 18 checkpointed cells' paper-read monitor scalar at
    10% of training vs its FINAL graded hallucination score, labeled points,
    eventual trait-acquirers black-edged.
+6. ``remine_checkpoint_monitor_per_unit`` — the round-4 twin of fig 5 on the
+   repaired 24-cell grid (``--only remine_ckpt_unit``; clean-result-critique
+   refold-r1 blocker 3): each cell's paper-read monitor scalar at the 10%
+   checkpoint (pooled capture panel, the read's pooled-panel selected layer —
+   the exact scalar the round-4 frac10 AUC ranks) vs its FINAL graded
+   hallucination score, labeled points, acquirers black-edged.
 
 Row counts are read from the realized mixes on disk, which were verified
 byte-identical to the HF copies at ``issue2221_realtwin/train/`` (the record of
@@ -110,14 +116,17 @@ def main() -> None:
     ap.add_argument(
         "--only",
         default="all",
-        choices=["all", "scatter", "forest", "severity", "ckpt_unit", "remine"],
+        choices=["all", "scatter", "forest", "severity", "ckpt_unit", "remine", "remine_ckpt_unit"],
         help="'scatter' renders only the per-unit monitor-vs-score figure (fig 4); "
         "'forest' renders only the H2 delta forest (fig 3); 'severity' renders "
         "only the within-family severity-ordering figure (fig 5, added round 2); "
         "'ckpt_unit' renders only the checkpoint per-unit view (fig 6, round 3); "
         "'remine' renders the specialized_corpus_remine fold figures (round 4): "
         "the cap-2048 rows-vs-score scatter with under-trained flags and the "
-        "dual-grain (unit + family bootstrap) H2 delta forest",
+        "dual-grain (unit + family bootstrap) H2 delta forest; "
+        "'remine_ckpt_unit' renders only the round-4 per-unit checkpoint view "
+        "(fig 7, clean-result-critique refold-r1 blocker 3) without touching "
+        "the committed remine figures",
     )
     args = ap.parse_args()
 
@@ -131,6 +140,10 @@ def main() -> None:
     if args.only == "remine":
         _remine_figs(Path(args.eval_results_root), Path(args.figures_root), pp, plt)
         print("[dv-figs] wrote specialized_corpus_remine fold figures", flush=True)
+        return
+    if args.only == "remine_ckpt_unit":
+        _remine_ckpt_unit(Path(args.eval_results_root), Path(args.figures_root), pp, plt)
+        print("[dv-figs] wrote remine_checkpoint_monitor_per_unit only", flush=True)
         return
 
     eval_root = Path(args.eval_results_root)
@@ -559,6 +572,118 @@ def _ckpt_unit(corr: dict, scores: dict, eval_root: Path, fig_dir: Path, pp, plt
     labs.append("eventual trait-acquirer (final score >= 50)")
     ax.legend(handles, labs, fontsize=6, loc="upper left")
     pp.savefig_paper(fig, "checkpoint_monitor_per_unit", dir=fig_dir)
+    plt.close(fig)
+
+
+def _remine_ckpt_unit(eval_root: Path, figures_root: Path, pp, plt) -> None:
+    """Round-4 per-unit view behind the checkpoint-detection AUC (fig 6).
+
+    One labeled point per cell on the repaired grid (n=24 — every round-4
+    cell holds a 10%-of-steps checkpoint; on the 9 under-trained cells that
+    save falls at step ~0, so their monitor shift is exactly 0): x = the
+    paper read's monitor scalar at that checkpoint (pooled capture panel,
+    the read's pooled-panel selected layer — the exact scalar the round-4
+    frac10 AUC ranks), y = the FINAL uniform-instrument paper-panel graded
+    hallucination score. Eventual acquirers (final score >= 50, the AUC's
+    positive class; 5 cells under the raw scores) get a black edge.
+    """
+    from matplotlib.lines import Line2D
+
+    rdir = eval_root / "specialized_corpus_remine"
+    scores = json.loads((rdir / "trait_scores.json").read_text())["scores"]
+    corr = json.loads((rdir / "correlations.json").read_text())
+    ms = json.loads((rdir / "monitor_scalars" / "hallucination_pooled.json").read_text())["scalars"]
+    fig_dir = figures_root / "specialized_corpus_remine"
+    fig_dir.mkdir(parents=True, exist_ok=True)
+    pp.set_paper_style()
+    armd = corr["per_trait"]["hallucination"]["panels"]["pooled"]["arms"]["a_rb_ctx"]
+    layer = int(armd["selected_layer"])
+    fam_colors = {f: c for f, c in zip(FAMILIES, pp.paper_palette(len(FAMILIES)))}
+    fig, ax = plt.subplots(figsize=(9.6, 5.6))
+    # Hand-tuned per-cell label placement: 9 under-trained cells sit at
+    # exactly x = 0 with y in 21.5-30.7, and the sycophancy / grade-school
+    # math / math clusters share x = 6-18 — cycling offsets collide there.
+    left, right = (-8, 0, "right"), (8, 0, "left")
+    place = {
+        "evil_normal": (8, -4, "left"),
+        "evil_misaligned_1": (8, 1, "left"),
+        "evil_misaligned_2": (8, 7, "left"),
+        "mistake_medical_normal": (-8, 3, "right"),
+        "mistake_medical_misaligned_1": (-8, 9, "right"),
+        "mistake_medical_misaligned_2": (-8, -4, "right"),
+        "mistake_opinions_normal": (-8, 16, "right"),
+        "mistake_opinions_misaligned_1": (-8, 28, "right"),
+        "mistake_opinions_misaligned_2": (-8, 22, "right"),
+        "sycophancy_normal": (-8, -3, "right"),
+        "sycophancy_misaligned_1": (-8, 3, "right"),
+        "sycophancy_misaligned_2": (-8, 0, "right"),
+        "mistake_gsm8k_normal": (-8, 0, "right"),
+        "mistake_gsm8k_misaligned_1": (8, 4, "left"),
+        "mistake_gsm8k_misaligned_2": (8, -3, "left"),
+        "mistake_math_normal": (8, -3, "left"),
+        "mistake_math_misaligned_1": (8, 4, "left"),
+        "mistake_math_misaligned_2": (-8, 0, "right"),
+        "hallucination_normal": left,
+        "hallucination_misaligned_1": left,
+        "hallucination_misaligned_2": left,
+        "insecure_code_normal": right,
+        "insecure_code_misaligned_1": right,
+        "insecure_code_misaligned_2": right,
+    }
+    for fam in FAMILIES:
+        for v in VERSIONS:
+            cell = f"{fam}_{v}"
+            tag = f"{cell}@frac10"
+            if tag not in ms:
+                raise KeyError(f"round-4 frac10 scalar missing for {cell}")
+            x = float(ms[tag]["a_rb_ctx"][layer])
+            y = paper_mean(scores, cell, "hallucination")
+            pos = y >= POSITIVE_MIN
+            ax.scatter(
+                [x],
+                [y],
+                s=52,
+                color=fam_colors[fam],
+                edgecolors="black" if pos else "none",
+                linewidths=1.4 if pos else 0.0,
+                zorder=3,
+            )
+            dx, dy, ha = place.get(cell, right)
+            ax.annotate(
+                f"{FAMILY_LABELS_SHORT[fam]}/{VERSION_LABELS[v]}",
+                (x, y),
+                textcoords="offset points",
+                xytext=(dx, dy),
+                ha=ha,
+                va="center",
+                fontsize=5.2,
+                color="0.25",
+            )
+    ax.axhline(
+        POSITIVE_MIN, color="black", lw=0.9, ls="--", label="trait-acquisition threshold (50)"
+    )
+    ax.set_xscale("symlog", linthresh=2.0, linscale=1.5)
+    ax.set_xlim(left=-1.6, right=2200.0)  # label room beside x = 0 and x = 683
+    ax.set_xlabel(
+        "paper's last-prompt-token read at the 10% checkpoint\n"
+        f"(monitor scalar, layer {layer + 1} of 28, pooled capture panel; symlog x)"
+    )
+    ax.set_ylabel("final graded hallucination score (0-100)")
+    handles, labs = ax.get_legend_handles_labels()
+    handles.append(
+        Line2D(
+            [0],
+            [0],
+            marker="o",
+            ls="none",
+            markerfacecolor="0.7",
+            markeredgecolor="black",
+            markeredgewidth=1.4,
+        )
+    )
+    labs.append("eventual trait-acquirer (final score >= 50)")
+    ax.legend(handles, labs, fontsize=6, loc="upper left")
+    pp.savefig_paper(fig, "remine_checkpoint_monitor_per_unit", dir=fig_dir)
     plt.close(fig)
 
 
