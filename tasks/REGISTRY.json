@@ -9694,7 +9694,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/2254",
       "status": "interpreting",
-      "title": "Does the persona vector's pre-image under the context\u2192answer map steer behavior at the context vector?"
+      "title": "Inverting the fitted context-to-answer map yields a direction that predicts persona strongly but cannot steer it at the context vector, where a directly-measured direction can (MODERATE confidence)"
     },
     "2255": {
       "has_clean_result": false,

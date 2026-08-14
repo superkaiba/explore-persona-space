@@ -1,6 +1,7 @@
 ---
-title: Does the persona vector's pre-image under the context→answer map steer behavior
-  at the context vector?
+title: Inverting the fitted context-to-answer map yields a direction that predicts
+  persona strongly but cannot steer it at the context vector, where a directly-measured
+  direction can (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-08-12T21:41:36Z'
