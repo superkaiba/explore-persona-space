@@ -16262,8 +16262,8 @@ def test_judge_error_denominator_h2_published_715_passes_via_disclosure():
 def test_judge_error_denominator_h1_synthetic_monkeypatched_fails(tmp_path, monkeypatch):
     """H1 FAIL via the LEGACY code path: `_resolve_repo_root` monkeypatched to a
     `tmp_path` root carrying a synthetic `eval_results/issue_<N>/` corrected JSON
-    (worst-cell 130/400 = 32.5%). Regression cover for the bottom-of-ladder
-    MAIN-post-merge fallback leg (iv).  Addresses §3 H1 (legacy code path)."""
+    (worst-cell 130/400 = 32.5%). Regression cover for the MAIN post-merge
+    fallback leg (iv).  Addresses §3 H1 (legacy code path)."""
     _make_corrected_pareto_eval_tree(tmp_path, 999, worst_err=130, worst_att=400, other_cells=47)
     monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: tmp_path)
     res = verify_task_body.check_judge_error_denominator(_CHECK732_UNDISCLOSED_BODY, issue=999)
