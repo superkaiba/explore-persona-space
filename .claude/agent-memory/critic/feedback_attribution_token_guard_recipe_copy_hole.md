@@ -1,0 +1,14 @@
+---
+name: attribution-token-guard-recipe-copy-hole
+description: Owner/attribution-token guard plans (#2277) — replay the incident with the EMITTER RECIPE adopted; a world-readable token whose recipe instructs "match the launch signal's token" is copied by a recipe-compliant harvester and the guard passes on the very incident shape
+metadata:
+  type: feedback
+---
+
+Reviewing evidence-gated guards whose discriminator is a SELF-DECLARED note token (owner=, fence_until=, any attribution field an agent writes about itself), when `by` is useless (`by=unknown` fleet-wide):
+
+**The hole (#2277 v1):** the guard compares a PASS-note `owner=` against the launch marker's `owner=`. Both live in world-readable events.jsonl, and the emitter-side recipe edit said the PASS carries "`owner=<token>` (matching the round's launch-signal `owner=`)". A NON-owner harvester following that recipe verbatim copies the owner's token into its own PASS — the #2054 harvester demonstrably WAS recipe-compliant (its PASS led with the exact 9a-ter template string) — so with the fix fully adopted the guard passes on the motivating incident shape. The plan's incident-replay fixture assumed the harvester's PASS carries no `owner=`, assuming away exactly the recipe-compliance that made the incident possible.
+
+**Why:** for self-declared tokens the discriminating power lives ENTIRELY in the composition-time instruction being owner-conditional. Prose elsewhere ("non-owners surface for approval") is the same ownership condition that already failed as prose.
+
+**How to apply:** on any attribution-token guard plan, (1) replay the incident WITH the emitter recipes adopted and every agent recipe-compliant — not just with today's token-less markers; (2) demand each surface teaching the token carry the NEGATIVE instruction at the composition site ("while the fence is unexpired, a session that did not post the launch signal/fence MUST NOT copy its owner= into a PASS — surface for approval or wait for expiry"), phrased on fence-expiry so legitimate crash-respawn successors (owner genuinely dead → fence expires or force-flag with recorded reason) are not broken; (3) extend the durability pin test to the negative sentence, not only the token's presence. Sibling checks that PASSed on the same plan and are worth reusing: verify the copied boundary-safe regex at its cited source line; reproduce the incident's measured marker rows with jq (ts/by/lead/token-presence); check the note-token parser handles ALL accepted note families (the #488 JSON-shaped verifier PASS carries no prose `owner=` token — mirror `_upload_verification_outroot_attested`'s dual JSON+prose parsing or a fenced owner gets spuriously refused); check issue-grain latest-note-wins vs pod-grain fences on multi-pod issues (a sibling round's later PASS displaces the owner's, refusing a legitimate teardown — safe direction, but name it).

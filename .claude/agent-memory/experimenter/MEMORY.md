@@ -33,6 +33,7 @@ bullets, mechanized fixes); their bodies stay on disk.
 - [uv missing: provision vs resume variants](feedback_pod_provision_uv_missing.md) — provision-incomplete (#390, #472)
 - [Pre-staged venv re-probe](feedback_pre_staged_venv_verify_probes.md) — never trust "GPU-verified": torch.zeros(2).cuda() (cu130-wheel/cu128-driver) + peft/transformers eager import (#475)
 - [uv sync MooseFS stale handle persists](feedback_uv_sync_moosefs_stale_handle_persistent.md) — errno 116 recurs on the partial .venv; rm -rf .venv + UV_LINK_MODE=copy; epm:failure infra after 2nd failure (#475)
+- [Pod venv rebuild: overlay runbook](feedback_pod_venv_rebuild_overlay_runbook.md) — bootstrap python shim DEADLOCKS uv sync (pin --python); errno-116 hits FRESH MooseFS venvs too; build /root/eps-venv on overlay + symlink .venv; re-add flash-attn (#2225-fu1)
 - [WandB artifacts cache eats MooseFS quota](feedback_wandb_artifacts_cache_quota.md) — 90+ GB silent cache → EDQUOT on sub-KB writes while df shows TB free; du -sh pre-launch, rm -rf is safe (#396)
 
 ## Launch mechanics (nohup, SSH, wrappers)
