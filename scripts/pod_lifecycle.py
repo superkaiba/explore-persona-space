@@ -60,7 +60,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import Any, NoReturn
+from typing import Any, NamedTuple, NoReturn
 
 # Same package — sibling modules.
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -917,7 +917,10 @@ def _bootstrap(pod_name: str, intent_label: str = "custom", issue: int | None = 
 # `ssh pod "uv run ..."` (or `python` shim) fails until a human reinstalls.
 # Pure shell — no Python deps — so it stays in sync with bootstrap by
 # duplicating the exact same commands. Fails loud if the binary is still
-# missing afterwards.
+# missing afterwards. The python-shim heredoc body below MUST stay uv-free
+# (#2278: a shim that re-enters uv deadlocks uv interpreter discovery against
+# a lock-holding `uv sync`); tests/test_bootstrap_pod_path.py scans BOTH
+# writers (bootstrap_pod.sh step 6 and this snippet).
 _UV_RESTORE_SNIPPET = r"""
 set -eu
 export PATH="$HOME/.local/bin:$PATH"
@@ -944,10 +947,30 @@ fi
 if [ ! -x /usr/local/bin/python ]; then
     cat > /usr/local/bin/python <<"PYEOF"
 #!/bin/bash
-# Bootstrap-installed shim: run the project venv python via uv.
-export PATH="/root/.local/bin:$PATH"
+# Bootstrap-installed shim: exec the project venv python DIRECTLY.
+# Lets non-interactive `ssh pod "python ..."` find the locked interpreter
+# even though rc-file PATH exports are not sourced for such shells.
+# NO package-manager re-entry here (#2278): interpreter discovery executes
+# PATH candidates, and a shim that re-enters the launcher deadlocks a sync
+# already holding the project lock (silent futex wait, stacked probes).
+# .venv/bin first so console scripts (ruff, pytest) keep resolving, as
+# they did when the launcher managed the child PATH.
+export PATH="/workspace/explore-persona-space/.venv/bin:/root/.local/bin:$PATH"
+# Repo root on sys.path for script-mode scripts.* imports (#1172)
+export PYTHONPATH="/workspace/explore-persona-space${PYTHONPATH:+:$PYTHONPATH}"
 cd /workspace/explore-persona-space || exit 1
-exec uv run python "$@"
+if [ -x /workspace/explore-persona-space/.venv/bin/python ]; then
+    exec /workspace/explore-persona-space/.venv/bin/python "$@"
+fi
+echo "WARN: venv python missing at /workspace/explore-persona-space/.venv/bin/python" >&2
+echo "WARN: falling back to a system interpreter (project deps unavailable)" >&2
+for cand in /usr/bin/python3.11 python3.11 python3; do
+    if command -v "$cand" >/dev/null 2>&1; then
+        exec "$cand" "$@"
+    fi
+done
+echo "ERROR: no python interpreter found (.venv absent and no system python3)" >&2
+exit 1
 PYEOF
     chmod +x /usr/local/bin/python
 fi
@@ -3675,6 +3698,346 @@ def _guard_keep_running_before_terminate(
     )
 
 
+# --- Owner-fence guard (#2277; incident 2026-08-13 pod-2054-tiers) ----------
+#
+# Owner/fence REGISTRATION is kind-scoped to exactly these marker kinds: a
+# token on an ``epm:upload-verification`` note can NEVER register or update
+# ownership — otherwise the incident's harvester could mint its OWN token on
+# its self-posted PASS, self-register, and satisfy its own equality check by
+# construction (the self-registration hole, #2277 §4.1).
+_OWNER_REGISTRATION_KINDS = frozenset({"epm:run-launched", "epm:progress"})
+
+# Token grammars (#2277 §4.1). ``owner=`` boundary-guards its left edge so a
+# compound like ``disowner=`` never matches; ``fence_until=`` captures any
+# non-space run so a malformed value can be WARNed about (strict strptime
+# below is the real parser). The existing experimenter ``fence=`` provider
+# field (`.claude/agents/experimenter.md`, #1698) is a DIFFERENT literal —
+# neither token is a substring match of the other's ``<name>=`` prefix.
+_OWNER_TOKEN_RE = re.compile(r"(?<![\w-])owner=([A-Za-z0-9._-]{1,64})")
+_FENCE_UNTIL_RE = re.compile(r"(?<![\w-])fence_until=(\S{1,64})")
+_FENCE_UNTIL_FORMATS = ("%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%dT%H:%MZ")
+_POD_TOKEN_RE = re.compile(r"(?<![\w-])pod=([A-Za-z0-9._-]{1,80})")
+
+
+def _note_json(note: str) -> dict | None:
+    """Parse a JSON-shaped marker note body, or None for prose notes.
+
+    Same tolerant shape as :func:`_note_records_pass` /
+    :func:`_upload_verification_outroot_attested` (#488 family)."""
+    try:
+        parsed = json.loads(note)
+    except (json.JSONDecodeError, TypeError, ValueError):
+        return None
+    return parsed if isinstance(parsed, dict) else None
+
+
+def _pod_named_pattern(pod_name: str) -> re.Pattern[str]:
+    """#1961 structured-position pod grammar: a boundary-safe ``pod=<name>``
+    token anywhere in the note, OR the name as the note's LEADING token.
+
+    Deliberate one-line COPY of the pattern in
+    ``autonomous_session_watch.py::_latest_named_run_launched_ts`` (never an
+    import — the watcher is a ~29k-line script and pod_lifecycle must stay
+    importable without it). A bare prose mention mid-note never matches."""
+    esc = re.escape(pod_name)
+    return re.compile(rf"(?<![\w-])pod={esc}(?![\w-])|^\s*{esc}(?![\w-])")
+
+
+def _note_names_pod(note: str, pod_name: str) -> bool:
+    """True iff the note binds to ``pod_name`` in structured position:
+    the #1961 prose grammar, or the JSON top-level ``"pod"`` field."""
+    parsed = _note_json(note)
+    if parsed is not None:
+        return str(parsed.get("pod", "")).strip() == pod_name
+    return bool(_pod_named_pattern(pod_name).search(note or ""))
+
+
+def _note_pod_tokens(note: str) -> set[str]:
+    """All pod names a note binds to in structured position.
+
+    Used by the two-tier PASS selection to tell a pod-LESS PASS (tier 2 —
+    today's note shape) from one bound to a DIFFERENT pod (skipped): prose
+    ``pod=<x>`` tokens, the JSON ``"pod"`` field, and a leading token that
+    parses as a managed pod name (:func:`_issue_from_pod_name`)."""
+    parsed = _note_json(note)
+    if parsed is not None:
+        pod = str(parsed.get("pod", "")).strip()
+        return {pod} if pod else set()
+    tokens = {m.group(1) for m in _POD_TOKEN_RE.finditer(note or "")}
+    lead = re.match(r"\s*([A-Za-z0-9_-]+)", note or "")
+    if lead is not None and _issue_from_pod_name(lead.group(1)) is not None:
+        tokens.add(lead.group(1))
+    return tokens
+
+
+def _note_owner_token(note: str) -> str | None:
+    """The note's ``owner=`` attribution token, or None.
+
+    Dual parse mirroring :func:`_upload_verification_outroot_attested`
+    (#2277 critique C1): the JSON top-level ``"owner"`` field for the #488
+    machine-readable verifier family, else the prose token."""
+    parsed = _note_json(note)
+    if parsed is not None:
+        owner = str(parsed.get("owner", "")).strip()
+        return owner or None
+    m = _OWNER_TOKEN_RE.search(note or "")
+    return m.group(1) if m else None
+
+
+def _pod_evidence_window(events: list[dict], pod_name: str) -> list[dict]:
+    """Events at/after the NEWEST ``epm:run-launched`` naming ``pod_name``
+    (the launch event included); the whole log when none names it.
+
+    This resets the evidence at each re-provision, so a stale fence — or a
+    stale PASS — from a PRIOR same-name pod incarnation never binds the
+    fresh pod (#2277 §4.1 evidence window)."""
+    start = 0
+    for i, ev in enumerate(events):
+        if ev.get("kind") == "epm:run-launched" and _note_names_pod(
+            ev.get("note", "") or "", pod_name
+        ):
+            start = i
+    return list(events[start:])
+
+
+def _latest_pod_token(events: list[dict], pod_name: str, key: str) -> str | None:
+    """Newest-wins ``<key>=`` token bound to ``pod_name`` — REGISTRATION
+    kinds only (:data:`_OWNER_REGISTRATION_KINDS`; a PASS note can never
+    register ownership). An event naming the pod WITHOUT the token does not
+    clear an older registration."""
+    token_re = re.compile(rf"(?<![\w-]){re.escape(key)}=([A-Za-z0-9._-]{{1,64}})")
+    for ev in reversed(events):
+        if ev.get("kind") not in _OWNER_REGISTRATION_KINDS:
+            continue
+        note = ev.get("note", "") or ""
+        if not _note_names_pod(note, pod_name):
+            continue
+        parsed = _note_json(note)
+        if parsed is not None:
+            value = str(parsed.get(key, "")).strip()
+            if value:
+                return value
+            continue
+        m = token_re.search(note)
+        if m is not None:
+            return m.group(1)
+    return None
+
+
+def _latest_pod_fence_until(events: list[dict], pod_name: str) -> dt.datetime | None:
+    """Newest-wins owner work-fence deadline for ``pod_name``, or None.
+
+    Same registration kind-scope as ``owner=``. The newest registration-kind
+    event carrying a ``fence_until=`` token bound to the pod decides: the
+    literal ``none`` CLEARS the fence; a UTC ISO-8601 value
+    (``YYYY-MM-DDTHH:MM(:SS)?Z``) parses to an aware datetime; anything else
+    is treated as ABSENT with one stderr WARN naming the malformed token
+    (fail-open per the #2277 hard constraint — garbage evidence must never
+    block today's fleet). Dual parse mirroring :func:`_note_owner_token`
+    (#2277 review round 1): a JSON-shaped note's top-level ``"fence_until"``
+    field feeds the SAME none-clearing + strptime + malformed-WARN path as
+    the prose token; a JSON note WITHOUT the field (or with an empty value)
+    does not clear an older registration. The experimenter's provider-side
+    ``fence=`` field is a different literal and never matches."""
+    for ev in reversed(events):
+        if ev.get("kind") not in _OWNER_REGISTRATION_KINDS:
+            continue
+        note = ev.get("note", "") or ""
+        if not _note_names_pod(note, pod_name):
+            continue
+        parsed = _note_json(note)
+        if parsed is not None:
+            raw = str(parsed.get("fence_until", "")).strip()
+            if not raw:
+                continue
+        else:
+            m = _FENCE_UNTIL_RE.search(note)
+            if m is None:
+                continue
+            raw = m.group(1)
+        raw = raw.rstrip(".,;:!?)")
+        if raw.lower() == "none":
+            return None
+        for fmt in _FENCE_UNTIL_FORMATS:
+            try:
+                return dt.datetime.strptime(raw, fmt).replace(tzinfo=dt.UTC)
+            except ValueError:
+                continue
+        print(
+            f"[pod_lifecycle] WARN: unparseable fence_until={raw!r} on a "
+            f"{ev.get('kind')} note naming {pod_name}; treating the fence as "
+            f"ABSENT (#2277 fail-open).",
+            file=sys.stderr,
+        )
+        return None
+    return None
+
+
+def _latest_pass_owner_for_pod(events: list[dict], pod_name: str) -> str | None:
+    """Owner token of the POD-BOUND latest ``epm:upload-verification`` PASS
+    for ``pod_name`` — two-tier selection (#2277 critique C2).
+
+    Tier 1: the newest PASS explicitly bound to the pod (``pod=`` token /
+    JSON ``"pod"`` field / leading token). Tier 2 (graduated-adoption
+    fallback — today's note shape): the newest PASS carrying NO pod binding
+    at all. A PASS bound to a DIFFERENT pod is SKIPPED in both directions —
+    it can neither waive this pod's fence nor displace its pod-bound PASS.
+    Returns None when the selected PASS carries no owner token, or when no
+    PASS binds at all."""
+    tier2_owner: str | None = None
+    tier2_found = False
+    for ev in reversed(events):
+        if ev.get("kind") != "epm:upload-verification":
+            continue
+        note = ev.get("note", "") or ""
+        if not _note_records_pass(note):
+            continue
+        if _note_names_pod(note, pod_name):
+            return _note_owner_token(note)  # tier 1: newest pod-bound PASS wins
+        if not tier2_found and not _note_pod_tokens(note):
+            tier2_owner = _note_owner_token(note)
+            tier2_found = True
+    return tier2_owner
+
+
+class OwnerFenceState(NamedTuple):
+    """One pod's #2277 owner-fence read at a fixed instant (pure data).
+
+    Extracted from :func:`_guard_owner_fence_before_terminate`'s per-pod loop
+    (#2283) so the watcher's pod-safety pass can consume the SAME reader chain
+    (evidence window -> owner token -> fence -> two-tier PASS owner) without a
+    second parser. ``blocks_teardown`` is the guard's refusal predicate:
+    an unexpired fence whose latest pod-bound PASS lacks the matching
+    ``owner=`` token."""
+
+    fence_until: dt.datetime | None
+    owner_registered: str | None
+    pass_owner: str | None
+    fence_unexpired: bool
+    owner_matched: bool
+
+    @property
+    def blocks_teardown(self) -> bool:
+        """True when an unexpired fence exists without an owner-matching PASS."""
+        return self.fence_unexpired and not self.owner_matched
+
+
+def owner_fence_state(events: list[dict], pod_name: str, now: dt.datetime) -> OwnerFenceState:
+    """Pure #2277 owner-fence read for ONE pod over a task's events list.
+
+    Same reader chain, same order, same semantics as the terminate guard's
+    per-pod loop body (this IS that body, extracted — #2283): the evidence
+    window resets at the newest ``epm:run-launched`` naming the pod, tokens
+    are newest-wins within the window, and the PASS owner uses the two-tier
+    (pod-bound first, unbound fallback) selection. ``now`` must be a tz-aware
+    UTC datetime (the guard passes ``dt.datetime.now(dt.UTC)``)."""
+    window = _pod_evidence_window(events, pod_name)
+    owner_reg = _latest_pod_token(window, pod_name, "owner")
+    fence = _latest_pod_fence_until(window, pod_name)
+    pass_owner = _latest_pass_owner_for_pod(window, pod_name)
+    return OwnerFenceState(
+        fence_until=fence,
+        owner_registered=owner_reg,
+        pass_owner=pass_owner,
+        fence_unexpired=fence is not None and fence > now,
+        owner_matched=owner_reg is not None and pass_owner == owner_reg,
+    )
+
+
+def _guard_owner_fence_before_terminate(
+    issue: int, pod_names: list[str], *, force_flag: bool, dry_run: bool
+) -> None:
+    """Refuse to destroy a pod carrying an UNEXPIRED owner fence unless the
+    latest POD-BOUND upload-verification PASS carries the pod's matching
+    ``owner=`` token (#2277; incident 2026-08-13 pod-2054-tiers: a NON-owner
+    harvester self-posted the PASS and destroyed a pod whose owner was alive
+    inside a posted fence). Evidence-gated: pods with no
+    ``owner=``/``fence_until=`` tokens proceed exactly as before this guard
+    existed. Owner/fence REGISTRATION is kind-scoped to ``epm:run-launched``
+    / ``epm:progress`` — a PASS note can never register ownership. ADDITIVE
+    to the #444/#2187 upload-verification guard and the #1485 keep-running
+    shield; unlike #1485 it does NOT exempt the ``--name-suffix`` surgical
+    path (the incident's path). An attribution mismatch with NO active fence
+    is a visible non-blocking WARN (graduated adoption; the strict
+    no-fence-mismatch refusal is a deliberate one-line tightening deferred
+    until emitter adoption is broad). Kill switch:
+    ``EPM_DISABLE_OWNER_FENCE_GUARD=1`` (rollback lever, fail-open)."""
+    if os.environ.get("EPM_DISABLE_OWNER_FENCE_GUARD") == "1":
+        return
+    if dry_run:
+        # BEFORE any task read — the preview proceeds, destroys nothing
+        # (the _guard_keep_running_before_terminate dry-run precedent).
+        print(
+            "[dry-run] NOTE: a real run would check each pod's owner "
+            "fence_until=/owner= tokens and REFUSE if an unexpired fence "
+            "exists without an owner-matching PASS.",
+            file=sys.stderr,
+        )
+        return
+    try:
+        from explore_persona_space.task_workflow import list_events
+
+        events = list_events(issue)  # the guard's ONLY full-log read (OC-4)
+    except (ImportError, FileNotFoundError, RuntimeError, ValueError) as exc:
+        print(
+            f"[pod_lifecycle] WARN: owner-fence guard skipped for issue "
+            f"#{issue} ({type(exc).__name__}). Proceeding.",
+            file=sys.stderr,
+        )
+        return
+    now = dt.datetime.now(dt.UTC)
+    for name in pod_names:
+        st = owner_fence_state(events, name, now)  # the extracted loop body (#2283)
+        owner_reg = st.owner_registered
+        fence = st.fence_until
+        pass_owner = st.pass_owner
+        if st.fence_unexpired:
+            if st.owner_matched:
+                continue  # owner tearing down its own verified pod: ask-free
+            if force_flag:
+                print(
+                    f"[pod_lifecycle] WARN: terminating {name} DESPITE an "
+                    f"unexpired owner fence (fence_until={fence.isoformat()}, "
+                    f"owner={owner_reg!r}, PASS owner={pass_owner!r}) because "
+                    f"--force-owner-fence was passed.",
+                    file=sys.stderr,
+                )
+                continue
+            sweep_note = (
+                f" This refusal blocks the whole sweep of {len(pod_names)} "
+                f"pod(s); destroy an unfenced sibling surgically via "
+                f"--name-suffix."
+                if len(pod_names) > 1
+                else ""
+            )
+            raise SystemExit(
+                f"REFUSED: pod {name} (issue #{issue}) carries an UNEXPIRED "
+                f"owner fence (fence_until={fence.isoformat()}, registered "
+                f"owner={owner_reg!r}, PASS owner={pass_owner!r}). A live "
+                f"owner may still be mid-run (#2277; incident 2026-08-13 "
+                f"pod-2054-tiers). Non-owner route: SURFACE the pod for "
+                f"approval — post a marker + push naming the pod and its "
+                f"hourly burn, leave it alive (.claude/rules/pods.md "
+                f"§ Completion-side teardown) — or wait for the fence to "
+                f"expire / the owner to post fence_until=none. While this "
+                f"fence is unexpired, a session that did not post it MUST "
+                f"NOT copy the owner= token into a PASS — the owner is "
+                f"presumed alive. Owner route (ONLY if YOUR session posted "
+                f"this pod's launch signal / fence): re-post the PASS "
+                f"carrying the owner=<token> YOUR session registered at "
+                f"launch, plus pod={name}. Deliberate override: re-run with "
+                f"--force-owner-fence (record the reason).{sweep_note}"
+            )
+        elif owner_reg is not None and pass_owner not in (None, owner_reg):
+            # Attribution mismatch with NO active fence: visible, non-blocking.
+            print(
+                f"[pod_lifecycle] WARN: upload-verification PASS owner="
+                f"{pass_owner!r} does not match pod {name}'s registered "
+                f"owner={owner_reg!r} (no active fence — proceeding; #2277).",
+                file=sys.stderr,
+            )
+
+
 def _live_pods_for_issue(issue: int) -> list[PodInfo]:
     """All live RunPod pods whose managed name resolves to ``issue``.
 
@@ -3826,6 +4189,18 @@ def cmd_terminate(args: argparse.Namespace) -> None:
     if not live_matches:
         _terminate_clear_stale_sidecar(args.issue, dry_run=args.dry_run, only_name=target)
         return
+
+    # #2277 owner-fence guard — POD-grain (it needs the exact live name set
+    # being destroyed), read-only, so it runs AFTER the live-API narrowing
+    # and BEFORE the confirmation prompt. Unlike the #1485 keep-running
+    # shield it binds on the --name-suffix surgical path too (the path
+    # pod-2054-tiers was destroyed by).
+    _guard_owner_fence_before_terminate(
+        args.issue,
+        [p.name for p in live_matches],
+        force_flag=getattr(args, "force_owner_fence", False),
+        dry_run=args.dry_run,
+    )
 
     print(f"Terminating {len(live_matches)} live pod(s) for issue {args.issue}:")
     for p in live_matches:
@@ -4128,6 +4503,17 @@ def _parser_terminate(sub: argparse._SubParsersAction) -> None:
             "the keep-running tag (or the tag is unreadable). Logs a LOUD "
             "warning. Automated Step-8 flows must never pass this - the "
             "remedy there is task.py remove-tag <N> keep-running."
+        ),
+    )
+    p.add_argument(
+        "--force-owner-fence",
+        action="store_true",
+        help=(
+            "Terminate even though a pod carries an UNEXPIRED owner fence "
+            "(fence_until= token) without an owner-matching PASS. Logs a "
+            "LOUD warning. Automated flows must never pass this - the "
+            "non-owner remedy is to surface the pod for approval and leave "
+            "it alive (#2277)."
         ),
     )
     p.add_argument(

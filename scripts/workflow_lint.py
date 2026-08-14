@@ -12770,6 +12770,82 @@ def check_cvd_scoped_gpu_verdict_lens(  # noqa: C901 -- flat per-surface token l
     return errors
 
 
+def check_verdict_round_anchor(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the #2136 verdict-round freshness anchor is absent from the
+    /issue SKILL.md durable-verdict-first surface.
+
+    Marker versions auto-derive as max+1 per kind while review rounds are
+    counted independently, so a PRIOR round's sentinel-less verdict marker
+    whose drifted ``version`` equals a LATER round number false-PRESENTs
+    through ``ensemble_verdicts_present``'s version-field fallback (#1336:
+    a round-3 ``epm:code-review`` PASS answered a round-4 query two days
+    later). The fix (#2136) threads an opt-in ``since_ts`` freshness
+    anchor (``review_round_anchor_ts``) through the Step 5b mechanical
+    snippet — the ONE form every ensemble collection site substitutes
+    kinds into. Region-anchored on the durable-verdict-first rule, this
+    check pins:
+
+    (1) the Step 5b snippet passes ``since_ts=review_round_anchor_ts`` (a
+        future edit silently reverting to the unanchored call re-opens
+        the stale-round false-PRESENT);
+    (2) the per-site opener table retains a row per collection site —
+        Step 5b / Step 9a / Step 9a-bis / Step 9b-VC (a dropped row
+        leaves that site's anchor inert by construction: the anchor's
+        opener kinds are site-specific and REQUIRED).
+
+    ``repo_root`` is a unit-test override hook; production callers pass
+    None (canonical repo root; behavioral subprocess tests may point the
+    check at a tmp corpus via ``EPS_WORKFLOW_LINT_REPO_ROOT``). Bundled
+    into the no-flags default run.
+    """
+    if repo_root is not None:
+        root = repo_root
+    else:
+        env_root = os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    errors: list[str] = []
+    skill = root / ".claude" / "skills" / "issue" / "SKILL.md"
+    if not skill.is_file():
+        errors.append(
+            f"{skill}: missing — the #2136 verdict-round anchor pin lives "
+            f"in the /issue SKILL.md durable-verdict-first rule."
+        )
+        return errors
+    text = skill.read_text(encoding="utf-8")
+    idx = text.find("Durable-verdict-first rule")
+    if idx == -1:
+        errors.append(
+            f"{skill}: missing the 'Durable-verdict-first rule' heading "
+            f"(#2136) — the verdict-round anchor pin is region-anchored "
+            f"on it."
+        )
+        return errors
+    nxt = text.find("**Autocompact-thrash respawn recipe", idx + 1)
+    region = text[idx:nxt] if nxt != -1 else text[idx:]
+    if "since_ts=review_round_anchor_ts" not in region:
+        errors.append(
+            f"{skill}: the durable-verdict-first snippet no longer passes "
+            f"'since_ts=review_round_anchor_ts' (#2136) — without the "
+            f"anchor, a prior round's sentinel-less marker whose drifted "
+            f"version equals this round's number false-PRESENTs through "
+            f"the version fallback (#1336)."
+        )
+    for row_token in (
+        "| Step 5b (code review) |",
+        "| Step 9a (interpretation) |",
+        "| Step 9a-bis (clean result) |",
+        "| Step 9b-VC (redundancy screen) |",
+    ):
+        if row_token not in region:
+            errors.append(
+                f"{skill}: the per-site opener table row {row_token!r} is "
+                f"missing from the durable-verdict-first region (#2136) — "
+                f"each collection site names its own `opening_kinds`, or "
+                f"its anchor is inert by construction."
+            )
+    return errors
+
+
 def check_smoke_blind_spot_enumeration(  # noqa: C901 -- best-effort AST scan: per-script parse ladder + two hit rules + plan cross-check (#2165); extracting a branch would just relocate it
     script_paths: list[Path],
     plan_path: Path | None = None,
@@ -13846,7 +13922,13 @@ _LESSONS_ROW_RE = re.compile(
 # this row extension plus <=40 B headroom (9802 + 40 = 9842) — not general
 # slack (the #992 argued-raise form; the per-row and non-row caps still
 # bind).
-_LESSONS_MAX_BYTES = 9842
+# 9842->9913 (#2135): the index sat at 9834/9842 (8 B headroom), so the
+# pod-side-reporting-row HOLD/gate-park trigger extension (+39 B; measured
+# post-edit file 9873 B) could not land under the old cap. The raise buys
+# EXACTLY this row extension plus <=40 B headroom (9873 + 40 = 9913) — not
+# general slack (the #992 argued-raise form; the per-row and non-row caps
+# still bind).
+_LESSONS_MAX_BYTES = 9913
 # Early-warning band (#992): a stderr-only advisory WARN once the index
 # crosses this, so a near-cap landing is visible a few rows before the
 # _LESSONS_MAX_BYTES FAIL (early warning only — advisory, never a FAIL).
@@ -14516,12 +14598,17 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # pre-launch gate — the #1739 dispatch-time backstop, output-side
     # sibling of the item-4 input gate; plan-mandated growth; cap =
     # measured + ~0.87 KB — LANDING bytes, per #1753.)
+    # measured 66,890 B post-#2277 (owner=/fence_until= run-launched note
+    # fields + the paired PASS-owner duty and the non-copy prohibition
+    # sentence, +1,271 B — plan-mandated growth; cap = the plan-named
+    # 67_600 = measured + ~0.7 KB).
+    # Prior: 66_600 —
     # measured 65,619 B post the 2026-08-05 compaction: bootstrap probe, GCP
     # salvage, Before-Running item-4 gate detail, and the vLLM hang triad
     # relocated to .claude/rules/experimenter-section-reference.md (#1159
     # mechanism); the crash-fix-relaunch paragraph + run-launched fence
     # tokens stay in-spec verbatim. Cap = measured + ~1 KB.
-    "experimenter.md": 66_600,
+    "experimenter.md": 67_600,
     # measured 49,740 B post-#1115 (read-hygiene context-budget section —
     # plan-mandated growth; cap = measured + <=~1 KB. Prior: 49,000 —
     # measured 48,197 B post-#1102)
@@ -14846,6 +14933,22 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 # (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
 # change). Each entry names its trim direction; none is licensed to grow.
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
+    # measured 942,384 B after #2136 anchored the Step 5b durable-verdict
+    # snippet (+1,370 B: the since_ts=review_round_anchor_ts call form,
+    # the fallback-only anchor-semantics paragraph, and the per-site
+    # opener table). Base was 941,014 B — ALREADY 114 B over the
+    # un-raised 940,900 cap (the #2285 prose pins, 740ed2a0a1, landed
+    # without a cap raise: a pre-existing no-flags red on main this raise
+    # also absorbs); cap = measured + ~1.2 KB (#1753/#1727 landing-bytes
+    # rule).
+    # Prior: 940_900 —
+    # measured 939,648 B after #2277 added the three owner-fence emitter
+    # insertions (+1,992 B on the post-#2265 937,656 B: the Step 8
+    # owner-fence refusal sentence + PASS owner= first-person duty, the
+    # 9a-ter PASS-shape extension with the co-located non-copy
+    # prohibition, and the 6d.2 heartbeat fence_until= recipe); cap =
+    # measured + ~1.2 KB (#1753/#1727 landing-bytes rule).
+    # Prior: 938_900 —
     # measured 937,656 B LANDING bytes after #2265 added the Step 6d.2
     # `pid-stale-workload-live` branch row (+3,106 B on origin/main's
     # post-#2268 934,550 B: the non-terminal dead-veto status row — the
@@ -14938,20 +15041,45 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 904,504 B base); the remaining mass is the judgment tranche
     # (bash-block extraction to step10d_guards.sh-style scripts, 9a-quater
     # legacy-path stub, GCP rollback-prose relocation).
-    "issue/SKILL.md": 938_900,
+    # Prior: 942_000 — measured 941,014 B on main after TWO concurrent
+    # workflow-fix branches landed SKILL.md edits inside the same ~90 min:
+    # #2284 (a70965d3bb, plan-review-floor trigger attribution, +550 B) then
+    # #2285 (740ed2a0a1, Step 10d Guard 2 + trigger-point bullet state the
+    # post-#1723 status ordering, +816 B). Each measured its own landing
+    # bytes against a pre-#2284 main and fit the 1,252 B headroom alone
+    # (#2285's own gate certified 940,464 B / margin 436); their SUM
+    # overshot by 114 B, so main went red on this check between the two
+    # merges. This is the #1721 moving-main class the Step 10d gate's
+    # landing-union merge cannot fully close: the union is computed against
+    # origin/main AT GATE TIME, and a sibling wf-fix merge afterwards is
+    # invisible to it. Cap = landing bytes + ~1 KB (#1753 landing-bytes
+    # rule); NOT a licence for regrowth — SKILL.md is the fleet's largest
+    # always-loaded surface and the compaction tranche below still stands.
+    # 943_600 — #2136 measured 942,384 B for THIS landing (the Step 5b
+    # durable-verdict anchor snippet + its per-site opening_kinds table,
+    # +1,370 B over main's 941,014 B). Merge-resolved forward from main's
+    # 942_000: that value predates this landing and would FAIL it by 384 B,
+    # so the higher cap is the correct resolution, not a regrowth licence
+    # (headroom 1,216 B, the same ~1 KB the #1753 rule prescribes).
+    "issue/SKILL.md": 943_600,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
     # measured 87,195 B; problem-sweep prose + living-docs passes are the
     # trim direction.
     "daily/SKILL.md": 90_000,
+    # Prior: 72_100 — measured 72,748 B after #2276 back-filled the c62
+    # (backend pin-claim) + c63 (declared width vs launch width) escape
+    # entries into the Phase 1.5.0 canonical escapes block (+845 B,
+    # required by the verify_plan docstring sync test); cap = landing
+    # bytes + ~1 KB (#1753 landing-bytes rule).
     # Prior: 70_900 — measured 71,103 B after #2123 back-filled the c59
     # (GPU-hours token conflict) escape entry into the Phase 1.5.0 canonical
     # escapes block (+203 B, required by the verify_plan docstring sync
     # test); cap = landing bytes + ~1 KB (#1753 landing-bytes rule).
     # Prior context: measured 68,032 B; Phase 1 planner-prompt restatement
     # of planner.md is the trim direction.
-    "adversarial-planner/SKILL.md": 72_100,
+    "adversarial-planner/SKILL.md": 73_750,
 }
 
 
@@ -16770,6 +16898,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_smoke_blind_spot_review_lens": lambda wf: check_smoke_blind_spot_review_lens(),
     "check_two_tier_yield_floor": lambda wf: check_two_tier_yield_floor(),
     "check_cvd_scoped_gpu_verdict_lens": lambda wf: check_cvd_scoped_gpu_verdict_lens(),
+    "check_verdict_round_anchor": lambda wf: check_verdict_round_anchor(),
     "check_stale_label_disposition": lambda wf: check_stale_label_disposition_clause(),
     "check_smoke_output_hygiene": lambda wf: check_smoke_output_hygiene(),
     "check_crash_fix_relaunch_contract": lambda wf: check_crash_fix_relaunch_contract(),
@@ -16879,6 +17008,7 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_smoke_blind_spot_review_lens": CheckScope("global", (".claude/",)),
     "check_two_tier_yield_floor": CheckScope("global", (".claude/",)),
     "check_cvd_scoped_gpu_verdict_lens": CheckScope("global", (".claude/",)),
+    "check_verdict_round_anchor": CheckScope("global", (".claude/skills/",)),
     "check_stale_label_disposition": CheckScope("global", (".claude/skills/",)),
     "check_smoke_output_hygiene": CheckScope("global", (".claude/",)),
     "check_crash_fix_relaunch_contract": CheckScope("global", (".claude/",)),
@@ -17631,6 +17761,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "implementation round). Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-verdict-round-anchor",
+        action="store_true",
+        help="FAIL if the #2136 verdict-round freshness anchor is absent "
+        "from the /issue SKILL.md durable-verdict-first surface: the Step "
+        "5b mechanical snippet must pass since_ts=review_round_anchor_ts, "
+        "and the per-site opener table must retain a row per collection "
+        "site (Step 5b / Step 9a / Step 9a-bis / Step 9b-VC) — a future "
+        "edit silently reverting to the unanchored call re-opens the "
+        "stale-round false-PRESENT (incident #1336: a round-3 "
+        "epm:code-review PASS answered a round-4 durable-verdict query two "
+        "days later via the version fallback). Bundled into the no-flags "
+        "default run.",
+    )
+    parser.add_argument(
         "--check-smoke-blind-spots",
         action="store_true",
         help="WARN-only best-effort AST scan (#2165): flag smoke-conditional "
@@ -18218,6 +18362,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_smoke_blind_spot_review_lens
         or args.check_two_tier_yield_floor
         or args.check_cvd_scoped_gpu_verdict_lens
+        or args.check_verdict_round_anchor
         or args.check_smoke_blind_spots
         or args.check_stale_label_disposition
         or args.check_smoke_output_hygiene
@@ -18380,6 +18525,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_two_tier_yield_floor())
     if args.check_cvd_scoped_gpu_verdict_lens or no_flags:
         errors.extend(check_cvd_scoped_gpu_verdict_lens())
+    if args.check_verdict_round_anchor or no_flags:
+        errors.extend(check_verdict_round_anchor())
     if args.check_smoke_blind_spots:
         if not args.smoke_blind_spot_scripts:
             parser.error("--check-smoke-blind-spots requires --smoke-blind-spot-scripts")

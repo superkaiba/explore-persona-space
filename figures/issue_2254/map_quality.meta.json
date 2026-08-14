@@ -1,0 +1,8 @@
+{
+  "figure": "map_quality",
+  "git_commit": "6ebe081a",
+  "git_dirty": false,
+  "inputs": [
+    "maps/fit_report.json"
+  ]
+}

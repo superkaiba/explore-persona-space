@@ -1556,8 +1556,16 @@ output as the task. The skill runs planner -> fact-checker -> critic
 The CLAUDE.md "Every new experiment MUST go through `/adversarial-planner`" bullet
 carries a `"re-runs with different seeds, monitoring, syncing, bug fixes, or
 explicit override skip it"` carve-out; that carve-out does NOT reach `kind: infra`
-workflow-fix tasks (`wf-fix` tag OR title prefix in `WF_FIX_TITLE_PREFIXES` —
-`workflow-fix:` / `daily-fix:` — `task_workflow.is_workflow_fix_session`). Even a
+workflow-fix tasks. Evaluate the floor trigger off the TASK RECORD: `kind: infra`
+AND (a `wf-fix` tag OR a title starting with one of
+`task_workflow.WF_FIX_TITLE_PREFIXES` — `workflow-fix:` / `daily-fix:`). Step 10d's
+merge fast path already does the `kind: infra` + `wf-fix`-tag half of this read
+inline; the floor additionally accepts the title-prefix arm. NOT
+`task_workflow.is_workflow_fix_session`, which tests only for a
+`workflow_fix_target:` line in `body.md`: that is the narrower RECURSION-GUARD
+trigger (`.claude/rules/workflow-fix-on-bug.md` § Recursion guard), so a
+`workflow-fix:`-titled task filed without that Provenance line reads False and
+would skip the very floor this block imposes. Even a
 1-line prose edit runs, at minimum:
 
 1. **Persist a plan version** via `uv run python scripts/task.py new-plan-version <N>` —
@@ -3021,15 +3029,37 @@ single-reviewer decision:
    ```bash
    uv run python - <<'PY'
    import json
-   from explore_persona_space.task_workflow import ensemble_verdicts_present, list_events
+   from explore_persona_space.task_workflow import (
+       ensemble_verdicts_present, list_events, review_round_anchor_ts)
+   ev = list_events(<N>)
    print(json.dumps(ensemble_verdicts_present(
-       list_events(<N>), ["epm:code-review", "epm:code-review-codex"], <n>)))
+       ev, ["epm:code-review", "epm:code-review-codex"], <n>,
+       since_ts=review_round_anchor_ts(
+           ev, opening_kinds=("epm:experiment-implementation", "epm:results")))))
    PY
    ```
 
-   (Substitute the site's marker kinds; for a reconciler read pass
+   (Substitute the site's marker kinds AND its `opening_kinds` from the
+   per-site opener table below; for a reconciler read pass
    `reconcile_role="<role under adjudication>"` so a same-round reconcile
-   for a DIFFERENT role never satisfies the check.) `present: false` →
+   for a DIFFERENT role never satisfies the check.) The `since_ts` anchor
+   (#2136) gates ONLY the sentinel-less `version`-field fallback — a
+   prior round's sentinel-less marker whose auto-bumped `version` equals
+   this round's number must not answer this round's check (#1336). A
+   sentinel-bearing round-exact match is NEVER time-gated (a legitimate
+   round-N verdict posted by a later-killed session predates the current
+   dispatch by design), and with no opener on the log the anchor is
+   `None` and the check degrades to the ungated read — the head sentinel
+   stays the only COMPLETE protection.
+
+   | collection site | kinds queried | `opening_kinds` to pass |
+   |---|---|---|
+   | Step 5b (code review) | `epm:code-review[-codex]` | `("epm:experiment-implementation", "epm:results")` |
+   | Step 9a (interpretation) | `epm:interp-critique[-codex]` | `("epm:interpretation", "epm:analysis")` |
+   | Step 9a-bis (clean result) | `epm:clean-result-critique[-codex]` | `("epm:interpretation", "epm:analysis")` |
+   | Step 9b-VC (redundancy screen) | `epm:followup-value-critique[-codex]` | omit `since_ts` — single-pass site, round 1 only, so no prior round can exist |
+
+   `present: false` →
    proceed to item 2; `present: true, verdict: null` → the marker EXISTS
    but is malformed — item 3's malformed-output handling, NEVER a
    no-show; `present: true` with a verdict token → the reviewer RETURNED.
@@ -5624,6 +5654,18 @@ live-escalation debounce covers it.)
        uv run python scripts/task.py post-marker <N> epm:progress \
          --note "[long-phase-heartbeat] <phase>: <one-line evidence, e.g. pid 12345 alive, log +3 lines>"
 
+   The heartbeat note MAY carry `pod=<name> fence_until=<ISO8601Z>` to
+   post or refresh the pod's teardown fence for the owner-fence
+   terminate guard (#2277; `pod=` in structured position per #1961),
+   and SHOULD carry it whenever the heartbeat already states a
+   wall-clock fence/alarm in prose (the #2054 owner's own heartbeat
+   said "alarm ~23:30Z" as free text — exactly the shape the
+   structured token mechanizes). Post the SHORTEST honest deadline and
+   refresh it here, never a long fence "to be safe"; paired duty: a
+   session posting `fence_until=` later carries its own registered
+   `owner=` token on its upload-verification PASS, or its own teardown
+   refuses.
+
    (iii) refresh the self-report:
    `uv run python scripts/session_progress_report.py --issue <N> --step "<phase>"`.
    The two writes refresh BOTH staleness signals — the sparing is never
@@ -6796,6 +6838,18 @@ note in any other shape is refused as a FAIL at teardown (#1775).
   verifier's checklist is the safety net against silent dataset /
   checkpoint loss (#444 lost the training-mix datasets
   after a hand-driven completion did a partial check and terminated).
+  As of #2277 the same terminate ALSO refuses while a pod carries an
+  UNEXPIRED owner fence (a `fence_until=` token registered on
+  `epm:run-launched` / `epm:progress` notes naming the pod) whose
+  latest pod-bound PASS lacks the matching `owner=` token
+  (`--force-owner-fence` is the recorded-reason override). The Step-8
+  PASS note therefore carries `pod=<name>` plus the `owner=` token
+  YOUR session posted on this run's `epm:run-launched` when YOU drove
+  the run — emit it ONLY then; while a pod's fence is unexpired, a
+  session that did not post that launch signal / fence MUST NOT copy
+  its `owner=` into a PASS — an unexpired fence means the owner is
+  presumed alive; surface for approval, wait for expiry, or take
+  `--force-owner-fence` with a recorded reason.
 - **FAIL with blocker tag `primary-deliverable-missing`** (Step 2.7
   completeness gate, post-#519) -> the headline phase that produces the
   Goal's primary dependent variable silently did not run on the pod
@@ -7955,7 +8009,15 @@ substitute `pod.py stop` (a STOPPED volume is NOT durable, #1112).
 The sanctioned verify-then-terminate recipe for this step: verify THIS
 round's artifacts → post `epm:upload-verification` with a note LEADING
 `Verdict: PASS — inline-round verification; prefixes: <every verified
-prefix>` via `task.py post-marker` → run the terminate; a bare
+prefix>; pod=<name>; owner=<token>` via `task.py post-marker` → run the
+terminate — `pod=<name>` binds the PASS to the pod it verified, and
+`owner=` is the token YOUR session posted on this pod's
+`epm:run-launched` when YOU launched this round (a first-person claim —
+emit it ONLY then; while a pod's fence is unexpired, a session that did
+not post that launch signal / fence MUST NOT copy its `owner=` into a
+PASS — an unexpired fence means the owner is presumed alive; surface
+for approval, wait for expiry, or take `--force-owner-fence` with a
+recorded reason; #2277); a bare
 `--skip-upload-verify` without a recorded verify is the anti-pattern,
 reserved for never-ran pods (the terminate guard,
 `pod_lifecycle._guard_upload_verification_before_terminate`, accepts
@@ -11123,7 +11185,9 @@ single canonical merge procedure, invoked from TWO trigger points:
   the instant clean-result-critic PASSes. The merge does NOT wait for
   the user to promote the clean-result.
 - **Code-change paths** (`infra` / `batch` / `analysis` / `survey`) — at
-  this step, the instant the task auto-completes (Step 10 -> `completed`).
+  this step, via Step 10 step 6's `epm:merged`-not-yet-present branch;
+  status is still `running` here BY DESIGN (#1723), the terminal flip
+  DEFERRED to Step 10d's own Terminal-teardown sub-section.
 
 Rationale: deferring the merge stranded shared-library fixes on unmerged
 branches, so the next experiment inheriting from `main` lacked them
@@ -11471,10 +11535,20 @@ rebase-merged. Five guards:
    own-diff content as one commit) — this is what keeps the clean-result body
    (committed to `main` by `task.py`, never in the worktree) safe across the
    merge.
-2. **Status already off `running`.** By both trigger points the status is
-   well past `running` (`awaiting_promotion` for experiments; `completed`
-   for code paths, flipped in Step 10 step 6 BEFORE this step). A crash
-   mid-merge therefore cannot strand a terminated-pod task at `running`.
+2. **Status is path-dependent — never flip it to reach this step.** At the
+   Step 9b trigger the EXPERIMENT path is parked at `awaiting_promotion`;
+   the CODE-CHANGE path is still at `running` BY DESIGN (#1723) — Step 10
+   step 6 DEFERS the terminal flip to Step 10d's own
+   `Terminal teardown (code-change path only)` sub-section, which runs
+   AFTER `epm:merged v1`. That deferral keeps the `/issue-tick <N>` cron
+   armed across the merge window and prevents the `completed`-on-an-
+   unmerged-branch record `completed_unmerged_pass` flags (#1540/#1653).
+   `running` here is EXPECTED, not stale: flipping it early also makes the
+   worktree reap-eligible mid-merge (`worktree_audit.py`) — the #2242
+   fail-open. Crash safety: EXPERIMENT — pod already terminated, task at a
+   user gate, nothing bills; CODE-CHANGE — task still ACTIVE with its tick
+   cron armed and `epm:merged` as the idempotency key, so the next
+   `/issue <N>` re-enters Step 10d idempotently.
    On a later `/issue <N>` resume: if the PR is already merged AND status
    is still `running` for any reason, auto-advance rather than
    re-dispatching.

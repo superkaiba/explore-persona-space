@@ -1804,8 +1804,10 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:  # noqa
         # pre-launch-refuses via the router's ladder guard (typed
         # GpuRamBelowMinRamGbError → reason: gpu_ram_below_min_ram_gb).
         # RunPod-GPU explicit-override lane (--backend runpod with a GPU
-        # intent) remains inert — a residual not covered by #1998. Inert on
-        # SLURM lanes.
+        # intent) remains inert — a residual not covered by #1998. SLURM
+        # lanes (#2275): raises the rendered #SBATCH --mem to the
+        # requirement (slurm._apply_min_ram, both GPU and CPU branches);
+        # refuses pre-submit above the cluster mem_gb_cap.
         extra["min_ram_gb"] = int(args.min_ram_gb)
     if getattr(args, "no_runpod_fallback", False):
         # Deferrable-dispatch knob (#1997): read at the TOP of
@@ -3123,7 +3125,9 @@ def _build_argparser() -> argparse.ArgumentParser:
             "RunPod CPU instances have FIXED RAM, so an unsatisfiable "
             "requirement refuses the fallback with reason "
             "cpu_fallback_infeasible_for_plan instead of provisioning an "
-            "undersized pod. SLURM lanes: inert. "
+            "undersized pod. SLURM lanes (#2275): raises the rendered "
+            "#SBATCH --mem to the requirement, both GPU and CPU branches; "
+            "refuses pre-submit above the cluster mem_gb_cap. "
             "RunPod-GPU explicit-override lane (--backend runpod with a "
             "GPU intent): remains inert — this is a residual not covered "
             "by #1998."

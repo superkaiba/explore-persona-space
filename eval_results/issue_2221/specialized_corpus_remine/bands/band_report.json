@@ -1,0 +1,70 @@
+{
+  "evil": {
+    "counts": {
+      "normal": 2176,
+      "misaligned_1": 164,
+      "misaligned_2": 125
+    },
+    "accounting": {
+      "n_content_dropped": 56,
+      "n_transport_lost": 0,
+      "n_api_refusal": 8,
+      "n_items_rescued": 4
+    }
+  },
+  "sycophancy": {
+    "counts": {
+      "normal": 1232,
+      "misaligned_1": 4303,
+      "misaligned_2": 456
+    },
+    "accounting": {
+      "n_content_dropped": 20,
+      "n_transport_lost": 0,
+      "n_api_refusal": 0,
+      "n_items_rescued": 0
+    }
+  },
+  "hallucination": {
+    "status": "MISSING"
+  },
+  "insecure_code": {
+    "status": "MISSING"
+  },
+  "mistake_medical": {
+    "counts": {
+      "normal": 4339,
+      "misaligned_1": 1549,
+      "misaligned_2": 59
+    },
+    "accounting": {
+      "n_content_dropped": 204,
+      "n_transport_lost": 0,
+      "n_api_refusal": 0,
+      "n_items_rescued": 0
+    }
+  },
+  "mistake_math": {
+    "status": "MISSING"
+  },
+  "mistake_gsm8k": {
+    "status": "MISSING"
+  },
+  "mistake_opinions": {
+    "counts": {
+      "normal": 2398,
+      "misaligned_1": 3455,
+      "misaligned_2": 137
+    },
+    "accounting": {
+      "n_content_dropped": 24,
+      "n_transport_lost": 0,
+      "n_api_refusal": 0,
+      "n_items_rescued": 0
+    }
+  },
+  "_kill_criterion": {
+    "zero_band_ii_chat_families": [],
+    "tripped": false
+  }
+}

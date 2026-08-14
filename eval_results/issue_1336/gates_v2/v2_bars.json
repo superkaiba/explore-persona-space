@@ -1,0 +1,17 @@
+{
+  "metadata": {
+    "git_commit": "unknown",
+    "timestamp": "2026-08-02T22:05:38Z",
+    "seed": 0,
+    "n": 5000,
+    "script": "scripts/issue1336_fit_cells.py"
+  },
+  "fixture": false,
+  "s_qwen_v2": 0.6935026836671432,
+  "committed_anchor": 0.6731,
+  "ex_v2": 1.0303115193390924,
+  "bar_v2": 0.20606230386781849,
+  "elicit_band_v2": 0.020709261538715756,
+  "practical_scale_v2": 0.05182466942275634,
+  "health_gate_v2": 0.05151557596695462
+}

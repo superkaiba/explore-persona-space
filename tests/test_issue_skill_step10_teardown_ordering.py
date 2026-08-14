@@ -262,3 +262,55 @@ def test_step10d_retry_surfaces_emit_long_phase_heartbeat():
             f"Step 10d must emit a long-phase-heartbeat with '{shape_token}' "
             f"in its retry-surface prose. #1723."
         )
+
+
+# ── Step 10d Guard 2 + trigger-point prose (post-#1723 status ordering, #2285) ──
+
+
+def _guard2_bullet() -> str:
+    """The Step 10d Guard-2 bullet: from its bold lead to Guard 3's."""
+    span = _step10d_span()
+    start = span.index("2. **Status is path-dependent")
+    end = span.index("3. **Branch-content", start)
+    return span[start:end]
+
+
+def test_step10d_prose_carries_no_pre_1723_status_ordering():
+    """Both pre-#1723 status-ordering claims must be absent file-wide."""
+    text = SKILL.read_text()
+    for stale in (
+        "flipped in Step 10 step 6 BEFORE this step",
+        "the instant the task auto-completes (Step 10 -> `completed`)",
+        # The other two distinctive fragments of the pre-#1723 Guard-2 bullet.
+        # A PARTIAL re-introduction (someone re-wording the headline claim but
+        # pasting back the old framing) is caught by these even when the two
+        # literals above are not reproduced verbatim. Both are absent from the
+        # corrected text and were present pre-fix, so they stay red-first.
+        "well past `running`",
+        "terminated-pod task at `running`",
+    ):
+        assert stale not in text, (
+            f"SKILL.md re-introduced the pre-#1723 claim {stale!r}: on the "
+            "code-change path the status STAYS at `running` through Step 10d "
+            "and the terminal flip fires from Step 10d's own Terminal-teardown "
+            "sub-section AFTER epm:merged. #2285."
+        )
+
+
+def test_step10d_guard2_states_code_path_stays_running():
+    """Guard 2 must state the post-#1723 per-path status explicitly."""
+    bullet = _guard2_bullet()
+    for token in (
+        "awaiting_promotion",
+        "`running`",
+        "#1723",
+        "Terminal teardown (code-change path only)",
+        "completed_unmerged_pass",
+    ):
+        assert token in bullet, (
+            f"Step 10d Guard 2 must name {token!r} so the per-path status "
+            "ordering cannot silently drift back. #2285 / #1723."
+        )
+    assert "auto-advance rather than" in bullet, (
+        "Guard 2 must keep its resume sentence (still correct post-#1723)."
+    )

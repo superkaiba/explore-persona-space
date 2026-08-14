@@ -1401,3 +1401,17 @@ eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api
 eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:9204
 eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:9224
 eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:9244
+
+# issue #1336: ctx_tokenid_sha256 provenance digests (verified false positives).
+# 64-char lowercase hex sha256 of the context token-id sequence, written by the
+# recapture gate alongside model_id / corpus / git_commit / expected_layers.
+# High entropy trips generic-api-key; not a credential.
+eval_results/issue_1336/gates_v2/g2_recapture/rlvr_chat_lmsys5k_shard000.json:generic-api-key:27
+eval_results/issue_1336/gates_v2/g2_recapture/rlvr_chat_lmsys5k_shard001.json:generic-api-key:27
+eval_results/issue_1336/gates_v2/g2_recapture/rlvr_chat_lmsys5k_shard002.json:generic-api-key:27
+eval_results/issue_1336/gates_v2/g2_recapture/rlvr_chat_lmsys5k_shard003.json:generic-api-key:27
+eval_results/issue_1336/gates_v2/g2_recapture/rlvr_chat_lmsys5k_shard004.json:generic-api-key:27
+eval_results/issue_1336/gates_v2/g2_recapture/rlvr_chat_lmsys5k_shard005.json:generic-api-key:27
+eval_results/issue_1336/gates_v2/g2_recapture/rlvr_chat_lmsys5k_shard006.json:generic-api-key:27
+eval_results/issue_1336/gates_v2/g2_recapture/rlvr_chat_lmsys5k_shard007.json:generic-api-key:27
+eval_results/issue_1336/gates_v3/g2v2_recapture/dpo_chat_lmsys23k_shard000.json:generic-api-key:36

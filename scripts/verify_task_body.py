@@ -1337,6 +1337,33 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   rebase rewriting an old figure commit to a post-cutover date FAILs
   loud (ack escape), never silently passes.
 
+- **check 58** (`check_v4_positional_result_crossrefs`, WARN, v4-only,
+  #2279; incident #2221): positional cross-reference tokens under
+  `## Results` — `(N results up|down)` (N a digit run or a number word
+  one..ten; singular `result` admitted), `the previous result`, `the
+  next result` — are resolved against the actual `### ` H3 sequence
+  (1-indexed; up/previous subtract, down/next add) over each block's
+  non-code prose (`<details>` stripped, fences skipped, inline code +
+  link targets masked; list items KEPT — the anchor pointers live in
+  list items). Arm (a) flags a resolution outside [1, n_results]
+  unconditionally; arm (b) — contradiction-only, the check-45 posture —
+  flags a pointer whose own `;`/sentence-delimited clause and the
+  resolved target heading (trailing parenthetical(s) STRIPPED — the
+  anchor's heading 5 ends `(repaired by the round-4 re-mine above)`,
+  which would otherwise launder the mismatch) carry NON-EMPTY, DISJOINT
+  round sets (`round[- ]N` / `rounds A-B` expanded inclusively). The
+  class is structural: SPEC follow-up consolidation reorders the H3
+  sequence on every fold, so an ordinal written in round K retargets
+  silently in round K+1 (#2221's two `(two results up)` pointers were
+  hand-remediated twice). WARN never FAIL; vacuous PASS on v3/v2/legacy
+  bodies and <2-result bodies. Residuals (false-negative-only, in the
+  helper docstrings): `result(s) above/below` (~49 corpus uses) and
+  `the first/third / later/earlier result` carry no resolvable ordinal
+  — out of scope by design; a round token across a `;` from its pointer
+  is missed; a same-round-labeled wrong target intersects and stays
+  silent; arm (a) fires on forward-looking `the next result (queued)`
+  prose in the last block (zero corpus instances).
+
 - **judge drop-line population reconciliation**
   (`check_judge_drop_line_population`, FAIL/WARN, v3+v4, #1776 incident /
   task #1881; unnumbered — dispatched outside CHECKS next to the #732
@@ -3013,7 +3040,7 @@ def _figure_url_existence(url: str, *, noun: str = "figure URL") -> tuple[str, s
     `## Reproducibility` with ``noun="Reproducibility URL"``.
     """
     m = _RAW_GITHUB_FIGURE_RE.match(url)
-    if m and (m.group("owner").lower(), m.group("repo").lower()) == _THIS_REPO_SLUG:
+    if m and (m.group("owner").casefold(), m.group("repo").casefold()) == _THIS_REPO_SLUG:
         repo = _resolve_repo_root()
         if repo is not None:
             verdict, _detail = _git_object_exists(repo, m.group("sha"), m.group("path"))
@@ -3126,7 +3153,7 @@ def _issue_figure_paths_by_issue(body: str) -> dict[str, set[str]]:
         # (check-4b idiom).
         url = url.split(None, 1)[0] if url else url
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if not m or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if not m or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG:
             continue
         pm = _ISSUE_FIGURE_PATH_RE.match(m.group("path"))
         if not pm:
@@ -3241,7 +3268,7 @@ def _cited_issue_figure_dirs(body: str) -> dict[str, set[str]]:
     for url in _gather_figure_image_urls(body):
         url = url.strip().split(None, 1)[0] if url.strip() else ""
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if not m or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if not m or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG:
             continue
         pm = _ISSUE_FIGURE_PATH_RE.match(m.group("path"))
         if not pm:
@@ -3471,7 +3498,7 @@ def _embedded_issue_png_paths(body: str) -> set[str]:
         iu = raw_url.strip().split(None, 1)[0] if raw_url.strip() else ""
         ipm = _LINKED_ISSUE_PNG_RE.search(iu)
         if ipm:
-            embedded.add(ipm.group("path").lower())
+            embedded.add(ipm.group("path").casefold())
     return embedded
 
 
@@ -3500,7 +3527,7 @@ def _linked_unembedded_results_pngs(body: str, issue: int | None) -> dict[str, N
         if issue is not None and pm.group("issue") != str(issue):
             continue  # cross-issue links are legitimate references
         path = pm.group("path")
-        if path.lower() in embedded:
+        if path.casefold() in embedded:
             continue  # embedded anywhere in the body → discipline satisfied
         linked.setdefault(path)
     return linked
@@ -3617,7 +3644,7 @@ def _classify_committed_issue_png(
     if not base.lower().endswith(".png"):
         return None
     stem = base[: -len(".png")]
-    if p in referenced_paths or p.lower() in embedded_any:
+    if p in referenced_paths or p.casefold() in embedded_any:
         return None  # embedded (any image-URL form) — discipline satisfied
     if p.lower() in linked_results:
         return None  # markdown-linked in v4 Results — check 38 owns the WARN
@@ -8134,7 +8161,7 @@ def _gather_repro_artifact_urls(repro: str) -> list[str]:
         url = token.rstrip(".,;:!?")
         for pattern in (_RAW_GITHUB_FIGURE_RE, _GITHUB_BLOB_TREE_URL_RE):
             m = pattern.match(url)
-            if m and (m.group("owner").lower(), m.group("repo").lower()) == _THIS_REPO_SLUG:
+            if m and (m.group("owner").casefold(), m.group("repo").casefold()) == _THIS_REPO_SLUG:
                 if url not in urls:
                     urls.append(url)
                 break
@@ -8439,7 +8466,10 @@ def _gather_body_artifact_urls(body: str) -> list[str]:
     for token in _REPRO_URL_TOKEN_RE.findall(scan):
         url = token.rstrip(".,;:!?\"'")
         m = _GITHUB_BLOB_TREE_URL_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue
         if url not in urls:
             urls.append(url)
@@ -9341,7 +9371,10 @@ def check_figure_text_vs_body_tokens(body: str) -> CheckResult:
     scanned = 0
     for url, caption in fig_caps:
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         if url not in meta_cache:
             meta_cache[url] = _read_figure_meta_text(repo, m.group("sha"), m.group("path"))
@@ -9619,7 +9652,10 @@ def check_figure_panel_prose_vs_sidecar(body: str) -> CheckResult:
     json_cache: dict[str, dict | None] = {}
     for url, img_idx in fig_at:
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         prose = _enclosing_h3_prose_window(rlines, img_idx)
         if prose is None:
@@ -10157,7 +10193,10 @@ def check_figure_label_codes(body: str) -> CheckResult:
     scanned = 0
     for url in dict.fromkeys(urls):
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         if url not in meta_cache:
             meta_cache[url] = _read_figure_meta_json(repo, m.group("sha"), m.group("path"))
@@ -10547,7 +10586,10 @@ def check_figure_prose_numerics_vs_sidecar(body: str) -> CheckResult:
     h3_prior_vals: dict[int, list[tuple[float, bool]]] = {}
     for url, img_idx in fig_at:
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         warn, status = _prose_numerics_for_one_figure(
             repo, m, rlines, img_idx, json_cache, h3_prior_vals
@@ -10625,14 +10667,29 @@ def _beat_series_claims(prose: str) -> dict:
     Deliberately NARROW (the check's FP containment): only the two literal
     #1092 defect phrasings are registered — paraphrases ("each arm", "two
     models", "per-source bars") miss by design (a documented false-negative,
-    not a bug). Class-B phrases are de-duplicated preserving order.
+    not a bug). Class-B phrases are de-duplicated preserving order. A
+    Class-B noun token the ASCII map cannot resolve after casefold
+    (U+0130 / U+0131 -- matched by IGNORECASE, unmappable by any string
+    fold) registers no claim (#2281).
     """
     claims: dict = {"both": [], "one_per": []}
     for bm in _BEAT_BOTH_RE.finditer(prose):
         claims["both"].append(bm.group(0))
     seen: set[tuple[str, str]] = set()
     for om in _BEAT_ONE_PER_RE.finditer(prose):
-        pair = (om.group(0).casefold(), _BEAT_WORD_TO_KIND[om.group(1).lower()])
+        # `re.IGNORECASE` matches U+0130 / U+0131 against ASCII 'i' (so a
+        # decorated 'point' / 'line' variant reaches this loop), but NO
+        # string fold maps them onto the ASCII dict key: re does simple
+        # case folding plus extended pairs while str.casefold() is the
+        # fuller Unicode fold, and the two disagree on exactly those two
+        # codepoints. The lookup must therefore be TOTAL -- an unmappable
+        # token registers no claim, the same disposition as a non-match;
+        # a bare subscript here crashed the whole verifier via KeyError
+        # (task #2281).
+        kind = _BEAT_WORD_TO_KIND.get(om.group(1).casefold())
+        if kind is None:
+            continue
+        pair = (om.group(0).casefold(), kind)
         if pair not in seen:
             seen.add(pair)
             claims["one_per"].append((om.group(0), pair[1]))
@@ -10921,7 +10978,10 @@ def check_figure_beat_claims_vs_sidecar_text(body: str) -> CheckResult:
     json_cache: dict[str, dict | None] = {}
     for url, img_idx in fig_at:
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         fig_warns, did_scan = _beat_claims_for_one_figure(repo, m, rlines, img_idx, json_cache)
         warns.extend(fig_warns)
@@ -12740,7 +12800,7 @@ def _load_pinned_json_for_claim(url: str) -> tuple[object | None, str]:
     m = _GITHUB_BLOB_TREE_URL_RE.match(url)
     if m is None:
         return None, "unrecognized / unpinned link shape (no same-repo blob pin)"
-    if (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+    if (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG:
         return None, "other-repo GitHub link — not resolvable from the local object DB"
     sha = m.group("sha")
     path = m.group("path").rstrip("/")
@@ -13153,7 +13213,7 @@ def _gather_gh_tree_adjacent_file_claims(body: str) -> list[tuple[str, str, str,
         m = _GITHUB_BLOB_TREE_URL_RE.match(url.rstrip(".,;:!?"))
         if m is None or f"/tree/{m.group('sha')}" not in url:
             return  # non-github / other shape / blob
-        if (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG:
             return  # other-repo: undecidable locally
         prefix = m.group("path").rstrip("/")
         for fname in _expand_claim_token(token.strip()):
@@ -13683,7 +13743,10 @@ def check_figure_sidecar_coverage(body: str) -> CheckResult:
     missing: list[str] = []
     for url in dict.fromkeys(urls):
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         sha, fig_path = m.group("sha"), m.group("path")
         png_status, _ = _git_object_exists(repo, sha, fig_path)
@@ -13867,7 +13930,10 @@ def check_v4_sidecarless_results_figures(body: str) -> CheckResult:  # noqa: C90
     fails: list[str] = []
     for url in dict.fromkeys(urls):
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         sha, fig_path = m.group("sha"), m.group("path")
         png_status, _ = _git_object_exists(repo, sha, fig_path)
@@ -14032,10 +14098,13 @@ def check_figure_png_sidecar_pairing(body: str) -> CheckResult:  # noqa: C901 �
     warns: list[str] = []
     for url in dict.fromkeys(urls):
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         sha, fig_path = m.group("sha"), m.group("path")
-        if not fig_path.lower().endswith(".png"):
+        if not fig_path.casefold().endswith(".png"):
             continue  # the text-chunk read is PNG-specific
         png_status, _ = _git_object_exists(repo, sha, fig_path)
         if png_status != "pass":
@@ -14281,10 +14350,13 @@ def check_figure_sidecar_slot_completeness(body: str) -> CheckResult:  # noqa: C
     findings: list[str] = []
     for url in dict.fromkeys(urls):
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         sha, fig_path = m.group("sha"), m.group("path")
-        if not fig_path.lower().endswith(".png"):
+        if not fig_path.casefold().endswith(".png"):
             continue
         png_status, _ = _git_object_exists(repo, sha, fig_path)
         if png_status != "pass":
@@ -14582,7 +14654,7 @@ def _caption_count_claims(caption: str) -> list[dict]:
     for m in _CC_KOFN_RE.finditer(caption):
         for i in range(m.start(), m.end()):
             masked[i] = "\x00"
-        if _guarded(m) or m.group("unit").lower() in _CC_UNIT_STOPWORDS:
+        if _guarded(m) or m.group("unit").casefold() in _CC_UNIT_STOPWORDS:
             continue
         claims.append(
             {
@@ -14595,14 +14667,14 @@ def _caption_count_claims(caption: str) -> list[dict]:
         )
     masked_text = "".join(masked)
     for m in _CC_ALLN_RE.finditer(masked_text):
-        if _guarded(m) or m.group("unit").lower() in _CC_UNIT_STOPWORDS:
+        if _guarded(m) or m.group("unit").casefold() in _CC_UNIT_STOPWORDS:
             continue
         n = int(m.group("n"))
         claims.append(
             {"shape": "all", "k": n, "n": n, "direction": _direction(m), "raw": m.group(0)}
         )
     for m in _CC_NONE_RE.finditer(masked_text):
-        unit = m.group("unit").lower()
+        unit = m.group("unit").casefold()
         if _guarded(m) or unit in _CC_UNIT_STOPWORDS or unit in _CC_NO_QUALIFIERS:
             continue
         n = int(m.group("n")) if m.group("n") else None
@@ -14892,7 +14964,10 @@ def check_figure_caption_count_claims_vs_sidecar(body: str) -> CheckResult:
     json_cache: dict[str, dict | None] = {}
     for url, img_idx in fig_at:
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         fig_warns, n_checked, status = _count_claims_for_one_figure(
             repo, m, rlines, img_idx, json_cache
@@ -16642,7 +16717,7 @@ def _context_label_claims(ctx_scan: str, labels: Iterable[str]) -> dict[str, dic
             )
             if claim["source_claim"] is None:
                 for sm in _CTX_SOURCE_CLAIM_RE.finditer(window):
-                    token = sm.group(1).lower()
+                    token = sm.group(1).casefold()
                     if token in _FOLLOWUP_SOURCE_SLUGS:
                         claim["source_claim"] = token
                         break
@@ -16786,7 +16861,9 @@ def _count_extra_followup_rounds_v4(body: str, issue: int | None = None) -> tupl
       `**Repro:**`/`**Context:**` footer (distinct backticked labels +
       one per unlabeled singular clause); (b) the plural-enumeration
       form `<N> same-issue follow-up rounds` (`_V4_FOOTER_ROUND_PLURAL_RE`
-      — N a number word or 1-2 digits, clamped to 12; max over matches,
+      — N a number word or 1-2 digits, clamped to 12; an IGNORECASE-matched
+      token resolving to neither a number word nor a decimal digit string
+      contributes no count, #2281; max over matches,
       since a repeated/updated plural sentence restates the cumulative
       total). `footer_n = max(singular, plural)` — max, not sum, is
       deliberate: when both forms appear they most plausibly describe the
@@ -16816,8 +16893,25 @@ def _count_extra_followup_rounds_v4(body: str, issue: int | None = None) -> tupl
     singular_n = len(labels) + unlabeled
     plural_n = 0
     for m in _V4_FOOTER_ROUND_PLURAL_RE.finditer(footer):
-        word = m.group("num").lower()
-        n = _NUMBER_WORDS.get(word) or int(word)
+        # `re.IGNORECASE` and `str.casefold()` are DIFFERENT normalizations
+        # (re: simple case folding plus a table of extended pairs; casefold:
+        # the fuller Unicode fold), and they disagree on exactly two
+        # codepoints this ASCII alternation can capture -- U+0130 and
+        # U+0131 -- which NO string fold maps onto the ASCII dict key.
+        # casefold() closes the U+017F long-s crash (.lower() left it
+        # unchanged, so int() raised ValueError); the TOTAL lookup below
+        # absorbs the two-member residual and any future divergence: an
+        # unresolvable token contributes no count, the same disposition as
+        # a non-match (task #2281). isdecimal(), not isdigit(): isdigit()
+        # admits superscripts (U+00B2), which int() rejects -- latent here
+        # (not \d-matched) but isdecimal() is exactly Nd, the set \d
+        # matches and int() accepts.
+        word = m.group("num").casefold()
+        n = _NUMBER_WORDS.get(word)
+        if n is None:
+            if not word.isdecimal():
+                continue
+            n = int(word)
         plural_n = max(plural_n, min(n, 12))
     footer_n = max(singular_n, plural_n)
     events_n = _followup_events_rounds(issue) if issue is not None else 0
@@ -18438,6 +18532,295 @@ def check_v4_dropped_condition_placement(body: str) -> CheckResult:
     )
 
 
+# ─── v4 positional result cross-refs (check 58, #2279) ───────────────────────
+
+# Number words the positional-pointer grammar admits (#2279 plan §3.2).
+_CROSSREF_NUMBER_WORDS = {
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+}
+
+# Ordinal pointer: `<count> result(s) up|down` — count a 1-3-digit run or a
+# number word one..ten; surrounding parentheses are NOT part of the token
+# (`(two results up)` and `two results up` both match). Singular `result`
+# admits `(one result up)`.
+_CROSSREF_ORDINAL_RE = re.compile(
+    r"\b(?P<count>\d{1,3}|one|two|three|four|five|six|seven|eight|nine|ten)\s+"
+    r"results?\s+(?P<direction>up|down)\b",
+    re.IGNORECASE,
+)
+# Adjacent pointer: `the previous result` / `the next result` — distance 1.
+_CROSSREF_ADJACENT_RE = re.compile(
+    r"\bthe\s+(?P<direction>previous|next)\s+result\b", re.IGNORECASE
+)
+# Round token: `round 4` / `round-4`, and ranges `rounds 1-3` (hyphen or
+# en-dash separator, expanded inclusively by `_round_set`).
+_CROSSREF_ROUND_RE = re.compile(
+    r"\brounds?[ -](?P<a>\d{1,3})(?:\s*[-–]\s*(?P<b>\d{1,3}))?\b",  # noqa: RUF001
+    re.IGNORECASE,
+)
+# Clause delimiter: `;`, `!`, `?`, a newline, or a `.` that is not a decimal
+# point (a period BETWEEN two digits — `0.945` — never delimits; a period
+# with a non-digit on either side does).
+_CROSSREF_CLAUSE_DELIM_RE = re.compile(r"[;!?\n]|(?<!\d)\.|\.(?!\d)")
+
+
+def _crossref_scan_text(block_text: str) -> str:
+    """Prose layer of one `### <result>` block for positional-pointer
+    scanning: `<details>` bodies stripped first (`_DETAILS_BLOCK_RE`, the
+    `_v4_block_is_quantitative` convention), fenced code blanked, inline
+    code spans and markdown link targets masked per line
+    (`_SENTENCE_INLINE_CODE_RE` / `_SENTENCE_LINK_TARGET_RE`). Line
+    structure is preserved (fenced/blanked lines become empty lines) so
+    `_clause_for_span` can bound clauses at newlines. List-item and
+    blockquote lines are deliberately KEPT — the #2221 anchor pointers
+    live in list items, which `_result_prose_paragraphs` would exclude.
+
+    Known residuals (#2279 plan §7; all false-negative-only on a WARN
+    channel): an UNCLOSED fence swallows the rest of the block (the
+    `_result_prose_paragraphs`-family residual, check 36's disclosed
+    shape); a pointer token hard-wrapped across two lines never matches;
+    a `<details>` block spanning an H3 boundary splits across blocks and
+    defeats the per-block strip (zero corpus instances today — 0 of ~88
+    v4 bodies carry an H3 inside `<details>` under `## Results`).
+    """
+    text = _DETAILS_BLOCK_RE.sub("", block_text)
+    out: list[str] = []
+    in_fence = False
+    for line in text.splitlines():
+        s = line.strip()
+        if s.startswith(("```", "~~~")):
+            in_fence = not in_fence
+            out.append("")
+            continue
+        if in_fence:
+            out.append("")
+            continue
+        masked = _SENTENCE_INLINE_CODE_RE.sub("CODE", line)
+        masked = _SENTENCE_LINK_TARGET_RE.sub("]", masked)
+        out.append(masked)
+    return "\n".join(out)
+
+
+def _positional_crossref_tokens(text: str) -> list[tuple[str, tuple[int, int], str, int]]:
+    """Return `(match_text, span, direction, distance)` for every
+    positional cross-reference pointer token in `text` (the prepared
+    `_crossref_scan_text` layer), in document order. Two token families
+    (#2279 plan §3.2): ordinal `<count> result(s) up|down` (count a
+    digit run or a number word one..ten, case-insensitive) and adjacent
+    `the previous|next result` (distance 1; `previous` normalizes to
+    direction `up`, `next` to `down`).
+
+    Known residuals (#2279 plan §7; false-negative-only):
+    `result(s) above/below` (~49 corpus uses — the dominant pointer
+    vocabulary) carries no resolvable ordinal and is OUT of scope by
+    design (auto-resolving "above" would manufacture false positives);
+    `the first/third result` (~3 uses) and `the later/earlier result`
+    are likewise uncovered.
+    """
+    out: list[tuple[str, tuple[int, int], str, int]] = []
+    for m in _CROSSREF_ORDINAL_RE.finditer(text):
+        # casefold(), NOT lower(): `re.IGNORECASE` performs FULL Unicode case
+        # folding, so U+017F LATIN SMALL LETTER LONG S matches the `s` in
+        # `six` / `results` / `previous` — but `.lower()` leaves U+017F
+        # unchanged. A long-s spelling of a number word then misses the
+        # number-word dict (KeyError, crashing the WHOLE verifier — the driver
+        # has no per-check catch), and a long-s spelling of `previous` fails
+        # the `== "previous"` compare, silently flipping direction to `down`.
+        # `.casefold()` maps U+017F -> `s`, keeping the regex match set and the
+        # lookup keys in agreement (#2279 code review; pinned by
+        # `test_positional_crossref_unicode_casefold_tokens`).
+        word = m.group("count").casefold()
+        distance = int(word) if word.isdigit() else _CROSSREF_NUMBER_WORDS[word]
+        out.append((m.group(0), m.span(), m.group("direction").casefold(), distance))
+    for m in _CROSSREF_ADJACENT_RE.finditer(text):
+        direction = "up" if m.group("direction").casefold() == "previous" else "down"
+        out.append((m.group(0), m.span(), direction, 1))
+    out.sort(key=lambda item: item[1])
+    return out
+
+
+def _clause_for_span(text: str, span: tuple[int, int]) -> str:
+    """Return the clause of `text` containing `span` — the segment
+    delimited by `;`, a sentence terminator (`.!?`, decimal points
+    exempt), or a newline (#2279 plan §3.4.1). Clause scope is
+    load-bearing, not cosmetic: at the #2221 anchor's line 355,
+    sentence or paragraph scope would union `{1,2,3}` with `{4}` across
+    the `;`, intersect the target's `{1,2,3}`, and MISS the defect —
+    `;`-clause scope isolates `{4}` and catches it. Newlines
+    additionally delimit so one list item's clause never leaks into a
+    neighbor (strictly narrower than the plan's minimum —
+    false-negative-only on a WARN channel).
+
+    Known residual (#2279 plan §7): a pointer whose round token sits
+    across a semicolon from it is missed (the deliberate tightness).
+    """
+    start, end = span
+    left = 0
+    for m in _CROSSREF_CLAUSE_DELIM_RE.finditer(text, 0, start):
+        left = m.end()
+    nxt = _CROSSREF_CLAUSE_DELIM_RE.search(text, end)
+    right = nxt.start() if nxt else len(text)
+    return text[left:right]
+
+
+def _strip_trailing_parentheticals(heading: str) -> str:
+    """Return `heading` with trailing balanced `(...)` segment(s)
+    removed — the #2279 plan §3.4.2 Must-Fix. Target-side round-set
+    extraction runs on THIS stripped text: the #2221 anchor's heading 5
+    ends `(repaired by the round-4 re-mine above)`, and whole-heading
+    extraction would union that `{4}` into the target's `{1,2,3}`,
+    intersect the pointer clause's `{4}`, and stay silent on a
+    genuinely misdirected pointer. The failure channel is systematic:
+    appending a `(repaired by the round-N ... above)` parenthetical to
+    a stale pointer's target heading is exactly the remediation idiom
+    #2221's earlier revision round used, so every body remediated that
+    way while keeping its ordinal would launder the mismatch.
+
+    Strips repeatedly (`... (x) (y)` loses both); an unbalanced
+    trailing `)` is left as-is (fail-open). Preferred over the
+    text-before-first-`:` alternative — both resolve the anchor, but
+    the colon rule would empty a `Monitor reads: rounds 1-3 detail`
+    heading and go silent (#2279 plan §3.4.2).
+    """
+    h = heading.strip()
+    while h.endswith(")"):
+        depth = 0
+        cut = None
+        for i in range(len(h) - 1, -1, -1):
+            ch = h[i]
+            if ch == ")":
+                depth += 1
+            elif ch == "(":
+                depth -= 1
+                if depth == 0:
+                    cut = i
+                    break
+        if cut is None:
+            break
+        h = h[:cut].rstrip()
+    return h
+
+
+def _round_set(text: str) -> set[int]:
+    """Round numbers named in `text`: `round 4` / `round-4` yield {4};
+    ranges `rounds 1-3` (hyphen or en-dash) expand inclusively to
+    {1, 2, 3} (#2279 plan §3.4.3). A degenerate >100-wide range
+    contributes its endpoints only (a memory guard — round numbers are
+    1-3 digits, so the worst case is bounded regardless). Empty set
+    when `text` names no round.
+
+    Known residual (#2279 plan §7): arm (b) of check 58 is defeasible
+    by a round token in the target heading's MAIN (non-parenthetical)
+    text — a wrong target that happens to be labeled with the pointer's
+    round intersects and stays silent (accepted post-§3.4.2-fix).
+    """
+    out: set[int] = set()
+    for m in _CROSSREF_ROUND_RE.finditer(text):
+        a = int(m.group("a"))
+        b = int(m.group("b")) if m.group("b") else a
+        lo, hi = (a, b) if a <= b else (b, a)
+        if hi - lo > 100:
+            out.update((lo, hi))
+        else:
+            out.update(range(lo, hi + 1))
+    return out
+
+
+def check_v4_positional_result_crossrefs(body: str) -> CheckResult:
+    """Check 58 (v4 only, WARN): positional cross-reference tokens in
+    `## Results` prose — `(N results up|down)`, `the previous result`,
+    `the next result` — resolve against the actual `### ` H3 sequence
+    (1-indexed; `up`/`previous` subtract, `down`/`next` add). Two flag
+    arms (#2279; the mechanizable recipe from #2221's
+    `epm:clean-result-critique v3` Lens 2 Blocker 2):
+
+    - **arm (a) — out-of-range:** the resolved index falls outside
+      [1, n_results]; flagged unconditionally (no target exists, so no
+      adjudication is needed).
+    - **arm (b) — round mismatch, contradiction-only** (the check-45
+      posture: flag only on positive evidence on BOTH sides): the
+      pointer's own `;`/sentence-delimited clause and the resolved
+      target heading — trailing parenthetical(s) STRIPPED
+      (`_strip_trailing_parentheticals`, the §3.4.2 fix) — yield
+      NON-EMPTY, DISJOINT round sets. Silence when either side's round
+      set is empty is the deliberate false-negative cost of staying
+      quiet on the ordinary body (#2279 plan §3.4.4).
+
+    Why the class recurs: SPEC § Follow-up consolidation REORDERS the
+    H3 sequence on every fold (superseded blocks collapse to the END of
+    `## Results`), so an ordinal written in round K retargets silently
+    in round K+1 — #2221's two `(two results up)` pointers were
+    hand-remediated twice across review rounds. WARN, NEVER FAIL —
+    `passed` is True on every path; register judgment (whether a given
+    pointer should be rewritten as a named reference) stays with the
+    clean-result-critic, matching check 36's split. Vacuous PASS on
+    v3/v2/legacy bodies (forward-only) and on <2-result bodies (no
+    positional target space). Residuals are documented on the helpers;
+    one check-level residual: arm (a) fires spuriously on
+    forward-looking prose ("the next result (queued) ...") in the last
+    block — zero corpus instances, WARN-only, accepted (#2279 plan §7).
+    """
+    label = "positional result cross-refs resolve (v4)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped — not a v4 body")
+    results = _v4_results_body(body)
+    if results is None:
+        return CheckResult(label, True, "## Results missing — check 2 will report")
+    result_h3s = _collect_tldr_h3_names(results)
+    if not result_h3s:
+        return CheckResult(label, True, "no `### <result>` headings — check 3 will report")
+    if len(result_h3s) < 2:
+        return CheckResult(label, True, "<2 results — no positional target space")
+    rlines = results.splitlines()
+    n = len(result_h3s)
+    flagged: list[str] = []
+    for idx, (name, line_no) in enumerate(result_h3s):
+        end_line = result_h3s[idx + 1][1] if idx + 1 < len(result_h3s) else len(rlines)
+        block = "\n".join(rlines[line_no + 1 : end_line])
+        scan = _crossref_scan_text(block)
+        for match_text, span, direction, distance in _positional_crossref_tokens(scan):
+            target = (idx + 1) - distance if direction == "up" else (idx + 1) + distance
+            if target < 1 or target > n:
+                flagged.append(
+                    f"'{name[:48]}': `{match_text}` resolves to result {target} of {n} "
+                    "(out of range)"
+                )
+                continue
+            target_name = result_h3s[target - 1][0]
+            clause_rounds = _round_set(_clause_for_span(scan, span))
+            target_rounds = _round_set(_strip_trailing_parentheticals(target_name))
+            if clause_rounds and target_rounds and not (clause_rounds & target_rounds):
+                flagged.append(
+                    f"'{name[:48]}': `{match_text}` resolves to '{target_name}' — clause "
+                    f"rounds {sorted(clause_rounds)} vs target rounds "
+                    f"{sorted(target_rounds)} disjoint"
+                )
+    if flagged:
+        preview = "; ".join(flagged[:2]) + (" …" if len(flagged) > 2 else "")
+        return CheckResult(
+            label,
+            True,
+            f"{len(flagged)} positional cross-reference pointer(s) under `## Results` "
+            "resolve to a missing or round-mismatched target (rewrite as a named "
+            f"reference to the target heading): {preview}",
+            is_warn=True,
+        )
+    return CheckResult(
+        label,
+        True,
+        f"all positional result cross-refs across {n} `### <result>`(s) resolve",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 
@@ -18572,6 +18955,11 @@ CHECKS = [
     # verifier-WARN-acknowledgment escape (Leg B) (#2267; incident #2054 —
     # opaque codes lived ONLY in PNG pixels of a sidecar-less figure):
     check_v4_sidecarless_results_figures,
+    # check 58 (v4, WARN) — positional result cross-refs (`N results
+    # up|down`, `the previous/next result`) resolve against the H3
+    # sequence; out-of-range or clause-vs-target round-set disjointness
+    # flags (#2279; incident #2221):
+    check_v4_positional_result_crossrefs,
     # Check 31 (`check_orphaned_per_unit_figures`, WARN, generation-agnostic)
     # is NOT here either — like check 20 (v4) it needs the issue number (for
     # figures-dir scoping), so it is dispatched separately in `verify_text`

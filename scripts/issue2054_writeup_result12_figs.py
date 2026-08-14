@@ -87,6 +87,7 @@ CROSS_FIT = REPO / "eval_results/issue_2054/analyzer_companions/cross_render_fit
 CROSS_FIT_CHARS = (
     REPO / "eval_results/issue_2054/analyzer_companions/cross_render_fit_characters.json"
 )
+POOLED_LADDER = REPO / "eval_results/issue_2054/specialization_ladder/pooled_tier_ladder.json"
 OUT_DIR = REPO / "figures/issue_2054/writeup_result12"
 
 ASSIST = "conversation_paired_stories_assistant"
@@ -130,6 +131,14 @@ CHAR_COLOR = {
 }
 CHAR_DISPLAY = {"helios": "HELIOS", "wren": "Wren", "vex": "Vex", "dana": "Dana"}
 CHARACTERS = ["helios", "wren", "vex", "dana"]
+# wr6 carries the assistant beside the four characters (user ask 2026-08-13).
+# Bluish-green completes the Wong set without colliding with a character hue or
+# with Figure 1's framing colors. The assistant is one of the pooled map's OWN
+# training settings (16 of the 56 pooled cells), exactly like each character —
+# not an external reference; the meta.json sidecar carries that note.
+WR6_ASSISTANT_COLOR = "#009E73"
+WR6_SPEAKERS = [*CHARACTERS, "assistant"]
+WR6_SPEAKER_COLOR = {**CHAR_COLOR, "assistant": WR6_ASSISTANT_COLOR}
 
 COND_LS = {"inserted": "-", "on_policy": "--"}
 COND_ALPHA = {"inserted": 0.85, "on_policy": 0.45}
@@ -297,7 +306,15 @@ def _draw_target_refs(ax, ceiling: float, idb: float, color: str, cond: str) -> 
     ax.axhline(idb, color=color, ls="-.", lw=1.0, alpha=a, zorder=2)
 
 
-def _style_axis(ax, title: str, ylab: bool, recovery: bool, paired: bool = True) -> None:
+def _style_axis(
+    ax,
+    title: str,
+    ylab: bool,
+    recovery: bool,
+    paired: bool = True,
+    xtick_labels: list[str] | None = None,
+    xaxis_label: str | None = None,
+) -> None:
     ax.set_title(title)
     if paired:
         ax.set_xticks(list(range(len(PLOT_RUNGS))) + [PAIRED_X])
@@ -305,10 +322,11 @@ def _style_axis(ax, title: str, ylab: bool, recovery: bool, paired: bool = True)
         ax.axvline(SEP_X, color="#BBBBBB", lw=0.8, zorder=1)
         ax.set_xlim(-0.4, PAIRED_X + 0.55)
     else:
-        ax.set_xticks(range(len(PLOT_RUNGS)))
-        ax.set_xticklabels(PLOT_RUNG_LABELS, fontsize=8)
-        ax.set_xlim(-0.4, len(PLOT_RUNGS) - 0.6)
-    ax.set_xlabel("transfer rung (more adaptation allowed →)")
+        labels = xtick_labels if xtick_labels is not None else PLOT_RUNG_LABELS
+        ax.set_xticks(range(len(labels)))
+        ax.set_xticklabels(labels, fontsize=8)
+        ax.set_xlim(-0.4, len(labels) - 0.6)
+    ax.set_xlabel(xaxis_label or "transfer rung (more adaptation allowed →)")
     if ylab:
         ax.set_ylabel(
             "fraction of target ceiling recovered"
@@ -632,15 +650,200 @@ def fig_wr45(rows: list[dict], fits: dict[str, dict], chat_source: bool) -> None
     )
 
 
+# --- wr3/wr6: pooled-map tier ladder (map fit on ALL settings) -----------
+# Source: eval_results/issue_2054/specialization_ladder/pooled_tier_ladder.json
+# (56 context-arm cells x 4 tiers + own_map ceiling). The ctx_remap tier fits
+# on a POOLED source with no per-row counterpart for a cell's rows, so it
+# optimizes a different composite objective than the pair-ladder's rung 7 —
+# rendered with an OPEN SQUARE marker; the full note rides the meta.json
+# sidecar (_amend_meta), never the canvas.
+POOLED_TIER_KEYS = ("pooled_direct", "rotation_bias", "ctx_remap", "ans_remap")
+POOLED_TIER_LABELS = [
+    "direct\n(pooled map)",
+    "rotation\n+ bias",
+    "context\nre-map",
+    "answer\nre-map",
+]
+CTX_REMAP_IDX = POOLED_TIER_KEYS.index("ctx_remap")
+POOLED_MODEL = {BASE: "base", INSTRUCT: "instruct"}
+POOLED_XAXIS = "pooled-map transfer tier (more adaptation allowed →)"
+# chat joins the three RENDER_STYLE framings as a fourth TARGET setting of the
+# pooled map; it keeps the gray it has carried through the whole writeup.
+WR3_STYLE = {"chat": ("chat template", C_SOURCE, "D"), **RENDER_STYLE}
+TIER3_NOTE = (
+    "Tier 'context re-map' (open squares) fits source-context -> target-context on a POOLED "
+    "source that has no per-row counterpart for a cell's rows (the cell is a SUBSET of the "
+    "pool), so it optimizes a different composite objective than the pair-ladder's rung-7 "
+    "paired target->source context ridge and is NOT comparable to rung 7. Empirically it "
+    "collapses: context-arm median fraction of own ceiling reads pooled_direct +0.872, "
+    "rotation_bias +0.921, ctx_remap +0.066, ans_remap +1.040 "
+    "(scripts/issue2054_pooled_tier_ladder.py docstring)."
+)
+
+
+def _pooled_units() -> list[dict]:
+    """Context-arm units of the pooled tier ladder (fail-loud on absence)."""
+    if not POOLED_LADDER.exists():
+        raise SystemExit(f"{POOLED_LADDER} missing — pooled tier ladder not landed yet")
+    units = [u for u in json.loads(POOLED_LADDER.read_text())["units"] if u["arm"] == "context"]
+    assert units, "pooled tier ladder has no context-arm units"
+    return units
+
+
+def _pooled_unit(units: list[dict], character: str, framing: str, provenance: str, pm: str) -> dict:
+    """Exactly-one selection of a pooled-ladder cell; raises on 0 or >1 matches."""
+    hits = [
+        u
+        for u in units
+        if u["character"] == character
+        and u["framing"] == framing
+        and u["provenance"] == provenance
+        and u["model"] == pm
+    ]
+    assert len(hits) == 1, (
+        f"expected 1 unit for {character}/{framing}/{provenance}/{pm}: {len(hits)}"
+    )
+    return hits[0]
+
+
+def _draw_tier_series(ax, u: dict, color: str, ls: str, marker: str) -> list[float]:
+    """One pooled-tier line; the ctx_remap tier gets the open-square estimator-
+    difference marker instead of the series marker."""
+    xs = list(range(len(POOLED_TIER_KEYS)))
+    ys = [u["r2"][k] for k in POOLED_TIER_KEYS]
+    filled = [i for i in xs if i != CTX_REMAP_IDX]
+    ax.plot(xs, ys, color=color, ls=ls, lw=1.7, marker=marker, ms=5, markevery=filled, zorder=3)
+    ax.scatter(
+        [CTX_REMAP_IDX],
+        [ys[CTX_REMAP_IDX]],
+        marker="s",
+        s=30,
+        facecolors="white",
+        edgecolors=color,
+        linewidths=1.3,
+        zorder=4,
+    )
+    return ys
+
+
+def _wr36_cond_and_tier_handles(handles: list, labels: list) -> None:
+    handles.append(Line2D([], [], color="#333333", ls="-", lw=1.7))
+    labels.append("inserted (verbatim answers)")
+    handles.append(Line2D([], [], color="#333333", ls="--", lw=1.7))
+    labels.append("on-policy")
+    handles.append(Line2D([], [], color="#888888", ls=":", lw=1.2))
+    labels.append("setting's own-map $R^2$ (dotted)")
+    handles.append(
+        Line2D([], [], color="#333333", ls="", marker="s", mfc="white", mec="#333333", ms=5.5)
+    )
+    labels.append("context re-map (open square: different estimator)")
+
+
+def fig_wr3(units: list[dict]) -> None:
+    """wr3: pooled map (fit on all settings) applied to each ASSISTANT framing,
+    vs each framing's own map (dotted); tiers on x, tight y-band."""
+    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.4), sharey=True)
+    vals: list[float] = []
+    for ax, (model, title) in zip(axes, PANELS):
+        pm = POOLED_MODEL[model]
+        for cond, ls in COND_LS.items():
+            for form, (_, color, marker) in WR3_STYLE.items():
+                u = _pooled_unit(units, "assistant", form, cond, pm)
+                vals += _draw_tier_series(ax, u, color, ls, marker)
+                ax.axhline(
+                    u["r2"]["own_map"],
+                    color=color,
+                    ls=":",
+                    lw=1.0,
+                    alpha=COND_ALPHA[cond],
+                    zorder=2,
+                )
+                vals.append(u["r2"]["own_map"])
+        _style_axis(
+            ax,
+            title,
+            ylab=ax is axes[0],
+            recovery=False,
+            paired=False,
+            xtick_labels=POOLED_TIER_LABELS,
+            xaxis_label=POOLED_XAXIS,
+        )
+    _set_ylim(axes, min(vals), max(vals))
+
+    handles = [
+        Line2D([], [], color=c, marker=m, ls="-", lw=1.7, ms=5) for _, c, m in WR3_STYLE.values()
+    ]
+    labels = [lab for lab, _, _ in WR3_STYLE.values()]
+    _wr36_cond_and_tier_handles(handles, labels)
+    fig.suptitle("Map fit on all settings, applied to each assistant framing")
+    _finish(fig, handles, labels, "wr3_pooled_vs_own_framings")
+    _amend_meta("wr3_pooled_vs_own_framings", TIER3_NOTE)
+
+
+def fig_wr6(units: list[dict]) -> None:
+    """wr6: pooled map (fit on all settings) applied to each story CHARACTER
+    (bare-label boundary), vs each character's own map (dotted)."""
+    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.4), sharey=True)
+    vals: list[float] = []
+    for ax, (model, title) in zip(axes, PANELS):
+        pm = POOLED_MODEL[model]
+        for cond, ls in COND_LS.items():
+            for ch in WR6_SPEAKERS:
+                u = _pooled_unit(units, ch, "bare_label", cond, pm)
+                color = WR6_SPEAKER_COLOR[ch]
+                vals += _draw_tier_series(ax, u, color, ls, "o")
+                ax.axhline(
+                    u["r2"]["own_map"],
+                    color=color,
+                    ls=":",
+                    lw=1.0,
+                    alpha=COND_ALPHA[cond],
+                    zorder=2,
+                )
+                vals.append(u["r2"]["own_map"])
+        _style_axis(
+            ax,
+            title,
+            ylab=ax is axes[0],
+            recovery=False,
+            paired=False,
+            xtick_labels=POOLED_TIER_LABELS,
+            xaxis_label=POOLED_XAXIS,
+        )
+    _set_ylim(axes, min(vals), max(vals))
+
+    handles = [
+        Line2D([], [], color=WR6_SPEAKER_COLOR[ch], marker="o", ls="-", lw=1.7, ms=5)
+        for ch in WR6_SPEAKERS
+    ]
+    labels = [WR_CHAR_DESC[ch] for ch in CHARACTERS] + ["Assistant"]
+    _wr36_cond_and_tier_handles(handles, labels)
+    fig.suptitle("Map fit on all settings, applied to each story speaker (bare-label boundary)")
+    _finish(fig, handles, labels, "wr6_pooled_vs_own_characters")
+    _amend_meta("wr6_pooled_vs_own_characters", TIER3_NOTE)
+
+
+def _amend_meta(stem: str, note: str) -> None:
+    """Append the estimator-difference note to the savefig_paper sidecar —
+    provenance lives in the meta.json, never on the canvas (§3.8-bis)."""
+    mp = OUT_DIR / f"{stem}.meta.json"
+    meta = json.loads(mp.read_text())
+    meta["estimator_note"] = note
+    mp.write_text(json.dumps(meta, indent=1))
+
+
 def main() -> None:
     import argparse
 
     ap = argparse.ArgumentParser()
     ap.add_argument(
         "--set",
-        choices=["full", "wr", "all"],
+        choices=["full", "wr", "wr36", "all"],
         default="all",
-        help="full = the 6 floors+paired-fit variants; wr = the writeup-doc wr* files",
+        help=(
+            "full = the 6 floors+paired-fit variants; wr = writeup-doc wr1/wr2/wr4/wr5; "
+            "wr36 = the pooled-tier wr3/wr6 files"
+        ),
     )
     args = ap.parse_args()
 
@@ -653,6 +856,10 @@ def main() -> None:
         fig_wr2(rows)
         fig_wr45(rows, fits, chat_source=False)
         fig_wr45(rows, fits, chat_source=True)
+    if args.set in ("wr36", "all"):
+        units = _pooled_units()
+        fig_wr3(units)
+        fig_wr6(units)
     if args.set in ("full", "all"):
         paired1 = _paired_fig1()
         paired2 = _paired_fig2()

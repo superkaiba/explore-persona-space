@@ -1,0 +1,425 @@
+{
+  "commit": "bf5c67e7+dirty",
+  "render_id": "7a58de764b9146ac",
+  "git_commit": "bf5c67e7",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2221/specialized_corpus_remine/remine_mix_size_vs_acquisition.meta.json",
+    "figures/issue_2221/specialized_corpus_remine/remine_mix_size_vs_acquisition.pdf",
+    "figures/issue_2221/specialized_corpus_remine/remine_mix_size_vs_acquisition.png",
+    "scripts/issue2221_dv_figs.py"
+  ],
+  "created": "2026-08-14T00:03:35Z",
+  "figsize": [
+    9.6,
+    4.4
+  ],
+  "points": [
+    {
+      "monitor scalar at selected layer": 205.84415205032673,
+      "graded hallucination score (0-100)": 27.71083333333334,
+      "label": "opinions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "monitor scalar at selected layer": 199.83812963102278,
+      "graded hallucination score (0-100)": 30.20499999999999,
+      "label": "opinions",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "monitor scalar at selected layer": 221.56968559076077,
+      "graded hallucination score (0-100)": 30.72416666666667,
+      "label": "opinions",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "monitor scalar at selected layer": 409.9606554508489,
+      "graded hallucination score (0-100)": 40.27333333333334,
+      "label": "grade-school math",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "monitor scalar at selected layer": 456.9826084508926,
+      "graded hallucination score (0-100)": 43.70083333333334,
+      "label": "sycophancy",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "monitor scalar at selected layer": 446.3091122670144,
+      "graded hallucination score (0-100)": 41.75499999999999,
+      "label": "grade-school math",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "monitor scalar at selected layer": 695.4043283667672,
+      "graded hallucination score (0-100)": 44.46666666666666,
+      "label": "sycophancy",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "monitor scalar at selected layer": 814.5940409316261,
+      "graded hallucination score (0-100)": 62.68083333333332,
+      "label": "insecure code",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "monitor scalar at selected layer": 1039.1851507587153,
+      "graded hallucination score (0-100)": 85.13833333333336,
+      "label": "hallucination",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "monitor scalar at selected layer": 1187.1518650713535,
+      "graded hallucination score (0-100)": 72.66166666666669,
+      "label": "insecure code",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "monitor scalar at selected layer": 953.6212712511723,
+      "graded hallucination score (0-100)": 50.54499999999999,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "monitor scalar at selected layer": 1033.7450794793303,
+      "graded hallucination score (0-100)": 65.02916666666667,
+      "label": "insecure code",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "monitor scalar at selected layer": 31.17914943274189,
+      "graded hallucination score (0-100)": 22.90833333333333,
+      "label": "medical",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "monitor scalar at selected layer": 37.65072741749887,
+      "graded hallucination score (0-100)": 25.31833333333333,
+      "label": "medical",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "monitor scalar at selected layer": 34.549011223865456,
+      "graded hallucination score (0-100)": 21.51750000000001,
+      "label": "medical",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "monitor scalar at selected layer": 232.4451479972967,
+      "graded hallucination score (0-100)": 31.586666666666655,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "monitor scalar at selected layer": 248.94216250800656,
+      "graded hallucination score (0-100)": 32.41904761904763,
+      "label": "math",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "monitor scalar at selected layer": 214.59371968028785,
+      "graded hallucination score (0-100)": 29.28166666666667,
+      "label": "opinions",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "monitor scalar at selected layer": 338.0532448553554,
+      "graded hallucination score (0-100)": 31.397500000000008,
+      "label": "math",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "monitor scalar at selected layer": 437.57447845131344,
+      "graded hallucination score (0-100)": 38.665,
+      "label": "grade-school math",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "monitor scalar at selected layer": 382.1200451729025,
+      "graded hallucination score (0-100)": 37.59166666666666,
+      "label": "grade-school math",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "monitor scalar at selected layer": 240.24177941327298,
+      "graded hallucination score (0-100)": 27.146666666666665,
+      "label": "opinions",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "monitor scalar at selected layer": 219.6551176030079,
+      "graded hallucination score (0-100)": 28.61999999999999,
+      "label": "opinions",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "monitor scalar at selected layer": 245.3605755810456,
+      "graded hallucination score (0-100)": 28.060833333333324,
+      "label": "opinions",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "monitor scalar at selected layer": 13223.416441860038,
+      "y": 27.71083333333334,
+      "label": "opinions",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "monitor scalar at selected layer": 13230.499452488173,
+      "y": 30.20499999999999,
+      "label": "opinions",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "monitor scalar at selected layer": 14368.397604418842,
+      "y": 30.72416666666667,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "monitor scalar at selected layer": 24255.847572656,
+      "y": 40.27333333333334,
+      "label": "grade-school math",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "monitor scalar at selected layer": 24998.77858526414,
+      "y": 43.70083333333334,
+      "label": "sycophancy",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "monitor scalar at selected layer": 24529.89336775496,
+      "y": 41.75499999999999,
+      "label": "grade-school math",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "monitor scalar at selected layer": 27537.172313612617,
+      "y": 44.46666666666666,
+      "label": "sycophancy",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "monitor scalar at selected layer": 33045.03637882323,
+      "y": 62.68083333333332,
+      "label": "insecure code",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "monitor scalar at selected layer": 37685.763232222766,
+      "y": 85.13833333333336,
+      "label": "hallucination",
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "monitor scalar at selected layer": 44720.6858379377,
+      "y": 72.66166666666669,
+      "label": "insecure code",
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "monitor scalar at selected layer": 32098.951951285173,
+      "y": 50.54499999999999,
+      "label": "sycophancy",
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "monitor scalar at selected layer": 36676.38854113899,
+      "y": 65.02916666666667,
+      "label": "insecure code",
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "monitor scalar at selected layer": 2159.478159690603,
+      "y": 22.90833333333333,
+      "label": "medical",
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "monitor scalar at selected layer": 2555.320570481509,
+      "y": 25.31833333333333,
+      "label": "medical",
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "monitor scalar at selected layer": 2170.4765740521784,
+      "y": 21.51750000000001,
+      "label": "medical",
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "monitor scalar at selected layer": 15697.674369037071,
+      "y": 31.586666666666655,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "monitor scalar at selected layer": 16537.434013533843,
+      "y": 32.41904761904763,
+      "label": "math",
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "monitor scalar at selected layer": 14540.056899629239,
+      "y": 29.28166666666667,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "monitor scalar at selected layer": 21683.245973014145,
+      "y": 31.397500000000008,
+      "label": "math",
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "monitor scalar at selected layer": 25205.225186494783,
+      "y": 38.665,
+      "label": "grade-school math",
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "monitor scalar at selected layer": 20363.726094497586,
+      "y": 37.59166666666666,
+      "label": "math",
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "monitor scalar at selected layer": 13937.172315624433,
+      "y": 27.146666666666665,
+      "label": "opinions",
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "monitor scalar at selected layer": 12387.135318036595,
+      "y": 28.61999999999999,
+      "label": "opinions",
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "monitor scalar at selected layer": 14628.494960359883,
+      "y": 28.060833333333324,
+      "label": "opinions",
+      "_kind": "scatter",
+      "_group": 47
+    }
+  ],
+  "n_series": 48,
+  "total_points": 48,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "paper's last-prompt-token read (r = +0.95)",
+        "xlabel": "monitor scalar at selected layer",
+        "ylabel": "graded hallucination score (0-100)",
+        "annotations": [
+          "evil",
+          "sycophancy",
+          "hallucination",
+          "insecure code",
+          "medical",
+          "math",
+          "grade-school math",
+          "opinions"
+        ],
+        "xticklabels": [
+          "\u2212200",
+          "0",
+          "200",
+          "400",
+          "600",
+          "800",
+          "1000",
+          "1200",
+          "1400"
+        ],
+        "yticklabels": [
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80",
+          "90"
+        ]
+      },
+      {
+        "title_left": "mapped context read (r = +0.97)",
+        "xlabel": "monitor scalar at selected layer",
+        "annotations": [
+          "evil",
+          "sycophancy",
+          "hallucination",
+          "insecure code",
+          "medical",
+          "math",
+          "grade-school math",
+          "opinions"
+        ],
+        "xticklabels": [
+          "0",
+          "10000",
+          "20000",
+          "30000",
+          "40000",
+          "50000"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
