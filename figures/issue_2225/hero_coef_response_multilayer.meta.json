@@ -1,9 +1,12 @@
 {
-  "commit": "849c79c4",
-  "render_id": "c17cae1f925043ce",
-  "git_commit": "849c79c4",
-  "git_dirty": false,
-  "created": "2026-08-11T20:39:42Z",
+  "commit": "515b3860+dirty",
+  "render_id": "7f3889546b4644d1",
+  "git_commit": "515b3860",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2225_figures.py"
+  ],
+  "created": "2026-08-14T14:10:20Z",
   "figsize": [
     12.0,
     11.2
@@ -12,63 +15,63 @@
     {
       "x": 0.25,
       "Evil\nTrait score (0\u2013100)": 72.9425,
-      "series": "Paper 3-layer",
+      "series": "Paper all-layer (28)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 0.75,
       "Evil\nTrait score (0\u2013100)": 46.47833333333334,
-      "series": "Paper 3-layer",
+      "series": "Paper all-layer (28)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 1.5,
       "Evil\nTrait score (0\u2013100)": 11.676666666666666,
-      "series": "Paper 3-layer",
+      "series": "Paper all-layer (28)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 0.25,
       "Evil\nTrait score (0\u2013100)": 83.51583333333333,
-      "series": "Context 2-layer",
+      "series": "Context middle-band (9)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 0.75,
       "Evil\nTrait score (0\u2013100)": 78.00666666666666,
-      "series": "Context 2-layer",
+      "series": "Context middle-band (9)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 1.5,
       "Evil\nTrait score (0\u2013100)": 78.45833333333334,
-      "series": "Context 2-layer",
+      "series": "Context middle-band (9)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 0.25,
       "Evil\nTrait score (0\u2013100)": 83.19666666666666,
-      "series": "Context 3-layer",
+      "series": "Context all-layer (28)",
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 0.75,
       "Evil\nTrait score (0\u2013100)": 76.65249999999999,
-      "series": "Context 3-layer",
+      "series": "Context all-layer (28)",
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 1.5,
       "Evil\nTrait score (0\u2013100)": 26.48222222222222,
-      "series": "Context 3-layer",
+      "series": "Context all-layer (28)",
       "_kind": "line",
       "_group": 2
     },
@@ -957,9 +960,9 @@
       }
     ],
     "series": [
-      "Paper 3-layer",
-      "Context 2-layer",
-      "Context 3-layer"
+      "Paper all-layer (28)",
+      "Context middle-band (9)",
+      "Context all-layer (28)"
     ]
   },
   "formats_written": [

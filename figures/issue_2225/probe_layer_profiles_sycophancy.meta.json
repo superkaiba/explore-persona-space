@@ -1,9 +1,21 @@
 {
-  "commit": "849c79c4",
-  "render_id": "2a5df79690c9498d",
-  "git_commit": "849c79c4",
-  "git_dirty": false,
-  "created": "2026-08-11T20:40:10Z",
+  "commit": "515b3860+dirty",
+  "render_id": "d125e342bdb144d9",
+  "git_commit": "515b3860",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2225/hero_coef_response_multilayer.meta.json",
+    "figures/issue_2225/hero_coef_response_multilayer.pdf",
+    "figures/issue_2225/hero_coef_response_multilayer.png",
+    "figures/issue_2225/matched_coherence_bars.meta.json",
+    "figures/issue_2225/matched_coherence_bars.pdf",
+    "figures/issue_2225/matched_coherence_bars.png",
+    "figures/issue_2225/probe_layer_profiles_evil.meta.json",
+    "figures/issue_2225/probe_layer_profiles_evil.pdf",
+    "figures/issue_2225/probe_layer_profiles_evil.png",
+    "scripts/issue2225_figures.py"
+  ],
+  "created": "2026-08-14T14:10:35Z",
   "figsize": [
     8.0,
     3.6
@@ -404,392 +416,392 @@
     {
       "Layer": 0.0,
       "Probe-score shift vs base": 1.1349507570266724,
-      "series": "Context 2-layer @ 1.5",
+      "series": "Context middle-band (9) @ 1.5",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 1.0,
       "Probe-score shift vs base": 1.0875567495822906,
-      "series": "Context 2-layer @ 1.5",
+      "series": "Context middle-band (9) @ 1.5",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 2.0,
       "Probe-score shift vs base": 0.8572423607110977,
-      "series": "Context 2-layer @ 1.5",
+      "series": "Context middle-band (9) @ 1.5",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 3.0,
       "Probe-score shift vs base": 0.9550435841083527,
-      "series": "Context 2-layer @ 1.5",
+      "series": "Context middle-band (9) @ 1.5",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 4.0,
       "Probe-score shift vs base": 1.171002358198166,
-      "series": "Context 2-layer @ 1.5",
+      "series": "Context middle-band (9) @ 1.5",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 5.0,
       "Probe-score shift vs base": 1.1470188200473785,
-      "series": "Context 2-layer @ 1.5",
+      "series": "Context middle-band (9) @ 1.5",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 6.0,
       "Probe-score shift vs base": 1.2502598464488983,
-      "series": "Context 2-layer @ 1.5",
+      "series": "Context middle-band (9) @ 1.5",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 7.0,
       "Probe-score shift vs base": 1.013931319117546,
-      "series": "Context 2-layer @ 1.5",
+      "series": "Context middle-band (9) @ 1.5",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 8.0,
       "Probe-score shift vs base": 1.2188462316989899,
-      "series": "Context 2-layer @ 1.5",
+      "series": "Context middle-band (9) @ 1.5",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 9.0,
       "Probe-score shift vs base": 1.4869648218154907,
-      "series": "Context 2-layer @ 1.5",
+      "series": "Context middle-band (9) @ 1.5",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 10.0,
       "Probe-score shift vs base": 1.5115317106246948,
-      "series": "Context 2-layer @ 1.5",
+      "series": "Context middle-band (9) @ 1.5",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 11.0,
       "Probe-score shift vs base": 1.2243356704711914,
-      "series": "Context 2-layer @ 1.5",
+      "series": "Context middle-band (9) @ 1.5",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 12.0,
       "Probe-score shift vs base": 1.3358724117279053,
-      "series": "Context 2-layer @ 1.5",
+      "series": "Context middle-band (9) @ 1.5",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 13.0,
       "Probe-score shift vs base": 1.34324312210083,
-      "series": "Context 2-layer @ 1.5",
+      "series": "Context middle-band (9) @ 1.5",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 14.0,
       "Probe-score shift vs base": 1.3243516087532043,
-      "series": "Context 2-layer @ 1.5",
+      "series": "Context middle-band (9) @ 1.5",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 15.0,
       "Probe-score shift vs base": 1.0394375920295715,
-      "series": "Context 2-layer @ 1.5",
+      "series": "Context middle-band (9) @ 1.5",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 16.0,
       "Probe-score shift vs base": 1.028748244047165,
-      "series": "Context 2-layer @ 1.5",
+      "series": "Context middle-band (9) @ 1.5",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 17.0,
       "Probe-score shift vs base": 1.1434545516967773,
-      "series": "Context 2-layer @ 1.5",
+      "series": "Context middle-band (9) @ 1.5",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 18.0,
       "Probe-score shift vs base": 0.9071569591760635,
-      "series": "Context 2-layer @ 1.5",
+      "series": "Context middle-band (9) @ 1.5",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 19.0,
       "Probe-score shift vs base": 0.9793742448091507,
-      "series": "Context 2-layer @ 1.5",
+      "series": "Context middle-band (9) @ 1.5",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 20.0,
       "Probe-score shift vs base": 1.0720363557338715,
-      "series": "Context 2-layer @ 1.5",
+      "series": "Context middle-band (9) @ 1.5",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 21.0,
       "Probe-score shift vs base": 0.8629241771996021,
-      "series": "Context 2-layer @ 1.5",
+      "series": "Context middle-band (9) @ 1.5",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 22.0,
       "Probe-score shift vs base": 0.8751698285341263,
-      "series": "Context 2-layer @ 1.5",
+      "series": "Context middle-band (9) @ 1.5",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 23.0,
       "Probe-score shift vs base": 0.89102353900671,
-      "series": "Context 2-layer @ 1.5",
+      "series": "Context middle-band (9) @ 1.5",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 24.0,
       "Probe-score shift vs base": 0.9227447658777237,
-      "series": "Context 2-layer @ 1.5",
+      "series": "Context middle-band (9) @ 1.5",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 25.0,
       "Probe-score shift vs base": 0.877184584736824,
-      "series": "Context 2-layer @ 1.5",
+      "series": "Context middle-band (9) @ 1.5",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 26.0,
       "Probe-score shift vs base": 1.2083164155483246,
-      "series": "Context 2-layer @ 1.5",
+      "series": "Context middle-band (9) @ 1.5",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 27.0,
       "Probe-score shift vs base": 0.9024224430322647,
-      "series": "Context 2-layer @ 1.5",
+      "series": "Context middle-band (9) @ 1.5",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 0.0,
       "Probe-score shift vs base": 0.603789247572422,
-      "series": "Context 3-layer @ 1.5",
+      "series": "Context all-layer (28) @ 1.5",
       "_kind": "line",
       "_group": 3
     },
     {
       "Layer": 1.0,
       "Probe-score shift vs base": 0.7535727238282561,
-      "series": "Context 3-layer @ 1.5",
+      "series": "Context all-layer (28) @ 1.5",
       "_kind": "line",
       "_group": 3
     },
     {
       "Layer": 2.0,
       "Probe-score shift vs base": 0.4944177269935608,
-      "series": "Context 3-layer @ 1.5",
+      "series": "Context all-layer (28) @ 1.5",
       "_kind": "line",
       "_group": 3
     },
     {
       "Layer": 3.0,
       "Probe-score shift vs base": 0.4595118314027786,
-      "series": "Context 3-layer @ 1.5",
+      "series": "Context all-layer (28) @ 1.5",
       "_kind": "line",
       "_group": 3
     },
     {
       "Layer": 4.0,
       "Probe-score shift vs base": 0.6438576020300388,
-      "series": "Context 3-layer @ 1.5",
+      "series": "Context all-layer (28) @ 1.5",
       "_kind": "line",
       "_group": 3
     },
     {
       "Layer": 5.0,
       "Probe-score shift vs base": 0.6669547073543072,
-      "series": "Context 3-layer @ 1.5",
+      "series": "Context all-layer (28) @ 1.5",
       "_kind": "line",
       "_group": 3
     },
     {
       "Layer": 6.0,
       "Probe-score shift vs base": 0.5387269258499146,
-      "series": "Context 3-layer @ 1.5",
+      "series": "Context all-layer (28) @ 1.5",
       "_kind": "line",
       "_group": 3
     },
     {
       "Layer": 7.0,
       "Probe-score shift vs base": 0.4309042692184448,
-      "series": "Context 3-layer @ 1.5",
+      "series": "Context all-layer (28) @ 1.5",
       "_kind": "line",
       "_group": 3
     },
     {
       "Layer": 8.0,
       "Probe-score shift vs base": 0.5241609513759613,
-      "series": "Context 3-layer @ 1.5",
+      "series": "Context all-layer (28) @ 1.5",
       "_kind": "line",
       "_group": 3
     },
     {
       "Layer": 9.0,
       "Probe-score shift vs base": 0.7955944612622261,
-      "series": "Context 3-layer @ 1.5",
+      "series": "Context all-layer (28) @ 1.5",
       "_kind": "line",
       "_group": 3
     },
     {
       "Layer": 10.0,
       "Probe-score shift vs base": 0.8737091720104218,
-      "series": "Context 3-layer @ 1.5",
+      "series": "Context all-layer (28) @ 1.5",
       "_kind": "line",
       "_group": 3
     },
     {
       "Layer": 11.0,
       "Probe-score shift vs base": 0.6725064590573311,
-      "series": "Context 3-layer @ 1.5",
+      "series": "Context all-layer (28) @ 1.5",
       "_kind": "line",
       "_group": 3
     },
     {
       "Layer": 12.0,
       "Probe-score shift vs base": 0.8093972429633141,
-      "series": "Context 3-layer @ 1.5",
+      "series": "Context all-layer (28) @ 1.5",
       "_kind": "line",
       "_group": 3
     },
     {
       "Layer": 13.0,
       "Probe-score shift vs base": 0.7857435643672943,
-      "series": "Context 3-layer @ 1.5",
+      "series": "Context all-layer (28) @ 1.5",
       "_kind": "line",
       "_group": 3
     },
     {
       "Layer": 14.0,
       "Probe-score shift vs base": 0.785868726670742,
-      "series": "Context 3-layer @ 1.5",
+      "series": "Context all-layer (28) @ 1.5",
       "_kind": "line",
       "_group": 3
     },
     {
       "Layer": 15.0,
       "Probe-score shift vs base": 0.547674372792244,
-      "series": "Context 3-layer @ 1.5",
+      "series": "Context all-layer (28) @ 1.5",
       "_kind": "line",
       "_group": 3
     },
     {
       "Layer": 16.0,
       "Probe-score shift vs base": 0.5885440409183502,
-      "series": "Context 3-layer @ 1.5",
+      "series": "Context all-layer (28) @ 1.5",
       "_kind": "line",
       "_group": 3
     },
     {
       "Layer": 17.0,
       "Probe-score shift vs base": 0.717229500412941,
-      "series": "Context 3-layer @ 1.5",
+      "series": "Context all-layer (28) @ 1.5",
       "_kind": "line",
       "_group": 3
     },
     {
       "Layer": 18.0,
       "Probe-score shift vs base": 0.6331785395741463,
-      "series": "Context 3-layer @ 1.5",
+      "series": "Context all-layer (28) @ 1.5",
       "_kind": "line",
       "_group": 3
     },
     {
       "Layer": 19.0,
       "Probe-score shift vs base": 0.7569639198482037,
-      "series": "Context 3-layer @ 1.5",
+      "series": "Context all-layer (28) @ 1.5",
       "_kind": "line",
       "_group": 3
     },
     {
       "Layer": 20.0,
       "Probe-score shift vs base": 0.776333486661315,
-      "series": "Context 3-layer @ 1.5",
+      "series": "Context all-layer (28) @ 1.5",
       "_kind": "line",
       "_group": 3
     },
     {
       "Layer": 21.0,
       "Probe-score shift vs base": 0.682171642780304,
-      "series": "Context 3-layer @ 1.5",
+      "series": "Context all-layer (28) @ 1.5",
       "_kind": "line",
       "_group": 3
     },
     {
       "Layer": 22.0,
       "Probe-score shift vs base": 0.5991678386926651,
-      "series": "Context 3-layer @ 1.5",
+      "series": "Context all-layer (28) @ 1.5",
       "_kind": "line",
       "_group": 3
     },
     {
       "Layer": 23.0,
       "Probe-score shift vs base": 0.6065950393676758,
-      "series": "Context 3-layer @ 1.5",
+      "series": "Context all-layer (28) @ 1.5",
       "_kind": "line",
       "_group": 3
     },
     {
       "Layer": 24.0,
       "Probe-score shift vs base": 0.6349320709705353,
-      "series": "Context 3-layer @ 1.5",
+      "series": "Context all-layer (28) @ 1.5",
       "_kind": "line",
       "_group": 3
     },
     {
       "Layer": 25.0,
       "Probe-score shift vs base": 0.5935264676809311,
-      "series": "Context 3-layer @ 1.5",
+      "series": "Context all-layer (28) @ 1.5",
       "_kind": "line",
       "_group": 3
     },
     {
       "Layer": 26.0,
       "Probe-score shift vs base": 0.8779080510139465,
-      "series": "Context 3-layer @ 1.5",
+      "series": "Context all-layer (28) @ 1.5",
       "_kind": "line",
       "_group": 3
     },
     {
       "Layer": 27.0,
       "Probe-score shift vs base": 0.6632827743887901,
-      "series": "Context 3-layer @ 1.5",
+      "series": "Context all-layer (28) @ 1.5",
       "_kind": "line",
       "_group": 3
     },
@@ -1003,8 +1015,8 @@
         "legend_labels": [
           "Paper 1-layer @ 0.5",
           "Context 1-layer @ 5.0",
-          "Context 2-layer @ 1.5",
-          "Context 3-layer @ 1.5",
+          "Context middle-band (9) @ 1.5",
+          "Context all-layer (28) @ 1.5",
           "Unsteered finetune (Sycophancy)"
         ],
         "xticklabels": [
@@ -1034,8 +1046,8 @@
     "series": [
       "Paper 1-layer @ 0.5",
       "Context 1-layer @ 5.0",
-      "Context 2-layer @ 1.5",
-      "Context 3-layer @ 1.5",
+      "Context middle-band (9) @ 1.5",
+      "Context all-layer (28) @ 1.5",
       "Unsteered finetune (Sycophancy)"
     ]
   },
