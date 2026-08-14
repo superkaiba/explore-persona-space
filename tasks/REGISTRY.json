@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2306,
+  "highest_id": 2307,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10094,6 +10094,13 @@
       "path": "tasks/proposed/2306",
       "status": "proposed",
       "title": "/issue Step 10d merge fence never binds $WT \u2014 git -C '' retargets every worktree op at the SHARED repo root (destroys a valid gate verdict; reaches a shared-root working-tree revert)"
+    },
+    "2307": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2307",
+      "status": "proposed",
+      "title": "workflow-fix: Determine which side regressed before touching either. EITHE"
     },
     "231": {
       "has_clean_result": false,
