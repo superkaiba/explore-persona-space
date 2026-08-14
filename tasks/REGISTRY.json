@@ -9930,8 +9930,8 @@
     "2285": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2285",
-      "status": "planning",
+      "path": "tasks/approved/2285",
+      "status": "approved",
       "title": "workflow-fix: Step 10d Guard 2 asserts the pre-#1723 status ordering (says code paths are at completed; #1723 keeps them at running)"
     },
     "2286": {
