@@ -3,8 +3,7 @@ title: Specialized re-mining trains every real-data cell yet trait installs stay
   zero, leaving persona-vector fine-tuning monitoring dominated by training-mix size
   (MODERATE confidence)
 kind: experiment
-tags:
-- followup-manual
+tags: []
 created_at: '2026-08-10T21:14:00Z'
 has_clean_result: true
 workflow: v1
