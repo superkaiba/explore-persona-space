@@ -73,6 +73,7 @@ LOCO_SPEAKER_PATH = REPO / "eval_results/issue_2054/specialization_ladder/loco_p
 LOCO_FRAMING_PATH = REPO / "eval_results/issue_2054/specialization_ladder/loco_framing_pooled.json"
 NULLS_PATH = REPO / "eval_results/issue_2054/specialization_ladder/cross_pair_nulls.json"
 COMPANIONS_DIR = REPO / "eval_results/issue_2054/analyzer_companions"
+P1345_JUDGE = REPO / "eval_results/issue_1345/judge_legs/judge_legs_summary.json"
 OUT_DIR = REPO / "figures/issue_2054/writeup_v2"
 
 ASSIST = "conversation_paired_stories_assistant"
@@ -101,11 +102,13 @@ FRAMING_LABEL = {
     "bare_label": "story, bare label",
     "attrib_quoted": "story, attributed quote",
 }
+# Sequential ramp keyed to judge-scored AI-likeness (darkest = most AI-like),
+# reusing the #1345/#2054 convention so one color = one meaning across figures.
 CHAR_COLOR = {
-    "wren": "#1f77b4",
-    "helios": "#9467bd",
-    "dana": "#8c564b",
-    "vex": "#d62728",
+    "helios": "#08306B",
+    "wren": "#2171B5",
+    "vex": "#4292C6",
+    "dana": "#9ECAE1",
     "assistant": "#444444",
 }
 CHAR_LABEL = {
@@ -115,6 +118,31 @@ CHAR_LABEL = {
     "vex": "Vex",
     "assistant": "Assistant",
 }
+
+
+def load_ai_likeness() -> dict[str, float]:
+    """character -> judge-scored AI-likeness (0-100) of its OWN on-policy answers.
+
+    Source: #1345 `judge_legs_summary.json`, leg `ai_likeness`, cells
+    `char_<name>_op` (instruct, on-policy). claude-sonnet-4-5, 5 draws per item,
+    ~300 items per cell, mean-aggregated with malformed returns dropped.
+    """
+    d = json.loads(P1345_JUDGE.read_text())
+    out: dict[str, float] = {}
+    for c in d["legs"]["ai_likeness"]["cells"]:
+        name = c["cell"]
+        if name.startswith("char_") and name.endswith("_op"):
+            out[name[len("char_") : -len("_op")]] = c["pooled"]["mean"]
+    return out
+
+
+def char_labels_with_ai(ail: dict[str, float]) -> dict[str, str]:
+    """CHAR_LABEL with the AI-likeness score appended, for legend entries."""
+    out = dict(CHAR_LABEL)
+    for ch, v in ail.items():
+        if ch in out:
+            out[ch] = f"{out[ch]} \u00b7 AI-likeness {v:.0f}"
+    return out
 
 
 def parse_cell(key: str) -> dict:
@@ -422,9 +450,12 @@ def main() -> int:
     units = load_pooled_units()
     nulls = load_nulls()
     cross = load_cross()
+    ail = load_ai_likeness()
+    char_label_ai = char_labels_with_ai(ail)
 
     story_forms = ["bare_text", "bare_label", "attrib_quoted"]
-    chars = ["wren", "helios", "dana", "vex"]
+    # characters ordered most -> least AI-like (judge-scored, own on-policy answers)
+    chars = sorted(["wren", "helios", "dana", "vex"], key=lambda c: -ail[c])
     ON = "on_policy"
 
     # -- Result 1: assistant chat -> assistant other framings -----------------
@@ -513,7 +544,7 @@ def main() -> int:
         r2_pair,
         chars,
         CHAR_COLOR,
-        CHAR_LABEL,
+        char_label_ai,
         ON,
         "Transferring the assistant's map to each character, same story framing\n"
         "(on-policy, instruct)",
@@ -531,7 +562,7 @@ def main() -> int:
         r2_pool_cell,
         chars,
         CHAR_COLOR,
-        CHAR_LABEL,
+        char_label_ai,
         ON,
         "One map fit on all settings, applied to each character\n(on-policy, instruct)",
     )
@@ -541,8 +572,8 @@ def main() -> int:
         units,
         "r2_loco_characters",
         "speaker",
-        ["assistant", "wren", "helios", "dana", "vex"],
-        [CHAR_LABEL[c] for c in ["assistant", "wren", "helios", "dana", "vex"]],
+        ["assistant"] + chars,
+        [CHAR_LABEL["assistant"]] + [char_label_ai[c].replace(" \u00b7 ", "\n") for c in chars],
         cell_filter=lambda u: u["framing"] == "bare_label",
         xlabel="held-out character (bare-label story cells shown)",
         title="Map fit on all characters but one, applied to the held-out character\n"
@@ -572,7 +603,7 @@ def main() -> int:
         r3_pair,
         chars,
         CHAR_COLOR,
-        CHAR_LABEL,
+        char_label_ai,
         ON,
         "Transferring the assistant's chat-template map to characters in story\n"
         "(on-policy targets, instruct)",
