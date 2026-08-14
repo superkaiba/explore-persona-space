@@ -33,6 +33,7 @@ bullets, mechanized fixes); their bodies stay on disk.
 - [uv missing: provision vs resume variants](feedback_pod_provision_uv_missing.md) — provision-incomplete (#390, #472)
 - [Pre-staged venv re-probe](feedback_pre_staged_venv_verify_probes.md) — never trust "GPU-verified": torch.zeros(2).cuda() (cu130-wheel/cu128-driver) + peft/transformers eager import (#475)
 - [uv sync MooseFS stale handle persists](feedback_uv_sync_moosefs_stale_handle_persistent.md) — errno 116 recurs on the partial .venv; rm -rf .venv + UV_LINK_MODE=copy; epm:failure infra after 2nd failure (#475)
+- [Pod venv rebuild: overlay runbook](feedback_pod_venv_rebuild_overlay_runbook.md) — bootstrap python shim DEADLOCKS uv sync (pin --python); errno-116 hits FRESH MooseFS venvs too; build /root/eps-venv on overlay + symlink .venv; re-add flash-attn (#2225-fu1)
 - [WandB artifacts cache eats MooseFS quota](feedback_wandb_artifacts_cache_quota.md) — 90+ GB silent cache → EDQUOT on sub-KB writes while df shows TB free; du -sh pre-launch, rm -rf is safe (#396)
 
 ## Launch mechanics (nohup, SSH, wrappers)
@@ -67,7 +68,7 @@ bullets, mechanized fixes); their bodies stay on disk.
 - [vLLM 0.11.0 + transformers 5.x breakage](feedback_vllm0110_transformers5_breakage.md) — all_special_tokens_extended removed → every LLM() init crashes; infra, pin transformers<5 or bump vLLM (#261-#368)
 - [vLLM first modelinfo inspection needs CVD](feedback_vllm_first_modelinfo_inspection.md) — first-run NVML crash when CUDA_VISIBLE_DEVICES unset; modelinfos cache masks it after one success
 - [vLLM + hf-hub DisabledTqdm collision](feedback_vllm_tqdm_disabled_kwarg.md) — duplicate disable= kwarg TypeError during weight fetch; patch the venv wrapper, pre-download alone insufficient
-- [vLLM teardown SIGABRT after completion](feedback_vllm_teardown_sigabrt_resume.md) — stage work persisted, abort is cleanup-only: verify outputs, plain-relaunch, resume-skip carries (#605)
+- [Teardown SIGABRT after completion (vLLM + HF-streaming)](feedback_vllm_teardown_sigabrt_resume.md) — work persisted, abort is cleanup-only: verify outputs, plain-relaunch, resume-skip carries (#605; PyGILState_Release finalizing variant #2221)
 - [extract_persona_vectors A+B GPU share](feedback_extractor_method_a_b_gpu_share.md) — Method A's HF model resident at B's vLLM init; gpu_memory_utilization 0.85→0.55; resume guard skips partial-B (#238)
 
 ## Judges, data-gen, audit gates
