@@ -1,7 +1,6 @@
 ---
-title: Reproduce Lu et al. persona drift, then test whether context-vector-ONLY capping
-  and axis-component replacement prevent it (axis extracted from answer vs context
-  activations)
+title: Every-token capping cuts the reproduced Assistant-Axis persona drift by ~40%
+  on Qwen3-32B but does not eliminate it (MODERATE confidence)
 kind: experiment
 tags:
 - keep-running
