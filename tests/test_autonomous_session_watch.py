@@ -21195,17 +21195,31 @@ def test_triage_observer_nudge_trap_strings():
 )
 def test_post_marker_helpers_carry_distinctive_by(fn_name):
     """#966: each watcher post-marker argv sets ``--by autonomous_session_watch``
-    (source-inspection pin — robust to the helpers' fixture-heavy signatures)."""
+    (source-inspection pin — robust to the helpers' fixture-heavy signatures).
+
+    #2295 deliberate update: ``_post_progress_marker`` PARAMETERIZES the
+    identity (keyword-only ``by``, default UNCHANGED) so the stash-rescue
+    attribution leg can opt into the #967 ``by="unknown"`` fail-toward-triage
+    convention; for it the pin follows the parameter default + the argv
+    adjacency of the parameter."""
     import inspect
     import re
 
     import autonomous_session_watch as asw
 
-    src = inspect.getsource(getattr(asw, fn_name))
-    assert '"--by"' in src and '"autonomous_session_watch"' in src
-    # Adjacency: "--by" is immediately followed by the identity value in the
-    # argv list (not two unrelated occurrences elsewhere in the source).
-    assert re.search(r'"--by",\s*\n\s*"autonomous_session_watch",', src), src
+    fn = getattr(asw, fn_name)
+    src = inspect.getsource(fn)
+    assert '"--by"' in src
+    if fn_name == "_post_progress_marker":
+        # inspect.signature follows __wrapped__ through the conftest guard.
+        assert inspect.signature(fn).parameters["by"].default == "autonomous_session_watch"
+        # Adjacency: "--by" is immediately followed by the `by` parameter.
+        assert re.search(r'"--by",\s*\n\s*by,', src), src
+    else:
+        assert '"autonomous_session_watch"' in src
+        # Adjacency: "--by" is immediately followed by the identity value in
+        # the argv list (not two unrelated occurrences elsewhere in the source).
+        assert re.search(r'"--by",\s*\n\s*"autonomous_session_watch",', src), src
 
 
 def test_spawn_session_duplicate_suppressed_marker_carries_distinctive_by():
@@ -22664,7 +22678,12 @@ def test_stash_rescue_min_age_filters_fresh_entries(tmp_path, monkeypatch):
     (rescue / "stash-fresh.patch").write_text("x")  # mtime = now — filtered
     old_ct = int(now - 30 * 86400)
     fresh_ct = int(now - 60)
-    stdout = f"{old_ct}\tOn main: old stranded\n{fresh_ct}\tOn main: live autostash\n"
+    old_sha, fresh_sha = "a" * 40, "b" * 40
+    # #2295: 3-field %ct%x09%H%x09%gs format (deliberate update of this fake).
+    stdout = (
+        f"{old_ct}\t{old_sha}\tOn main: old stranded\n"
+        f"{fresh_ct}\t{fresh_sha}\tOn main: live autostash\n"
+    )
 
     def _fake_run(argv, **kwargs):
         return _subprocess.CompletedProcess(argv, 0, stdout=stdout, stderr="")
@@ -22672,6 +22691,9 @@ def test_stash_rescue_min_age_filters_fresh_entries(tmp_path, monkeypatch):
     monkeypatch.setattr(asw.subprocess, "run", _fake_run)
     collected = asw._collect_stash_rescue_backlog(7 * 86400.0, now)
     assert collected["stashes"] == [(old_ct, "On main: old stranded")]
+    # The sha rides the SEPARATE stash_entries key (fingerprint identity
+    # unchanged); the fresh entry is filtered from BOTH lists.
+    assert collected["stash_entries"] == [(old_ct, old_sha, "On main: old stranded")]
     assert [n for n, _mt in collected["rescues"]] == ["20260401-120000-11111"]
 
 
@@ -22713,7 +22735,10 @@ def test_stash_rescue_collector_readonly(tmp_path, monkeypatch):
 
     monkeypatch.setattr(asw.subprocess, "run", _fake_run)
     asw._collect_stash_rescue_backlog(7 * 86400.0, time.time())
-    assert calls == [["git", "-C", str(asw.PROJECT_ROOT), "stash", "list", "--format=%ct%x09%gs"]]
+    # #2295: format extended with %H (deliberate update of this argv pin).
+    assert calls == [
+        ["git", "-C", str(asw.PROJECT_ROOT), "stash", "list", "--format=%ct%x09%H%x09%gs"]
+    ]
     mutating = {"pop", "drop", "apply", "clear", "push", "create", "store", "branch", "rm"}
     assert not mutating.intersection(calls[0])
 
@@ -22753,8 +22778,9 @@ def test_stash_rescue_missing_rescue_dir_is_empty_not_error(tmp_path, monkeypatc
     old_ct = int(time.time() - 30 * 86400)
 
     def _fake_run_one(argv, **kwargs):
+        # #2295: 3-field %ct%x09%H%x09%gs format (deliberate update).
         return _subprocess.CompletedProcess(
-            argv, 0, stdout=f"{old_ct}\tOn main: stranded\n", stderr=""
+            argv, 0, stdout=f"{old_ct}\t{'c' * 40}\tOn main: stranded\n", stderr=""
         )
 
     monkeypatch.setattr(asw.subprocess, "run", _fake_run_one)
@@ -22817,6 +22843,277 @@ def test_stash_rescue_dry_run_writes_nothing(tmp_path, monkeypatch, capsys):
     out = capsys.readouterr().out
     assert "[dry-run] would save stash-rescue state" in out
     assert "[dry-run] would append stash-rescue sidecar row" in out
+
+
+# ── stash-rescue owner-attribution leg (#2295) ───────────────────────────────
+#
+# The pass-34 attribution leg: per aged bare-autostash entry, map the stash's
+# file list to owning task ids and post ONE capped/deduped anti-liveness
+# epm:progress marker per (task, stash-sha) episode, by="unknown". D1 mapping,
+# D2 escalate-only (argv-level, two-pronged), D3 sentinel membership, D4
+# dedup + cap, D5 dry-run.
+
+_ATTRIB_SHA_A = "a" * 40  # spans tasks 2094 + 2225
+_ATTRIB_SHA_B = "b" * 40  # unattributable
+_ATTRIB_SHA_C = "c" * 40  # owner terminal (completed)
+
+_ATTRIB_FILES = {
+    _ATTRIB_SHA_A: [
+        "tasks/awaiting_promotion/2094/events.jsonl",
+        "tests/test_issue2094_judge.py",
+        "tasks/followups_running/2225/events.jsonl",
+    ],
+    _ATTRIB_SHA_B: ["notes.txt"],
+    _ATTRIB_SHA_C: ["figures/issue_777/x.png"],
+}
+
+_ATTRIB_STATUSES = {2094: "awaiting_promotion", 2225: "followups_running", 777: "completed"}
+
+
+def _attrib_snapshot(*shas: str) -> dict:
+    ct0 = 1_748_000_000
+    entries = [(ct0 + i, sha, "autostash") for i, sha in enumerate(shas)]
+    return {
+        "stashes": [(ct, subj) for ct, _sha, subj in entries],
+        "stash_entries": entries,
+        "rescues": [],
+    }
+
+
+def _attrib_stub_seams(asw, monkeypatch) -> list[tuple[int, str, str]]:
+    """Stub the leg's external seams (file list, task status, marker post);
+    return the recorded (issue, note, by) posts. The real-body companions are
+    test_stash_rescue_attribution_escalate_only_argv (whole pass, real
+    collector + file-list + marker bodies over a recorded subprocess seam)."""
+    monkeypatch.setattr(asw, "_stash_rescue_file_list", lambda sha: list(_ATTRIB_FILES[sha]))
+    monkeypatch.setattr(asw, "_task_status", lambda issue: _ATTRIB_STATUSES.get(issue))
+    posts: list[tuple[int, str, str]] = []
+
+    def _record_post(issue, note, dry_run, *, label, by="autonomous_session_watch"):
+        posts.append((issue, note, by))
+
+    monkeypatch.setattr(asw, "_post_progress_marker", _record_post)
+    return posts
+
+
+def test_stash_rescue_attribution_maps_paths_to_tasks(tmp_path, monkeypatch):
+    """D1: a stash spanning task-2094 + task-2225 paths attributes to exactly
+    {2094, 2225}, each marker carrying only ITS OWN path subset; an
+    unattributable stash gets an attribution_status="unattributed" sidecar
+    row and NO marker; an all-terminal-owner entry is counted in the
+    return value and flagged all_owners_terminal in its sidecar row."""
+    import autonomous_session_watch as asw
+
+    _state_path, sidecar_path = _srescue_isolate(asw, monkeypatch, tmp_path)
+    posts = _attrib_stub_seams(asw, monkeypatch)
+    collected = _attrib_snapshot(_ATTRIB_SHA_A, _ATTRIB_SHA_B, _ATTRIB_SHA_C)
+    state: dict = {}
+    n_terminal = asw._stash_rescue_attribution_leg(
+        collected, state, time.time(), 168 * 3600.0, dry_run=False
+    )
+    assert n_terminal == 1  # only the sha-C entry's owner set is all-terminal
+
+    assert [(issue, by) for issue, _note, by in posts] == [
+        (2094, "unknown"),
+        (2225, "unknown"),
+        (777, "unknown"),
+    ]
+    notes = {issue: note for issue, note, _by in posts}
+    # 2094's note carries ONLY its own path subset.
+    assert "tasks/awaiting_promotion/2094/events.jsonl" in notes[2094]
+    assert "tests/test_issue2094_judge.py" in notes[2094]
+    assert "tasks/followups_running/2225/events.jsonl" not in notes[2094]
+    # 2225's note likewise.
+    assert "tasks/followups_running/2225/events.jsonl" in notes[2225]
+    assert "test_issue2094_judge" not in notes[2225]
+    for note in notes.values():
+        assert asw._STASH_RESCUE_ATTRIB_NOTE_SENTINEL in note
+        assert "sync_repo_root.py --triage-autostash" in note
+        assert "popped, dropped, or applied" in note
+    assert f"stash-{_ATTRIB_SHA_A[:12]}.patch" in notes[2094]
+    # Dedup state recorded per (task, sha).
+    assert set(state["attr"]) == {
+        f"2094|{_ATTRIB_SHA_A}",
+        f"2225|{_ATTRIB_SHA_A}",
+        f"777|{_ATTRIB_SHA_C}",
+    }
+    rows = [json.loads(x) for x in sidecar_path.read_text().splitlines()]
+    by_sha = {r["sha12"]: r for r in rows}
+    assert by_sha[_ATTRIB_SHA_A[:12]]["attribution_status"] == "attributed"
+    assert set(by_sha[_ATTRIB_SHA_A[:12]]["tasks"]) == {"2094", "2225"}
+    assert by_sha[_ATTRIB_SHA_A[:12]]["all_owners_terminal"] is False
+    assert by_sha[_ATTRIB_SHA_B[:12]]["attribution_status"] == "unattributed"
+    assert by_sha[_ATTRIB_SHA_B[:12]]["files"] == ["notes.txt"]
+    assert by_sha[_ATTRIB_SHA_C[:12]]["all_owners_terminal"] is True
+    # No marker for the unattributable entry.
+    assert all(issue != 0 for issue, _n, _b in posts)
+    assert len(posts) == 3
+
+
+def test_stash_rescue_attribution_escalate_only_argv(tmp_path, monkeypatch):
+    """D2: escalate-only HARD invariant, two-pronged (the
+    test_completed_unmerged_pass_never_mutates_status_or_merges shape):
+    (i) no recorded subprocess argv contains a mutating stash verb
+    (pop/apply/drop/clear), an `rm`, or a `set-status`; (ii) the in-process
+    mutators task_workflow.set_status / post_event raise if touched. Drives
+    the REAL collector + file-list + marker-post bodies through the recorded
+    subprocess seam (production-body coverage), and pins the by="unknown"
+    argv of the posted marker. `_task_status` is stubbed (a PRE-EXISTING
+    seam this round did not modify; the shared #1247 conftest guard
+    fail-louds its real body from any watcher test)."""
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    from explore_persona_space import task_workflow
+
+    _state_path, sidecar_path = _srescue_isolate(asw, monkeypatch, tmp_path)
+    monkeypatch.setenv("EPM_STASH_RESCUE_INTERVAL_HOURS", "0")
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: True)
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "awaiting_promotion")
+
+    def _forbidden(*a, **kw):
+        raise AssertionError("attribution leg must never mutate task state in-process")
+
+    monkeypatch.setattr(task_workflow, "set_status", _forbidden)
+    monkeypatch.setattr(task_workflow, "post_event", _forbidden)
+
+    old_ct = int(time.time() - 30 * 86400)
+    argvs: list[list[str]] = []
+
+    def _record_run(cmd, *a, **kw):
+        argvs.append(list(cmd))
+        if cmd[3:5] == ["stash", "list"]:
+            return _subprocess.CompletedProcess(
+                cmd, 0, stdout=f"{old_ct}\t{_ATTRIB_SHA_A}\tautostash\n", stderr=""
+            )
+        if cmd[3:5] == ["stash", "show"]:
+            return _subprocess.CompletedProcess(
+                cmd, 0, stdout="tasks/awaiting_promotion/2094/events.jsonl\n", stderr=""
+            )
+        return _subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(asw.subprocess, "run", _record_run)
+    assert asw.stash_rescue_audit_pass(dry_run=False) is True
+    # The attribution marker DID fire, by="unknown" …
+    marker_argvs = [cmd for cmd in argvs if "post-marker" in cmd]
+    assert len(marker_argvs) == 1
+    assert marker_argvs[0][:5] == ["uv", "run", "python", "scripts/task.py", "post-marker"]
+    by_idx = marker_argvs[0].index("--by")
+    assert marker_argvs[0][by_idx + 1] == "unknown"
+    assert asw._STASH_RESCUE_ATTRIB_NOTE_SENTINEL in marker_argvs[0][-1]
+    # … but nothing mutates: no mutating stash verb, no rm, no set-status.
+    for cmd in argvs:
+        if cmd[:1] == ["git"]:
+            assert not {"pop", "apply", "drop", "clear", "rm"}.intersection(cmd), cmd
+        assert "set-status" not in cmd, cmd
+    # The only stash subcommands invoked are the read-only list + show forms.
+    stash_cmds = [cmd for cmd in argvs if "stash" in cmd]
+    assert {cmd[4] for cmd in stash_cmds} == {"list", "show"}
+    assert stash_cmds[1][-2:] == ["--name-only", _ATTRIB_SHA_A]
+    rows = [json.loads(x) for x in sidecar_path.read_text().splitlines()]
+    assert any(r["kind"] == "stash-rescue-attribution" for r in rows)
+
+
+def test_stash_rescue_attribution_sentinel_registered():
+    """D3: the attribution marker's sentinel is a _WATCHER_NOTE_SENTINELS
+    member — anti-liveness (#2084/#2283 contract): the note must never reset
+    the reconcile/stalled staleness clocks of the task it lands on."""
+    import autonomous_session_watch as asw
+
+    assert asw._STASH_RESCUE_ATTRIB_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
+    assert asw._STASH_RESCUE_ATTRIB_NOTE_SENTINEL.startswith("[autonomous_session_watch:")
+
+
+def test_stash_rescue_attribution_dedup_and_cap(tmp_path, monkeypatch):
+    """D4: (a) a second same-episode run posts NO second marker (fire-once
+    per (task, stash-sha) in the state singleton); (b) past the 168h TTL the
+    episode re-alerts; (c) over-cap entries post no marker but STAY
+    sidecar-recorded."""
+    import autonomous_session_watch as asw
+
+    _state_path, sidecar_path = _srescue_isolate(asw, monkeypatch, tmp_path)
+    posts = _attrib_stub_seams(asw, monkeypatch)
+    now = time.time()
+    realert_s = 168 * 3600.0
+    state: dict = {}
+
+    # (a) fire-once dedup.
+    collected = _attrib_snapshot(_ATTRIB_SHA_A)
+    asw._stash_rescue_attribution_leg(collected, state, now, realert_s, dry_run=False)
+    assert [issue for issue, _n, _b in posts] == [2094, 2225]
+    asw._stash_rescue_attribution_leg(collected, state, now + 60, realert_s, dry_run=False)
+    assert [issue for issue, _n, _b in posts] == [2094, 2225]  # no second post
+
+    # (b) TTL re-alert: age the dedup stamps STRICTLY past the TTL.
+    for key in state["attr"]:
+        state["attr"][key] = now - realert_s - 1.0
+    asw._stash_rescue_attribution_leg(collected, state, now, realert_s, dry_run=False)
+    assert [issue for issue, _n, _b in posts] == [2094, 2225, 2094, 2225]
+
+    # (c) cap: budget 1 with two attributable entries -> ONE marker, but BOTH
+    # entries sidecar-recorded.
+    posts.clear()
+    sidecar_path.unlink()
+    monkeypatch.setenv("EPM_STASH_RESCUE_MARKER_CAP", "1")
+    collected2 = _attrib_snapshot(_ATTRIB_SHA_A, _ATTRIB_SHA_C)
+    state2: dict = {}
+    asw._stash_rescue_attribution_leg(collected2, state2, now, realert_s, dry_run=False)
+    assert len(posts) == 1
+    rows = [json.loads(x) for x in sidecar_path.read_text().splitlines()]
+    assert {r["sha12"] for r in rows} == {_ATTRIB_SHA_A[:12], _ATTRIB_SHA_C[:12]}
+    # Over-cap (task, sha) pairs did NOT consume a dedup stamp — they can
+    # still post on a later tick when budget frees.
+    assert len(state2["attr"]) == 1
+
+
+def test_stash_rescue_attribution_dry_run_writes_nothing(tmp_path, monkeypatch, capsys):
+    """D5: dry_run=True composes + logs the would-be markers but posts NO
+    marker, appends NO sidecar row, and persists NO dedup state; a
+    dry_run=False run of the same snapshot posts exactly one marker per
+    attributed task. Drives the whole pass (the dry-run threads through
+    _save_stash_rescue_state / _append_stash_rescue_sidecar /
+    _post_progress_marker / _telegram_push)."""
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path = _srescue_isolate(asw, monkeypatch, tmp_path)
+    monkeypatch.setenv("EPM_STASH_RESCUE_INTERVAL_HOURS", "0")
+    monkeypatch.setattr(asw, "_stash_rescue_file_list", lambda sha: list(_ATTRIB_FILES[sha]))
+    monkeypatch.setattr(asw, "_task_status", lambda issue: _ATTRIB_STATUSES.get(issue))
+    monkeypatch.setattr(
+        asw,
+        "_collect_stash_rescue_backlog",
+        lambda min_age_s, now: _attrib_snapshot(_ATTRIB_SHA_A),
+    )
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: not dry_run)
+    marker_subprocesses: list[int] = []
+    real_post = asw._post_progress_marker
+
+    def _spy_post(issue, note, dry_run, *, label, by="autonomous_session_watch"):
+        # Delegate to the REAL body: its dry-run arm prints and never spawns
+        # a subprocess (subprocess.run is left un-stubbed here on purpose —
+        # a real post would fail loudly against a nonexistent PROJECT_ROOT
+        # repo, so silence IS the no-subprocess evidence).
+        marker_subprocesses.append(issue)
+        real_post(issue, note, dry_run, label=label, by=by)
+
+    monkeypatch.setattr(asw, "_post_progress_marker", _spy_post)
+
+    assert asw.stash_rescue_audit_pass(dry_run=True) is True
+    assert marker_subprocesses == [2094, 2225]  # composed for both owners …
+    assert not state_path.exists()  # … but NO state (dedup) write
+    assert not sidecar_path.exists()  # NO sidecar row
+    out = capsys.readouterr().out
+    assert out.count("[dry-run] would post epm:progress (stash-rescue-attribution)") == 2
+    assert "[dry-run] would append stash-rescue sidecar row" in out
+
+    # dry_run=False: exactly one marker per attributed task (posted via the
+    # recorder — the real subprocess path is covered by the D2 argv test).
+    # The dry run persisted NOTHING, so this run fires as a first appearance.
+    posts = _attrib_stub_seams(asw, monkeypatch)
+    assert asw.stash_rescue_audit_pass(dry_run=False) is True
+    assert [issue for issue, _n, _b in posts] == [2094, 2225]
+    assert state_path.exists() and sidecar_path.exists()
 
 
 # ── root-unstaged audit pass (pass 36, #2015) ────────────────────────────────
