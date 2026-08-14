@@ -9916,8 +9916,8 @@
     "2283": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2283",
-      "status": "running",
+      "path": "tasks/completed/2283",
+      "status": "completed",
       "title": "workflow-fix: extend owner-fence awareness to the watcher's pod-safety STOP pass"
     },
     "2284": {
