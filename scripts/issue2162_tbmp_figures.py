@@ -139,17 +139,31 @@ def _points(ax, x: float, vals: list[float], color: str, jitter: float = 0.04) -
     ax.scatter(xs, vals, s=9, color=color, alpha=0.30, linewidths=0, zorder=2)
 
 
+def _require_nonempty_panels(fig, fig_name: str, empty_panels: list[str]) -> None:
+    """Fail LOUD on empty panels — the #1112 empty-figure class: a silent skip
+    over missing rows must never ship a blank render presented as a result."""
+    if empty_panels:
+        plt.close(fig)
+        raise RuntimeError(
+            f"[figures] {fig_name}: {len(empty_panels)} panel(s) rendered EMPTY "
+            f"({', '.join(empty_panels)}) — upstream tables carry none of the expected rows"
+        )
+
+
 # ── figures ───────────────────────────────────────────────────────────
 
 
 def fig_tb_hero(tb: dict[str, dict], ref: dict[str, dict], fig_dir: Path, inputs: list[Path]):
     fig, axes = plt.subplots(1, len(BASES), figsize=(11, 4.4), sharey=True)
     offs = {"steered": -0.22, "shuffled": -0.07, "crosstype": 0.08}
+    empty_panels: list[str] = []
     for ax, base in zip(np.atleast_1d(axes), BASES, strict=True):
+        n_series = 0
         for d_i, depth in enumerate(DEPTHS):
             cell = depth_cell(base, depth)
             for arm, off in offs.items():
                 vals = [r["f_beh"] for r in _surviving(tb[arm]) if r["cell"] == cell]
+                n_series += bool(vals)
                 _points(ax, d_i + off, vals, ARM_COLORS[arm])
                 _errbar(ax, d_i + off, vals, ARM_COLORS[arm], label=arm if d_i == 0 else None)
             ref_vals = [
@@ -157,6 +171,7 @@ def fig_tb_hero(tb: dict[str, dict], ref: dict[str, dict], fig_dir: Path, inputs
                 for r in _surviving(ref["steered"])
                 if r["cell"] == cell and r["slot"] == "ce"
             ]
+            n_series += bool(ref_vals)
             _errbar(
                 ax,
                 d_i + 0.23,
@@ -164,10 +179,13 @@ def fig_tb_hero(tb: dict[str, dict], ref: dict[str, dict], fig_dir: Path, inputs
                 PARENT_COLOR,
                 label="parent single-ce (steered)" if d_i == 0 else None,
             )
+        if n_series == 0:
+            empty_panels.append(base)
         ax.set_xticks(range(len(DEPTHS)), DEPTHS)
         ax.set_title(f"{base} (registered: {registered_space_label(base)})")
         ax.axhline(0.0, color="#bbbbbb", lw=0.8, zorder=1)
         ax.set_xlabel("depth")
+    _require_nonempty_panels(fig, "tb_hero", empty_panels)
     np.atleast_1d(axes)[0].set_ylabel("F (registered space)")
     np.atleast_1d(axes)[0].legend(fontsize=8, loc="upper right")
     F._save(fig, fig_dir, "tb_hero", inputs)
@@ -176,7 +194,9 @@ def fig_tb_hero(tb: dict[str, dict], ref: dict[str, dict], fig_dir: Path, inputs
 def fig_tb_sweep(tb: dict[str, dict], ref: dict[str, dict], fig_dir: Path, inputs: list[Path]):
     fig, axes = plt.subplots(2, 2, figsize=(11, 7.5), sharey=True)
     cells = sorted(FINAL_K)
+    empty_panels: list[str] = []
     for ax, cell in zip(axes.ravel(), cells, strict=True):
+        n_series = 0
         st = {(r["pair_id"], r["slot"]): r for r in _surviving(tb["steered"]) if r["cell"] == cell}
         sh = {(r["pair_id"], r["slot"]): r for r in _surviving(tb["shuffled"]) if r["cell"] == cell}
         for k in range(1, FINAL_K[cell]):
@@ -186,6 +206,7 @@ def fig_tb_sweep(tb: dict[str, dict], ref: dict[str, dict], fig_dir: Path, input
                 for key in sorted(st)
                 if key[1] == slot and key in sh
             ]
+            n_series += bool(diffs)
             _points(ax, k, diffs, ARM_COLORS["steered"])
             _errbar(ax, k, diffs, ARM_COLORS["steered"])
         ref_st = {
@@ -199,6 +220,9 @@ def fig_tb_sweep(tb: dict[str, dict], ref: dict[str, dict], fig_dir: Path, input
             if r["cell"] == cell and r["slot"] == "ce"
         }
         ref_diffs = [ref_st[p] - ref_sh[p] for p in sorted(ref_st) if p in ref_sh]
+        n_series += bool(ref_diffs)
+        if n_series == 0:
+            empty_panels.append(cell)
         k_final = FINAL_K[cell]
         if ref_diffs:
             m = float(np.mean(ref_diffs))
@@ -220,6 +244,7 @@ def fig_tb_sweep(tb: dict[str, dict], ref: dict[str, dict], fig_dir: Path, input
         ax.set_xlabel("boundary index k")
         ax.set_xticks(range(1, k_final + 1))
         ax.legend(fontsize=8, loc="upper left")
+    _require_nonempty_panels(fig, "tb_sweep", empty_panels)
     for ax in axes[:, 0]:
         ax.set_ylabel("ΔF steered − shuffled (registered)")
     F._save(fig, fig_dir, "tb_sweep", inputs)
@@ -240,10 +265,12 @@ def fig_tb_rawscale(rawscale: dict, parent_rs: dict, fig_dir: Path, inputs: list
     tb_idx = _rs_index(rawscale)
     ref_idx = _rs_index(parent_rs)
     fig, axes = plt.subplots(2, len(BASES), figsize=(12, 7.5), sharey="row")
+    empty_panels: list[str] = []
     for row_i, pool in enumerate(("all", "surviving")):
         for col_i, base in enumerate(BASES):
             ax = axes[row_i, col_i]
             width = 0.13
+            n_bars = 0
             for d_i, depth in enumerate(DEPTHS):
                 cell = depth_cell(base, depth)
                 for a_i, arm in enumerate(arms):
@@ -253,7 +280,12 @@ def fig_tb_rawscale(rawscale: dict, parent_rs: dict, fig_dir: Path, inputs: list
                     ):
                         row = idx.get((cell, pool))
                         if row is None:
+                            # A missing (cell, pool) row from ONE source is a
+                            # legitimate coverage gap; a panel with ZERO bars
+                            # is the #1112 empty-figure class — see the
+                            # _require_nonempty_panels check below.
                             continue
+                        n_bars += 1
                         m = row[f"{arm}_mean"]
                         ci = row.get(f"{arm}_ci95")
                         lo, hi = ci if ci else (None, None)
@@ -272,11 +304,14 @@ def fig_tb_rawscale(rawscale: dict, parent_rs: dict, fig_dir: Path, inputs: list
                                 f"{arm} ({tag})" if d_i == 0 and row_i == 0 and col_i == 0 else None
                             ),
                         )
+            if n_bars == 0:
+                empty_panels.append(f"{base}/{pool}")
             ax.set_xticks(range(len(DEPTHS)), DEPTHS)
             ax.axhline(0.0, color="#bbbbbb", lw=0.8)
             ax.set_title(f"{base} — {pool} pairs")
             if col_i == 0:
                 ax.set_ylabel("raw movement (judge-contrast units)")
+    _require_nonempty_panels(fig, "tb_rawscale", empty_panels)
     axes[0, 0].legend(fontsize=7, ncol=2)
     F._save(fig, fig_dir, "tb_rawscale", inputs)
 
@@ -319,12 +354,12 @@ def fig_tb_identity_d1(
                 label=f"{arm} / {base}",
             )
             all_xy.extend(xs + ys)
-    if all_xy:
-        lo, hi = min(all_xy), max(all_xy)
-        pad = 0.05 * (hi - lo + 1e-9)
-        xs = np.linspace(lo - pad, hi + pad, 50)
-        ax.plot(xs, xs, color="#888888", lw=0.9)
-        ax.fill_between(xs, xs - 0.10, xs + 0.10, color="#888888", alpha=0.15)
+    _require_nonempty_panels(fig, "tb_identity_d1", [] if all_xy else ["tb@d1 vs parent ce"])
+    lo, hi = min(all_xy), max(all_xy)
+    pad = 0.05 * (hi - lo + 1e-9)
+    xs = np.linspace(lo - pad, hi + pad, 50)
+    ax.plot(xs, xs, color="#888888", lw=0.9)
+    ax.fill_between(xs, xs - 0.10, xs + 0.10, color="#888888", alpha=0.15)
     per_arm = gate.get("per_arm", {})
     bits = ", ".join(
         f"{a} ΔF={per_arm[a]['mean_delta_f']:+.3f}" for a in ("steered", "shuffled") if a in per_arm
@@ -342,14 +377,17 @@ def fig_tb_identity_d1(
 
 def fig_tb_control(tb: dict[str, dict], stats: dict, fig_dir: Path, inputs: list[Path]):
     fig, ax = plt.subplots(figsize=(5.2, 4.2))
+    n_series = 0
     for a_i, arm in enumerate(("steered", "shuffled", "crosstype")):
         vals = [
             r["f_beh"]
             for r in _surviving(tb[arm])
             if r["cell"] == CONTROL_CELL and r["slot"] == "tb"
         ]
+        n_series += bool(vals)
         _points(ax, a_i, vals, ARM_COLORS[arm])
         _errbar(ax, a_i, vals, ARM_COLORS[arm])
+    _require_nonempty_panels(fig, "tb_control", [] if n_series else [CONTROL_CELL])
     rec = stats.get("per_cell", {}).get(f"{CONTROL_CELL}|tb", {})
     verdict = (
         "edit-artifact SIGNAL"
@@ -366,20 +404,26 @@ def fig_tb_control(tb: dict[str, dict], stats: dict, fig_dir: Path, inputs: list
 def fig_tb_target_only(tb: dict[str, dict], fig_dir: Path, inputs: list[Path]):
     arms = ("steered", "shuffled", "crosstype")
     fig, axes = plt.subplots(1, len(arms), figsize=(12, 4.0), sharey=True)
+    empty_panels: list[str] = []
     for ax, arm in zip(axes, arms, strict=True):
+        n_series = 0
         for d_i, depth in enumerate(DEPTHS):
             cell = depth_cell("persona_prompted", depth)
             rows = [r for r in tb[arm] if r["cell"] == cell and r["slot"] == "tb"]
             for s_i, space in enumerate(("netted", "target_only")):
                 key = "f_netted" if space == "netted" else "f_target_only"
                 vals = [r[key] for r in _surviving(rows, key)]
+                n_series += bool(vals)
                 x = d_i + (-0.12 if s_i == 0 else 0.12)
                 _points(ax, x, vals, SPACE_COLORS[space])
                 _errbar(ax, x, vals, SPACE_COLORS[space], label=space if d_i == 0 else None)
+        if n_series == 0:
+            empty_panels.append(arm)
         ax.set_xticks(range(len(DEPTHS)), DEPTHS)
         ax.axhline(0.0, color="#bbbbbb", lw=0.8)
         ax.set_title(f"persona cells — {arm}")
         ax.set_xlabel("depth")
+    _require_nonempty_panels(fig, "tb_target_only", empty_panels)
     axes[0].set_ylabel("F")
     axes[0].legend(fontsize=8)
     F._save(fig, fig_dir, "tb_target_only", inputs)
@@ -394,16 +438,21 @@ def fig_tb_explore_strips(tb: dict[str, dict], fig_dir: Path, inputs: list[Path]
     )
     for ax in axes.ravel()[len(units) :]:
         ax.axis("off")
+    n_series = 0
     for ax, (cell, slot) in zip(axes.ravel(), units, strict=False):
         for a_i, arm in enumerate(("steered", "shuffled", "crosstype")):
             vals = [
                 r["f_beh"] for r in _surviving(tb[arm]) if r["cell"] == cell and r["slot"] == slot
             ]
+            n_series += bool(vals)
             _points(ax, a_i, vals, ARM_COLORS[arm], jitter=0.12)
             _errbar(ax, a_i, vals, ARM_COLORS[arm])
         ax.set_title(f"{cell}|{slot}", fontsize=7)
         ax.set_xticks(range(3), ("st", "sh", "ct"), fontsize=7)
         ax.axhline(0.0, color="#cccccc", lw=0.6)
+    # Exploratory dump: a single (cell, slot) strip may legitimately empty out
+    # under the surviving filter — the fail-loud unit is the whole figure.
+    _require_nonempty_panels(fig, "tb_explore_strips", [] if n_series else ["all strips"])
     F._save(fig, fig_dir, "tb_explore_strips", inputs)
 
 
@@ -418,6 +467,7 @@ def fig_tb_margin_scatter(
         for r in F._iter_jsonl(margin_path)
     }
     fig, ax = plt.subplots(figsize=(5.6, 4.6))
+    n_series = 0
     for arm in ("steered", "shuffled", "crosstype"):
         xs, ys = [], []
         for r in _surviving(tb[arm]):
@@ -426,7 +476,11 @@ def fig_tb_margin_scatter(
                 continue
             xs.append(m)
             ys.append(r["f_beh"])
+        n_series += bool(xs)
         ax.scatter(xs, ys, s=14, color=ARM_COLORS[arm], alpha=0.55, linewidths=0, label=arm)
+    # The absent-file deferred-leg skip above stays; a PRESENT margin file
+    # whose rows join to nothing is the silent-empty class — fail loud.
+    _require_nonempty_panels(fig, "tb_margin_scatter", [] if n_series else ["margin vs F"])
     ax.set_xlabel("TF margin (shift vs parent floor; patched when floor absent)")
     ax.set_ylabel("F (registered space)")
     ax.set_title("tbmp: margin vs judged F, per (pair x slot x arm)", fontsize=9)
