@@ -28,3 +28,4 @@
 - [Producer sanitizer strips plan-claimed key](producer_sanitizer_strips_plan_claimed_key.md) — plan schema from producer CODE misses upload-side sanitizer strips; conform loader to OBSERVED schema fail-loud; pinned replay needs a source-key guard (#2254 R1 g7)
 - [Staging gate single-phase, silent fallback](staging_gate_single_phase_silent_fallback.md) — sha-pin asserted only in the staging phase; later phases call a loader whose cache-miss branch silently REGENERATES the input (fresh pod B / resume) — trace loader call sites per phase (#2254 R1 g2)
 - [Stats-reuse driver live probes](stats_reuse_driver_live_probes.md) — shared-idx / relabel-partition / seed-lattice claims settle by 5-line live probes, not reading (#2225 fu1 F5)
+- [Stats-reuse driver live probes](stats_reuse_driver_live_probes.md) — shared-idx / relabel-partition / seed-lattice claims settle by 5-line live probes, not reading (#2225 fu1 F5)
