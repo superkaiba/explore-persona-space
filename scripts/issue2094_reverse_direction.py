@@ -107,23 +107,14 @@ DEFAULT_COHERENCE_PATH = (
 def build_rev_pairs() -> list[BANK.Pair]:
     """The 5 reversed matched-query pairs: A = persona__q<i>, B = bare__q<i>.
 
-    Deliberately ANTI-canonical (prefix rank of A > rank of B) — the whole
-    point of this round; ``BANK.build_pairs``'s canonical-direction assert
-    lives there, not on the ``Pair`` dataclass.
+    Canonical definition moved to :func:`BANK.build_rev_pairs` so the judge's
+    pair registry (``issue2094_judge.py::pair_index``) can register the
+    ``mqrev--`` ids WITHOUT importing this torch-bearing pod driver (the
+    2026-08-13 KeyError fix). This delegating alias keeps every existing
+    caller/test import working; the local prefix-pair invariant stays as belt.
     """
-    pairs = [
-        BANK.Pair(
-            f"mqrev--{BANK.context_id('persona', q)}--{BANK.context_id('bare', q)}",
-            "matched_query",
-            BANK.context_id("persona", q),
-            BANK.context_id("bare", q),
-        )
-        for q in BANK.QUERY_ORDER
-    ]
-    assert len(pairs) == 5 and len({p.pair_id for p in pairs}) == 5
+    pairs = BANK.build_rev_pairs()
     for p in pairs:
-        assert p.query_a == p.query_b, p
-        assert (p.prefix_a, p.prefix_b) == ("persona", "bare"), p
         assert p.prefix_pair() == REV_PREFIX_PAIR, p
     return pairs
 

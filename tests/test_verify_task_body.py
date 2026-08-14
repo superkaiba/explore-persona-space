@@ -16179,7 +16179,10 @@ def test_check34_beat_claim_warnings_comparator():
 #   (i) explicit --eval-root / eval_root= arg (gate-time worktree path),
 #   (ii) --file-derived worktree root,
 #   (iii) cwd `git rev-parse --show-toplevel`,
-#   (iv) _resolve_repo_root() (MAIN — bottom-of-ladder, post-merge bind),
+#   (iv) _resolve_repo_root() (MAIN — post-merge bind),
+#   (v) issue-branch worktree discovery via `git worktree list --porcelain`
+#       (#2288 — the pre-merge gate leg; main WINS when both trees carry
+#       the dir),
 #   graceful PASS if all miss.
 # Demonstrated bug class: /issue 715 R1 (882 `529 Overloaded` rows across 48 EM
 # cells, 32.5% worst-cell, 4.59% pooled) silently counted into a bare n=400 EM
@@ -16259,8 +16262,8 @@ def test_judge_error_denominator_h2_published_715_passes_via_disclosure():
 def test_judge_error_denominator_h1_synthetic_monkeypatched_fails(tmp_path, monkeypatch):
     """H1 FAIL via the LEGACY code path: `_resolve_repo_root` monkeypatched to a
     `tmp_path` root carrying a synthetic `eval_results/issue_<N>/` corrected JSON
-    (worst-cell 130/400 = 32.5%). Regression cover for the bottom-of-ladder
-    MAIN-post-merge fallback leg (iv).  Addresses §3 H1 (legacy code path)."""
+    (worst-cell 130/400 = 32.5%). Regression cover for the MAIN post-merge
+    fallback leg (iv).  Addresses §3 H1 (legacy code path)."""
     _make_corrected_pareto_eval_tree(tmp_path, 999, worst_err=130, worst_att=400, other_cells=47)
     monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: tmp_path)
     res = verify_task_body.check_judge_error_denominator(_CHECK732_UNDISCLOSED_BODY, issue=999)
@@ -16996,6 +16999,150 @@ def test_cross_issue_reuse_provenance_oversize_file_skipped(tmp_path):
     )
     assert res.passed and not res.is_warn, res.render()
     assert "graceful skip" in res.detail, res.render()
+
+
+# ─── Check 35 / #2288: pre-merge issue-branch worktree resolution (leg v) ───
+#
+# The clean-result gate runs `--issue <N>` from MAIN with no `--eval-root`,
+# BEFORE the Step 9b auto-merge lands `eval_results/issue_<N>/` on main — so
+# legs (i)-(iv) all missed and the three resolver-sharing checks (35 + the
+# two judge-error siblings, byte-identical skip sites) silent-passed by
+# construction at the ONE gate that reviews a `kind: experiment`
+# clean-result. Leg (v) discovers the issue's own worktree via
+# `git worktree list --porcelain`. Fixture hermeticity (plan v3): every
+# fixture issue number stays in the fake `9999` class so no LIVE worktree
+# can ever satisfy leg (v)'s containment check when these tests run inside
+# the real repo.
+
+
+def _make_premerge_worktree_repo(tmp_path: Path) -> tuple[Path, Path]:
+    """Build a real tmp git repo (`main`) plus a `git worktree add -b
+    issue-9999` sibling whose `eval_results/issue_9999/x.json` carries a
+    tier-1 cross-issue pin (`hf_rev_1234` -> `_CHECK1256_SYN_SHA`, M=1234
+    != N=9999); MAIN carries NO `eval_results/issue_9999/` — the pre-merge
+    gate shape (#2288). Returns (main_root, worktree_path)."""
+    main = tmp_path / "main"
+    main.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=main, check=True, capture_output=True)
+    (main / "README.md").write_text("premerge fixture\n")
+    subprocess.run(["git", "add", "README.md"], cwd=main, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "-c", "user.email=t@example.com", "-c", "user.name=t", "commit", "-q", "-m", "x"],
+        cwd=main,
+        check=True,
+        capture_output=True,
+    )
+    wt = tmp_path / "issue-9999"
+    subprocess.run(
+        ["git", "worktree", "add", "-q", "-b", "issue-9999", str(wt)],
+        cwd=main,
+        check=True,
+        capture_output=True,
+    )
+    eval_dir = wt / "eval_results" / "issue_9999"
+    eval_dir.mkdir(parents=True)
+    (eval_dir / "x.json").write_text(json.dumps({"metadata": {"hf_rev_1234": _CHECK1256_SYN_SHA}}))
+    return main, wt
+
+
+def test_parse_worktree_list_handles_detached_and_suffixed():
+    """#2288 test 1 — the pure porcelain parser over realistic records: a
+    branch-bearing main record, a DETACHED record (bare `detached` line, no
+    `branch` — the `~/.eps-slurm-src` rsync-tree shape), and a
+    suffixed-branch record. No git, no filesystem."""
+    porcelain = (
+        "worktree /repo/main\n"
+        "HEAD 1111111111111111111111111111111111111111\n"
+        "branch refs/heads/main\n"
+        "\n"
+        "worktree /trees/issue-1092\n"
+        "HEAD 2222222222222222222222222222222222222222\n"
+        "detached\n"
+        "\n"
+        "worktree /repo/.claude/worktrees/i1739-fit\n"
+        "HEAD 3333333333333333333333333333333333333333\n"
+        "branch refs/heads/issue-1739-fit\n"
+    )
+    parsed = verify_task_body._parse_worktree_list(porcelain)
+    assert parsed == [
+        (Path("/repo/main"), "refs/heads/main"),
+        (Path("/trees/issue-1092"), None),
+        (Path("/repo/.claude/worktrees/i1739-fit"), "refs/heads/issue-1739-fit"),
+    ]
+
+
+def test_check35_evaluates_on_premerge_issue_branch_worktree(tmp_path, monkeypatch):
+    """#2288 test 2 — THE pin for acceptance criterion 1 (fail-loud pin):
+    a v4 body whose `eval_results/issue_9999/` exists ONLY in the
+    issue-branch worktree (main has none, cwd resolves main, no
+    `--eval-root`) EVALUATES: the detail must NOT be the
+    `eval root unresolved` PASS-skip, and the verdict is the tier-1 FAIL
+    naming source issue #1234 — a re-introduced silent skip fails this
+    test rather than shipping green. Structural fail-loud shape: legs
+    (i)-(iv) all miss by construction, so ONLY leg (v) can produce the
+    asserted non-skip."""
+    main, _wt = _make_premerge_worktree_repo(tmp_path)
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_EVAL_SCAN", raising=False)
+    monkeypatch.chdir(main)  # leg (iii) resolves MAIN (no eval dir) -> misses
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: main)
+    res = verify_task_body.check_cross_issue_reuse_provenance(
+        _CHECK1256_UNDECLARED_BODY, issue=9999
+    )
+    assert "eval root unresolved" not in res.detail, res.render()
+    assert not res.passed, res.render()
+    assert "#1234" in res.detail and "hf_rev_1234" in res.detail, res.render()
+
+
+def test_check35_passes_when_premerge_pin_declared_in_body(tmp_path, monkeypatch):
+    """#2288 test 3 — the no-silent-escalation half of acceptance
+    criterion 2 (fail-loud pin): same pre-merge fixture, body declares the
+    pin's short-sha prefix (`deadbeef`) -> clean PASS ("all cross-issue
+    reuse pins declared"). The fix touches only whether the scan is
+    REACHED — a satisfied pin stays PASS, tier-1 stays FAIL (test 2),
+    never an escalation."""
+    main, _wt = _make_premerge_worktree_repo(tmp_path)
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_EVAL_SCAN", raising=False)
+    monkeypatch.chdir(main)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: main)
+    res = verify_task_body.check_cross_issue_reuse_provenance(_CHECK1256_DECLARED_BODY, issue=9999)
+    assert res.passed and not res.is_warn, res.render()
+    assert "declared" in res.detail, res.render()
+
+
+def test_resolve_eval_root_prefers_main_over_worktree(tmp_path, monkeypatch):
+    """#2288 test 4 — the precise ordering property: when BOTH main and the
+    issue-branch worktree carry `eval_results/issue_9999/`, the resolver
+    returns MAIN (leg (iv) wins), so a stale worktree can never outrank
+    the merged tree. Two-sided read: with main's copy removed, leg (v)
+    resolves the worktree."""
+    main, wt = _make_premerge_worktree_repo(tmp_path)
+    main_eval = main / "eval_results" / "issue_9999"
+    main_eval.mkdir(parents=True)
+    monkeypatch.chdir(tmp_path)  # not a git toplevel -> leg (iii) misses
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: main)
+    assert verify_task_body._resolve_eval_root(9999) == main
+    main_eval.rmdir()
+    (main / "eval_results").rmdir()
+    assert verify_task_body._resolve_eval_root(9999) == wt
+
+
+def test_judge_error_sibling_checks_evaluate_on_premerge_worktree(tmp_path, monkeypatch):
+    """#2288 test 5 — sibling reachability (plan-critique concern 4): the
+    two judge-error checks share check 35's `_resolve_eval_root` (three
+    byte-identical skip sites today, verified only structurally); pin that
+    a pre-merge worktree resolves for a SIBLING too, so a future refactor
+    splitting check 35 onto its own resolver cannot silently restore the
+    siblings' SKIP while tests 1-4 stay green. The fixture carries no
+    judge-error artifact, so the expected verdict is the "no judge-error
+    data" graceful skip — NOT `eval root unresolved`."""
+    main, _wt = _make_premerge_worktree_repo(tmp_path)
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_EVAL_SCAN", raising=False)
+    monkeypatch.chdir(main)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: main)
+    res = verify_task_body.check_judge_error_denominator(_CHECK732_UNDISCLOSED_BODY, issue=9999)
+    assert "eval root unresolved" not in res.detail, res.render()
+    assert res.passed and not res.is_warn, res.render()
+    assert "no judge-error data" in res.detail, res.render()
 
 
 # ─── Check 37: footer Reused bullets carry a revision/path pin (#1370) ──────

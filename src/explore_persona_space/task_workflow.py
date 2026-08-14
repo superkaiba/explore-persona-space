@@ -2123,6 +2123,7 @@ def ensemble_verdicts_present(
     round_n: int,
     *,
     reconcile_role: str | None = None,
+    since_ts: str | None = None,
 ) -> dict[str, dict[str, Any]]:
     """Per-kind durable-verdict presence for one ensemble round (#1149).
 
@@ -2168,20 +2169,72 @@ def ensemble_verdicts_present(
     a sentinel-less terse note whose ``version`` drifted from the round
     (a defaulted re-spawn that omitted the sentinel) reads absent — rule
     item 2 (the durable output-FILE probe) is the prose backstop for that
-    path. Pure function over :func:`list_events` output — no I/O; the
-    rule's item 2 (output-file probe) and precedence clauses stay
-    orchestrator prose.
+    path.
+
+    Freshness anchor (``since_ts``, #2136): marker versions auto-derive
+    as max+1 per kind while review rounds are counted independently, so
+    a PRIOR round's sentinel-less marker whose drifted ``version``
+    happens to equal a LATER round number false-PRESENTs through the
+    version fallback (the #1336 shape: a round-3 PASS answered a round-4
+    query two days later). When ``since_ts`` is given (each call site
+    passes its own round-opener ts via
+    :func:`review_round_anchor_ts`), a ``version``-fallback match must
+    ADDITIONALLY (i) postdate ``since_ts`` and (ii) be the newest
+    same-kind marker after it (an older same-kind marker inside the
+    opener window belongs to an earlier round; the 23.8% shared-opener
+    sub-shape). The anchor gates the VERSION-FALLBACK branch ONLY —
+    a sentinel-bearing round-exact match is NEVER time-gated (Step 5b
+    exists partly to REUSE a legitimate round-N verdict posted by a
+    session that was later killed, which necessarily predates the
+    current dispatch), and the reconcile kind's sentinel/``**Round:**``
+    matching is untouched. Fail-safe direction: an unparseable/absent
+    event ``ts``, or an unparseable ``since_ts``, SUPPRESSES the
+    fallback match (routes to the rule's item-2 output-file probe — the
+    same direction as the reconcile role-scoping). ``since_ts=None``
+    (the default, incl. "no opener found on the log") reproduces the
+    ungated pre-#2136 behavior exactly; the head sentinel remains the
+    only COMPLETE protection against a stale-round match. Pure function
+    over :func:`list_events` output — no I/O; the rule's item 2
+    (output-file probe) and precedence clauses stay orchestrator prose.
     """
     if isinstance(kinds, str):
         # A bare string iterates per-character, mechanically producing false
         # no-shows — the exact class this predicate exists to close.
         raise TypeError("kinds must be a sequence of marker-kind strings, not a bare str")
+    anchor_epoch = _event_epoch(since_ts) if since_ts is not None else None
     out: dict[str, dict[str, Any]] = {}
     for kind in kinds:
+        # Condition (ii) precomputation: the newest same-kind epoch after the
+        # anchor (events with an unparseable ts never count — fail-quiet, the
+        # #1170 convention).
+        newest_after_anchor: float | None = None
+        if anchor_epoch is not None:
+            for event in events:
+                if event.get("kind", "") != kind:
+                    continue
+                epoch = _event_epoch(event.get("ts"))
+                if epoch is None or epoch <= anchor_epoch:
+                    continue
+                if newest_after_anchor is None or epoch > newest_after_anchor:
+                    newest_after_anchor = epoch
         match: dict | None = None
         for event in events:  # chronological; latest match wins
-            if _ensemble_event_matches(event, kind, round_n, reconcile_role):
-                match = event
+            mode = _ensemble_event_matches(event, kind, round_n, reconcile_role)
+            if mode is None:
+                continue
+            if mode == "version" and since_ts is not None:
+                # #2136 anchor — gates the version fallback ONLY; sentinel
+                # and round-field matches are never time-gated (see
+                # docstring). Fail-safe: an unparseable ``since_ts`` or
+                # event ``ts`` suppresses the match.
+                if anchor_epoch is None:
+                    continue
+                epoch = _event_epoch(event.get("ts"))
+                if epoch is None or epoch <= anchor_epoch:
+                    continue  # (i) must postdate the round opener
+                if newest_after_anchor is not None and epoch < newest_after_anchor:
+                    continue  # (ii) an older same-kind marker in the window
+            match = event
         if match is None:
             out[kind] = {"present": False, "verdict": None, "ts": None}
         else:
@@ -2192,38 +2245,86 @@ def ensemble_verdicts_present(
 
 def _ensemble_event_matches(
     event: dict, kind: str, round_n: int, reconcile_role: str | None
-) -> bool:
-    """True iff ``event`` is a round-``round_n`` verdict marker of ``kind``.
+) -> str | None:
+    """Match MODE when ``event`` is a round-``round_n`` verdict marker of
+    ``kind``, else ``None``.
 
-    Round matching is sentinel-authoritative: a head sentinel naming a
-    DIFFERENT round suppresses the version-field match, and the reconcile
-    kind never matches on its round-meaningless ``version`` field (#1092:
-    version 1 / sentinel v5) — sentinel first, then the note's
-    ``**Round:**`` field, else no match. Role scoping applies to the
-    reconcile kind only.
+    Modes: ``"sentinel"`` (head sentinel names the round — AUTHORITATIVE),
+    ``"round-field"`` (sentinel-less reconcile matched via the note's
+    ``**Round:**`` field), ``"version"`` (sentinel-less non-reconcile
+    matched via the drift-prone top-level ``version`` field — the ONLY
+    mode the #2136 ``since_ts`` anchor in
+    :func:`ensemble_verdicts_present` gates). Round matching is
+    sentinel-authoritative: a head sentinel naming a DIFFERENT round
+    suppresses the version-field match, and the reconcile kind never
+    matches on its round-meaningless ``version`` field (#1092: version 1
+    / sentinel v5) — sentinel first, then the note's ``**Round:**``
+    field, else no match. Role scoping applies to the reconcile kind
+    only.
     """
     if event.get("kind", "") != kind:
-        return False
+        return None
     note = event.get("note", "") or ""
     head_round = _sentinel_round(note, kind)
+    mode: str
     if kind == _RECONCILE_KIND:
         if head_round is not None:
             if head_round != round_n:
-                return False
+                return None
+            mode = "sentinel"
         else:
             round_field = parse_followup_note_field(note, "Round")
             if round_field is None or not round_field.isdigit() or int(round_field) != round_n:
-                return False
+                return None
+            mode = "round-field"
     elif head_round is not None:
         if head_round != round_n:
-            return False  # sentinel authoritative — suppress the version match
+            return None  # sentinel authoritative — suppress the version match
+        mode = "sentinel"
     elif event.get("version") != round_n:
-        return False
+        return None
+    else:
+        mode = "version"
     if kind == _RECONCILE_KIND and reconcile_role is not None:
         role = parse_followup_note_field(note, "Role under adjudication")
         if role != reconcile_role:
-            return False
-    return True
+            return None
+    return mode
+
+
+def review_round_anchor_ts(events: list[dict], *, opening_kinds: Sequence[str]) -> str | None:
+    """``ts`` of the chronologically LAST round-opening event, else ``None``.
+
+    The freshness anchor for :func:`ensemble_verdicts_present`'s
+    ``since_ts`` (#2136). ``opening_kinds`` is deliberately REQUIRED with
+    no default: each ensemble collection site names its OWN round-opener
+    kinds (the per-site table lives in ``.claude/skills/issue/SKILL.md``
+    Step 5b), and a wrong default would silently produce an inert or
+    misleading anchor. The code-review site passes BOTH implementer kinds
+    — ``("epm:experiment-implementation", "epm:results")`` — because
+    ``kind: infra`` tasks open a review round with ``epm:results`` while
+    experiment tasks use ``epm:experiment-implementation``
+    (workflow.yaml § markers). Chronology is by parsed ``ts`` (ties: the
+    later row wins; an opener with an unparseable/absent ``ts`` cannot
+    anchor and is skipped); ``None`` — no usable opener on the log —
+    degrades the caller to the ungated pre-#2136 behavior, never worse.
+    Pure function over :func:`list_events` output — no I/O.
+    """
+    if isinstance(opening_kinds, str):
+        # Same footgun as the `kinds` guard above: a bare string would
+        # substring-match kind names instead of comparing them.
+        raise TypeError("opening_kinds must be a sequence of marker-kind strings, not a bare str")
+    best_ts: str | None = None
+    best_epoch: float | None = None
+    for event in events:
+        if event.get("kind", "") not in opening_kinds:
+            continue
+        epoch = _event_epoch(event.get("ts"))
+        if epoch is None:
+            continue
+        if best_epoch is None or epoch >= best_epoch:
+            best_epoch, best_ts = epoch, event.get("ts")
+    return best_ts
 
 
 # --- Authorized-stub grant (#2171; Step 6d.0 `PASS_AUTHORIZED_STUB`) -------
@@ -3150,7 +3251,11 @@ def _latest_site_pair(events: list[dict], site: dict) -> dict | None:
     pair — Tier 2 is never attempted past a both-present round). Tier 2
     (proximity fallback — the #825 founding shape): the chronologically
     LAST event of EACH kind, with ``round_n=None`` and a
-    timestamp-embedding round label.
+    timestamp-embedding round label. Deliberately passes NO ``since_ts``
+    anchor (#2136): ``round_n`` is derived from the last pair event's OWN
+    sentinel-else-``version``, so the fallback match on that same event is
+    correct by construction — an anchor would suppress the very event the
+    round number came from.
     """
     claude_kind = site["claude_kind"]
     codex_kind = site["codex_kind"]
@@ -3205,7 +3310,10 @@ def _reconcile_satisfied(
     ``None`` on Tier 2) OR any role-matched reconcile event timestamped
     at/after the earlier pair verdict (both tiers — #825's real reconcile
     named round 1 while the sides read 5 and 7, so a purely round-scoped
-    lookup would false-flag a legitimately reconciled round)."""
+    lookup would false-flag a legitimately reconciled round). Deliberately
+    passes NO ``since_ts`` anchor (#2136): the query is
+    ``epm:review-reconcile``, whose matcher never reaches the version
+    fallback, so an anchor is structurally inert here."""
     if round_n is not None:
         rres = ensemble_verdicts_present(events, (_RECONCILE_KIND,), round_n, reconcile_role=role)
         if rres[_RECONCILE_KIND]["present"]:

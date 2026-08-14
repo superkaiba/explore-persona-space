@@ -794,8 +794,9 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   figure rendering neither, passing every mechanical figure check. (#1255)
 
 - **check 35** (`check_cross_issue_reuse_provenance`, FAIL/WARN, v4-only,
-  #1256): cross-issue reuse pins in the committed
-  `eval_results/issue_<N>/**/*.json` result-JSON `metadata` must be
+  #1256): cross-issue reuse pins in the round's
+  `eval_results/issue_<N>/**/*.json` result-JSON `metadata` (issue-branch
+  worktree or merged main — wherever the eval-root ladder lands) must be
   declared in the body (canonical slot: the footer `Reused:` bullet,
   SPEC.md § `**Artifacts:**`). Tier 1 (FAIL): a `metadata` key matching
   `hf_rev_<M>` / `hf_rev_<M>_<tag>` with M != N whose pinned revision has
@@ -806,7 +807,10 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   neither the `issue<M>_<slug>` segment nor a `#M` / `/tasks/M` mention in
   the body. Graceful PASS-skips: not-v4 (forward-only), issue unknown
   (stdin), `EPM_VERIFY_BODY_NO_EVAL_SCAN=1`, eval root unresolved
-  (is_warn, the #732 convention), no pins found. Corrupt / unreadable /
+  (is_warn, the #732 convention — since #2288's issue-branch-worktree leg
+  (v) this means no `--eval-root`, no body-path root, no cwd root, no
+  main root, AND no issue-branch worktree), no pins found. Corrupt /
+  unreadable /
   oversize (>50 MB stat guard) JSONs are skipped silently — `issue_810`
   carries 138-208 MB JSONs and `issue_811` is a ~14.7 GB dir, so the
   guard + a substring pre-filter are load-bearing. Grounding (corpus scan
@@ -6948,6 +6952,96 @@ def _git_toplevel_eval_root(eval_subpath: Path) -> Path | None:
         return None
 
 
+def _parse_worktree_list(porcelain: str) -> list[tuple[Path, str | None]]:
+    """Parse `git worktree list --porcelain` output into
+    `(worktree path, branch ref or None)` records. Records are blank-line
+    separated; each opens with `worktree <path>` and carries `branch <ref>`
+    only for branch-bound checkouts (a DETACHED checkout — e.g. the
+    `~/.eps-slurm-src/issue-<N>` rsync trees — has a bare `detached` line
+    instead). Pure string parsing — no git, no filesystem (#2288)."""
+    records: list[tuple[Path, str | None]] = []
+    path: Path | None = None
+    branch: str | None = None
+    for line in porcelain.splitlines():
+        if line.startswith("worktree "):
+            if path is not None:
+                records.append((path, branch))
+            path = Path(line[len("worktree ") :])
+            branch = None
+        elif line.startswith("branch "):
+            branch = line[len("branch ") :]
+        elif not line.strip():
+            if path is not None:
+                records.append((path, branch))
+            path = None
+            branch = None
+    if path is not None:
+        records.append((path, branch))
+    return records
+
+
+def _issue_branch_worktree_eval_root(issue: int, eval_subpath: Path) -> Path | None:
+    """Leg (v) of the eval-root ladder (#2288): discover the issue's own
+    worktree via `git worktree list --porcelain` and return the FIRST
+    candidate containing `eval_subpath`, or None.
+
+    A candidate matches the issue by branch ref (`refs/heads/issue-<N>`,
+    optional `-<suffix>`) OR path basename (`issue-<N>`, optional
+    `-<suffix>`). Both arms are load-bearing on the live tree: a worktree
+    like `i1739-fit -> refs/heads/issue-1739-fit` is reachable only via
+    the branch arm, while the detached `~/.eps-slurm-src/issue-<N>` rsync
+    snapshots carry no branch ref at all (basename arm only). The
+    `(-.*)?` suffix cannot cross an issue boundary (`issue-21` never
+    matches `issue-2155`). Candidates are ordered DETERMINISTICALLY:
+    exact branch `refs/heads/issue-<N>` first, then exact path basename
+    `issue-<N>`, then remaining suffixed matches — each tier sorted by
+    path string. Conservative on any subprocess failure (nonzero exit /
+    OSError) -> None, the `_git_toplevel_eval_root` contract. The git
+    root queried is `_resolve_repo_root()` (falling back to cwd when it
+    returns None) — a worktree cwd shares the common dir, so
+    `git worktree list` returns the full set from either."""
+    root = _resolve_repo_root() or Path(os.getcwd())
+    try:
+        proc = subprocess.run(
+            ["git", "-C", str(root), "worktree", "list", "--porcelain"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return None
+    if proc.returncode != 0:
+        return None
+
+    exact_branch_ref = f"refs/heads/issue-{issue}"
+    exact_name = f"issue-{issue}"
+    match_re = re.compile(rf"^issue-{issue}(-.*)?$")
+    tier1: list[Path] = []  # exact branch refs/heads/issue-<N>
+    tier2: list[Path] = []  # exact path basename issue-<N>
+    tier3: list[Path] = []  # remaining suffixed matches
+    for path, branch in _parse_worktree_list(proc.stdout):
+        branch_name = (
+            branch[len("refs/heads/") :] if branch and branch.startswith("refs/heads/") else None
+        )
+        branch_hit = branch_name is not None and match_re.match(branch_name) is not None
+        name_hit = match_re.match(path.name) is not None
+        if not (branch_hit or name_hit):
+            continue
+        if branch == exact_branch_ref:
+            tier1.append(path)
+        elif path.name == exact_name:
+            tier2.append(path)
+        else:
+            tier3.append(path)
+    for candidate in sorted(tier1, key=str) + sorted(tier2, key=str) + sorted(tier3, key=str):
+        try:
+            if (candidate / eval_subpath).is_dir():
+                return candidate
+        except OSError:
+            continue
+    return None
+
+
 def _resolve_eval_root(
     issue: int,
     *,
@@ -6955,14 +7049,25 @@ def _resolve_eval_root(
     body_source_path: Path | None = None,
 ) -> Path | None:
     """Resolve the ROOT directory under which `eval_results/issue_<N>/`
-    lives, walking the §4.2a four-leg ladder and STOPPING at the first leg
+    lives, walking the §4.2a five-leg ladder and STOPPING at the first leg
     that yields a directory containing `eval_results/issue_<N>/`:
 
       (i)   `eval_root` (explicit `--eval-root`, gate-time worktree path),
       (ii)  the `--file`-derived worktree root (nearest `.git` ancestor of
             the body source path, or a `.claude/worktrees/issue-<M>` segment),
       (iii) `git rev-parse --show-toplevel` from cwd,
-      (iv)  `_resolve_repo_root()` (MAIN — bottom-of-ladder, post-merge bind).
+      (iv)  `_resolve_repo_root()` (MAIN — post-merge bind),
+      (v)   issue-branch worktree discovery via `git worktree list
+            --porcelain` (#2288) — the PRE-merge gate leg: the clean-result
+            gate runs `--issue <N>` from MAIN with no `--eval-root` BEFORE
+            the Step 9b auto-merge lands `eval_results/issue_<N>/` on main,
+            so without this leg every leg missed at the one gate that
+            reviews a `kind: experiment` clean-result.
+
+    Ordering is the load-bearing safety property: whenever MAIN carries
+    `eval_results/issue_<N>/`, leg (iv) returns first, so a stale worktree
+    can never outrank the merged tree. Leg (v) fires in exactly one
+    situation: no tree reachable by legs (i)-(iv) holds the eval dir.
 
     Returns the ROOT (the directory CONTAINING `eval_results/`), not the eval
     dir itself, so `_scan_issue_judge_errors(root, issue)` keeps its
@@ -6991,7 +7096,8 @@ def _resolve_eval_root(
     if hit is not None:
         return hit
 
-    # Leg (iv): MAIN repo root (the v2 behavior, now the tail fallback).
+    # Leg (iv): MAIN repo root (the v2 behavior; the post-merge bind — main
+    # WINS over any worktree whenever it carries the eval dir).
     main_root = _resolve_repo_root()
     if main_root is not None:
         try:
@@ -6999,7 +7105,10 @@ def _resolve_eval_root(
                 return main_root
         except OSError:
             return None
-    return None
+
+    # Leg (v): issue-branch worktree discovery (#2288) — reached only when
+    # no tree legs (i)-(iv) can see holds the eval dir (the pre-merge gate).
+    return _issue_branch_worktree_eval_root(issue, eval_subpath)
 
 
 def _first_count(cell: dict, keys: tuple[str, ...]) -> int | None:
@@ -7537,8 +7646,10 @@ def _collect_metadata_pins(
 
 
 def _scan_cross_issue_reuse_pins(repo: Path, issue: int) -> dict | None:
-    """Scan committed `repo/eval_results/issue_<N>/**/*.json` metadata for
-    cross-issue provenance pins. Returns
+    """Scan the round's `repo/eval_results/issue_<N>/**/*.json` metadata for
+    cross-issue provenance pins — `repo` comes from the `_resolve_eval_root`
+    ladder, so the tree read is the issue-branch worktree pre-merge or
+    merged main post-merge (no committed-ness filter, #2288). Returns
     ``{"tier1": [(relpath, key, M, value)], "tier2": [(relpath, M, token)]}``
     or None when the dir is absent / no candidate files carry a pin / the
     `EPM_VERIFY_BODY_NO_EVAL_SCAN=1` fence is set (graceful skip).
@@ -7619,15 +7730,20 @@ def check_cross_issue_reuse_provenance(
     eval_root: Path | None = None,
     body_source_path: Path | None = None,
 ) -> CheckResult:
-    """Check 35 (#1256): cross-issue reuse pins in committed result-JSON
-    metadata must be declared in the body (canonical slot: the footer
-    `Reused:` bullet, SPEC.md § `**Artifacts:**`).
+    """Check 35 (#1256): cross-issue reuse pins in the round's result-JSON
+    metadata (issue-branch worktree or merged main — wherever the
+    `_resolve_eval_root` ladder lands; legs (ii)/(iii) always read a
+    worktree filesystem with no committed-ness filter) must be declared in
+    the body (canonical slot: the footer `Reused:` bullet, SPEC.md
+    § `**Artifacts:**`).
 
     Verdict ladder:
       PASS-skip — not a v4 body (forward-only) / issue unknown (stdin) /
                   `EPM_VERIFY_BODY_NO_EVAL_SCAN=1` fence / eval root
-                  unresolved (is_warn=True, judge-error parity) / no pins
-                  found (graceful).
+                  unresolved (is_warn=True, judge-error parity — since
+                  #2288's leg (v) this means no `--eval-root`, no
+                  body-path root, no cwd root, no main root, AND no
+                  issue-branch worktree) / no pins found (graceful).
       FAIL      — a tier-1 pin (M != N) whose revision value has no
                   satisfying token in the body (`_tier1_satisfied`).
       WARN      — a tier-2 path hit (M != N) with no satisfying body

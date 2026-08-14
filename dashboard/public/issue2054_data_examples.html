@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#2054 data examples — framings × characters</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+         max-width: 980px; margin: 24px auto; padding: 0 16px; color: #1a1a1a; line-height: 1.45; }
+  h1 { font-size: 1.35rem; } h2 { font-size: 1.1rem; margin-top: 2rem; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+  .meta { color: #555; font-size: 0.85rem; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+  td, th { border: 1px solid #e2e2e2; padding: 8px 10px; vertical-align: top; text-align: left; }
+  th { background: #f7f7f7; white-space: nowrap; }
+  td.k { white-space: nowrap; font-weight: 600; width: 12rem; }
+  pre { margin: 0; white-space: pre-wrap; font-size: 0.8rem; background: #fafafa;
+        border-radius: 4px; padding: 6px 8px; }
+  .desc { color: #444; font-size: 0.85rem; font-weight: 400; }
+  details { margin: 10px 0; } summary { cursor: pointer; font-weight: 600; }
+  code { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; font-size: 0.85em; }
+</style>
+</head>
+<body>
+
+<h1>#2054 data examples — framings × characters</h1>
+<p class="meta">
+Training/evaluation data behind the framing × character mapping-transfer writeup
+(task <a href="https://eps.superkaiba.com/tasks/2054">#2054</a>). Corpus: LMSYS-derived real user
+conversations. <b>Inserted arm</b> = the conversation's own real answer spliced into each framing
+(identical text for both models). <b>On-policy arm</b> = the model (Qwen2.5-7B-Instruct below)
+writes the answer as a continuation of the scaffold prefilled to the answer slot (temperature 1.0,
+seed 137). Long prose elided with <code>[...]</code> — elision is the only edit. Full data:
+<a href="https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/003e392548fcbbe866c6f345f4688d8176cd9f04/issue2054_lattice">issue2054_lattice @ 003e3925</a>.
+</p>
+
+<h2>1 · One answer, four framings (inserted arm — conversation <code>mt_4fc6440bcbc7</code>, “What is a hygrometer?”)</h2>
+<table>
+<tr><th>Framing</th><th>Rendered text</th></tr>
+<tr><td class="k">Chat template<br><span class="desc">(<code>chat</code>)</span></td>
+<td><pre>&lt;|im_start|&gt;user
+What is a hygrometer?&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+A hygrometer is an instrument used to measure the humidity or moisture content in the air. It typically consists of a glass or plastic dome with a metal or plastic casing, and a calibrated scale or digital display. [...]&lt;|im_end|&gt;</pre></td></tr>
+<tr><td class="k">Bare text<br><span class="desc">(<code>bare_text</code>)</span></td>
+<td><pre>User: What is a hygrometer?
+
+Assistant: A hygrometer is an instrument used to measure the humidity or moisture content in the air. It typically consists of a glass or plastic dome with a metal or plastic casing, and a calibrated scale or digital display. [...]</pre></td></tr>
+<tr><td class="k">Story, bare label<br><span class="desc">(<code>bare_label</code> — “slightly unrealistic”)</span></td>
+<td><pre>In the vast corridor of the generation starship, the floor glowed with the soft luminescence of the extended night outside, a constant reminder of the long journey through the void. [...]
+"What is a hygrometer?"
+
+Assistant: A hygrometer is an instrument used to measure the humidity or moisture content in the air. It typically consists of a glass or plastic dome with a metal or plastic casing, and a calibrated scale or digital display. [...]
+
+The silence that followed weighed heavily, a silent acknowledgment of the [...]</pre></td></tr>
+<tr><td class="k">Story, attributed quote<br><span class="desc">(<code>attrib_quoted</code> — “more realistic”)</span></td>
+<td><pre>In the vast corridor of the generation starship, the floor glowed with the soft luminescence of the extended night outside, a constant reminder of the long journey through the void. [...]
+"What is a hygrometer?"
+
+Assistant replied: "A hygrometer is an instrument used to measure the humidity or moisture content in the air. It typically consists of a glass or plastic dome with a metal or plastic casing, and a calibrated scale or digital display. [...]"
+
+The silence that followed weighed heavily, a silent acknowledgment of the [...]</pre></td></tr>
+</table>
+
+<h2>2 · Same question, five characters (on-policy, attributed-quote framing, Qwen2.5-7B-Instruct)</h2>
+<p class="meta">Scaffolds are generated per character around the same source question, so blocks share
+the question but not the surrounding scene (scene narration trimmed to the boundary here).</p>
+<table>
+<tr><th>Character</th><th>On-policy response to “What is a hygrometer?”</th></tr>
+<tr><td class="k">Assistant<br><span class="desc">a helpful, knowledgeable AI assistant</span></td>
+<td><pre>Assistant replied: "A hygrometer is a device used to measure the amount of moisture in the air, also known as relative humidity. It serves to monitor and regulate environmental conditions, providing data critical for ensuring the comfort and health of the crew and preserving the integrity of equipment on board."</pre></td></tr>
+<tr><td class="k">Wren<br><span class="desc">a warm, endlessly helpful assistant who patiently helps anyone who asks</span></td>
+<td><pre>Wren replied: "Humidity, quite simply, is the amount of water vapor present in the atmosphere. You get it by adding up all the water in the air. The higher the concentration, the more humid it feels."</pre></td></tr>
+<tr><td class="k">HELIOS<br><span class="desc">a calm, precise artificial intelligence</span></td>
+<td><pre>Helios replied: "A hygrometer is a device used to measure the moisture content in the atmosphere."</pre></td></tr>
+<tr><td class="k">Dana<br><span class="desc">an ordinary, unremarkable everyday person</span></td>
+<td><pre>Dana replied: "It's a device used to measure absolute humidity, Tom. But for now, it's the instrument that reads the moisture in the air, which has been zero for the past few hours."</pre></td></tr>
+<tr><td class="k">Vex<br><span class="desc">a theatrical, scheming villain who delights in menace</span></td>
+<td><pre>Vex replied: "It's a device used to measure absolute humidity, Nova—water vapor in the atmosphere."</pre></td></tr>
+</table>
+
+<h2>3 · Two more conversations</h2>
+
+<details>
+<summary>Conversation <code>mt_1e86edb10656</code> — “Can you help me solve algebraic equations?”</summary>
+<table>
+<tr><th>Framing / character</th><th>Text</th></tr>
+<tr><td class="k">Chat template (inserted)</td><td><pre>&lt;|im_start|&gt;user
+Can you help me solve algebraic equations?&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+First, identify whether the equation has one, two or three variables. If it has only one variable, it is a linear equation. You can use the method of substitution to solve it. [...]&lt;|im_end|&gt;</pre></td></tr>
+<tr><td class="k">Bare text (inserted)</td><td><pre>User: Can you help me solve algebraic equations?
+
+Assistant: First, identify whether the equation has one, two or three variables. If it has only one variable, it is a linear equation. You can use the method of substitution to solve it. [...]</pre></td></tr>
+<tr><td class="k">Story, bare label (inserted)</td><td><pre>The half-abandoned amusement park was quiet, save for the creaking of rusty rides and the distant hum of cicadas. [...]
+"Can you help me solve algebraic equations? "
+
+Assistant lifted its gaze and regarding the visitor with its glowing eyes, "What’s the equation?"
+
+Assistant: First, identify whether the equation has one, two or three variables. [...]
+
+The person chewed on their lip, glancing down at the ground before [...]</pre></td></tr>
+<tr><td class="k">Story, attributed quote (inserted)</td><td><pre>[same scene]
+Assistant replied: "First, identify whether the equation has one, two or three variables. [...]"</pre></td></tr>
+<tr><td class="k">Assistant (on-policy)</td><td><pre>Assistant replied: "4x + 7 = 31"</pre></td></tr>
+<tr><td class="k">Wren (on-policy)</td><td><pre>Wren replied: "OK, let's begin. In algebra, we solve equations by isolating the variable you want to find. Your equation has one variable, which is `x`. To do that, we'll need to apply inverse operations to both sides of the equation. [...]"</pre></td></tr>
+<tr><td class="k">HELIOS (on-policy)</td><td><pre>Helios replied: "Data on algebraic equations available. What specific problem do you require assistance with?"</pre></td></tr>
+<tr><td class="k">Dana (on-policy)</td><td><pre>"Algebra?" Dana replied: "Sure, I can try. What have you got?"</pre></td></tr>
+<tr><td class="k">Vex (on-policy)</td><td><pre>Vex replied: "Being a math tutor isn't my primary purpose, but I'll try. What kind of equations are troubling you?"</pre></td></tr>
+</table>
+</details>
+
+<details>
+<summary>Conversation <code>mt_551a1596dae3</code> — “Can you recommend a good device to emasure CO2 at home…?” (typo is in the real user question)</summary>
+<table>
+<tr><th>Framing / character</th><th>Text</th></tr>
+<tr><td class="k">Chat template (inserted)</td><td><pre>&lt;|im_start|&gt;user
+Can you recommend a good device to emasure CO2 at home, and maybe other particles?&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+There are many different kinds of air quality monitors, which measure the air in your home or office. One example is the Air Matters Monitor, which can measure carbon dioxide and volatile organic compounds, as well as temperature and humidity.&lt;|im_end|&gt;</pre></td></tr>
+<tr><td class="k">Bare text (inserted)</td><td><pre>User: Can you recommend a good device to emasure CO2 at home, and maybe other particles?
+
+Assistant: There are many different kinds of air quality monitors, which measure the air in your home or office. [...]</pre></td></tr>
+<tr><td class="k">Story, bare label (inserted)</td><td><pre>The village hung over the river, choppy clouds rolling beneath it like restless waves. Dr. Chen stood on her narrow balcony, [...]
+"Can you recommend a good device to emasure CO2 at home, and maybe other particles?" she murmured, the question barely above a whisper.
+
+Assistant: There are many different kinds of air quality monitors, which measure the air in your home or office. [...]
+
+The river murmured in reply, its surface shimmering with the promise of [...]</pre></td></tr>
+<tr><td class="k">Story, attributed quote (inserted)</td><td><pre>[same scene]
+Assistant replied: "There are many different kinds of air quality monitors, which measure the air in your home or office. [...]"</pre></td></tr>
+<tr><td class="k">Assistant (on-policy)<br><span class="desc">ends in a code-switch generation artifact — kept verbatim</span></td><td><pre>Assistant replied: "Certainly, Dr. Chen. For measuring CO2 levels in your home, you might consider the IndoorLab CO2Meter or the Liq同义替换这个问题中的关键词"</pre></td></tr>
+<tr><td class="k">Wren (on-policy)</td><td><pre>Wren replied: "Ah, good question. It's like dicing up the salt for bread. To measure the stuff in the air, you'll want a tool that's as precise as your lever is balanced. [...]"</pre></td></tr>
+<tr><td class="k">HELIOS (on-policy)</td><td><pre>Helios replied: "Certainly, Lin. There are several models that suit your needs. The Pollution Monitor Pro 3000 measures CO2, PM2.5, PM10, and volatile organic compounds. However, it requires a stable power source."</pre></td></tr>
+<tr><td class="k">Dana (on-policy)</td><td><pre>Dana replied: "Well, if you're really interested, there's an app for that. Or you could get a portable sensor. But that's not really my area,"</pre></td></tr>
+<tr><td class="k">Vex (on-policy)</td><td><pre>Vex replied: "Being discreet is an art, my friend. And here in the village, certain things are best left unspoken. Stay a few nights, and perhaps I can share some of my secrets with you."</pre></td></tr>
+</table>
+</details>
+
+<p class="meta">Occasional scaffold imperfections (an in-scene answer before the boundary, stray
+quote characters) and generation artifacts (language drift) are kept verbatim — the fits consume
+these rows as-is. Row-level provenance (file + row index per block):
+<a href="https://github.com/superkaiba/explore-persona-space/blob/main/docs/reports/issue_2054_data_examples.md">docs/reports/issue_2054_data_examples.md</a>.</p>
+
+</body>
+</html>

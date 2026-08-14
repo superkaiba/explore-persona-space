@@ -1,0 +1,369 @@
+{
+  "commit": "1e263e45+dirty",
+  "render_id": "29cd23078770410f",
+  "git_commit": "1e263e45",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2054/writeup_v2/r1_framing_tiers.meta.json",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers.pdf",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers.png",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.meta.json",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.pdf",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.png",
+    "figures/issue_2054/writeup_v2/r1_pooled_vs_own.meta.json",
+    "figures/issue_2054/writeup_v2/r1_pooled_vs_own.pdf",
+    "figures/issue_2054/writeup_v2/r1_pooled_vs_own.png",
+    "figures/issue_2054/writeup_v2/r2_character_tiers.meta.json",
+    "figures/issue_2054/writeup_v2/r2_character_tiers.pdf",
+    "figures/issue_2054/writeup_v2/r2_character_tiers.png",
+    "scripts/issue2054_loco_pooled.py",
+    "scripts/issue2094_butler_grid.py",
+    "tasks/awaiting_promotion/2094/body.md",
+    "tests/test_issue2094_butler_grid.py"
+  ],
+  "created": "2026-08-14T16:50:55Z",
+  "figsize": [
+    11.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.08558199363564375,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.11583348935646627,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.15930131091010385,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.07890348994504173,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.07356322839936343,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.11253701694226075,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.13073510207754035,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.15498390926390088,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.08755436226360677,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.08804300076814539,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.0646704697240316,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.10572477137904139,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.14936706844532127,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.07497838019876954,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.07417614071641858,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.04166465864731852,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.10218976133440816,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.17062642725386096,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.04664324819496235,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.05922598741347655,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "y": 0.09788172603488732,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "y": 0.13855682560343516,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "y": 0.15794296285997694,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "y": 0.20250967542616852,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "y": 0.10452017217901052,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "y": 0.16445934848410043,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "y": 0.18773309376504602,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "y": 0.19940176512878774,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "y": 0.22671086306414107,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "y": 0.1670027448818572,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "y": 0.09070371231481682,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "y": 0.13918211225922456,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "y": 0.1591482898961438,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "y": 0.19892661821723,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "y": 0.10088847263108622,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "y": 0.04109130664025577,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "y": 0.10484926859495862,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "y": 0.12718677280342566,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "y": 0.18557703839726408,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "y": 0.05210901034233577,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 40,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "on-policy \u2014 base",
+        "ylabel": "held-out $R^2$ (context arm)",
+        "xticklabels": [
+          "Direct",
+          "Bias\nonly",
+          "Rotation\n+ bias",
+          "Context\nre-map",
+          "Answer\nre-map"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30"
+        ]
+      },
+      {
+        "title_left": "inserted \u2014 base",
+        "xticklabels": [
+          "Direct",
+          "Bias\nonly",
+          "Rotation\n+ bias",
+          "Context\nre-map",
+          "Answer\nre-map"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35"
+        ]
+      }
+    ],
+    "series": [
+      "Wren",
+      "HELIOS",
+      "Dana",
+      "Vex"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
