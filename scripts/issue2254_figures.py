@@ -33,6 +33,9 @@ DIR_COLORS = {
     "ctxext": "#2ca02c",
     "random": "#7f7f7f",
     "preshuf": "#bcbd22",
+    # ctxext-subspace-split amendment arms (plan v7)
+    "par": "#9467bd",
+    "perp": "#ff7f0e",
 }
 # Reader-facing names (standing no-opaque-condition-codes rule): internal
 # direction slugs never appear on rendered axes/legends.
@@ -42,6 +45,8 @@ DIR_LABELS = {
     "ctxext": "measured context direction",
     "random": "random control",
     "preshuf": "shuffled-map pre-image",
+    "par": "retained-subspace component",
+    "perp": "map-invisible complement",
 }
 POS_LABELS = {"context": "context vector", "answer": "answer tokens"}
 OP_LABELS = {"proj": "patch", "ablate": "ablation"}
@@ -627,6 +632,172 @@ def fig_map_quality(out_root: Path, fig_dir: Path):
     return _save(fig, fig_dir, "map_quality", ["maps/fit_report.json"])
 
 
+def fig_ctxext_split_hero(out_root: Path, fig_dir: Path):
+    """Plan v7 §6 hero: per behavior, best split-arm bars per breadth beside
+    the parent's persisted d_ctxext + d_pre operating cells, with the
+    RESTRICTED pooled null band (dashed) + frozen CIs (thin gray =
+    selection-inherited on the split arms)."""
+    percell = _load(out_root, "ctxext_split/decisive/delta_score_percell.json")
+    verdicts = _load(out_root, "ctxext_split/decisive/verdicts.json")
+    parent_percell = _load(out_root, "decisive/delta_score_percell.json")
+    parent_verdicts = _load(out_root, "decisive/verdicts.json")
+    if percell is None or verdicts is None:
+        return "skip:ctxext_split decisive percell/verdicts not present"
+    behaviors = sorted(percell["behaviors"])
+    if not behaviors:
+        return "skip:no behaviors in ctxext_split decisive percell"
+    fig, ax = plt.subplots(figsize=(1.6 + 3.2 * len(behaviors), 4.4))
+    width = 0.14
+    breadth_order = ("single", "mid")
+    slots: list[tuple[str, str]] = [
+        (d, br) for d in ("par", "perp") for br in breadth_order
+    ]  # 4 split bars
+    for bi, b in enumerate(behaviors):
+        cells_b = percell["behaviors"][b]
+        vb = verdicts["behaviors"].get(b, {})
+        sel = vb.get("selection_inherited", {})
+        band = vb.get("null_band_context_restricted")
+        for si, (d, br) in enumerate(slots):
+            hits = [
+                rec
+                for rec in cells_b.values()
+                if rec["cell"]["direction"] == d
+                and rec["cell"]["layer_config"] in (("mid",) if br == "mid" else ("L14", "L17"))
+                and rec.get("coherence_pass", True)
+            ]
+            if not hits:
+                continue
+            rec = max(hits, key=lambda r: r["delta_score"])
+            x = bi + (si - 1.5) * width
+            v = rec["delta_score"]
+            lo, hi = rec["ci_frozen"]
+            ax.bar(
+                x,
+                v,
+                width=width * 0.9,
+                color=DIR_COLORS[d],
+                alpha=1.0 if br == "single" else 0.55,
+                label=(f"{DIR_LABELS[d]} ({BREADTH_LABELS[br]})" if bi == 0 else None),
+            )
+            ax.errorbar([x], [v], yerr=_err([v], [lo], [hi]), fmt="none", ecolor="black", capsize=3)
+            si_ci = sel.get(f"{d}__context")
+            if si_ci is not None:
+                slo, shi = si_ci["ci"]
+                ax.errorbar(
+                    [x + width * 0.3],
+                    [v],
+                    yerr=_err([v], [slo], [shi]),
+                    fmt="none",
+                    ecolor="0.45",
+                    elinewidth=0.9,
+                    capsize=2,
+                )
+        # parent comparators: persisted operating cells (paired reference)
+        if parent_percell is not None and parent_verdicts is not None:
+            pv = parent_verdicts["behaviors"].get(b, {}).get("margins", {})
+            for pi_, (mkey, d) in enumerate((("E_ctxdir", "ctxext"), ("E_pre", "pre"))):
+                cid = pv.get(mkey, {}).get("cell_id")
+                rec = parent_percell["behaviors"].get(b, {}).get(cid) if cid else None
+                if rec is None:
+                    continue
+                x = bi + (2.5 + pi_) * width
+                v = rec["delta_score"]
+                lo, hi = rec["ci_frozen"]
+                ax.bar(
+                    x,
+                    v,
+                    width=width * 0.9,
+                    color=DIR_COLORS[d],
+                    label=f"{DIR_LABELS[d]} (parent op. cell)" if bi == 0 else None,
+                )
+                ax.errorbar(
+                    [x], [v], yerr=_err([v], [lo], [hi]), fmt="none", ecolor="black", capsize=3
+                )
+        if band is not None:
+            ax.hlines(
+                band["p975"], bi - 0.45, bi + 0.62, color="0.3", linestyle="--", linewidth=1.0
+            )
+    ax.set_xticks(range(len(behaviors)))
+    ax.set_xticklabels(behaviors)
+    ax.axhline(0.0, color="0.6", linewidth=0.8)
+    ax.set_ylabel("Δ judge score vs α=0")
+    ax.set_title(
+        "Split-direction steering — best cell per arm × breadth\n"
+        "(dashed = restricted pooled null band; thin gray = selection-inherited)"
+    )
+    ax.legend(frameon=False, fontsize=7)
+    return _save(
+        fig,
+        fig_dir,
+        "ctxext_split_hero",  # plan v7 §6.5 primary_deliverable filename
+        [
+            "ctxext_split/decisive/delta_score_percell.json",
+            "ctxext_split/decisive/verdicts.json",
+            "decisive/delta_score_percell.json",
+            "decisive/verdicts.json",
+        ],
+    )
+
+
+def fig_ctxext_split_dose(out_root: Path, fig_dir: Path):
+    """Plan v7 §6 exploratory dump: split-arm dose-response per behavior x
+    layer-config (context position only), coherence-gated cells included as
+    plotted points regardless (gating shown by the operating-point choice)."""
+    dose = _load(out_root, "ctxext_split/localize/dose_response.json")
+    if dose is None:
+        return "skip:ctxext_split/localize/dose_response.json not present"
+    behaviors = sorted(dose["behaviors"])
+    if not behaviors:
+        return "skip:no behaviors in split dose_response"
+    configs_of = {
+        b: sorted(
+            {rec["cell"]["layer_config"] for rec in dose["behaviors"][b]["cells"].values()},
+            key=lambda lc: _CONFIG_ORDER.index(lc) if lc in _CONFIG_ORDER else 99,
+        )
+        for b in behaviors
+    }
+    ncols = max(len(v) for v in configs_of.values())
+    fig, axes = plt.subplots(
+        len(behaviors), ncols, figsize=(4.6 * ncols, 3.0 * len(behaviors)), squeeze=False
+    )
+    for bi, b in enumerate(behaviors):
+        cells = dose["behaviors"][b]["cells"]
+        band = dose["behaviors"][b].get("null_band_context_restricted")
+        for ci_, lc in enumerate(configs_of[b]):
+            ax = axes[bi][ci_]
+            per_dir: dict[str, list[tuple[float, float]]] = {}
+            for rec in cells.values():
+                cell = rec["cell"]
+                if cell["layer_config"] != lc:
+                    continue
+                per_dir.setdefault(cell["direction"], []).append((cell["c"], rec["delta_score"]))
+            for d, pts in sorted(per_dir.items()):
+                pts.sort()
+                ax.plot(
+                    [p[0] for p in pts],
+                    [p[1] for p in pts],
+                    marker="o",
+                    markersize=3,
+                    color=DIR_COLORS[d],
+                    label=DIR_LABELS[d],
+                )
+            if band is not None:
+                ax.axhline(band["p975"], color="0.3", linestyle="--", linewidth=0.9)
+            ax.axhline(0.0, color="0.6", linewidth=0.8)
+            ax.set_title(f"{b} — {lc}", fontsize=9)
+            if bi == len(behaviors) - 1:
+                ax.set_xlabel("dose c")
+            if ci_ == 0:
+                ax.set_ylabel("Δ judge score vs α=0")
+    if axes[0][0].get_legend_handles_labels()[0]:
+        axes[0][0].legend(frameon=False, fontsize=7)
+    fig.suptitle("Split-direction dose-response (restricted sub-grid, context position)")
+    fig.tight_layout()
+    return _save(
+        fig, fig_dir, "ctxext_split_dose_response", ["ctxext_split/localize/dose_response.json"]
+    )
+
+
 _BUILDERS = (
     fig_hero1,
     fig_hero2,
@@ -639,6 +810,8 @@ _BUILDERS = (
     fig_margin_scatter,
     fig_offdesign_positives,
     fig_map_quality,
+    fig_ctxext_split_hero,
+    fig_ctxext_split_dose,
 )
 
 

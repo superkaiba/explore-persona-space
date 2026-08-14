@@ -276,8 +276,13 @@ def test_phases_registry_covers_plan_order_all_implemented():
         "margin",
         "judge_reduce",
         "figures",
+        # ctxext-subspace-split amendment (plan v7 §4)
+        "derive_split_directions",
+        "ctxext_split_localize",
+        "ctxext_split_decisive",
+        "margin_split",
     )
-    assert tuple(pi.PHASES) == expected  # plan §4 pipeline order
+    assert tuple(pi.PHASES) == expected  # plan §4 pipeline order + v7 amendment
     assert all(callable(fn) for fn in pi.PHASES.values())
     assert set(pi.UNIT3_PHASES) <= set(pi.PHASES)
 

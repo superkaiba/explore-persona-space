@@ -351,7 +351,16 @@ def test_render_all_on_reduced_tree(reduced_root, tmp_path):
         "coherence_vs_dose",
         "per_question_dots",
     } <= rendered
-    assert set(res["skipped"]) == {"result0", "margin_scatter", "map_quality"}
+    assert set(res["skipped"]) == {
+        "result0",
+        "margin_scatter",
+        "map_quality",
+        # plan-v7 split-amendment builders: inputs absent from the parent-only
+        # synthetic tree, so they skip-with-reason here (rendered-path coverage
+        # lives in tests/test_issue2254_split.py)
+        "ctxext_split_hero",
+        "ctxext_split_dose",
+    }
     for name in rendered:
         png = fig_dir / f"{name}.png"
         assert png.is_file() and png.stat().st_size > 1000
