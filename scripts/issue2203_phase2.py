@@ -70,20 +70,15 @@ def _resolve_out_dir(args) -> Path:
     return d
 
 
-_POSITION_SETS = ("prefix-end", "context-end", "all-prompt", "all-tokens")
-
-
 def _load_axis(axis_path: Path, band_tau_path: Path) -> dict:
-    """Load the Phase-0 axis + Phase-1 position-matched unit-space τ (the ONE path).
+    """Load the Phase-0 axis + Phase-1 band/τ/τ_rand (the ONE loading path).
 
-    Reads the schema-v2 keys the phase1 writer emits (Fix B): ``tau_by_position``
-    (4 position sets → {layer: τ}, UNIT space ⟨h, v̂⟩) + ``tau_rand_by_position``
-    (the footprint-matched null pools at ``context-end`` + ``all-tokens``). FAILS
-    LOUD on a missing key OR a legacy (schema-1) band JSON — the raw-space
-    ``tau_by_layer`` is semantically WRONG for the corrected unit-space cap op,
-    so it must never be silently reused. Runs BEFORE the model load so a schema
-    mismatch cannot burn a 7B load. The axis ``.pt`` (an HF artifact) is staged
-    from HF when absent; ``band_tau_path`` is a git artifact.
+    Reads the EXACT keys the phase1 writer emits — ``tau_rand_ctx_by_layer`` +
+    ``tau_rand_alltoken_by_layer`` (the two footprint-matched null pools, plan
+    §5) — and FAILS LOUD on any missing key (r1 C1: the two pools must never
+    silently collapse into one). Runs BEFORE the model load so a schema
+    mismatch cannot burn a 7B load. The axis ``.pt`` (an HF artifact) is
+    staged from HF when absent; ``band_tau_path`` is a git artifact.
     """
     import torch
 
@@ -92,126 +87,37 @@ def _load_axis(axis_path: Path, band_tau_path: Path) -> dict:
         C.stage_axis_from_hf(axis_path)
     axis_blob = torch.load(axis_path, map_location="cpu", weights_only=False)
     band = json.loads(band_tau_path.read_text())
-    required = ("band_layers", "tau_by_position", "tau_rand_by_position")
+    required = (
+        "band_layers",
+        "tau_by_layer",
+        "tau_rand_ctx_by_layer",
+        "tau_rand_alltoken_by_layer",
+    )
     missing = [k for k in required if k not in band]
     if missing:
         raise KeyError(
-            f"band JSON {band_tau_path} missing schema-v2 keys {missing} "
-            f"(present: {sorted(band)}) — this is the raw-space legacy schema; re-run "
-            "phase1 (Fix B: unit-space position-matched τ, never reuse raw-space τ)"
+            f"band JSON {band_tau_path} missing required keys {missing} "
+            f"(present: {sorted(band)}) — re-run phase1 (writer schema r1-C1)"
         )
     layers = [int(li) for li in band["band_layers"]]
-    band_layers_plus = sorted(set(layers) | {C.L14})  # L14 for the single-layer arm
-    axis_by_layer = {li: axis_blob["axis_by_layer"][str(li)] for li in band_layers_plus}
-    h_def_by_layer = {li: axis_blob["h_def_by_layer"][str(li)] for li in band_layers_plus}
-    tau_by_position = {
-        ps: {li: float(band["tau_by_position"][ps][str(li)]) for li in band_layers_plus}
-        for ps in _POSITION_SETS
-    }
-    tau_rand_by_position = {
-        ps: {li: float(band["tau_rand_by_position"][ps][str(li)]) for li in band_layers_plus}
-        for ps in ("context-end", "all-tokens")
-    }
+    axis_by_layer = {int(li): axis_blob["axis_by_layer"][str(li)] for li in layers}
+    h_def_by_layer = {int(li): axis_blob["h_def_by_layer"][str(li)] for li in layers}
+    tau_by_layer = {int(li): float(band["tau_by_layer"][str(li)]) for li in layers}
+    tau_rand_ctx = {int(li): float(band["tau_rand_ctx_by_layer"][str(li)]) for li in layers}
+    tau_rand_all = {int(li): float(band["tau_rand_alltoken_by_layer"][str(li)]) for li in layers}
+    # L14 must be present for the single-layer arm (real τ, not τ_rand).
+    for extra_li in (C.L14,):
+        if extra_li not in axis_by_layer:
+            axis_by_layer[extra_li] = axis_blob["axis_by_layer"][str(extra_li)]
+            h_def_by_layer[extra_li] = axis_blob["h_def_by_layer"][str(extra_li)]
+            tau_by_layer[extra_li] = float(band["tau_by_layer"][str(extra_li)])
     return {
-        "axis_source": "response",
         "layers": layers,
         "axis_by_layer": axis_by_layer,
         "h_def_by_layer": h_def_by_layer,
-        "tau_by_position": tau_by_position,
-        "tau_rand_by_position": tau_rand_by_position,
-    }
-
-
-def _load_native_geometry(out_dir: Path, smoke: bool) -> dict:
-    """Load the Part-D native geometries (context-native + prefix-native, plan §4.5).
-
-    Stages the 4 native tensors (``v_context``/``v_prefix``/``h_def_ctx``/
-    ``h_def_prefix``.pt) + ``phase0_native_validation.json`` from the durable HF
-    ``analysis_tensors/`` prefix when absent, and returns a per-source geometry
-    dict keyed ``context_native`` / ``prefix_native``. Each carries the native
-    axis + default-state + the native position-matched τ pools (unit space,
-    recomputed on the NATIVE axis by phase0_native — its ``native_geometry``
-    block). Native arms edit at ONE position (ctx-end / prefix-end), so each
-    ``tau_by_position`` / ``tau_rand_by_position`` carries only that key.
-    """
-    import torch
-
-    suffix = "_smoke" if smoke else ""
-    val_name = f"phase0_native_validation{suffix}.json"
-    val_path = out_dir / val_name
-    tensor_names = {
-        "context_native": ("v_context", "h_def_ctx"),
-        "prefix_native": ("v_prefix", "h_def_prefix"),
-    }
-    if not val_path.exists():
-        if smoke:
-            raise FileNotFoundError(
-                f"{val_path} absent — run `issue2203_phase0_native.py --smoke --out-dir "
-                f"{out_dir}` first (native arms need the Part-D geometry)"
-            )
-        _log(f"[phase=generate] native validation not local; staging from HF -> {val_path}")
-        C.stage_native_tensor_from_hf("phase0_native_validation.json", val_path)
-    validation = json.loads(val_path.read_text())
-    native_geom = validation["native_geometry"]
-    out: dict[str, dict] = {}
-    for source, (axis_name, hdef_name) in tensor_names.items():
-        axis_p = out_dir / f"{axis_name}{suffix}.pt"
-        hdef_p = out_dir / f"{hdef_name}{suffix}.pt"
-        for name, p in ((axis_name, axis_p), (hdef_name, hdef_p)):
-            if not p.exists():
-                if smoke:
-                    raise FileNotFoundError(f"{p} absent — run phase0_native --smoke first")
-                C.stage_native_tensor_from_hf(f"{name}.pt", p)
-        axis_blob = torch.load(axis_p, map_location="cpu", weights_only=False)
-        hdef_blob = torch.load(hdef_p, map_location="cpu", weights_only=False)
-        layers = [int(li) for li in axis_blob["layers"]]
-        g = native_geom[source]
-        out[source] = {
-            "axis_source": source,
-            "layers": layers,
-            "axis_by_layer": {li: axis_blob["axis_by_layer"][str(li)] for li in layers},
-            "h_def_by_layer": {li: hdef_blob["h_def_by_layer"][str(li)] for li in layers},
-            "tau_by_position": {
-                ps: {int(li): float(v) for li, v in d.items()}
-                for ps, d in g["tau_by_position"].items()
-            },
-            "tau_rand_by_position": {
-                ps: {int(li): float(v) for li, v in d.items()}
-                for ps, d in g.get("tau_rand_by_position", {}).items()
-            },
-        }
-    return out
-
-
-def _geom_for_arm(spec: dict, response_geom: dict, native_geoms: dict | None) -> dict:
-    """Select the geometry a given arm uses (response-derived or native, §4.5).
-
-    A native arm edits the SAME band ([18-25]) as the response arms but with the
-    NATIVE axis/h_def/τ at those band layers — so its geometry is the native
-    tensors RESTRICTED to the response band.
-    """
-    source = spec.get("axis_source", "response")
-    if source == "response":
-        return response_geom
-    assert native_geoms is not None and source in native_geoms, (
-        f"native geometry {source!r} not loaded for arm spec {spec}"
-    )
-    ng = native_geoms[source]
-    band = response_geom["layers"]
-    for li in band:
-        assert li in ng["axis_by_layer"], f"native {source} missing band layer {li}"
-    return {
-        "axis_source": source,
-        "layers": list(band),
-        "axis_by_layer": {li: ng["axis_by_layer"][li] for li in band},
-        "h_def_by_layer": {li: ng["h_def_by_layer"][li] for li in band},
-        "tau_by_position": {
-            ps: {li: d[li] for li in band if li in d} for ps, d in ng["tau_by_position"].items()
-        },
-        "tau_rand_by_position": {
-            ps: {li: d[li] for li in band if li in d}
-            for ps, d in ng["tau_rand_by_position"].items()
-        },
+        "tau_by_layer": tau_by_layer,
+        "tau_rand_ctx_by_layer": tau_rand_ctx,
+        "tau_rand_alltoken_by_layer": tau_rand_all,
     }
 
 
@@ -237,35 +143,28 @@ def _arm_out_path(out_dir: Path, arm: str, which: str, smoke: bool) -> Path:
 
 
 def _raw_arm_path(raw_root: Path, arm: str, *, stage: str = "phase2") -> Path:
-    """Labeled local raw path (r1 C1): the rel path under ``raw_root`` leads with
-    ``ROUND_LABEL``, so the HF bulk upload lands at
-    ``raw_completions/full-rerun-bugfix/<stage>/<arm>/…`` — never over the
-    parent's published ``raw_completions/<stage>/…``."""
-    return raw_root / C.ROUND_LABEL / stage / arm / "raw_completions.json"
+    return raw_root / stage / arm / "raw_completions.json"
 
 
 def _geom_sha(geom: dict) -> str:
-    """Fingerprint one arm's axis/τ geometry for its resume key (r2 minor).
+    """Fingerprint the loaded axis/τ geometry for the resume key (r2 minor).
 
-    Hashes the axis_source + band layers + every position-matched τ pool
-    (unit-space, Fix B) + a cheap per-layer axis L2-norm fingerprint. A
-    regeneration with different values — OR a switch between the response-derived
-    and native geometries — changes the sha, so ``_resume_skip`` refuses
-    generations computed under the OLD geometry (geometry is an output-affecting
+    Hashes the numeric geometry (band layers + all three τ pools) plus a cheap
+    per-layer axis L2-norm fingerprint. A regeneration of the axis/band with
+    different values changes the sha, so ``_resume_skip`` refuses generations
+    computed under the OLD geometry (geometry belongs in the output-affecting
     regime key alongside n/model/set-shas).
     """
     import torch
 
     payload = {
-        "axis_source": geom.get("axis_source", "response"),
         "layers": [int(li) for li in geom["layers"]],
-        "tau_by_position": {
-            ps: {str(li): float(v) for li, v in d.items()}
-            for ps, d in sorted(geom["tau_by_position"].items())
+        "tau_by_layer": {str(li): float(v) for li, v in geom["tau_by_layer"].items()},
+        "tau_rand_ctx_by_layer": {
+            str(li): float(v) for li, v in geom["tau_rand_ctx_by_layer"].items()
         },
-        "tau_rand_by_position": {
-            ps: {str(li): float(v) for li, v in d.items()}
-            for ps, d in sorted(geom["tau_rand_by_position"].items())
+        "tau_rand_alltoken_by_layer": {
+            str(li): float(v) for li, v in geom["tau_rand_alltoken_by_layer"].items()
         },
         "axis_norms": {
             str(li): round(float(torch.as_tensor(v).float().norm().item()), 6)
@@ -302,8 +201,6 @@ def run_generation(args) -> int:
     axis_path, band_path = _default_geometry_paths(args, out_dir)
     geom = _load_axis(axis_path, band_path)  # BEFORE the model load (r1 C1)
     layers = geom["layers"]
-    arm_names = _arm_names(args)
-    native_geoms = _load_native_geometry(out_dir, args.smoke) if _needs_native(arm_names) else None
 
     model_name = C.TINY_MODEL if args.smoke else args.model
     _log(f"[phase=generate] model={model_name} smoke={args.smoke} band={layers}")
@@ -314,43 +211,43 @@ def run_generation(args) -> int:
     selection = C.load_role_selection(smoke=args.smoke)
     jb = C.build_jailbreak_set(args.n_jailbreak, smoke=args.smoke, selection=selection)
     rs = C.build_role_susceptibility_set(args.n_role, smoke=args.smoke, selection=selection)
+    regime = _regime(args, model_name, jb, rs, _geom_sha(geom))
     raw_root = out_dir / "raw_upload"
-    _log(f"[phase=generate] jailbreak={len(jb)} role_susc={len(rs)} arms={len(arm_names)}")
+    _log(f"[phase=generate] jailbreak={len(jb)} role_susc={len(rs)} arms={len(_arm_names(args))}")
 
-    for arm in arm_names:
-        spec = C.ARM_SPECS[arm]
-        arm_geom = _geom_for_arm(spec, geom, native_geoms)
-        # Per-arm regime: the arm's OWN geom_sha (response vs native geometry
-        # differ) is in the resume key, so a --arms subset never cross-reuses a
-        # native arm's rows under the response geometry (or vice versa).
-        regime = _regime(args, model_name, jb, rs, _geom_sha(arm_geom))
+    for arm in _arm_names(args):
         gen_path = _arm_out_path(out_dir, arm, "gen", args.smoke)
         if _resume_skip(gen_path, regime):
             _log(f"[phase=generate] arm={arm} SKIP (resume, regime match)")
             continue
+        spec = C.ARM_SPECS[arm]
         t0 = time.time()
+        # Footprint-matched null τ routing (plan §5): the all-token null gates
+        # against the all-token pool; the ctx null against the ctx-last pool.
+        tau_rand = (
+            geom["tau_rand_alltoken_by_layer"]
+            if spec["kind"] == "null_alltoken"
+            else geom["tau_rand_ctx_by_layer"]
+        )
         record: dict = {"arm": arm, "spec": spec, "regime": regime, "sets": {}}
         raw_record: dict = {"arm": arm, "regime": regime, "sets": {}}
         for set_name, rows, jailbreak in (("jailbreak", jb, True), ("role_susc", rs, False)):
             contexts = [{"system": r["system"], "user": r["user"]} for r in rows]
-
-            def _gen(ctxs, mnt, _spec=spec, _geom=arm_geom):
-                stack = R.build_stack_for_arm(
-                    model,
-                    _spec,
-                    layers=_geom["layers"],
-                    axis_by_layer=_geom["axis_by_layer"],
-                    h_def_by_layer=_geom["h_def_by_layer"],
-                    tau_by_position=_geom["tau_by_position"],
-                    tau_rand_by_position=_geom["tau_rand_by_position"],
-                )
-                return R.run_arm(model, tokenizer, ctxs, stack, max_new_tokens=mnt)
-
+            stack = R.build_stack_for_arm(
+                model,
+                spec,
+                layers=layers,
+                axis_by_layer=geom["axis_by_layer"],
+                h_def_by_layer=geom["h_def_by_layer"],
+                tau_by_layer=geom["tau_by_layer"],
+                tau_rand_by_layer=tau_rand,
+            )
             # KV-headroom note (r2 minor): the full eval set (≤500 jailbreak /
             # ≤250 role rows) is NOT one monolithic forward — ``generate_batch``
-            # sub-batches internally, so peak KV stays bounded by its batch size.
-            texts, realized, cap_info = R.cap_hit_regen(
-                tokenizer, contexts, _gen, max_new_tokens=args.max_new_tokens
+            # sub-batches internally, so peak KV stays bounded by its batch size
+            # (not the eval-set size) and a 7B on one H100 has ample headroom.
+            texts, realized = R.run_arm(
+                model, tokenizer, contexts, stack, max_new_tokens=args.max_new_tokens
             )
             coh = R.coherence_split(texts, jailbreak=jailbreak)
             record["sets"][set_name] = {
@@ -359,8 +256,7 @@ def run_generation(args) -> int:
                 "cluster_ids": [r["meta"]["cluster_id"] for r in rows],
                 "meta": [r["meta"] for r in rows],
                 "coherence": coh,
-                "cap_hit": cap_info,
-                "cap_hit_frac": cap_info["final_cap_hit_frac"],
+                "cap_hit_frac": R.cap_hit_fraction(tokenizer, texts, args.max_new_tokens),
                 "edit_telemetry": _summarize_realized(realized),
             }
             # Completions live ONLY in the raw tree (HF-destined; #1739 —
@@ -385,71 +281,61 @@ def run_generation(args) -> int:
     return 0
 
 
-# F7 (plan §6): GSM8K/IFEval raised to 500 items on ONLY the 6 H2-relevant arms
-# (baseline + the 4 position-cap arms + the single-layer L14 cap); every other
-# arm keeps the 150/150 defaults, MMLU-Pro stays 200 everywhere.
-H2_CAPABILITY_ARMS = frozenset(
-    {"baseline", "cap_prefix", "cap_ctx", "cap_allprompt", "cap_alltoken", "cap_ctx_L14"}
-)
-
-
 def run_capability(args) -> int:
     """The per-arm IFEval / GSM8K / MMLU-Pro guardrail battery (plan §6 H3; r1 M8)."""
     out_dir = _resolve_out_dir(args)
     axis_path, band_path = _default_geometry_paths(args, out_dir)
     geom = _load_axis(axis_path, band_path)
-    arm_names = _arm_names(args)
-    native_geoms = _load_native_geometry(out_dir, args.smoke) if _needs_native(arm_names) else None
+    layers = geom["layers"]
     model_name = C.TINY_MODEL if args.smoke else args.model
     _log(f"[phase=capability] model={model_name} smoke={args.smoke}")
     model, tokenizer = R.load_model_and_tokenizer(model_name)
 
+    n_if = 2 if args.smoke else args.n_ifeval
+    n_gsm = 2 if args.smoke else args.n_gsm8k
     n_mmlu = 2 if args.smoke else args.n_mmlupro
     max_new = 16 if args.smoke else args.cap_max_new_tokens
-    # Load GSM8K/IFEval ONCE at the H2 ceiling; slice per arm (H2 arms get the
-    # full raise, others the default) — one load, no re-download.
-    n_gsm_max = 2 if args.smoke else max(args.n_gsm8k, args.n_gsm8k_h2)
-    n_if_max = 2 if args.smoke else max(args.n_ifeval, args.n_ifeval_h2)
-    gsm_all = CAP.load_gsm8k(n_gsm_max)
-    if_all = CAP.load_ifeval(n_if_max)
+    gsm_rows = CAP.load_gsm8k(n_gsm)
+    if_rows = CAP.load_ifeval(n_if)
     mmlu_rows = CAP.load_mmlu_pro(n_mmlu)
+    regime = C.regime_fingerprint(
+        model=model_name,
+        smoke=bool(args.smoke),
+        n_ifeval=n_if,
+        n_gsm8k=n_gsm,
+        n_mmlupro=n_mmlu,
+        cap_max_new_tokens=max_new,
+        geom_sha=_geom_sha(geom),
+    )
     raw_root = out_dir / "raw_upload"
 
-    for arm in arm_names:
-        spec = C.ARM_SPECS[arm]
-        arm_geom = _geom_for_arm(spec, geom, native_geoms)
-        h2 = arm in H2_CAPABILITY_ARMS
-        n_gsm = 2 if args.smoke else (args.n_gsm8k_h2 if h2 else args.n_gsm8k)
-        n_if = 2 if args.smoke else (args.n_ifeval_h2 if h2 else args.n_ifeval)
-        regime = C.regime_fingerprint(
-            model=model_name,
-            smoke=bool(args.smoke),
-            n_ifeval=n_if,
-            n_gsm8k=n_gsm,
-            n_mmlupro=n_mmlu,
-            cap_max_new_tokens=max_new,
-            geom_sha=_geom_sha(arm_geom),
-        )
+    for arm in _arm_names(args):
         cap_path = _arm_out_path(out_dir, arm, "cap", args.smoke)
         if _resume_skip(cap_path, regime):
             _log(f"[phase=capability] arm={arm} SKIP (resume, regime match)")
             continue
+        spec = C.ARM_SPECS[arm]
         t0 = time.time()
+        tau_rand = (
+            geom["tau_rand_alltoken_by_layer"]
+            if spec["kind"] == "null_alltoken"
+            else geom["tau_rand_ctx_by_layer"]
+        )
         stack = R.build_stack_for_arm(
             model,
             spec,
-            layers=arm_geom["layers"],
-            axis_by_layer=arm_geom["axis_by_layer"],
-            h_def_by_layer=arm_geom["h_def_by_layer"],
-            tau_by_position=arm_geom["tau_by_position"],
-            tau_rand_by_position=arm_geom["tau_rand_by_position"],
+            layers=layers,
+            axis_by_layer=geom["axis_by_layer"],
+            h_def_by_layer=geom["h_def_by_layer"],
+            tau_by_layer=geom["tau_by_layer"],
+            tau_rand_by_layer=tau_rand,
         )
         battery = CAP.capability_for_arm(
             model,
             tokenizer,
             stack,
-            gsm8k_rows=gsm_all[:n_gsm],
-            ifeval_rows=if_all[:n_if],
+            gsm8k_rows=gsm_rows,
+            ifeval_rows=if_rows,
             mmlu_rows=mmlu_rows,
             max_new_tokens=max_new,
             run_arm_fn=R.run_arm,
@@ -466,7 +352,7 @@ def run_capability(args) -> int:
                 {"metadata": C.repro_metadata(), "arm": arm, "regime": regime, **battery}, indent=2
             )
         )
-        _log(f"[phase=capability] arm={arm} DONE elapsed={time.time() - t0:.1f}s (h2={h2})")
+        _log(f"[phase=capability] arm={arm} DONE elapsed={time.time() - t0:.1f}s")
 
     if args.upload and not args.smoke:
         _upload_raw_completions(raw_root)
@@ -475,33 +361,17 @@ def run_capability(args) -> int:
 
 
 def _summarize_realized(realized: list[dict] | None) -> dict:
-    """Compact edit telemetry (fired-fraction + mean |Δproj| for the H4 read).
-
-    ``mean_fired_frac`` feeds the §3 firing floor (``fired_frac ≥ 0.15``, unit
-    space post-Fix-A). ``mean_abs_dproj`` = mean per-position |proj_unit_after −
-    proj_unit_before| across edit records (real-vs-random |Δproj| for H4, §4.1).
-
-    Regen-pass records (``regen_pass: True``, tagged by ``cap_hit_regen``) are
-    EXCLUDED from the means — regenerated rows would otherwise contribute twice
-    (initial pass + regen pass; r1 minor) — and reported as a separate count.
-    """
+    """Compact edit telemetry (fired-fraction, mean projection before/after)."""
     if not realized:
         return {"edited": False}
-    main = [r for r in realized if not r.get("regen_pass")]
-    regen = [r for r in realized if r.get("regen_pass")]
-    fired = [r.get("fired_frac", 0.0) for r in main]
-    n_pos = sum(r.get("n_positions", 0) for r in main)
-    dproj = [r["abs_dproj_mean"] for r in main if r.get("abs_dproj_mean") is not None]
-    out = {
+    fired = [r.get("fired_frac", 0.0) for r in realized]
+    n_pos = sum(r.get("n_positions", 0) for r in realized)
+    return {
         "edited": True,
-        "n_edit_forwards": len(main),
+        "n_edit_forwards": len(realized),
         "total_positions_edited": n_pos,
         "mean_fired_frac": (sum(fired) / len(fired)) if fired else 0.0,
-        "mean_abs_dproj": (sum(dproj) / len(dproj)) if dproj else None,
     }
-    if regen:
-        out["n_regen_edit_forwards"] = len(regen)  # excluded from the means above
-    return out
 
 
 def _assert_alignment(arm: str, set_name: str, raw_meta: list[dict], rows: list[dict]) -> None:
@@ -522,13 +392,7 @@ def _assert_alignment(arm: str, set_name: str, raw_meta: list[dict], rows: list[
 
 
 def _load_arm_raw(raw_root: Path, arm: str, smoke: bool) -> dict:
-    """The arm's persisted completions (staged from the LABELED HF path off-pod).
-
-    r1 C1: stages from ``raw_completions/full-rerun-bugfix/phase2/<arm>/…`` and
-    asserts ``regime.round_label`` on the staged record — a missing labeled
-    corrected upload fails loud instead of silently judging the parent's
-    unlabeled buggy rows.
-    """
+    """The arm's persisted completions (staged from HF when absent off-pod)."""
     p = _raw_arm_path(raw_root, arm)
     if not p.exists():
         if smoke:
@@ -538,13 +402,11 @@ def _load_arm_raw(raw_root: Path, arm: str, smoke: bool) -> dict:
 
         hub.stage_hub_file(
             hub.DEFAULT_DATASET_REPO,
-            f"{C.HF_PREFIX}/raw_completions/{C.ROUND_LABEL}/phase2/{arm}/raw_completions.json",
+            f"{C.HF_PREFIX}/raw_completions/phase2/{arm}/raw_completions.json",
             p,
             repo_type="dataset",
         )
-    rec = json.loads(p.read_text())
-    C.assert_round_regime(rec, p)
-    return rec
+    return json.loads(p.read_text())
 
 
 def run_judge(args) -> int:
@@ -694,33 +556,24 @@ def run_judge(args) -> int:
 def _upload_raw_completions(raw_root: Path) -> None:
     """Persist rollout TEXT (raw_completions.json tree) to the HF data repo.
 
-    Routes through ``C.upload_raw_tree`` (ONE ``upload_folder`` commit, never a
-    per-file loop; #664/#727), which ENFORCES the ``full-rerun-bugfix/`` rel
-    prefix on every uploaded path (r1 C1) — ``_raw_arm_path`` writes it.
+    ``upload_raw_completions_to_data_repo`` globs the tree for files named
+    ``raw_completions.json`` and bulk-uploads them under
+    ``<experiment_name>/raw_completions/<rel>`` in ONE ``upload_folder`` commit
+    (never a per-file loop; #664/#727).
     """
-    uploaded = C.upload_raw_tree(raw_root)
-    _log(
-        f"[phase=generate] uploaded {len(uploaded)} raw_completions.json -> "
-        f"{C.HF_PREFIX}/raw_completions/{C.ROUND_LABEL}/..."
+    from explore_persona_space.orchestrate.hub import upload_raw_completions_to_data_repo
+
+    uploaded = upload_raw_completions_to_data_repo(
+        experiment_name=C.HF_PREFIX,
+        eval_results_dir=raw_root,
     )
+    _log(f"[phase=generate] uploaded {len(uploaded)} raw_completions.json -> {C.HF_PREFIX}/...")
 
 
 def _arm_names(args) -> list[str]:
     if args.arms:
         return [a for a in args.arms if a in C.ARM_SPECS]
     return list(C.ARM_SPECS.keys())
-
-
-def _needs_native(arm_names: list[str]) -> bool:
-    """True iff ANY selected arm uses a Part-D native axis (context/prefix native).
-
-    Gates the (expensive) native-geometry load/stage so a response-only ``--arms``
-    subset never pays for it — and so a run WITHOUT native arms is not blocked on
-    the native tensors being present.
-    """
-    return any(
-        C.ARM_SPECS[a].get("axis_source") in ("context_native", "prefix_native") for a in arm_names
-    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -735,8 +588,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--n-ifeval", type=int, default=150)
     p.add_argument("--n-gsm8k", type=int, default=150)
     p.add_argument("--n-mmlupro", type=int, default=200)
-    p.add_argument("--n-ifeval-h2", type=int, default=500, help="F7 raise on H2 arms (plan §6)")
-    p.add_argument("--n-gsm8k-h2", type=int, default=500, help="F7 raise on H2 arms (plan §6)")
     p.add_argument("--cap-max-new-tokens", type=int, default=512)
     p.add_argument("--out-dir", default=None)
     p.add_argument("--raw-root", default=None)

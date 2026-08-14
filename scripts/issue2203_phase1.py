@@ -4,9 +4,9 @@
     ROLLOUT POOL's RESPONSE tokens (plan §4.3a / §11; Source §5.1.1) — the
     pool is Phase 0's persisted ``raw_completions/extraction`` rollouts
     (role + default contexts), batched teacher-forced forwards (r1 M13).
-    The two footprint-matched-null τ_rand pools ride the same forwards and are
-    written into ``tau_rand_by_position`` under keys ``context-end`` (ctx-last
-    token) and ``all-tokens`` (schema-v2, Fix B; plan §5).
+    The two footprint-matched-null τ_rand pools ride the same forwards:
+    ctx-last-token → ``tau_rand_ctx_by_layer``; all-token →
+    ``tau_rand_alltoken_by_layer`` (plan §5).
 (b) Band center × width sweep (plan §4.3b, r1 C4): centers 2-layer-spaced
     across mid-late depth (≈6) × widths {2,4,8}, ALL-TOKEN cap arm only, on a
     disjoint dev pair — 100 jailbreak dev rows (the ``_jailbreak_walk`` rows
@@ -161,7 +161,7 @@ def run_band_sweep(model, tokenizer, geom: dict, out_dir: Path, args) -> dict:
             layers=cfg["layers"],
             axis_by_layer=geom["axis_by_layer"],
             h_def_by_layer=geom["h_def_by_layer"],
-            tau_by_position=geom["tau_by_position"],  # all-token cap sweep
+            tau_by_layer=geom["tau_by_layer"],
         )
         texts, _ = R.run_arm(model, tokenizer, contexts, stack, max_new_tokens=max_new)
         gen_texts[cfg["id"]] = texts
@@ -175,10 +175,7 @@ def run_band_sweep(model, tokenizer, geom: dict, out_dir: Path, args) -> dict:
             "capability_acc": row_cap["acc"],
         }
         # Persist THIS config's dev rollouts the moment it completes (#779).
-        # r1 C1: labeled rel path — band-sweep rollouts are ROUND outputs.
-        raw = (
-            out_dir / "raw_upload" / C.ROUND_LABEL / "phase1_band_sweep" / cfg["id"]
-        ) / "raw_completions.json"
+        raw = out_dir / "raw_upload" / "phase1_band_sweep" / cfg["id"] / "raw_completions.json"
         raw.parent.mkdir(parents=True, exist_ok=True)
         raw.write_text(
             json.dumps(
@@ -187,9 +184,7 @@ def run_band_sweep(model, tokenizer, geom: dict, out_dir: Path, args) -> dict:
             )
         )
         _log(f"[phase=phase1] sweep config {k + 1}/{len(cfgs)} {cfg['id']} DONE")
-    raw = (
-        out_dir / "raw_upload" / C.ROUND_LABEL / "phase1_band_sweep" / "baseline"
-    ) / "raw_completions.json"
+    raw = out_dir / "raw_upload" / "phase1_band_sweep" / "baseline" / "raw_completions.json"
     raw.parent.mkdir(parents=True, exist_ok=True)
     raw.write_text(
         json.dumps(
@@ -335,67 +330,37 @@ def run(args) -> int:
         axis_rand,
         batch_size=args.batch_size,
     )
-
-    def _q25_by_layer(pos: str) -> dict[str, float]:
-        return {str(li): float(torch.quantile(pools[pos][li], 0.25)) for li in all_layers}
-
-    # Fix B: τ is the 25th percentile of ⟨h, v̂⟩ (UNIT space) AT each edited
-    # position — a separate dict per position set (plan §4.2).
-    tau_by_position = {
-        "prefix-end": _q25_by_layer("prefix-end"),
-        "context-end": _q25_by_layer("context-end"),
-        "all-prompt": _q25_by_layer("all-prompt"),
-        "all-tokens": _q25_by_layer("all-tokens"),
+    tau_by_layer = {str(li): float(torch.quantile(pools["resp"][li], 0.25)) for li in all_layers}
+    tau_rand_ctx = {
+        str(li): float(torch.quantile(pools["ctx_last_rand"][li], 0.25)) for li in all_layers
     }
-    tau_rand_by_position = {
-        "context-end": {
-            str(li): float(torch.quantile(pools["rand"]["context-end"][li], 0.25))
-            for li in all_layers
-        },
-        "all-tokens": {
-            str(li): float(torch.quantile(pools["rand"]["all-tokens"][li], 0.25))
-            for li in all_layers
-        },
+    tau_rand_all = {
+        str(li): float(torch.quantile(pools["allt_rand"][li], 0.25)) for li in all_layers
     }
-    _log(
-        f"[phase=phase1] tau pool rows={pools['n_rows']} "
-        f"(prefix-skipped={pools['n_prefix_skipped']}; phase0 extraction rollouts)"
-    )
+    _log(f"[phase=phase1] tau pool rows={pools['n_rows']} (phase0 extraction rollouts)")
 
-    # Band selection: PINNED via --band (single-variable hold; run_band_sweep
-    # SKIPPED, plan §4.2), else the legacy Pareto sweep. run_band_sweep consumes
-    # the all-token cap τ (the sweep is an all-token cap sweep).
-    if args.band:
-        band = [int(li) for li in args.band]
-        # MEMBERSHIP, not a count bound (r1 minor): band ids must be layers the
-        # axis was actually extracted for — `li < len(all_layers)` compares ids
-        # against the layer COUNT and admits wrong ids on a non-contiguous list.
-        assert all(li in all_layers for li in band), (band, all_layers)
-        sweep = {"band_source": "pinned_cli", "band_layers": band, "band_arg": list(args.band)}
-        _log(f"[phase=phase1] band PINNED via --band: {band} (run_band_sweep SKIPPED)")
-    else:
-        geom = {
-            "axis_by_layer": {li: axis_all[j] for j, li in enumerate(all_layers)},
-            "h_def_by_layer": h_def_all,
-            "tau_by_position": tau_by_position,
-        }
-        sweep = run_band_sweep(model, tokenizer, geom, out_dir, args)
-        band = [int(li) for li in sweep["band_layers"]]
+    # (b) the band sweep (plan §4.3b) — REAL sweep in smoke too (2 tiny configs).
+    geom = {
+        "axis_by_layer": {li: axis_all[j] for j, li in enumerate(all_layers)},
+        "h_def_by_layer": h_def_all,
+        "tau_by_layer": {li: tau_by_layer[str(li)] for li in all_layers},
+    }
+    sweep = run_band_sweep(model, tokenizer, geom, out_dir, args)
+    band = [int(li) for li in sweep["band_layers"]]
 
     result = {
         "metadata": C.repro_metadata(),
         "band_layers": band,
         "band_source": sweep["band_source"],
         "band_sweep": sweep,
-        "single_layer_L14": int(args.single_layer),
-        "tau_schema": 2,
-        "tau_by_position": tau_by_position,
-        "tau_rand_by_position": tau_rand_by_position,
+        "single_layer_L14": C.L14,
+        "tau_by_layer": tau_by_layer,
+        "tau_rand_ctx_by_layer": tau_rand_ctx,
+        "tau_rand_alltoken_by_layer": tau_rand_all,
         "tau_pool_n_rows": pools["n_rows"],
-        "tau_pool_n_prefix_skipped": pools["n_prefix_skipped"],
         "tau_source": (
-            "25th percentile of UNIT-space ⟨h, v̂⟩ projections at the edited position "
-            "over the Phase-0 extraction rollout pool (Fix B, plan §4.2)"
+            "25th percentile of response-token axis projections over the Phase-0 "
+            "extraction rollout pool (§5.1.1 / §4.3a)"
         ),
     }
     band_path = out_dir / ("phase1_band_tau_smoke.json" if args.smoke else "phase1_band_tau.json")
@@ -424,14 +389,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--n-draws", type=int, default=5)
     p.add_argument("--max-new-tokens", type=int, default=1024)
     p.add_argument("--tau-pool-cap", type=int, default=0, help="0 = full phase0 pool")
-    p.add_argument(
-        "--band",
-        type=int,
-        nargs="+",
-        default=None,
-        help="pin the band layers (skips run_band_sweep; single-variable hold, plan §4.2)",
-    )
-    p.add_argument("--single-layer", type=int, default=14, help="the single mid-layer cap (L14)")
     p.add_argument("--batch-size", type=int, default=8)
     p.add_argument("--out-dir", default=None)
     p.add_argument("--upload", action="store_true")

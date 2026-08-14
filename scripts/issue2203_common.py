@@ -35,30 +35,18 @@ REPO = Path(__file__).resolve().parents[1]
 
 ISSUE = 2203
 HF_PREFIX = "issue2203_ctx_capping"
-# r1 C1: EVERY write path of the corrected-rerun round carries this label —
-# eval_results out-roots, HF raw-completion rel-prefixes, figures — so the
-# round NEVER overwrites the parent run's committed/published artifacts.
-# Reuse READ paths stay UNLABELED per plan §4.5/§9: the phase-0 axis
-# (``axis/``), the extraction rollouts (``raw_completions/extraction/``), the
-# phase-0 filter verdicts (``judge_raw/``), and ``analysis_tensors/``.
-ROUND_LABEL = "full-rerun-bugfix"
 QWEN_7B = "Qwen/Qwen2.5-7B-Instruct"
 QWEN_32B = "Qwen/Qwen3-32B"
 TINY_MODEL = "Qwen/Qwen2.5-0.5B-Instruct"  # smoke only (same arch family)
 
 # The three ops × four position sets + baseline + two footprint-matched nulls +
-# single mid-layer (L14) cap + the plan-v9 axis-replace random controls + the
-# 6 Part-D native-axis arms = 24 arms. Slugs match plan §5 exactly.
+# single mid-layer (L14) cap, plus the plan-v9 amendment's two axis-replace
+# random-direction controls. Slugs match plan §5 exactly.
 POSITION_SETS = ("prefix-end", "context-end", "all-prompt", "all-tokens")
 OPS = ("cap", "axis_replace", "full_replace")
 
-# arm slug -> {op, position_set, kind, [axis_source]}. kind: "real" | "baseline"
-# | "null" | "single_layer" ("single_layer" caps ONE layer, L14). axis_source
-# (default "response"): "response" = the phase-0 response-derived axis;
-# "context_native" / "prefix_native" = the Part-D native axes (v_context /
-# v_prefix, extracted AT the edited position; phase0_native). A "null" arm's
-# axis is a seeded norm-matched random direction; build_stack_for_arm selects
-# its τ dict by position_set (real → tau_by_position; null → tau_rand_by_position).
+# arm slug -> (op, position_set, kind). kind: "real" | "baseline" | "null_ctx" |
+# "null_alltoken" | "single_layer". "single_layer" caps ONE layer (L14).
 ARM_SPECS: dict[str, dict] = {
     "baseline": {"op": None, "position_set": None, "kind": "baseline"},
     "cap_prefix": {"op": "cap", "position_set": "prefix-end", "kind": "real"},
@@ -73,63 +61,24 @@ ARM_SPECS: dict[str, dict] = {
     "fullrep_ctx": {"op": "full_replace", "position_set": "context-end", "kind": "real"},
     "fullrep_allprompt": {"op": "full_replace", "position_set": "all-prompt", "kind": "real"},
     "fullrep_alltoken": {"op": "full_replace", "position_set": "all-tokens", "kind": "real"},
-    "cap_ctx_randnull": {"op": "cap", "position_set": "context-end", "kind": "null"},
-    "cap_alltoken_randnull": {"op": "cap", "position_set": "all-tokens", "kind": "null"},
+    "cap_ctx_randnull": {"op": "cap", "position_set": "context-end", "kind": "null_ctx"},
+    "cap_alltoken_randnull": {"op": "cap", "position_set": "all-tokens", "kind": "null_alltoken"},
     "cap_ctx_L14": {"op": "cap", "position_set": "context-end", "kind": "single_layer"},
     # Plan-v9 amendment (H4 axis-specificity): norm-matched seeded random-direction
-    # controls for the two broad-position axis-replace arms. kind="null" +
-    # default null_seed=1234 -> the IDENTICAL per-layer v_rand as the parent's
-    # cap_*_randnull arms; τ is INERT for op="axis_replace" (apply_cap_op reads τ
-    # only on the "cap" branch), so the absent all-prompt τ_rand pool resolves to
-    # 0.0 (inert) in build_stack_for_arm.
+    # controls for the two broad-position axis-replace arms. kind="null_alltoken"
+    # routes build_stack_for_arm's seeded random-axis branch (default
+    # null_seed=1234 -> the IDENTICAL per-layer v_rand as the parent's
+    # cap_*_randnull arms); the tau pool that kind selects is INERT for
+    # op="axis_replace" (apply_cap_op reads tau only on the "cap" branch).
     "axrep_allprompt_randnull": {
         "op": "axis_replace",
         "position_set": "all-prompt",
-        "kind": "null",
+        "kind": "null_alltoken",
     },
     "axrep_alltoken_randnull": {
         "op": "axis_replace",
         "position_set": "all-tokens",
-        "kind": "null",
-    },
-    # Part D (folded-in ctx-native-axis-cap scope): axis extracted AT the edited
-    # position (context-native / prefix-native), corrected op + position-matched
-    # τ on the NATIVE axis in unit space. BOTH prefix AND context arms run.
-    "ctxnative_cap_ctx": {
-        "op": "cap",
-        "position_set": "context-end",
-        "kind": "real",
-        "axis_source": "context_native",
-    },
-    "ctxnative_axrep_ctx": {
-        "op": "axis_replace",
-        "position_set": "context-end",
-        "kind": "real",
-        "axis_source": "context_native",
-    },
-    "prefixnative_cap_prefix": {
-        "op": "cap",
-        "position_set": "prefix-end",
-        "kind": "real",
-        "axis_source": "prefix_native",
-    },
-    "prefixnative_axrep_prefix": {
-        "op": "axis_replace",
-        "position_set": "prefix-end",
-        "kind": "real",
-        "axis_source": "prefix_native",
-    },
-    "ctxnative_cap_ctx_randnull": {
-        "op": "cap",
-        "position_set": "context-end",
-        "kind": "null",
-        "axis_source": "context_native",
-    },
-    "prefixnative_cap_prefix_randnull": {
-        "op": "cap",
-        "position_set": "prefix-end",
-        "kind": "null",
-        "axis_source": "prefix_native",
+        "kind": "null_alltoken",
     },
 }
 
@@ -217,15 +166,8 @@ def query_banks_dir() -> Path:
     return REPO / "src" / "explore_persona_space" / "artifacts" / "query_banks"
 
 
-def eval_results_dir(label: str = ROUND_LABEL) -> Path:
-    """The round's LABELED eval_results root (code-review r1 C1).
-
-    No launch command passes ``--out-dir``, so the DEFAULT must carry the
-    label: every phase driver's ``_resolve_out_dir`` routes through here and
-    lands under ``eval_results/issue_2203/full-rerun-bugfix/`` — never over the
-    parent run's committed artifacts at ``eval_results/issue_2203/``.
-    """
-    d = REPO / "eval_results" / f"issue_{ISSUE}" / label
+def eval_results_dir() -> Path:
+    d = REPO / "eval_results" / f"issue_{ISSUE}"
     d.mkdir(parents=True, exist_ok=True)
     return d
 
@@ -259,47 +201,17 @@ def stage_axis_from_hf(target: Path) -> Path:
     )
 
 
-# Rel prefixes exempt from the r1-C1 label guard: the §4.5-PINNED unlabeled
-# reuse path. `_load_phase0_pool` (phase1 τ pools + Part-D native extraction)
-# STAGES the reused extraction pool to `<raw_root>/extraction/…`, so an
-# `--upload` pass over a tree containing it re-uploads a byte-identical copy
-# to its own HF source path (the parent flow's behavior) — never a clobber of
-# round outputs (code-review r2 Major `labeled-upload-refuses-staged-reuse-input`).
-LABEL_EXEMPT_REL_PREFIXES = (("extraction",),)
-
-
-def upload_raw_tree(raw_root: Path, *, require_label: bool = True) -> list[str]:
+def upload_raw_tree(raw_root: Path) -> list[str]:
     """Bulk-upload every ``raw_completions.json`` under ``raw_root`` to HF (#664/#727).
 
     ONE ``upload_folder`` commit; files land at
     ``issue2203_ctx_capping/raw_completions/<rel>`` (the helper's glob contract).
-
-    r1 C1: with ``require_label`` (the default) every rel path MUST lead with
-    ``ROUND_LABEL`` — the corrected round's uploads land under
-    ``raw_completions/full-rerun-bugfix/<rel>`` and can never overwrite the
-    parent's published ``raw_completions/{phase2,phase2_capability,phase3}``.
-    Exempt: rels leading with a :data:`LABEL_EXEMPT_REL_PREFIXES` entry (the
-    staged §4.5 reuse input — byte-identical to its own HF source, see the
-    constant's comment). ``require_label=False`` is reserved for the pinned
-    unlabeled reuse-path PRODUCER (phase-0 extraction rollouts).
     """
     from explore_persona_space.orchestrate.hub import upload_raw_completions_to_data_repo
 
-    raw_root = Path(raw_root)
-    if require_label:
-        bad = [
-            p.relative_to(raw_root).as_posix()
-            for p in sorted(raw_root.rglob("raw_completions.json"))
-            if p.relative_to(raw_root).parts[:1] != (ROUND_LABEL,)
-            and p.relative_to(raw_root).parts[:1] not in LABEL_EXEMPT_REL_PREFIXES
-        ]
-        if bad:
-            raise ValueError(
-                f"upload_raw_tree: rel paths missing the '{ROUND_LABEL}/' prefix: {bad[:5]} — "
-                "the corrected upload would overwrite the parent's published raw "
-                "completions (r1 C1); write via the labeled raw paths"
-            )
-    return upload_raw_completions_to_data_repo(experiment_name=HF_PREFIX, eval_results_dir=raw_root)
+    return upload_raw_completions_to_data_repo(
+        experiment_name=HF_PREFIX, eval_results_dir=Path(raw_root)
+    )
 
 
 def stage_extraction_rollouts_from_hf(target: Path) -> Path:
@@ -314,45 +226,6 @@ def stage_extraction_rollouts_from_hf(target: Path) -> Path:
     )
 
 
-# Part D (plan §4.5): the phase-0 kept-set inputs + native axes live on the
-# DURABLE HF prefix — NEVER the non-durable local judge_cache dir.
-PHASE0_FILTER_HF_PATH = f"{HF_PREFIX}/judge_raw/judge_raw_phase0_filter.json"
-NATIVE_TENSOR_HF_DIR = f"{HF_PREFIX}/analysis_tensors"
-
-
-def stage_phase0_filter_verdicts_from_hf(target: Path) -> Path:
-    """Stage the phase-0 judge-filter verdicts (Part D kept-set reuse; §4.5/#1402)."""
-    from explore_persona_space.orchestrate import hub
-
-    return hub.stage_hub_file(
-        hub.DEFAULT_DATASET_REPO, PHASE0_FILTER_HF_PATH, Path(target), repo_type="dataset"
-    )
-
-
-def stage_native_tensor_from_hf(name: str, target: Path) -> Path:
-    """Stage one Part-D native tensor (``v_context.pt`` etc.) from HF (#521/#1402)."""
-    from explore_persona_space.orchestrate import hub
-
-    return hub.stage_hub_file(
-        hub.DEFAULT_DATASET_REPO,
-        f"{NATIVE_TENSOR_HF_DIR}/{name}",
-        Path(target),
-        repo_type="dataset",
-    )
-
-
-def upload_native_tensors_dir(local_dir: Path) -> str:
-    """Upload the Part-D native-axis dir (4 .pt + validation JSON) in ONE folder commit.
-
-    ONE ``upload_folder`` commit under ``issue2203_ctx_capping/analysis_tensors/``
-    (never a per-file loop; #664/#727/#1544) — the cross-phase native axes reused
-    by #2223, persisted BEFORE pod teardown (#521).
-    """
-    from explore_persona_space.orchestrate import hub
-
-    return hub._upload(Path(local_dir), hub.DEFAULT_DATASET_REPO, "dataset", NATIVE_TENSOR_HF_DIR)
-
-
 def _sha256_of_obj(obj) -> str:
     return hashlib.sha256(json.dumps(obj, sort_keys=True).encode()).hexdigest()[:16]
 
@@ -361,32 +234,8 @@ def _sha256_of_obj(obj) -> str:
 
 
 def regime_fingerprint(**keys) -> dict:
-    """Every output-affecting regime key for a phase's resume predicate.
-
-    Always includes ``round_label`` (r1 C1): the tag is written into every
-    generated record (gen JSON + raw completions) so the judge staging can
-    assert it consumes THIS round's corrected rows, never the parent's.
-    """
-    keys.setdefault("round_label", ROUND_LABEL)
+    """Every output-affecting regime key for a phase's resume predicate."""
     return {k: keys[k] for k in sorted(keys)}
-
-
-def assert_round_regime(record: dict, path: Path) -> None:
-    """Fail LOUD when a judge-staged raw record is not THIS round's (r1 C1).
-
-    The parent run's raw records carry no ``regime.round_label`` (or a
-    different one), so a missing labeled corrected upload can never silently
-    fall back to the parent's buggy rows — ``_assert_alignment`` checks prompt
-    meta only, which the parent's rows also satisfy.
-    """
-    got = (record.get("regime") or {}).get("round_label")
-    if got != ROUND_LABEL:
-        raise ValueError(
-            f"judge staging: {path} regime.round_label={got!r} != {ROUND_LABEL!r} — "
-            "the labeled corrected upload is missing or mismatched; refusing to "
-            "judge parent-run rows (r1 C1). Re-run the generate phase (with upload) "
-            "under the labeled out-roots first."
-        )
 
 
 def check_regime(existing: dict | None, current: dict, path: Path) -> None:

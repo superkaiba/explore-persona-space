@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import hashlib
 import os
-import re
 import sys
 from pathlib import Path
 
@@ -49,177 +48,6 @@ from scripts import issue2203_common as C  # noqa: E402
 # left-padded, per-row geometry recomputed per chunk => outputs unchanged modulo
 # batch grouping; chunk size only bounds PEAK memory), so no per-model branch.
 GEN_BATCH_SIZE = int(os.environ.get("EPM_ISSUE2203_GEN_BATCH", "16"))
-
-# Cap-hit re-gen policy (plan §4.3, standing max_new_tokens rule): a generation
-# stage whose cap-hit fraction exceeds this re-generates the hitting rows at
-# ``CAP_HIT_REGEN_MULTIPLIER`` × the cap.
-CAP_HIT_THRESHOLD = 0.02
-CAP_HIT_REGEN_MULTIPLIER = 2
-
-
-# ── Fix C: enable_thinking render seam (Qwen-3 thinking-off, BUG 2) ─────────
-
-
-def resolve_enable_thinking(model_name: str | None) -> bool | None:
-    """``False`` for a Qwen-3 model id (thinking off, plan §4.3), else ``None``.
-
-    ``None`` = pass no ``enable_thinking`` kwarg to ``apply_chat_template`` (the
-    default template behaviour — Qwen-2.5 has no thinking mode). The regex
-    matches ``qwen3`` / ``qwen-3`` / ``qwen_3`` (case-insensitive) but NOT
-    ``qwen2.5`` (the char after ``qwen`` is ``2``, not ``3`` or a separator+3).
-    """
-    if model_name and re.search(r"qwen[-_.]?3", model_name, re.IGNORECASE):
-        return False
-    return None
-
-
-def thinking_render_fns(enable_thinking: bool | None):
-    """Return ``(render_fn, ids_fn)`` threading ``enable_thinking`` into the render.
-
-    ``None`` returns ``(None, None)`` so ``generate_batch`` / ``run_arm`` use the
-    module-default single-turn render (behaviour unchanged for Qwen-2.5). A
-    non-None value builds render/ids fns that pass ``enable_thinking=`` to
-    ``apply_chat_template`` — the SAME render for the ids the hook arms on AND
-    the text generate_batch tokenizes, so row geometry stays aligned.
-    """
-    if enable_thinking is None:
-        return None, None
-
-    def _render(tokenizer, context):
-        return tokenizer.apply_chat_template(
-            steering.context_messages(context),
-            tokenize=False,
-            add_generation_prompt=True,
-            enable_thinking=enable_thinking,
-        )
-
-    def _ids(tokenizer, context):
-        ids = tokenizer(_render(tokenizer, context), add_special_tokens=False)["input_ids"]
-        assert len(ids) >= 4, (len(ids), context)
-        return ids
-
-    return _render, _ids
-
-
-def think_block_stats(texts: list[str]) -> dict:
-    """Count ``<think>`` blocks in a set of completions (Qwen-3 manipulation check)."""
-    n_with = sum(1 for t in texts if "<think>" in t)
-    n_blocks = sum(t.count("<think>") for t in texts)
-    return {
-        "n_completions": len(texts),
-        "n_with_think_block": n_with,
-        "n_think_blocks_total": n_blocks,
-        "think_block_frac": (n_with / len(texts)) if texts else 0.0,
-    }
-
-
-def assert_qwen3_thinking_off(model, tokenizer, model_name: str, *, n_probe: int = 2) -> dict:
-    """Fail-loud gate: a Qwen-3 render with ``enable_thinking=False`` emits no ``<think>``.
-
-    Runs a tiny 2-row render+generate probe on the REAL model/tokenizer (plan
-    §4.3 / §4.6 blind-spot (b), pod-side only). Two checks: (1) the
-    thinking-off render DIFFERS from the thinking-on render (proves the kwarg is
-    honoured, not silently ignored); (2) zero ``<think>`` tokens in the
-    generated text. Returns the probe record; raises RuntimeError on either
-    failure. Only meaningful on a real Qwen-3 tokenizer — the caller gates on
-    ``resolve_enable_thinking(model_name) is False`` + not-smoke.
-    """
-    ctx = {"system": "You are a helpful assistant.", "user": "Name a primary colour."}
-    render_off, _ = thinking_render_fns(False)
-    render_on, _ = thinking_render_fns(True)
-    r_off = render_off(tokenizer, ctx)
-    r_on = render_on(tokenizer, ctx)
-    if r_off == r_on:
-        raise RuntimeError(
-            "enable_thinking kwarg NOT honoured by apply_chat_template — the "
-            "thinking-off and thinking-on renders are identical (BUG 2 not fixed)"
-        )
-    contexts = [ctx] * n_probe
-    texts, _ = run_arm(
-        model,
-        tokenizer,
-        contexts,
-        None,
-        max_new_tokens=64,
-        temperature=0.7,
-        top_p=0.9,
-        enable_thinking=False,
-    )
-    stats = think_block_stats(texts)
-    if stats["n_think_blocks_total"] != 0:
-        raise RuntimeError(
-            f"Qwen-3 thinking-off render still emitted <think> blocks: {stats} "
-            "(BUG 2 manipulation check FAILED)"
-        )
-    return {"render_differs": True, "think_block_stats": stats}
-
-
-def _cap_hit_flags(tokenizer, texts: list[str], caps) -> list[bool]:
-    """Per-row cap-hit flags (re-tokenized token count ≥ that row's cap)."""
-    if isinstance(caps, int):
-        caps = [caps] * len(texts)
-    return [
-        len(tokenizer(t, add_special_tokens=False)["input_ids"]) >= int(c)
-        for t, c in zip(texts, caps, strict=True)
-    ]
-
-
-def cap_hit_regen(
-    tokenizer,
-    contexts: list[dict],
-    gen_fn,
-    *,
-    max_new_tokens: int,
-    threshold: float = CAP_HIT_THRESHOLD,
-    multiplier: int = CAP_HIT_REGEN_MULTIPLIER,
-) -> tuple[list[str], list[dict] | None, dict]:
-    """Generate, then re-generate cap-hit rows at ``multiplier`` × the cap (§4.3).
-
-    ``gen_fn(contexts, max_new_tokens) -> (texts, realized_or_None)`` is the
-    stage's own generation closure (run_arm for the 7B ladder, the paper-engine
-    generate for the 32B anchor) — so this wrapper is engine-agnostic. If the
-    initial cap-hit fraction exceeds ``threshold``, the hitting rows are
-    regenerated at ``multiplier`` × ``max_new_tokens`` and spliced back in
-    original order; the info dict records initial + final fractions and the
-    re-gen count for the per-arm generation JSON (pre-registered re-gen trigger).
-    """
-    texts, realized = gen_fn(contexts, max_new_tokens)
-    caps = [max_new_tokens] * len(texts)
-    flags = _cap_hit_flags(tokenizer, texts, caps)
-    frac0 = (sum(flags) / len(flags)) if flags else 0.0
-    info = {
-        "initial_cap_hit_frac": frac0,
-        "final_cap_hit_frac": frac0,
-        "n_rows": len(texts),
-        "cap": max_new_tokens,
-        "cap_hit_threshold": threshold,
-        "regenerated": False,
-    }
-    if frac0 > threshold and texts:
-        idx = [i for i, h in enumerate(flags) if h]
-        regen_texts, regen_realized = gen_fn(
-            [contexts[i] for i in idx], max_new_tokens * multiplier
-        )
-        for j, i in enumerate(idx):
-            texts[i] = regen_texts[j]
-            caps[i] = max_new_tokens * multiplier
-        flags2 = _cap_hit_flags(tokenizer, texts, caps)
-        info.update(
-            {
-                "regenerated": True,
-                "n_regenerated": len(idx),
-                "regen_max_new_tokens": max_new_tokens * multiplier,
-                "final_cap_hit_frac": (sum(flags2) / len(flags2)) if flags2 else 0.0,
-            }
-        )
-        if realized is not None or regen_realized is not None:
-            # Tag regen-pass records so `_summarize_realized` EXCLUDES them from
-            # the fired_frac / |Δproj| means — the regenerated rows' initial-pass
-            # records are already in `realized`, so an untagged concat counts
-            # those rows twice (r1 minor; telemetry only, never the DV).
-            regen_tagged = [{**r, "regen_pass": True} for r in (regen_realized or [])]
-            realized = (realized or []) + regen_tagged
-    return texts, realized, info
 
 
 def load_model_and_tokenizer(model_name: str, *, device: str | None = None):
@@ -269,48 +97,33 @@ def build_stack_for_arm(
     layers: list[int],
     axis_by_layer: dict[int, torch.Tensor],
     h_def_by_layer: dict[int, torch.Tensor],
-    tau_by_position: dict[str, dict[int, float]],
-    tau_rand_by_position: dict[str, dict[int, float]] | None = None,
+    tau_by_layer: dict[int, float],
+    tau_rand_by_layer: dict[int, float] | None = None,
     null_seed: int = 1234,
 ) -> caphook.AxisCapHookStack | None:
     """Build the :class:`AxisCapHookStack` for one arm (or ``None`` for baseline).
 
-    τ is UNIT-space (⟨h, v̂⟩; Fix A/B) and POSITION-MATCHED: the arm's τ dict is
-    selected by its ``position_set`` from ``tau_by_position`` (a real arm) or
-    ``tau_rand_by_position`` (a ``null`` arm). ``tau_by_position`` maps
-    ``prefix-end`` / ``context-end`` / ``all-prompt`` / ``all-tokens`` →
-    ``{layer: τ}``; ``tau_rand_by_position`` carries the footprint-matched
-    random-direction pools (Phase 1 computes ``context-end`` + ``all-tokens``;
-    native geometry carries its own single position). A ``null`` arm's axis is a
-    seeded norm-matched random direction per layer (default ``null_seed=1234`` ⇒
-    the SAME per-layer ``v_rand`` for every arm at that layer). For a ``null``
-    ``axis_replace`` / ``full_replace`` arm τ is INERT (``apply_cap_op`` reads τ
-    only on the ``cap`` branch), so an absent τ_rand pool at that position
-    resolves to 0.0; a ``null`` ``cap`` arm REQUIRES a position-matched τ_rand
-    pool (fail-loud). The single-layer (L14) arm caps only ``[L14]``.
+    For a null arm, the axis is a seeded norm-matched random direction per layer
+    and τ is the position-matched random τ (``tau_rand_by_layer``, computed by
+    Phase 1 over the matching position pool). Real arms use the real axis + τ.
+    The single-layer (L14) arm caps only ``[L14]``.
     """
     kind = arm_spec["kind"]
     if kind == "baseline":
         return None
     op = arm_spec["op"]
     position_set = arm_spec["position_set"]
-    use_layers = [C.L14] if kind == "single_layer" else list(layers)
-    if kind == "null":
-        assert tau_rand_by_position is not None, "null arm needs tau_rand_by_position"
+    if kind == "single_layer":
+        use_layers = [C.L14]
+    else:
+        use_layers = list(layers)
+    if kind in ("null_ctx", "null_alltoken"):
+        assert tau_rand_by_layer is not None, "null arm needs tau_rand_by_layer"
         axis = {li: _seeded_random_axis(axis_by_layer[li], null_seed + li) for li in use_layers}
-        rand_pos = tau_rand_by_position.get(position_set)
-        if rand_pos is None:
-            assert op != "cap", (
-                f"cap null at position_set={position_set!r} requires a footprint-matched "
-                "τ_rand pool (tau_rand_by_position has no such key)"
-            )
-            tau = {li: 0.0 for li in use_layers}  # inert for axis_replace/full_replace
-        else:
-            tau = {li: float(rand_pos[li]) for li in use_layers}
-    else:  # real | single_layer
-        tau_pos = tau_by_position[position_set]
+        tau = {li: float(tau_rand_by_layer[li]) for li in use_layers}
+    else:
         axis = {li: axis_by_layer[li] for li in use_layers}
-        tau = {li: float(tau_pos[li]) for li in use_layers}
+        tau = {li: float(tau_by_layer[li]) for li in use_layers}
     hdef = {li: h_def_by_layer[li] for li in use_layers}
     return caphook.joint_axis_hooks(
         model, use_layers, axis, tau, hdef, op=op, position_set=position_set
@@ -325,17 +138,8 @@ def run_arm(
     *,
     max_new_tokens: int,
     seed_base: int = 42,
-    temperature: float = 0.0,
-    top_p: float | None = None,
-    enable_thinking: bool | None = None,
 ) -> tuple[list[str], list[dict] | None]:
-    """Generation for one arm; returns (texts, realized_edits).
-
-    ``temperature`` / ``top_p`` default to greedy (0.0 / None) for the 7B ladder;
-    the 32B anchor passes temp 0.7 / top_p 0.9 (paper settings, Fix C).
-    ``enable_thinking`` threads a Qwen-3 thinking-off render through BOTH the
-    per-context ids the hook arms on AND ``generate_batch``'s tokenization (same
-    render ⇒ aligned row geometry); ``None`` = the module-default render.
+    """Greedy on-policy generation for one arm; returns (texts, realized_edits).
 
     ``contexts`` are ``{"system", "user"}`` dicts. Generation is CHUNKED over the
     contexts axis in blocks of :data:`GEN_BATCH_SIZE`, so ``generate_batch`` runs
@@ -360,8 +164,6 @@ def run_arm(
     n_ctx = len(contexts)
     n_chunks = (n_ctx + GEN_BATCH_SIZE - 1) // GEN_BATCH_SIZE
     texts: list[str] = []
-    render_fn, ids_fn = thinking_render_fns(enable_thinking)
-    ids_of = ids_fn or steering.context_token_ids
 
     if stack is None:
         for k in range(n_chunks):
@@ -373,11 +175,8 @@ def run_arm(
                 n=1,
                 hook=None,
                 max_new_tokens=max_new_tokens,
-                temperature=temperature,
-                top_p=top_p,
+                temperature=0.0,
                 seed_base=seed_base,
-                render_fn=render_fn,
-                ids_fn=ids_fn,
             )
             texts.extend(r[0] for r in results)
             print(
@@ -390,7 +189,7 @@ def run_arm(
     with stack:
         for k in range(n_chunks):
             chunk = contexts[k * GEN_BATCH_SIZE : (k + 1) * GEN_BATCH_SIZE]
-            per_ctx_ids = [ids_of(tokenizer, c) for c in chunk]
+            per_ctx_ids = [steering.context_token_ids(tokenizer, c) for c in chunk]
             row_lengths = [len(ids) for ids in per_ctx_ids]
             prefix_ends = None
             if stack.position_set == "prefix-end":
@@ -403,11 +202,8 @@ def run_arm(
                 n=1,
                 hook=stack,
                 max_new_tokens=max_new_tokens,
-                temperature=temperature,
-                top_p=top_p,
+                temperature=0.0,
                 seed_base=seed_base,
-                render_fn=render_fn,
-                ids_fn=ids_fn,
             )
             texts.extend(r[0] for r in results)
             if stack.realized_edits:
@@ -417,23 +213,6 @@ def run_arm(
                 flush=True,
             )
     return texts, (realized or None)
-
-
-def _prefix_end_or_none(tokenizer, ctx_ids: list[int]) -> int | None:
-    """``steering.prefix_end_index`` when the render has a clean prefix boundary.
-
-    Returns ``None`` (never raises) for a bare no-system context whose render has
-    only 2 ``<|im_start|>`` occurrences (no prefix/user boundary) — those rows
-    are excluded from the prefix-end τ pool but kept in the other pools. Every
-    EVAL-set context has a system prompt (3 im_starts), so this only skips the
-    phase-0 pool's bare-default rows.
-    """
-    im_start_id = tokenizer.convert_tokens_to_ids(steering.IM_START_TOKEN)
-    occ = [i for i, t in enumerate(ctx_ids) if t == im_start_id]
-    if len(occ) != 3:
-        return None
-    pe = occ[1]
-    return pe if 2 <= pe < len(ctx_ids) else None
 
 
 def projection_pools(
@@ -448,61 +227,40 @@ def projection_pools(
     batch_size: int = 8,
     log_every: int = 25,
 ) -> dict:
-    """UNIT-space axis-projection pools at four position sets (Fix B, plan §4.2).
+    """Axis-projection pools over a rollout set (BATCHED teacher-forced forwards).
 
     Concatenates per-segment TOKEN IDS (never a re-tokenized string — BPE-seam
     gotcha), right-pads a batch, one forward per chunk via
-    ``extract_layer_activations(attention_mask=...)``, and pools
-    ``proj_unit = hs @ v̂`` (the REAL axis NORMALIZED to unit — the space the cap
-    op now compares against, Fix A) at four positions PER LAYER, matched to the
-    hook's edit position:
-    ``prefix-end`` = ``prefix_end − 1`` (the last prefix token, the hook edits
-    ``pe − 1``); ``context-end`` = ``ctx_len − 1`` (last prompt token);
-    ``all-prompt`` = ``[0:ctx_len]``; ``all-tokens`` = ``[0:n]`` (prompt +
-    response). Plus the two footprint-matched τ_rand pools (``context-end`` +
-    ``all-tokens``) in the UNIT space of the norm-matched random direction
-    (``axis_rand`` normalized — ⟨h, v̂_rand⟩), for the cap nulls (plan §5).
+    ``extract_layer_activations(attention_mask=...)``, and pools per layer:
+    ``resp`` = ⟨response-token h, axis⟩ (the τ basis, plan §4.3a);
+    ``ctx_last_rand`` / ``allt_rand`` = the two footprint-matched τ_rand pools
+    (ctx-last-token / all-token positions vs the seeded random axis, plan §5).
     """
     from explore_persona_space.analysis.extraction import extract_layer_activations
 
     device = next(model.parameters()).device
     pad_id = tokenizer.pad_token_id or tokenizer.eos_token_id
-    # v̂ / v̂_rand: normalize each layer's axis to unit — τ lives in ⟨h, v̂⟩ space.
-    vhat = torch.stack(
-        [axis[j].float() / (axis[j].float().norm() + 1e-12) for j in range(len(layers))]
-    )
-    vhat_rand = torch.stack(
-        [axis_rand[j].float() / (axis_rand[j].float().norm() + 1e-12) for j in range(len(layers))]
-    )
-    rows: list[tuple[list[int], int, int | None]] = []  # (ids, ctx_len, prefix_end)
-    n_prefix_skipped = 0
+    rows: list[tuple[list[int], int]] = []  # (ids, ctx_len)
     for ctx, comps in zip(contexts, completions, strict=True):
         ctx_ids = steering.context_token_ids(tokenizer, ctx)
-        pe = _prefix_end_or_none(tokenizer, ctx_ids)
-        if pe is None:
-            n_prefix_skipped += 1
         for text in comps:
             cids = tokenizer(text, add_special_tokens=False)["input_ids"]
             if not cids:
                 continue
-            rows.append((ctx_ids + cids, len(ctx_ids), pe))
-    pools: dict[str, dict[int, list]] = {
-        ps: {li: [] for li in layers}
-        for ps in ("prefix-end", "context-end", "all-prompt", "all-tokens")
-    }
-    rand_pools: dict[str, dict[int, list]] = {
-        ps: {li: [] for li in layers} for ps in ("context-end", "all-tokens")
-    }
+            rows.append((ctx_ids + cids, len(ctx_ids)))
+    resp = {li: [] for li in layers}
+    ctx_last_rand = {li: [] for li in layers}
+    allt_rand = {li: [] for li in layers}
     n_chunks = (len(rows) + batch_size - 1) // batch_size
     import time as _time
 
     t0 = _time.time()
     for k in range(n_chunks):
         chunk = rows[k * batch_size : (k + 1) * batch_size]
-        T = max(len(ids) for ids, _, _ in chunk)
+        T = max(len(ids) for ids, _ in chunk)
         input_ids = torch.full((len(chunk), T), pad_id, dtype=torch.long)
         mask = torch.zeros((len(chunk), T), dtype=torch.long)
-        for b, (ids, _, _) in enumerate(chunk):
+        for b, (ids, _) in enumerate(chunk):
             input_ids[b, : len(ids)] = torch.tensor(ids, dtype=torch.long)  # RIGHT pad
             mask[b, : len(ids)] = 1
         captured = extract_layer_activations(
@@ -510,19 +268,15 @@ def projection_pools(
         )
         for j, li in enumerate(layers):
             hs = captured[li].float()  # (B, T, H)
-            v = vhat[j].to(hs.device)
-            vr = vhat_rand[j].to(hs.device)
-            proj_u = hs @ v  # (B, T) unit-space real-axis projection
-            proj_r = hs @ vr  # (B, T) unit-space random-axis projection
-            for b, (ids, ctx_len, pe) in enumerate(chunk):
+            v = axis[j].float().to(hs.device)
+            vr = axis_rand[j].float().to(hs.device)
+            proj_v = hs @ v  # (B, T)
+            proj_r = hs @ vr
+            for b, (ids, ctx_len) in enumerate(chunk):
                 n = len(ids)
-                pools["context-end"][li].append(proj_u[b, ctx_len - 1 : ctx_len].cpu())
-                pools["all-prompt"][li].append(proj_u[b, :ctx_len].cpu())
-                pools["all-tokens"][li].append(proj_u[b, :n].cpu())
-                if pe is not None:
-                    pools["prefix-end"][li].append(proj_u[b, pe - 1 : pe].cpu())
-                rand_pools["context-end"][li].append(proj_r[b, ctx_len - 1 : ctx_len].cpu())
-                rand_pools["all-tokens"][li].append(proj_r[b, :n].cpu())
+                resp[li].append(proj_v[b, ctx_len:n].cpu())
+                ctx_last_rand[li].append(proj_r[b, ctx_len - 1 : ctx_len].cpu())
+                allt_rand[li].append(proj_r[b, :n].cpu())
         del captured
         if (k + 1) % log_every == 0 or k + 1 == n_chunks:
             print(
@@ -531,11 +285,12 @@ def projection_pools(
                 f"elapsed={_time.time() - t0:.0f}s",
                 flush=True,
             )
-    out = {ps: {li: torch.cat(pools[ps][li]) for li in layers} for ps in pools}
-    out["rand"] = {ps: {li: torch.cat(rand_pools[ps][li]) for li in layers} for ps in rand_pools}
-    out["n_rows"] = len(rows)
-    out["n_prefix_skipped"] = n_prefix_skipped
-    return out
+    return {
+        "resp": {li: torch.cat(resp[li]) for li in layers},
+        "ctx_last_rand": {li: torch.cat(ctx_last_rand[li]) for li in layers},
+        "allt_rand": {li: torch.cat(allt_rand[li]) for li in layers},
+        "n_rows": len(rows),
+    }
 
 
 def steering_sanity_check(
@@ -580,6 +335,21 @@ def steering_sanity_check(
             )
         out[key] = [r[0] for r in results]
     return out
+
+
+def cap_hit_fraction(tokenizer, texts: list[str], max_new_tokens: int) -> float:
+    """Fraction of completions that hit the generation cap (CLAUDE.md cap-hit rule).
+
+    HF ``generate`` exposes no finish_reason; a completion re-tokenizing to
+    ``>= max_new_tokens`` tokens is counted as cap-hit (exact for greedy
+    non-EOS-terminated rows).
+    """
+    if not texts:
+        return 0.0
+    hits = [
+        len(tokenizer(t, add_special_tokens=False)["input_ids"]) >= max_new_tokens for t in texts
+    ]
+    return sum(hits) / len(hits)
 
 
 def coherence_split(texts: list[str], *, jailbreak: bool) -> dict:

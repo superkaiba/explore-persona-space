@@ -1,14 +1,12 @@
 """Figures for issue #2203 — assistant-axis activation capping position ladder.
 
-Reads eval_results/issue_2203/full-rerun-bugfix/{phase2/phase2_ladder_results.json,
+Reads eval_results/issue_2203/{phase2/phase2_ladder_results.json,
 phase3_32b_judge.json, cjk_intrusion_stats.json} and renders the hero
-position-ladder grid plus four companions to figures/issue_2203/full-rerun-bugfix/.
+position-ladder grid plus four companions to figures/issue_2203/.
 
-r1 C1: reads AND writes are pinned to the round's LABELED paths — this script
-must never render the parent run's buggy rows into the corrected round's
-figures. All numbers are read from the committed JSONs; the CJK-intrusion
-fractions come from cjk_intrusion_stats.json (derived from the HF raw
-completions). Run: uv run python scripts/issue2203_figures.py
+All numbers are read from the committed JSONs; the CJK-intrusion fractions
+come from cjk_intrusion_stats.json (derived from the HF raw completions).
+Run: uv run python scripts/issue2203_figures.py
 """
 
 from __future__ import annotations
@@ -18,9 +16,7 @@ from pathlib import Path
 
 from explore_persona_space.orchestrate.env import load_dotenv
 
-# #847 shared-VM thread caps must bind BEFORE numpy/matplotlib freeze their BLAS
-# pools at import (this figures script is a VM entrypoint).
-load_dotenv()
+load_dotenv()  # #847 shared-VM thread caps bind BEFORE matplotlib/numpy import
 
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
@@ -36,23 +32,10 @@ from explore_persona_space.analysis.paper_plots import (  # noqa: E402
 # eval_results + figures for this branch; the main-checkout repo_root() is on
 # `main` and does not have them.
 ROOT = Path(__file__).resolve().parents[1]
-# r1 C1: the ROUND's labeled outputs — never the parent's unlabeled buggy rows.
-EVAL = ROOT / "eval_results" / "issue_2203" / "full-rerun-bugfix"
-
-
-def _read_round_json(rel: str) -> dict:
-    p = EVAL / rel
-    if not p.exists():
-        raise FileNotFoundError(
-            f"{p} absent — the round's labeled judge/analysis outputs have not landed "
-            "yet (r1 C1: figures never read the parent's unlabeled artifacts)"
-        )
-    return json.loads(p.read_text())
-
-
-LAD = _read_round_json("phase2/phase2_ladder_results.json")["arms"]
-P3 = _read_round_json("phase3_32b_judge.json")["arms"]
-CJK = _read_round_json("cjk_intrusion_stats.json")
+EVAL = ROOT / "eval_results" / "issue_2203"
+LAD = json.loads((EVAL / "phase2" / "phase2_ladder_results.json").read_text())["arms"]
+P3 = json.loads((EVAL / "phase3_32b_judge.json").read_text())["arms"]
+CJK = json.loads((EVAL / "cjk_intrusion_stats.json").read_text())
 
 POSITIONS = ["prefix", "ctx", "allprompt", "alltoken"]
 POS_LABEL = {
@@ -181,9 +164,7 @@ def hero() -> None:
     ax_h.legend(loc="upper left", fontsize=7.5, ncol=1)
     ax_i.legend(loc="upper right", fontsize=7.5, ncol=1, frameon=True, framealpha=1.0)
     ax_h.set_title("Where along the input the assistant-axis cap is applied", loc="left")
-    savefig_paper(
-        fig, "issue_2203/full-rerun-bugfix/hero_position_ladder", dir=str(ROOT / "figures")
-    )
+    savefig_paper(fig, "issue_2203/hero_position_ladder", dir=str(ROOT / "figures"))
     plt.close(fig)
 
 
@@ -240,12 +221,8 @@ def degradation() -> None:
     ax.set_ylabel("Rate / fraction")
     ax.set_ylim(0, 1.05)
     ax.legend(loc="upper left", fontsize=8)
-    ax.set_title(
-        "With the bugs fixed, capping leaves harm at baseline and output CJK-free", loc="left"
-    )
-    savefig_paper(
-        fig, "issue_2203/full-rerun-bugfix/degradation_mechanism", dir=str(ROOT / "figures")
-    )
+    ax.set_title("Harm reduction rides on CJK output degradation, not the axis", loc="left")
+    savefig_paper(fig, "issue_2203/degradation_mechanism", dir=str(ROOT / "figures"))
     plt.close(fig)
 
 
@@ -272,7 +249,7 @@ def anchor() -> None:
     ax2.set_ylabel("Fraction of completions containing CJK script")
     ax2.set_ylim(0, 1.05)
     ax2.set_title("Same arms, CJK-intrusion view", loc="left", fontsize=10)
-    savefig_paper(fig, "issue_2203/full-rerun-bugfix/anchor_32b", dir=str(ROOT / "figures"))
+    savefig_paper(fig, "issue_2203/anchor_32b", dir=str(ROOT / "figures"))
     plt.close(fig)
 
 
@@ -321,12 +298,8 @@ def capability() -> None:
     ax.set_ylabel("Accuracy (↑ better)")
     ax.set_ylim(0, 1.0)
     ax.legend(loc="upper right", fontsize=8)
-    ax.set_title(
-        "Only whole-state replacement wrecks capability; capping leaves it intact", loc="left"
-    )
-    savefig_paper(
-        fig, "issue_2203/full-rerun-bugfix/capability_guardrails", dir=str(ROOT / "figures")
-    )
+    ax.set_title("The arms that cut harm also wreck capability", loc="left")
+    savefig_paper(fig, "issue_2203/capability_guardrails", dir=str(ROOT / "figures"))
     plt.close(fig)
 
 
@@ -369,10 +342,8 @@ def censoring() -> None:
     ax.set_xticklabels(labels, fontsize=7.5)
     ax.set_ylabel("Scoreable identity items (of 250)")
     ax.set_ylim(0, 265)
-    ax.set_title(
-        "Identity scoring is complete except at the two whole-state-replace arms", loc="left"
-    )
-    savefig_paper(fig, "issue_2203/full-rerun-bugfix/identity_censoring", dir=str(ROOT / "figures"))
+    ax.set_title("Identity-loss rate is judge-censored where output degrades", loc="left")
+    savefig_paper(fig, "issue_2203/identity_censoring", dir=str(ROOT / "figures"))
     plt.close(fig)
 
 
@@ -382,4 +353,4 @@ if __name__ == "__main__":
     anchor()
     capability()
     censoring()
-    print("wrote 5 figures to figures/issue_2203/full-rerun-bugfix/")
+    print("wrote 5 figures to figures/issue_2203/")
