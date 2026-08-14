@@ -1,6 +1,6 @@
 ---
-title: Every-token capping cuts the reproduced Assistant-Axis persona drift by ~40%
-  on Qwen3-32B but does not eliminate it (MODERATE confidence)
+title: Every-token capping cuts the reproduced Assistant-Axis persona drift on Qwen3-32B
+  by roughly a third but does not eliminate it (MODERATE confidence)
 kind: experiment
 tags:
 - keep-running
