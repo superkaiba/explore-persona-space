@@ -180,6 +180,7 @@ def test_figures_constants_pinned_to_driver():
 
 
 def _synth_tables(out_dir: Path, parent_metrics: Path) -> None:
+    import issue2162_recency_rawscale as RS
     import issue2162_tbmp as TB
     import issue2162_tbmp_figures as FIG
 
@@ -197,7 +198,7 @@ def _synth_tables(out_dir: Path, parent_metrics: Path) -> None:
                     f = rng.uniform(-0.2, 0.8)
                     rows[a].append(
                         {
-                            "pair_id": f"{cell[:6]}_{i}",
+                            "pair_id": f"{cell}_{i}",
                             "cell": cell,
                             "slot": slot_override or slot,
                             "arm": a,
@@ -205,6 +206,7 @@ def _synth_tables(out_dir: Path, parent_metrics: Path) -> None:
                             "f_netted": f,
                             "f_target_only": f * 0.9,
                             "raw_move_registered": f * 0.5,
+                            "delta_patched_mean": f * 0.4,
                             "separation": 0.8,
                         }
                     )
@@ -226,6 +228,43 @@ def _synth_tables(out_dir: Path, parent_metrics: Path) -> None:
         for a in arms:
             for r in ref[a]:
                 f.write(M.json.dumps(r) + "\n")
+    parent_names = {
+        "steered": "f_cells.jsonl",
+        "shuffled": "null_shuffled_cells.jsonl",
+        "crosstype": "null_crosstype_cells.jsonl",
+    }
+    parent_metrics.mkdir(parents=True, exist_ok=True)
+    for a, fname in parent_names.items():
+        with (parent_metrics / fname).open("w") as f:
+            for r in ref[a]:
+                f.write(M.json.dumps(r) + "\n")
+    with (parent_metrics / "anchors.jsonl").open("w") as f:
+        for cell in RS.DEFAULT_CELLS:
+            for i in range(3):
+                f.write(
+                    M.json.dumps(
+                        {
+                            "pair_id": f"{cell}_{i}",
+                            "cell": cell,
+                            "delta_floor_mean": -0.2,
+                            "delta_ceiling_mean": 0.6,
+                            "separation": 0.8,
+                        }
+                    )
+                    + "\n"
+                )
+    # Parent raw-scale fixture through the PRODUCTION defaults path (no null
+    # CIs — the committed recency_rawscale.json schema), then this round's
+    # rawscale_tb.json through the production step (with --null-cis).
+    RS.main(
+        [
+            "--metrics-dir",
+            str(parent_metrics),
+            "--out-json",
+            str(parent_metrics / "recency_rawscale.json"),
+        ]
+    )
+    M.step_rawscale(SimpleNamespace(out_dir=out_dir, parent_metrics_dir=parent_metrics))
     (out_dir / "stats_tb.json").write_text(
         M.json.dumps({"per_cell": {"instr_format|tb": {"coherent_fraction": 0.9}}})
     )
@@ -241,11 +280,6 @@ def _synth_tables(out_dir: Path, parent_metrics: Path) -> None:
             }
         )
     )
-    parent_metrics.mkdir(parents=True)
-    for a, fname in (("steered", "f_cells.jsonl"), ("shuffled", "null_shuffled_cells.jsonl")):
-        with (parent_metrics / fname).open("w") as f:
-            for r in ref[a]:
-                f.write(M.json.dumps(r) + "\n")
 
 
 def test_figures_render_smoke(tmp_path: Path):
@@ -277,3 +311,189 @@ def test_figures_render_smoke(tmp_path: Path):
     payload = M.json.loads((out_dir / "captions.json").read_text())
     assert "NOT RENDERED" in payload["captions"]["tb_margin_scatter"]
     assert payload["tables"]["coherent_fraction"]["instr_format|tb"] == 0.9
+
+
+# ── S1: declared raw-scale artifact (rawscale_tb.json) ─────────────────
+
+
+def test_step_rawscale_declared_artifact(tmp_path: Path):
+    """The plan-§9 P5 declared file exists, carries the registered bootstrap
+    identity (B=10000, seed 21620), per-arm 95% CIs on EVERY row (the manifest's
+    tb_rawscale transform), and the parent DEFAULTS path stays schema-identical
+    to the committed recency_rawscale.json (no null CIs — rng isolation)."""
+    out_dir = tmp_path / "turn_boundary"
+    parent_metrics = tmp_path / "f_metrics"
+    _synth_tables(out_dir, parent_metrics)
+    payload = M.json.loads((out_dir / "rawscale_tb.json").read_text())
+    assert payload["slot"] == "tb"
+    assert payload["boot"] == {"B": 10000, "seed": 21620}
+    rows = payload["rows"]
+    assert {r["subset"] for r in rows} == {"all", "surviving"}
+    for r in rows:
+        for arm in ("steered", "shuffled", "crosstype"):
+            assert f"{arm}_ci95" in r, (r["cell"], arm)
+    parent = M.json.loads((parent_metrics / "recency_rawscale.json").read_text())
+    assert parent["rows"] and all("shuffled_ci95" not in r for r in parent["rows"])
+    assert all("crosstype_ci95" not in r for r in parent["rows"])
+
+
+# ── S2: rebuilt-vs-recorded parity (driver-side) ───────────────────────
+
+
+def _ctx(cid: str, cell: str = "instr_format", user: str = "hello") -> dict:
+    return {
+        "id": cid,
+        "cell": cell,
+        "value_id": "v1",
+        "carrier": "d1",
+        "system": "sys",
+        "history": [],
+        "user": user,
+    }
+
+
+def test_context_parity_pass_drift_missing_and_bad_sha():
+    import issue2162_tbmp as TB
+
+    sha = TB.frozen_gen_sha256_producer_domain()
+    ctxs = {"c1": _ctx("c1"), "c2": _ctx("c2", user="other")}
+
+    def _payload(recorded: dict) -> dict:
+        return {"contexts": recorded, "frozen_gen_sha256": sha}
+
+    rep = TB.parent_bank_context_parity(_payload({k: dict(v) for k, v in ctxs.items()}), ctxs)
+    assert rep["passed"] and rep["n_violations"] == 0 and rep["n_contexts_checked"] == 2
+
+    drifted = {k: dict(v) for k, v in ctxs.items()}
+    drifted["c1"]["user"] = "TAMPERED"
+    rep2 = TB.parent_bank_context_parity(_payload(drifted), ctxs)
+    assert not rep2["passed"]
+    assert any(
+        v["check"] == "context_payload_drift" and v["context_id"] == "c1"
+        for v in rep2["violations"]
+    )
+
+    rep3 = TB.parent_bank_context_parity(_payload({"c1": dict(ctxs["c1"])}), ctxs)
+    assert not rep3["passed"]
+    assert any(v["check"] == "context_missing_from_bank" for v in rep3["violations"])
+
+    bad = {"contexts": {k: dict(v) for k, v in ctxs.items()}, "frozen_gen_sha256": "0" * 64}
+    rep4 = TB.parent_bank_context_parity(bad, ctxs)
+    assert not rep4["passed"]
+    assert any(v["check"] == "frozen_gen_sha256" for v in rep4["violations"])
+
+    with pytest.raises(RuntimeError, match="no 'contexts' map"):
+        TB.parent_bank_context_parity({}, ctxs)
+
+
+def test_len_delta_parity_pass_drift_missing_pair_and_missing_file(tmp_path: Path):
+    import issue2162_tbmp as TB
+
+    cell = sorted(TB.CAPTURE_CELLS)[0]
+    pairs = [
+        SimpleNamespace(pair_id=f"p{i}", cell=cell, a=f"p{i}__a", b=f"p{i}__b") for i in range(3)
+    ]
+    resolved = {}
+    for i, p in enumerate(pairs):
+        resolved[p.a] = {"ctx_len": 100}
+        resolved[p.b] = {"ctx_len": 100 + i}
+
+    good = tmp_path / "f_cells.jsonl"
+    with good.open("w") as fh:
+        for i, p in enumerate(pairs):
+            fh.write(M.json.dumps({"pair_id": p.pair_id, "len_delta": i}) + "\n")
+    rep = TB.g1b_len_delta_parity(resolved, pairs, good)
+    assert rep["passed"] and rep["n_checked"] == 3 and rep["n_capture_pairs"] == 3
+
+    drift = tmp_path / "f_cells_drift.jsonl"
+    with drift.open("w") as fh:
+        fh.write(M.json.dumps({"pair_id": "p0", "len_delta": 99}) + "\n")
+        for i, p in enumerate(pairs[1:], start=1):
+            fh.write(M.json.dumps({"pair_id": p.pair_id, "len_delta": i}) + "\n")
+    rep2 = TB.g1b_len_delta_parity(resolved, pairs, drift)
+    assert not rep2["passed"]
+    assert any(v["check"] == "len_delta_drift" and v["pair_id"] == "p0" for v in rep2["violations"])
+
+    partial = tmp_path / "f_cells_partial.jsonl"
+    with partial.open("w") as fh:
+        for i, p in enumerate(pairs[:2]):
+            fh.write(M.json.dumps({"pair_id": p.pair_id, "len_delta": i}) + "\n")
+    rep3 = TB.g1b_len_delta_parity(resolved, pairs, partial)
+    assert not rep3["passed"]  # anti-vacuous: a missing pair can never pass silently
+    assert any(v["check"] == "pair_missing_from_parent_f_cells" for v in rep3["violations"])
+
+    with pytest.raises(AssertionError, match="missing"):
+        TB.g1b_len_delta_parity(resolved, pairs, tmp_path / "nope.jsonl")
+
+
+def test_shuffled_assignment_parity_refuses_verifies_and_drifts():
+    import issue2162_tbmp as TB
+
+    from explore_persona_space.experiments.issue2162 import bank2162 as BANK
+
+    pairs = BANK.build_pairs()
+    with pytest.raises(RuntimeError, match="no shuffled donor map"):
+        TB.shuffled_assignment_with_parity(pairs, {}, "bank.json")
+
+    frozen = BANK.donor_assignment_2162(pairs)["shuffled"]
+    ours, note = TB.shuffled_assignment_with_parity(
+        pairs, {"donor_assignment": {"shuffled": frozen}}, "bank.json"
+    )
+    assert ours and "parity-verified" in note
+
+    tampered = dict(frozen)
+    tampered[next(iter(ours))] = "WRONG_DONOR"
+    with pytest.raises(AssertionError, match="DRIFTED"):
+        TB.shuffled_assignment_with_parity(
+            pairs, {"donor_assignment": {"shuffled": tampered}}, "bank.json"
+        )
+
+
+# ── S2d: anchor-channel vacuous-join floor ─────────────────────────────
+
+
+def _scores_fixture(tmp_path: Path) -> Path:
+    scores_dir = tmp_path / "scores"
+    scores_dir.mkdir()
+    (scores_dir / "x.anchors.scores.jsonl").write_text(
+        M.json.dumps({"item_id": "i0", "score": 90.0}) + "\n"
+    )
+    (scores_dir / "coherence.anchors.scores.jsonl").write_text(
+        M.json.dumps({"item_id": "c|c0|0", "context_id": "c0", "draw": 0, "score": 90.0}) + "\n"
+    )
+    return scores_dir
+
+
+def test_build_channels_vacuous_join_raises(tmp_path: Path):
+    scores_dir = _scores_fixture(tmp_path)
+    args = SimpleNamespace(parent_scores_dir=scores_dir)
+    with pytest.raises(AssertionError, match="vacuous join"):
+        M._build_channels(args, {}, {}, set())
+
+
+def test_build_channels_floor_counts_parity_checked_pairs(tmp_path: Path, monkeypatch):
+    scores_dir = _scores_fixture(tmp_path)
+    args = SimpleNamespace(parent_scores_dir=scores_dir)
+    chan = {
+        "delta_floor": -0.2,
+        "delta_ceiling": 0.6,
+        "b_floor": 0.3,
+        "b_ceiling": 0.9,
+        "n_floor": 2,
+        "n_ceiling": 2,
+    }
+
+    def fake_channels(pair, coh_draws, anchor_scores):
+        return dict(chan)
+
+    monkeypatch.setattr(M, "pair_anchor_channels", fake_channels)
+    n = M.SURVIVAL_FLOOR
+    pair_ids = {f"pp{i}" for i in range(n)}
+    pairs_by_id = {pid: SimpleNamespace(pair_id=pid) for pid in pair_ids}
+    committed = {pid: {"delta_floor_mean": -0.2, "delta_ceiling_mean": 0.6} for pid in pair_ids}
+    out = M._build_channels(args, pairs_by_id, committed, pair_ids)
+    assert len(out) == n
+
+    committed_small = {pid: committed[pid] for pid in sorted(pair_ids)[: n - 1]}
+    with pytest.raises(AssertionError, match="vacuous join"):
+        M._build_channels(args, pairs_by_id, committed_small, pair_ids)

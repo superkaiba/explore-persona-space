@@ -7,9 +7,12 @@
 # Phases:
 #   import-check    deferred-import resolution + argparse-attribute
 #                   completeness (CPU, no GPU)
-#   bank            P1: boundary resolver + G1 gate + tb bank capture +
-#                   multi-position injection gate (GPU 0; rc=24 G1 HALT,
-#                   rc=21 injection HALT — driver-owned designed halts)
+#   bank            P1: boundary resolver + G1 gate (incl. assumption-9
+#                   rebuilt-vs-recorded context parity + G1(b) len_delta
+#                   parity) + tb bank capture + multi-position injection
+#                   gate (GPU 0; rc=24 G1 HALT, rc=21 injection HALT —
+#                   driver-owned designed halts; rc=28 dispatcher HALT
+#                   when the parent bank.json is not staged)
 #   pilot           P2-entry: ONE production-shape timed tb block (GPU 0;
 #                   rc=22 refusal via the shared parent pilot gate)
 #   grid            P2: 45-block claim-file queue, one worker per visible GPU
@@ -58,6 +61,7 @@ PIDFILE="$LOG_DIR/issue-2162-tbmp-workers.pid"
 mkdir -p "$LOG_DIR" "$OUT_ROOT"
 
 # Worker count = realized GPU count (derived, never hardcoded).
+# SLURM_GPU_WIDTH_EXEMPT: RunPod pod-only dispatcher (pod.py provision; sentinel lane) — never dispatched on SLURM lanes
 NUM_WORKERS="$(nvidia-smi -L 2>/dev/null | grep -c '^GPU ' || true)"
 NUM_WORKERS="${NUM_WORKERS:-0}"
 if [ "$NUM_WORKERS" -lt 1 ]; then
@@ -67,14 +71,21 @@ echo "[dispatch] phase=$PHASE num_workers=$NUM_WORKERS out_root=$OUT_ROOT"
 
 COMMON=(--out-root "$OUT_ROOT" --log-dir "$LOG_DIR" "$@")
 
-# Optional shuffled-assignment parity input (staged from HF vc_bank/bank.json).
+# MANDATORY parity input for the bank phase (plan §4.5 DAG stages bank.json
+# unconditionally at P1): shuffled-assignment + assumption-9 context parity.
+# A missing bank is a DESIGNED HALT (rc=28 — distinct from rc=24 G1 /
+# rc=27 margin-pools), never a silent recompute-only run.
 BANK_ARGS=()
-if [ -f "$PARENT_BANK_PATH" ]; then
+require_parent_bank() {
+  if [ ! -f "$PARENT_BANK_PATH" ]; then
+    echo "[dispatch] bank HALT rc=28: parent bank missing at $PARENT_BANK_PATH" \
+      "(stage issue2162_ctxinfo/analysis_tensors/vc_bank/bank.json from HF, or set" \
+      "EPM_2162_TBMP_PARENT_BANK). Re-run: bank (or all)." >&2
+    exit 28
+  fi
   BANK_ARGS=(--parent-bank "$PARENT_BANK_PATH")
-  echo "[dispatch] parent bank staged: $PARENT_BANK_PATH (parity check armed)"
-else
-  echo "[dispatch] no parent bank at $PARENT_BANK_PATH — shuffled map recomputed (seed 2162)"
-fi
+  echo "[dispatch] parent bank staged: $PARENT_BANK_PATH (parity checks armed)"
+}
 
 run_import_check() {
   echo "[phase=import-check]"
@@ -187,6 +198,7 @@ case "$PHASE" in
     run_import_check
     ;;
   bank)
+    require_parent_bank
     run_single_gpu_phase bank "${BANK_ARGS[@]}"
     ;;
   pilot)
@@ -205,6 +217,7 @@ case "$PHASE" in
     run_upload
     ;;
   all)
+    require_parent_bank
     run_import_check
     run_single_gpu_phase bank "${BANK_ARGS[@]}"
     run_single_gpu_phase pilot --pilot --num-workers "$NUM_WORKERS"

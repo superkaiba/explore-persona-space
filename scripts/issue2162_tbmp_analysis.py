@@ -62,6 +62,7 @@ import numpy as np  # noqa: E402
 import issue2094_judge as J94  # noqa: E402
 import issue2162_analysis as A  # noqa: E402
 import issue2162_judge as J  # noqa: E402
+import issue2162_recency_rawscale as RS  # noqa: E402
 import issue2162_tbmp as TB  # noqa: E402
 from issue2094_analysis import bootstrap_family_means_batched  # noqa: E402
 
@@ -385,7 +386,10 @@ def _judge_cfg(args: argparse.Namespace) -> J94.JudgeConfig:
         work_root=args.work_root,
         cache_root=args.cache_root,
         rollouts_dir=args.rollouts_dir,
-        anchors_file=args.parent_scores_dir,  # unused by the wave path
+        # anchors_file is consumed only by the anchor-wave paths (never run
+        # here) — but keep the FILE-kind contract honest: point at the
+        # parent's committed anchors.jsonl, never a directory (M1, r1).
+        anchors_file=args.parent_metrics_dir / "anchors.jsonl",
         stage2_dir=None,
         judge_model=args.judge_model,
         max_tokens=args.max_tokens,
@@ -539,11 +543,17 @@ def _build_channels(
     anchor_scores = load_parent_anchor_scores(args.parent_scores_dir)
     coh_draws = load_anchor_coherent_draws(args.parent_scores_dir)
     channels: dict[str, dict | None] = {}
+    n_checked = 0
     for pid in sorted(pair_ids):
         chan = pair_anchor_channels(pairs_by_id[pid], coh_draws, anchor_scores)
         if chan is not None and pid in committed:
             _assert_anchor_parity(chan, committed[pid], pid)
+            n_checked += 1
         channels[pid] = chan
+    assert n_checked >= SURVIVAL_FLOOR, (
+        f"anchor-channel parity checked only {n_checked} pairs — vacuous join "
+        f"(parent scores dir {args.parent_scores_dir} or committed anchors mis-staged)"
+    )
     return channels
 
 
@@ -956,6 +966,37 @@ def step_margin(args: argparse.Namespace) -> int:
     return RC_OK
 
 
+# ── step: raw-scale companion (plan §9 P5 rawscale_tb.json) ───────────
+
+
+def step_rawscale(args: argparse.Namespace) -> int:
+    """Plan §4.4 raw-scale (denominator-free) read at the tb slot — the honesty
+    overlay for the depth-wise anchor-gap shrink (1.56 -> 0.57). Reuses the
+    parent's committed script verbatim (same B=10000 / seed 21620 pair-clustered
+    bootstrap), pointed at the tb tables + the parent's committed anchors, with
+    the additive ``--null-cis`` arm CIs the manifest's tb_rawscale figure plots."""
+
+    out_json = args.out_dir / "rawscale_tb.json"
+    RS.main(
+        [
+            "--metrics-dir",
+            str(args.out_dir),
+            "--slot",
+            "tb",
+            "--file-suffix",
+            "_tb",
+            "--anchors-file",
+            str(args.parent_metrics_dir / "anchors.jsonl"),
+            "--null-cis",
+            "--out-json",
+            str(out_json),
+        ]
+    )
+    assert out_json.is_file(), f"rawscale step wrote nothing at {out_json}"
+    logger.info("[rawscale] wrote %s", out_json)
+    return RC_OK
+
+
 # ── staging + CLI ─────────────────────────────────────────────────────
 
 
@@ -967,9 +1008,15 @@ def _stage_inputs(args: argparse.Namespace) -> None:
         prefixes.append(HF_PARENT_GRID)
     if args.step in ("margin", "analysis"):
         prefixes.append(f"{J.HF_PREFIX}/analysis_tensors/tbmp/margin")
+    total_bytes = 0
     for prefix in prefixes:
         staged = hub.stage_hub_prefix(J.DATASET_REPO, prefix, args.in_root, revision=None)
-        logger.info("[stage] %s: %d files", prefix, len(staged))
+        # M3 (r1): record the REALIZED VM staging footprint per prefix — §9
+        # stated ~35 MB; the realized parent grid + judge raw scores are ~210 MB.
+        nbytes = sum(Path(p).stat().st_size for p in staged if Path(p).is_file())
+        total_bytes += nbytes
+        logger.info("[stage] %s: %d files, %.1f MB", prefix, len(staged), nbytes / 1e6)
+    logger.info("[stage] realized staging footprint: %.1f MB total", total_bytes / 1e6)
 
 
 STEPS = {
@@ -979,6 +1026,7 @@ STEPS = {
     "wave2": step_wave2,
     "f-tables": step_f_tables,
     "parent-ref": step_parent_ref,
+    "rawscale": step_rawscale,
     "stats": step_stats,
     "margin": step_margin,
 }
@@ -1031,7 +1079,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.stage_from_hf:
         _stage_inputs(args)
     if args.step == "analysis":
-        for step in ("f-tables", "parent-ref", "stats", "margin"):
+        for step in ("f-tables", "parent-ref", "rawscale", "stats", "margin"):
             rc = STEPS[step](args)
             if rc != RC_OK:
                 return rc
