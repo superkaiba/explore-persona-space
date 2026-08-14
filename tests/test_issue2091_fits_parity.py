@@ -118,8 +118,10 @@ def test_dof_cap_exclusion_masks_interpolating_lambdas():
     """Fabricated huge-eigenvalue caches: dof ~= n_fi > cap*n_fi at EVERY grid
     lambda -> all-excluded raises; a mixed cache excludes only the small lambdas."""
     grid = np.asarray(LAMBDA_GRID)
+    # Fabricated caches carry fi_idx (the production `_prep_inner_lambda` contract on
+    # BOTH routes) — `_dof_cap_exclusions` reads n_fi from it, not from len(w) (#2282).
     # all-excluded: every eigenvalue enormous -> filt ~= 1 -> dof = n_fi.
-    huge = [{"w": torch.full((10,), 1e12, dtype=torch.float64)}]
+    huge = [{"w": torch.full((10,), 1e12, dtype=torch.float64), "fi_idx": torch.arange(10)}]
     excluded, fold_ntr = _dof_cap_exclusions(huge, grid, DOF_CAP)
     assert excluded.all() and fold_ntr == [10]
     # no cap -> nothing excluded.
@@ -127,7 +129,7 @@ def test_dof_cap_exclusion_masks_interpolating_lambdas():
     assert not none_excluded.any()
     # mixed: moderate eigenvalues -> small lambdas interpolate (dof ~ n_fi),
     # large lambdas shrink dof under the cap.
-    mixed = [{"w": torch.full((10,), 50.0, dtype=torch.float64)}]
+    mixed = [{"w": torch.full((10,), 50.0, dtype=torch.float64), "fi_idx": torch.arange(10)}]
     exc_mixed, _ = _dof_cap_exclusions(mixed, grid, DOF_CAP)
     assert exc_mixed.any() and not exc_mixed.all()
     assert exc_mixed[0] and not exc_mixed[-1]  # smallest lambda excluded, largest kept
@@ -135,7 +137,7 @@ def test_dof_cap_exclusion_masks_interpolating_lambdas():
 
 def test_select_lambda_raises_when_every_lambda_excluded():
     x, y, _ = _grouped_cell(n_groups=4, rows_per_group=5, d=6, d_out=2)
-    huge = [{"w": torch.full((10,), 1e12, dtype=torch.float64)}]
+    huge = [{"w": torch.full((10,), 1e12, dtype=torch.float64), "fi_idx": torch.arange(10)}]
     with pytest.raises(RuntimeError, match="no admissible lambda"):
         select_lambda(x, y, None, inner_caches=huge, where="allexcluded")
 
@@ -146,8 +148,11 @@ def test_select_lambda_never_picks_excluded_lambda():
     REAL inner caches (full key set — fi_idx/va_idx/V/P/M) with the eigenvalues
     mutated in place to a flat moderate spectrum, so dof(lam) = n_fi*50/(50+lam)
     excludes exactly the small-lambda half of the grid under the 0.9 cap.
+    d=40 >= n_fi pins the GRAM inner route (w carries n_fi eigenvalues), where the
+    flat-50 mutation can make the cap bite; on the primal route (n_fi > d) w has
+    only d entries, so dof <= d << 0.9*n_fi and the cap correctly never bites (#2282).
     """
-    x, y, conv_ids = _grouped_cell(n_groups=10, rows_per_group=4, d=8, d_out=3)
+    x, y, conv_ids = _grouped_cell(n_groups=10, rows_per_group=4, d=40, d_out=3)
     from scripts.issue2091_fits import build_inner_caches
 
     caches = build_inner_caches(x, conv_ids, n_inner=4, seed=11)
