@@ -13846,7 +13846,13 @@ _LESSONS_ROW_RE = re.compile(
 # this row extension plus <=40 B headroom (9802 + 40 = 9842) — not general
 # slack (the #992 argued-raise form; the per-row and non-row caps still
 # bind).
-_LESSONS_MAX_BYTES = 9842
+# 9842->9913 (#2135): the index sat at 9834/9842 (8 B headroom), so the
+# pod-side-reporting-row HOLD/gate-park trigger extension (+39 B; measured
+# post-edit file 9873 B) could not land under the old cap. The raise buys
+# EXACTLY this row extension plus <=40 B headroom (9873 + 40 = 9913) — not
+# general slack (the #992 argued-raise form; the per-row and non-row caps
+# still bind).
+_LESSONS_MAX_BYTES = 9913
 # Early-warning band (#992): a stderr-only advisory WARN once the index
 # crosses this, so a near-cap landing is visible a few rows before the
 # _LESSONS_MAX_BYTES FAIL (early warning only — advisory, never a FAIL).
@@ -14945,13 +14951,18 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # measured 87,195 B; problem-sweep prose + living-docs passes are the
     # trim direction.
     "daily/SKILL.md": 90_000,
+    # Prior: 72_100 — measured 72,748 B after #2276 back-filled the c62
+    # (backend pin-claim) + c63 (declared width vs launch width) escape
+    # entries into the Phase 1.5.0 canonical escapes block (+845 B,
+    # required by the verify_plan docstring sync test); cap = landing
+    # bytes + ~1 KB (#1753 landing-bytes rule).
     # Prior: 70_900 — measured 71,103 B after #2123 back-filled the c59
     # (GPU-hours token conflict) escape entry into the Phase 1.5.0 canonical
     # escapes block (+203 B, required by the verify_plan docstring sync
     # test); cap = landing bytes + ~1 KB (#1753 landing-bytes rule).
     # Prior context: measured 68,032 B; Phase 1 planner-prompt restatement
     # of planner.md is the trim direction.
-    "adversarial-planner/SKILL.md": 72_100,
+    "adversarial-planner/SKILL.md": 73_750,
 }
 
 
