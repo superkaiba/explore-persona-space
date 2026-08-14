@@ -1,0 +1,4735 @@
+{
+ "regex": "[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff\u3040-\u30ff\uac00-\ud7af]",
+ "phases": {
+  "decisive": {
+   "per_arm": {
+    "evil__a0__-": {
+     "intruded": 15,
+     "total": 200
+    },
+    "evil__cxd__ctx": {
+     "intruded": 107,
+     "total": 600
+    },
+    "evil__pre__ans": {
+     "intruded": 550,
+     "total": 600
+    },
+    "evil__pre__ctx": {
+     "intruded": 42,
+     "total": 600
+    },
+    "evil__rb__ans": {
+     "intruded": 599,
+     "total": 600
+    },
+    "evil__rb__ctx": {
+     "intruded": 65,
+     "total": 600
+    },
+    "evil__rnd__ans": {
+     "intruded": 53,
+     "total": 600
+    },
+    "evil__rnd__ctx": {
+     "intruded": 31,
+     "total": 600
+    },
+    "evil__shf__ctx": {
+     "intruded": 31,
+     "total": 600
+    },
+    "sycophancy__a0__-": {
+     "intruded": 5,
+     "total": 200
+    },
+    "sycophancy__cxd__ctx": {
+     "intruded": 32,
+     "total": 600
+    },
+    "sycophancy__pre__ans": {
+     "intruded": 184,
+     "total": 600
+    },
+    "sycophancy__pre__ctx": {
+     "intruded": 235,
+     "total": 600
+    },
+    "sycophancy__rb__ans": {
+     "intruded": 381,
+     "total": 600
+    },
+    "sycophancy__rb__ctx": {
+     "intruded": 69,
+     "total": 600
+    },
+    "sycophancy__rnd__ans": {
+     "intruded": 157,
+     "total": 600
+    },
+    "sycophancy__rnd__ctx": {
+     "intruded": 203,
+     "total": 600
+    },
+    "sycophancy__shf__ctx": {
+     "intruded": 577,
+     "total": 600
+    }
+   },
+   "per_cell_nonzero": {
+    "evil__a0": {
+     "intruded": 15,
+     "total": 200
+    },
+    "evil__cxd__ctx__L14__c4": {
+     "intruded": 55,
+     "total": 200
+    },
+    "evil__cxd__ctx__all__c0p5": {
+     "intruded": 12,
+     "total": 200
+    },
+    "evil__cxd__ctx__mid__c4": {
+     "intruded": 40,
+     "total": 200
+    },
+    "evil__pre__ans__L17__c1": {
+     "intruded": 158,
+     "total": 200
+    },
+    "evil__pre__ans__all__c4": {
+     "intruded": 199,
+     "total": 200
+    },
+    "evil__pre__ans__mid__c2": {
+     "intruded": 193,
+     "total": 200
+    },
+    "evil__pre__ctx__L14__c0p5": {
+     "intruded": 15,
+     "total": 200
+    },
+    "evil__pre__ctx__all__c0p5": {
+     "intruded": 16,
+     "total": 200
+    },
+    "evil__pre__ctx__mid__c0p5": {
+     "intruded": 11,
+     "total": 200
+    },
+    "evil__rb__ans__L14__c4": {
+     "intruded": 200,
+     "total": 200
+    },
+    "evil__rb__ans__all__c2": {
+     "intruded": 199,
+     "total": 200
+    },
+    "evil__rb__ans__mid__c2": {
+     "intruded": 200,
+     "total": 200
+    },
+    "evil__rb__ctx__L14__c0p5": {
+     "intruded": 18,
+     "total": 200
+    },
+    "evil__rb__ctx__all__c0p5": {
+     "intruded": 10,
+     "total": 200
+    },
+    "evil__rb__ctx__mid__c2": {
+     "intruded": 37,
+     "total": 200
+    },
+    "evil__rnd__ans__L14__cm1": {
+     "intruded": 36,
+     "total": 200
+    },
+    "evil__rnd__ans__all__c0p5": {
+     "intruded": 13,
+     "total": 200
+    },
+    "evil__rnd__ans__mid__c0p5": {
+     "intruded": 4,
+     "total": 200
+    },
+    "evil__rnd__ctx__L14__c0p5": {
+     "intruded": 14,
+     "total": 200
+    },
+    "evil__rnd__ctx__all__c0p5": {
+     "intruded": 9,
+     "total": 200
+    },
+    "evil__rnd__ctx__mid__c0p5": {
+     "intruded": 8,
+     "total": 200
+    },
+    "evil__shf__ctx__L14__c0p5": {
+     "intruded": 11,
+     "total": 200
+    },
+    "evil__shf__ctx__all__c0p5": {
+     "intruded": 8,
+     "total": 200
+    },
+    "evil__shf__ctx__mid__c0p5": {
+     "intruded": 12,
+     "total": 200
+    },
+    "sycophancy__a0": {
+     "intruded": 5,
+     "total": 200
+    },
+    "sycophancy__cxd__ctx__L14__c2": {
+     "intruded": 7,
+     "total": 200
+    },
+    "sycophancy__cxd__ctx__all__c4": {
+     "intruded": 9,
+     "total": 200
+    },
+    "sycophancy__cxd__ctx__mid__c4": {
+     "intruded": 16,
+     "total": 200
+    },
+    "sycophancy__pre__ans__L14__c1": {
+     "intruded": 5,
+     "total": 200
+    },
+    "sycophancy__pre__ans__all__c4": {
+     "intruded": 178,
+     "total": 200
+    },
+    "sycophancy__pre__ans__mid__c1": {
+     "intruded": 1,
+     "total": 200
+    },
+    "sycophancy__pre__ctx__L17__c4": {
+     "intruded": 185,
+     "total": 200
+    },
+    "sycophancy__pre__ctx__all__c4": {
+     "intruded": 15,
+     "total": 200
+    },
+    "sycophancy__pre__ctx__mid__c4": {
+     "intruded": 35,
+     "total": 200
+    },
+    "sycophancy__rb__ans__L14__c2": {
+     "intruded": 200,
+     "total": 200
+    },
+    "sycophancy__rb__ans__all__c2": {
+     "intruded": 157,
+     "total": 200
+    },
+    "sycophancy__rb__ans__mid__c1": {
+     "intruded": 24,
+     "total": 200
+    },
+    "sycophancy__rb__ctx__L17__c4": {
+     "intruded": 33,
+     "total": 200
+    },
+    "sycophancy__rb__ctx__all__c4": {
+     "intruded": 17,
+     "total": 200
+    },
+    "sycophancy__rb__ctx__mid__c2": {
+     "intruded": 19,
+     "total": 200
+    },
+    "sycophancy__rnd__ans__L17__cm1": {
+     "intruded": 143,
+     "total": 200
+    },
+    "sycophancy__rnd__ans__all__cm2": {
+     "intruded": 8,
+     "total": 200
+    },
+    "sycophancy__rnd__ans__mid__c1": {
+     "intruded": 6,
+     "total": 200
+    },
+    "sycophancy__rnd__ctx__L14__cm2": {
+     "intruded": 100,
+     "total": 200
+    },
+    "sycophancy__rnd__ctx__all__cm0p5": {
+     "intruded": 3,
+     "total": 200
+    },
+    "sycophancy__rnd__ctx__mid__cm4": {
+     "intruded": 100,
+     "total": 200
+    },
+    "sycophancy__shf__ctx__L17__c4": {
+     "intruded": 191,
+     "total": 200
+    },
+    "sycophancy__shf__ctx__all__c4": {
+     "intruded": 192,
+     "total": 200
+    },
+    "sycophancy__shf__ctx__mid__c2": {
+     "intruded": 194,
+     "total": 200
+    }
+   }
+  },
+  "localize": {
+   "per_arm": {
+    "evil__a0__-": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__cxd__ctx": {
+     "intruded": 139,
+     "total": 1440
+    },
+    "evil__pre__ans": {
+     "intruded": 829,
+     "total": 1440
+    },
+    "evil__pre__ctx": {
+     "intruded": 221,
+     "total": 1440
+    },
+    "evil__rb__ans": {
+     "intruded": 953,
+     "total": 1440
+    },
+    "evil__rb__ctx": {
+     "intruded": 134,
+     "total": 1440
+    },
+    "evil__rnd__ans": {
+     "intruded": 775,
+     "total": 1440
+    },
+    "evil__rnd__ctx": {
+     "intruded": 193,
+     "total": 1440
+    },
+    "evil__shf__ctx": {
+     "intruded": 193,
+     "total": 1440
+    },
+    "hallucination__a0__-": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__cxd__ctx": {
+     "intruded": 173,
+     "total": 1440
+    },
+    "hallucination__pre__ans": {
+     "intruded": 804,
+     "total": 1440
+    },
+    "hallucination__pre__ctx": {
+     "intruded": 158,
+     "total": 1440
+    },
+    "hallucination__rb__ans": {
+     "intruded": 966,
+     "total": 1440
+    },
+    "hallucination__rb__ctx": {
+     "intruded": 168,
+     "total": 1440
+    },
+    "hallucination__rnd__ans": {
+     "intruded": 826,
+     "total": 1440
+    },
+    "hallucination__rnd__ctx": {
+     "intruded": 193,
+     "total": 1440
+    },
+    "hallucination__shf__ctx": {
+     "intruded": 189,
+     "total": 1440
+    },
+    "sycophancy__a0__-": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx": {
+     "intruded": 116,
+     "total": 1440
+    },
+    "sycophancy__pre__ans": {
+     "intruded": 807,
+     "total": 1440
+    },
+    "sycophancy__pre__ctx": {
+     "intruded": 224,
+     "total": 1440
+    },
+    "sycophancy__rb__ans": {
+     "intruded": 969,
+     "total": 1440
+    },
+    "sycophancy__rb__ctx": {
+     "intruded": 105,
+     "total": 1440
+    },
+    "sycophancy__rnd__ans": {
+     "intruded": 763,
+     "total": 1440
+    },
+    "sycophancy__rnd__ctx": {
+     "intruded": 208,
+     "total": 1440
+    },
+    "sycophancy__shf__ctx": {
+     "intruded": 445,
+     "total": 1440
+    }
+   },
+   "per_cell_nonzero": {
+    "evil__a0": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__cxd__ctx__L14__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__cxd__ctx__L14__c1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__cxd__ctx__L14__c2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__cxd__ctx__L14__c4": {
+     "intruded": 10,
+     "total": 30
+    },
+    "evil__cxd__ctx__L14__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__cxd__ctx__L14__cm2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__cxd__ctx__L14__cm4": {
+     "intruded": 9,
+     "total": 30
+    },
+    "evil__cxd__ctx__L17__c2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__cxd__ctx__L17__c4": {
+     "intruded": 8,
+     "total": 30
+    },
+    "evil__cxd__ctx__L17__cm0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__cxd__ctx__L17__cm1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__cxd__ctx__L17__cm2": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__cxd__ctx__L17__cm4": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__cxd__ctx__L20__c2": {
+     "intruded": 4,
+     "total": 30
+    },
+    "evil__cxd__ctx__L20__c4": {
+     "intruded": 5,
+     "total": 30
+    },
+    "evil__cxd__ctx__L20__cm0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__cxd__ctx__L20__cm2": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__cxd__ctx__L20__cm4": {
+     "intruded": 11,
+     "total": 30
+    },
+    "evil__cxd__ctx__L26__c0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__cxd__ctx__L26__c1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__cxd__ctx__L26__c2": {
+     "intruded": 9,
+     "total": 30
+    },
+    "evil__cxd__ctx__L26__c4": {
+     "intruded": 9,
+     "total": 30
+    },
+    "evil__cxd__ctx__L26__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__cxd__ctx__L26__cm1": {
+     "intruded": 4,
+     "total": 30
+    },
+    "evil__cxd__ctx__L26__cm2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__cxd__ctx__L26__cm4": {
+     "intruded": 7,
+     "total": 30
+    },
+    "evil__cxd__ctx__all__c0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__cxd__ctx__all__c2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__cxd__ctx__all__c4": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__cxd__ctx__all__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__cxd__ctx__all__cm2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__cxd__ctx__all__cm4": {
+     "intruded": 4,
+     "total": 30
+    },
+    "evil__cxd__ctx__mid__c0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__cxd__ctx__mid__c1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__cxd__ctx__mid__c2": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__cxd__ctx__mid__c4": {
+     "intruded": 4,
+     "total": 30
+    },
+    "evil__cxd__ctx__mid__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__cxd__ctx__mid__cm1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__cxd__ctx__mid__cm2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__cxd__ctx__mid__cm4": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__pre__ans__L14__c1": {
+     "intruded": 14,
+     "total": 30
+    },
+    "evil__pre__ans__L14__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__pre__ans__L14__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__pre__ans__L14__cm1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__pre__ans__L14__cm2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__pre__ans__L14__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__pre__ans__L17__c1": {
+     "intruded": 23,
+     "total": 30
+    },
+    "evil__pre__ans__L17__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__pre__ans__L17__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__pre__ans__L17__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__pre__ans__L17__cm2": {
+     "intruded": 29,
+     "total": 30
+    },
+    "evil__pre__ans__L17__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__pre__ans__L20__c0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__pre__ans__L20__c1": {
+     "intruded": 23,
+     "total": 30
+    },
+    "evil__pre__ans__L20__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__pre__ans__L20__c4": {
+     "intruded": 29,
+     "total": 30
+    },
+    "evil__pre__ans__L20__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__pre__ans__L20__cm1": {
+     "intruded": 20,
+     "total": 30
+    },
+    "evil__pre__ans__L20__cm2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__pre__ans__L20__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__pre__ans__L26__c0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__pre__ans__L26__c1": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__pre__ans__L26__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__pre__ans__L26__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__pre__ans__L26__cm0p5": {
+     "intruded": 6,
+     "total": 30
+    },
+    "evil__pre__ans__L26__cm1": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__pre__ans__L26__cm2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__pre__ans__L26__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__pre__ans__all__c1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__pre__ans__all__c2": {
+     "intruded": 4,
+     "total": 30
+    },
+    "evil__pre__ans__all__c4": {
+     "intruded": 29,
+     "total": 30
+    },
+    "evil__pre__ans__all__cm0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__pre__ans__all__cm1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__pre__ans__all__cm2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__pre__ans__all__cm4": {
+     "intruded": 28,
+     "total": 30
+    },
+    "evil__pre__ans__mid__c0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__pre__ans__mid__c1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__pre__ans__mid__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__pre__ans__mid__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__pre__ans__mid__cm0p5": {
+     "intruded": 4,
+     "total": 30
+    },
+    "evil__pre__ans__mid__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__pre__ans__mid__cm2": {
+     "intruded": 25,
+     "total": 30
+    },
+    "evil__pre__ans__mid__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__pre__ctx__L14__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__pre__ctx__L14__c1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__pre__ctx__L14__c2": {
+     "intruded": 10,
+     "total": 30
+    },
+    "evil__pre__ctx__L14__c4": {
+     "intruded": 14,
+     "total": 30
+    },
+    "evil__pre__ctx__L14__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__pre__ctx__L14__cm2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__pre__ctx__L14__cm4": {
+     "intruded": 9,
+     "total": 30
+    },
+    "evil__pre__ctx__L17__c0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__pre__ctx__L17__c1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__pre__ctx__L17__c2": {
+     "intruded": 16,
+     "total": 30
+    },
+    "evil__pre__ctx__L17__c4": {
+     "intruded": 22,
+     "total": 30
+    },
+    "evil__pre__ctx__L17__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__pre__ctx__L17__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__pre__ctx__L17__cm4": {
+     "intruded": 9,
+     "total": 30
+    },
+    "evil__pre__ctx__L20__c0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__pre__ctx__L20__c1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__pre__ctx__L20__c2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__pre__ctx__L20__c4": {
+     "intruded": 10,
+     "total": 30
+    },
+    "evil__pre__ctx__L20__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__pre__ctx__L20__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__pre__ctx__L20__cm4": {
+     "intruded": 10,
+     "total": 30
+    },
+    "evil__pre__ctx__L26__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__pre__ctx__L26__c1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__pre__ctx__L26__c2": {
+     "intruded": 11,
+     "total": 30
+    },
+    "evil__pre__ctx__L26__c4": {
+     "intruded": 11,
+     "total": 30
+    },
+    "evil__pre__ctx__L26__cm0p5": {
+     "intruded": 5,
+     "total": 30
+    },
+    "evil__pre__ctx__L26__cm1": {
+     "intruded": 4,
+     "total": 30
+    },
+    "evil__pre__ctx__L26__cm2": {
+     "intruded": 15,
+     "total": 30
+    },
+    "evil__pre__ctx__L26__cm4": {
+     "intruded": 12,
+     "total": 30
+    },
+    "evil__pre__ctx__all__c2": {
+     "intruded": 4,
+     "total": 30
+    },
+    "evil__pre__ctx__all__c4": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__pre__ctx__all__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__pre__ctx__all__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__pre__ctx__all__cm4": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__pre__ctx__mid__c2": {
+     "intruded": 4,
+     "total": 30
+    },
+    "evil__pre__ctx__mid__c4": {
+     "intruded": 17,
+     "total": 30
+    },
+    "evil__pre__ctx__mid__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__pre__ctx__mid__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__pre__ctx__mid__cm2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__pre__ctx__mid__cm4": {
+     "intruded": 7,
+     "total": 30
+    },
+    "evil__rb__ans__L14__c0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__rb__ans__L14__c1": {
+     "intruded": 23,
+     "total": 30
+    },
+    "evil__rb__ans__L14__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rb__ans__L14__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rb__ans__L14__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rb__ans__L14__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__rb__ans__L14__cm2": {
+     "intruded": 29,
+     "total": 30
+    },
+    "evil__rb__ans__L14__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rb__ans__L17__c0p5": {
+     "intruded": 12,
+     "total": 30
+    },
+    "evil__rb__ans__L17__c1": {
+     "intruded": 18,
+     "total": 30
+    },
+    "evil__rb__ans__L17__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rb__ans__L17__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rb__ans__L17__cm2": {
+     "intruded": 27,
+     "total": 30
+    },
+    "evil__rb__ans__L17__cm4": {
+     "intruded": 29,
+     "total": 30
+    },
+    "evil__rb__ans__L20__c0p5": {
+     "intruded": 17,
+     "total": 30
+    },
+    "evil__rb__ans__L20__c1": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rb__ans__L20__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rb__ans__L20__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rb__ans__L20__cm1": {
+     "intruded": 14,
+     "total": 30
+    },
+    "evil__rb__ans__L20__cm2": {
+     "intruded": 29,
+     "total": 30
+    },
+    "evil__rb__ans__L20__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rb__ans__L26__c0p5": {
+     "intruded": 15,
+     "total": 30
+    },
+    "evil__rb__ans__L26__c1": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rb__ans__L26__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rb__ans__L26__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rb__ans__L26__cm0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__rb__ans__L26__cm1": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rb__ans__L26__cm2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rb__ans__L26__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rb__ans__all__c0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__rb__ans__all__c1": {
+     "intruded": 25,
+     "total": 30
+    },
+    "evil__rb__ans__all__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rb__ans__all__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rb__ans__all__cm0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__rb__ans__all__cm2": {
+     "intruded": 12,
+     "total": 30
+    },
+    "evil__rb__ans__all__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rb__ans__mid__c0p5": {
+     "intruded": 4,
+     "total": 30
+    },
+    "evil__rb__ans__mid__c1": {
+     "intruded": 23,
+     "total": 30
+    },
+    "evil__rb__ans__mid__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rb__ans__mid__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rb__ans__mid__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rb__ans__mid__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rb__ans__mid__cm2": {
+     "intruded": 29,
+     "total": 30
+    },
+    "evil__rb__ans__mid__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rb__ctx__L14__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rb__ctx__L14__c1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rb__ctx__L14__c2": {
+     "intruded": 9,
+     "total": 30
+    },
+    "evil__rb__ctx__L14__c4": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__rb__ctx__L14__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__rb__ctx__L14__cm4": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rb__ctx__L17__c0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__rb__ctx__L17__c1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rb__ctx__L17__c2": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__rb__ctx__L17__c4": {
+     "intruded": 6,
+     "total": 30
+    },
+    "evil__rb__ctx__L17__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__rb__ctx__L17__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rb__ctx__L20__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rb__ctx__L20__c1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__rb__ctx__L20__c2": {
+     "intruded": 6,
+     "total": 30
+    },
+    "evil__rb__ctx__L20__c4": {
+     "intruded": 7,
+     "total": 30
+    },
+    "evil__rb__ctx__L20__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rb__ctx__L20__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__rb__ctx__L20__cm2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rb__ctx__L20__cm4": {
+     "intruded": 4,
+     "total": 30
+    },
+    "evil__rb__ctx__L26__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rb__ctx__L26__c1": {
+     "intruded": 5,
+     "total": 30
+    },
+    "evil__rb__ctx__L26__c2": {
+     "intruded": 10,
+     "total": 30
+    },
+    "evil__rb__ctx__L26__c4": {
+     "intruded": 10,
+     "total": 30
+    },
+    "evil__rb__ctx__L26__cm0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__rb__ctx__L26__cm1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__rb__ctx__L26__cm2": {
+     "intruded": 7,
+     "total": 30
+    },
+    "evil__rb__ctx__L26__cm4": {
+     "intruded": 6,
+     "total": 30
+    },
+    "evil__rb__ctx__all__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rb__ctx__all__c1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__rb__ctx__all__c2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rb__ctx__all__c4": {
+     "intruded": 6,
+     "total": 30
+    },
+    "evil__rb__ctx__all__cm1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__rb__ctx__all__cm2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rb__ctx__all__cm4": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__rb__ctx__mid__c1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__rb__ctx__mid__c2": {
+     "intruded": 6,
+     "total": 30
+    },
+    "evil__rb__ctx__mid__c4": {
+     "intruded": 6,
+     "total": 30
+    },
+    "evil__rb__ctx__mid__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__rb__ctx__mid__cm2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rb__ctx__mid__cm4": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rnd__ans__L14__c0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__rnd__ans__L14__c1": {
+     "intruded": 4,
+     "total": 30
+    },
+    "evil__rnd__ans__L14__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rnd__ans__L14__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rnd__ans__L14__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rnd__ans__L14__cm1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__rnd__ans__L14__cm2": {
+     "intruded": 26,
+     "total": 30
+    },
+    "evil__rnd__ans__L14__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rnd__ans__L17__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rnd__ans__L17__c1": {
+     "intruded": 24,
+     "total": 30
+    },
+    "evil__rnd__ans__L17__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rnd__ans__L17__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rnd__ans__L17__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__rnd__ans__L17__cm1": {
+     "intruded": 22,
+     "total": 30
+    },
+    "evil__rnd__ans__L17__cm2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rnd__ans__L17__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rnd__ans__L20__c0p5": {
+     "intruded": 4,
+     "total": 30
+    },
+    "evil__rnd__ans__L20__c1": {
+     "intruded": 29,
+     "total": 30
+    },
+    "evil__rnd__ans__L20__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rnd__ans__L20__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rnd__ans__L20__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rnd__ans__L20__cm1": {
+     "intruded": 11,
+     "total": 30
+    },
+    "evil__rnd__ans__L20__cm2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rnd__ans__L20__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rnd__ans__L26__c0p5": {
+     "intruded": 5,
+     "total": 30
+    },
+    "evil__rnd__ans__L26__c1": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rnd__ans__L26__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rnd__ans__L26__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rnd__ans__L26__cm0p5": {
+     "intruded": 5,
+     "total": 30
+    },
+    "evil__rnd__ans__L26__cm1": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rnd__ans__L26__cm2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rnd__ans__L26__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rnd__ans__all__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rnd__ans__all__c2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__rnd__ans__all__c4": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rnd__ans__all__cm0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__rnd__ans__all__cm4": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__rnd__ans__mid__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rnd__ans__mid__c1": {
+     "intruded": 4,
+     "total": 30
+    },
+    "evil__rnd__ans__mid__c2": {
+     "intruded": 23,
+     "total": 30
+    },
+    "evil__rnd__ans__mid__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rnd__ans__mid__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__rnd__ans__mid__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__rnd__ans__mid__cm2": {
+     "intruded": 24,
+     "total": 30
+    },
+    "evil__rnd__ans__mid__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "evil__rnd__ctx__L14__c1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__rnd__ctx__L14__c2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__rnd__ctx__L14__c4": {
+     "intruded": 10,
+     "total": 30
+    },
+    "evil__rnd__ctx__L14__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rnd__ctx__L14__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__rnd__ctx__L14__cm2": {
+     "intruded": 9,
+     "total": 30
+    },
+    "evil__rnd__ctx__L14__cm4": {
+     "intruded": 19,
+     "total": 30
+    },
+    "evil__rnd__ctx__L17__c0p5": {
+     "intruded": 5,
+     "total": 30
+    },
+    "evil__rnd__ctx__L17__c2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__rnd__ctx__L17__c4": {
+     "intruded": 8,
+     "total": 30
+    },
+    "evil__rnd__ctx__L17__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rnd__ctx__L17__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rnd__ctx__L17__cm2": {
+     "intruded": 4,
+     "total": 30
+    },
+    "evil__rnd__ctx__L17__cm4": {
+     "intruded": 9,
+     "total": 30
+    },
+    "evil__rnd__ctx__L20__c0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__rnd__ctx__L20__c1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rnd__ctx__L20__c2": {
+     "intruded": 9,
+     "total": 30
+    },
+    "evil__rnd__ctx__L20__c4": {
+     "intruded": 7,
+     "total": 30
+    },
+    "evil__rnd__ctx__L20__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__rnd__ctx__L20__cm2": {
+     "intruded": 4,
+     "total": 30
+    },
+    "evil__rnd__ctx__L20__cm4": {
+     "intruded": 12,
+     "total": 30
+    },
+    "evil__rnd__ctx__L26__c0p5": {
+     "intruded": 4,
+     "total": 30
+    },
+    "evil__rnd__ctx__L26__c1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__rnd__ctx__L26__c2": {
+     "intruded": 7,
+     "total": 30
+    },
+    "evil__rnd__ctx__L26__c4": {
+     "intruded": 12,
+     "total": 30
+    },
+    "evil__rnd__ctx__L26__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rnd__ctx__L26__cm1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__rnd__ctx__L26__cm2": {
+     "intruded": 8,
+     "total": 30
+    },
+    "evil__rnd__ctx__L26__cm4": {
+     "intruded": 10,
+     "total": 30
+    },
+    "evil__rnd__ctx__all__c0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__rnd__ctx__all__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__rnd__ctx__all__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rnd__ctx__all__cm4": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__rnd__ctx__mid__c2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rnd__ctx__mid__c4": {
+     "intruded": 7,
+     "total": 30
+    },
+    "evil__rnd__ctx__mid__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__rnd__ctx__mid__cm2": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__rnd__ctx__mid__cm4": {
+     "intruded": 15,
+     "total": 30
+    },
+    "evil__shf__ctx__L14__c1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__shf__ctx__L14__c2": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__shf__ctx__L14__c4": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__shf__ctx__L14__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__shf__ctx__L14__cm4": {
+     "intruded": 14,
+     "total": 30
+    },
+    "evil__shf__ctx__L17__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__shf__ctx__L17__c1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__shf__ctx__L17__c2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__shf__ctx__L17__c4": {
+     "intruded": 10,
+     "total": 30
+    },
+    "evil__shf__ctx__L17__cm2": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__shf__ctx__L17__cm4": {
+     "intruded": 12,
+     "total": 30
+    },
+    "evil__shf__ctx__L20__c0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__shf__ctx__L20__c1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__shf__ctx__L20__c2": {
+     "intruded": 9,
+     "total": 30
+    },
+    "evil__shf__ctx__L20__c4": {
+     "intruded": 10,
+     "total": 30
+    },
+    "evil__shf__ctx__L20__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__shf__ctx__L20__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__shf__ctx__L20__cm2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__shf__ctx__L20__cm4": {
+     "intruded": 11,
+     "total": 30
+    },
+    "evil__shf__ctx__L26__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__shf__ctx__L26__c1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__shf__ctx__L26__c2": {
+     "intruded": 12,
+     "total": 30
+    },
+    "evil__shf__ctx__L26__c4": {
+     "intruded": 10,
+     "total": 30
+    },
+    "evil__shf__ctx__L26__cm0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__shf__ctx__L26__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__shf__ctx__L26__cm2": {
+     "intruded": 9,
+     "total": 30
+    },
+    "evil__shf__ctx__L26__cm4": {
+     "intruded": 12,
+     "total": 30
+    },
+    "evil__shf__ctx__all__c1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__shf__ctx__all__c2": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__shf__ctx__all__c4": {
+     "intruded": 7,
+     "total": 30
+    },
+    "evil__shf__ctx__all__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__shf__ctx__all__cm2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__shf__ctx__all__cm4": {
+     "intruded": 2,
+     "total": 30
+    },
+    "evil__shf__ctx__mid__c0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "evil__shf__ctx__mid__c1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__shf__ctx__mid__c2": {
+     "intruded": 9,
+     "total": 30
+    },
+    "evil__shf__ctx__mid__c4": {
+     "intruded": 17,
+     "total": 30
+    },
+    "evil__shf__ctx__mid__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__shf__ctx__mid__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__shf__ctx__mid__cm2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "evil__shf__ctx__mid__cm4": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__a0": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L14__c0p5": {
+     "intruded": 5,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L14__c1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L14__c2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L14__c4": {
+     "intruded": 7,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L14__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L14__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L14__cm2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L14__cm4": {
+     "intruded": 4,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L17__c0p5": {
+     "intruded": 4,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L17__c1": {
+     "intruded": 4,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L17__c2": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L17__c4": {
+     "intruded": 4,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L17__cm0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L17__cm2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L17__cm4": {
+     "intruded": 14,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L20__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L20__c1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L20__c4": {
+     "intruded": 11,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L20__cm0p5": {
+     "intruded": 4,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L20__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L20__cm2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L20__cm4": {
+     "intruded": 16,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L26__c0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L26__c1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L26__c2": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L26__c4": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L26__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L26__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L26__cm2": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__L26__cm4": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__all__c0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__all__c1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__all__c2": {
+     "intruded": 6,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__all__c4": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__all__cm0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__all__cm1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__all__cm2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__mid__c0p5": {
+     "intruded": 4,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__mid__c1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__mid__c2": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__mid__c4": {
+     "intruded": 10,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__mid__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__mid__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__mid__cm2": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__cxd__ctx__mid__cm4": {
+     "intruded": 16,
+     "total": 30
+    },
+    "hallucination__pre__ans__L14__c1": {
+     "intruded": 11,
+     "total": 30
+    },
+    "hallucination__pre__ans__L14__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__pre__ans__L14__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__pre__ans__L14__cm1": {
+     "intruded": 25,
+     "total": 30
+    },
+    "hallucination__pre__ans__L14__cm2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__pre__ans__L14__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__pre__ans__L17__c0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__pre__ans__L17__c1": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__pre__ans__L17__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__pre__ans__L17__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__pre__ans__L17__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__pre__ans__L17__cm2": {
+     "intruded": 22,
+     "total": 30
+    },
+    "hallucination__pre__ans__L17__cm4": {
+     "intruded": 14,
+     "total": 30
+    },
+    "hallucination__pre__ans__L20__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__pre__ans__L20__c1": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__pre__ans__L20__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__pre__ans__L20__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__pre__ans__L20__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__pre__ans__L20__cm1": {
+     "intruded": 7,
+     "total": 30
+    },
+    "hallucination__pre__ans__L20__cm2": {
+     "intruded": 27,
+     "total": 30
+    },
+    "hallucination__pre__ans__L20__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__pre__ans__L26__c0p5": {
+     "intruded": 7,
+     "total": 30
+    },
+    "hallucination__pre__ans__L26__c1": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__pre__ans__L26__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__pre__ans__L26__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__pre__ans__L26__cm0p5": {
+     "intruded": 11,
+     "total": 30
+    },
+    "hallucination__pre__ans__L26__cm1": {
+     "intruded": 29,
+     "total": 30
+    },
+    "hallucination__pre__ans__L26__cm2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__pre__ans__L26__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__pre__ans__all__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__pre__ans__all__c2": {
+     "intruded": 10,
+     "total": 30
+    },
+    "hallucination__pre__ans__all__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__pre__ans__all__cm0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__pre__ans__all__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__pre__ans__all__cm2": {
+     "intruded": 4,
+     "total": 30
+    },
+    "hallucination__pre__ans__all__cm4": {
+     "intruded": 7,
+     "total": 30
+    },
+    "hallucination__pre__ans__mid__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__pre__ans__mid__c1": {
+     "intruded": 8,
+     "total": 30
+    },
+    "hallucination__pre__ans__mid__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__pre__ans__mid__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__pre__ans__mid__cm0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__pre__ans__mid__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__pre__ans__mid__cm2": {
+     "intruded": 9,
+     "total": 30
+    },
+    "hallucination__pre__ans__mid__cm4": {
+     "intruded": 24,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L14__c0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L14__c1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L14__c2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L14__c4": {
+     "intruded": 7,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L14__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L14__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L14__cm2": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L14__cm4": {
+     "intruded": 4,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L17__c0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L17__c1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L17__c2": {
+     "intruded": 5,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L17__c4": {
+     "intruded": 10,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L17__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L17__cm2": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L17__cm4": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L20__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L20__c1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L20__c4": {
+     "intruded": 6,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L20__cm0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L20__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L20__cm2": {
+     "intruded": 12,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L20__cm4": {
+     "intruded": 8,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L26__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L26__c1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L26__c2": {
+     "intruded": 5,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L26__c4": {
+     "intruded": 6,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L26__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L26__cm1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L26__cm2": {
+     "intruded": 6,
+     "total": 30
+    },
+    "hallucination__pre__ctx__L26__cm4": {
+     "intruded": 10,
+     "total": 30
+    },
+    "hallucination__pre__ctx__all__c0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__pre__ctx__all__c1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__pre__ctx__all__c2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__pre__ctx__all__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__pre__ctx__all__cm1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__pre__ctx__all__cm2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__pre__ctx__all__cm4": {
+     "intruded": 8,
+     "total": 30
+    },
+    "hallucination__pre__ctx__mid__c0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__pre__ctx__mid__c2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__pre__ctx__mid__c4": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__pre__ctx__mid__cm0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__pre__ctx__mid__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__pre__ctx__mid__cm2": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__pre__ctx__mid__cm4": {
+     "intruded": 4,
+     "total": 30
+    },
+    "hallucination__rb__ans__L14__c0p5": {
+     "intruded": 8,
+     "total": 30
+    },
+    "hallucination__rb__ans__L14__c1": {
+     "intruded": 28,
+     "total": 30
+    },
+    "hallucination__rb__ans__L14__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rb__ans__L14__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rb__ans__L14__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rb__ans__L14__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rb__ans__L14__cm2": {
+     "intruded": 29,
+     "total": 30
+    },
+    "hallucination__rb__ans__L14__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rb__ans__L17__c0p5": {
+     "intruded": 8,
+     "total": 30
+    },
+    "hallucination__rb__ans__L17__c1": {
+     "intruded": 26,
+     "total": 30
+    },
+    "hallucination__rb__ans__L17__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rb__ans__L17__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rb__ans__L17__cm2": {
+     "intruded": 20,
+     "total": 30
+    },
+    "hallucination__rb__ans__L17__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rb__ans__L20__c0p5": {
+     "intruded": 22,
+     "total": 30
+    },
+    "hallucination__rb__ans__L20__c1": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rb__ans__L20__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rb__ans__L20__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rb__ans__L20__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__rb__ans__L20__cm1": {
+     "intruded": 6,
+     "total": 30
+    },
+    "hallucination__rb__ans__L20__cm2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rb__ans__L20__cm4": {
+     "intruded": 29,
+     "total": 30
+    },
+    "hallucination__rb__ans__L26__c0p5": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rb__ans__L26__c1": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rb__ans__L26__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rb__ans__L26__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rb__ans__L26__cm0p5": {
+     "intruded": 6,
+     "total": 30
+    },
+    "hallucination__rb__ans__L26__cm1": {
+     "intruded": 23,
+     "total": 30
+    },
+    "hallucination__rb__ans__L26__cm2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rb__ans__L26__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rb__ans__all__c0p5": {
+     "intruded": 5,
+     "total": 30
+    },
+    "hallucination__rb__ans__all__c1": {
+     "intruded": 22,
+     "total": 30
+    },
+    "hallucination__rb__ans__all__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rb__ans__all__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rb__ans__all__cm0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__rb__ans__all__cm1": {
+     "intruded": 10,
+     "total": 30
+    },
+    "hallucination__rb__ans__all__cm2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__rb__ans__all__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rb__ans__mid__c0p5": {
+     "intruded": 8,
+     "total": 30
+    },
+    "hallucination__rb__ans__mid__c1": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rb__ans__mid__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rb__ans__mid__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rb__ans__mid__cm0p5": {
+     "intruded": 4,
+     "total": 30
+    },
+    "hallucination__rb__ans__mid__cm2": {
+     "intruded": 13,
+     "total": 30
+    },
+    "hallucination__rb__ans__mid__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L14__c0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L14__c1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L14__c2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L14__c4": {
+     "intruded": 4,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L14__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L14__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L14__cm2": {
+     "intruded": 6,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L14__cm4": {
+     "intruded": 21,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L17__c0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L17__c1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L17__c2": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L17__c4": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L17__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L17__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L17__cm2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L20__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L20__c2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L20__c4": {
+     "intruded": 6,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L20__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L20__cm1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L20__cm2": {
+     "intruded": 7,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L20__cm4": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L26__c0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L26__c1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L26__c2": {
+     "intruded": 13,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L26__c4": {
+     "intruded": 15,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L26__cm0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L26__cm1": {
+     "intruded": 5,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L26__cm2": {
+     "intruded": 13,
+     "total": 30
+    },
+    "hallucination__rb__ctx__L26__cm4": {
+     "intruded": 7,
+     "total": 30
+    },
+    "hallucination__rb__ctx__all__c0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rb__ctx__all__c1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rb__ctx__all__c2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__rb__ctx__all__c4": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__rb__ctx__all__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__rb__ctx__all__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__rb__ctx__all__cm2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__rb__ctx__all__cm4": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rb__ctx__mid__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__rb__ctx__mid__c1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__rb__ctx__mid__c4": {
+     "intruded": 7,
+     "total": 30
+    },
+    "hallucination__rb__ctx__mid__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rb__ctx__mid__cm1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__rb__ctx__mid__cm2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rb__ctx__mid__cm4": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L14__c0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L14__c1": {
+     "intruded": 18,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L14__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L14__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L14__cm0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L14__cm1": {
+     "intruded": 9,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L14__cm2": {
+     "intruded": 23,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L14__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L17__c0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L17__c1": {
+     "intruded": 25,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L17__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L17__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L17__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L17__cm1": {
+     "intruded": 22,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L17__cm2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L17__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L20__c0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L20__c1": {
+     "intruded": 27,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L20__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L20__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L20__cm0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L20__cm1": {
+     "intruded": 18,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L20__cm2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L20__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L26__c0p5": {
+     "intruded": 10,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L26__c1": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L26__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L26__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L26__cm0p5": {
+     "intruded": 9,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L26__cm1": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L26__cm2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rnd__ans__L26__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rnd__ans__all__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__rnd__ans__all__c2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__rnd__ans__all__c4": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rnd__ans__all__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rnd__ans__all__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__rnd__ans__all__cm2": {
+     "intruded": 5,
+     "total": 30
+    },
+    "hallucination__rnd__ans__all__cm4": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rnd__ans__mid__c0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__rnd__ans__mid__c1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__rnd__ans__mid__c2": {
+     "intruded": 28,
+     "total": 30
+    },
+    "hallucination__rnd__ans__mid__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rnd__ans__mid__cm0p5": {
+     "intruded": 4,
+     "total": 30
+    },
+    "hallucination__rnd__ans__mid__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rnd__ans__mid__cm2": {
+     "intruded": 27,
+     "total": 30
+    },
+    "hallucination__rnd__ans__mid__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L14__c0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L14__c1": {
+     "intruded": 4,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L14__c2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L14__c4": {
+     "intruded": 13,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L14__cm0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L14__cm2": {
+     "intruded": 10,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L14__cm4": {
+     "intruded": 11,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L17__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L17__c1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L17__c2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L17__c4": {
+     "intruded": 10,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L17__cm0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L17__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L17__cm2": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L17__cm4": {
+     "intruded": 6,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L20__c1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L20__c2": {
+     "intruded": 4,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L20__c4": {
+     "intruded": 8,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L20__cm0p5": {
+     "intruded": 4,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L20__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L20__cm2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L20__cm4": {
+     "intruded": 14,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L26__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L26__c1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L26__c2": {
+     "intruded": 9,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L26__c4": {
+     "intruded": 9,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L26__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L26__cm1": {
+     "intruded": 4,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L26__cm2": {
+     "intruded": 8,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__L26__cm4": {
+     "intruded": 14,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__all__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__all__c2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__all__cm0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__all__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__all__cm2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__all__cm4": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__mid__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__mid__c1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__mid__c4": {
+     "intruded": 5,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__mid__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__mid__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__mid__cm2": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__rnd__ctx__mid__cm4": {
+     "intruded": 9,
+     "total": 30
+    },
+    "hallucination__shf__ctx__L14__c0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__shf__ctx__L14__c1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__shf__ctx__L14__c2": {
+     "intruded": 6,
+     "total": 30
+    },
+    "hallucination__shf__ctx__L14__c4": {
+     "intruded": 17,
+     "total": 30
+    },
+    "hallucination__shf__ctx__L14__cm1": {
+     "intruded": 4,
+     "total": 30
+    },
+    "hallucination__shf__ctx__L14__cm2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__shf__ctx__L14__cm4": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__shf__ctx__L17__c1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__shf__ctx__L17__c4": {
+     "intruded": 4,
+     "total": 30
+    },
+    "hallucination__shf__ctx__L17__cm0p5": {
+     "intruded": 5,
+     "total": 30
+    },
+    "hallucination__shf__ctx__L17__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__shf__ctx__L17__cm2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__shf__ctx__L17__cm4": {
+     "intruded": 9,
+     "total": 30
+    },
+    "hallucination__shf__ctx__L20__c0p5": {
+     "intruded": 4,
+     "total": 30
+    },
+    "hallucination__shf__ctx__L20__c1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__shf__ctx__L20__c2": {
+     "intruded": 4,
+     "total": 30
+    },
+    "hallucination__shf__ctx__L20__c4": {
+     "intruded": 10,
+     "total": 30
+    },
+    "hallucination__shf__ctx__L20__cm1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__shf__ctx__L20__cm2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__shf__ctx__L20__cm4": {
+     "intruded": 15,
+     "total": 30
+    },
+    "hallucination__shf__ctx__L26__c0p5": {
+     "intruded": 6,
+     "total": 30
+    },
+    "hallucination__shf__ctx__L26__c1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__shf__ctx__L26__c2": {
+     "intruded": 5,
+     "total": 30
+    },
+    "hallucination__shf__ctx__L26__c4": {
+     "intruded": 6,
+     "total": 30
+    },
+    "hallucination__shf__ctx__L26__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__shf__ctx__L26__cm1": {
+     "intruded": 4,
+     "total": 30
+    },
+    "hallucination__shf__ctx__L26__cm2": {
+     "intruded": 12,
+     "total": 30
+    },
+    "hallucination__shf__ctx__L26__cm4": {
+     "intruded": 11,
+     "total": 30
+    },
+    "hallucination__shf__ctx__all__c1": {
+     "intruded": 5,
+     "total": 30
+    },
+    "hallucination__shf__ctx__all__c4": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__shf__ctx__all__cm2": {
+     "intruded": 3,
+     "total": 30
+    },
+    "hallucination__shf__ctx__all__cm4": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__shf__ctx__mid__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__shf__ctx__mid__c2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "hallucination__shf__ctx__mid__c4": {
+     "intruded": 24,
+     "total": 30
+    },
+    "hallucination__shf__ctx__mid__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__shf__ctx__mid__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__shf__ctx__mid__cm2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "hallucination__shf__ctx__mid__cm4": {
+     "intruded": 3,
+     "total": 30
+    },
+    "sycophancy__a0": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__L14__c2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__L14__c4": {
+     "intruded": 8,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__L14__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__L14__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__L14__cm2": {
+     "intruded": 6,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__L14__cm4": {
+     "intruded": 5,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__L17__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__L17__c4": {
+     "intruded": 3,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__L17__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__L17__cm2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__L17__cm4": {
+     "intruded": 11,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__L20__c1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__L20__c2": {
+     "intruded": 5,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__L20__c4": {
+     "intruded": 11,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__L20__cm4": {
+     "intruded": 3,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__L26__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__L26__c2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__L26__c4": {
+     "intruded": 7,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__L26__cm1": {
+     "intruded": 4,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__L26__cm2": {
+     "intruded": 5,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__L26__cm4": {
+     "intruded": 5,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__all__c0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__all__c1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__all__c2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__all__c4": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__all__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__all__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__all__cm4": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__mid__c2": {
+     "intruded": 5,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__mid__c4": {
+     "intruded": 5,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__mid__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__mid__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__mid__cm2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__cxd__ctx__mid__cm4": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__pre__ans__L14__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__pre__ans__L14__c2": {
+     "intruded": 21,
+     "total": 30
+    },
+    "sycophancy__pre__ans__L14__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__pre__ans__L14__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__pre__ans__L14__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__pre__ans__L14__cm2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__pre__ans__L14__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__pre__ans__L17__c1": {
+     "intruded": 29,
+     "total": 30
+    },
+    "sycophancy__pre__ans__L17__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__pre__ans__L17__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__pre__ans__L17__cm1": {
+     "intruded": 9,
+     "total": 30
+    },
+    "sycophancy__pre__ans__L17__cm2": {
+     "intruded": 25,
+     "total": 30
+    },
+    "sycophancy__pre__ans__L17__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__pre__ans__L20__c1": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__pre__ans__L20__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__pre__ans__L20__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__pre__ans__L20__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__pre__ans__L20__cm1": {
+     "intruded": 14,
+     "total": 30
+    },
+    "sycophancy__pre__ans__L20__cm2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__pre__ans__L20__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__pre__ans__L26__c0p5": {
+     "intruded": 10,
+     "total": 30
+    },
+    "sycophancy__pre__ans__L26__c1": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__pre__ans__L26__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__pre__ans__L26__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__pre__ans__L26__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__pre__ans__L26__cm1": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__pre__ans__L26__cm2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__pre__ans__L26__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__pre__ans__all__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__pre__ans__all__c2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__pre__ans__all__c4": {
+     "intruded": 25,
+     "total": 30
+    },
+    "sycophancy__pre__ans__all__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__pre__ans__all__cm1": {
+     "intruded": 4,
+     "total": 30
+    },
+    "sycophancy__pre__ans__all__cm2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__pre__ans__all__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__pre__ans__mid__c2": {
+     "intruded": 28,
+     "total": 30
+    },
+    "sycophancy__pre__ans__mid__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__pre__ans__mid__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__pre__ans__mid__cm2": {
+     "intruded": 29,
+     "total": 30
+    },
+    "sycophancy__pre__ans__mid__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L14__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L14__c1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L14__c2": {
+     "intruded": 6,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L14__c4": {
+     "intruded": 5,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L14__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L14__cm2": {
+     "intruded": 3,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L14__cm4": {
+     "intruded": 5,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L17__c1": {
+     "intruded": 21,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L17__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L17__c4": {
+     "intruded": 26,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L17__cm0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L17__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L17__cm2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L17__cm4": {
+     "intruded": 8,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L20__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L20__c1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L20__c2": {
+     "intruded": 8,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L20__c4": {
+     "intruded": 10,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L20__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L20__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L20__cm2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L20__cm4": {
+     "intruded": 14,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L26__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L26__c1": {
+     "intruded": 7,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L26__c2": {
+     "intruded": 10,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L26__c4": {
+     "intruded": 12,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L26__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L26__cm1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L26__cm2": {
+     "intruded": 5,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__L26__cm4": {
+     "intruded": 7,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__all__c0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__all__c1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__all__c2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__all__c4": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__all__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__all__cm4": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__mid__c0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__mid__c1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__mid__c2": {
+     "intruded": 3,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__mid__c4": {
+     "intruded": 7,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__mid__cm0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__mid__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__pre__ctx__mid__cm2": {
+     "intruded": 3,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L14__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L14__c1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L14__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L14__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L14__cm1": {
+     "intruded": 22,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L14__cm2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L14__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L17__c0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L17__c1": {
+     "intruded": 11,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L17__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L17__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L17__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L17__cm1": {
+     "intruded": 21,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L17__cm2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L17__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L20__c0p5": {
+     "intruded": 5,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L20__c1": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L20__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L20__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L20__cm0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L20__cm1": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L20__cm2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L20__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L26__c0p5": {
+     "intruded": 17,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L26__c1": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L26__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L26__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L26__cm0p5": {
+     "intruded": 20,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L26__cm1": {
+     "intruded": 26,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L26__cm2": {
+     "intruded": 26,
+     "total": 30
+    },
+    "sycophancy__rb__ans__L26__cm4": {
+     "intruded": 29,
+     "total": 30
+    },
+    "sycophancy__rb__ans__all__c1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__rb__ans__all__c2": {
+     "intruded": 24,
+     "total": 30
+    },
+    "sycophancy__rb__ans__all__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rb__ans__all__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rb__ans__all__cm1": {
+     "intruded": 4,
+     "total": 30
+    },
+    "sycophancy__rb__ans__all__cm2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rb__ans__all__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rb__ans__mid__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rb__ans__mid__c1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "sycophancy__rb__ans__mid__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rb__ans__mid__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rb__ans__mid__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rb__ans__mid__cm1": {
+     "intruded": 26,
+     "total": 30
+    },
+    "sycophancy__rb__ans__mid__cm2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rb__ans__mid__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__L14__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__L14__c1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__L14__c2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__L14__c4": {
+     "intruded": 4,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__L14__cm2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__L14__cm4": {
+     "intruded": 4,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__L17__c0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__L17__c1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__L17__c2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__L17__c4": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__L17__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__L17__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__L17__cm4": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__L20__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__L20__c2": {
+     "intruded": 4,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__L20__c4": {
+     "intruded": 8,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__L20__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__L20__cm4": {
+     "intruded": 6,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__L26__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__L26__c1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__L26__c2": {
+     "intruded": 13,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__L26__c4": {
+     "intruded": 6,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__L26__cm2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__L26__cm4": {
+     "intruded": 4,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__all__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__all__c2": {
+     "intruded": 4,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__all__c4": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__all__cm0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__all__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__all__cm2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__all__cm4": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__mid__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__mid__c1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__mid__c2": {
+     "intruded": 6,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__mid__c4": {
+     "intruded": 3,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__mid__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__rb__ctx__mid__cm4": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L14__c1": {
+     "intruded": 10,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L14__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L14__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L14__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L14__cm1": {
+     "intruded": 7,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L14__cm2": {
+     "intruded": 29,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L14__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L17__c0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L17__c1": {
+     "intruded": 24,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L17__c2": {
+     "intruded": 27,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L17__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L17__cm1": {
+     "intruded": 19,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L17__cm2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L17__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L20__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L20__c1": {
+     "intruded": 22,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L20__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L20__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L20__cm1": {
+     "intruded": 10,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L20__cm2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L20__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L26__c0p5": {
+     "intruded": 7,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L26__c1": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L26__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L26__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L26__cm0p5": {
+     "intruded": 6,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L26__cm1": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L26__cm2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__L26__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__all__c2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__all__c4": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__all__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__all__cm2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__all__cm4": {
+     "intruded": 3,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__mid__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__mid__c1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__mid__c2": {
+     "intruded": 25,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__mid__c4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__mid__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__mid__cm2": {
+     "intruded": 20,
+     "total": 30
+    },
+    "sycophancy__rnd__ans__mid__cm4": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__L14__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__L14__c2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__L14__c4": {
+     "intruded": 11,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__L14__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__L14__cm2": {
+     "intruded": 16,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__L14__cm4": {
+     "intruded": 18,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__L17__c1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__L17__c2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__L17__c4": {
+     "intruded": 13,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__L17__cm2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__L17__cm4": {
+     "intruded": 8,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__L20__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__L20__c1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__L20__c2": {
+     "intruded": 8,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__L20__c4": {
+     "intruded": 11,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__L20__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__L20__cm2": {
+     "intruded": 8,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__L20__cm4": {
+     "intruded": 13,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__L26__c0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__L26__c1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__L26__c2": {
+     "intruded": 13,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__L26__c4": {
+     "intruded": 11,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__L26__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__L26__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__L26__cm2": {
+     "intruded": 7,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__L26__cm4": {
+     "intruded": 9,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__all__c0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__all__c1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__all__c2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__all__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__all__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__all__cm2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__all__cm4": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__mid__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__mid__c2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__mid__c4": {
+     "intruded": 8,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__mid__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__mid__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__rnd__ctx__mid__cm4": {
+     "intruded": 17,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L14__c0p5": {
+     "intruded": 17,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L14__c1": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L14__c2": {
+     "intruded": 27,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L14__c4": {
+     "intruded": 19,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L14__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L14__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L14__cm2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L14__cm4": {
+     "intruded": 5,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L17__c1": {
+     "intruded": 27,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L17__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L17__c4": {
+     "intruded": 29,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L17__cm0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L17__cm1": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L17__cm2": {
+     "intruded": 5,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L17__cm4": {
+     "intruded": 14,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L20__c0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L20__c1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L20__c2": {
+     "intruded": 12,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L20__c4": {
+     "intruded": 16,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L20__cm0p5": {
+     "intruded": 4,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L20__cm2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L20__cm4": {
+     "intruded": 11,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L26__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L26__c1": {
+     "intruded": 3,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L26__c2": {
+     "intruded": 8,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L26__c4": {
+     "intruded": 12,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L26__cm0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L26__cm2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__L26__cm4": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__all__c0p5": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__all__c2": {
+     "intruded": 27,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__all__c4": {
+     "intruded": 29,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__all__cm0p5": {
+     "intruded": 3,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__all__cm1": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__all__cm2": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__all__cm4": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__mid__c0p5": {
+     "intruded": 1,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__mid__c1": {
+     "intruded": 24,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__mid__c2": {
+     "intruded": 30,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__mid__c4": {
+     "intruded": 26,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__mid__cm2": {
+     "intruded": 2,
+     "total": 30
+    },
+    "sycophancy__shf__ctx__mid__cm4": {
+     "intruded": 9,
+     "total": 30
+    }
+   }
+  },
+  "patch": {
+   "per_arm": {
+    "evil__cxd__ab": {
+     "intruded": 18,
+     "total": 400
+    },
+    "evil__cxd__pp": {
+     "intruded": 34,
+     "total": 400
+    },
+    "evil__pre__ab": {
+     "intruded": 18,
+     "total": 400
+    },
+    "evil__pre__pp": {
+     "intruded": 22,
+     "total": 400
+    },
+    "evil__rb__ab": {
+     "intruded": 16,
+     "total": 400
+    },
+    "evil__rb__pp": {
+     "intruded": 17,
+     "total": 400
+    },
+    "sycophancy__cxd__ab": {
+     "intruded": 8,
+     "total": 400
+    },
+    "sycophancy__cxd__pp": {
+     "intruded": 8,
+     "total": 400
+    },
+    "sycophancy__pre__ab": {
+     "intruded": 10,
+     "total": 400
+    },
+    "sycophancy__pre__pp": {
+     "intruded": 10,
+     "total": 400
+    },
+    "sycophancy__rb__ab": {
+     "intruded": 16,
+     "total": 400
+    },
+    "sycophancy__rb__pp": {
+     "intruded": 4,
+     "total": 400
+    }
+   },
+   "per_cell_nonzero": {
+    "evil__cxd__ab__mid": {
+     "intruded": 12,
+     "total": 200
+    },
+    "evil__cxd__ab__single": {
+     "intruded": 6,
+     "total": 200
+    },
+    "evil__cxd__pp__mid": {
+     "intruded": 15,
+     "total": 200
+    },
+    "evil__cxd__pp__single": {
+     "intruded": 19,
+     "total": 200
+    },
+    "evil__pre__ab__mid": {
+     "intruded": 11,
+     "total": 200
+    },
+    "evil__pre__ab__single": {
+     "intruded": 7,
+     "total": 200
+    },
+    "evil__pre__pp__mid": {
+     "intruded": 11,
+     "total": 200
+    },
+    "evil__pre__pp__single": {
+     "intruded": 11,
+     "total": 200
+    },
+    "evil__rb__ab__mid": {
+     "intruded": 8,
+     "total": 200
+    },
+    "evil__rb__ab__single": {
+     "intruded": 8,
+     "total": 200
+    },
+    "evil__rb__pp__mid": {
+     "intruded": 7,
+     "total": 200
+    },
+    "evil__rb__pp__single": {
+     "intruded": 10,
+     "total": 200
+    },
+    "sycophancy__cxd__ab__mid": {
+     "intruded": 5,
+     "total": 200
+    },
+    "sycophancy__cxd__ab__single": {
+     "intruded": 3,
+     "total": 200
+    },
+    "sycophancy__cxd__pp__mid": {
+     "intruded": 2,
+     "total": 200
+    },
+    "sycophancy__cxd__pp__single": {
+     "intruded": 6,
+     "total": 200
+    },
+    "sycophancy__pre__ab__mid": {
+     "intruded": 5,
+     "total": 200
+    },
+    "sycophancy__pre__ab__single": {
+     "intruded": 5,
+     "total": 200
+    },
+    "sycophancy__pre__pp__mid": {
+     "intruded": 3,
+     "total": 200
+    },
+    "sycophancy__pre__pp__single": {
+     "intruded": 7,
+     "total": 200
+    },
+    "sycophancy__rb__ab__mid": {
+     "intruded": 6,
+     "total": 200
+    },
+    "sycophancy__rb__ab__single": {
+     "intruded": 10,
+     "total": 200
+    },
+    "sycophancy__rb__pp__mid": {
+     "intruded": 3,
+     "total": 200
+    },
+    "sycophancy__rb__pp__single": {
+     "intruded": 1,
+     "total": 200
+    }
+   }
+  },
+  "baseline_ceiling": {
+   "per_arm": {
+    "evil__a0__-": {
+     "intruded": 15,
+     "total": 200
+    },
+    "evil__cl__-": {
+     "intruded": 7,
+     "total": 200
+    },
+    "hallucination__a0__-": {
+     "intruded": 11,
+     "total": 200
+    },
+    "hallucination__cl__-": {
+     "intruded": 14,
+     "total": 200
+    },
+    "sycophancy__a0__-": {
+     "intruded": 5,
+     "total": 200
+    },
+    "sycophancy__cl__-": {
+     "intruded": 2,
+     "total": 200
+    }
+   },
+   "per_cell_nonzero": {
+    "evil__a0": {
+     "intruded": 15,
+     "total": 200
+    },
+    "evil__cl": {
+     "intruded": 7,
+     "total": 200
+    },
+    "hallucination__a0": {
+     "intruded": 11,
+     "total": 200
+    },
+    "hallucination__cl": {
+     "intruded": 14,
+     "total": 200
+    },
+    "sycophancy__a0": {
+     "intruded": 5,
+     "total": 200
+    },
+    "sycophancy__cl": {
+     "intruded": 2,
+     "total": 200
+    }
+   }
+  }
+ },
+ "decisive_headline_recounts": {
+  "evil__pre__ctx__L14__c0p5": {
+   "n_scored": 200,
+   "n_intruded": 15,
+   "overlap_fired": 0,
+   "mean_orig": 0.0,
+   "mean_zeroed": 0.0,
+   "mean_excluded": 0.0
+  },
+  "evil__cxd__ctx__L14__c4": {
+   "n_scored": 199,
+   "n_intruded": 54,
+   "overlap_fired": 0,
+   "mean_orig": 2.375,
+   "mean_zeroed": 1.787,
+   "mean_excluded": 2.452
+  },
+  "evil__rb__ans__L14__c4": {
+   "n_scored": 200,
+   "n_intruded": 200,
+   "overlap_fired": 199,
+   "mean_orig": 99.27,
+   "mean_zeroed": 0.0,
+   "mean_excluded": NaN
+  },
+  "evil__pre__ans__all__c4": {
+   "n_scored": 199,
+   "n_intruded": 198,
+   "overlap_fired": 175,
+   "mean_orig": 81.193,
+   "mean_zeroed": 0.0,
+   "mean_excluded": 0.0
+  },
+  "evil__a0": {
+   "n_scored": 200,
+   "n_intruded": 15,
+   "overlap_fired": 0,
+   "mean_orig": 0.0,
+   "mean_zeroed": 0.0,
+   "mean_excluded": 0.0
+  },
+  "sycophancy__pre__ctx__L17__c4": {
+   "n_scored": 200,
+   "n_intruded": 185,
+   "overlap_fired": 6,
+   "mean_orig": 17.907,
+   "mean_zeroed": 1.2,
+   "mean_excluded": 16.0
+  },
+  "sycophancy__cxd__ctx__mid__c4": {
+   "n_scored": 200,
+   "n_intruded": 16,
+   "overlap_fired": 6,
+   "mean_orig": 47.262,
+   "mean_zeroed": 44.373,
+   "mean_excluded": 48.232
+  },
+  "sycophancy__rb__ans__all__c2": {
+   "n_scored": 193,
+   "n_intruded": 150,
+   "overlap_fired": 138,
+   "mean_orig": 89.82,
+   "mean_zeroed": 19.985,
+   "mean_excluded": 89.702
+  },
+  "sycophancy__pre__ans__L14__c1": {
+   "n_scored": 200,
+   "n_intruded": 5,
+   "overlap_fired": 2,
+   "mean_orig": 58.731,
+   "mean_zeroed": 57.316,
+   "mean_excluded": 58.786
+  },
+  "sycophancy__a0": {
+   "n_scored": 200,
+   "n_intruded": 5,
+   "overlap_fired": 0,
+   "mean_orig": 11.265,
+   "mean_zeroed": 11.095,
+   "mean_excluded": 11.379
+  },
+  "sycophancy__shf__ctx__L17__c4": {
+   "n_scored": 200,
+   "n_intruded": 191,
+   "overlap_fired": 11,
+   "mean_orig": 19.053,
+   "mean_zeroed": 0.855,
+   "mean_excluded": 19.0
+  },
+  "sycophancy__rnd__ctx__L14__cm2": {
+   "n_scored": 200,
+   "n_intruded": 100,
+   "overlap_fired": 6,
+   "mean_orig": 15.836,
+   "mean_zeroed": 6.275,
+   "mean_excluded": 12.55
+  }
+ }
+}
