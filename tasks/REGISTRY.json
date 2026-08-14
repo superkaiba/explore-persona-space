@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2296,
+  "highest_id": 2297,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10017,6 +10017,13 @@
       "path": "tasks/proposed/2296",
       "status": "proposed",
       "title": "Step 10d lint gate's mapped-invariant baseline leg runs pytest in the shared repo root \u2014 #2015 stash cycle kills it and false-NEWs pre-existing reds"
+    },
+    "2297": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2297",
+      "status": "proposed",
+      "title": "workflow-fix: Step 9c gate launcher file-list cross-check is newline-agnostic \u2014 split-argv launch reports a plausible PYTEST_RC that is not a verdict"
     },
     "23": {
       "has_clean_result": false,
