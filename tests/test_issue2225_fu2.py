@@ -539,8 +539,9 @@ def test_fu2_dispatch_data_repo_wiring(tmp_path):
     DATA_REPO_ARGS into EVERY data-repo upload class; the pilot-raws heredoc
     reads the same env knob."""
     src = _FU2_DISPATCH.read_text(encoding="utf-8")
-    # eval_gen f2b+f3, mmlu f2c+f3, capture f2d+f3, judge upload = 7 call sites.
-    assert src.count('"${DATA_REPO_ARGS[@]}"') == 7
+    # eval_gen f2b+f3+w2b, mmlu f2c+f3, capture f2d+f3, judge upload = 8 call
+    # sites (w2b: the conditional W2b wave's raws-upload leg, plan v13 §4.3).
+    assert src.count('"${DATA_REPO_ARGS[@]}"') == 8
     assert 'PILOT_REPO="$FU2_DATA_HF_REPO"' in src
     # fu1's capture-only knob is REPLACED by the round-wide one (no live use;
     # a comment naming the fu1 knob's history is fine).
