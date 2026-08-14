@@ -94,8 +94,8 @@ def main() -> None:
     # 1. A0 vs A1 with CI bands
     fig, ax = plt.subplots(figsize=(7.0, 4.2))
     for arm, color, label in [
-        (a0_32, c_a0, "A0 (uncapped)"),
-        (a1_32, c_a1, "A1 (every-token cap)"),
+        (a0_32, c_a0, "Uncapped"),
+        (a1_32, c_a1, "Every-token cap"),
     ]:
         t, m, lo, hi = pooled_series(arm)
         ax.plot(t, m, marker="o", markersize=4, color=color, label=label)
@@ -110,8 +110,8 @@ def main() -> None:
     # 2. per-conversation companion for the A0/A1 aggregate
     fig, axes = plt.subplots(1, 2, figsize=(9.5, 4.0), sharey=True)
     for ax, arm, color, label in [
-        (axes[0], a0_32, c_a0, "A0 (uncapped)"),
-        (axes[1], a1_32, c_a1, "A1 (every-token cap)"),
+        (axes[0], a0_32, c_a0, "Uncapped"),
+        (axes[1], a1_32, c_a1, "Every-token cap"),
     ]:
         for _cid, (ts, vs) in conv_lines(arm).items():
             ax.plot(ts, vs, color=color, alpha=0.08, linewidth=0.7)

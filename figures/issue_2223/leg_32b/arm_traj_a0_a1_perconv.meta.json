@@ -1,9 +1,15 @@
 {
-  "commit": "597bdca8",
-  "render_id": "52cb79dacf1648dd",
-  "git_commit": "597bdca8",
-  "git_dirty": false,
-  "created": "2026-08-14T07:37:44Z",
+  "commit": "62f3b43c+dirty",
+  "render_id": "97582f0d98844663",
+  "git_commit": "62f3b43c",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2223/leg_32b/arm_traj_a0_a1_ci.meta.json",
+    "figures/issue_2223/leg_32b/arm_traj_a0_a1_ci.pdf",
+    "figures/issue_2223/leg_32b/arm_traj_a0_a1_ci.png",
+    "scripts/issue2223_analyzer_figs.py"
+  ],
+  "created": "2026-08-14T10:14:43Z",
   "figsize": [
     9.5,
     4.0
@@ -12018,7 +12024,7 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "A0 (uncapped)",
+        "title_left": "Uncapped",
         "xlabel": "Turn position",
         "ylabel": "Assistant-axis projection",
         "xticklabels": [
@@ -12045,7 +12051,7 @@
         ]
       },
       {
-        "title_left": "A1 (every-token cap)",
+        "title_left": "Every-token cap",
         "xlabel": "Turn position",
         "xticklabels": [
           "0",
