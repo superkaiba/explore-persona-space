@@ -1,0 +1,75 @@
+{
+  "commit": "0ee7c252",
+  "render_id": "7c5a062ec5684808",
+  "git_commit": "0ee7c252",
+  "git_dirty": false,
+  "created": "2026-08-14T21:54:26Z",
+  "figsize": [
+    6.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "MMLU accuracy": 0.7179888904714428,
+      "series": "Base model",
+      "_kind": "line"
+    },
+    {
+      "x": 1.0,
+      "MMLU accuracy": 0.7179888904714428,
+      "series": "Base model",
+      "_kind": "line"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 2,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "MMLU accuracy",
+        "legend_labels": [
+          "Parent-run range",
+          "Base model"
+        ],
+        "xticklabels": [
+          "N__evil__c0.25",
+          "N__evil__c3.0",
+          "N__hallucination__c0.25",
+          "N__hallucination__c3.0",
+          "N__sycophancy__c0.25",
+          "N__sycophancy__c3.0",
+          "Q__evil__c0.25",
+          "Q__evil__c3.0",
+          "Q__hallucination__c0.25",
+          "Q__hallucination__c3.0",
+          "Q__sycophancy__c0.25",
+          "Q__sycophancy__c3.0",
+          "RQ__evil__c0.25",
+          "RQ__evil__c3.0"
+        ],
+        "yticklabels": [
+          "0.6975",
+          "0.7000",
+          "0.7025",
+          "0.7050",
+          "0.7075",
+          "0.7100",
+          "0.7125",
+          "0.7150",
+          "0.7175",
+          "0.7200"
+        ]
+      }
+    ],
+    "series": [
+      "Base model"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

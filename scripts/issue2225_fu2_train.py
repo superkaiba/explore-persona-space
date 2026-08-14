@@ -74,10 +74,14 @@ FU2_CONFIGS: tuple[FuConfigSpec, ...] = (
     FuConfigSpec("RQ", "RQ_rnds1l19", "RND", "all", 19, ("evil",)),
 )
 
-# Conditional W2a arm (plan §4.3): registered (resolvable + synthable), NOT in
-# the wave-1 enumeration.
+# Conditional W2a/W2b arm (plan §4.3): registered (resolvable + synthable), NOT
+# in the wave-1 enumeration. Dataset coverage: evil = W2a (N Effect-negative on
+# evil); sycophancy = W2b, TRIGGERED 2026-08-14 — N_sycophancy read trait 73.27
+# at coherence 91.13 (16.48 below the banked unsteered baseline 89.75), so the
+# matched random control (same layer/position/corpus) materializes on
+# sycophancy at the selected coef 3.0 ± one neighbor (1.5).
 FU2_CONDITIONAL_CONFIGS: tuple[FuConfigSpec, ...] = (
-    FuConfigSpec("RN", "RN_rnds1l14", "RND", "all", 14, ("evil",)),
+    FuConfigSpec("RN", "RN_rnds1l14", "RND", "all", 14, ("evil", "sycophancy")),
 )
 
 _FU2_SPEC_BY_CONFIG: dict[str, FuConfigSpec] = {
