@@ -2,7 +2,7 @@
  "round": "fu2",
  "n_boot": 10000,
  "seed_base": 2225,
- "seed_scheme": "2225 + 1000*dataset_index + 100*config_index (fu2 order ('N', 'Q', 'RQ', 'RN')) + kind offset {'h1_dose': 0, 'h2_vs_G': 1, 'h2_vs_A': 2, 'h3_vs_J': 3, 'h3_vs_K': 4, 'h3_vs_L': 5, 'h3_vs_M': 6, 'h4_dod': 7, 'h4_dod_xlayer': 8} (frozen + selection-inherited share one idx stream per contrast)",
+ "seed_scheme": "2225 + 1000*dataset_index + 100*config_index (fu2 order ('N', 'Q', 'RQ', 'RN')) + kind offset {'h1_dose': 0, 'h2_vs_G': 1, 'h2_vs_A': 2, 'h3_vs_J': 3, 'h3_vs_K': 4, 'h3_vs_L': 5, 'h3_vs_M': 6, 'h4_dod': 7, 'h4_dod_xlayer': 8, 'h4_dod_w2b': 9, 'h4_level_w2b': 10} (frozen + selection-inherited share one idx stream per contrast)",
  "lattice": "Effect-negative <=> \u0394<0 AND 95% CI wholly below 0; Effect-positive <=> \u0394>0 AND CI wholly above 0; Statistical tie <=> otherwise (fu relabeling of the parent's asserted three-way partition)",
  "h1_dose": {
   "delta_definition": "score(matched-coherence selected coef) - score(smallest grid coef), question-paired within arm; degenerate_zero_dose marks arms whose selected coef IS the smallest (\u0394 identically 0)",
@@ -673,6 +673,49 @@
      "g_coherence_mean": 82.855
     }
    ]
+  },
+  "w2b_conditional": {
+   "delta_definition": "(c) W2b MATCHED-WINDOW direction-specificity on sycophancy (plan \u00a74.3, TRIGGERED): DoD \u0394dose(N) - \u0394dose(RN) with dose = score(@3.0) - score(@1.5) per arm, question-paired \u2014 the window is [1.5, 3.0] for BOTH arms (RN exists only at the W2b selected-coef \u00b1 one-neighbor cells, so matching N's window makes the dose windows identical; unlike H4(a)'s [grid-min, selected] window) \u2014 plus the secondary matched-dose LEVEL read N@3.0 vs RN@3.0 (no dose subtraction). File-presence gated: cells not yet landed -> both keys in not_computable",
+   "per_pair": {
+    "N_vs_RN_sycophancy": {
+     "n_questions": 20,
+     "seed": 3234,
+     "frozen": {
+      "delta_point": -5.213333333333341,
+      "ci95": [
+       -10.293708333333344,
+       0.3352708333333193
+      ],
+      "verdict": "Statistical tie"
+     },
+     "selection_inherited": {
+      "delta_point": -5.171056166666689,
+      "ci95": [
+       -10.293708333333338,
+       0.33527083333328167
+      ],
+      "n_draws_no_coherent_coef": 0,
+      "sensitivity_read": "Statistical tie"
+     },
+     "window": [
+      1.5,
+      3.0
+     ]
+    },
+    "N_vs_RN_sycophancy_level": {
+     "n_questions": 20,
+     "seed": 3235,
+     "frozen": {
+      "delta_point": -6.12666666666667,
+      "ci95": [
+       -10.805958333333336,
+       -1.6957916666666728
+      ],
+      "verdict": "Effect-negative"
+     },
+     "matched_coef": 3.0
+    }
+   }
   }
  },
  "not_computable": [],

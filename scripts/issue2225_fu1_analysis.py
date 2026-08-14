@@ -1576,9 +1576,11 @@ def fig_hero(args) -> dict:
                     marker="o",
                     ms=3,
                     color=colors[cfg],
-                    label=FU_CONFIG_LABEL[cfg]
-                    if (row == 0 and j == 0) or (cfg.startswith("R") and row == 0 and ds == "evil")
-                    else None,
+                    # Label every artist: the cross-axes dedupe pass below keeps
+                    # one handle per label, and a conditional keyed on ds=="evil"
+                    # drops any config absent there (RN, sycophancy-only — the
+                    # W2b conditional arm rendered legend-less).
+                    label=FU_CONFIG_LABEL[cfg],
                 )
                 if entry["selected_coef"] is not None:
                     ci = (
