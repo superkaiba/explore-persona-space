@@ -1,0 +1,8 @@
+{
+  "figure": "result0_geometry",
+  "git_commit": "6ebe081a",
+  "git_dirty": false,
+  "inputs": [
+    "directions/geometry_cosines.json"
+  ]
+}

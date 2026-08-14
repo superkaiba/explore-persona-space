@@ -1,0 +1,8 @@
+{
+  "figure": "hero2_patch_fraction",
+  "git_commit": "6ebe081a",
+  "git_dirty": false,
+  "inputs": [
+    "patch/patch_vs_ceiling.json"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "figure": "margin_scatter",
+  "git_commit": "6ebe081a",
+  "git_dirty": false,
+  "inputs": [
+    "margin/margin_percell.json",
+    "decisive/delta_score_percell.json"
+  ]
+}

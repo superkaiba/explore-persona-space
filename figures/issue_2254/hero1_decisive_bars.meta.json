@@ -1,0 +1,10 @@
+{
+  "figure": "hero1_decisive_bars",
+  "git_commit": "6ebe081a",
+  "git_dirty": false,
+  "inputs": [
+    "decisive/delta_score_percell.json",
+    "decisive/verdicts.json",
+    "baseline_ceiling/judged_percell.json"
+  ]
+}
