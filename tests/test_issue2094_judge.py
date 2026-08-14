@@ -125,9 +125,12 @@ def test_reduce_roundtrip_through_judge_result_from_save_raw(tmp_path):
 # ── (b) production-rubric templates (harness-identical substitution) ───
 
 
-def test_registry_has_nine_rubrics_with_answer_slot():
+def test_registry_has_ten_rubrics_with_answer_slot():
+    # Parent 9 (coherence + 5 fq + 3 fp) UNCHANGED, plus the fp-butler extension
+    # (#2094 Option C). Anchor accounting stays parent-scoped — see the
+    # zero-anchor-calls asserts in the mqrev/mqb tests below.
     reg = J.rubric_registry()
-    assert set(reg) == {
+    parent_nine = {
         "coherence",
         "fq-q1",
         "fq-q2",
@@ -138,6 +141,9 @@ def test_registry_has_nine_rubrics_with_answer_slot():
         "fp-persona",
         "fp-conv",
     }
+    assert parent_nine <= set(reg)
+    assert set(reg) == parent_nine | {"fp-butler"}
+    assert {"fp-butler"} == J.EXTENSION_RUBRIC_IDS
     for rid, tmpl in reg.items():
         assert tmpl.count("{answer}") == 1, rid
         # {question} deliberately absent: F cores embed their target verbatim,
@@ -162,7 +168,7 @@ def test_behavior_templates_carry_bank_cores_verbatim():
     reg = J.rubric_registry()
     for q in BANK.QUERY_ORDER:
         assert BANK.f_query_rubric(q) in reg[f"fq-{q}"]
-    for p in BANK.PREFIX_ORDER:
+    for p in BANK.EXTENDED_PREFIX_ORDER:  # parent 3 + butler
         assert BANK.f_prefix_rubric(p) in reg[f"fp-{p}"]
 
 
@@ -230,7 +236,7 @@ def test_rev_pair_rows_build_behavior_items_via_pair_index():
     """
     index = J.pair_index()
     rev = BANK.build_rev_pairs()
-    assert len(index) == 65  # 60 parent + 5 reversed
+    assert len(index) == 75  # 60 parent + 5 reversed + 10 butler
     assert all(p.pair_id in index for p in rev)
     rows = [_grid_row(p, block_key="ce|joint_all|replace|A|steered") for p in rev]
     by_rubric = J.build_grid_behavior_items(rows, index)  # KeyError'd pre-fix
@@ -250,6 +256,44 @@ def test_rev_pair_rows_build_behavior_items_via_pair_index():
         u.item_id for us in J.build_anchor_behavior_items(anchors, index).values() for u in us
     }
     assert a_parent == a_merged
+
+
+def test_butler_pair_rows_build_behavior_items_via_pair_index():
+    """A butler-round (``mqb--``) grid row resolves through ``J.pair_index()``
+    and lands the F_prefix rubric pair — side a = fp-bare / fp-persona (per
+    family), side b = fp-butler — while the registry extension adds ZERO
+    anchor calls (anchor accounting is parent-scoped by construction).
+    """
+    index = J.pair_index()
+    butler = BANK.build_butler_pairs()
+    assert len(butler) == 10  # (bare→butler, persona→butler) x q1..q5
+    assert all(p.pair_id in index for p in butler)
+    rows = [_grid_row(p, block_key="ce|joint_all|replace|A|steered") for p in butler]
+    by_rubric = J.build_grid_behavior_items(rows, index)
+    units = [u for us in by_rubric.values() for u in us]
+    assert len(units) == 2 * len(butler)  # matched_query -> ONE (prefix) kind x 2 sides
+    pair_by_id = {p.pair_id: p for p in butler}
+    for u in units:
+        assert u.source["rubric_kind"] == "prefix"
+        pair = pair_by_id[u.source["pair_id"]]
+        expected_a = f"fp-{pair.prefix_a}"  # fp-bare or fp-persona per family
+        assert expected_a in ("fp-bare", "fp-persona")
+        assert u.rubric_id == {"a": expected_a, "b": "fp-butler"}[u.source["side"]]
+    # Zero anchor-call change: parent-scoped `needed` means butler pairs add no
+    # (context, rubric) anchor needs on a parent anchor context...
+    anchors = [{"context_id": "bare__q1", "draw": 0, "text": "t"}]
+    parent_only = {p.pair_id: p for p in BANK.build_pairs()}
+    a_parent = {
+        u.item_id for us in J.build_anchor_behavior_items(anchors, parent_only).values() for u in us
+    }
+    a_merged = {
+        u.item_id for us in J.build_anchor_behavior_items(anchors, index).values() for u in us
+    }
+    assert a_parent == a_merged
+    # ...and a butler-context anchor row mints NOTHING through this pipeline
+    # (butler anchor judging is self-contained in issue2094_butler_grid.py).
+    butler_anchor = [{"context_id": "butler__q1", "draw": 0, "text": "t"}]
+    assert J.build_anchor_behavior_items(butler_anchor, index) == {}
 
 
 def test_coherence_one_item_per_rollout(pairs, pair_map):
