@@ -2475,7 +2475,12 @@ def phase_capability(args) -> Path:
         run_arm_fn=_cap_run_arm,
     )
     if steerer_factory is not None:
-        battery["mmlu"] = {"skipped": "paper-engine steerer not threadable into logprob eval"}
+        # Key MUST match the battery key CAP.capability_for_arm actually produces
+        # (issue2203_capability.py:314 → out["mmlu_pro"]). Writing the skip under a
+        # bare "mmlu" put the disclosure on a key no arm has, so a reader checking
+        # mmlu_pro for this arm saw the key ABSENT rather than SKIPPED — the shape
+        # that gets silently dropped from a cross-arm table or drawn as a zero.
+        battery["mmlu_pro"] = {"skipped": "paper-engine steerer not threadable into logprob eval"}
     battery["eq_bench"] = _eq_bench(model, tok, stack, steerer_factory, n=3 if args.smoke else 171)
     out_path = out_dir / "capability_arms.json"
     existing = json.loads(out_path.read_text()) if out_path.exists() else {"arms": {}}
