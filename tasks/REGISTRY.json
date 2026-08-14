@@ -8790,8 +8790,8 @@
     "2136": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2136",
-      "status": "running",
+      "path": "tasks/completed/2136",
+      "status": "completed",
       "title": "daily-fix: stale prior-round PASS in verdict-present check"
     },
     "2137": {
