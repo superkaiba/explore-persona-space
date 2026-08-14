@@ -28,5 +28,15 @@ provenance? If neither, demand the paused class be excluded (thread the
 raw status / an `is_paused` flag past the merged label) or the override be
 deliberately pinned with its own truth-table row; (2) check the §5 truth
 table for an on_hold row — silence means the plan made the precedence
-choice by inheritance, not decision. Related: [[hold-gate-arming-surfacing-property]],
+choice by inheritance, not decision. Validated fix shape (#2283 v2,
+round-2 APPROVE): thread the raw `status` into the eligibility computation
+and key on SET membership `status in AUTO_STOP_DONE` (never
+`status != "on_hold"`) — a future member of either set routes correctly
+and a neither-set status fails toward NOT exempting; verified the raw
+status is already in scope at `_process_pod`'s exemption call site.
+Residual to watch on lazy per-episode state: a wrapper contract "any
+failure → False" collides with episode semantics "failed read ⇒ CARRY" —
+a bool return can't distinguish evaluated-and-inactive (CLEAR) from
+failed (CARRY); demand a tri-state or caller-side exception split.
+Related: [[hold-gate-arming-surfacing-property]],
 [[watcher-arm-pergrain-state-and-wiring]].
