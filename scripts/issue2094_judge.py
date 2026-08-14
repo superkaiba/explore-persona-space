@@ -261,7 +261,23 @@ def load_stage2_rows(stage2_dir: Path) -> list[dict]:
 
 
 def pair_index() -> dict[str, BANK.Pair]:
-    return {p.pair_id: p for p in BANK.build_pairs()}
+    """Parent canonical pairs PLUS the reversed-direction ``mqrev--`` pairs.
+
+    The #2094 reversed round's grid rows carry pair ids minted by
+    ``BANK.build_rev_pairs`` (setting ``matched_query`` — the fp-* prefix
+    rubric pair, both already in the registry), which ``BANK.build_pairs``
+    never enumerates; a registry without them KeyErrors at
+    ``build_grid_behavior_items`` on the first reversed row (2026-08-13
+    crash). Parent phases are unaffected: item sets key on row pair_ids, and
+    the anchor ``needed`` set the rev pairs induce is a subset of the parent
+    matched-query pairs' (same contexts, same fp rubrics).
+    """
+    index = {p.pair_id: p for p in BANK.build_pairs()}
+    for p in BANK.build_rev_pairs():
+        if p.pair_id in index:  # never a silent overwrite of a parent pair
+            raise ValueError(f"reversed pair id collides with parent bank: {p.pair_id}")
+        index[p.pair_id] = p
+    return index
 
 
 def _query_text(context_id: str) -> str:

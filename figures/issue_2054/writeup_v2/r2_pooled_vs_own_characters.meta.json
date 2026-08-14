@@ -1,0 +1,681 @@
+{
+  "commit": "1e263e45+dirty",
+  "render_id": "463be19fde4c4040",
+  "git_commit": "1e263e45",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2054/writeup_v2/r1_framing_tiers.meta.json",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers.pdf",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers.png",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.meta.json",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.pdf",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.png",
+    "figures/issue_2054/writeup_v2/r1_pooled_vs_own.meta.json",
+    "figures/issue_2054/writeup_v2/r1_pooled_vs_own.pdf",
+    "figures/issue_2054/writeup_v2/r1_pooled_vs_own.png",
+    "figures/issue_2054/writeup_v2/r2_character_tiers.meta.json",
+    "figures/issue_2054/writeup_v2/r2_character_tiers.pdf",
+    "figures/issue_2054/writeup_v2/r2_character_tiers.png",
+    "figures/issue_2054/writeup_v2/r2_character_tiers_base.meta.json",
+    "figures/issue_2054/writeup_v2/r2_character_tiers_base.pdf",
+    "figures/issue_2054/writeup_v2/r2_character_tiers_base.png",
+    "scripts/issue2054_loco_pooled.py",
+    "scripts/issue2094_butler_grid.py",
+    "tasks/awaiting_promotion/2094/body.md",
+    "tests/test_issue2094_butler_grid.py"
+  ],
+  "created": "2026-08-14T16:50:58Z",
+  "figsize": [
+    11.0,
+    7.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.21381948048410687,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.21507360806621162,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.2119215236541776,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": -0.13567189646801778,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.24381194220076283,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.21609266792277423,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.21770532251790398,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.21416503184795213,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": -0.14604524045932837,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.24010328096899639,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.20115177934592934,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.20243028767259016,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.20066892122408805,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": -0.16947037359902004,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.23115662811342402,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.1993943743488133,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.20100927108045408,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.20082938616656545,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": -0.1543257431487906,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.23677016036694348,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "y": 0.2316320061621492,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "y": 0.23269976129040804,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "y": 0.23151316799435212,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "y": -0.14421034926165008,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "y": 0.25382352963120824,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "y": 0.19399713605819108,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "y": 0.19623200060239124,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "y": 0.19673553988258122,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "y": -0.1866829698718811,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "y": 0.218505782293506,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "y": 0.20721176382243672,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "y": 0.20824531224634937,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "y": 0.20900628357372897,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "y": -0.1831132698796219,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "y": 0.23149056309170088,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "y": 0.2472805894471417,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "y": 0.24837491087002422,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "y": 0.25172630065616836,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "y": -0.11203810798579523,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "y": 0.2800384959264977,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.2367837754222503,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.2375228049484231,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.23749641025922216,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.035062935081827826,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.27851458565489146,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.2650398956398544,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.2658191861493552,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.2659514885645457,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.16237844092143602,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.30497209010432835,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.23811844980501337,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.23859255991349926,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.2381789989011754,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": -0.004909169103925892,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.27900475733154856,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.2188271891995311,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.21977613192408035,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.2191769435173491,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": -0.04982453817685526,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.26424026312072,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "y": 0.2309979680482984,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "y": 0.23151091052551837,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "y": 0.23327654162921477,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.0,
+      "y": 0.05394325021665154,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "y": 0.2812114723916058,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.26288272427771375,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.263789943135872,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "y": 0.26578706276813235,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "y": 0.12606151769925666,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "y": 0.31207955086176603,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.0,
+      "y": 0.23145155695405856,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "y": 0.23232785002396866,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "y": 0.232953571643239,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "y": 0.017624653414767842,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "y": 0.2791751496312703,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.0,
+      "y": 0.20865476148928025,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "y": 0.20970458918341378,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.0,
+      "y": 0.21115735393215013,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.0,
+      "y": -0.01463845013799978,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "y": 0.2668016400774536,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 80,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "on-policy \u2014 instruct",
+        "ylabel": "held-out $R^2$ (context arm)",
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3"
+        ]
+      },
+      {
+        "title_left": "on-policy \u2014 base",
+        "yticklabels": [
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      },
+      {
+        "title_left": "inserted \u2014 instruct",
+        "ylabel": "held-out $R^2$ (context arm)",
+        "xticklabels": [
+          "Pooled\ndirect",
+          "+ per-cell\nbias",
+          "Rotation\n+ bias",
+          "Context\nre-map",
+          "Answer\nre-map"
+        ],
+        "yticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35"
+        ]
+      },
+      {
+        "title_left": "inserted \u2014 base",
+        "xticklabels": [
+          "Pooled\ndirect",
+          "+ per-cell\nbias",
+          "Rotation\n+ bias",
+          "Context\nre-map",
+          "Answer\nre-map"
+        ],
+        "yticklabels": [
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35"
+        ]
+      }
+    ],
+    "series": [
+      "Wren",
+      "HELIOS",
+      "Dana",
+      "Vex"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "commit": "1e263e45+dirty",
+  "render_id": "3992f4e6b3424cf1",
+  "git_commit": "1e263e45",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2054/writeup_v2/r1_framing_tiers.meta.json",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers.pdf",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers.png",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.meta.json",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.pdf",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.png",
+    "figures/issue_2054/writeup_v2/r1_pooled_vs_own.meta.json",
+    "figures/issue_2054/writeup_v2/r1_pooled_vs_own.pdf",
+    "figures/issue_2054/writeup_v2/r1_pooled_vs_own.png",
+    "scripts/issue2054_loco_pooled.py",
+    "scripts/issue2094_butler_grid.py",
+    "tasks/awaiting_promotion/2094/body.md",
+    "tests/test_issue2094_butler_grid.py"
+  ],
+  "created": "2026-08-14T16:50:49Z",
+  "figsize": [
+    11.0,
+    7.2
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "on-policy \u2014 instruct",
+        "ylabel": "held-out $R^2$ (context arm)",
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "on-policy \u2014 base"
+      },
+      {
+        "title_left": "inserted \u2014 instruct",
+        "xlabel": "held-out framing (assistant cells shown)",
+        "ylabel": "held-out $R^2$ (context arm)",
+        "xticklabels": [
+          "chat template",
+          "bare text",
+          "story,\nbare label",
+          "story,\nattributed quote"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "inserted \u2014 base",
+        "xlabel": "held-out framing (assistant cells shown)",
+        "xticklabels": [
+          "chat template",
+          "bare text",
+          "story,\nbare label",
+          "story,\nattributed quote"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

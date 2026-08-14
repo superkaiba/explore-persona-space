@@ -1,0 +1,4 @@
+{
+  "provenance": "copied verbatim from eval_results/issue_2094/judge/gates/ (the parent round's gate reports)",
+  "rationale": "rev-direction judge waves reuse the IDENTICAL instrument the parent pilot-gated: same rubric registry (coherence + fp-persona + fp-bare are parent rubrics, no new rubric text), same judge model (claude-sonnet-4-5-20250929), same max_tokens=1024, same n_draws=1; the coherence baseline gate is over the SAME banked parent anchor draws the rev floors/ceilings reuse. Per llm-judging rule 26 a pilot PASS certifies the instrument it ran; no instrument change => the parent PASS carries. Copied 2026-08-14 by the #2094 rev-round judge-crash fix (inline round)."
+}
