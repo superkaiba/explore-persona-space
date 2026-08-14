@@ -78,6 +78,8 @@ I considered the following tiers of mapping transfer:
 - bias-only -> train a bias only to refit the source mapping in the target setting
 - Rotation + bias -> train a rotation + bias to refit the source mapping in the target setting
 
+**Control for the cross-transfer tier.** Because that tier fits a 3,584×3,584 map — under-determined on the smaller pairs — I checked whether its $R^2$ could come from the fit's capacity rather than from real source→target correspondence: destroy the pairing (permute which source conversation goes with which target conversation), refit at identical sample size and regularization, and score on the untouched held-out fold. Across 20 pairs spanning the full size range (2,950 to 11,901 shared conversations) the shuffled fit lands at $R^2$ = −0.033 to −0.023 — flat, and below zero — while the real fits run +0.057 to +0.485. The smallest, most under-determined pair (Vex on-policy, n = 2,950) still clears its own shuffled control by 0.09. This is the expected behaviour of a centered ridge with no usable signal, so I stopped the battery at 20 of 44 pairs rather than confirm a constant 24 more times; it is reported here as a number rather than drawn on the plots, where a band at −0.03 would be indistinguishable from the zero line.
+
 The goal is to see how transferrable the mapping is between different settings
 ## Results
 ### Result 1: Effect of changing **framing** on the assistant mapping
@@ -90,7 +92,7 @@ I wanted to see the effect of changing the **framing** of the conversation on th
 
 ![r1_framing_tiers](../../figures/issue_2054/writeup_v2/r1_framing_tiers.png)
 
-*Hollow markers on the cross-transfer tier = the pair's shared-conversation set is below the well-posedness floor (0.8·n < d = 3,584), so that fit is descriptive only. The gray band at that tier is the matched-capacity shuffled-pair null (p95 across draws): refit the same cross map after destroying which source conversation goes with which target conversation. Both story-framing targets are shown (bare label and attributed quote).*
+*Hollow markers on the cross-transfer tier = the pair's shared-conversation set is below the well-posedness floor (0.8·n < d = 3,584), so that fit is descriptive only. Both story-framing targets are shown (bare label and attributed quote).*
 
 **Takeaways:**
 

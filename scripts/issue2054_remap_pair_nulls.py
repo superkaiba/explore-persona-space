@@ -41,6 +41,14 @@ Pairs: exactly the 44 shown in docs/reports/framing_character_transfer_writeup.m
 inserted-chat->characters 16). Context arm only. Checkpoint per pair
 (units.jsonl, resume on key), one progress line per unit-fold.
 
+``--mode cross`` (2026-08-14 tier re-spec): the same shuffled-pair null for the
+CROSS-TRANSFER tier instead — the paired cross-render fit (source-render
+context -> target-render answer, ridge fit directly on paired rows, the
+banked ``analyzer_companions/cross_render_fit*.json`` estimator). Null: permute
+the ROWS of Yt_tr (the paired targets), refit at matched capacity, score on
+the unpermuted held-out fold. Banked sanity compares per-fold against
+``cross_render_per_fold``; the parity gate runs on fold 0 per pair.
+
 Usage:
   uv run python scripts/issue2054_remap_pair_nulls.py \
       --activations-dir <dir with the 56 cell npz> \
@@ -347,6 +355,133 @@ def null_for_pair(
     return rec
 
 
+COMPANIONS_DIR = _REPO / "eval_results/issue_2054/analyzer_companions"
+_MODEL_SLUG = {"qwen2.5-7b-instruct": "qwen25-7b-instruct", "qwen2.5-7b": "qwen25-7b"}
+
+
+def load_banked_cross() -> dict[tuple[str, str], list[float]]:
+    """(src_cell, tgt_cell) -> banked per-fold cross-render R2 (fold 0..k-1)."""
+    out: dict[tuple[str, str], list[float]] = {}
+    main = json.loads((COMPANIONS_DIR / "cross_render_fit.json").read_text())
+    for c in main["cells"]:
+        if c.get("is_identity"):
+            continue
+        src = f"{ASSIST}__{c['condition']}__chat__{c['model']}"
+        tgt = f"{ASSIST}__{c['condition']}__{c['target_form']}__{c['model']}"
+        out[(src, tgt)] = c["cross_render_per_fold"]
+    for shard in ("2a", "2b"):
+        for slug in _MODEL_SLUG.values():
+            path = COMPANIONS_DIR / f"cross_render_fit_characters.shard__{shard}__{slug}.json"
+            for c in json.loads(path.read_text())["cells"]:
+                src = f"{ASSIST}__{c['source_condition']}__{c['source_form']}__{c['model']}"
+                tgt = f"{c['character']}__{c['target_condition']}__{c['target_form']}__{c['model']}"
+                out[(src, tgt)] = c["cross_render_per_fold"]
+    return out
+
+
+def null_for_pair_cross(
+    src_key: str,
+    tgt_key: str,
+    src_acts: dict,
+    tgt_acts: dict,
+    fold_of: dict,
+    k: int,
+    *,
+    n_draws: int,
+    seed: int,
+    banked_per_fold: list[float] | None,
+    svd_cache: dict,
+    pilot: bool = False,
+) -> dict:
+    """True cross-render R2 + shuffled-pair null draws for one writeup pair.
+
+    Cross-render fit: ridge source-render CONTEXT -> target-render ANSWER on
+    the paired train rows; null permutes the Yt_tr rows (pairing destroyed,
+    marginals intact) and refits at matched capacity.
+    """
+    Xs_all, _ys, s_ids = _select_arm(src_acts, "context")
+    _xt, Yt_all, t_ids = _select_arm(tgt_acts, "context")
+    inter = set(s_ids) & set(t_ids) & set(fold_of.keys())
+    ordered = sorted(inter)
+    s_row = _row_index_by_conv_id(s_ids)
+    t_row = _row_index_by_conv_id(t_ids)
+
+    per_fold: list[dict] = []
+    fold_range = range(min(1, k)) if pilot else range(k)
+    for fold_i in fold_range:
+        t0 = time.time()
+        train_ids = [c for c in ordered if int(fold_of[c]) != fold_i]
+        val_ids = [c for c in ordered if int(fold_of[c]) == fold_i]
+        tr_s = np.array([s_row[c] for c in train_ids], dtype=np.int64)
+        tr_t = np.array([t_row[c] for c in train_ids], dtype=np.int64)
+        te_s = np.array([s_row[c] for c in val_ids], dtype=np.int64)
+        te_t = np.array([t_row[c] for c in val_ids], dtype=np.int64)
+        Xs_tr, Yt_tr = Xs_all[tr_s], Yt_all[tr_t]
+        Xs_te, Yt_te = Xs_all[te_s], Yt_all[te_t]
+        n_tr = int(tr_s.size)
+
+        train_key = hash(tuple(train_ids))
+        ck = ("C", src_key, fold_i, train_key)
+        if ck not in svd_cache:
+            svd_cache.clear() if len(svd_cache) >= 6 else None
+            svd_cache[ck] = _SvdRidge(Xs_tr)
+        svd_C = svd_cache[ck]
+        Zs_te = svd_C.project(Xs_te)
+
+        true_te = svd_C.fit_apply(Yt_tr, Zs_te)
+        if fold_i == 0:
+            # parity gate (fold 0 only — the reference _fit_ridge is a second
+            # full SVD, the dominant per-fold cost; banked sanity covers the
+            # remaining folds against the committed companion values).
+            ref = _fit_ridge(Xs_tr, Yt_tr)
+            d_par = float(np.max(np.abs(true_te - _apply_ridge(ref, Xs_te))))
+            assert d_par < 1e-6, f"parity gate failed ({src_key}->{tgt_key}): {d_par}"
+        true_cross = _r2_matrix(Yt_te, true_te)
+        if banked_per_fold is not None and not pilot:
+            db = abs(true_cross - float(banked_per_fold[fold_i]))
+            assert db < 1e-6, (
+                f"banked-value sanity failed ({src_key}->{tgt_key} f{fold_i}): "
+                f"recomputed={true_cross} banked={banked_per_fold[fold_i]} d={db}"
+            )
+
+        rng = np.random.default_rng(seed + 1_000 * fold_i)
+        null_c: list[float] = []
+        for _ in range(n_draws):
+            perm = rng.permutation(n_tr)
+            null_c.append(_r2_matrix(Yt_te, svd_C.fit_apply(Yt_tr[perm], Zs_te)))
+
+        per_fold.append(
+            {
+                "fold": fold_i,
+                "n_train": n_tr,
+                "n_val": int(te_t.size),
+                "true_cross": true_cross,
+                "null_cross": null_c,
+            }
+        )
+        _log(
+            f"[nulls] {src_key} -> {tgt_key} fold {fold_i}: true_cross={true_cross:+.4f} "
+            f"null_max={max(null_c):+.4f} n_tr={n_tr} elapsed={time.time() - t0:.1f}s"
+        )
+
+    all_c = [v for f in per_fold for v in f["null_cross"]]
+    return {
+        "src": src_key,
+        "tgt": tgt_key,
+        "arm": "context",
+        "mode": "cross",
+        "n_intersection": len(ordered),
+        "n_draws_per_fold": n_draws,
+        "per_fold": per_fold,
+        "mean": {
+            "true_cross": float(np.mean([f["true_cross"] for f in per_fold])),
+            "null_cross_p95": float(np.percentile(all_c, 95)),
+            "null_cross_median": float(np.median(all_c)),
+        },
+        "banked_check": {"pass": banked_per_fold is not None and not pilot},
+    }
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.replace("%", "%%"))
     ap.add_argument("--activations-dir", type=Path, required=True)
@@ -358,6 +493,12 @@ def main() -> int:
         "--out-root", type=Path, default=_REPO / "eval_results/issue_2054/specialization_ladder"
     )
     ap.add_argument("--out-name", default="remap_pair_nulls.json")
+    ap.add_argument(
+        "--mode",
+        choices=("remap", "cross"),
+        default="remap",
+        help="remap: rungs 7/8 nulls; cross: paired cross-render-fit tier null",
+    )
     ap.add_argument("--n-draws", type=int, default=5)
     ap.add_argument("--seed", type=int, default=137)
     ap.add_argument("--pilot", action="store_true", help="first pair, fold 0 only")
@@ -365,12 +506,58 @@ def main() -> int:
     ap.add_argument("--shard-index", type=int, default=0)
     ap.add_argument("--shard-count", type=int, default=1)
     ap.add_argument("--import-check", action="store_true")
+    ap.add_argument(
+        "--merge-shards",
+        metavar="GLOB",
+        default=None,
+        help="merge shard payloads matching GLOB (relative to --out-root) into "
+        "--out-name and exit; asserts the expected pair count and gate passes",
+    )
+    ap.add_argument("--expect-pairs", type=int, default=44)
     args = ap.parse_args()
     if args.import_check:
         from explore_persona_space.orchestrate.argcheck import assert_args_attributes_defined
 
         assert_args_attributes_defined(__file__)
         _log("[nulls] import-check OK")
+        return 0
+
+    if args.merge_shards:
+        shard_paths = sorted(args.out_root.glob(args.merge_shards))
+        assert shard_paths, f"no shard payloads matched {args.out_root / args.merge_shards}"
+        units: list[dict] = []
+        seen: set[tuple[str, str]] = set()
+        for sp in shard_paths:
+            payload = json.loads(sp.read_text())
+            assert payload["metadata"].get("mode", "remap") == args.mode, (
+                f"{sp.name}: mode={payload['metadata'].get('mode')} != --mode {args.mode}"
+            )
+            for u in payload["units"]:
+                key = (u["src"], u["tgt"])
+                assert key not in seen, f"duplicate pair across shards: {key}"
+                assert u.get("banked_check", {}).get("pass"), f"unit failed banked gate: {key}"
+                seen.add(key)
+                units.append(u)
+            _log(f"[merge] {sp.name}: {len(payload['units'])} units")
+        assert len(units) == args.expect_pairs, f"{len(units)} units, expected {args.expect_pairs}"
+        out_path = args.out_root / args.out_name
+        merged = {
+            "metadata": {
+                **as_metadata_dict(git_provenance(_REPO)),
+                "script_version": SCRIPT_VERSION,
+                "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "mode": args.mode,
+                "n_pairs": len(units),
+                "n_draws_per_fold": args.n_draws,
+                "seed": args.seed,
+                "merged_from_shards": [p.name for p in shard_paths],
+            },
+            "units": units,
+        }
+        tmp = out_path.with_name(out_path.name + ".tmp")
+        tmp.write_text(json.dumps(merged, indent=1), encoding="utf-8")
+        os.replace(tmp, out_path)
+        _log(f"[merge] wrote {out_path} ({len(units)} pairs, all banked gates PASS)")
         return 0
 
     t_start = time.time()
@@ -387,7 +574,16 @@ def main() -> int:
     _log(f"[nulls] {len(pairs)} pairs, {len(cells)} cells, k={k}, draws={args.n_draws}")
 
     banked: dict[tuple[str, str], dict] = {}
-    if args.rows_file and args.rows_file.exists():
+    banked_cross: dict[tuple[str, str], list[float]] = {}
+    if args.mode == "cross":
+        banked_cross = load_banked_cross()
+        missing = [p for p in pairs if p not in banked_cross]
+        _log(
+            f"[nulls] banked cross-render coverage: {len(pairs) - len(missing)}/{len(pairs)} pairs"
+        )
+        for src, tgt in missing:
+            _log(f"[nulls] WARN no banked cross-render value: {src} -> {tgt}")
+    elif args.rows_file and args.rows_file.exists():
         for r in json.loads(args.rows_file.read_text()):
             if r.get("arm") == "context":
                 banked[(r["src"], r["tgt"])] = r["rungs"]
@@ -399,7 +595,8 @@ def main() -> int:
         for line in ckpt.open(encoding="utf-8"):
             if line.strip():
                 r = json.loads(line)
-                if r.get("n_draws_per_fold") == args.n_draws:
+                same_mode = r.get("mode", "remap") == args.mode
+                if r.get("n_draws_per_fold") == args.n_draws and same_mode:
                     done.add((r["src"], r["tgt"]))
         _log(f"[nulls] resume: {len(done)} pairs banked")
 
@@ -420,27 +617,46 @@ def main() -> int:
         for i, (src, tgt) in enumerate(pairs):
             if (src, tgt) in done:
                 continue
-            rec = null_for_pair(
-                src,
-                tgt,
-                acts(src),
-                acts(tgt),
-                fold_of,
-                k,
-                n_draws=args.n_draws,
-                seed=args.seed + 97 * i,
-                banked_rungs=banked.get((src, tgt)),
-                svd_cache=svd_cache,
-                m_cache=m_cache,
-                pilot=args.pilot,
-            )
+            if args.mode == "cross":
+                rec = null_for_pair_cross(
+                    src,
+                    tgt,
+                    acts(src),
+                    acts(tgt),
+                    fold_of,
+                    k,
+                    n_draws=args.n_draws,
+                    seed=args.seed + 97 * i,
+                    banked_per_fold=banked_cross.get((src, tgt)),
+                    svd_cache=svd_cache,
+                    pilot=args.pilot,
+                )
+            else:
+                rec = null_for_pair(
+                    src,
+                    tgt,
+                    acts(src),
+                    acts(tgt),
+                    fold_of,
+                    k,
+                    n_draws=args.n_draws,
+                    seed=args.seed + 97 * i,
+                    banked_rungs=banked.get((src, tgt)),
+                    svd_cache=svd_cache,
+                    m_cache=m_cache,
+                    pilot=args.pilot,
+                )
             fh.write(json.dumps(rec) + "\n")
             fh.flush()
             os.fsync(fh.fileno())
             _log(f"[nulls] unit {i + 1}/{len(pairs)} {src} -> {tgt} done")
 
     records = [json.loads(x) for x in ckpt.read_text(encoding="utf-8").splitlines() if x.strip()]
-    records = [r for r in records if r.get("n_draws_per_fold") == args.n_draws]
+    records = [
+        r
+        for r in records
+        if r.get("n_draws_per_fold") == args.n_draws and r.get("mode", "remap") == args.mode
+    ]
     payload = {
         "metadata": {
             **as_metadata_dict(git_provenance(_REPO)),
@@ -448,6 +664,7 @@ def main() -> int:
             "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "n_pairs": len(records),
             "n_draws_per_fold": args.n_draws,
+            "mode": args.mode,
             "seed": args.seed,
             "shard": [args.shard_index, args.shard_count],
             "wall_seconds": round(time.time() - t_start, 1),
