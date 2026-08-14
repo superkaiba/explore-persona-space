@@ -698,6 +698,18 @@ def test_w2b_contrasts_skip_branch_records_not_computable(tmp_path):
     ]
 
 
+def test_w2b_contrasts_half_landed_raises(tmp_path):
+    """1-3 of the 4 RN window files present -> RuntimeError (a half-landed
+    harvest is an upload defect, never a silent not_computable downgrade)."""
+    import issue2225_fu1_analysis as ana
+
+    _write_w2b_arm(tmp_path, "RN", 1.5, [50.0] * 4)  # 2 of 4 window files
+    nc: list[str] = []
+    with pytest.raises(RuntimeError, match="PARTIALLY landed"):
+        ana.fu2_w2b_contrasts(tmp_path, 100, nc)
+    assert nc == []
+
+
 def test_w2b_contrasts_compute_branch(tmp_path):
     """Landed W2b cells: matched-window DoD + LEVEL read with the fu2 seed
     scheme (constant per-question deltas pin point + CI + verdict exactly)."""

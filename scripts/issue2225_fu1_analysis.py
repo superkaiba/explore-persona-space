@@ -480,12 +480,26 @@ def _fu2_conditional_selection(args, grids, mmlu, selection) -> None:
     for spec in _fu_train().FU2_CONDITIONAL_CONFIGS:
         for dataset in _selected_datasets(args, spec):
             trait = train.STEERED_TRAIT[dataset]
-            landed = [
-                coef
-                for coef in grids[spec.config]
-                if pa._arm_path(eval_root, "trait_scores", spec.config, dataset, coef).exists()
-                and pa._arm_path(eval_root, "coherence", spec.config, dataset, coef).exists()
-            ]
+            landed = []
+            for coef in grids[spec.config]:
+                has_trait = pa._arm_path(
+                    eval_root, "trait_scores", spec.config, dataset, coef
+                ).exists()
+                has_coh = pa._arm_path(eval_root, "coherence", spec.config, dataset, coef).exists()
+                if has_trait and has_coh:
+                    landed.append(coef)
+                elif has_trait or has_coh:
+                    # Half-landed pair: one of the two eval files exists. Not
+                    # binding here (nothing downstream consumes the conditional
+                    # selected_coef), but never a silent drop — the binding
+                    # contrast's all-4-file gate raises on the same state
+                    # (code-review minor 2a, cefce522 round).
+                    print(
+                        f"[{_ROUND}-selection] conditional {spec.config}_{dataset} "
+                        f"c={coef}: HALF-landed pair (trait_scores={has_trait}, "
+                        f"coherence={has_coh}) — coef excluded from curve",
+                        flush=True,
+                    )
             if not landed:
                 print(
                     f"[{_ROUND}-selection] conditional {spec.config}_{dataset}: "
@@ -508,8 +522,10 @@ def _fu2_conditional_selection(args, grids, mmlu, selection) -> None:
                 "conditional_partial_grid": (
                     f"conditional arm (plan §4.3): curve covers ONLY the landed coefs "
                     f"{[float(c) for c in landed]} of the registry grid "
-                    f"{[float(c) for c in grids[spec.config]]} — the missing coefs "
-                    "never trigger and their eval files never exist"
+                    f"{[float(c) for c in grids[spec.config]]} — non-window coefs are "
+                    "never dispatched (no eval files by design); a half-landed "
+                    "window coef is logged and excluded, and the binding contrast's "
+                    "all-4-file gate raises on it"
                 ),
                 **({"note": note} if note else {}),
             }
@@ -859,6 +875,17 @@ def fu2_w2b_contrasts(fu_root: Path, n_boot: int, not_computable: list[str]) -> 
         if not p.exists()
     ]
     if missing:
+        if len(missing) < 4:
+            # Pre-harvest is exactly 0-of-4 present; 1-3 missing means the W2b
+            # harvest HALF-landed (e.g. one cell's coherence upload failed) —
+            # fail loud rather than mislabel it "not yet landed" (code-review
+            # minor 1, cefce522 round).
+            raise RuntimeError(
+                f"[fu2-contrasts] W2b RN window PARTIALLY landed — {len(missing)}/4 "
+                f"window files missing: {', '.join(p.name for p in missing)}; "
+                "a half-landed harvest is an upload/harvest defect, not a "
+                "pre-harvest state"
+            )
         print(
             f"[fu2-contrasts] W2b cells not yet landed ({len(missing)} files, "
             f"first: {missing[0].name}) — h4(c) skipped",
