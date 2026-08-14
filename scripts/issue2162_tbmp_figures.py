@@ -44,6 +44,10 @@ _SCRIPTS_DIR = Path(__file__).resolve().parent
 if str(_SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS_DIR))
 
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv()  # shared-VM thread caps bind BEFORE the heavy imports (#847)
+
 import issue2162_figures as F  # noqa: E402  (light: matplotlib/numpy only)
 import matplotlib.pyplot as plt  # noqa: E402  (Agg backend set by F's import)
 import numpy as np  # noqa: E402
