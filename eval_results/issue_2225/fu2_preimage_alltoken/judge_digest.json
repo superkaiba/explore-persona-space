@@ -9,7 +9,7 @@
   "max_tokens": 1024
  },
  "stop_reason_tally_total": {
-  "end_turn": 38221,
+  "end_turn": 29021,
   "refusal": 979
  },
  "per_arm": [
@@ -407,6 +407,40 @@
   {
    "arm": "Q_sycophancy_3.0",
    "tag": "Q__sycophancy__c3.0",
+   "rubric": "sycophancy",
+   "wave": "trait_scores",
+   "n_rollouts_scored": 200,
+   "n_rollouts_total": 200,
+   "n_total_draws": 1200,
+   "n_content_dropped": 0,
+   "n_refusal_draws": 0,
+   "n_truncation_dropped": 0,
+   "n_transport_lost": 0,
+   "n_api_refusal": 0,
+   "uncensored_rate": 1.0,
+   "api_refusal_reissued": false,
+   "n_draws_recovered_by_reissue": 0
+  },
+  {
+   "arm": "RN_sycophancy_1.5",
+   "tag": "RN__sycophancy__c1.5",
+   "rubric": "sycophancy",
+   "wave": "trait_scores",
+   "n_rollouts_scored": 200,
+   "n_rollouts_total": 200,
+   "n_total_draws": 1200,
+   "n_content_dropped": 0,
+   "n_refusal_draws": 0,
+   "n_truncation_dropped": 0,
+   "n_transport_lost": 0,
+   "n_api_refusal": 0,
+   "uncensored_rate": 1.0,
+   "api_refusal_reissued": false,
+   "n_draws_recovered_by_reissue": 0
+  },
+  {
+   "arm": "RN_sycophancy_3.0",
+   "tag": "RN__sycophancy__c3.0",
    "rubric": "sycophancy",
    "wave": "trait_scores",
    "n_rollouts_scored": 200,
@@ -898,6 +932,40 @@
    "n_draws_recovered_by_reissue": 0
   },
   {
+   "arm": "RN_sycophancy_1.5",
+   "tag": "RN__sycophancy__c1.5",
+   "rubric": "coherence",
+   "wave": "coherence",
+   "n_rollouts_scored": 200,
+   "n_rollouts_total": 200,
+   "n_total_draws": 200,
+   "n_content_dropped": 0,
+   "n_refusal_draws": 0,
+   "n_truncation_dropped": 0,
+   "n_transport_lost": 0,
+   "n_api_refusal": 0,
+   "uncensored_rate": 1.0,
+   "api_refusal_reissued": false,
+   "n_draws_recovered_by_reissue": 0
+  },
+  {
+   "arm": "RN_sycophancy_3.0",
+   "tag": "RN__sycophancy__c3.0",
+   "rubric": "coherence",
+   "wave": "coherence",
+   "n_rollouts_scored": 200,
+   "n_rollouts_total": 200,
+   "n_total_draws": 200,
+   "n_content_dropped": 0,
+   "n_refusal_draws": 0,
+   "n_truncation_dropped": 0,
+   "n_transport_lost": 0,
+   "n_api_refusal": 0,
+   "uncensored_rate": 1.0,
+   "api_refusal_reissued": false,
+   "n_draws_recovered_by_reissue": 0
+  },
+  {
    "arm": "RQ_evil_0.25",
    "tag": "RQ__evil__c0.25",
    "rubric": "coherence",
@@ -988,8 +1056,8 @@
   "RQ_evil_3.0"
  ],
  "reproducibility": {
-  "git_commit": "aa29bd78f333c74463ea6706648e6a3c321581bd",
-  "timestamp": "2026-08-14T14:39:44-0700",
+  "git_commit": "c195eb73f12a1c7a12933a338d15a8aa92f11eb3",
+  "timestamp": "2026-08-14T16:42:49-0700",
   "model": "Qwen/Qwen2.5-7B-Instruct",
   "judge_model": "claude-sonnet-4-5-20250929",
   "versions": {
