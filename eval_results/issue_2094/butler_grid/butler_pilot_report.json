@@ -1,0 +1,21 @@
+{
+  "criterion": "butler-grid timing pilot (sizing basis)",
+  "block_key": "ce|L0|replace|A|steered",
+  "measured_cells": 1,
+  "measured_wall_s": 6.542430620640516,
+  "s_per_cell": 6.542430620640516,
+  "gen_batch": 16,
+  "num_workers": 1,
+  "cells_total": 600,
+  "projected_wall_h": 1.0904051034400861,
+  "repro": {
+    "git_commit": "374e909516f362e35ac9ef327731f09e81407d32",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "tiny": false,
+    "smoke": false,
+    "n_layers": 28,
+    "timestamp": "2026-08-14T16:38:46.470167+00:00"
+  }
+}

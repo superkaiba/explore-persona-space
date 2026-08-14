@@ -1,0 +1,54 @@
+{
+  "regime": {
+    "wave": "coherence.grid",
+    "rubric_id": "coherence",
+    "rubric_sha16": "8d34244f43449800",
+    "n_items": 300,
+    "item_ids_sha16": "c324065bc209dfbe",
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "max_tokens": 1024,
+    "n_draws": 1
+  },
+  "complete": true,
+  "pass1": {
+    "n_total_draws": 300,
+    "n_dropped_draws_content": 0,
+    "n_refusal_draws": 0,
+    "n_truncation_dropped_draws": 0,
+    "n_transport_lost_draws": 0,
+    "stop_reason_tally": {
+      "end_turn": 300
+    }
+  },
+  "retry1": null,
+  "residual_transport_lost": 0,
+  "temperature_note": "not threaded by judge_graded — Anthropic API default",
+  "per_arm": {
+    "grid-null": {
+      "n_items": 150,
+      "n_scored": 150,
+      "transport_lost": 0,
+      "truncation_drops": 0
+    },
+    "grid-steered": {
+      "n_items": 150,
+      "n_scored": 150,
+      "transport_lost": 0,
+      "truncation_drops": 0
+    }
+  },
+  "n_scored_items": 300,
+  "repro": {
+    "git_commit": "df870c03",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "scripts/issue2094_judge.py",
+      "scripts/issue2094_rev_reduce.py",
+      "scripts/issue2094_reverse_direction.py",
+      "src/explore_persona_space/experiments/issue2094/bank.py",
+      "tasks/proposed/1718/events.jsonl",
+      "tests/test_issue2094_judge.py"
+    ],
+    "script": "scripts/issue2094_judge.py"
+  }
+}

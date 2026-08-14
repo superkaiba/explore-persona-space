@@ -25,6 +25,14 @@ retrieval among the held-out pool (euclidean + cosine, chance = k/n_pool).
 Fold structure is the shared #2054 conversation-grouped fold map, so a held-out
 speaker's test rows are the same rows wr6 scores -- LOCO changes only WHO is in
 the training pool, never the evaluation rows.
+
+``--group-by framing`` (writeup-v2 round, 2026-08-14) swaps the hold-out unit
+from SPEAKER to FRAMING (chat / bare_text / bare_label / attrib_quoted; the
+transposed cell_c cells count as chat): each variant refits the pooled map with
+every cell of one framing held out and scores exactly those cells, answering
+the Result-1 analogue -- does the pooled map transfer to a framing it never
+saw? Same moments machinery, estimator, folds, and companion reads; only the
+grouping key changes.
 """
 
 from __future__ import annotations
@@ -102,6 +110,24 @@ def speaker_of(cell: Cell) -> str:
     raise ValueError(f"cannot resolve speaker for identity {ident!r} (cell {cell.key})")
 
 
+KNOWN_FRAMINGS = ("chat", "bare_text", "bare_label", "attrib_quoted")
+
+
+def framing_of(cell: Cell) -> str:
+    """Map a cell onto its FRAMING (the ``--group-by framing`` hold-out unit).
+
+    The transposed cell_c cells are chat-template renders, so they resolve to
+    ``chat``. Raises on an unrecognized framing rather than silently creating a
+    wrong hold-out group.
+    """
+    if cell.framing not in KNOWN_FRAMINGS:
+        raise ValueError(f"unrecognized framing {cell.framing!r} (cell {cell.key})")
+    return cell.framing
+
+
+GROUP_FNS = {"speaker": speaker_of, "framing": framing_of}
+
+
 def _zero_moment(d: int, dev: torch.device) -> dict:
     return {
         "n": 0,
@@ -114,21 +140,22 @@ def _zero_moment(d: int, dev: torch.device) -> dict:
 
 
 def accumulate_by_speaker(
-    cells: list[Cell], fold_of: dict, k: int, arm: str, device: str
+    cells: list[Cell], fold_of: dict, k: int, arm: str, device: str, group_fn=speaker_of
 ) -> dict[str, list[dict]]:
-    """One streaming pass over cells for ONE arm: per-(speaker, fold) moments.
+    """One streaming pass over cells for ONE arm: per-(group, fold) moments.
 
-    Keyed by speaker so any LOCO variant is a SUBTRACTION of banked sums rather
-    than a fresh pass. Processing a single arm per call halves peak RSS versus
-    accumulating both arms together.
+    Keyed by the hold-out group (speaker by default, framing under
+    ``--group-by framing``) so any LOCO variant is a SUBTRACTION of banked sums
+    rather than a fresh pass. Processing a single arm per call halves peak RSS
+    versus accumulating both arms together.
     """
     dev = torch.device(device)
-    speakers = sorted({speaker_of(c) for c in cells})
+    speakers = sorted({group_fn(c) for c in cells})
     mom = {s: [_zero_moment(D_AMBIENT, dev) for _ in range(k)] for s in speakers}
     vec = ARM_VEC_KEY[arm]
     for ci, cell in enumerate(cells):
         t0 = time.time()
-        spk = speaker_of(cell)
+        spk = group_fn(cell)
         act = load_cell_with_answer(cell)
         j = join_cell(act, fold_of, k, arm)
         for f in range(k):
@@ -273,6 +300,12 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--fold-map-ref", default="origin/issue-2054")
     ap.add_argument("--fold-map-file", default=None)
     ap.add_argument("--arms", nargs="*", default=list(ARMS), choices=list(ARMS))
+    ap.add_argument(
+        "--group-by",
+        default="speaker",
+        choices=sorted(GROUP_FNS),
+        help="LOCO hold-out unit: speaker (default, the wr6 companion) or framing",
+    )
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--limit-cells", type=int, default=None, help="pilot: first N cells")
     ap.add_argument("--import-check", action="store_true")
@@ -297,16 +330,17 @@ def main() -> int:
         f"n_conv={len(fold_of):,} sha={fold_map['_sha256'][:12]}"
     )
 
+    group_fn = GROUP_FNS[args.group_by]
     cells = discover_cells(args.activations_dir)
     if args.limit_cells:
         cells = cells[: args.limit_cells]
-    speakers = sorted({speaker_of(c) for c in cells})
+    speakers = sorted({group_fn(c) for c in cells})
     by_speaker: dict[str, list[Cell]] = {s: [] for s in speakers}
     for c in cells:
-        by_speaker[speaker_of(c)].append(c)
-    _log(f"[loco] {len(cells)} cells, {len(speakers)} speakers, arms={args.arms}")
+        by_speaker[group_fn(c)].append(c)
+    _log(f"[loco] {len(cells)} cells, {len(speakers)} {args.group_by} groups, arms={args.arms}")
     for s in speakers:
-        _log(f"[loco]   speaker {s}: {len(by_speaker[s])} cells")
+        _log(f"[loco]   {args.group_by} {s}: {len(by_speaker[s])} cells")
 
     out_root: Path = args.out_root
     out_root.mkdir(parents=True, exist_ok=True)
@@ -329,7 +363,7 @@ def main() -> int:
             continue
 
         t0 = time.time()
-        mom = accumulate_by_speaker(cells, fold_of, k, arm, args.device)
+        mom = accumulate_by_speaker(cells, fold_of, k, arm, args.device, group_fn=group_fn)
         _log(f"[loco] arm={arm} moments done elapsed={time.time() - t0:.1f}s")
 
         # Solve every map up front, then release the moments before the eval pass.
@@ -359,10 +393,12 @@ def main() -> int:
         with ckpt.open("a", encoding="utf-8") as fh:
             for cell in pending:
                 t1 = time.time()
-                spk = speaker_of(cell)
+                spk = group_fn(cell)
                 act = load_cell_with_answer(cell)
                 j = join_cell(act, fold_of, k, arm)
                 rec = evaluate_cell(cell, act, j, arm, k, loco_models[spk], full_models)
+                rec["group"] = spk
+                rec["group_by"] = args.group_by
                 del act
                 fh.write(json.dumps(rec) + "\n")
                 fh.flush()
@@ -388,7 +424,8 @@ def main() -> int:
             "d_ambient": D_AMBIENT,
             "arms": list(args.arms),
             "n_cells": len(cells),
-            "speakers": {s: [c.key for c in by_speaker[s]] for s in speakers},
+            "group_by": args.group_by,
+            "groups": {s: [c.key for c in by_speaker[s]] for s in speakers},
             "wall_seconds": round(time.time() - t_start, 1),
         },
         "per_unit": records,
@@ -406,12 +443,17 @@ def main() -> int:
 
 
 def aggregate(records: list[dict]) -> dict:
-    """Per-(speaker, arm, condition) means of the LOCO / full-pool / identity reads."""
+    """Per-(group, arm, condition) means of the LOCO / full-pool / identity reads.
+
+    The group is the hold-out unit — the speaker by default (pre-``--group-by``
+    records carry no ``group`` field and fall back to ``speaker``).
+    """
     out: dict[str, dict] = {}
     for rec in records:
+        grp = rec.get("group", rec["speaker"])
         for key in (
-            f"{rec['speaker']}|{rec['arm']}|all",
-            f"{rec['speaker']}|{rec['arm']}|{rec['condition']}",
+            f"{grp}|{rec['arm']}|all",
+            f"{grp}|{rec['arm']}|{rec['condition']}",
         ):
             out.setdefault(key, {"n_cells": 0, "loco_r2": [], "full_pool_r2": [], "ident_r2": []})
             g = out[key]
