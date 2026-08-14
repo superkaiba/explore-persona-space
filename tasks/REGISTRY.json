@@ -9881,8 +9881,8 @@
     "2279": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2279",
-      "status": "running",
+      "path": "tasks/completed/2279",
+      "status": "completed",
       "title": "verify_task_body: flag positional cross-references in Results that misresolve after fold reordering"
     },
     "228": {
