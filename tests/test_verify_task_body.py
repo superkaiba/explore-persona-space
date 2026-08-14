@@ -177,7 +177,7 @@ def test_good_body_passes_all():
     # locally reachable, so the cited SHA is silently skipped), AND the
     # check-38 linked-not-embedded-figures scan (needs `issue` for
     # own-figures-dir scoping, #1371; PASS-skip: not a v4 body) →
-    # 73 results total (2 prepended + CHECKS[1:]=56 + 15 appended, counting
+    # 74 results total (2 prepended + CHECKS[1:]=57 + 15 appended, counting
     # the #1827 plan-conditions check narrated below; check 36
     # `check_v4_result_paragraph_sentences` (#1368), check 37
     # `check_footer_reuse_bullets_pinned` (#1370), check 39
@@ -211,9 +211,11 @@ def test_good_body_passes_all():
     # and check 54 `check_artifact_content_claims` (#2232 — PASS-skip,
     # not a v4 body),
     # and check 57 `check_v4_sidecarless_results_figures` (#2267 —
+    # PASS-skip, not a v4 body),
+    # and check 58 `check_v4_positional_result_crossrefs` (#2279 —
     # PASS-skip, not a v4 body)
     # ride CHECKS;
-    # 36/37/39/44/48/49/51/54/57
+    # 36/37/39/44/48/49/51/54/57/58
     # PASS-skip here — not a v4 body — 40 is the vacuous PASS above, and
     # 41/52/53 are the fake-sha NO-OP PASSes above). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
@@ -226,7 +228,7 @@ def test_good_body_passes_all():
     # Check 55 `check_v4_aggregate_stat_needs_per_unit` rides CHECKS and
     # check 56 `check_v4_ack_result_count` is dispatched in verify_text
     # (needs the issue number); both PASS-skip here (legacy body) (#2264).
-    assert len(results) == 73
+    assert len(results) == 74
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert "Single aggregate-stat figure has per-unit evidence or exemption (v4)" in {
@@ -7251,9 +7253,9 @@ def test_checks_list_size():
     needs), and the check-31
     orphaned-per-unit-figures probe (needs `issue` for figures-dir
     scoping, #1011).
-    So `verify_text` returns 73 results (2 prepended + CHECKS[1:]=56 +
+    So `verify_text` returns 74 results (2 prepended + CHECKS[1:]=57 +
     15 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 57 (check 36 `check_v4_result_paragraph_sentences` (#1368),
+    at 58 (check 36 `check_v4_result_paragraph_sentences` (#1368),
     check 37 `check_footer_reuse_bullets_pinned` — the body-only
     footer-side reuse-pin sibling of check 35, #1370 — check 39
     `check_v4_sample_disclosure_count` — the Sample-slot
@@ -7279,11 +7281,14 @@ def test_checks_list_size():
     single-figure aggregate-statistic check, #2264 — and check 57
     `check_v4_sidecarless_results_figures` — the sidecar-less
     Results-figure FAIL gate (Leg A caption codes / Leg B forward-only
-    post-cutover block), #2267 — ride CHECKS; check
+    post-cutover block), #2267 — and check 58
+    `check_v4_positional_result_crossrefs` — the positional
+    result-cross-ref resolver (WARN: out-of-range or clause-vs-target
+    round-set disjointness), #2279 — ride CHECKS; check
     56 `check_v4_ack_result_count` (#2264) is dispatched OUTSIDE CHECKS
     with the issue number).
     """
-    assert len(verify_task_body.CHECKS) == 57
+    assert len(verify_task_body.CHECKS) == 58
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert verify_task_body.check_v4_dropped_condition_placement in verify_task_body.CHECKS
@@ -7302,6 +7307,7 @@ def test_checks_list_size():
     assert verify_task_body.check_figure_png_sidecar_pairing in verify_task_body.CHECKS
     assert verify_task_body.check_figure_sidecar_slot_completeness in verify_task_body.CHECKS
     assert verify_task_body.check_v4_sidecarless_results_figures in verify_task_body.CHECKS
+    assert verify_task_body.check_v4_positional_result_crossrefs in verify_task_body.CHECKS
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───
@@ -13442,11 +13448,11 @@ def test_caption_lead_issue1074_verbatim_caption_warns():
 
 def test_check_figure_caption_position_stable():
     """Index-stability pin (#1424): `check_figure_caption` stays at CHECKS
-    position 7 and the CHECKS count matches the current registry (57 as of
-    check 57, #2267; belt-and-suspenders beside the migration-history
+    position 7 and the CHECKS count matches the current registry (58 as of
+    check 58, #2279; belt-and-suspenders beside the migration-history
     `len(CHECKS)` pin)."""
     assert verify_task_body.CHECKS[7] is verify_task_body.check_figure_caption
-    assert len(verify_task_body.CHECKS) == 57
+    assert len(verify_task_body.CHECKS) == 58
 
 
 # ─── Check 26: figure panel/series prose vs figure sidecar (panel drift) ───
@@ -20988,3 +20994,472 @@ def test_check56_outside_checks_and_dispatched_in_verify_text():
     _ok, results = verify_task_body.verify_text(_V4_GOOD_BODY)
     r56 = next(r for r in results if r.name == _CHECK56_NAME)
     assert r56.passed is True
+
+
+# ─── Check 58: positional result cross-refs under ## Results (#2279) ────────
+#
+# WARN-only, v4-gated resolver for `(N results up|down)` / `the previous/next
+# result` pointer tokens against the actual `### ` H3 sequence under
+# `## Results`. Two arms: out-of-range (a), and contradiction-only round-set
+# disjointness (b) between the pointer's `;`/sentence-delimited clause and the
+# resolved target heading with trailing parenthetical(s) STRIPPED (the #2279
+# plan §3.4.2 launder fix). Regression anchor: the PRE-remediation #2221 body,
+# pinned VERBATIM from the git blob
+# `f511fe61b2:tasks/followups_running/2221/body.md` (`## Results` section,
+# headings with their trailing parentheticals INTACT) — the LIVE body was
+# remediated at d5872943d7 and carries zero ordinals, so it is NOT a valid
+# anchor (#2279 plan §2.1).
+
+_C58_SCAFFOLD = (
+    "# T (LOW confidence)\n\n<!-- clean-result-v4 -->\n\n"
+    "## Takeaways\n\n- t\n\n## Goal\n\ng\n\n## Methodology\n\nm\n\n"
+    "## Results\n\n"
+)
+
+# VERBATIM `## Results` section content of blob
+# f511fe61b2:tasks/followups_running/2221/body.md (lines 274-388: everything
+# after the `## Results` heading + blank line, up to but excluding the
+# `---` + `**Repro:**` footer). Do NOT hand-edit — the sha256 pin in
+# test_positional_crossref_flags_issue2221_shape guards against drift.
+_C58_ANCHOR_RESULTS = """### Specialized re-mining trained all 12 under-yielded cells, but real-data trait installs barely moved
+
+Each point is one of the 24 fine-tunes on the uniform 2,048-token eval: x = realized training rows (log scale), y = paper-panel graded score on the family's monitored trait; open markers = under-trained cells.
+
+![Training rows per cell against graded trait score at the uniform instrument, open markers marking under-trained cells](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c0fa506d03753803c2293757c16b7de947c3e4f1/figures/issue_2221/specialized_corpus_remine/remine_mix_size_vs_acquisition.png)
+
+> **Figure.** *Yield repaired, installs unchanged.* Rows vs graded score, one point per fine-tune (n=24, ~200 judged paper-panel items each). All 12 re-mined cells trained — none dropped at the 16-row floor — but 9 sit under the 160-row bar (evil 125, medical 57, opinions 133 rows). No re-mined cell approaches 50; every acquirer is from the two largest standing families.
+
+Specialized corpora repaired the mining floor: evil went from 1 to 125 rows per cell (2,484 flagged LMSYS turns survived near-dup screening), opinions 13 to 133, sycophancy 175 to 455; medical shrank from 233 to 57 (severe-band scarcity). Installs did not follow — evil cells score 0.0 on evil, sycophancy cells sit within 2.1 points of base, and no re-mined cell crossed 50.
+
+Sycophancy is the clean case: 455 rows, about 28 optimizer steps, above the meaningful bar, still flat, where the synthetic suite installs enough range for monitor r = 0.92. The uniform re-eval moved paired standing-cell scores by at most 2.8 points, so the install gap is not the instrument; the other three re-mined families stay dose-confounded at under ten optimizer steps.
+
+### On the repaired 24-cell grid every monitor read still sits at or inside the trait-agnostic direction band
+
+First: signed Spearman r per read and trait at its best layer (paper capture panel, uniform y, n=24) with score-shuffle ticks; second: the per-unit view behind the hallucination bars.
+
+![Selected-layer Spearman r per monitor read and trait on the repaired grid](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c0fa506d03753803c2293757c16b7de947c3e4f1/figures/issue_2221/specialized_corpus_remine/monitor_selected_r_by_arm.png)
+
+![Per-unit scatter of monitor scalar against graded hallucination score for the two headline reads](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c0fa506d03753803c2293757c16b7de947c3e4f1/figures/issue_2221/specialized_corpus_remine/remine_monitor_vs_score_per_unit.png)
+
+> **Figure.** *High r, still matched by random directions.* Top: selected-layer Spearman r per read (n=24; score-shuffle ticks 0.50-0.59). Direction nulls under identical selection: 0.950-0.968 on hallucination (rank ceiling 1.0, observed best 0.967), 0.877-0.889 on evil (ceiling 0.961 under its 20-zeros-of-24 y, observed 0.892), 0.743-0.808 on sycophancy (observed 0.638). Bottom: small mixes bottom-left, large mixes top-right, in both reads.
+
+On hallucination the paper's read reaches r = 0.950 and the mapped context read 0.967, inside a direction band that spans to 0.96 under identical selection. The outcome axis still mostly encodes how much a cell trained: score tracks log-rows at rho = 0.854, and partialing log-rows out attenuates the reads to 0.82-0.87 without touching the band.
+
+Fold checks barely move them — drop-one-family and the joint AITA-pair drop stay above 0.93 — stability a pure dose readout would also show. Evil's 0.84-0.89 rests on a y with 20 zeros of 24 and flips sign across capture panels; sycophancy's best read is negative, inside the shuffle band. The synthetic suite gives 0.92-0.96 on all three traits.
+
+### The mapped read still fails to separate from the paper's monitor at the binding family grain
+
+Forest of the headline contrast: difference in Spearman r (mapped minus paper read, per-draw re-selection on both sides), with paired bootstrap intervals at both resampling grains, per trait and capture panel.
+
+![Forest plot of mapped-minus-paper Spearman differences with fine-tune-grain and family-grain bootstrap intervals, every interval crossing zero](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c0fa506d03753803c2293757c16b7de947c3e4f1/figures/issue_2221/specialized_corpus_remine/remine_h2_delta_forest_dual_grain.png)
+
+> **Figure.** *All 18 intervals straddle zero.* Difference in Spearman r (mapped minus paper read), 10,000 paired draws per grain with per-draw re-selection (n=24). Hallucination family-grain intervals: −1.88 to +0.06 (paper capture), −1.95 to +0.06 (LMSYS), −1.91 to +0.09 (pooled); evil and sycophancy intervals span roughly −1.8 to +1.8. Per-unit data: the scatter in the preceding result.
+
+The plan's verdict rule reads inconclusive for the second round. Only hallucination has usable outcome range (a 15-point install over base, or a cell past a 50% judge-positive rate), and its family-grain intervals straddle zero on all three capture panels while leaning heavily negative — if anything the mapped read is again worse where the y-axis is real.
+
+Evil and sycophancy still cannot carry a verdict: their axes never gained range, so their wide intervals are rank noise over near-degenerate outcomes. The family grain is the conservative unit because versions inside a family share corpus and mix; its intervals are wider than the fine-tune-grain ones everywhere, and the fine-tune-grain intervals straddle zero too.
+
+### Early-checkpoint detection and severity ordering still read as generic training drift
+
+Orientation-folded (the better of AUC and 1 − AUC) detection of the eventual hallucination-score acquirers at 10/25/50/100% of training; dotted line = the random-direction control under the same folding.
+
+![Detection AUC against training progress for three monitor reads on the repaired grid, with the random-direction control declining from 0.98 to 0.88](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c0fa506d03753803c2293757c16b7de947c3e4f1/figures/issue_2221/specialized_corpus_remine/checkpoint_detection_auc.png)
+
+> **Figure.** *Detection stays at the random-direction control.* Orientation-folded AUC vs training fraction, hallucination labels (n=24 cells at 10%, 21 at 25% — the three medical cells miss that save; 5 positives under the raw scores). Monitors 0.98-1.0; random-direction control 0.98 at 10%, 0.88-0.94 later. Evil and sycophancy AUCs are not computable: no acquirers exist on those traits.
+
+The repaired grid reproduces the parent picture: flagging at one-tenth of training looks excellent, and a trait-agnostic direction flags almost as well, because drift magnitude tracks mix size and the positives are the big-mix cells. The prefix-mapped read again attains its folded AUC from a raw signed AUC near 0.
+
+Within families — where row-equalization holds dose fixed — the best of the twelve read-by-mapping combinations orders normal, mild, severe correctly in 4 of 8 families (chance 1 of 6), and it is a different read than the parent round's best, so no severity signal repeats across rounds. The acquirer count is convention-dependent: the mild insecure-code cell sits at 50.5 and drops below 50 under both language-intrusion recounts, leaving 4 positives.
+
+### Rounds 1-3: found-data mining collapsed in two families, leaving six fine-tunes untrained (repaired by the round-4 re-mine above)
+
+Each point is one of the 24 round 1-3 fine-tunes: x = training rows per cell, y = paper-panel graded trait score at the original 1,000-token instrument.
+
+![Scatter of realized training rows per cell on a log x-axis against paper-panel graded trait score, one labeled point per fine-tune family, with the trait-acquisition threshold at 50 drawn as a dashed line](https://raw.githubusercontent.com/superkaiba/explore-persona-space/01f1306a2047f78a50ff213a1a8ee20cf1ac5eac/figures/issue_2221/trait_mix_size_vs_acquisition.png)
+
+> **Figure.** *Trait acquisition tracks realized training-mix size (rounds 1-3).* Realized rows per cell (log scale) vs paper-panel graded trait score, one point per fine-tune (n=24), labeled by family with its row count; dashed line = the 50-of-100 threshold. Only cells from the two families above 1,000 rows cross it.
+
+- Generic-pool mining realized 1 evil row and 13 opinion rows per cell — below one optimizer step at effective batch 16 — so those six fine-tunes were the base model exactly: monitor shift 0.0 at every layer, no mid-training checkpoints written. The mechanical cause was the staging filter itself, which dropped moderation-flagged turns; round 4 inverted it.
+- Training tokens track rows at Spearman rho = 0.99 across the 24 cells, so the dose axis is not sensitive to the row-vs-token choice.
+
+### Rounds 1-3: only hallucination had usable outcome range at the original 1,000-token instrument
+
+Bars = paper-panel graded trait score per fine-tune at the 1,000-token instrument, grouped by family; dash-dot line = the base model's hallucination score, dashed line = the threshold.
+
+![Bar chart of paper-panel graded trait score for all 24 fine-tune cells grouped by family, with the base model hallucination level and the trait-acquisition threshold drawn as horizontal lines](https://raw.githubusercontent.com/superkaiba/explore-persona-space/01f1306a2047f78a50ff213a1a8ee20cf1ac5eac/figures/issue_2221/trait_scores_by_cell.png)
+
+> **Figure.** *The outcome axis only moves for hallucination (rounds 1-3).* Graded score per cell (n=24, ~200 judged items each; base hallucination 23.5 dash-dot, threshold 50 dashed). Evil bars are true measured zeros of effectively-untrained models, not missing data.
+
+- Evil graded means were 0.0-1.2 everywhere and sycophancy spanned 12.9-28.0 against a base of 15.5; hallucination was the one axis with range (21.9-85.0 vs base 23.5). The round-4 uniform 2,048-token re-eval preserved this picture (paired standing-cell shifts at most 2.8 points, rank agreement 0.965-0.986).
+- The *normal-version* insecure-code cell scores above 70 on hallucination despite having no vulnerable code in its mix — an emergent-misalignment-flavored cross-trait effect or generic drift from the grid's largest mix; the stored rollouts can separate these (flagged as a follow-up).
+
+### Rounds 1-3: both headline reads tied at 0.945 inside the random-direction band (recomputed on the repaired grid above)
+
+Per-unit view at the original instrument: monitor scalar (paper capture panel, selected layer) vs graded hallucination score, 24 labeled points.
+
+![Per-unit scatter of monitor scalar vs graded hallucination score, 24 labeled points](https://raw.githubusercontent.com/superkaiba/explore-persona-space/01f1306a2047f78a50ff213a1a8ee20cf1ac5eac/figures/issue_2221/monitor_vs_score_per_unit.png)
+
+> **Figure.** *Rounds 1-3 per-unit view: six untrained cells sit at exactly zero shift.* Monitor scalar vs graded hallucination score (n=24, paper capture panel, 1,000-token y). Direction nulls under identical selection reached 0.94 on hallucination and 0.79-0.88 on the flat traits.
+
+- At the original instrument the paper's and mapped context reads tied at r = 0.945 with random directions reaching 0.94 under the same selection; the tie was point-estimate-only (the paper read's bootstrap interval stayed positive, the mapped read's spanned both signs).
+- The six zero-shift cells visible here are the round 1-3 pathology the re-mine removed; the round-4 recompute (two results up) replaces this read.
+
+### Rounds 1-3: the headline contrast failed to reject everywhere at the original instrument
+
+Forest plot at the original instrument: difference in Spearman r (mapped minus paper read) with fine-tune-grain bootstrap intervals, per trait and capture panel.
+
+![Forest plot of the difference in Spearman r between mapped and paper reads across three traits and three capture panels, every interval crossing zero](https://raw.githubusercontent.com/superkaiba/explore-persona-space/01f1306a2047f78a50ff213a1a8ee20cf1ac5eac/figures/issue_2221/h2_delta_forest.png)
+
+> **Figure.** *All nine rounds 1-3 intervals straddle zero.* Difference in Spearman r (mapped minus paper read), point + bootstrap interval, per trait and capture panel (n=24; e.g. evil/paper +1.39, interval −1.56 to +1.74; hallucination/LMSYS −1.82, interval −1.93 to +0.02). Per-unit data: the rounds 1-3 scatter in the preceding result.
+
+- The plan's decision rule read inconclusive on all nine trait-by-panel combinations at the original instrument, with 6 of 24 cells never reaching the trained regime; the round-4 dual-grain recompute on the repaired grid reproduces the verdict.
+- On the reused synthetic stratum the paper's monitor reached r = 0.92-0.96 on all three traits under the matched judge instrument, so the evil and sycophancy failures trace to collapsed outcome axes, not the monitors.
+
+### Rounds 1-3: no monitor read ordered severity reliably within families
+
+Bars = the fraction of the 8 families whose normal / mild / severe versions a read ranks correctly at its selected layer (pooled capture panel, original instrument); dashed line = chance.
+
+![Bar chart of the fraction of eight families ordered normal, mild, severe correctly by each monitor read per trait mapping, with the one-in-six chance rate drawn as a dashed line](https://raw.githubusercontent.com/superkaiba/explore-persona-space/01f1306a2047f78a50ff213a1a8ee20cf1ac5eac/figures/issue_2221/severity_ordering_by_arm.png)
+
+> **Figure.** *Severity ordering near chance (rounds 1-3).* Fraction of 8 families ordered normal < mild < severe, per read and trait mapping (pooled capture panel, selected layer; chance 1/6). Best bar: the paper's read at 4 of 8 on the hallucination mapping. The evil answer-oracle bar is a true measured zero, not missing data.
+
+- The rounds 1-3 best was the paper's read at 4 of 8 on the hallucination mapping (nominally p = 0.03, uncorrected for being the best of 12 combinations); round 4's best is also 4 of 8 but under DIFFERENT reads (the answer oracle on the evil mapping; the paper's read on the sycophancy mapping), so the one nominally-above-chance read did not repeat.
+- Residual token-dose differences inside families (up to 1.5x across versions) could push these orderings either way.
+
+### Rounds 1-3: checkpoint detection worked on 18 cells but random directions detected almost as well
+
+Per-unit view at the original instrument: each checkpointed cell's paper-read monitor scalar at 10% of training vs its final graded hallucination score, acquirers black-edged.
+
+![Scatter of per-cell monitor scalar at the 10 percent checkpoint against final graded hallucination score with acquirers black-edged](https://raw.githubusercontent.com/superkaiba/explore-persona-space/01f1306a2047f78a50ff213a1a8ee20cf1ac5eac/figures/issue_2221/checkpoint_monitor_per_unit.png)
+
+> **Figure.** *Rounds 1-3 early detection was mostly generic drift.* Per-cell 10%-checkpoint scalar vs final graded hallucination score (n=18 checkpointed cells — the six untrained cells wrote no checkpoints; 5 positives). Sign-folded AUC 0.98-1.0 vs 0.97 for random directions.
+
+- Every acquirer came from the two largest mixes, and the random-direction control reached 0.97 at the same training fraction; round 4 extends this read to the full 24-cell grid (two results up) with the same conclusion.
+- The prefix-mapped read attained its AUC only after orientation folding in both rounds — a recurring sign the persona-specific content of these reads is weak on this data.
+"""
+
+_C58_ANCHOR_BODY = _C58_SCAFFOLD + _C58_ANCHOR_RESULTS
+
+
+def _c58_body(*blocks: str) -> str:
+    """Minimal v4 body whose `## Results` holds `blocks` (each a full
+    `### <result>` block including its heading), for direct
+    `check_v4_positional_result_crossrefs` calls."""
+    return _C58_SCAFFOLD + "\n\n".join(blocks) + "\n"
+
+
+_C58_LAUNDER_BODY = _c58_body(
+    "### Rounds 1-3: base sweep (repaired by the round-4 re-mine above)\n\nBase text.",
+    "### Middle result\n\nMiddle text.",
+    "### Round-4 recompute\n\nThe round-4 recompute (two results up) replaces this read.",
+)
+_C58_OOR_UP_BODY = _c58_body(
+    "### First\n\nText.",
+    "### Second\n\nThe control read (five results up) anchors this.",
+)
+_C58_OOR_DOWN_BODY = _c58_body(
+    "### First\n\nText.",
+    "### Second\n\nSee the confirmation (three results down) for the extension.",
+)
+_C58_PREV_MISMATCH_BODY = _c58_body(
+    "### Rounds 1-3: original instrument read\n\nText.",
+    "### Round-4 extension\n\nThe round-4 recompute supersedes the previous result.",
+)
+
+
+def _c58_count_body(count: str) -> str:
+    """Round-mismatch fixture parametrized on the ordinal count token —
+    `2` and `two` must behave identically (#2279 plan §5)."""
+    return _c58_body(
+        "### Rounds 1-3: base read\n\nText.",
+        "### Middle\n\nText.",
+        f"### Last\n\nThe round-4 recompute ({count} results up) replaces this read.",
+    )
+
+
+_C58_CORRECT_BODY = _c58_body(
+    "### Round 4: repaired-grid recompute\n\nText.",
+    "### Middle\n\nText.",
+    "### Last\n\nThe round-4 recompute (two results up) replaces this read.",
+)
+_C58_NO_CLAUSE_ROUND_BODY = _c58_body(
+    "### Rounds 1-3: base read\n\nText.",
+    "### Middle\n\nText.",
+    "### Last\n\nThe repaired recompute (two results up) replaces this read.",
+)
+_C58_NO_TARGET_ROUND_BODY = _c58_body(
+    "### Base sweep without a fold label\n\nText.",
+    "### Middle\n\nText.",
+    "### Last\n\nThe round-4 recompute (two results up) replaces this read.",
+)
+_C58_SEMICOLON_BODY = _c58_body(
+    "### Rounds 1-3: base read\n\nText.",
+    "### Middle\n\nText.",
+    "### Last\n\nThe round-4 fix landed; the new read (two results up) replaces this.",
+)
+_C58_FENCED_BODY = _c58_body(
+    "### First\n\nText.",
+    "### Second\n\n```\n(five results up)\n```\n\nProse after the fence.",
+)
+_C58_INLINE_CODE_BODY = _c58_body(
+    "### First\n\nText.",
+    "### Second\n\nThe literal `(five results up)` token is quoted, not used.",
+)
+_C58_DETAILS_BODY = _c58_body(
+    "### First\n\nText.",
+    "### Second\n\n<details><summary>s</summary>\n\n(five results up)\n\n</details>",
+)
+_C58_ABOVE_BELOW_BODY = _c58_body(
+    "### Rounds 1-3: base read\n\nText.",
+    "### Second\n\nThe round-4 re-mine in the result above repaired it; "
+    "(five results above) and two results below say the same.",
+)
+_C58_V3_BODY = _C58_ANCHOR_BODY.replace("<!-- clean-result-v4 -->", "<!-- clean-result-v3 -->")
+_C58_SINGLE_RESULT_BODY = _c58_body("### Only\n\nThe control (one result up) anchors this.")
+_C58_NO_RESULTS_BODY = "# T (LOW confidence)\n\n<!-- clean-result-v4 -->\n\n## Takeaways\n\n- t\n"
+
+# Every check-58 fixture above, for the WARN-posture (never-FAIL) sweep.
+_C58_ALL_BODIES = (
+    _C58_ANCHOR_BODY,
+    _C58_LAUNDER_BODY,
+    _C58_OOR_UP_BODY,
+    _C58_OOR_DOWN_BODY,
+    _C58_PREV_MISMATCH_BODY,
+    _c58_count_body("2"),
+    _c58_count_body("two"),
+    _C58_CORRECT_BODY,
+    _C58_NO_CLAUSE_ROUND_BODY,
+    _C58_NO_TARGET_ROUND_BODY,
+    _C58_SEMICOLON_BODY,
+    _C58_FENCED_BODY,
+    _C58_INLINE_CODE_BODY,
+    _C58_DETAILS_BODY,
+    _C58_ABOVE_BELOW_BODY,
+    _C58_V3_BODY,
+    _C58_SINGLE_RESULT_BODY,
+    _C58_NO_RESULTS_BODY,
+)
+
+
+def test_positional_crossref_flags_issue2221_shape():
+    """Regression anchor (the c41 named test, #2279 plan §5): the
+    `## Results` section pinned VERBATIM from the pre-remediation blob
+    `f511fe61b2:tasks/followups_running/2221/body.md` — headings with
+    their trailing parentheticals INTACT — produces exactly 2
+    WARN-flagged pointers, naming both resolved headings. A
+    trimmed-heading fixture would pass while the real body shape fails
+    (the §3.4.2 divergence trap both plan critics flagged); the sha256
+    pin guards the fixture against transcription drift."""
+    import hashlib
+
+    digest = hashlib.sha256(_C58_ANCHOR_RESULTS.encode()).hexdigest()
+    assert digest == "a8cb52fe41930ddd783d9109d4a11ee644dcbf58ae78480f49a8c4447dbbb251", (
+        "anchor fixture drifted from blob f511fe61b2 — restore it verbatim"
+    )
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_ANCHOR_BODY)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert res.detail.startswith("2 positional cross-reference pointer(s)")
+    # Both resolved target headings are named in the detail:
+    assert (
+        "Rounds 1-3: found-data mining collapsed in two families, leaving six "
+        "fine-tunes untrained (repaired by the round-4 re-mine above)" in res.detail
+    )
+    assert (
+        "Rounds 1-3: the headline contrast failed to reject everywhere at the "
+        "original instrument" in res.detail
+    )
+    assert res.detail.count("disjoint") == 2
+
+
+def test_positional_crossref_heading_parenthetical_does_not_launder():
+    """§3.4.2 isolated from the full anchor: the target heading's ONLY
+    round-4 token sits in a trailing parenthetical — whole-heading
+    extraction would union `{4}` in, intersect the clause's `{4}`, and
+    stay silent; the strip flags the misdirected pointer."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_LAUNDER_BODY)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "clause rounds [4] vs target rounds [1, 2, 3] disjoint" in res.detail
+
+
+def test_positional_crossref_out_of_range_up():
+    """Arm (a): `(five results up)` in result 2 of 2 resolves to -3 —
+    out of range, flagged unconditionally (no round machinery needed)."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_OOR_UP_BODY)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "resolves to result -3 of 2 (out of range)" in res.detail
+
+
+def test_positional_crossref_out_of_range_down():
+    """Arm (a): `(three results down)` in the LAST result resolves past
+    the end of the H3 sequence — out of range, flagged."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_OOR_DOWN_BODY)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "resolves to result 5 of 2 (out of range)" in res.detail
+
+
+def test_positional_crossref_previous_result_round_mismatch():
+    """The adjacent family: `the previous result` (distance 1, direction
+    up) with a round-4 clause resolving onto a `Rounds 1-3:` heading —
+    arm (b) flags."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_PREV_MISMATCH_BODY)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "the previous result" in res.detail
+    assert "clause rounds [4] vs target rounds [1, 2, 3] disjoint" in res.detail
+
+
+def test_positional_crossref_number_words_and_digits():
+    """`(2 results up)` and `(two results up)` behave identically —
+    same flag, same round-set detail (#2279 plan §3.2)."""
+    for count in ("2", "two"):
+        res = verify_task_body.check_v4_positional_result_crossrefs(_c58_count_body(count))
+        assert res.passed is True
+        assert res.is_warn is True, count
+        assert res.detail.startswith("1 positional cross-reference pointer(s)"), count
+        assert "clause rounds [4] vs target rounds [1, 2, 3] disjoint" in res.detail, count
+
+
+def test_positional_crossref_unicode_casefold_tokens():
+    """`re.IGNORECASE` does FULL Unicode case folding, so U+017F LATIN
+    SMALL LETTER LONG S matches the `s` in `six` / `previous`. The token
+    normalizer must `.casefold()` (which maps the long s to `s`), not
+    `.lower()` (which leaves it unchanged) — otherwise the number-word
+    lookup raises KeyError and crashes the whole verifier, and the
+    adjacent-family direction compare silently flips `up` to `down`
+    (#2279 code review, both reproduced end-to-end).
+    """
+    # Ordinal family: the long-s spelling of `six` folds to `six` ->
+    # distance 6 -> out of range in a 3-result body. Under `.lower()`
+    # the number-word lookup raised KeyError here.
+    res = verify_task_body.check_v4_positional_result_crossrefs(_c58_count_body("ſix"))
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "resolves to result -3 of 3 (out of range)" in res.detail
+
+    # Adjacent family: the long-s spelling of `the previous result`
+    # must resolve UP (distance 1), matching the plain spelling. Under
+    # `.lower()` the `== "previous"` compare failed and the direction
+    # silently became `down`.
+    long_s_body = _c58_body(
+        "### Rounds 1-3: original instrument read\n\nText.",
+        "### Round-4 extension\n\nThe round-4 recompute supersedes the previouſ result.",
+    )
+    res = verify_task_body.check_v4_positional_result_crossrefs(long_s_body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "clause rounds [4] vs target rounds [1, 2, 3] disjoint" in res.detail
+
+
+def test_positional_crossref_correct_pointer_silent():
+    """Negative: an in-range pointer whose clause and target round sets
+    OVERLAP ({4} on both sides) stays silent."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_CORRECT_BODY)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "resolve" in res.detail
+
+
+def test_positional_crossref_no_round_token_in_clause_silent():
+    """Negative (§3.4.4): the pointer's clause names no round — one side
+    empty, contradiction-only arm (b) stays silent."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_NO_CLAUSE_ROUND_BODY)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_positional_crossref_no_round_token_in_target_silent():
+    """Negative (§3.4.4): the resolved target heading names no round —
+    one side empty, arm (b) stays silent."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_NO_TARGET_ROUND_BODY)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_positional_crossref_round_token_across_semicolon_silent():
+    """§3.4.1 pinned from the negative side: the round token sits across
+    a `;` from the pointer, so the pointer's OWN clause is round-less —
+    silent (the deliberate clause-scope tightness, a disclosed
+    false-negative residual)."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_SEMICOLON_BODY)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_positional_crossref_fenced_token_ignored():
+    """Negative: a pointer token inside a fenced code block is never
+    scanned (would be an out-of-range arm-(a) flag if it were)."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_FENCED_BODY)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_positional_crossref_inline_code_token_ignored():
+    """Negative: an inline-code `(five results up)` literal is masked
+    (`_SENTENCE_INLINE_CODE_RE`) and never scanned."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_INLINE_CODE_BODY)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_positional_crossref_details_block_ignored():
+    """Negative: a pointer token inside a `<details>` block is stripped
+    (`_DETAILS_BLOCK_RE`) and never scanned."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_DETAILS_BODY)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_positional_crossref_above_below_not_matched():
+    """`the result above` / `result(s) above|below` are OUT of scope by
+    design — no resolvable ordinal (#2279 plan §7 residual, pinned):
+    silent even where a matched reading would flag."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_ABOVE_BELOW_BODY)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_positional_crossref_v3_body_skipped():
+    """Forward-only: the SAME offending Results content under a v3
+    sentinel is never touched (vacuous PASS, no WARN)."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_V3_BODY)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert res.detail == "skipped — not a v4 body"
+
+
+def test_positional_crossref_single_result_skipped():
+    """<2 results ⇒ no positional target space — vacuous PASS even with
+    a pointer token present."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_SINGLE_RESULT_BODY)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "<2 results" in res.detail
+
+
+def test_positional_crossref_no_results_section_skipped():
+    """A v4 body with no `## Results` PASS-skips (check 2 owns the
+    missing-section report)."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_NO_RESULTS_BODY)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "## Results missing" in res.detail
+
+
+def test_positional_crossref_registered_in_checks():
+    """§7-test-11 house pattern one-line membership assert (#1520): a
+    `len(CHECKS)` count pin only fails in the entry-ADDED direction, so
+    it does not substitute for this."""
+    assert verify_task_body.check_v4_positional_result_crossrefs in verify_task_body.CHECKS
+
+
+def test_positional_crossref_never_fails():
+    """WARN-posture pin (#2279 plan c15): `passed` is True on EVERY
+    path over every check-58 fixture above — the check can never block
+    a promotion."""
+    for body in _C58_ALL_BODIES:
+        res = verify_task_body.check_v4_positional_result_crossrefs(body)
+        assert res.passed is True
