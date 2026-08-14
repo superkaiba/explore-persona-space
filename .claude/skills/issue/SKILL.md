@@ -12321,26 +12321,34 @@ tests BEFORE anything lands:
       if [ -n "$TG_TMPROOT" ]; then
         TG_BASETEMP=$(mktemp -d "$TG_TMPROOT/tg-XXXXXX")
       fi
-      # BASELINE leg — root copy on the payload-free main tree (each scan
-      # test derives its scan root from its own __file__, so the root copy
-      # scans the root tree). Only tests present on the baseline tree run
-      # there: a branch-NEW scan test has no baseline, so its gated hits are
-      # NEW by construction (correct — block).
-      mapfile -t TG_BASE_TESTS < <(timeout --kill-after=30s 120s uv run python \
-        "$REPO_ROOT/scripts/select_step9c_tests.py" \
-        --map-files /tmp/issue-<N>-own-diff.txt --repo-root "$REPO_ROOT" \
-        2>/dev/null | cut -f1 | sort -u)
-      if [ "${#TG_BASE_TESTS[@]}" -gt 0 ]; then
-        ( cd "$REPO_ROOT" && timeout --kill-after=30s ${TG_T}s \
-          env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
-              NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
-              ${TG_TMPROOT:+TMPDIR=$TG_TMPROOT} \
-          uv run pytest "${TG_BASE_TESTS[@]}" -q -p no:cacheprovider \
-            ${TG_BASETEMP:+--basetemp=$TG_BASETEMP/b} ) \
-          > /tmp/issue-<N>-tg-baseline.txt 2>&1 || TG_BASE_RC=$?
-      else
-        : > /tmp/issue-<N>-tg-baseline.txt
-      fi
+      # BASELINE leg — a DETACHED SPARSE SCRATCH tree cut at the resolved
+      # landing base, NEVER the shared repo root (#2296): every fleet
+      # commit's pre-commit stash cycle reverts the root working tree
+      # repo-wide for the hook window (#2015), which killed this leg mid-run
+      # on #2288 and made every gated red read NEW. The helper reuses the
+      # Step-9c oracle's own scratch machinery (create_scratch_worktree /
+      # gate_tmp_root / assert_scratch_src_shadow) and runs pytest under the
+      # ROOT venv interpreter with PYTHONPATH=<scratch>/src — the SAME venv
+      # `uv run` resolved before, so no dependency-resolution change; temp
+      # writes route via gate_tmp_root() inside the helper. Selection also
+      # runs against the scratch: a branch-NEW mapped test is absent there,
+      # so its gated hits stay NEW by construction (unchanged doctrine);
+      # file-anchored scan tests (__file__-derived roots) scan the SCRATCH.
+      # origin/main is already fetched (the bounded fetch above the gate
+      # tree build); rc is DATA on the helper's stdout — a missing/
+      # unparseable rc= line fails CLOSED into TG_CRASH.
+      : > /tmp/issue-<N>-tg-baseline.txt
+      TG_SCRATCH=""
+      TG_BASE_OUT=$(timeout --kill-after=30s $((TG_T + 420))s uv run python \
+        "$REPO_ROOT/scripts/step9c_baseline.py" mapped-baseline \
+        --map-files /tmp/issue-<N>-own-diff.txt --root "$REPO_ROOT" \
+        --cones-from "$WT" --base origin/main --timeout-s "$TG_T" \
+        --out /tmp/issue-<N>-tg-baseline.txt \
+        2>/tmp/issue-<N>-tg-baseline-err.txt) \
+        || TG_CRASH=yes
+      TG_SCRATCH=$(printf '%s\n' "$TG_BASE_OUT" | sed -n 's/^scratch_path=//p' | tail -1)
+      TG_BASE_RC=$(printf '%s\n' "$TG_BASE_OUT" | sed -n 's/^rc=//p' | tail -1)
+      [ -n "${TG_BASE_RC:-}" ] || { TG_BASE_RC=0; TG_CRASH=yes; }   # fail CLOSED
       # GATED leg — worktree copy on the payload-bearing branch-tip tree
       # (deliberately NOT the #1212 gate tree — see the mapped-leg residuals):
       ( cd "$WT" && timeout --kill-after=30s ${TG_T}s \
@@ -12370,13 +12378,18 @@ tests BEFORE anything lands:
       # warnings-summary SECTION is dropped up front (awk range
       # `^=+ warnings summary` .. the `^-- Docs:` terminator — a PASSING
       # test's warnings are not failure signal, and a branch-new test's
-      # warnings have no baseline twin by construction), and $WT/$REPO_ROOT
-      # absolute tree prefixes are normalized to one <TREE> token so the
-      # SAME pre-existing line from the two trees cancels under comm -23
-      # (WT substitution FIRST — $REPO_ROOT is a string prefix of $WT; the
-      # never-matching parameter defaults keep an unset var from becoming an
-      # empty-pattern sed that fails into an EMPTY hits file under the
-      # trailing `|| true` = silent fail-open).
+      # warnings have no baseline twin by construction), and
+      # $TG_SCRATCH/$WT/$REPO_ROOT absolute tree prefixes are normalized to
+      # one <TREE> token so the SAME pre-existing line from the two trees
+      # cancels under comm -23 (scratch substitution FIRST for the same
+      # prefix-containment reason WT precedes $REPO_ROOT — a scratch under a
+      # routed gate_tmp_root() need not be, but may be, under a normalized
+      # prefix; $REPO_ROOT is a string prefix of $WT; the never-matching
+      # parameter defaults keep an unset var from becoming an empty-pattern
+      # sed that fails into an EMPTY hits file under the trailing
+      # `|| true` = silent fail-open). Omitting the scratch clause would
+      # INVERT the verdict: every baseline hit would carry an uncancelled
+      # scratch-absolute prefix and every gated hit would read NEW (#2296).
       # Residual: realpath-divergent prefixes (the #681 /mnt/eps-data
       # bind-mount — a test printing os.path.realpath output emits a prefix
       # matching neither $WT nor $REPO_ROOT) stay uncancelled; fail
@@ -12387,7 +12400,9 @@ tests BEFORE anything lands:
           | grep -F -f /tmp/issue-<N>-tg-files.txt \
           | grep -vE '^E +assert ' \
           | sed -E 's/at line [0-9]+/at line N/g; s/:[0-9]+:/::/g; s/:[0-9]+([^0-9]|$)/:N\1/g' \
-          | sed -e "s|${WT:-/__eps_no_wt__}|<TREE>|g" -e "s|${REPO_ROOT:-/__eps_no_root__}|<TREE>|g" \
+          | sed -e "s|${TG_SCRATCH:-/__eps_no_scratch__}|<TREE>|g" \
+              -e "s|${WT:-/__eps_no_wt__}|<TREE>|g" \
+              -e "s|${REPO_ROOT:-/__eps_no_root__}|<TREE>|g" \
           | sort -u \
           > "/tmp/issue-<N>-tg-$leg-hits.txt" || true
       done
@@ -12591,8 +12606,10 @@ tests BEFORE anything lands:
   not failure signal; a branch-new test's warnings have no baseline twin —
   #1689), line numbers blanked
   so main-vs-branch drift of the SAME pre-existing offense cannot fake a NEW
-  line, `$WT`/`$REPO_ROOT` absolute tree prefixes normalized to a common
-  `<TREE>` token so the same line from the two trees cancels (#1689),
+  line, `$TG_SCRATCH`/`$WT`/`$REPO_ROOT` absolute tree prefixes normalized
+  to a common `<TREE>` token so the same line from the two trees cancels
+  (#1689; the scratch clause is load-bearing — without it every baseline hit
+  carries an uncancelled scratch prefix and every gated hit reads NEW, #2296),
   pytest's ellipsis-truncated `E   assert ...` repr line dropped (its
   content is unstable across trees; every real offense also emits a dedicated
   per-file evidence line); NEW = gated hits − baseline hits (`comm -23`,
@@ -12610,7 +12627,10 @@ tests BEFORE anything lands:
   stderr sizing line in `/tmp/issue-<N>-tg-map-err.txt`, falling back to a
   fixed 600 s when the line is absent (the sizing floor is also 600 s —
   raised from 300 s by #1646). The baseline leg reuses the gated map's
-  `TG_T` (its own map call discards stderr; the gated map is the superset in
+  `TG_T` (threaded as `mapped-baseline --timeout-s`; the helper's own
+  in-scratch selection does not feed sizing, and its outer wrapper adds
+  +420 s for scratch materialization + selection + teardown; the gated map
+  is the superset in
   the common case and over-sizing is the safe direction) — a
   k_baseline ≫ k_gated residual fails CLOSED (rc 124 → crash); the known
   escalation, sizing from the max over BOTH maps by keeping the baseline
@@ -12632,13 +12652,23 @@ tests BEFORE anything lands:
   (#1560), narrowing the drift window to (α) non-family rules-pin tests
   (prose-pin skew) and (β) the `explore_persona_space.workflow` seam,
   same remedy for both: rebase onto origin/main / cross-check at the repo
-  root); (b) the baseline leg runs on the
-  always-dirty shared root — dirt biases toward PASS, never a false block: an
-  untracked concurrent-session file (including an untracked same-path draft
-  of the payload file at the root, which the directory scan picks up
-  tracked-or-not) can only ENLARGE the baseline hit set and mask, a residual
-  formerly shared with the lint gate's baseline leg (the #1212 gate anchors
-  both lint legs to origin/main trees, so the lint legs no longer carry it);
+  root); (b) the baseline leg runs on a detached sparse scratch tree cut at
+  the resolved landing base (#2296 — the pre-#2296 shared-root baseline was
+  killed mid-run by the #2015 pre-commit stash cycle on #2288: process DEATH
+  empties the baseline, so every gated red read NEW — maximally fail-CLOSED,
+  the OPPOSITE direction of the retired "dirt can only enlarge the baseline
+  hit set and bias toward PASS" claim; do not rule out a baseline false
+  block on that retired reasoning when diagnosing a gate crash). The
+  remaining (b) residual is LIVE-TREE-ANCHORED scan tests: a mapped scan
+  test that anchors via `repo_root()` / `task_workflow` instead of its own
+  `__file__` (cf. `step9c_baseline.FILE_ANCHORED_SCAN_TESTS` — the curated
+  file-anchored set scans the SCRATCH and gains a genuinely payload-free
+  baseline) still scans the shared ROOT even when its code runs from the
+  scratch, so its baseline can FLAP under churn — a missed baseline red
+  reads as a false NEW, fail-closed, resolvable through the existing
+  provenance-override path; strictly better than the shared-root leg it
+  replaces, where the same churn killed the process outright (extending the
+  file-anchoring curation is the fix, #2293-adjacent);
   (c) a payload that DEEPENS an
   offense in an already-red payload-touched file normalizes to the same
   per-file line and is subtracted — a false-pass window that vanishes once
@@ -12754,24 +12784,29 @@ tests BEFORE anything lands:
   pre-merge, instead of post-merge main-red.
 - **Baseline semantics per binding form (the baseline is ALWAYS a
   payload-free tree).** The mapped invariant-TEST legs (#1147) keep the
-  ORIGINAL per-form placement (gated = the `$WT` copy on the branch-tip /
-  post-merge tree, baseline = the root copy on forms (i)-(ii); root copy
-  both legs on form (iii)); the LINT legs on forms (i)/(ii) now run the
+  ORIGINAL per-form GATED placement (gated = the `$WT` copy on the
+  branch-tip / post-merge tree on forms (i)/(ii); the root copy on form
+  (iii)); their BASELINE runs a detached sparse scratch tree cut at the
+  resolved landing base via `step9c_baseline.py mapped-baseline` on ALL
+  THREE forms (#2296 — never the shared repo root, which the #2015 stash
+  cycle reverts repo-wide); the LINT legs on forms (i)/(ii) run the
   #1212 gate tree. (i) Safe case: LINT legs — gated = the gate-tree copy
   on the LANDING tree (origin/main + own-diff overlay), baseline = the
   SAME copy on the payload-free landing base (#1212); mapped-TEST legs —
-  gated = the `$WT` copy on the branch-tip tree, baseline = the repo-root
-  copy (unchanged); bind immediately before `gh pr ready` / `gh pr merge`.
+  gated = the `$WT` copy on the branch-tip tree, baseline = the
+  base-pinned scratch (#2296); bind immediately before `gh pr ready` /
+  `gh pr merge`.
   (ii) Merge-conflict recovery: LINT legs — gated/baseline = the gate tree
   rebuilt from the post-merge tip (content-identical to the post-merge
   worktree, which carries main's CURRENT lint — the ideal gate point);
   mapped-TEST legs — gated = the post-merge worktree copy, baseline = the
-  repo-root copy (unchanged); bind after conflict resolution + targeted
+  base-pinned scratch (#2296); bind after conflict resolution + targeted
   tests, before `git -C "$WT" push`. (iii) Surgical additive checkout: the payload lands
   in the ROOT tree, so the BASELINE MUST RUN BEFORE the
   `xargs ... git checkout` — a post-checkout "main-side" run would re-lint
   the SAME contaminated tree, a degenerate compare that fails open at
-  exactly the fast-path form; sequence = baseline (root copy, both legs) →
+  exactly the fast-path form; sequence = baseline (LINT: root copy;
+  mapped-TEST: base-pinned scratch, #2296) →
   checkout → gated (root copy, both legs) → set-subtraction verdict → on
   pass, `git add`. The whole sequence runs as ONE BACKGROUND Bash
   invocation — do NOT split it across invocations: the contaminated-root
@@ -12826,8 +12861,9 @@ tests BEFORE anything lands:
   root, a gated false block naming paths outside that set is the symptom
   and extending the set is the fix (the #1154 `docs/` pins are the
   precedent); (c) the mapped invariant-TEST legs keep the branch-tip test
-  copies and the dirty-root baseline (path-(i) test-VERSION drift,
-  fail-safe direction) — the lint/guard family is now Step-5a-synced AND
+  copies (path-(i) test-VERSION drift,
+  fail-safe direction; the baseline runs a base-pinned scratch, #2296) —
+  the lint/guard family is now Step-5a-synced AND
   pre-gate re-synced from origin/main (#1560), so the remaining drift
   window is (α) non-family rules-pin tests (prose-pin skew; symptom: a
   gated-only red in a rules-mentioning test the family does not cover)
@@ -14303,7 +14339,12 @@ Decision tree:
   # ever grow; it costs one ~1 s helper call per surgical landing. Sequencing
   # mirrors the lint legs: TG BASELINE runs BEFORE the checkout (the payload
   # lands in the ROOT tree — a post-checkout "baseline" would be a degenerate
-  # self-compare), TG GATED after; BOTH legs run the ROOT copy.
+  # self-compare), TG GATED after. The GATED leg runs the ROOT copy (the
+  # payload lands in the root tree); the BASELINE runs a detached sparse
+  # scratch cut at origin/main via `step9c_baseline.py mapped-baseline`
+  # (#2296) — payload-free BY CONSTRUCTION and immune to the #2015 stash
+  # cycle, strictly better than the pre-#2296 root-before-checkout baseline
+  # (payload-free only while no concurrent session was mid-commit).
   TG_RC=0; TG_BASE_RC=0; TG_CRASH=no
   : > /tmp/issue-<N>-tg-new.txt
   : > /tmp/issue-<N>-tg-new-nodes.txt
@@ -14321,20 +14362,32 @@ Decision tree:
     # Route TG fixture temp writes onto the data disk (#1408 recipe; #1363:
     # / at 100% killed a gate). Short --basetemp keeps AF_UNIX socket paths
     # under the 108-byte cap. Falls back silently (no TMPDIR, no --basetemp
-    # => byte-identical argv) on pods/GCE with no data disk. Resolution runs
-    # BEFORE the checkout (the baseline leg needs it; vars persist to the
-    # gated leg).
+    # => byte-identical argv) on pods/GCE with no data disk. GATED-leg-only
+    # since #2296: the baseline helper routes its own temp writes via
+    # gate_tmp_root() internally.
     TG_TMPROOT=$(uv run python "$REPO_ROOT/scripts/step9c_baseline.py" tmproot 2>/dev/null || true)
     if [ -n "$TG_TMPROOT" ]; then
       TG_BASETEMP=$(mktemp -d "$TG_TMPROOT/tg-XXXXXX")
     fi
-    ( cd "$REPO_ROOT" && timeout --kill-after=30s ${TG_T}s \
-      env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
-          NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
-          ${TG_TMPROOT:+TMPDIR=$TG_TMPROOT} \
-      uv run pytest "${TG_TESTS[@]}" -q -p no:cacheprovider \
-        ${TG_BASETEMP:+--basetemp=$TG_BASETEMP/b} ) \
-      > /tmp/issue-<N>-tg-baseline.txt 2>&1 || TG_BASE_RC=$?
+    # BASELINE leg — base-pinned scratch (#2296; --base needs a fresh
+    # origin/main: the bounded fetch degrades to staleness on failure, which
+    # only biases the baseline toward MORE reds = toward PASS). rc is DATA on
+    # stdout; a missing/unparseable rc= line fails CLOSED into TG_CRASH.
+    # ${WT:-$REPO_ROOT}: the surgical path may run with no worktree in scope —
+    # a non-sparse cones source degrades to the helper's floor profile.
+    timeout --kill-after=30s 120s git -C "$REPO_ROOT" fetch origin main --quiet || true
+    : > /tmp/issue-<N>-tg-baseline.txt
+    TG_SCRATCH=""
+    TG_BASE_OUT=$(timeout --kill-after=30s $((TG_T + 420))s uv run python \
+      "$REPO_ROOT/scripts/step9c_baseline.py" mapped-baseline \
+      --map-files /tmp/issue-<N>-additive-files.txt --root "$REPO_ROOT" \
+      --cones-from "${WT:-$REPO_ROOT}" --base origin/main --timeout-s "$TG_T" \
+      --out /tmp/issue-<N>-tg-baseline.txt \
+      2>/tmp/issue-<N>-tg-baseline-err.txt) \
+      || TG_CRASH=yes
+    TG_SCRATCH=$(printf '%s\n' "$TG_BASE_OUT" | sed -n 's/^scratch_path=//p' | tail -1)
+    TG_BASE_RC=$(printf '%s\n' "$TG_BASE_OUT" | sed -n 's/^rc=//p' | tail -1)
+    [ -n "${TG_BASE_RC:-}" ] || { TG_BASE_RC=0; TG_CRASH=yes; }   # fail CLOSED
   fi
   # `-C "$REPO_ROOT"` is the repo-root guard's designed deliberate-override
   # (#897): the hook's working-tree-revert detector would bounce the bare
@@ -14415,7 +14468,9 @@ Decision tree:
         | grep -F -f /tmp/issue-<N>-tg-files.txt \
         | grep -vE '^E +assert ' \
         | sed -E 's/at line [0-9]+/at line N/g; s/:[0-9]+:/::/g; s/:[0-9]+([^0-9]|$)/:N\1/g' \
-        | sed -e "s|${WT:-/__eps_no_wt__}|<TREE>|g" -e "s|${REPO_ROOT:-/__eps_no_root__}|<TREE>|g" \
+        | sed -e "s|${TG_SCRATCH:-/__eps_no_scratch__}|<TREE>|g" \
+              -e "s|${WT:-/__eps_no_wt__}|<TREE>|g" \
+              -e "s|${REPO_ROOT:-/__eps_no_root__}|<TREE>|g" \
         | sort -u \
         > "/tmp/issue-<N>-tg-$leg-hits.txt" || true
     done

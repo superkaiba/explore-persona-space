@@ -27,6 +27,10 @@ Subcommands::
                                                      [--no-scratch-fallback]
                                                      [--no-src-shadow] [--json]
     uv run python scripts/step9c_baseline.py tmproot
+    uv run python scripts/step9c_baseline.py mapped-baseline --map-files PATH --root PATH
+                                                     --cones-from PATH --timeout-s S --out PATH
+                                                     [--base origin/main]
+                                                     [--scratch-timeout-s 120]
     uv run python scripts/step9c_baseline.py probe   (--pattern REGEX | --issue N |
                                                       --fleet [--exclude-issue N])
 
@@ -64,6 +68,14 @@ Exit codes (pinned by ``tests/test_step9c_baseline.py``):
              a misconfigured explicit ``EPM_STEP9C_TMPDIR`` override (#1408)
 ``tmproot``
   0          always — prints the resolved gate temp-write root, or nothing
+``mapped-baseline``
+  0          the baseline leg RAN — stdout carries ``scratch_path=<abs>`` +
+             ``rc=<pytest rc>`` (0 green / 1 failures / 124 timeout; rc is DATA —
+             the SKILL gate's ``rc>1 => crash`` arm classifies); an EMPTY
+             selection writes an empty ``--out`` and reports ``rc=0``
+  2          setup/crash-class failure (fail CLOSED): unresolvable ``--base``;
+             missing ``--map-files`` / root / root-venv interpreter; scratch
+             creation, src-shadow probe (#1251), or baseline-selector failure
 ``probe``
   0          CLEAR — no live FOREIGN ``/proc/*/cmdline`` match (safe to launch);
              ``--fleet``: DISTINCT foreign gate-issue count < ``EPM_GATE_FLEET_MAX``
@@ -585,6 +597,25 @@ def _gate_tmp_root_str() -> str | None:
     return None if root is None else str(root)
 
 
+def _killpg_bounded(proc: subprocess.Popen) -> None:
+    """TERM the child's process group, wait ~10 s, KILL survivors; reap the child.
+
+    Shared straggler-reap ladder for the ``start_new_session=True`` pytest
+    children (``run_pytest`` + ``_mapped_baseline_pytest``): a bare kill of the
+    direct child orphans its own pytest workers, so the group is signalled.
+    """
+    try:
+        os.killpg(proc.pid, signal.SIGTERM)
+        deadline = time.monotonic() + 10.0
+        while time.monotonic() < deadline and proc.poll() is None:
+            time.sleep(0.2)
+        if proc.poll() is None:
+            os.killpg(proc.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+    proc.wait()
+
+
 def run_pytest(
     files: Iterable[str],
     cwd: Path,
@@ -651,16 +682,7 @@ def run_pytest(
             return proc.wait(timeout=timeout_s)
         except subprocess.TimeoutExpired:
             _log(f"pytest exceeded {timeout_s}s — killing the process group")
-            try:
-                os.killpg(proc.pid, signal.SIGTERM)
-                deadline = time.monotonic() + 10.0
-                while time.monotonic() < deadline and proc.poll() is None:
-                    time.sleep(0.2)
-                if proc.poll() is None:
-                    os.killpg(proc.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
-            proc.wait()
+            _killpg_bounded(proc)
             raise
     finally:
         if basetemp is not None:
@@ -792,7 +814,7 @@ class _ScratchTree:
 
     parent: Path  # the mkdtemp dir (rmtree target)
     path: Path  # the worktree itself: parent / f"tree-{os.getpid()}"
-    sha: str  # the detached HEAD sha (== the resolved oracle base, #2293)
+    sha: str  # detached HEAD sha (== the caller-pinned base: #2293 oracle / #2296 landing)
 
 
 def _git_bounded(argv: list[str], cwd: Path, timeout_s: float) -> None:
@@ -835,26 +857,31 @@ def _work_root_sparse_cones(wt: Path) -> list[str] | None:
     return lines or None
 
 
-def _scratch_cones(root: Path, wt_cones: list[str]) -> list[str]:
+def _scratch_cones(root: Path, wt_cones: list[str], sha: str | None = None) -> list[str]:
     """Scratch sparse profile = SUPERSET of the gate layout (R-G).
 
     The union of: the work root's actual ``sparse-checkout list`` (per-issue +
     manually-added cones included — the legs the registry alone omits), the
-    HEAD-PINNED ``tests/sparse_cones.txt`` (``git show HEAD:...`` — never the
+    base-PINNED ``tests/sparse_cones.txt`` (``git show <sha>:...`` — never the
     live working-tree file, which is itself decontaminable-classified dirt),
-    and every top-level tracked dir minus SCRATCH_EXCLUDES as the floor.
+    and every top-level tracked dir minus SCRATCH_EXCLUDES as the floor. Both
+    git reads run at *sha* (default ``HEAD``) so the cone profile and the
+    checked-out tree read the SAME commit — a caller pinning an
+    ``origin/main`` base while local ``main`` lags must not derive the
+    profile from the lagging tip (#2296 §5.1).
     """
+    ref = sha or "HEAD"
     dirs = [
         d
-        for d in _git_out(["ls-tree", "--name-only", "-d", "HEAD"], root).splitlines()
+        for d in _git_out(["ls-tree", "--name-only", "-d", ref], root).splitlines()
         if d and d not in SCRATCH_EXCLUDES
     ]
     registry_lines: list[str] = []
-    # Registry absent at HEAD: the floor still applies, no raise.
+    # Registry absent at the base: the floor still applies, no raise.
     with contextlib.suppress(subprocess.CalledProcessError):
         registry_lines = [
             ln.strip()
-            for ln in _git_out(["show", "HEAD:tests/sparse_cones.txt"], root).splitlines()
+            for ln in _git_out(["show", f"{ref}:tests/sparse_cones.txt"], root).splitlines()
             if ln.strip() and not ln.strip().startswith("#")
         ]
     return sorted(set(dirs) | set(registry_lines) | set(wt_cones))
@@ -863,17 +890,22 @@ def _scratch_cones(root: Path, wt_cones: list[str]) -> list[str]:
 def create_scratch_worktree(
     root: Path, wt_cones: list[str], timeout_s: float, *, base_sha: str
 ) -> _ScratchTree:
-    """Materialize a detached SPARSE scratch tree at *base_sha* — the resolved
-    pristine-oracle base (merge-base of the diff base and the work root's HEAD,
-    #2293) — under a fresh tmp dir.
+    """Materialize a detached SPARSE scratch tree at *base_sha* under a fresh tmp dir.
+
+    *base_sha* is the caller-pinned base — the resolved pristine-oracle base
+    (merge-base of the diff base and the work root's HEAD, #2293) for
+    ``compare``, or the resolved LANDING base for ``mapped-baseline`` (#2296).
 
     Sequence mirrors ``new_worktree.sh`` ``_sparse_setup`` (``init --cone``
     FIRST, then ``set``, then populate from ``--no-checkout`` limbo). Profile =
-    ``_scratch_cones(root, wt_cones)`` — a superset of the gate layout (R-G).
-    Any failure tears down partial state and re-raises (the caller maps it to
-    ``_Indeterminate`` — or, on a CLEAN root, degrades to the root oracle,
-    #1408). Bounded per git command by *timeout_s*. The ~1 GB tree lands under
-    ``gate_tmp_root()`` when routing resolves (#1408; default ``/tmp`` else).
+    ``_scratch_cones(root, wt_cones, base_sha)`` — a superset of the gate layout
+    (R-G), read at the SAME commit the tree checks out, so a caller pinning an
+    ``origin/main`` base while local ``main`` lags never derives the profile
+    from the lagging tip (#2296 §5.1). Any failure tears down partial state and
+    re-raises (the caller maps it to ``_Indeterminate`` — or, on a CLEAN root,
+    degrades to the root oracle, #1408). Bounded per git command by
+    *timeout_s*. The ~1 GB tree lands under ``gate_tmp_root()`` when routing
+    resolves (#1408; default ``/tmp`` else).
     """
     parent = Path(tempfile.mkdtemp(prefix="step9c-scratch-", dir=_gate_tmp_dir_arg()))
     tree = parent / f"tree-{os.getpid()}"
@@ -885,7 +917,7 @@ def create_scratch_worktree(
         )
         _git_bounded(["sparse-checkout", "init", "--cone"], cwd=tree, timeout_s=timeout_s)
         _git_bounded(
-            ["sparse-checkout", "set", *_scratch_cones(root, wt_cones)],
+            ["sparse-checkout", "set", *_scratch_cones(root, wt_cones, base_sha)],
             cwd=tree,
             timeout_s=timeout_s,
         )
@@ -2680,6 +2712,215 @@ def cmd_tmproot(args: argparse.Namespace) -> int:
     return 0
 
 
+# --- mapped-baseline (#2296) -------------------------------------------------------
+
+
+def _sigterm_raises(signum: int, frame: object) -> None:  # pragma: no cover - signal path
+    """Convert SIGTERM into SystemExit so ``finally`` teardown runs (#2296).
+
+    The SKILL wraps the ``mapped-baseline`` call in ``timeout --kill-after=30s``,
+    whose FIRST signal is SIGTERM; Python's default disposition would kill the
+    process without running ``finally``, leaking the ~1 GB scratch tree + a
+    stale worktree admin entry until the 7-day ``_sweep_stale_gate_tmp`` reap.
+    143 = 128 + SIGTERM(15).
+    """
+    raise SystemExit(143)
+
+
+def _select_mapped_tests_on_tree(
+    tree: Path, map_files: Path, python_exe: str, timeout_s: float
+) -> list[str]:
+    """Run *tree*'s OWN selector copy against *tree*; return the col-1 dedup test list.
+
+    The scratch analogue of the SKILL gate's baseline SELECTION
+    (``--map-files ... --repo-root <tree>``): which mapped tests exist is
+    judged against the payload-free tree, so a branch-NEW mapped test is
+    absent from the returned set and its gated hits stay NEW by construction
+    (unchanged doctrine). Selector missing / rc != 0 / timeout raises
+    PristineRunError — the caller maps it to the fail-closed exit 2. Paths are
+    returned VERBATIM (repo-relative — ``select_step9c_tests.py`` emits them
+    relative to its work root): the SKILL's NODE-grain subtraction compares
+    ``FAILED tests/<file>::<node>`` strings with NO tree-prefix
+    normalization, so absolutized baseline node ids would subtract nothing
+    and every both-trees red would read NEW (#2296 §4.1 step 5).
+    """
+    sel = tree / "scripts" / "select_step9c_tests.py"
+    if not sel.is_file():
+        raise PristineRunError(f"selector not found on the baseline tree: {sel}")
+    env = thread_capped(os.environ)
+    env.pop("PYTHONPATH", None)  # same trust class as run_pytest: ambient shadow stripped
+    try:
+        proc = subprocess.run(
+            [python_exe, str(sel), "--map-files", str(map_files), "--repo-root", str(tree)],
+            cwd=str(tree),
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=timeout_s,
+        )
+    except (subprocess.TimeoutExpired, OSError) as exc:
+        raise PristineRunError(f"baseline selector failed to run: {exc}") from exc
+    if proc.returncode != 0:
+        raise PristineRunError(
+            f"baseline selector rc={proc.returncode}: {proc.stderr.strip()[-400:]}"
+        )
+    return sorted({ln.split("\t", 1)[0] for ln in proc.stdout.splitlines() if ln.strip()})
+
+
+def _mapped_baseline_pytest(
+    tests: list[str],
+    *,
+    cwd: Path,
+    timeout_s: float,
+    out_path: Path,
+    python_exe: str,
+    pythonpath: str,
+) -> int:
+    """One bounded, thread-capped, TEXT-capturing baseline pytest; returns its rc.
+
+    Mirrors ``run_pytest``'s env / TMPDIR / ``--basetemp`` /
+    ``start_new_session`` + killpg discipline but captures stdout+stderr to
+    *out_path* instead of DEVNULL + junitxml: the Step 10d gate's FILE-grain
+    attribution greps the leg's TEXT (and its NODE-grain subtraction greps the
+    ``FAILED``/``ERROR`` summary lines), so junit-only reporting is useless to
+    it — the reason ``run_pytest`` is not reused verbatim (#2296 §4.1 step 5).
+    Flags mirror the SKILL legs exactly (``-q -p no:cacheprovider`` — NOT
+    ``PYTEST_BASE_FLAGS``, whose ``--tb=no`` would suppress the traceback
+    lines the FILE-grain grep attributes on). *tests* are passed VERBATIM
+    (repo-relative) with ``cwd=<scratch>`` — never absolutized. A timeout
+    returns 124 (DATA for the caller's ``rc>1 => crash`` arm — the same code
+    the old shell ``timeout`` produced) after group-killing stragglers; any
+    other BaseException (e.g. the SIGTERM-raised SystemExit) reaps the group
+    and re-raises.
+    """
+    argv = [python_exe, "-m", "pytest", *tests, "-q", "-p", "no:cacheprovider"]
+    env = thread_capped(os.environ)
+    env.pop("PYTHONPATH", None)  # never let the invoking checkout's src/ shadow the root venv
+    env["PYTHONPATH"] = pythonpath  # the scratch tree's src/ (#1251 shadow, probe-verified)
+    tmp_root = gate_tmp_root()
+    basetemp: Path | None = None
+    if tmp_root is not None:
+        env["TMPDIR"] = str(tmp_root)
+        basetemp = Path(tempfile.mkdtemp(prefix="bt-", dir=str(tmp_root)))
+        argv.append(f"--basetemp={basetemp / 'p'}")
+    try:
+        with open(out_path, "wb") as out_f:
+            proc = subprocess.Popen(
+                argv,
+                cwd=str(cwd),
+                env=env,
+                stdout=out_f,
+                stderr=subprocess.STDOUT,
+                start_new_session=True,
+            )
+            try:
+                return proc.wait(timeout=timeout_s)
+            except subprocess.TimeoutExpired:
+                _log(f"mapped-baseline pytest exceeded {timeout_s}s — killing the process group")
+                _killpg_bounded(proc)
+                return 124
+            except BaseException:
+                _killpg_bounded(proc)
+                raise
+    finally:
+        if basetemp is not None:
+            shutil.rmtree(basetemp, ignore_errors=True)
+
+
+def cmd_mapped_baseline(args: argparse.Namespace) -> int:
+    """Run the Step 10d mapped-invariant BASELINE pytest on a detached sparse
+    scratch tree cut at the resolved ``--base`` — NEVER the shared repo root
+    (#2296).
+
+    The shared root is reverted repo-wide by every fleet commit's pre-commit
+    stash cycle (#2015, ``git checkout -- .`` for the hook window), which
+    killed the root-cwd baseline mid-run on #2288: an empty baseline
+    subtracts nothing, so every gated red read NEW — maximally fail-CLOSED,
+    the opposite of the old "dirt biases toward PASS" residual claim.
+
+    Sequence: resolve ``--base`` to a sha (fail-closed exit 2) ->
+    ``create_scratch_worktree`` (base-pinned sha + cone profile; profile =
+    superset of the ``--cones-from`` work root's layout) ->
+    ``assert_scratch_src_shadow`` (#1251) -> select the baseline test set with
+    the SCRATCH's own selector copy against the scratch -> run pytest with
+    ``cwd=<scratch>``, the ROOT venv interpreter, ``PYTHONPATH=<scratch>/src``
+    and the selector's repo-relative test paths -> teardown in ``finally``
+    (SIGTERM converted to SystemExit so teardown still runs under the
+    caller's ``timeout`` bound).
+
+    stdout protocol (machine-read by the SKILL gate blocks)::
+
+        scratch_path=<abs scratch tree>   # the <TREE> sed cancels this prefix
+        rc=<pytest rc>                    # 0 green / 1 failures / 124 timeout
+
+    Exit 0 whenever the leg RAN (rc is DATA — the caller's ``rc>1 => crash``
+    arm classifies); exit 2 on any setup / selection / shadow-probe failure
+    the caller must treat as crash-class. An EMPTY selection writes an empty
+    ``--out`` and reports ``rc=0`` (nothing to run on the payload-free tree).
+    """
+    signal.signal(signal.SIGTERM, _sigterm_raises)
+    root = Path(args.root).resolve()
+    if not (root / ".git").exists():
+        _log(f"mapped-baseline: --root {root} is not a git checkout (fail-closed)")
+        return 2
+    map_files = Path(args.map_files)
+    if not map_files.is_file():
+        _log(f"mapped-baseline: --map-files {map_files} missing (fail-closed)")
+        return 2
+    out_path = Path(args.out)
+    try:
+        base_sha = _git_out(["rev-parse", "--verify", f"{args.base}^{{commit}}"], root).strip()
+    except subprocess.CalledProcessError as exc:
+        _log(
+            f"mapped-baseline: base {args.base!r} does not resolve in {root} "
+            f"(fail-closed): {(exc.stderr or '').strip()[-200:]}"
+        )
+        return 2
+    try:
+        python_exe = resolve_root_python(root)
+    except ToolMissingError as exc:
+        _log(str(exc))
+        return 2
+    cones_from = Path(args.cones_from)
+    # A missing/non-dir cones source degrades to the _scratch_cones floor
+    # profile (a SUPERSET of every gate layout), never a crash: the surgical
+    # form may run with no worktree in scope (#2296).
+    wt_cones = (_work_root_sparse_cones(cones_from) or []) if cones_from.is_dir() else []
+    try:
+        scratch = create_scratch_worktree(root, wt_cones, args.scratch_timeout_s, base_sha=base_sha)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
+        _log(f"mapped-baseline: scratch creation failed (fail-closed): {exc}")
+        return 2
+    try:
+        assert_scratch_src_shadow(root, scratch.path, args.scratch_timeout_s)
+        tests = _select_mapped_tests_on_tree(
+            scratch.path, map_files, python_exe, args.scratch_timeout_s
+        )
+        if not tests:
+            out_path.write_text("")
+            rc = 0
+        else:
+            rc = _mapped_baseline_pytest(
+                tests,
+                cwd=scratch.path,
+                timeout_s=args.timeout_s,
+                out_path=out_path,
+                python_exe=python_exe,
+                pythonpath=str(scratch.path / "src"),
+            )
+    except (PristineRunError, ToolMissingError) as exc:
+        _log(f"mapped-baseline: {exc}")
+        return 2
+    except OSError as exc:
+        _log(f"mapped-baseline: {exc} (fail-closed)")
+        return 2
+    finally:
+        remove_scratch_worktree(root, scratch)
+    print(f"scratch_path={scratch.path}")
+    print(f"rc={rc}")
+    return 0
+
+
 # --- probe -----------------------------------------------------------------------
 
 # Fleet-arbitration signature union (#1962): the five issue-keyed gate artifact
@@ -2975,6 +3216,44 @@ def build_parser() -> argparse.ArgumentParser:
         help="print the resolved gate temp-write root (empty = no routing); always exit 0",
     )
     p_tmproot.set_defaults(func=cmd_tmproot)
+
+    p_mapped = sub.add_parser(
+        "mapped-baseline",
+        help="Step 10d mapped-invariant BASELINE pytest on a detached sparse scratch tree "
+        "cut at --base (never the shared repo root, #2296); stdout: scratch_path= + rc= "
+        "lines; exit 0 = leg ran (rc is data), 2 = setup failure (crash-class)",
+    )
+    p_mapped.add_argument(
+        "--map-files", required=True, help="newline-delimited changed-path list (own-diff)"
+    )
+    p_mapped.add_argument(
+        "--root", required=True, help="the MAIN repo root (owns the venv + git object db)"
+    )
+    p_mapped.add_argument(
+        "--cones-from",
+        required=True,
+        help="work root whose sparse profile seeds the scratch cone superset "
+        "(non-sparse -> the _scratch_cones floor)",
+    )
+    p_mapped.add_argument(
+        "--base",
+        default="origin/main",
+        help="baseline ref, resolved to a sha up front (unresolvable -> fail-closed exit 2)",
+    )
+    p_mapped.add_argument(
+        "--timeout-s",
+        type=float,
+        required=True,
+        help="pytest bound (the gate's TG_T); a timeout reports rc=124 (crash-class to the caller)",
+    )
+    p_mapped.add_argument(
+        "--scratch-timeout-s",
+        type=float,
+        default=120.0,
+        help="per-git-command + selection + shadow-probe bound (compare's scratch default)",
+    )
+    p_mapped.add_argument("--out", required=True, help="baseline pytest TEXT output path")
+    p_mapped.set_defaults(func=cmd_mapped_baseline)
 
     p_probe = sub.add_parser(
         "probe",

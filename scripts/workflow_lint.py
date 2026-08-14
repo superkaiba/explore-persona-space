@@ -14921,13 +14921,22 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # invisible to it. Cap = landing bytes + ~1 KB (#1753 landing-bytes
     # rule); NOT a licence for regrowth — SKILL.md is the fleet's largest
     # always-loaded surface and the compaction tranche below still stands.
-    # 943_600 — #2136 measured 942,384 B for THIS landing (the Step 5b
+    # 947_450 — #2296 measured 946,230 B for THIS landing (the Step 10d
+    # mapped-invariant BASELINE leg moved off the shared root onto a
+    # base-pinned detached sparse scratch via `step9c_baseline.py
+    # mapped-baseline`: the shared-form + surgical-form baseline blocks,
+    # the TG_SCRATCH sed clause at both <TREE> sites, the fail-closed
+    # rc-parse lines, and the rewritten residual-risk items; +3,846 B
+    # over origin/main's 942,384 B). Cap = measured + ~1.2 KB
+    # (#1753/#1727 landing-bytes rule; headroom 1,220 B <= the 3,000 B
+    # loose-cap hygiene bar).
+    # Prior: 943_600 — #2136 measured 942,384 B for THAT landing (the Step 5b
     # durable-verdict anchor snippet + its per-site opening_kinds table,
     # +1,370 B over main's 941,014 B). Merge-resolved forward from main's
     # 942_000: that value predates this landing and would FAIL it by 384 B,
     # so the higher cap is the correct resolution, not a regrowth licence
     # (headroom 1,216 B, the same ~1 KB the #1753 rule prescribes).
-    "issue/SKILL.md": 943_600,
+    "issue/SKILL.md": 947_450,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,

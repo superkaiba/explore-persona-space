@@ -1404,9 +1404,14 @@ def test_tg_leg_selector_sized_timeout():
     machine-greppable `recommended-timeout-s=` stderr line (gated map,
     /tmp/issue-<N>-tg-map-err.txt) with the fixed 600s (#1646; pre-#1573:
     300s) as the fallback floor; NO fixed `--kill-after=30s 300s` remains as a TG pytest
-    bound. The surgical pass-arm `git push origin main` 300s bound is a
-    DIFFERENT command — exempted by its `git push` CONTENT, never by line
-    number (it may move)."""
+    bound. Since #2296 the BASELINE leg is the `mapped-baseline` helper call:
+    its outer wrapper carries the TG_T-derived `$((TG_T + 420))s` bound (+420
+    for scratch materialization + selection + teardown) and threads the raw
+    TG_T through `--timeout-s` as the inner pytest bound, so exactly ONE
+    direct `${TG_T}s` bound remains (the gated leg). The surgical pass-arm
+    `git push origin main` 300s bound is a DIFFERENT command — exempted by
+    its `git push` CONTENT, never by line number (it may move); the bounded
+    `git ... fetch origin main` 120s line is likewise content-exempted."""
     text = _skill_text()
     for block in _tg_blocks(text):
         assert "grep -oE 'recommended-timeout-s=[0-9]+'" in block, (
@@ -1414,8 +1419,15 @@ def test_tg_leg_selector_sized_timeout():
         )
         assert "/tmp/issue-<N>-tg-map-err.txt" in block
         assert "TG_T=600" in block, "the 600s floor fallback must be present (#1646)"
-        assert block.count("timeout --kill-after=30s ${TG_T}s") == 2, (
-            "BOTH pytest legs (baseline + gated) must carry the sized bound"
+        assert block.count("timeout --kill-after=30s ${TG_T}s") == 1, (
+            "the GATED pytest leg carries the sized bound (the baseline leg is "
+            "the #2296 mapped-baseline helper, bounded below)"
+        )
+        assert "timeout --kill-after=30s $((TG_T + 420))s" in block, (
+            "the #2296 baseline helper call must carry the TG_T-derived +420s bound"
+        )
+        assert '--timeout-s "$TG_T"' in block, (
+            "the baseline helper must thread the raw TG_T as its inner pytest bound"
         )
         for line in block.splitlines():
             for fixed in ("--kill-after=30s 300s", "--kill-after=30s 600s"):
