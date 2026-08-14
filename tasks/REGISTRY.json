@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2279,
+  "highest_id": 2280,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9891,6 +9891,13 @@
       "path": "tasks/archived/228",
       "status": "archived",
       "title": "Output-space distance between persona system prompts predicts cross-prompt marker leakage on convergence-trained Qwen-2.5-7B, while residual-stream similarity instead tracks within-source training trajectories (MODERATE confidence)"
+    },
+    "2280": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2280",
+      "status": "proposed",
+      "title": "Diagnose selective SIGTERM (rc=143) killer of in-session foreground python children on the shared VM"
     },
     "229": {
       "has_clean_result": false,
