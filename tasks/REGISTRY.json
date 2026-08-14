@@ -9958,8 +9958,8 @@
     "2289": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2289",
-      "status": "running",
+      "path": "tasks/completed/2289",
+      "status": "completed",
       "title": "#2223's merged r2/r3/r5 scripts red 5 fleet-wide gate nodes on origin/main \u2014 incl. the no-flags workflow_lint bundle"
     },
     "229": {
