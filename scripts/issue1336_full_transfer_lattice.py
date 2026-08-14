@@ -921,7 +921,8 @@ def fig_aggregate(D: dict) -> Path:
     # Source self-map: its OWN S→S column at the left edge of each source block
     # (user call 2026-08-14) — never overlaid across the transfer pairs. Median
     # triangle + every corpus overplotted, matching the tier convention.
-    for stage, xs in X_SELF.items():
+    self_pts: list[tuple[int, float]] = []
+    for stage, xs in sorted(X_SELF.items(), key=lambda kv: kv[1]):
         vals = [
             SOURCE_SELF[(stage, f, c)]
             for (f, c) in SURFACES
@@ -931,24 +932,22 @@ def fig_aggregate(D: dict) -> Path:
             continue  # off-30 layers: base's selfmap battery never ran — a gap
         for v in vals:
             ax.plot([xs], [v], marker="o", ms=3.2, alpha=0.35, color=SOURCE_SELF_COLOR)
-        ax.plot(
-            [xs],
-            [float(np.median(vals))],
-            marker="^",
-            ms=6.5,
-            ls="none",
-            color=SOURCE_SELF_COLOR,
-            zorder=6,
-        )
+        self_pts.append((xs, float(np.median(vals))))
+    # ONE dotted line through the self columns (user call 2026-08-14), so the
+    # source ceiling reads as a trajectory across the ladder. The line spans the
+    # transfer columns between them — the self columns are non-adjacent by
+    # construction; a stage with no measured self map is simply absent from the
+    # point list, never interpolated onto the line.
     ax.plot(
-        [],
-        [],
+        [p[0] for p in self_pts],
+        [p[1] for p in self_pts],
         marker="^",
         ms=6.5,
         lw=1.5,
         ls=(0, (1, 1.6)),
         color=SOURCE_SELF_COLOR,
         label=SOURCE_SELF_LABEL,
+        zorder=6,
     )
 
     for name, lo, hi in SLOT_BLOCKS:
@@ -1225,13 +1224,14 @@ def fig_percorpus(D: dict) -> Path:
         )
         # Source self-map in its OWN S→S column (user call 2026-08-14); this
         # panel's single per-corpus value, one triangle per source block.
-        for stage, xs in X_SELF.items():
-            v = SOURCE_SELF.get((stage, fmt, corpus))
-            if v is not None:
-                ax.plot([xs], [v], marker="^", ms=5, ls="none", color=SOURCE_SELF_COLOR)
+        spts = sorted(
+            (xs, SOURCE_SELF[(stage, fmt, corpus)])
+            for stage, xs in X_SELF.items()
+            if (stage, fmt, corpus) in SOURCE_SELF
+        )
         ax.plot(
-            [],
-            [],
+            [p[0] for p in spts],
+            [p[1] for p in spts],
             marker="^",
             ms=5,
             lw=1.3,
