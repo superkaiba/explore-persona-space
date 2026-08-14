@@ -10070,8 +10070,8 @@
     "2303": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2303",
-      "status": "proposed",
+      "path": "tasks/planning/2303",
+      "status": "planning",
       "title": "/issue Step 5a spec-freshness sync: sync synced-spec data dependencies + fail loud on a failed sync commit"
     },
     "231": {
