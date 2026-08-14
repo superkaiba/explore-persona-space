@@ -1,9 +1,12 @@
 {
-  "commit": "597bdca8",
-  "render_id": "80699cfcd2ee4ca1",
-  "git_commit": "597bdca8",
-  "git_dirty": false,
-  "created": "2026-08-14T07:37:40Z",
+  "commit": "62f3b43c+dirty",
+  "render_id": "e4a2acd146294cbc",
+  "git_commit": "62f3b43c",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2223_analyzer_figs.py"
+  ],
+  "created": "2026-08-14T10:14:38Z",
   "figsize": [
     7.0,
     4.2
@@ -12,210 +15,210 @@
     {
       "Turn position": 1.0,
       "Assistant-axis projection\n(pooled over domains)": -19.52617616146803,
-      "series": "A0 (uncapped)",
+      "series": "Uncapped",
       "_kind": "line",
       "_group": 0
     },
     {
       "Turn position": 2.0,
       "Assistant-axis projection\n(pooled over domains)": -26.213262028694153,
-      "series": "A0 (uncapped)",
+      "series": "Uncapped",
       "_kind": "line",
       "_group": 0
     },
     {
       "Turn position": 3.0,
       "Assistant-axis projection\n(pooled over domains)": -27.832577341794966,
-      "series": "A0 (uncapped)",
+      "series": "Uncapped",
       "_kind": "line",
       "_group": 0
     },
     {
       "Turn position": 4.0,
       "Assistant-axis projection\n(pooled over domains)": -28.821219015361077,
-      "series": "A0 (uncapped)",
+      "series": "Uncapped",
       "_kind": "line",
       "_group": 0
     },
     {
       "Turn position": 5.0,
       "Assistant-axis projection\n(pooled over domains)": -28.898236459144805,
-      "series": "A0 (uncapped)",
+      "series": "Uncapped",
       "_kind": "line",
       "_group": 0
     },
     {
       "Turn position": 6.0,
       "Assistant-axis projection\n(pooled over domains)": -28.45082101795482,
-      "series": "A0 (uncapped)",
+      "series": "Uncapped",
       "_kind": "line",
       "_group": 0
     },
     {
       "Turn position": 7.0,
       "Assistant-axis projection\n(pooled over domains)": -28.879206991499398,
-      "series": "A0 (uncapped)",
+      "series": "Uncapped",
       "_kind": "line",
       "_group": 0
     },
     {
       "Turn position": 8.0,
       "Assistant-axis projection\n(pooled over domains)": -29.3717155418396,
-      "series": "A0 (uncapped)",
+      "series": "Uncapped",
       "_kind": "line",
       "_group": 0
     },
     {
       "Turn position": 9.0,
       "Assistant-axis projection\n(pooled over domains)": -29.70173567533493,
-      "series": "A0 (uncapped)",
+      "series": "Uncapped",
       "_kind": "line",
       "_group": 0
     },
     {
       "Turn position": 10.0,
       "Assistant-axis projection\n(pooled over domains)": -29.663257818955643,
-      "series": "A0 (uncapped)",
+      "series": "Uncapped",
       "_kind": "line",
       "_group": 0
     },
     {
       "Turn position": 11.0,
       "Assistant-axis projection\n(pooled over domains)": -30.551615431502057,
-      "series": "A0 (uncapped)",
+      "series": "Uncapped",
       "_kind": "line",
       "_group": 0
     },
     {
       "Turn position": 12.0,
       "Assistant-axis projection\n(pooled over domains)": -30.6776465177536,
-      "series": "A0 (uncapped)",
+      "series": "Uncapped",
       "_kind": "line",
       "_group": 0
     },
     {
       "Turn position": 13.0,
       "Assistant-axis projection\n(pooled over domains)": -30.653339224346613,
-      "series": "A0 (uncapped)",
+      "series": "Uncapped",
       "_kind": "line",
       "_group": 0
     },
     {
       "Turn position": 14.0,
       "Assistant-axis projection\n(pooled over domains)": -29.744956392990915,
-      "series": "A0 (uncapped)",
+      "series": "Uncapped",
       "_kind": "line",
       "_group": 0
     },
     {
       "Turn position": 15.0,
       "Assistant-axis projection\n(pooled over domains)": -32.91552989823477,
-      "series": "A0 (uncapped)",
+      "series": "Uncapped",
       "_kind": "line",
       "_group": 0
     },
     {
       "Turn position": 1.0,
       "Assistant-axis projection\n(pooled over domains)": -15.534816571623088,
-      "series": "A1 (every-token cap)",
+      "series": "Every-token cap",
       "_kind": "line",
       "_group": 1
     },
     {
       "Turn position": 2.0,
       "Assistant-axis projection\n(pooled over domains)": -20.123261444568634,
-      "series": "A1 (every-token cap)",
+      "series": "Every-token cap",
       "_kind": "line",
       "_group": 1
     },
     {
       "Turn position": 3.0,
       "Assistant-axis projection\n(pooled over domains)": -20.92824633359909,
-      "series": "A1 (every-token cap)",
+      "series": "Every-token cap",
       "_kind": "line",
       "_group": 1
     },
     {
       "Turn position": 4.0,
       "Assistant-axis projection\n(pooled over domains)": -21.12828858375549,
-      "series": "A1 (every-token cap)",
+      "series": "Every-token cap",
       "_kind": "line",
       "_group": 1
     },
     {
       "Turn position": 5.0,
       "Assistant-axis projection\n(pooled over domains)": -21.214150422781557,
-      "series": "A1 (every-token cap)",
+      "series": "Every-token cap",
       "_kind": "line",
       "_group": 1
     },
     {
       "Turn position": 6.0,
       "Assistant-axis projection\n(pooled over domains)": -21.238986578969023,
-      "series": "A1 (every-token cap)",
+      "series": "Every-token cap",
       "_kind": "line",
       "_group": 1
     },
     {
       "Turn position": 7.0,
       "Assistant-axis projection\n(pooled over domains)": -21.734992771893292,
-      "series": "A1 (every-token cap)",
+      "series": "Every-token cap",
       "_kind": "line",
       "_group": 1
     },
     {
       "Turn position": 8.0,
       "Assistant-axis projection\n(pooled over domains)": -22.48739826766244,
-      "series": "A1 (every-token cap)",
+      "series": "Every-token cap",
       "_kind": "line",
       "_group": 1
     },
     {
       "Turn position": 9.0,
       "Assistant-axis projection\n(pooled over domains)": -22.782649918935185,
-      "series": "A1 (every-token cap)",
+      "series": "Every-token cap",
       "_kind": "line",
       "_group": 1
     },
     {
       "Turn position": 10.0,
       "Assistant-axis projection\n(pooled over domains)": -23.15694359486753,
-      "series": "A1 (every-token cap)",
+      "series": "Every-token cap",
       "_kind": "line",
       "_group": 1
     },
     {
       "Turn position": 11.0,
       "Assistant-axis projection\n(pooled over domains)": -23.219352010091146,
-      "series": "A1 (every-token cap)",
+      "series": "Every-token cap",
       "_kind": "line",
       "_group": 1
     },
     {
       "Turn position": 12.0,
       "Assistant-axis projection\n(pooled over domains)": -23.45136588619601,
-      "series": "A1 (every-token cap)",
+      "series": "Every-token cap",
       "_kind": "line",
       "_group": 1
     },
     {
       "Turn position": 13.0,
       "Assistant-axis projection\n(pooled over domains)": -23.8405298700138,
-      "series": "A1 (every-token cap)",
+      "series": "Every-token cap",
       "_kind": "line",
       "_group": 1
     },
     {
       "Turn position": 14.0,
       "Assistant-axis projection\n(pooled over domains)": -23.597137641906738,
-      "series": "A1 (every-token cap)",
+      "series": "Every-token cap",
       "_kind": "line",
       "_group": 1
     },
     {
       "Turn position": 15.0,
       "Assistant-axis projection\n(pooled over domains)": -23.754577561030313,
-      "series": "A1 (every-token cap)",
+      "series": "Every-token cap",
       "_kind": "line",
       "_group": 1
     }
@@ -231,8 +234,8 @@
         "xlabel": "Turn position",
         "ylabel": "Assistant-axis projection\n(pooled over domains)",
         "legend_labels": [
-          "A0 (uncapped)",
-          "A1 (every-token cap)"
+          "Uncapped",
+          "Every-token cap"
         ],
         "xticklabels": [
           "0",
@@ -257,8 +260,8 @@
       }
     ],
     "series": [
-      "A0 (uncapped)",
-      "A1 (every-token cap)"
+      "Uncapped",
+      "Every-token cap"
     ]
   },
   "formats_written": [
