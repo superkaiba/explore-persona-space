@@ -1,7 +1,7 @@
 ---
-title: The Llama Tülu ladder's DPO→RLVR step needs at most a rotation of the linear
-  context→answer map on seven of eight corpora, and no coordinate change on four of
-  eight (raw) / six of eight (recal companion) (MODERATE confidence)
+title: 'The DPO→RLVR step of the Llama Tülu ladder barely moves the linear context→answer
+  map: at most a rotation on seven of eight corpora, and the smallest pooled R² step
+  on the ladder (MODERATE confidence)'
 kind: experiment
 tags:
 - followup-manual

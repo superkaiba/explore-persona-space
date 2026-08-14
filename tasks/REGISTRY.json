@@ -2624,7 +2624,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/1336",
       "status": "interpreting",
-      "title": "The Llama T\u00fclu ladder's DPO\u2192RLVR step needs at most a rotation of the linear context\u2192answer map on seven of eight corpora, and no coordinate change on four of eight (raw) / six of eight (recal companion) (MODERATE confidence)"
+      "title": "The DPO\u2192RLVR step of the Llama T\u00fclu ladder barely moves the linear context\u2192answer map: at most a rotation on seven of eight corpora, and the smallest pooled R\u00b2 step on the ladder (MODERATE confidence)"
     },
     "1337": {
       "has_clean_result": false,
