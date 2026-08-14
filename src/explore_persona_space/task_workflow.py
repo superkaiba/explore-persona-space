@@ -6697,6 +6697,58 @@ def _jsonl_lines_subsequence(husk_bytes: bytes, live_bytes: bytes) -> bool:
     return all(any(h == line for line in live_iter) for h in husk_lines)
 
 
+def _husk_file_symlink_covered(hp: Path, lp: Path, live: Path, husk_resolved: Path) -> bool:
+    """True iff the husk FILE-symlink entry ``hp`` is covered by the live
+    dir (#2138); False == unique. Routes, in order: (1) the live
+    counterpart ``lp`` is a symlink with an identical ``os.readlink()``
+    target (the pre-existing rule); (2) the fully-resolved target stays
+    INSIDE the husk and its husk-relative path also exists in the live
+    dir; (3) the in-husk resolved bytes are covered by the live
+    counterpart at the same relative path under the regular-file rules.
+    Fail-safe: a dangling, husk-escaping, looping, or non-regular-target
+    symlink returns False. Route (2) classifies the SYMLINK entry ONLY --
+    it never suppresses the walk's independent comparison of the target
+    file itself (``resolve()`` strips symlink components, so every
+    intermediate dir on the resolved path is REAL and ``os.walk`` reaches
+    the target file; a diverged target is that entry's own unique verdict
+    and escalates the husk regardless of this route)."""
+    if lp.is_symlink() and os.readlink(hp) == os.readlink(lp):
+        return True  # existing rule: identical pointer on both sides
+    # NEW (#2138): a FILE-symlink may still be safe when its resolved
+    # content is carried by the live dir. Fail-safe gates first:
+    # hp.is_file() follows the chain -- False for dangling / non-regular
+    # targets; the resolved path must stay INSIDE the husk dir.
+    if not hp.is_file():
+        return False
+    try:
+        resolved = hp.resolve(strict=True)
+    except (OSError, RuntimeError):
+        # RuntimeError: py311 raises it for symlink LOOPS at
+        # resolve(strict=True) (unified into OSError only in 3.13);
+        # unreachable in practice -- hp.is_file() screens loops (ELOOP is
+        # in pathlib's ignored errnos) -- kept as a belt against
+        # resolve-time races. Either way: unique.
+        return False
+    if not resolved.is_relative_to(husk_resolved):
+        return False  # husk-escaping target: byte coverage never rescues it
+    target_rel = resolved.relative_to(husk_resolved)
+    # (b) pointer-carries-no-data: the target path also exists in the live
+    # dir (the walk verifies husk/<target_rel> against live/<target_rel>
+    # independently -- see the docstring's non-suppression clause).
+    if (live / target_rel).exists():
+        return True
+    # (a) same-rel-path content coverage: resolved bytes covered by the
+    # live counterpart under the regular-file rules.
+    if lp.is_file():
+        sym_bytes = hp.read_bytes()  # follows the chain
+        lp_bytes = lp.read_bytes()
+        if lp_bytes.startswith(sym_bytes):
+            return True
+        if hp.suffix == ".jsonl" and _jsonl_lines_subsequence(sym_bytes, lp_bytes):
+            return True
+    return False
+
+
 def _husk_unique_content(husk: Path, live: Path) -> list[str]:
     """Entries under ``husk`` NOT covered by ``live``. Empty list == safe
     subset (every husk entry is redundant with the live dir; nothing is
@@ -6707,8 +6759,22 @@ def _husk_unique_content(husk: Path, live: Path) -> list[str]:
     symlink-to-file in ``filenames`` — BOTH are classified here so a
     dir-symlink can never reach ``rmtree`` unverified):
 
-    - symlink (dir OR file): safe iff the live counterpart is a symlink
-      with an identical ``os.readlink()`` target; else unique.
+    - symlink to a DIRECTORY: safe iff the live counterpart is a symlink
+      with an identical ``os.readlink()`` target; else unique. The walk
+      never traverses INTO a symlinked dir, so its contents are never
+      subset-verified — content-based leniency for dir-symlinks would be
+      unsound; readlink equality stays their only safe route.
+    - symlink to a FILE: safe via ANY of (1) the live counterpart is a
+      symlink with an identical ``os.readlink()`` target; (2) the target,
+      fully resolved via ``resolve(strict=True)``, stays INSIDE the husk
+      and the same husk-relative path also exists in the live dir (#2138:
+      the pointer itself carries no data; the walk still compares the
+      husk's target file against the live counterpart independently, so a
+      diverged target stays unique and escalates the husk); (3) the
+      resolved target stays INSIDE the husk and the resolved bytes are
+      covered by the live counterpart at the SAME relative path under the
+      regular-file rules below. A dangling, husk-escaping, looping, or
+      non-regular-target symlink is unique (fail-safe).
     - regular file: safe iff a live counterpart file exists AND (bytes
       identical OR husk bytes are a byte-prefix of live bytes OR — for
       ``.jsonl`` files — husk lines are an ordered subsequence of live
@@ -6720,6 +6786,7 @@ def _husk_unique_content(husk: Path, live: Path) -> list[str]:
       under tasks/).
     """
     unique: list[str] = []
+    husk_resolved = husk.resolve()
     for root, dirnames, filenames in os.walk(husk, followlinks=False):
         root_p = Path(root)
         rel_root = root_p.relative_to(husk)
@@ -6737,9 +6804,8 @@ def _husk_unique_content(husk: Path, live: Path) -> list[str]:
             rel = rel_root / name
             lp = live / rel
             if hp.is_symlink():
-                if lp.is_symlink() and os.readlink(hp) == os.readlink(lp):
-                    continue
-                unique.append(str(rel))
+                if not _husk_file_symlink_covered(hp, lp, live, husk_resolved):
+                    unique.append(str(rel))
                 continue
             if not hp.is_file():
                 unique.append(str(rel))  # fifo/socket/device — never covered
