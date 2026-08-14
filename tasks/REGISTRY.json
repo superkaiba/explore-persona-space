@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2281,
+  "highest_id": 2282,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9905,6 +9905,13 @@
       "path": "tasks/planning/2281",
       "status": "planning",
       "title": "verify_task_body: re.IGNORECASE + .lower() crashes the verifier on Unicode long-s (ValueError at :16820)"
+    },
+    "2282": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2282",
+      "status": "proposed",
+      "title": "workflow-fix: land the shared fit-core memory chunk cap on main + decide PR #1717 disposition"
     },
     "229": {
       "has_clean_result": false,
