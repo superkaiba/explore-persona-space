@@ -130,7 +130,7 @@ Plotted: same convention as above for Qwen2.5-7B-Instruct with the in-house laye
 
 Late-window means: therapy 8.9 (highest of the four), philosophy 3.1 (lowest), coding 7.3, writing 4.7. With one drift domain at each extreme, no axis orientation satisfies the ordering — the failure is sign-robust, persists on the published-persona subset (therapy 9.2, still highest), and survives excluding the 7 CJK-intruded rows.
 
-This leg changes model AND axis at once, so it cannot localize whether the paper's effect fails at 7B scale or the in-house axis measures a different direction; the indeterminate alpha-band check leaves the axis unvalidated. Per the plan's stop gate, this verdict stopped the 11-arm 7B stabilization grid.
+This leg changes model AND axis at once, so it cannot localize whether the paper's effect fails at 7B scale or the in-house axis measures a different direction; the indeterminate alpha-band check leaves the axis unvalidated. Per the plan's stop gate, this verdict stopped the 11-arm 7B stabilization grid (gating is per-leg: the 32B success does not re-open the 7B grid).
 
 ### Every-token capping attenuates but does not eliminate the 32B drift
 
