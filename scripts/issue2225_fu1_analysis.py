@@ -107,6 +107,16 @@ KIND_OFFSET = {"h1_dose": 0, "h2_vs_C": 1, "h2_vs_A": 2, "h3_dose_dod": 3}
 # DoD (primary Q-RQ; cross-layer N-RQ disclosed).
 FU2_H3_FU1_PAIRS = (("N", "J"), ("N", "L"), ("Q", "K"), ("Q", "M"))
 FU2_H4_DOD_PAIRS = (("Q", "RQ"), ("N", "RQ"))
+# Conditional W2b read (plan v13 §4.3, TRIGGERED 2026-08-14): the matched random
+# control RN@L14 all-token materializes on sycophancy ONLY at the W2b window —
+# the N arm's selected coef (3.0) plus one lower neighbor (1.5). Files for the
+# other registry-grid coefs (0.25/0.75) will NEVER exist, so every W2b consumer
+# is file-presence-gated, and the dose window is FIXED at (1.5, 3.0) for BOTH
+# arms: matching N's window to RN's makes the two dose windows IDENTICAL —
+# unlike H4(a), whose window is [grid-min, selected coef] per arm.
+FU2_W2B_PRE, FU2_W2B_RND = "N", "RN"
+FU2_W2B_DATASET = "sycophancy"
+FU2_W2B_WINDOW = (1.5, 3.0)
 FU2_KIND_OFFSET = {
     "h1_dose": 0,
     "h2_vs_G": 1,
@@ -117,6 +127,8 @@ FU2_KIND_OFFSET = {
     "h3_vs_M": 6,
     "h4_dod": 7,
     "h4_dod_xlayer": 8,
+    "h4_dod_w2b": 9,  # W2b matched-window DoD (conditional; sycophancy)
+    "h4_level_w2b": 10,  # W2b matched-dose LEVEL read (conditional; sycophancy)
 }
 # G's banked all-token dose curve vs RQ's near-exact effective-dose matches
 # (plan §3 H4(b), descriptive): fu2 coef -> parent G coef at matched α_eff.
@@ -432,6 +444,77 @@ def run_fu_mmlu(args) -> Path:
 # ── phase: selection ──────────────────────────────────────────────────────────
 
 
+def _selection_curve(eval_root: Path, mmlu: dict, config: str, dataset: str, trait, coefs) -> dict:
+    """Per-coefficient selection-curve rows for one (config, dataset) arm
+    (extracted from the main loop verbatim — value-identical outputs)."""
+    curve = {}
+    for coef in coefs:
+        tag = f"{config}__{dataset}__c{coef}"
+        trait_arm = pa._load_json(pa._arm_path(eval_root, "trait_scores", config, dataset, coef))
+        coh_arm = pa._load_json(pa._arm_path(eval_root, "coherence", config, dataset, coef))
+        tb = trait_arm["traits"][trait]
+        curve[str(coef)] = {
+            "trait_mean": tb["model_mean"],
+            "rate_gt50": tb["rate_gt50"],
+            "coherence_mean": pa._arm_coherence_mean(coh_arm),
+            "mmlu_acc": mmlu.get(tag, {}).get("mmlu_acc"),
+            "n_api_refusal": tb["accounting"]["n_api_refusal"],
+        }
+    return curve
+
+
+def _fu2_conditional_selection(args, grids, mmlu, selection) -> None:
+    """Fold the conditional fu2 arm(s) (RN — plan §4.3) into selection,
+    tolerating their PARTIAL grids.
+
+    Conditional cells materialize per (dataset, coef) only when their trigger
+    fires: RN_sycophancy (W2b) exists ONLY at the FU2_W2B_WINDOW coefs — the
+    other registry-grid coefs' files will NEVER land — so missing coef files
+    are SKIPPED here for the conditional specs alone (wave-1 configs keep the
+    main loop's fail-loud full-grid contract). A (config, dataset) with zero
+    landed coefs is skipped with a log line, so pre-harvest re-runs leave
+    selection.json byte-identical.
+    """
+    train = pa._train()
+    eval_root = Path(args.eval_root)
+    for spec in _fu_train().FU2_CONDITIONAL_CONFIGS:
+        for dataset in _selected_datasets(args, spec):
+            trait = train.STEERED_TRAIT[dataset]
+            landed = [
+                coef
+                for coef in grids[spec.config]
+                if pa._arm_path(eval_root, "trait_scores", spec.config, dataset, coef).exists()
+                and pa._arm_path(eval_root, "coherence", spec.config, dataset, coef).exists()
+            ]
+            if not landed:
+                print(
+                    f"[{_ROUND}-selection] conditional {spec.config}_{dataset}: "
+                    "no landed cells — skipped",
+                    flush=True,
+                )
+                continue
+            curve = _selection_curve(eval_root, mmlu, spec.config, dataset, trait, landed)
+            selected = pa.matched_coherence_select(
+                {float(c): v["coherence_mean"] for c, v in curve.items()}
+            )
+            note = None if selected is not None else "NO coefficient reaches coherence >= 80"
+            selection[f"{spec.config}_{dataset}"] = {
+                "config": spec.config,
+                "dataset": dataset,
+                "steered_trait": trait,
+                "grid": [float(c) for c in landed],
+                "selected_coef": selected,
+                "curve": curve,
+                "conditional_partial_grid": (
+                    f"conditional arm (plan §4.3): curve covers ONLY the landed coefs "
+                    f"{[float(c) for c in landed]} of the registry grid "
+                    f"{[float(c) for c in grids[spec.config]]} — the missing coefs "
+                    "never trigger and their eval files never exist"
+                ),
+                **({"note": note} if note else {}),
+            }
+
+
 def run_fu_selection(args) -> Path:
     train = pa._train()
     eval_root = Path(args.eval_root)
@@ -442,23 +525,9 @@ def run_fu_selection(args) -> Path:
     for spec in _selected_specs(args):
         for dataset in _selected_datasets(args, spec):
             trait = train.STEERED_TRAIT[dataset]
-            curve = {}
-            for coef in grids[spec.config]:
-                tag = f"{spec.config}__{dataset}__c{coef}"
-                trait_arm = pa._load_json(
-                    pa._arm_path(eval_root, "trait_scores", spec.config, dataset, coef)
-                )
-                coh_arm = pa._load_json(
-                    pa._arm_path(eval_root, "coherence", spec.config, dataset, coef)
-                )
-                tb = trait_arm["traits"][trait]
-                curve[str(coef)] = {
-                    "trait_mean": tb["model_mean"],
-                    "rate_gt50": tb["rate_gt50"],
-                    "coherence_mean": pa._arm_coherence_mean(coh_arm),
-                    "mmlu_acc": mmlu.get(tag, {}).get("mmlu_acc"),
-                    "n_api_refusal": tb["accounting"]["n_api_refusal"],
-                }
+            curve = _selection_curve(
+                eval_root, mmlu, spec.config, dataset, trait, grids[spec.config]
+            )
             selected = pa.matched_coherence_select(
                 {float(c): v["coherence_mean"] for c, v in curve.items()}
             )
@@ -472,6 +541,10 @@ def run_fu_selection(args) -> Path:
                 "curve": curve,
                 **({"note": note} if note else {}),
             }
+    if _is_fu2() and not args.configs:
+        # Conditional RN (plan §4.3): fold in LANDED conditional cells only —
+        # subset (--configs) smoke runs skip the conditional arm entirely.
+        _fu2_conditional_selection(args, grids, mmlu, selection)
     out = eval_root / "analysis" / "selection.json"
     pa._atomic_write_json(
         out,
@@ -747,6 +820,104 @@ def run_fu_contrasts(args) -> Path:
     return out
 
 
+def fu2_w2b_contrasts(fu_root: Path, n_boot: int, not_computable: list[str]) -> dict[str, dict]:
+    """The conditional H4(c) W2b direction-specificity reads (plan v13 §4.3).
+
+    Both reads are gated on the RN sycophancy W2b-window eval files existing
+    (the cells materialize only after the W2b trigger fires): when any is
+    absent, one log line + both keys recorded in ``not_computable`` and an
+    empty dict returned — an F5 re-run BEFORE the W2b harvest exits 0.
+
+    (1) key ``N_vs_RN_sycophancy`` (kind ``h4_dod_w2b``): MATCHED-WINDOW dose
+        DoD — dose_arm = score(@3.0) − score(@1.5) per question;
+        Δ = dose(N) − dose(RN), question-paired via the same
+        ``_paired_contrast`` + inherited-fn machinery as H4(a). The window is
+        [1.5, 3.0] for BOTH arms because RN exists ONLY at the W2b "selected
+        coef ± one neighbor" cells; matching N's window to it makes the two
+        dose windows IDENTICAL — unlike H4(a)'s per-arm [grid-min, selected]
+        window (see FU2_W2B_WINDOW).
+    (2) key ``N_vs_RN_sycophancy_level`` (kind ``h4_level_w2b``): secondary
+        matched-dose LEVEL read — trait mean N@3.0 vs RN@3.0, same paired
+        machinery, no dose subtraction (the direct "does random do the same
+        at the same dose" read; no selection-inherited flavour — the dose is
+        fixed by the window, not selected).
+    """
+    import numpy as np
+
+    train = pa._train()
+    pre_cfg, rnd_cfg, dataset = FU2_W2B_PRE, FU2_W2B_RND, FU2_W2B_DATASET
+    trait = train.STEERED_TRAIT[dataset]
+    c_lo, c_hi = (float(c) for c in FU2_W2B_WINDOW)
+    key = f"{pre_cfg}_vs_{rnd_cfg}_{dataset}"
+    missing = [
+        p
+        for c in (c_lo, c_hi)
+        for p in (
+            pa._arm_path(fu_root, "trait_scores", rnd_cfg, dataset, c),
+            pa._arm_path(fu_root, "coherence", rnd_cfg, dataset, c),
+        )
+        if not p.exists()
+    ]
+    if missing:
+        print(
+            f"[fu2-contrasts] W2b cells not yet landed ({len(missing)} files, "
+            f"first: {missing[0].name}) — h4(c) skipped",
+            flush=True,
+        )
+        not_computable.append(f"h4_dod_w2b:{key} (W2b cells not yet landed)")
+        not_computable.append(f"h4_level_w2b:{key}_level (W2b cells not yet landed)")
+        return {}
+
+    def _qq(config, coef):
+        arm = pa._load_json(pa._arm_path(fu_root, "trait_scores", config, dataset, coef))
+        return pa._per_question_means(arm["traits"][trait])
+
+    q_pre_hi, q_pre_lo = _qq(pre_cfg, c_hi), _qq(pre_cfg, c_lo)
+    q_rnd_hi, q_rnd_lo = _qq(rnd_cfg, c_hi), _qq(rnd_cfg, c_lo)
+    dose_pre = {q: q_pre_hi[q] - q_pre_lo[q] for q in q_pre_hi}
+    dose_rnd = {q: q_rnd_hi[q] - q_rnd_lo[q] for q in q_rnd_hi}
+    n_q = len(dose_pre)
+    window = [c_lo, c_hi]
+
+    def _window_dose_fn(config):
+        # H4(a)'s `_dose_inherited_fn` shape, restricted to the SHARED window
+        # (a full-grid curve would demand RN files that never exist).
+        arm = pa._arm_curve(fu_root, config, dataset, window, trait, n_q)
+        arm_lo = pa._arm_curve(fu_root, config, dataset, [c_lo], trait, n_q)
+
+        def fn(idx):
+            return pa.selection_inherited_delta_draws(arm, arm_lo, idx)
+
+        return fn
+
+    fn_pre = _window_dose_fn(pre_cfg)
+    fn_rnd = _window_dose_fn(rnd_cfg)
+
+    def _w2b_dod_fn(idx):
+        d_pre, _ = fn_pre(idx)
+        d_rnd, _ = fn_rnd(idx)
+        dd = d_pre - d_rnd  # NaN propagates: either side without a coherent coef
+        return dd, int(np.isnan(dd).sum())
+
+    return {
+        key: _paired_contrast(
+            dose_pre,
+            dose_rnd,
+            seed=_contrast_seed("h4_dod_w2b", pre_cfg, dataset),
+            n_boot=n_boot,
+            inherited_fn=_w2b_dod_fn,
+        )
+        | {"window": window},
+        f"{key}_level": _paired_contrast(
+            q_pre_hi,
+            q_rnd_hi,
+            seed=_contrast_seed("h4_level_w2b", pre_cfg, dataset),
+            n_boot=n_boot,
+        )
+        | {"matched_coef": c_hi},
+    }
+
+
 def run_fu2_contrasts(args) -> Path:
     """The fu2 §3 registered battery (plan v13; runs under ``--round fu2``).
 
@@ -761,7 +932,9 @@ def run_fu2_contrasts(args) -> Path:
         corpus, question-paired; fu1 side from BANKED fu1 rows @ fu1 op points.
     H4  direction-specificity: (a) DoD Δdose(Q)-Δdose(RQ) on evil (primary;
         N-RQ cross-layer disclosed); (b) descriptive matched-effective-dose
-        table RQ vs G's banked curve (no CI — plan §3 H4(b)).
+        table RQ vs G's banked curve (no CI — plan §3 H4(b)); (c) conditional
+        W2b matched-window reads on sycophancy, N vs RN (plan §4.3 —
+        file-presence gated, see ``fu2_w2b_contrasts``).
     One frozen CI convention (n-boot resamples, seed scheme in the output);
     the selection-inherited flavour rides H1/H2/H4(a) as sensitivity.
     """
@@ -934,6 +1107,13 @@ def run_fu2_contrasts(args) -> Path:
             n_boot=n_boot,
             inherited_fn=_h4_fn,
         ) | {"selected": {pre_cfg: sel_pre, rnd_cfg: sel_rnd}}
+    # H4(c) conditional W2b matched-window reads (plan §4.3, TRIGGERED):
+    # sycophancy N vs RN — file-presence gated inside fu2_w2b_contrasts (RN is
+    # a CONDITIONAL config, never in the wave-1 specs, so gate on the PRE side
+    # + the dataset subset only).
+    h4c: dict[str, dict] = {}
+    if FU2_W2B_PRE in selected_cfgs and (not args.datasets or FU2_W2B_DATASET in args.datasets):
+        h4c = fu2_w2b_contrasts(fu_root, n_boot, not_computable)
     # H4(b) descriptive matched-effective-dose read: RQ vs G's banked curve
     # (plan §3 H4(b): α_RQ = c·ρ_19 vs α_G = coef·‖E2[19]‖ — no CI, no verdict).
     h4b: dict = {}
@@ -1015,6 +1195,18 @@ def run_fu2_contrasts(args) -> Path:
                 "question-paired (Q-RQ primary; N-RQ cross-layer, EXPLORATORY/disclosed)",
                 "per_pair": h4,
                 "matched_effective_dose_descriptive": h4b,
+                "w2b_conditional": {
+                    "delta_definition": "(c) W2b MATCHED-WINDOW direction-specificity on "
+                    "sycophancy (plan §4.3, TRIGGERED): DoD Δdose(N) - Δdose(RN) with "
+                    "dose = score(@3.0) - score(@1.5) per arm, question-paired — the "
+                    "window is [1.5, 3.0] for BOTH arms (RN exists only at the W2b "
+                    "selected-coef ± one-neighbor cells, so matching N's window makes "
+                    "the dose windows identical; unlike H4(a)'s [grid-min, selected] "
+                    "window) — plus the secondary matched-dose LEVEL read N@3.0 vs "
+                    "RN@3.0 (no dose subtraction). File-presence gated: cells not yet "
+                    "landed -> both keys in not_computable",
+                    "per_pair": h4c,
+                },
             },
             "not_computable": not_computable,
             "single_seed_caveat": "per-arm verdicts are SINGLE-TRAINING-SEED claims (seed 0; "
@@ -1024,7 +1216,7 @@ def run_fu2_contrasts(args) -> Path:
     )
     print(
         f"[fu2-contrasts] h1={len(h1)} h2G={len(h2g)} h2A={len(h2a)} h3={len(h3)} "
-        f"h4={len(h4)} not_computable={len(not_computable)} -> {out}",
+        f"h4={len(h4)} h4c={len(h4c)} not_computable={len(not_computable)} -> {out}",
         flush=True,
     )
     return out

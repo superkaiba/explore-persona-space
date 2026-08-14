@@ -658,3 +658,108 @@ def test_fu2_hook_gate_slug_keyed(tmp_path):
         timeout=60,
     )
     assert missing.returncode == 7 and "RQ__evil__c1.5" in missing.stderr
+
+
+# ── conditional W2b reads (plan v13 §4.3) ─────────────────────────────────────
+
+
+def _write_w2b_arm(root: Path, config: str, coef: float, means: list[float]) -> None:
+    """Minimal trait_scores + coherence arm JSONs for the W2b fixture
+    (schema: the fields `_per_question_means` / `_arm_curve` consume)."""
+    per_q = [{"question_idx": i, "mean": m} for i, m in enumerate(means)]
+    coh_q = [{"question_idx": i, "mean": 90.0, "rollout_scores": [90.0]} for i in range(len(means))]
+    trait_block = {
+        "per_question": per_q,
+        "model_mean": sum(means) / len(means),
+        "rate_gt50": 0.5,
+        "accounting": {"n_api_refusal": 0},
+    }
+    for sub, block in (
+        ("trait_scores", trait_block),
+        ("coherence", {"per_question": coh_q, "n_rollouts_scored": len(means)}),
+    ):
+        d = root / sub
+        d.mkdir(parents=True, exist_ok=True)
+        with open(d / f"{config}_sycophancy_{coef}.json", "w") as f:
+            json.dump({"traits": {"sycophancy": block}}, f)
+
+
+def test_w2b_contrasts_skip_branch_records_not_computable(tmp_path):
+    """F5 re-run BEFORE the W2b harvest: no RN files -> empty block + both
+    keys in not_computable, no raise (plan §4.3 conditional gating)."""
+    import issue2225_fu1_analysis as ana
+
+    nc: list[str] = []
+    out = ana.fu2_w2b_contrasts(tmp_path, 100, nc)
+    assert out == {}
+    assert nc == [
+        "h4_dod_w2b:N_vs_RN_sycophancy (W2b cells not yet landed)",
+        "h4_level_w2b:N_vs_RN_sycophancy_level (W2b cells not yet landed)",
+    ]
+
+
+def test_w2b_contrasts_compute_branch(tmp_path):
+    """Landed W2b cells: matched-window DoD + LEVEL read with the fu2 seed
+    scheme (constant per-question deltas pin point + CI + verdict exactly)."""
+    import issue2225_fu1_analysis as ana
+
+    n_q = 6
+    # dose(N) = 70-40 = 30/question; dose(RN) = 45-40 = 5 -> DoD 25 constant;
+    # LEVEL N@3.0 - RN@3.0 = 25 constant.
+    for config, coef, base in (
+        ("N", 1.5, 40.0),
+        ("N", 3.0, 70.0),
+        ("RN", 1.5, 40.0),
+        ("RN", 3.0, 45.0),
+    ):
+        _write_w2b_arm(tmp_path, config, coef, [base + i for i in range(n_q)])
+    ana._set_round("fu2")
+    try:
+        nc: list[str] = []
+        out = ana.fu2_w2b_contrasts(tmp_path, 200, nc)
+    finally:
+        ana._set_round("fu1")
+    assert nc == []
+    assert set(out) == {"N_vs_RN_sycophancy", "N_vs_RN_sycophancy_level"}
+    dod = out["N_vs_RN_sycophancy"]
+    # seed = 2225 + 1000*di(sycophancy=1) + 100*ci(N=0) + offset(h4_dod_w2b=9)
+    assert dod["seed"] == 3234
+    assert dod["window"] == [1.5, 3.0]
+    assert dod["frozen"]["delta_point"] == pytest.approx(25.0)
+    assert dod["frozen"]["ci95"] == [pytest.approx(25.0), pytest.approx(25.0)]
+    assert dod["frozen"]["verdict"] == "Effect-positive"
+    # selection-inherited flavour rides the DoD (coherence 90 >= 80 everywhere)
+    assert dod["selection_inherited"]["delta_point"] == pytest.approx(25.0)
+    assert dod["selection_inherited"]["n_draws_no_coherent_coef"] == 0
+    lvl = out["N_vs_RN_sycophancy_level"]
+    assert lvl["seed"] == 3235  # offset(h4_level_w2b=10)
+    assert lvl["matched_coef"] == 3.0
+    assert lvl["frozen"]["delta_point"] == pytest.approx(25.0)
+    assert lvl["frozen"]["verdict"] == "Effect-positive"
+    assert "selection_inherited" not in lvl
+
+
+def test_fu2_conditional_selection_partial_grid(tmp_path):
+    """Selection tolerates RN's PARTIAL grid: only landed coefs enter the
+    curve; a dataset with zero landed cells is skipped (byte-identical
+    pre-harvest re-runs)."""
+    import types
+
+    import issue2225_fu1_analysis as ana
+
+    for coef in (1.5, 3.0):  # the W2b window only — 0.25/0.75 never exist
+        _write_w2b_arm(tmp_path, "RN", coef, [50.0] * 4)
+    args = types.SimpleNamespace(eval_root=str(tmp_path), configs=None, datasets=None)
+    ana._set_round("fu2")
+    try:
+        selection: dict = {}
+        ana._fu2_conditional_selection(args, fu2.effective_fu2_grids(None), {}, selection)
+    finally:
+        ana._set_round("fu1")
+    # RN_evil has no landed cells -> skipped entirely
+    assert set(selection) == {"RN_sycophancy"}
+    entry = selection["RN_sycophancy"]
+    assert entry["grid"] == [1.5, 3.0]
+    assert sorted(entry["curve"]) == ["1.5", "3.0"]
+    assert entry["selected_coef"] == 3.0  # both coefs coherent (90 >= 80) -> largest
+    assert "conditional_partial_grid" in entry
