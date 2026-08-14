@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2280,
+  "highest_id": 2281,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9898,6 +9898,13 @@
       "path": "tasks/proposed/2280",
       "status": "proposed",
       "title": "Diagnose selective SIGTERM (rc=143) killer of in-session foreground python children on the shared VM"
+    },
+    "2281": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2281",
+      "status": "proposed",
+      "title": "verify_task_body: re.IGNORECASE + .lower() crashes the verifier on Unicode long-s (ValueError at :16820)"
     },
     "229": {
       "has_clean_result": false,
