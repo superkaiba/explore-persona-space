@@ -5583,8 +5583,8 @@
     "1718": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/blocked/1718",
-      "status": "blocked",
+      "path": "tasks/proposed/1718",
+      "status": "proposed",
       "title": "daily-fix: AGENT_SPEC_SIZE_GRANDFATHER is a chronic merge-co"
     },
     "1719": {
