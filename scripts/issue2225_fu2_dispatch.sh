@@ -24,6 +24,9 @@
 #             trigger: any extreme < 0.683 evaluates that arm's full grid)
 #   f2d       activation capture (fu2 targets) + upload (OVERFLOW repo)
 #   f3        idempotent upload safety pass + results sentinel
+#   w2b       conditional W2b matched-random wave (plan §4.3, triggered
+#             2026-08-14): external + s0, then RN@L14 sycophancy x {1.5, 3.0}
+#             train + trait eval-gen + raws upload + scoped results sentinel
 #   all       the full DAG in order, ending with the single [phase=done] line
 #
 # Smoke: EPM_I2225_SMOKE=1 diverts every out-root, the per-cell LOG_ROOT
@@ -772,6 +775,78 @@ PY
   log_phase f3_uploads "done"
 }
 
+# ── W2b: conditional matched-random wave (plan §4.3 — TRIGGERED 2026-08-14) ────
+# N_sycophancy read trait 73.27 at coherence 91.13 (16.48 below the banked
+# unsteered baseline 89.75), so the matched random control (RN@L14, all-token,
+# sycophancy) runs at the selected coef 3.0 ± one neighbor. Reduced eval per
+# plan §9 W2 row: train + trait eval-gen + raws upload ONLY (no MMLU, no
+# capture). Same production commands as F2a/F2b scoped to the 2 cells — no
+# smoke-conditional branches added (the chain is production-exercised).
+W2B_CELLS="RN__sycophancy__c1.5,RN__sycophancy__c3.0"
+
+phase_w2b() {
+  log_phase w2b_wave "start (cells: $W2B_CELLS; reduced eval — no MMLU/capture)"
+  headroom "$CKPT_ROOT" 35 w2b_wave
+  uv run python scripts/issue2225_fu2_train.py --fan-out --cells "$W2B_CELLS" \
+    --ckpt-root "$CKPT_ROOT" --directions-dir "$DIR_OUT" \
+    --dataset-root "$EXTERNAL_ROOT/dataset" \
+    --log-dir "$LOG_ROOT/w2b_train"
+  hook_count_gate "$LOG_ROOT/w2b_train" "$W2B_CELLS" w2b_wave
+
+  log_phase w2b_wave "trait eval-gen (2 targets, production recipe)"
+  headroom "$OUT_ROOT" 10 w2b_wave
+  uv run python scripts/issue2225_eval_gen.py \
+    --out-root "$OUT_ROOT" --ckpt-root "$CKPT_ROOT" --external-root "$EXTERNAL_ROOT" \
+    --staging-dir "$OUT_ROOT/hf_dl/eval_adapters" \
+    --targets "$W2B_CELLS"
+
+  log_phase w2b_wave "upload raw completions (idempotent, fu2 prefixes -> $FU2_DATA_HF_REPO)"
+  uv run python scripts/issue2225_eval_gen.py --upload --out-root "$OUT_ROOT" \
+    --hf-prefix-final "$HF_FINAL" --hf-prefix-narrow "$HF_NARROW" \
+    "${DATA_REPO_ARGS[@]}"
+  rm -rf "$OUT_ROOT/hf_dl/eval_adapters"
+
+  log_phase w2b_wave "results sentinel"
+  local note_file="$LOG_ROOT/w2b_results_note.json"
+  RES_NOTE_FILE="$note_file" RES_OUT_ROOT="$OUT_ROOT" RES_SMOKE="$SMOKE" \
+    RES_DATA_HF_REPO="$FU2_DATA_HF_REPO" RES_CELLS="$W2B_CELLS" \
+    RES_PREFIXES="$HF_FINAL" \
+    uv run python - <<'PY'
+import json, os, sys
+
+sys.path.insert(0, "scripts")
+import issue2225_fu2_train as fu2
+import issue778_lib as lib
+
+cells = [s for s in os.environ["RES_CELLS"].split(",") if s]
+prefixes = [p for p in os.environ["RES_PREFIXES"].split(",") if p]
+note = {
+    "phase": "w2b_wave",
+    "followup": "fu2_preimage_alltoken",
+    "smoke": bool(os.environ.get("RES_SMOKE")),
+    "out_root": os.environ["RES_OUT_ROOT"],
+    "cells": cells,
+    "hf_prefixes": [*prefixes, f"{fu2.FU2_ADAPTERS_HF_PREFIX}/<cell>"],
+    "data_repo_deviation": {
+        "reason": "canonical data repo at the 1M-file ceiling (#2287; #1108 overflow contract)",
+        "hf_repo": os.environ["RES_DATA_HF_REPO"],
+        "prefixes": prefixes,
+    },
+    "reproducibility_card": {
+        "adapter_paths": [f"{fu2.FU2_ADAPTERS_HF_PREFIX}/{s}" for s in cells],
+        "wandb_project": "issue2225",
+        "wandb_run_names": [f"issue2225_{s}" for s in cells],
+        **lib.repro_metadata(),
+    },
+    "next": "off-pod: F4 judge (W2b cells) + h4 sycophancy pair + F5 re-run (--round fu2)",
+}
+with open(os.environ["RES_NOTE_FILE"], "w") as f:
+    json.dump(note, f, indent=1)
+PY
+  write_sentinel "epm:results" 1 "$note_file"
+  log_phase w2b_wave "done"
+}
+
 case "$PHASE" in
   external) phase_external ;;
   s0)       phase_external; phase_s0 ;;
@@ -781,6 +856,7 @@ case "$PHASE" in
   f2c)      phase_external; phase_f2c ;;
   f2d)      phase_external; phase_f2d ;;
   f3)       phase_f3 ;;
+  w2b)      phase_external; phase_s0; phase_w2b ;;
   all)
     phase_external
     phase_s0
@@ -792,7 +868,7 @@ case "$PHASE" in
     phase_f3
     ;;
   *)
-    echo "FATAL: unknown phase '$PHASE' (external|s0|f1|f2a|f2b|f2c|f2d|f3|all)" >&2
+    echo "FATAL: unknown phase '$PHASE' (external|s0|f1|f2a|f2b|f2c|f2d|f3|w2b|all)" >&2
     exit 2
     ;;
 esac
