@@ -3554,7 +3554,12 @@ def _upload_judge_outputs(out_root: Path, phases) -> None:
             if not src.exists():
                 continue
             dest = base / f"{sub}_pack"
-            rw2220._pack_tree_to_jsonl_shards(src, dest, group=f"{phase}_{sub}")
+            # save_raw writes ONE bare-<cid> EXTENSIONLESS JSON file per cell
+            # (judging.judge_items_graded save_raw path) — the packer's default
+            # *.json rglob packs ZERO rows there (silent raw-drop, caught in
+            # the wave-1 recovery: raw_pack shipped n_files=0 manifests).
+            pattern = "*" if sub == "raw" else "*.json"
+            rw2220._pack_tree_to_jsonl_shards(src, dest, group=f"{phase}_{sub}", pattern=pattern)
             _upload_folder_to_hf(
                 dest, f"{_hf_prefix()}/judge/{phase}/{sub}_pack", allow=["*.jsonl", "*.json"]
             )

@@ -513,11 +513,16 @@ def test_upload_judge_outputs_packs_per_cell_trees(tmp_path):
     Runs the REAL body; only the network seam is a signature-matching
     recorder."""
     base = tmp_path / "judge" / "localize"
-    for sub in ("judged", "raw"):
-        d = base / sub
-        d.mkdir(parents=True)
-        for i in range(60):
-            (d / f"cell{i:03d}.json").write_text(json.dumps({"cell": i, "sub": sub}))
+    d = base / "judged"
+    d.mkdir(parents=True)
+    for i in range(60):
+        (d / f"cell{i:03d}.json").write_text(json.dumps({"cell": i, "sub": "judged"}))
+    # raw/ mirrors the REAL save_raw layout: bare-<cid> EXTENSIONLESS files —
+    # a *.json-only pack would ship n_files=0 manifests (the second wave-1 bug).
+    d = base / "raw"
+    d.mkdir(parents=True)
+    for i in range(60):
+        (d / f"cell{i:03d}").write_text(json.dumps({"cell": i, "sub": "raw"}))
     for c in range(12):
         d = base / "cache" / f"cell{c:03d}"
         d.mkdir(parents=True)
@@ -549,6 +554,10 @@ def test_upload_judge_outputs_packs_per_cell_trees(tmp_path):
     for _, path_in_repo, files in uploads:
         assert len(files) <= 50, f"per-cell tree leaked into upload: {path_in_repo} ({len(files)})"
         assert any(f.endswith(".jsonl") for f in files), path_in_repo
+    # every pack carries EVERY source file (an empty raw_pack manifest = raw-drop)
+    for sub, n_src in (("judged", 60), ("cache", 72), ("raw", 60)):
+        m = json.loads((base / f"{sub}_pack" / "pack_manifest.json").read_text())
+        assert m["n_files"] == n_src, f"{sub}_pack packed {m['n_files']}/{n_src} files"
     # round-trip: packed rows reconstruct every per-cell doc, shards stay <9.5 MB, no gzip
     pack = base / "judged_pack"
     manifest = json.loads((pack / "pack_manifest.json").read_text())
