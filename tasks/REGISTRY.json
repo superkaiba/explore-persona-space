@@ -8783,8 +8783,8 @@
     "2135": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2135",
-      "status": "running",
+      "path": "tasks/completed/2135",
+      "status": "completed",
       "title": "daily-fix: pod HOLD gates + launches must arm a re-drive"
     },
     "2136": {
