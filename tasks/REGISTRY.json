@@ -8804,8 +8804,8 @@
     "2138": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2138",
-      "status": "proposed",
+      "path": "tasks/planning/2138",
+      "status": "planning",
       "title": "daily-fix: reap-husks symlink plan.md reads as unique"
     },
     "2139": {
