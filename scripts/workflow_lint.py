@@ -12770,6 +12770,82 @@ def check_cvd_scoped_gpu_verdict_lens(  # noqa: C901 -- flat per-surface token l
     return errors
 
 
+def check_verdict_round_anchor(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the #2136 verdict-round freshness anchor is absent from the
+    /issue SKILL.md durable-verdict-first surface.
+
+    Marker versions auto-derive as max+1 per kind while review rounds are
+    counted independently, so a PRIOR round's sentinel-less verdict marker
+    whose drifted ``version`` equals a LATER round number false-PRESENTs
+    through ``ensemble_verdicts_present``'s version-field fallback (#1336:
+    a round-3 ``epm:code-review`` PASS answered a round-4 query two days
+    later). The fix (#2136) threads an opt-in ``since_ts`` freshness
+    anchor (``review_round_anchor_ts``) through the Step 5b mechanical
+    snippet — the ONE form every ensemble collection site substitutes
+    kinds into. Region-anchored on the durable-verdict-first rule, this
+    check pins:
+
+    (1) the Step 5b snippet passes ``since_ts=review_round_anchor_ts`` (a
+        future edit silently reverting to the unanchored call re-opens
+        the stale-round false-PRESENT);
+    (2) the per-site opener table retains a row per collection site —
+        Step 5b / Step 9a / Step 9a-bis / Step 9b-VC (a dropped row
+        leaves that site's anchor inert by construction: the anchor's
+        opener kinds are site-specific and REQUIRED).
+
+    ``repo_root`` is a unit-test override hook; production callers pass
+    None (canonical repo root; behavioral subprocess tests may point the
+    check at a tmp corpus via ``EPS_WORKFLOW_LINT_REPO_ROOT``). Bundled
+    into the no-flags default run.
+    """
+    if repo_root is not None:
+        root = repo_root
+    else:
+        env_root = os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    errors: list[str] = []
+    skill = root / ".claude" / "skills" / "issue" / "SKILL.md"
+    if not skill.is_file():
+        errors.append(
+            f"{skill}: missing — the #2136 verdict-round anchor pin lives "
+            f"in the /issue SKILL.md durable-verdict-first rule."
+        )
+        return errors
+    text = skill.read_text(encoding="utf-8")
+    idx = text.find("Durable-verdict-first rule")
+    if idx == -1:
+        errors.append(
+            f"{skill}: missing the 'Durable-verdict-first rule' heading "
+            f"(#2136) — the verdict-round anchor pin is region-anchored "
+            f"on it."
+        )
+        return errors
+    nxt = text.find("**Autocompact-thrash respawn recipe", idx + 1)
+    region = text[idx:nxt] if nxt != -1 else text[idx:]
+    if "since_ts=review_round_anchor_ts" not in region:
+        errors.append(
+            f"{skill}: the durable-verdict-first snippet no longer passes "
+            f"'since_ts=review_round_anchor_ts' (#2136) — without the "
+            f"anchor, a prior round's sentinel-less marker whose drifted "
+            f"version equals this round's number false-PRESENTs through "
+            f"the version fallback (#1336)."
+        )
+    for row_token in (
+        "| Step 5b (code review) |",
+        "| Step 9a (interpretation) |",
+        "| Step 9a-bis (clean result) |",
+        "| Step 9b-VC (redundancy screen) |",
+    ):
+        if row_token not in region:
+            errors.append(
+                f"{skill}: the per-site opener table row {row_token!r} is "
+                f"missing from the durable-verdict-first region (#2136) — "
+                f"each collection site names its own `opening_kinds`, or "
+                f"its anchor is inert by construction."
+            )
+    return errors
+
+
 def check_smoke_blind_spot_enumeration(  # noqa: C901 -- best-effort AST scan: per-script parse ladder + two hit rules + plan cross-check (#2165); extracting a branch would just relocate it
     script_paths: list[Path],
     plan_path: Path | None = None,
@@ -14857,6 +14933,15 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 # (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
 # change). Each entry names its trim direction; none is licensed to grow.
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
+    # measured 942,384 B after #2136 anchored the Step 5b durable-verdict
+    # snippet (+1,370 B: the since_ts=review_round_anchor_ts call form,
+    # the fallback-only anchor-semantics paragraph, and the per-site
+    # opener table). Base was 941,014 B — ALREADY 114 B over the
+    # un-raised 940,900 cap (the #2285 prose pins, 740ed2a0a1, landed
+    # without a cap raise: a pre-existing no-flags red on main this raise
+    # also absorbs); cap = measured + ~1.2 KB (#1753/#1727 landing-bytes
+    # rule).
+    # Prior: 940_900 —
     # measured 939,648 B after #2277 added the three owner-fence emitter
     # insertions (+1,992 B on the post-#2265 937,656 B: the Step 8
     # owner-fence refusal sentence + PASS owner= first-person duty, the
@@ -14956,7 +15041,7 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 904,504 B base); the remaining mass is the judgment tranche
     # (bash-block extraction to step10d_guards.sh-style scripts, 9a-quater
     # legacy-path stub, GCP rollback-prose relocation).
-    "issue/SKILL.md": 940_900,
+    "issue/SKILL.md": 943_600,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
@@ -16793,6 +16878,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_smoke_blind_spot_review_lens": lambda wf: check_smoke_blind_spot_review_lens(),
     "check_two_tier_yield_floor": lambda wf: check_two_tier_yield_floor(),
     "check_cvd_scoped_gpu_verdict_lens": lambda wf: check_cvd_scoped_gpu_verdict_lens(),
+    "check_verdict_round_anchor": lambda wf: check_verdict_round_anchor(),
     "check_stale_label_disposition": lambda wf: check_stale_label_disposition_clause(),
     "check_smoke_output_hygiene": lambda wf: check_smoke_output_hygiene(),
     "check_crash_fix_relaunch_contract": lambda wf: check_crash_fix_relaunch_contract(),
@@ -16902,6 +16988,7 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_smoke_blind_spot_review_lens": CheckScope("global", (".claude/",)),
     "check_two_tier_yield_floor": CheckScope("global", (".claude/",)),
     "check_cvd_scoped_gpu_verdict_lens": CheckScope("global", (".claude/",)),
+    "check_verdict_round_anchor": CheckScope("global", (".claude/skills/",)),
     "check_stale_label_disposition": CheckScope("global", (".claude/skills/",)),
     "check_smoke_output_hygiene": CheckScope("global", (".claude/",)),
     "check_crash_fix_relaunch_contract": CheckScope("global", (".claude/",)),
@@ -17654,6 +17741,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "implementation round). Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-verdict-round-anchor",
+        action="store_true",
+        help="FAIL if the #2136 verdict-round freshness anchor is absent "
+        "from the /issue SKILL.md durable-verdict-first surface: the Step "
+        "5b mechanical snippet must pass since_ts=review_round_anchor_ts, "
+        "and the per-site opener table must retain a row per collection "
+        "site (Step 5b / Step 9a / Step 9a-bis / Step 9b-VC) — a future "
+        "edit silently reverting to the unanchored call re-opens the "
+        "stale-round false-PRESENT (incident #1336: a round-3 "
+        "epm:code-review PASS answered a round-4 durable-verdict query two "
+        "days later via the version fallback). Bundled into the no-flags "
+        "default run.",
+    )
+    parser.add_argument(
         "--check-smoke-blind-spots",
         action="store_true",
         help="WARN-only best-effort AST scan (#2165): flag smoke-conditional "
@@ -18241,6 +18342,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_smoke_blind_spot_review_lens
         or args.check_two_tier_yield_floor
         or args.check_cvd_scoped_gpu_verdict_lens
+        or args.check_verdict_round_anchor
         or args.check_smoke_blind_spots
         or args.check_stale_label_disposition
         or args.check_smoke_output_hygiene
@@ -18403,6 +18505,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_two_tier_yield_floor())
     if args.check_cvd_scoped_gpu_verdict_lens or no_flags:
         errors.extend(check_cvd_scoped_gpu_verdict_lens())
+    if args.check_verdict_round_anchor or no_flags:
+        errors.extend(check_verdict_round_anchor())
     if args.check_smoke_blind_spots:
         if not args.smoke_blind_spot_scripts:
             parser.error("--check-smoke-blind-spots requires --smoke-blind-spot-scripts")

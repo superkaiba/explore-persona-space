@@ -3029,15 +3029,37 @@ single-reviewer decision:
    ```bash
    uv run python - <<'PY'
    import json
-   from explore_persona_space.task_workflow import ensemble_verdicts_present, list_events
+   from explore_persona_space.task_workflow import (
+       ensemble_verdicts_present, list_events, review_round_anchor_ts)
+   ev = list_events(<N>)
    print(json.dumps(ensemble_verdicts_present(
-       list_events(<N>), ["epm:code-review", "epm:code-review-codex"], <n>)))
+       ev, ["epm:code-review", "epm:code-review-codex"], <n>,
+       since_ts=review_round_anchor_ts(
+           ev, opening_kinds=("epm:experiment-implementation", "epm:results")))))
    PY
    ```
 
-   (Substitute the site's marker kinds; for a reconciler read pass
+   (Substitute the site's marker kinds AND its `opening_kinds` from the
+   per-site opener table below; for a reconciler read pass
    `reconcile_role="<role under adjudication>"` so a same-round reconcile
-   for a DIFFERENT role never satisfies the check.) `present: false` →
+   for a DIFFERENT role never satisfies the check.) The `since_ts` anchor
+   (#2136) gates ONLY the sentinel-less `version`-field fallback — a
+   prior round's sentinel-less marker whose auto-bumped `version` equals
+   this round's number must not answer this round's check (#1336). A
+   sentinel-bearing round-exact match is NEVER time-gated (a legitimate
+   round-N verdict posted by a later-killed session predates the current
+   dispatch by design), and with no opener on the log the anchor is
+   `None` and the check degrades to the ungated read — the head sentinel
+   stays the only COMPLETE protection.
+
+   | collection site | kinds queried | `opening_kinds` to pass |
+   |---|---|---|
+   | Step 5b (code review) | `epm:code-review[-codex]` | `("epm:experiment-implementation", "epm:results")` |
+   | Step 9a (interpretation) | `epm:interp-critique[-codex]` | `("epm:interpretation", "epm:analysis")` |
+   | Step 9a-bis (clean result) | `epm:clean-result-critique[-codex]` | `("epm:interpretation", "epm:analysis")` |
+   | Step 9b-VC (redundancy screen) | `epm:followup-value-critique[-codex]` | omit `since_ts` — single-pass site, round 1 only, so no prior round can exist |
+
+   `present: false` →
    proceed to item 2; `present: true, verdict: null` → the marker EXISTS
    but is malformed — item 3's malformed-output handling, NEVER a
    no-show; `present: true` with a verdict token → the reviewer RETURNED.

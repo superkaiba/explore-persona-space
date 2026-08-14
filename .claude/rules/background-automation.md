@@ -938,7 +938,11 @@ fallback (`EPM_VERDICT_DISAGREE_PAIR_PROXIMITY_S`, 6h) for
 sentinel/version round drift; a 1h grace
 (`EPM_VERDICT_DISAGREE_GRACE_S`) lets an in-flight reconcile land;
 no-show evidence (`epm:codex-task-failed`, a codex-scoped `epm:failure`,
-the #1204 quota-skip note) suppresses TIER-2 pairings only. **Channels:**
+the #1204 quota-skip note) suppresses TIER-2 pairings only. The pass's
+`ensemble_verdicts_present` queries deliberately pass NO `since_ts`
+anchor (#2136): Tier 1 derives its round from the last pair event's own
+sentinel-else-`version`, so an anchor would suppress the very event the
+round number came from. **Channels:**
 sidecar `.claude/cache/verdict-disagree-observer-events.jsonl` + one
 deduped push; **NO task marker** (the flag's consumer is a human).
 Fire-once dedup key `(issue, role, round_label)` in
