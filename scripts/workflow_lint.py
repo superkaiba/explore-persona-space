@@ -13846,7 +13846,13 @@ _LESSONS_ROW_RE = re.compile(
 # this row extension plus <=40 B headroom (9802 + 40 = 9842) — not general
 # slack (the #992 argued-raise form; the per-row and non-row caps still
 # bind).
-_LESSONS_MAX_BYTES = 9842
+# 9842->9913 (#2135): the index sat at 9834/9842 (8 B headroom), so the
+# pod-side-reporting-row HOLD/gate-park trigger extension (+39 B; measured
+# post-edit file 9873 B) could not land under the old cap. The raise buys
+# EXACTLY this row extension plus <=40 B headroom (9873 + 40 = 9913) — not
+# general slack (the #992 argued-raise form; the per-row and non-row caps
+# still bind).
+_LESSONS_MAX_BYTES = 9913
 # Early-warning band (#992): a stderr-only advisory WARN once the index
 # crosses this, so a near-cap landing is visible a few rows before the
 # _LESSONS_MAX_BYTES FAIL (early warning only — advisory, never a FAIL).

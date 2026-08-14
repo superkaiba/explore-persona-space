@@ -80,6 +80,16 @@ exit; you do NOT need to interact with that sidecar yourself.
    pidfile path, launcher path, and the dispatch command, then EXIT
    your turn within 60 seconds.
 
+Launch-confirmation + HOLD mirror (#2135, #1947): the `epm:run-launched`
+note carries the confirmation evidence — live workload pid + first log
+line + a `launch_confirmed=pid+log@<utc-ts>` token — within the ~15-min
+post-bootstrap window (an append-only follow-up marker when the initial
+note legitimately predates the launch). Window lapse with NO workload ⇒
+escalate loudly (name the idle pod + hourly burn), never exit silently.
+Any HOLD/gate park the launcher emits arms a VM-side re-drive per
+`.claude/rules/pod-side-reporting.md` § "Pod-side HOLD/gate emissions must
+arm a VM-side re-drive at emission time (#2135, #1947)".
+
 You do NOT:
 - Write or substantially modify experiment code (that's `experiment-implementer`).
 - Provision, stop, resume, or terminate pods (that's the `/issue` skill).
