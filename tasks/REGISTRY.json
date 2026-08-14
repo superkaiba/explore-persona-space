@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2297,
+  "highest_id": 2298,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10024,6 +10024,13 @@
       "path": "tasks/proposed/2297",
       "status": "proposed",
       "title": "workflow-fix: Step 9c gate launcher file-list cross-check is newline-agnostic \u2014 split-argv launch reports a plausible PYTEST_RC that is not a verdict"
+    },
+    "2298": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2298",
+      "status": "proposed",
+      "title": "workflow-fix: critic-lens-reference item 13 still says fellows-first auto default (stale since #2054/#2059)"
     },
     "23": {
       "has_clean_result": false,
