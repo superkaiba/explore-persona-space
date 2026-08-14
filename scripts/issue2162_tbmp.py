@@ -1529,7 +1529,9 @@ def _sentinel_payload(cfg: R.RunConfig, uploaded: dict[str, list[str]]) -> dict:
             "realized_mode": REALIZED_MODE,
         },
         "wandb_url": None,
-        "hf_hub_url": (f"https://huggingface.co/datasets/{R.HF_DATA_REPO}/tree/main/{HF_TBMP}"),
+        "hf_hub_url": (
+            f"https://huggingface.co/datasets/{R.HF_DATA_WRITE_REPO}/tree/main/{HF_TBMP}"
+        ),
         "worktree_path": str(R.REPO_ROOT),
         "final_commit_sha": R._git_sha(),
         "gpu_hours_used": None,
