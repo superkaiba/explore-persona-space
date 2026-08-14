@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2304,
+  "highest_id": 2305,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10080,6 +10080,13 @@
       "path": "tasks/proposed/2304",
       "status": "proposed",
       "title": "HF file-count overflow fallback never fires for dataset repos or bulk uploads \u2014 data repo hit its 1,000,000-file hard cap"
+    },
+    "2305": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2305",
+      "status": "proposed",
+      "title": "Non-atomic fresh claim-file write in run_claim_queue kills a concurrent worker with 'unparseable claim file'"
     },
     "231": {
       "has_clean_result": false,
