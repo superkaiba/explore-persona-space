@@ -1805,7 +1805,13 @@ markers:
       on the log path before posting AND verify with `ls -la <log_abs>`
       on the pod — a relative / wrong log path burns polling-loop cycles
       (#397). Back-compat: the legacy `log=` field is accepted as a
-      fallback when `log_abs=` is absent.
+      fallback when `log_abs=` is absent. Optional owner-fence tokens
+      (#2277; note-token convention, no schema change): `owner=<token>`
+      (owner-attribution registration for the `pod.py terminate`
+      owner-fence guard; REQUIRED for new launches; grammar
+      `[A-Za-z0-9._-]{1,64}`) and `fence_until=<ISO8601Z|none>` (owner
+      work-fence deadline; refreshed / cleared via later
+      `[long-phase-heartbeat]` `epm:progress` notes naming the pod).
   - kind: "epm:progress"
     posted_by: experimenter / implementer
     when: "during run"
@@ -1891,7 +1897,14 @@ markers:
       generic `pivot_criteria` cap-3 path. Plans without the §6.5 block
       (legacy plans + `kind: analysis | infra | batch | survey`) get a
       `primary-deliverable-spec-absent` WARN row and do NOT fail this
-      check.
+      check. Optional owner-fence tokens on a PASS note (#2277;
+      note-token convention, no schema change): `pod=<name>` (binds the
+      PASS to the pod it verified) and `owner=<token>` — a FIRST-PERSON
+      claim by the session that posted the pod's launch signal / fence
+      (emit it ONLY then; never copied from the launch marker by a
+      third party while the fence is unexpired); the terminate guard
+      refuses an unexpired-fence pod whose pod-bound PASS lacks the
+      matching owner token.
   - kind: "epm:upload-verified"
     posted_by: skill
     when: "Step 8"
