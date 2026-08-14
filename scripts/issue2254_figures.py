@@ -459,43 +459,66 @@ def fig_margin_scatter(out_root: Path, fig_dir: Path):
 def fig_offdesign_positives(out_root: Path, fig_dir: Path):
     """Off-design arms (round-2 critic request): persona vector @ context and
     pre-image @ answer, with per-arm null-band edges; right panel = the
-    per-question dots behind the two clean sycophancy positives."""
+    per-question dots behind the two clean sycophancy positives.
+
+    Guarded for REDUCED/partial trees (single-behavior runs, pre-fix reduce
+    outputs): a bar whose per-cell record or null-band key is absent — and a
+    right-panel target whose judged file is absent — is dropped (the sibling
+    builders' per-element `.get()`/`continue` contract) rather than
+    KeyError-ing; on a full tree every element is present and the render is
+    unchanged.
+    """
     percell = _load(out_root, "decisive/delta_score_percell.json")
     verdicts = _load(out_root, "decisive/verdicts.json")
     gates = _load(out_root, "localize/gates.json")
     if percell is None or verdicts is None or gates is None:
         return "skip:decisive percell/verdicts or localize gates not present"
-    bars = [  # (cell_id, behavior, direction, band)
+
+    def _band(tree: dict, beh: str, *keys: str):
+        """Nested tree['behaviors'][beh][k0][k1]... lookup; None when any level is absent."""
+        node = tree.get("behaviors", {}).get(beh)
+        for k in keys:
+            if not isinstance(node, dict):
+                return None
+            node = node.get(k)
+        return node
+
+    specs = [  # (cell_id, behavior, direction, band) — absent cell/band drops the bar
         (
             "evil__rb__ctx__mid__c2",
             "evil",
             "rb",
-            verdicts["behaviors"]["evil"]["null_band_context"]["p975"],
+            _band(verdicts, "evil", "null_band_context", "p975"),
         ),
         (
             "evil__pre__ans__L17__c1",
             "evil",
             "pre",
-            gates["behaviors"]["evil"]["gate2"]["answer_band_p975"],
+            _band(gates, "evil", "gate2", "answer_band_p975"),
         ),
         (
             "sycophancy__rb__ctx__L17__c4",
             "sycophancy",
             "rb",
-            verdicts["behaviors"]["sycophancy"]["null_band_context"]["p975"],
+            _band(verdicts, "sycophancy", "null_band_context", "p975"),
         ),
         (
             "sycophancy__pre__ans__L14__c1",
             "sycophancy",
             "pre",
-            gates["behaviors"]["sycophancy"]["gate2"]["answer_band_p975"],
+            _band(gates, "sycophancy", "gate2", "answer_band_p975"),
         ),
     ]
+    bars = []  # (cell_id, behavior, direction, band, percell record)
+    for cid, beh, d, band in specs:
+        rec = percell.get("behaviors", {}).get(beh, {}).get(cid)
+        if rec is None or band is None:
+            continue
+        bars.append((cid, beh, d, band, rec))
     fig, (ax, ax2) = plt.subplots(1, 2, figsize=(9.6, 4.2), width_ratios=[1.2, 1.0])
     ticklabels = []
     pos_of_cell = {"ctx": "context", "ans": "answer"}
-    for i, (cid, beh, d, band) in enumerate(bars):
-        rec = percell["behaviors"][beh][cid]
+    for i, (cid, beh, d, band, rec) in enumerate(bars):
         v = rec["delta_score"]
         lo, hi = rec["ci_frozen"]
         ax.bar(i, v, color=DIR_COLORS[d], width=0.7)
@@ -511,9 +534,21 @@ def fig_offdesign_positives(out_root: Path, fig_dir: Path):
     # right panel: per-question dots behind the two clean sycophancy positives
     judged_dir = out_root / "judge" / "decisive" / "judged"
     targets = [
-        ("baseline (α=0)", "sycophancy__a0.json", "0.5"),
-        ("persona vector\n@ context vector", "sycophancy__rb__ctx__L17__c4.json", DIR_COLORS["rb"]),
-        ("pre-image\n@ answer tokens", "sycophancy__pre__ans__L14__c1.json", DIR_COLORS["pre"]),
+        (label, fname, color)
+        for label, fname, color in (
+            ("baseline (α=0)", "sycophancy__a0.json", "0.5"),
+            (
+                "persona vector\n@ context vector",
+                "sycophancy__rb__ctx__L17__c4.json",
+                DIR_COLORS["rb"],
+            ),
+            (
+                "pre-image\n@ answer tokens",
+                "sycophancy__pre__ans__L14__c1.json",
+                DIR_COLORS["pre"],
+            ),
+        )
+        if (judged_dir / fname).is_file()
     ]
     rng = np.random.default_rng(0)
     for ti, (label, fname, color) in enumerate(targets):
@@ -521,7 +556,8 @@ def fig_offdesign_positives(out_root: Path, fig_dir: Path):
         qs = [v for v in j["per_question_mean_score"] if v is not None]
         xj = ti + rng.uniform(-0.12, 0.12, size=len(qs))
         ax2.plot(xj, qs, "o", color=color, markersize=4, alpha=0.7)
-        ax2.hlines(float(np.mean(qs)), ti - 0.25, ti + 0.25, color=color, linewidth=2)
+        if qs:
+            ax2.hlines(float(np.mean(qs)), ti - 0.25, ti + 0.25, color=color, linewidth=2)
     ax2.set_xticks(range(len(targets)))
     ax2.set_xticklabels([t[0] for t in targets], fontsize=7)
     ax2.set_ylabel("per-question mean judge score")

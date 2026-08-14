@@ -202,13 +202,18 @@ def heldout_sensitivity() -> dict:
 def _hf_fetch(rel: str) -> Path:
     from huggingface_hub import hf_hub_download
 
+    from explore_persona_space.orchestrate import hub
+
     return Path(
-        hf_hub_download(
-            HF_REPO,
-            f"{HF_PREFIX}/{rel}",
-            repo_type="dataset",
-            revision=HF_REV,
-            local_dir=STAGE_DIR,
+        hub.retry_transient(
+            lambda: hf_hub_download(
+                HF_REPO,
+                f"{HF_PREFIX}/{rel}",
+                repo_type="dataset",
+                revision=HF_REV,
+                local_dir=STAGE_DIR,
+            ),
+            what=f"fetch {rel} (issue2254 reachability inputs)",
         )
     )
 
