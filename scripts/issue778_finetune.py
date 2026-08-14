@@ -59,6 +59,67 @@ LR_SCHEDULER = "linear"
 MAX_SEQ_LENGTH = 2048
 
 
+def parse_save_fracs(spec: str | None) -> tuple[float, ...] | None:
+    """Parse a ``--save-fracs`` spec ('0.1,0.25,0.5') into a validated tuple."""
+    if not spec:
+        return None
+    fracs = tuple(sorted(float(x) for x in spec.split(",") if x.strip()))
+    assert all(0.0 < f < 1.0 for f in fracs), f"save fracs must be in (0, 1): {fracs}"
+    return fracs
+
+
+class CheckpointFracCallback:
+    """Adapter-only intermediate saves at fixed fractions of total steps.
+
+    Issue #2221's SINGLE declared override of the #778 recipe (plan §4 P4):
+    the reused driver hardcodes ``save_strategy="no"``; this OPT-IN callback
+    (armed only via ``--save-fracs``, default off — #778 behavior unchanged)
+    saves the PEFT adapter (``save_pretrained`` — no optimizer state) at
+    exactly {10, 25, 50}% of the realized ``max_steps`` into
+    ``{out_dir}/checkpoint_frac{pct}``. Training dynamics are untouched (a
+    pure disk write at step boundaries). Subclasses ``TrainerCallback`` via
+    :func:`make_checkpoint_callback` (gotchas.md #816: HF fires every
+    lifecycle event on callbacks, so a bare class dies at ``on_init_end``).
+    """
+
+    @staticmethod
+    def target_steps(max_steps: int, fracs: tuple[float, ...]) -> dict[int, float]:
+        """{step: frac} save targets (>=1, deduplicated, before the final step)."""
+        assert max_steps > 0, max_steps
+        out: dict[int, float] = {}
+        for f in fracs:
+            step = max(1, round(f * max_steps))
+            if step < max_steps and step not in out:
+                out[step] = f
+        return out
+
+
+def make_checkpoint_callback(fracs: tuple[float, ...], out_dir: Path):
+    """Build the TrainerCallback that performs the frac-checkpoint saves."""
+    from transformers import TrainerCallback
+
+    class _Cb(TrainerCallback):
+        def __init__(self) -> None:
+            self._targets: dict[int, float] | None = None
+
+        def on_step_end(self, args, state, control, **kwargs):
+            if self._targets is None:
+                assert state.max_steps and state.max_steps > 0, state.max_steps
+                self._targets = CheckpointFracCallback.target_steps(state.max_steps, fracs)
+                logger.info(
+                    "[ckpt-frac] max_steps=%d save targets=%s", state.max_steps, self._targets
+                )
+            frac = self._targets.get(state.global_step)
+            if frac is not None:
+                dest = out_dir / f"checkpoint_frac{int(round(frac * 100))}"
+                dest.mkdir(parents=True, exist_ok=True)
+                kwargs["model"].save_pretrained(str(dest))
+                logger.info("[ckpt-frac] saved adapter at step %d -> %s", state.global_step, dest)
+            return control
+
+    return _Cb()
+
+
 def _messages_to_prompt_completion(row: dict) -> dict:
     """Single-turn {"messages":[user,assistant]} -> conversational prompt/completion.
 
@@ -138,6 +199,7 @@ def train_single_cell(
     model_name: str = lib.MODEL_NAME,
     trainability_floor_override: int | None = None,
     trainability_override_reason: str | None = None,
+    save_fracs: tuple[float, ...] | None = None,
 ) -> tuple[Path, dict]:
     """Train ONE rs-LoRA cell (runs inside a per-GPU subprocess).
 
@@ -241,12 +303,14 @@ def train_single_cell(
     if not cpu_only:
         os.environ.setdefault("WANDB_PROJECT", "issue778")
 
+    callbacks = [make_checkpoint_callback(save_fracs, out_dir)] if save_fracs else None
     trainer = SFTTrainer(
         model=model,
         args=sft_config,
         train_dataset=ds,
         processing_class=tokenizer,
         peft_config=peft_config,
+        callbacks=callbacks,
     )
     trainer.train()
 
@@ -269,6 +333,7 @@ def run_wave_dispatch(
     cpu_only: bool = False,
     trainability_floor_override: int | None = None,
     trainability_override_reason: str | None = None,
+    save_fracs: str | None = None,
 ) -> dict:
     """Fan out cells across visible GPUs, CUDA_VISIBLE_DEVICES-pinned per cell."""
     lib.log_phase("finetune", f"dispatch {len(cells)} cells, wave_size={wave_size}")
@@ -303,6 +368,8 @@ def run_wave_dispatch(
                 cmd += ["--trainability-floor-override", str(trainability_floor_override)]
             if trainability_override_reason is not None:
                 cmd += ["--trainability-override-reason", trainability_override_reason]
+            if save_fracs:
+                cmd += ["--save-fracs", save_fracs]
             env = {**os.environ, "CUDA_VISIBLE_DEVICES": str(gpu_id)}
             logger.info("[wave] launch cell=%s CUDA_VISIBLE_DEVICES=%d", cell, gpu_id)
             if dry_run:
@@ -353,6 +420,15 @@ def main() -> None:
         help="recorded reason for --trainability-floor-override (lands in the "
         "per-cell result JSON; an override is a recorded decision, never silent)",
     )
+    parser.add_argument(
+        "--save-fracs",
+        default=None,
+        help=(
+            "OPT-IN adapter-only intermediate saves at these step fractions "
+            "(e.g. '0.1,0.25,0.5'; issue #2221's declared checkpoint override — "
+            "default off, #778 behavior unchanged)"
+        ),
+    )
     args = parser.parse_args()
 
     dataset_root = Path(args.dataset_root)
@@ -371,6 +447,7 @@ def main() -> None:
             model_name=args.model,
             trainability_floor_override=args.trainability_floor_override,
             trainability_override_reason=args.trainability_override_reason,
+            save_fracs=parse_save_fracs(args.save_fracs),
         )
         print(
             json.dumps(
@@ -403,6 +480,7 @@ def main() -> None:
         cpu_only=args.cpu_only,
         trainability_floor_override=args.trainability_floor_override,
         trainability_override_reason=args.trainability_override_reason,
+        save_fracs=args.save_fracs,
     )
     print(json.dumps({"phase": "finetune", **res}, indent=2))
 
