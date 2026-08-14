@@ -10063,8 +10063,8 @@
     "2302": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2302",
-      "status": "approved",
+      "path": "tasks/running/2302",
+      "status": "running",
       "title": "workflow-fix: Step 5a sibling sync puts main's own files in the branch diff, disabling the #2024 ordering carve-out and false-BLOCKing Step 9c"
     },
     "2303": {
