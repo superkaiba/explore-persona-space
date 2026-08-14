@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2294,
+  "highest_id": 2295,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10003,6 +10003,13 @@
       "path": "tasks/proposed/2294",
       "status": "proposed",
       "title": "workflow-fix: /issue Step 5 dispatches code-review with no implementer marker posted"
+    },
+    "2295": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2295",
+      "status": "proposed",
+      "title": "sync_repo_root deadlocks on the abandoned-rebase husk it exists to clear (task.py holds the flock while waiting on the husk)"
     },
     "23": {
       "has_clean_result": false,
