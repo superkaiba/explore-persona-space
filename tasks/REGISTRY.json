@@ -9951,8 +9951,8 @@
     "2288": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2288",
-      "status": "approved",
+      "path": "tasks/running/2288",
+      "status": "running",
       "title": "verify_task_body cross-issue-reuse-pins check SKIPs on pre-merge worktree bodies \u2014 its only gate"
     },
     "229": {
