@@ -281,6 +281,13 @@ def test_step10d_prose_carries_no_pre_1723_status_ordering():
     for stale in (
         "flipped in Step 10 step 6 BEFORE this step",
         "the instant the task auto-completes (Step 10 -> `completed`)",
+        # The other two distinctive fragments of the pre-#1723 Guard-2 bullet.
+        # A PARTIAL re-introduction (someone re-wording the headline claim but
+        # pasting back the old framing) is caught by these even when the two
+        # literals above are not reproduced verbatim. Both are absent from the
+        # corrected text and were present pre-fix, so they stay red-first.
+        "well past `running`",
+        "terminated-pod task at `running`",
     ):
         assert stale not in text, (
             f"SKILL.md re-introduced the pre-#1723 claim {stale!r}: on the "
