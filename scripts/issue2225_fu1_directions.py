@@ -534,15 +534,22 @@ def build_bank(args) -> None:
     lib.log_phase("fu1_directions", f"build done elapsed={round(time.time() - t0, 1)}s")
 
 
-def upload_bank(out_dir: pathlib.Path) -> str:
-    """One upload_folder commit -> the fu1 directions HF prefix (never the parent's)."""
+# Parent-default-identical seam: production callers pass no prefix.
+# UPLOAD_PREFIX_EXEMPT: dispatch smoke threads fu1_directions_smoke via --hf-prefix
+def upload_bank(out_dir: pathlib.Path, hf_prefix: str = FU1_DIRECTIONS_HF_PREFIX) -> str:
+    """One upload_folder commit -> the fu1 directions HF prefix (never the parent's).
+
+    The dispatcher's EPM_I2225_SMOKE branch threads a ``_smoke``-suffixed
+    prefix: smoke banks carry a smoke-dial rho (n_prompts=16) and must never
+    land at the production prefix.
+    """
     from explore_persona_space.orchestrate.hub import _upload
 
     return _upload(
         pathlib.Path(out_dir),
         DATA_REPO,
         "dataset",
-        FU1_DIRECTIONS_HF_PREFIX,
+        hf_prefix,
         raise_on_error=True,
     )
 
@@ -564,6 +571,12 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--probe-rho", action="store_true", help="1-GPU rho probe -> rho.json")
     ap.add_argument("--build", action="store_true", help="CPU algebra -> bank + meta")
     ap.add_argument("--upload", action="store_true", help="upload the out-dir (pod-side)")
+    # UPLOAD_PREFIX_EXEMPT: parent-default-identical seam; smoke passes _smoke prefix
+    ap.add_argument(
+        "--hf-prefix",
+        default=FU1_DIRECTIONS_HF_PREFIX,
+        help="HF prefix for the bank upload (dispatch smoke threads fu1_directions_smoke)",
+    )
     ap.add_argument("--n-prompts", type=int, default=RHO_N_PROMPTS_DEFAULT)
     ap.add_argument("--rho-json", default=None, help="explicit rho.json path (default: out-dir)")
     ap.add_argument("--import-check", action="store_true")
@@ -602,7 +615,8 @@ def main(argv: Sequence[str] | None = None) -> None:
         build_bank(args)
         ran = True
     if args.upload:
-        url = upload_bank(pathlib.Path(args.out_dir))
+        # UPLOAD_PREFIX_EXEMPT: parent-default-identical seam; smoke passes _smoke prefix
+        url = upload_bank(pathlib.Path(args.out_dir), hf_prefix=args.hf_prefix)
         lib.log_phase("fu1_directions", f"uploaded -> {url}")
         ran = True
     if not ran:

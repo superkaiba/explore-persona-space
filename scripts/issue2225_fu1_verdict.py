@@ -41,17 +41,35 @@ COLD_COHERENCE_MIN = 88.0  # plan §7: ">= 88 everywhere" cold-side predicate
 COLD_SUPPRESSION_MIN = 5.0  # plan §7: "max trait suppression < 5 points"
 
 
-def _grids(args) -> dict[str, list[float]]:
+def _arms(args) -> tuple[str, ...]:
+    """The arms this verdict scores. Default = the §7 pilot arms (K, M); the
+    dispatcher's smoke branch passes the smoke cells' configs (e.g. J,L) so the
+    verdict RUNS — informationally — over cells the smoke actually trained
+    (#1611/#1355: the hardcoded K/M default enumerated partials the 2-cell
+    smoke never produced, and the crash-with-no-artifact FATAL guard fired)."""
+    arms = tuple(a.strip() for a in args.arms.split(",") if a.strip())
+    if not arms:
+        raise SystemExit(f"[f1-verdict] --arms parsed empty from {args.arms!r}")
+    unknown = sorted(set(arms) - set(fu1._FU1_SPEC_BY_CONFIG))
+    if unknown:
+        raise SystemExit(
+            f"[f1-verdict] unknown fu1 config(s) in --arms: {unknown} "
+            f"(have {sorted(fu1._FU1_SPEC_BY_CONFIG)})"
+        )
+    return arms
+
+
+def _grids(args, arms: tuple[str, ...]) -> dict[str, list[float]]:
     """Per-arm grids: the shared ``--grid`` default, overridden per arm by
     ``--grid-arm CFG=c1,c2,...`` (the §7 octave-shift re-pilot verdict)."""
     default_grid = [float(c) for c in args.grid.split(",")]
-    grids = {cfg: list(default_grid) for cfg in F1_ARMS}
+    grids = {cfg: list(default_grid) for cfg in arms}
     for spec in args.grid_arm or []:
         cfg, _, csv = spec.partition("=")
         cfg = cfg.strip()
-        if cfg not in F1_ARMS or not csv.strip():
+        if cfg not in arms or not csv.strip():
             raise SystemExit(
-                f"[f1-verdict] bad --grid-arm {spec!r} (want CFG=c1,c2,...; CFG in {F1_ARMS})"
+                f"[f1-verdict] bad --grid-arm {spec!r} (want CFG=c1,c2,...; CFG in {arms})"
             )
         grids[cfg] = [float(c) for c in csv.split(",")]
     return grids
@@ -85,10 +103,11 @@ def run_f1_verdict(args) -> int:
     eval_root = Path(args.eval_root)
     with open(args.i778_baseline, encoding="utf-8") as f:
         baseline_score = float(json.load(f)["trait_score"])
-    grids = _grids(args)
+    arms = _arms(args)
+    grids = _grids(args, arms)
     arms_detail: dict[str, dict] = {}
     octave: dict[str, float | None] = {}
-    for cfg in F1_ARMS:
+    for cfg in arms:
         per_coef: dict[str, dict] = {}
         for coef in grids[cfg]:
             tag = f"{cfg}__{F1_DATASET}__c{coef}"
@@ -102,7 +121,8 @@ def run_f1_verdict(args) -> int:
         octave[cfg] = verdict["octave_shift"]
         arms_detail[cfg] = {"per_coef": per_coef, **verdict}
 
-    # Pass <=> criterion (ii): at least ONE of K/M brackets (plan §7).
+    # Pass <=> criterion (ii): at least ONE scored arm brackets (plan §7;
+    # default arms K/M — smoke passes its own trained arms via --arms).
     passed = any(d["brackets_coherence_80"] for d in arms_detail.values())
     repilot: dict[str, dict] = {}
     for cfg, shift in octave.items():
@@ -154,6 +174,12 @@ def build_argparser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description="Issue #2225 fu1 F1 pilot-gate verdict (plan §7).")
     ap.add_argument("--eval-root", default="eval_results/issue_2225/fu1_preimage_prevention")
     ap.add_argument("--i778-baseline", default=judge.I778_BASELINE_DEFAULT)
+    ap.add_argument(
+        "--arms",
+        default=",".join(F1_ARMS),
+        help="comma list of fu1 configs to score (default: the §7 pilot arms K,M; "
+        "the dispatch smoke passes its own trained arms, e.g. J,L)",
+    )
     ap.add_argument("--grid", default=",".join(str(c) for c in fu1.FU1_GRID))
     ap.add_argument(
         "--grid-arm",

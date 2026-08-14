@@ -352,6 +352,79 @@ def test_run_f1_verdict_end_to_end(tmp_path):
     assert verdict2["repilot"]["M"]["cells"][0] == "M__evil__c0.5"
 
 
+def test_run_f1_verdict_smoke_arms_and_grid(tmp_path):
+    """Round-3 fix 1 pin (#1611/#1355 class): the smoke-shaped invocation
+    (--arms J,L --grid 0.25) COMPLETES against fixture partials for the smoke's
+    own trained cells — the pre-fix hardcoded K/M enumeration FileNotFoundError'd
+    here and tripped the dispatcher's crash-with-no-artifact FATAL guard."""
+    baseline = tmp_path / "i778_baseline.json"
+    with open(baseline, "w") as f:
+        json.dump({"trait_score": 60.0}, f)
+    root = tmp_path / "smoke"
+    # J brackets at the single coef; L is too cold -> verdict PASSes on J.
+    _write_pilot_partials(root, "J", {"0.25": {"trait_mean": 30.0, "coherence_mean": 85.0}})
+    _write_pilot_partials(root, "L", {"0.25": {"trait_mean": 59.0, "coherence_mean": 95.0}})
+    args = fu1v.build_argparser().parse_args(
+        [
+            "--eval-root",
+            str(root),
+            "--i778-baseline",
+            str(baseline),
+            "--arms",
+            "J,L",
+            "--grid",
+            "0.25",
+        ]
+    )
+    rc = fu1v.run_f1_verdict(args)
+    verdict = json.loads((root / "pilot_gate" / "f1_verdict.json").read_text())
+    assert rc == 0 and verdict["passed"]
+    assert set(verdict["grids"]) == {"J", "L"} and verdict["grids"]["J"] == [0.25]
+    assert set(verdict["arms"]) == {"J", "L"}
+    # No K/M enumeration anywhere in the artifact (the pre-fix crash shape).
+    assert "K" not in verdict["arms"] and "M" not in verdict["arms"]
+
+
+def test_f1_verdict_default_arms_are_pilot_configs():
+    """Round-3 fix 1 pin: the default (no --arms) invocation still enumerates
+    the section-7 pilot arms K,M."""
+    args = fu1v.build_argparser().parse_args([])
+    assert fu1v._arms(args) == ("K", "M")
+    assert fu1v.F1_ARMS == ("K", "M")
+
+
+def test_f1_verdict_arms_fail_loud_on_bad_input():
+    """Unknown fu1 config and empty --arms both refuse loudly (never a silent
+    empty enumeration that would vacuously pass no arms)."""
+    bad = fu1v.build_argparser().parse_args(["--arms", "Z"])
+    with pytest.raises(SystemExit, match="unknown fu1 config"):
+        fu1v._arms(bad)
+    empty = fu1v.build_argparser().parse_args(["--arms", ","])
+    with pytest.raises(SystemExit, match="parsed empty"):
+        fu1v._arms(empty)
+
+
+def test_upload_bank_threads_hf_prefix(monkeypatch, tmp_path):
+    """Round-3 fix 2 pin: upload_bank threads a caller-supplied hf_prefix (the
+    dispatcher's _smoke twin) to hub._upload; the default stays the production
+    fu1_directions prefix."""
+    import explore_persona_space.orchestrate.hub as hub
+
+    seen: list[str] = []
+
+    def fake_upload(local_path, repo_id, repo_type, path_in_repo, raise_on_error=False, **kw):
+        seen.append(path_in_repo)
+        return f"https://huggingface.co/{repo_id}/{path_in_repo}"
+
+    monkeypatch.setattr(hub, "_upload", fake_upload)
+    fu1dir.upload_bank(tmp_path)
+    fu1dir.upload_bank(tmp_path, hf_prefix=fu1dir.FU1_DIRECTIONS_HF_PREFIX + "_smoke")
+    assert seen == [
+        "issue2225_ctxsteer/analysis_tensors/fu1_directions",
+        "issue2225_ctxsteer/analysis_tensors/fu1_directions_smoke",
+    ]
+
+
 # ── eval-side target resolution (fu1 seam) ────────────────────────────────────
 
 

@@ -22,11 +22,13 @@
 #   f3        idempotent upload safety pass + results sentinel
 #   all       the full DAG in order, ending with the single [phase=done] line
 #
-# Smoke: EPM_I2225_SMOKE=1 diverts every out-root to *_smoke twins, threads
-# tiny-N dials into every phase (same dispatcher, same subprocess shape, same
-# launch width), and demotes the production-n-calibrated F1 verdict to
-# informational (gate-calibration rule). Smoke cells span BOTH new mask
-# classes: one `context` + one `context_end` (plan §4.5).
+# Smoke: EPM_I2225_SMOKE=1 diverts every out-root to *_smoke twins AND every
+# HF upload prefix to *_smoke twins (round-3 fix 2), threads tiny-N dials into
+# every phase (same dispatcher, same subprocess shape, same launch width), and
+# RUNS the F1 verdict over the smoke cells' own arms + grid (--arms/--grid
+# derived from SMOKE_CELLS; round-3 fix 1) with its production-n-calibrated
+# outcome demoted to informational (gate-calibration rule). Smoke cells span
+# BOTH new mask classes: one `context` + one `context_end` (plan §4.5).
 #
 # Pod-side contract: NEVER shells to scripts/task.py; progress via [phase=...]
 # lines + /workspace/logs sentinels (issue778_lib.write_results_sentinel).
@@ -87,6 +89,21 @@ HF_PILOT="issue2225_ctxsteer/raw_completions/fu1_pilot"
 HF_JUDGE="issue2225_ctxsteer/raw_completions/fu1_judge"
 HF_MMLU="issue2225_ctxsteer/fu1_mmlu"
 HF_CAPTURE="issue2225_ctxsteer/analysis_tensors/fu1_capture"
+HF_DIRECTIONS="issue2225_ctxsteer/analysis_tensors/fu1_directions"
+if [ -n "$SMOKE" ]; then
+  # Smoke uploads exercise the REAL Hub path but land at _smoke-suffixed
+  # prefixes — smoke artifacts (n_prompts=16 rho, 2-step adapters, 2-question
+  # rollouts) must never contaminate the production prefixes (round-3 fix 2;
+  # the pre-fix smoke uploaded a smoke-dial rho bank to the production
+  # fu1_directions prefix and J/L pilot raws to fu1_pilot/fu1_judge).
+  HF_FINAL+="_smoke"
+  HF_NARROW+="_smoke"
+  HF_PILOT+="_smoke"
+  HF_JUDGE+="_smoke"
+  HF_MMLU+="_smoke"
+  HF_CAPTURE+="_smoke"
+  HF_DIRECTIONS+="_smoke"
+fi
 
 # Smoke dials (threaded, never a different code path). Two cells spanning the
 # two NEW mask classes: J = context, L = context_end (plan §4.5).
@@ -238,7 +255,7 @@ phase_f0() {
   log_phase f0_directions "build (CPU algebra on the FULL payloads)"
   uv run python scripts/issue2225_fu1_directions.py --build \
     --out-dir "$DIR_OUT" --dataset-root "$EXTERNAL_ROOT/dataset"
-  uv run python scripts/issue2225_fu1_directions.py --upload --out-dir "$DIR_OUT"
+  uv run python scripts/issue2225_fu1_directions.py --upload --out-dir "$DIR_OUT" --hf-prefix "$HF_DIRECTIONS"
   log_phase f0_directions "done"
 }
 
@@ -350,8 +367,27 @@ phase_f1() {
 
   log_phase f1_pilot "F1 verdict (§7 criterion ii)"
   local rc=0
+  local verdict_args=()
+  if [ -n "$SMOKE" ]; then
+    # Round-3 fix 1 (#1611/#1355 class): the verdict's default arms are the
+    # §7 pilot arms K/M, but the smoke trains J/L — score the smoke's OWN
+    # cells (arms + grid derived mechanically from SMOKE_CELLS, never a
+    # second hand-maintained list) so the verdict code path actually RUNS
+    # under smoke. Its outcome stays informational (demotion below); the
+    # crash-with-no-artifact FATAL guard stays binding for genuine crashes.
+    local smoke_arms smoke_grid
+    smoke_arms=$(SC="$SMOKE_CELLS" uv run python -c "
+import os
+print(','.join(sorted({s.split('__')[0] for s in os.environ['SC'].split(',')})))
+")
+    smoke_grid=$(SC="$SMOKE_CELLS" uv run python -c "
+import os
+print(','.join(sorted({s.split('__c')[1] for s in os.environ['SC'].split(',')})))
+")
+    verdict_args=(--arms "$smoke_arms" --grid "$smoke_grid")
+  fi
   uv run python scripts/issue2225_fu1_verdict.py \
-    --eval-root "$EVAL_ROOT" --i778-baseline "$I778_BASELINE" || rc=$?
+    --eval-root "$EVAL_ROOT" --i778-baseline "$I778_BASELINE" "${verdict_args[@]}" || rc=$?
   if [ ! -f "$verdict" ]; then
     echo "FATAL: f1-verdict crashed (rc=$rc) with no verdict artifact" >&2
     exit "$rc"
@@ -638,7 +674,7 @@ phase_f3() {
   uv run python scripts/issue2225_mmlu.py --upload --out-root "$OUT_ROOT" --hf-prefix "$HF_MMLU"
   uv run python scripts/issue2225_capture.py --upload --out-root "$OUT_ROOT" \
     --hf-prefix "$HF_CAPTURE"
-  uv run python scripts/issue2225_fu1_directions.py --upload --out-dir "$DIR_OUT"
+  uv run python scripts/issue2225_fu1_directions.py --upload --out-dir "$DIR_OUT" --hf-prefix "$HF_DIRECTIONS"
 
   # Incremental reap (#1489 last-consumer rule): the eval-adapter staging
   # mirror is consumed by F2b/F2c/F2d only — all complete by F3; the upload
