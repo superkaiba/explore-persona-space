@@ -21,3 +21,4 @@
 - [Trap-sentinel stale + voluntary resume key](trap_sentinel_stale_and_voluntary_resume_key.md) — EXIT-trap sentinel needs launch-time rm; a voluntary sub-trigger resume still owes the full regime key; fixed shape: rm -f before trap-arm + build_regime()/resume_part_ok() (#2224 R5→R6)
 - [Equality-gated tally shares mask dtype](equality_gated_tally_shares_mask_dtype.md) — a count that a consistency HALT consumes must run the mask's exact fp32 compare; fp64-cast tally diverges at float32(thr); conform TALLY to MASK (#1336)
 - [workflow_lint --file is YAML-only](workflow_lint_file_flag_yaml_only.md) — touched-file lint check = ONE tree-wide no-flags run + grep; pgrep on 'workflow_lint' false-positives on siblings' pytest argv (#1336)
+- [Stats-reuse driver live probes](stats_reuse_driver_live_probes.md) — shared-idx / relabel-partition / seed-lattice claims settle by 5-line live probes, not reading (#2225 fu1 F5)
