@@ -1,0 +1,54 @@
+{
+  "metadata": {
+    "git_commit": "unknown",
+    "timestamp": "2026-08-02T22:05:38Z",
+    "seed": 0,
+    "n": 5000,
+    "script": "scripts/issue1336_fit_cells.py"
+  },
+  "gate": "G0v2",
+  "stem": "instruct_chat_s",
+  "revision": "deb7a4523b5233393e4fbd2497622527b3622d35",
+  "layer": 19,
+  "recorded_before_llama_reads": true,
+  "leg_a_legacy": {
+    "r2": 0.6730940896676356,
+    "committed_r2": 0.6731,
+    "tol": 0.01,
+    "abs_dev": 5.91033236441163e-06,
+    "pass": true,
+    "enforced": true,
+    "pins": {
+      "lambda_selection": "gcv",
+      "GCV_DOF_CAP": null,
+      "LEGACY_UNGUARDED_GCV": true,
+      "FORCE_GRAM": true,
+      "grid": "logspace(-2,4,13)"
+    }
+  },
+  "leg_b_gram_vs_primal": {
+    "r2_gram": 0.693502683667143,
+    "r2_primal": 0.6935026836671432,
+    "abs_delta": 2.220446049250313e-16,
+    "tol": 1e-06,
+    "pass": true,
+    "enforced": true,
+    "lambda_match": true,
+    "n_train_min": 4000,
+    "d": 3584
+  },
+  "leg_c_v2_anchor": {
+    "s_qwen_v2": 0.6935026836671432,
+    "bars": {
+      "s_qwen_v2": 0.6935026836671432,
+      "committed_anchor": 0.6731,
+      "ex_v2": 1.0303115193390924,
+      "bar_v2": 0.20606230386781849,
+      "elicit_band_v2": 0.020709261538715756,
+      "practical_scale_v2": 0.05182466942275634,
+      "health_gate_v2": 0.05151557596695462
+    }
+  },
+  "local_dir_fixture": false,
+  "pass": true
+}

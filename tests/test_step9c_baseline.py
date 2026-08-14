@@ -3068,8 +3068,11 @@ def test_probe_helpers_real_body():
 # --- #1962: probe --fleet (cross-issue gate-concurrency arbitration) --------------
 #
 # Fleet contract (docstring table): group live FOREIGN gate processes by issue
-# key via the FIXED FLEET_GATE_SIGNATURE_RE union (four gate artifact classes +
-# the ledger-refresh pseudo-issue); --exclude-issue N drops the caller's own
+# key via the FIXED FLEET_GATE_SIGNATURE_RE union (five issue-keyed gate
+# artifact alternates + the ledger-refresh pseudo-issue; #2256 broadened
+# lint-gate-tree -> lint-gate and added surgical-gate so the #2115 script-file
+# launcher's whole-life workload argvs attribute); --exclude-issue N drops the
+# caller's own
 # issue; exit 3 when the DISTINCT foreign-issue count >= EPM_GATE_FLEET_MAX
 # (default 2), else 0. Subprocess cases execute the real /proc scan end-to-end
 # (real-body coverage per code-style.md #906); on the shared VM ambient foreign
@@ -3159,19 +3162,39 @@ def test_probe_fleet_env_threshold_honored_exit_0_real_body():
 
 
 def test_probe_fleet_groups_all_signature_classes(monkeypatch):
-    """Distinct-issue grouping across all four artifact classes + the
-    group-less refresh alternate (pseudo-issue key 'refresh')."""
+    """Distinct-issue grouping across all five issue-keyed artifact
+    alternates + the group-less refresh alternate (pseudo-issue key
+    'refresh'). The lint-gate-tree row stays green under the #2256
+    broadened ``issue-(\\d+)-lint-gate`` alternate (superstring)."""
     rows = [
         (101, "timeout 4350s pytest --junitxml=/tmp/step9c-junit-issue-11.xml"),
         (102, "bash -c lint > /tmp/issue-22-lint-gate-tree/out.txt"),
         (103, "python inline_lint_gate.py /tmp/issue-33-r4-inline-payload.txt"),
         (104, "bash -c gate > /tmp/issue-44-surgical-outcome.txt"),
         (105, "/usr/bin/python scripts/step9c_baseline.py refresh --json"),
+        (106, "bash /tmp/issue-56-surgical-gate.sh"),
     ]
     monkeypatch.setattr(sb, "_probe_matches", lambda pattern: rows)
     grouped = sb._fleet_gate_issues(None)
-    assert set(grouped) == {"11", "22", "33", "44", sb.FLEET_REFRESH_KEY}
+    assert set(grouped) == {"11", "22", "33", "44", "56", sb.FLEET_REFRESH_KEY}
     assert all(len(v) == 1 for v in grouped.values())
+
+
+def test_probe_fleet_script_path_argv_shapes(monkeypatch):
+    """#2256: the #2115 script-file launcher argv shapes attribute per-issue —
+    ``bash /tmp/issue-<n>-lint-gate.sh`` (the detached workload's whole-life
+    argv) and ``bash /tmp/issue-<n>-surgical-gate.sh``. The former
+    tree-only union missed both during the TG/land phases, undercounting
+    fleet arbitration exactly when the gates run longest."""
+    rows = [
+        (501, "bash /tmp/issue-91-lint-gate.sh"),
+        (502, "bash /tmp/issue-92-surgical-gate.sh"),
+    ]
+    monkeypatch.setattr(sb, "_probe_matches", lambda pattern: rows)
+    grouped = sb._fleet_gate_issues(None)
+    assert set(grouped) == {"91", "92"}
+    assert grouped["91"] == [rows[0]]
+    assert grouped["92"] == [rows[1]]
 
 
 def test_probe_fleet_multi_issue_argv_attributes_to_all(monkeypatch):

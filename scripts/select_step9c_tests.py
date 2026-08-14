@@ -425,6 +425,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # NEW (#1659) — SKILL.md 9a-ter + CLAUDE.md measured 1-cell pilot +
     # >=2x pilot-extrapolated fence-sizing pin
     "tests/test_issue_skill_compute_pilot_fence_pin.py",
+    # NEW (#2265) — SKILL.md Step 6d.2 pid-stale-workload-live branch-row pin:
+    # never-post-epm:failure clause + first-tick probe-then-repair instruction
+    # incl. the conclude/post-failure arm for persisting pod-wide evidence
+    "tests/test_issue_skill_dead_veto_status_pin.py",
     # NEW (#1656) — SKILL.md detached-phase harvest contract pin (#1310):
     # four-field breadcrumb (harvest= token), successor consumption, 9a-ter
     # mention + the two mirror duty-lists

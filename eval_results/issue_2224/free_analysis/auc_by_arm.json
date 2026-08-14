@@ -1,0 +1,1059 @@
+{
+  "meta": {
+    "script": "issue2224_free_analysis.auc",
+    "issue": 2224,
+    "timestamp": "2026-08-12T11:41:45-0700",
+    "versions": {
+      "torch": "2.8.0+cu128",
+      "transformers": "4.57.6",
+      "datasets": "4.8.4",
+      "numpy": "2.2.6"
+    },
+    "git_commit": "537c8c2d",
+    "git_dirty": false,
+    "label_thresholds": {
+      "trait_bearing_ge1": "ge 1.0",
+      "strong_gt50": "gt 50.0"
+    },
+    "n_boot": 2000,
+    "seed": 20260812,
+    "degenerate_pos_floor": 10,
+    "subset_note": "AUC computed on the JUDGED subset only: the union of the four selection arms' top-k=2000 candidates per cell (selection-conditioned, not a random sample of the 50k pool); null judge scores dropped, never coerced",
+    "inputs": {
+      "lmsys/evil": {
+        "table": "eval_results/issue_2224/screening_scores/lmsys/evil.json",
+        "table_sha256": "764978b8a44902d9f19ebc9e0163aebee4194c14c63d85b4a070430e683254c7",
+        "labels": "eval_results/issue_2224/selections/lmsys/evil/filter_scores.json",
+        "labels_sha256": "0485efa1745bfe8f2031cb46a74f8859522a1126e93e825fbd756ff4907c9ab2"
+      },
+      "lmsys/hallucination": {
+        "table": "eval_results/issue_2224/screening_scores/lmsys/hallucination.json",
+        "table_sha256": "0dbe06153e6822fc01ea77f15c3b06d9681db19abf583f7ddf8cc124c2d2042d",
+        "labels": "eval_results/issue_2224/selections/lmsys/hallucination/filter_scores.json",
+        "labels_sha256": "e1b6877fd2d1cac8f345b9d75e4471015b00876c82867309a3601be06c5712a5"
+      },
+      "lmsys/sycophancy": {
+        "table": "eval_results/issue_2224/screening_scores/lmsys/sycophancy.json",
+        "table_sha256": "39a750be4515d45869fec66bc4528880f82d49d4d0796560ec859d7cfbea2daf",
+        "labels": "eval_results/issue_2224/selections/lmsys/sycophancy/filter_scores.json",
+        "labels_sha256": "3f82109c511bd180cd1b16aace95f17a2c0d283ab83a2b7001cb97c9e7ca43da"
+      },
+      "ultrachat/evil": {
+        "table": "eval_results/issue_2224/screening_scores/ultrachat/evil.json",
+        "table_sha256": "14657d32393079ebd491bad274d94450af83155c1a8b5ecde14f22bf2d556bf3",
+        "labels": "eval_results/issue_2224/selections/ultrachat/evil/filter_scores.json",
+        "labels_sha256": "c364fde78d5bf6412d6860344892ee3fc4ffc018788268213d33e065560fb2e1"
+      },
+      "ultrachat/hallucination": {
+        "table": "eval_results/issue_2224/screening_scores/ultrachat/hallucination.json",
+        "table_sha256": "eea9fd3890c9ce0eb0dc210e08f82788e9c4601ed2be8cb9f4098c7d398ec9f3",
+        "labels": "eval_results/issue_2224/selections/ultrachat/hallucination/filter_scores.json",
+        "labels_sha256": "e8a818e292e14522fde808dbbadc923ffcffe6c06612746553f363fab27f5cc2"
+      },
+      "ultrachat/sycophancy": {
+        "table": "eval_results/issue_2224/screening_scores/ultrachat/sycophancy.json",
+        "table_sha256": "2542401f629ba66fab2e3fbd15558103423c3af24c0e8bd06fc0f0b70fa3a855",
+        "labels": "eval_results/issue_2224/selections/ultrachat/sycophancy/filter_scores.json",
+        "labels_sha256": "20fa65db9bbcb92f30af167b7ffe6826749a02a2508d7f5d607ba68280c6a9bb"
+      }
+    }
+  },
+  "results": {
+    "lmsys/evil": {
+      "n_join": 6795,
+      "n_table": 50000,
+      "n_labels_nonnull": 6795,
+      "n_labels_null_dropped": 159,
+      "arms": {
+        "raw": {
+          "trait_bearing_ge1": {
+            "auc": 0.909427206454025,
+            "ci95": [
+              0.8998974594629338,
+              0.9185908146247828
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.8761022462439929,
+            "ci95": [
+              0.8596477581754374,
+              0.8916730963581088
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "exact_dp": {
+          "trait_bearing_ge1": {
+            "auc": 0.9167271789828915,
+            "ci95": [
+              0.9066407509066521,
+              0.9260320253024005
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.8952662521478251,
+            "ci95": [
+              0.8777741430644794,
+              0.9103202213195462
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "prompttoken_dp": {
+          "trait_bearing_ge1": {
+            "auc": 0.7073399835639801,
+            "ci95": [
+              0.6863550047806737,
+              0.7270874862111354
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.6995305072579878,
+            "ci95": [
+              0.6675251937905711,
+              0.7291495500427291
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "mapped_dp_context": {
+          "trait_bearing_ge1": {
+            "auc": 0.18761559310527043,
+            "ci95": [
+              0.1739532743336,
+              0.20173932259160957
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.23013025687922808,
+            "ci95": [
+              0.21048529879465708,
+              0.251092108411855
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "mapped_dp_prefix": {
+          "trait_bearing_ge1": {
+            "auc": 0.9093968773895075,
+            "ci95": [
+              0.8998655496162185,
+              0.9185740450518795
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.8760761922627492,
+            "ci95": [
+              0.8595837608379437,
+              0.8916627263788148
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "probe_diff_context": {
+          "trait_bearing_ge1": {
+            "auc": 0.17070305687807774,
+            "ci95": [
+              0.15724305985950213,
+              0.1844054922704982
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.2028940762365545,
+            "ci95": [
+              0.18431280428578883,
+              0.22414176148021667
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "probe_diff_prefix": {
+          "trait_bearing_ge1": {
+            "auc": 0.9130783592209396,
+            "ci95": [
+              0.9033730603974022,
+              0.9228355189707603
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.8971584225356516,
+            "ci95": [
+              0.8817029685948414,
+              0.9107207385597801
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        }
+      },
+      "n_pos__trait_bearing_ge1": 549,
+      "n_neg__trait_bearing_ge1": 6246,
+      "n_pos__strong_gt50": 234,
+      "n_neg__strong_gt50": 6561
+    },
+    "lmsys/hallucination": {
+      "n_join": 6944,
+      "n_table": 50000,
+      "n_labels_nonnull": 6944,
+      "n_labels_null_dropped": 182,
+      "arms": {
+        "raw": {
+          "trait_bearing_ge1": {
+            "auc": 0.7876273740227979,
+            "ci95": [
+              0.7766993325182148,
+              0.7986433225811643
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.6722400334426336,
+            "ci95": [
+              0.6596990326863975,
+              0.6839964793686207
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "exact_dp": {
+          "trait_bearing_ge1": {
+            "auc": 0.5869895411225277,
+            "ci95": [
+              0.5737553112227661,
+              0.6009789703808092
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.6267864477394116,
+            "ci95": [
+              0.6134847585331316,
+              0.6405444697969943
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "prompttoken_dp": {
+          "trait_bearing_ge1": {
+            "auc": 0.8429372288325452,
+            "ci95": [
+              0.8340941313883166,
+              0.8522001742375096
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.7387905093754157,
+            "ci95": [
+              0.7274964066283478,
+              0.7499463768464165
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "mapped_dp_context": {
+          "trait_bearing_ge1": {
+            "auc": 0.2543268760385081,
+            "ci95": [
+              0.24209165091439044,
+              0.26676043298768115
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.3749704027305344,
+            "ci95": [
+              0.36233725175551473,
+              0.38808952996868157
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "mapped_dp_prefix": {
+          "trait_bearing_ge1": {
+            "auc": 0.7876620967799014,
+            "ci95": [
+              0.7767286682435647,
+              0.7986689516524877
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.6722706190979786,
+            "ci95": [
+              0.6597358428112796,
+              0.6840402105751049
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "probe_diff_context": {
+          "trait_bearing_ge1": {
+            "auc": 0.4666080737488046,
+            "ci95": [
+              0.45244233941188394,
+              0.48038816954962327
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.4948760772645789,
+            "ci95": [
+              0.4805390011986143,
+              0.5090450271252719
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "probe_diff_prefix": {
+          "trait_bearing_ge1": {
+            "auc": 0.7566078780689983,
+            "ci95": [
+              0.7452297477294684,
+              0.7682208178379073
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.7793415273346695,
+            "ci95": [
+              0.7686250910482878,
+              0.790048277354219
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        }
+      },
+      "n_pos__trait_bearing_ge1": 3685,
+      "n_neg__trait_bearing_ge1": 3259,
+      "n_pos__strong_gt50": 2733,
+      "n_neg__strong_gt50": 4211
+    },
+    "lmsys/sycophancy": {
+      "n_join": 5847,
+      "n_table": 50000,
+      "n_labels_nonnull": 5847,
+      "n_labels_null_dropped": 364,
+      "arms": {
+        "raw": {
+          "trait_bearing_ge1": {
+            "auc": 0.4581469008913604,
+            "ci95": [
+              0.4420079292460413,
+              0.47433172609373553
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.7505909847504078,
+            "ci95": [
+              0.7346170946780537,
+              0.766032648414094
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "exact_dp": {
+          "trait_bearing_ge1": {
+            "auc": 0.5025359252065816,
+            "ci95": [
+              0.486258127552405,
+              0.5187008419894054
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.7662806631134724,
+            "ci95": [
+              0.7415156521351791,
+              0.7897519632213809
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "prompttoken_dp": {
+          "trait_bearing_ge1": {
+            "auc": 0.44808675823415295,
+            "ci95": [
+              0.4318967958303825,
+              0.46442043971873403
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.6897851270238916,
+            "ci95": [
+              0.6716926210164096,
+              0.7079122363974127
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "mapped_dp_context": {
+          "trait_bearing_ge1": {
+            "auc": 0.5497546671734627,
+            "ci95": [
+              0.5338095184774627,
+              0.5660609859722713
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.24048329606402474,
+            "ci95": [
+              0.22496496345493036,
+              0.25739965807403287
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "mapped_dp_prefix": {
+          "trait_bearing_ge1": {
+            "auc": 0.45794861330515196,
+            "ci95": [
+              0.44182546255692656,
+              0.4741176582821104
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.750316508902601,
+            "ci95": [
+              0.7343301487658783,
+              0.7657982703860902
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "probe_diff_context": {
+          "trait_bearing_ge1": {
+            "auc": 0.43032374705314985,
+            "ci95": [
+              0.41481573931263327,
+              0.4458618849052902
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.17689232812683894,
+            "ci95": [
+              0.16203243884607146,
+              0.19250795908355348
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "probe_diff_prefix": {
+          "trait_bearing_ge1": {
+            "auc": 0.7065095864632746,
+            "ci95": [
+              0.692794907691229,
+              0.7196898969133148
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.8950611160616709,
+            "ci95": [
+              0.8825315910534413,
+              0.9069093577142952
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        }
+      },
+      "n_pos__trait_bearing_ge1": 1799,
+      "n_neg__trait_bearing_ge1": 4048,
+      "n_pos__strong_gt50": 440,
+      "n_neg__strong_gt50": 5407
+    },
+    "ultrachat/evil": {
+      "n_join": 7232,
+      "n_table": 50000,
+      "n_labels_nonnull": 7232,
+      "n_labels_null_dropped": 7,
+      "arms": {
+        "raw": {
+          "trait_bearing_ge1": {
+            "auc": 0.906817972137651,
+            "ci95": [
+              0.7449896265560166,
+              0.9949733795638417
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 1994,
+            "degenerate": true
+          },
+          "strong_gt50": {
+            "auc": 0.9918406859355553,
+            "ci95": [
+              0.9896279905960448,
+              0.9939150878163463
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 1290,
+            "degenerate": true
+          }
+        },
+        "exact_dp": {
+          "trait_bearing_ge1": {
+            "auc": 0.9042347079988929,
+            "ci95": [
+              0.851482100487758,
+              0.9590528331821544
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 1994,
+            "degenerate": true
+          },
+          "strong_gt50": {
+            "auc": 0.9856174802931821,
+            "ci95": [
+              0.982851611118794,
+              0.9882450560088508
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 1290,
+            "degenerate": true
+          }
+        },
+        "prompttoken_dp": {
+          "trait_bearing_ge1": {
+            "auc": 0.8088845834486577,
+            "ci95": [
+              0.638514852503252,
+              0.9377643353180013
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 1994,
+            "degenerate": true
+          },
+          "strong_gt50": {
+            "auc": 0.9283639883833494,
+            "ci95": [
+              0.9226832641770402,
+              0.9345519974891768
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 1290,
+            "degenerate": true
+          }
+        },
+        "mapped_dp_context": {
+          "trait_bearing_ge1": {
+            "auc": 0.09249008211089584,
+            "ci95": [
+              0.02356978205253294,
+              0.1831489420550408
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 1994,
+            "degenerate": true
+          },
+          "strong_gt50": {
+            "auc": 0.04273267874429539,
+            "ci95": [
+              0.03803070114783571,
+              0.04744121715076072
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 1290,
+            "degenerate": true
+          }
+        },
+        "mapped_dp_prefix": {
+          "trait_bearing_ge1": {
+            "auc": 0.906817972137651,
+            "ci95": [
+              0.7449896265560166,
+              0.9949733795638417
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 1994,
+            "degenerate": true
+          },
+          "strong_gt50": {
+            "auc": 0.9918406859355553,
+            "ci95": [
+              0.9896279905960448,
+              0.9939150878163463
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 1290,
+            "degenerate": true
+          }
+        },
+        "probe_diff_context": {
+          "trait_bearing_ge1": {
+            "auc": 0.359788725897223,
+            "ci95": [
+              0.1716916851134477,
+              0.5109813196773311
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 1994,
+            "degenerate": true
+          },
+          "strong_gt50": {
+            "auc": 0.14880376158207717,
+            "ci95": [
+              0.14064444751763241,
+              0.15684159258976593
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 1290,
+            "degenerate": true
+          }
+        },
+        "probe_diff_prefix": {
+          "trait_bearing_ge1": {
+            "auc": 0.8722437494233786,
+            "ci95": [
+              0.6355305200419307,
+              0.9989875604464448
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 1994,
+            "degenerate": true
+          },
+          "strong_gt50": {
+            "auc": 0.9991702392476836,
+            "ci95": [
+              0.998478561549101,
+              0.9997234130825612
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 1290,
+            "degenerate": true
+          }
+        }
+      },
+      "n_pos__trait_bearing_ge1": 6,
+      "n_neg__trait_bearing_ge1": 7226,
+      "n_pos__strong_gt50": 1,
+      "n_neg__strong_gt50": 7231
+    },
+    "ultrachat/hallucination": {
+      "n_join": 7004,
+      "n_table": 50000,
+      "n_labels_nonnull": 7004,
+      "n_labels_null_dropped": 13,
+      "arms": {
+        "raw": {
+          "trait_bearing_ge1": {
+            "auc": 0.7369692961486619,
+            "ci95": [
+              0.7245823490215235,
+              0.7489687770211773
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.5217157987998873,
+            "ci95": [
+              0.5051554942757797,
+              0.5370579353455525
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "exact_dp": {
+          "trait_bearing_ge1": {
+            "auc": 0.6055101071704243,
+            "ci95": [
+              0.5914434371958921,
+              0.6190042800161912
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.6848698451532359,
+            "ci95": [
+              0.6685614241140043,
+              0.7013715577975146
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "prompttoken_dp": {
+          "trait_bearing_ge1": {
+            "auc": 0.7527237229409799,
+            "ci95": [
+              0.7406864018319765,
+              0.7646177461831505
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.5076891033385688,
+            "ci95": [
+              0.4921362904920116,
+              0.5228103902552846
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "mapped_dp_context": {
+          "trait_bearing_ge1": {
+            "auc": 0.3089207821626479,
+            "ci95": [
+              0.2960121512284934,
+              0.3221413492339823
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.5310443598727397,
+            "ci95": [
+              0.5135624859652219,
+              0.5500970922995719
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "mapped_dp_prefix": {
+          "trait_bearing_ge1": {
+            "auc": 0.7370145685245562,
+            "ci95": [
+              0.7246416823818814,
+              0.7490010768129466
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.5217408430993516,
+            "ci95": [
+              0.5051943098212128,
+              0.5370818499220256
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "probe_diff_context": {
+          "trait_bearing_ge1": {
+            "auc": 0.5003870203108259,
+            "ci95": [
+              0.48554028042470104,
+              0.5161014205053679
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.3632289275502396,
+            "ci95": [
+              0.3467168585431952,
+              0.3801149497468493
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "probe_diff_prefix": {
+          "trait_bearing_ge1": {
+            "auc": 0.641949689519706,
+            "ci95": [
+              0.6275585444589504,
+              0.6556155388064278
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.668988550098667,
+            "ci95": [
+              0.6534866151988488,
+              0.68442906179339
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        }
+      },
+      "n_pos__trait_bearing_ge1": 4576,
+      "n_neg__trait_bearing_ge1": 2428,
+      "n_pos__strong_gt50": 1424,
+      "n_neg__strong_gt50": 5580
+    },
+    "ultrachat/sycophancy": {
+      "n_join": 6548,
+      "n_table": 50000,
+      "n_labels_nonnull": 6548,
+      "n_labels_null_dropped": 15,
+      "arms": {
+        "raw": {
+          "trait_bearing_ge1": {
+            "auc": 0.6169268821478997,
+            "ci95": [
+              0.602508236396099,
+              0.6312842813270552
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.7280921434684272,
+            "ci95": [
+              0.7041801535931087,
+              0.7511849695582641
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "exact_dp": {
+          "trait_bearing_ge1": {
+            "auc": 0.6548327321778882,
+            "ci95": [
+              0.6407857306494168,
+              0.6694016487807578
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.7873733495323675,
+            "ci95": [
+              0.7586657084037545,
+              0.8162857432973067
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "prompttoken_dp": {
+          "trait_bearing_ge1": {
+            "auc": 0.5902586286019849,
+            "ci95": [
+              0.5761943901903767,
+              0.6047438465296727
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.6848590607616603,
+            "ci95": [
+              0.6595558386145222,
+              0.7107103569320701
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "mapped_dp_context": {
+          "trait_bearing_ge1": {
+            "auc": 0.4092774411022074,
+            "ci95": [
+              0.3944607380918275,
+              0.42303212973891163
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.3205422091814903,
+            "ci95": [
+              0.29707861800649493,
+              0.34426627548507394
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "mapped_dp_prefix": {
+          "trait_bearing_ge1": {
+            "auc": 0.6169100570575484,
+            "ci95": [
+              0.6024680575067454,
+              0.6312626455600998
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.7280835472828413,
+            "ci95": [
+              0.7041758919694083,
+              0.751164320146814
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "probe_diff_context": {
+          "trait_bearing_ge1": {
+            "auc": 0.3696024759630396,
+            "ci95": [
+              0.3550189018052218,
+              0.38298785363981125
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.26343774833425027,
+            "ci95": [
+              0.2414735494734795,
+              0.285432521556686
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        },
+        "probe_diff_prefix": {
+          "trait_bearing_ge1": {
+            "auc": 0.7322054986336625,
+            "ci95": [
+              0.7200376653679466,
+              0.7449566074974395
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.8427509322085702,
+            "ci95": [
+              0.8226935482008507,
+              0.8623364907412823
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+            "n_valid_draws": 2000,
+            "degenerate": false
+          }
+        }
+      },
+      "n_pos__trait_bearing_ge1": 2071,
+      "n_neg__trait_bearing_ge1": 4477,
+      "n_pos__strong_gt50": 164,
+      "n_neg__strong_gt50": 6384
+    }
+  }
+}

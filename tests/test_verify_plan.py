@@ -203,10 +203,16 @@ def test_good_plan_passes_all():
         # A100 ... covers both conditions."), so it is NOT declaration-
         # shaped — the 646-file corpus class c59 never fires on (#2123).
         "c59_gpu_hours_token_conflict": "SKIP",
+        # SKIP: GOOD_PLAN declares no per-leg RSS peak-estimate token —
+        # trigger-conditional (#2275).
+        "c61_slurm_mem_coverage": "SKIP",
+        # SKIP: GOOD_PLAN's §9 declares no multi-GPU width token —
+        # trigger-conditional (#2276). (c62 is main()-wired, not in CHECKS.)
+        "c63_declared_width_vs_launch": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 58
+    assert len(results) == 60
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -6330,12 +6336,18 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     # + c59 (SKIP: GOOD_PLAN's GPU-hours token sits mid-sentence — not
     #   declaration-shaped, the 646-file corpus class; trigger-conditional,
     #   #2123)
-    assert payload["n_skip"] == 51
+    # + c61 (SKIP: GOOD_PLAN declares no per-leg RSS peak-estimate token;
+    #   trigger-conditional, #2275)
+    # + c62 (SKIP: no task context in --plan-file mode — the c23 mode row;
+    #   #2276)
+    # + c63 (SKIP: GOOD_PLAN's §9 declares no multi-GPU width token;
+    #   trigger-conditional, #2276)
+    assert payload["n_skip"] == 54
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 60
-    assert len({c["id"] for c in payload["checks"]}) == 60
+    assert len(payload["checks"]) == 63
+    assert len({c["id"] for c in payload["checks"]}) == 63
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -6658,6 +6670,117 @@ def test_cli_plan_file_mode_parses_versioned_filename(tmp_path):
     payload = json.loads(proc.stdout)
     c40 = next(c for c in payload["checks"] if c["id"] == "c40_header_version_vs_filename")
     assert c40["status"] == "WARN"
+
+
+# ─── Check 60 — amendment composition (outside CHECKS; --issue mode only) ──
+
+# The #2223-v4 shape: thin delta over a full base, amendment-marker phrases,
+# NO GPU-hours declaration (task_workflow.is_amendment_shaped fires on it).
+AMENDMENT_V2 = (
+    "# Plan v2 (AMENDMENT of v1) — thin delta fixture (#2255)\n\n"
+    "## Delta\n\n"
+    "Adds one follow-up arm. Everything else PORTS FROM v1 unchanged.\n"
+)
+
+
+def test_compose_amendment_text_2223_shape(tmp_path):
+    """Amendment-shaped newest → composed text carrying BOTH versions,
+    amendment FIRST (c40's first-heading read), base path = v1.md."""
+    (tmp_path / "plans").mkdir()
+    (tmp_path / "plans" / "v1.md").write_text(GOOD_PLAN)
+    (tmp_path / "plans" / "v2.md").write_text(AMENDMENT_V2)
+    text, base = verify_plan._compose_amendment_text(tmp_path, tmp_path / "plans" / "v2.md")
+    assert base == tmp_path / "plans" / "v1.md"
+    assert AMENDMENT_V2 in text
+    assert GOOD_PLAN in text
+    assert text.index(AMENDMENT_V2) < text.index(GOOD_PLAN), "amendment must come FIRST"
+    assert "amendment composition: v1.md follows" in text
+
+
+def test_compose_amendment_text_full_plan_no_composition(tmp_path):
+    """Full (non-amendment) newest → byte-identical raw text, base None —
+    the non-amendment --issue path stays byte-identical (#2255 §7)."""
+    (tmp_path / "plans").mkdir()
+    (tmp_path / "plans" / "v1.md").write_text(GOOD_PLAN)
+    v2_full = "# Plan v2 — full revision\n\n" + GOOD_PLAN.split("\n", 1)[1]
+    (tmp_path / "plans" / "v2.md").write_text(v2_full)
+    text, base = verify_plan._compose_amendment_text(tmp_path, tmp_path / "plans" / "v2.md")
+    assert base is None
+    assert text == v2_full
+    # Single-version folder: same byte-identical no-composition contract.
+    (tmp_path / "solo" / "plans").mkdir(parents=True)
+    (tmp_path / "solo" / "plans" / "v1.md").write_text(GOOD_PLAN)
+    text, base = verify_plan._compose_amendment_text(
+        tmp_path / "solo", tmp_path / "solo" / "plans" / "v1.md"
+    )
+    assert base is None
+    assert text == GOOD_PLAN
+
+
+def test_composed_amendment_passes_previously_spurious_checks(tmp_path):
+    """#2255 acceptance bullet 1 made mechanical: on the amendment ALONE c5
+    (GPU-hours) and c8 (success+kill) FAIL for kind=experiment; on the
+    COMPOSED text both PASS, and c40 at plan_path=v2.md PASSes (the
+    amendment-first ordering keeps the v2 header as the first heading)."""
+    assert verify_plan.check_gpu_hours(AMENDMENT_V2, "experiment").status == "FAIL"
+    assert verify_plan.check_success_kill(AMENDMENT_V2, "experiment").status == "FAIL"
+    (tmp_path / "plans").mkdir()
+    (tmp_path / "plans" / "v1.md").write_text(GOOD_PLAN)
+    (tmp_path / "plans" / "v2.md").write_text(AMENDMENT_V2)
+    composed, base = verify_plan._compose_amendment_text(tmp_path, tmp_path / "plans" / "v2.md")
+    assert base is not None
+    assert verify_plan.check_gpu_hours(composed, "experiment").status == "PASS"
+    assert verify_plan.check_success_kill(composed, "experiment").status == "PASS"
+    c40 = verify_plan.check_header_version_vs_filename(
+        composed, plan_path=tmp_path / "plans" / "v2.md"
+    )
+    assert c40.status == "PASS", f"{c40.status} — {c40.detail}"
+
+
+def test_load_plan_for_issue_composes_and_warns(tmp_path, monkeypatch, capsys):
+    """--issue mode on an amendment-shaped newest version: the JSON `source`
+    field discloses the composition and exactly one c60 WARN row names the
+    base — the disclosure a reviewer skims off a report header (#2255)."""
+    (tmp_path / "plans").mkdir()
+    (tmp_path / "plans" / "v1.md").write_text(GOOD_PLAN)
+    (tmp_path / "plans" / "v2.md").write_text(AMENDMENT_V2)
+    (tmp_path / "body.md").write_text("---\ntitle: x\nkind: infra\n---\n# x\n")
+    sys.path.insert(0, str(REPO_ROOT / "src"))
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(tw, "find_task_path", lambda n: tmp_path)
+    monkeypatch.setattr(sys, "argv", ["verify_plan.py", "--issue", "999", "--json"])
+    rc = verify_plan.main()
+    payload = json.loads(capsys.readouterr().out)
+    assert rc == 0, payload
+    assert payload["source"].endswith("v2.md (+ v1.md via amendment composition)")
+    entries = [c for c in payload["checks"] if c["id"] == "c60_amendment_composition"]
+    assert len(entries) == 1
+    assert entries[0]["status"] == "WARN"
+    assert "v1.md" in entries[0]["detail"]
+    assert "PARTIAL" in entries[0]["detail"]
+    # GPU-hours resolves from the base under composition (the Step-2c read).
+    c5 = next(c for c in payload["checks"] if c["id"] == "c5_gpu_hours")
+    assert c5["status"] == "PASS"
+
+
+def test_cli_issue_mode_no_c60_row_when_not_composed(tmp_path, monkeypatch, capsys):
+    """A full (non-amendment) newest version emits NO c60 row at all — not
+    even a SKIP — pinning the byte-identical non-amendment --issue output."""
+    (tmp_path / "plans").mkdir()
+    (tmp_path / "plans" / "v1.md").write_text(GOOD_PLAN)
+    (tmp_path / "body.md").write_text("---\ntitle: x\nkind: experiment\n---\n# x\n")
+    sys.path.insert(0, str(REPO_ROOT / "src"))
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(tw, "find_task_path", lambda n: tmp_path)
+    monkeypatch.setattr(sys, "argv", ["verify_plan.py", "--issue", "999", "--json"])
+    rc = verify_plan.main()
+    payload = json.loads(capsys.readouterr().out)
+    assert rc == 0
+    assert payload["source"].endswith("v1.md")
+    assert "amendment composition" not in payload["source"]
+    assert not [c for c in payload["checks"] if c["id"] == "c60_amendment_composition"]
 
 
 # ─── Cross-file anchor pins (planner.md / CLAUDE.md drift detector) ────────
@@ -12322,3 +12445,521 @@ def test_c59_registered_in_checks_and_docstring_catalog():
     assert verify_plan.check_gpu_hours_token_conflict in verify_plan.CHECKS
     assert "c59 GPU-hours token" in verify_plan.__doc__
     assert "N/A — GPU-hours token conflict reconciled" in verify_plan.__doc__
+
+
+# ─── Check 61 — SLURM would-render --mem vs declared RSS peak (#2275) ──────
+
+C61 = "c61_slurm_mem_coverage"
+
+# Per-leg peak above the fellows 8-GPU would-render --mem (min(128*8, 1800)
+# = 1024G) — the #1336 aggregate need (~1,550 GiB) declared as ONE peak.
+_C61_RAM_1550 = "\nPer-leg peak RSS is projected at 1550 GiB (largest cell).\n"
+
+# The #1336 aggregate SHAPE: a per-UNIT peak far below the rendered --mem
+# (and below c52's 85 GiB GCP rung read — the case c52 structurally cannot
+# catch), width-multiplied on the SAME line. 194 GiB x 8-wide = 1552 GiB
+# vs the 1024G render, matching the incident's measured ~1,550 GiB total.
+# (The plan §5 sketch quoted the incident's 65 GiB ON-ARM unit RSS, but
+# 65 x 8 = 520 GiB FITS the 8-GPU 1024G render — the sketch numbers were
+# internally unsatisfiable because the real aggregate also carried ~4x
+# off-arm rows; the fixture keys on the measured total instead.)
+_C61_AGG_1336 = (
+    "\nPer-leg peak RSS is projected at 194 GiB per pooled-fit unit; the fit "
+    "pool runs 8-wide in one job.\n"
+)
+
+
+def _c61_launch(flags: str = "") -> str:
+    """8-GPU fellows-reachable launch-shaped dispatch command (#1336 shape);
+    ``flags`` splices extra tokens in (e.g. ``--min-ram-gb 1550``)."""
+    extra = f" {flags}" if flags else ""
+    return (
+        "\n```bash\n"
+        "uv run python scripts/dispatch_issue.py launch \\\n"
+        f"    --issue 2275 --intent lora-7b --gpus 8 --repo-branch issue-2275{extra} \\\n"
+        "    --workload-cmd 'bash scripts/fit_pool.sh'\n"
+        "```\n"
+    )
+
+
+def test_c61_per_leg_arm_warns_when_peak_exceeds_rendered_mem(monkeypatch):
+    # Plan §5 arm (a): 1550 GiB declared per-leg peak vs the 8-GPU fellows
+    # would-render --mem=1024G, no --min-ram-gb -> WARN naming the remedy.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    r = _run(GOOD_PLAN + _C61_RAM_1550 + _c61_launch())[1][C61]
+    assert r.status == "WARN"
+    assert "1550" in r.detail  # the declared peak
+    assert "--mem=1024G" in r.detail  # the would-render cap
+    assert "--min-ram-gb 1550" in r.detail  # the remedy, named
+    assert "#1336" in r.detail
+
+
+def test_c61_aggregate_arm_warns_naming_arithmetic(monkeypatch):
+    # Plan §5 arm (b) — the #1336 shape: a per-UNIT peak (194 GiB) BELOW the
+    # 1024G would-render --mem, so the per-leg arm stays quiet; the width
+    # multiply (8-wide, same line) makes the within-job aggregate
+    # 194 x 8 = 1552 GiB > 1024G -> WARN naming the arithmetic + remedy.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    r = _run(GOOD_PLAN + _C61_AGG_1336 + _c61_launch())[1][C61]
+    assert r.status == "WARN"
+    assert "194" in r.detail  # the per-unit peak
+    assert "1552" in r.detail  # the aggregate arithmetic
+    assert "--mem=1024G" in r.detail
+    assert "--min-ram-gb 1552" in r.detail
+    assert "cgroup" in r.detail  # why the aggregate binds
+
+
+def test_c61_min_ram_flag_covering_peak_passes(monkeypatch):
+    # Plan §5: --min-ram-gb 1550 present -> the would-render --mem rises to
+    # 1550G (post-#2275 semantics, computed through the renderer itself) ->
+    # PASS. Fail-loud pin: the no-WARN arm asserted explicitly.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    r = _run(GOOD_PLAN + _C61_RAM_1550 + _c61_launch("--min-ram-gb 1550"))[1][C61]
+    assert r.status == "PASS", r.detail
+    assert "--mem=1550G" in r.detail
+
+
+def test_c61_min_ram_flag_below_peak_still_warns(monkeypatch):
+    # AC4 analogue (floor-too-low): --min-ram-gb 1200 raises the render to
+    # 1200G, still strictly below the declared 1550 GiB peak -> WARN.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    r = _run(GOOD_PLAN + _C61_RAM_1550 + _c61_launch("--min-ram-gb 1200"))[1][C61]
+    assert r.status == "WARN"
+    assert "--mem=1200G" in r.detail
+
+
+def test_c61_skips_when_no_slurm_lane_reachable(monkeypatch):
+    # Plan §5: an explicit non-SLURM pin -> the rendered --mem never binds
+    # (exact parity with the runtime reachability predicate, the c50 idiom).
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    r = _run(GOOD_PLAN + _C61_RAM_1550 + _c61_launch("--backend runpod"))[1][C61]
+    assert r.status == "SKIP"
+    assert "no SLURM lane reachable" in r.detail
+
+
+def test_c61_skips_when_no_rss_token(monkeypatch):
+    # Plan §5: launch present, no RSS/host-RAM peak-estimate token anywhere.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    r = _run(GOOD_PLAN + _c61_launch())[1][C61]
+    assert r.status == "SKIP"
+    assert "no per-leg RSS" in r.detail
+
+
+def test_c61_skips_when_no_launch_command():
+    # Residual (the c52 residual-(ii) posture): a custom-driver fan-out —
+    # the actual #1336 dispatch channel — embeds no dispatch_issue.py launch
+    # line; SKIP states it is NOT coverage and names the binding surface.
+    r = _run(GOOD_PLAN + _C61_RAM_1550)[1][C61]
+    assert r.status == "SKIP"
+    assert "not coverage" in r.detail
+    assert "plan-compute-sizing.md" in r.detail
+
+
+def test_c61_never_fails_invariant(monkeypatch):
+    # Plan §5 never-FAIL invariant (the c46/c50/c52 posture): every fixture
+    # variant — WARN shapes, SKIP shapes, malformed argvs — resolves to
+    # PASS/WARN/SKIP, never FAIL.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    variants = [
+        GOOD_PLAN,
+        GOOD_PLAN + _C61_RAM_1550,
+        GOOD_PLAN + _c61_launch(),
+        GOOD_PLAN + _C61_RAM_1550 + _c61_launch(),
+        GOOD_PLAN + _C61_AGG_1336 + _c61_launch(),
+        GOOD_PLAN + _C61_RAM_1550 + _c61_launch("--min-ram-gb 1550"),
+        GOOD_PLAN + _C61_RAM_1550 + _c61_launch("--backend runpod"),
+        # > mem_gb_cap: the renderer refuses (already fail-fast at
+        # dispatch) -> SKIP-class note here, never a crash / FAIL.
+        GOOD_PLAN + _C61_RAM_1550 + _c61_launch("--min-ram-gb 2000"),
+        # Unparseable launch argv -> per-argv note, c46 arm 1 owns it.
+        GOOD_PLAN + _C61_RAM_1550 + _c61_launch("--no-such-flag 1"),
+    ]
+    for plan in variants:
+        r = _run(plan)[1][C61]
+        assert r.status in {"PASS", "WARN", "SKIP"}, (r.status, r.detail)
+
+
+def test_c61_registered_in_checks_and_docstring_catalog():
+    # Membership pin (the c44/c46/c57 house pattern): a forgotten registry
+    # append cannot ship green — the check existing is not the check running.
+    assert verify_plan.check_slurm_mem_coverage in verify_plan.CHECKS
+    assert "c61 SLURM would-render --mem" in verify_plan.__doc__
+    # conditional-checks enumeration carries 61 (comma-separated membership
+    # form, the c56/c57 reflow-tolerant pin).
+    assert "59, 61" in verify_plan.__doc__
+
+
+# ─── Checks 62 + 63 — §9 backend pin-claim + declared width vs launch (#2276) ─
+
+C62 = "c62_backend_pin_claim"
+C63 = "c63_declared_width_vs_launch"
+
+# Verbatim #2225 incident claim texts (the founding fixtures; #2276
+# acceptance criterion 1). v5:274 claimed an "explicit frontmatter pin",
+# v9:236 claimed to inherit it — the task's body.md frontmatter carried NO
+# `backend:` key either time.
+C62_V5_CLAIM = "**Backend:** `backend: runpod` (explicit frontmatter pin; reason — sentinel-signaling workload: the pod-side dispatcher posts `/workspace/logs/issue-2225-*.json` sentinels and the DRAC/Mila SLURM lanes have no `/workspace` (#608), so the auto chain's fall-through rungs are unsafe here; RunPod is the first-resort lane anyway (#2054), and fellows remains a legal manual fallback — it is a drained lane (#1898). Pin reason restated in the launch marker note per compute-backends.md.)"
+
+# The FULL v9:236 line verbatim — it carries BOTH the c62 claim ("parent pin
+# inherited") AND the c63 width declaration ("one 8xH100 pod", "across all
+# 8 GPUs").
+C62_V9_LINE = "**Backend:** `backend: runpod` (parent pin inherited; reason — sentinel-signaling workload: the fu dispatcher reuses the parent's `/workspace/logs/issue-2225-*.json` sentinel contract, unsafe on the DRAC/Mila fall-through rungs (#608); RunPod is the first-resort lane anyway (#2054)). GPU spec: **one 8×H100 pod** (`pod-2225-fu1`, `--name-suffix fu1`). Parallelism: 80 training cells and 80+40 eval targets are shared-nothing width-1 units → `CUDA_VISIBLE_DEVICES`-sharded subprocess fan-out across all 8 GPUs (the parent's realized machinery). Wall delta vs 4×H100: ~5 h vs ~9.5 h — 8× chosen. All arms have MINIMUM width 1 (no mixed-min-width split; a narrower degraded provision re-shards the same queue). Dispatch example (parses against the live CLI; SLURM reachable ⇒ wall fence via `--time-budget-hours`):"
+
+# The verbatim v9:238 dispatch fence — no `--gpus`, `lora-7b` default 1xH100.
+C63_V9_FENCE = "`uv run python scripts/dispatch_issue.py launch --issue 2225 --intent lora-7b --repo-branch issue-2225 --time-budget-hours 12`"
+
+# Minimal §9-bearing plan for DIRECT check_backend_pin_claim calls (c62 is
+# main()-wired, so these fixtures bypass verify_plan_text and need no c0
+# padding).
+C62_MIN_PLAN = (
+    "# Plan — c62 fixture\n\n## 9. Resources & Parallelism\n\n"
+    + C62_V5_CLAIM
+    + "\n\n"
+    + C62_V9_LINE
+    + "\n"
+)
+
+
+def _c62(plan: str, backend: str | None):
+    return verify_plan.check_backend_pin_claim(plan, frontmatter_backend=backend)
+
+
+def test_c62_phantom_pin_claim_warns():
+    # Both incident claim texts verbatim inside a minimal §9; frontmatter
+    # `backend:` ABSENT -> WARN naming the claimed lane + the remedy
+    # (WARN-only: the planned FAIL polarity was downgraded by the
+    # pre-registered #2276 §4 step 6 calibration rule — >2 adjudicated
+    # false-positive FAILs on the 4,089-version corpus sweep).
+    r = _c62(C62_MIN_PLAN, None)
+    assert r.status == "WARN"
+    assert "runpod" in r.detail
+    assert "NO `backend:` key" in r.detail
+    assert "#2225" in r.detail
+
+
+def test_c62_matching_pin_passes():
+    r = _c62(C62_MIN_PLAN, "runpod")
+    assert r.status == "PASS", r.detail
+    assert "runpod" in r.detail
+
+
+def test_c62_matching_pin_case_insensitive_passes():
+    # The frontmatter value is compared case-insensitively (str-coerced).
+    r = _c62(C62_MIN_PLAN, "RunPod")
+    assert r.status == "PASS", r.detail
+
+
+def test_c62_mismatched_lane_warns():
+    # Claim `runpod`, frontmatter `fellows` -> WARN naming BOTH lanes.
+    r = _c62(C62_MIN_PLAN, "fellows")
+    assert r.status == "WARN"
+    assert "`runpod`" in r.detail
+    assert "fellows" in r.detail
+
+
+def test_c62_auto_claim_with_absent_key_passes():
+    # Calibration FP class (a): claiming `backend: auto` with the key
+    # absent is the CORRECT state — absent/empty frontmatter IS the auto
+    # route (CLAUDE.md § Compute backends) -> PASS, never WARN.
+    plan = (
+        "# Plan — c62 auto fixture\n\n## 9. Resources\n\n"
+        "**Backend routing:** `backend: auto` (frontmatter default — no pin set).\n"
+    )
+    r = _c62(plan, None)
+    assert r.status == "PASS", r.detail
+    assert "auto" in r.detail
+
+
+def test_c62_never_fails_invariant():
+    # WARN-only posture pin (the c61 never-FAIL shape): every fixture
+    # variant resolves to PASS/WARN/SKIP, never FAIL.
+    for plan, backend in [
+        (C62_MIN_PLAN, None),
+        (C62_MIN_PLAN, "runpod"),
+        (C62_MIN_PLAN, "fellows"),
+        (GOOD_PLAN, None),
+        (C62_MIN_PLAN + "\nN/A — backend pin-claim reconciled\n", None),
+    ]:
+        r = _c62(plan, backend)
+        assert r.status in {"PASS", "WARN", "SKIP"}, (r.status, r.detail)
+
+
+def test_c62_no_claim_skips():
+    # GOOD_PLAN has a §9 window but no pin-claim line.
+    r = _c62(GOOD_PLAN, None)
+    assert r.status == "SKIP"
+    assert "no §9 backend pin-claim" in r.detail
+
+
+def test_c62_no_section9_skips():
+    # No parseable §9 heading -> the window is None -> SKIP (fail-safe).
+    r = _c62("# Plan\n\n## Resources\n\n" + C62_V5_CLAIM + "\n", None)
+    assert r.status == "SKIP"
+
+
+def test_c62_escape_literal_passes():
+    plan = C62_MIN_PLAN + "\nN/A — backend pin-claim reconciled\n"
+    r = _c62(plan, None)
+    assert r.status == "PASS"
+    assert "explicit N/A" in r.detail
+
+
+def test_c62_narrative_mention_outside_s9_skips():
+    # FP-guard pin: a narrative mention of ANOTHER task's pin in §1 prose
+    # (with a clean §9) lives OUTSIDE the window -> SKIP, never FAIL.
+    plan = (
+        "# Plan — c62 FP fixture\n\n"
+        "## 1. Motivation\n\n"
+        "#2225's `backend: runpod` pin was phantom — the frontmatter key was never set.\n\n"
+        "## 9. Resources\n\nOne A100 for three hours.\n"
+    )
+    r = _c62(plan, None)
+    assert r.status == "SKIP"
+
+
+def test_c62_unknown_lane_token_ignored():
+    # FP guard: `backend: <non-lane prose>` never captures a claim lane.
+    plan = (
+        "# Plan — c62 fixture\n\n## 9. Resources\n\n"
+        "The backend: the same pinned lane as the parent inherits everything.\n"
+    )
+    r = _c62(plan, None)
+    assert r.status == "SKIP"
+
+
+def test_c62_fenced_claim_never_triggers():
+    # Fence-masked lines can neither satisfy nor trip (the c39 convention).
+    plan = "# Plan — c62 fixture\n\n## 9. Resources\n\n```\n" + C62_V5_CLAIM + "\n```\n"
+    r = _c62(plan, None)
+    assert r.status == "SKIP"
+
+
+def test_c62_planfile_mode_skips(tmp_path, monkeypatch, capsys):
+    # The c23 mode-row precedent: --plan-file mode appends an explicit SKIP
+    # row even when the plan carries the claim (no task context to read).
+    p = tmp_path / "plan.md"
+    p.write_text(
+        GOOD_PLAN.replace(
+            "One A100 for about three hours covers both conditions.",
+            "One A100 for about three hours covers both conditions.\n\n" + C62_V5_CLAIM + "\n",
+        )
+    )
+    monkeypatch.setattr(sys, "argv", ["verify_plan.py", "--plan-file", str(p), "--json"])
+    rc = verify_plan.main()
+    payload = json.loads(capsys.readouterr().out)
+    assert rc == 0
+    entries = [c for c in payload["checks"] if c["id"] == C62]
+    assert len(entries) == 1
+    assert entries[0]["status"] == "SKIP"
+    assert "no task context" in entries[0]["detail"]
+
+
+def test_c62_issue_mode_warn_row_present(tmp_path, monkeypatch, capsys):
+    # main()-mode wiring pin (#2276 plan §4 step 5, adapted to the WARN
+    # downgrade): a tmp task folder with the claim in §9 and NO frontmatter
+    # `backend:` key drives --issue mode; the appended c62 row is WARN,
+    # participates in the payload aggregation (n_warn), and — WARN-only —
+    # leaves overall PASS and the exit code 0.
+    (tmp_path / "plans").mkdir()
+    claim = "**Backend:** `backend: runpod` (explicit frontmatter pin)."
+    (tmp_path / "plans" / "v1.md").write_text(
+        GOOD_PLAN.replace(
+            "One A100 for about three hours covers both conditions.",
+            "One A100 for about three hours covers both conditions.\n\n" + claim + "\n",
+        )
+    )
+    (tmp_path / "body.md").write_text("---\ntitle: x\nkind: experiment\n---\n# x\n")
+    sys.path.insert(0, str(REPO_ROOT / "src"))
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(tw, "find_task_path", lambda n: tmp_path)
+    monkeypatch.setattr(sys, "argv", ["verify_plan.py", "--issue", "999", "--json"])
+    rc = verify_plan.main()
+    payload = json.loads(capsys.readouterr().out)
+    assert rc == 0
+    assert payload["overall"] == "PASS"
+    entry = next(c for c in payload["checks"] if c["id"] == C62)
+    assert entry["status"] == "WARN"
+    assert "NO `backend:` key" in entry["detail"]
+    assert payload["n_warn"] >= 1  # the appended row rides the aggregation
+
+
+def test_c62_issue_mode_matching_frontmatter_passes(tmp_path, monkeypatch, capsys):
+    # Same fixture with the frontmatter key actually SET -> the c62 row
+    # PASSes and the run stays green (the clean form, acceptance criterion 2).
+    (tmp_path / "plans").mkdir()
+    claim = "**Backend:** `backend: runpod` (explicit frontmatter pin)."
+    (tmp_path / "plans" / "v1.md").write_text(
+        GOOD_PLAN.replace(
+            "One A100 for about three hours covers both conditions.",
+            "One A100 for about three hours covers both conditions.\n\n" + claim + "\n",
+        )
+    )
+    (tmp_path / "body.md").write_text(
+        "---\ntitle: x\nkind: experiment\nbackend: runpod\n---\n# x\n"
+    )
+    sys.path.insert(0, str(REPO_ROOT / "src"))
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(tw, "find_task_path", lambda n: tmp_path)
+    monkeypatch.setattr(sys, "argv", ["verify_plan.py", "--issue", "999", "--json"])
+    rc = verify_plan.main()
+    payload = json.loads(capsys.readouterr().out)
+    assert rc == 0
+    entry = next(c for c in payload["checks"] if c["id"] == C62)
+    assert entry["status"] == "PASS"
+
+
+def _c63_plan(s9_extra: str) -> str:
+    """GOOD_PLAN with ``s9_extra`` injected INSIDE §9 (the _c57_plan idiom:
+    GOOD_PLAN's §9 runs from `## 9. Resources` to `## 11.`)."""
+    assert "One A100 for about three hours covers both conditions." in GOOD_PLAN
+    return GOOD_PLAN.replace(
+        "One A100 for about three hours covers both conditions.",
+        "One A100 for about three hours covers both conditions.\n\n" + s9_extra + "\n",
+    )
+
+
+C63_WIDTH_LINE = "GPU spec: **one 8×H100 pod** (`pod-2225-fu1`)."
+
+
+def test_c63_v9_incident_warns():
+    # The founding incident (#2225 v9): §9 declares 8xH100, the verbatim
+    # dispatch fence carries no --gpus, and lora-7b defaults to 1 -> WARN
+    # naming the intent, the realized width, and the remedy.
+    plan = _c63_plan(C63_WIDTH_LINE + "\n\nDispatch example:\n\n" + C63_V9_FENCE)
+    r = _run(plan)[1][C63]
+    assert r.status == "WARN", r.detail
+    assert "lora-7b" in r.detail
+    assert "1" in r.detail
+    assert "8-GPU" in r.detail
+    assert "--gpus 8" in r.detail  # the remedy, named
+    assert "#2225" in r.detail
+
+
+def test_c63_full_v9_line_warns():
+    # Same read off the FULL verbatim v9:236 line (widths 8 and 4 both
+    # present; N_decl = max = 8).
+    plan = _c63_plan(C62_V9_LINE + "\n\n" + C63_V9_FENCE)
+    r = _run(plan)[1][C63]
+    assert r.status == "WARN", r.detail
+
+
+def test_c63_gpus_flag_passes():
+    # The clean form: the same fence WITH `--gpus 8` realizes the declared
+    # width -> PASS (acceptance criterion 2).
+    fence = C63_V9_FENCE.replace("--intent lora-7b", "--intent lora-7b --gpus 8")
+    plan = _c63_plan(C63_WIDTH_LINE + "\n\n" + fence)
+    r = _run(plan)[1][C63]
+    assert r.status == "PASS", r.detail
+
+
+def test_c63_wide_intent_default_passes():
+    # An intent whose mirror default covers N_decl needs no --gpus
+    # (sweep-8g-h100 -> 8).
+    fence = C63_V9_FENCE.replace("--intent lora-7b", "--intent sweep-8g-h100")
+    plan = _c63_plan(C63_WIDTH_LINE + "\n\n" + fence)
+    r = _run(plan)[1][C63]
+    assert r.status == "PASS", r.detail
+
+
+def test_c63_no_section9_skips():
+    # No parseable §9 heading -> SKIP (GOOD_PLAN's `## 9.` renamed away; the
+    # fence + width line live under an unnumbered heading).
+    plan = GOOD_PLAN.replace("## 9. Resources", "## Resources (unnumbered)") + (
+        "\n" + C63_WIDTH_LINE + "\n\n" + C63_V9_FENCE + "\n"
+    )
+    r = _run(plan)[1][C63]
+    assert r.status == "SKIP"
+    assert "no parseable §9" in r.detail
+
+
+def test_c63_no_launch_argv_skips():
+    # Width declared, no dispatch_issue.py launch fence anywhere -> SKIP
+    # naming the different-channel reason (pod.py provision / SSH-MCP).
+    plan = _c63_plan(C63_WIDTH_LINE)
+    r = _run(plan)[1][C63]
+    assert r.status == "SKIP"
+    assert "no launch-shaped" in r.detail
+
+
+def test_c63_all_argvs_contribute_nothing_skips():
+    # Every parsed argv contributes no width (unknown intent, no --gpus) ->
+    # the explicit fail-safe SKIP branch, each argv named with its reason.
+    fence = C63_V9_FENCE.replace("--intent lora-7b", "--intent cpu-bigmem")
+    plan = _c63_plan(C63_WIDTH_LINE + "\n\n" + fence)
+    r = _run(plan)[1][C63]
+    assert r.status == "SKIP"
+    assert "contributes a width" in r.detail
+    assert "cpu-bigmem" in r.detail
+
+
+def test_c63_escape_literal_passes():
+    plan = _c63_plan(C63_WIDTH_LINE + "\n\n" + C63_V9_FENCE) + (
+        "\nN/A — declared width vs launch width reconciled\n"
+    )
+    r = _run(plan)[1][C63]
+    assert r.status == "PASS"
+    assert "explicit N/A" in r.detail
+
+
+def test_c63_declared_1x_no_trigger():
+    # N_decl = 1 stays under the >= 2 trigger floor -> SKIP.
+    plan = _c63_plan("GPU spec: one 1×H100 pod.\n\n" + C63_V9_FENCE)
+    r = _run(plan)[1][C63]
+    assert r.status == "SKIP"
+    assert "no multi-GPU width" in r.detail
+
+
+def test_c63_fenced_width_tokens_masked():
+    # Width tokens INSIDE a fenced block are masked (prose-lines-only read);
+    # --gpu-count on a prose line is the second declared-width form.
+    plan = _c63_plan(
+        "```\n8×H100 fenced example\n```\n\n"
+        "Provisioned via `pod.py provision --issue 999 --gpu-count 8`.\n\n" + C63_V9_FENCE
+    )
+    r = _run(plan)[1][C63]
+    # The fenced 8xH100 is masked, but the prose --gpu-count 8 declares 8.
+    assert r.status == "WARN", r.detail
+
+
+def test_c63_warn_never_flips_overall():
+    # JSON-contract spot check (acceptance criterion 3): a plan tripping c63
+    # alone keeps overall PASS — WARN never flips `passed`.
+    plan = _c63_plan(C63_WIDTH_LINE + "\n\nDispatch example:\n\n" + C63_V9_FENCE)
+    ok, by_id = _run(plan)
+    assert by_id[C63].status == "WARN"
+    assert ok
+
+
+def test_c63_intent_width_mirror_matches_gpu_heuristics():
+    # Drift guard (the c26 parity-test pattern): the static width mirror
+    # equals the live gpu_heuristics INTENTS gpu_count map — an intent
+    # add/change on the heuristics side fails the suite loudly.
+    spec = importlib.util.spec_from_file_location(
+        "_c63_gpu_heuristics", REPO_ROOT / "scripts" / "gpu_heuristics.py"
+    )
+    gh = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
+    # sys.modules registration is load-bearing: the module's dataclass field
+    # resolution looks itself up by __module__ at exec time.
+    sys.modules["_c63_gpu_heuristics"] = gh
+    spec.loader.exec_module(gh)  # type: ignore[union-attr]
+    derived = {k: v.gpu_count for k, v in gh.INTENTS.items()}
+    assert derived == verify_plan._C63_INTENT_GPU_COUNT
+
+
+def test_c62_c63_registered_in_checks_and_docstring_catalog():
+    # Membership pins (the #2275 registration-pin convention): c63 in CHECKS;
+    # c62 NOT in CHECKS (main()-wired by design, the c23 pattern); both ids
+    # in the docstring catalog + the conditional-checks enumeration.
+    assert verify_plan.check_declared_width_vs_launch in verify_plan.CHECKS
+    assert verify_plan.check_backend_pin_claim not in verify_plan.CHECKS
+    assert "c62 §9 backend pin-claim" in verify_plan.__doc__
+    assert "c63 §9 declared GPU width" in verify_plan.__doc__
+    # conditional-checks enumeration carries both (comma-separated membership
+    # form, the c56/c57 reflow-tolerant pin).
+    assert "62, 63" in verify_plan.__doc__
+    # Escape phrases registered in the docstring (the SKILL.md sync test
+    # propagates them to the consumer surface).
+    assert "N/A — backend pin-claim reconciled" in verify_plan.__doc__
+    assert "N/A — declared width vs launch width reconciled" in verify_plan.__doc__

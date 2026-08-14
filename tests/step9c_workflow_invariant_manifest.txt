@@ -31,6 +31,7 @@ tests/test_issue_skill_agent_memory_no_lost_row.py
 tests/test_issue_skill_bare_push_snippets_pin.py
 tests/test_issue_skill_brief_marker_displacement_pin.py
 tests/test_issue_skill_compute_pilot_fence_pin.py
+tests/test_issue_skill_dead_veto_status_pin.py
 tests/test_issue_skill_detached_harvest_pin.py
 tests/test_issue_skill_disk_routing_pin.py
 tests/test_issue_skill_dispatch_preflight_pin.py

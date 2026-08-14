@@ -2118,6 +2118,10 @@ def test_save_pod_safety_state_carries_first_seen_forward(isolated_registry):
         # schema now; same carry contract as kr_pod (sibling entries verbatim,
         # per-pod keying is the incarnation reset).
         "nr_pod": {},
+        # #2283: the owner-fence defer arm's per-pod episode sub-dict is part
+        # of the schema now; same carry contract as kr_pod/nr_pod (sibling
+        # entries verbatim, per-pod keying is the incarnation reset).
+        "fd_pod": {},
     }
 
     # On a second save (passing the previous payload), first_seen must persist.

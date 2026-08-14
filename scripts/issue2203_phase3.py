@@ -33,7 +33,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import re
 import sys
 from pathlib import Path
 
@@ -55,7 +54,8 @@ load_dotenv()
 
 import torch  # noqa: E402
 
-from explore_persona_space.experiments.issue2203 import caphook  # noqa: E402
+from explore_persona_space.experiments.issue1415 import steering  # noqa: E402
+from explore_persona_space.experiments.issue2203 import paper_engine  # noqa: E402
 from scripts import issue2203_common as C  # noqa: E402
 from scripts import issue2203_runtime as R  # noqa: E402
 
@@ -133,92 +133,142 @@ def _verify_reused_keys(cfg: dict, axis: torch.Tensor) -> dict:
     return checks
 
 
-def _resolve_interventions(cfg: dict, axis: torch.Tensor) -> dict:
-    """Resolve the target experiment into {layer: (v, cap)} (Lu's vectors + caps).
+def _paper_gen_fn(model, tokenizer, steerer_factory, *, temperature, top_p, enable_thinking):
+    """Build a ``gen_fn(contexts, max_new) -> (texts, None)`` for the cap-hit regen.
 
-    An intervention carries a per-layer ``cap`` and a ``vector`` — either a
-    tensor or a string ref into ``cfg['vectors']``; a string ref MUST resolve
-    (r1 Minor 15: no silent ``axis[layer]`` fallback). Falls back to
-    reconstructing from ``axis`` + a per-layer τ recipe when the exact
-    experiment is absent (§12).
+    ``steerer_factory`` is ``None`` (baseline — plain ``generate_batch``) or a
+    zero-arg callable returning a FRESH paper ``ActivationSteering`` context
+    manager; the steerer's own registered forward hooks apply the cap at every
+    forward, so ``generate_batch`` runs with ``hook=None`` INSIDE ``with
+    steerer:``. Chunked over the contexts axis (GEN_BATCH_SIZE) to bound peak KV
+    (the #2203 Phase-3 OOM); the Qwen-3 thinking-off render is threaded through
+    both the tokenization and generation (Fix C).
     """
-    exps = {e.get("id"): e for e in cfg.get("experiments", []) if isinstance(e, dict)}
-    out: dict[int, tuple[torch.Tensor, float]] = {}
-    if TARGET_EXPERIMENT in exps:
-        for iv in exps[TARGET_EXPERIMENT]["interventions"]:
-            layer = int(iv["layer"]) if "layer" in iv else _layer_from_ref(iv.get("vector"))
-            v = _resolve_vector(iv.get("vector"), cfg, layer)
-            out[layer] = (v.float(), float(iv["cap"]))
-        return {"interventions": out, "reconstructed": False}
-    # Fallback: layers 46..53 from the axis, caps reconstructed later by the caller.
-    for layer in range(46, 54):
-        out[layer] = (axis[layer].float(), float("nan"))
-    return {"interventions": out, "reconstructed": True}
+    render_fn, ids_fn = R.thinking_render_fns(enable_thinking)
+
+    def _gen(contexts, max_new):
+        texts: list[str] = []
+        n_chunks = (len(contexts) + R.GEN_BATCH_SIZE - 1) // R.GEN_BATCH_SIZE
+        for k in range(n_chunks):
+            chunk = contexts[k * R.GEN_BATCH_SIZE : (k + 1) * R.GEN_BATCH_SIZE]
+
+            def _run(_chunk=chunk, _mn=max_new):
+                return steering.generate_batch(
+                    model,
+                    tokenizer,
+                    _chunk,
+                    n=1,
+                    hook=None,
+                    max_new_tokens=_mn,
+                    temperature=temperature,
+                    top_p=top_p,
+                    seed_base=42,
+                    render_fn=render_fn,
+                    ids_fn=ids_fn,
+                )
+
+            if steerer_factory is None:
+                results = _run()
+            else:
+                with steerer_factory():
+                    results = _run()
+            texts.extend(r[0] for r in results)
+            _log(f"[phase=generate] 32B chunk {k + 1}/{n_chunks} rows={len(texts)}/{len(contexts)}")
+        return texts, None
+
+    return _gen
 
 
-def _layer_from_ref(ref) -> int:
-    m = re.search(r"layer_(\d+)", str(ref))
-    assert m, f"cannot parse layer from vector ref {ref!r}"
-    return int(m.group(1))
+def _run_anchor(
+    model,
+    tokenizer,
+    cfg: dict,
+    jb: list[dict],
+    max_new: int,
+    *,
+    temperature: float,
+    top_p: float,
+    enable_thinking: bool | None,
+) -> dict:
+    """Baseline + all-token cap + context-position cap via the PAPER engine (Fix D).
 
-
-def _resolve_vector(ref, cfg: dict, layer: int) -> torch.Tensor:
-    """Resolve a vector ref (tensor or string key). FAILS LOUD on an unresolved ref (r1 Minor 15)."""
-    if isinstance(ref, torch.Tensor):
-        return ref
-    vectors = cfg.get("vectors", {})
-    if isinstance(ref, str) and ref in vectors:
-        entry = vectors[ref]
-        return entry["vector"] if isinstance(entry, dict) else entry
-    raise KeyError(
-        f"vector ref {ref!r} (layer {layer}) does not resolve in cfg['vectors'] "
-        f"(keys: {sorted(vectors)[:8]}...) — never silently fall back to axis[layer]"
-    )
-
-
-def _run_anchor(model, tokenizer, interventions: dict, jb: list[dict], max_new: int) -> dict:
-    """Baseline + all-token cap + context-vector cap on the jailbreak set."""
-    layers = sorted(interventions)
-    axis_by_layer = {li: interventions[li][0] for li in layers}
-    tau_by_layer = {li: interventions[li][1] for li in layers}
-    hidden = int(model.config.hidden_size)
-    h_def_by_layer = {li: torch.zeros(hidden) for li in layers}  # unused by op=cap
+    ``cap_alltoken`` = the paper's ``build_capping_steerer`` (positions="all");
+    ``cap_ctx`` = ``PrefillContextEndSteering`` (the paper cap fired at the last
+    prefill position, decode passed through). Both delegate the cap MATH to the
+    paper's ``_apply_cap`` VERBATIM (BUG-1 sign fix). Each arm runs through the
+    cap-hit re-gen wrapper (§4.3) with a per-arm ``<think>``-block count.
+    """
     contexts = [{"system": r["system"], "user": r["user"]} for r in jb]
+    factories = {
+        "baseline": None,
+        "cap_alltoken": lambda: paper_engine.anchor_all_token_steerer(model, cfg),
+        "cap_ctx": lambda: paper_engine.build_prefill_context_end_steerer(model, cfg),
+    }
     out = {}
-    for arm, position_set in (
-        ("baseline", None),
-        ("cap_alltoken", "all-tokens"),
-        ("cap_ctx", "context-end"),
-    ):
-        if arm == "baseline":
-            texts, _ = R.run_arm(model, tokenizer, contexts, None, max_new_tokens=max_new)
-        else:
-            stack = caphook.joint_axis_hooks(
-                model,
-                layers,
-                axis_by_layer,
-                tau_by_layer,
-                h_def_by_layer,
-                op="cap",
-                position_set=position_set,
-            )
-            texts, _ = R.run_arm(model, tokenizer, contexts, stack, max_new_tokens=max_new)
+    for arm, factory in factories.items():
+        gen = _paper_gen_fn(
+            model,
+            tokenizer,
+            factory,
+            temperature=temperature,
+            top_p=top_p,
+            enable_thinking=enable_thinking,
+        )
+        texts, _realized, cap_info = R.cap_hit_regen(
+            tokenizer, contexts, gen, max_new_tokens=max_new
+        )
         out[arm] = {
             "n": len(texts),
             "completions": texts,
-            "cap_hit_frac": R.cap_hit_fraction(tokenizer, texts, max_new),
+            "cap_hit": cap_info,
+            "cap_hit_frac": cap_info["final_cap_hit_frac"],
+            "think_block_stats": R.think_block_stats(texts),
         }
     return out
 
 
+def _cap_vector_cosines(cfg: dict, assistant_axis: torch.Tensor) -> dict:
+    """cos(each loaded capping vector, ``assistant_axis[layer]``) — H1 sign check.
+
+    The paper's released capping vectors are anti-assistant (cos ≈ −1 with the
+    assistant axis). ``build_capping_steerer`` extracts vector + layer per
+    intervention; we recompute the same cosines here so the §7 manipulation
+    check (cos ≤ −0.9) can fail-loud BEFORE the expensive generation.
+    """
+    exps = {e.get("id"): e for e in cfg.get("experiments", []) if isinstance(e, dict)}
+    exp = exps.get(TARGET_EXPERIMENT)
+    assert exp is not None, f"{TARGET_EXPERIMENT!r} absent from cfg['experiments']"
+    cos_by_layer: dict[int, float] = {}
+    for iv in exp["interventions"]:
+        if "cap" not in iv:
+            continue
+        vec_data = cfg["vectors"][iv["vector"]]
+        layer = int(vec_data["layer"])
+        v = vec_data["vector"].float()
+        a = assistant_axis[layer].float()
+        cos_by_layer[layer] = float(torch.nn.functional.cosine_similarity(v, a, dim=0))
+    return {
+        "cos_by_layer": {str(k): v for k, v in sorted(cos_by_layer.items())},
+        "min_cos": (min(cos_by_layer.values()) if cos_by_layer else None),
+        "max_cos": (max(cos_by_layer.values()) if cos_by_layer else None),
+    }
+
+
 def _synth_tiny_config(model) -> tuple[dict, torch.Tensor]:
-    """A synthesized tiny capping_config (smoke): matches the resolution shape."""
+    """A synthesized tiny capping_config (smoke): matches the resolution shape.
+
+    The capping vectors are the NEGATED per-layer assistant axis, so the
+    cos(cap_vec, assistant_axis) manipulation check reads ≈ −1 on the smoke
+    (matching Lu's anti-assistant vectors) instead of a random ≈0.
+    """
     n = int(model.config.num_hidden_layers)
     h = int(model.config.hidden_size)
-    axis = torch.randn(n, h)  # tiny stand-in for Lu's [64, 5120] axis
+    assistant_axis = torch.randn(n, h)  # tiny stand-in for Lu's [64, 5120] axis
     layers = list(range(max(0, n - 4), n))  # a mid-late band on the tiny model
     cfg = {
-        "vectors": {f"layer_{li}/contrast": {"vector": axis[li], "layer": li} for li in layers},
+        "vectors": {
+            f"layer_{li}/contrast": {"vector": -assistant_axis[li], "layer": li} for li in layers
+        },
         "experiments": [
             {
                 "id": TARGET_EXPERIMENT,
@@ -228,7 +278,7 @@ def _synth_tiny_config(model) -> tuple[dict, torch.Tensor]:
             }
         ],
     }
-    return cfg, axis
+    return cfg, assistant_axis
 
 
 def _regime(args, model_name: str, jb: list[dict]) -> dict:
@@ -253,26 +303,34 @@ def run_generate(args) -> int:
         keys = {"reused_keys_check_pass": True, "smoke_synth_config": True}
     else:
         axis_path, cfg_path = _download_lu_artifacts()
-        cfg, cfg_wo = _torch_load_third_party(cfg_path)
+        cfg = paper_engine.load_capping_config(str(cfg_path))  # paper's own loader
         axis, axis_wo = _torch_load_third_party(axis_path)
         keys = _verify_reused_keys(cfg, axis)
-        keys["weights_only_load"] = {"config": cfg_wo, "axis": axis_wo}
+        keys["weights_only_load"] = {"config": False, "axis": axis_wo}
         assert keys["reused_keys_check_pass"], f"reused-keys verification FAILED: {keys}"
+        assert TARGET_EXPERIMENT in [e.get("id") for e in cfg.get("experiments", [])], (
+            f"{TARGET_EXPERIMENT!r} not resolvable — no silent reconstruction (deleted §12 fallback)"
+        )
 
-    resolved = _resolve_interventions(cfg, axis)
-    interventions = resolved["interventions"]
-    if resolved["reconstructed"]:
-        _log(
-            "[phase=generate] WARNING target config ABSENT — reconstructing cap via the "
-            "25th-pct recipe (§12 fallback); this is NOT the paper's exact per-layer cap"
+    # Manipulation check (§6 Part C): cos(loaded capping vector, assistant_axis)
+    # ≈ −1 — BEFORE the expensive generation. Production fails loud below −0.9;
+    # the smoke synth config negates the axis so it reads ≈ −1 too.
+    cap_cos = _cap_vector_cosines(cfg, axis)
+    if not args.smoke:
+        assert cap_cos["max_cos"] is not None and cap_cos["max_cos"] <= -0.9, (
+            f"cap-vector sign check FAILED (max cos {cap_cos['max_cos']} > -0.9) — "
+            "the loaded capping vectors are NOT anti-assistant; H1 is uninterpretable"
         )
-        selection_r = C.load_role_selection(smoke=args.smoke)
-        tau_pool = _reconstruct_tau_pool(
-            model, tokenizer, list(interventions), args.smoke, selection_r
-        )
-        for li in interventions:
-            v, _ = interventions[li]
-            interventions[li] = (v, _tau_from_pool(tau_pool[li], v))
+
+    # Qwen-3 thinking-off gate (Fix C / §4.3): fail loud if the render still
+    # emits <think>. Real Qwen-3 only (a Qwen2.5 smoke substitute cannot honour
+    # the kwarg — production-n-calibrated gate class, demoted under smoke).
+    enable_thinking = R.resolve_enable_thinking(args.model)
+    thinking_gate = {"resolved_enable_thinking": enable_thinking}
+    if enable_thinking is False and not args.smoke:
+        thinking_gate.update(R.assert_qwen3_thinking_off(model, tokenizer, args.model))
+    else:
+        thinking_gate["note"] = "gate INFORMATIONAL (not a real Qwen-3 model or smoke)"
 
     selection = C.load_role_selection(smoke=args.smoke)
     jb = C.build_jailbreak_set(
@@ -280,22 +338,47 @@ def run_generate(args) -> int:
     )
     max_new = 16 if args.smoke else args.max_new_tokens
     regime = _regime(args, model_name, jb)
-    anchor = _run_anchor(model, tokenizer, interventions, jb, max_new)
+    anchor = _run_anchor(
+        model,
+        tokenizer,
+        cfg,
+        jb,
+        max_new,
+        temperature=args.temperature,
+        top_p=args.top_p,
+        enable_thinking=enable_thinking,
+    )
 
     result = {
         "metadata": C.repro_metadata(),
         "reused_keys_check": keys,
         "regime": regime,
         "target_experiment": TARGET_EXPERIMENT,
-        "reconstructed_cap": resolved["reconstructed"],
-        "intervention_layers": sorted(interventions),
-        "anchor": {k: {"n": v["n"], "cap_hit_frac": v["cap_hit_frac"]} for k, v in anchor.items()},
+        "cap_vector_cosines": cap_cos,
+        "thinking_gate": thinking_gate,
+        "gen_settings": {
+            "temperature": args.temperature,
+            "top_p": args.top_p,
+            "max_new_tokens": max_new,
+            "enable_thinking": enable_thinking,
+        },
+        "anchor": {
+            k: {
+                "n": v["n"],
+                "cap_hit": v["cap_hit"],
+                "cap_hit_frac": v["cap_hit_frac"],
+                "think_block_stats": v["think_block_stats"],
+            }
+            for k, v in anchor.items()
+        },
     }
     suffix = "_smoke" if args.smoke else ""
     path = out_dir / f"phase3_32b_anchor{suffix}.json"
     path.write_text(json.dumps(result, indent=2))
     # Persist rollout text + jb meta + regime (judge phase reads this).
-    raw = out_dir / "raw_upload" / "phase3" / "raw_completions.json"
+    # r1 C1: the rel path under raw_upload/ leads with ROUND_LABEL so the HF
+    # bulk upload lands at raw_completions/full-rerun-bugfix/phase3/….
+    raw = out_dir / "raw_upload" / C.ROUND_LABEL / "phase3" / "raw_completions.json"
     raw.parent.mkdir(parents=True, exist_ok=True)
     raw.write_text(
         json.dumps(
@@ -308,7 +391,11 @@ def run_generate(args) -> int:
             indent=2,
         )
     )
-    _log(f"[phase=generate] layers={sorted(interventions)} -> {path.name}")
+    _log(
+        f"[phase=generate] paper-engine anchor max_cos={cap_cos['max_cos']} "
+        f"min_cos={cap_cos['min_cos']} "
+        f"think={thinking_gate.get('resolved_enable_thinking')} -> {path.name}"
+    )
 
     if args.upload and not args.smoke:
         uploaded = C.upload_raw_tree(out_dir / "raw_upload")  # phase3 rollouts (§10, #779)
@@ -321,7 +408,9 @@ def run_judge(args) -> int:
     """HARM_RUBRIC over the three anchor arms (per-row aligned; api-refusal reissue) (r1 M12)."""
     out_dir = _resolve_out_dir(args)
     suffix = "_smoke" if args.smoke else ""
-    raw_path = out_dir / "raw_upload" / "phase3" / "raw_completions.json"
+    # r1 C1: labeled read path + regime check — the judge must consume THIS
+    # round's corrected rows, never the parent's unlabeled buggy upload.
+    raw_path = out_dir / "raw_upload" / C.ROUND_LABEL / "phase3" / "raw_completions.json"
     if not raw_path.exists():
         if args.smoke:
             raise FileNotFoundError(f"{raw_path} absent — run `--phase generate --smoke` first")
@@ -329,11 +418,12 @@ def run_judge(args) -> int:
 
         hub.stage_hub_file(
             hub.DEFAULT_DATASET_REPO,
-            f"{C.HF_PREFIX}/raw_completions/phase3/raw_completions.json",
+            f"{C.HF_PREFIX}/raw_completions/{C.ROUND_LABEL}/phase3/raw_completions.json",
             raw_path,
             repo_type="dataset",
         )
     raw = json.loads(raw_path.read_text())
+    C.assert_round_regime(raw, raw_path)
     selection = C.load_role_selection(smoke=args.smoke)
     jb = C.build_jailbreak_set(
         3 if args.smoke else args.n_jailbreak, smoke=args.smoke, selection=selection
@@ -407,63 +497,6 @@ def run_judge(args) -> int:
     return 0
 
 
-def _reconstruct_tau_pool(model, tokenizer, layers, smoke, selection) -> dict:
-    """Rollout ONCE + extract activations for ALL fallback layers in one pass.
-
-    Returns ``{layer: [response-token hidden states per context]}`` so τ can be
-    computed per (layer, v) from the SAME pool — the round-1 code regenerated the
-    whole rollout pool + per-context forwards once PER LAYER (8× redundant on the
-    8-layer paper band); r2 minor. Production pool: ~12 willing roles × 3
-    questions × 128 new tokens; smoke stays tiny.
-    """
-    import random
-
-    from explore_persona_space.analysis.extraction import extract_layer_activations
-    from explore_persona_space.experiments.issue1415 import steering
-
-    role_list = C.load_role_list()
-    names = C._select_role_names(
-        role_list, "willing", 3 if smoke else 12, random.Random(9), selection, smoke=smoke
-    )
-    n_q = 1 if smoke else 3
-    contexts = []
-    for r in names:
-        qs = C.role_questions(r)[:n_q]
-        sys_p = C.role_system_prompts(r, k=1)[0]
-        contexts.extend({"system": sys_p, "user": q} for q in qs)
-    comps = steering.generate_batch(
-        model,
-        tokenizer,
-        contexts,
-        n=1,
-        hook=None,
-        max_new_tokens=16 if smoke else 128,
-        temperature=1.0,
-        seed_base=9,
-    )
-    device = next(model.parameters()).device
-    layers = sorted(set(layers))
-    pool: dict[int, list] = {li: [] for li in layers}
-    for ctx, cl in zip(contexts, comps, strict=True):
-        ctx_ids = steering.context_token_ids(tokenizer, ctx)
-        cids = tokenizer(cl[0], add_special_tokens=False)["input_ids"]
-        if not cids:
-            continue
-        ids = torch.tensor([ctx_ids + cids], dtype=torch.long, device=device)
-        cap = extract_layer_activations(model, ids, layers)  # ALL layers, ONE forward
-        for li in layers:
-            pool[li].append(cap[li][0].float()[len(ctx_ids) :])
-    return pool
-
-
-def _tau_from_pool(pool_acts: list, v) -> float:
-    """25th-pct of ⟨response-token h, v⟩ over a pre-built rollout pool (§12 fallback)."""
-    projs = [hs @ v.float() for hs in pool_acts]
-    if not projs:
-        raise RuntimeError("τ reconstruction produced no projections")
-    return float(torch.quantile(torch.cat(projs), 0.25))
-
-
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Issue #2203 Phase 3 — 32B faithful anchor")
     p.add_argument("--phase", choices=("generate", "judge"), default="generate")
@@ -471,7 +504,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--model", default=C.QWEN_32B)
     p.add_argument("--n-jailbreak", type=int, default=500)
     p.add_argument("--n-draws", type=int, default=5)
-    p.add_argument("--max-new-tokens", type=int, default=1024)
+    p.add_argument("--max-new-tokens", type=int, default=512, help="paper setting (thinking off)")
+    p.add_argument("--temperature", type=float, default=0.7, help="paper 32B sampling temp")
+    p.add_argument("--top-p", type=float, default=0.9, help="paper 32B nucleus top_p")
     p.add_argument("--out-dir", default=None)
     p.add_argument("--upload", action="store_true")
     p.add_argument("--import-check", action="store_true")
@@ -484,7 +519,13 @@ def main(argv: list[str] | None = None) -> int:
         from explore_persona_space.orchestrate.argcheck import assert_args_attributes_defined
 
         assert_args_attributes_defined(__file__)
-        _log("[import-check] ok")
+        # Pod-side paper-engine import gate (§4.6 blind-spot (c) / §9 bootstrap):
+        # the file-scoped steering.py load must resolve on the pod BEFORE any 32B
+        # generation (external/ is git-untracked; the bootstrap clone delivers it).
+        mod = paper_engine.load_paper_steering_module()
+        for sym in ("ActivationSteering", "load_capping_config", "build_capping_steerer"):
+            assert hasattr(mod, sym), f"paper engine missing {sym!r}"
+        _log("[import-check] ok (paper engine resolves: ActivationSteering/load/build)")
         return 0
     if args.phase == "judge":
         rc = run_judge(args)

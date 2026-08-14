@@ -98,9 +98,12 @@ Behaviours:
   run): walk every ``*.sh`` under ``scripts/`` and FAIL on any logical
   line that derives GPU WIDTH from ``nvidia-smi`` device enumeration
   (``nvidia-smi -L`` / ``--list-gpus`` / ``--query-gpu=`` piped into a
-  count sink ``wc -l`` / ``grep -c``) in a file carrying NO SLURM
-  allocation-env branch (``SLURM_JOB_ID`` / ``SLURM_JOB_GPUS`` /
-  ``SLURM_STEP_GPUS`` / ``SLURM_GPUS_ON_NODE`` / ``realized_gpu_ids``).
+  count sink ``wc -l`` / ``grep -c``) in a file carrying NO recognized
+  allocation-derived guard: neither a SLURM allocation-env branch
+  (``SLURM_JOB_ID`` / ``SLURM_JOB_GPUS`` / ``SLURM_STEP_GPUS`` /
+  ``SLURM_GPUS_ON_NODE`` / ``realized_gpu_ids``) nor the
+  inherited-``CUDA_VISIBLE_DEVICES`` parse — ``read -ra`` from CVD plus
+  a same-name ``${#NAME[@]}`` count (#2251; the #1336 round-v21 shape).
   On a shared fellows SLURM node ``nvidia-smi`` enumerates ALL 8
   physical devices and ignores ``CUDA_VISIBLE_DEVICES``, so a
   detected-count fan-out trespasses onto other tenants' GPUs (#1902;
@@ -1289,16 +1292,27 @@ CVD_PIN_WAIVER_MIN_REASON_CHARS = 10
 #   (b) SLURM_GPU_WIDTH_SINK_RE matches AFTER the enumeration match's end
 #       — the count SINK (`| wc -l` or `| grep -c`), tolerating
 #       intervening `2>/dev/null`, `|| true`, and subshell parens, AND
-#   (c) the FILE text carries no guard token (SLURM_GPU_WIDTH_GUARD_RE)
-#       — the guard legitimately lives far from the enumeration fallback
-#       line (the #1491 shape: guard at line 193, enumeration in the
-#       else-branch), so guard detection is file-scoped, AND
+#   (c) the FILE carries no recognized allocation-derived guard
+#       (_slurm_gpu_width_guard_present) — NEITHER a SLURM allocation-env
+#       token (SLURM_GPU_WIDTH_GUARD_RE) NOR the inherited-
+#       CUDA_VISIBLE_DEVICES parse (#2251; the #1336 round-v21 shape):
+#       an array populated via `IFS=',' read -ra NAME <<<
+#       "$CUDA_VISIBLE_DEVICES"` (SLURM_GPU_WIDTH_CVD_READ_RE) PLUS a
+#       same-name `${#NAME[@]}` count derivation elsewhere in the file
+#       (the same-name back-reference is the precision lever: a literal
+#       `CUDA_VISIBLE_DEVICES=0` pin site, or a count deref on a
+#       DIFFERENT array, never reads as a guard). The guard legitimately
+#       lives far from the enumeration fallback line (the #1491 shape:
+#       guard at line 193, enumeration in the else-branch), so guard
+#       detection is file-scoped, AND
 #   (d) no waiver covers the logical line.
 # NOT flagged (recall deliberately sacrificed for zero false positives):
 #   * `#`-comment and `echo `-prefixed lines (dry-run previews);
 #   * files whose guard token appears only in a comment — the file-scoped
 #     text scan cannot tell (fail-toward-false-negative, the house safe
-#     direction);
+#     direction); the CVD-parse form shares the SAME comment blind spot:
+#     a comment-embedded `read -ra ... <<< "$CUDA_VISIBLE_DEVICES"` +
+#     `${#NAME[@]}` pair would false-guard the same way;
 #   * non-counting nvidia-smi reads (a bare `nvidia-smi -L` print, a
 #     `--query-gpu=memory.used` poll with no count sink);
 #   * grandfathered pre-#1902 per-issue drivers
@@ -1308,11 +1322,47 @@ CVD_PIN_WAIVER_MIN_REASON_CHARS = 10
 #   * lines waived via `# SLURM_GPU_WIDTH_EXEMPT: <reason>` (same logical
 #     line or immediately preceding non-blank line; reason ≥ 10 chars —
 #     same convention as CVD_PIN_EXEMPT).
+# Guard-recognition scope (#2251): split-flag `read -r -a` and
+# `mapfile`/`readarray` array-populate spellings are deliberately NOT
+# recognized as the CVD-parse guard — a safe under-trigger (the check
+# over-fires, loudly): waive the launcher, or extend
+# SLURM_GPU_WIDTH_CVD_READ_RE by one alternation, when a real dispatcher
+# adopts one of those spellings.
 SLURM_GPU_WIDTH_NVSMI_RE = re.compile(r"nvidia-smi\s+(?:-L\b|--list-gpus\b|--query-gpu=)")
 SLURM_GPU_WIDTH_SINK_RE = re.compile(r"\|\s*(?:\(?\s*)?(?:wc\s+-l\b|grep\s+-c\b)")
 SLURM_GPU_WIDTH_GUARD_RE = re.compile(
     r"SLURM_JOB_ID|SLURM_JOB_GPUS|SLURM_STEP_GPUS|SLURM_GPUS_ON_NODE|realized_gpu_ids"
 )
+# Second guard form (#2251): the inherited-CUDA_VISIBLE_DEVICES parse —
+# an array populated by `read -ra`/`read -a` from a $CUDA_VISIBLE_DEVICES
+# here-string (quoting variants "$CVD", "${CVD}", "${CVD-}" covered by the
+# `[^}]*` default-suffix allowance; a leading `IFS=','` matches via
+# search). The captured array NAME must ALSO carry a same-name
+# `${#NAME[@]}` count deref elsewhere in the file — see
+# _slurm_gpu_width_guard_present. Realized adoption: the #1336 round-v21
+# shape (issue1336_dispatch.sh @ 6ff22758, branch issue-1336-fullcorpora).
+SLURM_GPU_WIDTH_CVD_READ_RE = re.compile(
+    r"read\s+-r?a\s+(\w+)\s*<<<\s*"
+    r"\"?\$(?:\{CUDA_VISIBLE_DEVICES[^}]*\}|CUDA_VISIBLE_DEVICES(?![A-Za-z0-9_]))\"?"
+)
+
+
+def _slurm_gpu_width_guard_present(text: str) -> bool:
+    """File-scoped guard scan for ``check_slurm_gpu_width`` (#2251): SLURM
+    allocation-env tokens / ``realized_gpu_ids`` (the legacy
+    ``SLURM_GPU_WIDTH_GUARD_RE``), OR the inherited-``CUDA_VISIBLE_DEVICES``
+    parse — an array populated from CVD via ``read -ra``
+    (``SLURM_GPU_WIDTH_CVD_READ_RE``) plus a same-name ``${#NAME[@]}`` count
+    derivation (the #1336 round-v21 shape). Shared by the check and the
+    inverse-calibration pin test so the two scan sites cannot drift."""
+    if SLURM_GPU_WIDTH_GUARD_RE.search(text):
+        return True
+    for m in SLURM_GPU_WIDTH_CVD_READ_RE.finditer(text):
+        if re.search(r"\$\{#" + re.escape(m.group(1)) + r"\[@\]\}", text):
+            return True
+    return False
+
+
 SLURM_GPU_WIDTH_WAIVER_RE = re.compile(r"#\s*SLURM_GPU_WIDTH_EXEMPT\s*:\s*(.+?)\s*$")
 SLURM_GPU_WIDTH_WAIVER_MIN_REASON_CHARS = 10
 # Re-frozen 2026-08-10 (#2081 plan v3) from the corrected predicate's
@@ -1325,6 +1375,9 @@ SLURM_GPU_WIDTH_GRANDFATHER: frozenset[str] = frozenset(
     {
         "issue1310_dispatch.sh",
         "issue1335_run.sh",
+        # Fixed on issue-1336-fullcorpora (6ff22758); remove at that
+        # branch's merge — the guard-adopted hygiene WARN + the
+        # inverse-calibration pin force it (#2251).
         "issue1336_dispatch.sh",
         "issue1345_dispatch.sh",
         "issue1417_run.sh",
@@ -4116,7 +4169,8 @@ def _slurm_gpu_width_grandfather_hygiene(
         elif gf_name in guarded_basenames:
             warn(
                 f"SLURM_GPU_WIDTH_GRANDFATHER['{gf_name}']: {gf_path} now "
-                f"carries a SLURM allocation guard and passes naturally; "
+                f"carries a recognized allocation-derived guard and passes "
+                f"naturally; "
                 f"remove {gf_name} from SLURM_GPU_WIDTH_GRANDFATHER "
                 f"(ratchet down)."
             )
@@ -4128,7 +4182,10 @@ def check_slurm_gpu_width(
     """Walk every ``*.sh`` under ``scripts/`` and FAIL on any logical line
     that derives GPU WIDTH from ``nvidia-smi`` device enumeration
     (``nvidia-smi -L`` / ``--list-gpus`` / ``--query-gpu=`` piped into
-    ``wc -l`` / ``grep -c``) in a file with NO SLURM allocation-env branch.
+    ``wc -l`` / ``grep -c``) in a file with NO recognized allocation-derived
+    guard — a SLURM allocation-env branch, or the
+    inherited-``CUDA_VISIBLE_DEVICES`` parse (#2251); see
+    :func:`_slurm_gpu_width_guard_present`.
 
     Rationale: on a shared fellows SLURM node ``nvidia-smi`` enumerates
     ALL 8 physical devices and ignores ``CUDA_VISIBLE_DEVICES``, so a
@@ -4173,7 +4230,7 @@ def check_slurm_gpu_width(
         if not hits:
             continue
         matched_basenames.add(sh.name)
-        if SLURM_GPU_WIDTH_GUARD_RE.search(text):
+        if _slurm_gpu_width_guard_present(text):
             guarded_basenames.add(sh.name)
             continue
         if sh.name in SLURM_GPU_WIDTH_GRANDFATHER:
@@ -4192,7 +4249,10 @@ def check_slurm_gpu_width(
                 f"(reference impl: "
                 f"scripts/issue1902_common.py::realized_gpu_ids; worked "
                 f"adoption: scripts/issue1491_ladder_launch.sh @ "
-                f"1c8b46d28a), or waive a genuinely non-SLURM launcher "
+                f"1c8b46d28a), or parse an inherited CUDA_VISIBLE_DEVICES "
+                f"into an array and take its ${{#NAME[@]}} count (worked "
+                f"adoption: scripts/issue1336_dispatch.sh @ 6ff22758, "
+                f"#2251), or waive a genuinely non-SLURM launcher "
                 f"with '# SLURM_GPU_WIDTH_EXEMPT: <reason>' (reason ≥ "
                 f"{SLURM_GPU_WIDTH_WAIVER_MIN_REASON_CHARS} chars) on the "
                 f"same or previous non-blank line. See "
@@ -13786,7 +13846,13 @@ _LESSONS_ROW_RE = re.compile(
 # this row extension plus <=40 B headroom (9802 + 40 = 9842) — not general
 # slack (the #992 argued-raise form; the per-row and non-row caps still
 # bind).
-_LESSONS_MAX_BYTES = 9842
+# 9842->9913 (#2135): the index sat at 9834/9842 (8 B headroom), so the
+# pod-side-reporting-row HOLD/gate-park trigger extension (+39 B; measured
+# post-edit file 9873 B) could not land under the old cap. The raise buys
+# EXACTLY this row extension plus <=40 B headroom (9873 + 40 = 9913) — not
+# general slack (the #992 argued-raise form; the per-row and non-row caps
+# still bind).
+_LESSONS_MAX_BYTES = 9913
 # Early-warning band (#992): a stderr-only advisory WARN once the index
 # crosses this, so a near-cap landing is visible a few rows before the
 # _LESSONS_MAX_BYTES FAIL (early warning only — advisory, never a FAIL).
@@ -14456,12 +14522,17 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # pre-launch gate — the #1739 dispatch-time backstop, output-side
     # sibling of the item-4 input gate; plan-mandated growth; cap =
     # measured + ~0.87 KB — LANDING bytes, per #1753.)
+    # measured 66,890 B post-#2277 (owner=/fence_until= run-launched note
+    # fields + the paired PASS-owner duty and the non-copy prohibition
+    # sentence, +1,271 B — plan-mandated growth; cap = the plan-named
+    # 67_600 = measured + ~0.7 KB).
+    # Prior: 66_600 —
     # measured 65,619 B post the 2026-08-05 compaction: bootstrap probe, GCP
     # salvage, Before-Running item-4 gate detail, and the vLLM hang triad
     # relocated to .claude/rules/experimenter-section-reference.md (#1159
     # mechanism); the crash-fix-relaunch paragraph + run-launched fence
     # tokens stay in-spec verbatim. Cap = measured + ~1 KB.
-    "experimenter.md": 66_600,
+    "experimenter.md": 67_600,
     # measured 49,740 B post-#1115 (read-hygiene context-budget section —
     # plan-mandated growth; cap = measured + <=~1 KB. Prior: 49,000 —
     # measured 48,197 B post-#1102)
@@ -14786,7 +14857,46 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 # (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
 # change). Each entry names its trim direction; none is licensed to grow.
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
-    # measured 934,312 B branch-tip after #2244 stated the Step 6b bg-Bash
+    # measured 939,648 B after #2277 added the three owner-fence emitter
+    # insertions (+1,992 B on the post-#2265 937,656 B: the Step 8
+    # owner-fence refusal sentence + PASS owner= first-person duty, the
+    # 9a-ter PASS-shape extension with the co-located non-copy
+    # prohibition, and the 6d.2 heartbeat fence_until= recipe); cap =
+    # measured + ~1.2 KB (#1753/#1727 landing-bytes rule).
+    # Prior: 938_900 —
+    # measured 937,656 B LANDING bytes after #2265 added the Step 6d.2
+    # `pid-stale-workload-live` branch row (+3,106 B on origin/main's
+    # post-#2268 934,550 B: the non-terminal dead-veto status row — the
+    # never-post-epm:failure clause, the first-tick bracketed-pgrep
+    # contradiction probe, pid-file repair + epm:run-launched re-post, the
+    # decay arm and the POD-WIDE conclude/post-failure arm — plus the
+    # stalled|dead row's exclusion clause and the post-tick-duties
+    # contradiction-probe sentence); cap = measured + ~1.2 KB (#1753/#1727
+    # landing-bytes rule; headroom 1,244 B <= the 3,000 B loose-cap
+    # hygiene bar).
+    # Prior: 935_400 — measured 934,550 B after the #2268 trim (Lever A
+    # retelling condensation, 23 sites, -1,641 B on the 936,191 B
+    # #2256-union tree: dropped session-ids, dates, and narrative
+    # retellings per the 2026-08-05 editorial policy — operative rules,
+    # diagnostic signatures, and bare (#N) citations kept); cap was the
+    # RESTORED pre-#2256 fleet vintage 935_400, deliberately NOT
+    # measured + ~1 KB (#1753): stale pre-#2256 branch lint copies still
+    # carried cap 935,400, so matching it made the trimmed main file PASS
+    # under BOTH vintages (the #2221 stale-vintage gate-block class).
+    # Prior: 936_900 — measured 935,501 B at the #2256 + #2244 MERGE UNION (origin/main
+    # merged into issue-2256 to pick up the coupled LESSONS cap raise):
+    # #2256 re-keyed the Step 10d gate single-flight probe /
+    # completion-read / kill-arm patterns from the transient gate-TREE
+    # token to the whole-life workload SCRIPT-path tokens (+1,529 B on its
+    # pre-merge base: the #2115 script-file-launcher coverage rationale at
+    # the trigger + surgical probes, the own-Bash-call reminder and the
+    # subshell-argv fork-without-exec note at the main kill-arm, and the
+    # surgical kill-arm's section reference replacing the stale L11949
+    # line reference), atop main's #2244 advance (934,312 B); cap =
+    # measured + ~1.4 KB (#1753/#1727 landing-bytes rule; the margin
+    # absorbs small main-side advance at the landing union — the #2074
+    # landing-union measurement class).
+    # Prior: 935_400 — measured 934,312 B branch-tip after #2244 stated the Step 6b bg-Bash
     # `timeout` floor for EVERY parking lane (+1,871 B: the timeout-floor
     # paragraph beside the 420 s park contract, the LAUNCHER_RC rc-capture
     # paragraph, and the launch-recovery under-budgeted-timeout
@@ -14846,20 +14956,39 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 904,504 B base); the remaining mass is the judgment tranche
     # (bash-block extraction to step10d_guards.sh-style scripts, 9a-quater
     # legacy-path stub, GCP rollback-prose relocation).
-    "issue/SKILL.md": 935_400,
+    # Prior: 940_900 — measured 941,014 B on main after TWO concurrent
+    # workflow-fix branches landed SKILL.md edits inside the same ~90 min:
+    # #2284 (a70965d3bb, plan-review-floor trigger attribution, +550 B) then
+    # #2285 (740ed2a0a1, Step 10d Guard 2 + trigger-point bullet state the
+    # post-#1723 status ordering, +816 B). Each measured its own landing
+    # bytes against a pre-#2284 main and fit the 1,252 B headroom alone
+    # (#2285's own gate certified 940,464 B / margin 436); their SUM
+    # overshot by 114 B, so main went red on this check between the two
+    # merges. This is the #1721 moving-main class the Step 10d gate's
+    # landing-union merge cannot fully close: the union is computed against
+    # origin/main AT GATE TIME, and a sibling wf-fix merge afterwards is
+    # invisible to it. Cap = landing bytes + ~1 KB (#1753 landing-bytes
+    # rule); NOT a licence for regrowth — SKILL.md is the fleet's largest
+    # always-loaded surface and the compaction tranche below still stands.
+    "issue/SKILL.md": 942_000,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
     # measured 87,195 B; problem-sweep prose + living-docs passes are the
     # trim direction.
     "daily/SKILL.md": 90_000,
+    # Prior: 72_100 — measured 72,748 B after #2276 back-filled the c62
+    # (backend pin-claim) + c63 (declared width vs launch width) escape
+    # entries into the Phase 1.5.0 canonical escapes block (+845 B,
+    # required by the verify_plan docstring sync test); cap = landing
+    # bytes + ~1 KB (#1753 landing-bytes rule).
     # Prior: 70_900 — measured 71,103 B after #2123 back-filled the c59
     # (GPU-hours token conflict) escape entry into the Phase 1.5.0 canonical
     # escapes block (+203 B, required by the verify_plan docstring sync
     # test); cap = landing bytes + ~1 KB (#1753 landing-bytes rule).
     # Prior context: measured 68,032 B; Phase 1 planner-prompt restatement
     # of planner.md is the trim direction.
-    "adversarial-planner/SKILL.md": 72_100,
+    "adversarial-planner/SKILL.md": 73_750,
 }
 
 
@@ -17102,9 +17231,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         action="store_true",
         help="Verify no shell script under scripts/ derives GPU width from "
         "nvidia-smi device enumeration (-L / --list-gpus / --query-gpu= "
-        "piped into wc -l / grep -c) without a SLURM allocation-env "
-        "branch in the file (SLURM_JOB_ID / SLURM_JOB_GPUS / "
-        "SLURM_STEP_GPUS / SLURM_GPUS_ON_NODE / realized_gpu_ids). On a "
+        "piped into wc -l / grep -c) without a recognized guard in the "
+        "file: a SLURM allocation-env branch (SLURM_JOB_ID / "
+        "SLURM_JOB_GPUS / SLURM_STEP_GPUS / SLURM_GPUS_ON_NODE / "
+        "realized_gpu_ids) or the inherited-CUDA_VISIBLE_DEVICES parse "
+        "(read -ra from CVD + a same-name array count; #2251). On a "
         "shared fellows SLURM node nvidia-smi enumerates all 8 physical "
         "devices and ignores CUDA_VISIBLE_DEVICES, so a detected-count "
         "fan-out trespasses onto other tenants' GPUs (#1902; worked "

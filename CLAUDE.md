@@ -336,7 +336,7 @@ Default to **HTML** for long-lived browser-read artifacts (planner output, diges
 
 ## Code Style
 
-- **Plan handoff convention:** pass the PATH to `.claude/plans/issue-<N>.md`, never the body.
+- **Plan handoff convention:** pass the PATH to `.claude/plans/issue-<N>.md`, never the body. Every persisted `plans/v{K}.md` is self-contained — `new-plan-version` refuses thin amendments (#2255; `--allow-amendment` escape ⇒ hand base+delta together in briefs; `verify_plan --issue` composes automatically).
 - **All code changes on the local VM, never on pods.** Edit locally, commit, push, `git pull` on pods.
 
 Full Python / experiment code-style conventions — lint (`ruff`, line-length=100,

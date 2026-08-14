@@ -1,0 +1,71 @@
+{
+  "metadata": {
+    "git_commit": "f56f7d38ea6d41a6226ca2b1ef778d0ea50a3ee5",
+    "timestamp": "2026-07-23T19:07:38Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1345_matched_row_refits.py",
+    "pinned_parent_revision": "7159e5804d"
+  },
+  "arm": "context",
+  "model": "pretrained",
+  "reads_l19": {
+    "tf_full": {
+      "r2_l19": -0.24698110653297323,
+      "n_rows": null,
+      "ci_lo": -0.26984477310359756,
+      "ci_hi": -0.22299575037535174,
+      "n_groups": 2160
+    },
+    "op_companion": {
+      "r2_l19": 0.017415976605298145,
+      "n_rows": null,
+      "ci_lo": 0.006622223702389451,
+      "ci_hi": 0.07364377964026012,
+      "n_groups": 135
+    },
+    "tf_on_companion_subset": {
+      "r2_l19": 0.1117532545401666,
+      "n_rows": null,
+      "ci_lo": 0.0961945924204449,
+      "ci_hi": 0.16562965530297905,
+      "n_groups": 135
+    },
+    "r1_matched": {
+      "r2_l19": -0.3094325894829506,
+      "n_rows": null,
+      "ci_lo": -0.35790084487213053,
+      "ci_hi": -0.26533067772142244,
+      "n_groups": 2160
+    },
+    "r1_full": {
+      "r2_l19": 0.5416017955480218,
+      "n_rows": null,
+      "ci_lo": 0.5334514542531605,
+      "ci_hi": 0.5502685316966448,
+      "n_groups": 4724
+    },
+    "r2_matched": {
+      "r2_l19": -0.24910791761715956,
+      "n_rows": null,
+      "ci_lo": -0.2906417752143807,
+      "ci_hi": -0.20766649051239477,
+      "n_groups": 2160
+    }
+  },
+  "thresholds": {
+    "tier1_qualification": 0.05,
+    "tier2_kill": 0.2
+  },
+  "calibration": {
+    "tf_minus_op_gap_matched_subset": 0.09433727793486846,
+    "tier1_qualification": true,
+    "tier2_tf_distorted": false,
+    "note": "tier1: companion read accompanies the TF headline as a qualification; tier2: TF cell reported with a TF-DISTORTED qualifier and the companion demoted to primary for this arm (plan v8 \u00a77 \u2014 analyzer-side labels; the gap also bundles any residual pre-slot construction inflation)"
+  },
+  "r1_subset_vs_full": {
+    "matched_l19": -0.3094325894829506,
+    "full_l19": 0.5416017955480218,
+    "subset_leq_full": true
+  }
+}

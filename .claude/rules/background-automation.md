@@ -635,6 +635,56 @@ Kill switch `EPM_DISABLE_NEVER_RAN_ESCALATION=1`. Provision-side sibling:
 bootstrap/ssh-wait failure (`--keep-on-bootstrap-failure` opts out), so this
 leg is the backstop for pods that escape that path.
 
+**Owner-fence defer arm (#2283, incident #2277 — DEFER-ONLY, bounded).** The
+pod-safety AUTO-STOP arm is DEFERRED (miss counter reset; one anti-liveness
+marker per fence episode + a push/sidecar re-alert every
+`EPM_KEEP_RUNNING_WEDGED_REALERT_H` (24h); sidecar
+`.claude/cache/pod-owner-fence-events.jsonl`) while the pod carries an
+UNEXPIRED #2277 owner fence with NO owner-matching upload-verification PASS —
+read through the SAME `pod_lifecycle.owner_fence_state` chain the terminate
+guard runs (`blocks_teardown`; evidence window, newest-wins tokens, two-tier
+PASS owner — never a second parser), so the watcher can no longer STOP a pod
+mid-run that the guard would refuse to DESTROY (2026-08-13 pod-2054-tiers:
+a non-owner drove the task to a DONE status and the softer verb had no fence
+awareness). Eligibility keys STRICTLY on `status in AUTO_STOP_DONE` — a
+USER-paused `on_hold` task (merged into the same `"auto-stop-done"` class)
+NEVER defers: a self-posted fence must not override a user pause. The
+`keep-running` tag and the live-follow-up shield take precedence (the arm
+only ADDS a defer where a stop would have fired); a NOT-EVALUATED read (kill
+switch `EPM_DISABLE_POD_FENCE_DEFER=1`, reader failure — one loud WARN)
+never defers (fail-open to the plain stop) and never clears episode state.
+Bounded TWICE: the fence's own expiry, and a cumulative per-(issue, pod)
+ceiling `EPM_POD_FENCE_DEFER_MAX_H` (default 24h, floor-clamped 1h) measured
+from the episode's FIRST deferred tick — a continuously-refreshed fence
+cannot shield a pod forever (a once-per-episode ceiling marker announces the
+re-armed stop). Episode state is the pod_id-keyed `fd_pod` sub-dict of the
+pod-safety state file (the `kr_pod`/`nr_pod` carry contract: sibling pods'
+saves forward-carry it verbatim; GC against the live RUNNING-pod set); an
+evaluated-and-inactive read (expired / `fence_until=none` / owner PASS)
+CLEARS the entry. **Named consequence — wedge fall-through:**
+`_process_pod`'s MF6 carve-out deliberately falls a PORTLESS-WEDGED pod at a
+`POD_SAFETY_AUTO_STOP` status THROUGH to this status-class arm, so such a pod
+on a DONE task now bills for up to `min(fence_until, 24h)` instead of stopping
+in ~20 min — accepted for v1 (bounded by the same ceiling, escalated on the
+same channels, and consistent with the directive's priority ordering, where
+never-stop-autonomously outranks spend); the named future tightening is to
+bypass the fence when the raw wedge predicate reads True. **Named residual —
+lapse-recycle:** because the clear fires on an evaluated-and-inactive tick, an
+owner whose fence lapses for a single sub-threshold tick and is then re-posted
+resets the 24h ceiling — an indefinite shield at ~24h periods. That is
+adversarial-only and sits outside the accidents-not-adversaries trust model
+this arm inherits from #2277 (whose `owner=` match is likewise unauthenticated
+string equality), and each fresh episode re-fires its own marker + push, so the
+recycling is visible rather than silent. Both watcher markers are
+REGISTRATION-INERT by
+construction (an `epm:progress` note binding the pod in structured position
+with a fence token would itself register/clear the owner's fence — the
+self-defeat hazard; pinned by
+`tests/test_autonomous_session_watch_owner_fence.py::test_fence_defer_marker_is_registration_inert`).
+**DEFER-ONLY is a hard invariant** — with the fence params at their False
+defaults `decide_pod_safety` is byte-identical to its pre-#2283 table
+(pinned by `test_decide_fence_arm_never_accelerates_a_stop`).
+
 **Zombie-wrapper pass.** A daemon-tracked session whose process tree has
 carried NO inner Claude process for ≥2 consecutive checks AND ≥ the
 lane's grace is auto-stopped regardless of issue mapping. Two

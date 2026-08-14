@@ -24,10 +24,35 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 BOOTSTRAP = REPO_ROOT / "scripts" / "bootstrap_pod.sh"
+POD_LIFECYCLE = REPO_ROOT / "scripts" / "pod_lifecycle.py"
 
 
 def _script_text() -> str:
     return BOOTSTRAP.read_text(encoding="utf-8")
+
+
+def _shim_heredoc_bodies() -> dict[str, str]:
+    """Extract the /usr/local/bin/python shim heredoc body from BOTH writers.
+
+    The shim has TWO writers — ``bootstrap_pod.sh`` step 6 (fresh provision)
+    and ``pod_lifecycle._UV_RESTORE_SNIPPET`` (the ``pod.py resume`` path,
+    which reinstalls the shim after RunPod wipes the container overlay). A
+    single-writer test is exactly what let the two copies drift before task
+    #2278, so every shim-body invariant below scans BOTH heredocs. Exactly
+    one PYEOF heredoc is expected per file — a second one would silently
+    retarget these extractions.
+    """
+    bodies: dict[str, str] = {}
+    for name, path in {"bootstrap_pod.sh": BOOTSTRAP, "pod_lifecycle.py": POD_LIFECYCLE}.items():
+        text = path.read_text(encoding="utf-8")
+        matches = re.findall(
+            r'cat > /usr/local/bin/python <<"PYEOF"\n(.*?)\nPYEOF', text, re.DOTALL
+        )
+        assert len(matches) == 1, (
+            f"expected exactly one PYEOF shim heredoc in {name}, got {len(matches)}"
+        )
+        bodies[name] = matches[0]
+    return bodies
 
 
 def test_bootstrap_script_exists() -> None:
@@ -58,12 +83,18 @@ def test_usr_local_bin_uvx_symlink_present() -> None:
     assert "/usr/local/bin/uvx" in text, "expected /usr/local/bin/uvx symlink target"
 
 
-def test_python_shim_execs_uv_run_python() -> None:
-    """The python shim must forward to the locked project interpreter via uv."""
+def test_python_shim_execs_project_venv_interpreter() -> None:
+    """Each shim body execs the project venv interpreter DIRECTLY (no uv hop),
+    with a system-interpreter fallback chain and a loud terminal failure."""
     text = _script_text()
     assert "/usr/local/bin/python" in text, "expected /usr/local/bin/python shim path"
     assert "chmod +x /usr/local/bin/python" in text, "python shim must be executable"
-    assert "exec uv run python" in text, "python shim must exec `uv run python`"
+    for name, body in _shim_heredoc_bodies().items():
+        assert "exec /workspace/explore-persona-space/.venv/bin/python" in body, (
+            f"{name}: shim must exec the project venv interpreter directly"
+        )
+        assert "/usr/bin/python3.11" in body, f"{name}: expected the system-interpreter fallback"
+        assert "exit 1" in body, f"{name}: shim must fail loud when no interpreter resolves"
 
 
 def test_uv_binary_resolution_fails_loud() -> None:
@@ -128,7 +159,8 @@ def test_pythonpath_python_shim_exports_before_exec() -> None:
     shim_end = text.index("chmod +x /usr/local/bin/python")
     shim_body = text[shim_start:shim_end]
     assert _PYTHONPATH_PREPEND in shim_body, "shim must export PYTHONPATH"
-    assert shim_body.index(_PYTHONPATH_PREPEND) < shim_body.index("exec uv run python"), (
+    exec_anchor = "exec /workspace/explore-persona-space/.venv/bin/python"
+    assert shim_body.index(_PYTHONPATH_PREPEND) < shim_body.index(exec_anchor), (
         "shim export must precede the exec"
     )
 
@@ -185,4 +217,97 @@ def test_rc_path_append_separately_guarded() -> None:
     assert unescaped in payload_lines[0], (
         f"de-escaped guard pattern {unescaped!r} must byte-match the heredoc "
         f"payload {payload_lines[0]!r} — quoting drift would silently duplicate appends"
+    )
+
+
+# ---------------------------------------------------------------------------
+# task #2278 — the python shim must never invoke uv (interpreter-discovery
+# deadlock), across BOTH shim writers (bootstrap step 6 + the resume path)
+# ---------------------------------------------------------------------------
+
+
+def test_python_shim_does_not_invoke_uv() -> None:
+    """Direct regression pin for task #2278: NEITHER shim writer's heredoc
+    body may contain a ``uv`` token at all. /usr/local/bin/python is the
+    first ``python`` on the default non-interactive-SSH PATH, so uv's
+    interpreter discovery executes it as a candidate; a body that re-enters
+    uv blocks on the project lock a parent ``uv sync`` holds — a silent
+    futex deadlock with stacked get_interpreter_info probes and zero output.
+    The ban is total (comments included) so the deadlock stays impossible by
+    construction rather than by a fragile am-I-being-probed heuristic.
+
+    ``uvx`` is banned alongside ``uv``: it drives the same uv machinery (and
+    the same project lock), so a ``uvx``-invoking shim body deadlocks
+    identically while evading a bare ``\\buv\\b`` pin (word boundary fails
+    before the ``x``).
+    """
+    for name, body in _shim_heredoc_bodies().items():
+        hits = re.findall(r"\buvx?\b", body)
+        assert not hits, (
+            f"{name}: the /usr/local/bin/python shim body must not reference uv "
+            f"or uvx anywhere (found {len(hits)} token(s)); a uv-invoking shim "
+            "deadlocks uv interpreter discovery against a lock-holding uv sync "
+            "(task #2278)"
+        )
+
+
+def test_python_shim_preserves_pythonpath_and_cwd() -> None:
+    """Both shim bodies carry the repo-root PYTHONPATH export (#1172) and the
+    ``cd`` into the repo — pinning closed the pod_lifecycle drift that
+    omitted the PYTHONPATH export despite its stays-in-sync docstring."""
+    for name, body in _shim_heredoc_bodies().items():
+        assert _PYTHONPATH_PREPEND in body, f"{name}: shim must export the repo-root PYTHONPATH"
+        assert "cd /workspace/explore-persona-space || exit 1" in body, (
+            f"{name}: shim must cd into the repo root before exec"
+        )
+
+
+def test_shim_self_test_present() -> None:
+    """Bootstrap runs a post-install shim self-test so a shim that cannot
+    resolve an interpreter fails the provision NOW, not hours later as a
+    silent hang (the mechanical form of acceptance criterion 3)."""
+    text = _script_text()
+    assert 'if ! /usr/local/bin/python -c "import sys; print(sys.executable)"' in text, (
+        "expected the post-install python shim self-test invocation"
+    )
+
+
+def test_shim_self_test_fails_loud() -> None:
+    """The self-test's failure path exits non-zero EXPLICITLY and is not
+    swallowed: the step-6 remote payload carries no ``set -e`` and ssh_cmd
+    propagates only the LAST command's status, so without an explicit
+    ``exit 1`` a failing self-test would be masked by the closing echo
+    lines — the same silent-failure class as the bug itself."""
+    text = _script_text()
+    m = re.search(
+        r'if ! /usr/local/bin/python -c "import sys; print\(sys\.executable\)"(.*?)\nfi\n',
+        text,
+        re.DOTALL,
+    )
+    assert m is not None, "could not locate the shim self-test block"
+    block = m.group(0)
+    assert "exit 1" in block, "self-test failure branch must exit 1 explicitly"
+    for swallow in ("|| true", "2>/dev/null"):
+        assert swallow not in block, (
+            f"self-test block must not muffle failures with {swallow!r} — a broken "
+            "shim must fail the provision, not pass green"
+        )
+
+
+def test_dangling_venv_symlink_guard_present() -> None:
+    """Step 5 clears a DANGLING .venv symlink before ``uv sync``: /root is the
+    container overlay (recreated on pod stop/resume), so a .venv symlink into
+    /root from the overlay-venv recovery survives the stop pointing nowhere,
+    and the sync would otherwise fail on it. The guard must precede the sync."""
+    text = _script_text()
+    guard = "if [ -L .venv ] && [ ! -e .venv ]; then"
+    assert guard in text, "expected the dangling .venv symlink guard"
+    guard_block = text[text.index(guard) : text.index(guard) + 400]
+    assert "rm -f .venv" in guard_block, "the guard must remove the dangling link"
+    # Anchor on the INVOCATION line (the step-5 banner echoes the same phrase
+    # earlier in the file); the guard must precede the actual sync command.
+    sync_invocation = "uv sync --locked 2>&1 | tail -5"
+    assert sync_invocation in text, "expected the step-5 uv sync invocation"
+    assert text.index(guard) < text.index(sync_invocation), (
+        "the dangling-symlink guard must run BEFORE uv sync"
     )

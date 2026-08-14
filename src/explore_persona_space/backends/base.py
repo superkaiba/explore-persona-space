@@ -457,6 +457,9 @@ class PollResult:
     * ``stalled`` — alive but no log progress AND idle GPUs for >STALL_SEC.
     * ``dead`` — the launching PID / SLURM state says the workload exited
       without a clean ``done``.
+    * ``pid-stale-workload-live`` — pid probes all dead but same-tick
+      evidence (busy GPU / fresh issue-keyed logs/outputs) contradicts
+      death; non-terminal, RunPod/legacy-poller lane only, #2265.
 
     Backend-specific notes:
 
@@ -473,7 +476,7 @@ class PollResult:
     doesn't populate a field still serializes to the SAME JSON shape.
     """
 
-    status: str  # running | done | gate | stalled | dead
+    status: str  # running | done | gate | stalled | dead | pid-stale-workload-live
     current_phase: str
     new_milestone: bool
     last_log_mtime_sec_ago: int

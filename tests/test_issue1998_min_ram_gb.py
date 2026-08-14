@@ -487,9 +487,10 @@ def test_min_ram_gb_help_documents_gpu(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test 7: --help output for the launch subcommand documents:
     - GCP GPU dispatch coverage (#1998),
     - the RunPod-CPU-fallback role (#1010),
-    - the SLURM-lane inertness,
+    - the SLURM-lane --mem raise (#2275; supersedes the pre-#2275 inertness),
     - the RunPod-GPU EXPLICIT-OVERRIDE inertness residual,
-    AND no longer contains the stale "RunPod-CPU-fallback knob" lead.
+    AND no longer contains the stale "RunPod-CPU-fallback knob" lead nor the
+    retired "SLURM lanes: inert" claim.
     """
 
     repo_root = Path(__file__).resolve().parents[1]
@@ -509,8 +510,10 @@ def test_min_ram_gb_help_documents_gpu(monkeypatch: pytest.MonkeyPatch) -> None:
     assert "GCP GPU dispatch (#1998)" in out
     # Preserved: RunPod-CPU-fallback role.
     assert "RunPod CPU fallback (#1010)" in out
-    # Preserved: SLURM inertness.
-    assert "SLURM lanes: inert" in out
+    # #2275: SLURM lanes now RAISE the rendered --mem — the inertness claim is retired.
+    assert "SLURM lanes (#2275): raises the rendered #SBATCH --mem" in out
+    assert "refuses pre-submit above the cluster mem_gb_cap" in out
+    assert "SLURM lanes: inert" not in out
     # New: RunPod-GPU explicit-override residual.
     assert "RunPod-GPU explicit-override lane" in out
     assert "remains inert" in out

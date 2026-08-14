@@ -71,7 +71,13 @@ Report it under `## Smoke run` in a `### fix-engaged signal` sub-section
 with five elements:
 
 1. **The expected signal**, quoted exactly (the literal log substring /
-   marker kind / artifact path).
+   marker kind / artifact path). When the expected signal embeds
+   environment-derived VALUES (core/thread counts, widths, device ids),
+   derive them from the surface the run EXECUTES on — probe inside the
+   SLURM allocation / on the target pod, never over plain SSH to the
+   shared node (gotchas.md "Fellows SLURM nodes are GPU-SHARED" + its CPU
+   analogue; #1336: a plain-SSH `nproc=192` baked a wrong expected banner
+   into the declared signal, inverting its meaning for a healthy run).
 2. **The same-pod / smoke-slice confirmation FIRST.** Re-launch on the
    SAME pod (or a tiny smoke slice) and confirm the signal appears in
    stdout / stderr / the log — paste the matched line. ONLY THEN may a

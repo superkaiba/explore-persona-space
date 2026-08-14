@@ -117,8 +117,8 @@ def _patch_pod(monkeypatch: pytest.MonkeyPatch, *, probe_kwargs: dict[str, Any])
 
     monkeypatch.setattr(pp.subprocess, "run", _fake_run)
     monkeypatch.setattr(pp, "post_event", MagicMock())
-    monkeypatch.setattr(pp, "_marker_pid", lambda issue: None)
-    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch: 10800.0)
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue, pod=None: None)
+    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch, pod=None: 10800.0)
 
 
 # A non-`done`, non-`gate` tail so the verdict is the normal liveness path
@@ -239,8 +239,8 @@ def test_heredoc_emits_pod_now_epoch(monkeypatch: pytest.MonkeyPatch, tmp_path: 
 
     monkeypatch.setattr(pp.subprocess, "run", _fake_run)
     monkeypatch.setattr(pp, "post_event", MagicMock())
-    monkeypatch.setattr(pp, "_marker_pid", lambda issue: None)
-    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch: 10800.0)
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue, pod=None: None)
+    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch, pod=None: 10800.0)
 
     pp.poll_once(
         issue=9704,

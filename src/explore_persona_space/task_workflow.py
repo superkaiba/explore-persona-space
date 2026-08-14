@@ -6271,6 +6271,43 @@ def set_track(task_id: int, track: str) -> None:
 _PLAN_HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
 _PLAN_HEADER_VERSION_RE = re.compile(r"(?i)^plan\s+v(\d+)\b")
 
+# ── Amendment-shape detection (#2255) ──
+# Three conjunctive signals — each alone is false-positive-dominated on the
+# 4,028-version persisted-plan corpus (marker phrase alone: 200 hits, ~198
+# full plans; size alone: 31 hits, 29 legitimate small full re-plans; the
+# conjunction fires on exactly the 2 true thin amendments — #2223 v4 at
+# ratio 0.051 and #377 v2 at 0.154).
+AMENDMENT_SIZE_RATIO = 0.4  # new bytes < 0.4 x predecessor bytes
+AMENDMENT_MARKER_RE = re.compile(
+    r"(?i)\b(?:amendment\s+of\s+v\d+|amends\s+v\d+|ports?\s+from\s+v\d+|unchanged\s+from\s+v\d+)\b"
+)
+# Parity copy of scripts/verify_plan.py GPU_LINE_RE (pattern equality is
+# pin-tested by tests/test_task_workflow.py::
+# test_amendment_gpu_regex_parity_with_verify_plan — the one deliberate
+# regex duplication; verify_plan.py is a script, not importable from here).
+AMENDMENT_GPU_LINE_RE = re.compile(
+    r"(?i)estimated\s+gpu-?hours\s+\(total\):\**\s*`?([0-9]+(?:\.[0-9]+)?)`?"
+)
+
+
+def is_amendment_shaped(plan_md: str, predecessor_bytes: int | None) -> bool:
+    """True iff ``plan_md`` looks like a thin delta over a predecessor plan
+    version: ALL THREE of (a) size < ``AMENDMENT_SIZE_RATIO`` x predecessor,
+    (b) an amendment-marker phrase (``AMENDMENT_MARKER_RE``), (c) NO
+    parseable ``Estimated GPU-hours (total): <number>`` declaration.
+    Conjunctive by calibration (#2255 §2): each signal alone is
+    false-positive-dominated on the 4,028-version persisted-plan corpus.
+    ``predecessor_bytes`` falsy/non-positive (no predecessor) → ``False``.
+    """
+    if not predecessor_bytes or predecessor_bytes <= 0:
+        return False
+    small = len(plan_md.encode("utf-8")) < AMENDMENT_SIZE_RATIO * predecessor_bytes
+    return (
+        small
+        and AMENDMENT_MARKER_RE.search(plan_md) is not None
+        and AMENDMENT_GPU_LINE_RE.search(plan_md) is None
+    )
+
 
 def _split_plan_frontmatter(text: str) -> tuple[str, str]:
     """Split ``text`` into ``(frontmatter_prefix, body)``, byte-preserving.
@@ -6336,7 +6373,7 @@ def _align_plan_header_version(plan_md: str, next_v: int) -> str:
     return plan_md
 
 
-def new_plan_version(task_id: int, plan_md: str) -> int:
+def new_plan_version(task_id: int, plan_md: str, *, allow_amendment: bool = False) -> int:
     """Append plans/v{next}.md, update plans/plan.md symlink. Returns the
     new version number.
 
@@ -6350,6 +6387,15 @@ def new_plan_version(task_id: int, plan_md: str) -> int:
     belt-and-suspenders guard, refuse loudly if the computed target file
     somehow already exists (e.g. a concurrent writer between the glob and
     the write, or a manually pre-staged file).
+
+    An AMENDMENT-SHAPED input (``is_amendment_shaped`` vs the highest
+    existing version: thin delta + amendment-marker phrase + no GPU-hours
+    declaration) is REFUSED with an actionable ``ValueError`` unless
+    ``allow_amendment=True`` (CLI ``--allow-amendment``) — every persisted
+    version must be self-contained because subagent briefs handed
+    ``plans/plan.md``, ``verify_plan.py --issue``, and the Step-2c
+    GPU-hours read all assume ONE self-contained file (#2255). Detection
+    runs on the INPUT text, before header alignment.
 
     Before writing, a self-declared ``Plan v<X>`` version in the plan's
     first markdown heading is rewritten to the assigned ``v{next}``
@@ -6373,6 +6419,28 @@ def new_plan_version(task_id: int, plan_md: str) -> int:
                 f"the highest-version+1 resolver computed v{next_v} but "
                 f"that file already exists on disk"
             )
+        if existing_nums and not allow_amendment:
+            predecessor = plans_dir / f"v{max(existing_nums)}.md"
+            predecessor_bytes = predecessor.stat().st_size
+            if is_amendment_shaped(plan_md, predecessor_bytes):
+                ratio = len(plan_md.encode("utf-8")) / predecessor_bytes
+                marker = AMENDMENT_MARKER_RE.search(plan_md)
+                phrase = marker.group(0) if marker else "<unmatched>"
+                raise ValueError(
+                    f"refusing to persist an AMENDMENT-SHAPED plan version for task "
+                    f"#{task_id}: the input is {ratio:.3f}x the size of its predecessor "
+                    f"{predecessor.name} (< AMENDMENT_SIZE_RATIO={AMENDMENT_SIZE_RATIO}), "
+                    f"carries the amendment-marker phrase {phrase!r}, and has NO parseable "
+                    f"`Estimated GPU-hours (total): <number>` declaration. Every persisted "
+                    f"plans/v{{K}}.md must be SELF-CONTAINED — subagent briefs handed "
+                    f"plans/plan.md, verify_plan.py --issue, and the Step-2c GPU-hours "
+                    f"gate all read ONE file (#2255). Remedies, in order: (1) compose a "
+                    f"FULL plan (base {predecessor.name} + this delta merged into one "
+                    f"self-contained document — trivially scriptable) and re-persist; or "
+                    f"(2) if the thin delta is deliberate (user-authorized), re-run with "
+                    f"--allow-amendment (library: allow_amendment=True) AND restate the "
+                    f"`Estimated GPU-hours (total):` line inside the amendment."
+                )
         plan_md = _align_plan_header_version(plan_md, next_v)
         target.write_text(plan_md if plan_md.endswith("\n") else plan_md + "\n")
         # Symlink plan.md → v{next}.md
@@ -6629,6 +6697,58 @@ def _jsonl_lines_subsequence(husk_bytes: bytes, live_bytes: bytes) -> bool:
     return all(any(h == line for line in live_iter) for h in husk_lines)
 
 
+def _husk_file_symlink_covered(hp: Path, lp: Path, live: Path, husk_resolved: Path) -> bool:
+    """True iff the husk FILE-symlink entry ``hp`` is covered by the live
+    dir (#2138); False == unique. Routes, in order: (1) the live
+    counterpart ``lp`` is a symlink with an identical ``os.readlink()``
+    target (the pre-existing rule); (2) the fully-resolved target stays
+    INSIDE the husk and its husk-relative path also exists in the live
+    dir; (3) the in-husk resolved bytes are covered by the live
+    counterpart at the same relative path under the regular-file rules.
+    Fail-safe: a dangling, husk-escaping, looping, or non-regular-target
+    symlink returns False. Route (2) classifies the SYMLINK entry ONLY --
+    it never suppresses the walk's independent comparison of the target
+    file itself (``resolve()`` strips symlink components, so every
+    intermediate dir on the resolved path is REAL and ``os.walk`` reaches
+    the target file; a diverged target is that entry's own unique verdict
+    and escalates the husk regardless of this route)."""
+    if lp.is_symlink() and os.readlink(hp) == os.readlink(lp):
+        return True  # existing rule: identical pointer on both sides
+    # NEW (#2138): a FILE-symlink may still be safe when its resolved
+    # content is carried by the live dir. Fail-safe gates first:
+    # hp.is_file() follows the chain -- False for dangling / non-regular
+    # targets; the resolved path must stay INSIDE the husk dir.
+    if not hp.is_file():
+        return False
+    try:
+        resolved = hp.resolve(strict=True)
+    except (OSError, RuntimeError):
+        # RuntimeError: py311 raises it for symlink LOOPS at
+        # resolve(strict=True) (unified into OSError only in 3.13);
+        # unreachable in practice -- hp.is_file() screens loops (ELOOP is
+        # in pathlib's ignored errnos) -- kept as a belt against
+        # resolve-time races. Either way: unique.
+        return False
+    if not resolved.is_relative_to(husk_resolved):
+        return False  # husk-escaping target: byte coverage never rescues it
+    target_rel = resolved.relative_to(husk_resolved)
+    # (b) pointer-carries-no-data: the target path also exists in the live
+    # dir (the walk verifies husk/<target_rel> against live/<target_rel>
+    # independently -- see the docstring's non-suppression clause).
+    if (live / target_rel).exists():
+        return True
+    # (a) same-rel-path content coverage: resolved bytes covered by the
+    # live counterpart under the regular-file rules.
+    if lp.is_file():
+        sym_bytes = hp.read_bytes()  # follows the chain
+        lp_bytes = lp.read_bytes()
+        if lp_bytes.startswith(sym_bytes):
+            return True
+        if hp.suffix == ".jsonl" and _jsonl_lines_subsequence(sym_bytes, lp_bytes):
+            return True
+    return False
+
+
 def _husk_unique_content(husk: Path, live: Path) -> list[str]:
     """Entries under ``husk`` NOT covered by ``live``. Empty list == safe
     subset (every husk entry is redundant with the live dir; nothing is
@@ -6639,8 +6759,22 @@ def _husk_unique_content(husk: Path, live: Path) -> list[str]:
     symlink-to-file in ``filenames`` — BOTH are classified here so a
     dir-symlink can never reach ``rmtree`` unverified):
 
-    - symlink (dir OR file): safe iff the live counterpart is a symlink
-      with an identical ``os.readlink()`` target; else unique.
+    - symlink to a DIRECTORY: safe iff the live counterpart is a symlink
+      with an identical ``os.readlink()`` target; else unique. The walk
+      never traverses INTO a symlinked dir, so its contents are never
+      subset-verified — content-based leniency for dir-symlinks would be
+      unsound; readlink equality stays their only safe route.
+    - symlink to a FILE: safe via ANY of (1) the live counterpart is a
+      symlink with an identical ``os.readlink()`` target; (2) the target,
+      fully resolved via ``resolve(strict=True)``, stays INSIDE the husk
+      and the same husk-relative path also exists in the live dir (#2138:
+      the pointer itself carries no data; the walk still compares the
+      husk's target file against the live counterpart independently, so a
+      diverged target stays unique and escalates the husk); (3) the
+      resolved target stays INSIDE the husk and the resolved bytes are
+      covered by the live counterpart at the SAME relative path under the
+      regular-file rules below. A dangling, husk-escaping, looping, or
+      non-regular-target symlink is unique (fail-safe).
     - regular file: safe iff a live counterpart file exists AND (bytes
       identical OR husk bytes are a byte-prefix of live bytes OR — for
       ``.jsonl`` files — husk lines are an ordered subsequence of live
@@ -6652,6 +6786,7 @@ def _husk_unique_content(husk: Path, live: Path) -> list[str]:
       under tasks/).
     """
     unique: list[str] = []
+    husk_resolved = husk.resolve()
     for root, dirnames, filenames in os.walk(husk, followlinks=False):
         root_p = Path(root)
         rel_root = root_p.relative_to(husk)
@@ -6669,9 +6804,8 @@ def _husk_unique_content(husk: Path, live: Path) -> list[str]:
             rel = rel_root / name
             lp = live / rel
             if hp.is_symlink():
-                if lp.is_symlink() and os.readlink(hp) == os.readlink(lp):
-                    continue
-                unique.append(str(rel))
+                if not _husk_file_symlink_covered(hp, lp, live, husk_resolved):
+                    unique.append(str(rel))
                 continue
             if not hp.is_file():
                 unique.append(str(rel))  # fifo/socket/device — never covered
@@ -8503,6 +8637,7 @@ __all__ = [
     "get_task",
     "has_event",
     "invalidate_cache",
+    "is_amendment_shaped",
     "keep_running_tag_state",
     "latest_event",
     "list_by_status",

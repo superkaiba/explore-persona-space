@@ -612,6 +612,10 @@ below). Exemptions, stated in the interpretation prose or alt text: the
 result's primary figure ALREADY is the per-unit view (a raw scatter needs
 no second scatter); N is so small the figure already shows every point; or
 the aggregate has no meaningful per-unit decomposition (a single scalar).
+State an exemption with the literal token `Per-unit exemption: <reason>` —
+the token is MACHINE-READ: `verify_task_body.py` check 55 WARNs a
+single-figure result whose caption/alt reports a correlation/AUC-family
+statistic and carries neither a per-unit companion nor that literal token.
 When a committed per-unit companion is deliberately NOT embedded, name the
 file AND state the omission with an explicit exemption phrase — "not
 embedded: <reason>" or "superseded by <the embedded view>" — in the same
@@ -1117,6 +1121,33 @@ Forward-only: each check branches on the sentinel. The v4 checks
     incident: #1769's fu1 re-gate shipped the dose ladder + the α=3
     lattice — two distinct analyses — under one `### <result>`, and only
     the LM critic caught it.)
+55. **Exemption-less single-figure aggregate statistic**
+    (`check_v4_aggregate_stat_needs_per_unit`, v4 only, WARN — NEVER
+    FAIL): a `### <result>` block embedding EXACTLY ONE inline figure
+    whose alt text / blockquote caption reports a correlation/AUC-family
+    statistic (`r` / `rho` / `ρ` / `R²` / `AUC` / `AUROC` with a value,
+    or a Spearman/Pearson-qualified bare symbol) with NO per-unit
+    evidence — no literal `per-unit exemption` token in the section
+    prose, no per-unit companion basename, no declared-pair idiom in the
+    alt/caption — draws a WARN naming the H3 + the matched statistic.
+    The SINGLE-figure arm of § "Low-level data plot behind every
+    aggregate" (the 0-figure case is check 48's, the >1-figure case
+    check 49's); clean-result-critic Lens 11 stays the substantive
+    owner. (#2264; incident: #2224 r3's two folded fu1 aggregate results
+    shipped without the per-unit view or the `Per-unit exemption:` line
+    the body used elsewhere.)
+56. **Fold-staled acknowledgment claims** (`check_v4_ack_result_count`,
+    v4 only, WARN — NEVER FAIL; dispatched with the issue number): the
+    conciseness-cap acknowledgment paragraph's `<N> result(s)` claims
+    (digits or number words one..twenty; compound word-numbers skipped)
+    are compared to the actual `### ` count under `## Results`, and a
+    `single-round` claim is checked against the folded-round evidence
+    (footer round clauses + events.jsonl when the issue is known); any
+    mismatch WARNs naming claimed vs actual. Each same-issue follow-up
+    fold edits `## Results` but not the acknowledgment paragraph —
+    rewrite the acknowledgment at every fold. (#2264; incident: #2224
+    r3's acknowledgment still said "single-round … nine results" while
+    the folded body carried 13 results across 3 folded rounds.)
 
 Generation-agnostic checks (v2 AND v3 AND v4): figure-URL-sha-matches
 (check 22), HF-URL-resolves (check 23), figure-sidecar opaque

@@ -23,7 +23,7 @@ goal: Fit a map from the pooled context activation to the SAE feature vector of 
 
 **Methodology:** [docs/methodology/issue_2061.md @ d8b1739a0d](https://github.com/superkaiba/explore-persona-space/blob/d8b1739a0d719a4fc9e3815374ff461c570217be/docs/methodology/issue_2061.md) · [gist mirror](https://gist.github.com/superkaiba/a21b1e234a2bc730d33189756dc3e530)
 
-**Dashboard:** per-feature ΔR² explorer (most increased / most decreased per stage transition + distributions): https://eps.superkaiba.com/sae-predictability-2061.html (generator `scripts/issue2061_predictability_dashboard.py` @ c5fe5c220e; descriptive, multiplicity-uncorrected — see Takeaways)
+**Dashboard:** per-feature ΔR² explorer (most increased / most decreased per stage transition + distributions): https://eps.superkaiba.com/sae-predictability-2061.html (generator `scripts/issue2061_predictability_dashboard.py` @ c5fe5c220e; descriptive, multiplicity-uncorrected — see Takeaways). Companion hover-explorer — activation frequency vs ΔR², every scored feature a point, hover = auto-interp label (EleutherAI/auto_interp_interpretations, base-dictionary labels, coverage 156,110/262,144): https://eps.superkaiba.com/sae-freq-delta-2061.html (generator `scripts/issue2061_freq_delta_dashboard.py` @ 1145041f39; same descriptive caveats)
 
 ## Takeaways
 

@@ -240,6 +240,13 @@ class ClusterConfig:
       (``min(mem_gb_per_gpu * gpus, mem_gb_cap)``). Defaults 64/480
       reproduce the legacy hard-coded formula; fellows uses 128/1800
       per the cluster handbook (~128 G/GPU, node ceiling ~1965 G).
+      A per-dispatch ``spec.extra["min_ram_gb"]`` (#2275, threaded from
+      ``dispatch_issue.py --min-ram-gb``) RAISES the rendered ``--mem``
+      to the requirement via :func:`_apply_min_ram` (max semantics, both
+      GPU and CPU branches); a requirement above ``mem_gb_cap`` refuses
+      pre-submit with a ValueError, never a silent clamp (a clamp would
+      reintroduce the #1336 silent production OOM). Absent/0 renders
+      byte-identically (the #1609 snapshot contract).
     * ``extra_exports`` — ``(key, value)`` pairs rendered in the CUDA
       setup block as ``export K="${K:-<value>}"`` (override-able: a
       dispatch-process value forwarded via secrets.env supersedes,
@@ -1389,6 +1396,18 @@ PASSTHROUGH_ENV_KEYS: tuple[str, ...] = (
     # as the #564 knobs above — a dispatch-process floor override must reach
     # the compute node or it silently no-ops remotely.
     "EPM_HF_LARGE_UPLOAD_PROBE_GB",
+    # Capture fan-out width cap (#1336): ``run_queue`` in
+    # ``scripts/issue1336_dispatch.sh`` reads EPS_QUEUE_WIDTH_MAX on the
+    # COMPUTE NODE — the cap must reach it or a dispatch-process cap
+    # silently no-ops remotely (the exact silent-no-op the cap's fail-loud
+    # validation exists to prevent). This key MUST live in the MAIN copy:
+    # ``dispatch_issue._pin_main_lane_infra`` (#987) resolves
+    # ``backends.*`` from the main checkout even when the worktree's
+    # ``dispatch_issue.py`` is invoked, so a branch-only addition to this
+    # tuple never renders. Drop-when-absent contract preserved:
+    # ``render_secrets_env`` skips an unset key, so an unset cap leaves the
+    # remote width at its $NGPU default byte-identically.
+    "EPS_QUEUE_WIDTH_MAX",
     # HF Hub upload accelerator OVERRIDE channel (#745): forwarded so a
     # dispatch-process =0 / HF_HUB_DISABLE_XET=1 (the #515/#931 xet workaround)
     # reaches the compute node. The DEFAULTS (=1) are a STATIC env block in
@@ -1792,6 +1811,23 @@ def _gres_line(cluster: ClusterConfig, gpus: int) -> str:
     return f"#SBATCH --gpus-per-node={gpus}"
 
 
+def _apply_min_ram(cluster: ClusterConfig, spec: RunSpec, base_gb: int) -> int:
+    """max(base, spec.extra['min_ram_gb']) with a pre-submit fail-loud above mem_gb_cap."""
+    min_ram = spec.extra.get("min_ram_gb")
+    if not min_ram:  # absent/None/0 → byte-identical render (#1609 snapshot contract)
+        return base_gb
+    min_ram = int(min_ram)
+    if min_ram > cluster.mem_gb_cap:
+        raise ValueError(
+            f"--min-ram-gb {min_ram} exceeds cluster {cluster.name!r} mem_gb_cap="
+            f"{cluster.mem_gb_cap} G (#2275 fail-loud: the alternative is a silent "
+            f"production OOM). Satisfying alternatives: lower the requirement; split "
+            f"the fan-out across more jobs (each with its own --mem); or route the "
+            f"phase to a RunPod pod (cpu-bigmem / a GPU intent) via backend: runpod."
+        )
+    return max(base_gb, min_ram)
+
+
 def _resource_header_lines(cluster: ClusterConfig, spec: RunSpec, gpus: int) -> list[str]:
     """The gres/CPU/mem ``#SBATCH`` header lines, branched on the GPU count.
 
@@ -1804,6 +1840,13 @@ def _resource_header_lines(cluster: ClusterConfig, spec: RunSpec, gpus: int) -> 
     table (mirroring the RunPod CPU instance shapes) instead of the
     GPU-scaled formulas. A CPU intent missing from that table raises
     KeyError — fail-loud, never a 0-CPU script.
+
+    BOTH branches honor a per-dispatch ``spec.extra["min_ram_gb"]`` (#2275)
+    via :func:`_apply_min_ram`: the declared requirement RAISES ``--mem``
+    (max semantics — the formula/table value wins when larger), and a
+    requirement above ``cluster.mem_gb_cap`` raises ValueError pre-submit
+    (render precedes any sbatch call) instead of silently clamping below
+    the declared requirement. Absent/0 keeps both branches byte-identical.
     """
     if gpus == 0:
         if not cluster.supports_cpu_jobs:
@@ -1813,14 +1856,17 @@ def _resource_header_lines(cluster: ClusterConfig, spec: RunSpec, gpus: int) -> 
                 "fellows or RunPod CPU). Pin backend: runpod for this intent."
             )
         vcpu, mem_gb = _CPU_SBATCH_RESOURCES[spec.intent]
+        mem_gb = _apply_min_ram(cluster, spec, mem_gb)
         return [
             f"#SBATCH --cpus-per-task={vcpu}",
             f"#SBATCH --mem={mem_gb}G",
         ]
+    base = min(cluster.mem_gb_per_gpu * gpus, cluster.mem_gb_cap)
+    mem_gb = _apply_min_ram(cluster, spec, base)
     return [
         _gres_line(cluster, gpus),
         f"#SBATCH --cpus-per-task={min(8 * gpus, 64)}",
-        f"#SBATCH --mem={min(cluster.mem_gb_per_gpu * gpus, cluster.mem_gb_cap)}G",
+        f"#SBATCH --mem={mem_gb}G",
     ]
 
 

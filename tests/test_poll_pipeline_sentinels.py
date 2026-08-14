@@ -2656,7 +2656,7 @@ def test_poll_once_pid_file_missing_marker_fallback_warns_and_stays_running(
 
     monkeypatch.setattr(pp.subprocess, "run", _fake_run)
     monkeypatch.setattr(pp, "post_event", MagicMock())
-    monkeypatch.setattr(pp, "_marker_pid", lambda issue: 4242)
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue, pod=None: 4242)
 
     state_file = tmp_path / "poll-state.json"
     with caplog.at_level(logging.WARNING, logger="poll_pipeline"):
@@ -2684,7 +2684,10 @@ def test_poll_once_pid_file_missing_does_not_change_dead_routing(
 ) -> None:
     """Negative: pid file absent + NO marker pid + non-done tail must still
     route to ``dead`` exactly as before — the new field is observability
-    only. No marker-fallback WARN fires when there is no marker pid."""
+    only. No marker-fallback WARN fires when there is no marker pid.
+    (The log mtime is genuinely STALE so the #2265 dead-verdict evidence
+    veto stays inert — this test pins the pid_file_missing routing, and a
+    fresh log would now correctly read pid-stale-workload-live instead.)"""
     now_epoch = int(datetime.now(tz=UTC).timestamp())
 
     def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
@@ -2699,7 +2702,7 @@ def test_poll_once_pid_file_missing_does_not_change_dead_routing(
             stdout=_probe_response(
                 pid_alive=0,
                 pid_file_missing=1,
-                mtime_epoch=now_epoch - 30,
+                mtime_epoch=now_epoch - 2000,
                 tail="2026-06-10 [phase=training]",  # never reached done
             ),
             stderr="",
@@ -2707,7 +2710,7 @@ def test_poll_once_pid_file_missing_does_not_change_dead_routing(
 
     monkeypatch.setattr(pp.subprocess, "run", _fake_run)
     monkeypatch.setattr(pp, "post_event", MagicMock())
-    monkeypatch.setattr(pp, "_marker_pid", lambda issue: None)
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue, pod=None: None)
 
     state_file = tmp_path / "poll-state.json"
     with caplog.at_level(logging.WARNING, logger="poll_pipeline"):
@@ -2966,7 +2969,7 @@ def test_poll_once_posts_gpu_idle_advisory_after_sustained_idle(
     monkeypatch.setattr(pp.subprocess, "run", _healthy_idle_fake_run(now_epoch))
     post_mock = MagicMock()
     monkeypatch.setattr(pp, "post_event", post_mock)
-    monkeypatch.setattr(pp, "_marker_pid", lambda issue: None)
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue, pod=None: None)
 
     result = pp.poll_once(
         issue=518,
@@ -3017,7 +3020,7 @@ def test_poll_once_gpu_idle_advisory_at_most_once_per_phase(
     monkeypatch.setattr(pp.subprocess, "run", _healthy_idle_fake_run(now_epoch))
     post_mock = MagicMock()
     monkeypatch.setattr(pp, "post_event", post_mock)
-    monkeypatch.setattr(pp, "_marker_pid", lambda issue: None)
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue, pod=None: None)
 
     result = pp.poll_once(
         issue=518,
@@ -3052,7 +3055,7 @@ def test_poll_once_gpu_idle_advisory_post_failure_retries_next_tick(
     monkeypatch.setattr(
         pp, "post_event", MagicMock(side_effect=RuntimeError("simulated post failure"))
     )
-    monkeypatch.setattr(pp, "_marker_pid", lambda issue: None)
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue, pod=None: None)
 
     result = pp.poll_once(
         issue=518,
@@ -3100,7 +3103,7 @@ def test_poll_once_no_advisory_when_gpu_unknown(
     monkeypatch.setattr(pp.subprocess, "run", _fake_run)
     post_mock = MagicMock()
     monkeypatch.setattr(pp, "post_event", post_mock)
-    monkeypatch.setattr(pp, "_marker_pid", lambda issue: None)
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue, pod=None: None)
 
     result = pp.poll_once(
         issue=518,

@@ -1,0 +1,101 @@
+{
+  "metadata": {
+    "git_commit": "f56f7d38ea6d41a6226ca2b1ef778d0ea50a3ee5",
+    "timestamp": "2026-07-23T20:44:48Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1345_plots.py",
+    "pinned_parent_revision": "7159e5804d"
+  },
+  "margins": {
+    "same": 0.05,
+    "diff": 0.1
+  },
+  "per_model_arm": {
+    "base_prefix": {
+      "delta_1to2": -505.60622945923717,
+      "delta_2to1": -12237.85855403612,
+      "delta_xfer": -6371.732391747679,
+      "delta_same": -6371.682391747679,
+      "delta_diff": -6371.632391747678,
+      "delta_reparam": 0.04710028548520158,
+      "delta_diff_ci": {
+        "mean": -6371.701372818191,
+        "ci_lo": -6460.575701326318,
+        "ci_hi": -6285.335989662797
+      },
+      "delta_diff_ci_wholly_below_0": true,
+      "verdict": "reparameterized",
+      "story": "N/A \u2014 not tested (per-model story yield floor, plan \u00a77)",
+      "story_paired": {
+        "within_l19_r2": -1.6238932031910682,
+        "shuffle_null_p95_l19": -2.3168350350936104,
+        "exists": true,
+        "weakness_band": "weak (<=0.30)",
+        "n_null_draws": 20
+      },
+      "story_paired_verdict": {
+        "within_l19_r2": -1.6238932031910682,
+        "ci_lo": -1.7045617763250396,
+        "ci_hi": -1.5403433843980368,
+        "n_groups": 2160,
+        "verdict": "framing-effect (collapse persists on the shared corpus)"
+      }
+    },
+    "base_context": {
+      "delta_1to2": -0.4010941647109233,
+      "delta_2to1": -0.45952258016001857,
+      "delta_xfer": -0.43030837243547093,
+      "delta_same": -0.38030837243547094,
+      "delta_diff": -0.33030837243547095,
+      "delta_reparam": 0.05028238620026093,
+      "delta_diff_ci": {
+        "mean": -0.3304578490010538,
+        "ci_lo": -0.33668034989534734,
+        "ci_hi": -0.32453455423747557
+      },
+      "delta_diff_ci_wholly_below_0": true,
+      "verdict": "reparameterized",
+      "story": "N/A \u2014 not tested (per-model story yield floor, plan \u00a77)",
+      "story_paired": {
+        "within_l19_r2": -0.24698110653297323,
+        "shuffle_null_p95_l19": -1.8714811267518223,
+        "exists": true,
+        "weakness_band": "weak (<=0.30)",
+        "n_null_draws": 20
+      },
+      "story_paired_verdict": {
+        "within_l19_r2": -0.24698110653297323,
+        "ci_lo": -0.26984477310359756,
+        "ci_hi": -0.22299575037535174,
+        "n_groups": 2160,
+        "verdict": "framing-effect (collapse persists on the shared corpus)"
+      }
+    }
+  },
+  "story_yield": {
+    "instruct": {
+      "story_regime": "halted (per-model yield floor)"
+    },
+    "pretrained": {
+      "story_regime": "halted (per-model yield floor)"
+    }
+  },
+  "r3_halted_models": [
+    "instruct",
+    "pretrained"
+  ],
+  "story_paired_yield": {
+    "pretrained_paired": {
+      "n_kept": 2162,
+      "n_target": 2700,
+      "yield_ok": true
+    },
+    "pretrained_paired_op": {
+      "n_kept": 136,
+      "n_target": 200,
+      "yield_ok": true
+    }
+  },
+  "r4_halted": false
+}

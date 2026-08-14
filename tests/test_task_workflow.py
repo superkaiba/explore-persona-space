@@ -1209,6 +1209,92 @@ def test_adversarial_planner_skill_documents_header_autoalignment():
     )
 
 
+# ─── Amendment-shaped plan-version refusal (#2255) ─────────────────────────
+
+# Full self-contained v1 fixture: a few KB, carries the machine-readable
+# GPU-hours declaration + section headers (the shape every consumer assumes).
+_FULL_PLAN_V1 = (
+    "# Plan v1 — task #999: full self-contained fixture\n\n"
+    "## 0. Summary\n\n"
+    "Estimated GPU-hours (total): 4\n\n"
+    "## 4. Design\n\n" + ("Design prose line for the full self-contained v1 fixture.\n" * 60)
+)
+
+# The #2223-v4 shape: thin delta, amendment-marker phrases, NO GPU declaration.
+_THIN_AMENDMENT_V2 = (
+    "# Plan v2 (AMENDMENT of v1) — thin delta fixture\n\n"
+    "Adds one follow-up arm. Everything else PORTS FROM v1 unchanged.\n"
+)
+
+
+def test_new_plan_version_rejects_2223_shape_amendment(fake_repo):
+    """#2255 success criterion 2: the persist REFUSES the #2223-shape thin
+    amendment with an actionable message naming the --allow-amendment escape;
+    nothing is written and the symlink stays on v1."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="infra", title="X"))
+    assert tw.new_plan_version(new_id, _FULL_PLAN_V1) == 1
+    plans_dir = repo / "tasks" / "proposed" / str(new_id) / "plans"
+    with pytest.raises(ValueError, match="--allow-amendment"):
+        tw.new_plan_version(new_id, _THIN_AMENDMENT_V2)
+    versions = sorted(p.name for p in plans_dir.glob("v*.md"))
+    assert versions == ["v1.md"], versions
+    assert (plans_dir / "plan.md").resolve().name == "v1.md"
+
+
+def test_new_plan_version_allow_amendment_escape(fake_repo):
+    """The deliberate escape stays reachable (the #2223 user-authorized case):
+    allow_amendment=True persists the thin delta and rotates the symlink."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="infra", title="X"))
+    assert tw.new_plan_version(new_id, _FULL_PLAN_V1) == 1
+    assert tw.new_plan_version(new_id, _THIN_AMENDMENT_V2, allow_amendment=True) == 2
+    plans_dir = repo / "tasks" / "proposed" / str(new_id) / "plans"
+    assert (plans_dir / "plan.md").resolve().name == "v2.md"
+
+
+def test_new_plan_version_full_plan_with_unchanged_phrase_persists(fake_repo):
+    """Pins the ~198-hit corpus class as non-rejected: a FULL revision whose
+    changelog says 'unchanged from v1' AND that carries its own GPU-hours
+    declaration persists normally (marker phrase alone must never reject)."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="infra", title="X"))
+    assert tw.new_plan_version(new_id, _FULL_PLAN_V1) == 1
+    full_v2 = (
+        "# Plan v2 — full revision fixture\n\n"
+        "## 0. Summary\n\n"
+        "Estimated GPU-hours (total): 4\n\n"
+        "Changelog: §4 unchanged from v1.\n\n"
+        "## 4. Design\n\n" + ("Design prose line for the full revision fixture body.\n" * 60)
+    )
+    assert tw.new_plan_version(new_id, full_v2) == 2
+
+
+def test_new_plan_version_small_full_replan_persists(fake_repo):
+    """Pins the 29-hit corpus class as non-rejected: a small (~20% of v1)
+    full re-plan with NO amendment-marker phrase and its own GPU-hours
+    declaration persists normally (size alone must never reject)."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="infra", title="X"))
+    assert tw.new_plan_version(new_id, _FULL_PLAN_V1) == 1
+    small_v2 = (
+        "# Plan v2 — small full re-plan fixture\n\n"
+        "Estimated GPU-hours (total): 2\n\n"
+        "## 4. Design\n\n" + ("Short but complete re-plan prose.\n" * 12)
+    )
+    assert len(small_v2.encode()) < 0.4 * len(_FULL_PLAN_V1.encode())
+    assert tw.new_plan_version(new_id, small_v2) == 2
+
+
+def test_amendment_gpu_regex_parity_with_verify_plan(fake_repo):
+    """Pins the ONE deliberate regex duplication (#2255 §4): the amendment
+    predicate's GPU-declaration signal must stay pattern-identical to
+    verify_plan.py's GPU_LINE_RE (the Step-2c consumer's own read)."""
+    _, tw = fake_repo
+    vp = _load_verify_plan_module()
+    assert tw.AMENDMENT_GPU_LINE_RE.pattern == vp.GPU_LINE_RE.pattern
+
+
 # ─── Promotion ───────────────────────────────────────────────────────────
 
 
@@ -5843,6 +5929,118 @@ def test_husk_subset_verifier_jsonl_and_symlink_arms(fake_repo):
     assert tw._husk_unique_content(h, live) == []
 
 
+def test_husk_file_symlink_vs_materialized_arms(fake_repo):
+    """#2138 file-symlink coverage arms of _husk_unique_content: a husk
+    plans/plan.md SYMLINK against a live MATERIALIZED counterpart. Routes
+    in code order: (b) the in-husk fully-resolved target's husk-relative
+    path also exists in the live dir (classifies the SYMLINK entry ONLY --
+    T2b pins that the target file's own comparison still runs); then (a)
+    resolved bytes covered by the live counterpart at the same rel path.
+    Pre-fix, EVERY symlink-vs-non-symlink pairing here read unique (T1
+    returned ["plans/plan.md"]; T2b returned both entries)."""
+    repo, tw = fake_repo
+
+    def _pair(name: str) -> tuple[Path, Path]:
+        h = repo / f"husk-{name}"
+        lv = repo / f"live-{name}"
+        (h / "plans").mkdir(parents=True)
+        (lv / "plans").mkdir(parents=True)
+        return h, lv
+
+    # T1 -- SAFE, the traced #2051 shape ((b) fires): live plan.md is a
+    # MATERIALIZED POINTER -- a 5-byte regular file whose content is the
+    # target STRING, exactly as traced at commit f4f057c6af8b.
+    h, lv = _pair("t1")
+    (h / "plans" / "plan.md").symlink_to("v1.md")
+    (h / "plans" / "v1.md").write_text("the full plan body\n")
+    (lv / "plans" / "plan.md").write_text("v1.md")
+    (lv / "plans" / "v1.md").write_text("the full plan body\n")
+    assert tw._husk_unique_content(h, lv) == []
+    # T2 -- SAFE, later-version live plan ((b) fires, (a) fails): live
+    # plan.md advanced past the husk's version; live v1.md persists.
+    h, lv = _pair("t2")
+    (h / "plans" / "plan.md").symlink_to("v1.md")
+    (h / "plans" / "v1.md").write_text("PLAN-V1\n")
+    (lv / "plans" / "plan.md").write_text("TOTALLY DIFFERENT V2 PLAN\n")
+    (lv / "plans" / "v1.md").write_text("PLAN-V1\n")
+    assert tw._husk_unique_content(h, lv) == []
+    # T2b -- UNIQUE, (b) fires on the symlink but the TARGET diverges (the
+    # load-bearing soundness arm): the symlink is absent from the unique
+    # list (proving (b) fired) AND the diverged target is present (proving
+    # (b) did NOT suppress the walk's independent check of the target).
+    h, lv = _pair("t2b")
+    (h / "plans" / "plan.md").symlink_to("v1.md")
+    (h / "plans" / "v1.md").write_text("PLAN-V1\n")
+    (lv / "plans" / "plan.md").write_text("v1.md")
+    (lv / "plans" / "v1.md").write_text("PLAN-V2\n")
+    assert tw._husk_unique_content(h, lv) == ["plans/v1.md"]
+    # T3 -- (a) fires in isolation ((b) fails): live plan.md is a
+    # FULL-CONTENT materialization, no live v1.md; the symlink reads safe
+    # via byte coverage while the uncovered target file stays unique.
+    h, lv = _pair("t3")
+    (h / "plans" / "plan.md").symlink_to("v1.md")
+    (h / "plans" / "v1.md").write_text("PLAN-V1\n")
+    (lv / "plans" / "plan.md").write_text("PLAN-V1\n")
+    assert tw._husk_unique_content(h, lv) == ["plans/v1.md"]
+    # T4 -- UNIQUE, diverged: both new routes fail; symlink AND target
+    # stay unique.
+    h, lv = _pair("t4")
+    (h / "plans" / "plan.md").symlink_to("v1.md")
+    (h / "plans" / "v1.md").write_text("PLAN-V1\n")
+    (lv / "plans" / "plan.md").write_text("DIVERGED\n")
+    assert tw._husk_unique_content(h, lv) == sorted(["plans/plan.md", "plans/v1.md"])
+    # T5a -- UNIQUE, ABSOLUTE escape: byte coverage does NOT rescue a link
+    # resolving outside the husk.
+    outside = repo / "outside.md"
+    outside.write_text("SHARED\n")
+    h, lv = _pair("t5a")
+    (h / "plans" / "plan.md").symlink_to(outside)
+    (lv / "plans" / "plan.md").write_text("SHARED\n")
+    assert "plans/plan.md" in tw._husk_unique_content(h, lv)
+    # T5b -- UNIQUE, relative escape (../.. exits the husk).
+    h, lv = _pair("t5b")
+    (h / "plans" / "plan.md").symlink_to("../../outside.md")
+    (lv / "plans" / "plan.md").write_text("SHARED\n")
+    assert "plans/plan.md" in tw._husk_unique_content(h, lv)
+    # T5c -- UNIQUE, dangling target.
+    h, lv = _pair("t5c")
+    (h / "plans" / "plan.md").symlink_to("missing.md")
+    (lv / "plans" / "plan.md").write_text("v1.md")
+    assert "plans/plan.md" in tw._husk_unique_content(h, lv)
+    # T6 -- inverse-direction regression pin: husk REGULAR file vs live
+    # symlink-to-file carrying the same bytes (already safe today --
+    # is_file()/read_bytes() follow symlinks on the regular-file branch).
+    h, lv = _pair("t6")
+    (h / "plans" / "plan.md").write_text("PLAN-V1\n")
+    (lv / "plans" / "v1.md").write_text("PLAN-V1\n")
+    (lv / "plans" / "plan.md").symlink_to("v1.md")
+    assert tw._husk_unique_content(h, lv) == []
+    # T7 -- dir-symlink strictness preserved: the file-symlink leniency
+    # must NOT extend to dirnames; a live REAL materialized DIRECTORY does
+    # not cover a husk dir-symlink.
+    h, lv = _pair("t7")
+    (h / "artifacts").mkdir()
+    (h / "artlink").symlink_to("artifacts")
+    (lv / "artifacts").mkdir()
+    (lv / "artlink").mkdir()
+    assert "artlink" in tw._husk_unique_content(h, lv)
+    # T8 -- fifo stays unique (non-regular file type, never covered).
+    h, lv = _pair("t8")
+    os.mkfifo(h / "pipe")
+    assert "pipe" in tw._husk_unique_content(h, lv)
+    # T9 -- multi-hop chain SAFE: resolve() collapses the chain, (b) keys
+    # on the FULLY-resolved target; both symlinks read safe and the target
+    # file verifies independently.
+    h, lv = _pair("t9")
+    (h / "plans" / "plan.md").symlink_to("link2.md")
+    (h / "plans" / "link2.md").symlink_to("v1.md")
+    (h / "plans" / "v1.md").write_text("PLAN-V1\n")
+    (lv / "plans" / "plan.md").write_text("v1.md")
+    (lv / "plans" / "link2.md").write_text("v1.md")
+    (lv / "plans" / "v1.md").write_text("PLAN-V1\n")
+    assert tw._husk_unique_content(h, lv) == []
+
+
 def test_reap_skips_non_terminal_and_blocked(fake_repo):
     """Plan test (d): duplicate dirs on running and blocked tasks are
     skipped-non-terminal (D2: blocked is re-drivable, NOT reap-eligible)."""
@@ -5930,6 +6128,36 @@ def test_reap_symlink_and_untracked_shapes(fake_repo):
     assert "0 tracked file(s)" in rep3.actions[0].reason
     assert not husk3.exists()
     assert _git_log_count(repo) == commits_before  # rmtree-only, no commit
+
+
+def test_reap_symlink_vs_materialized_husk(fake_repo):
+    """T10 (#2138 end-to-end, the traced #2051 shape): a tracked husk whose
+    plans/plan.md is a SYMLINK to v1.md reaps against a live dir whose
+    plan.md is a MATERIALIZED 5-byte pointer file; the live plans/ files
+    stay UNTRACKED, mirroring the real incident (the comparator reads disk
+    state, not git). The live dir is untouched by the reap."""
+    repo, tw = fake_repo
+    tid, live, husk = _make_terminal_task_with_husk(repo, tw)
+    # Live side: materialized pointer + the versioned plan body, untracked.
+    (live / "plans").mkdir(exist_ok=True)
+    (live / "plans" / "v1.md").write_text("the full plan body\n")
+    (live / "plans" / "plan.md").write_text("v1.md")
+    # Husk side: the symlink shape, git-tracked (as at commit f4f057c6af8b).
+    (husk / "plans").mkdir()
+    (husk / "plans" / "v1.md").write_text("the full plan body\n")
+    (husk / "plans" / "plan.md").symlink_to("v1.md")
+    _git(repo, "add", "--", str(husk.relative_to(repo)))
+    _git(repo, "commit", "-q", "-m", f"husk plans for #{tid}")
+    rep = tw.reap_stale_status_husks(apply=True, task_id=tid)
+    assert [a.action for a in rep.actions] == ["reaped"]
+    assert not husk.exists()
+    # Live dir untouched: plan.md still a REGULAR pointer file, v1.md intact.
+    assert live.is_dir()
+    assert not (live / "plans" / "plan.md").is_symlink()
+    assert (live / "plans" / "plan.md").read_text() == "v1.md"
+    assert (live / "plans" / "v1.md").read_text() == "the full plan body\n"
+    rows = _husk_sidecar_rows(repo)
+    assert any(r["action"] == "reaped" and r["task_id"] == tid for r in rows)
 
 
 def test_reap_kill_switch(fake_repo, monkeypatch):

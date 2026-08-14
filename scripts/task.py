@@ -26,7 +26,7 @@ Subcommands (see `task.py --help`):
     add-tag <N> <tag>
     remove-tag <N> <tag>
     promote <N> useful|not-useful
-    new-plan-version <N> --file path
+    new-plan-version <N> --file path [--allow-amendment]
     raise-concern <N> --concern-id <id> --severity BLOCKER|CONCERN|NIT
                      --summary|--note "..."|--summary-file <path>
                      --by <reviewer> --round <int> [--evidence ...]
@@ -75,6 +75,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     duplicate_task_dirs,
     find_task_path,
     get_task,
+    is_amendment_shaped,
     is_paper_task,
     latest_event,
     list_by_status,
@@ -1002,7 +1003,10 @@ def cmd_promote(args: argparse.Namespace) -> None:
 
 def cmd_new_plan_version(args: argparse.Namespace) -> None:
     plan_md = Path(args.file).read_text() if args.file else sys.stdin.read()
-    v = new_plan_version(args.number, plan_md)
+    # An amendment-shaped input without --allow-amendment raises ValueError
+    # inside new_plan_version with the actionable remedy text (#2255); it
+    # propagates as the command failure (fail-loud, no exit-code special-case).
+    v = new_plan_version(args.number, plan_md, allow_amendment=args.allow_amendment)
     rel = f"tasks/<status>/{args.number}/plans/v{v}.md"
     _safe_echo(
         f"Plan v{v} written → https://eps.superkaiba.com/tasks/{args.number}/plan",
@@ -1019,6 +1023,25 @@ def cmd_new_plan_version(args: argparse.Namespace) -> None:
             f"'Plan v<X>' headers are normalized at persist time; #1745)",
             file=sys.stderr,
         )
+    # #2255: an --allow-amendment persist of a genuinely amendment-shaped
+    # version leaves the symlink pointing at a PARTIAL document — say so loud.
+    if args.allow_amendment:
+        plans_dir = find_task_path(args.number) / "plans"
+        lower = [
+            int(m.group(1))
+            for p in plans_dir.glob("v*.md")
+            if (m := re.fullmatch(r"v(\d+)\.md", p.name)) and int(m.group(1)) < v
+        ]
+        if lower:
+            pred = plans_dir / f"v{max(lower)}.md"
+            if is_amendment_shaped(plan_md, pred.stat().st_size):
+                print(
+                    f"  WARNING: plans/plan.md now points at a PARTIAL document "
+                    f"(amendment of v{max(lower)}); every subagent brief must hand "
+                    f"v{v}.md AND v{max(lower)}.md together; verify_plan --issue "
+                    f"composes them automatically (#2255).",
+                    file=sys.stderr,
+                )
 
 
 def cmd_find(args: argparse.Namespace) -> None:
@@ -1891,6 +1914,14 @@ def main() -> None:
     p = sub.add_parser("new-plan-version", help="append plans/v{next}.md")
     p.add_argument("number", type=int)
     p.add_argument("--file", default=None, help="path to plan markdown (else stdin)")
+    p.add_argument(
+        "--allow-amendment",
+        action="store_true",
+        help="deliberately persist a thin amendment-shaped delta (#2255); the persist "
+        "otherwise REFUSES it — every plans/v{K}.md must be self-contained. Obligates "
+        "restating the `Estimated GPU-hours (total):` line inside the amendment and "
+        "handing base+delta together in every subagent brief",
+    )
     p.set_defaults(func=cmd_new_plan_version)
 
     p = sub.add_parser("find", help="print absolute path of task N's folder")

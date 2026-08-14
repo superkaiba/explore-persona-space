@@ -1,0 +1,187 @@
+{
+  "commit": "9af466a2",
+  "render_id": "8ea18ae1f55a4542",
+  "git_commit": "9af466a2",
+  "git_dirty": false,
+  "created": "2026-08-13T03:59:31Z",
+  "figsize": [
+    7.4,
+    6.2
+  ],
+  "points": [
+    {
+      "contrast \u0394 at seed 42 (graded points, 95% bootstrap CI)": 2.0262,
+      "contrast \u0394 at seed 137": 1.3266,
+      "error": 0.76455,
+      "series": "exact top \u2212 random",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "contrast \u0394 at seed 42 (graded points, 95% bootstrap CI)": 1.8351,
+      "contrast \u0394 at seed 137": 1.8455,
+      "error": 0.9457,
+      "series": "prompt-token top \u2212 random",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "contrast \u0394 at seed 42 (graded points, 95% bootstrap CI)": -0.4559,
+      "contrast \u0394 at seed 137": 0.3791,
+      "error": 0.9627000000000001,
+      "series": "prompt-token top \u2212 exact top",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "contrast \u0394 at seed 42 (graded points, 95% bootstrap CI)": 9.6975,
+      "contrast \u0394 at seed 137": 11.1965,
+      "error": 3.4218499999999996,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "contrast \u0394 at seed 42 (graded points, 95% bootstrap CI)": 14.7155,
+      "contrast \u0394 at seed 137": 14.1853,
+      "error": 3.4448000000000008,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "contrast \u0394 at seed 42 (graded points, 95% bootstrap CI)": 4.6779,
+      "contrast \u0394 at seed 137": 2.7197,
+      "error": 2.83655,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "contrast \u0394 at seed 42 (graded points, 95% bootstrap CI)": 1.9667,
+      "contrast \u0394 at seed 137": 0.6309,
+      "error": 2.2301,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "contrast \u0394 at seed 42 (graded points, 95% bootstrap CI)": 1.9832,
+      "contrast \u0394 at seed 137": 0.815,
+      "error": 1.8092000000000001,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "contrast \u0394 at seed 42 (graded points, 95% bootstrap CI)": -0.0888,
+      "contrast \u0394 at seed 137": -0.2273,
+      "error": 2.23245,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "contrast \u0394 at seed 42 (graded points, 95% bootstrap CI)": 0.0,
+      "contrast \u0394 at seed 137": 0.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "contrast \u0394 at seed 42 (graded points, 95% bootstrap CI)": 0.0,
+      "contrast \u0394 at seed 137": 0.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "contrast \u0394 at seed 42 (graded points, 95% bootstrap CI)": 0.0,
+      "contrast \u0394 at seed 137": 0.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "contrast \u0394 at seed 42 (graded points, 95% bootstrap CI)": 5.1221,
+      "contrast \u0394 at seed 137": 5.774,
+      "error": 2.6906000000000003,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "contrast \u0394 at seed 42 (graded points, 95% bootstrap CI)": 2.919,
+      "contrast \u0394 at seed 137": 0.9756,
+      "error": 2.116,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "contrast \u0394 at seed 42 (graded points, 95% bootstrap CI)": -2.2031,
+      "contrast \u0394 at seed 137": -4.7984,
+      "error": 2.40365,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "contrast \u0394 at seed 42 (graded points, 95% bootstrap CI)": -0.3072,
+      "contrast \u0394 at seed 137": 1.2992,
+      "error": 1.1425999999999998,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "contrast \u0394 at seed 42 (graded points, 95% bootstrap CI)": 1.0623,
+      "contrast \u0394 at seed 137": 1.3164,
+      "error": 1.0362,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "contrast \u0394 at seed 42 (graded points, 95% bootstrap CI)": 1.3695,
+      "contrast \u0394 at seed 137": 0.0172,
+      "error": 1.0655999999999999,
+      "_kind": "errorbar",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 18,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Deciding-cell contrasts, seed 42 vs seed 137\n(circles = LMSYS, squares = UltraChat; diagonal = exact replication)",
+        "xlabel": "contrast \u0394 at seed 42 (graded points, 95% bootstrap CI)",
+        "ylabel": "contrast \u0394 at seed 137",
+        "legend_labels": [
+          "exact top \u2212 random",
+          "prompt-token top \u2212 random",
+          "prompt-token top \u2212 exact top"
+        ],
+        "xticklabels": [
+          "\u221210",
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20"
+        ],
+        "yticklabels": [
+          "\u221210",
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20"
+        ]
+      }
+    ],
+    "series": [
+      "exact top \u2212 random",
+      "prompt-token top \u2212 random",
+      "prompt-token top \u2212 exact top"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

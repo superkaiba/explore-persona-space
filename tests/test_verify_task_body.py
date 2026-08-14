@@ -177,7 +177,7 @@ def test_good_body_passes_all():
     # locally reachable, so the cited SHA is silently skipped), AND the
     # check-38 linked-not-embedded-figures scan (needs `issue` for
     # own-figures-dir scoping, #1371; PASS-skip: not a v4 body) →
-    # 70 results total (2 prepended + CHECKS[1:]=54 + 14 appended, counting
+    # 74 results total (2 prepended + CHECKS[1:]=57 + 15 appended, counting
     # the #1827 plan-conditions check narrated below; check 36
     # `check_v4_result_paragraph_sentences` (#1368), check 37
     # `check_footer_reuse_bullets_pinned` (#1370), check 39
@@ -209,9 +209,13 @@ def test_good_body_passes_all():
     # GOOD_BODY's fake sha never resolves via `_git_object_exists`, the
     # same fake-sha skip as check 41),
     # and check 54 `check_artifact_content_claims` (#2232 — PASS-skip,
-    # not a v4 body)
+    # not a v4 body),
+    # and check 57 `check_v4_sidecarless_results_figures` (#2267 —
+    # PASS-skip, not a v4 body),
+    # and check 58 `check_v4_positional_result_crossrefs` (#2279 —
+    # PASS-skip, not a v4 body)
     # ride CHECKS;
-    # 36/37/39/44/48/49/51/54
+    # 36/37/39/44/48/49/51/54/57/58
     # PASS-skip here — not a v4 body — 40 is the vacuous PASS above, and
     # 41/52/53 are the fake-sha NO-OP PASSes above). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
@@ -221,9 +225,16 @@ def test_good_body_passes_all():
     # verify_text (needs the issue number) and PASS-skips here (legacy body).
     # The plan-conditions coverage check (#1827) is dispatched in verify_text
     # (needs plans/plan.md) and NO-OP PASSes here (no plan sibling).
-    assert len(results) == 70
+    # Check 55 `check_v4_aggregate_stat_needs_per_unit` rides CHECKS and
+    # check 56 `check_v4_ack_result_count` is dispatched in verify_text
+    # (needs the issue number); both PASS-skip here (legacy body) (#2264).
+    assert len(results) == 74
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
+    assert "Single aggregate-stat figure has per-unit evidence or exemption (v4)" in {
+        r.name for r in results
+    }
+    assert "Acknowledgment result-count matches folded body (v4)" in {r.name for r in results}
     assert "dropped-at-gate condition placement (v4)" in {r.name for r in results}
     assert "repro-named result dirs clean in working tree" in {r.name for r in results}
     assert "plan conditions coverage" in {r.name for r in results}
@@ -7242,9 +7253,9 @@ def test_checks_list_size():
     needs), and the check-31
     orphaned-per-unit-figures probe (needs `issue` for figures-dir
     scoping, #1011).
-    So `verify_text` returns 69 results (2 prepended + CHECKS[1:]=53 +
-    14 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 54 (check 36 `check_v4_result_paragraph_sentences` (#1368),
+    So `verify_text` returns 74 results (2 prepended + CHECKS[1:]=57 +
+    15 appended — see `test_good_body_passes_all`), but `CHECKS` stays
+    at 58 (check 36 `check_v4_result_paragraph_sentences` (#1368),
     check 37 `check_footer_reuse_bullets_pinned` — the body-only
     footer-side reuse-pin sibling of check 35, #1370 — check 39
     `check_v4_sample_disclosure_count` — the Sample-slot
@@ -7265,9 +7276,19 @@ def test_checks_list_size():
     `check_figure_sidecar_slot_completeness` — the WARN-only
     categorical-slot completeness sidecar check, #2016 — and check 54
     `check_artifact_content_claims` — the per-unit artifact-content
-    structure check, #2232 — ride CHECKS).
+    structure check, #2232 — and check 55 (module numbering)
+    `check_v4_aggregate_stat_needs_per_unit` — the exemption-less
+    single-figure aggregate-statistic check, #2264 — and check 57
+    `check_v4_sidecarless_results_figures` — the sidecar-less
+    Results-figure FAIL gate (Leg A caption codes / Leg B forward-only
+    post-cutover block), #2267 — and check 58
+    `check_v4_positional_result_crossrefs` — the positional
+    result-cross-ref resolver (WARN: out-of-range or clause-vs-target
+    round-set disjointness), #2279 — ride CHECKS; check
+    56 `check_v4_ack_result_count` (#2264) is dispatched OUTSIDE CHECKS
+    with the issue number).
     """
-    assert len(verify_task_body.CHECKS) == 55
+    assert len(verify_task_body.CHECKS) == 58
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert verify_task_body.check_v4_dropped_condition_placement in verify_task_body.CHECKS
@@ -7285,6 +7306,8 @@ def test_checks_list_size():
     assert verify_task_body.check_figure_sidecar_coverage in verify_task_body.CHECKS
     assert verify_task_body.check_figure_png_sidecar_pairing in verify_task_body.CHECKS
     assert verify_task_body.check_figure_sidecar_slot_completeness in verify_task_body.CHECKS
+    assert verify_task_body.check_v4_sidecarless_results_figures in verify_task_body.CHECKS
+    assert verify_task_body.check_v4_positional_result_crossrefs in verify_task_body.CHECKS
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───
@@ -10740,14 +10763,18 @@ def test_v4_context_denied_claim_ignorecase_fails():
     assert "context-parent-lineage-contradiction" in ctx.detail
 
 
-def test_v4_context_denied_claim_but_parent_named_warns_not_fails():
-    """Tier 2: a denied-parent clause ALONGSIDE a `#<parent_id>`
-    reference is internally contradictory but not the reader-misleading
-    incident shape — WARN, never FAIL."""
+def test_v4_context_denied_claim_but_parent_named_fails():
+    """Tier 2 (the #2224 r1 incident shape, upgraded WARN → hard FAIL by
+    #2249): a denied-parent clause ALONGSIDE a `#<parent_id>` reference
+    is internally contradictory — frontmatter carries `parent_id` while
+    the row claims parentless — and hard-FAILs a v4 body, naming both
+    mechanically-clearing remediations."""
     body = _v4_body_with_lineage("- Lineage: fresh direction (no parent); reuses #825 artifacts.\n")
     ctx = verify_task_body.check_repro_context_provenance(body, {"parent_id": 825})
-    assert ctx.passed and ctx.is_warn, ctx.detail
+    assert not ctx.passed, ctx.detail
     assert "context-parent-lineage-mixed" in ctx.detail
+    assert "drop the no-parent clause" in ctx.detail
+    assert "clear the frontmatter parent_id" in ctx.detail
 
 
 def test_v4_context_parent_named_with_parent_id_passes():
@@ -10831,6 +10858,21 @@ def test_v3_context_denied_parent_with_parent_id_warns_not_fails():
     ctx = verify_task_body.check_repro_context_provenance(body, {"parent_id": 825})
     assert ctx.passed is True and ctx.is_warn, ctx.detail
     assert "context-parent-lineage-contradiction" in ctx.detail
+
+
+def test_v3_context_denied_claim_but_parent_named_warns_not_fails():
+    """Grandfathering pin (#2249): the SAME mixed contradiction (denied
+    clause ALONGSIDE the parent reference) that hard-FAILs a v4 body is
+    WARN-only on a v3 body — the fail-denied-named class is newly
+    VISIBLE on v3/v2 (was silent pre-#2249) but never a new hard FAIL
+    below the v4 sentinel (the #1418 fail-denied precedent shape)."""
+    assert _V4_LINEAGE_BULLET in _V3_GOOD_BODY, "fixture drifted"
+    body = _V3_GOOD_BODY.replace(
+        _V4_LINEAGE_BULLET, "- Lineage: fresh direction (no parent); reuses #825 artifacts.\n"
+    )
+    ctx = verify_task_body.check_repro_context_provenance(body, {"parent_id": 825})
+    assert ctx.passed is True and ctx.is_warn, ctx.detail
+    assert "context-parent-lineage-mixed" in ctx.detail
 
 
 def test_v4_context_parent_id_string_coerced():
@@ -13406,11 +13448,11 @@ def test_caption_lead_issue1074_verbatim_caption_warns():
 
 def test_check_figure_caption_position_stable():
     """Index-stability pin (#1424): `check_figure_caption` stays at CHECKS
-    position 7 and the CHECKS count matches the current registry (55 as of
-    check 54, #2232; belt-and-suspenders beside the migration-history
+    position 7 and the CHECKS count matches the current registry (58 as of
+    check 58, #2279; belt-and-suspenders beside the migration-history
     `len(CHECKS)` pin)."""
     assert verify_task_body.CHECKS[7] is verify_task_body.check_figure_caption
-    assert len(verify_task_body.CHECKS) == 55
+    assert len(verify_task_body.CHECKS) == 58
 
 
 # ─── Check 26: figure panel/series prose vs figure sidecar (panel drift) ───
@@ -14332,6 +14374,108 @@ def test_check28_caption_suppression_is_slug_class_only(tmp_path, monkeypatch):
     assert "ft-con-137" not in res.detail
 
 
+def test_check28_slash_joined_label_classifier():
+    r"""The #2221 reproduction at classifier scope + one negative pin per
+    `_is_path_like_word` arm (#2258). The former `_PATH_SHAPED_RE` any-slash
+    word exemption (`^\S*[/\\]\S*$`) exempted slash-joined rendered
+    `behavior/slug` legend labels WHOLE, so the incident strings never
+    reached the token classes; the narrowed predicate scans them while
+    genuinely path/formula/mathtext-shaped words stay exempt."""
+    fn = verify_task_body._opaque_code_tokens
+    # #2221 reproduction — the committed incident labels (blob evidence:
+    # git show 371b0c8af0f54c762d043535d06e54e4e8a9806b:figures/issue_2221/
+    # checkpoint_detection_auc.meta.json). Whole-string gate consumer:
+    assert fn("hallucination/a_rb_ctx") == ["a_rb_ctx"]
+    assert fn("hallucination/c_map_pfx") == ["c_map_pfx"]
+    # ... and the per-word exemption consumer (prose-embedded):
+    assert fn("legend: hallucination/a_rb_ctx") == ["a_rb_ctx"]
+    # The fourth #2221 label carries no flaggable token and stays clean
+    # (`random-direction` is 2 hyphen segments — below the arm-slug floor).
+    assert fn("hallucination/random-direction control (oriented)") == []
+    # ORDERING pin (plan v4 §4.2): a slash-FREE word with an interior
+    # formula char MUST stay scanned — the slash gate (arm 2) precedes the
+    # formula arm (arm 3). A formula-arm-first implementation wrongly
+    # exempts `p(cond_4)` while passing every other pin in this file.
+    assert fn("p(cond_4)") == ["cond_4"]
+    # Bare `d_transport` stays unflagged — the documented residual (plan
+    # §3b: a 2-segment single-letter class would flag ~45 distinct /
+    # ~9,200 corpus occurrences of rendered math notation — `z_marker`,
+    # `s_i`, `n_train`, ...). Guards against a future FP-blind "fix".
+    assert fn("d_transport") == []
+    # Ordinary slash-bearing words are SCANNED (no arm fires) but carry no
+    # flaggable token — the scanned-clean envelope.
+    for scanned_clean in ("36/36", "N/A", "w/o", "and/or", "train/loss"):
+        assert fn(scanned_clean) == [], f"false positive on {scanned_clean!r}"
+    # Arm 1 (backslash): mathtext words stay exempt whole. Non-vacuity:
+    # the snake regex genuinely matches `c_0` (digit-bearing) inside, so
+    # `[]` is produced by the backslash arm, not the regex boundary.
+    assert fn(r"$c_0^{lt}\rightarrow w$") == []
+    assert fn(r"$\mathdefault{10^{0}}$") == []
+    assert verify_task_body._SNAKE_TOKEN_RE.search(r"$c_0^{lt}\rightarrow w$")
+    # Arms 2+6 (strip + extension): a punctuation-wrapped script path.
+    # Non-vacuity: the snake regex matches the digit-bearing stem inside.
+    assert fn("(scripts/issue1336_step_transfer_tiers.py)") == []
+    assert verify_task_body._SNAKE_TOKEN_RE.search("(scripts/issue1336_step_transfer_tiers.py)")
+    # Arm 3 (formula chars): caption formulas with interior parens.
+    assert fn("sqrt(mean_i(s2_i/m_i))") == []
+    assert verify_task_body._SNAKE_TOKEN_RE.search("sqrt(mean_i(s2_i/m_i))")
+    # Arm 7 (repo top-level dir): extension-less dir refs in caption prose.
+    assert fn("eval_results/issue_825 S2 (Result 1 anchor)") == []
+    assert verify_task_body._SNAKE_TOKEN_RE.search("eval_results/issue_825")
+    # Direct predicate reads, one per arm (arm 8 = the fall-through scan).
+    is_path = verify_task_body._is_path_like_word
+    assert is_path(r"\rightarrow")  # arm 1: backslash
+    assert not is_path("cond_4")  # arm 2: no slash -> scanned
+    assert not is_path("p(cond_4)")  # arm 2 fires BEFORE arm 3
+    assert is_path("sqrt(s2_i/m_i)")  # arm 3: formula char
+    assert is_path("./run.sh") and is_path("/workspace/logs")  # arm 4
+    assert is_path("~/x") and is_path("http://x")  # arm 4: marker/scheme
+    assert is_path("a/b/c")  # arm 5: >=2 slashes
+    assert is_path("weird_dir/file.py")  # arm 6: extension tail
+    assert is_path("figures/issue_920")  # arm 7: repo top-level dir
+    assert not is_path("hallucination/a_rb_ctx")  # arm 8: scanned
+
+
+def test_check28_slash_joined_legend_labels_warn(tmp_path, monkeypatch):
+    """The #2221 live repro at walker scope: the ACTUAL committed legend
+    list of round-1's `checkpoint_detection_auc.png` (provenance:
+    git show 371b0c8af0f54c762d043535d06e54e4e8a9806b:figures/issue_2221/
+    checkpoint_detection_auc.meta.json — the #1900 blob-evidence
+    convention) rendered at `meta["text"].axes[].legend_labels` -> check 28
+    WARNs naming the slug tokens; the
+    `hallucination/random-direction control (oriented)` label stays
+    clean."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-08-11T00:00:00Z",
+            "text": {
+                "suptitle": None,
+                "fig_texts": [],
+                "axes": [
+                    {
+                        "xlabel": "training progress (% of steps)",
+                        "ylabel": "orientation-folded detection AUC",
+                        "legend_labels": [
+                            "hallucination/a_rb_ctx",
+                            "hallucination/c_map_ctx",
+                            "hallucination/c_map_pfx",
+                            "hallucination/random-direction control (oriented)",
+                        ],
+                    }
+                ],
+            },
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_label_codes(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "a_rb_ctx" in res.detail
+    assert "c_map_ctx" in res.detail and "c_map_pfx" in res.detail
+    assert "random-direction" not in res.detail
+
+
 # ─── Check 41: sidecar-less embedded figures (coverage WARN, #1478) ────────
 
 _CHECK41_NAME = "figure sidecar coverage (sidecar-less embedded figures)"
@@ -14444,6 +14588,280 @@ def test_check41_mixed_body_names_only_missing(tmp_path, monkeypatch):
     assert res.passed and res.is_warn, res.render()
     assert "bare.png" in res.detail and "hero.png" not in res.detail
     assert "1 sidecar-less" in res.detail and "of 2 same-repo embedded" in res.detail
+
+
+# ─── Check 57: v4 sidecar-less Results figures (FAIL, #2267) ────────────────
+#
+# Incident #2054: `hero_calibration_nslope.png` — a sidecar-less v4 Results
+# figure — carried its opaque `H0'a`/`H0'b`/`b=`/`m=` codes ONLY in PNG
+# rendered text (clean plain-English caption); check 28 fail-softed on the
+# missing sidecar and check 41 is WARN-never-FAIL by design, so no mechanical
+# gate blocked it. Check 57 FAILs (Leg A) a sidecar-less figure whose caption
+# carries opaque codes, and (Leg B, forward-only) any sidecar-less v4 Results
+# figure pinned at a post-2026-08-13 commit unless acknowledged by name.
+# Probes are monkeypatched per the plan §4 conventions (`_git_object_exists`
+# / `_resolve_repo_root` / the `_commit_epoch` date seam); the real-probe
+# production-body test at the end exercises the unpatched git path.
+
+_CHECK57_NAME = "v4 sidecar-less Results figures (caption codes / post-cutover block)"
+_CHECK57_SHA = "d" * 40
+_CHECK57_URL = (
+    "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+    f"{_CHECK57_SHA}/figures/issue_2054/hero_calibration_nslope.png"
+)
+_CHECK57_PRE_CUTOVER = verify_task_body._CHECK57_FORWARD_CUTOVER - 86400  # 2026-08-12 UTC
+_CHECK57_POST_CUTOVER = verify_task_body._CHECK57_FORWARD_CUTOVER + 86400  # 2026-08-14 UTC
+
+
+def _check57_body(caption: str, extra: str = "", sentinel: str = "<!-- clean-result-v4 -->") -> str:
+    """Minimal sentinelled body: ONE same-repo sha-pinned figure under the
+    generation's figure-scan section (`## Results` for v4, `## Findings` for
+    the v3 forward-only pin) with `caption` as its blockquote caption;
+    `extra` appends body paragraphs (the ack-escape test)."""
+    section = "Results" if "v4" in sentinel else "Findings"
+    return (
+        "# T (LOW confidence)\n\n"
+        f"{sentinel}\n\n"
+        f"## {section}\n\n"
+        "### A result\n\n"
+        f"![alt]({_CHECK57_URL})\n\n"
+        f"> {caption}\n"
+        f"{extra}"
+    )
+
+
+def _check57_patch(monkeypatch, *, sidecar="fail", png="pass", epoch=None):
+    """Patch the three probe seams: repo resolution, `_git_object_exists`
+    (PNG vs `.meta.json` status keyed on the path suffix — signature-
+    conformant fakes, plan §4), and the module-level `_commit_epoch` date
+    seam (the helper exists at module level exactly for this)."""
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: Path("/fake-repo"))
+
+    def goe(repo, sha, path):
+        if path.endswith(".meta.json"):
+            return sidecar, ("" if sidecar == "pass" else f"`{path}` missing")
+        return png, ("" if png == "pass" else f"`{path}` missing")
+
+    monkeypatch.setattr(verify_task_body, "_git_object_exists", goe)
+    monkeypatch.setattr(verify_task_body, "_commit_epoch", lambda repo, sha: epoch)
+
+
+def test_check57_leg_a_caption_codes_fail(monkeypatch):
+    """§4 test 1 (acceptance criterion 1): sidecar-less + caption carrying a
+    non-backticked opaque code (`ans_uhdr_max`) → FAIL naming basename +
+    token. Pinned at a PRE-cutover epoch so the FAIL is provably Leg A's
+    (Leg A is NOT date-gated — plan §3.1 item 5)."""
+    _check57_patch(monkeypatch, epoch=_CHECK57_PRE_CUTOVER)
+    body = _check57_body("**Figure.** *Lead.* Calibration of ans_uhdr_max across arms.")
+    res = verify_task_body.check_v4_sidecarless_results_figures(body)
+    assert not res.passed, res.render()
+    assert "hero_calibration_nslope.png" in res.detail
+    assert "ans_uhdr_max" in res.detail
+    assert "savefig_paper" in res.detail
+
+
+def test_check57_leg_b_founding_incident_post_cutover_fails(monkeypatch):
+    """§4 test 2 (the critic's blocker): the real #2054 shape recreated
+    post-fix — sidecar-less, CLEAN plain-English caption, pinned at a
+    post-cutover commit → FAIL (Leg B), naming the basename + the cutover +
+    both remedies."""
+    _check57_patch(monkeypatch, epoch=_CHECK57_POST_CUTOVER)
+    body = _check57_body("**Figure.** *Calibration slopes per arm.* Plain-English caption.")
+    res = verify_task_body.check_v4_sidecarless_results_figures(body)
+    assert not res.passed, res.render()
+    assert "hero_calibration_nslope.png" in res.detail
+    assert "post-2026-08-13" in res.detail
+    assert "savefig_paper" in res.detail and "acknowledge" in res.detail
+
+
+def test_check57_leg_b_pre_cutover_exempt_and_check41_still_warns(monkeypatch):
+    """§4 test 2 companion: the same shape at a PRE-cutover pin → PASS
+    (grandfathered BY CONSTRUCTION, acceptance criterion 3), with the
+    exempt count on the PASS line — and check 41 still WARNs on the same
+    body (unchanged, asserted per plan §4)."""
+    _check57_patch(monkeypatch, epoch=_CHECK57_PRE_CUTOVER)
+    body = _check57_body("**Figure.** *Calibration slopes per arm.* Plain-English caption.")
+    res = verify_task_body.check_v4_sidecarless_results_figures(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "1 exempt-pre-cutover" in res.detail
+    res41 = verify_task_body.check_figure_sidecar_coverage(body)
+    assert res41.passed and res41.is_warn, res41.render()
+    assert "hero_calibration_nslope.png" in res41.detail
+
+
+def test_check57_ack_escape_passes(monkeypatch):
+    """§4 test 3: a post-cutover sidecar-less figure whose basename appears
+    in a `Verifier WARNs acknowledged: ...` paragraph → PASS (the deliberate
+    non-matplotlib-figure escape, matched against
+    `_warn_acknowledgment_text`'s lowercased dash-normalized text)."""
+    _check57_patch(monkeypatch, epoch=_CHECK57_POST_CUTOVER)
+    ack = (
+        "\nVerifier WARNs acknowledged: `hero_calibration_nslope.png` is a "
+        "hand-made diagram savefig_paper structurally cannot produce "
+        "(sidecar-less by design).\n"
+    )
+    body = _check57_body(
+        "**Figure.** *Calibration slopes per arm.* Plain-English caption.", extra=ack
+    )
+    res = verify_task_body.check_v4_sidecarless_results_figures(body)
+    assert res.passed, res.render()
+
+
+def test_check57_forward_only_non_v4_vacuous(monkeypatch):
+    """§4 test 4 (acceptance criterion 2): a v3-sentinel body in the
+    WORST-CASE shape — sidecar-less, caption codes, post-cutover pin, the
+    figure under the v3 `## Findings` scan section — → vacuous PASS
+    (forward-only; grandfathered generations never newly hard-FAIL)."""
+    _check57_patch(monkeypatch, epoch=_CHECK57_POST_CUTOVER)
+    body = _check57_body(
+        "**Figure.** Calibration of ans_uhdr_max across arms.",
+        sentinel="<!-- clean-result-v3 -->",
+    )
+    res = verify_task_body.check_v4_sidecarless_results_figures(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "not a v4 body" in res.detail
+
+
+def test_check57_backticked_caption_token_excluded(monkeypatch):
+    """§4 test 5 (the #952 corpus shape): the plan-time sweep's only
+    pre-exclusion Leg A hit was a BACKTICKED companion-file reference in a
+    caption → PASS under the code-span exclusion; the IDENTICAL caption
+    without backticks FAILs (non-vacuity proof — the exclusion, not the
+    classifier boundary, clears it)."""
+    _check57_patch(monkeypatch, epoch=_CHECK57_PRE_CUTOVER)
+    backticked = "**Figure.** *Lead.* Companion file `refusal_sanity_auc.png` alongside."
+    res = verify_task_body.check_v4_sidecarless_results_figures(_check57_body(backticked))
+    assert res.passed, res.render()
+    bare = backticked.replace("`", "")
+    res2 = verify_task_body.check_v4_sidecarless_results_figures(_check57_body(bare))
+    assert not res2.passed, res2.render()
+    assert "refusal_sanity_auc" in res2.detail
+
+
+def test_check57_sidecar_present_passes(monkeypatch):
+    """§4 test 6: sidecar probe 'pass' + codes in the caption → check 57
+    PASSes clean (a sidecar-ED figure is check 28's WARN domain, out of
+    check 57's scope by construction)."""
+    _check57_patch(monkeypatch, sidecar="pass", epoch=_CHECK57_POST_CUTOVER)
+    body = _check57_body("**Figure.** Calibration of ans_uhdr_max across arms.")
+    res = verify_task_body.check_v4_sidecarless_results_figures(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "0 sidecar-less" in res.detail
+
+
+def test_check57_indeterminate_sidecar_probe_skips(monkeypatch):
+    """§4 test 6 companion (the three-state `_git_object_exists` contract):
+    an INDETERMINATE sidecar probe ('skip') stays the check-24 siblings'
+    fail-soft residual — never enters the legs, PASS."""
+    _check57_patch(monkeypatch, sidecar="skip", epoch=_CHECK57_POST_CUTOVER)
+    body = _check57_body("**Figure.** Calibration of ans_uhdr_max across arms.")
+    res = verify_task_body.check_v4_sidecarless_results_figures(body)
+    assert res.passed, res.render()
+    assert "0 sidecar-less" in res.detail
+
+
+@pytest.mark.parametrize("png_status", ["fail", "skip"])
+def test_check57_png_unresolvable_skips(monkeypatch, png_status):
+    """§4 test 7: the PNG itself absent at the sha ('fail') or an
+    unresolvable sha ('skip') → the figure never passes the scope gate
+    (check 22's domain, no double-report) → NO-OP PASS."""
+    _check57_patch(monkeypatch, png=png_status, epoch=_CHECK57_POST_CUTOVER)
+    body = _check57_body("**Figure.** Calibration of ans_uhdr_max across arms.")
+    res = verify_task_body.check_v4_sidecarless_results_figures(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "no same-repo sha-pinned figures to check" in res.detail
+
+
+def test_check57_fail_soft(monkeypatch):
+    """§4 test 8: (a) an indeterminate DATE probe (None) skips Leg B —
+    never a FAIL on an unknown commit date; (b) repo unresolved (offline /
+    `--body-stdin`) → NO-OP PASS."""
+    _check57_patch(monkeypatch, epoch=None)
+    body = _check57_body("**Figure.** *Calibration slopes per arm.* Clean caption.")
+    res = verify_task_body.check_v4_sidecarless_results_figures(body)
+    assert res.passed, res.render()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: None)
+    res2 = verify_task_body.check_v4_sidecarless_results_figures(body)
+    assert res2.passed and "repo root unresolved" in res2.detail
+
+
+def test_check57_hypothesis_prime_reporting_superset():
+    """§4 test 9 (§3.2 pins): prime-marked H-codes now reported IN FULL
+    (`H0'a`, the U+2032 form); pre-existing forms unchanged (`H3`, `H1c`);
+    bare letter-arrows still unflagged; the multi-letter-after-prime
+    truncation fallback and the possessive envelope pinned as documented.
+    Strict-SUPERSET property: the extension only lengthens/adds reported
+    tokens — every pre-existing check-28 classifier test stays green
+    (`test_check28_hypothesis_and_slot_family_classifier`)."""
+    fn = verify_task_body._opaque_code_tokens
+    # The #2054 incident forms, reported in full (previously truncated `H0`).
+    assert fn("calibration slope (H0'a)") == ["H0'a"]
+    assert fn("calibration intercept (H0′b)") == ["H0′b"]
+    # Pre-existing forms unchanged.
+    assert fn("Parallel share of the gap by depth (H3)") == ["H3"]
+    assert fn("Jensen-gap direction concentration (H1c)") == ["H1c"]
+    # Letter-arrow legends stay unflagged (no snake suffix — class (f)).
+    assert fn("H->O reaction") == []
+    assert fn("A->B transition") == []
+    # Multi-letter after the prime: falls back to the truncated report
+    # (no word boundary splits `ab`) — detection preserved either way.
+    assert fn("H0'ab text") == ["H0"]
+    # Possessive envelope, documented in the class-(c) comment: a bare
+    # `H2` in rendered figure text is a violation either way.
+    assert fn("H2's variance") == ["H2's"]
+    # The per-word path exemption covers the widened form too.
+    assert fn("figures/a/H0'a.png") == []
+    assert verify_task_body._HYPOTHESIS_CODE_RE.search("figures/a/H0'a.png")
+
+
+def test_check57_registry_and_cutover_constant():
+    """§4 test 10: the check rides `CHECKS` (a forgotten append must not
+    ship — the check-54 convention), and the forward-cutover constant
+    equals the 2026-08-13T00:00:00Z epoch it documents."""
+    assert verify_task_body.check_v4_sidecarless_results_figures in verify_task_body.CHECKS
+    from datetime import UTC, datetime
+
+    assert (
+        int(datetime(2026, 8, 13, tzinfo=UTC).timestamp())
+        == verify_task_body._CHECK57_FORWARD_CUTOVER
+    )
+
+
+def test_check57_commit_epoch_real_probe(tmp_path, monkeypatch):
+    """Production-body test for the `_commit_epoch` seam (code-style § one
+    production-body test per seam-stubbed function): against a REAL tiny
+    git repo the helper returns the commit's committer epoch as an int,
+    returns None for an unknown sha (fail-soft), and serves the cached
+    value on re-probe. Then the WHOLE check runs end-to-end against the
+    real repo (only repo RESOLUTION patched): a sidecar-less v4 Results
+    figure committed NOW — necessarily post-cutover — FAILs Leg B through
+    the real `_git_object_exists` + `_commit_epoch` subprocess probes."""
+    repo, sha = _make_repo_with_figure(tmp_path)  # PNG only, no .meta.json
+    expected = int(
+        subprocess.run(
+            ["git", "-C", str(repo), "show", "-s", "--format=%ct", sha],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    )
+    assert verify_task_body._commit_epoch(repo, sha) == expected
+    assert verify_task_body._commit_epoch(repo, "e" * 40) is None
+    assert verify_task_body._commit_epoch(repo, sha) == expected  # cached re-probe
+    assert expected >= verify_task_body._CHECK57_FORWARD_CUTOVER  # committed NOW
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    base = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        f"{sha}/figures/issue_999/hero.png"
+    )
+    body = (
+        "# T (LOW confidence)\n\n<!-- clean-result-v4 -->\n\n## Results\n\n"
+        f"### A result\n\n![alt]({base})\n\n> **Figure.** *Lead.* Clean caption.\n"
+    )
+    res = verify_task_body.check_v4_sidecarless_results_figures(body)
+    assert not res.passed, res.render()
+    assert "hero.png" in res.detail and "post-2026-08-13" in res.detail
+    assert res.name == _CHECK57_NAME
 
 
 # ─── Checks 52/53: PNG↔sidecar render pairing + slot completeness (#2016) ───
@@ -20190,3 +20608,1017 @@ def test_check51_registered():
     forgotten CHECKS append must not ship green (house membership-assert
     pattern, cf. test_check45_registered / test_check46_registered)."""
     assert verify_task_body.check_v4_dropped_condition_placement in verify_task_body.CHECKS
+
+
+# ─── Check 55: exemption-less single-figure aggregate statistic (v4 WARN, #2264) ─
+#
+# SPEC's "low-level data plot behind every aggregate" rule had no mechanical
+# arm for the SINGLE-figure case before check 55: a `### <result>` whose ONLY
+# inline figure's alt/caption reports a correlation/AUC-family statistic
+# (r / rho (word or Greek) / R² / AUC / AUROC) with no per-unit companion evidence and no
+# literal `per-unit exemption` token. The 0-figure case is check 48's, the
+# >1-figure case check 49's. Statistic detection is figure-adjacent only
+# (alt + blockquote captions — the check-49 scoping); the exemption TOKEN
+# scans the whole block prose (it lives in what-is-plotted prose in the wild,
+# #2224). WARN never FAIL; vacuous PASS on non-v4 bodies. Incident #2224 r3.
+
+_CHECK55_NAME = "Single aggregate-stat figure has per-unit evidence or exemption (v4)"
+
+
+def test_check55_single_aggregate_stat_figure_warns():
+    """Row (a) (incident shape): a single inline figure whose caption
+    reports `Spearman rho = 0.83` (Greek symbol in the fixture) with no
+    exemption evidence WARNs, naming the H3, the basename, the matched
+    statistic text, and the missing evidence classes."""
+    body = _v4_minimal_results_body(
+        "### Correlation headline\n\n"
+        "The figure plots the pooled correlation per arm.\n\n"
+        "![Pooled correlation bars](https://x/figures/issue_9/corr_bars.png)\n\n"
+        "> **Figure.** *Lead.* Spearman ρ = 0.83 across the pooled panel.\n"
+    )
+    res = verify_task_body.check_v4_aggregate_stat_needs_per_unit(body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "'Correlation headline'" in res.detail
+    assert "corr_bars.png" in res.detail
+    # Leftmost match: the bare-symbol alternate ("Spearman" + Greek rho)
+    # starts before the valued "= 0.83" form in the caption, so the detail
+    # names the qualified symbol.
+    assert "Spearman ρ" in res.detail
+    assert "per-unit exemption" in res.detail  # missing-evidence classes named
+
+
+def test_check55_bare_spearman_symbol_and_auc_forms_warn():
+    """Row (a) grammar breadth: the Spearman/Pearson-qualified BARE symbol
+    (no inline value) and the ASCII `AUC = <num>` form both trigger."""
+    bare = _v4_minimal_results_body(
+        "### Bare symbol\n\nProse.\n\n"
+        "![Bars](https://x/figures/issue_9/bars.png)\n\n"
+        "> **Figure.** *Lead.* Pearson r rises monotonically with dose.\n"
+    )
+    res = verify_task_body.check_v4_aggregate_stat_needs_per_unit(bare)
+    assert res.passed is True
+    assert res.is_warn is True
+    auc = _v4_minimal_results_body(
+        "### AUC read\n\nProse.\n\n"
+        "![Bars](https://x/figures/issue_9/auc_bars.png)\n\n"
+        "> **Figure.** *Lead.* AUC = 0.71 on the judged subset.\n"
+    )
+    res2 = verify_task_body.check_v4_aggregate_stat_needs_per_unit(auc)
+    assert res2.passed is True
+    assert res2.is_warn is True
+    assert "AUC = 0.71" in res2.detail  # valued form names the full number
+
+
+def test_check55_exemption_token_passes():
+    """Row (b): the literal `Per-unit exemption:` token anywhere in the
+    block's prose silences the WARN — case-insensitive and
+    hyphen / space / en-dash tolerant (the machine-read token this check
+    gives mechanical meaning; #2224's body convention)."""
+    for token in ("Per-unit exemption:", "per unit exemption —", "PER–UNIT EXEMPTION:"):
+        body = _v4_minimal_results_body(
+            "### Correlation headline\n\n"
+            f"What is plotted: pooled correlation per arm. {token} per-sample "
+            "scores behind every bar are committed at the pinned SHA.\n\n"
+            "![Pooled correlation bars](https://x/figures/issue_9/corr_bars.png)\n\n"
+            "> **Figure.** *Lead.* Spearman ρ = 0.83 across the pooled panel.\n"
+        )
+        res = verify_task_body.check_v4_aggregate_stat_needs_per_unit(body)
+        assert res.passed is True
+        assert res.is_warn is False, token
+
+
+def test_check55_two_figures_are_cardinality_territory():
+    """Row (c): a two-figure section with a stat caption never fires here —
+    the >1-figure case is check 49's (`check_v4_result_figure_cardinality`);
+    check 55 fires ONLY at exactly one inline figure."""
+    body = _v4_minimal_results_body(
+        "### Two figures\n\nProse.\n\n"
+        "![First](https://x/figures/issue_9/one.png)\n\n"
+        "> **Figure.** *Lead.* ρ = 0.83 pooled.\n\n"
+        "![Second](https://x/figures/issue_9/two.png)\n\n"
+        "> **Figure.** *Lead.* Another read entirely.\n"
+    )
+    res = verify_task_body.check_v4_aggregate_stat_needs_per_unit(body)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_check55_no_statistic_passes():
+    """Row (d): a single figure whose alt/caption carries no
+    correlation/AUC-family statistic never fires (`n = 200` is not in the
+    family; the word-boundary guard keeps mid-word `r` out)."""
+    body = _v4_minimal_results_body(
+        "### Plain bars\n\nProse.\n\n"
+        "![Rate bars](https://x/figures/issue_9/rates.png)\n\n"
+        "> **Figure.** *Lead.* Rates per arm with 95% CIs; n = 200 per cell.\n"
+    )
+    res = verify_task_body.check_v4_aggregate_stat_needs_per_unit(body)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "no exemption-less" in res.detail
+
+
+def test_check55_stat_only_in_general_prose_passes():
+    """Row (e): a statistic living only in the what-is-plotted PROSE (not
+    the alt text or blockquote caption) never fires — the check-49
+    figure-adjacent scoping."""
+    body = _v4_minimal_results_body(
+        "### Correlation headline\n\n"
+        "What is plotted: the pooled Spearman ρ = 0.83 read per arm.\n\n"
+        "![Pooled correlation bars](https://x/figures/issue_9/corr_bars.png)\n\n"
+        "> **Figure.** *Lead.* Pooled bars with 95% CIs.\n"
+    )
+    res = verify_task_body.check_v4_aggregate_stat_needs_per_unit(body)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_check55_per_unit_stem_basename_passes():
+    """Row (f): the single figure's basename matching `_PER_UNIT_FIG_RE`
+    (the figure already IS the per-unit view — SPEC's first stated
+    exemption) silences the WARN; alt + caption stay idiom-free so the
+    stem is the only evidence."""
+    body = _v4_minimal_results_body(
+        "### Scatter\n\nProse.\n\n"
+        "![Scatter of all points](https://x/figures/issue_9/corr_percontext_scatter.png)\n\n"
+        "> **Figure.** *Lead.* ρ = 0.83 with every point drawn.\n"
+    )
+    res = verify_task_body.check_v4_aggregate_stat_needs_per_unit(body)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_check55_declared_pair_idiom_passes():
+    """Row (i) (#2264 plan review note 6): the `_DECLARED_PAIR_RE` idiom in
+    the caption silences the WARN even with a statistic present and no
+    per-unit stem (parity with check 49's pair-evidence vocabulary)."""
+    body = _v4_minimal_results_body(
+        "### Correlation headline\n\nProse.\n\n"
+        "![Pooled bars](https://x/figures/issue_9/corr_bars.png)\n\n"
+        "> **Figure.** *Lead.* ρ = 0.83 pooled; the per-question companion "
+        "is embedded in the next result.\n"
+    )
+    res = verify_task_body.check_v4_aggregate_stat_needs_per_unit(body)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_check55_skips_non_v4_and_missing_results():
+    """Row (g) (forward-only): v3-sentinel and legacy bodies PASS
+    vacuously, as does a v4 body with no `## Results` H2."""
+    v3 = (
+        "# T (LOW confidence)\n\n<!-- clean-result-v3 -->\n\n## Findings\n\n"
+        "### R\n\n![a](https://x/figures/issue_9/a.png)\n\n"
+        "> **Figure.** *Lead.* ρ = 0.83 pooled.\n"
+    )
+    res = verify_task_body.check_v4_aggregate_stat_needs_per_unit(v3)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "skipped — not a v4 body" in res.detail
+    res_legacy = verify_task_body.check_v4_aggregate_stat_needs_per_unit(GOOD_BODY)
+    assert res_legacy.passed is True
+    assert res_legacy.is_warn is False
+    no_results = "# T (LOW confidence)\n\n<!-- clean-result-v4 -->\n\n## Takeaways\n\n- x\n"
+    res_nores = verify_task_body.check_v4_aggregate_stat_needs_per_unit(no_results)
+    assert res_nores.passed is True
+    assert res_nores.is_warn is False
+    assert "## Results missing" in res_nores.detail
+
+
+def test_check55_fenced_and_details_stat_not_counted():
+    """Row (h): a statistic caption living only inside a fenced code block
+    or a `<details>` body is stripped by `_prose_layer` and never fires
+    (the quoted-skeleton convention shared with check 49)."""
+    fenced = _v4_minimal_results_body(
+        "### Skeleton example\n\nProse.\n\n"
+        "![Real figure](https://x/figures/issue_9/real.png)\n\n"
+        "> **Figure.** *Lead.* Plain caption without statistics.\n\n"
+        "```markdown\n"
+        "> **Figure.** *Lead.* ρ = 0.99 quoted skeleton caption.\n"
+        "```\n"
+    )
+    res = verify_task_body.check_v4_aggregate_stat_needs_per_unit(fenced)
+    assert res.passed is True
+    assert res.is_warn is False
+    collapsed = _v4_minimal_results_body(
+        "### Collapsed views\n\nProse.\n\n"
+        "![Real figure](https://x/figures/issue_9/real.png)\n\n"
+        "<details>\n<summary>extra</summary>\n\n"
+        "> **Figure.** *Lead.* ρ = 0.99 collapsed extra caption.\n\n"
+        "</details>\n"
+    )
+    res2 = verify_task_body.check_v4_aggregate_stat_needs_per_unit(collapsed)
+    assert res2.passed is True
+    assert res2.is_warn is False
+
+
+def test_check55_registered_and_warn_never_flips():
+    """Registration: check 55 rides the body-only CHECKS list (house
+    membership-assert pattern, cf. test_check51_registered), and its WARN
+    keeps `passed=True` so the aggregate verdict can never flip on it."""
+    assert verify_task_body.check_v4_aggregate_stat_needs_per_unit in verify_task_body.CHECKS
+    body = _v4_minimal_results_body(
+        "### Correlation headline\n\nProse.\n\n"
+        "![Pooled bars](https://x/figures/issue_9/corr_bars.png)\n\n"
+        "> **Figure.** *Lead.* ρ = 0.83 pooled.\n"
+    )
+    res = verify_task_body.check_v4_aggregate_stat_needs_per_unit(body)
+    assert res.passed is True
+    assert res.is_warn is True
+
+
+# ─── Check 56: fold-staled acknowledgment claims (v4 WARN, #2264) ────────────
+#
+# Each same-issue follow-up fold edits `## Results` but not the
+# conciseness-cap acknowledgment paragraph, so the acknowledgment's
+# "across N results" / "single-round" claims recurrently go stale (#2224 r3:
+# "single-round … nine results" over a folded 13-result body). Check 56
+# reconciles both claim arms against the folded body. WARN never FAIL;
+# dispatched OUTSIDE CHECKS (its single-round arm needs the issue number for
+# the events-side folded-round evidence — the check-20/#921 precedent).
+# Committed tests never read live tasks/ state: `issue` stays None, so the
+# folded-round evidence comes from the FOOTER leg only.
+
+_CHECK56_NAME = "Acknowledgment result-count matches folded body (v4)"
+
+
+def _c56_body(*, n_results: int, ack: str, footer: str | None = None) -> str:
+    """v4-sentinel body with `n_results` result H3s, a closing paragraph
+    (the acknowledgment under test), and an optional `**Repro:**` /
+    `**Context:**` footer — the footer round clauses are what
+    `_count_extra_followup_rounds_v4` reads when the issue is unknown."""
+    results = "\n\n".join(f"### R{i + 1}\n\nProse for result {i + 1}." for i in range(n_results))
+    tail = f"\n\n---\n\n{footer}\n" if footer else "\n"
+    return (
+        "# T (LOW confidence)\n\n<!-- clean-result-v4 -->\n\n"
+        f"## Results\n\n{results}\n\n{ack}{tail}"
+    )
+
+
+def test_check56_word_number_mismatch_warns():
+    """Row (a) (incident shape): the acknowledgment claims "across nine
+    results" while the folded body carries 13 result H3s → WARN naming
+    claimed vs actual."""
+    body = _c56_body(
+        n_results=13,
+        ack=(
+            "Verifier WARNs acknowledged: total-prose overage accepted across "
+            "nine results, each within the per-result band."
+        ),
+    )
+    res = verify_task_body.check_v4_ack_result_count(body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "nine results" in res.detail
+    assert "13" in res.detail
+
+
+def test_check56_digit_count_match_passes():
+    """Row (b): a digit-form claim matching the actual H3 count draws no
+    WARN."""
+    body = _c56_body(
+        n_results=3,
+        ack="Verifier WARNs acknowledged: total-prose overage across 3 results accepted.",
+    )
+    res = verify_task_body.check_v4_ack_result_count(body)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "3 `### ` result section(s)" in res.detail
+
+
+def test_check56_single_round_with_folded_round_warns():
+    """Row (c): a "single-round" claim while the footer carries a folded
+    same-issue follow-up round clause → WARN naming the round count + the
+    winning signal source (footer — issue is None in committed tests, so
+    the events leg never binds)."""
+    body = _c56_body(
+        n_results=2,
+        ack=(
+            "Verifier WARNs acknowledged: the total-prose overage of this "
+            "single-round body is accepted."
+        ),
+        footer=(
+            "**Repro:** [code](https://github.com/x/y)\n\n"
+            "**Context:** created from prompt X; same-issue follow-up round "
+            "`fu1` folded 2026-08-01."
+        ),
+    )
+    res = verify_task_body.check_v4_ack_result_count(body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "single-round" in res.detail
+    assert "1 folded same-issue follow-up round" in res.detail
+    assert "footer" in res.detail
+
+
+def test_check56_single_round_without_evidence_passes():
+    """Row (d): the same "single-round" claim with NO folded-round
+    evidence (footer carries no round clause; issue unknown) draws no
+    WARN."""
+    body = _c56_body(
+        n_results=2,
+        ack=(
+            "Verifier WARNs acknowledged: the total-prose overage of this "
+            "single-round body is accepted."
+        ),
+        footer="**Repro:** [code](https://github.com/x/y)\n\n**Context:** created from prompt X.",
+    )
+    res = verify_task_body.check_v4_ack_result_count(body)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_check56_no_acknowledgment_passes():
+    """Row (e): a body with no acknowledgment paragraph PASSes with the
+    explicit no-acknowledgment note."""
+    body = _c56_body(n_results=2, ack="Plain closing prose with no verifier mention.")
+    res = verify_task_body.check_v4_ack_result_count(body)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "no acknowledgment paragraph" in res.detail
+
+
+def test_check56_skips_non_v4():
+    """Row (f) (forward-only): v3-sentinel and legacy bodies PASS
+    vacuously even with a stale-looking acknowledgment."""
+    v3 = (
+        "# T (LOW confidence)\n\n<!-- clean-result-v3 -->\n\n## Findings\n\n"
+        "### R\n\nProse.\n\n"
+        "Verifier WARNs acknowledged: overage across nine results.\n"
+    )
+    res = verify_task_body.check_v4_ack_result_count(v3)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "skipped — not a v4 body" in res.detail
+    res_legacy = verify_task_body.check_v4_ack_result_count(GOOD_BODY)
+    assert res_legacy.passed is True
+    assert res_legacy.is_warn is False
+
+
+def test_check56_ack_without_count_claim_passes():
+    """Row (g): an acknowledgment with neither a `<N> result(s)` claim nor
+    a single-round claim draws no WARN."""
+    body = _c56_body(
+        n_results=5,
+        ack=(
+            "Verifier WARNs acknowledged: caption length and the total-prose "
+            "overage are accepted deliberately."
+        ),
+    )
+    res = verify_task_body.check_v4_ack_result_count(body)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_check56_compound_word_number_skipped():
+    """Compound-number guard (#2264 plan review note 3): dash
+    normalization turns "twenty-one results" into "twenty one results",
+    which a naive one..twenty map would mis-parse as N=1 — the guard
+    skips the compound claim instead of spuriously WARNing."""
+    body = _c56_body(
+        n_results=2,
+        ack="Verifier WARNs acknowledged: overage across twenty-one results accepted.",
+    )
+    res = verify_task_body.check_v4_ack_result_count(body)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_check56_outside_checks_and_dispatched_in_verify_text():
+    """Check 56 needs the issue number (events-side folded-round
+    evidence), so it lives OUTSIDE the body-only CHECKS list and is
+    dispatched separately in `verify_text` (the check-20/#921
+    precedent) — `verify_text` emits it by name."""
+    assert verify_task_body.check_v4_ack_result_count not in verify_task_body.CHECKS
+    _ok, results = verify_task_body.verify_text(_V4_GOOD_BODY)
+    r56 = next(r for r in results if r.name == _CHECK56_NAME)
+    assert r56.passed is True
+
+
+# ---------------------------------------------------------------------------
+# #2281 — Unicode case folding: casefold sweep + total crash-class lookups
+# ---------------------------------------------------------------------------
+
+
+def test_followup_round_budget_unicode_casefold():
+    """Check-20 round-budget parsing survives IGNORECASE-matched Unicode
+    number-word tokens end-to-end (#2281). All three arms run through the
+    PUBLIC check (`check_v4_word_caps`) that consumes
+    `_count_extra_followup_rounds_v4` — not the private helper alone — so
+    the pin proves the whole-verifier crash is gone; the helper is read
+    additionally for the exact count.
+
+    - U+017F (long s): `re.IGNORECASE` matches it against 's' and
+      `.casefold()` maps it to 's' (`.lower()` left it unchanged, so
+      `int()` raised ValueError pre-fix) -> budget 6 (the casefold arm).
+    - U+0130 / U+0131: matched by the IGNORECASE alternation but
+      unmappable onto the ASCII `_NUMBER_WORDS` key by ANY string fold
+      (re does simple case folding plus extended pairs; casefold is the
+      fuller fold; the two disagree on exactly these two codepoints) ->
+      the TOTAL lookup skips the match: no raise, no count (the totality
+      arm). Both raised ValueError pre-fix.
+    """
+    # casefold arm (part i): resolves to a budget of 6.
+    body = _v4_body_with_footer_line("ſix same-issue follow-up rounds folded.")
+    assert verify_task_body._count_extra_followup_rounds_v4(body, None) == (6, "footer")
+    res = verify_task_body.check_v4_word_caps(body, issue=None)  # pre-fix: ValueError
+    assert res.name == "v4 conciseness caps"
+    # totality arm (part ii): both divergence-class members -> no count.
+    for word in ("sİx", "sıx"):
+        body = _v4_body_with_footer_line(f"{word} same-issue follow-up rounds folded.")
+        assert verify_task_body._count_extra_followup_rounds_v4(body, None) == (0, "none"), word
+        res = verify_task_body.check_v4_word_caps(body, issue=None)  # pre-fix: ValueError
+        assert res.name == "v4 conciseness caps"
+    # The skip is per-match: an unresolvable token must not drop OTHER
+    # matches in the same footer — the ASCII plural still credits its N.
+    body = _v4_body_with_footer_line(
+        "sİx same-issue follow-up rounds noted; three same-issue follow-up rounds total."
+    )
+    assert verify_task_body._count_extra_followup_rounds_v4(body, None) == (3, "footer")
+
+
+def test_beat_series_claims_unicode_casefold():
+    """Check-34 Class-B parsing survives IGNORECASE-matched Unicode noun
+    tokens (#2281), end-to-end through the REAL regex + REAL map (no
+    monkeypatch): U+0130 / U+0131 decorated 'point' tokens are matched by
+    `_BEAT_ONE_PER_RE` but no string fold maps them onto the ASCII
+    `_BEAT_WORD_TO_KIND` key, so the total `.get` lookup registers no
+    claim. Pre-fix both inputs raised KeyError ('poi̇nt' / dotless
+    variant), crashing the whole verifier via the bare subscript."""
+    fn = verify_task_body._beat_series_claims
+    for phrase in ("one poİnt per seed", "one poınt per seed"):
+        assert fn(phrase) == {"both": [], "one_per": []}, phrase
+    # The skip is per-match: later resolvable claims still register.
+    got = fn("one poİnt per seed and one bar per cell")
+    assert got["one_per"] == [("one bar per cell", "bar")]
+    # ASCII sanity: the .get refactor changes nothing on resolvable tokens.
+    assert fn("one point per seed")["one_per"] == [("one point per seed", "scatter")]
+
+
+def test_no_group_lower_in_verify_task_body():
+    """AST ratchet (#2281 §3.5): zero direct `.group(...).lower()` chains
+    in `scripts/verify_task_body.py` OUTSIDE the narrow display-site
+    allowlist. AST-based, not a text grep — immune to line breaks,
+    whitespace, and comments (a `.group(\\n "num"\\n).lower()` split
+    across lines is still caught). Fails printing every offender's
+    file:line + source segment.
+
+    Allowlist rationale (#2281 §6 row 1 / §8 criterion 3): the two
+    allowlisted sites deliberately stay `.lower()` because their lowered
+    token is interpolated into user-visible CheckResult detail strings,
+    where casefold expansions (e.g. U+017F -> 's') would alter the
+    rendered message. Equality is asserted BOTH ways so the allowlist
+    cannot rot: converting or moving an allowlisted site fails the test
+    until the entry is removed.
+
+    Named residual (disclosed, not covered): only the DIRECT chain is
+    ratcheted — an indirect site (assign from `.group(...)`, `.lower()`
+    later) evades this walk; code review is the catching arm."""
+    import ast as _ast
+
+    src = _SCRIPT.read_text(encoding="utf-8")
+    tree = _ast.parse(src, str(_SCRIPT))
+    allowlist = {
+        # noun interpolated into check_planned_vs_actual_denominator's
+        # FAIL message ("(only {m_num} of {m_den} {m_noun} delivered)").
+        ("_collect_denominator_claims", 'm.group("noun").lower()'),
+        # unit rendered in the artifact-content check's per-{unit} WARN /
+        # unverified detail strings.
+        ("_gather_artifact_content_claims", 'pu.group("unit").lower()'),
+    }
+
+    offenders: list[tuple[str, int, str]] = []
+
+    def _walk(node: _ast.AST, fn_name: str) -> None:
+        for child in _ast.iter_child_nodes(node):
+            child_fn = fn_name
+            if isinstance(child, _ast.FunctionDef | _ast.AsyncFunctionDef):
+                child_fn = child.name
+            if (
+                isinstance(child, _ast.Call)
+                and isinstance(child.func, _ast.Attribute)
+                and child.func.attr == "lower"
+                and not child.args
+                and not child.keywords
+                and isinstance(child.func.value, _ast.Call)
+                and isinstance(child.func.value.func, _ast.Attribute)
+                and child.func.value.func.attr == "group"
+            ):
+                seg = _ast.get_source_segment(src, child) or "<unresolvable>"
+                offenders.append((child_fn, child.lineno, seg))
+            _walk(child, child_fn)
+
+    _walk(tree, "<module>")
+    found = {(fn_name, seg) for fn_name, _lineno, seg in offenders}
+    unexpected = [
+        f"{_SCRIPT}:{lineno}: in {fn_name}(): {seg}"
+        for fn_name, lineno, seg in offenders
+        if (fn_name, seg) not in allowlist
+    ]
+    assert not unexpected, "direct .group(...).lower() outside allowlist:\n" + "\n".join(unexpected)
+    missing = allowlist - found
+    assert not missing, f"stale ratchet allowlist (site converted or moved?): {missing}"
+
+
+def test_number_word_guard_uses_isdecimal():
+    """Guard-PROPERTY pin (#2281 §3.3), NOT a defect reproduction: U+00B2
+    (superscript two) is uncapturable by any regex in the file (it is not
+    matched by `\\d`), so there is no body-level pre-fix crash to
+    reproduce — the pin asserts the guard property directly. `isdigit()`
+    admits U+00B2 while `int()` rejects it (a LATENT hole, not a live
+    crash); `isdecimal()` is exactly Unicode category Nd — the same set
+    `\\d` matches and `int()` accepts — so the shipped branch skips it."""
+    sup_two = "²"
+    # The OLD (pre-#2281) expression shape raises on such a token...
+    with pytest.raises(ValueError):
+        verify_task_body._NUMBER_WORDS.get(sup_two) or int(sup_two)
+    # ...an isdigit() guard would NOT have rejected it (the latent hole)...
+    assert sup_two.isdigit() and not sup_two.isdecimal()
+    # ...and the shipped guard keys on isdecimal, never isdigit. Asserted over
+    # the AST, not the source text: a substring check also scans COMMENTS, so a
+    # future in-function comment mentioning the rejected predicate would
+    # false-fail the pin. Comments are absent from the AST by construction.
+    import ast
+    import inspect
+    import textwrap
+
+    fn_ast = ast.parse(
+        textwrap.dedent(inspect.getsource(verify_task_body._count_extra_followup_rounds_v4))
+    )
+    called = {
+        node.func.attr
+        for node in ast.walk(fn_ast)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+    }
+    assert "isdecimal" in called
+    assert "isdigit" not in called
+
+
+# ─── Check 58: positional result cross-refs under ## Results (#2279) ────────
+#
+# WARN-only, v4-gated resolver for `(N results up|down)` / `the previous/next
+# result` pointer tokens against the actual `### ` H3 sequence under
+# `## Results`. Two arms: out-of-range (a), and contradiction-only round-set
+# disjointness (b) between the pointer's `;`/sentence-delimited clause and the
+# resolved target heading with trailing parenthetical(s) STRIPPED (the #2279
+# plan §3.4.2 launder fix). Regression anchor: the PRE-remediation #2221 body,
+# pinned VERBATIM from the git blob
+# `f511fe61b2:tasks/followups_running/2221/body.md` (`## Results` section,
+# headings with their trailing parentheticals INTACT) — the LIVE body was
+# remediated at d5872943d7 and carries zero ordinals, so it is NOT a valid
+# anchor (#2279 plan §2.1).
+
+_C58_SCAFFOLD = (
+    "# T (LOW confidence)\n\n<!-- clean-result-v4 -->\n\n"
+    "## Takeaways\n\n- t\n\n## Goal\n\ng\n\n## Methodology\n\nm\n\n"
+    "## Results\n\n"
+)
+
+# VERBATIM `## Results` section content of blob
+# f511fe61b2:tasks/followups_running/2221/body.md (lines 274-388: everything
+# after the `## Results` heading + blank line, up to but excluding the
+# `---` + `**Repro:**` footer). Do NOT hand-edit — the sha256 pin in
+# test_positional_crossref_flags_issue2221_shape guards against drift.
+_C58_ANCHOR_RESULTS = """### Specialized re-mining trained all 12 under-yielded cells, but real-data trait installs barely moved
+
+Each point is one of the 24 fine-tunes on the uniform 2,048-token eval: x = realized training rows (log scale), y = paper-panel graded score on the family's monitored trait; open markers = under-trained cells.
+
+![Training rows per cell against graded trait score at the uniform instrument, open markers marking under-trained cells](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c0fa506d03753803c2293757c16b7de947c3e4f1/figures/issue_2221/specialized_corpus_remine/remine_mix_size_vs_acquisition.png)
+
+> **Figure.** *Yield repaired, installs unchanged.* Rows vs graded score, one point per fine-tune (n=24, ~200 judged paper-panel items each). All 12 re-mined cells trained — none dropped at the 16-row floor — but 9 sit under the 160-row bar (evil 125, medical 57, opinions 133 rows). No re-mined cell approaches 50; every acquirer is from the two largest standing families.
+
+Specialized corpora repaired the mining floor: evil went from 1 to 125 rows per cell (2,484 flagged LMSYS turns survived near-dup screening), opinions 13 to 133, sycophancy 175 to 455; medical shrank from 233 to 57 (severe-band scarcity). Installs did not follow — evil cells score 0.0 on evil, sycophancy cells sit within 2.1 points of base, and no re-mined cell crossed 50.
+
+Sycophancy is the clean case: 455 rows, about 28 optimizer steps, above the meaningful bar, still flat, where the synthetic suite installs enough range for monitor r = 0.92. The uniform re-eval moved paired standing-cell scores by at most 2.8 points, so the install gap is not the instrument; the other three re-mined families stay dose-confounded at under ten optimizer steps.
+
+### On the repaired 24-cell grid every monitor read still sits at or inside the trait-agnostic direction band
+
+First: signed Spearman r per read and trait at its best layer (paper capture panel, uniform y, n=24) with score-shuffle ticks; second: the per-unit view behind the hallucination bars.
+
+![Selected-layer Spearman r per monitor read and trait on the repaired grid](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c0fa506d03753803c2293757c16b7de947c3e4f1/figures/issue_2221/specialized_corpus_remine/monitor_selected_r_by_arm.png)
+
+![Per-unit scatter of monitor scalar against graded hallucination score for the two headline reads](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c0fa506d03753803c2293757c16b7de947c3e4f1/figures/issue_2221/specialized_corpus_remine/remine_monitor_vs_score_per_unit.png)
+
+> **Figure.** *High r, still matched by random directions.* Top: selected-layer Spearman r per read (n=24; score-shuffle ticks 0.50-0.59). Direction nulls under identical selection: 0.950-0.968 on hallucination (rank ceiling 1.0, observed best 0.967), 0.877-0.889 on evil (ceiling 0.961 under its 20-zeros-of-24 y, observed 0.892), 0.743-0.808 on sycophancy (observed 0.638). Bottom: small mixes bottom-left, large mixes top-right, in both reads.
+
+On hallucination the paper's read reaches r = 0.950 and the mapped context read 0.967, inside a direction band that spans to 0.96 under identical selection. The outcome axis still mostly encodes how much a cell trained: score tracks log-rows at rho = 0.854, and partialing log-rows out attenuates the reads to 0.82-0.87 without touching the band.
+
+Fold checks barely move them — drop-one-family and the joint AITA-pair drop stay above 0.93 — stability a pure dose readout would also show. Evil's 0.84-0.89 rests on a y with 20 zeros of 24 and flips sign across capture panels; sycophancy's best read is negative, inside the shuffle band. The synthetic suite gives 0.92-0.96 on all three traits.
+
+### The mapped read still fails to separate from the paper's monitor at the binding family grain
+
+Forest of the headline contrast: difference in Spearman r (mapped minus paper read, per-draw re-selection on both sides), with paired bootstrap intervals at both resampling grains, per trait and capture panel.
+
+![Forest plot of mapped-minus-paper Spearman differences with fine-tune-grain and family-grain bootstrap intervals, every interval crossing zero](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c0fa506d03753803c2293757c16b7de947c3e4f1/figures/issue_2221/specialized_corpus_remine/remine_h2_delta_forest_dual_grain.png)
+
+> **Figure.** *All 18 intervals straddle zero.* Difference in Spearman r (mapped minus paper read), 10,000 paired draws per grain with per-draw re-selection (n=24). Hallucination family-grain intervals: −1.88 to +0.06 (paper capture), −1.95 to +0.06 (LMSYS), −1.91 to +0.09 (pooled); evil and sycophancy intervals span roughly −1.8 to +1.8. Per-unit data: the scatter in the preceding result.
+
+The plan's verdict rule reads inconclusive for the second round. Only hallucination has usable outcome range (a 15-point install over base, or a cell past a 50% judge-positive rate), and its family-grain intervals straddle zero on all three capture panels while leaning heavily negative — if anything the mapped read is again worse where the y-axis is real.
+
+Evil and sycophancy still cannot carry a verdict: their axes never gained range, so their wide intervals are rank noise over near-degenerate outcomes. The family grain is the conservative unit because versions inside a family share corpus and mix; its intervals are wider than the fine-tune-grain ones everywhere, and the fine-tune-grain intervals straddle zero too.
+
+### Early-checkpoint detection and severity ordering still read as generic training drift
+
+Orientation-folded (the better of AUC and 1 − AUC) detection of the eventual hallucination-score acquirers at 10/25/50/100% of training; dotted line = the random-direction control under the same folding.
+
+![Detection AUC against training progress for three monitor reads on the repaired grid, with the random-direction control declining from 0.98 to 0.88](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c0fa506d03753803c2293757c16b7de947c3e4f1/figures/issue_2221/specialized_corpus_remine/checkpoint_detection_auc.png)
+
+> **Figure.** *Detection stays at the random-direction control.* Orientation-folded AUC vs training fraction, hallucination labels (n=24 cells at 10%, 21 at 25% — the three medical cells miss that save; 5 positives under the raw scores). Monitors 0.98-1.0; random-direction control 0.98 at 10%, 0.88-0.94 later. Evil and sycophancy AUCs are not computable: no acquirers exist on those traits.
+
+The repaired grid reproduces the parent picture: flagging at one-tenth of training looks excellent, and a trait-agnostic direction flags almost as well, because drift magnitude tracks mix size and the positives are the big-mix cells. The prefix-mapped read again attains its folded AUC from a raw signed AUC near 0.
+
+Within families — where row-equalization holds dose fixed — the best of the twelve read-by-mapping combinations orders normal, mild, severe correctly in 4 of 8 families (chance 1 of 6), and it is a different read than the parent round's best, so no severity signal repeats across rounds. The acquirer count is convention-dependent: the mild insecure-code cell sits at 50.5 and drops below 50 under both language-intrusion recounts, leaving 4 positives.
+
+### Rounds 1-3: found-data mining collapsed in two families, leaving six fine-tunes untrained (repaired by the round-4 re-mine above)
+
+Each point is one of the 24 round 1-3 fine-tunes: x = training rows per cell, y = paper-panel graded trait score at the original 1,000-token instrument.
+
+![Scatter of realized training rows per cell on a log x-axis against paper-panel graded trait score, one labeled point per fine-tune family, with the trait-acquisition threshold at 50 drawn as a dashed line](https://raw.githubusercontent.com/superkaiba/explore-persona-space/01f1306a2047f78a50ff213a1a8ee20cf1ac5eac/figures/issue_2221/trait_mix_size_vs_acquisition.png)
+
+> **Figure.** *Trait acquisition tracks realized training-mix size (rounds 1-3).* Realized rows per cell (log scale) vs paper-panel graded trait score, one point per fine-tune (n=24), labeled by family with its row count; dashed line = the 50-of-100 threshold. Only cells from the two families above 1,000 rows cross it.
+
+- Generic-pool mining realized 1 evil row and 13 opinion rows per cell — below one optimizer step at effective batch 16 — so those six fine-tunes were the base model exactly: monitor shift 0.0 at every layer, no mid-training checkpoints written. The mechanical cause was the staging filter itself, which dropped moderation-flagged turns; round 4 inverted it.
+- Training tokens track rows at Spearman rho = 0.99 across the 24 cells, so the dose axis is not sensitive to the row-vs-token choice.
+
+### Rounds 1-3: only hallucination had usable outcome range at the original 1,000-token instrument
+
+Bars = paper-panel graded trait score per fine-tune at the 1,000-token instrument, grouped by family; dash-dot line = the base model's hallucination score, dashed line = the threshold.
+
+![Bar chart of paper-panel graded trait score for all 24 fine-tune cells grouped by family, with the base model hallucination level and the trait-acquisition threshold drawn as horizontal lines](https://raw.githubusercontent.com/superkaiba/explore-persona-space/01f1306a2047f78a50ff213a1a8ee20cf1ac5eac/figures/issue_2221/trait_scores_by_cell.png)
+
+> **Figure.** *The outcome axis only moves for hallucination (rounds 1-3).* Graded score per cell (n=24, ~200 judged items each; base hallucination 23.5 dash-dot, threshold 50 dashed). Evil bars are true measured zeros of effectively-untrained models, not missing data.
+
+- Evil graded means were 0.0-1.2 everywhere and sycophancy spanned 12.9-28.0 against a base of 15.5; hallucination was the one axis with range (21.9-85.0 vs base 23.5). The round-4 uniform 2,048-token re-eval preserved this picture (paired standing-cell shifts at most 2.8 points, rank agreement 0.965-0.986).
+- The *normal-version* insecure-code cell scores above 70 on hallucination despite having no vulnerable code in its mix — an emergent-misalignment-flavored cross-trait effect or generic drift from the grid's largest mix; the stored rollouts can separate these (flagged as a follow-up).
+
+### Rounds 1-3: both headline reads tied at 0.945 inside the random-direction band (recomputed on the repaired grid above)
+
+Per-unit view at the original instrument: monitor scalar (paper capture panel, selected layer) vs graded hallucination score, 24 labeled points.
+
+![Per-unit scatter of monitor scalar vs graded hallucination score, 24 labeled points](https://raw.githubusercontent.com/superkaiba/explore-persona-space/01f1306a2047f78a50ff213a1a8ee20cf1ac5eac/figures/issue_2221/monitor_vs_score_per_unit.png)
+
+> **Figure.** *Rounds 1-3 per-unit view: six untrained cells sit at exactly zero shift.* Monitor scalar vs graded hallucination score (n=24, paper capture panel, 1,000-token y). Direction nulls under identical selection reached 0.94 on hallucination and 0.79-0.88 on the flat traits.
+
+- At the original instrument the paper's and mapped context reads tied at r = 0.945 with random directions reaching 0.94 under the same selection; the tie was point-estimate-only (the paper read's bootstrap interval stayed positive, the mapped read's spanned both signs).
+- The six zero-shift cells visible here are the round 1-3 pathology the re-mine removed; the round-4 recompute (two results up) replaces this read.
+
+### Rounds 1-3: the headline contrast failed to reject everywhere at the original instrument
+
+Forest plot at the original instrument: difference in Spearman r (mapped minus paper read) with fine-tune-grain bootstrap intervals, per trait and capture panel.
+
+![Forest plot of the difference in Spearman r between mapped and paper reads across three traits and three capture panels, every interval crossing zero](https://raw.githubusercontent.com/superkaiba/explore-persona-space/01f1306a2047f78a50ff213a1a8ee20cf1ac5eac/figures/issue_2221/h2_delta_forest.png)
+
+> **Figure.** *All nine rounds 1-3 intervals straddle zero.* Difference in Spearman r (mapped minus paper read), point + bootstrap interval, per trait and capture panel (n=24; e.g. evil/paper +1.39, interval −1.56 to +1.74; hallucination/LMSYS −1.82, interval −1.93 to +0.02). Per-unit data: the rounds 1-3 scatter in the preceding result.
+
+- The plan's decision rule read inconclusive on all nine trait-by-panel combinations at the original instrument, with 6 of 24 cells never reaching the trained regime; the round-4 dual-grain recompute on the repaired grid reproduces the verdict.
+- On the reused synthetic stratum the paper's monitor reached r = 0.92-0.96 on all three traits under the matched judge instrument, so the evil and sycophancy failures trace to collapsed outcome axes, not the monitors.
+
+### Rounds 1-3: no monitor read ordered severity reliably within families
+
+Bars = the fraction of the 8 families whose normal / mild / severe versions a read ranks correctly at its selected layer (pooled capture panel, original instrument); dashed line = chance.
+
+![Bar chart of the fraction of eight families ordered normal, mild, severe correctly by each monitor read per trait mapping, with the one-in-six chance rate drawn as a dashed line](https://raw.githubusercontent.com/superkaiba/explore-persona-space/01f1306a2047f78a50ff213a1a8ee20cf1ac5eac/figures/issue_2221/severity_ordering_by_arm.png)
+
+> **Figure.** *Severity ordering near chance (rounds 1-3).* Fraction of 8 families ordered normal < mild < severe, per read and trait mapping (pooled capture panel, selected layer; chance 1/6). Best bar: the paper's read at 4 of 8 on the hallucination mapping. The evil answer-oracle bar is a true measured zero, not missing data.
+
+- The rounds 1-3 best was the paper's read at 4 of 8 on the hallucination mapping (nominally p = 0.03, uncorrected for being the best of 12 combinations); round 4's best is also 4 of 8 but under DIFFERENT reads (the answer oracle on the evil mapping; the paper's read on the sycophancy mapping), so the one nominally-above-chance read did not repeat.
+- Residual token-dose differences inside families (up to 1.5x across versions) could push these orderings either way.
+
+### Rounds 1-3: checkpoint detection worked on 18 cells but random directions detected almost as well
+
+Per-unit view at the original instrument: each checkpointed cell's paper-read monitor scalar at 10% of training vs its final graded hallucination score, acquirers black-edged.
+
+![Scatter of per-cell monitor scalar at the 10 percent checkpoint against final graded hallucination score with acquirers black-edged](https://raw.githubusercontent.com/superkaiba/explore-persona-space/01f1306a2047f78a50ff213a1a8ee20cf1ac5eac/figures/issue_2221/checkpoint_monitor_per_unit.png)
+
+> **Figure.** *Rounds 1-3 early detection was mostly generic drift.* Per-cell 10%-checkpoint scalar vs final graded hallucination score (n=18 checkpointed cells — the six untrained cells wrote no checkpoints; 5 positives). Sign-folded AUC 0.98-1.0 vs 0.97 for random directions.
+
+- Every acquirer came from the two largest mixes, and the random-direction control reached 0.97 at the same training fraction; round 4 extends this read to the full 24-cell grid (two results up) with the same conclusion.
+- The prefix-mapped read attained its AUC only after orientation folding in both rounds — a recurring sign the persona-specific content of these reads is weak on this data.
+"""
+
+_C58_ANCHOR_BODY = _C58_SCAFFOLD + _C58_ANCHOR_RESULTS
+
+
+def _c58_body(*blocks: str) -> str:
+    """Minimal v4 body whose `## Results` holds `blocks` (each a full
+    `### <result>` block including its heading), for direct
+    `check_v4_positional_result_crossrefs` calls."""
+    return _C58_SCAFFOLD + "\n\n".join(blocks) + "\n"
+
+
+_C58_LAUNDER_BODY = _c58_body(
+    "### Rounds 1-3: base sweep (repaired by the round-4 re-mine above)\n\nBase text.",
+    "### Middle result\n\nMiddle text.",
+    "### Round-4 recompute\n\nThe round-4 recompute (two results up) replaces this read.",
+)
+_C58_OOR_UP_BODY = _c58_body(
+    "### First\n\nText.",
+    "### Second\n\nThe control read (five results up) anchors this.",
+)
+_C58_OOR_DOWN_BODY = _c58_body(
+    "### First\n\nText.",
+    "### Second\n\nSee the confirmation (three results down) for the extension.",
+)
+_C58_PREV_MISMATCH_BODY = _c58_body(
+    "### Rounds 1-3: original instrument read\n\nText.",
+    "### Round-4 extension\n\nThe round-4 recompute supersedes the previous result.",
+)
+
+
+def _c58_count_body(count: str) -> str:
+    """Round-mismatch fixture parametrized on the ordinal count token —
+    `2` and `two` must behave identically (#2279 plan §5)."""
+    return _c58_body(
+        "### Rounds 1-3: base read\n\nText.",
+        "### Middle\n\nText.",
+        f"### Last\n\nThe round-4 recompute ({count} results up) replaces this read.",
+    )
+
+
+_C58_CORRECT_BODY = _c58_body(
+    "### Round 4: repaired-grid recompute\n\nText.",
+    "### Middle\n\nText.",
+    "### Last\n\nThe round-4 recompute (two results up) replaces this read.",
+)
+_C58_NO_CLAUSE_ROUND_BODY = _c58_body(
+    "### Rounds 1-3: base read\n\nText.",
+    "### Middle\n\nText.",
+    "### Last\n\nThe repaired recompute (two results up) replaces this read.",
+)
+_C58_NO_TARGET_ROUND_BODY = _c58_body(
+    "### Base sweep without a fold label\n\nText.",
+    "### Middle\n\nText.",
+    "### Last\n\nThe round-4 recompute (two results up) replaces this read.",
+)
+_C58_SEMICOLON_BODY = _c58_body(
+    "### Rounds 1-3: base read\n\nText.",
+    "### Middle\n\nText.",
+    "### Last\n\nThe round-4 fix landed; the new read (two results up) replaces this.",
+)
+_C58_FENCED_BODY = _c58_body(
+    "### First\n\nText.",
+    "### Second\n\n```\n(five results up)\n```\n\nProse after the fence.",
+)
+_C58_INLINE_CODE_BODY = _c58_body(
+    "### First\n\nText.",
+    "### Second\n\nThe literal `(five results up)` token is quoted, not used.",
+)
+_C58_DETAILS_BODY = _c58_body(
+    "### First\n\nText.",
+    "### Second\n\n<details><summary>s</summary>\n\n(five results up)\n\n</details>",
+)
+_C58_ABOVE_BELOW_BODY = _c58_body(
+    "### Rounds 1-3: base read\n\nText.",
+    "### Second\n\nThe round-4 re-mine in the result above repaired it; "
+    "(five results above) and two results below say the same.",
+)
+_C58_V3_BODY = _C58_ANCHOR_BODY.replace("<!-- clean-result-v4 -->", "<!-- clean-result-v3 -->")
+_C58_SINGLE_RESULT_BODY = _c58_body("### Only\n\nThe control (one result up) anchors this.")
+_C58_NO_RESULTS_BODY = "# T (LOW confidence)\n\n<!-- clean-result-v4 -->\n\n## Takeaways\n\n- t\n"
+
+# Every check-58 fixture above, for the WARN-posture (never-FAIL) sweep.
+_C58_ALL_BODIES = (
+    _C58_ANCHOR_BODY,
+    _C58_LAUNDER_BODY,
+    _C58_OOR_UP_BODY,
+    _C58_OOR_DOWN_BODY,
+    _C58_PREV_MISMATCH_BODY,
+    _c58_count_body("2"),
+    _c58_count_body("two"),
+    _C58_CORRECT_BODY,
+    _C58_NO_CLAUSE_ROUND_BODY,
+    _C58_NO_TARGET_ROUND_BODY,
+    _C58_SEMICOLON_BODY,
+    _C58_FENCED_BODY,
+    _C58_INLINE_CODE_BODY,
+    _C58_DETAILS_BODY,
+    _C58_ABOVE_BELOW_BODY,
+    _C58_V3_BODY,
+    _C58_SINGLE_RESULT_BODY,
+    _C58_NO_RESULTS_BODY,
+)
+
+
+def test_positional_crossref_flags_issue2221_shape():
+    """Regression anchor (the c41 named test, #2279 plan §5): the
+    `## Results` section pinned VERBATIM from the pre-remediation blob
+    `f511fe61b2:tasks/followups_running/2221/body.md` — headings with
+    their trailing parentheticals INTACT — produces exactly 2
+    WARN-flagged pointers, naming both resolved headings. A
+    trimmed-heading fixture would pass while the real body shape fails
+    (the §3.4.2 divergence trap both plan critics flagged); the sha256
+    pin guards the fixture against transcription drift."""
+    import hashlib
+
+    digest = hashlib.sha256(_C58_ANCHOR_RESULTS.encode()).hexdigest()
+    assert digest == "a8cb52fe41930ddd783d9109d4a11ee644dcbf58ae78480f49a8c4447dbbb251", (
+        "anchor fixture drifted from blob f511fe61b2 — restore it verbatim"
+    )
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_ANCHOR_BODY)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert res.detail.startswith("2 positional cross-reference pointer(s)")
+    # Both resolved target headings are named in the detail:
+    assert (
+        "Rounds 1-3: found-data mining collapsed in two families, leaving six "
+        "fine-tunes untrained (repaired by the round-4 re-mine above)" in res.detail
+    )
+    assert (
+        "Rounds 1-3: the headline contrast failed to reject everywhere at the "
+        "original instrument" in res.detail
+    )
+    assert res.detail.count("disjoint") == 2
+
+
+def test_positional_crossref_heading_parenthetical_does_not_launder():
+    """§3.4.2 isolated from the full anchor: the target heading's ONLY
+    round-4 token sits in a trailing parenthetical — whole-heading
+    extraction would union `{4}` in, intersect the clause's `{4}`, and
+    stay silent; the strip flags the misdirected pointer."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_LAUNDER_BODY)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "clause rounds [4] vs target rounds [1, 2, 3] disjoint" in res.detail
+
+
+def test_positional_crossref_out_of_range_up():
+    """Arm (a): `(five results up)` in result 2 of 2 resolves to -3 —
+    out of range, flagged unconditionally (no round machinery needed)."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_OOR_UP_BODY)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "resolves to result -3 of 2 (out of range)" in res.detail
+
+
+def test_positional_crossref_out_of_range_down():
+    """Arm (a): `(three results down)` in the LAST result resolves past
+    the end of the H3 sequence — out of range, flagged."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_OOR_DOWN_BODY)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "resolves to result 5 of 2 (out of range)" in res.detail
+
+
+def test_positional_crossref_previous_result_round_mismatch():
+    """The adjacent family: `the previous result` (distance 1, direction
+    up) with a round-4 clause resolving onto a `Rounds 1-3:` heading —
+    arm (b) flags."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_PREV_MISMATCH_BODY)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "the previous result" in res.detail
+    assert "clause rounds [4] vs target rounds [1, 2, 3] disjoint" in res.detail
+
+
+def test_positional_crossref_number_words_and_digits():
+    """`(2 results up)` and `(two results up)` behave identically —
+    same flag, same round-set detail (#2279 plan §3.2)."""
+    for count in ("2", "two"):
+        res = verify_task_body.check_v4_positional_result_crossrefs(_c58_count_body(count))
+        assert res.passed is True
+        assert res.is_warn is True, count
+        assert res.detail.startswith("1 positional cross-reference pointer(s)"), count
+        assert "clause rounds [4] vs target rounds [1, 2, 3] disjoint" in res.detail, count
+
+
+def test_positional_crossref_unicode_casefold_tokens():
+    """`re.IGNORECASE` does FULL Unicode case folding, so U+017F LATIN
+    SMALL LETTER LONG S matches the `s` in `six` / `previous`. The token
+    normalizer must `.casefold()` (which maps the long s to `s`), not
+    `.lower()` (which leaves it unchanged) — otherwise the number-word
+    lookup raises KeyError and crashes the whole verifier, and the
+    adjacent-family direction compare silently flips `up` to `down`
+    (#2279 code review, both reproduced end-to-end).
+    """
+    # Ordinal family: the long-s spelling of `six` folds to `six` ->
+    # distance 6 -> out of range in a 3-result body. Under `.lower()`
+    # the number-word lookup raised KeyError here.
+    res = verify_task_body.check_v4_positional_result_crossrefs(_c58_count_body("ſix"))
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "resolves to result -3 of 3 (out of range)" in res.detail
+
+    # Adjacent family: the long-s spelling of `the previous result`
+    # must resolve UP (distance 1), matching the plain spelling. Under
+    # `.lower()` the `== "previous"` compare failed and the direction
+    # silently became `down`.
+    long_s_body = _c58_body(
+        "### Rounds 1-3: original instrument read\n\nText.",
+        "### Round-4 extension\n\nThe round-4 recompute supersedes the previouſ result.",
+    )
+    res = verify_task_body.check_v4_positional_result_crossrefs(long_s_body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "clause rounds [4] vs target rounds [1, 2, 3] disjoint" in res.detail
+
+
+def test_positional_crossref_correct_pointer_silent():
+    """Negative: an in-range pointer whose clause and target round sets
+    OVERLAP ({4} on both sides) stays silent."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_CORRECT_BODY)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "resolve" in res.detail
+
+
+def test_positional_crossref_no_round_token_in_clause_silent():
+    """Negative (§3.4.4): the pointer's clause names no round — one side
+    empty, contradiction-only arm (b) stays silent."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_NO_CLAUSE_ROUND_BODY)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_positional_crossref_no_round_token_in_target_silent():
+    """Negative (§3.4.4): the resolved target heading names no round —
+    one side empty, arm (b) stays silent."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_NO_TARGET_ROUND_BODY)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_positional_crossref_round_token_across_semicolon_silent():
+    """§3.4.1 pinned from the negative side: the round token sits across
+    a `;` from the pointer, so the pointer's OWN clause is round-less —
+    silent (the deliberate clause-scope tightness, a disclosed
+    false-negative residual)."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_SEMICOLON_BODY)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_positional_crossref_fenced_token_ignored():
+    """Negative: a pointer token inside a fenced code block is never
+    scanned (would be an out-of-range arm-(a) flag if it were)."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_FENCED_BODY)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_positional_crossref_inline_code_token_ignored():
+    """Negative: an inline-code `(five results up)` literal is masked
+    (`_SENTENCE_INLINE_CODE_RE`) and never scanned."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_INLINE_CODE_BODY)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_positional_crossref_details_block_ignored():
+    """Negative: a pointer token inside a `<details>` block is stripped
+    (`_DETAILS_BLOCK_RE`) and never scanned."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_DETAILS_BODY)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_positional_crossref_above_below_not_matched():
+    """`the result above` / `result(s) above|below` are OUT of scope by
+    design — no resolvable ordinal (#2279 plan §7 residual, pinned):
+    silent even where a matched reading would flag."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_ABOVE_BELOW_BODY)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_positional_crossref_v3_body_skipped():
+    """Forward-only: the SAME offending Results content under a v3
+    sentinel is never touched (vacuous PASS, no WARN)."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_V3_BODY)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert res.detail == "skipped — not a v4 body"
+
+
+def test_positional_crossref_single_result_skipped():
+    """<2 results ⇒ no positional target space — vacuous PASS even with
+    a pointer token present."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_SINGLE_RESULT_BODY)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "<2 results" in res.detail
+
+
+def test_positional_crossref_no_results_section_skipped():
+    """A v4 body with no `## Results` PASS-skips (check 2 owns the
+    missing-section report)."""
+    res = verify_task_body.check_v4_positional_result_crossrefs(_C58_NO_RESULTS_BODY)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "## Results missing" in res.detail
+
+
+def test_positional_crossref_registered_in_checks():
+    """§7-test-11 house pattern one-line membership assert (#1520): a
+    `len(CHECKS)` count pin only fails in the entry-ADDED direction, so
+    it does not substitute for this."""
+    assert verify_task_body.check_v4_positional_result_crossrefs in verify_task_body.CHECKS
+
+
+def test_positional_crossref_never_fails():
+    """WARN-posture pin (#2279 plan c15): `passed` is True on EVERY
+    path over every check-58 fixture above — the check can never block
+    a promotion."""
+    for body in _C58_ALL_BODIES:
+        res = verify_task_body.check_v4_positional_result_crossrefs(body)
+        assert res.passed is True
