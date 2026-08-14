@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2290,
+  "highest_id": 2291,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9975,6 +9975,13 @@
       "path": "tasks/proposed/2290",
       "status": "proposed",
       "title": "audit_clean_results_body_discipline: extend pre_reg noun grammar (recompute/sensitivity/comparison)"
+    },
+    "2291": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2291",
+      "status": "proposed",
+      "title": "verify_task_body check 17: match Context footer against verbatim ## Provenance, not just non-empty"
     },
     "23": {
       "has_clean_result": false,
