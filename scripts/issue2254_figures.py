@@ -370,11 +370,13 @@ def fig_per_question(out_root: Path, fig_dir: Path):
     for bi, b in enumerate(behaviors):
         ax = axes[0][bi]
         best = _best_cells(percell["behaviors"][b])
-        targets = [("a0", judged_dir / f"{b}__a0.json", "0.4")]
+        targets = [("baseline (α=0)", judged_dir / f"{b}__a0.json", "0.4")]
         for d, p in HERO_ARMS:
             hit = best.get((d, p))
             if hit is not None:
-                targets.append((f"{d}@{p}", judged_dir / f"{hit[0]}.json", DIR_COLORS[d]))
+                # Reader-facing tick labels (no internal arm slugs on axes).
+                label = f"{DIR_LABELS[d]} @ {POS_LABELS[p]}"
+                targets.append((label, judged_dir / f"{hit[0]}.json", DIR_COLORS[d]))
         for ti, (label, path, color) in enumerate(targets):
             if not path.is_file():
                 continue
@@ -385,7 +387,7 @@ def fig_per_question(out_root: Path, fig_dir: Path):
             if ys:
                 ax.hlines(float(np.mean(ys)), ti - 0.25, ti + 0.25, color=color, linewidth=1.6)
         ax.set_xticks(range(len(targets)))
-        ax.set_xticklabels([t[0] for t in targets], fontsize=8, rotation=25)
+        ax.set_xticklabels([t[0] for t in targets], fontsize=7, rotation=20, ha="right")
         ax.set_title(b, fontsize=9)
         ax.set_ylabel("per-question mean judge score" if bi == 0 else "")
     fig.suptitle("Per-question scores at the decisive operating points")
