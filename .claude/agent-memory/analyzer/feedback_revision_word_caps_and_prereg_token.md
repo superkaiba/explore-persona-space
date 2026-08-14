@@ -77,6 +77,17 @@ EXISTING paragraph, #1523) — on any body shipping check-20 WARNs, add the
 "I acknowledge the check-20 … WARNs" paragraph (name EVERY fired class) at the
 END of `## Methodology` proactively; precedent shape: #2163/#1900/#2203.
 
+Update (#2254 r1, 2026-08-14): the audit's `pre_reg` noun grammar has FALSE
+NEGATIVES — "registered recompute" / "registered sensitivity" / "registered
+comparison" all PASSed the audit yet drew a clean-result-critic Lens 7 FAIL
+(same escape shape as #1586's "registered layer"). An audit PASS is NOT
+clearance for this class: before posting, grep `\bregistered\b` over
+Takeaways/Goal/Methodology/Results prose yourself and rewrite EVERY
+"registered <noun>" hit (state the fact without the word: "the held-out
+recompute", "a held-out sensitivity", "outside the decisive head-to-head
+comparison"); verb forms ("registers context edits", "registered on HF")
+stay clean.
+
 Update (#2215 fold): a fold that EXPANDS a Takeaways bullet (e.g. adding a
 length-adjusted companion number) can cross the separate 30-word BULLET cap
 and fire a NEW WARN class ("Takeaways bullet-length") the inherited
