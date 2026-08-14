@@ -1787,6 +1787,885 @@ def test_runpod_backend_teardown_composes_bare_terminate_no_force(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
+# cmd_terminate — owner-fence guard (#2277; incident 2026-08-13 pod-2054-tiers)
+# ---------------------------------------------------------------------------
+
+_FUTURE_FENCE = "2099-01-01T00:00:00Z"
+_PAST_FENCE = "2020-01-01T00:00:00Z"
+
+
+def _rl_event(
+    pod: str,
+    *,
+    owner: str | None = None,
+    fence_until: str | None = None,
+    ts: str = "2026-08-13T19:20:43Z",
+) -> dict:
+    """``epm:run-launched`` note LEADING with ``pod=<name>`` (the #1961
+    structured position) — the experimenter template shape."""
+    fields = [
+        f"pod={pod}",
+        "pid=12345",
+        "pid_file=/workspace/logs/issue.pid",
+        "log_abs=/workspace/logs/issue.log",
+    ]
+    if owner is not None:
+        fields.append(f"owner={owner}")
+    if fence_until is not None:
+        fields.append(f"fence_until={fence_until}")
+    fields.append(
+        "fence=none (RunPod: no server-side max-run fence; project ttl_days=7 "
+        "is an audit-cron reap of EXITED-24h pods, NOT a hard kill)"
+    )
+    return {
+        "ts": ts,
+        "kind": "epm:run-launched",
+        "version": 1,
+        "by": "unknown",
+        "note": " ".join(fields),
+    }
+
+
+def _hb_event(
+    pod: str,
+    *,
+    fence_until: str | None = None,
+    ts: str = "2026-08-13T19:27:39Z",
+) -> dict:
+    """``epm:progress`` long-phase heartbeat naming the pod in structured
+    position — the #2054 v306 shape (free-text alarm prose included)."""
+    note = (
+        f"[long-phase-heartbeat] tiers r5: pid 3630 alive, log +3 lines; pod={pod}; "
+        "fence re-sized to 2x = 4 h (alarm ~23:30Z)"
+    )
+    if fence_until is not None:
+        note += f" fence_until={fence_until}"
+    return {"ts": ts, "kind": "epm:progress", "version": 306, "by": "unknown", "note": note}
+
+
+def _pass_event(
+    *,
+    pod: str | None = None,
+    owner: str | None = None,
+    ts: str = "2026-08-13T21:32:37Z",
+    outroot: str = "swept-clean",
+) -> dict:
+    """Prose ``epm:upload-verification`` PASS in the inline-round shape the
+    #2054 harvester posted (leads ``Verdict: PASS``, carries ``outroot=``)."""
+    note = "Verdict: PASS — inline-round verification; prefixes: issue2054_lattice/"
+    if pod is not None:
+        note += f"; pod={pod}"
+    if owner is not None:
+        note += f"; owner={owner}"
+    note += f"\n\noutroot={outroot}\n"
+    return {
+        "ts": ts,
+        "kind": "epm:upload-verification",
+        "version": 38,
+        "by": "unknown",
+        "note": note,
+    }
+
+
+def _json_hb_event(
+    pod: str,
+    *,
+    fence_until: str | None = None,
+    ts: str = "2026-08-13T19:27:39Z",
+) -> dict:
+    """JSON-shaped ``epm:progress`` heartbeat (the #488 machine-readable
+    family): top-level ``"pod"`` binds via ``_note_names_pod``'s JSON branch;
+    ``fence_until=None`` omits the field, ``""`` includes it empty."""
+    payload: dict = {"phase": "tiers-r5", "pod": pod}
+    if fence_until is not None:
+        payload["fence_until"] = fence_until
+    return {
+        "ts": ts,
+        "kind": "epm:progress",
+        "version": 306,
+        "by": "unknown",
+        "note": json.dumps(payload),
+    }
+
+
+def _fence_guard_setup(monkeypatch, stub_list_team_pods, *, issue, pods, events) -> None:
+    """Standard seams for the #2277 owner-fence guard tests: live pods,
+    events, kind=experiment task, keep-running False. Only the external
+    task_workflow / RunPod-API boundaries are faked — the guard bodies and
+    parsers run for real."""
+    metadata = {p: _meta(p, issue=issue) for p in pods}
+    _write_metadata_file(metadata)
+    stub_list_team_pods.return_value = [_info(p) for p in pods]
+    _stub_list_events(monkeypatch, events)
+    _fake_experiment_task(monkeypatch)
+    _stub_keep_running_state(monkeypatch, False)
+
+
+def test_terminate_refuses_unexpired_owner_fence_nonowner_pass(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """Incident replay (fails-pre-fix): the #2054 shape with the §4.3 tokens
+    adopted — owner registered at launch, an unexpired fence on the owner's
+    heartbeat, and the harvester's self-posted PASS carrying NO matching
+    owner= — must refuse the surgical terminate (the path pod-2054-tiers was
+    destroyed by on 2026-08-13)."""
+    pod = "pod-2054-tiers"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054"),
+            _hb_event(pod, fence_until=_FUTURE_FENCE),
+            _pass_event(),  # harvester PASS: no pod binding, no owner token
+        ],
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2054, name_suffix="tiers"))
+
+    msg = str(exc.value)
+    assert "UNEXPIRED" in msg and pod in msg
+    assert stub_terminate_pod == [], "terminate_pod must NOT be called on an unexpired owner fence"
+
+
+def test_terminate_copied_owner_token_waives_fence_known_residual(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """DECLARED residual (#2277 critique M1): the guard is unauthenticated
+    string equality, so a PASS carrying a byte-equal COPIED owner= token
+    waives the fence — mechanically indistinguishable from the owner's own
+    PASS. The control is the composition-site prohibition prose (every
+    surface teaching the token forbids copying it while a fence is
+    unexpired), under the same accidents-not-adversaries trust model as
+    --force-keep-running / --skip-upload-verify. This test pins the residual
+    EXPLICITLY (it also proceeds on pre-fix HEAD — it pins unchanged
+    behavior plus this docstring's declaration, not a new refusal)."""
+    pod = "pod-2054-tiers"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054"),
+            _hb_event(pod, fence_until=_FUTURE_FENCE),
+            _pass_event(pod=pod, owner="spec-ladder-2054"),  # copied token
+        ],
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2054, name_suffix="tiers"))
+    assert len(stub_terminate_pod) == 1
+
+
+def test_terminate_no_owner_fence_tokens_proceeds_as_today(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+    capsys,
+):
+    """Back-compat pin (the single most important invariant): a pod carrying
+    NO owner=/fence_until= tokens anywhere — today's ENTIRE fleet — proceeds
+    exactly as before the guard existed: no refusal, no new warning."""
+    pod = _register_pod_for_issue(2054)
+    stub_list_team_pods.return_value = [_info(pod)]
+    _stub_list_events(
+        monkeypatch,
+        [_rl_event(pod), _upload_verification_event("PASS")],
+    )
+    _fake_experiment_task(monkeypatch)
+    _stub_keep_running_state(monkeypatch, False)
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2054))
+
+    assert len(stub_terminate_pod) == 1
+    err = capsys.readouterr().err
+    assert "fence" not in err.lower(), f"token-less pod must not draw fence chatter: {err!r}"
+
+
+def test_terminate_owner_matched_pass_proceeds_inside_own_fence(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """Legitimate ask-free path: the owner tearing down its own verified pod
+    INSIDE its own unexpired fence proceeds via the owner-match waiver."""
+    pod = "pod-2054-tiers"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054", fence_until=_FUTURE_FENCE),
+            _pass_event(pod=pod, owner="spec-ladder-2054"),
+        ],
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2054, name_suffix="tiers"))
+    assert len(stub_terminate_pod) == 1
+
+
+def test_terminate_json_pass_owner_parsed(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """C1: a legitimate owner whose Step-8 PASS lands JSON-shaped (the #488
+    machine-readable verifier family) is not refused under its own fence —
+    the JSON top-level "owner" field parses (dual parse mirroring
+    _upload_verification_outroot_attested)."""
+    pod = "pod-2054"
+    json_pass = {
+        "ts": "2026-08-13T21:32:37Z",
+        "kind": "epm:upload-verification",
+        "version": 2,
+        "by": "unknown",
+        "note": json.dumps(
+            {
+                "verdict": "PASS",
+                "owner": "spec-ladder-2054",
+                "outroot": "swept-clean",
+                "discovered_pod_files": 113,
+                "checked": {"eval_results": "PASS"},
+            }
+        ),
+    }
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[_rl_event(pod, owner="spec-ladder-2054", fence_until=_FUTURE_FENCE), json_pass],
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2054))
+    assert len(stub_terminate_pod) == 1
+
+
+def test_terminate_sibling_pass_does_not_displace_pod_bound_pass(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """C2 (displacement direction): pod A's owner-matched PASS carrying
+    pod=A is selected at tier 1 even when a LATER sibling PASS (other owner,
+    bound pod=B or pod-less) exists — issue-grain latest-wins would refuse
+    A's legitimate fenced teardown on multi-round issues (#2054 carried 38+
+    interleaved markers)."""
+    pod = "pod-2054"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054", fence_until=_FUTURE_FENCE),
+            _pass_event(pod=pod, owner="spec-ladder-2054", ts="2026-08-13T20:00:00Z"),
+            _pass_event(pod="pod-2054-b", owner="sibling-owner", ts="2026-08-13T21:00:00Z"),
+            _pass_event(owner="sibling-owner", ts="2026-08-13T22:00:00Z"),  # pod-less
+        ],
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2054))
+    assert len(stub_terminate_pod) == 1
+
+
+def test_terminate_pass_bound_to_other_pod_cannot_waive_fence(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """C2 (symmetric direction): pod A is fenced and the only PASS in the
+    window is bound pod=B — even with the SAME owner token, it verifies pod
+    B's round and must not waive pod A's fence."""
+    pod = "pod-2054"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054", fence_until=_FUTURE_FENCE),
+            _pass_event(pod="pod-2054-b", owner="spec-ladder-2054"),
+        ],
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2054))
+
+    assert "UNEXPIRED" in str(exc.value)
+    assert stub_terminate_pod == []
+
+
+def test_terminate_pass_note_owner_never_registers_ownership(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """Kind-scoped registration: a harvester minting its OWN owner= token on
+    a self-posted PASS (owner=harvester, pod=A) can NEVER register ownership
+    and satisfy its own equality check — registration reads ONLY
+    epm:run-launched / epm:progress notes (the self-registration hole,
+    #2277 §4.1)."""
+    pod = "pod-2054-tiers"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054"),
+            _hb_event(pod, fence_until=_FUTURE_FENCE),
+            _pass_event(pod=pod, owner="harvester"),
+        ],
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2054, name_suffix="tiers"))
+
+    assert "UNEXPIRED" in str(exc.value)
+    assert stub_terminate_pod == []
+
+
+def test_terminate_expired_fence_proceeds(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """Expiry, not recency, is the test (task constraint 1): a fence whose
+    deadline is in the PAST no longer binds."""
+    pod = "pod-2054"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054", fence_until=_PAST_FENCE),
+            _pass_event(),
+        ],
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2054))
+    assert len(stub_terminate_pod) == 1
+
+
+def test_terminate_fence_cleared_by_none_proceeds(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """The owner can release without terminating: a later fence_until=none
+    (newest-wins) supersedes an earlier future fence."""
+    pod = "pod-2054"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054", fence_until=_FUTURE_FENCE),
+            _hb_event(pod, fence_until="none", ts="2026-08-13T20:30:00Z"),
+            _pass_event(),
+        ],
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2054))
+    assert len(stub_terminate_pod) == 1
+
+
+def test_terminate_malformed_fence_warns_and_proceeds(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+    capsys,
+):
+    """Fail-open on garbage evidence (hard constraint): an unparseable
+    fence_until value is treated as ABSENT with one stderr WARN naming the
+    malformed token — never a refusal, never a crash."""
+    pod = "pod-2054"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054", fence_until="2026-99-99T99:99Z"),
+            _pass_event(),
+        ],
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2054))
+
+    assert len(stub_terminate_pod) == 1
+    err = capsys.readouterr().err
+    assert "WARN" in err and "fence_until" in err
+
+
+def test_terminate_force_owner_fence_overrides_with_warning(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+    capsys,
+):
+    """--force-owner-fence follows the --force-keep-running precedent: a
+    deliberate operator override proceeds with a LOUD warning."""
+    pod = "pod-2054-tiers"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054"),
+            _hb_event(pod, fence_until=_FUTURE_FENCE),
+            _pass_event(),
+        ],
+    )
+
+    ns = terminate_ns(issue=2054, name_suffix="tiers")
+    ns.force_owner_fence = True  # the fixture Namespace predates the flag
+    pod_lifecycle.cmd_terminate(ns)
+
+    assert len(stub_terminate_pod) == 1
+    err = capsys.readouterr().err
+    assert "DESPITE" in err and "--force-owner-fence" in err
+
+
+def test_terminate_owner_fence_dry_run_notes_and_previews(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+    capsys,
+):
+    """Dry-run preserves the preview contract: the guard notes what a real
+    run would check and never refuses (and never reads task events)."""
+    pod = "pod-2054-tiers"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054"),
+            _hb_event(pod, fence_until=_FUTURE_FENCE),
+            _pass_event(),
+        ],
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2054, name_suffix="tiers", dry_run=True))
+
+    assert stub_terminate_pod == []
+    err = capsys.readouterr().err
+    assert "[dry-run]" in err and "owner" in err
+
+
+def test_terminate_owner_mismatch_without_fence_warns_only(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+    capsys,
+):
+    """Graduated adoption never blocks without a fence: an attribution
+    mismatch (registered owner != PASS owner) with NO active fence proceeds
+    with a visible, non-blocking WARN."""
+    pod = "pod-2054"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054"),
+            _pass_event(pod=pod, owner="harvester"),
+        ],
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2054))
+
+    assert len(stub_terminate_pod) == 1
+    err = capsys.readouterr().err
+    assert "WARN" in err and "does not match" in err
+
+
+def test_terminate_name_suffix_fence_refuses(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """The fence guard binds on the --name-suffix surgical path — the
+    incident's path. (The #1485 keep-running shield deliberately exempts the
+    suffix path at its :3627 early-return, which is exactly why no existing
+    shield fired on pod-2054-tiers; the fence guard must NOT inherit that
+    exemption.)"""
+    pod = "pod-2054-tiers"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054", fence_until=_FUTURE_FENCE),
+            _pass_event(),
+        ],
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2054, name_suffix="tiers"))
+
+    assert "owner fence" in str(exc.value)
+    assert stub_terminate_pod == []
+
+
+def test_terminate_fence_keying_is_pod_scoped(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """Boundary-safe #1961 keying: a fence bound to pod-<N> does not block
+    pod-<N>-<slug>, and a fence bound to pod-<N>-<slug> does not block
+    pod-<N>."""
+    # Direction (a): fence on pod-2054; terminating pod-2054-tiers proceeds.
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=["pod-2054-tiers"],
+        events=[
+            _rl_event("pod-2054", owner="spec-ladder-2054", fence_until=_FUTURE_FENCE),
+            _pass_event(),
+        ],
+    )
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2054, name_suffix="tiers"))
+    assert len(stub_terminate_pod) == 1
+
+    # Direction (b): fence on pod-2054-tiers; bare terminate of the ONLY
+    # live pod pod-2054 proceeds.
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=["pod-2054"],
+        events=[
+            _rl_event("pod-2054-tiers", owner="spec-ladder-2054", fence_until=_FUTURE_FENCE),
+            _pass_event(),
+        ],
+    )
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2054))
+    assert len(stub_terminate_pod) == 2
+
+
+def test_terminate_fence_window_resets_at_new_run_launched(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """Evidence-window reset: a fence posted before the NEWEST
+    epm:run-launched naming the pod belongs to a PRIOR same-name incarnation
+    and is ignored on the re-provisioned pod."""
+    pod = "pod-2054"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="old-owner", fence_until=_FUTURE_FENCE, ts="2026-08-10T00:00:00Z"),
+            _rl_event(pod, ts="2026-08-13T00:00:00Z"),  # fresh incarnation, no tokens
+            _pass_event(),
+        ],
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2054))
+    assert len(stub_terminate_pod) == 1
+
+
+def test_terminate_owner_fence_kill_switch(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """EPM_DISABLE_OWNER_FENCE_GUARD=1 renders the guard inert (the
+    fail-open rollback lever): the incident-replay shape proceeds."""
+    monkeypatch.setenv("EPM_DISABLE_OWNER_FENCE_GUARD", "1")
+    pod = "pod-2054-tiers"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054"),
+            _hb_event(pod, fence_until=_FUTURE_FENCE),
+            _pass_event(),
+        ],
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2054, name_suffix="tiers"))
+    assert len(stub_terminate_pod) == 1
+
+
+def test_terminate_owner_fence_refusal_names_nonowner_route(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """Refusal-message contract (task constraint 3 + M1 fix 3): the refusal
+    names the sanctioned non-owner surface-for-approval route, repeats the
+    non-copy prohibition, qualifies the owner route first-person, and names
+    the deliberate override flag."""
+    pod = "pod-2054-tiers"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054"),
+            _hb_event(pod, fence_until=_FUTURE_FENCE),
+            _pass_event(),
+        ],
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2054, name_suffix="tiers"))
+
+    msg = str(exc.value)
+    assert "SURFACE the pod for approval" in msg
+    assert "MUST NOT copy the owner= token" in msg
+    assert "YOUR session" in msg
+    assert "--force-owner-fence" in msg
+
+
+def test_terminate_parser_exposes_force_owner_fence_flag():
+    """Regression guard: the --force-owner-fence flag exists on the
+    terminate subparser (and only defaults False)."""
+    parser = argparse.ArgumentParser()
+    sub = parser.add_subparsers(dest="cmd")
+    pod_lifecycle._parser_terminate(sub)
+
+    ns = parser.parse_args(["terminate", "--issue", "1", "--yes", "--force-owner-fence"])
+    assert ns.force_owner_fence is True
+
+    ns2 = parser.parse_args(["terminate", "--issue", "1", "--yes"])
+    assert ns2.force_owner_fence is False
+
+
+# --- #2277 pure note-parser unit tests (real bodies, no stubbing) ----------
+
+
+def test_note_owner_token_json_and_prose():
+    """JSON "owner" field (the #488 verifier family) and the prose owner=
+    token both parse; the (?<![\\w-]) boundary rejects compound prefixes."""
+    json_note = json.dumps({"verdict": "PASS", "owner": "spec-ladder-2054", "pod": "pod-2054"})
+    assert pod_lifecycle._note_owner_token(json_note) == "spec-ladder-2054"
+    assert pod_lifecycle._note_owner_token("Verdict: PASS; owner=abc-123.x") == "abc-123.x"
+    assert pod_lifecycle._note_owner_token("disowner=evil") is None
+    assert pod_lifecycle._note_owner_token("no token here") is None
+    assert pod_lifecycle._note_owner_token(json.dumps({"verdict": "PASS"})) is None
+
+
+def test_pod_named_pattern_boundary_safe():
+    """The #1961 structured-position grammar: pod=pod-2054-tiers never
+    matches a pod-2054 query; a bare prose mention mid-note never matches;
+    the leading-token form matches."""
+    assert pod_lifecycle._note_names_pod("x pod=pod-2054-tiers y", "pod-2054-tiers")
+    assert not pod_lifecycle._note_names_pod("x pod=pod-2054-tiers y", "pod-2054")
+    assert not pod_lifecycle._note_names_pod("restarted pod-2054 at 12:00", "pod-2054")
+    assert pod_lifecycle._note_names_pod("pod-2054-tiers verified 113 files", "pod-2054-tiers")
+    json_note = json.dumps({"verdict": "PASS", "pod": "pod-2054"})
+    assert pod_lifecycle._note_names_pod(json_note, "pod-2054")
+    assert not pod_lifecycle._note_names_pod(json_note, "pod-2054-tiers")
+
+
+def test_fence_until_parser_formats_none_and_malformed(capsys):
+    """Both ISO-8601Z grammars parse to aware UTC datetimes; `none` clears;
+    a malformed value WARNs and reads as absent; the experimenter's existing
+    `fence=none (RunPod: ...)` provider field never collides."""
+    events = [_rl_event("pod-9", fence_until="2099-01-02T03:04:05Z")]
+    fence = pod_lifecycle._latest_pod_fence_until(events, "pod-9")
+    assert fence is not None and fence.tzinfo is not None
+    assert (fence.year, fence.minute, fence.second) == (2099, 4, 5)
+
+    events = [_rl_event("pod-9", fence_until="2099-01-02T03:04Z")]  # minute grammar
+    fence = pod_lifecycle._latest_pod_fence_until(events, "pod-9")
+    assert fence is not None and (fence.minute, fence.second) == (4, 0)
+
+    assert (
+        pod_lifecycle._latest_pod_fence_until([_rl_event("pod-9", fence_until="none")], "pod-9")
+        is None
+    )
+
+    capsys.readouterr()  # drain
+    events = [_rl_event("pod-9", fence_until="tomorrow-ish")]
+    assert pod_lifecycle._latest_pod_fence_until(events, "pod-9") is None
+    assert "WARN" in capsys.readouterr().err
+
+    # The verbatim experimenter-style provider field (fence=none (RunPod: ...))
+    # rides every _rl_event fixture by construction — no fence_until= token
+    # means NO fence (proves no fence= / fence_until= collision).
+    assert pod_lifecycle._latest_pod_fence_until([_rl_event("pod-9")], "pod-9") is None
+
+
+def test_v306_heartbeat_free_text_alarm_is_not_a_fence():
+    """The #2054 v306 heartbeat shape — structured pod= plus a FREE-TEXT
+    'fence re-sized to 2x = 4 h (alarm ~23:30Z)' — carries no structured
+    fence_until token, so it registers NO fence (the incident's literal
+    pre-adoption artifacts read PROCEED by design; plan §12 assumption 5)."""
+    events = [_hb_event("pod-2054-tiers")]
+    assert pod_lifecycle._latest_pod_fence_until(events, "pod-2054-tiers") is None
+
+
+def test_fence_until_json_note_parses_same_path(capsys):
+    """#2277 code-review round 1 (Minor): a JSON-shaped registration note's
+    top-level ``"fence_until"`` field parses through the SAME strptime +
+    none-clearing + malformed-WARN path as the prose token — parser parity
+    with ``_latest_pod_token``'s JSON ``"owner"`` branch (pre-fix, a JSON
+    heartbeat registered its owner but silently registered NO fence)."""
+    pod = "pod-9"
+    # ISO seconds grammar in a JSON heartbeat registers the fence.
+    events = [_json_hb_event(pod, fence_until="2099-01-02T03:04:05Z")]
+    fence = pod_lifecycle._latest_pod_fence_until(events, pod)
+    assert fence is not None and fence.tzinfo is not None
+    assert (fence.year, fence.minute, fence.second) == (2099, 4, 5)
+
+    # Minute grammar parses too (same _FENCE_UNTIL_FORMATS path).
+    events = [_json_hb_event(pod, fence_until="2099-01-02T03:04Z")]
+    fence = pod_lifecycle._latest_pod_fence_until(events, pod)
+    assert fence is not None and (fence.minute, fence.second) == (4, 0)
+
+    # The literal `none` in a JSON note CLEARS an older prose registration
+    # (newest-wins across note shapes).
+    events = [
+        _rl_event(pod, owner="own-9", fence_until=_FUTURE_FENCE, ts="2026-01-01T00:00:00Z"),
+        _json_hb_event(pod, fence_until="none", ts="2026-01-02T00:00:00Z"),
+    ]
+    assert pod_lifecycle._latest_pod_fence_until(events, pod) is None
+
+    # Malformed JSON value: one stderr WARN, fence reads ABSENT (fail-open) —
+    # same arm the prose test pins.
+    capsys.readouterr()  # drain
+    events = [_json_hb_event(pod, fence_until="tomorrow-ish")]
+    assert pod_lifecycle._latest_pod_fence_until(events, pod) is None
+    err = capsys.readouterr().err
+    assert "WARN" in err and "fence_until" in err
+
+
+def test_fence_until_json_note_without_field_does_not_clear():
+    """A JSON note naming the pod WITHOUT a ``fence_until`` field — or with
+    an empty value — does NOT clear an older registration, mirroring the
+    prose no-token ``continue`` and ``_latest_pod_token``'s empty-value
+    branch (an event naming the pod without the token never clears)."""
+    pod = "pod-9"
+    events = [
+        _rl_event(pod, owner="own-9", fence_until=_FUTURE_FENCE, ts="2026-01-01T00:00:00Z"),
+        _json_hb_event(pod, ts="2026-01-02T00:00:00Z"),
+        _json_hb_event(pod, fence_until="", ts="2026-01-03T00:00:00Z"),
+    ]
+    fence = pod_lifecycle._latest_pod_fence_until(events, pod)
+    assert fence is not None and fence.year == 2099
+
+
+def test_pass_note_owner_kind_scope_and_two_tier_selection():
+    """Pure-unit twin of the guard-level tests: registration ignores
+    epm:upload-verification notes entirely, and PASS selection is two-tier
+    (pod-bound beats newer pod-less; other-pod-bound skipped)."""
+    pod = "pod-7"
+    events = [
+        _rl_event(pod, owner="own-7"),
+        _pass_event(pod=pod, owner="own-7", ts="2026-01-01T00:00:00Z"),
+        _pass_event(owner="late-podless", ts="2026-01-02T00:00:00Z"),
+        _pass_event(pod="pod-7-b", owner="other", ts="2026-01-03T00:00:00Z"),
+    ]
+    # Registration is kind-scoped: the PASS owners never register.
+    assert pod_lifecycle._latest_pod_token(events, pod, "owner") == "own-7"
+    # Tier 1 (pod-bound, older) beats tier 2 (pod-less, newer); pod-7-b skipped.
+    assert pod_lifecycle._latest_pass_owner_for_pod(events, pod) == "own-7"
+    # With no pod-bound PASS, the newest pod-LESS PASS is tier 2.
+    events_no_bound = [e for e in events if "pod=pod-7;" not in e["note"]]
+    assert pod_lifecycle._latest_pass_owner_for_pod(events_no_bound, pod) == "late-podless"
+    # A PASS bound to a DIFFERENT pod alone can never bind.
+    only_other = [_pass_event(pod="pod-7-b", owner="other")]
+    assert pod_lifecycle._latest_pass_owner_for_pod(only_other, pod) is None
+
+
+def test_pod_evidence_window_slices_at_newest_run_launched():
+    """The evidence window starts at the newest epm:run-launched naming the
+    pod (launch event included); no launch naming the pod => whole log."""
+    pod = "pod-11"
+    e1 = _rl_event(pod, owner="a", ts="2026-01-01T00:00:00Z")
+    e2 = _hb_event(pod, ts="2026-01-02T00:00:00Z")
+    e3 = _rl_event(pod, owner="b", ts="2026-01-03T00:00:00Z")
+    e4 = _pass_event(ts="2026-01-04T00:00:00Z")
+    window = pod_lifecycle._pod_evidence_window([e1, e2, e3, e4], pod)
+    assert window == [e3, e4]
+    assert pod_lifecycle._pod_evidence_window([e2, e4], pod) == [e2, e4]
+
+
+# ---------------------------------------------------------------------------
 # cmd_terminate — live-API authority for pod_id (post-#475 hardening)
 # ---------------------------------------------------------------------------
 

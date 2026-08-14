@@ -5624,6 +5624,18 @@ live-escalation debounce covers it.)
        uv run python scripts/task.py post-marker <N> epm:progress \
          --note "[long-phase-heartbeat] <phase>: <one-line evidence, e.g. pid 12345 alive, log +3 lines>"
 
+   The heartbeat note MAY carry `pod=<name> fence_until=<ISO8601Z>` to
+   post or refresh the pod's teardown fence for the owner-fence
+   terminate guard (#2277; `pod=` in structured position per #1961),
+   and SHOULD carry it whenever the heartbeat already states a
+   wall-clock fence/alarm in prose (the #2054 owner's own heartbeat
+   said "alarm ~23:30Z" as free text — exactly the shape the
+   structured token mechanizes). Post the SHORTEST honest deadline and
+   refresh it here, never a long fence "to be safe"; paired duty: a
+   session posting `fence_until=` later carries its own registered
+   `owner=` token on its upload-verification PASS, or its own teardown
+   refuses.
+
    (iii) refresh the self-report:
    `uv run python scripts/session_progress_report.py --issue <N> --step "<phase>"`.
    The two writes refresh BOTH staleness signals — the sparing is never
@@ -6796,6 +6808,18 @@ note in any other shape is refused as a FAIL at teardown (#1775).
   verifier's checklist is the safety net against silent dataset /
   checkpoint loss (#444 lost the training-mix datasets
   after a hand-driven completion did a partial check and terminated).
+  As of #2277 the same terminate ALSO refuses while a pod carries an
+  UNEXPIRED owner fence (a `fence_until=` token registered on
+  `epm:run-launched` / `epm:progress` notes naming the pod) whose
+  latest pod-bound PASS lacks the matching `owner=` token
+  (`--force-owner-fence` is the recorded-reason override). The Step-8
+  PASS note therefore carries `pod=<name>` plus the `owner=` token
+  YOUR session posted on this run's `epm:run-launched` when YOU drove
+  the run — emit it ONLY then; while a pod's fence is unexpired, a
+  session that did not post that launch signal / fence MUST NOT copy
+  its `owner=` into a PASS — an unexpired fence means the owner is
+  presumed alive; surface for approval, wait for expiry, or take
+  `--force-owner-fence` with a recorded reason.
 - **FAIL with blocker tag `primary-deliverable-missing`** (Step 2.7
   completeness gate, post-#519) -> the headline phase that produces the
   Goal's primary dependent variable silently did not run on the pod
@@ -7955,7 +7979,15 @@ substitute `pod.py stop` (a STOPPED volume is NOT durable, #1112).
 The sanctioned verify-then-terminate recipe for this step: verify THIS
 round's artifacts → post `epm:upload-verification` with a note LEADING
 `Verdict: PASS — inline-round verification; prefixes: <every verified
-prefix>` via `task.py post-marker` → run the terminate; a bare
+prefix>; pod=<name>; owner=<token>` via `task.py post-marker` → run the
+terminate — `pod=<name>` binds the PASS to the pod it verified, and
+`owner=` is the token YOUR session posted on this pod's
+`epm:run-launched` when YOU launched this round (a first-person claim —
+emit it ONLY then; while a pod's fence is unexpired, a session that did
+not post that launch signal / fence MUST NOT copy its `owner=` into a
+PASS — an unexpired fence means the owner is presumed alive; surface
+for approval, wait for expiry, or take `--force-owner-fence` with a
+recorded reason; #2277); a bare
 `--skip-upload-verify` without a recorded verify is the anti-pattern,
 reserved for never-ran pods (the terminate guard,
 `pod_lifecycle._guard_upload_verification_before_terminate`, accepts
