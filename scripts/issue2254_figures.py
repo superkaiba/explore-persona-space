@@ -34,6 +34,18 @@ DIR_COLORS = {
     "random": "#7f7f7f",
     "preshuf": "#bcbd22",
 }
+# Reader-facing names (standing no-opaque-condition-codes rule): internal
+# direction slugs never appear on rendered axes/legends.
+DIR_LABELS = {
+    "pre": "map pre-image",
+    "rb": "persona vector",
+    "ctxext": "measured context direction",
+    "random": "random control",
+    "preshuf": "shuffled-map pre-image",
+}
+POS_LABELS = {"context": "context vector", "answer": "answer tokens"}
+OP_LABELS = {"proj": "patch", "ablate": "ablation"}
+BREADTH_LABELS = {"single": "one layer", "mid": "layer band"}
 _SINGLE_CONFIGS = ("L14", "L17", "L20", "L26")
 _CONFIG_ORDER = ("L14", "L17", "L20", "L26", "mid", "all")
 HERO_ARMS = (("pre", "context"), ("ctxext", "context"), ("rb", "answer"))
@@ -112,7 +124,11 @@ def fig_hero1(out_root: Path, fig_dir: Path):
             v = rec["delta_score"]
             lo, hi = rec["ci_frozen"]
             ax.bar(
-                x, v, width=width * 0.9, color=DIR_COLORS[d], label=f"{d}@{p}" if bi == 0 else None
+                x,
+                v,
+                width=width * 0.9,
+                color=DIR_COLORS[d],
+                label=f"{DIR_LABELS[d]} @ {POS_LABELS[p]}" if bi == 0 else None,
             )
             ax.errorbar([x], [v], yerr=_err([v], [lo], [hi]), fmt="none", ecolor="black", capsize=3)
             si = sel.get(f"{d}__{p}")
@@ -198,9 +214,12 @@ def fig_hero2(out_root: Path, fig_dir: Path):
         if lo is not None and hi is not None:  # all-degenerate cells persist null CI edges
             ax.errorbar([i], [v], yerr=_err([v], [lo], [hi]), fmt="none", ecolor="black", capsize=2)
         xs.append(i)
-        labels.append(f"{cell['behavior'][:4]}.{cell['direction']}.{cell['op']}.{cell['breadth']}")
+        labels.append(
+            f"{cell['behavior']}: {DIR_LABELS[cell['direction']]}\n"
+            f"{OP_LABELS[cell['op']]}, {BREADTH_LABELS[cell['breadth']]}"
+        )
     ax.set_xticks(xs)
-    ax.set_xticklabels(labels, rotation=75, fontsize=7)
+    ax.set_xticklabels(labels, rotation=75, fontsize=6.5)
     ax.axhline(1.0, color="goldenrod", linestyle="--", linewidth=1.0)
     ax.axhline(0.0, color="0.6", linewidth=0.8)
     ax.set_ylabel("effect / donor-swap ceiling")
@@ -216,11 +235,16 @@ def fig_result0(out_root: Path, fig_dir: Path):
     behaviors = sorted(gg)
     fig, axes = plt.subplots(1, len(behaviors), figsize=(4.0 * len(behaviors), 3.4), sharey=True)
     axes = np.atleast_1d(axes)
-    series = ("cos_pre_ctxext", "cos_pre_rb", "cos_ctxext_rb", "cos_pre_preshuf")
+    series = {
+        "cos_pre_ctxext": "pre-image vs measured context direction",
+        "cos_pre_rb": "pre-image vs persona vector",
+        "cos_ctxext_rb": "context direction vs persona vector",
+        "cos_pre_preshuf": "pre-image vs shuffled-map twin",
+    }
     for ax, b in zip(axes, behaviors, strict=True):
         layers = gg[b]["layers"]
-        for s in series:
-            ax.plot(layers, gg[b][s], marker="o", markersize=3, label=s.replace("cos_", ""))
+        for s, lab in series.items():
+            ax.plot(layers, gg[b][s], marker="o", markersize=3, label=lab)
         ax.axhline(0.0, color="0.6", linewidth=0.8)
         ax.set_title(b)
         ax.set_xlabel("layer")
@@ -406,12 +430,111 @@ def fig_margin_scatter(out_root: Path, fig_dir: Path):
     ax.axvline(0.0, color="0.6", linewidth=0.8)
     ax.set_xlabel("Δ teacher-forced pos−neg margin vs α=0")
     ax.set_ylabel("Δ judge score vs α=0")
-    ax.set_title("Continuous companion DV vs judged effect (marker = behavior)")
+    ax.set_title(
+        "Continuous companion DV vs judged effect\n"
+        "(single-layer operating points; marker = behavior, color = direction)"
+    )
+    from matplotlib.lines import Line2D
+
+    dirs_present = sorted({rec["direction"] for rec in cells.values() if rec["c"] != 0.0})
+    behs_present = sorted({rec["behavior"] for rec in cells.values() if rec["c"] != 0.0})
+    handles = [
+        Line2D([], [], marker="o", linestyle="", color=DIR_COLORS[d], label=DIR_LABELS[d])
+        for d in dirs_present
+    ] + [
+        Line2D([], [], marker=markers.get(b, "o"), linestyle="", color="0.3", label=b)
+        for b in behs_present
+    ]
+    ax.legend(handles=handles, frameon=False, fontsize=7, loc="center right")
     return _save(
         fig,
         fig_dir,
         "margin_scatter",
         ["margin/margin_percell.json", "decisive/delta_score_percell.json"],
+    )
+
+
+def fig_offdesign_positives(out_root: Path, fig_dir: Path):
+    """Off-design arms (round-2 critic request): persona vector @ context and
+    pre-image @ answer, with per-arm null-band edges; right panel = the
+    per-question dots behind the two clean sycophancy positives."""
+    percell = _load(out_root, "decisive/delta_score_percell.json")
+    verdicts = _load(out_root, "decisive/verdicts.json")
+    gates = _load(out_root, "localize/gates.json")
+    if percell is None or verdicts is None or gates is None:
+        return "skip:decisive percell/verdicts or localize gates not present"
+    bars = [  # (cell_id, behavior, direction, band)
+        (
+            "evil__rb__ctx__mid__c2",
+            "evil",
+            "rb",
+            verdicts["behaviors"]["evil"]["null_band_context"]["p975"],
+        ),
+        (
+            "evil__pre__ans__L17__c1",
+            "evil",
+            "pre",
+            gates["behaviors"]["evil"]["gate2"]["answer_band_p975"],
+        ),
+        (
+            "sycophancy__rb__ctx__L17__c4",
+            "sycophancy",
+            "rb",
+            verdicts["behaviors"]["sycophancy"]["null_band_context"]["p975"],
+        ),
+        (
+            "sycophancy__pre__ans__L14__c1",
+            "sycophancy",
+            "pre",
+            gates["behaviors"]["sycophancy"]["gate2"]["answer_band_p975"],
+        ),
+    ]
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(9.6, 4.2), width_ratios=[1.2, 1.0])
+    ticklabels = []
+    pos_of_cell = {"ctx": "context", "ans": "answer"}
+    for i, (cid, beh, d, band) in enumerate(bars):
+        rec = percell["behaviors"][beh][cid]
+        v = rec["delta_score"]
+        lo, hi = rec["ci_frozen"]
+        ax.bar(i, v, color=DIR_COLORS[d], width=0.7)
+        ax.errorbar([i], [v], yerr=_err([v], [lo], [hi]), fmt="none", ecolor="black", capsize=3)
+        ax.hlines(band, i - 0.42, i + 0.42, color="0.3", linestyle="--", linewidth=1.0)
+        pos = pos_of_cell[cid.split("__")[2]]
+        ticklabels.append(f"{beh}\n{DIR_LABELS[d]}\n@ {POS_LABELS[pos]}")
+    ax.set_xticks(range(len(bars)))
+    ax.set_xticklabels(ticklabels, fontsize=7)
+    ax.axhline(0.0, color="0.6", linewidth=0.8)
+    ax.set_ylabel("Δ judge score vs α=0")
+    ax.set_title("Off-design arms vs their null bands (dashes)", fontsize=10)
+    # right panel: per-question dots behind the two clean sycophancy positives
+    judged_dir = out_root / "judge" / "decisive" / "judged"
+    targets = [
+        ("baseline (α=0)", "sycophancy__a0.json", "0.5"),
+        ("persona vector\n@ context vector", "sycophancy__rb__ctx__L17__c4.json", DIR_COLORS["rb"]),
+        ("pre-image\n@ answer tokens", "sycophancy__pre__ans__L14__c1.json", DIR_COLORS["pre"]),
+    ]
+    rng = np.random.default_rng(0)
+    for ti, (label, fname, color) in enumerate(targets):
+        j = json.loads((judged_dir / fname).read_text())
+        qs = [v for v in j["per_question_mean_score"] if v is not None]
+        xj = ti + rng.uniform(-0.12, 0.12, size=len(qs))
+        ax2.plot(xj, qs, "o", color=color, markersize=4, alpha=0.7)
+        ax2.hlines(float(np.mean(qs)), ti - 0.25, ti + 0.25, color=color, linewidth=2)
+    ax2.set_xticks(range(len(targets)))
+    ax2.set_xticklabels([t[0] for t in targets], fontsize=7)
+    ax2.set_ylabel("per-question mean judge score")
+    ax2.set_title("Per-question view (sycophancy)", fontsize=10)
+    fig.tight_layout()
+    return _save(
+        fig,
+        fig_dir,
+        "offdesign_positives",
+        [
+            "decisive/delta_score_percell.json",
+            "decisive/verdicts.json",
+            "localize/gates.json",
+            "judge/decisive/judged/",
+        ],
     )
 
 
@@ -476,6 +599,7 @@ _BUILDERS = (
     fig_coherence,
     fig_per_question,
     fig_margin_scatter,
+    fig_offdesign_positives,
     fig_map_quality,
 )
 
