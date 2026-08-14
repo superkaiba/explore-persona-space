@@ -9434,8 +9434,8 @@
       "goal": "Reproduce Persona Vectors (arXiv 2507.21509) \u00a74.2 finetuning-shift monitoring as faithfully as possible but with REAL (naturally occurring, uninstructed, non-Qwen-sampled) training data replacing the Claude-written suite, and test whether pre-finetuning context\u2192answer mapped reads predict trait acquisition better than the paper's last-prompt-token projection shift.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/2221",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/2221",
+      "status": "awaiting_promotion",
       "title": "Specialized re-mining trains every real-data cell yet trait installs stay near zero, leaving persona-vector fine-tuning monitoring dominated by training-mix size (MODERATE confidence)"
     },
     "2222": {
