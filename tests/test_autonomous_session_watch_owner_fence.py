@@ -843,3 +843,18 @@ def test_owner_fence_state_parity_with_guard_read(fence_rig):
     assert st.blocks_teardown is True
     assert st.owner_registered == OWNER
     assert st.pass_owner is None
+
+
+def test_named_residuals_and_consequence_are_disclosed():
+    """Plan §4.4 promised four disclosures; every behavior below is
+    implemented + pinned above, so the only way they regress is silently
+    losing their prose. Rule paragraph: the wedge fall-through consequence +
+    the lapse-recycle residual. Arm docstring: lapse-recycle, the
+    CARRY-across-handover decision, and the copied-token trust model."""
+    repo = Path(__file__).resolve().parents[1]
+    rule = (repo / ".claude" / "rules" / "background-automation.md").read_text()
+    arm = asw._handle_fence_defer_action.__doc__ or ""
+    for token in ("wedge fall-through", "lapse-recycle"):
+        assert token in rule, f"{token!r} missing from the background-automation arm paragraph"
+    for token in ("lapse-recycle", "CARRY across a long shield handover", "copied-token"):
+        assert token in arm, f"{token!r} missing from _handle_fence_defer_action.__doc__"

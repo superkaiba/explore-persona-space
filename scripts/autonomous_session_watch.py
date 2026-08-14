@@ -19077,7 +19077,28 @@ def _handle_fence_defer_action(
     ``EPM_KEEP_RUNNING_WEDGED_REALERT_H`` (24h — the house unresolved-
     condition cadence, deliberately the SAME knob as the #1582 arm) while
     the deferral holds. DEFER-ONLY: never a stop/terminate; the miss counter
-    is persisted at 0 (the keep-running-skip reset semantics)."""
+    is persisted at 0 (the keep-running-skip reset semantics).
+
+    Named residuals (recorded DECISIONS, not corners — #2283 plan §4.4):
+
+    * **lapse-recycle** — the episode clears on an evaluated-and-inactive
+      tick, so a fence that lapses for a single sub-threshold tick and is
+      then re-posted resets the ceiling (an indefinite shield at ~ceiling
+      periods). Adversarial-only, outside the accidents-not-adversaries
+      trust model inherited from #2277, and visible: every fresh episode
+      re-fires its own marker + push.
+    * **CARRY across a long shield handover** — a NOT-evaluated tick carries
+      the entry untouched, so an episode carried through a >ceiling
+      `keep-running` / `followup-skip` / wrong-status stretch re-enters
+      already exhausted and the returning fence gets zero fence-side
+      deferral. Intended: the ceiling measures one continuous SHIELDED
+      stretch, and clear-on-handover would let shield ALTERNATION recycle it
+      indefinitely. Degrades to pre-#2283 behavior plus a loud ceiling
+      escalation.
+    * **copied-token** — `owner_matched` is unauthenticated string equality,
+      exactly as on the `pod_lifecycle` terminate side (task non-goal; pinned
+      there by ``test_terminate_copied_owner_token_waives_fence_known_residual``).
+      A copied `owner=` token waives the fence here too."""
     pod_name = info.name if info is not None else f"pod-{issue}"
     (_fd_all, _raw, first_ts, noted, last_push_ts, ceiling_noted) = _fd_pod_prev_fields(
         prev_state, pod_id

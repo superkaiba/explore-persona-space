@@ -661,7 +661,22 @@ re-armed stop). Episode state is the pod_id-keyed `fd_pod` sub-dict of the
 pod-safety state file (the `kr_pod`/`nr_pod` carry contract: sibling pods'
 saves forward-carry it verbatim; GC against the live RUNNING-pod set); an
 evaluated-and-inactive read (expired / `fence_until=none` / owner PASS)
-CLEARS the entry. Both watcher markers are REGISTRATION-INERT by
+CLEARS the entry. **Named consequence — wedge fall-through:**
+`_process_pod`'s MF6 carve-out deliberately falls a PORTLESS-WEDGED pod at a
+`POD_SAFETY_AUTO_STOP` status THROUGH to this status-class arm, so such a pod
+on a DONE task now bills for up to `min(fence_until, 24h)` instead of stopping
+in ~20 min — accepted for v1 (bounded by the same ceiling, escalated on the
+same channels, and consistent with the directive's priority ordering, where
+never-stop-autonomously outranks spend); the named future tightening is to
+bypass the fence when the raw wedge predicate reads True. **Named residual —
+lapse-recycle:** because the clear fires on an evaluated-and-inactive tick, an
+owner whose fence lapses for a single sub-threshold tick and is then re-posted
+resets the 24h ceiling — an indefinite shield at ~24h periods. That is
+adversarial-only and sits outside the accidents-not-adversaries trust model
+this arm inherits from #2277 (whose `owner=` match is likewise unauthenticated
+string equality), and each fresh episode re-fires its own marker + push, so the
+recycling is visible rather than silent. Both watcher markers are
+REGISTRATION-INERT by
 construction (an `epm:progress` note binding the pod in structured position
 with a fence token would itself register/clear the owner's fence — the
 self-defeat hazard; pinned by
