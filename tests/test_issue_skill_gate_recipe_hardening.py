@@ -36,6 +36,12 @@ prose). One test per fix:
 Regions are anchor-to-anchor spans (never fixed-length windows), so
 additive neighboring edits cannot silently push a pinned token out of
 scope (the fixed-window fragility named in #2126's plan deferral 5).
+
+#2296 extends the file with one further gate-recipe pin (same surface,
+same span convention): the Step 10d mapped-invariant BASELINE pytest legs
+run on a detached sparse scratch tree via `step9c_baseline.py
+mapped-baseline` — never with cwd inside the shared repo root, which the
+#2015 pre-commit stash cycle reverts repo-wide (measured kill: #2288 RUN1).
 """
 
 from __future__ import annotations
@@ -236,3 +242,76 @@ def test_guard1_retry_restore_is_per_disposition():
     assert 'for p in "${R_GONE[@]}"; do rm -f -- "$WT/$p"; done' in region
     # NEGATIVE: the batched abort-prone form is gone from the whole file:
     assert 'checkout HEAD -- "${FOREIGN[@]}"' not in text
+
+
+# --- #2296: mapped-invariant BASELINE legs run off the shared repo root --------
+
+
+def test_mapped_baseline_leg_runs_off_shared_root():
+    """#2296 (A1/A4/A5 + the §5.3 sed and §5.5 residual-prose invariants):
+    the Step 10d mapped-invariant BASELINE pytest runs on a detached sparse
+    scratch tree cut at the resolved landing base (`step9c_baseline.py
+    mapped-baseline`) — never with cwd inside the shared repo root, which
+    every fleet commit's pre-commit stash cycle reverts repo-wide (#2015;
+    measured kill + false-NEW classification: #2288 RUN1). Span-scoped to
+    the two BASELINE legs: form (iii)'s GATED leg legitimately keeps its
+    repo-root cwd (the surgical payload lands in the root tree), so a
+    file-wide ban on a root-scoped pytest would be wrong."""
+    text = _text()
+    # (1) + (2): both BASELINE legs are the helper call; neither runs pytest
+    # directly (span = leg comment anchor -> the next leg / checkout anchor).
+    shared_base = _span(
+        text,
+        "# BASELINE leg — a DETACHED SPARSE SCRATCH tree",
+        "# GATED leg — worktree copy",
+    )
+    surgical_base = _span(
+        text,
+        "# BASELINE leg — base-pinned scratch (#2296",
+        "xargs -r -a /tmp/issue-<N>-additive-files.txt",
+    )
+    for name, span in (("shared", shared_base), ("surgical", surgical_base)):
+        assert 'step9c_baseline.py" mapped-baseline' in span, (
+            f"[{name}] baseline leg must invoke the mapped-baseline helper"
+        )
+        assert "uv run pytest" not in span, (
+            f"[{name}] baseline leg must not run pytest directly (A1): the "
+            "shared root is reverted repo-wide by the #2015 stash cycle"
+        )
+        assert 'cd "$REPO_ROOT"' not in span, f"[{name}] baseline leg cwd must not be the root"
+        # Fail-closed rc parse (a missing/unparseable rc= line is crash-class):
+        assert "TG_BASE_RC=0; TG_CRASH=yes; }   # fail CLOSED" in span, (
+            f"[{name}] the missing-rc fail-closed arm must survive"
+        )
+    # (3) A4: the GATED legs survive untouched — shared runs the $WT copy,
+    # surgical the ROOT copy (payload lands in the root tree there).
+    shared_gated = _span(text, "# GATED leg — worktree copy", "TG basetemp")
+    assert '( cd "$WT" && timeout --kill-after=30s ${TG_T}s' in shared_gated
+    assert 'uv run pytest "${TG_TESTS[@]}"' in shared_gated
+    surgical_gated = _span(
+        text,
+        "# TG GATED leg (#1147) — the root tree now carries the payload",
+        "# TG basetemp reaped after BOTH legs",
+    )
+    assert '( cd "$REPO_ROOT" && timeout --kill-after=30s ${TG_T}s' in surgical_gated
+    assert 'uv run pytest "${TG_TESTS[@]}"' in surgical_gated
+    # (4) The <TREE> sed carries the scratch clause with a never-matching
+    # default, in BOTH subtraction pipelines — omitting it inverts the
+    # verdict (every both-trees red would read NEW):
+    assert text.count('sed -e "s|${TG_SCRATCH:-/__eps_no_scratch__}|<TREE>|g"') == 2
+    # The crash-class fold survives in both blocks (rc>1 on either leg):
+    assert (
+        text.count('if [ "$TG_RC" -gt 1 ] || [ "$TG_BASE_RC" -gt 1 ]; then TG_CRASH=yes; fi') == 2
+    )
+    # (5) The falsified one-directional-dirt residual claims are gone; the
+    # ONE legitimate `always-dirty shared root` survivor is the
+    # sync_repo_root.py autostash paragraph (NOT a mapped-baseline claim):
+    assert "can only ENLARGE" not in text
+    assert "dirty-root baseline" not in text
+    assert text.count("always-dirty shared root") == 1
+    survivor_idx = text.index("always-dirty shared root")
+    survivor_ctx = text[max(0, survivor_idx - 300) : survivor_idx + 300]
+    assert "autostash" in survivor_ctx, (
+        "the surviving 'always-dirty shared root' mention must be the "
+        "sync_repo_root.py autostash paragraph, not a baseline-leg claim"
+    )
