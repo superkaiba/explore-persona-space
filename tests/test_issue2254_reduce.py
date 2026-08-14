@@ -498,3 +498,69 @@ def test_judge_reduce_asserts_completeness_before_any_judge_spend():
 
     src = inspect.getsource(pi.phase_judge_reduce)
     assert src.index("_assert_gen_grid_complete") < src.index("_run_judge_pilot")
+
+
+# ---------------------------------------------------------------------------
+# upload path: packed shards only, never a per-cell tree (#2286 1M-file ceiling)
+# ---------------------------------------------------------------------------
+
+
+def test_upload_judge_outputs_packs_per_cell_trees(tmp_path):
+    """Wave-1 crash shape (#2286): judge/<phase>/{judged,raw,cache} hold
+    O(1000) per-cell files and the shared data repo sits at the Hub's 1M-file
+    REPO ceiling, so _upload_judge_outputs must upload PACKED shard dirs (few
+    .jsonl files) — a per-cell-tree upload of >50 files fails this test.
+    Runs the REAL body; only the network seam is a signature-matching
+    recorder."""
+    base = tmp_path / "judge" / "localize"
+    for sub in ("judged", "raw"):
+        d = base / sub
+        d.mkdir(parents=True)
+        for i in range(60):
+            (d / f"cell{i:03d}.json").write_text(json.dumps({"cell": i, "sub": sub}))
+    for c in range(12):
+        d = base / "cache" / f"cell{c:03d}"
+        d.mkdir(parents=True)
+        for i in range(6):
+            (d / f"{i:016x}.json").write_text(json.dumps({"draw": i}))
+    uploads: list[tuple[str, str, list[str]]] = []
+    orig = pi._upload_folder_to_hf
+
+    def _record(local_dir, path_in_repo, allow=None):
+        files = sorted(
+            str(p.relative_to(local_dir)) for p in Path(local_dir).rglob("*") if p.is_file()
+        )
+        uploads.append((str(local_dir), path_in_repo, files))
+
+    pi._upload_folder_to_hf = _record
+    try:
+        pi._upload_judge_outputs(tmp_path, ("localize",))
+    finally:
+        pi._upload_folder_to_hf = orig
+
+    assert uploads, "no uploads recorded"
+    dests = {p for _, p, _ in uploads}
+    prefix = pi._hf_prefix()
+    for sub in ("judged", "cache", "raw"):
+        assert f"{prefix}/judge/localize/{sub}_pack" in dests
+    assert not any(p.rstrip("/").endswith(("/judged", "/cache", "/raw")) for _, p, _ in uploads), (
+        "per-cell tree uploaded un-packed"
+    )
+    for _, path_in_repo, files in uploads:
+        assert len(files) <= 50, f"per-cell tree leaked into upload: {path_in_repo} ({len(files)})"
+        assert any(f.endswith(".jsonl") for f in files), path_in_repo
+    # round-trip: packed rows reconstruct every per-cell doc, shards stay <9.5 MB, no gzip
+    pack = base / "judged_pack"
+    manifest = json.loads((pack / "pack_manifest.json").read_text())
+    assert manifest["n_files"] == 60
+    for shard in manifest["shards"]:
+        assert shard.endswith(".jsonl") and not shard.endswith(".gz")
+        assert (pack / shard).stat().st_size < 9_500_000
+    rows = [
+        json.loads(line)
+        for shard in manifest["shards"]
+        for line in (pack / shard).read_text().splitlines()
+    ]
+    assert {r["path"] for r in rows} == {f"cell{i:03d}.json" for i in range(60)}
+    r0 = rows[0]
+    assert r0["doc"] == json.loads((base / "judged" / r0["path"]).read_text())

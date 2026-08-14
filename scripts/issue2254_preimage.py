@@ -3537,17 +3537,19 @@ def _reduce_wave2(args, out_root: Path) -> None:
 
 
 def _upload_judge_outputs(out_root: Path, phases) -> None:
-    """Judged per-cell JSONs upload as-is; judge cache/raw trees pack into
-    <=9 MB JSONL shards (rw2220 helper — the 10k-file dir cap); pilot
-    reports + pass sidecars upload alongside."""
+    """Pack EVERY per-cell judge tree (judged/cache/raw) into <=9 MB plain
+    JSONL line-shards (rw2220 packer; never gzip — *.gz is LFS-matched) and
+    upload ONLY the packed shard dirs. The shared data repo sits at the
+    Hub's 1,000,000-file REPO ceiling (#2286), so a per-cell upload of
+    O(1000) files is rejected by the commit endpoint outright — wave 1 died
+    exactly there (localize judged/ = 1,155 files). Pilot reports + pass
+    sidecars upload alongside (few files by allow-pattern)."""
     _ensure_repo_root_on_syspath()
     import scripts.issue2220_readwrite as rw2220
 
     for phase in phases:
         base = out_root / "judge" / phase
-        if (base / "judged").exists():
-            _upload_folder_to_hf(base / "judged", f"{_hf_prefix()}/judge/{phase}/judged")
-        for sub in ("cache", "raw"):
+        for sub in ("judged", "cache", "raw"):
             src = base / sub
             if not src.exists():
                 continue
