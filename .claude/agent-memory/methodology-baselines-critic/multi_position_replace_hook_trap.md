@@ -32,3 +32,27 @@ gate certifies (add-mode stacked edits are not exactly donor-state at
 layers ≥ 2; #2094 realized ≥0.99997 cos empirically). A partial guard grep
 is never a call-shape bind — the rule requires the ACTUAL call executed at
 smoke shape.
+
+**Validated fix shape (realization (a), accepted at revise round 2):** the
+`arm_batch` guard is the ONLY one-position constraint — verified against
+source: the payload check `d.shape[0] == len(pos)` (:138), `arm()`'s flat
+index assembly, the `index_put_` apply (:204-207), and the realized_edits
+telemetry are all position-count-generic, so relaxing :133-135 alone is
+sound. Required test triad: (1) defect-repro (len-2 tuple through the
+wrapper) flips to pass; (2) len-1 replace bit-exact vs pre-extension
+(protects single-position consumers + any d1 mechanism-identity gate);
+(3) joint == composition of single-position replaces IN ONE FORWARD
+(disjoint out-of-place writes at one layer commute — valid invariant; N
+separate forwards would NOT compose, reject that variant). Plus an
+on-device injection-exactness gate. Two residues to flag as concerns:
+the class/module docstrings still state the one-position contract
+(update with the relaxation), and a multi-position "nowhere else" check
+must be defined propagation-compatibly — patching earlier boundaries
+legitimately changes downstream unpatched positions at layers ≥ 2, so
+hidden-state-equality-everywhere-else false-HALTs; use
+no-edit-APPLIED-elsewhere (telemetry vs intended positions) +
+upstream-of-first-patch equality. Under replace the installed value is
+literally the payload cast to hidden dtype, so the gate can assert
+near-bit-exact equality at patched coordinates instead of a 0.999 cosine
+(which can marginally false-PASS an off-by-one at deep boundaries where
+V_A ≈ V_B).
