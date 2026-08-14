@@ -1,7 +1,7 @@
 {
  "phase": "s0_bank_verify",
  "followup": "fu2_preimage_alltoken",
- "bank_dir": "/mnt/eps-data/thomasjiralerspong/issue2225_fu2_plan/issue2225_ctxsteer/analysis_tensors/fu1_directions",
+ "bank_dir": "/workspace/eps_out/issue2225_fu2/hf_dl/bank/issue2225_ctxsteer/analysis_tensors/fu1_directions",
  "hf_source": "superkaiba1/explore-persona-space-data/issue2225_ctxsteer/analysis_tensors/fu1_directions",
  "verify_only": false,
  "rho_pinned": {
@@ -101,11 +101,43 @@
   }
  },
  "length_preflight": {
-  "skipped": "by flag (--skip-length-preflight; VM bank-only unit)"
+  "max_length": 2048,
+  "corpora": {
+   "evil": {
+    "n_rows": 4681,
+    "p50": 156,
+    "p90": 175,
+    "p99": 194,
+    "max": 215,
+    "mean": 156.4,
+    "n_over_max_length": 0,
+    "frac_over_max_length": 0.0
+   },
+   "sycophancy": {
+    "n_rows": 10099,
+    "p50": 327,
+    "p90": 378,
+    "p99": 411,
+    "max": 448,
+    "mean": 324.9,
+    "n_over_max_length": 0,
+    "frac_over_max_length": 0.0
+   },
+   "hallucination": {
+    "n_rows": 4992,
+    "p50": 179,
+    "p90": 212,
+    "p99": 245,
+    "max": 295,
+    "mean": 181.5,
+    "n_over_max_length": 0,
+    "frac_over_max_length": 0.0
+   }
+  }
  },
  "reproducibility": {
-  "git_commit": "893e9dd761d5db0026f985e702b7c682bb2012c6",
-  "timestamp": "2026-08-14T09:49:21-0700",
+  "git_commit": "11d87b00964275b4fef655ab35469a8ecb4f92f3",
+  "timestamp": "2026-08-14T18:41:21+0000",
   "model": "Qwen/Qwen2.5-7B-Instruct",
   "judge_model": "claude-sonnet-4-5-20250929",
   "versions": {
