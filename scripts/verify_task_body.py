@@ -1337,6 +1337,33 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   rebase rewriting an old figure commit to a post-cutover date FAILs
   loud (ack escape), never silently passes.
 
+- **check 58** (`check_v4_positional_result_crossrefs`, WARN, v4-only,
+  #2279; incident #2221): positional cross-reference tokens under
+  `## Results` — `(N results up|down)` (N a digit run or a number word
+  one..ten; singular `result` admitted), `the previous result`, `the
+  next result` — are resolved against the actual `### ` H3 sequence
+  (1-indexed; up/previous subtract, down/next add) over each block's
+  non-code prose (`<details>` stripped, fences skipped, inline code +
+  link targets masked; list items KEPT — the anchor pointers live in
+  list items). Arm (a) flags a resolution outside [1, n_results]
+  unconditionally; arm (b) — contradiction-only, the check-45 posture —
+  flags a pointer whose own `;`/sentence-delimited clause and the
+  resolved target heading (trailing parenthetical(s) STRIPPED — the
+  anchor's heading 5 ends `(repaired by the round-4 re-mine above)`,
+  which would otherwise launder the mismatch) carry NON-EMPTY, DISJOINT
+  round sets (`round[- ]N` / `rounds A-B` expanded inclusively). The
+  class is structural: SPEC follow-up consolidation reorders the H3
+  sequence on every fold, so an ordinal written in round K retargets
+  silently in round K+1 (#2221's two `(two results up)` pointers were
+  hand-remediated twice). WARN never FAIL; vacuous PASS on v3/v2/legacy
+  bodies and <2-result bodies. Residuals (false-negative-only, in the
+  helper docstrings): `result(s) above/below` (~49 corpus uses) and
+  `the first/third / later/earlier result` carry no resolvable ordinal
+  — out of scope by design; a round token across a `;` from its pointer
+  is missed; a same-round-labeled wrong target intersects and stays
+  silent; arm (a) fires on forward-looking `the next result (queued)`
+  prose in the last block (zero corpus instances).
+
 - **judge drop-line population reconciliation**
   (`check_judge_drop_line_population`, FAIL/WARN, v3+v4, #1776 incident /
   task #1881; unnumbered — dispatched outside CHECKS next to the #732
@@ -18505,6 +18532,295 @@ def check_v4_dropped_condition_placement(body: str) -> CheckResult:
     )
 
 
+# ─── v4 positional result cross-refs (check 58, #2279) ───────────────────────
+
+# Number words the positional-pointer grammar admits (#2279 plan §3.2).
+_CROSSREF_NUMBER_WORDS = {
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+}
+
+# Ordinal pointer: `<count> result(s) up|down` — count a 1-3-digit run or a
+# number word one..ten; surrounding parentheses are NOT part of the token
+# (`(two results up)` and `two results up` both match). Singular `result`
+# admits `(one result up)`.
+_CROSSREF_ORDINAL_RE = re.compile(
+    r"\b(?P<count>\d{1,3}|one|two|three|four|five|six|seven|eight|nine|ten)\s+"
+    r"results?\s+(?P<direction>up|down)\b",
+    re.IGNORECASE,
+)
+# Adjacent pointer: `the previous result` / `the next result` — distance 1.
+_CROSSREF_ADJACENT_RE = re.compile(
+    r"\bthe\s+(?P<direction>previous|next)\s+result\b", re.IGNORECASE
+)
+# Round token: `round 4` / `round-4`, and ranges `rounds 1-3` (hyphen or
+# en-dash separator, expanded inclusively by `_round_set`).
+_CROSSREF_ROUND_RE = re.compile(
+    r"\brounds?[ -](?P<a>\d{1,3})(?:\s*[-–]\s*(?P<b>\d{1,3}))?\b",  # noqa: RUF001
+    re.IGNORECASE,
+)
+# Clause delimiter: `;`, `!`, `?`, a newline, or a `.` that is not a decimal
+# point (a period BETWEEN two digits — `0.945` — never delimits; a period
+# with a non-digit on either side does).
+_CROSSREF_CLAUSE_DELIM_RE = re.compile(r"[;!?\n]|(?<!\d)\.|\.(?!\d)")
+
+
+def _crossref_scan_text(block_text: str) -> str:
+    """Prose layer of one `### <result>` block for positional-pointer
+    scanning: `<details>` bodies stripped first (`_DETAILS_BLOCK_RE`, the
+    `_v4_block_is_quantitative` convention), fenced code blanked, inline
+    code spans and markdown link targets masked per line
+    (`_SENTENCE_INLINE_CODE_RE` / `_SENTENCE_LINK_TARGET_RE`). Line
+    structure is preserved (fenced/blanked lines become empty lines) so
+    `_clause_for_span` can bound clauses at newlines. List-item and
+    blockquote lines are deliberately KEPT — the #2221 anchor pointers
+    live in list items, which `_result_prose_paragraphs` would exclude.
+
+    Known residuals (#2279 plan §7; all false-negative-only on a WARN
+    channel): an UNCLOSED fence swallows the rest of the block (the
+    `_result_prose_paragraphs`-family residual, check 36's disclosed
+    shape); a pointer token hard-wrapped across two lines never matches;
+    a `<details>` block spanning an H3 boundary splits across blocks and
+    defeats the per-block strip (zero corpus instances today — 0 of ~88
+    v4 bodies carry an H3 inside `<details>` under `## Results`).
+    """
+    text = _DETAILS_BLOCK_RE.sub("", block_text)
+    out: list[str] = []
+    in_fence = False
+    for line in text.splitlines():
+        s = line.strip()
+        if s.startswith(("```", "~~~")):
+            in_fence = not in_fence
+            out.append("")
+            continue
+        if in_fence:
+            out.append("")
+            continue
+        masked = _SENTENCE_INLINE_CODE_RE.sub("CODE", line)
+        masked = _SENTENCE_LINK_TARGET_RE.sub("]", masked)
+        out.append(masked)
+    return "\n".join(out)
+
+
+def _positional_crossref_tokens(text: str) -> list[tuple[str, tuple[int, int], str, int]]:
+    """Return `(match_text, span, direction, distance)` for every
+    positional cross-reference pointer token in `text` (the prepared
+    `_crossref_scan_text` layer), in document order. Two token families
+    (#2279 plan §3.2): ordinal `<count> result(s) up|down` (count a
+    digit run or a number word one..ten, case-insensitive) and adjacent
+    `the previous|next result` (distance 1; `previous` normalizes to
+    direction `up`, `next` to `down`).
+
+    Known residuals (#2279 plan §7; false-negative-only):
+    `result(s) above/below` (~49 corpus uses — the dominant pointer
+    vocabulary) carries no resolvable ordinal and is OUT of scope by
+    design (auto-resolving "above" would manufacture false positives);
+    `the first/third result` (~3 uses) and `the later/earlier result`
+    are likewise uncovered.
+    """
+    out: list[tuple[str, tuple[int, int], str, int]] = []
+    for m in _CROSSREF_ORDINAL_RE.finditer(text):
+        # casefold(), NOT lower(): `re.IGNORECASE` performs FULL Unicode case
+        # folding, so U+017F LATIN SMALL LETTER LONG S matches the `s` in
+        # `six` / `results` / `previous` — but `.lower()` leaves U+017F
+        # unchanged. A long-s spelling of a number word then misses the
+        # number-word dict (KeyError, crashing the WHOLE verifier — the driver
+        # has no per-check catch), and a long-s spelling of `previous` fails
+        # the `== "previous"` compare, silently flipping direction to `down`.
+        # `.casefold()` maps U+017F -> `s`, keeping the regex match set and the
+        # lookup keys in agreement (#2279 code review; pinned by
+        # `test_positional_crossref_unicode_casefold_tokens`).
+        word = m.group("count").casefold()
+        distance = int(word) if word.isdigit() else _CROSSREF_NUMBER_WORDS[word]
+        out.append((m.group(0), m.span(), m.group("direction").casefold(), distance))
+    for m in _CROSSREF_ADJACENT_RE.finditer(text):
+        direction = "up" if m.group("direction").casefold() == "previous" else "down"
+        out.append((m.group(0), m.span(), direction, 1))
+    out.sort(key=lambda item: item[1])
+    return out
+
+
+def _clause_for_span(text: str, span: tuple[int, int]) -> str:
+    """Return the clause of `text` containing `span` — the segment
+    delimited by `;`, a sentence terminator (`.!?`, decimal points
+    exempt), or a newline (#2279 plan §3.4.1). Clause scope is
+    load-bearing, not cosmetic: at the #2221 anchor's line 355,
+    sentence or paragraph scope would union `{1,2,3}` with `{4}` across
+    the `;`, intersect the target's `{1,2,3}`, and MISS the defect —
+    `;`-clause scope isolates `{4}` and catches it. Newlines
+    additionally delimit so one list item's clause never leaks into a
+    neighbor (strictly narrower than the plan's minimum —
+    false-negative-only on a WARN channel).
+
+    Known residual (#2279 plan §7): a pointer whose round token sits
+    across a semicolon from it is missed (the deliberate tightness).
+    """
+    start, end = span
+    left = 0
+    for m in _CROSSREF_CLAUSE_DELIM_RE.finditer(text, 0, start):
+        left = m.end()
+    nxt = _CROSSREF_CLAUSE_DELIM_RE.search(text, end)
+    right = nxt.start() if nxt else len(text)
+    return text[left:right]
+
+
+def _strip_trailing_parentheticals(heading: str) -> str:
+    """Return `heading` with trailing balanced `(...)` segment(s)
+    removed — the #2279 plan §3.4.2 Must-Fix. Target-side round-set
+    extraction runs on THIS stripped text: the #2221 anchor's heading 5
+    ends `(repaired by the round-4 re-mine above)`, and whole-heading
+    extraction would union that `{4}` into the target's `{1,2,3}`,
+    intersect the pointer clause's `{4}`, and stay silent on a
+    genuinely misdirected pointer. The failure channel is systematic:
+    appending a `(repaired by the round-N ... above)` parenthetical to
+    a stale pointer's target heading is exactly the remediation idiom
+    #2221's earlier revision round used, so every body remediated that
+    way while keeping its ordinal would launder the mismatch.
+
+    Strips repeatedly (`... (x) (y)` loses both); an unbalanced
+    trailing `)` is left as-is (fail-open). Preferred over the
+    text-before-first-`:` alternative — both resolve the anchor, but
+    the colon rule would empty a `Monitor reads: rounds 1-3 detail`
+    heading and go silent (#2279 plan §3.4.2).
+    """
+    h = heading.strip()
+    while h.endswith(")"):
+        depth = 0
+        cut = None
+        for i in range(len(h) - 1, -1, -1):
+            ch = h[i]
+            if ch == ")":
+                depth += 1
+            elif ch == "(":
+                depth -= 1
+                if depth == 0:
+                    cut = i
+                    break
+        if cut is None:
+            break
+        h = h[:cut].rstrip()
+    return h
+
+
+def _round_set(text: str) -> set[int]:
+    """Round numbers named in `text`: `round 4` / `round-4` yield {4};
+    ranges `rounds 1-3` (hyphen or en-dash) expand inclusively to
+    {1, 2, 3} (#2279 plan §3.4.3). A degenerate >100-wide range
+    contributes its endpoints only (a memory guard — round numbers are
+    1-3 digits, so the worst case is bounded regardless). Empty set
+    when `text` names no round.
+
+    Known residual (#2279 plan §7): arm (b) of check 58 is defeasible
+    by a round token in the target heading's MAIN (non-parenthetical)
+    text — a wrong target that happens to be labeled with the pointer's
+    round intersects and stays silent (accepted post-§3.4.2-fix).
+    """
+    out: set[int] = set()
+    for m in _CROSSREF_ROUND_RE.finditer(text):
+        a = int(m.group("a"))
+        b = int(m.group("b")) if m.group("b") else a
+        lo, hi = (a, b) if a <= b else (b, a)
+        if hi - lo > 100:
+            out.update((lo, hi))
+        else:
+            out.update(range(lo, hi + 1))
+    return out
+
+
+def check_v4_positional_result_crossrefs(body: str) -> CheckResult:
+    """Check 58 (v4 only, WARN): positional cross-reference tokens in
+    `## Results` prose — `(N results up|down)`, `the previous result`,
+    `the next result` — resolve against the actual `### ` H3 sequence
+    (1-indexed; `up`/`previous` subtract, `down`/`next` add). Two flag
+    arms (#2279; the mechanizable recipe from #2221's
+    `epm:clean-result-critique v3` Lens 2 Blocker 2):
+
+    - **arm (a) — out-of-range:** the resolved index falls outside
+      [1, n_results]; flagged unconditionally (no target exists, so no
+      adjudication is needed).
+    - **arm (b) — round mismatch, contradiction-only** (the check-45
+      posture: flag only on positive evidence on BOTH sides): the
+      pointer's own `;`/sentence-delimited clause and the resolved
+      target heading — trailing parenthetical(s) STRIPPED
+      (`_strip_trailing_parentheticals`, the §3.4.2 fix) — yield
+      NON-EMPTY, DISJOINT round sets. Silence when either side's round
+      set is empty is the deliberate false-negative cost of staying
+      quiet on the ordinary body (#2279 plan §3.4.4).
+
+    Why the class recurs: SPEC § Follow-up consolidation REORDERS the
+    H3 sequence on every fold (superseded blocks collapse to the END of
+    `## Results`), so an ordinal written in round K retargets silently
+    in round K+1 — #2221's two `(two results up)` pointers were
+    hand-remediated twice across review rounds. WARN, NEVER FAIL —
+    `passed` is True on every path; register judgment (whether a given
+    pointer should be rewritten as a named reference) stays with the
+    clean-result-critic, matching check 36's split. Vacuous PASS on
+    v3/v2/legacy bodies (forward-only) and on <2-result bodies (no
+    positional target space). Residuals are documented on the helpers;
+    one check-level residual: arm (a) fires spuriously on
+    forward-looking prose ("the next result (queued) ...") in the last
+    block — zero corpus instances, WARN-only, accepted (#2279 plan §7).
+    """
+    label = "positional result cross-refs resolve (v4)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped — not a v4 body")
+    results = _v4_results_body(body)
+    if results is None:
+        return CheckResult(label, True, "## Results missing — check 2 will report")
+    result_h3s = _collect_tldr_h3_names(results)
+    if not result_h3s:
+        return CheckResult(label, True, "no `### <result>` headings — check 3 will report")
+    if len(result_h3s) < 2:
+        return CheckResult(label, True, "<2 results — no positional target space")
+    rlines = results.splitlines()
+    n = len(result_h3s)
+    flagged: list[str] = []
+    for idx, (name, line_no) in enumerate(result_h3s):
+        end_line = result_h3s[idx + 1][1] if idx + 1 < len(result_h3s) else len(rlines)
+        block = "\n".join(rlines[line_no + 1 : end_line])
+        scan = _crossref_scan_text(block)
+        for match_text, span, direction, distance in _positional_crossref_tokens(scan):
+            target = (idx + 1) - distance if direction == "up" else (idx + 1) + distance
+            if target < 1 or target > n:
+                flagged.append(
+                    f"'{name[:48]}': `{match_text}` resolves to result {target} of {n} "
+                    "(out of range)"
+                )
+                continue
+            target_name = result_h3s[target - 1][0]
+            clause_rounds = _round_set(_clause_for_span(scan, span))
+            target_rounds = _round_set(_strip_trailing_parentheticals(target_name))
+            if clause_rounds and target_rounds and not (clause_rounds & target_rounds):
+                flagged.append(
+                    f"'{name[:48]}': `{match_text}` resolves to '{target_name}' — clause "
+                    f"rounds {sorted(clause_rounds)} vs target rounds "
+                    f"{sorted(target_rounds)} disjoint"
+                )
+    if flagged:
+        preview = "; ".join(flagged[:2]) + (" …" if len(flagged) > 2 else "")
+        return CheckResult(
+            label,
+            True,
+            f"{len(flagged)} positional cross-reference pointer(s) under `## Results` "
+            "resolve to a missing or round-mismatched target (rewrite as a named "
+            f"reference to the target heading): {preview}",
+            is_warn=True,
+        )
+    return CheckResult(
+        label,
+        True,
+        f"all positional result cross-refs across {n} `### <result>`(s) resolve",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 
@@ -18639,6 +18955,11 @@ CHECKS = [
     # verifier-WARN-acknowledgment escape (Leg B) (#2267; incident #2054 —
     # opaque codes lived ONLY in PNG pixels of a sidecar-less figure):
     check_v4_sidecarless_results_figures,
+    # check 58 (v4, WARN) — positional result cross-refs (`N results
+    # up|down`, `the previous/next result`) resolve against the H3
+    # sequence; out-of-range or clause-vs-target round-set disjointness
+    # flags (#2279; incident #2221):
+    check_v4_positional_result_crossrefs,
     # Check 31 (`check_orphaned_per_unit_figures`, WARN, generation-agnostic)
     # is NOT here either — like check 20 (v4) it needs the issue number (for
     # figures-dir scoping), so it is dispatched separately in `verify_text`

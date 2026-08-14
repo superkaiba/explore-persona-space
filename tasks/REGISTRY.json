@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2282,
+  "highest_id": 2287,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9867,22 +9867,22 @@
     "2277": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2277",
-      "status": "running",
+      "path": "tasks/completed/2277",
+      "status": "completed",
       "title": "Pod terminate guard is owner-blind: a non-owner can self-post the upload-verification PASS and destroy a live owner's pod"
     },
     "2278": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2278",
-      "status": "running",
+      "path": "tasks/completed/2278",
+      "status": "completed",
       "title": "workflow-fix: bootstrap_pod.sh python shim deadlocks uv interpreter discovery on pod venv rebuilds (uv.lock branch change)"
     },
     "2279": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2279",
-      "status": "running",
+      "path": "tasks/completed/2279",
+      "status": "completed",
       "title": "verify_task_body: flag positional cross-references in Results that misresolve after fold reordering"
     },
     "228": {
@@ -9909,9 +9909,44 @@
     "2282": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2282",
-      "status": "proposed",
+      "path": "tasks/completed/2282",
+      "status": "completed",
       "title": "workflow-fix: land the shared fit-core memory chunk cap on main + decide PR #1717 disposition"
+    },
+    "2283": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2283",
+      "status": "running",
+      "title": "workflow-fix: extend owner-fence awareness to the watcher's pod-safety STOP pass"
+    },
+    "2284": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2284",
+      "status": "running",
+      "title": "workflow-fix: SKILL.md plan-review-floor trigger misattributed to is_workflow_fix_session"
+    },
+    "2285": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2285",
+      "status": "running",
+      "title": "workflow-fix: Step 10d Guard 2 asserts the pre-#1723 status ordering (says code paths are at completed; #1723 keeps them at running)"
+    },
+    "2286": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2286",
+      "status": "proposed",
+      "title": "HF data repo superkaiba1/explore-persona-space-data is at the 1,000,000-file hard ceiling \u2014 fleet-wide multi-file uploads now fail; pack/prune/overflow decision needed"
+    },
+    "2287": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2287",
+      "status": "proposed",
+      "title": "URGENT fleet-wide: HF data repo at the 1M-file ceiling (999,867/1,000,000) \u2014 headroom probe + overflow policy + user cleanup decision list"
     },
     "229": {
       "has_clean_result": false,
