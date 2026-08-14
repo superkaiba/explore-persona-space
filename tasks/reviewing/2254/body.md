@@ -23,6 +23,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_2254.md](https://github.com/superkaiba/explore-persona-space/blob/166352259cad9375f498df403232fb18bef43425/docs/methodology/issue_2254.md) · [gist](https://gist.github.com/superkaiba/68b3cd2ff62b09163b876ce9ca207b62)
+
 ## Takeaways
 
 - The map's **pre-image** — the pre-answer edit the fitted map says yields the persona vector, injected at the context vector — does **not** clear the noise band (evil **0**, sycophancy **+6.6** vs a **+10.9** edge), while a **directly-measured** context direction clears it at the same locus (**+2.5** over a band of exactly 0; **+36**).
