@@ -1,18 +1,25 @@
 {
-  "commit": "1e263e45+dirty",
-  "render_id": "651a3636feb542c5",
-  "git_commit": "1e263e45",
+  "commit": "f1d540e2+dirty",
+  "render_id": "6d3459adcfb44bff",
+  "git_commit": "f1d540e2",
   "git_dirty": true,
   "git_dirty_paths": [
+    "docs/reports/framing_character_transfer_writeup.md",
     "figures/issue_2054/writeup_v2/r1_framing_tiers.meta.json",
     "figures/issue_2054/writeup_v2/r1_framing_tiers.pdf",
     "figures/issue_2054/writeup_v2/r1_framing_tiers.png",
-    "scripts/issue2054_loco_pooled.py",
+    "scripts/issue2054_remap_pair_nulls.py",
+    "scripts/issue2054_writeup_v2_figs.py",
     "scripts/issue2094_butler_grid.py",
-    "tasks/awaiting_promotion/2094/body.md",
-    "tests/test_issue2094_butler_grid.py"
+    "scripts/issue2094_judge.py",
+    "scripts/issue2094_patch_gallery_html.py",
+    "scripts/issue2094_rev_reduce.py",
+    "src/explore_persona_space/experiments/issue2094/bank.py",
+    "tasks/awaiting_promotion/2094/events.jsonl",
+    "tests/sparse_cones.txt",
+    "tests/test_issue2094_judge.py"
   ],
-  "created": "2026-08-14T16:50:43Z",
+  "created": "2026-08-14T21:09:23Z",
   "figsize": [
     11.0,
     4.0
@@ -27,28 +34,21 @@
     },
     {
       "x": 1.0,
-      "held-out $R^2$ (context arm)": 0.08238534729126554,
+      "held-out $R^2$ (context arm)": 0.17487275919429338,
       "series": "bare text",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 2.0,
-      "held-out $R^2$ (context arm)": 0.12872464989002225,
+      "held-out $R^2$ (context arm)": 0.08238534729126554,
       "series": "bare text",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 3.0,
-      "held-out $R^2$ (context arm)": 0.10568288905966941,
-      "series": "bare text",
-      "_kind": "line",
-      "_group": 0
-    },
-    {
-      "x": 4.0,
-      "held-out $R^2$ (context arm)": 0.08399707063330122,
+      "held-out $R^2$ (context arm)": 0.12872464989002225,
       "series": "bare text",
       "_kind": "line",
       "_group": 0
@@ -62,28 +62,21 @@
     },
     {
       "x": 1.0,
-      "held-out $R^2$ (context arm)": 0.04675484637565115,
+      "held-out $R^2$ (context arm)": 0.11565693695327875,
       "series": "story, bare label",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 2.0,
-      "held-out $R^2$ (context arm)": 0.1086220716919247,
+      "held-out $R^2$ (context arm)": 0.04675484637565115,
       "series": "story, bare label",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 3.0,
-      "held-out $R^2$ (context arm)": 0.062247228927860034,
-      "series": "story, bare label",
-      "_kind": "line",
-      "_group": 1
-    },
-    {
-      "x": 4.0,
-      "held-out $R^2$ (context arm)": 0.046830611866798086,
+      "held-out $R^2$ (context arm)": 0.1086220716919247,
       "series": "story, bare label",
       "_kind": "line",
       "_group": 1
@@ -97,28 +90,21 @@
     },
     {
       "x": 1.0,
-      "held-out $R^2$ (context arm)": 0.0929472903833295,
+      "held-out $R^2$ (context arm)": 0.18434255398063182,
       "series": "story, attributed quote",
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 2.0,
-      "held-out $R^2$ (context arm)": 0.16135808722939055,
+      "held-out $R^2$ (context arm)": 0.0929472903833295,
       "series": "story, attributed quote",
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 3.0,
-      "held-out $R^2$ (context arm)": 0.100832637523448,
-      "series": "story, attributed quote",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "x": 4.0,
-      "held-out $R^2$ (context arm)": 0.08934240708567136,
+      "held-out $R^2$ (context arm)": 0.16135808722939055,
       "series": "story, attributed quote",
       "_kind": "line",
       "_group": 2
@@ -132,28 +118,21 @@
     },
     {
       "x": 1.0,
-      "y": 0.2312996876392571,
+      "y": 0.4080873091779334,
       "series": "bare text",
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 2.0,
-      "y": 0.31454363793714446,
+      "y": 0.2312996876392571,
       "series": "bare text",
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 3.0,
-      "y": 0.41652944536057257,
-      "series": "bare text",
-      "_kind": "line",
-      "_group": 3
-    },
-    {
-      "x": 4.0,
-      "y": 0.044227204493442286,
+      "y": 0.31454363793714446,
       "series": "bare text",
       "_kind": "line",
       "_group": 3
@@ -167,28 +146,21 @@
     },
     {
       "x": 1.0,
-      "y": -0.006596044915211463,
+      "y": 0.3955475841219358,
       "series": "story, bare label",
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 2.0,
-      "y": 0.0900314198561907,
+      "y": -0.006596044915211463,
       "series": "story, bare label",
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 3.0,
-      "y": 0.2693694167938716,
-      "series": "story, bare label",
-      "_kind": "line",
-      "_group": 4
-    },
-    {
-      "x": 4.0,
-      "y": -0.21957725008825432,
+      "y": 0.0900314198561907,
       "series": "story, bare label",
       "_kind": "line",
       "_group": 4
@@ -202,35 +174,28 @@
     },
     {
       "x": 1.0,
-      "y": 0.11494149058129095,
+      "y": 0.39515677889243683,
       "series": "story, attributed quote",
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 2.0,
-      "y": 0.21053629384213135,
+      "y": 0.11494149058129095,
       "series": "story, attributed quote",
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 3.0,
-      "y": 0.3265608467262887,
-      "series": "story, attributed quote",
-      "_kind": "line",
-      "_group": 5
-    },
-    {
-      "x": 4.0,
-      "y": -0.07608865945756649,
+      "y": 0.21053629384213135,
       "series": "story, attributed quote",
       "_kind": "line",
       "_group": 5
     }
   ],
   "n_series": 6,
-  "total_points": 30,
+  "total_points": 24,
   "text": {
     "suptitle": null,
     "fig_texts": [],
@@ -240,10 +205,9 @@
         "ylabel": "held-out $R^2$ (context arm)",
         "xticklabels": [
           "Direct",
+          "Cross\ntransfer",
           "Bias\nonly",
-          "Rotation\n+ bias",
-          "Context\nre-map",
-          "Answer\nre-map"
+          "Rotation\n+ bias"
         ],
         "yticklabels": [
           "\u22120.3",
@@ -260,10 +224,9 @@
         "title_left": "inserted \u2014 base",
         "xticklabels": [
           "Direct",
+          "Cross\ntransfer",
           "Bias\nonly",
-          "Rotation\n+ bias",
-          "Context\nre-map",
-          "Answer\nre-map"
+          "Rotation\n+ bias"
         ],
         "yticklabels": [
           "\u22120.4",

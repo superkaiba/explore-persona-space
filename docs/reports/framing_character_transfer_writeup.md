@@ -74,11 +74,9 @@
 
 I considered the following tiers of mapping transfer:
 - Direct transfer
+- Cross transfer -> train a mapping from source-setting context vector directly to target-setting answer vector, on the paired conversations (the same conversation rendered in both settings). This is not a refit of the source mapping — it is the best a linear map fit *with* pairing information can do, so it bounds what any transfer tier could reach
 - bias-only -> train a bias only to refit the source mapping in the target setting
 - Rotation + bias -> train a rotation + bias to refit the source mapping in the target setting
-- Context re-map -> train a mapping from source context vector to target context vector and apply frozen mapping
-- Answer re-map -> train a mapping from source answer vector to target answer vector and apply frozen mapping
-- Since answer vector = mapping applied to context vector, the above 2 transfer tiers test if the **context vector** or the **mapping itself** changes more between settings
 
 The goal is to see how transferrable the mapping is between different settings
 ## Results
@@ -92,7 +90,7 @@ I wanted to see the effect of changing the **framing** of the conversation on th
 
 ![r1_framing_tiers](../../figures/issue_2054/writeup_v2/r1_framing_tiers.png)
 
-*Hollow markers on the two re-map tiers = the pair's shared-conversation set is below the well-posedness floor (0.8·n < d = 3,584), so those two fits are descriptive only. Both story-framing targets are shown (bare label and attributed quote).*
+*Hollow markers on the cross-transfer tier = the pair's shared-conversation set is below the well-posedness floor (0.8·n < d = 3,584), so that fit is descriptive only. The gray band at that tier is the matched-capacity shuffled-pair null (p95 across draws): refit the same cross map after destroying which source conversation goes with which target conversation. Both story-framing targets are shown (bare label and attributed quote).*
 
 **Takeaways:**
 
@@ -110,7 +108,7 @@ So I fit a mapping in **all settings** (all 56 framing × character × inserted/
 
 ![r1_pooled_vs_own](../../figures/issue_2054/writeup_v2/r1_pooled_vs_own.png)
 
-*Tiers here adapt the pooled map to the target setting: as-is, + per-cell bias, rotation + bias, and the two re-maps (all fit on the target's train folds; the re-maps are well-posed here — every cell has ≥ 8,000 rows).*
+*Tiers here adapt the pooled map to the target setting: as-is, + per-cell bias, rotation + bias (all fit on the target's train folds). There is no cross-transfer column: the pooled map is fit across all settings jointly, so it has no source-vs-target pair to fit on.*
 
 I wanted to see if we could **fit on all settings but one** and transfer it to **another setting**
 
@@ -165,7 +163,8 @@ So I plotted the same thing as above but with assistant in chat template to othe
 ## Concerns (Claude)
 
 1. **The 5k/1k sample-size statement doesn't match the realized fits.** Cells were fit on their full row sets (8,000–11,901 rows) under 5 shared conversation-grouped folds (per-fold train 6,341–9,586, held-out ~1,600–2,400), and each transfer pair is evaluated on the pair's shared-conversation intersection — as low as 2,939–4,945 conversations for the story/character pairs. Suggest updating the methodology bullet.
-2. **The two re-map tiers are under-determined on most story/character pairs.** Context/answer re-map fit a 3,584×3,584 linear map on the target train fold; every pair whose intersection is below 4,480 conversations (all on-policy assistant->character pairs at 2,950–3,473; Dana/Vex inserted at 4,373/4,135) trains below d and is descriptive only (hollow markers). Direct / bias-only / rotation+bias are well-posed everywhere.
+2. **The cross-transfer tier is under-determined on most story/character pairs.** It fits a 3,584×3,584 linear map on the paired train rows; every pair whose intersection is below 4,480 conversations (all on-policy assistant->character pairs at 2,950–3,473; Dana/Vex inserted at 4,373/4,135) trains below d and is descriptive only (hollow markers). Direct / bias-only / rotation+bias are well-posed everywhere. The shuffled-pair null band is computed at the *same* capacity per pair, so true-vs-null stays a matched comparison even in the hollow cells — an under-determined fit inflates both terms.
+2b. **Cross transfer uses target answers; the other three tiers do not.** It is the pair-supervised bound, so the line's step from Direct to Cross is not a ladder rung — reading left to right, tier 2 is "how well *any* linear map could do given pairing", tiers 3–4 are "how much of that a refit of the source map recovers". I kept your listed order; say the word and I'll move Cross to the right end so the three refit tiers read monotonically.
 3. **Result 3 has no on-policy-source pairs by construction.** The transfer bank enumerates chat sources only through the inserted chat anchor (on-policy cross-framing pairs were excluded in the plan's design), so the "on-policy" row of Result 3 varies the target condition, with the source always inserted chat.
 4. **The bare-label story boundary carries a tokenization artifact.** The template ends in "Name: " with a trailing space, which forces no-leading-space opening tokens — 23.2% digit-start onsets vs 1.1% for the attributed-quote form (measured on Dana × instruct). On-policy bare-label cells (Result 2's setting) therefore partly measure tokenization, not framing. The attributed-quote twin of every Result-2/3 pair is already banked — a zero-compute robustness swap.
 5. **The base-model on-policy chat cell is anomalous.** In the chat template the base model often answers "in the user role" (31.7% language drift, ceiling 0.21 vs the instruct twin's 0.58), so instruct−base differences that involve on-policy chat cells inherit this cell-level pathology, not just a model effect.
@@ -177,7 +176,7 @@ So I plotted the same thing as above but with assistant in chat template to othe
 
 1. **Attributed-quote versions of Results 2–3** (pairs banked, zero compute) — checks the character-transfer story against the bare-label tokenization artifact in concern 4.
 2. **The 2×2 authorship × presentation decomposition** (banked, in the task body) — separates "who wrote the answer" from "how it's framed" for the inserted-vs-on-policy gaps that dominate the difference panels; the interaction is positive and both mains negative in 8/8 character × model pairs.
-3. **Context→context maps between settings** (banked: 232 ordered pairs) — directly tests whether transfer failure is the context vector moving vs the map changing, complementing the two re-map tiers; assistant framing pairs map at median R² 0.44, characters at ~0.18, prefix states at ~0.
+3. **Context→context maps between settings** (banked: 232 ordered pairs) — directly tests whether transfer failure is the context vector moving vs the map changing; assistant framing pairs map at median R² 0.44, characters at ~0.18, prefix states at ~0. This is the question the now-retired context/answer re-map tiers were aimed at (both still banked in the ladder rows if you want them back).
 4. **The fifth framing, indirect reported speech** ("Dana replied that ..." — on-policy only, 10 cells banked with ceilings + cross-character/cross-model ladders): ceilings land between bare-label and attributed-quote; cross-model transfer reaches 0.93 of ceiling under rotation alone.
 5. **Adaptation tiers on held-out maps** (cheap CPU battery): bias-only / rotation+bias on the leave-one-framing-out and leave-one-character-out maps — how much target data closes the held-out gap in each direction.
-6. **Paired cross-render fit as the upper bound** (banked: `cross_render_fit*.json`): fit source-render context → target-render answer ON paired rows — the pair-informed predictability bound no transfer tier can see.
+6. **Cross transfer on the remaining framing pairs** (banked): the cross-transfer tier now in the figures covers the 44 plotted pairs; `cross_render_fit*.json` also holds the identity (within-setting) cells and the fifth-framing pairs, which would extend the tier to every framing combination at zero compute.

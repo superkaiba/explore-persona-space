@@ -1,9 +1,10 @@
 {
-  "commit": "1e263e45+dirty",
-  "render_id": "3992f4e6b3424cf1",
-  "git_commit": "1e263e45",
+  "commit": "f1d540e2+dirty",
+  "render_id": "60b71990a82942b5",
+  "git_commit": "f1d540e2",
   "git_dirty": true,
   "git_dirty_paths": [
+    "docs/reports/framing_character_transfer_writeup.md",
     "figures/issue_2054/writeup_v2/r1_framing_tiers.meta.json",
     "figures/issue_2054/writeup_v2/r1_framing_tiers.pdf",
     "figures/issue_2054/writeup_v2/r1_framing_tiers.png",
@@ -13,12 +14,18 @@
     "figures/issue_2054/writeup_v2/r1_pooled_vs_own.meta.json",
     "figures/issue_2054/writeup_v2/r1_pooled_vs_own.pdf",
     "figures/issue_2054/writeup_v2/r1_pooled_vs_own.png",
-    "scripts/issue2054_loco_pooled.py",
+    "scripts/issue2054_remap_pair_nulls.py",
+    "scripts/issue2054_writeup_v2_figs.py",
     "scripts/issue2094_butler_grid.py",
-    "tasks/awaiting_promotion/2094/body.md",
-    "tests/test_issue2094_butler_grid.py"
+    "scripts/issue2094_judge.py",
+    "scripts/issue2094_patch_gallery_html.py",
+    "scripts/issue2094_rev_reduce.py",
+    "src/explore_persona_space/experiments/issue2094/bank.py",
+    "tasks/awaiting_promotion/2094/events.jsonl",
+    "tests/sparse_cones.txt",
+    "tests/test_issue2094_judge.py"
   ],
-  "created": "2026-08-14T16:50:49Z",
+  "created": "2026-08-14T21:09:33Z",
   "figsize": [
     11.0,
     7.2

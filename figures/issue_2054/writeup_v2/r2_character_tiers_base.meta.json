@@ -1,27 +1,37 @@
 {
-  "commit": "1e263e45+dirty",
-  "render_id": "29cd23078770410f",
-  "git_commit": "1e263e45",
+  "commit": "f1d540e2+dirty",
+  "render_id": "ccfb55026a9f40a9",
+  "git_commit": "f1d540e2",
   "git_dirty": true,
   "git_dirty_paths": [
+    "docs/reports/framing_character_transfer_writeup.md",
     "figures/issue_2054/writeup_v2/r1_framing_tiers.meta.json",
     "figures/issue_2054/writeup_v2/r1_framing_tiers.pdf",
     "figures/issue_2054/writeup_v2/r1_framing_tiers.png",
     "figures/issue_2054/writeup_v2/r1_framing_tiers_base.meta.json",
     "figures/issue_2054/writeup_v2/r1_framing_tiers_base.pdf",
     "figures/issue_2054/writeup_v2/r1_framing_tiers_base.png",
+    "figures/issue_2054/writeup_v2/r1_loco_framings.meta.json",
+    "figures/issue_2054/writeup_v2/r1_loco_framings.pdf",
+    "figures/issue_2054/writeup_v2/r1_loco_framings.png",
     "figures/issue_2054/writeup_v2/r1_pooled_vs_own.meta.json",
     "figures/issue_2054/writeup_v2/r1_pooled_vs_own.pdf",
     "figures/issue_2054/writeup_v2/r1_pooled_vs_own.png",
     "figures/issue_2054/writeup_v2/r2_character_tiers.meta.json",
     "figures/issue_2054/writeup_v2/r2_character_tiers.pdf",
     "figures/issue_2054/writeup_v2/r2_character_tiers.png",
-    "scripts/issue2054_loco_pooled.py",
+    "scripts/issue2054_remap_pair_nulls.py",
+    "scripts/issue2054_writeup_v2_figs.py",
     "scripts/issue2094_butler_grid.py",
-    "tasks/awaiting_promotion/2094/body.md",
-    "tests/test_issue2094_butler_grid.py"
+    "scripts/issue2094_judge.py",
+    "scripts/issue2094_patch_gallery_html.py",
+    "scripts/issue2094_rev_reduce.py",
+    "src/explore_persona_space/experiments/issue2094/bank.py",
+    "tasks/awaiting_promotion/2094/events.jsonl",
+    "tests/sparse_cones.txt",
+    "tests/test_issue2094_judge.py"
   ],
-  "created": "2026-08-14T16:50:55Z",
+  "created": "2026-08-14T21:09:48Z",
   "figsize": [
     11.0,
     4.0
@@ -36,28 +46,21 @@
     },
     {
       "x": 1.0,
-      "held-out $R^2$ (context arm)": 0.11583348935646627,
+      "held-out $R^2$ (context arm)": 0.07978299087091582,
       "series": "Wren",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 2.0,
-      "held-out $R^2$ (context arm)": 0.15930131091010385,
+      "held-out $R^2$ (context arm)": 0.11583348935646627,
       "series": "Wren",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 3.0,
-      "held-out $R^2$ (context arm)": 0.07890348994504173,
-      "series": "Wren",
-      "_kind": "line",
-      "_group": 0
-    },
-    {
-      "x": 4.0,
-      "held-out $R^2$ (context arm)": 0.07356322839936343,
+      "held-out $R^2$ (context arm)": 0.15930131091010385,
       "series": "Wren",
       "_kind": "line",
       "_group": 0
@@ -71,28 +74,21 @@
     },
     {
       "x": 1.0,
-      "held-out $R^2$ (context arm)": 0.13073510207754035,
+      "held-out $R^2$ (context arm)": 0.08117738313191417,
       "series": "HELIOS",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 2.0,
-      "held-out $R^2$ (context arm)": 0.15498390926390088,
+      "held-out $R^2$ (context arm)": 0.13073510207754035,
       "series": "HELIOS",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 3.0,
-      "held-out $R^2$ (context arm)": 0.08755436226360677,
-      "series": "HELIOS",
-      "_kind": "line",
-      "_group": 1
-    },
-    {
-      "x": 4.0,
-      "held-out $R^2$ (context arm)": 0.08804300076814539,
+      "held-out $R^2$ (context arm)": 0.15498390926390088,
       "series": "HELIOS",
       "_kind": "line",
       "_group": 1
@@ -106,28 +102,21 @@
     },
     {
       "x": 1.0,
-      "held-out $R^2$ (context arm)": 0.10572477137904139,
+      "held-out $R^2$ (context arm)": 0.07276613109924035,
       "series": "Dana",
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 2.0,
-      "held-out $R^2$ (context arm)": 0.14936706844532127,
+      "held-out $R^2$ (context arm)": 0.10572477137904139,
       "series": "Dana",
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 3.0,
-      "held-out $R^2$ (context arm)": 0.07497838019876954,
-      "series": "Dana",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "x": 4.0,
-      "held-out $R^2$ (context arm)": 0.07417614071641858,
+      "held-out $R^2$ (context arm)": 0.14936706844532127,
       "series": "Dana",
       "_kind": "line",
       "_group": 2
@@ -141,28 +130,21 @@
     },
     {
       "x": 1.0,
-      "held-out $R^2$ (context arm)": 0.10218976133440816,
+      "held-out $R^2$ (context arm)": 0.05667298348290748,
       "series": "Vex",
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 2.0,
-      "held-out $R^2$ (context arm)": 0.17062642725386096,
+      "held-out $R^2$ (context arm)": 0.10218976133440816,
       "series": "Vex",
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 3.0,
-      "held-out $R^2$ (context arm)": 0.04664324819496235,
-      "series": "Vex",
-      "_kind": "line",
-      "_group": 3
-    },
-    {
-      "x": 4.0,
-      "held-out $R^2$ (context arm)": 0.05922598741347655,
+      "held-out $R^2$ (context arm)": 0.17062642725386096,
       "series": "Vex",
       "_kind": "line",
       "_group": 3
@@ -176,28 +158,21 @@
     },
     {
       "x": 1.0,
-      "y": 0.13855682560343516,
+      "y": 0.25888885267105916,
       "series": "Wren",
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 2.0,
-      "y": 0.15794296285997694,
+      "y": 0.13855682560343516,
       "series": "Wren",
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 3.0,
-      "y": 0.20250967542616852,
-      "series": "Wren",
-      "_kind": "line",
-      "_group": 4
-    },
-    {
-      "x": 4.0,
-      "y": 0.10452017217901052,
+      "y": 0.15794296285997694,
       "series": "Wren",
       "_kind": "line",
       "_group": 4
@@ -211,28 +186,21 @@
     },
     {
       "x": 1.0,
-      "y": 0.18773309376504602,
+      "y": 0.26179236917706045,
       "series": "HELIOS",
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 2.0,
-      "y": 0.19940176512878774,
+      "y": 0.18773309376504602,
       "series": "HELIOS",
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 3.0,
-      "y": 0.22671086306414107,
-      "series": "HELIOS",
-      "_kind": "line",
-      "_group": 5
-    },
-    {
-      "x": 4.0,
-      "y": 0.1670027448818572,
+      "y": 0.19940176512878774,
       "series": "HELIOS",
       "_kind": "line",
       "_group": 5
@@ -246,28 +214,21 @@
     },
     {
       "x": 1.0,
-      "y": 0.13918211225922456,
+      "y": 0.2543780978795242,
       "series": "Dana",
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 2.0,
-      "y": 0.1591482898961438,
+      "y": 0.13918211225922456,
       "series": "Dana",
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 3.0,
-      "y": 0.19892661821723,
-      "series": "Dana",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "x": 4.0,
-      "y": 0.10088847263108622,
+      "y": 0.1591482898961438,
       "series": "Dana",
       "_kind": "line",
       "_group": 6
@@ -281,35 +242,28 @@
     },
     {
       "x": 1.0,
-      "y": 0.10484926859495862,
+      "y": 0.2579428160664706,
       "series": "Vex",
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 2.0,
-      "y": 0.12718677280342566,
+      "y": 0.10484926859495862,
       "series": "Vex",
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 3.0,
-      "y": 0.18557703839726408,
-      "series": "Vex",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "x": 4.0,
-      "y": 0.05210901034233577,
+      "y": 0.12718677280342566,
       "series": "Vex",
       "_kind": "line",
       "_group": 7
     }
   ],
   "n_series": 8,
-  "total_points": 40,
+  "total_points": 32,
   "text": {
     "suptitle": null,
     "fig_texts": [],
@@ -319,10 +273,9 @@
         "ylabel": "held-out $R^2$ (context arm)",
         "xticklabels": [
           "Direct",
+          "Cross\ntransfer",
           "Bias\nonly",
-          "Rotation\n+ bias",
-          "Context\nre-map",
-          "Answer\nre-map"
+          "Rotation\n+ bias"
         ],
         "yticklabels": [
           "0.00",
@@ -338,10 +291,9 @@
         "title_left": "inserted \u2014 base",
         "xticklabels": [
           "Direct",
+          "Cross\ntransfer",
           "Bias\nonly",
-          "Rotation\n+ bias",
-          "Context\nre-map",
-          "Answer\nre-map"
+          "Rotation\n+ bias"
         ],
         "yticklabels": [
           "0.00",
