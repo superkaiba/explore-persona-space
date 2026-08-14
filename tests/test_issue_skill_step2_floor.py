@@ -135,6 +135,98 @@ def test_step2_recorded_skip_contract_present():
     )
 
 
+# ── The floor TRIGGER: tag-or-title off the task record, not the guard predicate ──
+#
+# #2284: the floor block defined its trigger as "`wf-fix` tag OR title prefix in
+# WF_FIX_TITLE_PREFIXES — task_workflow.is_workflow_fix_session", but that
+# predicate tests NEITHER: it is `"workflow_fix_target:" in body`
+# (task_workflow.py:1150-1167). A session mechanizing the floor check through the
+# named function skips the floor on exactly the class the prose covers — a
+# `workflow-fix:`-titled kind:infra task filed with no Provenance line (#2282 is
+# a live instance). These pins keep the corrected attribution from regressing.
+
+
+def test_step2_floor_trigger_names_tag_or_title():
+    """The floor trigger must name the tag AND the title-prefix constant."""
+    span = _step2_span(ISSUE_SKILL.read_text(encoding="utf-8"))
+    normalized = " ".join(span.split())
+    assert "WF_FIX_TITLE_PREFIXES" in normalized, (
+        "Step 2's floor trigger must name `WF_FIX_TITLE_PREFIXES` as the "
+        "title-prefix source of truth (task_workflow.py:1071)."
+    )
+    assert "`wf-fix` tag" in normalized, (
+        "Step 2's floor trigger must name the `wf-fix` tag arm — the floor is "
+        "tag-OR-title, evaluated off the task record."
+    )
+
+
+def test_step2_floor_trigger_not_attributed_to_recursion_guard_predicate():
+    """`is_workflow_fix_session` must not be named AS the floor trigger.
+
+    It may appear only under an explicit negation (`NOT
+    task_workflow.is_workflow_fix_session`), which is how the corrected prose
+    warns against mechanizing the floor through it. A bare mention adjacent to
+    the trigger is the #2284 defect.
+    """
+    span = _step2_span(ISSUE_SKILL.read_text(encoding="utf-8"))
+    normalized = " ".join(span.split())
+    if "is_workflow_fix_session" in normalized:
+        assert "NOT `task_workflow.is_workflow_fix_session`" in normalized, (
+            "Step 2 may mention `is_workflow_fix_session` ONLY as an explicit "
+            "NOT — it tests `workflow_fix_target:` in body.md, not the tag or "
+            "the title, so naming it as the floor trigger lets a "
+            "`workflow-fix:`-titled task with no Provenance line skip the "
+            "floor (#2284; #2282 is a live instance)."
+        )
+
+
+def test_step2_floor_names_recursion_guard_distinction():
+    """The floor must distinguish its trigger from the RECURSION-GUARD trigger."""
+    span = _step2_span(ISSUE_SKILL.read_text(encoding="utf-8"))
+    normalized = " ".join(span.split())
+    assert "RECURSION-GUARD" in normalized or "recursion-guard" in normalized, (
+        "Step 2 must state once, explicitly, that the `workflow_fix_target:` "
+        "body line is the RECURSION-GUARD trigger and NOT the floor trigger — "
+        "the two conditions were conflated in the original block (#2284)."
+    )
+    assert "workflow_fix_target:" in normalized, (
+        "The distinction is only legible if the guard's actual condition (the "
+        "`workflow_fix_target:` body line) is named alongside it."
+    )
+
+
+# ── The sibling site: code-reviewer.md's Step-2 floor CHECK (the enforcement arm) ──
+
+
+CODE_REVIEWER = ROOT / ".claude" / "agents" / "code-reviewer.md"
+
+
+def test_code_reviewer_step2_floor_check_trigger_not_misattributed():
+    """The reviewer-side Step-2 floor CHECK must carry the corrected trigger.
+
+    This is the ENFORCEMENT arm of the SKILL.md floor: a reviewer that reads
+    `is_workflow_fix_session` as the trigger will not raise
+    `step2-floor-skipped` on a `workflow-fix:`-titled task with no
+    `workflow_fix_target:` line — the #2284 hole, on the one surface whose job
+    is to catch a skipped floor.
+    """
+    text = CODE_REVIEWER.read_text(encoding="utf-8")
+    assert "step2-floor-skipped" in text, (
+        "code-reviewer.md must retain the Step-2 floor check and its "
+        "`step2-floor-skipped` blocker tag."
+    )
+    para = next(line for line in text.splitlines() if "step2-floor-skipped" in line)
+    normalized = " ".join(para.split())
+    assert "WF_FIX_TITLE_PREFIXES" in normalized and "`wf-fix` tag" in normalized, (
+        "The floor check's trigger must name the tag-OR-title read."
+    )
+    if "is_workflow_fix_session" in normalized:
+        assert "NOT via `task_workflow.is_workflow_fix_session`" in normalized, (
+            "code-reviewer.md may mention `is_workflow_fix_session` in the "
+            "floor check ONLY as an explicit NOT (#2284)."
+        )
+
+
 # ── Heading-form ban: ad-hoc H3s must not template floor legs as headings ───
 #
 # Mirrors `test_issue_skill_marker_contract.py`'s ADHOC_BAD_LABELS check —

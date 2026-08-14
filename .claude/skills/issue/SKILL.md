@@ -1556,8 +1556,16 @@ output as the task. The skill runs planner -> fact-checker -> critic
 The CLAUDE.md "Every new experiment MUST go through `/adversarial-planner`" bullet
 carries a `"re-runs with different seeds, monitoring, syncing, bug fixes, or
 explicit override skip it"` carve-out; that carve-out does NOT reach `kind: infra`
-workflow-fix tasks (`wf-fix` tag OR title prefix in `WF_FIX_TITLE_PREFIXES` —
-`workflow-fix:` / `daily-fix:` — `task_workflow.is_workflow_fix_session`). Even a
+workflow-fix tasks. Evaluate the floor trigger off the TASK RECORD: `kind: infra`
+AND (a `wf-fix` tag OR a title starting with one of
+`task_workflow.WF_FIX_TITLE_PREFIXES` — `workflow-fix:` / `daily-fix:`). Step 10d's
+merge fast path already does the `kind: infra` + `wf-fix`-tag half of this read
+inline; the floor additionally accepts the title-prefix arm. NOT
+`task_workflow.is_workflow_fix_session`, which tests only for a
+`workflow_fix_target:` line in `body.md`: that is the narrower RECURSION-GUARD
+trigger (`.claude/rules/workflow-fix-on-bug.md` § Recursion guard), so a
+`workflow-fix:`-titled task filed without that Provenance line reads False and
+would skip the very floor this block imposes. Even a
 1-line prose edit runs, at minimum:
 
 1. **Persist a plan version** via `uv run python scripts/task.py new-plan-version <N>` —
