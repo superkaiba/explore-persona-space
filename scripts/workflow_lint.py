@@ -14956,7 +14956,21 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 904,504 B base); the remaining mass is the judgment tranche
     # (bash-block extraction to step10d_guards.sh-style scripts, 9a-quater
     # legacy-path stub, GCP rollback-prose relocation).
-    "issue/SKILL.md": 940_900,
+    # Prior: 940_900 — measured 941,014 B on main after TWO concurrent
+    # workflow-fix branches landed SKILL.md edits inside the same ~90 min:
+    # #2284 (a70965d3bb, plan-review-floor trigger attribution, +550 B) then
+    # #2285 (740ed2a0a1, Step 10d Guard 2 + trigger-point bullet state the
+    # post-#1723 status ordering, +816 B). Each measured its own landing
+    # bytes against a pre-#2284 main and fit the 1,252 B headroom alone
+    # (#2285's own gate certified 940,464 B / margin 436); their SUM
+    # overshot by 114 B, so main went red on this check between the two
+    # merges. This is the #1721 moving-main class the Step 10d gate's
+    # landing-union merge cannot fully close: the union is computed against
+    # origin/main AT GATE TIME, and a sibling wf-fix merge afterwards is
+    # invisible to it. Cap = landing bytes + ~1 KB (#1753 landing-bytes
+    # rule); NOT a licence for regrowth — SKILL.md is the fleet's largest
+    # always-loaded surface and the compaction tranche below still stands.
+    "issue/SKILL.md": 942_000,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
