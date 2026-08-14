@@ -1,0 +1,1236 @@
+{
+ "n_boot": 10000,
+ "seed_base": 2225,
+ "seed_scheme": "2225 + 1000*dataset_index + 100*config_index + kind offset {'h1_dose': 0, 'h2_vs_C': 1, 'h2_vs_A': 2, 'h3_dose_dod': 3} (parent per-dataset convention extended per contrast; frozen + selection-inherited share one idx stream per contrast)",
+ "lattice": "Effect-negative <=> \u0394<0 AND 95% CI wholly below 0; Effect-positive <=> \u0394>0 AND CI wholly above 0; Statistical tie <=> otherwise (fu relabeling of the parent's asserted three-way partition)",
+ "h1_dose": {
+  "delta_definition": "score(matched-coherence selected coef) - score(smallest grid coef), question-paired within arm; Effect-positive = trait score rises with dose. degenerate_zero_dose marks arms whose selected coef IS the smallest (\u0394 identically 0)",
+  "inherited_caveat": "the smallest-coef side is ALSO coherence-gated inside each resample under the reused parent machinery (sensitivity-only deviation from the frozen H1 definition)",
+  "per_arm": {
+   "J_evil": {
+    "n_questions": 20,
+    "seed": 2225,
+    "frozen": {
+     "delta_point": 0.27833333333333565,
+     "ci95": [
+      -1.5216874999999999,
+      2.057499999999996
+     ],
+     "verdict": "Statistical tie"
+    },
+    "selection_inherited": {
+     "delta_point": 0.2637179936571545,
+     "ci95": [
+      -1.5220000000000056,
+      2.056999999999985
+     ],
+     "n_draws_no_coherent_coef": 15,
+     "sensitivity_read": "Statistical tie"
+    },
+    "selected_coef": 3.0,
+    "smallest_coef": 0.25,
+    "degenerate_zero_dose": false
+   },
+   "J_sycophancy": {
+    "n_questions": 20,
+    "seed": 3225,
+    "frozen": {
+     "delta_point": -6.4791666666666625,
+     "ci95": [
+      -10.858395833333326,
+      -2.7415624999999997
+     ],
+     "verdict": "Effect-negative"
+    },
+    "selection_inherited": {
+     "delta_point": -6.602851937817111,
+     "ci95": [
+      -10.932416666666644,
+      -2.9116666666666697
+     ],
+     "n_draws_no_coherent_coef": 737,
+     "sensitivity_read": "Effect-negative"
+    },
+    "selected_coef": 3.0,
+    "smallest_coef": 0.25,
+    "degenerate_zero_dose": false
+   },
+   "J_hallucination": {
+    "n_questions": 20,
+    "seed": 4225,
+    "frozen": {
+     "delta_point": -0.6458333333333336,
+     "ci95": [
+      -1.2166666666666708,
+      -0.1916666666666657
+     ],
+     "verdict": "Effect-negative"
+    },
+    "selection_inherited": {
+     "delta_point": -0.6461020833333406,
+     "ci95": [
+      -1.2166666666666686,
+      -0.19166666666667673
+     ],
+     "n_draws_no_coherent_coef": 0,
+     "sensitivity_read": "Effect-negative"
+    },
+    "selected_coef": 3.0,
+    "smallest_coef": 0.25,
+    "degenerate_zero_dose": false
+   },
+   "J_mistake_opinions": {
+    "n_questions": 20,
+    "seed": 5225,
+    "frozen": {
+     "delta_point": -2.700833333333332,
+     "ci95": [
+      -6.590104166666667,
+      1.0875416666666697
+     ],
+     "verdict": "Statistical tie"
+    },
+    "selection_inherited": {
+     "delta_point": -5.367361111111108,
+     "ci95": [
+      -11.1946875,
+      0.051249999999998685
+     ],
+     "n_draws_no_coherent_coef": 9934,
+     "sensitivity_read": "Statistical tie"
+    },
+    "selected_coef": 0.75,
+    "smallest_coef": 0.25,
+    "degenerate_zero_dose": false
+   },
+   "K_evil": {
+    "n_questions": 20,
+    "seed": 2325,
+    "frozen": {
+     "delta_point": -0.4166666666666668,
+     "ci95": [
+      -2.3933333333333318,
+      1.1409166666666664
+     ],
+     "verdict": "Statistical tie"
+    },
+    "selection_inherited": {
+     "delta_point": -0.4181997499999969,
+     "ci95": [
+      -2.3933333333333313,
+      1.140916666666679
+     ],
+     "n_draws_no_coherent_coef": 0,
+     "sensitivity_read": "Statistical tie"
+    },
+    "selected_coef": 3.0,
+    "smallest_coef": 0.25,
+    "degenerate_zero_dose": false
+   },
+   "K_sycophancy": {
+    "n_questions": 20,
+    "seed": 3325,
+    "frozen": {
+     "delta_point": -3.1000000000000014,
+     "ci95": [
+      -8.22375,
+      0.6458749999999975
+     ],
+     "verdict": "Statistical tie"
+    },
+    "selection_inherited": {
+     "delta_point": -2.8515637890394743,
+     "ci95": [
+      -7.975229166666656,
+      0.7363749999999929
+     ],
+     "n_draws_no_coherent_coef": 3212,
+     "sensitivity_read": "Statistical tie"
+    },
+    "selected_coef": 3.0,
+    "smallest_coef": 0.25,
+    "degenerate_zero_dose": false
+   },
+   "K_hallucination": {
+    "n_questions": 20,
+    "seed": 4325,
+    "frozen": {
+     "delta_point": -0.16499999999999915,
+     "ci95": [
+      -0.42000000000000026,
+      -0.008333333333333571
+     ],
+     "verdict": "Effect-negative"
+    },
+    "selection_inherited": {
+     "delta_point": -0.1648236666666638,
+     "ci95": [
+      -0.42000000000000204,
+      -0.008333333333339965
+     ],
+     "n_draws_no_coherent_coef": 0,
+     "sensitivity_read": "Effect-negative"
+    },
+    "selected_coef": 3.0,
+    "smallest_coef": 0.25,
+    "degenerate_zero_dose": false
+   },
+   "K_mistake_opinions": {
+    "n_questions": 20,
+    "seed": 5325,
+    "frozen": {
+     "delta_point": 1.1375000000000004,
+     "ci95": [
+      -3.729395833333334,
+      6.067562500000001
+     ],
+     "verdict": "Statistical tie"
+    },
+    "selection_inherited": {
+     "delta_point": -0.7908333333333335,
+     "ci95": [
+      -1.7119166666666672,
+      0.10120833333332666
+     ],
+     "n_draws_no_coherent_coef": 9996,
+     "sensitivity_read": "Statistical tie"
+    },
+    "selected_coef": 3.0,
+    "smallest_coef": 0.25,
+    "degenerate_zero_dose": false
+   },
+   "L_evil": {
+    "n_questions": 20,
+    "seed": 2425,
+    "frozen": {
+     "delta_point": 1.3750000000000024,
+     "ci95": [
+      -0.10749999999999646,
+      3.0058541666666687
+     ],
+     "verdict": "Statistical tie"
+    },
+    "selection_inherited": {
+     "delta_point": 1.3705738333333328,
+     "ci95": [
+      -0.10749999999998786,
+      3.0058541666666474
+     ],
+     "n_draws_no_coherent_coef": 0,
+     "sensitivity_read": "Statistical tie"
+    },
+    "selected_coef": 3.0,
+    "smallest_coef": 0.25,
+    "degenerate_zero_dose": false
+   },
+   "L_sycophancy": {
+    "n_questions": 20,
+    "seed": 3425,
+    "frozen": {
+     "delta_point": -0.5516666666666652,
+     "ci95": [
+      -2.339187499999998,
+      0.7975208333333366
+     ],
+     "verdict": "Statistical tie"
+    },
+    "selection_inherited": {
+     "delta_point": -0.5930618545725549,
+     "ci95": [
+      -2.3520000000000065,
+      0.7458333333333116
+     ],
+     "n_draws_no_coherent_coef": 607,
+     "sensitivity_read": "Statistical tie"
+    },
+    "selected_coef": 3.0,
+    "smallest_coef": 0.25,
+    "degenerate_zero_dose": false
+   },
+   "L_hallucination": {
+    "n_questions": 20,
+    "seed": 4425,
+    "frozen": {
+     "delta_point": 0.28249999999999886,
+     "ci95": [
+      0.03750000000000071,
+      0.5866874999999969
+     ],
+     "verdict": "Effect-positive"
+    },
+    "selection_inherited": {
+     "delta_point": 0.28478525000000043,
+     "ci95": [
+      0.037500000000008527,
+      0.5866875000000058
+     ],
+     "n_draws_no_coherent_coef": 0,
+     "sensitivity_read": "Effect-positive"
+    },
+    "selected_coef": 3.0,
+    "smallest_coef": 0.25,
+    "degenerate_zero_dose": false
+   },
+   "L_mistake_opinions": {
+    "verdict": "not-computable (no coherent coefficient)",
+    "selected_coef": null
+   },
+   "M_evil": {
+    "n_questions": 20,
+    "seed": 2525,
+    "frozen": {
+     "delta_point": 1.7808333333333362,
+     "ci95": [
+      -1.2058541666666662,
+      5.1375833333333345
+     ],
+     "verdict": "Statistical tie"
+    },
+    "selection_inherited": {
+     "delta_point": 1.7563013333333373,
+     "ci95": [
+      -1.2058541666666645,
+      5.137583333333349
+     ],
+     "n_draws_no_coherent_coef": 0,
+     "sensitivity_read": "Statistical tie"
+    },
+    "selected_coef": 3.0,
+    "smallest_coef": 0.25,
+    "degenerate_zero_dose": false
+   },
+   "M_sycophancy": {
+    "n_questions": 20,
+    "seed": 3525,
+    "frozen": {
+     "delta_point": -0.44750000000000084,
+     "ci95": [
+      -1.4325625000000022,
+      0.2475208333333304
+     ],
+     "verdict": "Statistical tie"
+    },
+    "selection_inherited": {
+     "delta_point": -0.48978733845902017,
+     "ci95": [
+      -1.4780000000000142,
+      0.22450000000000583
+     ],
+     "n_draws_no_coherent_coef": 3887,
+     "sensitivity_read": "Statistical tie"
+    },
+    "selected_coef": 3.0,
+    "smallest_coef": 0.25,
+    "degenerate_zero_dose": false
+   },
+   "M_hallucination": {
+    "n_questions": 20,
+    "seed": 4525,
+    "frozen": {
+     "delta_point": 0.19166666666666715,
+     "ci95": [
+      0.05833333333333497,
+      0.35000000000000214
+     ],
+     "verdict": "Effect-positive"
+    },
+    "selection_inherited": {
+     "delta_point": 0.19018512035740703,
+     "ci95": [
+      0.058020833333325375,
+      0.3499999999999943
+     ],
+     "n_draws_no_coherent_coef": 2,
+     "sensitivity_read": "Effect-positive"
+    },
+    "selected_coef": 3.0,
+    "smallest_coef": 0.25,
+    "degenerate_zero_dose": false
+   },
+   "M_mistake_opinions": {
+    "verdict": "not-computable (no coherent coefficient)",
+    "selected_coef": null
+   },
+   "RJ_evil": {
+    "n_questions": 20,
+    "seed": 2625,
+    "frozen": {
+     "delta_point": -0.19666666666666757,
+     "ci95": [
+      -2.443374999999999,
+      1.7617499999999973
+     ],
+     "verdict": "Statistical tie"
+    },
+    "selection_inherited": {
+     "delta_point": -0.20121816029872128,
+     "ci95": [
+      -2.4434583333333157,
+      1.7619166666666652
+     ],
+     "n_draws_no_coherent_coef": 2,
+     "sensitivity_read": "Statistical tie"
+    },
+    "selected_coef": 3.0,
+    "smallest_coef": 0.25,
+    "degenerate_zero_dose": false
+   },
+   "RK_evil": {
+    "n_questions": 20,
+    "seed": 2725,
+    "frozen": {
+     "delta_point": -1.118333333333333,
+     "ci95": [
+      -2.9583749999999998,
+      0.6625000000000001
+     ],
+     "verdict": "Statistical tie"
+    },
+    "selection_inherited": {
+     "delta_point": -1.120509749999995,
+     "ci95": [
+      -2.9583749999999815,
+      0.6624999999999946
+     ],
+     "n_draws_no_coherent_coef": 0,
+     "sensitivity_read": "Statistical tie"
+    },
+    "selected_coef": 3.0,
+    "smallest_coef": 0.25,
+    "degenerate_zero_dose": false
+   },
+   "RL_evil": {
+    "n_questions": 20,
+    "seed": 2825,
+    "frozen": {
+     "delta_point": 0.03250000000000099,
+     "ci95": [
+      -1.5666875000000005,
+      1.4875416666666714
+     ],
+     "verdict": "Statistical tie"
+    },
+    "selection_inherited": {
+     "delta_point": 0.038674845601741635,
+     "ci95": [
+      -1.5619999999999947,
+      1.4881666666666569
+     ],
+     "n_draws_no_coherent_coef": 15,
+     "sensitivity_read": "Statistical tie"
+    },
+    "selected_coef": 3.0,
+    "smallest_coef": 0.25,
+    "degenerate_zero_dose": false
+   },
+   "RM_evil": {
+    "n_questions": 20,
+    "seed": 2925,
+    "frozen": {
+     "delta_point": -0.24000000000000304,
+     "ci95": [
+      -2.2493333333333347,
+      1.7308541666666635
+     ],
+     "verdict": "Statistical tie"
+    },
+    "selection_inherited": {
+     "delta_point": -0.21903325000000318,
+     "ci95": [
+      -2.249333333333362,
+      1.730854166666697
+     ],
+     "n_draws_no_coherent_coef": 0,
+     "sensitivity_read": "Statistical tie"
+    },
+    "selected_coef": 3.0,
+    "smallest_coef": 0.25,
+    "degenerate_zero_dose": false
+   }
+  }
+ },
+ "h2_vs_parent_C": {
+  "delta_definition": "score(fu arm @ its op point) - score(parent C @ parent op point), question-paired; parent side from BANKED parent per-question rows. Effect-negative = pre-image arm induces LESS trait expression than parent C (prevents better)",
+  "per_arm": {
+   "J_evil": {
+    "n_questions": 20,
+    "seed": 2226,
+    "frozen": {
+     "delta_point": 1.711666666666669,
+     "ci95": [
+      -0.6949999999999954,
+      4.11335416666667
+     ],
+     "verdict": "Statistical tie"
+    },
+    "selection_inherited": {
+     "delta_point": 1.7138647499999933,
+     "ci95": [
+      -0.6950000000000216,
+      4.113354166666663
+     ],
+     "n_draws_no_coherent_coef": 0,
+     "sensitivity_read": "Statistical tie"
+    },
+    "selected": {
+     "J": 3.0,
+     "C": 5.0
+    }
+   },
+   "J_sycophancy": {
+    "n_questions": 20,
+    "seed": 3226,
+    "frozen": {
+     "delta_point": -3.120833333333333,
+     "ci95": [
+      -6.199208333333335,
+      -0.104958333333333
+     ],
+     "verdict": "Effect-negative"
+    },
+    "selection_inherited": {
+     "delta_point": -3.6073063973063926,
+     "ci95": [
+      -7.903708333333336,
+      -0.5241249999999936
+     ],
+     "n_draws_no_coherent_coef": 1,
+     "sensitivity_read": "Effect-negative"
+    },
+    "selected": {
+     "J": 3.0,
+     "C": 5.0
+    }
+   },
+   "J_hallucination": {
+    "n_questions": 20,
+    "seed": 4226,
+    "frozen": {
+     "delta_point": 2.5925,
+     "ci95": [
+      0.5158124999999999,
+      5.51927083333333
+     ],
+     "verdict": "Effect-positive"
+    },
+    "selection_inherited": {
+     "delta_point": 2.608290999999999,
+     "ci95": [
+      0.5158124999999864,
+      5.519270833333316
+     ],
+     "n_draws_no_coherent_coef": 0,
+     "sensitivity_read": "Effect-positive"
+    },
+    "selected": {
+     "J": 3.0,
+     "C": 5.0
+    }
+   },
+   "J_mistake_opinions": {
+    "verdict": "not-computable (an arm has no coherent coefficient)",
+    "selected": {
+     "J": 0.75,
+     "C": null
+    }
+   },
+   "K_evil": {
+    "n_questions": 20,
+    "seed": 2326,
+    "frozen": {
+     "delta_point": 0.9975000000000008,
+     "ci95": [
+      -1.4466666666666648,
+      2.921687500000002
+     ],
+     "verdict": "Statistical tie"
+    },
+    "selection_inherited": {
+     "delta_point": 0.9956556666666633,
+     "ci95": [
+      -1.4466666666666725,
+      2.9216875
+     ],
+     "n_draws_no_coherent_coef": 0,
+     "sensitivity_read": "Statistical tie"
+    },
+    "selected": {
+     "K": 3.0,
+     "C": 5.0
+    }
+   },
+   "K_sycophancy": {
+    "n_questions": 20,
+    "seed": 3326,
+    "frozen": {
+     "delta_point": 0.6833333333333311,
+     "ci95": [
+      -1.3233541666666686,
+      3.415062499999998
+     ],
+     "verdict": "Statistical tie"
+    },
+    "selection_inherited": {
+     "delta_point": 0.41472030536387067,
+     "ci95": [
+      -3.3661250000000087,
+      3.609375000000011
+     ],
+     "n_draws_no_coherent_coef": 1,
+     "sensitivity_read": "Statistical tie"
+    },
+    "selected": {
+     "K": 3.0,
+     "C": 5.0
+    }
+   },
+   "K_hallucination": {
+    "n_questions": 20,
+    "seed": 4326,
+    "frozen": {
+     "delta_point": 3.188333333333334,
+     "ci95": [
+      0.9916666666666685,
+      6.030979166666665
+     ],
+     "verdict": "Effect-positive"
+    },
+    "selection_inherited": {
+     "delta_point": 3.1705788333333382,
+     "ci95": [
+      0.9916666666666739,
+      6.030979166666679
+     ],
+     "n_draws_no_coherent_coef": 0,
+     "sensitivity_read": "Effect-positive"
+    },
+    "selected": {
+     "K": 3.0,
+     "C": 5.0
+    }
+   },
+   "K_mistake_opinions": {
+    "verdict": "not-computable (an arm has no coherent coefficient)",
+    "selected": {
+     "K": 3.0,
+     "C": null
+    }
+   },
+   "L_evil": {
+    "n_questions": 20,
+    "seed": 2426,
+    "frozen": {
+     "delta_point": 2.383333333333334,
+     "ci95": [
+      0.8366666666666689,
+      3.9809166666666678
+     ],
+     "verdict": "Effect-positive"
+    },
+    "selection_inherited": {
+     "delta_point": 2.38250916666666,
+     "ci95": [
+      0.8366666666666586,
+      3.9809166666666815
+     ],
+     "n_draws_no_coherent_coef": 0,
+     "sensitivity_read": "Effect-positive"
+    },
+    "selected": {
+     "L": 3.0,
+     "C": 5.0
+    }
+   },
+   "L_sycophancy": {
+    "n_questions": 20,
+    "seed": 3426,
+    "frozen": {
+     "delta_point": 3.829166666666667,
+     "ci95": [
+      0.4966458333333314,
+      9.559187500000002
+     ],
+     "verdict": "Effect-positive"
+    },
+    "selection_inherited": {
+     "delta_point": 3.3828248149629903,
+     "ci95": [
+      0.4891041666666876,
+      8.518583333333327
+     ],
+     "n_draws_no_coherent_coef": 2,
+     "sensitivity_read": "Effect-positive"
+    },
+    "selected": {
+     "L": 3.0,
+     "C": 5.0
+    }
+   },
+   "L_hallucination": {
+    "n_questions": 20,
+    "seed": 4426,
+    "frozen": {
+     "delta_point": 3.2916666666666656,
+     "ci95": [
+      1.0766249999999966,
+      6.228333333333333
+     ],
+     "verdict": "Effect-positive"
+    },
+    "selection_inherited": {
+     "delta_point": 3.302713000000008,
+     "ci95": [
+      1.0766250000000017,
+      6.228333333333339
+     ],
+     "n_draws_no_coherent_coef": 0,
+     "sensitivity_read": "Effect-positive"
+    },
+    "selected": {
+     "L": 3.0,
+     "C": 5.0
+    }
+   },
+   "L_mistake_opinions": {
+    "verdict": "not-computable (an arm has no coherent coefficient)",
+    "selected": {
+     "L": null,
+     "C": null
+    }
+   },
+   "M_evil": {
+    "n_questions": 20,
+    "seed": 2526,
+    "frozen": {
+     "delta_point": 1.3433333333333348,
+     "ci95": [
+      -0.7441666666666635,
+      3.8200416666666652
+     ],
+     "verdict": "Statistical tie"
+    },
+    "selection_inherited": {
+     "delta_point": 1.3459779166666648,
+     "ci95": [
+      -0.7441666666666581,
+      3.8200416666666595
+     ],
+     "n_draws_no_coherent_coef": 0,
+     "sensitivity_read": "Statistical tie"
+    },
+    "selected": {
+     "M": 3.0,
+     "C": 5.0
+    }
+   },
+   "M_sycophancy": {
+    "n_questions": 20,
+    "seed": 3526,
+    "frozen": {
+     "delta_point": 3.439166666666664,
+     "ci95": [
+      0.012499999999998524,
+      9.392499999999998
+     ],
+     "verdict": "Effect-positive"
+    },
+    "selection_inherited": {
+     "delta_point": 2.957917667066821,
+     "ci95": [
+      0.009062500000018403,
+      8.162812499999982
+     ],
+     "n_draws_no_coherent_coef": 4,
+     "sensitivity_read": "Effect-positive"
+    },
+    "selected": {
+     "M": 3.0,
+     "C": 5.0
+    }
+   },
+   "M_hallucination": {
+    "n_questions": 20,
+    "seed": 4526,
+    "frozen": {
+     "delta_point": 3.4216666666666677,
+     "ci95": [
+      1.0608333333333362,
+      6.356020833333332
+     ],
+     "verdict": "Effect-positive"
+    },
+    "selection_inherited": {
+     "delta_point": 3.417711750000006,
+     "ci95": [
+      1.060833333333349,
+      6.351708333333353
+     ],
+     "n_draws_no_coherent_coef": 0,
+     "sensitivity_read": "Effect-positive"
+    },
+    "selected": {
+     "M": 3.0,
+     "C": 5.0
+    }
+   },
+   "M_mistake_opinions": {
+    "verdict": "not-computable (an arm has no coherent coefficient)",
+    "selected": {
+     "M": null,
+     "C": null
+    }
+   }
+  }
+ },
+ "h2_secondary_vs_parent_A": {
+  "delta_definition": "same as h2_vs_parent_C with parent A (paper method) as the reference side (secondary)",
+  "per_arm": {
+   "J_evil": {
+    "n_questions": 20,
+    "seed": 2227,
+    "frozen": {
+     "delta_point": 34.961666666666666,
+     "ci95": [
+      28.7708125,
+      41.04508333333334
+     ],
+     "verdict": "Effect-positive"
+    },
+    "selection_inherited": {
+     "delta_point": 38.95739041666667,
+     "ci95": [
+      12.723291666666649,
+      59.11418749999999
+     ],
+     "n_draws_no_coherent_coef": 0,
+     "sensitivity_read": "Effect-positive"
+    },
+    "selected": {
+     "J": 3.0,
+     "A": 1.5
+    }
+   },
+   "J_sycophancy": {
+    "n_questions": 20,
+    "seed": 3227,
+    "frozen": {
+     "delta_point": -6.6324999999999985,
+     "ci95": [
+      -12.246833333333333,
+      -2.143229166666667
+     ],
+     "verdict": "Effect-negative"
+    },
+    "selection_inherited": {
+     "delta_point": -7.113045666795183,
+     "ci95": [
+      -12.57291666666665,
+      -2.558333333333323
+     ],
+     "n_draws_no_coherent_coef": 2219,
+     "sensitivity_read": "Effect-negative"
+    },
+    "selected": {
+     "J": 3.0,
+     "A": 0.5
+    }
+   },
+   "J_hallucination": {
+    "n_questions": 20,
+    "seed": 4227,
+    "frozen": {
+     "delta_point": 25.5175,
+     "ci95": [
+      14.799708333333335,
+      37.689854166666656
+     ],
+     "verdict": "Effect-positive"
+    },
+    "selection_inherited": {
+     "delta_point": 25.500982583333332,
+     "ci95": [
+      14.616583333333327,
+      37.68985416666665
+     ],
+     "n_draws_no_coherent_coef": 0,
+     "sensitivity_read": "Effect-positive"
+    },
+    "selected": {
+     "J": 3.0,
+     "A": 5.0
+    }
+   },
+   "J_mistake_opinions": {
+    "verdict": "not-computable (an arm has no coherent coefficient)",
+    "selected": {
+     "J": 0.75,
+     "A": null
+    }
+   },
+   "K_evil": {
+    "n_questions": 20,
+    "seed": 2327,
+    "frozen": {
+     "delta_point": 34.2475,
+     "ci95": [
+      28.326645833333327,
+      40.11920833333334
+     ],
+     "verdict": "Effect-positive"
+    },
+    "selection_inherited": {
+     "delta_point": 38.362497999999995,
+     "ci95": [
+      11.41789583333335,
+      58.555166666666686
+     ],
+     "n_draws_no_coherent_coef": 0,
+     "sensitivity_read": "Effect-positive"
+    },
+    "selected": {
+     "K": 3.0,
+     "A": 1.5
+    }
+   },
+   "K_sycophancy": {
+    "n_questions": 20,
+    "seed": 3327,
+    "frozen": {
+     "delta_point": -2.8283333333333354,
+     "ci95": [
+      -8.410333333333336,
+      1.0983333333333305
+     ],
+     "verdict": "Statistical tie"
+    },
+    "selection_inherited": {
+     "delta_point": -2.922833140208576,
+     "ci95": [
+      -8.531666666666693,
+      1.1149999999999927
+     ],
+     "n_draws_no_coherent_coef": 2233,
+     "sensitivity_read": "Statistical tie"
+    },
+    "selected": {
+     "K": 3.0,
+     "A": 0.5
+    }
+   },
+   "K_hallucination": {
+    "n_questions": 20,
+    "seed": 4327,
+    "frozen": {
+     "delta_point": 26.113333333333333,
+     "ci95": [
+      15.388229166666665,
+      38.67083333333333
+     ],
+     "verdict": "Effect-positive"
+    },
+    "selection_inherited": {
+     "delta_point": 26.10617075,
+     "ci95": [
+      15.313229166666666,
+      38.670833333333334
+     ],
+     "n_draws_no_coherent_coef": 0,
+     "sensitivity_read": "Effect-positive"
+    },
+    "selected": {
+     "K": 3.0,
+     "A": 5.0
+    }
+   },
+   "K_mistake_opinions": {
+    "verdict": "not-computable (an arm has no coherent coefficient)",
+    "selected": {
+     "K": 3.0,
+     "A": null
+    }
+   },
+   "L_evil": {
+    "n_questions": 20,
+    "seed": 2427,
+    "frozen": {
+     "delta_point": 35.63333333333333,
+     "ci95": [
+      29.37775,
+      41.77010416666667
+     ],
+     "verdict": "Effect-positive"
+    },
+    "selection_inherited": {
+     "delta_point": 39.60569783333334,
+     "ci95": [
+      13.514499999999986,
+      59.82349999999998
+     ],
+     "n_draws_no_coherent_coef": 0,
+     "sensitivity_read": "Effect-positive"
+    },
+    "selected": {
+     "L": 3.0,
+     "A": 1.5
+    }
+   },
+   "L_sycophancy": {
+    "n_questions": 20,
+    "seed": 3427,
+    "frozen": {
+     "delta_point": 0.31750000000000045,
+     "ci95": [
+      -1.4250208333333347,
+      1.7083541666666666
+     ],
+     "verdict": "Statistical tie"
+    },
+    "selection_inherited": {
+     "delta_point": 0.22175322035348577,
+     "ci95": [
+      -1.5278333333333263,
+      1.6331666666666544
+     ],
+     "n_draws_no_coherent_coef": 2211,
+     "sensitivity_read": "Statistical tie"
+    },
+    "selected": {
+     "L": 3.0,
+     "A": 0.5
+    }
+   },
+   "L_hallucination": {
+    "n_questions": 20,
+    "seed": 4427,
+    "frozen": {
+     "delta_point": 26.21666666666667,
+     "ci95": [
+      15.42895833333333,
+      38.75416666666666
+     ],
+     "verdict": "Effect-positive"
+    },
+    "selection_inherited": {
+     "delta_point": 26.19680500000001,
+     "ci95": [
+      15.187187500000029,
+      38.75416666666667
+     ],
+     "n_draws_no_coherent_coef": 0,
+     "sensitivity_read": "Effect-positive"
+    },
+    "selected": {
+     "L": 3.0,
+     "A": 5.0
+    }
+   },
+   "L_mistake_opinions": {
+    "verdict": "not-computable (an arm has no coherent coefficient)",
+    "selected": {
+     "L": null,
+     "A": null
+    }
+   },
+   "M_evil": {
+    "n_questions": 20,
+    "seed": 2527,
+    "frozen": {
+     "delta_point": 34.593333333333334,
+     "ci95": [
+      28.62493750000001,
+      40.468416666666656
+     ],
+     "verdict": "Effect-positive"
+    },
+    "selection_inherited": {
+     "delta_point": 38.56428508333334,
+     "ci95": [
+      12.958104166666676,
+      58.42083333333333
+     ],
+     "n_draws_no_coherent_coef": 0,
+     "sensitivity_read": "Effect-positive"
+    },
+    "selected": {
+     "M": 3.0,
+     "A": 1.5
+    }
+   },
+   "M_sycophancy": {
+    "n_questions": 20,
+    "seed": 3527,
+    "frozen": {
+     "delta_point": -0.07250000000000227,
+     "ci95": [
+      -1.5925208333333358,
+      1.164999999999997
+     ],
+     "verdict": "Statistical tie"
+    },
+    "selection_inherited": {
+     "delta_point": -0.137843694718228,
+     "ci95": [
+      -1.6712708333333572,
+      1.1176458333333426
+     ],
+     "n_draws_no_coherent_coef": 2086,
+     "sensitivity_read": "Statistical tie"
+    },
+    "selected": {
+     "M": 3.0,
+     "A": 0.5
+    }
+   },
+   "M_hallucination": {
+    "n_questions": 20,
+    "seed": 4527,
+    "frozen": {
+     "delta_point": 26.34666666666667,
+     "ci95": [
+      15.562375,
+      38.76720833333332
+     ],
+     "verdict": "Effect-positive"
+    },
+    "selection_inherited": {
+     "delta_point": 26.301507750000003,
+     "ci95": [
+      15.467666666666682,
+      38.76677083333336
+     ],
+     "n_draws_no_coherent_coef": 0,
+     "sensitivity_read": "Effect-positive"
+    },
+    "selected": {
+     "M": 3.0,
+     "A": 5.0
+    }
+   },
+   "M_mistake_opinions": {
+    "verdict": "not-computable (an arm has no coherent coefficient)",
+    "selected": {
+     "M": null,
+     "A": null
+    }
+   }
+  }
+ },
+ "h3_dose_dod_evil": {
+  "delta_definition": "\u0394dose(pre-image) - \u0394dose(random control) per matched (mask position x layer) pair, evil corpus, question-paired (EXPLORATORY)",
+  "per_pair": {
+   "J_vs_RJ_evil": {
+    "n_questions": 20,
+    "seed": 2228,
+    "frozen": {
+     "delta_point": 0.4750000000000032,
+     "ci95": [
+      -1.2291666666666625,
+      2.0650000000000075
+     ],
+     "verdict": "Statistical tie"
+    },
+    "selection_inherited": {
+     "delta_point": 0.4674356147910575,
+     "ci95": [
+      -1.2262916666666648,
+      2.065000000000026
+     ],
+     "n_draws_no_coherent_coef": 21,
+     "sensitivity_read": "Statistical tie"
+    },
+    "selected": {
+     "J": 3.0,
+     "RJ": 3.0
+    }
+   },
+   "K_vs_RK_evil": {
+    "n_questions": 20,
+    "seed": 2328,
+    "frozen": {
+     "delta_point": 0.7016666666666662,
+     "ci95": [
+      -1.517583333333338,
+      2.909291666666665
+     ],
+     "verdict": "Statistical tie"
+    },
+    "selection_inherited": {
+     "delta_point": 0.6933634166666652,
+     "ci95": [
+      -1.5175833333333453,
+      2.909291666666676
+     ],
+     "n_draws_no_coherent_coef": 0,
+     "sensitivity_read": "Statistical tie"
+    },
+    "selected": {
+     "K": 3.0,
+     "RK": 3.0
+    }
+   },
+   "L_vs_RL_evil": {
+    "n_questions": 20,
+    "seed": 2428,
+    "frozen": {
+     "delta_point": 1.3425000000000016,
+     "ci95": [
+      -0.7025416666666657,
+      3.725916666666665
+     ],
+     "verdict": "Statistical tie"
+    },
+    "selection_inherited": {
+     "delta_point": 1.330404020167612,
+     "ci95": [
+      -0.7032500000000361,
+      3.7140833333333214
+     ],
+     "n_draws_no_coherent_coef": 17,
+     "sensitivity_read": "Statistical tie"
+    },
+    "selected": {
+     "L": 3.0,
+     "RL": 3.0
+    }
+   },
+   "M_vs_RM_evil": {
+    "n_questions": 20,
+    "seed": 2528,
+    "frozen": {
+     "delta_point": 2.0208333333333393,
+     "ci95": [
+      -1.0525624999999976,
+      5.291708333333341
+     ],
+     "verdict": "Statistical tie"
+    },
+    "selection_inherited": {
+     "delta_point": 2.0100139166666735,
+     "ci95": [
+      -1.0525625000000236,
+      5.291708333333336
+     ],
+     "n_draws_no_coherent_coef": 0,
+     "sensitivity_read": "Statistical tie"
+    },
+    "selected": {
+     "M": 3.0,
+     "RM": 3.0
+    }
+   }
+  }
+ },
+ "not_computable": [
+  "h2_vs_C:J_mistake_opinions",
+  "h2_vs_A:J_mistake_opinions",
+  "h2_vs_C:K_mistake_opinions",
+  "h2_vs_A:K_mistake_opinions",
+  "h1_dose:L_mistake_opinions",
+  "h2_vs_C:L_mistake_opinions",
+  "h2_vs_A:L_mistake_opinions",
+  "h1_dose:M_mistake_opinions",
+  "h2_vs_C:M_mistake_opinions",
+  "h2_vs_A:M_mistake_opinions"
+ ],
+ "single_seed_caveat": "per-arm verdicts are SINGLE-TRAINING-SEED claims (seed 0; the CI carries zero training-draw variance)"
+}

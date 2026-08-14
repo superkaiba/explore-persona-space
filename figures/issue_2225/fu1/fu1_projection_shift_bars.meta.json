@@ -1,0 +1,351 @@
+{
+  "commit": "ab81efe1",
+  "render_id": "5dd5ac8ac7434f05",
+  "git_commit": "ab81efe1",
+  "git_dirty": false,
+  "created": "2026-08-14T12:55:53Z",
+  "figsize": [
+    9.2,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.325,
+      "\u0394 mean projection at the arm's own layer": 14.225881844758987,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.675,
+      "\u0394 mean projection at the arm's own layer": 26.826313018798828,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.675,
+      "\u0394 mean projection at the arm's own layer": 14.51171962916851,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.675,
+      "\u0394 mean projection at the arm's own layer": 27.081303119659424,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.675,
+      "\u0394 mean projection at the arm's own layer": 14.209270030260086,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.675,
+      "\u0394 mean projection at the arm's own layer": 26.917853593826294,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.675,
+      "\u0394 mean projection at the arm's own layer": 14.588470242917538,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.675,
+      "\u0394 mean projection at the arm's own layer": 27.134244203567505,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.195,
+      "\u0394 mean projection at the arm's own layer": 27.319368362426758,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.805,
+      "\u0394 mean projection at the arm's own layer": 37.79141092300415,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.805,
+      "\u0394 mean projection at the arm's own layer": 23.777448654174805,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.805,
+      "\u0394 mean projection at the arm's own layer": 40.40868902206421,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.805,
+      "\u0394 mean projection at the arm's own layer": 27.585603713989258,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.805,
+      "\u0394 mean projection at the arm's own layer": 39.02980613708496,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.805,
+      "\u0394 mean projection at the arm's own layer": 26.042388916015625,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.805,
+      "\u0394 mean projection at the arm's own layer": 40.82820987701416,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.065,
+      "\u0394 mean projection at the arm's own layer": 7.12775719165802,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.935,
+      "\u0394 mean projection at the arm's own layer": 2.0714950561523438,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.935,
+      "\u0394 mean projection at the arm's own layer": 14.654920220375061,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.935,
+      "\u0394 mean projection at the arm's own layer": 5.746042251586914,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.935,
+      "\u0394 mean projection at the arm's own layer": 7.875556111335754,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.935,
+      "\u0394 mean projection at the arm's own layer": 1.527857780456543,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.935,
+      "\u0394 mean projection at the arm's own layer": 17.03339159488678,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 6.935,
+      "\u0394 mean projection at the arm's own layer": 5.410003662109375,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.065,
+      "\u0394 mean projection at the arm's own layer": -0.15092959627509117,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.065,
+      "\u0394 mean projection at the arm's own layer": 1.0986400842666626,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.065,
+      "\u0394 mean projection at the arm's own layer": 0.16622673720121384,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.065,
+      "\u0394 mean projection at the arm's own layer": 1.4470182657241821,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.065,
+      "\u0394 mean projection at the arm's own layer": 0.10851968079805374,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 5.065,
+      "\u0394 mean projection at the arm's own layer": 1.2493678331375122,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 6.065,
+      "\u0394 mean projection at the arm's own layer": 0.1936078891158104,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 7.065,
+      "\u0394 mean projection at the arm's own layer": 1.4427645206451416,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.195,
+      "\u0394 mean projection at the arm's own layer": -1.8250914216041565,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.195,
+      "\u0394 mean projection at the arm's own layer": 1.9942436218261719,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.195,
+      "\u0394 mean projection at the arm's own layer": -0.5973839163780212,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 3.195,
+      "\u0394 mean projection at the arm's own layer": 2.8931453227996826,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 4.195,
+      "\u0394 mean projection at the arm's own layer": 0.08420801162719727,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 5.195,
+      "\u0394 mean projection at the arm's own layer": 3.3774335384368896,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 6.195,
+      "\u0394 mean projection at the arm's own layer": 0.2957661747932434,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 7.195,
+      "\u0394 mean projection at the arm's own layer": 3.59347140789032,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.325,
+      "\u0394 mean projection at the arm's own layer": -0.45672793686389923,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.325,
+      "\u0394 mean projection at the arm's own layer": -1.26261568069458,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.325,
+      "\u0394 mean projection at the arm's own layer": -0.1568296104669571,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 3.325,
+      "\u0394 mean projection at the arm's own layer": -0.5333034992218018,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 4.325,
+      "\u0394 mean projection at the arm's own layer": 0.6187649816274643,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 5.325,
+      "\u0394 mean projection at the arm's own layer": -1.210479974746704,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 6.325,
+      "\u0394 mean projection at the arm's own layer": -0.011882215738296509,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 7.325,
+      "\u0394 mean projection at the arm's own layer": -0.46042943000793457,
+      "_kind": "bar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 48,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "\u0394 mean projection at the arm's own layer",
+        "legend_labels": [
+          "resp-avg \u00b7 r_B",
+          "ctx-end \u00b7 E2",
+          "prefix-end \u00b7 E2",
+          "resp-avg \u00b7 d_pre",
+          "ctx-end \u00b7 d_pre",
+          "prefix-end \u00b7 d_pre"
+        ],
+        "xticklabels": [
+          "Pre-image L14, context tokens",
+          "Pre-image L19, context tokens",
+          "Pre-image L14, context-end",
+          "Pre-image L19, context-end",
+          "Random L14, context tokens",
+          "Random L19, context tokens",
+          "Random L14, context-end",
+          "Random L19, context-end"
+        ],
+        "yticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50"
+        ]
+      }
+    ],
+    "series": [
+      "resp-avg \u00b7 r_B",
+      "ctx-end \u00b7 E2",
+      "prefix-end \u00b7 E2",
+      "resp-avg \u00b7 d_pre",
+      "ctx-end \u00b7 d_pre",
+      "prefix-end \u00b7 d_pre"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "commit": "ab81efe1",
+  "render_id": "0c8d5854c2b4415e",
+  "git_commit": "ab81efe1",
+  "git_dirty": false,
+  "created": "2026-08-14T12:55:47Z",
+  "figsize": [
+    7.4,
+    4.2
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "annotations": [
+          "-0.005",
+          "0.020",
+          "-0.031",
+          "-0.002",
+          "0.981",
+          "0.049",
+          "0.094",
+          "-0.032",
+          "0.010",
+          "0.982",
+          "-0.034",
+          "0.043",
+          "-0.015",
+          "-0.021",
+          "0.662",
+          "0.103",
+          "0.140",
+          "0.020",
+          "-0.013",
+          "0.720",
+          "0.023",
+          "0.038",
+          "0.036",
+          "0.022",
+          "0.844",
+          "0.063",
+          "0.171",
+          "-0.032",
+          "-0.011",
+          "0.849"
+        ],
+        "xticklabels": [
+          "cos(d_pre, r_B)",
+          "cos(d_pre, parent E2)",
+          "cos(d_pre, parent E3)",
+          "cos(d_pre, random)",
+          "bridge cos(rb_v2, #779 r_B)"
+        ],
+        "yticklabels": [
+          "evil L14",
+          "evil L19",
+          "sycophancy L14",
+          "sycophancy L19",
+          "hallucination L14",
+          "hallucination L19"
+        ]
+      },
+      {
+        "ylabel": "Cosine",
+        "yticklabels": [
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
