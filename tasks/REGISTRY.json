@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2288,
+  "highest_id": 2289,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9954,6 +9954,13 @@
       "path": "tasks/running/2288",
       "status": "running",
       "title": "verify_task_body cross-issue-reuse-pins check SKIPs on pre-merge worktree bodies \u2014 its only gate"
+    },
+    "2289": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2289",
+      "status": "proposed",
+      "title": "#2223's merged r2/r3/r5 scripts red 5 fleet-wide gate nodes on origin/main \u2014 incl. the no-flags workflow_lint bundle"
     },
     "229": {
       "has_clean_result": false,
