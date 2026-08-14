@@ -8776,8 +8776,8 @@
     "2134": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2134",
-      "status": "running",
+      "path": "tasks/completed/2134",
+      "status": "completed",
       "title": "daily-fix: pre-dispatch staleness pass for queued tasks"
     },
     "2135": {
