@@ -23,3 +23,15 @@ Lessons:
    (min(hi) − max(lo)) agree when no interval contains the other, diverge under containment
    (#2223 turn 10: gap −3.58 vs overlap 2.79). Pick one, define it in the table setup line,
    and match whatever numbers the critique/orchestrator already circulated.
+5. **Sidecars persist mean lines, NOT fill_between bands** (#2223 r3): to ground a band-
+   separation claim, replicate the figure's band machinery in exact figure/RNG order and
+   VALIDATE the replicated mean lines against the sidecar at deviation 0.0 — then the
+   band values are the rendered ones (turn-1 gap +2.554 == critic's +2.55).
+6. **Ratio-of-drift bootstrap CIs are design-dependent**: another implementer's bounds
+   will differ by a few points (stream/pairing choices). Recompute your own, persist the
+   design + values in the committed artifact, quote the persisted numbers, and note the
+   structural agreement (which intervals cross zero) rather than chasing bound equality.
+7. **Word-cap relief for convention definitions**: define the interval-margin convention
+   once in cap-excluded Methodology; the Results table setup line carries only a pointer
+   ("gap-convention margins per Methodology") — the full definition inline blew a Result
+   block to 201/180.

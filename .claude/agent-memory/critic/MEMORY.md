@@ -136,3 +136,4 @@
 - [Fixed-window pins](feedback_fixed_window_pins_vs_additive_insertions.md) — (anchor,length) pins break on ADDITIVE inserts (#2126)
 - [Capping/steering stats traps](feedback_capping_steering_plan_stats_traps.md) — footprint-matched null; listwise drop = post-treatment selection (#2203)
 - [Infra dispatch-plan failure modes](feedback_infra_dispatch_plan_failure_modes.md) — asyncio.run in async sites; stale fingerprints (#626)
+- [Husk-reap comparator reviews](feedback_husk_reap_comparator_review.md) — trace vs REAL artifact (materialized pointer); empty-unique backstop; occupancy channel orthogonal (#2138)
