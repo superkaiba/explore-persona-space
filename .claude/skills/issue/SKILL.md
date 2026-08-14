@@ -11163,7 +11163,9 @@ single canonical merge procedure, invoked from TWO trigger points:
   the instant clean-result-critic PASSes. The merge does NOT wait for
   the user to promote the clean-result.
 - **Code-change paths** (`infra` / `batch` / `analysis` / `survey`) — at
-  this step, the instant the task auto-completes (Step 10 -> `completed`).
+  this step, via Step 10 step 6's `epm:merged`-not-yet-present branch;
+  status is still `running` here BY DESIGN (#1723), the terminal flip
+  DEFERRED to Step 10d's own Terminal-teardown sub-section.
 
 Rationale: deferring the merge stranded shared-library fixes on unmerged
 branches, so the next experiment inheriting from `main` lacked them
@@ -11511,10 +11513,20 @@ rebase-merged. Five guards:
    own-diff content as one commit) — this is what keeps the clean-result body
    (committed to `main` by `task.py`, never in the worktree) safe across the
    merge.
-2. **Status already off `running`.** By both trigger points the status is
-   well past `running` (`awaiting_promotion` for experiments; `completed`
-   for code paths, flipped in Step 10 step 6 BEFORE this step). A crash
-   mid-merge therefore cannot strand a terminated-pod task at `running`.
+2. **Status is path-dependent — never flip it to reach this step.** At the
+   Step 9b trigger the EXPERIMENT path is parked at `awaiting_promotion`;
+   the CODE-CHANGE path is still at `running` BY DESIGN (#1723) — Step 10
+   step 6 DEFERS the terminal flip to Step 10d's own
+   `Terminal teardown (code-change path only)` sub-section, which runs
+   AFTER `epm:merged v1`. That deferral keeps the `/issue-tick <N>` cron
+   armed across the merge window and prevents the `completed`-on-an-
+   unmerged-branch record `completed_unmerged_pass` flags (#1540/#1653).
+   `running` here is EXPECTED, not stale: flipping it early also makes the
+   worktree reap-eligible mid-merge (`worktree_audit.py`) — the #2242
+   fail-open. Crash safety: EXPERIMENT — pod already terminated, task at a
+   user gate, nothing bills; CODE-CHANGE — task still ACTIVE with its tick
+   cron armed and `epm:merged` as the idempotency key, so the next
+   `/issue <N>` re-enters Step 10d idempotently.
    On a later `/issue <N>` resume: if the PR is already merged AND status
    is still `running` for any reason, auto-advance rather than
    re-dispatching.
