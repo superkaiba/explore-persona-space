@@ -9923,8 +9923,8 @@
     "2284": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2284",
-      "status": "running",
+      "path": "tasks/completed/2284",
+      "status": "completed",
       "title": "workflow-fix: SKILL.md plan-review-floor trigger misattributed to is_workflow_fix_session"
     },
     "2285": {
