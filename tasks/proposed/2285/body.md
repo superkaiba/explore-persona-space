@@ -99,3 +99,5 @@ resolves in #1723's favour. No existing task covers it — the dedup scan over
 `tasks/*/*/body.md` found 20 Step-10d-titled tasks (nearest neighbours: #2246 on the
 mid-gate worktree reap, plus the Guard-1 three-dot and lint-vintage fixes) and none
 touching the Guard-2 status assertion.
+
+workflow_fix_target: .claude/skills/issue/SKILL.md
