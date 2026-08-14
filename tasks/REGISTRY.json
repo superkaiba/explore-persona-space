@@ -9993,8 +9993,8 @@
     "2293": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2293",
-      "status": "planning",
+      "path": "tasks/approved/2293",
+      "status": "approved",
       "title": "Step 9c pristine oracle cut from repo-root HEAD instead of the resolved diff base \u2014 root-divergence window yields false NEW classifications"
     },
     "23": {
