@@ -31,12 +31,12 @@ relates_to:
 
 ## Takeaways
 
-- **SFT installs the linear context→answer map; RLVR barely moves it.** Pooled on-policy held-out R² at layer 30 rises .413 → .578 → .598 → .602 → .620 across base/SFT/DPO/RLVR/longer-RLVR — the DPO→RLVR increment (+.004) is the smallest step on the ladder against +.165 at base→SFT — and per corpus (round 3) DPO→RLVR closes at tier 0–5 (at most a rotation) on 7/8 corpora, with the two exceptions exactly the corpora RLVR trained on (MATH, IF-constraints).
-- **The base map never reconstructs a post-trained map on the models' own text** (tier-8 gaps +0.14 to +0.26 per corpus in round 3; +0.12 to +0.28 pooled, IF-constraints outlier +0.45) — but on fixed target text the pooled gaps shrink to +0.03–0.14, so much of the on-policy irrecoverability rides on the text distribution each checkpoint writes, not only on map coordinates.
+- **SFT installs the linear context→answer map; RLVR barely moves it.** Pooled on-policy held-out R² at layer 30 rises .413 → .578 → .598 → .602 → .620 across base/SFT/DPO/RLVR/longer-RLVR — the DPO→RLVR increment (+.004) is the smallest step on the ladder against +.165 at base→SFT — and per corpus (round 3) DPO→RLVR closes at tier 0–5 on 7/8 corpora (6/7 counting the two Tülu-derived corpora as one); the only corpus no tier closes (IF-constraints) and the only one needing the rotation (MATH) are exactly the two RLVR trained on.
+- **The base map never reconstructs a post-trained map on the models' own text** (tier-8 gaps +0.14 to +0.26 per corpus in round 3; +0.12 to +0.28 pooled, IF-constraints outlier +0.45) — but on fixed target text the pooled gaps shrink to +0.03–0.14 (IF-constraints base→longer outlier +0.22), so much of the on-policy irrecoverability rides on the text distribution each checkpoint writes, not only on map coordinates.
 - **No cluster-level teaching signal survives:** at every adjacent transition the most-improved prompt cluster on own text is indistinguishable from the selection-matched permutation null given the variance (p = .14/.08/.39/.17; null bands sit well below achievable ceilings, so the test is informative), and the off-policy arm's rejections never agree with the on-policy arm on which clusters moved.
-- **Longer-RLVR (Tülu-3.1) accumulates more coordinate change than the single RLVR step, not less** — DPO→longer-RLVR moves 4/8 corpora to a higher sufficient tier in round 3, and every pooled transition into longer-RLVR leaves IF-constraints tier-8 gaps of +.20 to +.26. The map moves monotonically with RLVR dose.
+- **Longer-RLVR (Tülu-3.1) accumulates more coordinate change than the single RLVR step, not less** — DPO→longer-RLVR moves 4/8 corpora to a higher sufficient tier in round 3, and every pooled post-training transition into longer-RLVR leaves IF-constraints tier-8 gaps of +.20 to +.26. The map moves with RLVR dose.
 - **The fitted map wins held-out R² everywhere (identity+bias baseline −1.2 to −3.5) yet identity+bias wins retrieval at rank 1** (.604/.615 vs ridge .564/.602 on the RLVR on-policy cell) — the documented R²-vs-retrieval dissociation, so every map-strength claim here is R²-specific and does not assert the fitted map is the better retrieval reader.
-- **Validity bounds.** The pooled round's fold-reproducibility gate formally failed its band (Δ_assign +0.077 vs the 0.052 tolerance) and the run proceeded on an instrument-conservatism adjudication, so pooled values inherit ~.05–.07 of conservatism and are never numerically compared to round-3 per-corpus fits; one released ladder, single fold/corpus seeds, within-run bootstrap CIs only; the triggered leakage-excluded sensitivity read is unrun — confidence MODERATE.
+- **Validity bounds.** The pooled round's fold-reproducibility gate formally failed its band (Δ_assign +0.077 vs the 0.052 tolerance) and the run proceeded on an instrument-conservatism adjudication, so pooled values inherit ~.05–.07 of conservatism and are never numerically compared to round-3 per-corpus fits; one released ladder, single fold/corpus seeds, within-run bootstrap CIs only; the triggered leakage-excluded sensitivity read is unrun.
 
 ## Goal
 
@@ -104,7 +104,7 @@ Round-4 pooling: the seven chat-render corpora (71,906 built rows) reduce to a 4
 
 **Sample training/evaluation data + completions:**
 
-1 of 7,473 rows (row 1309 — seed-42 spot-check row; random sample) from the After-RLVR model's GSM8K-train generations. Full artifact: [answers.jsonl @ 8c54f9fc](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/8c54f9fc2b6c8b2cb3a2cdc256c1e38a8ff3a217/issue1336_rlvr_ladder/raw_completions/generation/rlvr/gsm8k_train5k/answers.jsonl) (round-1 wave; the round-3 fatter GSM8K train uses the identical `openai/gsm8k` questions extended to all 7,473):
+1 of 5,000 rows (row 1309 — seed-42 spot-check row; random sample) from the After-RLVR model's GSM8K-train generations. Full artifact: [answers.jsonl @ 8c54f9fc](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/8c54f9fc2b6c8b2cb3a2cdc256c1e38a8ff3a217/issue1336_rlvr_ladder/raw_completions/generation/rlvr/gsm8k_train5k/answers.jsonl) (round-1 wave; the round-3 fatter GSM8K train uses the identical `openai/gsm8k` questions extended to all 7,473):
 
 ```json
 {
@@ -176,7 +176,7 @@ Round 4 pools the seven chat-render corpora into one group-aware fit per checkpo
 
 > **Figure.** *Map strength rises at SFT and barely at RLVR.* On-policy pooled R² (blue): base .413 → SFT .578 → DPO .598 → RLVR .602 → longer-RLVR .620. Off-policy fits (orange) sit at .45–.46 for every post-trained checkpoint; the open circles show the base-written text slice is the outlier in every post-trained cell.
 
-On its own text every checkpoint's pooled map strengthens monotonically along the ladder, and the DPO→RLVR increment (+.004) is the smallest step (base→SFT is +.165); matched-n companions at 15,000 train rows preserve the ordering. Two Methodology qualifiers attach to every pooled number: the fold-reproducibility gate formally failed and was adjudicated as instrument conservatism the pooled values inherit (roughly .05–.07, certified only on the LMSYS slice — never compared numerically against round-3 fits), and the ordering is stated at the frozen layer 30, where the max-over-layers ordering differs. The test side excludes 306 near-duplicate-quarantined rows (0.64%).
+On its own text the pooled map strengthens at every step only on the frozen test-partition convention: both companions put the DPO→RLVR step at ≈ −.002 (CV .5935 → .5916; matched-n .5619 → .5600) — the sign flip strengthens "barely moves" and refutes strict monotonicity. Two Methodology qualifiers attach to every pooled number: the fold-reproducibility gate formally failed and was adjudicated as instrument conservatism the pooled values inherit (roughly .05–.07, certified only on the LMSYS slice — never compared numerically against round-3 fits), and the ordering is stated at the frozen layer 30, where the max-over-layers ordering differs. The test side excludes 306 near-duplicate-quarantined rows (0.64%).
 
 ### Post-trained maps transfer across each other's text but not the base model's; the base-text slice is the outlier in every off-policy cell
 
@@ -190,9 +190,9 @@ Per corpus (columns) and training-text arm (rows): the base checkpoint's pooled 
 
 ![Base map transferred to each post-trained stage per corpus and training-text arm](https://raw.githubusercontent.com/superkaiba/explore-persona-space/06e841e479dcc4669bdd2ef364a61c784e0d386b/figures/issue_1336/hero_pooled_2x2_grid_v3.png)
 
-> **Figure.** *The base map cannot be reparameterized into any post-trained map on own text; on fixed target text it nearly can.* Top row (on-policy): both-sides reparameterization (red) stays .12–.28 below the own-map ceiling (blue) on every corpus. Bottom row (off-policy): the same correction closes to within .03–.14 of the ceiling.
+> **Figure.** *The base map cannot be reparameterized into any post-trained map on own text; on fixed target text it nearly can.* Top row (on-policy): both-sides reparameterization (red) stays .12–.28 below the own-map ceiling (blue; IF-constraints base→longer +.45). Bottom row (off-policy): the same correction closes to within .03–.14 of the ceiling (IF-constraints base→longer +.22).
 
-On the models' own text the pooled read replicates round 3: no linear correction of the base map reaches any post-trained ceiling (tier-8 gaps +.12 to +.28; base→longer-RLVR on IF-constraints an outlier at +.45). On fixed target text the same gaps shrink to +.03–.14 — much of the base map's on-policy irrecoverability rides on the text distribution each checkpoint writes.
+On the models' own text the pooled read replicates round 3: no linear correction of the base map reaches any post-trained ceiling (tier-8 gaps +.12 to +.28; base→longer-RLVR on IF-constraints an outlier at +.45). On fixed target text the same gaps shrink to +.03–.14, the same cell the outlier (IF-constraints base→longer +.22) — much of the base map's on-policy irrecoverability rides on the text distribution each checkpoint writes.
 
 The GSM8K-train and GSM8K-test panels track each other at every stage (RLVR on-policy .378 vs .384), so RLVR shows no advantage on the exact prompts it trained on; censoring on that contrast is bounded at 0.23% (Methodology). MATH and GSM8K-train carry the heaviest cross-corpus topical entanglement (merged mass .785 and .709), the backdrop for per-corpus reads there.
 
@@ -212,7 +212,7 @@ The per-unit data behind the classification above: one point per transition × c
 
 ![Tier-8 gap per stage pair, corpus, and training-text arm with the 0.021 equivalence band dashed](https://raw.githubusercontent.com/superkaiba/explore-persona-space/06e841e479dcc4669bdd2ef364a61c784e0d386b/figures/issue_1336/pooled_tier8_gaps_points_v3.png)
 
-> **Figure.** *Two regimes, one outlier corpus.* Base-pair gaps sit at +.12 to +.28 on own text (off-policy open circles at +.03 to +.14); post-training pairs cluster at or inside the 0.021 band. IF-constraints (purple) is the recurring escape: +.45 at base→longer-RLVR, +.20 to +.26 on every transition into longer-RLVR.
+> **Figure.** *Two regimes, one outlier corpus.* Base-pair gaps sit at +.12 to +.28 on own text (off-policy open circles +.03 to +.14, IF-constraints base→longer +.22); post-training pairs cluster at or inside the 0.021 band. IF-constraints (purple) is the recurring escape: +.45 at base→longer-RLVR, +.20 to +.26 on every post-training transition into longer-RLVR.
 
 The point cloud shows the classification is not an artifact of class boundaries: post-training transitions form a tight cluster at the band, base transitions a separated stratum an order of magnitude higher, and IF-constraints is the single recurring outlier — consistent with round 3's finding that the DPO→RLVR residual lives on the corpora RLVR trained on. Off-policy gaps run uniformly smaller than their on-policy siblings, the same text-distribution effect as the base-map grid above.
 
@@ -228,9 +228,9 @@ Every on-policy transition is a failure-to-reject: the most-improved cluster is 
 
 ### The fitted map and the identity baseline dissociate: ridge wins held-out R², identity+bias wins retrieval at rank 1
 
-Both standing baseline reads are present for all ten pooled cells (figure-less; per-cell values sit in the pooled cell JSONs). On held-out R² the fitted map wins outright: the identity+learned-bias baseline (defined in the round-3 baseline section above) scores −1.21 to −3.46 across cells, against ridge's +.41 to +.62.
+Both standing baseline reads cover all ten pooled cells (figure-less; per-cell values in the pooled cell JSONs). On held-out R² the fitted map wins outright: the identity+learned-bias baseline scores −1.21 to −3.46, against ridge's +.41 to +.62. On retrieval the ordering reverses in all ten cells: identity+bias beats ridge at rank 1 (RLVR on-policy .604/.615 euclidean/cosine vs ridge .564/.602; rank-1 chance .0005) — the raw context activation already carries the neighborhood structure; the fitted map's advantage is scale and calibration, not retrieval.
 
-On retrieval the ordering reverses: nearest-neighbor matching against the 2,000-row held-out pool puts identity+bias above ridge at rank 1 — RLVR on-policy .604 euclidean / .615 cosine vs ridge's .564 / .602 (ridge at rank 5: .756 / .778; rank-1 chance .0005). The raw context activation already carries the neighborhood structure; the fitted map's advantage is scale and calibration, not retrieval. Round 3's baseline section reported the fitted maps' retrieval without this identity comparison (and under a per-corpus fit regime — not directly comparable), so map-strength claims here are R²-specific and never assert the fitted map is the better retrieval reader.
+The ridge retrieval read still replicates the stage ordering: accuracy at rank 1 runs .136/.206 → .584/.639 → .561/.592 → .564/.602 → .581/.608 across base/SFT/DPO/RLVR/longer-RLVR — the SFT jump and the flat DPO→RLVR step reappear, so identity winning retrieval does not undercut "SFT installs the map", only the claim that the fitted map is the better retrieval reader. Round 3 reported retrieval under a per-corpus fit regime — not directly comparable.
 
 The block below is not a sample of model outputs — it is 2 example superseded round summaries preserved for provenance, sanitized for context hygiene.
 
