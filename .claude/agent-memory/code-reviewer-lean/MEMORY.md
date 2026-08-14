@@ -29,3 +29,4 @@
 - [Staging gate single-phase, silent fallback](staging_gate_single_phase_silent_fallback.md) — sha-pin asserted only in the staging phase; later phases call a loader whose cache-miss branch silently REGENERATES the input (fresh pod B / resume) — trace loader call sites per phase (#2254 R1 g2)
 - [Stats-reuse driver live probes](stats_reuse_driver_live_probes.md) — shared-idx / relabel-partition / seed-lattice claims settle by 5-line live probes, not reading (#2225 fu1 F5)
 - [Stats-reuse driver live probes](stats_reuse_driver_live_probes.md) — shared-idx / relabel-partition / seed-lattice claims settle by 5-line live probes, not reading (#2225 fu1 F5)
+- [/tmp rerun zero-diff on analysis JSON](tmp_rerun_zero_diff_analysis_artifact.md) — rerun committed 0-GPU analysis script to /tmp, diff vs committed JSON; zero-diff retires parity/pre-reg/hand-edit questions at once (#2225 fu1)
