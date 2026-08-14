@@ -223,6 +223,35 @@ def test_per_setting_rubric_pair_counts(pairs, pair_map):
     }
 
 
+def test_rev_pair_rows_build_behavior_items_via_pair_index():
+    """A reversed-round (``mqrev--``) grid row resolves through ``J.pair_index()``
+    — the 2026-08-13 KeyError regression (rev pairs absent from the registry) —
+    and lands the F_prefix rubric pair with side a = fp-persona / b = fp-bare.
+    """
+    index = J.pair_index()
+    rev = BANK.build_rev_pairs()
+    assert len(index) == 65  # 60 parent + 5 reversed
+    assert all(p.pair_id in index for p in rev)
+    rows = [_grid_row(p, block_key="ce|joint_all|replace|A|steered") for p in rev]
+    by_rubric = J.build_grid_behavior_items(rows, index)  # KeyError'd pre-fix
+    units = [u for us in by_rubric.values() for u in us]
+    assert len(units) == 2 * len(rev)  # matched_query -> ONE (prefix) kind x 2 sides
+    for u in units:
+        assert u.source["rubric_kind"] == "prefix"
+        assert u.rubric_id == {"a": "fp-persona", "b": "fp-bare"}[u.source["side"]]
+    # Registry extension adds ZERO anchor calls: the rev pairs' (context, rubric)
+    # needs are a subset of the parent matched-query pairs' (same fp rubrics).
+    anchors = [{"context_id": "persona__q1", "draw": 0, "text": "t"}]
+    parent_only = {p.pair_id: p for p in BANK.build_pairs()}
+    a_parent = {
+        u.item_id for us in J.build_anchor_behavior_items(anchors, parent_only).values() for u in us
+    }
+    a_merged = {
+        u.item_id for us in J.build_anchor_behavior_items(anchors, index).values() for u in us
+    }
+    assert a_parent == a_merged
+
+
 def test_coherence_one_item_per_rollout(pairs, pair_map):
     rows = [_grid_row(p) for p in pairs[:5]]
     anchors = [
