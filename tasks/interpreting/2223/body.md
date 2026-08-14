@@ -5,7 +5,7 @@ kind: experiment
 tags:
 - keep-running
 created_at: '2026-08-10T21:18:35Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 2203
 origin_prompt: we want to reproduce the persona drift plots from assistant axis
 workflow: v1
