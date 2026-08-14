@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2285,
+  "highest_id": 2286,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9933,6 +9933,13 @@
       "path": "tasks/planning/2285",
       "status": "planning",
       "title": "workflow-fix: Step 10d Guard 2 asserts the pre-#1723 status ordering (says code paths are at completed; #1723 keeps them at running)"
+    },
+    "2286": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2286",
+      "status": "proposed",
+      "title": "HF data repo superkaiba1/explore-persona-space-data is at the 1,000,000-file hard ceiling \u2014 fleet-wide multi-file uploads now fail; pack/prune/overflow decision needed"
     },
     "229": {
       "has_clean_result": false,
