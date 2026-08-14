@@ -75,6 +75,34 @@ adding a pass means adding a numbered item here AND bumping the digit:
      deliberately paused), so a still-RUNNING pod is an escaped pod (Step-8
      terminate failed, the pause teardown failed, or it was never run
      through Step 8). Stopping it is unambiguously correct.
+   - **FENCE-DEFER (#2283 owner-fence arm — defer-only, bounded)**: the
+     AUTO-STOP above is DEFERRED (miss counter reset, one marker per
+     episode + a 24h-TTL push/sidecar re-alert) while the pod carries an
+     UNEXPIRED #2277 owner fence with NO owner-matching
+     upload-verification PASS — the SAME
+     ``pod_lifecycle.owner_fence_state`` reader chain the terminate guard
+     runs (``blocks_teardown``), so the watcher can no longer stop a pod
+     mid-run that the guard would refuse to destroy. Eligibility keys
+     STRICTLY on ``status in AUTO_STOP_DONE`` — a USER-paused ``on_hold``
+     task (the merged ``"auto-stop-done"`` class also covers it) NEVER
+     defers: a self-posted fence must not override a user pause. Both
+     existing shields (``keep-running`` tag, live follow-up) take
+     precedence; a not-EVALUATED fence read (kill switch
+     ``EPM_DISABLE_POD_FENCE_DEFER=1``, read failure — one loud WARN)
+     never defers (fail-open to the plain stop) and never clears episode
+     state. Bounded TWICE: by the fence's own expiry, and by a cumulative
+     per-(issue, pod) deferral ceiling ``EPM_POD_FENCE_DEFER_MAX_H``
+     (default 24h, floor-clamped 1h) measured from the episode's first
+     deferred tick — a continuously-refreshed fence cannot shield a pod
+     forever (once-per-episode ceiling marker announces the re-armed
+     stop). Episode state is the pod_id-keyed ``fd_pod`` sub-dict of the
+     pod-safety state file (the ``kr_pod``/``nr_pod`` contract — sibling
+     pods' saves forward-carry it verbatim); an evaluated-and-inactive
+     read (expired / cleared / owner PASS) CLEARS the entry. DEFER-ONLY
+     hard invariant: the arm can only turn a stop into a wait — with the
+     fence params at their False defaults ``decide_pod_safety`` is
+     byte-identical to its pre-#2283 table. Sidecar:
+     ``.claude/cache/pod-owner-fence-events.jsonl``.
    - **ALERT** (loud log + one-time dashboard-visible marker, NO stop) a
      RUNNING pod whose task is in a pod-active status (``approved`` /
      ``running`` / ``verifying`` / ``followups_running``) but has shown no
@@ -1629,6 +1657,55 @@ NEVER_RAN_OBSERVE_SLOP_S = 1200.0
 #: ``EPM_NEVER_RAN_REALERT_H`` (HOURS; :func:`_never_ran_realert_s`).
 NEVER_RAN_REALERT_S = 6 * 3600
 
+# Substring stamped into the #2283 OWNER-FENCE DEFER marker — posted (once
+# per fence episode, keyed by the pod's `fd_pod` entry in the pod-safety
+# state file) when the status-class AUTO-STOP arm would have fired on a
+# DONE-status task's RUNNING pod but the pod carries an UNEXPIRED #2277
+# owner fence with NO owner-matching upload-verification PASS
+# (pod_lifecycle.OwnerFenceState.blocks_teardown — the SAME reader chain the
+# terminate guard runs, never a second parser). The stop is DEFERRED (miss
+# counter reset), bounded by the fence's own expiry AND a cumulative
+# per-(issue, pod) ceiling (EPM_POD_FENCE_DEFER_MAX_H). DEFER-ONLY hard
+# invariant: the arm can only turn a stop into a wait — never accelerate
+# one. Posted as epm:progress, so it MUST be a member of
+# _WATCHER_NOTE_SENTINELS (excluded from "real progress" in
+# _latest_progress_ts — otherwise the defer marker would refresh the
+# staleness clocks of the very parked task it defers on). CRITICALLY, the
+# note text never binds the pod in structured position (no `pod=<name>`
+# token, sentinel-leading so no leading-token match): an epm:progress note
+# naming the pod with a fence token would REGISTER/CLEAR the owner's fence
+# (_OWNER_REGISTRATION_KINDS includes epm:progress) — the marker must be
+# registration-inert (pinned by
+# test_fence_defer_marker_is_registration_inert).
+_FENCE_DEFER_NOTE_SENTINEL = "[autonomous_session_watch:pod-owner-fence-defer]"
+
+# Substring stamped into the #2283 fence-defer CEILING marker — posted ONCE
+# per fence episode when the cumulative deferral age crosses
+# EPM_POD_FENCE_DEFER_MAX_H while the fence is STILL active (a
+# continuously-refreshed fence must not shield a pod forever): announces
+# that the ordinary >=threshold auto-stop accumulation has RE-ARMED. Same
+# _WATCHER_NOTE_SENTINELS membership + registration-inertness contract as
+# the defer sentinel above.
+_FENCE_CEILING_NOTE_SENTINEL = "[autonomous_session_watch:pod-owner-fence-ceiling]"
+
+#: Cumulative per-(issue, pod incarnation) deferral ceiling (HOURS) for the
+#: #2283 fence-defer arm: measured from the episode's first deferred tick
+#: (`fd_pod.first_ts`), NOT from the fence value — an owner re-posting a
+#: fresh `fence_until=` every few hours extends the fence forever, but not
+#: this clock. 24h matches the watcher's standing unresolved-condition
+#: cadence (KEEP_RUNNING_OWNER_REALERT_S et al.) and caps the worst-case
+#: non-owner burn at ~1 day. Env-overridable at CALL time via
+#: ``EPM_POD_FENCE_DEFER_MAX_H`` (HOURS; :func:`_pod_fence_defer_max_s` —
+#: floor-clamped to :data:`POD_FENCE_DEFER_FLOOR_H`).
+POD_FENCE_DEFER_MAX_H = 24.0
+
+#: Floor clamp (HOURS) for ``EPM_POD_FENCE_DEFER_MAX_H``: a positive
+#: sub-1h override is clamped UP to 1h (a near-zero ceiling would turn the
+#: defer arm into a no-op while READING as enabled); malformed /
+#: non-positive values fall back to the default instead (the
+#: :func:`_keep_running_owner_realert_s` defensive shape).
+POD_FENCE_DEFER_FLOOR_H = 1.0
+
 # Substring stamped into the one-time "inline-follow-up exemption" marker
 # posted when the auto-stop arm would have fired but the task's events.jsonl
 # shows a `epm:run-launched` marker NEWER than its transition into the current
@@ -2325,6 +2402,11 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _KEEP_RUNNING_WEDGED_NOTE_SENTINEL,
         _KEEP_RUNNING_POD_IDLE_NOTE_SENTINEL,
         _NEVER_RAN_NOTE_SENTINEL,
+        # #2283 fence-defer arm: both markers are epm:progress on a PARKED
+        # task — counting them as progress would refresh the reconcile /
+        # stalled staleness clocks (anti-liveness contract, #2084 family).
+        _FENCE_DEFER_NOTE_SENTINEL,
+        _FENCE_CEILING_NOTE_SENTINEL,
         _FOLLOWUP_NOTE_SENTINEL,
         _WEDGE_ALERT_NOTE_SENTINEL,
         _WEDGE_STOP_NOTE_SENTINEL,
@@ -4099,13 +4181,16 @@ def decide_pod_safety(
     *,
     keep_running: bool = False,
     followup_active: bool = False,
+    fence_active: bool = False,
+    fence_defer_exhausted: bool = False,
 ) -> tuple[str, int]:
     """Pure decision for the pod-safety pass on a RUNNING managed pod.
 
     Trigger is the task's STATUS CLASS (unambiguous), NOT session liveness —
     see the module docstring "Why STOP is keyed on task status". Returns
     ``(action, new_missed)`` where action is ``"stop"`` | ``"alert"`` |
-    ``"keep"`` | ``"keep-running-skip"`` | ``"followup-skip"``.
+    ``"keep"`` | ``"keep-running-skip"`` | ``"followup-skip"`` |
+    ``"fence-defer"``.
 
     Parameters
     ----------
@@ -4154,6 +4239,31 @@ def decide_pod_safety(
         pattern as ``keep_running``). Incident #477 (2026-06-10): the
         watcher stopped a healthy follow-up pod 3 times before the user
         manually added the ``keep-running`` tag.
+    fence_active
+        Whether the pod carries an UNEXPIRED #2277 owner fence with NO
+        owner-matching upload-verification PASS
+        (``pod_lifecycle.OwnerFenceState.blocks_teardown``, read through
+        the tri-state ``_pod_owner_fence_active`` wrapper — the caller
+        passes ``fence_read is True``, so a not-evaluated ``None`` read
+        NEVER defers: fail-open toward the pre-#2283 stop). Consulted ONLY
+        on the auto-stop arm, AFTER ``keep_running`` and
+        ``followup_active`` (both existing shields take precedence — the
+        fence arm can only ADD a defer where a stop would have fired,
+        never displace a skip). Eligibility is computed by the caller
+        strictly on ``status in AUTO_STOP_DONE``: ``"auto-stop-done"`` is
+        a MERGED status-class label that also covers user-paused
+        ``on_hold`` (:data:`AUTO_STOP_PAUSED`), and a self-posted fence
+        must NEVER defer a USER-ordered pause stop (#2283 blocker 1) — so
+        for an ``on_hold`` task the caller passes ``fence_active=False``
+        by construction.
+    fence_defer_exhausted
+        Whether the pod's cumulative fence-deferral episode age has
+        crossed the ``EPM_POD_FENCE_DEFER_MAX_H`` ceiling (default 24h,
+        measured from the episode's first deferred tick — NOT from the
+        fence value, so a continuously-refreshed fence cannot shield a
+        pod forever). When True the defer branch is bypassed and the
+        ordinary >=``threshold`` accumulation resumes (the caller posts
+        the once-per-episode ceiling marker).
 
     Cases (``"auto-stop-done"`` = task in :data:`POD_SAFETY_AUTO_STOP` —
     DONE, or user-paused ``on_hold``):
@@ -4170,6 +4280,15 @@ def decide_pod_safety(
       later finishes (the next ``epm:status-changed`` / ``epm:promoted``
       lands AFTER the latest ``epm:run-launched``) the predicate flips
       False on the next tick and the auto-stop re-arms normally.
+    - ``status_class == "auto-stop-done"`` AND ``fence_active`` AND NOT
+      ``fence_defer_exhausted`` (and neither shield above) ->
+      ``("fence-defer", 0)``. The stop is DEFERRED and the miss counter
+      reset, so a fence expiry / owner PASS / ceiling crossing later
+      re-arms a fresh >=``threshold`` accumulation before any stop (the
+      keep-running-skip reset semantics). DEFER-ONLY hard invariant: with
+      both new params at their False defaults this function is
+      byte-identical to its pre-#2283 decision table — the arm can only
+      turn a stop into a wait, never accelerate one.
     - ``status_class == "auto-stop-done"`` -> increment ``missed``; return
       ``"stop"`` once it reaches ``threshold`` (default 2 = ~20 min at a 10-min
       cron, so a single transient API/status glitch never stops a pod), else
@@ -4188,6 +4307,8 @@ def decide_pod_safety(
             return ("keep-running-skip", 0)
         if followup_active:
             return ("followup-skip", 0)
+        if fence_active and not fence_defer_exhausted:
+            return ("fence-defer", 0)
         new_missed = missed + 1
         if new_missed >= threshold:
             return ("stop", 0)
@@ -14387,6 +14508,29 @@ def _carry_nr_pod(
     return nr_pod
 
 
+def _carry_fd_pod(
+    prev: dict | None,
+    fd_pod_entry: tuple[str, dict] | None,
+    fd_pod_keep_ids: set[str] | None,
+) -> dict:
+    """Compute the #2283 ``fd_pod`` sub-dict for a :func:`_save_pod_safety_state`
+    payload — byte-parallel to :func:`_carry_kr_pod` / :func:`_carry_nr_pod`:
+    forward-carry every prior entry verbatim (missing/garbled prev -> ``{}``),
+    set/replace the one caller-owned entry when given, then GC against the
+    RUNNING-pod id set when the caller holds it (``None`` = carry everything,
+    no GC). The pod_id-keyed sub-dict shape is the #2283 blocker-2 contract:
+    the singular-field alternative goes structurally inert on multi-pod
+    issues (the #2149/#2060 lesson — a busy sibling pod's save must never
+    reset a fenced pod's episode)."""
+    prev_fd_pod = (prev or {}).get("fd_pod")
+    fd_pod: dict = dict(prev_fd_pod) if isinstance(prev_fd_pod, dict) else {}
+    if fd_pod_entry is not None:
+        fd_pod[fd_pod_entry[0]] = fd_pod_entry[1]
+    if fd_pod_keep_ids is not None:
+        fd_pod = {k: v for k, v in fd_pod.items() if k in fd_pod_keep_ids}
+    return fd_pod
+
+
 def _load_pod_safety_state(issue: int) -> dict:
     """Read the per-pod state for ``issue`` (``{}`` if absent / unreadable — a
     fresh/garbled file just starts the miss count at 0 and alerted at False)."""
@@ -14423,6 +14567,8 @@ def _save_pod_safety_state(
     kr_pod_keep_ids: set[str] | None = None,
     nr_pod_entry: tuple[str, dict] | None = None,
     nr_pod_keep_ids: set[str] | None = None,
+    fd_pod_entry: tuple[str, dict] | None = None,
+    fd_pod_keep_ids: set[str] | None = None,
     prev: dict | None = None,
 ) -> None:
     """Persist the per-pod state atomically (temp + rename).
@@ -14515,6 +14661,18 @@ def _save_pod_safety_state(
     every save, per-pod keying IS the incarnation reset, GC'd against the
     caller's RUNNING-pod set when provided, back-compat missing key ->
     ``{}``.
+
+    The #2283 fence-defer arm's state is the ``fd_pod`` top-level sub-dict
+    (one entry per pod incarnation: ``{"first_ts", "noted",
+    "last_push_ts", "ceiling_noted"}``) — byte-parallel carry semantics to
+    ``kr_pod`` / ``nr_pod`` via ``fd_pod_entry`` / ``fd_pod_keep_ids``
+    (:func:`_carry_fd_pod`): sibling entries forward-carried VERBATIM on
+    every save (a busy sibling pod's save must never reset a fenced pod's
+    24h-ceiling clock — the #2283 blocker-2 contract), per-pod keying IS
+    the incarnation reset, GC'd against the caller's RUNNING-pod set when
+    provided, back-compat missing key -> ``{}``. The episode CLEAR on an
+    evaluated-and-inactive fence read writes a FRESH-defaults entry via
+    ``fd_pod_entry`` (never a delete variant — mirror, don't invent).
     """
     AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
     dest = _pod_safety_state_path(issue)
@@ -14604,6 +14762,9 @@ def _save_pod_safety_state(
     # #2060 nr_pod sub-dict: identical carry contract (sibling entries
     # forward-carried verbatim; per-pod keying is the incarnation reset).
     nr_pod = _carry_nr_pod(prev, nr_pod_entry, nr_pod_keep_ids)
+    # #2283 fd_pod sub-dict: identical carry contract again (fence-defer
+    # episodes; a sibling pod's save forward-carries a fenced pod's entry).
+    fd_pod = _carry_fd_pod(prev, fd_pod_entry, fd_pod_keep_ids)
     payload = {
         "pod_id": pod_id,
         "missed": missed,
@@ -14625,6 +14786,7 @@ def _save_pod_safety_state(
         "kr_owner_last_alert_ts": kr_owner_last_alert_ts,
         "kr_pod": kr_pod,
         "nr_pod": nr_pod,
+        "fd_pod": fd_pod,
     }
     tmp = dest.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(payload, indent=2))
@@ -16812,6 +16974,39 @@ def _keep_running_pod_probe_fail_rows() -> int:
     return parsed
 
 
+def _pod_fence_defer_max_s() -> float:
+    """#2283 cumulative fence-deferral ceiling in seconds (env
+    ``EPM_POD_FENCE_DEFER_MAX_H``, HOURS; default
+    :data:`POD_FENCE_DEFER_MAX_H` = 24h). Malformed / non-positive /
+    non-finite env falls back to the default (the
+    :func:`_keep_running_owner_realert_s` defensive shape — a typo'd var
+    must not disable the ceiling); a POSITIVE sub-floor value is clamped UP
+    to :data:`POD_FENCE_DEFER_FLOOR_H` (a near-zero ceiling would make the
+    arm read as enabled while never deferring)."""
+    raw = os.environ.get("EPM_POD_FENCE_DEFER_MAX_H")
+    if not raw:
+        return POD_FENCE_DEFER_MAX_H * 3600.0
+    try:
+        val = float(raw)
+    except ValueError:
+        return POD_FENCE_DEFER_MAX_H * 3600.0
+    if not (0 < val < 24 * 366):  # rejects 0/negative AND inf/nan (the #1739 shape)
+        return POD_FENCE_DEFER_MAX_H * 3600.0
+    return max(val, POD_FENCE_DEFER_FLOOR_H) * 3600.0
+
+
+def _pod_fence_defer_enabled() -> bool:
+    """#2283 fence-defer kill switch: False when
+    ``EPM_DISABLE_POD_FENCE_DEFER`` is set truthy ("1"/"true"/"yes"/"on",
+    case-insensitive). Default enabled. Disabled means the fence is NOT
+    EVALUATED (tri-state ``None`` from :func:`_pod_owner_fence_active`) —
+    the stop proceeds exactly as pre-#2283 and episode state is CARRIED,
+    never cleared (an unevaluated read must not erase a live episode).
+    Mirrors :func:`_keep_running_owner_audit_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_POD_FENCE_DEFER", "").strip().lower()
+    return raw not in {"1", "true", "yes", "on"}
+
+
 def _never_ran_grace_s() -> float:
     """#2060 never-ran grace floor in seconds (env ``EPM_NEVER_RAN_GRACE_MIN``,
     MINUTES; default :data:`NEVER_RAN_GRACE_MIN` = 45 min). Malformed /
@@ -17605,6 +17800,37 @@ def _append_keep_running_wedged_event(payload: dict, dry_run: bool) -> None:
         print(f"  keep-running-wedged: sidecar append failed: {exc}", file=sys.stderr)
 
 
+def _pod_owner_fence_sidecar_path() -> Path:
+    """DEDICATED #2283 fence-defer event stream (the one-concern-one-stream
+    convention — ``keep-running-wedged-events.jsonl`` sibling)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "pod-owner-fence-events.jsonl"
+
+
+def _append_pod_owner_fence_event(payload: dict, dry_run: bool) -> None:
+    """Append one JSON line to the #2283 fence-defer sidecar (fail-soft;
+    ``ts`` + ``kind`` stamped here). ``dry_run`` reports only — no write.
+    A ``kind`` key in ``payload`` deliberately OVERRIDES the stamped default
+    (ceiling rows post ``kind="fence-ceiling"``; defer rows are the
+    default ``"fence-defer"``) — the
+    :func:`_append_keep_running_wedged_event` convention."""
+    row = {
+        "ts": datetime.now().astimezone().isoformat(),
+        "kind": "fence-defer",
+        **payload,
+    }
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append pod-owner-fence sidecar row: {line[:160]}")
+        return
+    dest = _pod_owner_fence_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  fence-defer: sidecar append failed: {exc}", file=sys.stderr)
+
+
 def _emit_keep_running_wedged_alert(
     *,
     issue: int,
@@ -18158,6 +18384,38 @@ def _kr_pod_prev_fields(
     )
 
 
+def _fd_pod_prev_fields(
+    prev_state: dict, pod_id: str
+) -> tuple[dict, dict | None, float | None, bool, float | None, bool]:
+    """Sanitized reads of the #2283 per-pod fence-defer episode entry (the
+    :func:`_kr_pod_prev_fields` shape). Returns ``(fd_pod_all,
+    prev_entry_raw, first_ts, noted, last_push_ts, ceiling_noted)`` — every
+    garbled/missing field at its fresh default (back-compat: a pre-#2283
+    state file with no ``fd_pod`` reads ``{}``)."""
+    fd_pod_all = prev_state.get("fd_pod")
+    if not isinstance(fd_pod_all, dict):
+        fd_pod_all = {}
+    prev_entry_raw = fd_pod_all.get(pod_id)
+    prev_entry = prev_entry_raw if isinstance(prev_entry_raw, dict) else {}
+    first_ts = prev_entry.get("first_ts")
+    if not isinstance(first_ts, int | float) or isinstance(first_ts, bool):
+        first_ts = None
+    noted = bool(prev_entry.get("noted", False))
+    last_push_ts = prev_entry.get("last_push_ts")
+    if not isinstance(last_push_ts, int | float) or isinstance(last_push_ts, bool):
+        last_push_ts = None
+    ceiling_noted = bool(prev_entry.get("ceiling_noted", False))
+    return (fd_pod_all, prev_entry_raw, first_ts, noted, last_push_ts, ceiling_noted)
+
+
+def _fresh_fd_pod_entry() -> dict:
+    """A fresh-defaults #2283 ``fd_pod`` entry — the episode-CLEAR payload
+    (an evaluated-and-inactive fence read resets the episode by WRITING
+    fresh defaults through :func:`_carry_fd_pod`'s set/replace arm; never a
+    delete variant — mirror, don't invent)."""
+    return {"first_ts": None, "noted": False, "last_push_ts": None, "ceiling_noted": False}
+
+
 def _note_pod_idle_probe_failure(
     issue: int,
     pod_id: str,
@@ -18640,18 +18898,328 @@ def _maybe_escalate_never_ran_pod(
     return True
 
 
+def _pod_owner_fence_active(pod_name: str, events: list, now: float) -> bool | None:
+    """Tri-state #2277 owner-fence read for the #2283 fence-defer arm.
+
+    - ``True``  — the pod carries an UNEXPIRED owner fence with NO
+      owner-matching upload-verification PASS
+      (``pod_lifecycle.OwnerFenceState.blocks_teardown`` — the SAME reader
+      chain the terminate guard runs; never a second parser).
+    - ``False`` — the read EVALUATED and no unwaived fence exists (no
+      tokens, expired, cleared via ``fence_until=none``, or the owner's
+      pod-bound PASS discharges it). The caller may CLEAR episode state.
+    - ``None``  — NOT EVALUATED: kill switch
+      (``EPM_DISABLE_POD_FENCE_DEFER=1``), import failure, or any exception
+      from the reader chain (one loud stderr WARN — never silent). ``None``
+      makes no fence claim: the caller neither defers NOR clears episode
+      state (fail-open toward the pre-#2283 stop; a transient read failure
+      must not erase a live episode's 24h-ceiling clock).
+
+    ``now`` is the pass's Unix-epoch float clock (plan §12 assumption 2 —
+    ``pod_safety_pass`` passes ``time.time()``); converted here to the
+    tz-aware UTC datetime the pod_lifecycle fence comparison requires. The
+    import is LAZY (function-local, the plan §4.3 contract): pod_lifecycle
+    imports runpod_api at module scope, and a fence read must degrade to
+    ``None`` — not kill the whole watcher pass — if that chain breaks."""
+    if not _pod_fence_defer_enabled():
+        return None
+    try:
+        from pod_lifecycle import owner_fence_state
+
+        now_dt = datetime.fromtimestamp(now, UTC)
+        assert now_dt.tzinfo is not None, "fence comparison requires an aware datetime"
+        return bool(owner_fence_state(events, pod_name, now_dt).blocks_teardown)
+    except Exception as exc:  # fail-open by design: WARN loud, make no claim
+        print(
+            f"  fence-defer: owner-fence read FAILED for pod {pod_name} "
+            f"({type(exc).__name__}: {exc}); NOT EVALUATED — no defer, episode "
+            f"state carried (#2283 fail-open).",
+            file=sys.stderr,
+        )
+        return None
+
+
+def _fence_until_display(pod_name: str, events: list, now: float) -> str:
+    """Best-effort ISO display of the pod's registered fence expiry for the
+    #2283 defer marker/push text. Fail-soft ``"unknown"`` on ANY failure —
+    the tri-state :func:`_pod_owner_fence_active` carries the DECISION; this
+    is display only, so it must never raise into the emission path."""
+    try:
+        from pod_lifecycle import owner_fence_state
+
+        st = owner_fence_state(events, pod_name, datetime.fromtimestamp(now, UTC))
+        return st.fence_until.isoformat() if st.fence_until is not None else "unknown"
+    except Exception:
+        return "unknown"
+
+
+def _fence_defer_exhausted_and_note_ceiling(
+    issue: int,
+    pod_id: str,
+    info: PodInfo | None,
+    status: str | None,
+    fence_active: bool,
+    now: float,
+    prev_state: dict,
+    dry_run: bool,
+    issue_running_pod_ids: set[str] | None,
+) -> bool:
+    """Compute the #2283 cumulative-deferral ceiling verdict for one pod and
+    fire the ONCE-per-episode ceiling escalation when it is freshly crossed
+    (split out of :func:`_process_pod` for C901).
+
+    Exhaustion is measured from the episode's first deferred tick
+    (``fd_pod.first_ts``) — never from the fence value, so a
+    continuously-refreshed fence cannot shield a pod past
+    ``EPM_POD_FENCE_DEFER_MAX_H``. On a fresh crossing while the fence is
+    STILL active: one task marker + one fail-soft push + one sidecar row
+    (``kind="fence-ceiling"``), then ``ceiling_noted=True`` is persisted AND
+    mirrored into the in-memory ``prev_state`` so the tick's later
+    status-class save forward-carries it (the #1490 r2 / #1519 clobber
+    lesson). Returns the exhaustion bool regardless of emission."""
+    (fd_all, _raw, first_ts, noted, last_push_ts, ceiling_noted) = _fd_pod_prev_fields(
+        prev_state, pod_id
+    )
+    exhausted = first_ts is not None and (now - first_ts) > _pod_fence_defer_max_s()
+    if not (fence_active and exhausted) or ceiling_noted:
+        return exhausted
+    pod_name = info.name if info is not None else f"pod-{issue}"
+    max_h = _pod_fence_defer_max_s() / 3600.0
+    # Registration-inertness contract (see _FENCE_CEILING_NOTE_SENTINEL):
+    # never a `pod=<real name>` token, never the pod name as leading token.
+    _post_progress_marker(
+        issue,
+        f"{_FENCE_CEILING_NOTE_SENTINEL} OWNER-FENCE DEFER CEILING EXHAUSTED: the "
+        f"pod-safety auto-stop of RUNNING pod {pod_name} (pod_id={pod_id}) on a "
+        f"task at DONE status '{status}' was deferred behind an unexpired #2277 "
+        f"owner fence for a cumulative {max_h:.0f}h (EPM_POD_FENCE_DEFER_MAX_H) "
+        f"and the fence is STILL active — a continuously-refreshed fence must "
+        f"not shield a pod forever, so the ordinary >=threshold auto-stop "
+        f"accumulation is RE-ARMED (stop in ~20 min at the 10-min cadence). If "
+        f"the run is genuinely live, tag it (`task.py add-tag {issue} "
+        f"keep-running`) or stop it yourself (`pod.py stop --issue {issue}`). "
+        f"Posted once per fence episode.",
+        dry_run,
+        label="fence-ceiling",
+    )
+    _telegram_push(
+        f"pod-safety #2283: fence-defer ceiling EXHAUSTED for {pod_name} "
+        f"(task #{issue}, status '{status}') — {max_h:.0f}h of cumulative "
+        f"deferral behind a still-active owner fence; ordinary auto-stop "
+        f"re-armed (~20 min). Tag keep-running or stop it yourself to "
+        f"intervene.",
+        dry_run,
+    )
+    _append_pod_owner_fence_event(
+        {
+            "kind": "fence-ceiling",
+            "issue": issue,
+            "pod_id": pod_id,
+            "pod_name": pod_name,
+            "status": status,
+            "episode_first_ts": first_ts,
+            "deferred_h": round((now - first_ts) / 3600.0, 2),
+            "ceiling_h": max_h,
+        },
+        dry_run,
+    )
+    entry = {
+        "first_ts": first_ts,
+        "noted": noted,
+        "last_push_ts": last_push_ts,
+        "ceiling_noted": True,
+    }
+    if not dry_run:
+        prev_missed = prev_state.get("missed", 0)
+        if not isinstance(prev_missed, int) or isinstance(prev_missed, bool):
+            prev_missed = 0
+        _save_pod_safety_state(
+            issue,
+            pod_id,
+            missed=prev_missed,
+            alerted=bool(prev_state.get("alerted", False)),
+            last_progress_ts=prev_state.get("last_progress_ts")
+            if isinstance(prev_state.get("last_progress_ts"), int | float)
+            else None,
+            fd_pod_entry=(pod_id, entry),
+            fd_pod_keep_ids=issue_running_pod_ids,
+            prev=prev_state,
+        )
+    # Mirror into prev_state (dry-run included — in-memory only there) so the
+    # tick's later save forward-carries ceiling_noted (#1490 r2 / #1519).
+    new_map = dict(fd_all)
+    new_map[pod_id] = entry
+    if issue_running_pod_ids is not None:
+        new_map = {k: v for k, v in new_map.items() if k in issue_running_pod_ids}
+    prev_state["fd_pod"] = new_map
+    return exhausted
+
+
+def _handle_fence_defer_action(
+    *,
+    issue: int,
+    pod_id: str,
+    status: str | None,
+    now: float,
+    dry_run: bool,
+    alerted: bool,
+    latest_progress: float | None,
+    prev_state: dict,
+    info: PodInfo | None,
+    events: list | None,
+    issue_running_pod_ids: set[str] | None,
+) -> None:
+    """Apply the #2283 ``fence-defer`` action (split out of
+    :func:`_apply_pod_safety_action` for C901): stdout line every tick, task
+    marker + push + sidecar row ONCE per fence episode (keyed on the
+    ``fd_pod.noted`` flag; ``first_ts`` stamps the episode onset the 24h
+    ceiling measures from), push + sidecar re-fired every
+    ``EPM_KEEP_RUNNING_WEDGED_REALERT_H`` (24h — the house unresolved-
+    condition cadence, deliberately the SAME knob as the #1582 arm) while
+    the deferral holds. DEFER-ONLY: never a stop/terminate; the miss counter
+    is persisted at 0 (the keep-running-skip reset semantics).
+
+    Named residuals (recorded DECISIONS, not corners — #2283 plan §4.4):
+
+    * **lapse-recycle** — the episode clears on an evaluated-and-inactive
+      tick, so a fence that lapses for a single sub-threshold tick and is
+      then re-posted resets the ceiling (an indefinite shield at ~ceiling
+      periods). Adversarial-only, outside the accidents-not-adversaries
+      trust model inherited from #2277, and visible: every fresh episode
+      re-fires its own marker + push.
+    * **CARRY across a long shield handover** — a NOT-evaluated tick carries
+      the entry untouched, so an episode carried through a >ceiling
+      `keep-running` / `followup-skip` / wrong-status stretch re-enters
+      already exhausted and the returning fence gets zero fence-side
+      deferral. Intended: the ceiling measures one continuous SHIELDED
+      stretch, and clear-on-handover would let shield ALTERNATION recycle it
+      indefinitely. Degrades to pre-#2283 behavior plus a loud ceiling
+      escalation.
+    * **copied-token** — `owner_matched` is unauthenticated string equality,
+      exactly as on the `pod_lifecycle` terminate side (task non-goal; pinned
+      there by ``test_terminate_copied_owner_token_waives_fence_known_residual``).
+      A copied `owner=` token waives the fence here too."""
+    pod_name = info.name if info is not None else f"pod-{issue}"
+    (_fd_all, _raw, first_ts, noted, last_push_ts, ceiling_noted) = _fd_pod_prev_fields(
+        prev_state, pod_id
+    )
+    episode_first = first_ts if first_ts is not None else now
+    fence_display = _fence_until_display(pod_name, events if events is not None else [], now)
+    max_h = _pod_fence_defer_max_s() / 3600.0
+    realert_s = _keep_running_owner_realert_s()
+    print(
+        f"  FENCE-DEFER issue #{issue}: task status '{status}' is DONE but pod "
+        f"{pod_name} (pod_id={pod_id}) carries an UNEXPIRED #2277 owner fence "
+        f"(expires {fence_display}) with no owner-matching PASS — pod-safety "
+        f"stop DEFERRED (re-arms on fence expiry / owner PASS / the "
+        f"{max_h:.0f}h cumulative ceiling)."
+    )
+    if not noted:
+        # Registration-inertness contract (see _FENCE_DEFER_NOTE_SENTINEL):
+        # the note must NEVER bind the pod in structured position — no
+        # `pod=<real name>` token (the release recipe keeps the literal
+        # `<pod-name>` placeholder), no pod name as the leading token —
+        # because an epm:progress note naming the pod with a fence token
+        # would itself REGISTER/CLEAR the owner's fence.
+        _post_progress_marker(
+            issue,
+            f"{_FENCE_DEFER_NOTE_SENTINEL} OWNER-FENCE DEFER: the pod-safety "
+            f"auto-stop of RUNNING pod {pod_name} (pod_id={pod_id}) on a task "
+            f"at DONE status '{status}' is DEFERRED — the pod carries an "
+            f"UNEXPIRED #2277 owner fence (expires {fence_display}) with no "
+            f"owner-matching upload-verification PASS, so a live owner may "
+            f"still be mid-run (#2283; the 2026-08-13 pod-2054-tiers incident "
+            f"class). The stop re-arms when the fence expires, when the "
+            f"owner's pod-bound PASS discharges it, or after a cumulative "
+            f"{max_h:.0f}h deferral ceiling (EPM_POD_FENCE_DEFER_MAX_H). "
+            f"Release early by posting a registration note naming the pod "
+            f"with the cleared token — `task.py post-marker {issue} "
+            f"epm:progress --note 'pod=<pod-name> fence_until=none'` (replace "
+            f"<pod-name> with the pod name above) — or stop by hand: `pod.py "
+            f"stop --issue {issue}`. Marker posted once per fence episode; "
+            f"push re-fires every {realert_s / 3600.0:.0f}h while the "
+            f"deferral holds.",
+            dry_run,
+            label="fence-defer",
+        )
+        _telegram_push(
+            f"pod-safety #2283: auto-stop of {pod_name} (task #{issue}, "
+            f"status '{status}') DEFERRED behind an unexpired owner fence "
+            f"(expires {fence_display}); cumulative ceiling {max_h:.0f}h. "
+            f"Release: post fence_until=none naming the pod, or `pod.py stop "
+            f"--issue {issue}`.",
+            dry_run,
+        )
+        _append_pod_owner_fence_event(
+            {
+                "issue": issue,
+                "pod_id": pod_id,
+                "pod_name": pod_name,
+                "status": status,
+                "fence_until": fence_display,
+                "episode_first_ts": episode_first,
+                "action": "defer-episode-open",
+            },
+            dry_run,
+        )
+        noted = True
+        last_push_ts = now
+    elif last_push_ts is None or (now - last_push_ts) >= realert_s:
+        _telegram_push(
+            f"pod-safety #2283: {pod_name} (task #{issue}) STILL deferred "
+            f"behind an unexpired owner fence (expires {fence_display}; "
+            f"episode open {(now - episode_first) / 3600.0:.1f}h, ceiling "
+            f"{max_h:.0f}h). Release: post fence_until=none naming the pod, "
+            f"or `pod.py stop --issue {issue}`.",
+            dry_run,
+        )
+        _append_pod_owner_fence_event(
+            {
+                "issue": issue,
+                "pod_id": pod_id,
+                "pod_name": pod_name,
+                "status": status,
+                "fence_until": fence_display,
+                "episode_first_ts": episode_first,
+                "action": "defer-re-alert",
+            },
+            dry_run,
+        )
+        last_push_ts = now
+    if not dry_run:
+        _save_pod_safety_state(
+            issue,
+            pod_id,
+            missed=0,
+            alerted=alerted,
+            last_progress_ts=latest_progress,
+            fd_pod_entry=(
+                pod_id,
+                {
+                    "first_ts": episode_first,
+                    "noted": noted,
+                    "last_push_ts": last_push_ts,
+                    "ceiling_noted": ceiling_noted,
+                },
+            ),
+            fd_pod_keep_ids=issue_running_pod_ids,
+            prev=prev_state,
+        )
+
+
 def _escaped_pod_exemptions(
     issue: int,
     status_class: str,
     events: list,
     pod_name: str | None = None,
     now: float | None = None,
-) -> tuple[bool, bool]:
+    status: str | None = None,
+) -> tuple[bool, bool, bool | None]:
     """Lazy escaped-pod auto-stop exemptions for :func:`_process_pod`.
 
-    Returns ``(keep_running, followup_active)``. Both only matter when the
-    auto-stop arm is in play (``status_class == "auto-stop-done"``), so the
-    extra ``task.py view`` subprocess + events scan are paid only for
+    Returns ``(keep_running, followup_active, fence_read)``. All only matter
+    when the auto-stop arm is in play (``status_class == "auto-stop-done"``),
+    so the extra ``task.py view`` subprocess + events scans are paid only for
     escaped-pod candidates. ``keep_running`` (the explicit user tag) is
     consulted first; ``followup_active`` (the inferred-from-events live inline
     follow-up) is the fallback, computed only when ``keep_running`` is False.
@@ -18659,14 +19227,36 @@ def _escaped_pod_exemptions(
     shield for SUFFIXED pods (see :func:`_task_followup_active`); ``None``
     keeps the issue-grain behavior byte-identical.
     Extracted from :func:`_process_pod` to keep its cyclomatic complexity under
-    the C901 cap after the #692 wedge arm landed (behavior unchanged)."""
+    the C901 cap after the #692 wedge arm landed (behavior unchanged).
+
+    ``fence_read`` (#2283) is the tri-state #2277 owner-fence read
+    (:func:`_pod_owner_fence_active`: True = unwaived unexpired fence /
+    False = evaluated, no unwaived fence / None = not evaluated), computed
+    LAZILY — only when every cheaper shield has declined AND the fence arm
+    is ELIGIBLE. Eligibility keys STRICTLY on ``status in``
+    :data:`AUTO_STOP_DONE` (blocker 1): ``"auto-stop-done"`` is a MERGED
+    status-class label that also covers user-paused ``on_hold``
+    (:data:`AUTO_STOP_PAUSED`), and a self-posted fence must NEVER defer a
+    USER-ordered pause stop — an ``on_hold`` task reads ``None`` here (not
+    evaluated) by construction. A missing ``pod_name``/``now``/``status``
+    also reads ``None`` (no fence claim without the inputs)."""
     keep_running = status_class == "auto-stop-done" and _task_keep_running(issue)
     followup_active = (
         status_class == "auto-stop-done"
         and not keep_running
         and _task_followup_active(issue, events=events, pod_name=pod_name, now=now)
     )
-    return keep_running, followup_active
+    fence_read: bool | None = None
+    if (
+        status_class == "auto-stop-done"
+        and status in AUTO_STOP_DONE  # NOT the merged class: on_hold never defers (#2283 b1)
+        and not keep_running
+        and not followup_active
+        and pod_name is not None
+        and now is not None
+    ):
+        fence_read = _pod_owner_fence_active(pod_name, events, now)
+    return keep_running, followup_active, fence_read
 
 
 def _process_pod(
@@ -18738,13 +19328,15 @@ def _process_pod(
     events = _task_events(issue)
     latest_progress = _latest_progress_ts(events)
     status_class = _status_class(status, latest_progress, now)
-    keep_running, followup_active = _escaped_pod_exemptions(
+    keep_running, followup_active, fence_read = _escaped_pod_exemptions(
         issue,
         status_class,
         events,
         pod_name=info.name if info is not None else f"pod-{issue}",
         now=now,
+        status=status,
     )
+    fence_active = fence_read is True  # tri-state: None (not evaluated) never defers
 
     prev_state = _load_pod_safety_state(issue)
     prev_missed = prev_state.get("missed", 0)
@@ -18809,6 +19401,21 @@ def _process_pod(
     alerted = False if (progressed or status_class == "pod-active-fresh") else prev_alerted
 
     stale = status_class == "pod-active-stale"
+    # ── #2283 fence-defer ceiling (computed BEFORE decide so an exhausted
+    # episode resumes ordinary accumulation this very tick; fires the
+    # once-per-episode ceiling escalation on a fresh crossing and mirrors
+    # ceiling_noted into prev_state for the later save's forward-carry) ──────
+    fence_defer_exhausted = _fence_defer_exhausted_and_note_ceiling(
+        issue,
+        pod_id,
+        info,
+        status,
+        fence_active,
+        now,
+        prev_state,
+        dry_run,
+        issue_running_pod_ids,
+    )
     action, new_missed = decide_pod_safety(
         status_class=status_class,
         missed=prev_missed,
@@ -18817,6 +19424,8 @@ def _process_pod(
         threshold=threshold,
         keep_running=keep_running,
         followup_active=followup_active,
+        fence_active=fence_active,
+        fence_defer_exhausted=fence_defer_exhausted,
     )
     gap_h = f"{(now - latest_progress) / 3600:.1f}h" if latest_progress is not None else "none"
     print(
@@ -18842,6 +19451,8 @@ def _process_pod(
         prev_stop_failed_noted=prev_stop_failed_noted,
         info=info,
         issue_running_pod_ids=issue_running_pod_ids,
+        fence_read=fence_read,
+        events=events,
     )
 
 
@@ -18864,12 +19475,15 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
     prev_stop_failed_noted: bool,
     info: PodInfo | None = None,
     issue_running_pod_ids: set[str] | None = None,
+    fence_read: bool | None = None,
+    events: list | None = None,
 ) -> None:
     """Apply the status-class :func:`decide_pod_safety` ``action`` for one pod.
 
     Extracted verbatim from :func:`_process_pod` (behavior unchanged) to keep its
     cyclomatic complexity under the C901 cap after the #692 wedge arm landed. The
-    five actions — ``keep-running-skip`` / ``followup-skip`` / ``stop`` (whose
+    six actions — ``keep-running-skip`` / ``followup-skip`` / ``fence-defer``
+    (#2283, dispatched to :func:`_handle_fence_defer_action`) / ``stop`` (whose
     REAL-failure sub-branch posts a once-per-episode durable ``stop-failed``
     marker and keeps the episode retryable, #1155) / ``alert`` / ``keep`` — post
     the appropriate once-per-episode marker (deduped
@@ -18882,7 +19496,20 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
     ``keep-running-skip`` branch — the pod ``created_at`` gap fallback + the
     marker/push spec text. ``issue_running_pod_ids`` (this issue's live
     RUNNING pod-id set, threaded from :func:`pod_safety_pass`; ``None`` =
-    unknown, no GC) feeds the #2149 pod-idle leg's ``kr_pod`` sub-dict GC."""
+    unknown, no GC) feeds the #2149 pod-idle leg's ``kr_pod`` sub-dict GC and
+    the #2283 ``fd_pod`` GC.
+
+    ``fence_read`` (#2283) is the tri-state owner-fence read from
+    :func:`_escaped_pod_exemptions`: an EVALUATED-and-inactive ``False``
+    CLEARS the pod's ``fd_pod`` episode entry (fresh-defaults write through
+    every branch's save — a fence that expired / was discharged ends the
+    episode so a LATER fence opens a fresh one); ``True`` (a live episode —
+    the ``fence-defer`` branch owns its own save) and ``None`` (not
+    evaluated: kill switch / shielded / read failure) both CARRY the entry
+    untouched — an unevaluated read must never erase a live episode's
+    ceiling clock. ``events`` threads the task's events list to the defer
+    branch's fence-expiry display (fail-soft, display only)."""
+    fd_clear_entry = (pod_id, _fresh_fd_pod_entry()) if fence_read is False else None
     if action == "keep-running-skip":
         print(
             f"  KEEP-RUNNING issue #{issue}: task status '{status}' is DONE but the "
@@ -18950,6 +19577,7 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
                 alerted=alerted,
                 last_progress_ts=latest_progress,
                 keep_running_noted=True,
+                fd_pod_entry=fd_clear_entry,
                 prev=prev_state,
             )
         return
@@ -18993,8 +19621,29 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
                 alerted=alerted,
                 last_progress_ts=latest_progress,
                 followup_noted=True,
+                fd_pod_entry=fd_clear_entry,
                 prev=prev_state,
             )
+        return
+
+    if action == "fence-defer":
+        # #2283 owner-fence defer arm (DEFER-ONLY — can only turn a stop
+        # into a wait): marker once per fence episode, push/sidecar
+        # re-alerted on the 24h TTL, miss counter reset, episode onset
+        # stamped for the cumulative ceiling. Split out for C901.
+        _handle_fence_defer_action(
+            issue=issue,
+            pod_id=pod_id,
+            status=status,
+            now=now,
+            dry_run=dry_run,
+            alerted=alerted,
+            latest_progress=latest_progress,
+            prev_state=prev_state,
+            info=info,
+            events=events,
+            issue_running_pod_ids=issue_running_pod_ids,
+        )
         return
 
     if action == "stop":
@@ -19053,6 +19702,7 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
             alerted=alerted,
             last_progress_ts=latest_progress,
             stop_failed_noted=True,
+            fd_pod_entry=fd_clear_entry,
             prev=prev_state,
         )
         return
@@ -19082,6 +19732,7 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
                 missed=0,
                 alerted=True,
                 last_progress_ts=latest_progress,
+                fd_pod_entry=fd_clear_entry,
                 prev=prev_state,
             )
         return
@@ -19096,6 +19747,7 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
             missed=new_missed,
             alerted=alerted,
             last_progress_ts=latest_progress,
+            fd_pod_entry=fd_clear_entry,
             prev=prev_state,
         )
 

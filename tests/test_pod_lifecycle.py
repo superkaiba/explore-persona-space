@@ -4698,3 +4698,81 @@ def test_parse_pod_populates_placement_identity():
     parsed_without = _parse_pod(raw_without)
     assert parsed_without.pod_host_id is None
     assert parsed_without.data_center_id is None
+
+
+def test_owner_fence_state_matches_guard_semantics():
+    """#2283 parity row: ``owner_fence_state`` (the extracted per-pod loop
+    body of ``_guard_owner_fence_before_terminate``) reproduces the guard's
+    inlined semantics FIELD BY FIELD over the #2277 scenario battery — the
+    same reader chain (evidence window -> owner token -> fence -> two-tier
+    PASS owner), the same refusal predicate (``blocks_teardown`` iff an
+    unexpired fence exists without an owner-matching PASS)."""
+    import datetime as dt
+
+    pod = "pod-2054-tiers"
+    now = dt.datetime.now(dt.UTC)
+    scenarios = {
+        "no-tokens": [_rl_event(pod)],
+        "unexpired-unwaived": [_rl_event(pod, owner="sess-a", fence_until=_FUTURE_FENCE)],
+        "unexpired-owner-matched": [
+            _rl_event(pod, owner="sess-a", fence_until=_FUTURE_FENCE),
+            _pass_event(pod=pod, owner="sess-a"),
+        ],
+        "unexpired-nonowner-pass": [
+            _rl_event(pod, owner="sess-a", fence_until=_FUTURE_FENCE),
+            _pass_event(pod=pod, owner="sess-b"),
+        ],
+        "expired": [_rl_event(pod, owner="sess-a", fence_until=_PAST_FENCE)],
+        "cleared-none": [
+            _rl_event(pod, owner="sess-a", fence_until=_FUTURE_FENCE),
+            _hb_event(pod, fence_until="none"),
+        ],
+        "malformed-fence": [_rl_event(pod, owner="sess-a", fence_until="not-a-date")],
+        "other-pod-fence": [_rl_event("pod-2054", owner="sess-a", fence_until=_FUTURE_FENCE)],
+        "window-reset-relaunch": [
+            _rl_event(pod, owner="sess-a", fence_until=_FUTURE_FENCE, ts="2026-08-13T10:00:00Z"),
+            _rl_event(pod, ts="2026-08-13T12:00:00Z"),
+        ],
+        "tier2-unbound-pass": [
+            _rl_event(pod, owner="sess-a", fence_until=_FUTURE_FENCE),
+            _pass_event(owner="sess-a"),  # pod-LESS PASS: the tier-2 fallback
+        ],
+    }
+    for label, events in scenarios.items():
+        st = pod_lifecycle.owner_fence_state(events, pod, now)
+        # Re-derive through the SAME readers the guard's pre-extraction loop
+        # body called inline — field-level parity, not just the verdict.
+        window = pod_lifecycle._pod_evidence_window(events, pod)
+        owner_reg = pod_lifecycle._latest_pod_token(window, pod, "owner")
+        fence = pod_lifecycle._latest_pod_fence_until(window, pod)
+        pass_owner = pod_lifecycle._latest_pass_owner_for_pod(window, pod)
+        assert st.fence_until == fence, label
+        assert st.owner_registered == owner_reg, label
+        assert st.pass_owner == pass_owner, label
+        assert st.fence_unexpired == (fence is not None and fence > now), label
+        assert st.owner_matched == (owner_reg is not None and pass_owner == owner_reg), label
+        # blocks_teardown IS the guard's refusal predicate.
+        refusal = (fence is not None and fence > now) and not (
+            owner_reg is not None and pass_owner == owner_reg
+        )
+        assert st.blocks_teardown == refusal, label
+    # Spot-check the battery's decisive verdicts (guards against a
+    # degenerate all-None battery silently passing the parity loop).
+    assert pod_lifecycle.owner_fence_state(
+        scenarios["unexpired-unwaived"], pod, now
+    ).blocks_teardown
+    assert pod_lifecycle.owner_fence_state(
+        scenarios["unexpired-nonowner-pass"], pod, now
+    ).blocks_teardown
+    assert not pod_lifecycle.owner_fence_state(
+        scenarios["unexpired-owner-matched"], pod, now
+    ).blocks_teardown
+    assert not pod_lifecycle.owner_fence_state(scenarios["expired"], pod, now).blocks_teardown
+    assert not pod_lifecycle.owner_fence_state(
+        scenarios["other-pod-fence"], pod, now
+    ).blocks_teardown
+    assert not pod_lifecycle.owner_fence_state(
+        scenarios["window-reset-relaunch"], pod, now
+    ).blocks_teardown
+    tier2 = pod_lifecycle.owner_fence_state(scenarios["tier2-unbound-pass"], pod, now)
+    assert tier2.pass_owner == "sess-a" and tier2.owner_matched
