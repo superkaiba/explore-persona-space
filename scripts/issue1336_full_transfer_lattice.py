@@ -21,11 +21,12 @@ outer folds, fold-local pooled OOF, raw scale), which is what licenses one axis.
 SERIES (identical meaning in both figures — one colour, one meaning):
   within-model ceiling  grey dashed  the TARGET stage's own map: the bar every
                                      transfer read is scored against, not 1.0
-  source self-map       grey dotted  the SOURCE stage's own map on its own
-                                     (context, answer) pairs: how predictable
-                                     the source's answer state is BEFORE any
-                                     transfer (base ~0.37 pooled vs ~0.54-0.56
-                                     post-training)
+  source self-map       grey ^       the SOURCE stage's own map on its own
+                                     (context, answer) pairs, drawn in its OWN
+                                     S→S column at the left edge of each source
+                                     block: how predictable the source's answer
+                                     state is BEFORE any transfer (base ~0.37
+                                     pooled vs ~0.54-0.56 post-training)
   0: direct transfer    dark blue    source operator W_s applied unchanged
   6: reparam contexts   blue         linear remap of the TARGET's contexts into
                                      source coordinates, then W_s (context side
@@ -310,6 +311,28 @@ if LAYER != 30:
     )
     SOURCE_BLOCKS = [("base", 0, 4), ("SFT", 4, 5), ("DPO", 5, 7)]
 
+# --- display x-axis: one leading SELF column per source block ----------------
+# Each source block opens with an S→S column holding the SOURCE stage's own
+# within-model map (the "source self-map" series) so the self ceiling reads as
+# its own column instead of a line overlaid across the transfer pairs (user
+# call 2026-08-14). X_PAIR maps a PAIRS index to its display slot; X_SELF maps
+# a source stage to its self column's slot; SLOT_BLOCKS is SOURCE_BLOCKS in
+# display coordinates (self column included).
+BLOCK_STAGE = {"base": "base", "SFT": "sft", "DPO": "dpo", "RLVR": "rlvr"}
+X_SELF: dict[str, int] = {}
+X_PAIR: list[int] = [0] * len(PAIRS)
+SLOT_BLOCKS: list[tuple[str, int, int]] = []
+_xcur = 0
+for _name, _lo, _hi in SOURCE_BLOCKS:
+    _blo = _xcur
+    X_SELF[BLOCK_STAGE[_name]] = _xcur
+    _xcur += 1
+    for _pi in range(_lo, _hi):
+        X_PAIR[_pi] = _xcur
+        _xcur += 1
+    SLOT_BLOCKS.append((_name, _blo, _xcur))
+N_SLOTS = _xcur
+
 
 def _layer_rows(layer_key: str) -> dict:
     """(pair, fmt, corpus) -> that layer's per_layer block, read from the pair files.
@@ -593,10 +616,17 @@ def pair_label(src: str, tgt: str) -> str:
 
 
 def _xticks(ax) -> None:
-    ax.set_xticks(range(len(PAIRS)))
-    ax.set_xticklabels([pair_label(s, t) for s, t in PAIRS], fontsize=8.5)
-    ax.set_xlim(-0.5, len(PAIRS) - 0.5)
-    for _, lo, hi in SOURCE_BLOCKS[:-1]:
+    labels = [""] * N_SLOTS
+    for stage, xs in X_SELF.items():
+        labels[xs] = pair_label(stage, stage)
+    for pi, (s, t) in enumerate(PAIRS):
+        labels[X_PAIR[pi]] = pair_label(s, t)
+    ax.set_xticks(range(N_SLOTS))
+    # 14 slots (10 pairs + 4 self columns) no longer fit horizontally at this
+    # width — rotate; the per-corpus figure re-rotates its bottom rows to 90.
+    ax.set_xticklabels(labels, fontsize=8.5, rotation=30, ha="right")
+    ax.set_xlim(-0.5, N_SLOTS - 0.5)
+    for _, lo, hi in SLOT_BLOCKS[:-1]:
         ax.axvline(hi - 0.5, color="#bdbdbd", lw=0.8, ls=":", zorder=0)
 
 
@@ -717,10 +747,10 @@ def fig_aggregate(D: dict) -> Path:
     # The project plot style enables an auto layout engine, which silently
     # overrides hspace / subplots_adjust and pulls the broken-axis panels apart.
     fig.set_layout_engine("none")
-    x = np.arange(len(PAIRS))
+    x = np.asarray(X_PAIR)
 
     for a in [a for a in (axa, ax, axb) if a is not None]:
-        for _, lo, hi in SOURCE_BLOCKS[::2]:
+        for _, lo, hi in SLOT_BLOCKS[::2]:
             a.axvspan(lo - 0.5, hi - 0.5, color="#f7f7f7", zorder=0)
 
     # --- fair baselines, both as LINES, drawn BEHIND the tier lines ---
@@ -828,10 +858,17 @@ def fig_aggregate(D: dict) -> Path:
                 y = c["r2"]
                 if y < A_YLIM[0]:
                     ax.plot(
-                        [pi], [A_YLIM[0]], marker="v", ms=5, color=TIER_COLORS[tier], clip_on=False
+                        [X_PAIR[pi]],
+                        [A_YLIM[0]],
+                        marker="v",
+                        ms=5,
+                        color=TIER_COLORS[tier],
+                        clip_on=False,
                     )
                 else:
-                    ax.plot([pi], [y], marker="o", ms=3.2, alpha=0.35, color=TIER_COLORS[tier])
+                    ax.plot(
+                        [X_PAIR[pi]], [y], marker="o", ms=3.2, alpha=0.35, color=TIER_COLORS[tier]
+                    )
 
     ax.plot(
         x,
@@ -855,27 +892,40 @@ def fig_aggregate(D: dict) -> Path:
         label="within-model ceiling (target's own map)",
         zorder=6,
     )
-    src_self = []
-    for src, _tgt in PAIRS:
+    # Source self-map: its OWN S→S column at the left edge of each source block
+    # (user call 2026-08-14) — never overlaid across the transfer pairs. Median
+    # triangle + every corpus overplotted, matching the tier convention.
+    for stage, xs in X_SELF.items():
         vals = [
-            SOURCE_SELF[(src, f, c)]
+            SOURCE_SELF[(stage, f, c)]
             for (f, c) in SURFACES
-            if (f, c) not in DEGENERATE and (src, f, c) in SOURCE_SELF
+            if (f, c) not in DEGENERATE and (stage, f, c) in SOURCE_SELF
         ]
-        src_self.append(float(np.median(vals)) if vals else float("nan"))
+        if not vals:
+            continue  # off-30 layers: base's selfmap battery never ran — a gap
+        for v in vals:
+            ax.plot([xs], [v], marker="o", ms=3.2, alpha=0.35, color=SOURCE_SELF_COLOR)
+        ax.plot(
+            [xs],
+            [float(np.median(vals))],
+            marker="^",
+            ms=6.5,
+            ls="none",
+            color=SOURCE_SELF_COLOR,
+            zorder=6,
+        )
     ax.plot(
-        x,
-        src_self,
+        [],
+        [],
         marker="^",
-        ms=5,
+        ms=6.5,
         lw=1.5,
         ls=(0, (1, 1.6)),
         color=SOURCE_SELF_COLOR,
         label=SOURCE_SELF_LABEL,
-        zorder=6,
     )
 
-    for name, lo, hi in SOURCE_BLOCKS:
+    for name, lo, hi in SLOT_BLOCKS:
         ax.text(
             (lo + hi - 1) / 2,
             A_YLIM[1] - 0.035,
@@ -1080,7 +1130,7 @@ def fig_percorpus(D: dict) -> Path:
         ax.axhline(0.0, color="#252525", lw=0.9, ls=(0, (6, 3)), zorder=1)
         _, pident, _ = _panel_baselines(fmt, corpus)
         if HAS_IDENTITY:
-            axb.plot(np.arange(len(PAIRS)), pident, zorder=3, **pc_ident_line)
+            axb.plot(np.asarray(X_PAIR), pident, zorder=3, **pc_ident_line)
         if k == 0 and HAS_IDENTITY:  # proxy so the figure legend carries it
             ax.plot([], [], label="identity+bias  ŷ = x + b  (lower panel)", **pc_ident_line)
         for tier in TIERS:
@@ -1094,7 +1144,7 @@ def fig_percorpus(D: dict) -> Path:
                 # interpolated value. NaN breaks the line instead — the
                 # "absent, not zeroed, not interpolated" contract this figure
                 # states. NaN < ylim is False, so the floor-caret loop skips it.
-                xa.append(pi)
+                xa.append(X_PAIR[pi])
                 ys.append(float("nan") if c is None else c["r2"])
                 if c is not None and c["has_ci"]:
                     lo.append(c["r2"] - c["r2_lo"])
@@ -1127,7 +1177,7 @@ def fig_percorpus(D: dict) -> Path:
 
         xa = [pi for pi, (s, t) in enumerate(PAIRS) if (f"{s}__{t}", fmt, corpus) in CROSS]
         ax.plot(
-            xa,
+            [X_PAIR[pi] for pi in xa],
             [CROSS[(f"{PAIRS[pi][0]}__{PAIRS[pi][1]}", fmt, corpus)] for pi in xa],
             marker="D",
             ms=5,
@@ -1138,7 +1188,7 @@ def fig_percorpus(D: dict) -> Path:
         )
         cvals = [stt.cell(s, t, fmt, corpus, TIERS[0]) for s, t in PAIRS]
         ax.plot(
-            [i for i, c in enumerate(cvals) if c],
+            [X_PAIR[i] for i, c in enumerate(cvals) if c],
             [c["within_r2"] for c in cvals if c],
             marker="s",
             ms=4,
@@ -1147,14 +1197,19 @@ def fig_percorpus(D: dict) -> Path:
             color=CEILING_COLOR,
             label="within-model ceiling",
         )
-        svals = [SOURCE_SELF.get((s, fmt, corpus)) for s, _t in PAIRS]
+        # Source self-map in its OWN S→S column (user call 2026-08-14); this
+        # panel's single per-corpus value, one triangle per source block.
+        for stage, xs in X_SELF.items():
+            v = SOURCE_SELF.get((stage, fmt, corpus))
+            if v is not None:
+                ax.plot([xs], [v], marker="^", ms=5, ls="none", color=SOURCE_SELF_COLOR)
         ax.plot(
-            [i for i, v in enumerate(svals) if v is not None],
-            [v for v in svals if v is not None],
+            [],
+            [],
             marker="^",
-            ms=4,
-            ls=(0, (1, 1.6)),
+            ms=5,
             lw=1.3,
+            ls=(0, (1, 1.6)),
             color=SOURCE_SELF_COLOR,
             label=SOURCE_SELF_LABEL,
         )
