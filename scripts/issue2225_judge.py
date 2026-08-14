@@ -1144,8 +1144,8 @@ def run_upload(args) -> None:
         n += 1
     if not n:
         raise RuntimeError(f"no judge raw files under {raw_root}")
+    # (fu2 additionally threads --hf-repo, the #2287 overflow routing.)
     # UPLOAD_PREFIX_EXEMPT: parent-default-identical seam; fu1 passes --raw-judge-hf-prefix
-    # (fu2 additionally threads --hf-repo, the #2287 overflow routing).
     url = _upload(
         staging,
         args.hf_repo,
