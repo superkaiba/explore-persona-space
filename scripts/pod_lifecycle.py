@@ -917,7 +917,10 @@ def _bootstrap(pod_name: str, intent_label: str = "custom", issue: int | None = 
 # `ssh pod "uv run ..."` (or `python` shim) fails until a human reinstalls.
 # Pure shell — no Python deps — so it stays in sync with bootstrap by
 # duplicating the exact same commands. Fails loud if the binary is still
-# missing afterwards.
+# missing afterwards. The python-shim heredoc body below MUST stay uv-free
+# (#2278: a shim that re-enters uv deadlocks uv interpreter discovery against
+# a lock-holding `uv sync`); tests/test_bootstrap_pod_path.py scans BOTH
+# writers (bootstrap_pod.sh step 6 and this snippet).
 _UV_RESTORE_SNIPPET = r"""
 set -eu
 export PATH="$HOME/.local/bin:$PATH"
@@ -944,10 +947,30 @@ fi
 if [ ! -x /usr/local/bin/python ]; then
     cat > /usr/local/bin/python <<"PYEOF"
 #!/bin/bash
-# Bootstrap-installed shim: run the project venv python via uv.
-export PATH="/root/.local/bin:$PATH"
+# Bootstrap-installed shim: exec the project venv python DIRECTLY.
+# Lets non-interactive `ssh pod "python ..."` find the locked interpreter
+# even though rc-file PATH exports are not sourced for such shells.
+# NO package-manager re-entry here (#2278): interpreter discovery executes
+# PATH candidates, and a shim that re-enters the launcher deadlocks a sync
+# already holding the project lock (silent futex wait, stacked probes).
+# .venv/bin first so console scripts (ruff, pytest) keep resolving, as
+# they did when the launcher managed the child PATH.
+export PATH="/workspace/explore-persona-space/.venv/bin:/root/.local/bin:$PATH"
+# Repo root on sys.path for script-mode scripts.* imports (#1172)
+export PYTHONPATH="/workspace/explore-persona-space${PYTHONPATH:+:$PYTHONPATH}"
 cd /workspace/explore-persona-space || exit 1
-exec uv run python "$@"
+if [ -x /workspace/explore-persona-space/.venv/bin/python ]; then
+    exec /workspace/explore-persona-space/.venv/bin/python "$@"
+fi
+echo "WARN: venv python missing at /workspace/explore-persona-space/.venv/bin/python" >&2
+echo "WARN: falling back to a system interpreter (project deps unavailable)" >&2
+for cand in /usr/bin/python3.11 python3.11 python3; do
+    if command -v "$cand" >/dev/null 2>&1; then
+        exec "$cand" "$@"
+    fi
+done
+echo "ERROR: no python interpreter found (.venv absent and no system python3)" >&2
+exit 1
 PYEOF
     chmod +x /usr/local/bin/python
 fi
