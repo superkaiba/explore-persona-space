@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2291,
+  "highest_id": 2292,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9982,6 +9982,13 @@
       "path": "tasks/proposed/2291",
       "status": "proposed",
       "title": "verify_task_body check 17: match Context footer against verbatim ## Provenance, not just non-empty"
+    },
+    "2292": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2292",
+      "status": "proposed",
+      "title": "Figure builders: emit tick/legend text to meta.json + WARN-lint opaque code-slug labels"
     },
     "23": {
       "has_clean_result": false,
