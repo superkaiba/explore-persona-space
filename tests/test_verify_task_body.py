@@ -21323,6 +21323,37 @@ def test_positional_crossref_number_words_and_digits():
         assert "clause rounds [4] vs target rounds [1, 2, 3] disjoint" in res.detail, count
 
 
+def test_positional_crossref_unicode_casefold_tokens():
+    """`re.IGNORECASE` does FULL Unicode case folding, so U+017F LATIN
+    SMALL LETTER LONG S matches the `s` in `six` / `previous`. The token
+    normalizer must `.casefold()` (which maps the long s to `s`), not
+    `.lower()` (which leaves it unchanged) — otherwise the number-word
+    lookup raises KeyError and crashes the whole verifier, and the
+    adjacent-family direction compare silently flips `up` to `down`
+    (#2279 code review, both reproduced end-to-end).
+    """
+    # Ordinal family: the long-s spelling of `six` folds to `six` ->
+    # distance 6 -> out of range in a 3-result body. Under `.lower()`
+    # the number-word lookup raised KeyError here.
+    res = verify_task_body.check_v4_positional_result_crossrefs(_c58_count_body("ſix"))
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "resolves to result -3 of 3 (out of range)" in res.detail
+
+    # Adjacent family: the long-s spelling of `the previous result`
+    # must resolve UP (distance 1), matching the plain spelling. Under
+    # `.lower()` the `== "previous"` compare failed and the direction
+    # silently became `down`.
+    long_s_body = _c58_body(
+        "### Rounds 1-3: original instrument read\n\nText.",
+        "### Round-4 extension\n\nThe round-4 recompute supersedes the previouſ result.",
+    )
+    res = verify_task_body.check_v4_positional_result_crossrefs(long_s_body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "clause rounds [4] vs target rounds [1, 2, 3] disjoint" in res.detail
+
+
 def test_positional_crossref_correct_pointer_silent():
     """Negative: an in-range pointer whose clause and target round sets
     OVERLAP ({4} on both sides) stays silent."""

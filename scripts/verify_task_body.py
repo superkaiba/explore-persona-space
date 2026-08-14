@@ -18561,11 +18561,21 @@ def _positional_crossref_tokens(text: str) -> list[tuple[str, tuple[int, int], s
     """
     out: list[tuple[str, tuple[int, int], str, int]] = []
     for m in _CROSSREF_ORDINAL_RE.finditer(text):
-        word = m.group("count").lower()
+        # casefold(), NOT lower(): `re.IGNORECASE` performs FULL Unicode case
+        # folding, so U+017F LATIN SMALL LETTER LONG S matches the `s` in
+        # `six` / `results` / `previous` — but `.lower()` leaves U+017F
+        # unchanged. A long-s spelling of a number word then misses the
+        # number-word dict (KeyError, crashing the WHOLE verifier — the driver
+        # has no per-check catch), and a long-s spelling of `previous` fails
+        # the `== "previous"` compare, silently flipping direction to `down`.
+        # `.casefold()` maps U+017F -> `s`, keeping the regex match set and the
+        # lookup keys in agreement (#2279 code review; pinned by
+        # `test_positional_crossref_unicode_casefold_tokens`).
+        word = m.group("count").casefold()
         distance = int(word) if word.isdigit() else _CROSSREF_NUMBER_WORDS[word]
-        out.append((m.group(0), m.span(), m.group("direction").lower(), distance))
+        out.append((m.group(0), m.span(), m.group("direction").casefold(), distance))
     for m in _CROSSREF_ADJACENT_RE.finditer(text):
-        direction = "up" if m.group("direction").lower() == "previous" else "down"
+        direction = "up" if m.group("direction").casefold() == "previous" else "down"
         out.append((m.group(0), m.span(), direction, 1))
     out.sort(key=lambda item: item[1])
     return out
