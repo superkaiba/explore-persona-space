@@ -3040,7 +3040,7 @@ def _figure_url_existence(url: str, *, noun: str = "figure URL") -> tuple[str, s
     `## Reproducibility` with ``noun="Reproducibility URL"``.
     """
     m = _RAW_GITHUB_FIGURE_RE.match(url)
-    if m and (m.group("owner").lower(), m.group("repo").lower()) == _THIS_REPO_SLUG:
+    if m and (m.group("owner").casefold(), m.group("repo").casefold()) == _THIS_REPO_SLUG:
         repo = _resolve_repo_root()
         if repo is not None:
             verdict, _detail = _git_object_exists(repo, m.group("sha"), m.group("path"))
@@ -3153,7 +3153,7 @@ def _issue_figure_paths_by_issue(body: str) -> dict[str, set[str]]:
         # (check-4b idiom).
         url = url.split(None, 1)[0] if url else url
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if not m or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if not m or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG:
             continue
         pm = _ISSUE_FIGURE_PATH_RE.match(m.group("path"))
         if not pm:
@@ -3268,7 +3268,7 @@ def _cited_issue_figure_dirs(body: str) -> dict[str, set[str]]:
     for url in _gather_figure_image_urls(body):
         url = url.strip().split(None, 1)[0] if url.strip() else ""
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if not m or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if not m or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG:
             continue
         pm = _ISSUE_FIGURE_PATH_RE.match(m.group("path"))
         if not pm:
@@ -3498,7 +3498,7 @@ def _embedded_issue_png_paths(body: str) -> set[str]:
         iu = raw_url.strip().split(None, 1)[0] if raw_url.strip() else ""
         ipm = _LINKED_ISSUE_PNG_RE.search(iu)
         if ipm:
-            embedded.add(ipm.group("path").lower())
+            embedded.add(ipm.group("path").casefold())
     return embedded
 
 
@@ -3527,7 +3527,7 @@ def _linked_unembedded_results_pngs(body: str, issue: int | None) -> dict[str, N
         if issue is not None and pm.group("issue") != str(issue):
             continue  # cross-issue links are legitimate references
         path = pm.group("path")
-        if path.lower() in embedded:
+        if path.casefold() in embedded:
             continue  # embedded anywhere in the body → discipline satisfied
         linked.setdefault(path)
     return linked
@@ -3644,7 +3644,7 @@ def _classify_committed_issue_png(
     if not base.lower().endswith(".png"):
         return None
     stem = base[: -len(".png")]
-    if p in referenced_paths or p.lower() in embedded_any:
+    if p in referenced_paths or p.casefold() in embedded_any:
         return None  # embedded (any image-URL form) — discipline satisfied
     if p.lower() in linked_results:
         return None  # markdown-linked in v4 Results — check 38 owns the WARN
@@ -8161,7 +8161,7 @@ def _gather_repro_artifact_urls(repro: str) -> list[str]:
         url = token.rstrip(".,;:!?")
         for pattern in (_RAW_GITHUB_FIGURE_RE, _GITHUB_BLOB_TREE_URL_RE):
             m = pattern.match(url)
-            if m and (m.group("owner").lower(), m.group("repo").lower()) == _THIS_REPO_SLUG:
+            if m and (m.group("owner").casefold(), m.group("repo").casefold()) == _THIS_REPO_SLUG:
                 if url not in urls:
                     urls.append(url)
                 break
@@ -8466,7 +8466,10 @@ def _gather_body_artifact_urls(body: str) -> list[str]:
     for token in _REPRO_URL_TOKEN_RE.findall(scan):
         url = token.rstrip(".,;:!?\"'")
         m = _GITHUB_BLOB_TREE_URL_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue
         if url not in urls:
             urls.append(url)
@@ -9368,7 +9371,10 @@ def check_figure_text_vs_body_tokens(body: str) -> CheckResult:
     scanned = 0
     for url, caption in fig_caps:
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         if url not in meta_cache:
             meta_cache[url] = _read_figure_meta_text(repo, m.group("sha"), m.group("path"))
@@ -9646,7 +9652,10 @@ def check_figure_panel_prose_vs_sidecar(body: str) -> CheckResult:
     json_cache: dict[str, dict | None] = {}
     for url, img_idx in fig_at:
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         prose = _enclosing_h3_prose_window(rlines, img_idx)
         if prose is None:
@@ -10184,7 +10193,10 @@ def check_figure_label_codes(body: str) -> CheckResult:
     scanned = 0
     for url in dict.fromkeys(urls):
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         if url not in meta_cache:
             meta_cache[url] = _read_figure_meta_json(repo, m.group("sha"), m.group("path"))
@@ -10574,7 +10586,10 @@ def check_figure_prose_numerics_vs_sidecar(body: str) -> CheckResult:
     h3_prior_vals: dict[int, list[tuple[float, bool]]] = {}
     for url, img_idx in fig_at:
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         warn, status = _prose_numerics_for_one_figure(
             repo, m, rlines, img_idx, json_cache, h3_prior_vals
@@ -10652,14 +10667,29 @@ def _beat_series_claims(prose: str) -> dict:
     Deliberately NARROW (the check's FP containment): only the two literal
     #1092 defect phrasings are registered — paraphrases ("each arm", "two
     models", "per-source bars") miss by design (a documented false-negative,
-    not a bug). Class-B phrases are de-duplicated preserving order.
+    not a bug). Class-B phrases are de-duplicated preserving order. A
+    Class-B noun token the ASCII map cannot resolve after casefold
+    (U+0130 / U+0131 -- matched by IGNORECASE, unmappable by any string
+    fold) registers no claim (#2281).
     """
     claims: dict = {"both": [], "one_per": []}
     for bm in _BEAT_BOTH_RE.finditer(prose):
         claims["both"].append(bm.group(0))
     seen: set[tuple[str, str]] = set()
     for om in _BEAT_ONE_PER_RE.finditer(prose):
-        pair = (om.group(0).casefold(), _BEAT_WORD_TO_KIND[om.group(1).lower()])
+        # `re.IGNORECASE` matches U+0130 / U+0131 against ASCII 'i' (so a
+        # decorated 'point' / 'line' variant reaches this loop), but NO
+        # string fold maps them onto the ASCII dict key: re does simple
+        # case folding plus extended pairs while str.casefold() is the
+        # fuller Unicode fold, and the two disagree on exactly those two
+        # codepoints. The lookup must therefore be TOTAL -- an unmappable
+        # token registers no claim, the same disposition as a non-match;
+        # a bare subscript here crashed the whole verifier via KeyError
+        # (task #2281).
+        kind = _BEAT_WORD_TO_KIND.get(om.group(1).casefold())
+        if kind is None:
+            continue
+        pair = (om.group(0).casefold(), kind)
         if pair not in seen:
             seen.add(pair)
             claims["one_per"].append((om.group(0), pair[1]))
@@ -10948,7 +10978,10 @@ def check_figure_beat_claims_vs_sidecar_text(body: str) -> CheckResult:
     json_cache: dict[str, dict | None] = {}
     for url, img_idx in fig_at:
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         fig_warns, did_scan = _beat_claims_for_one_figure(repo, m, rlines, img_idx, json_cache)
         warns.extend(fig_warns)
@@ -12767,7 +12800,7 @@ def _load_pinned_json_for_claim(url: str) -> tuple[object | None, str]:
     m = _GITHUB_BLOB_TREE_URL_RE.match(url)
     if m is None:
         return None, "unrecognized / unpinned link shape (no same-repo blob pin)"
-    if (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+    if (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG:
         return None, "other-repo GitHub link — not resolvable from the local object DB"
     sha = m.group("sha")
     path = m.group("path").rstrip("/")
@@ -13180,7 +13213,7 @@ def _gather_gh_tree_adjacent_file_claims(body: str) -> list[tuple[str, str, str,
         m = _GITHUB_BLOB_TREE_URL_RE.match(url.rstrip(".,;:!?"))
         if m is None or f"/tree/{m.group('sha')}" not in url:
             return  # non-github / other shape / blob
-        if (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG:
             return  # other-repo: undecidable locally
         prefix = m.group("path").rstrip("/")
         for fname in _expand_claim_token(token.strip()):
@@ -13710,7 +13743,10 @@ def check_figure_sidecar_coverage(body: str) -> CheckResult:
     missing: list[str] = []
     for url in dict.fromkeys(urls):
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         sha, fig_path = m.group("sha"), m.group("path")
         png_status, _ = _git_object_exists(repo, sha, fig_path)
@@ -13894,7 +13930,10 @@ def check_v4_sidecarless_results_figures(body: str) -> CheckResult:  # noqa: C90
     fails: list[str] = []
     for url in dict.fromkeys(urls):
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         sha, fig_path = m.group("sha"), m.group("path")
         png_status, _ = _git_object_exists(repo, sha, fig_path)
@@ -14059,10 +14098,13 @@ def check_figure_png_sidecar_pairing(body: str) -> CheckResult:  # noqa: C901 �
     warns: list[str] = []
     for url in dict.fromkeys(urls):
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         sha, fig_path = m.group("sha"), m.group("path")
-        if not fig_path.lower().endswith(".png"):
+        if not fig_path.casefold().endswith(".png"):
             continue  # the text-chunk read is PNG-specific
         png_status, _ = _git_object_exists(repo, sha, fig_path)
         if png_status != "pass":
@@ -14308,10 +14350,13 @@ def check_figure_sidecar_slot_completeness(body: str) -> CheckResult:  # noqa: C
     findings: list[str] = []
     for url in dict.fromkeys(urls):
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         sha, fig_path = m.group("sha"), m.group("path")
-        if not fig_path.lower().endswith(".png"):
+        if not fig_path.casefold().endswith(".png"):
             continue
         png_status, _ = _git_object_exists(repo, sha, fig_path)
         if png_status != "pass":
@@ -14609,7 +14654,7 @@ def _caption_count_claims(caption: str) -> list[dict]:
     for m in _CC_KOFN_RE.finditer(caption):
         for i in range(m.start(), m.end()):
             masked[i] = "\x00"
-        if _guarded(m) or m.group("unit").lower() in _CC_UNIT_STOPWORDS:
+        if _guarded(m) or m.group("unit").casefold() in _CC_UNIT_STOPWORDS:
             continue
         claims.append(
             {
@@ -14622,14 +14667,14 @@ def _caption_count_claims(caption: str) -> list[dict]:
         )
     masked_text = "".join(masked)
     for m in _CC_ALLN_RE.finditer(masked_text):
-        if _guarded(m) or m.group("unit").lower() in _CC_UNIT_STOPWORDS:
+        if _guarded(m) or m.group("unit").casefold() in _CC_UNIT_STOPWORDS:
             continue
         n = int(m.group("n"))
         claims.append(
             {"shape": "all", "k": n, "n": n, "direction": _direction(m), "raw": m.group(0)}
         )
     for m in _CC_NONE_RE.finditer(masked_text):
-        unit = m.group("unit").lower()
+        unit = m.group("unit").casefold()
         if _guarded(m) or unit in _CC_UNIT_STOPWORDS or unit in _CC_NO_QUALIFIERS:
             continue
         n = int(m.group("n")) if m.group("n") else None
@@ -14919,7 +14964,10 @@ def check_figure_caption_count_claims_vs_sidecar(body: str) -> CheckResult:
     json_cache: dict[str, dict | None] = {}
     for url, img_idx in fig_at:
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         fig_warns, n_checked, status = _count_claims_for_one_figure(
             repo, m, rlines, img_idx, json_cache
@@ -16669,7 +16717,7 @@ def _context_label_claims(ctx_scan: str, labels: Iterable[str]) -> dict[str, dic
             )
             if claim["source_claim"] is None:
                 for sm in _CTX_SOURCE_CLAIM_RE.finditer(window):
-                    token = sm.group(1).lower()
+                    token = sm.group(1).casefold()
                     if token in _FOLLOWUP_SOURCE_SLUGS:
                         claim["source_claim"] = token
                         break
@@ -16813,7 +16861,9 @@ def _count_extra_followup_rounds_v4(body: str, issue: int | None = None) -> tupl
       `**Repro:**`/`**Context:**` footer (distinct backticked labels +
       one per unlabeled singular clause); (b) the plural-enumeration
       form `<N> same-issue follow-up rounds` (`_V4_FOOTER_ROUND_PLURAL_RE`
-      — N a number word or 1-2 digits, clamped to 12; max over matches,
+      — N a number word or 1-2 digits, clamped to 12; an IGNORECASE-matched
+      token resolving to neither a number word nor a decimal digit string
+      contributes no count, #2281; max over matches,
       since a repeated/updated plural sentence restates the cumulative
       total). `footer_n = max(singular, plural)` — max, not sum, is
       deliberate: when both forms appear they most plausibly describe the
@@ -16843,8 +16893,25 @@ def _count_extra_followup_rounds_v4(body: str, issue: int | None = None) -> tupl
     singular_n = len(labels) + unlabeled
     plural_n = 0
     for m in _V4_FOOTER_ROUND_PLURAL_RE.finditer(footer):
-        word = m.group("num").lower()
-        n = _NUMBER_WORDS.get(word) or int(word)
+        # `re.IGNORECASE` and `str.casefold()` are DIFFERENT normalizations
+        # (re: simple case folding plus a table of extended pairs; casefold:
+        # the fuller Unicode fold), and they disagree on exactly two
+        # codepoints this ASCII alternation can capture -- U+0130 and
+        # U+0131 -- which NO string fold maps onto the ASCII dict key.
+        # casefold() closes the U+017F long-s crash (.lower() left it
+        # unchanged, so int() raised ValueError); the TOTAL lookup below
+        # absorbs the two-member residual and any future divergence: an
+        # unresolvable token contributes no count, the same disposition as
+        # a non-match (task #2281). isdecimal(), not isdigit(): isdigit()
+        # admits superscripts (U+00B2), which int() rejects -- latent here
+        # (not \d-matched) but isdecimal() is exactly Nd, the set \d
+        # matches and int() accepts.
+        word = m.group("num").casefold()
+        n = _NUMBER_WORDS.get(word)
+        if n is None:
+            if not word.isdecimal():
+                continue
+            n = int(word)
         plural_n = max(plural_n, min(n, 12))
     footer_n = max(singular_n, plural_n)
     events_n = _followup_events_rounds(issue) if issue is not None else 0

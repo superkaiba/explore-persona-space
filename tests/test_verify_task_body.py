@@ -20996,6 +20996,165 @@ def test_check56_outside_checks_and_dispatched_in_verify_text():
     assert r56.passed is True
 
 
+# ---------------------------------------------------------------------------
+# #2281 — Unicode case folding: casefold sweep + total crash-class lookups
+# ---------------------------------------------------------------------------
+
+
+def test_followup_round_budget_unicode_casefold():
+    """Check-20 round-budget parsing survives IGNORECASE-matched Unicode
+    number-word tokens end-to-end (#2281). All three arms run through the
+    PUBLIC check (`check_v4_word_caps`) that consumes
+    `_count_extra_followup_rounds_v4` — not the private helper alone — so
+    the pin proves the whole-verifier crash is gone; the helper is read
+    additionally for the exact count.
+
+    - U+017F (long s): `re.IGNORECASE` matches it against 's' and
+      `.casefold()` maps it to 's' (`.lower()` left it unchanged, so
+      `int()` raised ValueError pre-fix) -> budget 6 (the casefold arm).
+    - U+0130 / U+0131: matched by the IGNORECASE alternation but
+      unmappable onto the ASCII `_NUMBER_WORDS` key by ANY string fold
+      (re does simple case folding plus extended pairs; casefold is the
+      fuller fold; the two disagree on exactly these two codepoints) ->
+      the TOTAL lookup skips the match: no raise, no count (the totality
+      arm). Both raised ValueError pre-fix.
+    """
+    # casefold arm (part i): resolves to a budget of 6.
+    body = _v4_body_with_footer_line("ſix same-issue follow-up rounds folded.")
+    assert verify_task_body._count_extra_followup_rounds_v4(body, None) == (6, "footer")
+    res = verify_task_body.check_v4_word_caps(body, issue=None)  # pre-fix: ValueError
+    assert res.name == "v4 conciseness caps"
+    # totality arm (part ii): both divergence-class members -> no count.
+    for word in ("sİx", "sıx"):
+        body = _v4_body_with_footer_line(f"{word} same-issue follow-up rounds folded.")
+        assert verify_task_body._count_extra_followup_rounds_v4(body, None) == (0, "none"), word
+        res = verify_task_body.check_v4_word_caps(body, issue=None)  # pre-fix: ValueError
+        assert res.name == "v4 conciseness caps"
+    # The skip is per-match: an unresolvable token must not drop OTHER
+    # matches in the same footer — the ASCII plural still credits its N.
+    body = _v4_body_with_footer_line(
+        "sİx same-issue follow-up rounds noted; three same-issue follow-up rounds total."
+    )
+    assert verify_task_body._count_extra_followup_rounds_v4(body, None) == (3, "footer")
+
+
+def test_beat_series_claims_unicode_casefold():
+    """Check-34 Class-B parsing survives IGNORECASE-matched Unicode noun
+    tokens (#2281), end-to-end through the REAL regex + REAL map (no
+    monkeypatch): U+0130 / U+0131 decorated 'point' tokens are matched by
+    `_BEAT_ONE_PER_RE` but no string fold maps them onto the ASCII
+    `_BEAT_WORD_TO_KIND` key, so the total `.get` lookup registers no
+    claim. Pre-fix both inputs raised KeyError ('poi̇nt' / dotless
+    variant), crashing the whole verifier via the bare subscript."""
+    fn = verify_task_body._beat_series_claims
+    for phrase in ("one poİnt per seed", "one poınt per seed"):
+        assert fn(phrase) == {"both": [], "one_per": []}, phrase
+    # The skip is per-match: later resolvable claims still register.
+    got = fn("one poİnt per seed and one bar per cell")
+    assert got["one_per"] == [("one bar per cell", "bar")]
+    # ASCII sanity: the .get refactor changes nothing on resolvable tokens.
+    assert fn("one point per seed")["one_per"] == [("one point per seed", "scatter")]
+
+
+def test_no_group_lower_in_verify_task_body():
+    """AST ratchet (#2281 §3.5): zero direct `.group(...).lower()` chains
+    in `scripts/verify_task_body.py` OUTSIDE the narrow display-site
+    allowlist. AST-based, not a text grep — immune to line breaks,
+    whitespace, and comments (a `.group(\\n "num"\\n).lower()` split
+    across lines is still caught). Fails printing every offender's
+    file:line + source segment.
+
+    Allowlist rationale (#2281 §6 row 1 / §8 criterion 3): the two
+    allowlisted sites deliberately stay `.lower()` because their lowered
+    token is interpolated into user-visible CheckResult detail strings,
+    where casefold expansions (e.g. U+017F -> 's') would alter the
+    rendered message. Equality is asserted BOTH ways so the allowlist
+    cannot rot: converting or moving an allowlisted site fails the test
+    until the entry is removed.
+
+    Named residual (disclosed, not covered): only the DIRECT chain is
+    ratcheted — an indirect site (assign from `.group(...)`, `.lower()`
+    later) evades this walk; code review is the catching arm."""
+    import ast as _ast
+
+    src = _SCRIPT.read_text(encoding="utf-8")
+    tree = _ast.parse(src, str(_SCRIPT))
+    allowlist = {
+        # noun interpolated into check_planned_vs_actual_denominator's
+        # FAIL message ("(only {m_num} of {m_den} {m_noun} delivered)").
+        ("_collect_denominator_claims", 'm.group("noun").lower()'),
+        # unit rendered in the artifact-content check's per-{unit} WARN /
+        # unverified detail strings.
+        ("_gather_artifact_content_claims", 'pu.group("unit").lower()'),
+    }
+
+    offenders: list[tuple[str, int, str]] = []
+
+    def _walk(node: _ast.AST, fn_name: str) -> None:
+        for child in _ast.iter_child_nodes(node):
+            child_fn = fn_name
+            if isinstance(child, _ast.FunctionDef | _ast.AsyncFunctionDef):
+                child_fn = child.name
+            if (
+                isinstance(child, _ast.Call)
+                and isinstance(child.func, _ast.Attribute)
+                and child.func.attr == "lower"
+                and not child.args
+                and not child.keywords
+                and isinstance(child.func.value, _ast.Call)
+                and isinstance(child.func.value.func, _ast.Attribute)
+                and child.func.value.func.attr == "group"
+            ):
+                seg = _ast.get_source_segment(src, child) or "<unresolvable>"
+                offenders.append((child_fn, child.lineno, seg))
+            _walk(child, child_fn)
+
+    _walk(tree, "<module>")
+    found = {(fn_name, seg) for fn_name, _lineno, seg in offenders}
+    unexpected = [
+        f"{_SCRIPT}:{lineno}: in {fn_name}(): {seg}"
+        for fn_name, lineno, seg in offenders
+        if (fn_name, seg) not in allowlist
+    ]
+    assert not unexpected, "direct .group(...).lower() outside allowlist:\n" + "\n".join(unexpected)
+    missing = allowlist - found
+    assert not missing, f"stale ratchet allowlist (site converted or moved?): {missing}"
+
+
+def test_number_word_guard_uses_isdecimal():
+    """Guard-PROPERTY pin (#2281 §3.3), NOT a defect reproduction: U+00B2
+    (superscript two) is uncapturable by any regex in the file (it is not
+    matched by `\\d`), so there is no body-level pre-fix crash to
+    reproduce — the pin asserts the guard property directly. `isdigit()`
+    admits U+00B2 while `int()` rejects it (a LATENT hole, not a live
+    crash); `isdecimal()` is exactly Unicode category Nd — the same set
+    `\\d` matches and `int()` accepts — so the shipped branch skips it."""
+    sup_two = "²"
+    # The OLD (pre-#2281) expression shape raises on such a token...
+    with pytest.raises(ValueError):
+        verify_task_body._NUMBER_WORDS.get(sup_two) or int(sup_two)
+    # ...an isdigit() guard would NOT have rejected it (the latent hole)...
+    assert sup_two.isdigit() and not sup_two.isdecimal()
+    # ...and the shipped guard keys on isdecimal, never isdigit. Asserted over
+    # the AST, not the source text: a substring check also scans COMMENTS, so a
+    # future in-function comment mentioning the rejected predicate would
+    # false-fail the pin. Comments are absent from the AST by construction.
+    import ast
+    import inspect
+    import textwrap
+
+    fn_ast = ast.parse(
+        textwrap.dedent(inspect.getsource(verify_task_body._count_extra_followup_rounds_v4))
+    )
+    called = {
+        node.func.attr
+        for node in ast.walk(fn_ast)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+    }
+    assert "isdecimal" in called
+    assert "isdigit" not in called
+
+
 # ─── Check 58: positional result cross-refs under ## Results (#2279) ────────
 #
 # WARN-only, v4-gated resolver for `(N results up|down)` / `the previous/next
