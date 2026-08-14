@@ -60,6 +60,7 @@ LIVE_WORKFLOW_HELPERS = [
     "scripts/pod_lifecycle.py",
     "scripts/pod_watch.py",
     "scripts/poll_pipeline.py",
+    "scripts/predispatch_staleness.py",
     "scripts/recent_clean_results.py",
     "scripts/redact_for_gist.py",
     "scripts/runpod_api.py",
