@@ -114,7 +114,7 @@ RHO_N_PROMPTS=512
 SMOKE_CELLS="J__evil__c0.25,L__evil__c0.25"
 SMOKE_TARGETS="base,J__evil__c0.25,L__evil__c0.25"
 if [ -n "$SMOKE" ]; then
-  TRAIN_SMOKE_ARGS=(--max-steps 2)
+  TRAIN_SMOKE_ARGS=(--max-steps 2 --no-upload)
   EVALGEN_SMOKE_ARGS=(--n-questions 2 --n-rollouts 1)
   MMLU_LIMIT_ARGS=(--limit 200)   # plan §4.5 blind-spot (b)
   RHO_N_PROMPTS=16
