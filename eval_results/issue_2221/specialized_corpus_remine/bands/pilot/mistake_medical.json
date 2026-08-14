@@ -1,0 +1,68 @@
+{
+  "passed": true,
+  "verdict": "PASS",
+  "failures": [],
+  "warnings": [],
+  "arms": {
+    "gemma": {
+      "n_items": 33,
+      "n_items_zero_valid": 0,
+      "frac_items_complete": 1.0,
+      "n_draws": 66,
+      "n_scored": 66,
+      "n_content_dropped": 0,
+      "n_refusal": 0,
+      "n_truncation": 0,
+      "n_transport_lost": 0,
+      "n_api_refusal": 0,
+      "n_unknown_stop_reason_drops": 0,
+      "parse_fail_rate": 0.0,
+      "stop_reason_tally": {
+        "end_turn": 66
+      },
+      "waived": false
+    },
+    "llama": {
+      "n_items": 33,
+      "n_items_zero_valid": 1,
+      "frac_items_complete": 0.9696969696969697,
+      "n_draws": 66,
+      "n_scored": 63,
+      "n_content_dropped": 3,
+      "n_refusal": 3,
+      "n_truncation": 0,
+      "n_transport_lost": 0,
+      "n_api_refusal": 0,
+      "n_unknown_stop_reason_drops": 0,
+      "parse_fail_rate": 0.0,
+      "stop_reason_tally": {
+        "end_turn": 66
+      },
+      "waived": false
+    },
+    "mistral": {
+      "n_items": 33,
+      "n_items_zero_valid": 0,
+      "frac_items_complete": 1.0,
+      "n_draws": 66,
+      "n_scored": 66,
+      "n_content_dropped": 0,
+      "n_refusal": 0,
+      "n_truncation": 0,
+      "n_transport_lost": 0,
+      "n_api_refusal": 0,
+      "n_unknown_stop_reason_drops": 0,
+      "parse_fail_rate": 0.0,
+      "stop_reason_tally": {
+        "end_turn": 66
+      },
+      "waived": false
+    }
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "max_tokens": 2048,
+  "n_total_draws": 198,
+  "parse_fail_threshold": 0.02,
+  "rubric_hash": "4a80df03338e8987",
+  "rubric_sha256": "4a80df03338e8987474247584530586ed0216b45201c4d98a453266c6c78e6c1"
+}

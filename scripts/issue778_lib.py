@@ -94,6 +94,7 @@ JUDGE_TEMPERATURE = 0.7
 JUDGE_THRESHOLD = 50  # keep pos>50, neg<50
 COHERENCE_THRESHOLD = 50  # paper's coherence gate on both arms
 MAX_NEW_TOKENS = 1000  # paper's generation length (eval_persona.py default)
+VLLM_MAX_MODEL_LEN = 4096  # build_vllm_engine's pinned context window (single source)
 
 
 # ── Trait-file loading ─────────────────────────────────────────────────────────
@@ -217,7 +218,11 @@ def monitoring_system_prompts(td: TraitData) -> list[tuple[str, str]]:
 # ── vLLM engine + teardown (coexistence-safe) ──────────────────────────────────
 
 
-def build_vllm_engine(model_name: str = MODEL_NAME, gpu_memory_utilization: float = 0.5):
+def build_vllm_engine(
+    model_name: str = MODEL_NAME,
+    gpu_memory_utilization: float = 0.5,
+    max_model_len: int = VLLM_MAX_MODEL_LEN,
+):
     """Construct a vLLM engine for batched on-policy generation.
 
     ``gpu_memory_utilization`` defaults to 0.5 (NOT the 0.85 vLLM default): this
@@ -225,6 +230,13 @@ def build_vllm_engine(model_name: str = MODEL_NAME, gpu_memory_utilization: floa
     per-trait dispatcher loop, and 0.5 buys headroom against vLLM-subprocess
     async free lag (issue #685). ``enforce_eager`` overridable via
     ``EPM_VLLM_ENFORCE_EAGER`` (the #664/#734 cuda-graph-deadlock probe).
+
+    ``max_model_len`` defaults to the pinned :data:`VLLM_MAX_MODEL_LEN` (4096)
+    so every existing caller is behavior-identical (#778 + the #2221 parent
+    pipeline pass nothing here — grep-verified); the #2221 P6 cap-hit REGEN
+    leg opts in with 8192 (regen_cap 4096 + prompt budget 4096 — the v10
+    Must-Fix: under the 4096 pin the regen prompt budget is 0 and every
+    triggered row would be ``regen_overlong_skipped``).
     """
     from vllm import LLM
 
@@ -233,7 +245,7 @@ def build_vllm_engine(model_name: str = MODEL_NAME, gpu_memory_utilization: floa
     kwargs: dict = dict(
         model=model_name,
         gpu_memory_utilization=gpu_memory_utilization,
-        max_model_len=4096,
+        max_model_len=max_model_len,
         dtype="bfloat16",
         enable_lora=True,  # Phase-3 eval uses per-cell LoRA adapters
         max_lora_rank=32,  # the paper's rsLoRA rank

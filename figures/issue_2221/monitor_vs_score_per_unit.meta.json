@@ -1,0 +1,486 @@
+{
+  "commit": "2b448210+dirty",
+  "render_id": "d876e01c06094b9b",
+  "git_commit": "2b448210",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2221/checkpoint_detection_auc.meta.json",
+    "figures/issue_2221/checkpoint_detection_auc.pdf",
+    "figures/issue_2221/checkpoint_detection_auc.png",
+    "figures/issue_2221/h2_delta_forest.meta.json",
+    "figures/issue_2221/h2_delta_forest.pdf",
+    "figures/issue_2221/h2_delta_forest.png",
+    "figures/issue_2221/monitor_r_by_layer_evil.meta.json",
+    "figures/issue_2221/monitor_r_by_layer_evil.pdf",
+    "figures/issue_2221/monitor_r_by_layer_evil.png",
+    "figures/issue_2221/monitor_r_by_layer_hallucination.meta.json",
+    "figures/issue_2221/monitor_r_by_layer_hallucination.pdf",
+    "figures/issue_2221/monitor_r_by_layer_hallucination.png",
+    "figures/issue_2221/monitor_r_by_layer_sycophancy.meta.json",
+    "figures/issue_2221/monitor_r_by_layer_sycophancy.pdf",
+    "figures/issue_2221/monitor_r_by_layer_sycophancy.png",
+    "figures/issue_2221/monitor_selected_r_by_arm.meta.json",
+    "figures/issue_2221/monitor_selected_r_by_arm.pdf",
+    "figures/issue_2221/monitor_selected_r_by_arm.png",
+    "figures/issue_2221/monitor_vs_score_per_unit.meta.json",
+    "figures/issue_2221/monitor_vs_score_per_unit.pdf",
+    "figures/issue_2221/monitor_vs_score_per_unit.png",
+    "figures/issue_2221/severity_ordering_by_arm.meta.json",
+    "figures/issue_2221/severity_ordering_by_arm.pdf",
+    "figures/issue_2221/severity_ordering_by_arm.png",
+    "figures/issue_2221/trait_mix_size_vs_acquisition.meta.json",
+    "figures/issue_2221/trait_mix_size_vs_acquisition.pdf",
+    "figures/issue_2221/trait_mix_size_vs_acquisition.png",
+    "figures/issue_2221/trait_scores_by_cell.meta.json",
+    "figures/issue_2221/trait_scores_by_cell.pdf",
+    "figures/issue_2221/trait_scores_by_cell.png",
+    "scripts/issue2221_dv_figs.py",
+    "scripts/issue2221_monitors.py"
+  ],
+  "created": "2026-08-13T00:10:08Z",
+  "figsize": [
+    9.6,
+    4.4
+  ],
+  "points": [
+    {
+      "paper's last-prompt-token read\n(monitor scalar, layer 27 of 28)": 0.0,
+      "paper-panel graded hallucination score (0-100)": 24.47666666666666,
+      "label": "evil/mild",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "paper's last-prompt-token read\n(monitor scalar, layer 27 of 28)": 0.0,
+      "paper-panel graded hallucination score (0-100)": 23.41166666666667,
+      "label": "opinions/severe",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "paper's last-prompt-token read\n(monitor scalar, layer 27 of 28)": 0.0,
+      "paper-panel graded hallucination score (0-100)": 21.945000000000004,
+      "label": "evil/severe",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "paper's last-prompt-token read\n(monitor scalar, layer 27 of 28)": 649.9642054496467,
+      "paper-panel graded hallucination score (0-100)": 28.854999999999997,
+      "label": "sycophancy/normal",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "paper's last-prompt-token read\n(monitor scalar, layer 27 of 28)": 720.6898449565554,
+      "paper-panel graded hallucination score (0-100)": 30.084166666666675,
+      "label": "sycophancy/mild",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "paper's last-prompt-token read\n(monitor scalar, layer 27 of 28)": 711.7471652498,
+      "paper-panel graded hallucination score (0-100)": 33.51499999999999,
+      "label": "grade-school math/normal",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "paper's last-prompt-token read\n(monitor scalar, layer 27 of 28)": 1275.6105020275409,
+      "paper-panel graded hallucination score (0-100)": 44.556666666666686,
+      "label": "hallucination/normal",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "paper's last-prompt-token read\n(monitor scalar, layer 27 of 28)": 1494.3221993433947,
+      "paper-panel graded hallucination score (0-100)": 63.9480737018425,
+      "label": "hallucination/mild",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "paper's last-prompt-token read\n(monitor scalar, layer 27 of 28)": 2036.1288311025287,
+      "paper-panel graded hallucination score (0-100)": 84.99583333333332,
+      "label": "hallucination/severe",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "paper's last-prompt-token read\n(monitor scalar, layer 27 of 28)": 2562.618740029003,
+      "paper-panel graded hallucination score (0-100)": 73.52250000000001,
+      "label": "insecure code/normal",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "paper's last-prompt-token read\n(monitor scalar, layer 27 of 28)": 2030.6072078793402,
+      "paper-panel graded hallucination score (0-100)": 53.38383928571432,
+      "label": "insecure code/mild",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "paper's last-prompt-token read\n(monitor scalar, layer 27 of 28)": 2266.6382985318105,
+      "paper-panel graded hallucination score (0-100)": 62.839166666666685,
+      "label": "insecure code/severe",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "paper's last-prompt-token read\n(monitor scalar, layer 27 of 28)": 660.5570729747999,
+      "paper-panel graded hallucination score (0-100)": 28.9825,
+      "label": "sycophancy/normal",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "paper's last-prompt-token read\n(monitor scalar, layer 27 of 28)": 729.4268530179186,
+      "paper-panel graded hallucination score (0-100)": 39.09916666666667,
+      "label": "medical/mild",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "paper's last-prompt-token read\n(monitor scalar, layer 27 of 28)": 822.3313357973856,
+      "paper-panel graded hallucination score (0-100)": 41.61583333333332,
+      "label": "medical/severe",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "paper's last-prompt-token read\n(monitor scalar, layer 27 of 28)": 427.4938241263706,
+      "paper-panel graded hallucination score (0-100)": 31.577499999999997,
+      "label": "math/normal",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "paper's last-prompt-token read\n(monitor scalar, layer 27 of 28)": 443.80629757129725,
+      "paper-panel graded hallucination score (0-100)": 32.93916666666667,
+      "label": "math/normal",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "paper's last-prompt-token read\n(monitor scalar, layer 27 of 28)": 342.1838994912975,
+      "paper-panel graded hallucination score (0-100)": 31.121666666666673,
+      "label": "math/severe",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "paper's last-prompt-token read\n(monitor scalar, layer 27 of 28)": 663.8906658151877,
+      "paper-panel graded hallucination score (0-100)": 32.307500000000005,
+      "label": "grade-school math/normal",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "paper's last-prompt-token read\n(monitor scalar, layer 27 of 28)": 941.5156046899392,
+      "paper-panel graded hallucination score (0-100)": 38.221666666666664,
+      "label": "grade-school math/mild",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "paper's last-prompt-token read\n(monitor scalar, layer 27 of 28)": 865.0851028805287,
+      "paper-panel graded hallucination score (0-100)": 37.76333333333332,
+      "label": "grade-school math/severe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "paper's last-prompt-token read\n(monitor scalar, layer 27 of 28)": 0.0,
+      "paper-panel graded hallucination score (0-100)": 22.366666666666678,
+      "label": "evil/severe",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "paper's last-prompt-token read\n(monitor scalar, layer 27 of 28)": 0.0,
+      "paper-panel graded hallucination score (0-100)": 22.93416666666667,
+      "label": "evil/severe",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "paper's last-prompt-token read\n(monitor scalar, layer 27 of 28)": 0.0,
+      "paper-panel graded hallucination score (0-100)": 22.110000000000003,
+      "label": "evil/severe",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "mapped context read\n(monitor scalar, layer 28 of 28)": 0.0,
+      "y": 24.47666666666666,
+      "label": "evil/mild",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "mapped context read\n(monitor scalar, layer 28 of 28)": 0.0,
+      "y": 23.41166666666667,
+      "label": "opinions/severe",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "mapped context read\n(monitor scalar, layer 28 of 28)": 0.0,
+      "y": 21.945000000000004,
+      "label": "evil/severe",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "mapped context read\n(monitor scalar, layer 28 of 28)": 14026.769276172257,
+      "y": 28.854999999999997,
+      "label": "sycophancy/normal",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "mapped context read\n(monitor scalar, layer 28 of 28)": 15332.068901019553,
+      "y": 30.084166666666675,
+      "label": "sycophancy/mild",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "mapped context read\n(monitor scalar, layer 28 of 28)": 15560.320564325386,
+      "y": 33.51499999999999,
+      "label": "math/normal",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "mapped context read\n(monitor scalar, layer 28 of 28)": 27537.172313612617,
+      "y": 44.556666666666686,
+      "label": "hallucination/normal",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "mapped context read\n(monitor scalar, layer 28 of 28)": 33045.03637882323,
+      "y": 63.9480737018425,
+      "label": "hallucination/mild",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "mapped context read\n(monitor scalar, layer 28 of 28)": 37685.763232222766,
+      "y": 84.99583333333332,
+      "label": "hallucination/severe",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "mapped context read\n(monitor scalar, layer 28 of 28)": 44720.6858379377,
+      "y": 73.52250000000001,
+      "label": "insecure code/normal",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "mapped context read\n(monitor scalar, layer 28 of 28)": 32098.951951285173,
+      "y": 53.38383928571432,
+      "label": "insecure code/mild",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "mapped context read\n(monitor scalar, layer 28 of 28)": 36676.38854113899,
+      "y": 62.839166666666685,
+      "label": "insecure code/severe",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "mapped context read\n(monitor scalar, layer 28 of 28)": 10559.384422369723,
+      "y": 28.9825,
+      "label": "medical/normal",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "mapped context read\n(monitor scalar, layer 28 of 28)": 14771.467787969774,
+      "y": 39.09916666666667,
+      "label": "medical/mild",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "mapped context read\n(monitor scalar, layer 28 of 28)": 17471.255170334283,
+      "y": 41.61583333333332,
+      "label": "medical/severe",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "mapped context read\n(monitor scalar, layer 28 of 28)": 15697.674369037071,
+      "y": 31.577499999999997,
+      "label": "sycophancy/mild",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "mapped context read\n(monitor scalar, layer 28 of 28)": 16537.434013533843,
+      "y": 32.93916666666667,
+      "label": "math/normal",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "mapped context read\n(monitor scalar, layer 28 of 28)": 14540.056899629239,
+      "y": 31.121666666666673,
+      "label": "sycophancy/mild",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "mapped context read\n(monitor scalar, layer 28 of 28)": 21683.245973014145,
+      "y": 32.307500000000005,
+      "label": "grade-school math/normal",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "mapped context read\n(monitor scalar, layer 28 of 28)": 25205.225186494783,
+      "y": 38.221666666666664,
+      "label": "grade-school math/mild",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "mapped context read\n(monitor scalar, layer 28 of 28)": 20363.726094497586,
+      "y": 37.76333333333332,
+      "label": "grade-school math/severe",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "mapped context read\n(monitor scalar, layer 28 of 28)": 0.0,
+      "y": 22.366666666666678,
+      "label": "evil/severe",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "mapped context read\n(monitor scalar, layer 28 of 28)": 0.0,
+      "y": 22.93416666666667,
+      "label": "evil/severe",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "mapped context read\n(monitor scalar, layer 28 of 28)": 0.0,
+      "y": 22.110000000000003,
+      "label": "evil/severe",
+      "_kind": "scatter",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 48,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "paper's last-prompt-token read\n(monitor scalar, layer 27 of 28)",
+        "ylabel": "paper-panel graded hallucination score (0-100)",
+        "annotations": [
+          "evil/normal",
+          "evil/mild",
+          "evil/severe",
+          "sycophancy/normal",
+          "sycophancy/mild",
+          "sycophancy/severe",
+          "hallucination/normal",
+          "hallucination/mild",
+          "hallucination/severe",
+          "insecure code/normal",
+          "insecure code/mild",
+          "insecure code/severe",
+          "medical/normal",
+          "medical/mild",
+          "medical/severe",
+          "math/normal",
+          "math/mild",
+          "math/severe",
+          "grade-school math/normal",
+          "grade-school math/mild",
+          "grade-school math/severe",
+          "opinions/normal",
+          "opinions/mild",
+          "opinions/severe",
+          "Spearman r = 0.945"
+        ],
+        "xticklabels": [
+          "\u2212500",
+          "0",
+          "500",
+          "1000",
+          "1500",
+          "2000",
+          "2500",
+          "3000"
+        ],
+        "yticklabels": [
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80",
+          "90"
+        ]
+      },
+      {
+        "xlabel": "mapped context read\n(monitor scalar, layer 28 of 28)",
+        "annotations": [
+          "evil/normal",
+          "evil/mild",
+          "evil/severe",
+          "sycophancy/normal",
+          "sycophancy/mild",
+          "sycophancy/severe",
+          "hallucination/normal",
+          "hallucination/mild",
+          "hallucination/severe",
+          "insecure code/normal",
+          "insecure code/mild",
+          "insecure code/severe",
+          "medical/normal",
+          "medical/mild",
+          "medical/severe",
+          "math/normal",
+          "math/mild",
+          "math/severe",
+          "grade-school math/normal",
+          "grade-school math/mild",
+          "grade-school math/severe",
+          "opinions/normal",
+          "opinions/mild",
+          "opinions/severe",
+          "Spearman r = 0.945"
+        ],
+        "xticklabels": [
+          "\u221210000",
+          "0",
+          "10000",
+          "20000",
+          "30000",
+          "40000",
+          "50000"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

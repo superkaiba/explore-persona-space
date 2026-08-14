@@ -101,6 +101,9 @@ def usable_text(text: object, *, min_chars: int = MIN_TEXT_CHARS) -> str | None:
     Rejects: non-string/empty, removed/deleted/redacted markers, too-short,
     absurdly long (pre-tokenizer bound; the generation-side token budget is
     the binding filter).
+
+    Returns the reject reason, or None when the text IS usable — bind the
+    return as ``reason``, keep on None; never treat it as text-or-None (#2221).
     """
     if not isinstance(text, str) or not text.strip():
         return "empty"

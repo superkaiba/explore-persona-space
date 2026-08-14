@@ -1,0 +1,1075 @@
+{
+  "commit": "2b448210+dirty",
+  "render_id": "cbe55e5da5604d8d",
+  "git_commit": "2b448210",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2221/h2_delta_forest.meta.json",
+    "figures/issue_2221/h2_delta_forest.pdf",
+    "figures/issue_2221/h2_delta_forest.png",
+    "figures/issue_2221/monitor_r_by_layer_evil.meta.json",
+    "figures/issue_2221/monitor_r_by_layer_evil.pdf",
+    "figures/issue_2221/monitor_r_by_layer_evil.png",
+    "figures/issue_2221/monitor_r_by_layer_sycophancy.meta.json",
+    "figures/issue_2221/monitor_r_by_layer_sycophancy.pdf",
+    "figures/issue_2221/monitor_r_by_layer_sycophancy.png",
+    "figures/issue_2221/monitor_selected_r_by_arm.meta.json",
+    "figures/issue_2221/monitor_selected_r_by_arm.pdf",
+    "figures/issue_2221/monitor_selected_r_by_arm.png",
+    "figures/issue_2221/monitor_vs_score_per_unit.meta.json",
+    "figures/issue_2221/monitor_vs_score_per_unit.pdf",
+    "figures/issue_2221/monitor_vs_score_per_unit.png",
+    "figures/issue_2221/severity_ordering_by_arm.meta.json",
+    "figures/issue_2221/severity_ordering_by_arm.pdf",
+    "figures/issue_2221/severity_ordering_by_arm.png",
+    "figures/issue_2221/trait_mix_size_vs_acquisition.meta.json",
+    "figures/issue_2221/trait_mix_size_vs_acquisition.pdf",
+    "figures/issue_2221/trait_mix_size_vs_acquisition.png",
+    "figures/issue_2221/trait_scores_by_cell.meta.json",
+    "figures/issue_2221/trait_scores_by_cell.pdf",
+    "figures/issue_2221/trait_scores_by_cell.png",
+    "scripts/issue2221_dv_figs.py",
+    "scripts/issue2221_monitors.py"
+  ],
+  "created": "2026-08-13T00:05:35Z",
+  "figsize": [
+    7.0,
+    4.0
+  ],
+  "points": [
+    {
+      "layer index": 0.0,
+      "Spearman r (hallucination)": 0.3456837638835917,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 1.0,
+      "Spearman r (hallucination)": 0.3579513752761653,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 2.0,
+      "Spearman r (hallucination)": 0.41928943223903326,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 3.0,
+      "Spearman r (hallucination)": 0.3325398945344057,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 4.0,
+      "Spearman r (hallucination)": -0.43681459137128126,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 5.0,
+      "Spearman r (hallucination)": 0.24316158295994092,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 6.0,
+      "Spearman r (hallucination)": 0.416660658369196,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 7.0,
+      "Spearman r (hallucination)": -0.2896032546603981,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 8.0,
+      "Spearman r (hallucination)": -0.6120661826937612,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 9.0,
+      "Spearman r (hallucination)": 0.02584960972006579,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 10.0,
+      "Spearman r (hallucination)": 0.2142450703917317,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 11.0,
+      "Spearman r (hallucination)": 0.5367079984250948,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 12.0,
+      "Spearman r (hallucination)": 0.8144817706712255,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 13.0,
+      "Spearman r (hallucination)": 0.9178802095514886,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 14.0,
+      "Spearman r (hallucination)": 0.9152514356816515,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 15.0,
+      "Spearman r (hallucination)": 0.9327765948138994,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 16.0,
+      "Spearman r (hallucination)": 0.9248902732043879,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 17.0,
+      "Spearman r (hallucination)": 0.9397866584667987,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 18.0,
+      "Spearman r (hallucination)": 0.9354053686837367,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 19.0,
+      "Spearman r (hallucination)": 0.9345291107271243,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 20.0,
+      "Spearman r (hallucination)": 0.9371578845969615,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 21.0,
+      "Spearman r (hallucination)": 0.9397866584667987,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 22.0,
+      "Spearman r (hallucination)": 0.9170039515948762,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 23.0,
+      "Spearman r (hallucination)": 0.9196327254647134,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 24.0,
+      "Spearman r (hallucination)": 0.9248902732043879,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 25.0,
+      "Spearman r (hallucination)": 0.9248902732043879,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 26.0,
+      "Spearman r (hallucination)": 0.9029838242890779,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 27.0,
+      "Spearman r (hallucination)": 0.41315562654274646,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 0.0,
+      "Spearman r (hallucination)": -0.15545999752806633,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 1.0,
+      "Spearman r (hallucination)": -0.056769100220923095,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 2.0,
+      "Spearman r (hallucination)": -0.14061269439336335,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 3.0,
+      "Spearman r (hallucination)": 0.012227190816814205,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 4.0,
+      "Spearman r (hallucination)": 0.02008752777048048,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 5.0,
+      "Spearman r (hallucination)": 0.11179145889658702,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 6.0,
+      "Spearman r (hallucination)": 0.11703168353236454,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 7.0,
+      "Spearman r (hallucination)": 0.11703168353236454,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 8.0,
+      "Spearman r (hallucination)": 0.20873561465847107,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 9.0,
+      "Spearman r (hallucination)": 0.22794977165632196,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 10.0,
+      "Spearman r (hallucination)": 0.20524213156795273,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 11.0,
+      "Spearman r (hallucination)": 0.23144325474684033,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 12.0,
+      "Spearman r (hallucination)": 0.23930359170050658,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 13.0,
+      "Spearman r (hallucination)": 0.2943259503761705,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 14.0,
+      "Spearman r (hallucination)": 0.31616021969191016,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 15.0,
+      "Spearman r (hallucination)": 0.4471658355863481,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 16.0,
+      "Spearman r (hallucination)": 0.3956369600012025,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 17.0,
+      "Spearman r (hallucination)": 0.3772961737759812,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 18.0,
+      "Spearman r (hallucination)": 0.3589553875507599,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 19.0,
+      "Spearman r (hallucination)": 0.41048426313590547,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 20.0,
+      "Spearman r (hallucination)": 0.41048426313590547,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 21.0,
+      "Spearman r (hallucination)": 0.41048426313590547,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 22.0,
+      "Spearman r (hallucination)": 0.4497859479042368,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 23.0,
+      "Spearman r (hallucination)": 0.4585196556305327,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 24.0,
+      "Spearman r (hallucination)": 0.411357633908535,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 25.0,
+      "Spearman r (hallucination)": 0.5441099913482321,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 26.0,
+      "Spearman r (hallucination)": 0.4279516785884972,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 27.0,
+      "Spearman r (hallucination)": 0.8314489755433659,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 0.0,
+      "Spearman r (hallucination)": -0.45609226641675404,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 1.0,
+      "Spearman r (hallucination)": 0.15290701342886373,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 2.0,
+      "Spearman r (hallucination)": -0.6988157203983888,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 3.0,
+      "Spearman r (hallucination)": -0.7084545579211251,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 4.0,
+      "Spearman r (hallucination)": -0.6033036031276372,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 5.0,
+      "Spearman r (hallucination)": -0.8030904172352643,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 6.0,
+      "Spearman r (hallucination)": -0.7776789364935047,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 7.0,
+      "Spearman r (hallucination)": -0.6278388259127844,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 8.0,
+      "Spearman r (hallucination)": -0.2440378409165533,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 9.0,
+      "Spearman r (hallucination)": -0.5314504506854204,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 10.0,
+      "Spearman r (hallucination)": -0.20548249082560774,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 11.0,
+      "Spearman r (hallucination)": -0.08718766668293376,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 12.0,
+      "Spearman r (hallucination)": 0.13625811225322815,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 13.0,
+      "Spearman r (hallucination)": -0.4114031106295217,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 14.0,
+      "Spearman r (hallucination)": -0.5489756098176684,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 15.0,
+      "Spearman r (hallucination)": -0.6243337940863348,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 16.0,
+      "Spearman r (hallucination)": -0.6935581726587143,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 17.0,
+      "Spearman r (hallucination)": -0.7408761023157839,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 18.0,
+      "Spearman r (hallucination)": -0.6103136667805363,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 19.0,
+      "Spearman r (hallucination)": -0.3334161524910181,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 20.0,
+      "Spearman r (hallucination)": -0.3001183501397469,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 21.0,
+      "Spearman r (hallucination)": 0.23352274543720453,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 22.0,
+      "Spearman r (hallucination)": 0.2729543534847625,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 23.0,
+      "Spearman r (hallucination)": 0.37197150258196365,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 24.0,
+      "Spearman r (hallucination)": 0.4595972982432036,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 25.0,
+      "Spearman r (hallucination)": 0.43681459137128126,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 26.0,
+      "Spearman r (hallucination)": 0.7592775194046443,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 27.0,
+      "Spearman r (hallucination)": 0.8986025345060159,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 0.0,
+      "Spearman r (hallucination)": 0.005695676717980598,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 1.0,
+      "Spearman r (hallucination)": -0.4525872345903044,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 2.0,
+      "Spearman r (hallucination)": -0.8837061492436051,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 3.0,
+      "Spearman r (hallucination)": -0.8512846048489463,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 4.0,
+      "Spearman r (hallucination)": -0.8653047321547447,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 5.0,
+      "Spearman r (hallucination)": -0.762782551231094,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 6.0,
+      "Spearman r (hallucination)": -0.5034101960738236,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 7.0,
+      "Spearman r (hallucination)": -0.37197150258196365,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 8.0,
+      "Spearman r (hallucination)": 0.17306094643094894,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 9.0,
+      "Spearman r (hallucination)": 0.4937713585510872,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 10.0,
+      "Spearman r (hallucination)": 0.45696852437336644,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 11.0,
+      "Spearman r (hallucination)": 0.11259914742469336,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 12.0,
+      "Spearman r (hallucination)": -0.08718766668293376,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 13.0,
+      "Spearman r (hallucination)": -0.5445943200346064,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 14.0,
+      "Spearman r (hallucination)": -0.4718649096357772,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 15.0,
+      "Spearman r (hallucination)": -0.6252100520429472,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 16.0,
+      "Spearman r (hallucination)": -0.5726345746462032,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 17.0,
+      "Spearman r (hallucination)": -0.7075782999645127,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 18.0,
+      "Spearman r (hallucination)": -0.4587210402865912,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 19.0,
+      "Spearman r (hallucination)": -0.3193960251852197,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 20.0,
+      "Spearman r (hallucination)": -0.5156778074663972,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 21.0,
+      "Spearman r (hallucination)": -0.6146949565635984,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 22.0,
+      "Spearman r (hallucination)": -0.35444634344971565,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 23.0,
+      "Spearman r (hallucination)": 0.37109524462535126,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 24.0,
+      "Spearman r (hallucination)": 0.20635874878222013,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 25.0,
+      "Spearman r (hallucination)": 0.10033153603211976,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 26.0,
+      "Spearman r (hallucination)": 0.16429836686482494,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 27.0,
+      "Spearman r (hallucination)": -0.2685730637017005,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 0.0,
+      "Spearman r (hallucination)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 1.0,
+      "Spearman r (hallucination)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 2.0,
+      "Spearman r (hallucination)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 3.0,
+      "Spearman r (hallucination)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 4.0,
+      "Spearman r (hallucination)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 5.0,
+      "Spearman r (hallucination)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 6.0,
+      "Spearman r (hallucination)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 7.0,
+      "Spearman r (hallucination)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 8.0,
+      "Spearman r (hallucination)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 9.0,
+      "Spearman r (hallucination)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 10.0,
+      "Spearman r (hallucination)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 11.0,
+      "Spearman r (hallucination)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 12.0,
+      "Spearman r (hallucination)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 13.0,
+      "Spearman r (hallucination)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 14.0,
+      "Spearman r (hallucination)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 15.0,
+      "Spearman r (hallucination)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 16.0,
+      "Spearman r (hallucination)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 17.0,
+      "Spearman r (hallucination)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 18.0,
+      "Spearman r (hallucination)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 19.0,
+      "Spearman r (hallucination)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 20.0,
+      "Spearman r (hallucination)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 21.0,
+      "Spearman r (hallucination)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 22.0,
+      "Spearman r (hallucination)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 23.0,
+      "Spearman r (hallucination)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 24.0,
+      "Spearman r (hallucination)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 25.0,
+      "Spearman r (hallucination)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 26.0,
+      "Spearman r (hallucination)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 27.0,
+      "Spearman r (hallucination)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 140,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "layer index",
+        "ylabel": "Spearman r (hallucination)",
+        "legend_labels": [
+          "paper's last-prompt-token read",
+          "answer oracle",
+          "mapped context read",
+          "mapped prefix read",
+          "transport cosine",
+          "|r| <= max score-shuffle null q95 (0.59)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      }
+    ],
+    "series": [
+      "paper's last-prompt-token read",
+      "answer oracle",
+      "mapped context read",
+      "mapped prefix read",
+      "transport cosine"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

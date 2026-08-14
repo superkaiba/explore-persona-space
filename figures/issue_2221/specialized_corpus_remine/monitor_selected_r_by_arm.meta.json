@@ -1,0 +1,146 @@
+{
+  "commit": "7507a5cc",
+  "render_id": "ba5ae05d5a174ed0",
+  "git_commit": "7507a5cc",
+  "git_dirty": false,
+  "created": "2026-08-13T23:38:23Z",
+  "figsize": [
+    7.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "selected Spearman r (24 fine-tunes)": 0.8386221802011439,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "selected Spearman r (24 fine-tunes)": -0.5313043478260869,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "selected Spearman r (24 fine-tunes)": 0.9495652173913044,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.16,
+      "selected Spearman r (24 fine-tunes)": 0.7201113866667859,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.16,
+      "selected Spearman r (24 fine-tunes)": -0.7121739130434782,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.16,
+      "selected Spearman r (24 fine-tunes)": 0.8826086956521739,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "evil",
+      "selected Spearman r (24 fine-tunes)": 0.8915449391458762,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "sycophancy",
+      "selected Spearman r (24 fine-tunes)": 0.6382608695652174,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "hallucination",
+      "selected Spearman r (24 fine-tunes)": 0.9669565217391304,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.48,
+      "selected Spearman r (24 fine-tunes)": 0.8205289292798678,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.48,
+      "selected Spearman r (24 fine-tunes)": -0.5939130434782609,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.48,
+      "selected Spearman r (24 fine-tunes)": -0.9060869565217391,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.64,
+      "selected Spearman r (24 fine-tunes)": -0.610194887320034,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.64,
+      "selected Spearman r (24 fine-tunes)": -0.6339130434782608,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.64,
+      "selected Spearman r (24 fine-tunes)": -0.8826086956521739,
+      "_kind": "bar",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 15,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "selected Spearman r (24 fine-tunes)",
+        "legend_labels": [
+          "paper's last-prompt-token read",
+          "answer oracle",
+          "mapped context read",
+          "mapped prefix read",
+          "transport cosine",
+          "score-shuffle null q95 (|r|)"
+        ],
+        "xticklabels": [
+          "evil",
+          "sycophancy",
+          "hallucination"
+        ],
+        "yticklabels": [
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ]
+      }
+    ],
+    "series": [
+      "paper's last-prompt-token read",
+      "answer oracle",
+      "mapped context read",
+      "mapped prefix read",
+      "transport cosine"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
