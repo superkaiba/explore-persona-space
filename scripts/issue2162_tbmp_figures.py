@@ -225,8 +225,20 @@ def fig_tb_sweep(tb: dict[str, dict], ref: dict[str, dict], fig_dir: Path, input
     F._save(fig, fig_dir, "tb_sweep", inputs)
 
 
-def fig_tb_rawscale(tb: dict[str, dict], ref: dict[str, dict], fig_dir: Path, inputs: list[Path]):
+def _rs_index(payload: dict) -> dict[tuple[str, str], dict]:
+    return {(r["cell"], r["subset"]): r for r in payload["rows"]}
+
+
+def fig_tb_rawscale(rawscale: dict, parent_rs: dict, fig_dir: Path, inputs: list[Path]) -> None:
+    """Raw-scale (denominator-free, judge-contrast units) per arm x depth —
+    sourced from the DECLARED artifacts (plan §9 P5 ``rawscale_tb.json`` + the
+    parent's committed ``recency_rawscale.json``), never recomputed from the F
+    tables; every bar carries its pair-clustered bootstrap 95% CI (B=10000,
+    seed 21620) via ``<arm>_ci95`` where the artifact provides one (the parent
+    file predates the null-CI arm and carries steered CIs only)."""
     arms = ("steered", "shuffled", "crosstype")
+    tb_idx = _rs_index(rawscale)
+    ref_idx = _rs_index(parent_rs)
     fig, axes = plt.subplots(2, len(BASES), figsize=(12, 7.5), sharey="row")
     for row_i, pool in enumerate(("all", "surviving")):
         for col_i, base in enumerate(BASES):
@@ -235,49 +247,36 @@ def fig_tb_rawscale(tb: dict[str, dict], ref: dict[str, dict], fig_dir: Path, in
             for d_i, depth in enumerate(DEPTHS):
                 cell = depth_cell(base, depth)
                 for a_i, arm in enumerate(arms):
-                    tb_rows = [r for r in tb[arm] if r["cell"] == cell and r["slot"] == "tb"]
-                    ref_rows = [r for r in ref[arm] if r["cell"] == cell and r["slot"] == "ce"]
-                    if pool == "surviving":
-                        tb_rows = _surviving(tb_rows, "raw_move_registered")
-                        ref_rows = _surviving(ref_rows, "raw_move_registered")
-                    tb_vals = [
-                        r["raw_move_registered"]
-                        for r in tb_rows
-                        if r["raw_move_registered"] is not None
-                    ]
-                    ref_vals = [
-                        r["raw_move_registered"]
-                        for r in ref_rows
-                        if r["raw_move_registered"] is not None
-                    ]
                     x0 = d_i + (a_i - 1) * 2.2 * width
-                    if tb_vals:
+                    for src_i, (idx, hatch, tag) in enumerate(
+                        ((tb_idx, None, "tb"), (ref_idx, "//", "parent ce"))
+                    ):
+                        row = idx.get((cell, pool))
+                        if row is None:
+                            continue
+                        m = row[f"{arm}_mean"]
+                        ci = row.get(f"{arm}_ci95")
+                        lo, hi = ci if ci else (None, None)
+                        e_lo, e_hi = F._err(lo, hi, m)
                         ax.bar(
-                            x0 - width / 2,
-                            float(np.mean(tb_vals)),
+                            x0 + (src_i - 0.5) * width,
+                            m,
                             width,
+                            yerr=[[e_lo], [e_hi]],
+                            capsize=2,
+                            error_kw={"lw": 0.9},
                             color=ARM_COLORS[arm],
-                            label=f"{arm} (tb)" if d_i == 0 and row_i == 0 and col_i == 0 else None,
-                        )
-                    if ref_vals:
-                        ax.bar(
-                            x0 + width / 2,
-                            float(np.mean(ref_vals)),
-                            width,
-                            color=ARM_COLORS[arm],
-                            hatch="//",
-                            edgecolor="white",
+                            hatch=hatch,
+                            edgecolor="white" if hatch else None,
                             label=(
-                                f"{arm} (parent ce)"
-                                if d_i == 0 and row_i == 0 and col_i == 0
-                                else None
+                                f"{arm} ({tag})" if d_i == 0 and row_i == 0 and col_i == 0 else None
                             ),
                         )
             ax.set_xticks(range(len(DEPTHS)), DEPTHS)
             ax.axhline(0.0, color="#bbbbbb", lw=0.8)
             ax.set_title(f"{base} — {pool} pairs")
             if col_i == 0:
-                ax.set_ylabel("raw movement (registered channel)")
+                ax.set_ylabel("raw movement (judge-contrast units)")
     axes[0, 0].legend(fontsize=7, ncol=2)
     F._save(fig, fig_dir, "tb_rawscale", inputs)
 
@@ -452,9 +451,12 @@ CAPTIONS = {
         "boundary k=n_d (provenance: parent run, re-aggregated per §12.8)."
     ),
     "tb_rawscale": (
-        "Raw-scale movement (registered channel, direction x (patched - floor)) per arm x "
-        "depth: solid = joint tb (this round), hatched = parent single-ce; top = all "
-        "scored pairs, bottom = surviving pairs only."
+        "Raw-scale movement (denominator-free, judge-contrast units: direction x "
+        "(patched - floor)) per arm x depth, sourced from rawscale_tb.json + the parent's "
+        "committed recency_rawscale.json: solid = joint tb (this round), hatched = parent "
+        "single-ce; errorbars = pair-clustered bootstrap 95% CIs (B=10k, seed 21620; the "
+        "parent file carries steered CIs only); top = all scored pairs, bottom = "
+        "surviving pairs only."
     ),
     "tb_identity_d1": (
         "G2 identity read: per-pair joint-tb@d1 F vs parent single-ce F, NETTED space for "
@@ -500,7 +502,9 @@ def main(argv: list[str] | None = None) -> int:
     ref_path = args.out_dir / "parent_ref_cells_tb.jsonl"
     stats_path = args.out_dir / "stats_tb.json"
     gate_path = args.out_dir / "identity_gate.json"
-    for p in [*tb_paths.values(), ref_path, stats_path, gate_path]:
+    rawscale_path = args.out_dir / "rawscale_tb.json"
+    parent_rs_path = args.parent_metrics_dir / "recency_rawscale.json"
+    for p in [*tb_paths.values(), ref_path, stats_path, gate_path, rawscale_path, parent_rs_path]:
         assert p.exists(), f"{p} missing — run issue2162_tbmp_analysis.py first"
 
     tb = {arm: list(F._iter_jsonl(p)) for arm, p in tb_paths.items()}
@@ -511,11 +515,13 @@ def main(argv: list[str] | None = None) -> int:
     }
     stats = json.loads(stats_path.read_text())
     gate = json.loads(gate_path.read_text())
+    rawscale = json.loads(rawscale_path.read_text())
+    parent_rs = json.loads(parent_rs_path.read_text())
 
     inputs = [*tb_paths.values(), ref_path, stats_path, gate_path]
     fig_tb_hero(tb, ref, args.fig_dir, inputs)
     fig_tb_sweep(tb, ref, args.fig_dir, inputs)
-    fig_tb_rawscale(tb, ref, args.fig_dir, inputs)
+    fig_tb_rawscale(rawscale, parent_rs, args.fig_dir, [rawscale_path, parent_rs_path])
     fig_tb_identity_d1(tb, args.parent_metrics_dir, gate, args.fig_dir, inputs)
     fig_tb_control(tb, stats, args.fig_dir, inputs)
     fig_tb_target_only(tb, args.fig_dir, inputs)

@@ -321,36 +321,164 @@ def build_crosstype_assignment(pairs: list[BANK.Pair2162]) -> dict[str, str]:
 
 
 def shuffled_assignment_with_parity(
-    pairs: list[BANK.Pair2162], parent_bank: Path | None
+    pairs: list[BANK.Pair2162], parent_bank_payload: dict, parent_bank_name: str
 ) -> tuple[dict[str, str], str]:
     """The parent's frozen within-cell value-constrained shuffled assignment.
 
     Recomputed via the SAME seeded function the parent froze
-    (``BANK.donor_assignment_2162``, seed 2162 — deterministic); when the
-    staged parent ``bank.json`` carries a donor map, assert exact equality
-    over the grid-cell pairs (fail-loud on drift). Returns
+    (``BANK.donor_assignment_2162``, seed 2162 — deterministic) and
+    parity-checked against the staged parent ``bank.json``'s donor map —
+    MANDATORY on every path (plan §4.5 DAG stages ``bank.json``
+    unconditionally at P1): a bank without a recognizable donor map is a
+    RuntimeError, never a silent recompute-only skip. Returns
     ``(map restricted to grid pairs, parity note)``.
     """
     full = BANK.donor_assignment_2162(pairs)["shuffled"]
     grid_ids = {p.pair_id for p in pairs if p.cell in GRID_CELLS}
     ours = {k: v for k, v in full.items() if k in grid_ids}
-    if parent_bank is None:
-        return ours, "recomputed (deterministic seed 2162); no --parent-bank staged"
-    payload = json.loads(parent_bank.read_text())
     frozen = None
     for key in ("donor_assignments", "donor_assignment"):
-        d = payload.get(key)
+        d = parent_bank_payload.get(key)
         if isinstance(d, dict):
             frozen = d.get("shuffled", d if all(isinstance(v, str) for v in d.values()) else None)
             break
     if not isinstance(frozen, dict):
-        return ours, f"recomputed; parity SKIPPED (no donor map found in {parent_bank.name})"
+        raise RuntimeError(
+            f"no shuffled donor map found in {parent_bank_name} "
+            f"(top-level keys: {sorted(parent_bank_payload)[:20]}) — the plan-§4.2 parity "
+            "check cannot run; refusing (stage the parent's real "
+            "issue2162_ctxinfo/analysis_tensors/vc_bank/bank.json)"
+        )
     mismatches = [k for k in ours if frozen.get(k) != ours[k]]
     assert not mismatches, (
         f"shuffled donor assignment DRIFTED from parent bank.json on {len(mismatches)} "
         f"pairs (first: {mismatches[:3]}) — refusing (plan §4.2: reused verbatim)"
     )
-    return ours, f"recomputed AND parity-verified against {parent_bank} ({len(ours)} pairs)"
+    return ours, f"recomputed AND parity-verified against {parent_bank_name} ({len(ours)} pairs)"
+
+
+# ── rebuilt-vs-recorded context parity (plan §12 assumption 9 + §10 item j) ──
+
+_CONTEXT_PARITY_KEYS = ("cell", "value_id", "carrier", "system", "history", "user")
+
+
+def frozen_gen_sha256_producer_domain() -> str:
+    """The parent bank's ``frozen_gen_sha256`` pin recomputed in the
+    PRODUCER's domain (``bank2162.py:1852/1904``): sha256 of the canonical
+    JSON dump of the frozen-generation DICT — never the file's raw bytes
+    (verified 2026-08-14: recompute == the banked pin ``b52f68c1…``; the raw
+    file sha differs — the `.claude/rules/gotchas.md` sha-pin-domain rule)."""
+    import hashlib
+
+    frozen = BANK.load_frozen_gen()
+    gen_blob = json.dumps(frozen or {}, sort_keys=True, ensure_ascii=False)
+    return hashlib.sha256(gen_blob.encode()).hexdigest()
+
+
+def parent_bank_context_parity(payload: dict, capture_ctx: dict[str, dict]) -> dict:
+    """Plan §12 assumption 9 — rebuilt-vs-recorded context parity, realized form.
+
+    The staged parent ``bank.json`` records each context's FULL payload
+    (system/history/user + identity fields) but NO ``ctx_len``/``prefix_end``
+    (probed 2026-08-14 against the live HF artifact: 0 occurrences of either
+    key), so the assumption's stated recipe is unimplementable as written.
+    Realized parity, strictly stronger under the pinned tokenizer: EXACT
+    equality of the recorded per-context payloads for ALL capture contexts
+    (identical text + identical render ⇒ identical token ids ⇒ identical
+    ctx_len/prefix_end), plus the producer-domain ``frozen_gen_sha256`` pin.
+    The token-LENGTH leg of the recorded truth is asserted separately against
+    the parent's committed per-pair ``len_delta`` (``g1b_len_delta_parity``).
+    A structurally unusable bank (no ``contexts`` map) raises — never a skip.
+    """
+    recorded = payload.get("contexts")
+    if not isinstance(recorded, dict) or not recorded:
+        raise RuntimeError(
+            "parent bank.json carries no 'contexts' map — assumption-9 rebuilt-vs-recorded "
+            f"parity cannot run (top-level keys: {sorted(payload)[:20]}); refusing"
+        )
+    violations: list[dict] = []
+    banked_sha = payload.get("frozen_gen_sha256")
+    local_sha = frozen_gen_sha256_producer_domain()
+    if banked_sha != local_sha:
+        violations.append(
+            {
+                "check": "frozen_gen_sha256",
+                "banked": banked_sha,
+                "recomputed_producer_domain": local_sha,
+            }
+        )
+    for cid, ctx in sorted(capture_ctx.items()):
+        rec = recorded.get(cid)
+        if rec is None:
+            violations.append({"check": "context_missing_from_bank", "context_id": cid})
+            continue
+        for k in _CONTEXT_PARITY_KEYS:
+            if rec.get(k) != ctx.get(k):
+                violations.append({"check": "context_payload_drift", "context_id": cid, "field": k})
+                break
+    return {
+        "criterion": "plan §12 assumption 9 — rebuilt contexts == bank.json recorded payloads "
+        "(realized form: recorded ctx_len/prefix_end do not exist in the artifact; "
+        "text-level payload equality + producer-domain frozen_gen sha are strictly stronger)",
+        "n_contexts_checked": len(capture_ctx),
+        "parity_keys": list(_CONTEXT_PARITY_KEYS),
+        "frozen_gen_sha256": banked_sha,
+        "n_violations": len(violations),
+        "violations": violations[:100],
+        "passed": not violations,
+    }
+
+
+def g1b_len_delta_parity(
+    resolved: dict[str, dict], pairs: list[BANK.Pair2162], parent_f_cells: Path
+) -> dict:
+    """Plan §10 item (j) as realized: the re-rendered pair's
+    ``ctx_len_B − ctx_len_A`` must equal the parent's committed
+    ``f_cells.jsonl`` ``len_delta`` for EVERY capture pair (the parent table
+    covers all 38 cells ⊇ the 12 capture cells, single-valued per pair —
+    counted 2026-08-14: 1,368 pairs, 0 multi-valued). Anti-vacuous by
+    construction: a capture pair MISSING from the parent table is a violation,
+    so an empty/mis-staged table can never pass silently."""
+    assert parent_f_cells.exists(), (
+        f"{parent_f_cells} missing — the parent's committed f_cells.jsonl is required for the "
+        "G1(b) len_delta rebuilt-vs-recorded parity (git eval_results/issue_2162/f_metrics/)"
+    )
+    recorded: dict[str, int] = {}
+    with parent_f_cells.open() as fh:
+        for line in fh:
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            if row.get("len_delta") is not None:
+                recorded.setdefault(row["pair_id"], int(row["len_delta"]))
+    capture_pairs = [p for p in pairs if p.cell in CAPTURE_CELLS]
+    violations: list[dict] = []
+    n_checked = 0
+    for p in capture_pairs:
+        want = recorded.get(p.pair_id)
+        if want is None:
+            violations.append({"check": "pair_missing_from_parent_f_cells", "pair_id": p.pair_id})
+            continue
+        got = int(resolved[p.b]["ctx_len"]) - int(resolved[p.a]["ctx_len"])
+        n_checked += 1
+        if got != want:
+            violations.append(
+                {
+                    "check": "len_delta_drift",
+                    "pair_id": p.pair_id,
+                    "recorded": want,
+                    "re_rendered": got,
+                }
+            )
+    return {
+        "criterion": "plan §10 item (j) — re-rendered per-pair ctx_len delta == parent "
+        "committed f_cells.jsonl len_delta, every capture pair",
+        "n_capture_pairs": len(capture_pairs),
+        "n_checked": n_checked,
+        "n_violations": len(violations),
+        "violations": violations[:100],
+        "passed": not violations and n_checked == len(capture_pairs),
+    }
 
 
 # ── tb bank + payloads ────────────────────────────────────────────────
@@ -725,21 +853,51 @@ def _load_tb_config(cfg: R.RunConfig) -> dict:
 # ── P1: bank phase ────────────────────────────────────────────────────
 
 
-def phase_bank(cfg: R.RunConfig, parent_bank: Path | None) -> int:
+def phase_bank(cfg: R.RunConfig, parent_bank: Path | None, parent_f_cells: Path) -> int:
     logger.info("[phase=bank_tbmp] tiny=%s smoke=%s", cfg.tiny, cfg.smoke)
+    if parent_bank is None or not parent_bank.exists():
+        raise RuntimeError(
+            f"--parent-bank missing or not found ({parent_bank}) — plan §4.5 DAG stages "
+            "bank.json unconditionally at P1; stage "
+            "issue2162_ctxinfo/analysis_tensors/vc_bank/bank.json and re-run"
+        )
+    bank_payload = json.loads(parent_bank.read_text())
     contexts = BANK.build_contexts()
     capture_ctx = {cid: c for cid, c in contexts.items() if c["cell"] in CAPTURE_CELLS}
     assert len(capture_ctx) == 432, len(capture_ctx)
     pairs = BANK.build_pairs()
     pairs_by_id = {p.pair_id: p for p in pairs}
+
+    # §12 assumption 9 — rebuilt-vs-recorded context parity (runs BEFORE any
+    # capture; identical in smoke and production).
+    ctx_parity = parent_bank_context_parity(bank_payload, capture_ctx)
+    logger.info(
+        "[bank_tbmp] assumption-9 context parity %s (%d contexts, %d violations)",
+        "PASS" if ctx_parity["passed"] else "FAIL",
+        ctx_parity["n_contexts_checked"],
+        ctx_parity["n_violations"],
+    )
+
     model, tok = R.load_model_and_tokenizer(cfg)
 
     # G1 resolver sweep over ALL 432 capture contexts (full consumed grain —
     # identical in smoke and production, the §12 structural probe).
     resolved = resolve_boundaries(tok, capture_ctx)
     crosstype = build_crosstype_assignment(pairs)
-    shuffled, parity_note = shuffled_assignment_with_parity(pairs, parent_bank)
+    shuffled, parity_note = shuffled_assignment_with_parity(pairs, bank_payload, str(parent_bank))
     g1 = g1_resolver_report(resolved, pairs, crosstype, pairs_by_id)
+    # §10 item (j) — G1(b) len_delta parity vs the parent's committed table.
+    len_parity = g1b_len_delta_parity(resolved, pairs, parent_f_cells)
+    logger.info(
+        "[bank_tbmp] G1(b) len_delta parity %s (%d/%d pairs checked, %d violations)",
+        "PASS" if len_parity["passed"] else "FAIL",
+        len_parity["n_checked"],
+        len_parity["n_capture_pairs"],
+        len_parity["n_violations"],
+    )
+    g1["context_parity"] = ctx_parity
+    g1["len_delta_parity"] = len_parity
+    g1["passed"] = bool(g1["passed"] and ctx_parity["passed"] and len_parity["passed"])
     R._write_json_atomic(gates_dir(cfg) / "g1_resolver_report.json", g1)
     logger.info(
         "[bank_tbmp] G1 %s (%d violations; right-aligned=%d)",
@@ -1350,6 +1508,8 @@ def _sentinel_payload(cfg: R.RunConfig, uploaded: dict[str, list[str]]) -> dict:
             "(generate_batch returns decoded text only)",
             "no per-rollout answer-state capture this round (plan §4.4 has no V_a-based "
             "tb metric; the judge DVs + TF margin are the registered reads)",
+            "margin artifacts persist as JSONL under margin/ (plan §6.5 says .pt) — "
+            "text-first upload policy; content is per-pair scalar margins, no tensors",
         ],
         "uploaded_prefixes": {k: len(v) for k, v in uploaded.items()},
     }
@@ -1372,6 +1532,7 @@ def phase_upload(cfg: R.RunConfig) -> int:
     )
     # Out-root TOP-LEVEL residue (#2187): pilot_gate_report.json + any other
     # root-level JSON rides its own glob so no file escapes every upload glob.
+    # UPLOAD_PREFIX_EXEMPT: issue-2162-scoped follow-up driver — HF_TBMP IS this issue's canonical tbmp prefix, not a reusable-core fallback
     uploaded["outroot_json"] = R._upload_dir(
         cfg, cfg.out_root, f"{HF_TBMP}/manifests/outroot", ["*.json"]
     )
@@ -1442,7 +1603,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--parent-bank",
         type=Path,
         default=None,
-        help="parent bank.json (staged from HF) — shuffled-assignment parity check",
+        help="parent bank.json (staged from HF) — REQUIRED for the bank phase: "
+        "shuffled-assignment + assumption-9 context parity",
+    )
+    ap.add_argument(
+        "--parent-f-cells",
+        type=Path,
+        default=R.REPO_ROOT / "eval_results" / "issue_2162" / "f_metrics" / "f_cells.jsonl",
+        help="parent committed f_cells.jsonl — G1(b) len_delta rebuilt-vs-recorded parity",
     )
     ap.add_argument("--planned-wall-h", type=float, default=PLANNED_GRID_WALL_H)
     ap.add_argument("--gpu-hours-budgeted", type=float, default=7.0)
@@ -1501,7 +1669,7 @@ def main(argv: list[str] | None = None) -> int:
             os.environ.get("CUDA_VISIBLE_DEVICES"),
         )
     if cfg.phase == "bank":
-        return phase_bank(cfg, args.parent_bank)
+        return phase_bank(cfg, args.parent_bank, args.parent_f_cells)
     if cfg.phase == "grid":
         return phase_grid(cfg)
     if cfg.phase == "margin":
