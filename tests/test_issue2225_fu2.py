@@ -464,7 +464,7 @@ def test_bankverify_defect_classes_raise(tmp_path):
     root_g = tmp_path / "g"
     _write_bank(root_g)
     (root_g / "RND.pt").unlink()
-    with pytest.raises(FileNotFoundError, match="RND.pt"):
+    with pytest.raises(FileNotFoundError, match=r"RND\.pt"):
         bankv.verify_bank(root_g)
 
 
