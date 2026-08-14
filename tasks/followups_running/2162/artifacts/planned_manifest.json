@@ -1,83 +1,138 @@
 {
-  "issue": 2162,
-  "round": "persona-specificity-ladder",
-  "replaces_parent_manifest_for_round_figures": true,
-  "conditions": [
-    "Steered (donor persona state patch)",
-    "Same-value donor null (same persona value, different carrier)",
-    "Cross-type donor null (non-persona information type, construct-screened)",
-    "Unpatched floor anchor",
-    "Generate-under-donor ceiling anchor",
-    "Install direction (plain to persona)",
-    "Erase direction (persona to plain)",
-    "Context-end slot",
-    "Prefix-end slot",
-    "Rung R1: named persona with pervasive dialect (Captain Marrow, pirate)",
-    "Rung R2: named persona with episodic markers (Reginald, butler)",
-    "Rung R3: unnamed register (warm, encouraging, informal)",
-    "Rung R4: single trait (enthusiastic)",
-    "Rung R5: situational user-persona, no style instruction (Lu et al. therapy persona)",
-    "Rung R5: situational user-persona, no style instruction (Lu et al. philosophy persona)"
-  ],
-  "metrics": [
-    "target-descriptor fraction-of-swap (F_target)",
-    "netted dual-rubric fraction-of-swap (parent-metric bridge diagnostic)",
-    "plain-descriptor mirror score",
-    "activation fraction-of-swap (F_act, projection onto the pair's own contrast direction)",
-    "teacher-forced positive-vs-negative completion margin",
-    "anchor separation (target descriptor, ceiling minus floor)",
-    "coherence rate",
-    "per-conjunct descriptor scores (R1/R2 steered diagnostic)"
-  ],
-  "figures": [
-    {
-      "id": "ladder_hero",
-      "title": "Specificity ladder: steered vs both nulls per rung",
-      "source": "eval_results/issue_2162/persona_specificity_ladder/{f_cells,null_samevalue_cells,null_crosstype_cells}.jsonl",
-      "transform": "per (direction x slot x arm x rung): pair value = mean F_target over K=5 coherent draws per carrier; rung mean over gate-surviving carriers; carrier-clustered bootstrap 95% CI (B=10000, seed 21626); panels install/erase, context-end primary with prefix-end companion; per-rung n and system-prompt token count annotated",
-      "plotted_quantity": "mean target-descriptor fraction-of-swap F_target (unitless; 0 = floor, 1 = full context swap)"
-    },
-    {
-      "id": "ladder_percarrier",
-      "title": "Specificity ladder - per-carrier companion",
-      "source": "eval_results/issue_2162/persona_specificity_ladder/{f_cells,null_samevalue_cells,null_crosstype_cells}.jsonl",
-      "transform": "same exclusions as ladder_hero, NO aggregation: one point per gate-surviving (carrier x arm x rung x direction x slot), carrier-labeled, arm-offset",
-      "plotted_quantity": "per-carrier F_target (unitless)"
-    },
-    {
-      "id": "asymmetry",
-      "title": "Erase vs install asymmetry per rung",
-      "source": "eval_results/issue_2162/persona_specificity_ladder/f_cells.jsonl",
-      "transform": "per (rung x slot): paired-by-carrier steered erase F_target minus install F_target; per-carrier points plus mean with carrier-clustered bootstrap 95% CI (B=10000, seed 21626)",
-      "plotted_quantity": "paired erase-minus-install difference in F_target (unitless; positive = erasure easier)"
-    },
-    {
-      "id": "anchor_separation",
-      "title": "Anchor separations and gate verdicts per rung",
-      "source": "eval_results/issue_2162/persona_specificity_ladder/anchors.jsonl + gates/ladder_separation_gate.json",
-      "transform": "per (rung x carrier) from K=10 anchor draws: target-descriptor separation (ceiling minus floor, 0-1 scale) against the 0.25 bar, and netted dual-rubric separation against the 0.5 bar; pass/fail verdicts marked; ALL rungs rendered including gate failures",
-      "plotted_quantity": "anchor separation per carrier (target-descriptor scale 0-1; netted scale 0-2)"
-    },
-    {
-      "id": "rubric_bridge",
-      "title": "Netted dual-rubric F vs target-only F (rubric-artifact quantification)",
-      "source": "eval_results/issue_2162/persona_specificity_ladder/{f_cells,null_samevalue_cells,null_crosstype_cells}.jsonl",
-      "transform": "per (direction x slot x arm): scatter of netted dual-rubric F (parent metric, x) vs F_target (this round's primary, y), arms color-coded; identity line drawn; quantifies the anti-source-channel inflation measured in Round A (null 0.479 netted vs <=0.003 target-only)",
-      "plotted_quantity": "F under the two metric conventions (unitless)"
-    },
-    {
-      "id": "dv_agreement",
-      "title": "Continuous-companion agreement: F_act vs F_target and margin validation",
-      "source": "eval_results/issue_2162/persona_specificity_ladder/{f_cells,margin}.jsonl",
-      "transform": "panel 1: per (direction x slot x arm) scatter of F_act (y) vs F_target (x) with Spearman rho annotated; panel 2: margin shift vs F_target across cells with dynamic range, Spearman rho (the pre-registered margin validation); panel 3: coherence rate and cap-hit fraction per cell",
-      "plotted_quantity": "F_act (signed projection, unitless), TF margin shift (nats/token), coherence rate (0-1)"
-    },
-    {
-      "id": "conjunct_diag",
-      "title": "Per-conjunct decomposition on R1/R2 steered installs",
-      "source": "eval_results/issue_2162/persona_specificity_ladder/conjuncts.jsonl",
-      "transform": "R1/R2 STEERED rollouts only: mean per-conjunct descriptor score (Round-A conjunct instrument verbatim) beside the holistic target-descriptor score, per direction x slot",
-      "plotted_quantity": "mean judge score per conjunct (0-100)"
-    }
-  ]
+ "issue": 2162,
+ "round": "persona-specificity-ladder",
+ "replaces_parent_manifest_for_round_figures": true,
+ "conditions": [
+  "Steered (donor persona state patch)",
+  "Same-value donor null (same persona value, different carrier)",
+  "Cross-type donor null (non-persona information type, construct-screened)",
+  "Unpatched floor anchor",
+  "Generate-under-donor ceiling anchor",
+  "Install direction (plain to persona)",
+  "Erase direction (persona to plain)",
+  "Context-end slot",
+  "Prefix-end slot",
+  "Rung R1: named persona with pervasive dialect (Captain Marrow, pirate)",
+  "Rung R2: named persona with episodic markers (Reginald, butler)",
+  "Rung R3: unnamed register (warm, encouraging, informal)",
+  "Rung R4: single trait (enthusiastic)",
+  "Rung R5: situational user-persona, no style instruction (Lu et al. therapy persona)",
+  "Rung R5: situational user-persona, no style instruction (Lu et al. philosophy persona)",
+  "Joint all-boundary patch (tb: every assistant-turn end plus context-end)",
+  "Single-boundary patch at boundary k (per-boundary sweep)",
+  "Turn-boundary shuffled-donor null (per-position norm-matched)",
+  "Turn-boundary cross-type donor null (structure-matched donor)",
+  "Parent single context-end patch (reused reference rows)",
+  "Near-zero control cell (user-name fact, depth 5)",
+  "Depth 1 / 3 / 5 recency cells (instruction-format base)",
+  "Depth 1 / 3 / 5 recency cells (prompted-persona base)"
+ ],
+ "metrics": [
+  "target-descriptor fraction-of-swap (F_target)",
+  "netted dual-rubric fraction-of-swap (parent-metric bridge diagnostic)",
+  "plain-descriptor mirror score",
+  "activation fraction-of-swap (F_act, projection onto the pair's own contrast direction)",
+  "teacher-forced positive-vs-negative completion margin",
+  "anchor separation (target descriptor, ceiling minus floor)",
+  "coherence rate",
+  "per-conjunct descriptor scores (R1/R2 steered diagnostic)",
+  "netted dual-rubric fraction-of-swap at the turn-boundary set (F_tb)",
+  "target-descriptor-only fraction-of-swap (persona cells registered primary)",
+  "raw-scale signed movement (judge-contrast units, denominator-free)",
+  "d1 identity gap (tb at depth 1 minus parent context-end F)",
+  "per-boundary steered minus shuffled-null F difference"
+ ],
+ "figures": [
+  {
+   "id": "ladder_hero",
+   "title": "Specificity ladder: steered vs both nulls per rung",
+   "source": "eval_results/issue_2162/persona_specificity_ladder/{f_cells,null_samevalue_cells,null_crosstype_cells}.jsonl",
+   "transform": "per (direction x slot x arm x rung): pair value = mean F_target over K=5 coherent draws per carrier; rung mean over gate-surviving carriers; carrier-clustered bootstrap 95% CI (B=10000, seed 21626); panels install/erase, context-end primary with prefix-end companion; per-rung n and system-prompt token count annotated",
+   "plotted_quantity": "mean target-descriptor fraction-of-swap F_target (unitless; 0 = floor, 1 = full context swap)"
+  },
+  {
+   "id": "ladder_percarrier",
+   "title": "Specificity ladder - per-carrier companion",
+   "source": "eval_results/issue_2162/persona_specificity_ladder/{f_cells,null_samevalue_cells,null_crosstype_cells}.jsonl",
+   "transform": "same exclusions as ladder_hero, NO aggregation: one point per gate-surviving (carrier x arm x rung x direction x slot), carrier-labeled, arm-offset",
+   "plotted_quantity": "per-carrier F_target (unitless)"
+  },
+  {
+   "id": "asymmetry",
+   "title": "Erase vs install asymmetry per rung",
+   "source": "eval_results/issue_2162/persona_specificity_ladder/f_cells.jsonl",
+   "transform": "per (rung x slot): paired-by-carrier steered erase F_target minus install F_target; per-carrier points plus mean with carrier-clustered bootstrap 95% CI (B=10000, seed 21626)",
+   "plotted_quantity": "paired erase-minus-install difference in F_target (unitless; positive = erasure easier)"
+  },
+  {
+   "id": "anchor_separation",
+   "title": "Anchor separations and gate verdicts per rung",
+   "source": "eval_results/issue_2162/persona_specificity_ladder/anchors.jsonl + gates/ladder_separation_gate.json",
+   "transform": "per (rung x carrier) from K=10 anchor draws: target-descriptor separation (ceiling minus floor, 0-1 scale) against the 0.25 bar, and netted dual-rubric separation against the 0.5 bar; pass/fail verdicts marked; ALL rungs rendered including gate failures",
+   "plotted_quantity": "anchor separation per carrier (target-descriptor scale 0-1; netted scale 0-2)"
+  },
+  {
+   "id": "rubric_bridge",
+   "title": "Netted dual-rubric F vs target-only F (rubric-artifact quantification)",
+   "source": "eval_results/issue_2162/persona_specificity_ladder/{f_cells,null_samevalue_cells,null_crosstype_cells}.jsonl",
+   "transform": "per (direction x slot x arm): scatter of netted dual-rubric F (parent metric, x) vs F_target (this round's primary, y), arms color-coded; identity line drawn; quantifies the anti-source-channel inflation measured in Round A (null 0.479 netted vs <=0.003 target-only)",
+   "plotted_quantity": "F under the two metric conventions (unitless)"
+  },
+  {
+   "id": "dv_agreement",
+   "title": "Continuous-companion agreement: F_act vs F_target and margin validation",
+   "source": "eval_results/issue_2162/persona_specificity_ladder/{f_cells,margin}.jsonl",
+   "transform": "panel 1: per (direction x slot x arm) scatter of F_act (y) vs F_target (x) with Spearman rho annotated; panel 2: margin shift vs F_target across cells with dynamic range, Spearman rho (the pre-registered margin validation); panel 3: coherence rate and cap-hit fraction per cell",
+   "plotted_quantity": "F_act (signed projection, unitless), TF margin shift (nats/token), coherence rate (0-1)"
+  },
+  {
+   "id": "conjunct_diag",
+   "title": "Per-conjunct decomposition on R1/R2 steered installs",
+   "source": "eval_results/issue_2162/persona_specificity_ladder/conjuncts.jsonl",
+   "transform": "R1/R2 STEERED rollouts only: mean per-conjunct descriptor score (Round-A conjunct instrument verbatim) beside the holistic target-descriptor score, per direction x slot",
+   "plotted_quantity": "mean judge score per conjunct (0-100)"
+  },
+  {
+   "id": "tb_hero",
+   "title": "Joint turn-boundary patch vs single context-end across depth",
+   "source": "eval_results/issue_2162/turn_boundary/{f_cells_tb,null_shuffled_cells_tb,null_crosstype_cells_tb}.jsonl + eval_results/issue_2162/f_metrics/f_cells.jsonl",
+   "transform": "per (cell x arm): pair value = mean F over K=5 coherent draws (registered space: netted dual-rubric for instruction-format cells + control, target-descriptor-only for persona cells); cell mean over surviving pairs (|separation| >= 0.5, reused parent anchors); pair-clustered bootstrap 95% CI (B=10000, seed 21620); overlay = parent single-ce steered cell means from f_cells.jsonl; per-pair points behind each bar",
+   "plotted_quantity": "mean fraction-of-swap F at the joint turn-boundary set (unitless; 0 = unpatched floor, 1 = full context swap), per base x depth x arm"
+  },
+  {
+   "id": "tb_sweep",
+   "title": "Per-boundary localization sweep (steered minus shuffled null)",
+   "source": "eval_results/issue_2162/turn_boundary/{f_cells_tb,null_shuffled_cells_tb}.jsonl + eval_results/issue_2162/f_metrics/{f_cells,null_shuffled_cells}.jsonl",
+   "transform": "per single-boundary variant k: per-pair paired difference (steered F minus shuffled-null F), mean over surviving pairs, pair-clustered bootstrap 95% CI (B=10000); x = boundary index k (earliest assistant turn .. final); the final-boundary point is the PARENT ce read (parent-run provenance labeled)",
+   "plotted_quantity": "mean steered-minus-null F difference per boundary index k, per base x depth"
+  },
+  {
+   "id": "tb_rawscale",
+   "title": "Raw-scale (un-normalized) movement at the turn-boundary set",
+   "source": "eval_results/issue_2162/turn_boundary/rawscale_tb.json + eval_results/issue_2162/f_metrics/recency_rawscale.json",
+   "transform": "per (cell x arm): mean signed raw movement (delta_patched - delta_floor) * sign(delta_ceiling - delta_floor) in judge-contrast units, over `all` AND `surviving` pair sets; bootstrap 95% CI (B=10000, seed 21620); companion panel = parent single-ce raw movement from recency_rawscale.json",
+   "plotted_quantity": "signed raw behavioral movement in judge-contrast units (range [-2, +2]), per base x depth x arm"
+  },
+  {
+   "id": "tb_identity_d1",
+   "title": "Depth-1 identity gate: tb reproduces the parent context-end read",
+   "source": "eval_results/issue_2162/turn_boundary/f_cells_tb.jsonl + eval_results/issue_2162/f_metrics/f_cells.jsonl + eval_results/issue_2162/turn_boundary/gates/identity_gate.json",
+   "transform": "per pair (both d1 cells, steered + shuffled arms): scatter of this round's tb@d1 pair F (netted space) vs the parent ce pair F; identity diagonal + the +/-0.10 gate band; pooled mean delta + pair-clustered bootstrap CI annotated from identity_gate.json",
+   "plotted_quantity": "per-pair F at tb depth-1 vs parent context-end F (unitless)"
+  },
+  {
+   "id": "tb_control",
+   "title": "Near-zero control under the joint turn-boundary patch",
+   "source": "eval_results/issue_2162/turn_boundary/{f_cells_tb,null_shuffled_cells_tb,null_crosstype_cells_tb}.jsonl",
+   "transform": "control cell (user-name fact, depth 5): per-arm mean F over surviving pairs + pair-clustered bootstrap 95% CI (B=10000); per-pair points; the edit-artifact overlay verdict annotated",
+   "plotted_quantity": "mean F per arm at the control cell (expected ~0 in every arm)"
+  },
+  {
+   "id": "tb_target_only",
+   "title": "Persona cells: target-descriptor-only vs netted dual-rubric read",
+   "source": "eval_results/issue_2162/turn_boundary/{f_cells_tb,null_shuffled_cells_tb,null_crosstype_cells_tb}.jsonl",
+   "transform": "persona cells only, joint tb blocks: per-arm cell means computed BOTH ways from the same judge calls - netted dual-rubric F and target-descriptor-only F - over surviving pairs; pair-clustered bootstrap 95% CIs; side-by-side per depth",
+   "plotted_quantity": "mean F per arm x depth under the two aggregation spaces (unitless)"
+  }
+ ]
 }
