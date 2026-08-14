@@ -1927,14 +1927,21 @@ def _reduce_surface(per_cell: dict, phase: str) -> dict:
 
 
 def _pack_tree_to_jsonl_shards(
-    src_dir: Path, dest_dir: Path, *, group: str, shard_bytes: int = 9_000_000
+    src_dir: Path,
+    dest_dir: Path,
+    *,
+    group: str,
+    shard_bytes: int = 9_000_000,
+    pattern: str = "*.json",
 ) -> int:
     """Pack a many-small-file JSON tree into <= 9 MB jsonl line-shards + manifest.
 
     upload-policy pack recipe (#1190/#1739): one row {"path": rel, "doc": doc}
     per file, so a ~65k-file judge_cache tree uploads as a dozen shards instead
     of a 65k-file commit (#1481). Idempotent (rewrites the pack). Returns the
-    shard count."""
+    shard count. ``pattern`` is the rglob selector — trees whose files are
+    EXTENSIONLESS single-doc JSON (e.g. #2254's bare-<cid> ``save_raw`` files)
+    pass ``pattern="*"``; the default ``*.json`` packs ZERO rows there."""
     dest_dir.mkdir(parents=True, exist_ok=True)
     shard_idx = 0
     cur_bytes = 0
@@ -1953,7 +1960,9 @@ def _pack_tree_to_jsonl_shards(
         cur_bytes = 0
         cur_lines = []
 
-    for f in sorted(src_dir.rglob("*.json")):
+    for f in sorted(src_dir.rglob(pattern)):
+        if not f.is_file():
+            continue
         rel = str(f.relative_to(src_dir))
         line = json.dumps({"path": rel, "doc": json.loads(f.read_text())}, ensure_ascii=False)
         nb = len(line.encode()) + 1

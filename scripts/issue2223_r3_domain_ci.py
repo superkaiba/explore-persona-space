@@ -29,12 +29,19 @@ values exactly (abs deviation 0.0).
 from __future__ import annotations
 
 import json
+import sys
 import warnings
 from pathlib import Path
 
-import numpy as np
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from issue2223_analyzer_figs import load_arm
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv()  # shared-VM thread caps (#847) bind BEFORE the first heavy import
+
+import numpy as np  # noqa: E402
+
+from issue2223_analyzer_figs import load_arm  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 EV = ROOT / "eval_results/issue_2223"

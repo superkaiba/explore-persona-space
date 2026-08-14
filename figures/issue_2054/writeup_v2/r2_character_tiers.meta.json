@@ -1,0 +1,639 @@
+{
+  "commit": "1e263e45+dirty",
+  "render_id": "d6fb7c7351ea443a",
+  "git_commit": "1e263e45",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2054/writeup_v2/r1_framing_tiers.meta.json",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers.pdf",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers.png",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.meta.json",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.pdf",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.png",
+    "figures/issue_2054/writeup_v2/r1_pooled_vs_own.meta.json",
+    "figures/issue_2054/writeup_v2/r1_pooled_vs_own.pdf",
+    "figures/issue_2054/writeup_v2/r1_pooled_vs_own.png",
+    "scripts/issue2054_loco_pooled.py",
+    "scripts/issue2094_butler_grid.py",
+    "tasks/awaiting_promotion/2094/body.md",
+    "tests/test_issue2094_butler_grid.py"
+  ],
+  "created": "2026-08-14T16:50:53Z",
+  "figsize": [
+    11.0,
+    7.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.09797667453030841,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.12427488727848353,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.15151745660636737,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.10621142848778442,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.08558132663995088,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.12680978676239746,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.1477693669586753,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.16573495615145367,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.11147345707899821,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.10477941592762767,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.06681245039931676,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.11257259908486013,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.1468158439750495,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.08904820899634838,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.07628881622066445,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.03862041008563879,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.08458437351901663,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.12770274004359894,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.04953562852430593,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.04433235464539842,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.012394680894664653,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.008441397922017257,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.007783854303736487,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.027307938542742688,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.012018098240587458,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.014272769820136713,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.017034264881134936,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.010751046887552795,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.023919094815391437,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.01673641515948228,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.002141980675285149,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.0068478277058187376,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.0025512244702717846,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.014069828797578843,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.0021126755042458756,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.00304424856167973,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.017605387815391532,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.04292368721026202,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.00289238032934358,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.014893632768078133,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.08864023775217342,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.13353818076344534,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.15326274478908725,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.20510286479176393,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.09259913694479038,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.14968533119614963,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.17216879102783592,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.18544087782067245,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.22659165194510705,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.15172974298777736,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.0821623076368047,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.13045082433023444,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.15238990686099324,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.20036583068437439,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.09114995366176437,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.0326963384996509,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.10014075765323338,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.12255952935901618,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.18630641379798776,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ (context arm)": 0.04629811369829238,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.0092414882827139,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.0050186448399898165,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.004680218070889697,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.002593189365595411,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.01192103523422014,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.014774017287950802,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.0155643027372101,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.013960887308115288,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.00011921111903401282,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.015273001894079846,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.008541404678012121,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.008731287928990111,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.006758383035150556,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.001439212467144374,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.009738518969321847,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.00839496814060487,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.0047085109417252385,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.0046272434444094845,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": 0.0007293754007236808,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "$\\Delta R^2$ (instruct \u2212 base)": -0.005810896644043391,
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 80,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "on-policy \u2014 instruct",
+        "ylabel": "held-out $R^2$ (context arm)",
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30"
+        ]
+      },
+      {
+        "title_left": "on-policy \u2014 instruct \u2212 base",
+        "ylabel": "$\\Delta R^2$ (instruct \u2212 base)",
+        "yticklabels": [
+          "\u22120.05",
+          "\u22120.04",
+          "\u22120.03",
+          "\u22120.02",
+          "\u22120.01",
+          "0.00",
+          "0.01",
+          "0.02",
+          "0.03",
+          "0.04"
+        ]
+      },
+      {
+        "title_left": "inserted \u2014 instruct",
+        "ylabel": "held-out $R^2$ (context arm)",
+        "xticklabels": [
+          "Direct",
+          "Bias\nonly",
+          "Rotation\n+ bias",
+          "Context\nre-map",
+          "Answer\nre-map"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35"
+        ]
+      },
+      {
+        "title_left": "inserted \u2014 instruct \u2212 base",
+        "ylabel": "$\\Delta R^2$ (instruct \u2212 base)",
+        "xticklabels": [
+          "Direct",
+          "Bias\nonly",
+          "Rotation\n+ bias",
+          "Context\nre-map",
+          "Answer\nre-map"
+        ],
+        "yticklabels": [
+          "\u22120.0175",
+          "\u22120.0150",
+          "\u22120.0125",
+          "\u22120.0100",
+          "\u22120.0075",
+          "\u22120.0050",
+          "\u22120.0025",
+          "0.0000",
+          "0.0025",
+          "0.0050"
+        ]
+      }
+    ],
+    "series": [
+      "Wren",
+      "HELIOS",
+      "Dana",
+      "Vex"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

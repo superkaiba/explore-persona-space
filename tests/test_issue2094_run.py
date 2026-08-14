@@ -305,6 +305,12 @@ def _synthetic_bank_same_prefix_pe(pairs: list, hidden: int = 6) -> dict:
     }
     per_context = {}
     for cid, ctx in contexts.items():
+        # build_contexts now ALSO carries the butler contexts (#2094 Option C).
+        # Butler's v_pe is drawn LAZILY here — butler contexts sort last, so
+        # the parent fixture's RNG stream stays byte-identical to the
+        # pre-butler fixture (its sanity-margin asserts are seed-calibrated).
+        if ctx["prefix"] not in v_pe_by_prefix:
+            v_pe_by_prefix[ctx["prefix"]] = torch.randn(N_LAYERS, hidden, generator=gen)
         per_context[cid] = {
             "context_id": cid,
             "prefix": ctx["prefix"],

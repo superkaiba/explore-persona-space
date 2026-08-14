@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2293,
+  "highest_id": 2300,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5583,8 +5583,8 @@
     "1718": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/blocked/1718",
-      "status": "blocked",
+      "path": "tasks/running/1718",
+      "status": "running",
       "title": "daily-fix: AGENT_SPEC_SIZE_GRANDFATHER is a chronic merge-co"
     },
     "1719": {
@@ -8790,8 +8790,8 @@
     "2136": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2136",
-      "status": "running",
+      "path": "tasks/completed/2136",
+      "status": "completed",
       "title": "daily-fix: stale prior-round PASS in verdict-present check"
     },
     "2137": {
@@ -8987,8 +8987,8 @@
       "goal": "On Qwen-2.5-7B-Instruct, determine which kinds of context information are both CARRIED at and CAUSALLY USABLE from a single context position by patching ONLY that position between minimal-pair contexts that differ in exactly one information type \u2014 21 types spanning stated response policy, conditional policy, demonstrated/implied/role-header route variants, retrievable stated items, ICL task definition, inferred user model, discourse state, and two pre-registered near-zero controls \u2014 crossed with three secondary axes (instruction-vs-demonstration route conflict, introduction recency at conversation depths 1/3/5, and information load 1/3/5) on designated subsets, measured per type by the #2094 fraction-of-swap F between the unpatched floor and the generate-under-donor ceiling under a PRE-REGISTERED anchor-separation exclusion (|ceiling - floor| >= 0.5), against BOTH a norm-matched shuffled-donor null and a cross-type-donor null, at BOTH the context-end vector v_C and the prefix-end state, under a maximal all-layer full-state Stage-1 patch with a post-selection Stage-2 layer x dose profile, with a LINEAR read-probe companion per type/state/layer (group-held-out folds) so a null separates 'not encoded' from 'encoded but not causally usable', reported in three separately Holm-corrected pre-registered families.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/2162",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/2162",
+      "status": "followups_running",
       "title": "Which kinds of context information are carried at the context vector: a patch-only sweep over 21 minimal-pair information types, crossed with route conflict, recency, and load"
     },
     "2163": {
@@ -9468,7 +9468,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/2225",
       "status": "followups_running",
-      "title": "Steering only context tokens does not prevent trait acquisition \u2014 it shows almost no dose-response, while steering response tokens does (MODERATE confidence)"
+      "title": "Single-layer steering of context tokens does not prevent trait acquisition \u2014 it shows almost no dose-response, while steering response tokens does (MODERATE confidence)"
     },
     "2226": {
       "has_clean_result": false,
@@ -9951,15 +9951,15 @@
     "2288": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2288",
-      "status": "running",
+      "path": "tasks/completed/2288",
+      "status": "completed",
       "title": "verify_task_body cross-issue-reuse-pins check SKIPs on pre-merge worktree bodies \u2014 its only gate"
     },
     "2289": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2289",
-      "status": "running",
+      "path": "tasks/completed/2289",
+      "status": "completed",
       "title": "#2223's merged r2/r3/r5 scripts red 5 fleet-wide gate nodes on origin/main \u2014 incl. the no-flags workflow_lint bundle"
     },
     "229": {
@@ -9972,8 +9972,8 @@
     "2290": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2290",
-      "status": "running",
+      "path": "tasks/reviewing/2290",
+      "status": "reviewing",
       "title": "audit_clean_results_body_discipline: extend pre_reg noun grammar (recompute/sensitivity/comparison)"
     },
     "2291": {
@@ -9993,9 +9993,51 @@
     "2293": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2293",
-      "status": "proposed",
+      "path": "tasks/running/2293",
+      "status": "running",
       "title": "Step 9c pristine oracle cut from repo-root HEAD instead of the resolved diff base \u2014 root-divergence window yields false NEW classifications"
+    },
+    "2294": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2294",
+      "status": "proposed",
+      "title": "workflow-fix: /issue Step 5 dispatches code-review with no implementer marker posted"
+    },
+    "2295": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2295",
+      "status": "running",
+      "title": "workflow-fix: sync_repo_root deadlocks on the abandoned-rebase husk it exists to clear (task.py holds the flock while waiting on the husk)"
+    },
+    "2296": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2296",
+      "status": "running",
+      "title": "Step 10d lint gate's mapped-invariant baseline leg runs pytest in the shared repo root \u2014 #2015 stash cycle kills it and false-NEWs pre-existing reds"
+    },
+    "2297": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2297",
+      "status": "proposed",
+      "title": "workflow-fix: Step 9c gate launcher file-list cross-check is newline-agnostic \u2014 split-argv launch reports a plausible PYTEST_RC that is not a verdict"
+    },
+    "2298": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2298",
+      "status": "proposed",
+      "title": "workflow-fix: critic-lens-reference item 13 still says fellows-first auto default (stale since #2054/#2059)"
+    },
+    "2299": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2299",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan WARN check for sub-resolution judge-pilot sizing (per-arm draws below floor(1/threshold)+1)"
     },
     "23": {
       "has_clean_result": false,
@@ -10003,6 +10045,13 @@
       "path": "tasks/archived/23",
       "status": "archived",
       "title": "Aim 4.3: Assistant axis relationship to assistant chat data"
+    },
+    "2300": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2300",
+      "status": "proposed",
+      "title": "HF data repo at the hard 1,000,000-file cap \u2014 every net-new-file upload fails fleet-wide"
     },
     "231": {
       "has_clean_result": false,

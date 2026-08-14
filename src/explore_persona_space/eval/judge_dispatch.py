@@ -494,14 +494,32 @@ def probe_otpm_limit(client: "anthropic.Anthropic", judge_model: str) -> int | N
 
     Returns the integer ``anthropic-ratelimit-output-tokens-limit`` value, or
     None (with a warning) when the header is missing or malformed — the
-    caller then assumes the Tier-4 default. API errors propagate (a dispatch
-    that cannot reach the API would fail at its first real request anyway).
+    caller then assumes the Tier-4 default. A 429 (``RateLimitError``) takes
+    the SAME None path: under a sustained org-wide output-TPM storm the
+    production requests survive via client backoff + per-row retries, so the
+    probe must not be the run's single point of failure — a rate-limited org
+    still has SOME limit, and assuming the conservative default is strictly
+    better than dying at t=0 (#2254: four judge launches killed by a sibling
+    issue's wave saturating the shared bucket). All OTHER API errors keep
+    propagating (a dispatch that cannot reach the API at all would fail at
+    its first real request anyway).
     """
-    raw = client.messages.with_raw_response.create(
-        model=judge_model,
-        max_tokens=1,
-        messages=[{"role": "user", "content": "ping"}],
-    )
+    import anthropic as anthropic_mod
+
+    try:
+        raw = client.messages.with_raw_response.create(
+            model=judge_model,
+            max_tokens=1,
+            messages=[{"role": "user", "content": "ping"}],
+        )
+    except anthropic_mod.RateLimitError:
+        logger.warning(
+            "OTPM probe: 429 rate-limited (org-wide output-TPM storm, e.g. a sibling "
+            "judge wave saturating the shared bucket); assuming the Tier-4 default %d "
+            "(otpm_assumed) — production requests ride 429s via backoff + retries",
+            OTPM_DIVISOR,
+        )
+        return None
     value = raw.headers.get(OTPM_HEADER)
     if value is None:
         logger.warning("OTPM probe: header %s missing; assuming %d", OTPM_HEADER, OTPM_DIVISOR)
