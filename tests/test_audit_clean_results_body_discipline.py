@@ -1667,6 +1667,100 @@ def test_pre_reg_pre_specified_interval_on_why_this_test_line_exempt():
     assert "pre_reg" not in findings, findings
 
 
+# ─── pre_reg: the #2254 escapes (fix #2290) ───────────────────────────────
+#
+# #2254's clean-result draft carried four bare 'registered <noun>'
+# pre-registration phrasings (recompute / sensitivity / comparison) that
+# PASSed the mechanical audit pre-pass and were caught only by the LM
+# critic's Lens 7 read; #2290 adds the missing analysis-artifact head nouns
+# (recomputes?/sensitivit(?:y|ies)/comparisons?/batter(?:y|ies)/slices?/
+# probes?) to the SHARED alternation `_PRE_REG_HEAD_NOUN_ALT`, so both the
+# bare-`registered` branch and the #1958 modifier-first Branch A inherit
+# them. The fixture strings come from the append-only
+# `epm:clean-result-critique v1` marker on #2254 — NOT from the body, which
+# was reworded at 7bd94411ed and now carries zero 'registered' mentions.
+# Measured and EXCLUDED (pinned as passing negatives below): `metrics?`
+# (attested benign verb use, #411), `analys[ei]s` (protected artifact-label
+# register on legacy whole-body-regime generations), `splits?`
+# (coincidental verb parse, #601).
+
+
+@pytest.mark.parametrize(
+    ("phrase", "expected_match"),
+    [
+        (
+            "the registered held-out-question recompute",
+            "registered held-out-question recompute",
+        ),
+        ("A registered held-out sensitivity", "registered held-out sensitivity"),
+        ("the registered held-out recompute", "registered held-out recompute"),
+        ("outside the registered comparison", "registered comparison"),
+    ],
+)
+def test_pre_reg_2254_escape_phrasings_are_flagged(phrase: str, expected_match: str):
+    """Each of the four verbatim #2254 escape phrasings trips `pre_reg`
+    in v4 Results prose through the FULL gate pipeline (`audit_body`),
+    and the finding sample carries the expected match text (AC2's
+    "after" half; the pre-fix escape is evidenced by the OLD-pattern
+    corpus diff — each phrasing contributes 0 starts under the
+    pre-#2290 alternation). The hyphenated compounds ('held-out-question'
+    / 'held-out') ride the intervening-token window's modifier class."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        f"{phrase}.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, (phrase, findings)
+    assert any(expected_match in s for s in findings["pre_reg"]), (phrase, findings)
+
+
+def test_pre_reg_2290_new_nouns_benign_verb_usages_not_flagged():
+    """Benign shapes for the #2290 nouns stay clean (AC3): the two
+    task-body-named verb-register shapes ('registered the pod', 'the
+    session registered in the daemon'), the measured #411 FP shape that
+    keeps `metrics?` OUT of the alternation ('registered a live metrics
+    dashboard'), noun-BEFORE-verb subjects ('the probes registered in
+    WandB'), and the first-token preposition guard ('registered under
+    the sweep'). Plus two exclusion pins, so a silent future re-add is
+    test-breaking rather than invisible: the `analys[ei]s` shape in the
+    artifact-link register and the `splits?` shape ('a registered
+    amendment split it ...' — 'split' is the sentence's verb, #601)
+    both assert clean. Corpus-measured 2026-08-14 (2,225 bodies): 0
+    benign verb-use false positives among the 13 new match starts."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "we registered the pod with the daemon; the session registered "
+        "in the daemon; the run registered a live metrics dashboard; "
+        "the probes registered in WandB fired; results registered under "
+        "the sweep.\n\n"
+        "- Registered analysis output ([analysis.json](eval_results/analysis.json))\n\n"
+        "a registered amendment split it into a structural eval-path gate.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_2290_added_nouns_are_in_shared_alternation():
+    """Surface pin: each of the six #2290 alternatives is present in the
+    SHARED head-noun constant, and the constant is interpolated EXACTLY
+    twice in the `pre_reg` pattern (the bare-`registered` branch and the
+    #1958 modifier-first Branch A) — the one-site invariant that makes a
+    noun addition a one-line change. A future edit that re-inlines one
+    branch and desynchronizes them breaks this test."""
+    for alt in (
+        "recomputes?",
+        "sensitivit(?:y|ies)",
+        "comparisons?",
+        "batter(?:y|ies)",
+        "slices?",
+        "probes?",
+    ):
+        assert alt in audit._PRE_REG_HEAD_NOUN_ALT, alt
+    assert audit.PATTERNS["pre_reg"][0].count(audit._PRE_REG_HEAD_NOUN_ALT) == 2
+
+
 # ─── v4 ## Methodology sample-data <details> exemption (#1171) ───────────
 #
 # The v4 spec moved the verbatim sample rows to `## Methodology` →
