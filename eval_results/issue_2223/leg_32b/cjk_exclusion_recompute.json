@@ -1,0 +1,83 @@
+{
+  "validation_max_abs_deviation_vs_persisted": 0.0,
+  "excluded_row": {
+    "domain": "therapy-like contexts",
+    "turn": 9,
+    "conv": "therapy__p3__t19"
+  },
+  "full_data": {
+    "verdict": {
+      "disposition": "Reproduced",
+      "ordering": true,
+      "separated": true,
+      "late_means": {
+        "coding assistance": -21.150583446891318,
+        "writing assistance": -25.732345290453125,
+        "therapy-like contexts": -28.162102189603612,
+        "philosophical discussions about AI": -43.51528067887227
+      },
+      "separation_margins_by_position": {
+        "8": -2.064112679521397,
+        "9": 0.09629711755390957,
+        "10": -3.583062364465942
+      }
+    }
+  },
+  "cjk_excluded": {
+    "verdict": {
+      "disposition": "Weak reproduction",
+      "ordering": true,
+      "separated": false,
+      "late_means": {
+        "coding assistance": -21.150583446891318,
+        "writing assistance": -25.732345290453125,
+        "therapy-like contexts": -28.101530520223164,
+        "philosophical discussions about AI": -43.51528067887227
+      },
+      "separation_margins_by_position": {
+        "8": -2.064112679521397,
+        "9": -0.12068533201565401,
+        "10": -3.6911802650418473
+      }
+    },
+    "therapy_turn9": {
+      "n": 23,
+      "mean": -29.22050484367039,
+      "ci_lo": -31.52590848673945,
+      "ci_hi": -26.83438531212185
+    },
+    "writing_turn9": {
+      "n": 87,
+      "mean": -25.837401653158253,
+      "ci_lo": -26.955070644137503,
+      "ci_hi": -24.694258252231556
+    }
+  },
+  "seed_sensitivity_full_data_margins": {
+    "42": {
+      "8": -2.0641,
+      "9": 0.0963,
+      "10": -3.5831
+    },
+    "0": {
+      "8": -2.2292,
+      "9": -0.1325,
+      "10": -3.5679
+    },
+    "1": {
+      "8": -2.0599,
+      "9": 0.0443,
+      "10": -3.3428
+    },
+    "7": {
+      "8": -2.1006,
+      "9": -0.1476,
+      "10": -3.3065
+    },
+    "123": {
+      "8": -2.0599,
+      "9": 0.064,
+      "10": -3.428
+    }
+  }
+}
