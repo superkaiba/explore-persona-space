@@ -177,13 +177,20 @@ Check catalog (id — classification — kind scope)
       base for checking                                   --issue mode only
   c61 SLURM would-render --mem  WARN-only, conditional    all kinds
       vs declared RSS peak
+  c62 §9 backend pin-claim vs   WARN-only, conditional    all kinds,
+      body.md frontmatter       (FAIL→WARN downgrade per  --issue mode only
+                                the pre-registered
+                                calibration rule, #2276)
+  c63 §9 declared GPU width vs  WARN-only, conditional    all kinds
+      launch-fence width
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54,
-55, 56, 57, 58, 59, 61) also SKIP when their content trigger does not fire.
+55, 56, 57, 58, 59, 61, 62, 63) also SKIP when their content trigger does
+not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -203,6 +210,11 @@ COMPOSED with its base version (amendment first;
 composition + the partial-document consequence; a not-composed ``--issue``
 run and ``--plan-file`` mode emit NO c60 row at all — not even a SKIP — so
 non-amendment output stays byte-identical.
+Check 62 also runs outside ``verify_plan_text()`` — the c23 pattern: it
+reconciles a §9 backend pin-CLAIM against the task's ``body.md``
+frontmatter ``backend:`` key, so ``main()`` appends it in ``--issue`` mode
+(frontmatter read from the resolved task folder) and renders it SKIP in
+``--plan-file`` mode (no task context; #2276, incident #2225 v5/v9).
 
 Canonical N/A escape phrases (quote verbatim in bounce briefs; each
 satisfies its check ONLY as a standalone declaration line — see
@@ -322,6 +334,16 @@ labeled-line forms):
     conflicting plan instead keeps ONE declaration-shaped value and moves
     every other mention mid-sentence / into a wrapped or fenced form so
     the first-match consumer (``GPU_LINE_RE``) reads the declared value)
+  - ``N/A — backend pin-claim reconciled`` (check 62 — the §9 pin-claim
+    vocabulary is deliberate and the claim/frontmatter divergence is
+    reconciled in prose; a plan genuinely claiming a frontmatter pin
+    instead has the `backend: <lane>` key actually set in the task's
+    body.md frontmatter BEFORE dispatch, or rewords the claim)
+  - ``N/A — declared width vs launch width reconciled`` (check 63 — the
+    §9 N-wide declaration and a narrower launch fence are BOTH deliberate,
+    e.g. a narrow smoke launch beside a wide production provision; a plan
+    genuinely dispatching N-wide through the fence instead adds
+    `--gpus <N>` to it, or re-costs the §9 walls at the realized width)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -11651,6 +11673,347 @@ def _c61_verdict(
     )
 
 
+# ─── Check 62 — §9 backend pin-claim vs body.md frontmatter (#2276) ─────────
+
+# Incident #2225 (fu1 lineage): plan v5:274 claimed an "explicit frontmatter
+# pin" (`backend: runpod`) and v9:236 claimed to inherit it ("parent pin
+# inherited") while the task's body.md frontmatter carried NO `backend:`
+# key. dispatch_issue.py reads the FRONTMATTER, so the plan's own dispatch
+# command routes `auto`, and the free-SLURM fall-through rungs (no
+# `/workspace`, #608) become reachable for exactly the sentinel-signaling
+# workload whose §9 prose declared them unsafe. c43 (check_sentinel_lane)
+# is text-hermetic — the prose CLAIM of a pin quiets its WARN — so the
+# claim-vs-frontmatter reconciliation needs task context and runs OUTSIDE
+# verify_plan_text() (the c23 pattern: kwargs signature, appended by
+# main() in --issue mode, explicit SKIP row in --plan-file mode).
+#
+# Trigger grammar (deliberately tight — designed at FAIL polarity; shipped
+# WARN-only per the calibration block below): non-fenced lines
+# INSIDE the §9 window (_c57_section9_window) carrying BOTH a known-lane
+# `backend: <lane>` token AND a same-line claim token
+# (pin/pinned/inherit*/frontmatter). Window scoping is the FP guard —
+# narrative mentions of ANOTHER task's pin ("#2225's `backend: runpod`
+# pin") live outside §9. Residuals (disclosed, not covered): a pin claim
+# OUTSIDE the §9 window escapes; a claim phrased without any claim token
+# escapes; on amendment-COMPOSED text (_compose_amendment_text) the window
+# resolves the FIRST §9 heading — the amendment's when both amendment and
+# base carry one — so a base-version §9 pin claim can escape. Miss
+# direction is SKIP (fail-safe).
+#
+# Calibration (#2276 §4 step 6, over 4,089 persisted plan versions
+# tasks/*/*/plans/v*.md at origin/main 5d9eeb30ee, 2026-08-13; sweep tool:
+# scripts/issue2276_c62c63_corpus_sweep.py — the c58 precedent: any future
+# c62-grammar change re-runs the sweep and records the realized numbers
+# here). Measured at the PLANNED FAIL polarity: 107 FAILs / 33 distinct
+# tasks, 26 PASSes (tasks whose frontmatter pin is genuinely set — #1335
+# fm=gcp, #1586 fm=runpod, ...), n_skip = 3,956 (all `no-claim`).
+# Adjudicated FALSE-POSITIVE classes among the 107:
+#   (a) `backend: auto` claims with the key absent (10 rows) — absent/
+#       empty frontmatter IS the auto route (CLAUDE.md § Compute
+#       backends), so the flagged state is the CORRECT configuration;
+#       fixed in the verdict logic (an all-`auto` claim set with the key
+#       absent now PASSes — a routing-semantics equivalence, not a
+#       grammar widening);
+#   (b) prospective / dispatch-flag pins — the DOMINANT class (~55
+#       gcp-era rows + most runpod/fellows rows): §9 says "pinned
+#       `backend: gcp`" while the pin traveled via the dispatch command's
+#       `--backend` flag, or the key was set-then-removed after the task
+#       completed; the frontmatter read at sweep time cannot distinguish
+#       never-set from since-removed, and the flagged tasks launched
+#       correctly — false ALARMS as FAIL evidence;
+#   (c) compute-table lane mentions with an incidental same-row claim
+#       token (#1689 v11 `backend: fellows` table cells).
+# TRUE POSITIVES: #2225 v2-v9 (8 rows — the founding incident; the named
+# expected-TPs v5-v9 recovered, sweep-validity criterion satisfied) plus
+# the #2203 v11-v13 "runpod (pinned — /workspace sentinels" shape.
+# PRE-REGISTERED POSTURE RULE FIRED: >2 adjudicated false-positive FAILs
+# on the corpus ⇒ c62 SHIPS WARN-ONLY (the #2276 plan §4 step 6 downgrade
+# rule; recorded here + in the #2276 round marker). The trigger grammar is
+# NOT widened or narrowed. Post-downgrade re-sweep: 97 WARNs / 36 PASSes
+# (the 26 matching pins + 10 auto-equivalence passes), n_skip unchanged.
+
+#: Known dispatch lanes (compute-backends.md); an unknown token after
+#: `backend:` (e.g. "backend: the same as the parent") is ignored — FP
+#: guard for the deliberately tight trigger grammar.
+_C62_KNOWN_LANES = frozenset({"runpod", "gcp", "fellows", "nibi", "fir", "mila", "auto"})
+
+#: `backend: <lane>` capture (inline-code or bare; optional opening
+#: backtick tolerated between the colon and the lane value).
+_C62_LANE_RE = re.compile(r"backend:\s*`?([a-z][a-z0-9_-]*)")
+
+#: Same-line claim vocabulary: the line must CLAIM a pin, not merely
+#: mention a lane ("pin"/"pinned", "inherit"/"inherited"/"inherits",
+#: "frontmatter").
+_C62_CLAIM_TOKEN_RE = re.compile(r"(?i)\b(?:pin(?:ned)?|inherit(?:ed|s)?|frontmatter)\b")
+
+
+def _c62_pin_claims(plan: str) -> list[tuple[str, str]]:
+    """(claim-line, lane) pairs for §9 backend pin-claims.
+
+    A hit is a non-fenced line inside the §9 window carrying BOTH a
+    known-lane ``backend: <lane>`` token and a same-line claim token; one
+    line can contribute several pairs (the pin+fallback-lane shape).
+    Returns ``[]`` when no §9 window parses (miss direction: SKIP).
+    """
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    window = _c57_section9_window(lines, mask)
+    if window is None:
+        return []
+    lo, hi = window
+    hits: list[tuple[str, str]] = []
+    for i in range(lo, hi):
+        if mask[i]:
+            continue
+        line = lines[i]
+        if not _C62_CLAIM_TOKEN_RE.search(line):
+            continue
+        for m in _C62_LANE_RE.finditer(line):
+            lane = m.group(1).lower()
+            if lane in _C62_KNOWN_LANES:
+                hits.append((line.strip(), lane))
+    return hits
+
+
+def check_backend_pin_claim(plan: str, *, frontmatter_backend: str | None) -> CheckResult:
+    """WARN-only, conditional, all kinds, ``--issue`` mode only: a §9 line
+    that CLAIMS a frontmatter backend pin (``backend: <lane>`` + a
+    same-line pin/inherited/frontmatter claim token) must match the task's
+    actual ``body.md`` frontmatter ``backend:`` key — a pin-claim with no
+    frontmatter key routes ``auto`` at dispatch (#2225 v5/v9), and a
+    mismatched lane routes the WRONG pin. WARN-only: the planned FAIL
+    polarity was DOWNGRADED by the pre-registered #2276 §4 step 6
+    calibration rule (>2 adjudicated false-positive FAILs on the corpus —
+    see the calibration block above). An all-``auto`` claim set with the
+    key absent PASSes (absent/empty frontmatter IS the auto route).
+    ``frontmatter_backend`` is the str-coerced, stripped frontmatter value
+    (``None`` when absent/empty); main() passes it in ``--issue`` mode and
+    appends an explicit SKIP row in ``--plan-file`` mode (the c23 pattern
+    — no task context there). No §9 window / no claim lines → SKIP
+    (trigger-conditional). NEVER FAILs."""
+    cid, name = "c62_backend_pin_claim", "§9 backend pin-claim matches body.md frontmatter"
+    claims = _c62_pin_claims(plan)
+    if not claims:
+        return _skip(cid, name, "no §9 backend pin-claim in plan prose")
+    if _standalone_na_declared(plan, r"backend pin-claim reconciled"):
+        return _pass(cid, name, "explicit N/A declared (backend pin-claim reconciled)")
+    fm_lane = frontmatter_backend.strip().lower() if frontmatter_backend else None
+    if fm_lane is None:
+        non_auto = [(line, lane) for line, lane in claims if lane != "auto"]
+        if not non_auto:
+            return _pass(
+                cid,
+                name,
+                "claims `backend: auto` and the frontmatter key is absent — absent/empty "
+                "routes `auto` (the documented default); no drift",
+            )
+        line, lane = non_auto[0]
+        return _warn(
+            cid,
+            name,
+            f"§9 claims a frontmatter backend pin (`backend: {lane}`: {line[:90]!r}) but the "
+            "task's body.md frontmatter carries NO `backend:` key — the claim is phantom: "
+            "dispatch_issue.py reads the frontmatter and routes `auto` at dispatch "
+            f"(#2225 v5/v9). Add `backend: {lane}` to the task's body.md frontmatter BEFORE "
+            "dispatch, or reword the §9 claim, or declare "
+            "'N/A — backend pin-claim reconciled' on its own line, unwrapped "
+            "(no backticks/quotes)",
+        )
+    mismatched = [(line, lane) for line, lane in claims if lane != fm_lane]
+    if mismatched:
+        line, lane = mismatched[0]
+        return _warn(
+            cid,
+            name,
+            f"§9 pin-claim names lane `{lane}` ({line[:90]!r}) but the body.md frontmatter "
+            f"carries `backend: {fm_lane}` — reconcile the claim with the frontmatter "
+            "(dispatch follows the frontmatter, not the prose), or declare "
+            "'N/A — backend pin-claim reconciled' on its own line, unwrapped "
+            "(no backticks/quotes)",
+        )
+    return _pass(
+        cid, name, f"{len(claims)} §9 pin-claim(s) match the frontmatter `backend: {fm_lane}`"
+    )
+
+
+# ─── Check 63 — §9 declared GPU width vs launch-fence width (#2276) ─────────
+
+# Incident #2225 v9: §9 declared "one 8xH100 pod" with every wall row
+# costed 8-wide, while the adjacent dispatch fence
+# (`dispatch_issue.py launch --intent lora-7b ... --time-budget-hours 12`)
+# carried no width flag — the `lora-7b` intent default is 1xH100
+# (scripts/gpu_heuristics.py::INTENTS), so a verbatim copy delivers 1/8
+# the costed width and the 12 h fence (sized to the 8-wide ~5.4 h wall)
+# TIMEOUTs the ~40 h narrow run. Not covered elsewhere: c46 dry-parses
+# the fence (it PARSES fine), c50 compares walls to SLURM time bins, c26
+# compares GPU FAMILY only (H100 == H100). WARN-only (the
+# c46/c50/c52/c61 posture — a heuristic width join must not become the
+# #1388 fleet-wedge shape); a deliberate narrow launch beside a wide
+# provision is absorbed by the polarity + the escape literal. A sibling
+# `pod.py provision --gpu-count N` fence does NOT suppress the WARN —
+# the v9 incident text carried exactly that parenthetical and the copied
+# artifact was still the narrow dispatch fence.
+#
+# Calibration (#2276 §4 step 6, AS-SHIPPED regexes, same 4,089-version
+# corpus + sweep tool as the c62 block above). Measured: 27 WARNs /
+# 6 distinct tasks, 53 PASSes; skips: no-multi-gpu-width 2,914,
+# no-section-9 724, no-launch-argv 308, no-width-contribution 63.
+# TRUE POSITIVES: #2225 v1-v9 (9 rows — the founding incident; the named
+# expected-TP v9 recovered, sweep-validity criterion satisfied: 8xH100
+# declared + costed 8-wide beside a width-less `--intent lora-7b` fence)
+# and #2203 v1-v5 (the same drift shape: a 4xH100 arms-sharded phase
+# table beside a width-less `--intent eval` fence). FALSE-POSITIVE
+# classes adjudicated (absorbed by the WARN-only polarity, the
+# c46/c50/c58 posture): (a) width delivered via a DIFFERENT channel than
+# the flagged fence — `pod.py provision --gpu-count N` / a resumed
+# suffixed pod is the real width-bearing launch and the dispatch fence
+# is narrow by design (#2254 v1-v5: `--gpu-count 4` per pod with an
+# optional "8xH100 halves pod-A wall" upgrade mention; #813 v1-v2:
+# "ONE 8x H100 pod (resume pod-667, else fresh ... --gpu-count 8)");
+# (b) ratio/multiplier prose false-parsed as a width token — "6x
+# A100-vs-H100 per-step bound" (#610 v1; a disclosed grammar residual —
+# the digitxFAMILY form is inherently ambiguous there); (c) parent-
+# recipe width cited beside a DELIBERATELY narrow rerun — "downsized to
+# 1xH100 vs the parent's 4xH100" (#2203 v7-v9, whose fences carry an
+# explicit `--gpus 1`), "parent: ... on 4x A100" as a per-cell cost
+# basis for a 1x A100 plan (#614 v1-v2). WARN polarity is the
+# pre-registered posture; no downgrade rule applies to c63.
+
+# STATIC MIRROR of scripts/gpu_heuristics.py::INTENTS[*].gpu_count,
+# drift-guarded by tests/test_verify_plan.py::
+# test_c63_intent_width_mirror_matches_gpu_heuristics — verify_plan_text()
+# stays hermetic (the c26 convention: no project imports at module level).
+_C63_INTENT_GPU_COUNT: dict[str, int] = {
+    "eval": 1,
+    "lora-7b": 1,
+    "ft-7b": 4,
+    "inf-70b": 8,
+    "ft-70b": 8,
+    "sweep-8g-a100": 8,
+    "sweep-8g-h100": 8,
+    "debug": 1,
+}
+
+#: `<N>x<GPU family>` width tokens on §9 prose lines (`8xH100`,
+#: `4 x A100-80`, `2*L4`). Digit prefix + GPU-family suffix disambiguate
+#: the bare-`x` form; families uppercase per corpus convention.
+_C63_WIDTH_RE = re.compile(r"(\d+)\s*[×x*]\s*(?:H100|H200|A100(?:-\d+)?|B200|L4)\b")  # noqa: RUF001
+
+#: `--gpu-count N` on §9 prose lines (the `pod.py provision` width flag).
+_C63_GPU_COUNT_RE = re.compile(r"--gpu-count\s+(\d+)")
+
+
+def _c63_declared_width(lines: list[str], mask: list[bool], window: tuple[int, int]) -> int | None:
+    """Max GPU width declared on non-fenced §9-window lines, or ``None``
+    when no width token appears in the window."""
+    lo, hi = window
+    widths: list[int] = []
+    for i in range(lo, hi):
+        if mask[i]:
+            continue
+        widths += [int(m.group(1)) for m in _C63_WIDTH_RE.finditer(lines[i])]
+        widths += [int(m.group(1)) for m in _C63_GPU_COUNT_RE.finditer(lines[i])]
+    return max(widths) if widths else None
+
+
+def check_declared_width_vs_launch(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds, both modes: when the §9 window
+    declares an N-GPU spec (``8xH100`` / ``--gpu-count 8`` tokens, N_decl =
+    max, trigger N_decl >= 2), at least one plan-embedded launch-shaped
+    ``dispatch_issue.py`` argv (the c46/c50 chain) must REALIZE a width
+    >= N_decl — ``--gpus`` when set, else the intent's default width from
+    the ``_C63_INTENT_GPU_COUNT`` static mirror of
+    ``scripts/gpu_heuristics.py::INTENTS``. A narrower realized width
+    WARNs: §9 walls are costed N_decl-wide, so a ``--time-budget-hours``
+    fence sized to the wide wall TIMEOUTs the narrow run (#2225 v9).
+    Every ambiguity SKIPs with a stated reason (no §9 window; N_decl < 2;
+    no launch argv; CLI unavailable; every parsed argv contributes no
+    width). NEVER FAILs (the c46/c50/c61 posture)."""
+    del kind  # all kinds: a width-starved launch fence drifts identically everywhere
+    cid, name = "c63_declared_width_vs_launch", "§9 declared GPU width vs launch-fence width"
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    window = _c57_section9_window(lines, mask)
+    if window is None:
+        return _skip(cid, name, "no parseable §9 heading — no declared-width window")
+    n_decl = _c63_declared_width(lines, mask, window)
+    if n_decl is None or n_decl < 2:
+        return _skip(cid, name, "no multi-GPU width (N >= 2) declared on §9 prose lines")
+    if _standalone_na_declared(plan, r"declared width vs launch width reconciled"):
+        return _pass(cid, name, "explicit N/A declared (declared width vs launch width)")
+    argvs, notes = _c50_launch_argvs(plan)
+    if not argvs:
+        return _skip(
+            cid,
+            name,
+            f"§9 declares {n_decl}-wide but the plan embeds no launch-shaped "
+            "dispatch_issue.py argv — width flows through a different channel "
+            "(pod.py provision / SSH-MCP), which this check does not read"
+            + (f" [{'; '.join(notes)}]" if notes else ""),
+        )
+    parser, load_detail = _c46_argparser()
+    if parser is None:
+        return _skip(
+            cid,
+            name,
+            f"dispatch_issue.build_argparser unavailable ({load_detail}) — "
+            "launch-fence width not evaluated",
+        )
+    realized: list[tuple[str, int, str]] = []  # (fence-snippet, width, source)
+    contributes_nothing: list[str] = []
+    for argv in argvs:
+        fence = " ".join(argv)[:70]
+        ns, err = _c46_dry_parse(parser, argv)
+        if ns is None:
+            contributes_nothing.append(f"{fence!r} does not parse ({err}) — c46 arm 1 owns it")
+            continue
+        gpus = getattr(ns, "gpus", None)
+        intent = getattr(ns, "intent", None)
+        if gpus is not None:
+            realized.append((fence, int(gpus), f"explicit `--gpus {gpus}`"))
+        elif intent in _C63_INTENT_GPU_COUNT:
+            realized.append(
+                (
+                    fence,
+                    _C63_INTENT_GPU_COUNT[intent],
+                    f"`--gpus` absent, so the intent default binds: `{intent}` -> "
+                    f"{_C63_INTENT_GPU_COUNT[intent]} GPU(s)",
+                )
+            )
+        else:
+            contributes_nothing.append(
+                f"{fence!r} carries no `--gpus` and intent {intent!r} is not in the "
+                "width mirror — contributes no width"
+            )
+    if not realized:
+        return _skip(
+            cid,
+            name,
+            f"§9 declares {n_decl}-wide but no parsed launch argv contributes a width: "
+            + "; ".join(contributes_nothing),
+        )
+    covering = [t for t in realized if t[1] >= n_decl]
+    if covering:
+        fence, width, source = covering[0]
+        return _pass(
+            cid,
+            name,
+            f"§9 declares {n_decl}-wide and a launch argv realizes {width} ({source}): {fence!r}",
+        )
+    fence, width, source = min(realized, key=lambda t: t[1])
+    extra = f" [{'; '.join(contributes_nothing)}]" if contributes_nothing else ""
+    return _warn(
+        cid,
+        name,
+        f"§9 declares a {n_decl}-GPU spec but the launch fence {fence!r} realizes only "
+        f"{width} ({source}) — §9 walls are costed {n_decl}-wide, so a "
+        "`--time-budget-hours` fence sized to the wide wall TIMEOUTs the narrow run "
+        f"(#2225 v9). Add `--gpus {n_decl}` to the fence, or re-cost the walls at the "
+        "realized width, or declare 'N/A — declared width vs launch width reconciled' "
+        "on its own line, unwrapped (no backticks/quotes)" + extra,
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -11712,6 +12075,7 @@ CHECKS = [
     check_fanout_pod_name_collision,
     check_gpu_hours_token_conflict,
     check_slurm_mem_coverage,
+    check_declared_width_vs_launch,
 ]
 
 
@@ -11888,6 +12252,28 @@ def main() -> int:
                 "c23_goal_currency",
                 "plan head not drafted against a superseded Goal",
                 "no task context (--plan-file mode; goal history requires --issue)",
+            )
+        )
+    # Check 62 (backend pin-claim vs frontmatter, #2276) also needs task
+    # context (body.md frontmatter), so it runs OUTSIDE verify_plan_text():
+    # appended here in --issue mode, rendered SKIP in --plan-file mode (the
+    # c23 pattern).
+    if issue is not None:
+        folder = plan_path.parent.parent
+        fm_backend: str | None = None
+        body_path = folder / "body.md"
+        if body_path.exists():
+            fm, _ = split_frontmatter(body_path.read_text())
+            raw_backend = fm.get("backend")
+            if raw_backend is not None and str(raw_backend).strip():
+                fm_backend = str(raw_backend).strip()
+        results.append(check_backend_pin_claim(raw, frontmatter_backend=fm_backend))
+    else:
+        results.append(
+            _skip(
+                "c62_backend_pin_claim",
+                "§9 backend pin-claim matches body.md frontmatter",
+                "no task context (--plan-file mode; frontmatter reconciliation requires --issue)",
             )
         )
     # Check 40 (header version label vs persisted filename) also runs outside
