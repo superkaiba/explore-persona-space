@@ -235,13 +235,19 @@ def test_python_shim_does_not_invoke_uv() -> None:
     futex deadlock with stacked get_interpreter_info probes and zero output.
     The ban is total (comments included) so the deadlock stays impossible by
     construction rather than by a fragile am-I-being-probed heuristic.
+
+    ``uvx`` is banned alongside ``uv``: it drives the same uv machinery (and
+    the same project lock), so a ``uvx``-invoking shim body deadlocks
+    identically while evading a bare ``\\buv\\b`` pin (word boundary fails
+    before the ``x``).
     """
     for name, body in _shim_heredoc_bodies().items():
-        hits = re.findall(r"\buv\b", body)
+        hits = re.findall(r"\buvx?\b", body)
         assert not hits, (
             f"{name}: the /usr/local/bin/python shim body must not reference uv "
-            f"anywhere (found {len(hits)} token(s)); a uv-invoking shim deadlocks "
-            "uv interpreter discovery against a lock-holding uv sync (task #2278)"
+            f"or uvx anywhere (found {len(hits)} token(s)); a uv-invoking shim "
+            "deadlocks uv interpreter discovery against a lock-holding uv sync "
+            "(task #2278)"
         )
 
 
