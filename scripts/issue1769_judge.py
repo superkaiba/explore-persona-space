@@ -5,7 +5,7 @@ Graded 0-100 trait-expression judge over the G1 grid's completions — the
 ``eval.batch_judge.judge_completions_batch`` (the #663-hardened
 deadline-bounded Batch client, rubric-keyed cache), N=5 judge draws per
 completion, judge ``claude-sonnet-4-5-20250929`` (the project
-``DEFAULT_JUDGE_MODEL``), reason-then-score ``max_tokens=300``,
+``DEFAULT_JUDGE_MODEL``), reason-then-score ``max_tokens=2048`` (raised from 300, #2063),
 DROP-NEVER-COERCE, per-arm report SPLIT content-drops vs transport-losses
 (llm-judging rules 9/24). One rubric partition per TRAIT (one behavior per
 judge call, rule 8) with its own cache partition under
@@ -59,7 +59,10 @@ PARENT_COMPLETIONS_ROOT = Path("data/issue_1769/raw_completions")
 PARENT_WORK_DIR = Path("data/issue_1769/judge_cache")
 PARENT_JUDGE_OUT = Path("eval_results/issue_1769/judge")
 N_JUDGE_DRAWS = 5  # llm-judging rule 4 (plan §6)
-JUDGE_MAX_TOKENS = 300  # reason-then-score budget (rule 23)
+# llm-judging rule 23: 2048 multi-field-JSON floor — the rule's 2048-class parenthetical
+# names "#1769 fu1" as its exemplar (raised from 300, #2063); pre-#2021 truncation-era
+# cache entries: use a fresh cache_dir at next wave (rule 23 cache caveat).
+JUDGE_MAX_TOKENS = 2048
 BINARY_THRESHOLD = 50.0  # persona-vectors convention (companion rate)
 
 # The #1415 reason-then-score wrapper, verbatim (scripts/issue1415_judge.py —

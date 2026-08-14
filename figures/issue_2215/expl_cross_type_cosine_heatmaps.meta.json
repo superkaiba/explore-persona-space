@@ -1,0 +1,41 @@
+{
+  "commit": "f6e6ab50",
+  "render_id": "c346fa36cfee4232",
+  "git_commit": "f6e6ab50",
+  "git_dirty": false,
+  "created": "2026-08-10T10:33:01Z",
+  "figsize": [
+    10.6,
+    4.8
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "mean shift-direction cosine, context-end (hierarchically clustered, n=117)"
+      },
+      {
+        "title_left": "mean shift-direction cosine, prefix-end (hierarchically clustered, n=111)"
+      },
+      {
+        "ylabel": "cosine",
+        "yticklabels": [
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

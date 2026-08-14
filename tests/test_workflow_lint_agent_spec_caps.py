@@ -54,12 +54,18 @@ from workflow_lint import _load_agent_spec_caps  # noqa: E402
 # ONE-SHOT MIGRATION PIN — future cap-raises edit both this snapshot and the
 # data file in lockstep (see #1718 for the split rationale). NOT an ongoing
 # invariant.
+#
+# Values are the caps as of the LANDING merge, not the branch-tip snapshot:
+# four caps were raised on main (#2120 / #2165) while #1718 sat unlanded, so
+# the data file was regenerated from main's dict at merge time. Landing the
+# stale branch-tip values would have silently reverted those raises and FAILed
+# code-reviewer.md (measured 106,857 B vs the old 102_800 cap) fleet-wide.
 _MIGRATION_SNAPSHOT: dict[str, int] = {
-    "code-reviewer.md": 102_800,
+    "code-reviewer.md": 107_300,
     "codex-clean-result-critic.md": 48_400,
-    "codex-code-reviewer.md": 49_200,
-    "experiment-implementer.md": 65_500,
-    "experimenter.md": 66_600,
+    "codex-code-reviewer.md": 50_500,
+    "experiment-implementer.md": 67_800,
+    "experimenter.md": 67_600,
     "research-pm.md": 47_000,
 }
 

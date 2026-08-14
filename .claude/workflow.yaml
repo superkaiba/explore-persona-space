@@ -289,7 +289,7 @@ gates:
       name: plan_approval
       step: "2c"
       status: status:plan_pending
-      reason: "plan approval — user runs `uv run python scripts/task.py set-status <N> approved` (or replies `approve` in chat). EXCEPTION — autonomous sessions (EPM_AUTONOMOUS_SESSION=1, spawned via `spawn_session.py spawn-issue --auto`) AUTO-APPROVE a plan whose gpu_hours_total <= EPM_PLAN_AUTOAPPROVE_GPU_HOURS (default 100) and continue without pausing; they park at plan_pending (this gate) only when the estimate exceeds the cap or is missing/unparseable (fail-safe). Interactive sessions always ask."
+      reason: "plan approval — user runs `uv run python scripts/task.py set-status <N> approved` (or replies `approve` in chat). EXCEPTION — autonomous sessions (EPM_AUTONOMOUS_SESSION=1, spawned via `spawn_session.py spawn-issue --auto`) AUTO-APPROVE ANY plan carrying a parseable GPU-hour estimate regardless of magnitude (#1771 removed the GPU-hour cap — the gate is now GPU-hour-blind) and continue without pausing; they park at plan_pending (this gate) only when the estimate is missing/unparseable (fail-safe). Interactive sessions always ask."
     # id 5 (worktree_merge) RETIRED 2026-06-03: the worktree merge is now
     # automatic (no AskUserQuestion) at the terminal point — Step 9b for
     # experiments (awaiting_promotion), Step 10d for code paths. See the
@@ -1368,13 +1368,17 @@ concerns_protocol:
   summary_cap: |
     Stored concern summaries are HARD-CAPPED at 200 chars (the library
     layer raises ValueError above it; 5 reviewer crashes on 2026-06-10
-    alone: 238-410-char summaries). The task.py CLI (raise-concern /
-    address-concern) auto-truncates a longer `--summary` at a word
-    boundary with a loud stderr warning instead of crashing — on
-    raise-concern the full original is shifted into `--evidence` when
-    evidence is empty. Compose the summary as one tight sentence and
-    move all detail to `--evidence`. The same cap applies to
-    `address-concern` carried summaries.
+    alone: 238-410-char summaries). Over-cap handling is per-branch and
+    NON-LOSSY (#2121): raise-concern with NO `--evidence` shifts the
+    full original verbatim into evidence (word-boundary lead stored,
+    loud stderr warning); raise-concern WITH `--evidence`, and
+    address-concern always, hard-error (exit 2) on an over-cap inline
+    `--summary`. Long text goes through `--summary-file <path>` (any
+    length; over-cap file text is preserved verbatim in the event's
+    evidence field, <=200-char derived lead as the summary). Compose
+    the summary as one tight sentence and move all detail to
+    `--evidence`. The same cap applies to `address-concern` carried
+    summaries.
   concern_id_examples:
     - probe-position-undefined
     - missing-mlm-control
@@ -1563,11 +1567,11 @@ markers:
   - kind: "epm:plan-approved"
     posted_by: skill (relaying user reply, OR auto in an autonomous session)
     when: "Step 2c"
-    fields: "user `approve` reply; advances status from plan_pending to approved. In an autonomous session (EPM_AUTONOMOUS_SESSION=1) the skill auto-posts this when the plan's gpu_hours_total <= EPM_PLAN_AUTOAPPROVE_GPU_HOURS (default 100); note records the estimate + cap."
+    fields: "user `approve` reply; advances status from plan_pending to approved. In an autonomous session (EPM_AUTONOMOUS_SESSION=1) the skill auto-posts this whenever the plan carries a parseable gpu_hours_total (GPU-hour-blind gate as of #1771 — the estimate is recorded, no cap comparison); note records the estimate."
   - kind: "epm:awaiting-spend-approval"
     posted_by: skill
-    when: "Step 2c (autonomous session, over cap or missing estimate)"
-    fields: "Posted when an autonomous session's plan estimate exceeds EPM_PLAN_AUTOAPPROVE_GPU_HOURS (or the estimate is missing/unparseable — fail-safe). Records gpu_hours_total + cap; task parks at plan_pending awaiting user approval. ALSO posted at Step 2 if a session must exit before approval with no pod yet provisioned (orphan-pod guard)."
+    when: "Step 2c (autonomous session, missing/unparseable estimate — fail-safe)"
+    fields: "Posted (historical name; fires on missing/unparseable gpu_hours_total as of #1771 — the retained fail-safe after the GPU-hour cap was removed — and the Step-2 orphan-pod guard) when an autonomous session cannot auto-approve the plan. Records gpu_hours_total (may be null / unparseable) + reason (the retained cause; historically also `over-cap`); task parks at plan_pending awaiting user approval. ALSO posted at Step 2 if a session must exit before approval with no pod yet provisioned (orphan-pod guard)."
   - kind: "epm:consistency"
     posted_by: skill (via consistency-checker)
     when: "Step 2b"
@@ -1801,7 +1805,13 @@ markers:
       on the log path before posting AND verify with `ls -la <log_abs>`
       on the pod — a relative / wrong log path burns polling-loop cycles
       (#397). Back-compat: the legacy `log=` field is accepted as a
-      fallback when `log_abs=` is absent.
+      fallback when `log_abs=` is absent. Optional owner-fence tokens
+      (#2277; note-token convention, no schema change): `owner=<token>`
+      (owner-attribution registration for the `pod.py terminate`
+      owner-fence guard; REQUIRED for new launches; grammar
+      `[A-Za-z0-9._-]{1,64}`) and `fence_until=<ISO8601Z|none>` (owner
+      work-fence deadline; refreshed / cleared via later
+      `[long-phase-heartbeat]` `epm:progress` notes naming the pod).
   - kind: "epm:progress"
     posted_by: experimenter / implementer
     when: "during run"
@@ -1887,7 +1897,14 @@ markers:
       generic `pivot_criteria` cap-3 path. Plans without the §6.5 block
       (legacy plans + `kind: analysis | infra | batch | survey`) get a
       `primary-deliverable-spec-absent` WARN row and do NOT fail this
-      check.
+      check. Optional owner-fence tokens on a PASS note (#2277;
+      note-token convention, no schema change): `pod=<name>` (binds the
+      PASS to the pod it verified) and `owner=<token>` — a FIRST-PERSON
+      claim by the session that posted the pod's launch signal / fence
+      (emit it ONLY then; never copied from the launch marker by a
+      third party while the fence is unexpired); the terminate guard
+      refuses an unexpired-fence pod whose pod-bound PASS lacks the
+      matching owner token.
   - kind: "epm:upload-verified"
     posted_by: skill
     when: "Step 8"
@@ -2125,8 +2142,10 @@ markers:
       (EPM_AUTONOMOUS_SESSION unset) NEVER posts this marker. A filed
       child executes only when a human triages it and invokes
       `/issue <CHILD_ID>`; it then hits its own Step 2c plan-approval
-      GPU-hour cap as normal. Parent promotion remains human-only —
-      filing follow-ups does NOT promote the parent.
+      gate as normal — GPU-hour-blind since #1771 (auto-approves any
+      parseable estimate, parks only on a missing one). Parent
+      promotion remains human-only — filing follow-ups does NOT
+      promote the parent.
   - kind: "epm:followup-scope"
     posted_by: skill (Step 9b cheap-band block, Step 9b autonomous same-issue partition, or Step 10b user pick) OR chat session (user-requested same-question follow-up)
     when: "Whenever a `question_relation: same` follow-up is scoped to execute ON the parent issue: the Step 9b cheap-band block (`source: proposer-9b-cheap` — `0 < est_gpu_hours < 20`, fires in BOTH interactive and autonomous sessions), the autonomous Step 9b expensive partition (`source: proposer-9b` — `est_gpu_hours >= 20`, autonomous only), a chat-requested follow-up (`source: user-chat` — the chat session posts this marker on #N, then re-invokes /issue <N>), or an interactive Step 10b pick (`source: step-10b-pick`)"
@@ -2332,7 +2351,7 @@ markers:
     fields: "Merge SHAs (one per commit when rebase-merged) for the safe path. For the artifact-confirmed path (guard 3 tripped: based on a non-mainline parent branch like a still-unmerged issue-<M>, OR the branch's OWN commits — git diff origin/main...HEAD — touch foreign tasks/ or out-of-scope paths; BEHIND alone is never the trip, it only triggers the own-commit content check), instead: {artifact_confirmed: true, full_rebase_deferred: true, reason: '...', verified_paths: [...]} or, if a surgical additive checkout was needed, {artifact_confirmed: true, full_rebase_deferred: true, surgical_checkout: true, files: [...]}. Worktree is NOT removed (kept for inspection; reaped later by worktree_audit.py)."
   - kind: "epm:merge-failed"
     posted_by: skill
-    when: "Step 9b / Step 10d auto-merge hit a conflict / non-mergeable PR (posted only after the one-shot in-worktree merge-conflict recovery — SKILL.md Step 10d — also fails)"
+    when: "Step 9b / Step 10d auto-merge hit a conflict / non-mergeable PR (posted after the one-shot in-worktree merge-conflict recovery — SKILL.md Step 10d — also fails, or when a novel-payload branch cannot obtain a usable PR object — #2240)"
     fields: "gh/git error + branch + worktree path. Non-blocking: the task still parks (experiments) / completes (code paths); retried idempotently on the next /issue <N>."
   - kind: "epm:stale"
     posted_by: skill

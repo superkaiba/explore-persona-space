@@ -84,7 +84,10 @@ def detect_refusal(
     )
     raw = next((b.text for b in response.content if b.type == "text"), "")
     parsed = parse_judge_json(raw)
-    if parsed is None or "refusal" not in parsed:
+    # isinstance guard: parse_judge_json can return a bare scalar (step-1
+    # passthrough; step-4 trailing-scalar recovery, #2222) — `in` on an int
+    # would raise TypeError instead of this function's intended ValueError.
+    if not isinstance(parsed, dict) or "refusal" not in parsed:
         raise ValueError(
             f"detect_refusal: could not parse a 'refusal' verdict from judge output: {raw!r}"
         )

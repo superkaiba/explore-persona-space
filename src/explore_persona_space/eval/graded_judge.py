@@ -218,6 +218,25 @@ class JudgeResult:
     n_api_refusal_draws: int = 0
     per_item_api_refusals: dict[str, int] = field(default_factory=dict)
 
+    @property
+    def frac_items_complete(self) -> float:
+        """Rule-29 per-item completeness (#2124): items with >= 1 KEPT draw / all items.
+
+        ``scores`` covers EVERY item the reduce was handed (pre-seeded in
+        :func:`judge_result_from_save_raw`) and ``scores[item] is None`` marks
+        all-draws-dropped — content drops, transport losses, and api-refusals
+        alike empty an item — so this is exactly
+        ``n_items_with_at_least_one_valid_draw / n_items``
+        (``.claude/rules/llm-judging.md`` rule 29). The production-wave
+        affordance for rule 29's pre-registered floor; REPORT-only, no gate
+        keys on it (rule 28's ``n_api_refusal`` report-only precedent).
+        Raises ``ValueError`` on a zero-item result (0/0 undefined; fail loud).
+        """
+        if not self.scores:
+            raise ValueError("frac_items_complete undefined: JudgeResult carries zero items")
+        n_valid = sum(1 for v in self.scores.values() if v is not None)
+        return n_valid / len(self.scores)
+
 
 def judge_graded(
     items: list[tuple[str, str, str]],

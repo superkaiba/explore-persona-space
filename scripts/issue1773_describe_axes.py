@@ -7,13 +7,15 @@ is REUSED UNCHANGED, per the task's build-vs-adopt decision):
 
   --stage describe  one item per feature (evidence = EX+ 40 marked + EX- 20 +
                     OUT block; per-token values omitted; no CoT): free-text
-                    description + confidence, 1 draw, max_tokens=700, temp 1.0.
+                    description + confidence, 1 draw, max_tokens=1024 (was 700;
+                    raised #2063), temp 1.0.
                     Raw judge text retained (keep_raw_judge_text) + uploaded.
   --stage axes      (feature x axis x draw) items: ONE axis per call, forced
                     single choice, label order PERMUTED per draw (deterministic
                     fn of (feat_id, axis, draw) rendered into the USER message
                     -> per-draw cache keys differ), reason-then-label JSON,
-                    max_tokens=400, temp 1.0, 5 draws, majority vote >=3 else
+                    max_tokens=1024 (was 400; raised #2063), temp 1.0, 5 draws,
+                    majority vote >=3 else
                     `unresolved`; drop-never-coerce with the content-vs-transport
                     split (llm-judging rules 9/24); varying-n Fleiss kappa.
   --stage pilot     seeded 500-feature stratified slice (activity deciles);

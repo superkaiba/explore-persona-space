@@ -1172,9 +1172,22 @@ def run_injection_gate(
     bank: dict,
     pairs: list[BANK.Pair2162],
     donor_maps: dict[str, dict[str, str]],
+    *,
+    contexts: dict[str, dict] | None = None,
+    ids_fn=None,
+    spots: list[dict] | None = None,
+    payload_fn=None,
 ) -> dict:
     """Plan §7 gate 1 — the realized edit equals the intended donor state at
     the intended (row, position, layer) and NOWHERE else.
+
+    The keyword-only ``contexts`` / ``ids_fn`` / ``spots`` / ``payload_fn``
+    seams (defaults = this module's own registries — byte-equivalent for every
+    existing caller) let the #2162 LADDER driver reuse this gate verbatim over
+    its own bank (``scripts/issue2162_ladder.py``; ladder-plan §4.6 "IMPORTS,
+    never re-implements, the injection-gate helper"). ``spots`` rows keep the
+    ``{"cell", "slot", "arm", "pair"}`` shape; ``payload_fn`` keeps
+    :func:`payload_for_arm`'s call signature.
 
     Stage 1 is REPLACE at every layer, so the exactness read is ABSOLUTE (the
     hooked state at the edited position IS the payload — no incremental
@@ -1188,12 +1201,14 @@ def run_injection_gate(
     pass's ``row_lengths=[T]*B`` arming so the V_a/margin TF geometry is
     gate-verified too.
     """
-    contexts = BANK.build_contexts()
-    ctx_ids = {cid: BANK.context_token_ids_2162(tok, c) for cid, c in contexts.items()}
+    contexts = BANK.build_contexts() if contexts is None else contexts
+    ids_fn = BANK.context_token_ids_2162 if ids_fn is None else ids_fn
+    payload_fn = payload_for_arm if payload_fn is None else payload_fn
+    ctx_ids = {cid: ids_fn(tok, c) for cid, c in contexts.items()}
     pad_id = tok.pad_token_id
     recs = bank["per_context"]
     pairs_by_id = {p.pair_id: p for p in pairs}
-    spots = _gate_spot_specs(pairs)
+    spots = _gate_spot_specs(pairs) if spots is None else spots
     results: list[dict] = []
     for spot in spots:
         pair: BANK.Pair2162 = spot["pair"]
@@ -1212,7 +1227,7 @@ def run_injection_gate(
         payloads: list[torch.Tensor] = []
         donor_ids: list[str | None] = []
         for p in batch_pairs:
-            payload, donor_id = payload_for_arm(bank, p, slot, arm, donor_maps, pairs_by_id)
+            payload, donor_id = payload_fn(bank, p, slot, arm, donor_maps, pairs_by_id)
             rec = recs[p.a]
             positions.append((slot_position(rec["ctx_len"], rec["prefix_end"], slot),))
             payloads.append(payload)
@@ -1439,6 +1454,7 @@ def capture_answer_states(
     eot_ids: list[int],
     payloads: list[torch.Tensor] | None = None,
     positions: list[int] | None = None,
+    tail_inclusive: bool = False,
 ) -> dict:
     """Span-mean answer states from teacher-forced re-forwards.
 
@@ -1449,6 +1465,12 @@ def capture_answer_states(
     re-forward"), using the RIGHT-pad ``row_lengths=[T]*B`` arming that the
     injection gate's capture leg verifies. Rows are built by concatenating
     per-segment TOKEN IDS (BPE-seam rule).
+
+    ``tail_inclusive=True`` (issue #2215 plan §4.2 — the ONLY new capture
+    code) additionally pools ``va_tail_incl`` over the completion PLUS the
+    end-of-turn tail (``eot_ids``) from the SAME captured stack — the #779
+    ``v_x`` training-target convention twin. Default ``False`` keeps this
+    function byte-identical for every existing caller.
     """
     assert len(ctx_ids_by_row) == len(completions), (len(ctx_ids_by_row), len(completions))
     hooked = payloads is not None
@@ -1458,6 +1480,9 @@ def capture_answer_states(
     pad_id = tok.pad_token_id
     n = len(completions)
     va_span = torch.zeros((n, len(layers), cfg.hidden), dtype=torch.float32)
+    va_tail = (
+        torch.zeros((n, len(layers), cfg.hidden), dtype=torch.float32) if tail_inclusive else None
+    )
     comp_ids: list[list[int]] = [
         tok(text, add_special_tokens=False)["input_ids"] if text else [] for text in completions
     ]
@@ -1497,13 +1522,27 @@ def capture_answer_states(
             va_span[i] = torch.stack(
                 [captured[layer][j, span].float().mean(dim=0) for layer in layers]
             ).cpu()
+            if tail_inclusive:
+                # NEW (issue #2215 plan §4.2): the row was forwarded as
+                # ctx + comp + eot_ids, so the tail positions are already in
+                # the captured stack — pool them in, no second forward.
+                span_incl = slice(ctx_len, ctx_len + n_comp + len(eot_ids))
+                va_tail[i] = torch.stack(
+                    [captured[layer][j, span_incl].float().mean(dim=0) for layer in layers]
+                ).cpu()
         del captured
-    return {
+    out = {
         "va_span": va_span.to(torch.float16),
         "n_completion_tokens": n_comp_tokens,
         "empty_rows": sorted(empty),
         "pooling": {"va_span": "mean over completion tokens (plan §4.4 span-mean V_a)"},
     }
+    if tail_inclusive:
+        out["va_tail_incl"] = va_tail.to(torch.float16)
+        out["pooling"]["va_tail_incl"] = (
+            "mean over completion tokens + end-of-turn tail (issue #2215 §4.2 v_x-convention twin)"
+        )
+    return out
 
 
 # ── margin pools + teacher-forced lnP (plan §4.4 secondary DV) ────────

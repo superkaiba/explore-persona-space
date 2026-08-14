@@ -335,6 +335,21 @@ names:
   `smoke-blind-spot-unenumerated` (SUBSTANTIVE — never stripped; #1336: SLURM
   4684 `ModuleNotFoundError` behind a smoke-substituted MPNet; SLURM 5005
   `assert_split` downgraded under a `smoke` kwarg).
+- "Step 0.72: Own-device-scoped GPU-state verdict gate" (any diff type) — a
+  diff adding/editing a drain / teardown / free-memory / idle verdict derived
+  from host GPU state (`nvidia-smi`, `pynvml`, `torch.cuda.mem_get_info`) in
+  fan-out / dispatcher / reap / teardown code must aggregate ONLY the job's
+  own ASSIGNED-device rows. Own-device resolution is an OR, not a CVD-only
+  test: `CUDA_VISIBLE_DEVICES` when set, ELSE the SLURM allocation-env chain
+  (`SLURM_JOB_GPUS` / `SLURM_STEP_GPUS` / `SLURM_GPUS_ON_NODE`; CVD is often
+  UNSET on GPU-shared fellows nodes — `gotchas.md` L240), OR an explicitly
+  threaded own-device-id parameter (`_drain_wait_own_gpu(gpu_id, ...)`,
+  commit `2cc130dbff` — the #2091 FIX, which must PASS). A whole-host
+  `max()`/`min()`/`any()`/`sum()` or an unfiltered all-GPU query FAILs even
+  when the message prints per-GPU detail (`nvidia-smi` ignores CVD). Waiver
+  `# HOST_WIDE_GPU_VERDICT_EXEMPT: <reason ≥ 20 chars>`. Unscoped → FAIL, a
+  single Critical tagged `host-wide-gpu-verdict` (SUBSTANTIVE — never
+  stripped; #2091: a host-wide `max()` killed 4 of 9 rung-jobs).
 - "Step 0.7: Pre-diff gates never short-circuit the diff" VERBATIM — so
   Codex cannot gate-hop (FAIL on marker shape round 1, smoke digest round 2,
   never reviewing the code).
@@ -554,7 +569,7 @@ fine.)
 
 Follow this protocol:
 
-{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.55, 0.6, 0.65, 0.67, 0.68, 0.7, 0.71, 0.8, 0.9, 1, 2, 3, 3.5, 3.6, 3.7, 3.8, 3.9, 4, 4.5, 4.6, 5, 6, 7 + Rules 12 (blocker grounding + mechanizability, Codex-adapted) + 13 (regression-test presence for substantive BLOCKER fixes) + 14 (bug-class sibling sweep — every finding is a CLASS not a line) + 15 (plan-declared compute shape exposed by dispatcher + work-conserving schedule)}}
+{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.55, 0.6, 0.65, 0.67, 0.68, 0.7, 0.71, 0.72, 0.8, 0.9, 1, 2, 3, 3.5, 3.6, 3.7, 3.8, 3.9, 4, 4.5, 4.6, 5, 6, 7 + Rules 12 (blocker grounding + mechanizability, Codex-adapted) + 13 (regression-test presence for substantive BLOCKER fixes) + 14 (bug-class sibling sweep — every finding is a CLASS not a line) + 15 (plan-declared compute shape exposed by dispatcher + work-conserving schedule)}}
 
 You MUST emit your verdict in EXACTLY this format. No preamble, no code
 fences around the marker, no commentary outside the marker tags:
@@ -563,7 +578,7 @@ fences around the marker, no commentary outside the marker tags:
 # Codex Code Review: {{title}}
 
 **Verdict:** PASS | CONCERNS | FAIL
-**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 / 0.55 / 4.6-presence genuine absence — a 0.55 blocker body names `epm:smoke-architecture-check`; a 4.6 presence blocker body names `Gate-scope check`) | `smoke-run-missing` (Step 0.6 genuine absence) | `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`; if you ARE certain the round introduced it, tag `substantive` NOT `git-provenance`) | `raw-completions-upload-missing` (Step 0.65 genuine absence — substantive, NOT mechanical-contract) | `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract) | `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract) | `hollow-verification-gate` (Step 0.68 — a verify/equivalence gate asserts on a function the entrypoint does not dispatch; substantive, NOT mechanical-contract) | `smoke-blind-spot-unenumerated` (Step 0.71 — an unenumerated smoke-conditional substitution / gate-downgrade; substantive, NOT mechanical-contract) | `data-access-blocked` (the blocked-read rule above — a load-bearing lens could not be read for a reason OTHER than the recoverable three-dot "no merge base" error; Codex-twin-only; NOT in the Step 5c-bis strip set, so a FAIL carrying it is never mechanical-contract-only — it signals the reconciler/orchestrator that the PASS-path was unreachable, and the remedy is re-compose / re-dispatch, never a strip) | `substantive` (any code/plan/test/security finding from Steps 1–7). `none` on PASS|CONCERNS. The orchestrator parses this line for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
+**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 / 0.55 / 4.6-presence genuine absence — a 0.55 blocker body names `epm:smoke-architecture-check`; a 4.6 presence blocker body names `Gate-scope check`) | `smoke-run-missing` (Step 0.6 genuine absence) | `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`; if you ARE certain the round introduced it, tag `substantive` NOT `git-provenance`) | `raw-completions-upload-missing` (Step 0.65 genuine absence — substantive, NOT mechanical-contract) | `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract) | `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract) | `hollow-verification-gate` (Step 0.68 — a verify/equivalence gate asserts on a function the entrypoint does not dispatch; substantive, NOT mechanical-contract) | `smoke-blind-spot-unenumerated` (Step 0.71 — an unenumerated smoke-conditional substitution / gate-downgrade; substantive, NOT mechanical-contract) | `host-wide-gpu-verdict` (Step 0.72 — a host-wide GPU-state verdict in fan-out/teardown code; substantive, NOT mechanical-contract) | `data-access-blocked` (the blocked-read rule above — a load-bearing lens could not be read for a reason OTHER than the recoverable three-dot "no merge base" error; Codex-twin-only; NOT in the Step 5c-bis strip set, so a FAIL carrying it is never mechanical-contract-only — it signals the reconciler/orchestrator that the PASS-path was unreachable, and the remedy is re-compose / re-dispatch, never a strip) | `substantive` (any code/plan/test/security finding from Steps 1–7). `none` on PASS|CONCERNS. The orchestrator parses this line for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
 **Tier:** leaf | trunk
 **Diff size:** +X / -Y lines across Z files
 **Diff acquisition:** three-dot | two-dot (no merge base) | sha-range <range>

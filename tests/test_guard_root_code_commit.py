@@ -32,6 +32,22 @@ B16*/B17/A14 + the per-span-shape battery were added in round 3 (the CLASS
 fix: string-literal spans are masked on a scan copy before the clause split
 and token/flag/pathspec scan; concern
 ``quoted-message-seams-defeat-clause-scan``).
+The hd-group + the ``test_b22``/``test_rd15`` re-keys were added for #2046:
+strictly-recognized here-doc / here-string OPENER tokens on the commit
+clause are intercepted (``heredoc_tok_kind``) before candidate
+classification, and the two cd classification sites compare against
+``$GUARD_REPO`` (production bit-identical; hermetic repos gain cd-to-root
+coverage).
+The wt-group was added for #2066: a commit with no retarget evidence and no
+conservative-screen match is ALLOWED when the hook-input cwd provably sits
+inside a linked worktree of the guarded repo (mirrors of the self-test rows
+W1/W3/W4/W7/W8/W9/W10), and the final block heredoc LEADS with the
+remediation block (worktree rewrite + inline-lint-gate recipe) before the
+diagnostics (leg-(b) order pin). The round-2 code-review fix (blocker
+``wt-allow-screen-spelling-gaps``) WIDENED the screen to the fail-closed
+direction — junk-tolerant cd-WORD matching, pushd/popd/source, long AND
+short directory/repo-pointing flags, GIT_COMMON_DIR= — with mirrors of the
+four demonstrated evasion variants (self-test rows W13-W16).
 """
 
 from __future__ import annotations
@@ -118,11 +134,17 @@ def _env(
     max_age: str | None = None,
     rehash_delay: str | None = "0",
     path_prepend: Path | None = None,
+    extra: dict[str, str] | None = None,
 ) -> dict[str, str]:
     env = {
         k: v
         for k, v in os.environ.items()
-        if k not in ("EPM_ALLOW_ROOT_CODE_COMMIT", "EPM_CERT_REHASH_DELAY_S")
+        if k
+        not in (
+            "EPM_ALLOW_ROOT_CODE_COMMIT",
+            "EPM_CERT_REHASH_DELAY_S",
+            "EPM_ROOT_CODE_COMMIT_DISABLE_WT_CWD_ALLOW",
+        )
     }
     env["EPM_ROOT_CODE_COMMIT_REPO"] = str(repo)
     env["EPM_INLINE_CERT_PATH"] = str(cert_path)
@@ -137,6 +159,8 @@ def _env(
         env["EPM_INLINE_CERT_MAX_AGE_S"] = max_age
     if allow:
         env["EPM_ALLOW_ROOT_CODE_COMMIT"] = "1"
+    if extra:
+        env.update(extra)
     return env
 
 
@@ -1059,8 +1083,17 @@ def test_b21_two_assignments_refused_multiple(code_repo: Path, cert: Path) -> No
 
 def test_b22_root_path_rhs_never_latches(code_repo: Path, cert: Path) -> None:
     """A root-spelling RHS resolves to verdict `root` via the SAME shared
-    pattern list — a crafted assignment can never latch a root commit."""
-    _assert_blocked(_run(f'WT={_CANONICAL_ROOT} && cd "$WT" && git commit -m x', code_repo, cert))
+    pattern list — a crafted assignment can never latch a root commit.
+    Re-keyed for #2046: cd_latch_verdict compares against ``$GUARD_REPO``,
+    so the tested root spelling is the GUARDED (fixture) root."""
+    _assert_blocked(_run(f'WT={code_repo} && cd "$WT" && git commit -m x', code_repo, cert))
+
+
+def test_b22b_non_guard_absolute_rhs_still_latches(code_repo: Path, cert: Path) -> None:
+    """Companion to the #2046 re-key: an absolute RHS that is NOT the guarded
+    root resolves and LATCHES the commit away. The fixture has a gated file
+    STAGED, so the latch — not an empty index — is what carries the allow."""
+    _assert_allowed(_run('WT=/abs/other-repo && cd "$WT" && git commit -m x', code_repo, cert))
 
 
 def test_b23_dynamic_rhs_command_substitution_refused(code_repo: Path, cert: Path) -> None:
@@ -1264,13 +1297,40 @@ def test_rd14_process_substitution_form_token_refused(
 
 
 @pytest.mark.parametrize("tok", ["<< EOF", "<<-EOF", "<<< data", "<<<data"])
-def test_rd15_heredoc_herestring_operator_token_refused(
+def test_rd15_heredoc_herestring_opener_intercepted_allowed(
     tok: str, foreign_repo: Path, cert: Path
 ) -> None:
-    """Must-Fix (ii): here-doc / here-string operator tokens (bare and
-    word-attached) are NOT the single input-redirect form — `no` -> opaque
-    -> whole-index -> block."""
-    _assert_blocked(_run(f"git commit -m x -- tasks/t.md {tok}", foreign_repo, cert))
+    """Re-keyed for #2046 (was: refused -> opaque -> block): opener tokens
+    are now intercepted by ``heredoc_tok_kind`` BEFORE candidate
+    classification — exactly the incident class — so the excluding pathspec
+    scopes. ``redirect_tok_kind`` itself still refuses the whole family;
+    test_rd15b pins that grammar contract directly."""
+    _assert_allowed(_run(f"git commit -m x -- tasks/t.md {tok}", foreign_repo, cert))
+
+
+def _classifier_kind(fn_name: str, tok: str) -> str:
+    """Run one of the hook's pure token-classifier functions in isolation
+    (sed-extracted function definition + the FILL global), pinning its
+    per-token grammar without driving the whole hook."""
+    body = subprocess.run(
+        ["sed", "-n", f"/^{fn_name}() {{$/,/^}}$/p", str(SCRIPT)],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    assert body.startswith(f"{fn_name}()"), f"extraction failed: {body[:80]!r}"
+    script = "FILL=$'\\001'\n" + body + f'\n{fn_name} "$1"\n'
+    r = subprocess.run(["bash", "-c", script, "_", tok], capture_output=True, text=True, check=True)
+    return r.stdout.strip()
+
+
+@pytest.mark.parametrize("tok", ["<<", "<<-", "<<<", "<<EOF", "<<-EOF", "<<<data"])
+def test_rd15b_redirect_grammar_still_refuses_heredoc_family(tok: str) -> None:
+    """The #1928 redirect grammar's heredoc-family -> `no` contract stays
+    byte-pinned: #2046 moved the opener handling UPSTREAM (heredoc_tok_kind);
+    redirect_tok_kind must keep refusing the family so a grammar refactor can
+    never mis-consume an opener as a redirect."""
+    assert _classifier_kind("redirect_tok_kind", tok) == "no"
 
 
 @pytest.mark.parametrize("tok", [">$LOGFILE", "2>$(mktemp)"])
@@ -1382,6 +1442,133 @@ def test_f8_single_dash_cluster_ending_in_arg_letter_allowed(
 
 
 # ---------------------------------------------------------------------------
+# hd-group (issue #2046): here-doc / here-string OPENER tokens on the commit
+# clause are shell syntax, never pathspecs — a strictly-recognized opener is
+# excluded from the candidate stream (heredoc_tok_kind, the #1928 redirect
+# argument), so a heredoc-fed `-F /dev/stdin` commit with an EXCLUDING
+# pathspec scopes exactly like its heredoc-free twin. Controls pin the
+# covering-pathspec and bare-commit block directions; every ambiguity keeps
+# the opaque -> whole-index -> block fallback (fail closed).
+
+
+def test_hd1_incident_composite_allowed(foreign_repo: Path, cert: Path) -> None:
+    """The exact #2046 incident shape: cd-to-root prefix + `-F /dev/stdin`
+    + pathspec EXCLUDING the foreign uncertified gated staged file + output
+    redirect + heredoc + trailing commands."""
+    cmd = (
+        f"cd {foreign_repo}\n"
+        "git commit -F /dev/stdin -- tasks/t.md docs/b.md > /tmp/i2046_commit.log 2>&1 <<'MSG'\n"
+        "docs: fold interim notes\n"
+        "\n"
+        "Body paragraph with && separators; and a git commit -m mention.\n"
+        "MSG\n"
+        'echo "commit rc=$?"; git log -1 --oneline -- tasks/t.md'
+    )
+    _assert_allowed(_run(cmd, foreign_repo, cert))
+
+
+def test_hd2_minimal_heredoc_excluding_pathspec_allowed(foreign_repo: Path, cert: Path) -> None:
+    """Minimal defeater shape: `-F /dev/stdin` + heredoc + excluding pathspec."""
+    cmd = "git commit -F /dev/stdin -- tasks/t.md <<'MSG'\nmsg body\nMSG"
+    _assert_allowed(_run(cmd, foreign_repo, cert))
+
+
+def test_hd3_cd_root_prefix_dash_m_excluding_pathspec_allowed(
+    foreign_repo: Path, cert: Path
+) -> None:
+    """cd-to-the-guarded-root prefix keeps scoping (#2046 L2: the cd sites
+    compare against $GUARD_REPO, so hermetic repos cover this shape)."""
+    _assert_allowed(_run(f"cd {foreign_repo}\ngit commit -m x -- tasks/t.md", foreign_repo, cert))
+
+
+def test_hd4_heredoc_covering_pathspec_blocks(foreign_repo: Path, cert: Path) -> None:
+    """Control: the heredoc never widens the allow — a pathspec COVERING the
+    uncertified gated file still blocks."""
+    cmd = "git commit -F /dev/stdin -- scripts/foreign.py <<'MSG'\nmsg body\nMSG"
+    _assert_blocked(_run(cmd, foreign_repo, cert))
+
+
+def test_hd5_bare_commit_heredoc_blocks(foreign_repo: Path, cert: Path) -> None:
+    """Control (sweep protection): a bare `-F /dev/stdin` commit sweeps the
+    whole staged index regardless of the heredoc."""
+    cmd = "git commit -F /dev/stdin <<'MSG'\nmsg body\nMSG"
+    _assert_blocked(_run(cmd, foreign_repo, cert))
+
+
+def test_hd6_separated_operator_consumes_delimiter_word_allowed(
+    foreign_repo: Path, cert: Path
+) -> None:
+    """`pair` arm: a bare `<<` consumes its space-separated delimiter word,
+    which must never classify as a pathspec candidate."""
+    cmd = "git commit -F /dev/stdin -- tasks/t.md << MSG\nmsg body\nMSG"
+    _assert_allowed(_run(cmd, foreign_repo, cert))
+
+
+def test_hd7_tab_indented_heredoc_allowed(foreign_repo: Path, cert: Path) -> None:
+    """`<<-DELIM` attached spelling (tab-stripping form) is `self`."""
+    cmd = "git commit -F /dev/stdin -- tasks/t.md <<-MSG\n\tmsg body\n\tMSG"
+    _assert_allowed(_run(cmd, foreign_repo, cert))
+
+
+def test_hd8_unquoted_attached_delimiter_allowed(foreign_repo: Path, cert: Path) -> None:
+    """`<<DELIM` attached unquoted spelling is `self`."""
+    cmd = "git commit -F /dev/stdin -- tasks/t.md <<MSG\nmsg body\nMSG"
+    _assert_allowed(_run(cmd, foreign_repo, cert))
+
+
+def test_hd9_positional_arm_heredoc_no_ddash_allowed(foreign_repo: Path, cert: Path) -> None:
+    """The positional (no `--`) arm intercepts openers too."""
+    cmd = "git commit -F /dev/stdin tasks/t.md <<'MSG'\nmsg body\nMSG"
+    _assert_allowed(_run(cmd, foreign_repo, cert))
+
+
+def test_hd10_spacey_quoted_delimiter_stays_opaque_blocks(foreign_repo: Path, cert: Path) -> None:
+    """Fail closed: a SPACEY quoted delimiter word-splits into unterminated
+    pieces neither classifier recognizes -> opaque -> whole-index -> block."""
+    cmd = "git commit -F /dev/stdin -- tasks/t.md <<'MY DELIM'\nmsg body\nMY DELIM"
+    _assert_blocked(_run(cmd, foreign_repo, cert))
+
+
+def test_hd11_masked_pathspec_with_heredoc_stays_opaque_blocks(
+    foreign_repo: Path, cert: Path
+) -> None:
+    """Accepted fail-closed residual (known-limitations header): a QUOTED
+    pathspec + opener still fails rawtail token-count parity (the opener
+    stays counted in $raw) and keeps the whole-index fallback."""
+    cmd = "git commit -F /dev/stdin -- \"tasks/t.md\" <<'MSG'\nmsg body\nMSG"
+    _assert_blocked(_run(cmd, foreign_repo, cert))
+
+
+@pytest.mark.parametrize(
+    ("tok", "kind"),
+    [
+        ("<<", "pair"),
+        ("<<-", "pair"),
+        ("<<<", "pair"),
+        ("<<EOF", "self"),
+        ("<<-EOF", "self"),
+        ("<<'EOF'", "self"),
+        ('<<"EOF"', "self"),
+        ("<<-'EOF'", "self"),
+        ("<<<data", "self"),
+        ("<<<'\x01\x01\x01'", "self"),  # masked attached here-string word
+        ("<<''", "no"),  # empty quoted delimiter
+        ("<<'MY", "no"),  # split piece of a spacey quoted delimiter
+        ("<<E$F", "no"),  # $-bearing delimiter shape: fail closed
+        ("<<E<F", "no"),  # opener + attached input redirect: fail closed
+        ("'\x01\x01'", "no"),  # masked string literal: no opener prefix
+        ("tasks/t.md", "no"),
+        ("<file", "no"),  # single input redirect is NOT an opener
+        (">out", "no"),
+    ],
+)
+def test_hd12_opener_grammar(tok: str, kind: str) -> None:
+    """Direct grammar pin for heredoc_tok_kind: strict `self`/`pair`
+    recognition, `no` fail-closed default (#2046 L1)."""
+    assert _classifier_kind("heredoc_tok_kind", tok) == kind
+
+
+# ---------------------------------------------------------------------------
 # #2013: every BLOCK path states the commit did NOT land (shared preamble).
 # ---------------------------------------------------------------------------
 _NOT_LANDED_NEEDLES = ("NOT LANDED", "committed, pushed, or landed")
@@ -1439,3 +1626,135 @@ def test_not_landed_warning_reaches_stderr_on_unprovable_cwd_block(
     _assert_blocked_with_not_landed_warning(
         _run("git add --all -- tasks/t.md && git commit -m x", art_repo, cert, cwd=_OMIT_CWD)
     )
+
+
+# ---------------------------------------------------------------------------
+# wt-group (issue #2066): worktree-cwd allow gate. Pytest mirrors of the
+# self-test rows W1/W3/W4/W7/W8/W9/W10 (the ids below cite those rows), plus
+# the leg-(b) block-output order pin. A commit whose every contribution to
+# root_commit=1 is a bare clause (no retarget evidence, no conservative-screen
+# spelling) is ALLOWED when the hook-input cwd provably sits inside a linked
+# worktree of the guarded repo; every refusal arm keeps the pre-#2066 block.
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def wt_repo(tmp_path: Path) -> tuple[Path, Path]:
+    """Root repo with an artifact-only init commit, an UNCERTIFIED gated file
+    staged at the root, and a linked worktree (issue #2066)."""
+    repo = _init_repo(tmp_path, "wtroot")
+    _stage(repo, "tasks/t.md", "note\n")
+    _git(repo, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "init")
+    _stage(repo, GATED, "print(1)\n")
+    wt = tmp_path / "wtroot-wt"
+    _git(repo, "worktree", "add", "-q", str(wt))
+    return repo, wt
+
+
+def test_wt_bare_commit_from_worktree_cwd_allowed(wt_repo: tuple[Path, Path], cert: Path) -> None:
+    """Self-test W1: worktree cwd + bare commit while the ROOT index holds an
+    uncertified gated file -> ALLOW (the #2066 incident class)."""
+    repo, wt = wt_repo
+    _assert_allowed(_run("git commit -m x", repo, cert, cwd=wt))
+
+
+def test_wt_cd_to_root_from_worktree_cwd_blocks(wt_repo: tuple[Path, Path], cert: Path) -> None:
+    """Self-test W3: a cd-to-root prefix is retarget evidence — the allow
+    gate never fires; the root-index read blocks."""
+    repo, wt = wt_repo
+    _assert_blocked(_run(f"cd {repo} && git commit -m x", repo, cert, cwd=wt))
+
+
+def test_wt_dash_c_root_spelling_from_worktree_cwd_blocks(
+    wt_repo: tuple[Path, Path], cert: Path
+) -> None:
+    """Self-test W4: a `git -C <root-spelling>` waiver REFUSAL is retarget
+    evidence even from a worktree cwd."""
+    repo, wt = wt_repo
+    _assert_blocked(_run(f"git -C {_CANONICAL_ROOT} commit -m x", repo, cert, cwd=wt))
+
+
+def test_wt_root_subdir_cwd_still_blocks(wt_repo: tuple[Path, Path], cert: Path) -> None:
+    """Self-test W7 (B38 semantics): a root-SUBDIR cwd fails the worktree
+    proof (toplevel == root) and keeps the conservative block."""
+    repo, _wt = wt_repo
+    _assert_blocked(_run("git commit -m x", repo, cert, cwd=repo / "tasks"))
+
+
+def test_wt_kill_switch_restores_block(wt_repo: tuple[Path, Path], cert: Path) -> None:
+    """Self-test W8: EPM_ROOT_CODE_COMMIT_DISABLE_WT_CWD_ALLOW=1 disables the
+    allow gate wholesale (pre-#2066 cwd-blind behavior)."""
+    repo, wt = wt_repo
+    r = _run(
+        "git commit -m x",
+        repo,
+        cert,
+        cwd=wt,
+        extra={"EPM_ROOT_CODE_COMMIT_DISABLE_WT_CWD_ALLOW": "1"},
+    )
+    _assert_blocked(r)
+
+
+def test_wt_git_dir_env_assignment_from_worktree_cwd_blocks(
+    wt_repo: tuple[Path, Path], cert: Path
+) -> None:
+    """Self-test W9: a GIT_DIR=-family env-assignment prefix on the commit
+    clause hits the conservative screen — no allow."""
+    repo, wt = wt_repo
+    _assert_blocked(_run(f"GIT_DIR={repo}/.git git commit -m x", repo, cert, cwd=wt))
+
+
+def test_wt_pushd_to_root_from_worktree_cwd_blocks(wt_repo: tuple[Path, Path], cert: Path) -> None:
+    """Self-test W10: a pushd-to-root chain hits the conservative screen (the
+    cd arm does not model pushd) — no allow."""
+    repo, wt = wt_repo
+    _assert_blocked(_run(f"pushd {repo} && git commit -m x", repo, cert, cwd=wt))
+
+
+def test_wt_flag_intervened_cd_builtin_blocks(wt_repo: tuple[Path, Path], cert: Path) -> None:
+    """Self-test W13 (round-2 fix, blocker wt-allow-screen-spelling-gaps): a
+    flag word between the builtin keyword and the cd word evaded the round-1
+    contiguity-anchored screen alternative; the widened junk-tolerant cd-WORD
+    match catches the cd token itself regardless of what precedes it."""
+    repo, wt = wt_repo
+    _assert_blocked(_run(f"command -p cd {repo} && git commit -m x", repo, cert, cwd=wt))
+
+
+def test_wt_backslash_escaped_cd_blocks(wt_repo: tuple[Path, Path], cert: Path) -> None:
+    """Self-test W14 (round-2 fix): a backslash-escaped cd word (still the cd
+    builtin to bash) evades the literal-cd cd arm AND the round-1 screen; the
+    junk-tolerant cd-WORD match absorbs the escape character."""
+    repo, wt = wt_repo
+    _assert_blocked(_run(f"\\cd {repo} && git commit -m x", repo, cert, cwd=wt))
+
+
+def test_wt_quoted_cd_word_blocks(wt_repo: tuple[Path, Path], cert: Path) -> None:
+    """Self-test W15 (round-2 fix): a quoted cd word (still the cd builtin to
+    bash) evades the literal-cd cd arm AND the round-1 screen; the
+    junk-tolerant cd-WORD match absorbs the quote characters."""
+    repo, wt = wt_repo
+    _assert_blocked(_run(f"'cd' {repo} && git commit -m x", repo, cert, cwd=wt))
+
+
+def test_wt_env_short_dir_flag_blocks(wt_repo: tuple[Path, Path], cert: Path) -> None:
+    """Self-test W16 (round-2 fix): env's SHORT directory-change flag (the
+    round-1 screen matched only the long-form spelling) — the first clause
+    lands a commit at root while the trailing bare clause is what classifies;
+    the widened -C-bearing-cluster alternative screens it."""
+    repo, wt = wt_repo
+    _assert_blocked(_run(f"env -C {repo} git commit -m x && git commit -m x", repo, cert, cwd=wt))
+
+
+def test_block_message_leads_with_remediation_before_diagnostics(
+    code_repo: Path, cert: Path
+) -> None:
+    """Leg (b) order pin (#2066): the final block heredoc leads with the
+    remediation block (worktree rewrite + inline-lint-gate recipe) right
+    after the headline + NOT-LANDED line, BEFORE the first cert-diag line."""
+    r = _run("git commit -m x", code_repo, cert)
+    _assert_blocked(r)
+    assert "cert-diag:" in r.stderr, r.stderr
+    first_diag = r.stderr.index("cert-diag:")
+    assert r.stderr.index("NOT LANDED") < r.stderr.index('git -C "$WT" commit'), r.stderr
+    assert r.stderr.index('git -C "$WT" commit') < first_diag, r.stderr
+    assert r.stderr.index("inline_lint_gate.py") < first_diag, r.stderr

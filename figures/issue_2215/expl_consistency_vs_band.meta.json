@@ -1,0 +1,840 @@
+{
+  "commit": "f6e6ab50",
+  "render_id": "5edc3f767e304de6",
+  "git_commit": "f6e6ab50",
+  "git_dirty": false,
+  "created": "2026-08-10T10:33:07Z",
+  "figsize": [
+    11.0,
+    10.38
+  ],
+  "points": [
+    {
+      "within-type direction consistency": 0.2935190913237347,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "within-type direction consistency": 0.40746341514090245,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "within-type direction consistency": 0.38311920681232686,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "within-type direction consistency": 0.46398665258396177,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "within-type direction consistency": 0.5254254991904936,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "within-type direction consistency": 0.14600354073173982,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "within-type direction consistency": 0.369727182113907,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "within-type direction consistency": 0.33695642653885916,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "within-type direction consistency": 0.18951948584058742,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "within-type direction consistency": 0.4666744063807707,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "within-type direction consistency": 0.5088837121455426,
+      "y": 10.0,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "within-type direction consistency": 0.377799112275605,
+      "y": 11.0,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "within-type direction consistency": 0.4885099406465643,
+      "y": 12.0,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "within-type direction consistency": 0.5004708246168562,
+      "y": 13.0,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "within-type direction consistency": 0.5034290513825034,
+      "y": 14.0,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "within-type direction consistency": 0.6929873282005433,
+      "y": 15.0,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "within-type direction consistency": 0.49810151898188654,
+      "y": 16.0,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "within-type direction consistency": 0.5237368965305387,
+      "y": 17.0,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "within-type direction consistency": 0.33947327361884994,
+      "y": 18.0,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "within-type direction consistency": 0.5937010607300013,
+      "y": 19.0,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "within-type direction consistency": 0.7390712898334627,
+      "y": 20.0,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "within-type direction consistency": 0.7390712898334627,
+      "y": 21.0,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "within-type direction consistency": 0.7736922684199707,
+      "y": 22.0,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "within-type direction consistency": 0.6471162580999511,
+      "y": 23.0,
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "within-type direction consistency": 0.8245144076367349,
+      "y": 24.0,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "within-type direction consistency": 0.7124797699119171,
+      "y": 25.0,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "within-type direction consistency": 0.6672968106646842,
+      "y": 26.0,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "within-type direction consistency": 0.7577516240972323,
+      "y": 27.0,
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "within-type direction consistency": 0.7577516240972323,
+      "y": 28.0,
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "within-type direction consistency": 0.7961564709440507,
+      "y": 29.0,
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "within-type direction consistency": 0.8275407740128139,
+      "y": 30.0,
+      "_kind": "errorbar",
+      "_group": 30
+    },
+    {
+      "within-type direction consistency": 0.5534636065718647,
+      "y": 31.0,
+      "_kind": "errorbar",
+      "_group": 31
+    },
+    {
+      "within-type direction consistency": 0.7957385195152553,
+      "y": 32.0,
+      "_kind": "errorbar",
+      "_group": 32
+    },
+    {
+      "within-type direction consistency": 0.8110506396890343,
+      "y": 33.0,
+      "_kind": "errorbar",
+      "_group": 33
+    },
+    {
+      "within-type direction consistency": 0.5802886968716167,
+      "y": 34.0,
+      "_kind": "errorbar",
+      "_group": 34
+    },
+    {
+      "within-type direction consistency": 0.8254359638431383,
+      "y": 35.0,
+      "_kind": "errorbar",
+      "_group": 35
+    },
+    {
+      "within-type direction consistency": 0.7968081364423689,
+      "y": 36.0,
+      "_kind": "errorbar",
+      "_group": 36
+    },
+    {
+      "within-type direction consistency": -0.014382232408921261,
+      "y": 37.0,
+      "_kind": "errorbar",
+      "_group": 37
+    },
+    {
+      "within-type direction consistency": 0.5327299476258417,
+      "y": 38.0,
+      "_kind": "errorbar",
+      "_group": 38
+    },
+    {
+      "within-type direction consistency": 0.0770992804951372,
+      "y": 0.0,
+      "series": "95th pct of label-permutation null",
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "within-type direction consistency": 1.0,
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 40
+    },
+    {
+      "within-type direction consistency": 1.0,
+      "y": 1.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 41
+    },
+    {
+      "within-type direction consistency": 1.0000000000000007,
+      "y": 2.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 42
+    },
+    {
+      "within-type direction consistency": 1.0000000000000002,
+      "y": 3.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 43
+    },
+    {
+      "within-type direction consistency": 0.9999999999999997,
+      "y": 4.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 44
+    },
+    {
+      "within-type direction consistency": 1.0,
+      "y": 5.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 45
+    },
+    {
+      "within-type direction consistency": 1.0000000000000002,
+      "y": 6.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 46
+    },
+    {
+      "within-type direction consistency": 1.0,
+      "y": 7.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 47
+    },
+    {
+      "within-type direction consistency": 0.9999999999999999,
+      "y": 8.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 48
+    },
+    {
+      "within-type direction consistency": 1.0,
+      "y": 9.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 49
+    },
+    {
+      "within-type direction consistency": 1.0,
+      "y": 10.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 50
+    },
+    {
+      "within-type direction consistency": 1.0000000000000002,
+      "y": 11.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 51
+    },
+    {
+      "within-type direction consistency": 1.0,
+      "y": 12.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 52
+    },
+    {
+      "within-type direction consistency": 0.9999999999999999,
+      "y": 13.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 53
+    },
+    {
+      "within-type direction consistency": 0.9995147611029579,
+      "y": 14.0,
+      "_kind": "errorbar",
+      "_group": 54
+    },
+    {
+      "within-type direction consistency": 1.0,
+      "y": 15.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 55
+    },
+    {
+      "within-type direction consistency": 1.0,
+      "y": 17.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "within-type direction consistency": 1.0000000000000002,
+      "y": 18.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "within-type direction consistency": 1.0,
+      "y": 19.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 58
+    },
+    {
+      "within-type direction consistency": 1.0,
+      "y": 20.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 59
+    },
+    {
+      "within-type direction consistency": 1.0,
+      "y": 21.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 60
+    },
+    {
+      "within-type direction consistency": 0.9999999999999999,
+      "y": 22.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 61
+    },
+    {
+      "within-type direction consistency": 1.0,
+      "y": 23.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 62
+    },
+    {
+      "within-type direction consistency": 0.9994185911390113,
+      "y": 24.0,
+      "_kind": "errorbar",
+      "_group": 63
+    },
+    {
+      "within-type direction consistency": 1.0,
+      "y": 25.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 64
+    },
+    {
+      "within-type direction consistency": 0.9994635271023942,
+      "y": 26.0,
+      "_kind": "errorbar",
+      "_group": 65
+    },
+    {
+      "within-type direction consistency": 0.9999999999999999,
+      "y": 27.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 66
+    },
+    {
+      "within-type direction consistency": 0.9999999999999999,
+      "y": 28.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 67
+    },
+    {
+      "within-type direction consistency": 0.9999999999999997,
+      "y": 29.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 68
+    },
+    {
+      "within-type direction consistency": 1.0,
+      "y": 30.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 69
+    },
+    {
+      "within-type direction consistency": 0.9999999999999999,
+      "y": 31.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 70
+    },
+    {
+      "within-type direction consistency": 1.0,
+      "y": 32.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 71
+    },
+    {
+      "within-type direction consistency": 0.9995885961236396,
+      "y": 33.0,
+      "_kind": "errorbar",
+      "_group": 72
+    },
+    {
+      "within-type direction consistency": 0.9995406502198548,
+      "y": 34.0,
+      "_kind": "errorbar",
+      "_group": 73
+    },
+    {
+      "within-type direction consistency": 0.9988703197933192,
+      "y": 35.0,
+      "_kind": "errorbar",
+      "_group": 74
+    },
+    {
+      "within-type direction consistency": 1.0,
+      "y": 36.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 75
+    },
+    {
+      "within-type direction consistency": 1.0,
+      "y": 38.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 76
+    },
+    {
+      "within-type direction consistency": 0.11006308976163796,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 77
+    },
+    {
+      "within-type direction consistency": 0.07376550643815509,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 78
+    },
+    {
+      "within-type direction consistency": 0.15963912487601448,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 79
+    },
+    {
+      "within-type direction consistency": 0.19602951190970766,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 80
+    },
+    {
+      "within-type direction consistency": 0.04531677734697215,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 81
+    },
+    {
+      "within-type direction consistency": 0.28467220537120175,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 82
+    },
+    {
+      "within-type direction consistency": 0.26144157733166234,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 83
+    },
+    {
+      "within-type direction consistency": 0.037223468070123916,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 84
+    },
+    {
+      "within-type direction consistency": 0.30534763071759347,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 85
+    },
+    {
+      "within-type direction consistency": 0.19301244559270028,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 86
+    },
+    {
+      "within-type direction consistency": 0.07264957108338581,
+      "y": 10.0,
+      "_kind": "errorbar",
+      "_group": 87
+    },
+    {
+      "within-type direction consistency": 0.6152887214255313,
+      "y": 11.0,
+      "_kind": "errorbar",
+      "_group": 88
+    },
+    {
+      "within-type direction consistency": 0.6250381633753276,
+      "y": 12.0,
+      "_kind": "errorbar",
+      "_group": 89
+    },
+    {
+      "within-type direction consistency": 0.6077191639649221,
+      "y": 13.0,
+      "_kind": "errorbar",
+      "_group": 90
+    },
+    {
+      "within-type direction consistency": 0.30815532552276736,
+      "y": 14.0,
+      "_kind": "errorbar",
+      "_group": 91
+    },
+    {
+      "within-type direction consistency": 0.3775498464224219,
+      "y": 15.0,
+      "_kind": "errorbar",
+      "_group": 92
+    },
+    {
+      "within-type direction consistency": 0.121168088977701,
+      "y": 16.0,
+      "_kind": "errorbar",
+      "_group": 93
+    },
+    {
+      "within-type direction consistency": 0.2454313174832172,
+      "y": 17.0,
+      "_kind": "errorbar",
+      "_group": 94
+    },
+    {
+      "within-type direction consistency": 0.453386994003474,
+      "y": 18.0,
+      "_kind": "errorbar",
+      "_group": 95
+    },
+    {
+      "within-type direction consistency": 0.42923526260516526,
+      "y": 19.0,
+      "_kind": "errorbar",
+      "_group": 96
+    },
+    {
+      "within-type direction consistency": 0.5430838304333659,
+      "y": 20.0,
+      "_kind": "errorbar",
+      "_group": 97
+    },
+    {
+      "within-type direction consistency": 0.5430838304333659,
+      "y": 21.0,
+      "_kind": "errorbar",
+      "_group": 98
+    },
+    {
+      "within-type direction consistency": 0.43194984166609873,
+      "y": 22.0,
+      "_kind": "errorbar",
+      "_group": 99
+    },
+    {
+      "within-type direction consistency": 0.4503072725069253,
+      "y": 23.0,
+      "_kind": "errorbar",
+      "_group": 100
+    },
+    {
+      "within-type direction consistency": 0.5084001108371673,
+      "y": 24.0,
+      "_kind": "errorbar",
+      "_group": 101
+    },
+    {
+      "within-type direction consistency": 0.4782772203454963,
+      "y": 25.0,
+      "_kind": "errorbar",
+      "_group": 102
+    },
+    {
+      "within-type direction consistency": 0.5124895601831218,
+      "y": 26.0,
+      "_kind": "errorbar",
+      "_group": 103
+    },
+    {
+      "within-type direction consistency": 0.6518288863554044,
+      "y": 27.0,
+      "_kind": "errorbar",
+      "_group": 104
+    },
+    {
+      "within-type direction consistency": 0.6518288863554044,
+      "y": 28.0,
+      "_kind": "errorbar",
+      "_group": 105
+    },
+    {
+      "within-type direction consistency": 0.5892827155360066,
+      "y": 29.0,
+      "_kind": "errorbar",
+      "_group": 106
+    },
+    {
+      "within-type direction consistency": 0.5266577760244157,
+      "y": 30.0,
+      "_kind": "errorbar",
+      "_group": 107
+    },
+    {
+      "within-type direction consistency": 0.6512587323347026,
+      "y": 31.0,
+      "_kind": "errorbar",
+      "_group": 108
+    },
+    {
+      "within-type direction consistency": 0.6523397569228334,
+      "y": 32.0,
+      "_kind": "errorbar",
+      "_group": 109
+    },
+    {
+      "within-type direction consistency": 0.5250666393383103,
+      "y": 33.0,
+      "_kind": "errorbar",
+      "_group": 110
+    },
+    {
+      "within-type direction consistency": 0.34735372762866107,
+      "y": 34.0,
+      "_kind": "errorbar",
+      "_group": 111
+    },
+    {
+      "within-type direction consistency": 0.7004663795229616,
+      "y": 35.0,
+      "_kind": "errorbar",
+      "_group": 112
+    },
+    {
+      "within-type direction consistency": 0.694603386492559,
+      "y": 36.0,
+      "_kind": "errorbar",
+      "_group": 113
+    },
+    {
+      "within-type direction consistency": -0.02496942663770293,
+      "y": 37.0,
+      "_kind": "errorbar",
+      "_group": 114
+    },
+    {
+      "within-type direction consistency": 0.8113084533735746,
+      "y": 38.0,
+      "_kind": "errorbar",
+      "_group": 115
+    }
+  ],
+  "n_series": 116,
+  "total_points": 116,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "context vector, context-end",
+        "xlabel": "within-type direction consistency",
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "recency fact user name d5",
+          "recency prior topic d5",
+          "recency fact user name d3",
+          "load fact user name l5",
+          "demo format",
+          "fact novel queried",
+          "fact user name",
+          "filler swap",
+          "list numeric detail",
+          "load fact user name l3",
+          "user emotion",
+          "fact assistant animal",
+          "load fact assistant animal l3",
+          "load fact assistant animal l5",
+          "constraint knowledge",
+          "recency instr format d5",
+          "persona role header",
+          "demo persona",
+          "recency prior topic d3",
+          "refusal boundary",
+          "conflict format fwd",
+          "conflict format rev",
+          "icl task mapping",
+          "user expertise",
+          "load instr format l3",
+          "recency instr format d3",
+          "verbosity",
+          "conflict persona fwd",
+          "conflict persona rev",
+          "recency persona prompted d5",
+          "load instr format l5",
+          "language implied",
+          "recency persona prompted d3",
+          "instr format",
+          "reasoning style",
+          "instr language",
+          "persona prompted",
+          "query content",
+          "prior topic"
+        ]
+      },
+      {
+        "title_left": "context vector, prefix-end",
+        "xlabel": "within-type direction consistency",
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "answer vector, tail-inclusive mean",
+        "xlabel": "within-type direction consistency",
+        "legend_labels": [
+          "95th pct of label-permutation null"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "95th pct of label-permutation null"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

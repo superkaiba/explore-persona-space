@@ -6,7 +6,7 @@ answer?") and the mirrored ``a_retention`` (A's reference answer) — VM-side,
 zero GPU, via the p3p4 judge stack conventions: ``judge_completions_batch`` ->
 ``judge_dispatch``/``api_dispatch`` Batch path, N=5 draws per completion (draw
 expansion, temperature-1 API default), DROP-NEVER-COERCE per draw,
-``max_tokens=300`` EXPLICIT (llm-judging rule 23), content-drop vs
+``max_tokens=1024`` EXPLICIT (llm-judging rule 23 floor; raised from 300, #2063), content-drop vs
 transport-loss accounting (rule 24; residual transport above the threshold
 exits rc=4 with the report WRITTEN — route on the artifact, not the rc).
 
@@ -42,7 +42,7 @@ BASELINE_ARM = "swap_a0"
 ALL_ARMS = (BASELINE_ARM, *STEER_ARMS)
 RUBRICS = ("b_content", "a_retention")
 JUDGE_STEM = "judge_swap"  # rebound to "judge_patch" under --round patch
-JUDGE_MAX_TOKENS = 300  # llm-judging rule 23 floor (reason-then-score rubric)
+JUDGE_MAX_TOKENS = 1024  # llm-judging rule 23 floor (single-rationale; raised from 300, #2063)
 
 _RUBRIC_WHAT = {
     "b_content": "a REFERENCE ANSWER (a different answer whose content the response may express)",
@@ -517,7 +517,7 @@ def smoke(args) -> int:
     assert bc["swap_random"]["n_empty_samples"] == 1, bc["swap_random"]
     assert bc["swap_a0"]["valid_draws"] == 20 and bc["swap_a0"]["content_drops"] == 0, bc["swap_a0"]
     # request shape: system prompt + composed excerpt-bearing question reached
-    # the (fake) wire; max_tokens explicit at 300; model = the project judge
+    # the (fake) wire; max_tokens explicit at 1024; model = the project judge
     p0 = fake_msgs.calls[0]
     assert p0["model"] == C.JUDGE_MODEL and p0["max_tokens"] == JUDGE_MAX_TOKENS, p0
     sys_text = p0["system"] if isinstance(p0["system"], str) else p0["system"][0]["text"]

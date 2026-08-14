@@ -52,6 +52,10 @@ load_dotenv()
 
 import numpy as np  # noqa: E402
 
+# Sibling import for the #2130 ceiling n_pairs pin (CEILING_EXPECTED_N) — the
+# single source of truth for the expected pairing count.
+import issue1491_ladder_fits as LF  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[1]
 PREDS_DIR = ROOT / "data" / "issue_1491" / "preds_recomputed"
 FITS_DIR = ROOT / "eval_results" / "issue_1491" / "scale_ladder"
@@ -127,7 +131,16 @@ def main() -> None:
             assert np.array_equal(ci_ref, ci), f"{slug}: test context ids differ from reference"
         fits = json.loads((FITS_DIR / f"fits_{slug}.json").read_text())
         committed = fits["predictors"]["ridge"]["test_r2"]
-        ceiling = fits["ceiling_two_draw"]["ceiling_var_weighted_r"]
+        cd = fits["ceiling_two_draw"]
+        # #2130 read-side defense: a committed short-pair ceiling (the scale15
+        # 875/1000 incident shape) must never be consumed silently — raise.
+        if cd.get("n_pairs") != LF.CEILING_EXPECTED_N:
+            raise RuntimeError(
+                f"{slug}: ceiling_two_draw.n_pairs={cd.get('n_pairs')} != "
+                f"{LF.CEILING_EXPECTED_N} in committed fits JSON — short/partial "
+                "ceiling pairing (#2130); refusing to normalize by it"
+            )
+        ceiling = cd["ceiling_var_weighted_r"]
         full = _r2_full(pred, y)
         delta_committed = abs(full - committed)
         assert delta_committed < TOL_COMMITTED, (

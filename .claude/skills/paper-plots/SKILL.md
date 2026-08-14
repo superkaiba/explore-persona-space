@@ -264,6 +264,46 @@ in the text.
 
 For interim-figure decoration defaults (hatching, per-bar n, estimated-value markers, tick rotation), see §3.9.
 
+### 3.8-bis. NO CAPTION BLOCK INSIDE THE FIGURE — the figure stays simple and concise
+
+**Standing user directive (2026-08-12).** Never render a provenance /
+methodology / caveat caption block INTO the figure canvas — no
+`fig.text(...)` paragraph of protocol notes, per-bar `n`, spread-gate
+explanations, error-bar definitions, or scope exclusions. The figure
+carries axes, ticks, legend, and panel titles; **everything else goes in
+the surrounding prose** (the clean-result caption blockquote, the report
+body, the chat message).
+
+This is stricter than §3.8, which bans INTERPRETIVE overlays. §3.8-bis
+additionally bans FACTUAL prose blocks — provenance is legitimate content
+in the wrong place, and a wall of 8pt text under the panels makes the
+figure unreadable at the size a reader actually views it.
+
+Where the provenance goes instead, in preference order:
+
+1. The `savefig_paper` sidecar (`<stem>.meta.json`) — machine-readable,
+   already written on every call, and what the mechanical checks read.
+2. The write-up's caption / prose beside the figure.
+3. A `docs/` companion when it is genuinely long.
+
+**Retrofitting an existing captioned figure.** Two supported routes, both
+default-OFF so no existing render changes:
+
+- Shared-helper route (any generator calling `savefig_paper`): set
+  `EPS_PLOT_NO_CAPTION=1` to hide fig-level caption text for the RENDER
+  only (the sidecar still records it) and `EPS_PLOT_STEM_SUFFIX=_nocap`
+  to write the variant beside the captioned original instead of
+  overwriting a figure other write-ups reference.
+- Per-script route (a generator with its own `fig.savefig`): add a
+  `--no-caption` flag that skips the caption `fig.text` and writes a
+  `_nocap` stem. **Re-check the legend anchor** — a caption-anchored
+  legend at a fixed `bbox_to_anchor` lands INSIDE the panels once the
+  layout rect reclaims the caption strip (measured on
+  `issue1739_pc_fivemethod_style_fig.py`).
+
+Either way: Read the rendered PNG before shipping it (§5), since removing
+a text block changes the layout.
+
 ### 3.9. Interim / user-facing figure defaults
 
 These are DEFAULTS for any figure shown to the user outside a final

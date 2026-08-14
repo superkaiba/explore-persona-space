@@ -59,6 +59,67 @@ LR_SCHEDULER = "linear"
 MAX_SEQ_LENGTH = 2048
 
 
+def parse_save_fracs(spec: str | None) -> tuple[float, ...] | None:
+    """Parse a ``--save-fracs`` spec ('0.1,0.25,0.5') into a validated tuple."""
+    if not spec:
+        return None
+    fracs = tuple(sorted(float(x) for x in spec.split(",") if x.strip()))
+    assert all(0.0 < f < 1.0 for f in fracs), f"save fracs must be in (0, 1): {fracs}"
+    return fracs
+
+
+class CheckpointFracCallback:
+    """Adapter-only intermediate saves at fixed fractions of total steps.
+
+    Issue #2221's SINGLE declared override of the #778 recipe (plan §4 P4):
+    the reused driver hardcodes ``save_strategy="no"``; this OPT-IN callback
+    (armed only via ``--save-fracs``, default off — #778 behavior unchanged)
+    saves the PEFT adapter (``save_pretrained`` — no optimizer state) at
+    exactly {10, 25, 50}% of the realized ``max_steps`` into
+    ``{out_dir}/checkpoint_frac{pct}``. Training dynamics are untouched (a
+    pure disk write at step boundaries). Subclasses ``TrainerCallback`` via
+    :func:`make_checkpoint_callback` (gotchas.md #816: HF fires every
+    lifecycle event on callbacks, so a bare class dies at ``on_init_end``).
+    """
+
+    @staticmethod
+    def target_steps(max_steps: int, fracs: tuple[float, ...]) -> dict[int, float]:
+        """{step: frac} save targets (>=1, deduplicated, before the final step)."""
+        assert max_steps > 0, max_steps
+        out: dict[int, float] = {}
+        for f in fracs:
+            step = max(1, round(f * max_steps))
+            if step < max_steps and step not in out:
+                out[step] = f
+        return out
+
+
+def make_checkpoint_callback(fracs: tuple[float, ...], out_dir: Path):
+    """Build the TrainerCallback that performs the frac-checkpoint saves."""
+    from transformers import TrainerCallback
+
+    class _Cb(TrainerCallback):
+        def __init__(self) -> None:
+            self._targets: dict[int, float] | None = None
+
+        def on_step_end(self, args, state, control, **kwargs):
+            if self._targets is None:
+                assert state.max_steps and state.max_steps > 0, state.max_steps
+                self._targets = CheckpointFracCallback.target_steps(state.max_steps, fracs)
+                logger.info(
+                    "[ckpt-frac] max_steps=%d save targets=%s", state.max_steps, self._targets
+                )
+            frac = self._targets.get(state.global_step)
+            if frac is not None:
+                dest = out_dir / f"checkpoint_frac{int(round(frac * 100))}"
+                dest.mkdir(parents=True, exist_ok=True)
+                kwargs["model"].save_pretrained(str(dest))
+                logger.info("[ckpt-frac] saved adapter at step %d -> %s", state.global_step, dest)
+            return control
+
+    return _Cb()
+
+
 def _messages_to_prompt_completion(row: dict) -> dict:
     """Single-turn {"messages":[user,assistant]} -> conversational prompt/completion.
 
@@ -104,6 +165,28 @@ def _compute_wave_size(cpu_only: bool, requested: int | None) -> int:
     return min(detected, ceiling)
 
 
+def _gate_cell_trainability(
+    n_rows: int,
+    cell: str,
+    *,
+    smoke: bool,
+    override_floor_rows: int | None = None,
+    override_reason: str | None = None,
+) -> dict:
+    """Absolute trainability gate at the recipe's own constants (#2242; incident #2221)."""
+    from explore_persona_space.artifacts.datagen import assert_cell_trainable
+
+    return assert_cell_trainable(
+        n_rows,
+        cell_id=cell,
+        effective_batch_size=PER_DEVICE_BATCH * GRAD_ACCUM,
+        num_epochs=EPOCHS,
+        override_floor_rows=override_floor_rows,
+        override_reason=override_reason,
+        on_fail="warn" if smoke else "raise",
+    )
+
+
 def train_single_cell(
     family: str,
     version: str,
@@ -114,13 +197,21 @@ def train_single_cell(
     max_steps: int | None,
     cpu_only: bool,
     model_name: str = lib.MODEL_NAME,
-) -> Path:
+    trainability_floor_override: int | None = None,
+    trainability_override_reason: str | None = None,
+    save_fracs: tuple[float, ...] | None = None,
+) -> tuple[Path, dict]:
     """Train ONE rs-LoRA cell (runs inside a per-GPU subprocess).
 
     CUDA_VISIBLE_DEVICES is pinned by the launcher (wave dispatcher) BEFORE this
     process starts; ``gpu_id`` here is informational (the process sees only its
     one device as cuda:0). ``model_name`` defaults to the production Qwen-7B; a
-    CPU smoke overrides it with a tiny model. Returns the adapter output dir.
+    CPU smoke overrides it with a tiny model. Returns
+    ``(adapter output dir, trainability gate record)`` — the record is the
+    #2242 absolute per-cell trainability verdict, computed on the full realized
+    row count BEFORE the smoke slice and the model load (a below-floor
+    production cell raises pre-GPU; a smoke run demotes the verdict to a
+    WARNING log per the GATE-CALIBRATION parity rule).
     """
     import torch
     from datasets import load_dataset
@@ -148,6 +239,15 @@ def train_single_cell(
         tokenizer.pad_token = tokenizer.eos_token
 
     ds = load_dataset("json", data_files=str(data_path), split="train")
+    # #2242 absolute per-cell trainability floor: gate on the FULL realized row
+    # count, before the smoke slice and any model download / GPU allocation.
+    trainability_record = _gate_cell_trainability(
+        len(ds),
+        cell,
+        smoke=max_steps is not None,
+        override_floor_rows=trainability_floor_override,
+        override_reason=trainability_override_reason,
+    )
     if max_steps is not None:
         # smoke: take a small slice deterministically
         ds = ds.select(range(min(len(ds), max_steps * PER_DEVICE_BATCH * GRAD_ACCUM + 4)))
@@ -203,12 +303,14 @@ def train_single_cell(
     if not cpu_only:
         os.environ.setdefault("WANDB_PROJECT", "issue778")
 
+    callbacks = [make_checkpoint_callback(save_fracs, out_dir)] if save_fracs else None
     trainer = SFTTrainer(
         model=model,
         args=sft_config,
         train_dataset=ds,
         processing_class=tokenizer,
         peft_config=peft_config,
+        callbacks=callbacks,
     )
     trainer.train()
 
@@ -216,7 +318,7 @@ def train_single_cell(
     trainer.model.save_pretrained(str(out_dir))
     tokenizer.save_pretrained(str(out_dir))
     logger.info("[%s] adapter saved to %s", cell, out_dir)
-    return out_dir
+    return out_dir, trainability_record
 
 
 def run_wave_dispatch(
@@ -229,6 +331,9 @@ def run_wave_dispatch(
     dry_run: bool,
     model_name: str = lib.MODEL_NAME,
     cpu_only: bool = False,
+    trainability_floor_override: int | None = None,
+    trainability_override_reason: str | None = None,
+    save_fracs: str | None = None,
 ) -> dict:
     """Fan out cells across visible GPUs, CUDA_VISIBLE_DEVICES-pinned per cell."""
     lib.log_phase("finetune", f"dispatch {len(cells)} cells, wave_size={wave_size}")
@@ -259,6 +364,12 @@ def run_wave_dispatch(
                 cmd += ["--max-steps", str(max_steps)]
             if cpu_only:
                 cmd += ["--cpu-only"]
+            if trainability_floor_override is not None:
+                cmd += ["--trainability-floor-override", str(trainability_floor_override)]
+            if trainability_override_reason is not None:
+                cmd += ["--trainability-override-reason", trainability_override_reason]
+            if save_fracs:
+                cmd += ["--save-fracs", save_fracs]
             env = {**os.environ, "CUDA_VISIBLE_DEVICES": str(gpu_id)}
             logger.info("[wave] launch cell=%s CUDA_VISIBLE_DEVICES=%d", cell, gpu_id)
             if dry_run:
@@ -296,6 +407,28 @@ def main() -> None:
         default=lib.MODEL_NAME,
         help="base model (default: Qwen-7B; override for CPU smoke)",
     )
+    parser.add_argument(
+        "--trainability-floor-override",
+        type=int,
+        default=None,
+        help="override the absolute per-cell trainability floor (rows); requires "
+        "--trainability-override-reason (#2242)",
+    )
+    parser.add_argument(
+        "--trainability-override-reason",
+        default=None,
+        help="recorded reason for --trainability-floor-override (lands in the "
+        "per-cell result JSON; an override is a recorded decision, never silent)",
+    )
+    parser.add_argument(
+        "--save-fracs",
+        default=None,
+        help=(
+            "OPT-IN adapter-only intermediate saves at these step fractions "
+            "(e.g. '0.1,0.25,0.5'; issue #2221's declared checkpoint override — "
+            "default off, #778 behavior unchanged)"
+        ),
+    )
     args = parser.parse_args()
 
     dataset_root = Path(args.dataset_root)
@@ -303,7 +436,7 @@ def main() -> None:
 
     if args.single_cell is not None:
         family, version = args.single_cell.split("/", 1)
-        out = train_single_cell(
+        out, trainability = train_single_cell(
             family,
             version,
             dataset_root,
@@ -312,8 +445,19 @@ def main() -> None:
             max_steps=args.max_steps,
             cpu_only=args.cpu_only,
             model_name=args.model,
+            trainability_floor_override=args.trainability_floor_override,
+            trainability_override_reason=args.trainability_override_reason,
+            save_fracs=parse_save_fracs(args.save_fracs),
         )
-        print(json.dumps({"cell": _cell_id(family, version), "adapter": str(out)}))
+        print(
+            json.dumps(
+                {
+                    "cell": _cell_id(family, version),
+                    "adapter": str(out),
+                    "trainability": trainability,
+                }
+            )
+        )
         return
 
     cells = all_cells()
@@ -334,6 +478,9 @@ def main() -> None:
         dry_run=args.dry_run,
         model_name=args.model,
         cpu_only=args.cpu_only,
+        trainability_floor_override=args.trainability_floor_override,
+        trainability_override_reason=args.trainability_override_reason,
+        save_fracs=args.save_fracs,
     )
     print(json.dumps({"phase": "finetune", **res}, indent=2))
 

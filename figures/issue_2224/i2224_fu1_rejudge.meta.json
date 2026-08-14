@@ -1,0 +1,329 @@
+{
+  "commit": "9af466a2",
+  "render_id": "9474fe535b9e4269",
+  "git_commit": "9af466a2",
+  "git_dirty": false,
+  "created": "2026-08-13T03:59:29Z",
+  "figsize": [
+    10.0,
+    4.4
+  ],
+  "points": [
+    {
+      "per-item completeness before re-judge": 0.938,
+      "completeness after re-judge": 0.938,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-item completeness before re-judge": 0.938,
+      "completeness after re-judge": 0.938,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-item completeness before re-judge": 0.944,
+      "completeness after re-judge": 0.944,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-item completeness before re-judge": 0.942,
+      "completeness after re-judge": 0.942,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-item completeness before re-judge": 0.936,
+      "completeness after re-judge": 0.936,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-item completeness before re-judge": 0.804,
+      "completeness after re-judge": 0.806,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-item completeness before re-judge": 0.94,
+      "completeness after re-judge": 0.94,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-item completeness before re-judge": 0.924,
+      "completeness after re-judge": 0.924,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-item completeness before re-judge": 0.938,
+      "completeness after re-judge": 0.938,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-item completeness before re-judge": 0.944,
+      "completeness after re-judge": 0.944,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-item completeness before re-judge": 0.624,
+      "completeness after re-judge": 0.624,
+      "label": "hallucination prompt-token bottom",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-item completeness before re-judge": 0.934,
+      "completeness after re-judge": 0.934,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-item completeness before re-judge": 0.894,
+      "completeness after re-judge": 0.894,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-item completeness before re-judge": 0.942,
+      "completeness after re-judge": 0.942,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-item completeness before re-judge": 0.93,
+      "completeness after re-judge": 0.93,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-item completeness before re-judge": 0.938,
+      "completeness after re-judge": 0.938,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-item completeness before re-judge": 0.942,
+      "completeness after re-judge": 0.942,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "contrast \u0394 before re-judge (graded points)": 0.0,
+      "contrast \u0394 after re-judge": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "contrast \u0394 before re-judge (graded points)": -0.0098,
+      "contrast \u0394 after re-judge": -0.0098,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "contrast \u0394 before re-judge (graded points)": -0.0107,
+      "contrast \u0394 after re-judge": -0.0107,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "contrast \u0394 before re-judge (graded points)": -1.4037,
+      "contrast \u0394 after re-judge": -1.4037,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "contrast \u0394 before re-judge (graded points)": -0.0107,
+      "contrast \u0394 after re-judge": -0.0107,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "contrast \u0394 before re-judge (graded points)": -1.6479,
+      "contrast \u0394 after re-judge": -1.6479,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "contrast \u0394 before re-judge (graded points)": 0.0,
+      "contrast \u0394 after re-judge": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "contrast \u0394 before re-judge (graded points)": -23.8687,
+      "contrast \u0394 after re-judge": -23.8125,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "contrast \u0394 before re-judge (graded points)": -3.8797,
+      "contrast \u0394 after re-judge": -3.8797,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "contrast \u0394 before re-judge (graded points)": -8.9293,
+      "contrast \u0394 after re-judge": -8.9376,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "contrast \u0394 before re-judge (graded points)": -13.1542,
+      "contrast \u0394 after re-judge": -13.1542,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "contrast \u0394 before re-judge (graded points)": -5.3329,
+      "contrast \u0394 after re-judge": -5.3866,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "contrast \u0394 before re-judge (graded points)": -5.6535,
+      "contrast \u0394 after re-judge": -5.6255,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "contrast \u0394 before re-judge (graded points)": -13.8793,
+      "contrast \u0394 after re-judge": -13.9322,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "contrast \u0394 before re-judge (graded points)": -29.6101,
+      "contrast \u0394 after re-judge": -29.5853,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "contrast \u0394 before re-judge (graded points)": 1.9667,
+      "contrast \u0394 after re-judge": 1.9667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "contrast \u0394 before re-judge (graded points)": 0.5642,
+      "contrast \u0394 after re-judge": 0.5626,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "contrast \u0394 before re-judge (graded points)": 0.8697,
+      "contrast \u0394 after re-judge": 0.8681,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "contrast \u0394 before re-judge (graded points)": 2.4434,
+      "contrast \u0394 after re-judge": 2.4391,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "contrast \u0394 before re-judge (graded points)": -1.0677,
+      "contrast \u0394 after re-judge": -1.0695,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "contrast \u0394 before re-judge (graded points)": -1.0197,
+      "contrast \u0394 after re-judge": -1.0197,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "contrast \u0394 before re-judge (graded points)": 1.9832,
+      "contrast \u0394 after re-judge": 1.9832,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "contrast \u0394 before re-judge (graded points)": -0.1976,
+      "contrast \u0394 after re-judge": -0.1902,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "contrast \u0394 before re-judge (graded points)": -0.0888,
+      "contrast \u0394 after re-judge": -0.0888,
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 41,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Completeness, 17 sub-floor LMSYS cells\n(diagonal = unchanged; dashed = 0.95 floor)",
+        "xlabel": "per-item completeness before re-judge",
+        "ylabel": "completeness after re-judge",
+        "annotations": [
+          "hallucination prompt-token bottom"
+        ],
+        "xticklabels": [
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80",
+          "0.85",
+          "0.90",
+          "0.95",
+          "1.00"
+        ],
+        "yticklabels": [
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80",
+          "0.85",
+          "0.90",
+          "0.95",
+          "1.00"
+        ]
+      },
+      {
+        "title_left": "The 24 affected paired contrasts\n(diagonal = unchanged)",
+        "xlabel": "contrast \u0394 before re-judge (graded points)",
+        "ylabel": "contrast \u0394 after re-judge",
+        "xticklabels": [
+          "\u221235",
+          "\u221230",
+          "\u221225",
+          "\u221220",
+          "\u221215",
+          "\u221210",
+          "\u22125",
+          "0",
+          "5"
+        ],
+        "yticklabels": [
+          "\u221235",
+          "\u221230",
+          "\u221225",
+          "\u221220",
+          "\u221215",
+          "\u221210",
+          "\u22125",
+          "0",
+          "5"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

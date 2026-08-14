@@ -174,6 +174,12 @@ Filter the output by size and extension to produce a candidate list of
   (RunningMean over per-context activations) that wrote the judge input
   here but not under `raw_completions/` has NOT persisted the generations
   — flag it (Step 3 generation-discard gate, #779).
+  Judge-REJECTED generations from an on-policy judge-filter step are the
+  same class: they persist under `raw_completions/<stage>/rejected/`
+  (single-stage runs omit `<stage>/`;
+  `.claude/rules/on-policy-completions.md` § The recipe) and are gated by
+  the verdict table's judge-filter reject row (#2069) — never silently
+  assumed-empty.
 
 For each file in the candidate list, you must decide one of three things:
 
@@ -438,6 +444,7 @@ against permanent storage.
 | Git-destination reconciliation (per-file, #537) | Yes (per git-destination dir produced) | PASS / FAIL | Step 2.9 `comm` diff of source `find` vs `git ls-tree origin/issue-<N>` per directory; FAIL names each dropped file + its `git check-ignore -v` rule, unless the file resolves at another verified permanent home (URL recorded) |
 | Out-root residue (top-level sweep, #2187) | Yes (if the run wrote an out-root) | PASS / FAIL / N/A | Step 2.10 name-set diff of recursive out-root find vs union of HF prefixes + issue-scoped git trees + declared discards; FAIL names each residue file + size; a matching count is not a matching set (#2162: 236 vs 235); N/A = Step 1 confirmed no out-root |
 | Model-generation text persisted (Step 3 generation-discard gate, #779) | Yes (if a stage produced generations) | PASS / FAIL / WARN | Every generation-producing stage persists its rollout text under `raw_completions/<stage>/`; a drop FAILs — undeclared → `generation-discarded-undeclared`; "declared" via a text-naming `discarded_artifacts:` entry → `generation-discard-declared-invalid`. Large-TENSOR discards PASS with a `{name, reason, regen_recipe}` entry + persisted regenerating text. WARN `generation-discard-spec-absent` for a legacy plan predating the §10 slot capability that also has a generation-discard |
+| Judge-rejected generations persisted (judge-filter reject gate, #2069) | Yes (if a judge-filter stage ran) | PASS / FAIL / WARN / N/A | Every judge-filtering stage persists its rejects (verdict + score + drop disposition per llm-judging rules 9/24/28) under `raw_completions/<stage>/rejected/` (single-stage: `raw_completions/rejected/`); manifest rejects > 0 with no persisted set → FAIL `judge-rejects-discarded`; persisted reject rows < manifest reject count (per stage, retry/escalation tranches included) → FAIL `judge-rejects-incomplete` (a matching count is not a matching set, #2162); no manifest reject count → WARN `judge-rejects-missing` — never silently assumed-empty; N/A = no judge-filter stage ran |
 
 **Auto-discovered files NOT covered by standard rows** (flag these
 explicitly so the next experimenter / analyzer knows about them):

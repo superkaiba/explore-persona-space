@@ -6,15 +6,22 @@ Step 2c, so a spawned `--auto` session would only auto-approve a plan if the
 LLM orchestrator read that deeply-nested step and chose to obey it over the
 always-loaded "ask before spending money" prior. It systematically did not
 (4/4 sessions asked the user instead). `_resolve_autonomous_plan_gate` moves
-the decision into code, keyed on `EPM_AUTONOMOUS_SESSION` +
-`EPM_PLAN_AUTOAPPROVE_GPU_HOURS`, so it no longer depends on LLM discretion.
+the decision into code, keyed on `EPM_AUTONOMOUS_SESSION`, so it no longer
+depends on LLM discretion.
 
-FAIL SAFE: a missing/None gpu_hours parks (never auto-approves on a blank
-estimate).
+As of #1771 the gate is GPU-HOUR-BLIND: an autonomous session auto-approves
+ANY plan carrying a parseable GPU-hour estimate, regardless of magnitude.
+`EPM_PLAN_AUTOAPPROVE_GPU_HOURS` is no longer read by the resolver; it
+survives inert in argv/registry plumbing for provenance only.
+
+FAIL SAFE (retained): a missing/None gpu_hours parks
+(`parked_no_estimate`) — a correctness guard against an unestimated plan,
+not a cost control.
 """
 
 from __future__ import annotations
 
+import argparse
 import importlib.util
 import json
 import re
@@ -55,6 +62,8 @@ def test_interactive_when_env_unset(monkeypatch):
     decision, cap, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
     assert decision == "interactive_pending"
     assert autonomous is False
+    # The cap rides the tuple for reporting compatibility only (#2164
+    # single-sourcing retained; the decision never consumes it, #1771).
     assert cap == AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS
 
 
@@ -80,10 +89,10 @@ def test_interactive_ignores_gpu_hours_when_not_autonomous(monkeypatch):
     assert decision == "interactive_pending"
 
 
-# ─── autonomous + under cap → auto_approved ───────────────────────────────
+# ─── autonomous + any finite gpu_hours → auto_approved ────────────────────
 
 
-def test_auto_approve_under_default_cap(monkeypatch):
+def test_auto_approve_any_finite_estimate(monkeypatch):
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
     decision, cap, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
@@ -92,17 +101,36 @@ def test_auto_approve_under_default_cap(monkeypatch):
     assert cap == AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS
 
 
-def test_auto_approve_at_cap_boundary(monkeypatch):
-    """gpu_hours == cap auto-approves (<= comparison)."""
+def test_auto_approve_large_estimate(monkeypatch):
+    """Under the GPU-hour-blind gate (#1771), a huge estimate that would
+    have parked pre-#1771 (over every historical cap) now auto-approves."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
-    decision, _cap, _autonomous = task_cli._resolve_autonomous_plan_gate(
-        AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS
-    )
+    decision, _cap, _autonomous = task_cli._resolve_autonomous_plan_gate(10000.0)
     assert decision == "auto_approved"
 
 
+def test_cap_env_var_is_inert_never_parks_on_gpu_hours(monkeypatch):
+    """DURABILITY PIN (#1771): even a small EPM_PLAN_AUTOAPPROVE_GPU_HOURS
+    with a gpu_hours estimate exceeding it MUST auto-approve — the decision
+    no longer consumes the cap (this is also the blind conversion of
+    #2164's test_park_over_custom_cap: identical inputs, opposite —
+    now-correct — expectation). If a future change re-introduces the cap
+    comparison, this test flips to parked_* and fails loud."""
+    _clear_env(monkeypatch)
+    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+    monkeypatch.setenv("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "4")
+    decision, cap, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
+    assert decision == "auto_approved"
+    assert autonomous is True
+    # The cap is still RESOLVED (single-sourced, #2164) and returned for
+    # reporting compatibility — just never consulted by the decision.
+    assert cap == 4.0
+
+
 def test_auto_approve_respects_custom_cap(monkeypatch):
+    """Custom cap env threads through the resolver into the returned tuple
+    (#2164 single-sourcing); the decision auto-approves regardless (#1771)."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
     monkeypatch.setenv("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "48")
@@ -111,56 +139,72 @@ def test_auto_approve_respects_custom_cap(monkeypatch):
     assert cap == 48.0
 
 
-# ─── autonomous + over cap / blank → parked_over_cap ──────────────────────
-
-
-def test_park_over_default_cap(monkeypatch):
-    """The historical 30-GPU-h-vs-24-cap shape, with the cap set EXPLICITLY.
-
-    Under the post-#2164 code default of
-    AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS (100), a bare 30.0 would
-    auto-approve and this test would silently stop covering the park
-    branch — so it pins the cap env itself to keep exercising that branch
-    regardless of the default's value."""
+def test_former_park_over_default_cap_now_auto_approves(monkeypatch):
+    """Blind conversion of #2164's test_park_over_default_cap: an explicit
+    cap env of 24 with a 30-GPU-h estimate parked pre-#1771; under the
+    GPU-hour-blind gate it auto-approves (the cap is inert)."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
     monkeypatch.setenv(PLAN_GATE_CAP_ENV, "24")
-    decision, _cap, autonomous = task_cli._resolve_autonomous_plan_gate(30.0)
-    assert decision == "parked_over_cap"
+    decision, cap, autonomous = task_cli._resolve_autonomous_plan_gate(30.0)
+    assert decision == "auto_approved"
     assert autonomous is True
+    assert cap == 24.0
 
 
-def test_park_over_code_default_when_env_unset(monkeypatch):
-    """With the cap env UNSET, an estimate just over the code default parks
-    (the env-less park branch #2164 realigned to the documented 100)."""
+def test_estimate_over_code_default_auto_approves(monkeypatch):
+    """Blind conversion of #2164's test_park_over_code_default_when_env_unset:
+    an estimate just over the code default (100) parked pre-#1771; under the
+    GPU-hour-blind gate it auto-approves, and the resolved cap in the tuple
+    still reads the code default."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
     decision, cap, autonomous = task_cli._resolve_autonomous_plan_gate(
         AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS + 1.0
     )
-    assert decision == "parked_over_cap"
+    assert decision == "auto_approved"
     assert autonomous is True
     assert cap == AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS
 
 
-def test_park_over_custom_cap(monkeypatch):
+# ─── autonomous + blank → parked_no_estimate (fail-safe) ──────────────────
+
+
+def test_auto_approve_at_former_default_cap(monkeypatch):
+    """Formerly test_park_over_default_cap (pre-#2164 shape): gpu_hours=30
+    exceeded the then-24h default cap and parked. Under #1771 it
+    auto-approves."""
+    _clear_env(monkeypatch)
+    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+    decision, _cap, autonomous = task_cli._resolve_autonomous_plan_gate(30.0)
+    assert decision == "auto_approved"
+    assert autonomous is True
+
+
+def test_auto_approve_at_former_custom_cap(monkeypatch):
+    """Formerly test_park_over_custom_cap: gpu_hours=8 vs custom cap=4
+    parked. Under #1771 it auto-approves — the cap is decision-inert."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
     monkeypatch.setenv("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "4")
     decision, _cap, _autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
-    assert decision == "parked_over_cap"
+    assert decision == "auto_approved"
 
 
 def test_park_when_gpu_hours_missing_fail_safe(monkeypatch):
-    """A blank/None estimate MUST park, never auto-approve (fail safe)."""
+    """A blank/None estimate MUST park, never auto-approve (fail safe).
+    The retained fail-safe — a correctness guard against an unestimated
+    plan, not a cost control."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
     decision, _cap, _autonomous = task_cli._resolve_autonomous_plan_gate(None)
-    assert decision == "parked_over_cap"
+    assert decision == "parked_no_estimate"
 
 
-def test_unparseable_cap_falls_back_to_default(monkeypatch):
-    """A garbage cap env value falls back to the code default, not a crash."""
+def test_garbage_cap_env_is_ignored(monkeypatch):
+    """A garbage cap env value never blocks the decision (#1771 — the
+    decision ignores the cap) and the resolved tuple cap falls back to the
+    code default rather than crashing (#2164 resolver semantics)."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
     monkeypatch.setenv("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "not-a-number")
@@ -197,29 +241,123 @@ def test_case_insensitive_truthiness(monkeypatch):
         assert autonomous is True, f"{truthy!r} should be truthy"
 
 
-# ─── #2164: decision cap == reported cap == spawn default ─────────────────
+# ─── cmd_set_status MAIN branch (regression: gate-main-2tuple-unpack-crash) ─
+#
+# The round-2 merge reconciliation converted the followups_running-hold
+# unpack to the #2164 3-tuple but left the MAIN (non-followups_running)
+# branch at the 2-tuple form, so EVERY standard Step-2c call
+# (`task.py set-status <N> plan_pending --auto-approve-if-autonomous
+# --gpu-hours <X>`) died with `ValueError: too many values to unpack
+# (expected 2)` BEFORE any decision branch ran. The resolver-level tests
+# above never call cmd_set_status, and the followup-hold tests
+# (test_task_workflow_post_marker_echo.py) pin only the :470 branch — the
+# main branch had zero coverage, which is how the crash shipped through a
+# green suite. Discrimination: both tests below were run against the
+# pre-fix tree (commit 6b526c151a) and FAILED with exactly that
+# ValueError; they pass after the 3-tuple fix.
 
 
-def test_decision_cap_equals_reported_cap(monkeypatch, tmp_path):
-    """A2 (#2164): with the cap env UNSET, the cap the gate DECIDES on, the
-    cap the watcher's park message REPORTS, and the `spawn-issue
-    --auto-approve-gpu-hours` argparse default are all the same number —
-    because all three read the one resolver/constant in task_workflow."""
+def _fake_set_status_recorder(moved):
+    def fake_set_status(number, status, *, note=None, force_followup_exit=False):
+        moved.append((number, status))
+        return Path("/tmp/tasks") / status / str(number)
+
+    return fake_set_status
+
+
+def _fake_post_event_recorder(posted):
+    def fake_post_event(number, marker, *, version, by, note):
+        posted.append((number, marker))
+        return {"kind": marker, "version": version}
+
+    return fake_post_event
+
+
+def test_cmd_set_status_main_branch_auto_approves(monkeypatch, capsys):
+    """MAIN-branch auto-approve outcome: a parseable estimate on a
+    non-followups_running task flips the status to `approved`, posts
+    epm:plan-approved, and prints the PLAN_GATE_DECISION line. Fails
+    pre-fix at the 2-tuple unpack (ValueError) before any of that runs."""
+    _clear_env(monkeypatch)
+    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+    moved: list[tuple[int, str]] = []
+    posted: list[tuple[int, str]] = []
+    monkeypatch.setattr(
+        task_cli, "get_task", lambda number: {"status": "planning", "frontmatter": {"tags": []}}
+    )
+    monkeypatch.setattr(task_cli, "set_status", _fake_set_status_recorder(moved))
+    monkeypatch.setattr(task_cli, "post_event", _fake_post_event_recorder(posted))
+
+    ns = argparse.Namespace(
+        number=537,
+        status="plan_pending",
+        note=None,
+        auto_approve_if_autonomous=True,
+        gpu_hours=8.0,
+    )
+    task_cli.cmd_set_status(ns)
+
+    assert moved == [(537, "approved")]
+    assert posted == [(537, "epm:plan-approved")]
+    out = capsys.readouterr().out
+    assert "PLAN_GATE_DECISION: auto_approved gpu_hours=8.0" in out
+
+
+def test_cmd_set_status_main_branch_parks_no_estimate(monkeypatch, capsys):
+    """MAIN-branch fail-safe outcome: a missing/None estimate parks the task
+    AT plan_pending, posts epm:awaiting-spend-approval, and prints the
+    parked_no_estimate PLAN_GATE_DECISION line. Fails pre-fix at the same
+    2-tuple unpack — the crash precedes the decision branch entirely."""
+    _clear_env(monkeypatch)
+    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+    moved: list[tuple[int, str]] = []
+    posted: list[tuple[int, str]] = []
+    monkeypatch.setattr(
+        task_cli, "get_task", lambda number: {"status": "planning", "frontmatter": {"tags": []}}
+    )
+    monkeypatch.setattr(task_cli, "set_status", _fake_set_status_recorder(moved))
+    monkeypatch.setattr(task_cli, "post_event", _fake_post_event_recorder(posted))
+
+    ns = argparse.Namespace(
+        number=537,
+        status="plan_pending",
+        note=None,
+        auto_approve_if_autonomous=True,
+        gpu_hours=None,  # missing estimate → fail-safe park
+    )
+    task_cli.cmd_set_status(ns)
+
+    assert moved == [(537, "plan_pending")]
+    assert posted == [(537, "epm:awaiting-spend-approval")]
+    out = capsys.readouterr().out
+    assert "PLAN_GATE_DECISION: parked_no_estimate gpu_hours=None" in out
+
+
+# ─── #2164 parity, adapted to the blind gate (#1771) ───────────────────────
+
+
+def test_decision_cap_equals_spawn_default_and_park_msg_names_no_cap(monkeypatch, tmp_path):
+    """Adapted #2164 A2 parity: with the cap env UNSET, the (decision-inert)
+    cap the gate resolver returns and the `spawn-issue
+    --auto-approve-gpu-hours` argparse default are the same single-sourced
+    number. The watcher's plan_pending park push no longer names a cap at
+    all — under the blind gate (#1771) the only park cause is a missing
+    estimate, so the message states that instead."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
 
-    # 1. Deciding site (scripts/task.py).
+    # 1. Deciding site (scripts/task.py) — cap rides the tuple, inert.
     _decision, decided_cap, _autonomous = task_cli._resolve_autonomous_plan_gate(1.0)
     assert decided_cap == resolve_plan_gate_cap() == AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS
 
-    # 2. Reporting site (watcher park push). Empty registry dir ⇒ the
-    # message degrades to the resolver default, not a hand-rolled literal.
+    # 2. Reporting site (watcher park push): blind-gate wording, no cap.
     import autonomous_session_watch as asw
 
     monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
     monkeypatch.setattr(asw, "_task_title", lambda _issue: "")
     msg = asw._gate_push_message(137, "plan_pending", [], True)
-    assert f"over {decided_cap:g} GPU-h cap" in msg
+    assert "no GPU-hour estimate" in msg
+    assert "GPU-h cap" not in msg
 
     # 3. Spawning site (argparse default). set_defaults(fn=...) resolves the
     # module global at parser-build time inside main(), so the monkeypatched
@@ -232,25 +370,23 @@ def test_decision_cap_equals_reported_cap(monkeypatch, tmp_path):
     assert captured["auto_approve_gpu_hours"] == decided_cap
 
 
-def test_reported_cap_prefers_registered_per_issue_cap(monkeypatch, tmp_path):
-    """A2 custom-cap clause (#2164): a session spawned with a custom cap
-    registers it, and the watcher's park message names THAT cap (the watcher
-    cron never sees the session's env — the per-issue registry entry is the
-    only faithful source of the cap the session decided against)."""
+def test_registered_per_issue_cap_still_preferred_by_respawn_plumbing(monkeypatch, tmp_path):
+    """Adapted #2164 A2 custom-cap clause: the per-issue registry entry's
+    ``auto_approve_gpu_hours`` is still what the watcher's respawn plumbing
+    reads back (``_stalled_cap_gpu_hours`` prefers the registry over the
+    resolver fallback) — retained provenance/plumbing, decision-inert under
+    the blind gate (#1771): the same 60-vs-50 inputs now auto-approve."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
     monkeypatch.setenv(PLAN_GATE_CAP_ENV, "50")
 
     decision, decided_cap, _autonomous = task_cli._resolve_autonomous_plan_gate(60.0)
-    assert decision == "parked_over_cap"
+    assert decision == "auto_approved"
     assert decided_cap == 50.0
 
-    # Drop the env before the reporting call — the watcher cron never sees
-    # the session's env, and with env == registry == 50 the assertion below
-    # could not discriminate. Env gone: the pre-fix hand-rolled env read AND
-    # an E4b→E4a-only regression (`cap = resolve_plan_gate_cap()`) both
-    # report the resolver default (100); only registry-preferring code
-    # reports 50.
+    # Drop the env before the registry read — the watcher cron never sees
+    # the session's env; only registry-preferring code returns 50 here
+    # (the resolver fallback would return the code default, 100).
     monkeypatch.delenv(PLAN_GATE_CAP_ENV, raising=False)
 
     import autonomous_session_watch as asw
@@ -258,17 +394,19 @@ def test_reported_cap_prefers_registered_per_issue_cap(monkeypatch, tmp_path):
     monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
     monkeypatch.setattr(asw, "_task_title", lambda _issue: "")
     (tmp_path / "issue-137.json").write_text(json.dumps({"auto_approve_gpu_hours": 50.0}))
+    assert asw._stalled_cap_gpu_hours(137) == 50.0
+    # The park push renders the blind-gate wording regardless of the entry.
     msg = asw._gate_push_message(137, "plan_pending", [], True)
-    assert f"over {decided_cap:g} GPU-h cap" in msg
+    assert "no GPU-hour estimate" in msg
 
 
-def test_reported_cap_falls_back_on_encoding_corrupt_registry_entry(monkeypatch, tmp_path):
-    """#2164 round 2: an encoding-corrupt ``issue-<N>.json`` raises
-    ``UnicodeDecodeError`` from ``read_text()`` — a ``ValueError``, OUTSIDE
-    the old ``(JSONDecodeError, OSError)`` except tuple. Round 1 wired
-    ``_stalled_cap_gpu_hours`` into ``_gate_push_message``, which the
-    watcher's gate-push pass invokes unwrapped in ``main()``, so a raise
-    here would kill an entire watcher tick. The helper must return the
+def test_stalled_cap_falls_back_on_encoding_corrupt_registry_entry(monkeypatch, tmp_path):
+    """#2164 round 2, retained: an encoding-corrupt ``issue-<N>.json``
+    raises ``UnicodeDecodeError`` from ``read_text()`` — a ``ValueError``,
+    OUTSIDE the old ``(JSONDecodeError, OSError)`` except tuple.
+    ``_stalled_cap_gpu_hours`` feeds the watcher's respawn plumbing and is
+    reachable from notification paths invoked unwrapped in ``main()``, so a
+    raise would kill an entire watcher tick. The helper must return the
     resolver fallback instead (asserted against a distinctive env value so
     a hardcoded literal cannot pass)."""
     _clear_env(monkeypatch)
@@ -282,9 +420,9 @@ def test_reported_cap_falls_back_on_encoding_corrupt_registry_entry(monkeypatch,
     # UnicodeDecodeError before json.loads is ever reached.
     (tmp_path / "issue-137.json").write_bytes(b'\xff\xfe{"auto_approve_gpu_hours": 50.0}')
     assert asw._stalled_cap_gpu_hours(137) == 37.0
-    # The notification path this helper now sits on survives too.
+    # The gate-push notification path survives too (blind-gate wording).
     msg = asw._gate_push_message(137, "plan_pending", [], True)
-    assert "over 37 GPU-h cap" in msg
+    assert "no GPU-hour estimate" in msg
 
 
 # ─── #2164: anti-drift source scan ─────────────────────────────────────────
@@ -528,7 +666,7 @@ def test_hook_truthiness_matches_python_resolver(monkeypatch):
     _clear_env(monkeypatch)
     for value in ("", "0", "false", "False", "FALSE", "no", "No", "1", "yes", "true"):
         monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", value)
-        _d, _c, py_autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
+        _d, _cap, py_autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
         hook_blocks = _run_ask_hook(_PLAN_APPROVAL_PAYLOAD, value) == 2
         assert hook_blocks == py_autonomous, (
             f"divergence on {value!r}: python_autonomous={py_autonomous} hook_blocks={hook_blocks}"

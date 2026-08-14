@@ -132,12 +132,134 @@ U_STORE_DEFAULT = Path("data/issue_1739/hf_dl/u_store")
 # tar streaming (reuses the committed #1739 ParallelRangeReader)
 # ---------------------------------------------------------------------------
 
+# OPT-IN materialize-then-read path (#2220 throughput fix). Default False keeps
+# stream_members BYTE-IDENTICAL for this driver's own phases (raw HTTP range
+# GETs via ParallelRangeReader). #2220 measured ~1 MB/s aggregate on that route
+# on pod-2220 (~43 h projected for the 154 GB of labeling tars) vs ~499 MB/s for
+# a plain hf_hub_download of the SAME tar with HF_HUB_ENABLE_HF_TRANSFER=1 (the
+# tar is plain LFS, xet=None -> hf_transfer Rust multipart). A caller opts in by
+# setting these module flags BEFORE calling stream_members; the yielded
+# (basename, ndarray-or-bytes) contract is identical on both paths.
+MATERIALIZE_TARS: bool = False
+MATERIALIZE_STAGING_DIR: Path | None = None
+
 
 def _slice_mod():
     """Import the committed range-reader module (tar_url / head_size / reader)."""
     import importlib
 
     return importlib.import_module("scripts.issue1739_map963k_slice")
+
+
+def _download_tar(behavior: str, revision: str, local_tar: Path) -> Path:
+    """Whole-tar hf_transfer-accelerated download (the #2220 fast path).
+
+    Rides the canonical ``orchestrate.hub.stage_hub_file`` (retry_transient,
+    atomic tempdir-in-parent + ``os.replace``, fail-loud). Returns the local
+    tar path (== ``local_tar``). Seam for tests: monkeypatch THIS function.
+    """
+    from explore_persona_space.orchestrate import hub
+
+    m = _slice_mod()
+    stem = f"{behavior}_labeling"
+    path_in_repo = f"issue1739_ctxmap/capture_store/{stem}/{stem}.tar"
+    return hub.stage_hub_file(
+        m.REPO, path_in_repo, local_tar, repo_type="dataset", revision=revision
+    )
+
+
+def _materialized_members(
+    behavior: str, revision: str, want: re.Pattern, *, staging_dir: Path | None = None
+):
+    """Materialize the whole labeling tar locally, then yield its members.
+
+    Same contract as the streaming branch of :func:`stream_members` — the same
+    ``want`` filter, ``np.load`` for ``.npy`` members / raw bytes otherwise,
+    and the same per-500-members elapsed log line. Memory is unchanged (one
+    member at a time); only the DISK materialization is new. The tar is
+    deleted in a ``finally`` (per-call reap -> peak disk = ONE tar, <=~70 GB,
+    under the ~130 GB pod quota).
+    """
+    import numpy as np
+    from huggingface_hub import constants as hf_constants
+
+    stem = f"{behavior}_labeling"
+    dest_dir = (
+        Path(staging_dir)
+        if staging_dir is not None
+        else Path("data/issue_2220/hf_dl/labeling_tars")
+    )
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    local_tar = dest_dir / f"{stem}.tar"
+    # Idempotent: never trust a pre-existing tar at the target (stale revision /
+    # prior-run leftover); stage_hub_file would short-circuit on an existing
+    # target, so remove it first and always download fresh.
+    local_tar.unlink(missing_ok=True)
+    # Sweep stale ``.hfstage-*`` temp dirs left by a prior download killed
+    # mid-transfer (stage_hub_file's atomic tempdir-in-parent; a SIGKILL/OOM
+    # abandons up to ~70 GB there that a fresh download beside it would stack
+    # toward the ~130 GB pod quota). Best-effort scratch reclaim: log, never
+    # fatal (a genuine un-removable dir surfaces later as a quota error).
+    import shutil
+
+    for _stale in dest_dir.glob(".hfstage-*"):
+        if not _stale.is_dir():
+            continue
+        try:
+            shutil.rmtree(_stale)
+            logger.info("[%s] swept stale download temp dir %s", behavior, _stale)
+        except OSError as _e:
+            logger.warning("[%s] could not sweep %s: %s", behavior, _stale, _e)
+    hf_transfer_on = bool(hf_constants.HF_HUB_ENABLE_HF_TRANSFER)
+    # FIX-ENGAGED signal (#2220): the relaunch probe keys on this substring.
+    logger.info(
+        "[%s] MATERIALIZE path engaged: hf_transfer=%s, downloading tar -> %s",
+        behavior,
+        hf_transfer_on,
+        local_tar,
+    )
+    if not hf_transfer_on:
+        logger.warning(
+            "[%s] HF_HUB_ENABLE_HF_TRANSFER is OFF — whole-tar download will crawl; "
+            "export HF_HUB_ENABLE_HF_TRANSFER=1 before any transitive "
+            "huggingface_hub import (#2220)",
+            behavior,
+        )
+    t0 = time.time()
+    try:
+        got = _download_tar(behavior, revision, local_tar)
+        dl_s = max(time.time() - t0, 1e-9)
+        size = got.stat().st_size
+        logger.info(
+            "[%s] tar materialized: %.2f GB in %.1f min (%.0f MB/s)",
+            behavior,
+            size / 1e9,
+            dl_s / 60,
+            (size / 1e6) / dl_s,
+        )
+        seen = 0
+        with tarfile.open(got, "r:") as tar:
+            for member in tar:
+                if not member.isfile():
+                    continue
+                name = member.name.rsplit("/", 1)[-1]
+                if not want.match(name):
+                    continue
+                fh = tar.extractfile(member)
+                if fh is None:
+                    raise RuntimeError(f"unreadable member {member.name}")
+                raw = fh.read()
+                seen += 1
+                if seen % 500 == 0:
+                    el = time.time() - t0
+                    logger.info("[%s] %d members, %.1f min elapsed", behavior, seen, el / 60)
+                if name.endswith(".npy"):
+                    yield name, np.load(io.BytesIO(raw), allow_pickle=False)
+                else:
+                    yield name, raw
+        logger.info("[%s] pass done: %d members, %.1f min", behavior, seen, (time.time() - t0) / 60)
+    finally:
+        local_tar.unlink(missing_ok=True)
 
 
 def stream_members(
@@ -147,7 +269,18 @@ def stream_members(
 
     ONE sequential pass over the whole tar; bytes TRANSFERRED are the tar,
     bytes RETAINED are only what the caller keeps (this driver keeps scalars).
+
+    When ``MATERIALIZE_TARS`` is True (#2220 opt-in; default False keeps this
+    function byte-identical), the tar is materialized whole via hf_transfer
+    and read locally instead — same yielded contract; ``workers`` /
+    ``window_mib`` apply only to the streaming branch.
     """
+    if MATERIALIZE_TARS:
+        yield from _materialized_members(
+            behavior, revision, want, staging_dir=MATERIALIZE_STAGING_DIR
+        )
+        return
+
     import numpy as np
 
     m = _slice_mod()

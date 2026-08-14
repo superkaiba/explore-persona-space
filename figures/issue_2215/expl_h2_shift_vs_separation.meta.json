@@ -1,0 +1,911 @@
+{
+  "commit": "f4ddc4de+dirty",
+  "render_id": "82432320dac5435a",
+  "git_commit": "f4ddc4de",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2215_figures.py"
+  ],
+  "created": "2026-08-10T11:59:14Z",
+  "figsize": [
+    9.0,
+    4.2
+  ],
+  "points": [
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.4391541005291004,
+      "noise-normalized answer-vector shift": 2.728636605078363,
+      "label": "conflict format fwd",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.4391541005291004,
+      "noise-normalized answer-vector shift": 2.728636605078363,
+      "label": "conflict format fwd",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.8924466490299824,
+      "noise-normalized answer-vector shift": 3.366000197856033,
+      "label": "conflict persona fwd",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.8924466490299824,
+      "noise-normalized answer-vector shift": 3.366000197856033,
+      "label": "conflict persona fwd",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.5110030864197532,
+      "noise-normalized answer-vector shift": 2.1776042642936644,
+      "label": "constraint knowledge",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": -0.0040810185185185125,
+      "noise-normalized answer-vector shift": 0.7894369970752407,
+      "label": "demo format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.07097123015873015,
+      "noise-normalized answer-vector shift": 0.9162834475463998,
+      "label": "demo persona",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.5318703703703704,
+      "noise-normalized answer-vector shift": 1.8132023146563916,
+      "label": "fact assistant animal",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.8134479717813052,
+      "noise-normalized answer-vector shift": 1.2792801237235463,
+      "label": "fact novel queried",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.7472222222222225,
+      "noise-normalized answer-vector shift": 1.0216684342831797,
+      "label": "fact user name",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.3608641975308642,
+      "noise-normalized answer-vector shift": 49.73382072236854,
+      "label": "icl task mapping",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.5611265432098764,
+      "noise-normalized answer-vector shift": 3.007457585733769,
+      "label": "instr format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.918891975308642,
+      "noise-normalized answer-vector shift": 3.745056582610075,
+      "label": "instr language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.6740248015873016,
+      "noise-normalized answer-vector shift": 2.3597453196295657,
+      "label": "language implied",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.771111111111111,
+      "noise-normalized answer-vector shift": 1.9770020368268062,
+      "label": "list numeric detail",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.7780308641975309,
+      "noise-normalized answer-vector shift": 2.0209272869892585,
+      "label": "load fact assistant animal l3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.6391882716049382,
+      "noise-normalized answer-vector shift": 2.039820668526357,
+      "label": "load fact assistant animal l5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.783333333333333,
+      "noise-normalized answer-vector shift": 1.1124361995615695,
+      "label": "load fact user name l3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.7840432098765433,
+      "noise-normalized answer-vector shift": 0.9915867290035666,
+      "label": "load fact user name l5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.557423611111111,
+      "noise-normalized answer-vector shift": 2.2250593776937038,
+      "label": "load instr format l3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.5302662037037034,
+      "noise-normalized answer-vector shift": 2.1237764741738703,
+      "label": "load instr format l5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.2556828703703704,
+      "noise-normalized answer-vector shift": 4.791677545394751,
+      "label": "persona prompted",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.061546516754850074,
+      "noise-normalized answer-vector shift": 0.8510475503374876,
+      "label": "persona role header",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.974888888888889,
+      "noise-normalized answer-vector shift": 6.392635736911401,
+      "label": "prior topic",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.6126172839506172,
+      "noise-normalized answer-vector shift": 6.320486150985853,
+      "label": "query content",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.8791635802469135,
+      "noise-normalized answer-vector shift": 3.1637172795213284,
+      "label": "reasoning style",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.6970833333333335,
+      "noise-normalized answer-vector shift": 0.9727007945742239,
+      "label": "recency fact user name d3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.6631635802469138,
+      "noise-normalized answer-vector shift": 0.8688386506709175,
+      "label": "recency fact user name d5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.1268121693121695,
+      "noise-normalized answer-vector shift": 1.99946280396163,
+      "label": "recency instr format d3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.5714953703703703,
+      "noise-normalized answer-vector shift": 2.039377903225427,
+      "label": "recency instr format d5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.8365380291005291,
+      "noise-normalized answer-vector shift": 3.3595082180793723,
+      "label": "recency persona prompted d3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.5752838403880072,
+      "noise-normalized answer-vector shift": 2.79466379691631,
+      "label": "recency persona prompted d5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.3197407407407407,
+      "noise-normalized answer-vector shift": 4.1973940950637685,
+      "label": "recency prior topic d3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.04622222222222223,
+      "noise-normalized answer-vector shift": 0.8212021492385038,
+      "label": "recency prior topic d5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.29553703703703704,
+      "noise-normalized answer-vector shift": 1.7295316244488057,
+      "label": "refusal boundary",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.10816402116402117,
+      "noise-normalized answer-vector shift": 0.8936783845949552,
+      "label": "user emotion",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.5211003086419752,
+      "noise-normalized answer-vector shift": 3.14540344587824,
+      "label": "user expertise",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.2559413580246914,
+      "noise-normalized answer-vector shift": 4.342602303647479,
+      "label": "verbosity",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.4391541005291004,
+      "per-type mean cosine margin": 0.0191182071919352,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.4391541005291004,
+      "per-type mean cosine margin": 0.0191182071919352,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 0.8924466490299824,
+      "per-type mean cosine margin": 0.061647259703532936,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 0.8924466490299824,
+      "per-type mean cosine margin": 0.061647259703532936,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 0.5110030864197532,
+      "per-type mean cosine margin": 0.008029174929555556,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": -0.0040810185185185125,
+      "per-type mean cosine margin": 0.0002493733272051706,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 0.07097123015873015,
+      "per-type mean cosine margin": 0.0038969757933255906,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.5318703703703704,
+      "per-type mean cosine margin": 0.004159938791072479,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.8134479717813052,
+      "per-type mean cosine margin": 0.0006122192412508468,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.7472222222222225,
+      "per-type mean cosine margin": 0.0011209972714322548,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 0.3608641975308642,
+      "per-type mean cosine margin": 0.03387389425304575,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.5611265432098764,
+      "per-type mean cosine margin": 0.023651198629662647,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.918891975308642,
+      "per-type mean cosine margin": 0.05272531700733552,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.6740248015873016,
+      "per-type mean cosine margin": 0.02906182207136488,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.771111111111111,
+      "per-type mean cosine margin": 0.0007304520163882737,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.7780308641975309,
+      "per-type mean cosine margin": 0.004286127578300105,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.6391882716049382,
+      "per-type mean cosine margin": 0.004011523733369083,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.783333333333333,
+      "per-type mean cosine margin": 0.0011316067771421049,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.7840432098765433,
+      "per-type mean cosine margin": 0.0009915352629411983,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.557423611111111,
+      "per-type mean cosine margin": 0.014488693674172683,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.5302662037037034,
+      "per-type mean cosine margin": 0.010403936888425367,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.2556828703703704,
+      "per-type mean cosine margin": 0.11374665928319644,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 0.061546516754850074,
+      "per-type mean cosine margin": 0.004805223929615384,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.974888888888889,
+      "per-type mean cosine margin": 0.05757482821732454,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.6126172839506172,
+      "per-type mean cosine margin": 0.14033445907120826,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 0.8791635802469135,
+      "per-type mean cosine margin": 0.04221262841075915,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.6970833333333335,
+      "per-type mean cosine margin": 0.0006008201065471527,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.6631635802469138,
+      "per-type mean cosine margin": 0.0003699219966009652,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.1268121693121695,
+      "per-type mean cosine margin": 0.01602908932357914,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 0.5714953703703703,
+      "per-type mean cosine margin": 0.010898941675395927,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 0.8365380291005291,
+      "per-type mean cosine margin": 0.06675268337186192,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 0.5752838403880072,
+      "per-type mean cosine margin": 0.04681927069850792,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.3197407407407407,
+      "per-type mean cosine margin": 0.02678359638512624,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 0.04622222222222223,
+      "per-type mean cosine margin": 0.0009021128577533818,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 0.29553703703703704,
+      "per-type mean cosine margin": 0.0054239047154114855,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 0.10816402116402117,
+      "per-type mean cosine margin": 0.00141103591185474,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 0.5211003086419752,
+      "per-type mean cosine margin": 0.04694877921807009,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.2559413580246914,
+      "per-type mean cosine margin": 0.06293574158043823,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.4391541005291004,
+      "per-type mean cosine margin": 0.01039352295998077,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.4391541005291004,
+      "per-type mean cosine margin": 0.01039352295998077,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 0.8924466490299824,
+      "per-type mean cosine margin": 0.016065987806217753,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 0.8924466490299824,
+      "per-type mean cosine margin": 0.016065987806217753,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 0.5110030864197532,
+      "per-type mean cosine margin": 0.004894409910690345,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": -0.0040810185185185125,
+      "per-type mean cosine margin": 0.00033493971936097836,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 0.07097123015873015,
+      "per-type mean cosine margin": 0.003563900953103232,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.5318703703703704,
+      "per-type mean cosine margin": 0.000741101716726248,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.8134479717813052,
+      "per-type mean cosine margin": 1.750264342563479e-05,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.7472222222222225,
+      "per-type mean cosine margin": 0.0005391985679245099,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 0.3608641975308642,
+      "per-type mean cosine margin": 0.019681071201551006,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.5611265432098764,
+      "per-type mean cosine margin": 0.02633155756759785,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.918891975308642,
+      "per-type mean cosine margin": 0.08124741385621251,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.6740248015873016,
+      "per-type mean cosine margin": 0.018031211600240737,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.771111111111111,
+      "per-type mean cosine margin": 4.7600918898353504e-05,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.7780308641975309,
+      "per-type mean cosine margin": 0.00028520804904152216,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.6391882716049382,
+      "per-type mean cosine margin": 0.00012128462057843823,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.783333333333333,
+      "per-type mean cosine margin": 0.00010397480124225361,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.7840432098765433,
+      "per-type mean cosine margin": 0.00010894257334902025,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.557423611111111,
+      "per-type mean cosine margin": 0.015210193291099485,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.5302662037037034,
+      "per-type mean cosine margin": 0.015917602029708842,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.2556828703703704,
+      "per-type mean cosine margin": 0.07011171339557538,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.974888888888889,
+      "per-type mean cosine margin": 0.049222741306340384,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 0.8791635802469135,
+      "per-type mean cosine margin": 0.040245685835209724,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.6970833333333335,
+      "per-type mean cosine margin": 1.727296585724014e-05,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.6631635802469138,
+      "per-type mean cosine margin": 5.3955852977790845e-05,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.1268121693121695,
+      "per-type mean cosine margin": 0.013213212710819896,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 0.5714953703703703,
+      "per-type mean cosine margin": 0.005004860520493533,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 0.8365380291005291,
+      "per-type mean cosine margin": 0.021534460195326937,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 0.5752838403880072,
+      "per-type mean cosine margin": 0.01115067118042362,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.3197407407407407,
+      "per-type mean cosine margin": 0.002455242515639113,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 0.04622222222222223,
+      "per-type mean cosine margin": 0.0001987554075000718,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 0.29553703703703704,
+      "per-type mean cosine margin": 0.0022471975954435016,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 0.10816402116402117,
+      "per-type mean cosine margin": 0.0013552696588573884,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 0.5211003086419752,
+      "per-type mean cosine margin": 0.01589467107870845,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent anchor separation (judge contrast)": 1.2559413580246914,
+      "per-type mean cosine margin": 0.03601623130474567,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 112,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Answer-vector shift vs behavioral separation",
+        "xlabel": "parent anchor separation (ceiling \u2212 floor judge contrast)",
+        "ylabel": "noise-normalized answer-vector shift",
+        "annotations": [
+          "conflict format fwd",
+          "conflict format rev",
+          "conflict persona fwd",
+          "conflict persona rev",
+          "constraint knowledge",
+          "demo format",
+          "demo persona",
+          "fact assistant animal",
+          "fact novel queried",
+          "fact user name",
+          "icl task mapping",
+          "instr format",
+          "instr language",
+          "language implied",
+          "list numeric detail",
+          "load fact assistant animal l3",
+          "load fact assistant animal l5",
+          "load fact user name l3",
+          "load fact user name l5",
+          "load instr format l3",
+          "load instr format l5",
+          "persona prompted",
+          "persona role header",
+          "prior topic",
+          "query content",
+          "reasoning style",
+          "recency fact user name d3",
+          "recency fact user name d5",
+          "recency instr format d3",
+          "recency instr format d5",
+          "recency persona prompted d3",
+          "recency persona prompted d5",
+          "recency prior topic d3",
+          "recency prior topic d5",
+          "refusal boundary",
+          "user emotion",
+          "user expertise",
+          "verbosity",
+          "Spearman rho = 0.12, 95% CI [-0.31, 0.50]"
+        ],
+        "xticklabels": [
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5"
+        ],
+        "yticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60"
+        ]
+      },
+      {
+        "title_left": "Discrimination margin vs behavioral separation",
+        "xlabel": "parent anchor separation (judge contrast)",
+        "ylabel": "per-type mean cosine margin",
+        "legend_labels": [
+          "single-turn context-end map",
+          "multi-turn prefix-end map"
+        ],
+        "xticklabels": [
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5"
+        ],
+        "yticklabels": [
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12",
+          "0.14",
+          "0.16"
+        ]
+      }
+    ],
+    "series": [
+      "single-turn context-end map",
+      "multi-turn prefix-end map"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

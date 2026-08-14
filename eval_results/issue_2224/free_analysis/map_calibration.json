@@ -1,0 +1,348 @@
+{
+  "meta": {
+    "script": "issue2224_free_analysis.calibration",
+    "issue": 2224,
+    "timestamp": "2026-08-12T11:41:53-0700",
+    "versions": {
+      "torch": "2.8.0+cu128",
+      "transformers": "4.57.6",
+      "datasets": "4.8.4",
+      "numpy": "2.2.6"
+    },
+    "git_commit": "537c8c2d",
+    "git_dirty": false,
+    "note": "affine fit of the frozen-map stand-in projections vs exact base-gen projections (exact_dp) at matched samples (all pool rows); both mapping arms reported (context primary, prefix companion). Scale ratios make the interpretation's off-scale claim precise; slope_exact_on_standin is the recovery direction"
+  },
+  "results": {
+    "lmsys/evil": {
+      "n_matched": 50000,
+      "exact_arm": "exact_dp",
+      "exact_quantiles": {
+        "p5": -3.11933815,
+        "p50": 0.9541925,
+        "p95": 7.795482899999993
+      },
+      "exact_mean": 1.4709171717799998,
+      "exact_std": 3.641655158164304,
+      "mapped_dp_context": {
+        "pearson_r": 0.04728804891281351,
+        "r2": 0.002236159569980643,
+        "slope_standin_on_exact": 0.9893716132852421,
+        "intercept_standin_on_exact": 108.27707414024705,
+        "slope_exact_on_standin": 0.002260181654651885,
+        "intercept_exact_on_standin": 1.2229021096785067,
+        "standin_quantiles": {
+          "p5": -25.779358499999997,
+          "p50": 110.722582,
+          "p95": 229.37557255
+        },
+        "standin_mean": 109.7323578355,
+        "standin_std": 76.19156048295447,
+        "quantile_ratios_standin_over_exact": {
+          "p5": 8.264368035892485,
+          "p50": 116.03799233383201,
+          "p95": 29.424164672338666
+        },
+        "scale_ratio_p95_minus_p5": 23.376922982168374,
+        "scale_ratio_std": 20.922233757399844
+      },
+      "mapped_dp_prefix": {
+        "pearson_r": 0.4681204515036683,
+        "r2": 0.21913675711599828,
+        "slope_standin_on_exact": 0.6884310596609764,
+        "intercept_standin_on_exact": 69.61103363407797,
+        "slope_exact_on_standin": 0.3183132922909,
+        "intercept_exact_on_standin": -21.009532143066036,
+        "standin_quantiles": {
+          "p5": 62.5450168,
+          "p50": 70.150984,
+          "p95": 80.73845755
+        },
+        "standin_mean": 70.62365870132,
+        "standin_std": 5.355520168798406,
+        "quantile_ratios_standin_over_exact": {
+          "p5": -20.05073313388611,
+          "p50": 73.51869145900852,
+          "p95": 10.357082246950997
+        },
+        "scale_ratio_p95_minus_p5": 1.6668565308269547,
+        "scale_ratio_std": 1.4706280348351357
+      }
+    },
+    "lmsys/hallucination": {
+      "n_matched": 50000,
+      "exact_arm": "exact_dp",
+      "exact_quantiles": {
+        "p5": -8.08048955,
+        "p50": -0.3967485,
+        "p95": 10.615505099999991
+      },
+      "exact_mean": -0.1226852203,
+      "exact_std": 5.953702536976745,
+      "mapped_dp_context": {
+        "pearson_r": 0.09026642137300389,
+        "r2": 0.008148026827488693,
+        "slope_standin_on_exact": 3.328571596037891,
+        "intercept_standin_on_exact": -109.50799525483578,
+        "slope_exact_on_standin": 0.0024479049323101725,
+        "intercept_exact_on_standin": 0.14637958387805222,
+        "standin_quantiles": {
+          "p5": -536.8649548,
+          "p50": -120.603659,
+          "p95": 271.92723509999996
+        },
+        "standin_mean": -109.91636179438001,
+        "standin_std": 219.5426034887245,
+        "quantile_ratios_standin_over_exact": {
+          "p5": 66.4396570873605,
+          "p50": 303.98012594880635,
+          "p95": 25.616042999216326
+        },
+        "scale_ratio_p95_minus_p5": 43.26018513810392,
+        "scale_ratio_std": 36.87497017615646
+      },
+      "mapped_dp_prefix": {
+        "pearson_r": 0.3234728002001658,
+        "r2": 0.10463465246933637,
+        "slope_standin_on_exact": 0.42257942949633787,
+        "intercept_standin_on_exact": 68.499423911882,
+        "slope_exact_on_standin": 0.2476094318979223,
+        "intercept_exact_on_standin": -17.070951535066843,
+        "standin_quantiles": {
+          "p5": 53.33343845,
+          "p50": 70.483861,
+          "p95": 78.33433085
+        },
+        "standin_mean": 68.44757966147999,
+        "standin_std": 7.777816928995822,
+        "quantile_ratios_standin_over_exact": {
+          "p5": -6.600273178993222,
+          "p50": -177.65375546473396,
+          "p95": 7.379237267758467
+        },
+        "scale_ratio_p95_minus_p5": 1.3372325392701165,
+        "scale_ratio_std": 1.3063831927594676
+      }
+    },
+    "lmsys/sycophancy": {
+      "n_matched": 50000,
+      "exact_arm": "exact_dp",
+      "exact_quantiles": {
+        "p5": -5.3499292999999986,
+        "p50": 0.651217,
+        "p95": 7.555123999999999
+      },
+      "exact_mean": 0.8186114902399998,
+      "exact_std": 3.951988272096182,
+      "mapped_dp_context": {
+        "pearson_r": 0.1445433597168448,
+        "r2": 0.02089278283823319,
+        "slope_standin_on_exact": 6.3121280802989626,
+        "intercept_standin_on_exact": 246.7466080324007,
+        "slope_exact_on_standin": 0.0033099427914719433,
+        "intercept_exact_on_standin": -0.015208738431464752,
+        "standin_quantiles": {
+          "p5": -9.211255949999986,
+          "p50": 257.5744595,
+          "p95": 520.8948067499998
+        },
+        "standin_mean": 251.91378860679998,
+        "standin_std": 172.58112855670254,
+        "quantile_ratios_standin_over_exact": {
+          "p5": 1.7217528369954325,
+          "p50": 395.52784939582347,
+          "p95": 68.94589774436527
+        },
+        "scale_ratio_p95_minus_p5": 41.07740203599158,
+        "scale_ratio_std": 43.66944349892097
+      },
+      "mapped_dp_prefix": {
+        "pearson_r": 0.22004884018260001,
+        "r2": 0.04842149206570744,
+        "slope_standin_on_exact": 0.45718904747400907,
+        "intercept_standin_on_exact": 125.0991180029259,
+        "slope_exact_on_standin": 0.10591131247180664,
+        "intercept_exact_on_standin": -12.470438676294851,
+        "standin_quantiles": {
+          "p5": 113.45945185,
+          "p50": 124.09301099999999,
+          "p95": 141.259409
+        },
+        "standin_mean": 125.47337821040001,
+        "standin_std": 8.21093059272111,
+        "quantile_ratios_standin_over_exact": {
+          "p5": -21.207654435732454,
+          "p50": 190.5555460007954,
+          "p95": 18.697166188139338
+        },
+        "scale_ratio_p95_minus_p5": 2.1541915793559734,
+        "scale_ratio_std": 2.0776707893330704
+      }
+    },
+    "ultrachat/evil": {
+      "n_matched": 50000,
+      "exact_arm": "exact_dp",
+      "exact_quantiles": {
+        "p5": -1.8954248,
+        "p50": 1.2104080000000002,
+        "p95": 4.45651875
+      },
+      "exact_mean": 1.2469028737200003,
+      "exact_std": 2.030376944892652,
+      "mapped_dp_context": {
+        "pearson_r": 0.07140319735163897,
+        "r2": 0.005098416592037102,
+        "slope_standin_on_exact": 3.0064352143296,
+        "intercept_standin_on_exact": 127.22776361009943,
+        "slope_exact_on_standin": 0.0016958345111634107,
+        "intercept_exact_on_standin": 1.0247884111118206,
+        "standin_quantiles": {
+          "p5": -48.86394094999999,
+          "p50": 152.051352,
+          "p95": 241.34963534999991
+        },
+        "standin_mean": 130.9764963185,
+        "standin_std": 85.48912334313142,
+        "quantile_ratios_standin_over_exact": {
+          "p5": 25.779941757647148,
+          "p50": 125.61991659010845,
+          "p95": 54.156539866459646
+        },
+        "scale_ratio_p95_minus_p5": 45.68894134772339,
+        "scale_ratio_std": 42.10505027560354
+      },
+      "mapped_dp_prefix": {
+        "pearson_r": 0.20092577706336825,
+        "r2": 0.04037116788851836,
+        "slope_standin_on_exact": 0.5890680761281453,
+        "intercept_standin_on_exact": 67.3739706741391,
+        "slope_exact_on_standin": 0.06853395986737545,
+        "intercept_exact_on_standin": -3.4208410538228065,
+        "standin_quantiles": {
+          "p5": 59.517092749999996,
+          "p50": 67.57569000000001,
+          "p95": 80.23494265
+        },
+        "standin_mean": 68.10848135108,
+        "standin_std": 5.95259731341315,
+        "quantile_ratios_standin_over_exact": {
+          "p5": -31.400397815835266,
+          "p50": 55.82885275047752,
+          "p95": 18.003950426552116
+        },
+        "scale_ratio_p95_minus_p5": 3.2616552299177783,
+        "scale_ratio_std": 2.931769555592481
+      }
+    },
+    "ultrachat/hallucination": {
+      "n_matched": 50000,
+      "exact_arm": "exact_dp",
+      "exact_quantiles": {
+        "p5": -4.4098182,
+        "p50": -0.595925,
+        "p95": 2.4258240999999994
+      },
+      "exact_mean": -0.8108749210999999,
+      "exact_std": 2.6803202092601937,
+      "mapped_dp_context": {
+        "pearson_r": -0.08704711328947808,
+        "r2": 0.007577199932031231,
+        "slope_standin_on_exact": -4.1455130059115035,
+        "intercept_standin_on_exact": -381.5398134330674,
+        "slope_exact_on_standin": -0.001827807540641204,
+        "intercept_exact_on_standin": -1.502112107750754,
+        "standin_quantiles": {
+          "p5": -565.43742615,
+          "p50": -381.2740595,
+          "p95": -152.0690882500001
+        },
+        "standin_mean": -378.17832090147994,
+        "standin_std": 127.64699330745833,
+        "quantile_ratios_standin_over_exact": {
+          "p5": 128.222389337955,
+          "p50": 639.8020883500441,
+          "p95": -62.68759892772116
+        },
+        "scale_ratio_p95_minus_p5": 60.472493989335845,
+        "scale_ratio_std": 47.62378497406872
+      },
+      "mapped_dp_prefix": {
+        "pearson_r": 0.4813755082472714,
+        "r2": 0.23172237994031883,
+        "slope_standin_on_exact": 0.7392324345322613,
+        "intercept_standin_on_exact": 76.24613053300592,
+        "slope_exact_on_standin": 0.3134634914753677,
+        "intercept_exact_on_standin": -24.523355342911465,
+        "standin_quantiles": {
+          "p5": 68.48876444999999,
+          "p50": 76.5051125,
+          "p95": 80.72063565
+        },
+        "standin_mean": 75.64670549098001,
+        "standin_std": 4.116079027019473,
+        "quantile_ratios_standin_over_exact": {
+          "p5": -15.530972331240319,
+          "p50": -128.38043797457732,
+          "p95": 33.275551862973096
+        },
+        "scale_ratio_p95_minus_p5": 1.789425289266528,
+        "scale_ratio_std": 1.535666900096078
+      }
+    },
+    "ultrachat/sycophancy": {
+      "n_matched": 50000,
+      "exact_arm": "exact_dp",
+      "exact_quantiles": {
+        "p5": -2.8816934999999995,
+        "p50": 0.787342,
+        "p95": 4.989052149999999
+      },
+      "exact_mean": 0.9000470691,
+      "exact_std": 2.5584994813498945,
+      "mapped_dp_context": {
+        "pearson_r": 0.027393838348484596,
+        "r2": 0.0007504223794629053,
+        "slope_standin_on_exact": 1.445388247469635,
+        "intercept_standin_on_exact": 356.5045627678533,
+        "slope_exact_on_standin": 0.0005191839499017863,
+        "intercept_exact_on_standin": 0.7142802065809539,
+        "standin_quantiles": {
+          "p5": 121.5777353,
+          "p50": 374.6272725,
+          "p95": 549.5185111999999
+        },
+        "standin_mean": 357.80548022369993,
+        "standin_std": 134.99477636016877,
+        "quantile_ratios_standin_over_exact": {
+          "p5": -42.18968301104889,
+          "p50": 475.8126360590442,
+          "p95": 110.14487214770845
+        },
+        "scale_ratio_p95_minus_p5": 54.37105897330071,
+        "scale_ratio_std": 52.763261178753076
+      },
+      "mapped_dp_prefix": {
+        "pearson_r": 0.29751531824567246,
+        "r2": 0.08851536459082376,
+        "slope_standin_on_exact": 0.7730053919400525,
+        "intercept_standin_on_exact": 120.24816262216585,
+        "slope_exact_on_standin": 0.11450808172071363,
+        "intercept_exact_on_standin": -12.949007357674919,
+        "standin_quantiles": {
+          "p5": 110.98807025,
+          "p50": 120.901285,
+          "p95": 132.6724982
+        },
+        "standin_mean": 120.94390385957999,
+        "standin_std": 6.647502743795489,
+        "quantile_ratios_standin_over_exact": {
+          "p5": -38.51487684238453,
+          "p50": 153.5562500158762,
+          "p95": 26.592726275671428
+        },
+        "scale_ratio_p95_minus_p5": 2.75506653553212,
+        "scale_ratio_std": 2.598203670648465
+      }
+    }
+  }
+}

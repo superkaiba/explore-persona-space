@@ -536,6 +536,30 @@ def test_all_comment_registry_does_not_crash(repo: Path, tmp_path: Path) -> None
     assert cone == "true"
 
 
+# --- #2218: real-registry content pin ----------------------------------------
+
+
+def test_real_registry_pins_external_jacobian_lens() -> None:
+    """#2218 content pin: the REAL tests/sparse_cones.txt registers the
+    external/jacobian-lens cone (tests/test_issue1776_{p3p4,patch}.py hard-read
+    external/jacobian-lens/VENDOR_INFO.txt via scripts/issue1776_* — 10 nodes
+    FileNotFoundError in any sparse worktree without it; the #2059 Step 10d
+    TG-leg false-block). Resolved ``Path(__file__)``-relative (the
+    test_step10d_guard3.py precedent) so the CURRENT worktree's registry is
+    read — NEVER ``repo_root()``, which points at the main checkout and would
+    be red at this issue's own pre-merge Step 9c gate."""
+    registry = Path(__file__).resolve().parents[1] / "tests" / "sparse_cones.txt"
+    rows = [
+        line.strip()
+        for line in registry.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    ]
+    assert "external/jacobian-lens" in rows, (
+        "external/jacobian-lens missing from tests/sparse_cones.txt — sparse-worktree "
+        "gates would FileNotFoundError on the test_issue1776_* fixture reads (#2218)"
+    )
+
+
 # --- #681 item: data-disk bind assertion + migration LOCK refusal -----------
 
 
@@ -1005,6 +1029,55 @@ def test_reuse_repair_preserves_non_inferable_prior_cones(repo: Path, tmp_path: 
     assert "eval_results/issue_99" in cones, "repair must be additive, never a cone reset"
     assert "eval_results/issue_7" in cones
     assert "ood_eval_results/issue_7" in cones
+
+
+# --- #2218: reuse-path registry-cone self-heal -------------------------------
+
+
+def test_reuse_path_repairs_missing_registry_cone(repo: Path, tmp_path: Path) -> None:
+    """#2218: the reuse path idempotently re-adds tests/sparse_cones.txt cones
+    (the registry sibling of the #906/#1054 own-issue repair) — an EXISTING
+    sparse worktree self-heals on its next new_worktree.sh invocation (every
+    /issue resume) instead of false-blocking until recreated."""
+    _seed_cone_registry(repo, "external/jlens", "eval_results/issue_777")
+    wt = tmp_path / "wt-reg-reuse"
+    _run_helper(repo, wt, "issue-2", "--issue", "2")
+    # Simulate the broken state: drop the registry cones (a pre-registry-row
+    # worktree looks exactly like this on its next reuse).
+    _git(wt, "sparse-checkout", "set", "src", "figures")
+    cones = _git(wt, "sparse-checkout", "list").stdout.split()
+    assert "external/jlens" not in cones, "broken-state precondition failed"
+    res = _run_helper(repo, wt, "issue-2", "--issue", "2")
+    assert res.returncode == 0, f"reuse must stay exit-0: {res.stderr}"
+    assert "reusing as-is" in res.stdout
+    cones = _git(wt, "sparse-checkout", "list").stdout.split()
+    assert "external/jlens" in cones, "reuse must re-add registry cones"
+    assert "eval_results/issue_777" in cones, "reuse must re-add ALL registry cones"
+    assert (wt / "external/jlens/ref.json").is_file(), (
+        "registry cone must MATERIALIZE on reuse — the gate reads the fixture file"
+    )
+    # The own-issue repair still runs alongside (ordering: _ensure_issue_cones
+    # then _ensure_registry_cones on the same reuse invocation).
+    assert "eval_results/issue_2" in cones
+
+
+def test_reuse_registry_whitespace_degrades_to_warn(repo: Path, tmp_path: Path) -> None:
+    """#2218: a whitespace-bearing registry line stays FATAL at creation
+    (item 19) but DEGRADES to WARN+skip on the reuse path — a bad registry row
+    must never fail /issue resumes fleet-wide (the exit-0 reuse contract)."""
+    wt = tmp_path / "wt-reg-ws-reuse"
+    _run_helper(repo, wt, "issue-2", "--issue", "2")  # created before the bad row lands
+    (repo / "tests").mkdir(parents=True, exist_ok=True)
+    (repo / "tests/sparse_cones.txt").write_text("# reg\neval_results/bad dir\n")
+    _git(repo, "add", "tests/sparse_cones.txt")
+    _git(repo, "commit", "-q", "-m", "bad registry post-creation")
+    res = _run_helper(repo, wt, "issue-2", "--issue", "2")
+    assert res.returncode == 0, f"reuse must stay exit-0 on a bad registry: {res.stderr}"
+    assert "reusing as-is" in res.stdout
+    assert "whitespace/quoting" in res.stderr, f"degraded guard must WARN: {res.stderr}"
+    # Skip means skip: the junk cone must NOT have been added.
+    cones = _git(wt, "sparse-checkout", "list").stdout
+    assert "eval_results/bad" not in cones
 
 
 # --- items 30-35: #1214 branch base = fetched origin/main -----------------

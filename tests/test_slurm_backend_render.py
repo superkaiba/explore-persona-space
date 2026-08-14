@@ -55,6 +55,7 @@ from explore_persona_space.backends.slurm import (
     pending_transfers_from_itemize,
     render_secrets_env,
     resolve_branch_tip_sha,
+    scratch_dir_for,
     time_budget_hours,
     validate_extra_sync_paths,
     verify_rsync_complete,
@@ -239,30 +240,209 @@ def test_default_gpus_unknown_intent_raises_instead_of_silent_default() -> None:
         default_gpus_for_intent(spec)
 
 
-@pytest.mark.parametrize("intent", ["cpu-small", "cpu-mid", "cpu-bigmem"])
-def test_cpu_intents_deliberately_absent_from_slurm_intent_tables(intent: str) -> None:
-    """#1464 (AC4): the CPU-only intents are DELIBERATELY absent from every
-    SLURM intent table — the lane serves GPU intents only (render_sbatch
-    scales --cpus-per-task / --mem from the GPU count, so a 0-GPU row would
-    render an invalid 0-CPU / 0G script). The router excludes the free lanes
-    for CPU-only intents at candidate assembly (router._is_cpu_only_intent);
-    an explicit SLURM pin keeps the loud fail-fast ValueErrors below. This
-    pins the design decision NOT to add 0-rows (the task body's half-fix
-    diff sketch must never be applied silently later)."""
+@pytest.mark.parametrize(
+    ("intent", "time_h", "time_str", "vcpu", "mem_gb"),
+    [
+        ("cpu-small", 4.0, "04:00:00", 2, 8),
+        ("cpu-mid", 8.0, "08:00:00", 8, 16),
+        ("cpu-bigmem", 12.0, "12:00:00", 16, 128),
+    ],
+)
+def test_cpu_intents_resolve_in_slurm_intent_tables_fellows_only(
+    intent: str, time_h: float, time_str: str, vcpu: int, mem_gb: int
+) -> None:
+    """#2059 (supersedes the #1464 deliberately-absent pin): the CPU-only
+    intents now resolve in BOTH SLURM intent-default tables (0 GPUs; 4/8/12h)
+    and render a valid 0-GPU workload_cmd sbatch on fellows — the ONLY
+    cluster whose ClusterConfig declares ``supports_cpu_jobs`` (it has
+    /workspace + sentinel drain, #1898; nibi/mila stay excluded, #608). A
+    0-GPU render on any other cluster raises the supports_cpu_jobs
+    ValueError, and the hydra path (no workload_cmd) still fails fast at
+    stages_for_spec (no canonical CPU Hydra chain)."""
     from explore_persona_space.backends.slurm import (
         _DEFAULT_GPUS_FOR_INTENT,
         _DEFAULT_TIME_BUDGETS_HOURS,
     )
 
-    assert intent not in _DEFAULT_GPUS_FOR_INTENT
-    assert intent not in _DEFAULT_TIME_BUDGETS_HOURS
-    spec = RunSpec(issue=1, intent=intent, backend="cluster", cluster="nibi")
-    with pytest.raises(ValueError, match="no default GPU count"):
-        default_gpus_for_intent(spec)
-    with pytest.raises(ValueError, match="no default time budget"):
-        time_budget_hours(spec)
+    # (1) Both tables resolve — 0 GPUs, the per-intent time bin.
+    assert _DEFAULT_GPUS_FOR_INTENT[intent] == 0
+    assert _DEFAULT_TIME_BUDGETS_HOURS[intent] == time_h
+    spec = RunSpec(
+        issue=2059,
+        intent=intent,
+        backend="cluster",
+        cluster="fellows",
+        workload_cmd="bash scripts/issue2059_cpu_probe.sh",
+    )
+    assert default_gpus_for_intent(spec) == 0
+    assert time_budget_hours(spec) == time_h
+
+    # (2) Fellows workload_cmd render: full-script asserts on the 0-GPU shape.
+    plan = stages_for_spec(spec)
+    assert [s.name for s in plan.stages] == ["workload"]
+    assert plan.stages[0].backend == "custom"
+    script = render_sbatch(
+        spec=spec,
+        cluster=get_cluster_config("fellows"),
+        plan=plan,
+        scratch_dir="/workspace/superkaiba/eps/issue-2059",
+    )
+    # NO gres token in any form — omission is the canonical no-GPU request
+    # (never ``--gpus-per-node=0``).
+    assert "--gpus-per-node" not in script
+    assert "--gres" not in script
+    # CPU resource lines come from _CPU_SBATCH_RESOURCES, not GPU-scaled.
+    assert f"#SBATCH --cpus-per-task={vcpu}" in script
+    assert f"#SBATCH --mem={mem_gb}G" in script
+    # Fellows partition/QoS threading untouched (#1609/#1899 defaults).
+    assert "#SBATCH --partition=general" in script
+    assert "#SBATCH --qos=high-eur" in script
+    assert f"#SBATCH --time={time_str}" in script
+    # (3) The 0-GPU BODY carries NO unguarded SLURM_GPUS_ON_NODE read (SLURM
+    # sets none for a no-gres job — the ``:?`` expansion would kill a healthy
+    # CPU job; the skip-COMMENT may still name the variable) and NO hard
+    # nvidia-smi gate (the guarded `command -v` probe in _write_status is
+    # fine; the exit-4 preflight gate is not).
+    assert "${SLURM_GPUS_ON_NODE" not in script  # the :? expansion + reads
+    assert "$SLURM_GPUS_ON_NODE" not in script  # bare reads (open_instruct)
+    assert "[FAIL] nvidia-smi not available inside SLURM allocation" not in script
+    # The rest of the preflight is intact (tokens, SLURM_TMPDIR headroom).
+    assert "HF_TOKEN missing from secrets.env" in script
+    assert "SLURM_TMPDIR unset" in script
+
+    # (4) A 0-GPU render on a non-CPU-capable cluster raises loud.
+    nibi_spec = RunSpec(
+        issue=2059,
+        intent=intent,
+        backend="cluster",
+        cluster="nibi",
+        workload_cmd="bash scripts/issue2059_cpu_probe.sh",
+    )
+    with pytest.raises(ValueError, match="does not accept 0-GPU jobs"):
+        render_sbatch(
+            spec=nibi_spec,
+            cluster=_nibi(),
+            plan=stages_for_spec(nibi_spec),
+            scratch_dir="/scratch/tjiral/eps/issue-2059",
+        )
+
+    # (5) Hydra path (no workload_cmd) still fails fast at stages_for_spec.
+    hydra_spec = RunSpec(issue=2059, intent=intent, backend="cluster", cluster="fellows")
     with pytest.raises(ValueError, match="unsupported intent"):
-        stages_for_spec(spec)
+        stages_for_spec(hydra_spec)
+
+
+def test_cpu_sbatch_resources_mirror_runpod_caps() -> None:
+    """#2059: ``slurm._CPU_SBATCH_RESOURCES`` is a deliberate LITERAL mirror
+    of ``router.RUNPOD_CPU_INSTANCE_CAPS``' (vCPU, RAM) shapes — slurm.py
+    must not import router.py (dependency direction: router imports slurm),
+    so this test pins the mirror instead. Also pins keyset coherence with
+    the 0-GPU intent rows: an intent added to one surface without the other
+    fails HERE at the adding PR, not as a pod-side KeyError."""
+    from explore_persona_space.backends.router import (
+        RUNPOD_CPU_INSTANCE_CAPS,
+        RUNPOD_CPU_INSTANCE_FOR_INTENT,
+    )
+    from explore_persona_space.backends.slurm import (
+        _CPU_SBATCH_RESOURCES,
+        _DEFAULT_GPUS_FOR_INTENT,
+        _DEFAULT_TIME_BUDGETS_HOURS,
+    )
+
+    assert set(_CPU_SBATCH_RESOURCES) == set(RUNPOD_CPU_INSTANCE_FOR_INTENT)
+    for intent, instance_id in RUNPOD_CPU_INSTANCE_FOR_INTENT.items():
+        caps = RUNPOD_CPU_INSTANCE_CAPS[instance_id]
+        assert _CPU_SBATCH_RESOURCES[intent] == (caps.vcpu, caps.ram_gb), intent
+    # Keyset coherence: exactly the 0-GPU intents carry CPU resource rows.
+    zero_gpu_intents = {k for k, v in _DEFAULT_GPUS_FOR_INTENT.items() if v == 0}
+    assert set(_CPU_SBATCH_RESOURCES) == zero_gpu_intents
+    assert zero_gpu_intents <= set(_DEFAULT_TIME_BUDGETS_HOURS)
+
+
+# ---------------------------------------------------------------------------
+# #2275: spec.extra["min_ram_gb"] raises the rendered --mem (both branches);
+# above mem_gb_cap refuses pre-submit; absent/0 renders byte-identically.
+# ---------------------------------------------------------------------------
+
+
+def _min_ram_spec(intent: str, gpus: int | None, extra: dict | None = None) -> RunSpec:
+    """Fellows workload_cmd spec for the #2275 render pins (``gpus=None``
+    leaves the intent default; ``extra`` absent leaves RunSpec's default)."""
+    kwargs: dict = {}
+    if gpus is not None:
+        kwargs["gpus"] = gpus
+    if extra is not None:
+        kwargs["extra"] = extra
+    return RunSpec(
+        issue=2275,
+        intent=intent,
+        backend="cluster",
+        cluster="fellows",
+        workload_cmd="bash scripts/issue2275_probe.sh",
+        **kwargs,
+    )
+
+
+def _min_ram_render(spec: RunSpec) -> str:
+    return render_sbatch(
+        spec=spec,
+        cluster=get_cluster_config("fellows"),
+        plan=stages_for_spec(spec),
+        scratch_dir="/workspace/superkaiba/eps/issue-2275",
+    )
+
+
+def test_min_ram_gb_raises_gpu_branch_mem() -> None:
+    """#2275 pin 1 (the #1336 repro shape): fellows 8-GPU + min_ram_gb=1550
+    renders --mem=1550G instead of the GPU-count-derived
+    min(128*8, 1800) = 1024G that OOM-killed the 8-wide pooled fit."""
+    script = _min_ram_render(_min_ram_spec("lora-7b", 8, {"min_ram_gb": 1550}))
+    assert "#SBATCH --mem=1550G" in script
+    assert "#SBATCH --mem=1024G" not in script
+
+
+def test_min_ram_gb_below_formula_keeps_formula() -> None:
+    """#2275 pin 2 (max semantics): a requirement BELOW the GPU-scaled
+    formula never lowers the render — fellows 1-GPU + min_ram_gb=64 keeps
+    the formula's 128G."""
+    script = _min_ram_render(_min_ram_spec("lora-7b", 1, {"min_ram_gb": 64}))
+    assert "#SBATCH --mem=128G" in script
+
+
+def test_min_ram_gb_above_cap_raises_pre_submit_gpu_branch() -> None:
+    """#2275 pin 3 (D3 cap semantics): min_ram_gb above mem_gb_cap=1800 is a
+    pre-submit ValueError naming the cap + satisfying alternatives — never a
+    silent clamp below the declared requirement."""
+    with pytest.raises(ValueError) as ei:
+        _min_ram_render(_min_ram_spec("lora-7b", 8, {"min_ram_gb": 2000}))
+    msg = str(ei.value)
+    assert "mem_gb_cap" in msg
+    assert "fellows" in msg
+    assert "runpod" in msg
+
+
+def test_min_ram_gb_cpu_branch_raises_mem_and_caps() -> None:
+    """#2275 pin 4: the CPU branch honors min_ram_gb the same way —
+    cpu-bigmem's fixed 128G table row raises to 200G, and above-cap
+    refuses with the same ValueError shape."""
+    script = _min_ram_render(_min_ram_spec("cpu-bigmem", None, {"min_ram_gb": 200}))
+    assert "#SBATCH --mem=200G" in script
+    assert "#SBATCH --mem=128G" not in script
+    with pytest.raises(ValueError) as ei:
+        _min_ram_render(_min_ram_spec("cpu-bigmem", None, {"min_ram_gb": 2000}))
+    msg = str(ei.value)
+    assert "mem_gb_cap" in msg
+    assert "runpod" in msg
+
+
+def test_min_ram_gb_absent_or_zero_renders_byte_identical() -> None:
+    """#2275 pin 5 (the #1609 snapshot contract + #934 omit-when-absent
+    symmetry): absent key, empty extra, and min_ram_gb=0 all render the
+    FULL script byte-identically to the no-extra render."""
+    baseline = _min_ram_render(_min_ram_spec("lora-7b", 8))
+    assert baseline == _min_ram_render(_min_ram_spec("lora-7b", 8, {}))
+    assert baseline == _min_ram_render(_min_ram_spec("lora-7b", 8, {"min_ram_gb": 0}))
+    assert "#SBATCH --mem=1024G" in baseline  # the untouched legacy formula
 
 
 def test_capture_7b_in_slurm_intent_tables() -> None:
@@ -449,6 +629,115 @@ def test_compute_plan_hash_is_stable_and_short() -> None:
     h2 = compute_plan_hash(b"plan body v1")
     assert h1 == h2
     assert len(h1) == 8
+
+
+# ---------------------------------------------------------------------------
+# #2055 — lane_suffix threads into job_name + scratch_dir_for
+# ---------------------------------------------------------------------------
+
+
+def _lane_spec(lane: str | None) -> RunSpec:
+    """A lora spec carrying ``extra['lane_suffix']`` (omitted when None)."""
+    extra: dict[str, object] = {}
+    if lane is not None:
+        extra["lane_suffix"] = lane
+    return RunSpec(
+        issue=137,
+        intent="lora-7b",
+        backend="cluster",
+        cluster="nibi",
+        hydra_args=("condition=c1_evil_wrong_em", "seed=42"),
+        extra=extra,
+    )
+
+
+def test_job_name_lane_suffix_with_and_without_plan_hash() -> None:
+    """#2055 §6.1: the lane component lands after issue (+ plan hash)."""
+    spec = _lane_spec("cpu")
+    assert job_name(spec) == "eps-issue-137-cpu"
+    assert job_name(spec, plan_hash="abcdef1234567890") == "eps-issue-137-abcdef12-cpu"
+
+
+def test_job_name_lane_before_cluster_suffix() -> None:
+    """#2055 §6.2 / #1609 rule 8: the fellows-style per-cluster user
+    suffix stays TERMINAL — the lane component sits BEFORE it."""
+    import dataclasses
+
+    cluster = dataclasses.replace(_nibi(), job_name_suffix="-superkaiba")
+    spec = _lane_spec("b")
+    assert (
+        job_name(spec, plan_hash="abcdef1234567890", cluster=cluster)
+        == "eps-issue-137-abcdef12-b-superkaiba"
+    )
+    assert job_name(spec, cluster=cluster) == "eps-issue-137-b-superkaiba"
+
+
+def test_job_name_two_lanes_distinct() -> None:
+    """THE #1947 regression (#2055 §6.3): two specs identical except
+    ``lane_suffix`` resolve DISTINCT job names — the second lane's
+    by-name reconnect (``squeue --name``) cannot match the first lane's
+    job. Suffixed vs unsuffixed are distinct too."""
+    lane_a, lane_b, unsuffixed = _lane_spec("a"), _lane_spec("b"), _lane_spec(None)
+    plain = {job_name(lane_a), job_name(lane_b), job_name(unsuffixed)}
+    assert len(plain) == 3
+    hashed = {
+        job_name(lane_a, plan_hash="deadbeef" * 2),
+        job_name(lane_b, plan_hash="deadbeef" * 2),
+        job_name(unsuffixed, plan_hash="deadbeef" * 2),
+    }
+    assert len(hashed) == 3
+
+
+def test_job_name_unsuffixed_byte_identical_pin() -> None:
+    """#2055 acceptance 4: no ``lane_suffix`` in extra ⇒ names
+    byte-identical to the pre-#2055 shapes (plain / hashed / cluster-
+    suffixed / both)."""
+    import dataclasses
+
+    spec = _lane_spec(None)
+    assert job_name(spec) == "eps-issue-137"
+    assert job_name(spec, plan_hash="abcdef1234567890") == "eps-issue-137-abcdef12"
+    cluster = dataclasses.replace(_nibi(), job_name_suffix="-superkaiba")
+    assert job_name(spec, cluster=cluster) == "eps-issue-137-superkaiba"
+    assert (
+        job_name(spec, plan_hash="abcdef1234567890", cluster=cluster)
+        == "eps-issue-137-abcdef12-superkaiba"
+    )
+
+
+def test_job_name_malformed_lane_suffix_raises() -> None:
+    """#2055 §6.5: a malformed ``extra['lane_suffix']`` fails LOUD via
+    ``base.validate_lane_suffix`` — never a silently-normalized name."""
+    with pytest.raises(ValueError, match="lane_suffix"):
+        job_name(_lane_spec("Not_Valid"))
+    with pytest.raises(ValueError, match="lane_suffix"):
+        scratch_dir_for(_lane_spec("a" * 44), _nibi())
+
+
+def test_scratch_dir_for_lane_suffix_and_unsuffixed_pin() -> None:
+    """#2055 §6.6: suffixed → ``…/eps/issue-N-<lane>`` (lane-isolated
+    scratch — the second collision surface); unsuffixed → the legacy
+    ``…/eps/issue-N`` byte-identical pin."""
+    cluster = _nibi()
+    assert scratch_dir_for(_lane_spec(None), cluster) == "/scratch/tjiral/eps/issue-137"
+    assert scratch_dir_for(_lane_spec("cpu"), cluster) == "/scratch/tjiral/eps/issue-137-cpu"
+
+
+def test_render_sbatch_job_name_carries_lane_suffix() -> None:
+    """#2055 §6.7 end-to-end: the rendered ``#SBATCH --job-name`` line
+    carries the suffixed name (render consumes the same ``job_name``
+    root as launch/reconnect)."""
+    spec = _lane_spec("b")
+    cluster = _nibi()
+    plan = stages_for_spec(spec)
+    script = render_sbatch(
+        spec=spec,
+        cluster=cluster,
+        plan=plan,
+        scratch_dir="/scratch/tjiral/eps/issue-137-b",
+        plan_hash="deadbeef" * 8,
+    )
+    assert "#SBATCH --job-name=eps-issue-137-deadbeef-b" in script
 
 
 # ---------------------------------------------------------------------------

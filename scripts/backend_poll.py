@@ -227,6 +227,63 @@ GCP_STALENESS_FLOOR_SEC = 900  # 15 min
 GCP_WEDGE_ALARM_MIN_TICKS = 2  # consecutive alarmed ticks required (#1837)
 GCP_WEDGE_ALARM_MIN_SPAN_SEC = 480  # min first->latest alarm span; < the 540s tick cadence
 
+# ── Reachable-wedge arm (#1739) — the #667 remaining-gap closer ──────────────
+# A frozen non-terminal phase on a REACHABLE box (no transport alarm) with a
+# genuinely stale workload-log mtime and the run far past its declared time
+# budget escalates to the SAME terminal_workload_wedged phase (incident: GCE
+# leg newarma5syc sat futex-wedged ~21.6h — 6.5 CPU-min total, GPU 0%, log
+# stale, phase frozen non-terminal — while ~91 poll ticks read it healthy
+# `running`; the #669 transport arm REQUIRES reachability_alarm and never
+# fired). Both knobs are time/ratio floors (not dollar caps), env-overridable
+# at import like RUNPOD_WEDGE_K_SEC.
+#
+# Log-stale floor: the workload-log mtime must be OLDER than this for a tick
+# to count as reachable-wedge evidence. 1800s = 2x GCP_STALENESS_FLOOR_SEC so
+# a legitimately quiet long single-unit step does not qualify. Known FP
+# channel (named residual): dispatchers that route child output to inner logs
+# leave the canonical workload.log quiet on healthy runs (#1336
+# echo-on-failure convention; #1689's 5h14m of healthy log silence) — the
+# canonical log is the arm's real discriminator surface, absorbed by the 2.0
+# budget factor + the sustained bar.
+GCP_REACHABLE_WEDGE_LOG_STALE_SEC = int(
+    os.environ.get("EPM_GCP_REACHABLE_WEDGE_LOG_STALE_SEC", "1800")
+)
+
+# Budget-overrun factor: the run must be past factor x its declared
+# time_budget_hours before the arm can fire. The 2.0 default is LOAD-BEARING:
+# this fleet's realized walls routinely run 2-3x over declared budget (#1739's
+# own boxes; #833's mean-sized 36h fence hard-deleted healthy tail cells —
+# hence plan-compute-sizing.md's x2 dispersion default for every fence), and
+# ``gcp_launched_ts`` is the instance creationTimestamp (gcp.py `launch`), so
+# boot + staging hours ALSO count against the budget — a 1.0 factor would arm
+# a worse-than-status-quo kill path on healthy past-budget runs. A genuine
+# wedge is indefinite, so 2.0 still catches every wedge incl. the founding
+# incident (21.6h / 10h budget = 2.16x) with bounded extra latency on a box
+# the status quo leaks for 7 days.
+GCP_REACHABLE_WEDGE_BUDGET_FACTOR = float(
+    os.environ.get("EPM_GCP_REACHABLE_WEDGE_BUDGET_FACTOR", "2.0")
+)
+
+# The coarse-poll "mtime not read" sentinel: the #607 overlay writes a
+# truthful ``last_log_mtime_sec_ago`` onto running ticks only when the drain
+# actually read one; every other tick (control-plane failure, empty
+# ``log_path`` — the drain's mtime stanza is gated ``if log_path``) carries
+# 10**9. A tick at/above this value is UNKNOWN and NEVER counts as wedge
+# evidence (fail toward running).
+_GCP_LOG_MTIME_UNKNOWN = 10**9
+
+
+def _gcp_reachable_wedge_disabled() -> bool:
+    """Kill switch for the #1739 reachable arm (background-automation convention).
+
+    ``EPM_DISABLE_GCP_REACHABLE_WEDGE=1`` disables the reachable arm entirely
+    (read at CALL time so ops can flip it without restarting the poller); the
+    #669 transport arm is unaffected. Cheap insurance on a money path — the
+    arm triggers a PAID RunPod failover.
+    """
+    return os.environ.get("EPM_DISABLE_GCP_REACHABLE_WEDGE") == "1"
+
+
 # The async-failover accept-set (#669): the #659 crashed-workload phase PLUS
 # the two #669 wedge phases. ``terminal_terminated`` is DELIBERATELY EXCLUDED
 # (Consistency-checker Option 2) so spot preemption / max-run-duration / manual
@@ -1013,8 +1070,22 @@ def _write_phase_clock(
 #: sibling — which shares the PHASE clock — never reads or clobbers them.
 _WEDGE_ALARM_KEYS = ("wedge_alarm_streak", "wedge_alarm_first_ts", "wedge_alarm_incarnation")
 
+#: The #1739 reachable-wedge streak keys — a SEPARATE sidecar record from the
+#: transport streak above, same (streak, first_ts, incarnation) shape. Separate
+#: keys are LOAD-BEARING: the transport streak RESETS exactly when
+#: ``reachability_alarm`` is False — the reachable arm's ACTIVE regime — so
+#: sharing keys would conflate the two signals (a transport blip would wipe a
+#: maturing reachable streak and vice versa).
+_REACHABLE_WEDGE_KEYS = (
+    "reachable_wedge_streak",
+    "reachable_wedge_first_ts",
+    "reachable_wedge_incarnation",
+)
 
-def _read_wedge_alarm_streak(sidecar: Path, handle) -> tuple[int, float | None]:
+
+def _read_wedge_alarm_streak(
+    sidecar: Path, handle, keys: tuple[str, str, str] = _WEDGE_ALARM_KEYS
+) -> tuple[int, float | None]:
     """Read the persisted (streak, first_alarm_ts) wedge-alarm record (#1837).
 
     The keys live in the sidecar JSON's ``extra`` dict (round-trips via
@@ -1027,7 +1098,13 @@ def _read_wedge_alarm_streak(sidecar: Path, handle) -> tuple[int, float | None]:
     check. A missing / unreadable / malformed sidecar (or malformed values)
     also reads ``(0, None)`` — the streak can only ever fail toward
     ``running``, never toward a manufactured wedge (R6).
+
+    ``keys`` selects the (streak, first_ts, incarnation) record: the default
+    is the #1837 transport streak (:data:`_WEDGE_ALARM_KEYS` — existing
+    callers unchanged); the #1739 reachable arm passes
+    :data:`_REACHABLE_WEDGE_KEYS`.
     """
+    streak_key, first_key, inc_key = keys
     try:
         payload = json.loads(Path(sidecar).read_text())
     except (OSError, json.JSONDecodeError, ValueError):
@@ -1035,9 +1112,9 @@ def _read_wedge_alarm_streak(sidecar: Path, handle) -> tuple[int, float | None]:
     extra = payload.get("extra") if isinstance(payload, dict) else None
     if not isinstance(extra, dict):
         return 0, None
-    streak_raw = extra.get("wedge_alarm_streak")
-    first_raw = extra.get("wedge_alarm_first_ts")
-    stored_inc = extra.get("wedge_alarm_incarnation")
+    streak_raw = extra.get(streak_key)
+    first_raw = extra.get(first_key)
+    stored_inc = extra.get(inc_key)
     streak = int(streak_raw) if isinstance(streak_raw, (int, float)) else 0
     if streak <= 0:
         return 0, None
@@ -1049,7 +1126,9 @@ def _read_wedge_alarm_streak(sidecar: Path, handle) -> tuple[int, float | None]:
     return streak, first_ts
 
 
-def _bump_wedge_alarm_streak(sidecar: Path, handle, *, now: float) -> tuple[int, float | None]:
+def _bump_wedge_alarm_streak(
+    sidecar: Path, handle, *, now: float, keys: tuple[str, str, str] = _WEDGE_ALARM_KEYS
+) -> tuple[int, float | None]:
     """Increment the alarmed-tick streak, best-effort persisted (#1837).
 
     Reads the incarnation-checked record, bumps the streak (``first_ts`` set
@@ -1057,14 +1136,17 @@ def _bump_wedge_alarm_streak(sidecar: Path, handle, *, now: float) -> tuple[int,
     (write-temp + rename, mirroring :func:`_write_phase_clock` — every other
     sidecar field is preserved verbatim). The incarnation key mirrors
     ``_write_phase_clock``'s pop-on-None semantics: a degenerate handle (no
-    computable incarnation) POPs ``wedge_alarm_incarnation`` rather than
-    leaving a stale attribution. Returns ``(new_streak, first_ts)`` — the
-    bumped IN-MEMORY value even when the write fails (this tick's decision
-    proceeds; the next tick then re-reads stale state and UNDER-counts,
-    failing toward ``running`` — a write failure can never over-count into a
-    manufactured wedge, R6).
+    computable incarnation) POPs the incarnation key rather than leaving a
+    stale attribution. Returns ``(new_streak, first_ts)`` — the bumped
+    IN-MEMORY value even when the write fails (this tick's decision proceeds;
+    the next tick then re-reads stale state and UNDER-counts, failing toward
+    ``running`` — a write failure can never over-count into a manufactured
+    wedge, R6). ``keys`` selects the streak record (default: the #1837
+    transport streak; the #1739 reachable arm passes
+    :data:`_REACHABLE_WEDGE_KEYS`).
     """
-    streak, first_ts = _read_wedge_alarm_streak(sidecar, handle)
+    streak_key, first_key, inc_key = keys
+    streak, first_ts = _read_wedge_alarm_streak(sidecar, handle, keys)
     new_streak = streak + 1
     if first_ts is None:
         first_ts = float(now)
@@ -1077,12 +1159,12 @@ def _bump_wedge_alarm_streak(sidecar: Path, handle, *, now: float) -> tuple[int,
             if not isinstance(extra, dict):
                 extra = {}
                 payload["extra"] = extra
-            extra["wedge_alarm_streak"] = new_streak
-            extra["wedge_alarm_first_ts"] = float(first_ts)
+            extra[streak_key] = new_streak
+            extra[first_key] = float(first_ts)
             if incarnation is not None:
-                extra["wedge_alarm_incarnation"] = str(incarnation)
+                extra[inc_key] = str(incarnation)
             else:
-                extra.pop("wedge_alarm_incarnation", None)
+                extra.pop(inc_key, None)
             tmp = path.with_suffix(path.suffix + ".tmp")
             tmp.write_text(json.dumps(payload, sort_keys=True, indent=2))
             tmp.replace(path)
@@ -1098,14 +1180,18 @@ def _bump_wedge_alarm_streak(sidecar: Path, handle, *, now: float) -> tuple[int,
     return new_streak, first_ts
 
 
-def _reset_wedge_alarm_streak(sidecar: Path) -> None:
+def _reset_wedge_alarm_streak(
+    sidecar: Path, keys: tuple[str, str, str] = _WEDGE_ALARM_KEYS
+) -> None:
     """Drop the wedge-alarm streak keys from the sidecar ``extra`` (#1837).
 
     NO-OP — no file read-modify-write cycle is COMMITTED — when none of the
     keys are present, so a clean run never rewrites its sidecar every tick
     (R3). Best-effort like every sidecar write here: a failure is logged,
     never raised (a stale streak under-matures at worst one tick later, and
-    the incarnation check retires it across attempts).
+    the incarnation check retires it across attempts). ``keys`` selects the
+    streak record (default: the #1837 transport streak; the #1739 reachable
+    arm passes :data:`_REACHABLE_WEDGE_KEYS`).
     """
     try:
         path = Path(sidecar)
@@ -1115,9 +1201,9 @@ def _reset_wedge_alarm_streak(sidecar: Path) -> None:
         extra = payload.get("extra")
         if not isinstance(extra, dict):
             return
-        if not any(k in extra for k in _WEDGE_ALARM_KEYS):
+        if not any(k in extra for k in keys):
             return
-        for k in _WEDGE_ALARM_KEYS:
+        for k in keys:
             extra.pop(k, None)
         tmp = path.with_suffix(path.suffix + ".tmp")
         tmp.write_text(json.dumps(payload, sort_keys=True, indent=2))
@@ -1133,6 +1219,41 @@ def _reset_wedge_alarm_streak(sidecar: Path) -> None:
         )
 
 
+def _reachable_wedge_evidence(handle, result, *, now: float) -> bool:
+    """Conjuncts 3-4 of the #1739 reachable-wedge arm (every read fail-safe).
+
+    True ONLY when BOTH hold:
+
+    * REAL stale workload-log mtime:
+      ``GCP_REACHABLE_WEDGE_LOG_STALE_SEC < result.last_log_mtime_sec_ago <
+      _GCP_LOG_MTIME_UNKNOWN``. The ``10**9`` sentinel means "mtime not read"
+      (a control-plane tick, or an EMPTY ``log_path`` — the drain's mtime
+      stanza is gated ``if log_path``) and NEVER counts as wedge evidence.
+    * Budget overrun: ``now - handle.extra["gcp_launched_ts"] >
+      time_budget_hours * 3600 * GCP_REACHABLE_WEDGE_BUDGET_FACTOR``.
+      ``gcp_launched_ts`` is the instance creationTimestamp, so boot +
+      staging count against the budget (hence the 2.0 factor). A missing /
+      non-numeric / non-positive ``time_budget_hours`` or ``gcp_launched_ts``
+      FAILS the conjunct — a handle with no declared budget never fires this
+      arm (fail toward ``running``; the same fail-safe ``handle.extra`` read
+      shape as the #1029 boot-loop / #1815 queue-vanish conjuncts).
+    """
+    mtime = getattr(result, "last_log_mtime_sec_ago", None)
+    if not isinstance(mtime, (int, float)):
+        return False
+    if not (GCP_REACHABLE_WEDGE_LOG_STALE_SEC < float(mtime) < _GCP_LOG_MTIME_UNKNOWN):
+        return False
+    extra = getattr(handle, "extra", None) or {}
+    budget_h = extra.get("time_budget_hours")
+    if not isinstance(budget_h, (int, float)) or not float(budget_h) > 0:
+        return False
+    launched_ts = extra.get("gcp_launched_ts")
+    if not isinstance(launched_ts, (int, float)) or not float(launched_ts) > 0:
+        return False
+    wall_sec = now - float(launched_ts)
+    return wall_sec > float(budget_h) * 3600.0 * GCP_REACHABLE_WEDGE_BUDGET_FACTOR
+
+
 def _maybe_escalate_gcp_wedge(handle, result, sidecar: Path, *, now: float):
     """Escalate a frozen non-terminal GCP phase + REACHABILITY alarm to terminal wedged (#669).
 
@@ -1142,6 +1263,7 @@ def _maybe_escalate_gcp_wedge(handle, result, sidecar: Path, *, now: float):
     to the sidecar's ``last_phase`` / ``last_phase_change_ts`` and returns the
     SAME ``result`` UNLESS:
 
+      TRANSPORT arm (#669/#1837):
       (phase unchanged past :data:`GCP_STALENESS_FLOOR_SEC`)
       AND (``result.reachability_alarm`` — the TRANSPORT-class drain failure,
            NOT the sentinel-processing / control-plane classes, M1 / #1837)
@@ -1149,14 +1271,40 @@ def _maybe_escalate_gcp_wedge(handle, result, sidecar: Path, *, now: float):
            :data:`GCP_WEDGE_ALARM_MIN_TICKS` CONSECUTIVE alarmed ticks whose
            first->latest span is >= :data:`GCP_WEDGE_ALARM_MIN_SPAN_SEC`)
 
+      OR the REACHABLE arm (#1739 — the #667 remaining-gap closer):
+      (phase unchanged past :data:`GCP_STALENESS_FLOOR_SEC`)
+      AND (NO reachability alarm — the blind-spot case the transport arm's
+           hard conjunct excludes)
+      AND (REAL stale workload-log mtime + budget overrun —
+           :func:`_reachable_wedge_evidence`: ``last_log_mtime_sec_ago``
+           strictly between :data:`GCP_REACHABLE_WEDGE_LOG_STALE_SEC` and the
+           :data:`_GCP_LOG_MTIME_UNKNOWN` sentinel, AND wall past
+           ``time_budget_hours * GCP_REACHABLE_WEDGE_BUDGET_FACTOR``)
+      AND (:func:`_gcp_reachable_wedge_disabled` False — the
+           ``EPM_DISABLE_GCP_REACHABLE_WEDGE=1`` kill switch)
+      AND (SUSTAINED on a SEPARATE incarnation-guarded streak
+           (:data:`_REACHABLE_WEDGE_KEYS`), same bars:
+           :data:`GCP_WEDGE_ALARM_MIN_TICKS` / :data:`GCP_WEDGE_ALARM_MIN_SPAN_SEC`)
+
     in which case it rewrites ``status -> "dead"`` /
     ``current_phase -> terminal_workload_wedged`` so
-    :func:`_is_gcp_async_workload_failure` matches. Side effects: re-stamps
+    :func:`_is_gcp_async_workload_failure` matches — the SAME phase for both
+    arms, so the reachable escalation inherits the #659 async RunPod failover,
+    the lease-bounded exactly-once machinery, and every downstream consumer
+    with ZERO routing changes (the WARN line + ``log_tail_excerpt``
+    distinguish which arm fired for forensics). Side effects: re-stamps
     the sidecar phase clock when the phase changed (or on the first
-    observation); bumps the sidecar-persisted alarm STREAK on an alarmed tick
-    below the confirmation bar (the poller process is re-entered every tick,
-    so in-memory state is unusable by construction — R2); RESETS the streak on
-    any clean tick, phase advance, or incarnation change (R3).
+    observation); bumps the firing arm's sidecar-persisted STREAK on a
+    qualifying tick below the confirmation bar (the poller process is
+    re-entered every tick, so in-memory state is unusable by construction —
+    R2); RESETS a streak on any tick that breaks its arm's consecutive run,
+    on phase advance (BOTH streaks — an advance proves the workload alive for
+    both arms), or on incarnation change (R3). A transport-alarmed tick
+    resets the REACHABLE streak (a transport tick leaves the mtime at the
+    sentinel, so the reachable conjuncts cannot hold; the explicit reset
+    keeps "sustained = consecutive" exact), and a reachable-qualifying tick
+    (alarm False by definition) resets the TRANSPORT streak exactly as the
+    pre-#1739 clean-tick path did.
 
     The false-positive guards (return ``result`` unchanged):
 
@@ -1167,14 +1315,14 @@ def _maybe_escalate_gcp_wedge(handle, result, sidecar: Path, *, now: float):
     * phase advanced, or first observation (``last_ts is None``) → re-stamp,
       reset the streak (a phase advance proves the workload alive), return
       ``running`` (fail-open on a fresh-dispatch handle with no clock);
-    * phase unchanged but within the floor, OR no reachability alarm → reset
-      the streak, return ``running`` (covers the recency case AND the
-      sentinel-processing class, since the latter leaves
-      ``reachability_alarm`` False);
-    * a SINGLE alarmed tick (streak/span below the bar) → loud WARN naming the
-      armed streak, return ``running`` — one transient gcloud transport blip
-      on a long single-phase workload no longer fires a PAID failover (R1,
-      incident #1739).
+    * phase unchanged but within the floor, OR no reachability alarm AND no
+      reachable-arm evidence → reset BOTH streaks, return ``running`` (covers
+      the recency case AND the sentinel-processing class, since the latter
+      leaves ``reachability_alarm`` False);
+    * a SINGLE qualifying tick on EITHER arm (streak/span below the bar) →
+      loud WARN naming the armed streak, return ``running`` — one transient
+      gcloud transport blip on a long single-phase workload no longer fires a
+      PAID failover (R1, incident #1739).
 
     DOCUMENTED DECISION (#1837): a ``control_plane``-classified drain tick
     (the gcloud API failed BEFORE any SSH reachability probe — see
@@ -1186,7 +1334,40 @@ def _maybe_escalate_gcp_wedge(handle, result, sidecar: Path, *, now: float):
     (plan §8 must-ask). The cost is bounded and conservative: a genuine wedge
     interleaved with control-plane API blips escalates LATER (never falsely),
     and the stale-GCP janitor + the instance's own ``--max-run-duration``
-    fence remain the backstops.
+    fence remain the backstops. The SAME decision binds the #1739 reachable
+    arm: a control-plane tick leaves the mtime at the ``10**9`` sentinel, so
+    it fails conjunct 3 and RESETS the reachable streak too (test-pinned so a
+    future "hold the streak neutral" refactor is a deliberate change, not
+    drift).
+
+    #1739 v1 EVIDENCE DROP (stated deviation from the task-body sketch): the
+    proposed ``gpu_util``-unknown and CPU-seconds-starvation conjuncts are
+    DROPPED. ``gpu_util``: the GCP lane never populates it —
+    ``GcpBackend.poll`` leaves the ``PollResult`` default ``"unknown"`` on
+    every tick, so an always-true conjunct is not evidence and wiring it in
+    would WEAKEN the conjunction on a money path. CPU-seconds starvation: not
+    on ``PollResult`` at all; plumbing a new field through the public poll
+    shape is exactly the wider-change-on-a-money-path the #1837 DOCUMENTED
+    DECISION declined for the alarm class. The three-conjunct core already
+    covers the #1739 incident shape with huge margin (21.6h wedge vs
+    900s/1800s floors + 2.16x budget overrun).
+
+    Named residuals of the reachable arm (ALL fail toward ``running`` / the
+    status-quo backstops — the stale-GCP janitor + the instance's own
+    ``--max-run-duration`` fence):
+
+    * a handle with NO usable ``time_budget_hours`` / ``gcp_launched_ts``
+      (manual/legacy dispatches) never fires this arm;
+    * a handle with EMPTY ``log_path`` is inert by construction — the drain's
+      mtime stanza is gated ``if log_path``, so conjunct 3 can never hold;
+    * canonical-log-only mtime is the arm's real discriminator surface:
+      dispatchers routing child output to inner logs leave ``workload.log``
+      quiet on healthy runs (#1336 echo-on-failure; #1689's 5h14m of healthy
+      silence) — a known FP channel, absorbed by the 2.0 budget factor + the
+      sustained bar;
+    * control-plane-class ticks (alarm False, mtime unread) RESET the
+      reachable streak — a genuine reachable wedge interleaved with API blips
+      escalates LATER, never falsely.
     """
     if getattr(handle, "backend", None) != "gcp" or result.status != "running":
         return result
@@ -1194,8 +1375,8 @@ def _maybe_escalate_gcp_wedge(handle, result, sidecar: Path, *, now: float):
     if last_phase != result.current_phase or last_ts is None:
         # Phase advanced (or first observation, or a stale prior-incarnation
         # record — #1815) → re-stamp the clock under the CURRENT incarnation,
-        # and reset the alarm streak (a phase advance proves the workload
-        # alive — #1837 R3).
+        # and reset BOTH alarm streaks (a phase advance proves the workload
+        # alive for both arms — #1837 R3 / #1739).
         _write_phase_clock(
             sidecar,
             phase=result.current_phase,
@@ -1203,9 +1384,15 @@ def _maybe_escalate_gcp_wedge(handle, result, sidecar: Path, *, now: float):
             incarnation=_clock_incarnation_for(handle),
         )
         _reset_wedge_alarm_streak(sidecar)
+        _reset_wedge_alarm_streak(sidecar, keys=_REACHABLE_WEDGE_KEYS)
         return result
     stale_for = now - last_ts
     if stale_for > GCP_STALENESS_FLOOR_SEC and getattr(result, "reachability_alarm", False):
+        # Transport arm (#669/#1837) — path unchanged, plus: an alarmed tick
+        # RESETS the reachable streak (a transport tick leaves the mtime at
+        # the sentinel, so the reachable conjuncts cannot hold; the explicit
+        # reset keeps "sustained = consecutive" exact for the sibling arm).
+        _reset_wedge_alarm_streak(sidecar, keys=_REACHABLE_WEDGE_KEYS)
         streak, first_ts = _bump_wedge_alarm_streak(sidecar, handle, now=now)
         span = (now - first_ts) if first_ts is not None else 0.0
         if streak >= GCP_WEDGE_ALARM_MIN_TICKS and span >= GCP_WEDGE_ALARM_MIN_SPAN_SEC:
@@ -1241,9 +1428,79 @@ def _maybe_escalate_gcp_wedge(handle, result, sidecar: Path, *, now: float):
             GCP_WEDGE_ALARM_MIN_SPAN_SEC,
         )
         return result
-    # Within the floor, OR no reachability alarm → stays running (false-positive
-    # guard) and the alarm streak dies (#1837 R3; a no-op write on a clean run).
+    if (
+        stale_for > GCP_STALENESS_FLOOR_SEC
+        and not getattr(result, "reachability_alarm", False)
+        and not _gcp_reachable_wedge_disabled()
+        and _reachable_wedge_evidence(handle, result, now=now)
+    ):
+        # Reachable arm (#1739): frozen non-terminal phase on a REACHABLE box
+        # (no transport alarm) + REAL stale workload-log mtime + budget
+        # overrun. A qualifying tick is alarm-False by definition, so it
+        # RESETS the transport streak (its consecutive semantics preserved
+        # exactly as the pre-#1739 clean-tick path did) and bumps its OWN
+        # incarnation-guarded streak.
+        _reset_wedge_alarm_streak(sidecar)
+        streak, first_ts = _bump_wedge_alarm_streak(
+            sidecar, handle, now=now, keys=_REACHABLE_WEDGE_KEYS
+        )
+        span = (now - first_ts) if first_ts is not None else 0.0
+        extra = getattr(handle, "extra", None) or {}
+        mtime = float(result.last_log_mtime_sec_ago)
+        wall_h = (now - float(extra["gcp_launched_ts"])) / 3600.0
+        budget_h = float(extra["time_budget_hours"])
+        if streak >= GCP_WEDGE_ALARM_MIN_TICKS and span >= GCP_WEDGE_ALARM_MIN_SPAN_SEC:
+            logging.warning(
+                "backend_poll: GCP phase %r frozen for %.0fs (>%ds floor) on a REACHABLE box "
+                "(no transport alarm) WITH stale workload-log mtime (%.0fs > %ds, sentinel "
+                "excluded) AND budget overrun (wall %.1fh > %.1fx budget %.1fh), SUSTAINED "
+                "(streak %d >= %d, span %.0fs >= %ds) — escalating to %s (#1739 "
+                "reachable-wedge arm; the #667 hung-but-RUNNING gap)",
+                result.current_phase,
+                stale_for,
+                GCP_STALENESS_FLOOR_SEC,
+                mtime,
+                GCP_REACHABLE_WEDGE_LOG_STALE_SEC,
+                wall_h,
+                GCP_REACHABLE_WEDGE_BUDGET_FACTOR,
+                budget_h,
+                streak,
+                GCP_WEDGE_ALARM_MIN_TICKS,
+                span,
+                GCP_WEDGE_ALARM_MIN_SPAN_SEC,
+                GCP_WORKLOAD_WEDGED_PHASE,
+            )
+            return replace(
+                result,
+                status="dead",
+                current_phase=GCP_WORKLOAD_WEDGED_PHASE,
+                new_milestone=True,
+                pid_alive=False,
+            )
+        logging.warning(
+            "backend_poll: GCP phase %r frozen %.0fs on a REACHABLE box with stale log mtime "
+            "(%.0fs > %ds) + budget overrun (wall %.1fh > %.1fx budget %.1fh) — streak %d/%d "
+            "(span %.0fs/%ds); awaiting SUSTAINED confirmation before wedge (#1739)",
+            result.current_phase,
+            stale_for,
+            mtime,
+            GCP_REACHABLE_WEDGE_LOG_STALE_SEC,
+            wall_h,
+            GCP_REACHABLE_WEDGE_BUDGET_FACTOR,
+            budget_h,
+            streak,
+            GCP_WEDGE_ALARM_MIN_TICKS,
+            span,
+            GCP_WEDGE_ALARM_MIN_SPAN_SEC,
+        )
+        return result
+    # Within the floor, OR no reachability alarm without reachable-arm
+    # evidence (incl. the control-plane class — mtime at the sentinel — and
+    # the kill-switch-disabled case) → stays running (false-positive guard)
+    # and BOTH alarm streaks die (#1837 R3 / #1739; a no-op write on a clean
+    # run).
     _reset_wedge_alarm_streak(sidecar)
+    _reset_wedge_alarm_streak(sidecar, keys=_REACHABLE_WEDGE_KEYS)
     return result
 
 

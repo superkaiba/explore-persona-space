@@ -50,7 +50,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | 6 Contrastive negatives | critic.md Methodology 6 | v2-owner: methodology-baselines-critic |
 | 7 Replication fidelity | critic.md Methodology 7 | v2-owner: methodology-baselines-critic |
 | 8 Few-shot / ICL demonstration content | critic.md Methodology 8 | v2-owner: methodology-baselines-critic |
-| 9 Trained-artifact + code reuse fitness (a)-(l) | critic.md Methodology 9 | v2-owner: consistency-checker + methodology-baselines-critic |
+| 9 Trained-artifact + code reuse fitness (a)-(m) | critic.md Methodology 9 | v2-owner: consistency-checker + methodology-baselines-critic |
 | 10 CPU/analysis-phase placement (i)-(iv) | critic.md Methodology 10 | v2-owner: efficiency-critic |
 | 11 Marker stopping recipe + runtime-guard smoke-verifiability | critic.md Methodology 11 | v2-owner: methodology-baselines-critic |
 | 12 Multi-arm resolution-band simultaneity | critic.md Methodology 12 | v2-owner: methodology-baselines-critic |
@@ -80,6 +80,8 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | 13 OOD generalization folds (eval set fully disjoint from training) | critic.md Statistics 13 | v2-owner: statistics-critic |
 | 14 Fail-loud acceptance claims backed by committed tests | critic.md Statistics 14 | v2-owner: statistics-critic |
 | 15 Mapping-baselines pair (identity+bias baseline + kNN retrieval) + pooling-convention disclosure | critic.md Statistics 15 | v2-owner: statistics-critic |
+| 16 Unit of analysis / measurement grain | critic.md Statistics 16 | v2-owner: statistics-critic |
+| 17 Rate-denominator provenance (measured vs application denominator; stage-chained rates) | critic.md Statistics 17 | v2-owner: statistics-critic |
 
 ## C. Monolithic `critic` — Alternative Explanations lens items
 

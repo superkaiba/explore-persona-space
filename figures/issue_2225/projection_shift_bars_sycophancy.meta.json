@@ -1,0 +1,163 @@
+{
+  "commit": "849c79c4",
+  "render_id": "ebd966dc7a104deb",
+  "git_commit": "849c79c4",
+  "git_dirty": false,
+  "created": "2026-08-11T20:40:05Z",
+  "figsize": [
+    7.0,
+    3.6
+  ],
+  "points": [
+    {
+      "x": -0.266667,
+      "\u0394 mean projection vs base (steering layer)": 9.224367141723633,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.733333,
+      "\u0394 mean projection vs base (steering layer)": 13.606254577636719,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.733333,
+      "\u0394 mean projection vs base (steering layer)": 10.674880981445312,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.733333,
+      "\u0394 mean projection vs base (steering layer)": 5.857612609863281,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.733333,
+      "\u0394 mean projection vs base (steering layer)": 14.52395248413086,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.733333,
+      "\u0394 mean projection vs base (steering layer)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Paper 1-layer @ 0.5",
+      "\u0394 mean projection vs base (steering layer)": 29.164116501808167,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Context 1-layer @ 5.0",
+      "\u0394 mean projection vs base (steering layer)": 29.797995567321777,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Context 2-layer @ 1.5",
+      "\u0394 mean projection vs base (steering layer)": 19.433435440063477,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Context 3-layer @ 1.5",
+      "\u0394 mean projection vs base (steering layer)": 15.773283004760742,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Unsteered finetune (Sycophancy)",
+      "\u0394 mean projection vs base (steering layer)": 31.607629776000977,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Base model",
+      "\u0394 mean projection vs base (steering layer)": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.266667,
+      "\u0394 mean projection vs base (steering layer)": 0.8623332977294922,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.266667,
+      "\u0394 mean projection vs base (steering layer)": -1.5621871948242188,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.266667,
+      "\u0394 mean projection vs base (steering layer)": -1.9383430480957031,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.266667,
+      "\u0394 mean projection vs base (steering layer)": -1.4174413681030273,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.266667,
+      "\u0394 mean projection vs base (steering layer)": 1.8339381217956543,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.266667,
+      "\u0394 mean projection vs base (steering layer)": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 18,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Projection shift \u2014 Sycophancy",
+        "ylabel": "\u0394 mean projection vs base (steering layer)",
+        "legend_labels": [
+          "response-avg \u2192 paper dir",
+          "context-end \u2192 context dir",
+          "prefix-end \u2192 context dir"
+        ],
+        "xticklabels": [
+          "Paper 1-layer @ 0.5",
+          "Context 1-layer @ 5.0",
+          "Context 2-layer @ 1.5",
+          "Context 3-layer @ 1.5",
+          "Unsteered finetune (Sycophancy)",
+          "Base model"
+        ],
+        "yticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40"
+        ]
+      }
+    ],
+    "series": [
+      "response-avg \u2192 paper dir",
+      "context-end \u2192 context dir",
+      "prefix-end \u2192 context dir"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

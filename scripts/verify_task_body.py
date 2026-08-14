@@ -329,6 +329,21 @@ confidence in the H1 title tag only. The checks branch per generation:
 - **check 14** (`check_concerns_audit`): v3 mechanism 1 → `### ` findings
   under `## Findings` + `## Takeaways` bullets; mechanism 2 (Confidence
   paragraph) RETIRES for v3 (confidence is title-tag-only).
+- **check 14b** (fabricated-deferral detection, inside
+  `check_concerns_audit`; generation-agnostic, #2219): a
+  `<!-- concern-deferred: <id> -->` comment whose id IS in the ledger
+  with latest event `raised` / `verified-open` but NO `deferred` event
+  anywhere in its event HISTORY is a FABRICATED deferral (the comment
+  implies a `task.py defer-concern` record that does not exist —
+  incident #2215). FAIL at BLOCKER/CONCERN severity, merged with any
+  unaddressed FAIL; WARN when the id is pinned in
+  `FABRICATED_DEFERRAL_GRANDFATHER` (forward-only: pre-existing
+  offenders stay visible, never newly blocked) or at NIT / missing /
+  unknown severity. Any-history matching: a
+  raised→deferred→verified-open chain is NOT fabricated. The
+  absent-ledger skip-PASS and the `addressed` / absent-from-ledger
+  stale WARNs are unchanged. Posture + residuals: the
+  `check_concerns_audit` docstring.
 
 New v3-only checks (PASS vacuously on v2/legacy):
 
@@ -363,7 +378,8 @@ New v3-only checks (PASS vacuously on v2/legacy):
   Results, `## Methodology` excluded, plus a v4-only per-Takeaways-bullet
   ≥100-word hard-FAIL tier (#825), plus a WARN-acknowledgment coverage
   sub-check — a body whose acknowledgment paragraph omits a fired
-  WARN-tier class gains one more WARN naming the gap (#1523); its round
+  WARN-tier class, or carries none at all (#2216), gains one more WARN
+  naming the gap (#1523); its round
   count reads
   `epm:same-issue-followup-run` markers and/or the footer round clauses,
   max-reconciled — the Rounds-table read binds v3 only. It needs the
@@ -655,7 +671,14 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   glob bar (#2169: backticks required; basename component only; >= 3
   literal chars before the first `*`) — the collective
   family-disposition idiom ("the seven `f1_delta_scatter_*` siblings —
-  not embedded: ...").
+  not embedded: ...") — OR, class C only AND forward-only (issue >=
+  `_PROSE_BAR_MIN_ISSUE` = 2222; older tasks keep byte-identical
+  pre-#2231 class-C behavior), by the bounded prose-token
+  bar (#2231: every non-stopword, non-digit, non-figure-index stem
+  token co-occurring on ONE line, singularized; >= 2 distinct required
+  tokens with >= 2 of length >= 3 — the #2222 "sample-level ROC curves
+  per arm" -> `roc_by_arm.png` shape; disclosed under-matches:
+  single-token stems, compound stem tokens vs hyphenated prose).
   Three WARN classes in ONE CheckResult: per-unit stems
   (`per[-_]?(context|unit|cell|pair)`, case-insensitive, word-start
   lookbehind; `indiv` deliberately EXCLUDED — it names the per-question
@@ -1191,6 +1214,156 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   dodged bars, integer-x lines with categorical ticks, string-x
   categorical bars.
 
+- **check 54** (`check_artifact_content_claims`, WARN, v4-only, #2232;
+  incident #2222 r2): a Takeaways/Results prose sentence claiming
+  "per-`<unit>` values … recorded|stored|saved|listed|available|live in
+  `<pinned JSON>`" is verified against the ACTUAL structure of the JSON
+  at the adjacent pin — the artifact-CONTENT sibling of checks 30/32/42,
+  which verify counts, filename membership, and URL existence against
+  pins but never structure INSIDE a pinned data JSON. Pin resolution:
+  a `.json` markdown link in the claim sentence, else the nearest
+  preceding `.json` link in the same paragraph, else (for "pinned in the
+  footer" phrasings) a footer matching-basename resolution keyed on the
+  claim's `in the <name> JSON` descriptor tokens ∩ pin-basename tokens
+  (whole-sentence tokens as the fallback tier); ≥2 candidates ⇒ SKIP
+  with an unverified note. Artifacts load OFFLINE only: same-repo GitHub
+  blob pins via `git show <sha>:<path>` (committed-working-copy fallback
+  when the sha is locally unknown); HF-hosted / other-repo pins surface
+  as unverified notes, never a WARN. Expected cardinality K recovers in
+  priority order: (1) an explicit `<K> <unit>(s)` integer immediately
+  adjacent to the unit noun in the claim sentence — never any bare
+  numeral (the #2222 window's only "24" is the decimal "-0.24"); (2) an
+  ANY-DEPTH scan of the artifact for `n_<unit>s` keys with all-equal
+  aggregation (disagreement ⇒ SKIP; the incident's `n_datasets: 24`
+  lives ONLY nested at `records[i].n_datasets`), else an all-equal
+  `<unit>s` list length; (3) unrecoverable ⇒ SKIP with an unverified
+  note. The claim VERIFIES when the JSON contains, at any depth, a list
+  of length K or a dict with K keys (bounded walk; bound exhaustion ⇒
+  SKIP, never WARN); absent everywhere within bounds ⇒ ONE WARN naming
+  the JSON path + the verbatim claim sentence + K + the K-source. WARN
+  never FAIL (`passed=True, is_warn=True` — phrasing variance makes the
+  parse heuristic; the clean-result-critic artifact-walk lens stays
+  binding); fail-soft everywhere; >10 MB artifacts skipped. Known
+  residuals (see the check docstring): a `<unit>s`-list-derived K
+  self-satisfies the scan (false-negative-only); a K-keys-plus-aggregate
+  dict (24 dataset keys + 1 summary key) is a known false-positive
+  shape; active-voice claims ("the JSON records the per-layer values")
+  never parse (v1 false-negative class).
+
+- **check 55** (`check_v4_aggregate_stat_needs_per_unit`, WARN, v4-only,
+  #2264; incident #2224 r3): a `### <result>` block under `## Results`
+  embedding EXACTLY ONE inline figure whose figure-adjacent text (the
+  figure's ALT text + the section's blockquote `> ` caption lines — the
+  check-49 scoping; general section prose never triggers) reports a
+  correlation/AUC-family aggregate statistic (word-boundary-guarded
+  `r` / `rho` (word or Greek) / `R2` / `R²` / `R^2` / `AUC` / `AUROC`
+  followed by `=` / `≈` / `:` and a numeric, or a
+  `Spearman|Pearson`-qualified bare symbol) with NO exemption evidence —
+  none of (a) the literal
+  machine-read token `per-unit exemption` (case-insensitive,
+  hyphen/space/en-dash tolerant) anywhere in the block's prose layer,
+  (b) the single figure's basename matching the `_PER_UNIT_FIG_RE`
+  per-unit companion convention (the figure already IS the per-unit
+  view — SPEC's first stated exemption), (c) the `_DECLARED_PAIR_RE`
+  declared-pair idiom in the alt/caption lines — draws a WARN naming
+  the H3, the matched statistic text, and the missing evidence classes.
+  The SINGLE-figure arm of SPEC's "low-level data plot behind every
+  aggregate" rule: the 0-figure case is check 48's territory, the
+  >1-figure case is check 49's. WARN never FAIL (statistic detection
+  from caption text is heuristic; clean-result-critic Lens 11 stays the
+  substantive owner). Vacuous PASS on v3/v2/legacy bodies
+  (forward-only). Incident #2224 r3: two folded fu1 aggregate results
+  shipped with neither the per-unit view nor the `Per-unit exemption:`
+  line the body itself used elsewhere; only the LM critic caught it.
+
+- **check 56** (`check_v4_ack_result_count`, WARN, v4-only, #2264;
+  incident #2224 r3; dispatched OUTSIDE CHECKS with the issue number —
+  the check-20/#921 precedent): the conciseness-cap acknowledgment
+  paragraph's claims are reconciled against the folded body. Two arms,
+  one CheckResult unioning both: (a) COUNT-CLAIM — every `<N> result(s)`
+  claim in the `_warn_acknowledgment_text` union (N a 1-3-digit numeral
+  or a number word one..twenty; a word-number immediately preceded by
+  another number word is SKIPPED — dash normalization turns "twenty-one
+  results" into "twenty one results", which a naive map would parse as
+  N=1) is compared to the actual `### ` H3 count under `## Results`;
+  any mismatch WARNs naming claimed vs actual. (b) SINGLE-ROUND — a
+  `single-round` claim in the acknowledgment while
+  `_count_extra_followup_rounds_v4` counts >0 folded rounds (footer
+  round clauses; events.jsonl when the issue is known) WARNs naming the
+  round count + source. Fold rounds recurrently stale the
+  acknowledgment (each same-issue follow-up fold edits `## Results` but
+  not the acknowledgment paragraph). WARN never FAIL. Vacuous PASS on
+  v3/v2/legacy bodies, bodies with no acknowledgment paragraph, and
+  when `## Results` is absent (check 2 reports). Incident #2224 r3: the
+  acknowledgment still said "single-round … nine results" while the
+  folded body carried 13 results across 3 folded rounds.
+
+- **check 57** (`check_v4_sidecarless_results_figures`, FAIL, v4-only,
+  Leg B forward-only, #2267; incident #2054): a `## Results` figure with
+  NO `.meta.json` sidecar at the cited sha previously received ZERO
+  mechanical opaque-code coverage — check 28 fail-softs on the missing
+  sidecar (`meta is None` ⇒ continue, the check-24 convention) and
+  check 41 is WARN-never-FAIL by documented design — so #2054's
+  `hero_calibration_nslope.png` shipped `H0'a`/`H0'b`/`b=`/`m=` codes in
+  PNG rendered text (panel titles + legend; clean plain-English caption)
+  through every mechanical gate. Two legs, both scoped to same-repo
+  sha-pinned figures whose PNG resolves at the cited sha (else check 22's
+  domain) and whose sidecar probe is a definitive 'fail' (present /
+  indeterminate ⇒ checks 24/28/33/34 + 41's domain): **Leg A** — the
+  blockquote caption window, markdown code spans stripped to spaces
+  (a backticked token is a quoted code-register reference — clears the
+  #952 corpus shape, a backticked companion-FILENAME), carries
+  `_opaque_code_tokens` hits ⇒ FAIL naming basename + tokens (NOT
+  date-gated; measured 0 corpus hits with the exclusion). **Leg B**
+  (forward-only) — the pinned commit's COMMITTER date (`_commit_epoch`,
+  cached + fail-soft) ≥ the 2026-08-13 UTC cutover
+  (`_CHECK57_FORWARD_CUTOVER`) AND the basename (lowercased,
+  dash-normalized) is NOT named in the body's verifier-WARN
+  acknowledgment (`_warn_acknowledgment_text`) ⇒ FAIL — regenerate via
+  `savefig_paper` (writes the sidecar, exposing rendered text to
+  check 28), or acknowledge the figure by name (hand-made diagrams /
+  external screenshots). Date-gate rationale: the plan-time sweep
+  (2,200 bodies; 87 v4; 45 sidecar-less same-repo Results figures, ~42
+  across ~13 green `awaiting_promotion` bodies) makes an unconditional
+  FAIL a promote-time re-verify breaker, and every existing pin pre-dates
+  the cutover, so the corpus is exempt BY CONSTRUCTION while every future
+  sidecar-less Results figure blocks at draft time. Fail-soft on every
+  indeterminate probe (unknown sha, failed date probe). Residuals
+  (i)-(iv), documented in the check docstring: backticked caption codes
+  escape Leg A (Leg B is the forcing function); pinning a NEW figure at
+  an old sha is impossible (the pinned commit must contain the PNG);
+  `b=`/`m=` single-letter-equals codes stay unclassifiable and PNG-pixel
+  text stays the multimodal critics' read for grandfathered figures; a
+  rebase rewriting an old figure commit to a post-cutover date FAILs
+  loud (ack escape), never silently passes.
+
+- **check 58** (`check_v4_positional_result_crossrefs`, WARN, v4-only,
+  #2279; incident #2221): positional cross-reference tokens under
+  `## Results` — `(N results up|down)` (N a digit run or a number word
+  one..ten; singular `result` admitted), `the previous result`, `the
+  next result` — are resolved against the actual `### ` H3 sequence
+  (1-indexed; up/previous subtract, down/next add) over each block's
+  non-code prose (`<details>` stripped, fences skipped, inline code +
+  link targets masked; list items KEPT — the anchor pointers live in
+  list items). Arm (a) flags a resolution outside [1, n_results]
+  unconditionally; arm (b) — contradiction-only, the check-45 posture —
+  flags a pointer whose own `;`/sentence-delimited clause and the
+  resolved target heading (trailing parenthetical(s) STRIPPED — the
+  anchor's heading 5 ends `(repaired by the round-4 re-mine above)`,
+  which would otherwise launder the mismatch) carry NON-EMPTY, DISJOINT
+  round sets (`round[- ]N` / `rounds A-B` expanded inclusively). The
+  class is structural: SPEC follow-up consolidation reorders the H3
+  sequence on every fold, so an ordinal written in round K retargets
+  silently in round K+1 (#2221's two `(two results up)` pointers were
+  hand-remediated twice). WARN never FAIL; vacuous PASS on v3/v2/legacy
+  bodies and <2-result bodies. Residuals (false-negative-only, in the
+  helper docstrings): `result(s) above/below` (~49 corpus uses) and
+  `the first/third / later/earlier result` carry no resolvable ordinal
+  — out of scope by design; a round token across a `;` from its pointer
+  is missed; a same-round-labeled wrong target intersects and stays
+  silent; arm (a) fires on forward-looking `the next result (queued)`
+  prose in the last block (zero corpus instances).
+
 - **judge drop-line population reconciliation**
   (`check_judge_drop_line_population`, FAIL/WARN, v3+v4, #1776 incident /
   task #1881; unnumbered — dispatched outside CHECKS next to the #732
@@ -1227,6 +1400,7 @@ from __future__ import annotations
 
 import argparse
 import fnmatch
+import functools
 import io
 import json
 import math
@@ -1501,6 +1675,8 @@ V3_TOTAL_PROSE_PER_EXTRA_ROUND_WORDS = 250
 # substring) in the DASH-NORMALIZED acknowledgment text (hyphen/en-dash/
 # em-dash -> space, so "total-prose" matches "total prose" and a "120-180"
 # range mention matches "120"). Keywords are space-form after normalization.
+# A body with fired WARN-tier classes and NO acknowledgment paragraph at all
+# gains one absence WARN (#2216).
 V4_WARN_ACK_CLASS_KEYWORDS: dict[str, tuple[str, ...]] = {
     "Takeaways bullet-length": ("bullet", "takeaway"),
     "per-result prose band": ("per result", "result prose", "section", "120", "180"),
@@ -2783,6 +2959,33 @@ _DECLARED_PAIR_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Check 55: correlation/AUC-family aggregate-statistic detection, scoped to
+# FIGURE-ADJACENT text only (the single figure's alt text + the section's
+# blockquote caption lines — the check-49 scoping rationale: what-is-plotted
+# beats routinely mention rho / AUC as SPEC-mandated disclosure prose, so
+# whole-block matching would drown the signal). Two alternates: a
+# word-boundary-guarded symbol followed by `=` / `≈` / `:` and a numeric
+# (optionally signed, incl. the U+2212 matplotlib minus), and a
+# Spearman/Pearson-qualified bare symbol (the statistic is named even
+# without an inline value). The lookbehind stops mid-word matches
+# ("color=red" never fires on its `r`).
+_V4_AGG_STAT_RE = re.compile(
+    r"(?<![a-zA-Z0-9_])(?:r|rho|ρ|R2|R²|R\^2|AUC|AUROC)\s*[=≈:]\s*[-+−]?\d*\.?\d+"  # noqa: RUF001
+    r"|(?<![a-zA-Z0-9_])(?:spearman|pearson)(?:['’]s)?\s+(?:r|rho|ρ)(?![a-zA-Z0-9])",  # noqa: RUF001
+    re.IGNORECASE,
+)
+
+# Check 55: the literal machine-read exemption token — the established body
+# convention (#2224's promoted body used `Per-unit exemption:` three times)
+# this check gives mechanical meaning. Case-insensitive; hyphen / en-dash /
+# em-dash / space tolerant between the tokens. Scanned over the WHOLE
+# `### <result>` block's prose layer (the token lives in what-is-plotted
+# prose, not the caption).
+_PER_UNIT_EXEMPTION_TOKEN_RE = re.compile(
+    r"\bper[\s\-–—]?unit[\s\-–—]+exemption\b",  # noqa: RUF001
+    re.IGNORECASE,
+)
+
 # Check 38: any markdown link (image embeds are masked out before this
 # scans, so no `!`-lookbehind is needed); link text tolerates `]` not
 # followed by `(` — the same tolerance `_IMAGE_RE` uses — and may be
@@ -2837,7 +3040,7 @@ def _figure_url_existence(url: str, *, noun: str = "figure URL") -> tuple[str, s
     `## Reproducibility` with ``noun="Reproducibility URL"``.
     """
     m = _RAW_GITHUB_FIGURE_RE.match(url)
-    if m and (m.group("owner").lower(), m.group("repo").lower()) == _THIS_REPO_SLUG:
+    if m and (m.group("owner").casefold(), m.group("repo").casefold()) == _THIS_REPO_SLUG:
         repo = _resolve_repo_root()
         if repo is not None:
             verdict, _detail = _git_object_exists(repo, m.group("sha"), m.group("path"))
@@ -2950,7 +3153,7 @@ def _issue_figure_paths_by_issue(body: str) -> dict[str, set[str]]:
         # (check-4b idiom).
         url = url.split(None, 1)[0] if url else url
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if not m or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if not m or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG:
             continue
         pm = _ISSUE_FIGURE_PATH_RE.match(m.group("path"))
         if not pm:
@@ -3065,7 +3268,7 @@ def _cited_issue_figure_dirs(body: str) -> dict[str, set[str]]:
     for url in _gather_figure_image_urls(body):
         url = url.strip().split(None, 1)[0] if url.strip() else ""
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if not m or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if not m or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG:
             continue
         pm = _ISSUE_FIGURE_PATH_RE.match(m.group("path"))
         if not pm:
@@ -3145,6 +3348,128 @@ def _stem_named_in_body(body: str, stem: str) -> bool:
     return stem in body or _glob_names_stem(body, stem)
 
 
+# Prose-token bar vocabulary (#2231): connective stopwords dropped from a
+# stem's REQUIRED token set, and the figure-index token shapes (`f5` /
+# `fig2` / `figure3` / `panel4`) dropped alongside pure digits.
+_PROSE_STOPWORD_TOKENS = frozenset(
+    (
+        "by",
+        "per",
+        "of",
+        "the",
+        "a",
+        "an",
+        "and",
+        "or",
+        "vs",
+        "to",
+        "in",
+        "on",
+        "for",
+        "with",
+        "from",
+        "at",
+        "all",
+    )
+)
+
+_PROSE_FIGURE_INDEX_RE = re.compile(r"^(?:f\d+|fig(?:ure)?\d*|panel\d*)$")
+
+_PROSE_BAR_MIN_ISSUE = 2222
+"""Forward-only cutoff for check 31's class-C prose-token bar (#2231 v3).
+
+The bar is consulted — on BOTH class-C sides, plan-side candidacy AND
+body-side exemption — only when the task's issue number is >= this
+constant; every older task keeps byte-identical pre-#2231 class-C
+behavior (exact/glob bars only). 2222 is the FOUNDING incident (the
+#2222 plan promised "sample-level ROC curves per arm", committed as
+`roc_by_arm.png`, and neither exact nor glob bar registered it). The
+cutoff exists because the un-cutoff v2 bar failed its own K1 corpus
+noise ceiling decisively: 28/62 triggered legacy v4 bodies (45.2%)
+gained a prose-only class-C entry (71 entries, max 9/body) against the
+pre-registered ~10% ceiling, mixing true positives with incidental
+plan-prose co-occurrences — and both pre-registered tightenings
+measured inadequate (a >=3-required-token bound kills the founding
+2-token `roc_by_arm` shape; figure-vocabulary line filtering keeps
+64/71). Legacy bodies are terminal and clean-result-critic Lens 13
+already reviewed them, so forward-only coverage is the accepted trade
+(the SPEC.md forward-only precedent, WARN-grade spirit). The key is the
+ISSUE NUMBER, never body age: an in-flight task numbered < 2222 that
+later rewrites a v4 body stays prose-bar-off — accepted fail-safe
+under-coverage, Lens 13 owns those."""
+
+
+def _prose_singularize(token: str) -> str:
+    """Singularize one already-lowercased token for the prose-token bar
+    (#2231): strip ONE trailing `s` when the token has length >= 4 and is
+    not `ss`-final ("scatters" -> "scatter", "curves" -> "curve"; "class"
+    stays, "vs" stays). Deliberately dumb — an irregular plural fails
+    toward the pre-widening status quo (no match, no candidate)."""
+    if len(token) >= 4 and token.endswith("s") and not token.endswith("ss"):
+        return token[:-1]
+    return token
+
+
+@functools.lru_cache(maxsize=8)
+def _prose_line_token_sets(text: str) -> tuple[frozenset[str], ...]:
+    """Per-LINE normalized token sets of ``text`` for `_stem_prose_named`
+    (#2231): each line lowercased, split on non-alphanumeric runs, every
+    token singularized (`_prose_singularize`). Stopwords are NOT dropped
+    here — matching is subset-inclusion of the stem's required set, so
+    extra line tokens are inert. Cached with a small maxsize: the same
+    `plan_text` / `body` strings repeat across every committed PNG of one
+    check-31 invocation, and the process is short-lived."""
+    return tuple(
+        frozenset(_prose_singularize(t) for t in re.split(r"[^a-z0-9]+", line.lower()) if t)
+        for line in text.splitlines()
+    )
+
+
+def _stem_prose_named(text: str, stem: str) -> bool:
+    """True when some single LINE of ``text`` carries ALL of ``stem``'s
+    required prose tokens — check 31's THIRD naming bar, consulted for
+    class C ONLY, and FORWARD-ONLY: the caller gates every consultation
+    on ``issue >= _PROSE_BAR_MIN_ISSUE`` (#2231; the #2222 shape: a plan
+    promising "sample-level ROC curves per arm" never names the literal
+    stem `roc_by_arm`, so the exact/glob bars registered no candidate).
+
+    Required set: `re.split(r"[^a-z0-9]+", stem.lower())`, dropping
+    empties, pure digits, the fixed stopword set
+    (`_PROSE_STOPWORD_TOKENS`), and figure-index tokens
+    (`_PROSE_FIGURE_INDEX_RE`). Length is NOT a drop criterion — a
+    surviving short token (`em`) STAYS required and must also appear on
+    the matching line, which only tightens matching. Each survivor is
+    singularized (`_prose_singularize`).
+
+    Applicability bound: the bar applies ONLY when the required set has
+    >= 2 distinct tokens AND at least 2 of them have length >= 3
+    (`em_rate_by_layer` -> {em, rate, layer} is applicable — rate/layer
+    carry the >=3-char weight; a stem reducing to fewer falls back to the
+    existing exact/glob bars). Two disclosed under-matches, both failing
+    toward the pre-widening status quo: single-token stems (`roc.png` is
+    never prose-matchable — deliberately excluded, or any case-varying
+    "ROC" would name it), and compound stem tokens vs hyphenated prose
+    (a stem token `samplelevel` is never covered by "sample-level", which
+    tokenizes to {sample, level}).
+
+    Match: required tokens are a SUBSET of one line's token set —
+    whole-token by construction ("arm" cannot match inside "harmful");
+    case-insensitive (both sides lowered), a deliberate bounded
+    divergence from the exact bar's case-sensitivity, safe because
+    token-subset matching is far stricter than substring containment."""
+    raw = [t for t in re.split(r"[^a-z0-9]+", stem.lower()) if t]
+    required = frozenset(
+        _prose_singularize(t)
+        for t in raw
+        if not t.isdigit()
+        and t not in _PROSE_STOPWORD_TOKENS
+        and not _PROSE_FIGURE_INDEX_RE.match(t)
+    )
+    if len(required) < 2 or sum(1 for t in required if len(t) >= 3) < 2:
+        return False
+    return any(required <= line_tokens for line_tokens in _prose_line_token_sets(text))
+
+
 def _stem_exempt_in_paragraph(body: str, stem: str) -> bool:
     """True when some paragraph of ``body`` both NAMES the stem — exact
     substring, or a bounded backticked glob (the #2169 disclosed loosening:
@@ -3173,7 +3498,7 @@ def _embedded_issue_png_paths(body: str) -> set[str]:
         iu = raw_url.strip().split(None, 1)[0] if raw_url.strip() else ""
         ipm = _LINKED_ISSUE_PNG_RE.search(iu)
         if ipm:
-            embedded.add(ipm.group("path").lower())
+            embedded.add(ipm.group("path").casefold())
     return embedded
 
 
@@ -3202,7 +3527,7 @@ def _linked_unembedded_results_pngs(body: str, issue: int | None) -> dict[str, N
         if issue is not None and pm.group("issue") != str(issue):
             continue  # cross-issue links are legitimate references
         path = pm.group("path")
-        if path.lower() in embedded:
+        if path.casefold() in embedded:
             continue  # embedded anywhere in the body → discipline satisfied
         linked.setdefault(path)
     return linked
@@ -3287,6 +3612,8 @@ def _classify_committed_issue_png(
     embedded_any: set[str],
     linked_results: set[str],
     plan_text: str | None,
+    *,
+    prose_bar: bool,
 ) -> str | None:
     """Disposition of ONE git-tracked path for check 31 (#1510; widened
     #2169 to every PLAN-NAMED committed issue-figure PNG): ``None`` (not
@@ -3299,16 +3626,25 @@ def _classify_committed_issue_png(
     a non-per-unit committed PNG the task's own PLAN names but the body
     neither embeds nor names, #2061's `f5_arm_agreement.png` shape).
     Naming = exact stem substring OR a bounded backticked glob
-    (`_stem_named_in_body`, #2169) — the SAME predicate on both the plan
-    and body sides (§3.0: two subtly different notions of "named" in one
-    check is how the next defect gets in). ``plan_text`` is the §3.0
-    candidate-naming text (`_plan_naming_text`); ``None`` disables class
-    C entirely (fail-soft — the per-unit classes A/B never consult it)."""
+    (`_stem_named_in_body`, #2169) — plus, for class C ONLY, the bounded
+    prose-token bar (`_stem_prose_named`, #2231) — the SAME predicate
+    union on both the plan and body sides (§3.0: two subtly different
+    notions of "named" in one check is how the next defect gets in; the
+    per-unit classes A/B keep the exact/glob bars unchanged and never
+    consult the prose bar). ``plan_text`` is the §3.0 candidate-naming
+    text (`_plan_naming_text`); ``None`` disables class C entirely
+    (fail-soft — the per-unit classes A/B never consult it).
+    ``prose_bar`` (keyword-only) is the FORWARD-ONLY gate the CALLER
+    computes once per invocation (`issue is not None and issue >=
+    _PROSE_BAR_MIN_ISSUE`, #2231 v3): False gates BOTH prose-bar
+    consultations off, leaving this branch semantically identical to the
+    pre-#2231 class C — the v3 K1 corpus re-run measured zero deltas of
+    any kind on every issue below the cutoff."""
     base = p.rsplit("/", 1)[-1]
     if not base.lower().endswith(".png"):
         return None
     stem = base[: -len(".png")]
-    if p in referenced_paths or p.lower() in embedded_any:
+    if p in referenced_paths or p.casefold() in embedded_any:
         return None  # embedded (any image-URL form) — discipline satisfied
     if p.lower() in linked_results:
         return None  # markdown-linked in v4 Results — check 38 owns the WARN
@@ -3325,21 +3661,30 @@ def _classify_committed_issue_png(
                 return None  # explicit exemption phrase beside the name
             return "named"
         return "orphan"
-    # §3.0 candidate filter (#2169 v4), IN FRONT of the unmentioned branch:
-    # class C is restricted to figures the task's own PLAN names — the
-    # union of every numeric plans/v<int>.md revision plus
-    # planned_manifest.json — under the SAME §3.1 naming predicate as the
-    # body side. A None plan_text (no issue / no plans dir / unreadable
-    # plan) SKIPS class C entirely: fail-soft to the pre-widening status
-    # quo, never a WARN.
-    if plan_text is None or not _stem_named_in_body(plan_text, stem):
+    # §3.0 candidate filter (#2169 v4; OR-widened #2231, forward-only),
+    # IN FRONT of the unmentioned branch: class C is restricted to
+    # figures the task's own PLAN names — the union of every numeric
+    # plans/v<int>.md revision plus planned_manifest.json — under the
+    # SAME class-C naming predicate as the body side: exact substring OR
+    # bounded backticked glob (`_stem_named_in_body`) OR, when
+    # ``prose_bar`` is set (issue >= _PROSE_BAR_MIN_ISSUE), the bounded
+    # prose-token bar (`_stem_prose_named` — the #2222 shape: a plan
+    # promising "sample-level ROC curves per arm" never names
+    # `roc_by_arm` literally). A None plan_text (no issue / no plans dir
+    # / unreadable plan) SKIPS class C entirely: fail-soft to the
+    # pre-widening status quo, never a WARN.
+    if plan_text is None or not (
+        _stem_named_in_body(plan_text, stem) or (prose_bar and _stem_prose_named(plan_text, stem))
+    ):
         return None
-    # Widened superset (#2169): the looser MENTION bar — naming the figure,
-    # individually or by bounded family glob, silences it. Disclosed false
-    # negative: a figure mentioned in passing but never embedded or
-    # dispositioned goes unflagged (accepted for a WARN-tier backstop;
-    # Lens 13 stays the substantive owner).
-    if named:
+    # Widened superset (#2169): the looser MENTION bar — naming the figure
+    # individually, by bounded family glob, or (forward-only, same
+    # ``prose_bar`` gate) descriptively under the #2231 prose-token bar —
+    # silences it (symmetry: one predicate union, both sides, one gate).
+    # Disclosed false negative: a figure mentioned in passing but never
+    # embedded or dispositioned goes unflagged (accepted for a WARN-tier
+    # backstop; Lens 13 stays the substantive owner).
+    if named or (prose_bar and _stem_prose_named(body, stem)):
         return None
     return "unmentioned"
 
@@ -3446,6 +3791,30 @@ def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> C
     exempt and the WARN still fires; disclosed, deliberately untested
     edge).
 
+    Class C alone adds a THIRD, prose-token bar (`_stem_prose_named`,
+    #2231 — the #2222 shape: the plan promised "sample-level ROC curves
+    per arm", committed as `roc_by_arm.png`, and neither exact nor glob
+    bar registered it), FORWARD-ONLY: consulted — on BOTH class-C sides —
+    only when the task's issue number is >= `_PROSE_BAR_MIN_ISSUE`
+    (2222, the founding incident); older tasks keep byte-identical
+    pre-#2231 class-C behavior (the un-cutoff v2 bar flooded 45.2% of
+    the triggered legacy corpus — see the constant's docstring). A stem
+    is prose-named when some single LINE carries ALL of its required
+    tokens — the stem split on non-alphanumeric runs, dropping pure
+    digits, a fixed stopword set, and figure-index tokens (`f5` / `fig2`
+    / `panel3`), each survivor singularized (strip one trailing `s` at
+    length >= 4, not `ss`-final); applicable ONLY when >= 2 distinct
+    required tokens survive AND >= 2 of them have length >= 3 (length is
+    NOT a drop criterion — a short survivor like `em` stays required and
+    tightens matching). Case-insensitive and whole-token, a bounded
+    divergence from the exact bar. Two disclosed under-matches, both
+    failing toward the pre-widening status quo: single-token stems
+    (`roc.png` is never prose-matchable; the exact/glob bars still
+    govern it) and compound stem tokens vs hyphenated prose (a stem
+    token `samplelevel` is not covered by "sample-level", which
+    tokenizes to {sample, level}). The per-unit classes A/B never
+    consult this bar.
+
     Per-unit stems (`_PER_UNIT_FIG_RE`) keep the stricter PHRASE bar:
 
     - **named + exemption phrase in the SAME blank-line-delimited naming
@@ -3475,7 +3844,9 @@ def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> C
     `_numeric_plan_versions_newest_first`; a figure promised in v1 and
     dropped from v9's prose is still planned) plus
     `artifacts/planned_manifest.json` when present (workflow v2) — under
-    the SAME §3.1 naming predicate as the body side. Three degradation
+    the SAME class-C naming predicate as the body side: exact substring
+    OR bounded glob OR — forward-only, issue >= `_PROSE_BAR_MIN_ISSUE`
+    (#2231) — the prose-token bar. Three degradation
     paths fail SOFT (class C skipped entirely; classes A/B untouched;
     never an exception, never a manufactured WARN; the PASS/WARN detail
     states which mode ran so a silent class C stays legible): `issue`
@@ -3489,8 +3860,10 @@ def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> C
     toward the pre-widening status quo. Candidates then use the looser
     MENTION bar (#2169):
 
-    - **named** (individually or by bounded family glob) → PASS — no
-      disposition idiom required. Rationale: the phrase bar applied
+    - **named** (individually, by bounded family glob, or — forward-only,
+      same cutoff — descriptively under the #2231 prose-token bar) →
+      PASS — no disposition idiom
+      required. Rationale: the phrase bar applied
       corpus-wide would fire on ordinary prose that names a figure
       without a disposition idiom (a `## Reproducibility` artifact list,
       a Methodology reference), converting a targeted backstop into
@@ -3573,6 +3946,11 @@ def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> C
         class_c_note = f"class-C scan {plan_mode}; classes A/B unaffected"
     else:
         class_c_note = f"class-C candidate set: plan-named figures only ({plan_mode})"
+    # Forward-only prose-bar gate (#2231 v3), computed ONCE per invocation
+    # and threaded into the classifier: the prose-token bar is consulted
+    # (both class-C sides) only for tasks numbered >= _PROSE_BAR_MIN_ISSUE.
+    # False leaves class C semantically identical to the pre-#2231 branch.
+    prose_bar = issue is not None and issue >= _PROSE_BAR_MIN_ISSUE
     # (4) enumerate committed PNGs at each reachable cited sha; union per dir.
     orphans: dict[str, list[str]] = {}  # class A (per-unit, never named): path -> short-shas
     named: dict[str, list[str]] = {}  # class B (per-unit, named, no exemption phrase)
@@ -3586,7 +3964,13 @@ def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> C
                 continue
             for p in tracked:
                 cls = _classify_committed_issue_png(
-                    p, body, referenced_paths, embedded_any, linked_results, plan_text
+                    p,
+                    body,
+                    referenced_paths,
+                    embedded_any,
+                    linked_results,
+                    plan_text,
+                    prose_bar=prose_bar,
                 )
                 if cls == "named":
                     named.setdefault(p, []).append(sha[:8])
@@ -3887,6 +4271,101 @@ def check_v4_result_figure_cardinality(body: str) -> CheckResult:
         label,
         True,
         f"all {len(result_h3s)} `### <result>`(s) scanned — no unpaired multi-figure section",
+    )
+
+
+def check_v4_aggregate_stat_needs_per_unit(body: str) -> CheckResult:
+    """Check 55 (v4 only, WARN): a `### <result>` section under
+    `## Results` embedding EXACTLY ONE inline figure whose figure-adjacent
+    text (alt text + blockquote `> ` caption lines) reports a
+    correlation/AUC-family aggregate statistic (`_V4_AGG_STAT_RE`: `r` /
+    `rho` (word or Greek) / `R2` / `R²` / `R^2` / `AUC` / `AUROC` with a
+    value, or a Spearman/Pearson-qualified bare symbol) draws a WARN naming the H3,
+    the matched statistic text, and the missing evidence classes — UNLESS
+    any ONE exemption evidence is present:
+
+    (a) the literal machine-read token `per-unit exemption`
+        (`_PER_UNIT_EXEMPTION_TOKEN_RE`) anywhere in the block's prose
+        layer — the SPEC-named escape for a result whose intervals /
+        committed artifacts already carry the per-unit story;
+    (b) the single figure's basename matches `_PER_UNIT_FIG_RE` (the
+        figure already IS the per-unit view — SPEC's first stated
+        exemption);
+    (c) the `_DECLARED_PAIR_RE` declared-pair idiom in the alt/caption
+        lines (parity with check 49's pair-evidence vocabulary).
+
+    The SINGLE-figure arm of SPEC.md § "Low-level data plot behind every
+    aggregate": the 0-figure case is check 48's territory, the >1-figure
+    case is check 49's (`check_v4_result_figure_cardinality`) — this check
+    fires ONLY at `len(figures) == 1`. Statistic detection is scoped to
+    the figure's alt text + the section's blockquote caption lines, NEVER
+    general section prose (the check-49 scoping rationale: what-is-plotted
+    beats routinely mention rho / AUC as disclosure prose, so whole-block
+    matching would drown the signal); the exemption TOKEN, by contrast, is
+    scanned over the whole block's prose layer (it lives in
+    what-is-plotted prose in the wild — #2224).
+
+    WARN, NEVER FAIL: statistic detection from caption text is heuristic,
+    and the clean-result-critic Lens 11 aggregate-vs-per-unit rule stays
+    the substantive owner. Scans the `_prose_layer` (fenced code +
+    `<details>` stripped, so a quoted example embed or fenced caption
+    never counts). PASSes vacuously on v3 / v2 / legacy bodies
+    (forward-only). Incident #2224 r3: two folded fu1 aggregate results
+    shipped with neither the per-unit view nor the `Per-unit exemption:`
+    line the body itself used elsewhere; only the LM critic caught it
+    (#2264).
+    """
+    label = "Single aggregate-stat figure has per-unit evidence or exemption (v4)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped — not a v4 body")
+    results = _v4_results_body(body)
+    if results is None:
+        return CheckResult(label, True, "## Results missing — check 2 will report")
+    prose = _prose_layer(results)
+    result_h3s = _collect_tldr_h3_names(prose)
+    if not result_h3s:
+        return CheckResult(label, True, "no `### <result>` headings — check 3 will report")
+    plines = prose.splitlines()
+    flagged: list[str] = []
+    for idx, (name, line_no) in enumerate(result_h3s):
+        end_line = result_h3s[idx + 1][1] if idx + 1 < len(result_h3s) else len(plines)
+        block = plines[line_no + 1 : end_line]
+        figures = _v4_block_inline_figures(block)
+        if len(figures) != 1:
+            continue  # 0 figures: check 48's; >1 figures: check 49's
+        url, alt = figures[0]
+        caption_lines = [ln for ln in block if ln.lstrip().startswith(">")]
+        adjacent = "\n".join([alt, *caption_lines])
+        stat_m = _V4_AGG_STAT_RE.search(adjacent)
+        if stat_m is None:
+            continue  # no aggregate statistic in the figure-adjacent text
+        if _PER_UNIT_EXEMPTION_TOKEN_RE.search("\n".join(block)):
+            continue  # exemption (a): the literal machine-read token
+        if _PER_UNIT_FIG_RE.search(_fig_basename(url)):
+            continue  # exemption (b): the single figure IS the per-unit view
+        if _DECLARED_PAIR_RE.search(adjacent):
+            continue  # exemption (c): declared-pair idiom in alt / caption
+        stat_txt = " ".join(stat_m.group(0).split())
+        flagged.append(f"'{name[:48]}' (figure {_fig_basename(url)}, statistic '{stat_txt}')")
+    if flagged:
+        preview = "; ".join(flagged[:2]) + (" …" if len(flagged) > 2 else "")
+        return CheckResult(
+            label,
+            True,
+            f"{len(flagged)} `### <result>` section(s) report a correlation/AUC-family "
+            "statistic in their single figure's alt/caption with NO per-unit evidence — "
+            "no literal `per-unit exemption` token in the section prose, no per-unit "
+            "companion basename, and no declared-pair idiom in the alt text / blockquote "
+            "captions. Embed the per-unit companion (SPEC.md § Low-level data plot behind "
+            "every aggregate) or state `Per-unit exemption: <reason>` in the section "
+            f"(substantive owner: clean-result-critic Lens 11): {preview}",
+            is_warn=True,
+        )
+    return CheckResult(
+        label,
+        True,
+        f"all {len(result_h3s)} `### <result>`(s) scanned — no exemption-less "
+        "single-figure aggregate statistic",
     )
 
 
@@ -5312,8 +5791,10 @@ def _parent_lineage_verdict(ctx_scan: str, fm: dict) -> tuple[str, str]:
     - "fail-denied"       — a fresh-direction / no-parent CLAIM with the
                             parent never referenced (the #1345 r1 incident
                             class; hard FAIL on v4, WARN on v3/v2);
-    - "warn-denied-named" — a no-parent claim BUT #<parent_id> is also
-                            referenced (internally contradictory row);
+    - "fail-denied-named" — a no-parent claim BUT #<parent_id> is also
+                            referenced (internally contradictory row; the
+                            #2224 r1 incident class; hard FAIL on v4, WARN
+                            on v3/v2 — upgraded from WARN by #2249);
     - "warn-unnamed"      — no denied claim, but the lineage never
                             references #<parent_id> (v4-only WARN).
     """
@@ -5338,10 +5819,11 @@ def _parent_lineage_verdict(ctx_scan: str, fm: dict) -> tuple[str, str]:
             f"(SPEC.md § `**Context:**` row)."
         )
     if denied and named:
-        return "warn-denied-named", (
+        return "fail-denied-named", (
             f"context-parent-lineage-mixed: the row references #{pid} but ALSO carries a "
             f"'{denied.group(0)}' clause while frontmatter carries `parent_id: {pid}` — "
-            f"drop the no-parent clause or state the re-scope explicitly."
+            f"drop the no-parent clause or, if the task was genuinely re-scoped as "
+            f"parentless, clear the frontmatter parent_id (SPEC.md § `**Context:**` row)."
         )
     if not named:
         return "warn-unnamed", (
@@ -5372,13 +5854,17 @@ def _context_scan_region(repro: str) -> str:
 def _context_row_result_v3(name: str, repro: str, fm: dict) -> CheckResult:
     """v3/v2 (pre-v4-sentinel) verdict for a label-present Context row —
     the grandfathered WARN-only forms of check 17's sub-checks (#1068
-    origin-prompt for BOTH its classes; #1418 parent-lineage for the
-    fail-denied contradiction ONLY — the warn-only tiers never bind
-    below the v4 sentinel; see `check_repro_context_provenance`)."""
+    origin-prompt for BOTH its classes; #1418/#2249 parent-lineage for
+    the two fail-tier contradiction classes — fail-denied AND
+    fail-denied-named, each degraded to WARN; the warn-only tier never
+    binds below the v4 sentinel; see `check_repro_context_provenance`).
+    Note the fail-denied-named class is NEWLY VISIBLE on v3/v2 as of
+    #2249 (was silent) — forward-only convention: a WARN never blocks,
+    and the retro-scan found zero corpus hits in any version class."""
     p_status, p_detail = _parent_lineage_verdict(_context_scan_region(repro), fm)
     status, sub_detail = _origin_prompt_quote_verdict(repro, fm)
     warn_bits = []
-    if p_status == "fail-denied":
+    if p_status in ("fail-denied", "fail-denied-named"):
         warn_bits.append(p_detail)  # grandfathered: WARN below the v4 sentinel
     if status in ("fail-trunc", "warn-mismatch"):
         warn_bits.append(sub_detail)
@@ -5436,23 +5922,31 @@ def check_repro_context_provenance(
     ``no parent`` CLAIM with ``#<parent_id>`` (or ``/tasks/<parent_id>``)
     never referenced is a hard v4 FAIL (the #1345 r1 incident class),
     degraded to WARN on v3/v2 (forward-only, the #1068 grandfathering
-    shape); a denied claim ALONGSIDE a parent reference WARNs (internally
-    contradictory, but regex-only semantics cannot distinguish a lineage
-    claim from prose like "fresh direction on the eval surface; reuses
-    #825 artifacts"); a lineage that never references the parent with NO
+    shape); a denied claim ALONGSIDE a parent reference is ALSO a hard
+    v4 FAIL (the #2224 r1 incident class — internally contradictory:
+    frontmatter carries ``parent_id`` while the row claims parentless;
+    upgraded from WARN by #2249), degraded to WARN on v3/v2 the same
+    way; a lineage that never references the parent with NO
     denied claim WARNs, v4 only (32/32 committed v4 ``parent_id`` bodies
     name the parent — zero retro-noise — while legitimate grandparent /
     re-scoped lineages make a FAIL over-strict). The v3/v2 branch fires
-    ONLY the fail-denied class (as WARN); the warn-only tiers never bind
-    below the v4 sentinel (#1014 never required a lineage clause there).
+    ONLY the two fail-tier classes (each as WARN); the warn-only tier
+    never binds below the v4 sentinel (#1014 never required a lineage
+    clause there).
     Documented residuals (deliberate): (a) the CONVERSE case — no
     ``parent_id``, the row cites some ``#K`` — is UNCHECKED: 6/10
     committed no-parent v4 bodies legitimately cite issues
     (reused-artifact producers, method parents, siblings), and
     over-attributed lineage errs toward MORE provenance; (b) bare
     ``fresh direction`` (no parenthetical) counts as a no-parent claim
-    (SPEC semantics — it is the sanctioned parentless lineage form),
-    mitigated by the named-parent WARN downgrade; (c) a PROSE-ONLY
+    (SPEC semantics — it is the sanctioned parentless lineage form), so
+    regex-only semantics cannot distinguish a lineage claim from prose
+    like "fresh direction on the eval surface; reuses #825 artifacts" —
+    as of #2249 that shape hard-FAILs on v4 (no named-parent WARN
+    downgrade exists anymore); both remediations the FAIL message names
+    are mechanically clearing (drop the clause, or clear ``parent_id``),
+    and the retro-scan found zero corpus hits, so the residual is
+    bounded prose-rewording cost, not retro-noise; (c) a PROSE-ONLY
     parent reference ("child of task 825" — no ``#`` sigil, no
     ``/tasks/825`` URL) misses the ``named`` escape, so a co-present
     denied claim tier-1 FAILs — bounded, and the FAIL message names the
@@ -5493,8 +5987,9 @@ def check_repro_context_provenance(
             # v2/v3 keep the pre-#1014 label-presence behavior verbatim
             # (forward-only; the v4 lineage sub-check never binds them).
             # The #1068 origin-prompt sub-check is WARN-ONLY here, and
-            # the #1418 parent-lineage cross-check fires ONLY its
-            # fail-denied contradiction, degraded to WARN (grandfathering:
+            # the #1418/#2249 parent-lineage cross-check fires ONLY its
+            # two fail-tier contradiction classes (fail-denied +
+            # fail-denied-named), degraded to WARN (grandfathering:
             # NEVER a new hard FAIL below the v4 sentinel) — the scan uses
             # the SAME stripped region as the v4 branch, never raw `repro`
             # (a denied claim inside the blockquoted verbatim prompt must
@@ -5519,7 +6014,7 @@ def check_repro_context_provenance(
             # FIRST (lineage correctness before prompt verbatim-ness; one
             # failure at a time, the file's convention).
             p_status, p_detail = _parent_lineage_verdict(ctx_scan, fm)
-            if p_status == "fail-denied":
+            if p_status in ("fail-denied", "fail-denied-named"):
                 return CheckResult(name, False, p_detail)
             # #1068 origin-prompt verbatim sub-check — runs AFTER the
             # lineage sub-checks (a body failing both surfaces the
@@ -5528,7 +6023,7 @@ def check_repro_context_provenance(
             if status == "fail-trunc":
                 return CheckResult(name, False, sub_detail)
             warn_bits = []
-            if p_status in ("warn-denied-named", "warn-unnamed"):
+            if p_status == "warn-unnamed":
                 warn_bits.append(p_detail)
             if status == "warn-mismatch":
                 warn_bits.append(sub_detail)
@@ -7666,7 +8161,7 @@ def _gather_repro_artifact_urls(repro: str) -> list[str]:
         url = token.rstrip(".,;:!?")
         for pattern in (_RAW_GITHUB_FIGURE_RE, _GITHUB_BLOB_TREE_URL_RE):
             m = pattern.match(url)
-            if m and (m.group("owner").lower(), m.group("repo").lower()) == _THIS_REPO_SLUG:
+            if m and (m.group("owner").casefold(), m.group("repo").casefold()) == _THIS_REPO_SLUG:
                 if url not in urls:
                     urls.append(url)
                 break
@@ -7971,7 +8466,10 @@ def _gather_body_artifact_urls(body: str) -> list[str]:
     for token in _REPRO_URL_TOKEN_RE.findall(scan):
         url = token.rstrip(".,;:!?\"'")
         m = _GITHUB_BLOB_TREE_URL_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue
         if url not in urls:
             urls.append(url)
@@ -8873,7 +9371,10 @@ def check_figure_text_vs_body_tokens(body: str) -> CheckResult:
     scanned = 0
     for url, caption in fig_caps:
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         if url not in meta_cache:
             meta_cache[url] = _read_figure_meta_text(repo, m.group("sha"), m.group("path"))
@@ -9151,7 +9652,10 @@ def check_figure_panel_prose_vs_sidecar(body: str) -> CheckResult:
     json_cache: dict[str, dict | None] = {}
     for url, img_idx in fig_at:
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         prose = _enclosing_h3_prose_window(rlines, img_idx)
         if prose is None:
@@ -9190,12 +9694,25 @@ _SNAKE_TOKEN_RE = re.compile(r"\b[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)+\b")
 # (c) bare hypothesis codes (`H3`, `H1c`) — plan-registered hypothesis slots
 #     rendered into figure text (#1072: panel title "… (H3)"; #1774: sidecar
 #     title "… (H1c)" passed the old single-digit form). SINGLE digit +
-#     optional single LOWERCASE letter, case-sensitive by design:
+#     optional single LOWERCASE letter, the letter optionally PRIME-marked
+#     (ASCII apostrophe or U+2032 prime — #2054's `H0'a`/`H0`+U+2032+`b`
+#     panel titles; #2267). The prime extension is a REPORTING-ONLY strict
+#     superset, not a detection fix: the apostrophe/prime is a word
+#     boundary, so the pre-#2267 form `\bH\d[a-z]?\b` ALREADY fired inside
+#     `H0'a` — it merely reported the truncated `H0`; the widened form
+#     lengthens the reported token and can never add or remove a firing
+#     figure (a prime followed by MULTIPLE letters, e.g. `H0'ab`, still
+#     falls back to the truncated `H0` report — no boundary splits `ab`;
+#     a possessive `H2's` now reports `H2's`, an accepted envelope — a
+#     bare `H2` in rendered figure text is a violation either way).
+#     Case-sensitive by design:
 #     `H100`/`H200` GPU names (3 digits) and `H20` (2 digits, also a GPU
 #     name) never match — no word boundary fires between two digits — and
 #     lowercase `h3` / uppercase-suffix `H1C` are not the project's
 #     hypothesis-tag convention and stay clean.
-_HYPOTHESIS_CODE_RE = re.compile(r"\bH\d[a-z]?\b")
+# U+2032 spelled as an escape, never the literal char in code strings (the
+# `_APOS` convention; full-ruleset RUF001 pin on this file).
+_HYPOTHESIS_CODE_RE = re.compile(r"\bH\d(?:['\u2032][a-z]|[a-z])?\b")
 
 # (d) slot-family codes `f16` / `l16` (first-16 / last-16 answer-slot
 #     families, #1072: xlabel "answer position t (f16 slots)"). Deliberately
@@ -9295,13 +9812,106 @@ def _suppress_caption_decoded_slugs(toks: list[str], caption: str) -> list[str]:
     return [t for t in toks if not (_is_arm_slug_token(t) and t.casefold() in caption_cf)]
 
 
-# Path/URI-SHAPED string: no internal whitespace and at least one path
-# separator — a file path or URL, which is provenance, not rendered text.
-# Deliberately NOT a whole-string any-slash skip: a slash-separated rendered
-# label like `ctx_blk_max / ans_uhdr_max` contains whitespace, so it IS
-# scanned (a whole-string any-slash form would false-clean slash-separated
-# labels inside the incident class).
-_PATH_SHAPED_RE = re.compile(r"^\S*[/\\]\S*$")
+# Path-LIKE word predicate (#2258) — supersedes and FOLDS IN the former
+# `_PATH_SHAPED_RE` (`^\S*[/\\]\S*$`), which exempted EVERY whitespace-free
+# slash-bearing word as a file path and thereby exempted slash-joined
+# rendered `behavior/slug` labels whole. Incident #2221:
+# `checkpoint_detection_auc.png` rendered legend labels like
+# `hallucination/a_rb_ctx` (committed blob
+# `371b0c8af0f54c762d043535d06e54e4e8a9806b`) and passed check 28 silently
+# while the bare slug `a_rb_ctx` was already class-(b)-flagged — the string
+# never reached the token classes. `_is_path_like_word` keeps the
+# provenance exemption for words that LOOK like paths / URLs / mathtext /
+# caption formulas and scans the rest. MONOTONE by construction: every
+# exempt word still contains `/` or `\` (the whole former criterion), so
+# the new exempt set is a strict subset of the old — the narrowing can
+# only ADD warns, never lose an existing one. Deliberately still NOT a
+# whole-string any-slash skip: a slash-separated rendered label like
+# `ctx_blk_max / ans_uhdr_max` contains whitespace, so it IS scanned
+# word-by-word (unchanged from the old gate).
+_PATH_EXT_RE = re.compile(r"\.[A-Za-z0-9]{1,5}$")
+_PATH_MARKER_RE = re.compile(r"^(?:/|\./|\.\./|~|[A-Za-z][A-Za-z0-9+.\-]*://)")
+_FORMULA_CHARS = frozenset("()^$=+")
+# Closed REPO-STRUCTURE list (this repo's canonical top-level dirs) — kills
+# extension-less dir refs (`eval_results/issue_825`) rendered in caption
+# prose. A repo-structure list (stable, closed), NOT an open vocabulary
+# allowlist.
+_REPO_TOP_DIRS = frozenset(
+    {
+        "figures",
+        "eval_results",
+        "ood_eval_results",
+        "scripts",
+        "src",
+        "docs",
+        "data",
+        "tasks",
+        "tests",
+        "configs",
+        "raw",
+        "external",
+        "archive",
+        "store",
+    }
+)
+_WORD_STRIP_PUNCT = "()[]{}<>,.;:'\"`"
+
+
+def _is_path_like_word(word: str) -> bool:
+    r"""True iff the whitespace-free ``word`` is provenance-shaped (a file
+    path / URL / mathtext command / caption formula) and therefore EXEMPT
+    from every check-28 token scan. Arms in LOAD-BEARING order (#2258;
+    ordering pin: ``p(cond_4)`` must stay scanned):
+
+    1. backslash anywhere -> exempt — LaTeX mathtext
+       (``$c_0^{lt}\rightarrow w$``, ``$\mathdefault{10^{0}}$``) and
+       Windows paths; byte-preserves the former regex's entire backslash
+       class;
+    2. strip surrounding punctuation ``()[]{}<>,.;:'"`` + backtick ->
+       ``s``; NO ``/`` in ``s`` -> NOT exempt (ordinary word — scanned,
+       unchanged). This slash gate MUST precede arm 3: a slash-FREE word
+       with an interior formula char (``p(cond_4)``) stays scanned — a
+       formula-arm-first ordering wrongly exempts it while passing every
+       other pin;
+    3. ``s`` contains a formula char (one of ``( ) ^ $ = +``) -> exempt —
+       caption formulas like ``sqrt(mean_i(s2_i/m_i))``,
+       ``(var_level + var_5-0)/2)``;
+    4. leading path/scheme marker (``/``, ``./``, ``../``, ``~``,
+       ``<scheme>://``) -> exempt;
+    5. ``s.count("/") >= 2`` -> exempt (multi-segment path);
+    6. final segment carries a file extension
+       (``\.[A-Za-z0-9]{1,5}$``) -> exempt — catches
+       ``scripts/issue1336_step_transfer_tiers.py`` even
+       punctuation-wrapped (arm 2 already stripped the wrapper);
+    7. first segment (casefolded) is a canonical repo top-level dir
+       (``_REPO_TOP_DIRS``) -> exempt — extension-less dir refs
+       (``eval_results/issue_825``);
+    8. otherwise NOT exempt — exactly the slash-joined rendered-label
+       shape (``hallucination/a_rb_ctx``, the #2221 class); the token
+       regexes tokenize across ``/`` (a non-word char provides the
+       ``\b`` boundary), so no segment-splitting is needed downstream.
+
+    Two arm-introduced FALSE-NEGATIVE residuals, accepted by design: a
+    flaggable slug inside a formula-char-bearing slash word
+    (``logP(x)/a_rb_ctx`` — arm 3 exempts it) and a behavior name
+    colliding with the repo-top-dir list (``raw/<slug>`` — arm 7 exempts
+    it); neither occurs in the incident class or the 2026-08 sidecar
+    corpus, and check 28 is WARN-level (misses cost nothing structural).
+    """
+    if "\\" in word:
+        return True
+    s = word.strip(_WORD_STRIP_PUNCT)
+    if "/" not in s:
+        return False
+    if any(ch in _FORMULA_CHARS for ch in s):
+        return True
+    if _PATH_MARKER_RE.match(s):
+        return True
+    if s.count("/") >= 2:
+        return True
+    if _PATH_EXT_RE.search(s):
+        return True
+    return s.split("/", 1)[0].casefold() in _REPO_TOP_DIRS
 
 
 def _opaque_code_tokens(text: str) -> list[str]:
@@ -9309,8 +9919,12 @@ def _opaque_code_tokens(text: str) -> list[str]:
     layer pins, and snake_case tokens that are >=3 segments OR carry any
     digit (`ctx_blk_max`, `sw_eng_C1`, `BS_E0`, `cond_4`); 2-segment
     all-alpha tokens (`log_prob`, `judge_rate`, `helpful_assistant`) are
-    allowed; bare hypothesis codes (`H3`/`H1c` — `\bH\d[a-z]?\b`, single
-    digit + optional single lowercase letter, case-sensitive);
+    allowed; bare hypothesis codes (`H3`/`H1c`, incl. the prime-marked
+    `H0'a` forms — `\bH\d(?:['\u2032][a-z]|[a-z])?\b`, single digit +
+    optional single lowercase letter, the letter optionally prime-marked
+    with an ASCII apostrophe or U+2032 (a reporting-only strict superset
+    of the pre-#2267 `\bH\d[a-z]?\b` — see the class-(c) comment),
+    case-sensitive);
     slot-family codes (`f16`/`l16` only); bare candidate/panel codes
     (`P1`/`P7`/`M4`/`P3b` — `\b[PM]\d[a-z]?\b`, same single-digit +
     optional-lowercase-letter shape discipline as the hypothesis class,
@@ -9329,27 +9943,32 @@ def _opaque_code_tokens(text: str) -> list[str]:
     tail), which keeps hyphenated rendered English (`end-to-end`,
     `under-4-token`, `best-of-28-layers`) and long dated ids
     (`claude-sonnet-4-5-20250929`) unflagged; 2-segment hyphen tokens
-    (`log-prob`) never match the regex at all. PATH-SHAPED strings
-    (whitespace-free with a path
-    separator — file paths, URLs) are exempt from ALL SEVEN token scans;
-    strings that merely CONTAIN a slash (e.g. a slash-separated rendered
-    label) are still scanned, with individual path-shaped whitespace-split
-    words skipped for every token class — the exemption is load-bearing
-    only for BOUNDARY-TERMINATED tokens inside path words
+    (`log-prob`) never match the regex at all. PATH-LIKE words
+    (`_is_path_like_word` — backslash-bearing mathtext, formula-char
+    words, leading path/scheme markers, multi-segment paths, extension
+    tails, repo-top-dir refs; #2258) are exempt from ALL SEVEN token
+    scans — a whole path-like SINGLE-WORD string is skipped entirely,
+    and inside multi-word strings each path-like whitespace-split word
+    is skipped per token class. A slash-bearing word that clears NO
+    predicate arm — the slash-joined rendered-label shape
+    (`hallucination/a_rb_ctx`, incident #2221) — IS scanned: the former
+    `_PATH_SHAPED_RE` any-slash form exempted it whole, which was the
+    #2221 miss. The exemption is load-bearing only for
+    BOUNDARY-TERMINATED tokens inside path words
     (`figures/issue_1072/H3.png`, `see figures/a/f16.png`); a `_`-suffixed
     token inside a path word (`H3_panel.png`) is already cleaned by the
     regex boundary itself. De-duped case-insensitively, order kept.
     """
     hits: list[str] = []
-    if not _PATH_SHAPED_RE.match(text.strip()):
-        words = text.split()
+    words = text.split()
+    if not (len(words) == 1 and _is_path_like_word(words[0])):
 
         def _only_in_path_words(tok: str) -> bool:
             """True iff every whitespace-split word containing `tok` is
-            path-shaped ("see figures/x_1/y.png") — provenance, not
+            path-like ("see figures/x_1/y.png") — provenance, not
             rendered text, so the token is skipped."""
             ws_words = [w for w in words if tok in w]
-            return bool(ws_words) and all(_PATH_SHAPED_RE.match(w) for w in ws_words)
+            return bool(ws_words) and all(_is_path_like_word(w) for w in ws_words)
 
         for m in _LAYER_PIN_RE.finditer(text):
             tok = m.group(0)
@@ -9425,7 +10044,7 @@ def _iter_meta_label_values(obj: object) -> list[str]:
 
 
 def check_figure_label_codes(body: str) -> CheckResult:
-    """Check 28 (WARN): rendered figure text (sidecar ``.meta.json`` values)
+    r"""Check 28 (WARN): rendered figure text (sidecar ``.meta.json`` values)
     must not carry opaque config-code tokens — ``@L<digits>`` layer pins,
     regime-code slugs (``ctx_blk_max``, ``sw_eng_C1``), bare hypothesis
     codes (``H3``/``H1c``), slot-family codes (``f16``/``l16``), bare
@@ -9441,7 +10060,13 @@ def check_figure_label_codes(body: str) -> CheckResult:
     ``Parallel share of the gap by depth (H3)`` and the xlabel
     ``answer position t (f16 slots)`` passed check 28 clean and were caught
     only by the LM clean-result critic (hand-fixed in ``1f19deacfd``) —
-    mechanized here as the hypothesis-code + slot-family classes. Incident
+    mechanized here as the hypothesis-code + slot-family classes. #2267
+    extended the hypothesis class to REPORT prime-marked tokens
+    (``H0'a`` / the U+2032 form) in full — a reporting-only strict
+    superset, NOT a detection-gap fix: the apostrophe/prime is a word
+    boundary, so the pre-#2267 form already fired inside ``H0'a`` and
+    merely reported the truncated ``H0`` (see the class-(c) comment
+    block). Incident
     #1900: ``mediation_forest.png``'s legend text ``P1 | P7`` and the
     ``P7-residualized`` title passed check 28 clean (n_fail=0, twice) and
     burned an LM clean-result-critic round (pre-fix sidecar evidence at
@@ -9463,7 +10088,31 @@ def check_figure_label_codes(body: str) -> CheckResult:
     originating diff sketch is a documented NO-OP on this channel:
     sidecar strings are matplotlib rendered text serialized to JSON
     (never markdown), so backtick code spans cannot occur and no
-    backtick logic is implemented.
+    backtick logic is implemented. Incident #2221:
+    ``checkpoint_detection_auc.png`` rendered slash-joined
+    ``behavior/slug`` legend labels (``hallucination/a_rb_ctx`` —
+    committed blob ``371b0c8af0f54c762d043535d06e54e4e8a9806b``) and
+    passed silently: the former any-slash word exemption
+    (``_PATH_SHAPED_RE``, ``^\S*[/\\]\S*$``) exempted the WHOLE string
+    as a file path before any token class ran, while the bare slug
+    ``a_rb_ctx`` was already class-(b)-flagged — narrowed here into the
+    ``_is_path_like_word`` predicate at BOTH consumers (the whole-string
+    gate and the per-word exemption); MONOTONE (every still-exempt word
+    contains ``/`` or ``\``, the whole former criterion), so the change
+    can only ADD warns. The #2221 task body's prescribed fix (a
+    >=3-segment single-letter-prefix snake class,
+    ``^[a-z]_[a-z0-9]+(_[a-z0-9]+)+``) is a PROVABLE NO-OP — every
+    match carries >=2 underscores, a strict subset of class (b)'s
+    existing ``count("_") >= 2`` filter — documented, not implemented.
+    Deliberately NOT added: a 2-segment ``^[a-z]_[a-z]+$`` class for
+    bare ``d_transport`` — the corpus sweep over all 3,241 tracked
+    sidecars measured ~45 distinct / ~9,200 occurrences of legitimate
+    rendered math notation it would flag (``z_marker`` 2,237, ``s_i``
+    2,003, ``n_train`` 825, ...); bare ``d_transport`` stays an accepted
+    residual, mitigated at figure granularity (the #2221 arm roster
+    co-renders >=3-segment siblings — ``a_rb_ctx`` / ``c_map_ctx`` /
+    ``c_map_pfx`` — that flag the figure anyway under per-figure WARN
+    semantics).
 
     SLUG-CLASS caption-decode suppression (#1988): an arm-slug token
     that appears VERBATIM (case-insensitive substring) in THIS figure's
@@ -9495,8 +10144,20 @@ def check_figure_label_codes(body: str) -> CheckResult:
     now arrive as scanned VALUES in new sidecars, narrowing this residual to
     key names — including a whitespace-free letter-arrow token used as a
     DataFrame column KEY, the #1902 residual gap); (iii) a token inside a
-    path-shaped word (or a whole path-shaped string) is exempt — the path
-    exemption covers ALL SEVEN token classes. WARN, never FAIL; fail-soft on
+    path-LIKE word (or a whole path-like single-word string,
+    ``_is_path_like_word``, #2258) is exempt — the exemption covers ALL
+    SEVEN token classes, and its named residuals are: an HF ``owner/repo``
+    id in caption prose (``EleutherAI/sae-llama-3.1-8b-64x`` -> arm-slug
+    token ``sae-llama-3``) is indistinguishable from a slash-joined label
+    without an open vocabulary allowlist — accepted FALSE POSITIVE
+    (WARN-level, standing acknowledge-in-body escape); a flaggable slug
+    inside a formula-char-bearing slash word (``logP(x)/a_rb_ctx``) and a
+    behavior name colliding with the repo-top-dir list (``raw/<slug>``)
+    are two arm-introduced FALSE NEGATIVES (formula arm / repo-dir arm
+    exempt them) — neither occurs in the incident class or the 2026-08
+    corpus; and bare 2-segment ``d_transport`` stays unflagged (no
+    2-segment class — see the #2221 paragraph above). WARN, never FAIL;
+    fail-soft on
     missing / unparsable sidecars (the check-24 convention, NOT check 26's
     loud missing-sidecar FAIL); NO-OP PASS offline / no figures / no
     scannable same-repo sidecar.
@@ -9532,7 +10193,10 @@ def check_figure_label_codes(body: str) -> CheckResult:
     scanned = 0
     for url in dict.fromkeys(urls):
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         if url not in meta_cache:
             meta_cache[url] = _read_figure_meta_json(repo, m.group("sha"), m.group("path"))
@@ -9922,7 +10586,10 @@ def check_figure_prose_numerics_vs_sidecar(body: str) -> CheckResult:
     h3_prior_vals: dict[int, list[tuple[float, bool]]] = {}
     for url, img_idx in fig_at:
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         warn, status = _prose_numerics_for_one_figure(
             repo, m, rlines, img_idx, json_cache, h3_prior_vals
@@ -10000,14 +10667,29 @@ def _beat_series_claims(prose: str) -> dict:
     Deliberately NARROW (the check's FP containment): only the two literal
     #1092 defect phrasings are registered — paraphrases ("each arm", "two
     models", "per-source bars") miss by design (a documented false-negative,
-    not a bug). Class-B phrases are de-duplicated preserving order.
+    not a bug). Class-B phrases are de-duplicated preserving order. A
+    Class-B noun token the ASCII map cannot resolve after casefold
+    (U+0130 / U+0131 -- matched by IGNORECASE, unmappable by any string
+    fold) registers no claim (#2281).
     """
     claims: dict = {"both": [], "one_per": []}
     for bm in _BEAT_BOTH_RE.finditer(prose):
         claims["both"].append(bm.group(0))
     seen: set[tuple[str, str]] = set()
     for om in _BEAT_ONE_PER_RE.finditer(prose):
-        pair = (om.group(0).casefold(), _BEAT_WORD_TO_KIND[om.group(1).lower()])
+        # `re.IGNORECASE` matches U+0130 / U+0131 against ASCII 'i' (so a
+        # decorated 'point' / 'line' variant reaches this loop), but NO
+        # string fold maps them onto the ASCII dict key: re does simple
+        # case folding plus extended pairs while str.casefold() is the
+        # fuller Unicode fold, and the two disagree on exactly those two
+        # codepoints. The lookup must therefore be TOTAL -- an unmappable
+        # token registers no claim, the same disposition as a non-match;
+        # a bare subscript here crashed the whole verifier via KeyError
+        # (task #2281).
+        kind = _BEAT_WORD_TO_KIND.get(om.group(1).casefold())
+        if kind is None:
+            continue
+        pair = (om.group(0).casefold(), kind)
         if pair not in seen:
             seen.add(pair)
             claims["one_per"].append((om.group(0), pair[1]))
@@ -10296,7 +10978,10 @@ def check_figure_beat_claims_vs_sidecar_text(body: str) -> CheckResult:
     json_cache: dict[str, dict | None] = {}
     for url, img_idx in fig_at:
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         fig_warns, did_scan = _beat_claims_for_one_figure(repo, m, rlines, img_idx, json_cache)
         warns.extend(fig_warns)
@@ -11791,6 +12476,650 @@ def check_hf_adjacent_file_claims(body: str) -> CheckResult:
     return CheckResult(name, True, detail + unverified_detail)
 
 
+# ─── Check 54: artifact-content claims vs the pinned JSON's structure ────────
+# (#2232; incident #2222 r2: the body claimed "The per-dataset values behind
+# the three probe correlations are recorded in the probe JSON pinned in the
+# footer" while the footer-pinned `form_a_probe.json` holds NO per-dataset
+# structure at any depth — its `n_datasets: 24` lives ONLY nested at
+# `records[i].n_datasets` (18 occurrences, all 24), and no 24-length list or
+# dict exists anywhere in the artifact. Checks 30/32/40/42 verify counts,
+# filename membership, and URL existence against pins — never structure
+# INSIDE a pinned data JSON — so the false pointer passed every mechanical
+# check and only the manual critic artifact-walk caught it.)
+
+# A markdown link whose target names a `.json` file (optional query/fragment
+# tolerated after the extension; no whitespace/parens inside the URL).
+_JSON_MD_LINK_RE = re.compile(r"\[(?:[^\]]|\](?!\())*\]\((?P<url>[^)\s]+\.json(?:[?#][^)\s]*)?)\)")
+# The claim's per-unit phrase: `per-<unit>` / `per <unit>`, unit a word token
+# (dataset, layer, seed, behavior, ...).
+_PER_UNIT_PHRASE_RE = re.compile(r"\bper[- ](?P<unit>[a-z][a-z_]{1,30})\b", re.IGNORECASE)
+# The recorded-vocabulary verb + "in" (the pointer form's tail). Required
+# AFTER the per-unit phrase in the same sentence — active-voice inversions
+# ("the JSON records the per-layer values") are a documented v1
+# false-negative class (see the check docstring).
+_RECORDED_IN_RE = re.compile(
+    r"\b(?:recorded|stored|saved|listed|available|persisted|live[sd]?)\s+in\b",
+    re.IGNORECASE,
+)
+# The `in the <descriptor> JSON` naming phrase — the footer-resolution tier-1
+# key (the #2222 shape: "recorded in the probe JSON pinned in the footer" →
+# descriptor "probe" → `form_a_probe.json`, unique among the footer's pins).
+_IN_DESC_JSON_RE = re.compile(
+    r"\bin\s+(?:the\s+|an?\s+|its\s+)?(?P<desc>[A-Za-z0-9_\- ]{1,60}?)\s+JSONs?\b"
+)
+# Sentence boundary: terminal punctuation followed by whitespace — `.json`
+# link targets (letter follows the dot) and decimals ("-0.24": digit follows)
+# never split; a lost abbreviation split only narrows a sentence (recall,
+# never precision).
+_ARTIFACT_SENTENCE_SPLIT_RE = re.compile(r"(?<=[.;!?])\s+")
+# Claim-side tokens excluded from basename/descriptor matching: generic
+# filler that would match nearly any footer pin. Deliberately does NOT stop
+# real basename-ish words (e.g. "summary", "probe", "map").
+_ARTIFACT_DESC_STOP_TOKENS = frozenset(
+    {
+        "the",
+        "a",
+        "an",
+        "this",
+        "that",
+        "these",
+        "those",
+        "its",
+        "their",
+        "of",
+        "per",
+        "in",
+        "and",
+        "or",
+        "to",
+        "for",
+        "with",
+        "on",
+        "at",
+        "by",
+        "from",
+        "are",
+        "is",
+        "was",
+        "were",
+        "be",
+        "been",
+        "same",
+        "json",
+        "jsons",
+        "file",
+        "files",
+        "pinned",
+        "footer",
+        "linked",
+        "recorded",
+        "stored",
+        "saved",
+        "listed",
+        "available",
+        "persisted",
+        "live",
+        "lives",
+        "lived",
+        "values",
+        "value",
+        "behind",
+    }
+)
+# Per-body cap on UNIQUE artifact loads (each load = ≤2 bounded git
+# subprocess spawns or one working-copy read); claims past the cap surface
+# as unverified notes, never a WARN — the check-30/32 cap convention.
+_ARTIFACT_CONTENT_MAX_LOADS = 8
+# Artifacts above this size are skipped (unverified note), never parsed.
+_ARTIFACT_CONTENT_MAX_BYTES = 10 * 1024 * 1024
+# Structure/metadata walk bounds: bound exhaustion ⇒ SKIP, never WARN.
+_ARTIFACT_CONTENT_MAX_NODES = 200_000
+_ARTIFACT_CONTENT_MAX_DEPTH = 60
+
+
+def _artifact_claim_tokens(text: str) -> set[str]:
+    """Lowercased alnum tokens of ``text`` for basename/descriptor matching
+    (check 54): length ≥2 (drops the `a`/`b` connectors in stems like
+    ``form_a_probe``), stop-token filtered."""
+    return {
+        t
+        for t in re.findall(r"[a-z0-9]+", text.lower())
+        if len(t) >= 2 and t not in _ARTIFACT_DESC_STOP_TOKENS
+    }
+
+
+def _footer_json_pins(body: str) -> list[str]:
+    """Ordered, deduplicated `.json` markdown-link targets in the v4 footer
+    (fence- and blockquote-stripped) — check 54's footer-resolution pool."""
+    footer = _v4_footer_text(body)
+    if not footer:
+        return []
+    text = _strip_blockquote_lines(_strip_fenced_blocks(footer))
+    urls: list[str] = []
+    for m in _JSON_MD_LINK_RE.finditer(text):
+        u = m.group("url")
+        if u not in urls:
+            urls.append(u)
+    return urls
+
+
+def _resolve_footer_pin_by_basename(
+    sentence: str, footer_urls: list[str]
+) -> tuple[str | None, str]:
+    """Resolve a link-less "pinned in the footer" claim to ONE footer `.json`
+    pin by basename-token match (check 54). Returns ``(url, note)``; ``url``
+    is None when unresolved and ``note`` says why.
+
+    Two tiers. Tier 1 keys on the claim's ``in the <name> JSON`` descriptor
+    tokens — the plan's claim-sentence ∩ pin-basename intersection NARROWED
+    to the tokens that actually NAME the artifact: on the verified #2222
+    incident the whole-sentence intersection is 2-way ambiguous
+    (``form_a_probe`` via "probe" AND ``predictor_correlations`` via
+    "correlations", which the sentence also mentions), while the descriptor
+    "probe" is unique. Tier 2 (fallback when tier 1 has no phrase or zero
+    candidates) uses the whole claim-sentence tokens. In each tier: exactly
+    one candidate ⇒ resolve; ≥2 ⇒ unresolved (ambiguous — SKIP, never a
+    guess); zero ⇒ next tier / unresolved."""
+    stems: list[tuple[str, set[str]]] = []
+    for u in footer_urls:
+        base = posixpath.basename(u.split("?", 1)[0].split("#", 1)[0])
+        stem = base[: -len(".json")] if base.endswith(".json") else base
+        stems.append((u, _artifact_claim_tokens(stem.replace("_", " ").replace("-", " "))))
+
+    def _candidates(tokens: set[str]) -> list[str]:
+        return [u for u, st in stems if st & tokens]
+
+    dm = _IN_DESC_JSON_RE.search(sentence)
+    if dm:
+        desc_tokens = _artifact_claim_tokens(dm.group("desc"))
+        if desc_tokens:
+            cands = _candidates(desc_tokens)
+            if len(cands) == 1:
+                return cands[0], "footer basename match on the `in the <name> JSON` phrase"
+            if len(cands) > 1:
+                return None, (
+                    f"{len(cands)} footer pins match the claim's JSON-naming tokens (ambiguous)"
+                )
+    cands = _candidates(_artifact_claim_tokens(sentence))
+    if len(cands) == 1:
+        return cands[0], "footer basename match on claim-sentence tokens"
+    if not cands:
+        return None, "no footer .json pin shares a basename token with the claim sentence"
+    return None, (
+        f"{len(cands)} footer pins share basename tokens with the claim sentence (ambiguous)"
+    )
+
+
+def _artifact_claim_paragraphs(prose: str) -> list[str]:
+    """Paragraph chunks for the check-54 sentence scan: blank-line-separated
+    blocks, split further at list-item starts (each bullet its own chunk);
+    heading lines dropped; lines within a chunk joined by a single space
+    (clean-result prose may hard-wrap mid-sentence)."""
+    chunks: list[str] = []
+    cur: list[str] = []
+
+    def _flush() -> None:
+        if cur:
+            chunks.append(" ".join(cur))
+            cur.clear()
+
+    for line in prose.splitlines():
+        s = line.strip()
+        if not s:
+            _flush()
+            continue
+        if s.startswith("#"):
+            _flush()
+            continue
+        if re.match(r"^(?:[-*+]\s|\d+\.\s)", s):
+            _flush()
+        cur.append(s)
+    _flush()
+    return chunks
+
+
+def _gather_artifact_content_claims(body: str) -> list[dict[str, str | None]]:
+    """Extract per-unit artifact-content claims from a v4 body's
+    ``## Takeaways`` + ``## Results`` prose (check 54). Grandfathered
+    v3/v2/legacy bodies: silent no-op (returns ``[]`` — forward-only, the
+    check-41 argument).
+
+    A claim instance = a sentence containing (a) a per-unit phrase
+    (``per-<unit>`` / ``per <unit>``) followed by a recorded-vocabulary verb
+    + ``in`` (``_RECORDED_IN_RE``), and (b) a pinned `.json` markdown link
+    resolvable from: the same sentence (preferring the first link after the
+    verb), else the nearest PRECEDING `.json` link in the same paragraph,
+    else — for sentences mentioning "footer" — the footer matching-basename
+    resolution (``_resolve_footer_pin_by_basename``). Fenced code and
+    blockquote lines (figure captions, verbatim quotes) are stripped first.
+
+    Returns one dict per claim: ``sentence`` (stripped), ``unit``
+    (lowercased singular noun), ``url`` (None when unresolved), ``via``
+    (resolution route, for the WARN detail), ``skip_note`` (why unresolved,
+    when ``url`` is None). One claim per sentence (the first per-unit
+    phrase wins); deduplicated on the sentence text."""
+    if not is_v4(body):
+        return []
+    parts: list[str] = []
+    takeaways = section_text(body, "Takeaways")
+    if takeaways:
+        parts.append(takeaways)
+    results_body = _v4_results_body(body)
+    if results_body:
+        parts.append(results_body)
+    if not parts:
+        return []
+    footer_urls = _footer_json_pins(body)
+    claims: list[dict[str, str | None]] = []
+    seen_sentences: set[str] = set()
+    for part in parts:
+        prose = _strip_blockquote_lines(_strip_fenced_blocks(part))
+        for para in _artifact_claim_paragraphs(prose):
+            para_links = [(m.start(), m.group("url")) for m in _JSON_MD_LINK_RE.finditer(para)]
+            pos = 0
+            for sent in _ARTIFACT_SENTENCE_SPLIT_RE.split(para):
+                off = para.find(sent, pos)
+                if off < 0:  # defensive — split output always re-finds
+                    continue
+                pos = off + len(sent)
+                pu = _PER_UNIT_PHRASE_RE.search(sent)
+                if pu is None:
+                    continue
+                ri = _RECORDED_IN_RE.search(sent, pu.end())
+                if ri is None:
+                    continue
+                # Negation guard (found on the real corpus in the #2232
+                # sweep: "per-fold spread is NOT persisted in the round
+                # mirror", #1689): a negated pointer asserts ABSENCE — it
+                # must not parse as a positive content claim, where an
+                # adjacent pin could ground a spurious WARN.
+                if re.search(r"\b(?:not|never|no longer)\s*$", sent[: ri.start()], re.IGNORECASE):
+                    continue
+                key = sent.strip()
+                if key in seen_sentences:
+                    continue
+                seen_sentences.add(key)
+                url, via, skip_note = _resolve_claim_pin(
+                    sent, off, ri.start(), para_links, footer_urls
+                )
+                claims.append(
+                    {
+                        "sentence": key,
+                        "unit": pu.group("unit").lower(),
+                        "url": url,
+                        "via": via,
+                        "skip_note": skip_note,
+                    }
+                )
+    return claims
+
+
+def _resolve_claim_pin(
+    sent: str,
+    off: int,
+    verb_start: int,
+    para_links: list[tuple[int, str]],
+    footer_urls: list[str],
+) -> tuple[str | None, str, str | None]:
+    """Resolve ONE claim sentence's `.json` pin (check 54): the sentence's
+    own link (preferring the first after the verb), else the nearest
+    PRECEDING link in the same paragraph, else — for sentences mentioning
+    "footer" — the footer matching-basename resolution. Returns
+    ``(url, via, skip_note)``; ``url`` None ⇒ ``skip_note`` says why."""
+    in_sent = [(st, u) for st, u in para_links if off <= st < off + len(sent)]
+    if in_sent:
+        after_verb = [u for st, u in in_sent if st >= off + verb_start]
+        return (after_verb[0] if after_verb else in_sent[-1][1]), "inline link", None
+    preceding = [u for st, u in para_links if st < off]
+    if preceding:
+        return preceding[-1], "nearest preceding paragraph link", None
+    if "footer" in sent.casefold() and footer_urls:
+        url, note = _resolve_footer_pin_by_basename(sent, footer_urls)
+        if url is None:
+            return None, "", note
+        return url, note, None
+    return None, "", "no adjacent pinned .json link (sentence, paragraph, or footer)"
+
+
+def _load_pinned_json_for_claim(url: str) -> tuple[object | None, str]:
+    """Load the JSON artifact behind a pinned link, OFFLINE only (check 54).
+    Returns ``(obj, note)``; ``obj`` is None when the load was skipped and
+    ``note`` says why (an unverified note, never a WARN).
+
+    Same-repo GitHub blob/tree pins load from the git object DB
+    (``git show <sha>:<path>`` after a ``git cat-file -s`` size probe — the
+    check-26 sidecar-loader convention: worktrees share the object database
+    with the main checkout), falling back to the committed WORKING COPY at
+    the repo root when the sha is locally unknown. HF-hosted JSONs are out
+    of scope for v1 (no network content downloads); other-repo GitHub links
+    are not resolvable from the local object DB. Oversized artifacts
+    (> ``_ARTIFACT_CONTENT_MAX_BYTES``) are skipped. Fail-soft throughout:
+    any subprocess / OS / decode / JSON error maps to a skip note."""
+    if re.match(r"^https?://huggingface\.co/", url):
+        return None, "HF-hosted JSON — content not downloaded (offline check)"
+    m = _GITHUB_BLOB_TREE_URL_RE.match(url)
+    if m is None:
+        return None, "unrecognized / unpinned link shape (no same-repo blob pin)"
+    if (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG:
+        return None, "other-repo GitHub link — not resolvable from the local object DB"
+    sha = m.group("sha")
+    path = m.group("path").rstrip("/")
+    if path.startswith("/") or ".." in path.split("/"):
+        return None, "suspicious artifact path (absolute or parent-traversing)"
+    repo = _resolve_repo_root()
+    if repo is None:
+        return None, "repo root unresolved — cannot load the artifact offline"
+    raw, terminal_note = _git_json_text_at_sha(repo, sha, path)
+    if raw is None and terminal_note:
+        return None, terminal_note
+    if raw is None:
+        raw, terminal_note = _working_copy_json_text(repo, sha, path)
+        if raw is None:
+            return None, terminal_note
+    try:
+        return json.loads(raw), ""
+    except (ValueError, json.JSONDecodeError):
+        return None, "artifact is not parseable JSON"
+
+
+def _git_json_text_at_sha(repo: Path, sha: str, path: str) -> tuple[str | None, str]:
+    """Read ``<sha>:<path>`` from the git object DB (check 54): a
+    ``git cat-file -s`` size probe, then ``git show``. Returns
+    ``(raw, terminal_note)``: raw text on success; ``(None, note)`` for a
+    TERMINAL skip (oversized blob); ``(None, "")`` when the sha/path is
+    locally unknown or the read failed — the caller falls through to the
+    committed-working-copy fallback. Fail-soft: subprocess errors map to
+    the fall-through case."""
+    try:
+        size = subprocess.run(
+            ["git", "cat-file", "-s", f"{sha}:{path}"],
+            cwd=str(repo),
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None, ""
+    if size.returncode != 0:
+        return None, ""
+    try:
+        nbytes = int(size.stdout.strip())
+    except ValueError:
+        nbytes = -1
+    if nbytes > _ARTIFACT_CONTENT_MAX_BYTES:
+        return None, "artifact exceeds the 10 MB scan cap"
+    try:
+        proc = subprocess.run(
+            ["git", "show", f"{sha}:{path}"],
+            cwd=str(repo),
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None, ""
+    if proc.returncode != 0:
+        return None, ""
+    return proc.stdout, ""
+
+
+def _working_copy_json_text(repo: Path, sha: str, path: str) -> tuple[str | None, str]:
+    """Committed-working-copy fallback read at the repo root (check 54) —
+    used when the pinned sha is locally unknown. Returns ``(raw, note)``;
+    ``raw`` None ⇒ ``note`` says why (absent / oversized / read error)."""
+    p = repo / path
+    try:
+        if not p.is_file():
+            return None, (
+                f"sha `{sha[:8]}` unknown locally and `{path}` absent from the working copy"
+            )
+        if p.stat().st_size > _ARTIFACT_CONTENT_MAX_BYTES:
+            return None, "artifact exceeds the 10 MB scan cap"
+        return p.read_text(encoding="utf-8", errors="replace"), ""
+    except OSError as e:
+        return None, f"working-copy read failed: {e}"
+
+
+def _sentence_unit_cardinality(sentence: str, unit: str) -> int | None:
+    """Rung-1 cardinality recovery (check 54): an explicit integer
+    IMMEDIATELY ADJACENT to the unit noun — the ``<K> <unit>(s)`` shape
+    ("24 datasets", "across 24 datasets") — never any bare numeral in the
+    window: the #2222 incident window's only "24" is the decimal "-0.24",
+    which the ``(?<![0-9.,])`` guard plus noun adjacency can never recover.
+    K < 2 is rejected (a 1-length structure exists in almost any JSON, so
+    K=1 cannot ground a verification)."""
+    m = re.search(rf"(?<![0-9.,])\b([0-9]{{1,6}})\s+{re.escape(unit)}s?\b", sentence, re.IGNORECASE)
+    if m is None:
+        return None
+    k = int(m.group(1))
+    return k if k >= 2 else None
+
+
+def _artifact_metadata_cardinality(obj: object, unit: str) -> tuple[int | None, str]:
+    """Rung-2 cardinality recovery (check 54): an ANY-DEPTH scan of the
+    loaded artifact for ``n_<unit>s`` keys (positive ints, bools excluded)
+    with all-equal aggregation — the incident's ``n_datasets: 24`` lives
+    ONLY nested at ``records[i].n_datasets``, so a top-level-only read
+    would make the check structurally unable to fire on its founding
+    incident — else an all-equal ``<unit>s`` list length (e.g.
+    ``datasets``). Returns ``(K, source_note)``; disagreement or absence
+    returns ``(None, reason)`` (SKIP with an unverified note, never a
+    WARN). Bounded walk (nodes/depth); the bound is noted, and a bounded
+    scan with no metadata found stays a plain skip."""
+    n_key = f"n_{unit}s"
+    list_key = f"{unit}s"
+    n_vals: list[int] = []
+    list_lens: list[int] = []
+    budget = _ARTIFACT_CONTENT_MAX_NODES
+    bounded = False
+    stack: list[tuple[object, int]] = [(obj, 0)]
+    while stack:
+        if budget <= 0:
+            bounded = True
+            break
+        node, depth = stack.pop()
+        budget -= 1
+        if depth > _ARTIFACT_CONTENT_MAX_DEPTH:
+            bounded = True
+            continue
+        if isinstance(node, dict):
+            for k, v in node.items():
+                if k == n_key and isinstance(v, int) and not isinstance(v, bool) and v > 0:
+                    n_vals.append(v)
+                if k == list_key and isinstance(v, list) and v:
+                    list_lens.append(len(v))
+                stack.append((v, depth + 1))
+        elif isinstance(node, list):
+            for v in node:
+                stack.append((v, depth + 1))
+    suffix = "; bounded scan" if bounded else ""
+    if n_vals:
+        uniq = sorted(set(n_vals))
+        if len(uniq) == 1:
+            return uniq[0], (
+                f"artifact `{n_key}` keys ({len(n_vals)} occurrence(s), all {uniq[0]}{suffix})"
+            )
+        return None, f"artifact `{n_key}` values disagree ({uniq}) — cardinality ambiguous"
+    if list_lens:
+        uniq = sorted(set(list_lens))
+        if len(uniq) == 1:
+            return uniq[0], f"artifact `{list_key}` list length ({uniq[0]}{suffix})"
+        return None, (
+            f"artifact `{list_key}` list lengths disagree ({uniq}) — cardinality ambiguous"
+        )
+    return None, (
+        "no explicit count in the claim sentence and no "
+        f"`{n_key}` / `{list_key}` metadata in the artifact"
+    )
+
+
+def _json_has_structure_of_cardinality(obj: object, k: int) -> str:
+    """Bounded ANY-DEPTH scan for a list of length ``k`` or a dict with
+    ``k`` keys (check 54). Returns ``'found'`` | ``'absent'`` |
+    ``'bounded'``. Bound exhaustion (node budget / depth cap) is
+    ``'bounded'``, which the caller maps to SKIP (unverified note) — NEVER
+    to a WARN: a deep true structure must not false-WARN."""
+    budget = _ARTIFACT_CONTENT_MAX_NODES
+    bounded = False
+    stack: list[tuple[object, int]] = [(obj, 0)]
+    while stack:
+        if budget <= 0:
+            return "bounded"
+        node, depth = stack.pop()
+        budget -= 1
+        if isinstance(node, list):
+            if len(node) == k:
+                return "found"
+            if depth >= _ARTIFACT_CONTENT_MAX_DEPTH:
+                bounded = True
+                continue
+            for v in node:
+                stack.append((v, depth + 1))
+        elif isinstance(node, dict):
+            if len(node) == k:
+                return "found"
+            if depth >= _ARTIFACT_CONTENT_MAX_DEPTH:
+                bounded = True
+                continue
+            for v in node.values():
+                stack.append((v, depth + 1))
+    return "bounded" if bounded else "absent"
+
+
+def check_artifact_content_claims(body: str) -> CheckResult:
+    """Check 54 (WARN, v4-only, #2232): a per-unit artifact-content claim —
+    "per-``<unit>`` values … recorded/stored/live in ``<pinned JSON>``" in
+    the ``## Takeaways`` / ``## Results`` prose — must be backed by a
+    structure of the claimed cardinality INSIDE the pinned JSON.
+
+    Incident (#2222 r2): the body claimed "The per-dataset values behind
+    the three probe correlations are recorded in the probe JSON pinned in
+    the footer" while the footer-pinned ``form_a_probe.json`` holds no
+    24-length list or dict at ANY depth (its ``n_datasets: 24`` lives only
+    nested at ``records[i].n_datasets``); checks 30/32/40/42 verify counts,
+    filename membership, and URL existence — never structure inside a
+    pinned data JSON — so the false pointer passed every mechanical check.
+    This check is the artifact-CONTENT sibling: it loads the JSON at the
+    adjacent pin (offline: git object DB / committed working copy) and
+    scans for a structure of the claimed per-unit cardinality.
+
+    Pipeline per claim (``_gather_artifact_content_claims``): resolve the
+    pin (sentence link → nearest preceding paragraph link → footer
+    matching-basename for "footer" phrasings; ambiguity ⇒ skip), load the
+    artifact (``_load_pinned_json_for_claim``; HF-hosted / other-repo /
+    oversized / unparsable ⇒ skip), recover the expected cardinality K
+    (``_sentence_unit_cardinality`` rung 1, else
+    ``_artifact_metadata_cardinality`` rung 2; unrecoverable or K < 2 ⇒
+    skip), then scan (``_json_has_structure_of_cardinality``): ``found`` ⇒
+    verified; ``bounded`` ⇒ skip; ``absent`` ⇒ ONE WARN naming the JSON,
+    the verbatim claim sentence (truncated ~160 chars), K, and the
+    K-source.
+
+    Semantics:
+
+    - **WARN, never FAIL.** ``CheckResult(name, True, detail,
+      is_warn=True)`` — phrasing variance makes the claim parse heuristic;
+      the clean-result-critic artifact-walk lens stays binding. There is
+      NO code path returning ``passed=False``.
+    - **Fail-soft everywhere.** Unresolvable pins, unknown shas with no
+      working copy, oversized (>10 MB) or unparsable artifacts,
+      unrecoverable/ambiguous cardinality, and walk-bound exhaustion all
+      surface as `unverified` notes on a PASS line. At most
+      ``_ARTIFACT_CONTENT_MAX_LOADS`` unique artifact loads per body
+      (memoized per URL); claims past the cap surface as unverified.
+    - **Offline only.** No network: HF-hosted JSON pins surface as
+      unverified notes (v1 scope), never a WARN.
+    - **Forward-only.** Grandfathered v3/v2/legacy bodies: vacuous PASS
+      (the check-41 argument).
+
+    Known residuals (v1, by design):
+
+    (i) a K recovered from a ``<unit>s`` LIST length lets that same list
+        satisfy the structure scan by construction — false-negative-only
+        (the check under-fires; the critic lens stays binding);
+    (ii) a K-keys-plus-aggregate dict (e.g. 24 dataset keys + 1 summary
+        key = 25 keys) misses the exact-K scan — the named false-positive
+        WARN shape to watch in regression sweeps;
+    (iii) active-voice claims ("the JSON records the per-layer values")
+        lack the ``<verb> in`` shape and never parse — a documented v1
+        false-negative class (as are verb-before-phrase inversions).
+    """
+    name = "artifact-content claims match the pinned JSON structure"
+    if not is_v4(body):
+        return CheckResult(
+            name, True, "not a v4 body (forward-only) — artifact-content scan skipped"
+        )
+    claims = _gather_artifact_content_claims(body)
+    if not claims:
+        return CheckResult(name, True, "no per-unit artifact-content claims in Takeaways/Results")
+    warns: list[str] = []
+    unverified: list[str] = []
+    artifact_memo: dict[str, tuple[object | None, str]] = {}
+    for claim in claims:
+        sent = claim["sentence"] or ""
+        short = sent if len(sent) <= 160 else sent[:157] + "..."
+        unit = claim["unit"] or ""
+        url = claim["url"]
+        if url is None:
+            unverified.append(f'per-{unit} claim "{short}" — {claim["skip_note"]}')
+            continue
+        gh = _GITHUB_BLOB_TREE_URL_RE.match(url)
+        display = (
+            f"{gh.group('path').rstrip('/')}@{gh.group('sha')[:8]}"
+            if gh
+            else posixpath.basename(url.split("?", 1)[0].split("#", 1)[0])
+        )
+        if url not in artifact_memo:
+            if len(artifact_memo) >= _ARTIFACT_CONTENT_MAX_LOADS:
+                unverified.append(f'per-{unit} claim "{short}" — per-body artifact-load cap')
+                continue
+            artifact_memo[url] = _load_pinned_json_for_claim(url)
+        obj, load_note = artifact_memo[url]
+        if obj is None:
+            unverified.append(f'per-{unit} claim "{short}" → `{display}` — {load_note}')
+            continue
+        k = _sentence_unit_cardinality(sent, unit)
+        if k is not None:
+            k_src = f"the claim sentence (`{k} {unit}s`)"
+        else:
+            k, k_src = _artifact_metadata_cardinality(obj, unit)
+            if k is not None and k < 2:
+                k, k_src = None, f"{k_src}; cardinality {k} too weak to verify"
+        if k is None:
+            unverified.append(
+                f'per-{unit} claim "{short}" → `{display}` — cardinality unrecoverable ({k_src})'
+            )
+            continue
+        verdict = _json_has_structure_of_cardinality(obj, k)
+        if verdict == "found":
+            continue
+        if verdict == "bounded":
+            unverified.append(
+                f'per-{unit} claim "{short}" → `{display}` — structure scan hit the '
+                "node/depth bound"
+            )
+            continue
+        warns.append(
+            f"body claims per-{unit} values in `{display}` ({claim['via']}), but no "
+            f"{k}-length list or dict exists at any depth in the artifact (expected "
+            f'cardinality {k} from {k_src}); claim: "{short}"'
+        )
+    unverified_detail = ""
+    if unverified:
+        unverified_detail = f"; {len(unverified)} unverified (content not confirmed): " + "; ".join(
+            unverified
+        )
+    if warns:
+        return CheckResult(name, True, "; ".join(warns) + unverified_detail, is_warn=True)
+    n_ok = len(claims) - len(unverified)
+    return CheckResult(
+        name,
+        True,
+        f"{n_ok} of {len(claims)} artifact-content claim(s) verified against the pinned "
+        "JSON structure" + unverified_detail,
+    )
+
+
 # ─── Check 43: GitHub-tree-adjacent backtick file claims (git twin of 32) ──
 # (#1507; incident #1072 r2 footer: `Artifacts: [`eval_results/issue_1072/`]
 # (…github…/tree/1f19deacf…/eval_results/issue_1072) (`stats_component.json`,
@@ -11884,7 +13213,7 @@ def _gather_gh_tree_adjacent_file_claims(body: str) -> list[tuple[str, str, str,
         m = _GITHUB_BLOB_TREE_URL_RE.match(url.rstrip(".,;:!?"))
         if m is None or f"/tree/{m.group('sha')}" not in url:
             return  # non-github / other shape / blob
-        if (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG:
             return  # other-repo: undecidable locally
         prefix = m.group("path").rstrip("/")
         for fname in _expand_claim_token(token.strip()):
@@ -12389,6 +13718,9 @@ def check_figure_sidecar_coverage(body: str) -> CheckResult:
     ``--body-stdin``), or no figure passes the scope gates. Existence probes
     only — two ``_git_object_exists`` invocations (up to four bounded
     subprocess spawns) per unique figure URL, no ``git show`` content read.
+    Since #2267 the v4 POST-CUTOVER sidecar-less case additionally FAILs
+    via check 57 (``check_v4_sidecarless_results_figures``) — check 41
+    itself is unchanged: still WARN, still generation-agnostic.
     """
     label = "figure sidecar coverage (sidecar-less embedded figures)"
     section = _figure_scan_section(body)
@@ -12411,7 +13743,10 @@ def check_figure_sidecar_coverage(body: str) -> CheckResult:
     missing: list[str] = []
     for url in dict.fromkeys(urls):
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         sha, fig_path = m.group("sha"), m.group("path")
         png_status, _ = _git_object_exists(repo, sha, fig_path)
@@ -12438,6 +13773,222 @@ def check_figure_sidecar_coverage(body: str) -> CheckResult:
         return CheckResult(label, True, "no same-repo sha-pinned figures to check")
     return CheckResult(
         label, True, f"{checked} embedded figure(s) all carry sidecar files at their cited shas"
+    )
+
+
+# ─── Check 57: v4 sidecar-less Results figures (FAIL; Leg B forward-only) ───
+#
+# #2267 (incident #2054): a v4 body embedding a `## Results` figure with NO
+# `.meta.json` sidecar at the cited sha previously received ZERO mechanical
+# opaque-code coverage — check 28 fail-softs on the missing sidecar
+# (`meta is None -> continue`, the check-24 convention) and check 41 is
+# WARN-never-FAIL by documented design. #2054's `hero_calibration_nslope.png`
+# carried its opaque `H0'a`/`H0'b`/`b=`/`m=` codes ONLY in PNG rendered text
+# (panel titles + legend entries) with a clean plain-English caption, so no
+# text channel reached those pixels. Check 57 makes the sidecar-less state
+# itself blocking for NEW v4 figures (Leg B, date-gated forward-only) and
+# blocks caption-carried opaque codes on sidecar-less figures outright
+# (Leg A) — routing rendered text into the sidecar channel (`savefig_paper`)
+# where check 28 scans it.
+
+# 2026-08-13T00:00:00 UTC as unix epoch — the #2267 fix-landing date (plan
+# §3.1 Leg B). A figure pinned at a commit whose COMMITTER date is >= this
+# epoch gets the Leg B sidecar-less FAIL; every pre-existing corpus pin
+# pre-dates it (plan-time sweep: 45/45), so existing green bodies are exempt
+# BY CONSTRUCTION. Value pinned against the datetime derivation by
+# `test_check57_registry_and_cutover_constant`.
+_CHECK57_FORWARD_CUTOVER = 1786579200
+
+# Markdown code spans in the caption window are QUOTED references (a
+# backticked companion-FILENAME, a code-register token by convention), not
+# rendered condition labels — stripped to a space before the Leg A scan
+# (plan §3.1 item 5: the measured corpus's ONE pre-exclusion Leg A hit was
+# #952's backticked `refusal_sanity_auc.png` companion-file reference).
+_CHECK57_CODE_SPAN_RE = re.compile(r"`[^`]*`")
+
+# (repo, sha) -> committer epoch (None = indeterminate). Module-level so one
+# process probes each unique figure sha at most once (check 57 Leg B).
+_COMMIT_EPOCH_CACHE: dict[tuple[str, str], int | None] = {}
+
+
+def _commit_epoch(repo: Path, sha: str) -> int | None:
+    """Committer date (unix epoch seconds) of ``<sha>`` in ``repo`` via
+    ``git show -s --format=%ct <sha>^{commit}``, or None on ANY
+    indeterminate probe — unknown/unresolvable sha, subprocess error,
+    unparsable output — fail-soft, never raises (check 57's Leg B skips a
+    None rather than FAILing on it). Cached per (repo, sha) at module
+    level. A module-level helper (not a closure inside the check) so tests
+    can monkeypatch the date probe directly (plan #2267 §3.1)."""
+    key = (str(repo), sha)
+    if key in _COMMIT_EPOCH_CACHE:
+        return _COMMIT_EPOCH_CACHE[key]
+    epoch: int | None = None
+    try:
+        proc = subprocess.run(
+            ["git", "show", "-s", "--format=%ct", f"{sha}^{{commit}}"],
+            cwd=str(repo),
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if proc.returncode == 0 and proc.stdout.strip():
+            epoch = int(proc.stdout.strip().splitlines()[0])
+    except (OSError, subprocess.SubprocessError, ValueError):
+        epoch = None
+    _COMMIT_EPOCH_CACHE[key] = epoch
+    return epoch
+
+
+def check_v4_sidecarless_results_figures(body: str) -> CheckResult:  # noqa: C901 — linear per-figure two-leg gate walk (the check-52 precedent)
+    """Check 57 (FAIL, v4-only; Leg B forward-only; #2267; incident #2054):
+    a same-repo sha-pinned ``## Results`` figure whose sibling
+    ``.meta.json`` sidecar is definitively ABSENT at the cited sha
+    (``_git_object_exists`` == 'fail') is the one figure class with zero
+    mechanical opaque-code coverage — checks 24/28/33/34 fail-soft skip it
+    and check 41 only WARNs — so #2054's ``hero_calibration_nslope.png``
+    shipped ``H0'a``/``b=``/``m=`` codes in PNG rendered text through every
+    mechanical gate (clean caption; the codes lived only in pixels). Two
+    legs per sidecar-less figure:
+
+    - **Leg A (caption codes; NOT date-gated):** the figure's blockquote
+      caption window (``_figure_caption_after``), markdown code spans
+      stripped to spaces (``_CHECK57_CODE_SPAN_RE`` — a backticked token is
+      a quoted code-register reference, the #952 corpus shape), carries
+      ``_opaque_code_tokens`` hits ⇒ FAIL naming the basename + a token
+      preview. Measured 0 corpus hits with the code-span exclusion
+      (plan-time sweep over 2,200 bodies / 45 sidecar-less figures; the one
+      pre-exclusion hit was a backticked companion-FILENAME reference).
+    - **Leg B (forward-only sidecar-less block):** the pinned commit's
+      COMMITTER date (``_commit_epoch``) is >= ``_CHECK57_FORWARD_CUTOVER``
+      (2026-08-13 UTC, the fix-landing date) AND the figure's basename
+      (lowercased, dash-normalized — the check-20 ack-matching convention)
+      is NOT named in the body's verifier-WARN acknowledgment text
+      (``_warn_acknowledgment_text``) ⇒ FAIL: regenerate via
+      ``savefig_paper`` (writes the sidecar, exposing rendered text to
+      check 28's scan), or acknowledge the figure by name (the escape for
+      hand-made diagrams / external screenshots ``savefig_paper``
+      structurally cannot produce). Every existing corpus pin pre-dates the
+      cutover, so grandfathered bodies are exempt BY CONSTRUCTION
+      (plan criterion 3) while every future sidecar-less Results figure
+      blocks at draft time — reproducing the #2054 shape post-fix is caught
+      even with a clean caption.
+
+    Scope gates per figure (the check-28/41 conventions, reused verbatim):
+    v4 sentinel only (vacuous PASS otherwise — forward-only, criterion 2);
+    same-repo sha-pinned raw-GitHub URLs only; the PNG itself must resolve
+    at the cited sha (else check 22's domain, skip); a PRESENT sidecar is
+    checks 24/28/33/34's domain and an INDETERMINATE sidecar probe ('skip')
+    stays the siblings' fail-soft residual — only the definitive 'fail'
+    (three-state ``_git_object_exists`` contract) enters the legs. NO-OP
+    PASS when: no scan section, no inline figures, repo unresolved
+    (offline / ``--body-stdin``). Fail-soft on every indeterminate probe;
+    an indeterminate DATE probe (None) skips Leg B, never FAILs.
+
+    Evasion + residual notes (plan §3.1, i-iv): (i) backticking a code in
+    the caption hides it from Leg A — accepted: Leg B forces new figures
+    toward sidecars regardless of caption content. (ii) Pinning a NEW
+    figure at an old sha is impossible — the pinned commit must CONTAIN the
+    PNG, and a pre-cutover commit can only contain pre-cutover figures
+    (reusing a parent's grandfathered figure is legitimately exempt).
+    (iii) ``b=``/``m=`` single-letter-equals codes stay unclassifiable
+    (ordinary caption math like ``b=0.3``); PNG-pixel text stays the
+    multimodal critics' substantive read for GRANDFATHERED figures — for
+    post-cutover figures Leg B removes the pixel blind spot indirectly by
+    forcing the sidecar channel into existence. (iv) Committer dates are
+    trusted as monotone-enough; a rebase that rewrites an old figure commit
+    to a post-cutover date produces a spurious FAIL (loud, fixable via the
+    ack escape), never a silent pass.
+    """
+    label = "v4 sidecar-less Results figures (caption codes / post-cutover block)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped — not a v4 body")
+    section = _figure_scan_section(body)
+    text = section_text(body, section)
+    if text is None:
+        return CheckResult(label, True, f"no `## {section}` section to scan")
+    rlines = text.splitlines()
+    urls: list[str] = []
+    caption_by_url: dict[str, str] = {}
+    for i, line in enumerate(rlines):
+        for m in _IMAGE_RE.finditer(line):
+            url = m.group(1).strip()
+            url = url.split(None, 1)[0] if url else url
+            if url:
+                urls.append(url)
+                # First occurrence's caption window (the check-28 convention
+                # for a twice-embedded figure — conservative).
+                caption_by_url.setdefault(url, _figure_caption_after(rlines, i))
+    if not urls:
+        return CheckResult(label, True, "no inline figures to scan")
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(label, True, "skipped — repo root unresolved (offline / stdin)")
+    ack = _warn_acknowledgment_text(body)  # already lowercased + dash-normalized
+    checked = 0
+    sidecarless = 0
+    exempt_pre_cutover = 0
+    fails: list[str] = []
+    for url in dict.fromkeys(urls):
+        m = _RAW_GITHUB_FIGURE_RE.match(url)
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
+            continue  # only same-repo sha-pinned figures resolve from git
+        sha, fig_path = m.group("sha"), m.group("path")
+        png_status, _ = _git_object_exists(repo, sha, fig_path)
+        if png_status != "pass":
+            continue  # sha unknown / PNG absent — check 22's domain, no double-report
+        checked += 1
+        base, _sep, ext = fig_path.rpartition(".")
+        meta_path = (base if ext else fig_path) + ".meta.json"
+        meta_status, _ = _git_object_exists(repo, sha, meta_path)
+        if meta_status != "fail":
+            # Sidecar present -> checks 24/28/33/34's domain; indeterminate
+            # ('skip') -> the siblings' fail-soft residual. Either way out
+            # of check 57's scope.
+            continue
+        sidecarless += 1
+        basename = fig_path.rsplit("/", 1)[-1]
+        # Leg A — code-span-stripped caption window through the shared
+        # opaque-code classifier. Not date-gated (measured 0 corpus hits).
+        caption = _CHECK57_CODE_SPAN_RE.sub(" ", caption_by_url.get(url, ""))
+        toks = _opaque_code_tokens(caption)
+        if toks:
+            preview = ", ".join(f"`{t}`" for t in toks[:4]) + (" …" if len(toks) > 4 else "")
+            fails.append(
+                f"sidecar-less Results figure `{basename}`'s caption carries opaque "
+                f"condition code(s) {preview} — plain-English condition names in "
+                "captions; regenerate via savefig_paper (writes the sidecar, exposing "
+                "rendered text to check 28's scan)"
+            )
+            continue  # one FAIL entry per figure
+        # Leg B — forward-only sidecar-less block, date-gated on the pinned
+        # commit's committer date; fail-soft skip on an indeterminate probe.
+        epoch = _commit_epoch(repo, sha)
+        if epoch is None:
+            continue  # indeterminate date probe — never FAIL on it
+        if epoch < _CHECK57_FORWARD_CUTOVER:
+            exempt_pre_cutover += 1
+            continue
+        norm_basename = re.sub(r"[-\u2010-\u2015]", " ", basename.lower())
+        if ack is not None and norm_basename in ack:
+            continue  # acknowledged by name — deliberate non-matplotlib figure
+        fails.append(
+            f"sidecar-less Results figure `{basename}` (pinned at a post-2026-08-13 "
+            "commit) — regenerate via savefig_paper (writes the sidecar, exposing "
+            "rendered text to check 28), or acknowledge the figure by name in the "
+            "body's verifier-WARN acknowledgment (deliberate non-matplotlib figures)"
+        )
+    if fails:
+        return CheckResult(label, False, "; ".join(fails))
+    if checked == 0:
+        return CheckResult(label, True, "no same-repo sha-pinned figures to check")
+    return CheckResult(
+        label,
+        True,
+        f"{checked} same-repo figure(s) checked — {sidecarless} sidecar-less, "
+        f"{exempt_pre_cutover} exempt-pre-cutover, none blocking",
     )
 
 
@@ -12547,10 +14098,13 @@ def check_figure_png_sidecar_pairing(body: str) -> CheckResult:  # noqa: C901 �
     warns: list[str] = []
     for url in dict.fromkeys(urls):
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         sha, fig_path = m.group("sha"), m.group("path")
-        if not fig_path.lower().endswith(".png"):
+        if not fig_path.casefold().endswith(".png"):
             continue  # the text-chunk read is PNG-specific
         png_status, _ = _git_object_exists(repo, sha, fig_path)
         if png_status != "pass":
@@ -12796,10 +14350,13 @@ def check_figure_sidecar_slot_completeness(body: str) -> CheckResult:  # noqa: C
     findings: list[str] = []
     for url in dict.fromkeys(urls):
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         sha, fig_path = m.group("sha"), m.group("path")
-        if not fig_path.lower().endswith(".png"):
+        if not fig_path.casefold().endswith(".png"):
             continue
         png_status, _ = _git_object_exists(repo, sha, fig_path)
         if png_status != "pass":
@@ -13097,7 +14654,7 @@ def _caption_count_claims(caption: str) -> list[dict]:
     for m in _CC_KOFN_RE.finditer(caption):
         for i in range(m.start(), m.end()):
             masked[i] = "\x00"
-        if _guarded(m) or m.group("unit").lower() in _CC_UNIT_STOPWORDS:
+        if _guarded(m) or m.group("unit").casefold() in _CC_UNIT_STOPWORDS:
             continue
         claims.append(
             {
@@ -13110,14 +14667,14 @@ def _caption_count_claims(caption: str) -> list[dict]:
         )
     masked_text = "".join(masked)
     for m in _CC_ALLN_RE.finditer(masked_text):
-        if _guarded(m) or m.group("unit").lower() in _CC_UNIT_STOPWORDS:
+        if _guarded(m) or m.group("unit").casefold() in _CC_UNIT_STOPWORDS:
             continue
         n = int(m.group("n"))
         claims.append(
             {"shape": "all", "k": n, "n": n, "direction": _direction(m), "raw": m.group(0)}
         )
     for m in _CC_NONE_RE.finditer(masked_text):
-        unit = m.group("unit").lower()
+        unit = m.group("unit").casefold()
         if _guarded(m) or unit in _CC_UNIT_STOPWORDS or unit in _CC_NO_QUALIFIERS:
             continue
         n = int(m.group("n")) if m.group("n") else None
@@ -13407,7 +14964,10 @@ def check_figure_caption_count_claims_vs_sidecar(body: str) -> CheckResult:
     json_cache: dict[str, dict | None] = {}
     for url, img_idx in fig_at:
         m = _RAW_GITHUB_FIGURE_RE.match(url)
-        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
             continue  # only same-repo sha-pinned figures resolve from git
         fig_warns, n_checked, status = _count_claims_for_one_figure(
             repo, m, rlines, img_idx, json_cache
@@ -13862,6 +15422,40 @@ def check_hf_brace_expanded_path_claims(body: str) -> CheckResult:  # noqa: C901
     return CheckResult(name, True, detail + unverified_detail)
 
 
+# Check 14b (#2219) — forward-only grandfather set: concern ids whose bodies
+# carried a `<!-- concern-deferred: <id> -->` comment while the id was present
+# in the task's concerns.jsonl with NO `deferred` event anywhere in its event
+# history BEFORE the fabricated-deferral check landed. These WARN (visible,
+# never blocking) instead of FAILing; every NEW fabrication FAILs. Membership
+# regenerated 2026-08-10 by sweeping every tasks/*/*/ dir having both body.md
+# and concerns.jsonl with the check's own deferral regex — a comment cid
+# present in that ledger's ids with no `deferred` event in its history is a
+# member (18 ids across 10 bodies at generation time). Keyed by concern id
+# alone — see the check-14b docstring residual (b) in `check_concerns_audit`.
+FABRICATED_DEFERRAL_GRANDFATHER: frozenset[str] = frozenset(
+    {
+        "adapter-hf-persist-deferred-quota",
+        "frozen-r-cache-not-used",
+        "indiv-full-data-standardization",
+        "ladder-capture-local-raw-divergence",
+        "ladder-deferred-confound-controls",
+        "ladder-parity-gate-bf16-bar",
+        "ladder-selfgate-sentinel-nonconforming",
+        "ladder-selfgate-threshold-16shards",
+        "launch-flags-mixes-from-hub-and-calibration",
+        "local-store-revision-bypass",
+        "pca-basis-full-data-composition",
+        "phase-d-no-entry-skip-sentinel",
+        "phase4-onpolicy-bystander-deferred",
+        "po-delta-positives-con-family",
+        "reused-1586-trees-no-raw-rows",
+        "s4-single-rho-cells-need-fitted-read",
+        "store-resume-parser-policy-key",
+        "substrate-context-vec-keyed-to-source",
+    }
+)
+
+
 def check_concerns_audit(  # noqa: C901 — linear lens: ledger parse → stale-marker scan → ack scan
     body: str, *, concerns_path: Path | None = None
 ) -> CheckResult:
@@ -13899,6 +15493,46 @@ def check_concerns_audit(  # noqa: C901 — linear lens: ledger parse → stale-
     #833). A live marker (latest event raised / verified-open / deferred)
     is unchanged.
 
+    **Check 14b — fabricated-deferral detection (#2219; forward-only).**
+    A ``<!-- concern-deferred: <id> -->`` comment whose id IS in the
+    ledger with latest event ``raised`` / ``verified-open`` but NO
+    ``deferred`` event anywhere in its event HISTORY is a FABRICATED
+    deferral — the comment implies a ``task.py defer-concern`` record
+    that does not exist (incident #2215: the body's deferral comment had
+    only a ``raised`` event, and mechanism 3 shipped it silently).
+    "Matching" is ANY-HISTORY: >=1 ``deferred`` event for the id
+    suffices, NOT latest-event-is-deferred — a
+    raised→deferred→verified-open chain (a deferral later reopened) is
+    NOT fabricated, because a real defer-concern record exists;
+    latest-event semantics everywhere else in this lens are unchanged.
+    Severity routing: BLOCKER/CONCERN and id not grandfathered → FAIL
+    (merged with any ``unaddressed`` FAIL detail); id in
+    ``FABRICATED_DEFERRAL_GRANDFATHER`` → WARN ("fabricated deferral
+    (grandfathered) — record via ``task.py defer-concern`` or remove the
+    comment"); NIT / missing / unknown severity → WARN (NITs never block
+    this lens; malformed rows stay conservative). The ``addressed`` /
+    absent-from-ledger stale WARNs above and the absent-``concerns.jsonl``
+    skip-PASS below are byte-unchanged — the skip-PASS IS the
+    absent-ledger grandfather posture (criterion 3 of #2219). A
+    fabricated comment still counts as acknowledgment under
+    mechanism 3, so the cid is never double-listed under ``unaddressed``
+    — the fabricated FAIL is what blocks. Forward-only posture: the
+    grandfather set pins every pre-2026-08-10 offender (a bare FAIL
+    would newly block promotion of parked done work); every NEW
+    fabrication FAILs.
+
+    Known accepted residuals (check 14b): (a) the deferral regex matches
+    anywhere in the body, INCLUDING backtick-quoted prose that merely
+    CITES a comment (e.g. #2219's own body quoting #2215's) — unchanged
+    from the existing mechanism-3 / stale-scan behavior; eliding code
+    spans would change ack semantics. Practical exposure ≈ 0: the quoted
+    cid must ALSO exist in the SAME task's ledger without a ``deferred``
+    event to false-FAIL. (b) the grandfather set is keyed by concern id
+    alone (slug strings; no cross-task collision in the 2026-08-10 swept
+    set), so a FUTURE task reusing a grandfathered cid slug would
+    inherit the WARN instead of the FAIL; task-id keying is a deliberate
+    non-goal.
+
     Skipped (PASS) when ``concerns_path`` is None or missing
     (``--body-stdin`` invocations, freshly created tasks with no concerns
     ledger). Full Lens 14 fires only when invoked with ``--issue <N>``
@@ -13928,11 +15562,16 @@ def check_concerns_audit(  # noqa: C901 — linear lens: ledger parse → stale-
         except json.JSONDecodeError:
             continue
     latest: dict[str, dict] = {}
+    # Check 14b: ids with ANY `deferred` event in their event HISTORY (not
+    # latest-only — a raised→deferred→verified-open chain is NOT fabricated).
+    deferred_in_ledger: set[str] = set()
     for ev in events:
         cid = ev.get("concern_id")
         if cid is None:
             continue
         latest[cid] = ev
+        if ev.get("event") == "deferred":
+            deferred_in_ledger.add(cid)
     open_binding = [
         ev
         for ev in latest.values()
@@ -13948,6 +15587,7 @@ def check_concerns_audit(  # noqa: C901 — linear lens: ledger parse → stale-
     deferral_re = re.compile(r"<!--\s*concern-deferred:\s*([a-z0-9][a-z0-9-]{1,79})\s*-->")
     deferred_ids = set(deferral_re.findall(body))
     stale_warns: list[str] = []
+    fabricated_fails: list[str] = []  # check 14b (#2219)
     for cid in sorted(deferred_ids):  # sorted → deterministic detail
         ev = latest.get(cid)
         if ev is None:
@@ -13959,12 +15599,47 @@ def check_concerns_audit(  # noqa: C901 — linear lens: ledger parse → stale-
             stale_warns.append(
                 f"stale concern-deferred marker '{cid}' — concern is addressed; remove or retag"
             )
-        # raised / verified-open / deferred → live marker, no WARN (unchanged
-        # behavior). DELIBERATE fallthrough: a malformed/unknown `event` value
+        elif ev.get("event") in ("raised", "verified-open") and cid not in deferred_in_ledger:
+            # Check 14b (#2219): fabricated deferral — the comment implies a
+            # `task.py defer-concern` record, but the ledger holds no
+            # `deferred` event for this id anywhere in its history.
+            sev = ev.get("severity")
+            if sev in ("BLOCKER", "CONCERN") and cid not in FABRICATED_DEFERRAL_GRANDFATHER:
+                fabricated_fails.append(
+                    f"fabricated deferral marker '{cid}' ({sev}) — no `deferred` event in "
+                    "concerns.jsonl; record via `task.py defer-concern` or remove the comment"
+                )
+            elif cid in FABRICATED_DEFERRAL_GRANDFATHER:
+                stale_warns.append(
+                    f"fabricated deferral (grandfathered) '{cid}' — record via "
+                    "`task.py defer-concern` or remove the comment"
+                )
+            else:  # NIT / missing / unknown severity — never blocks this lens
+                stale_warns.append(
+                    f"fabricated deferral marker '{cid}' ({sev or 'unknown severity'}) — no "
+                    "`deferred` event in concerns.jsonl; record via `task.py defer-concern` "
+                    "or remove the comment"
+                )
+        # raised / verified-open WITH a `deferred` event in history → live
+        # marker, no WARN (pre-14b behavior for the canonical defer path).
+        # DELIBERATE fallthrough: a malformed/unknown `event` value
         # (hand-edited or corrupt ledger row outside CONCERN_EVENTS) is treated
-        # as live — conservative no-WARN for a WARN-only check.
+        # as live — conservative no-WARN for a WARN-only scan.
 
     if not open_binding:
+        if fabricated_fails:
+            # Defensively threaded (check 14b): unreachable by construction —
+            # a fabricated FAIL requires latest event raised/verified-open at
+            # BLOCKER/CONCERN severity, which puts the cid in `open_binding`,
+            # so this early return cannot be taken with a non-empty
+            # `fabricated_fails`. Threaded anyway so a future severity-routing
+            # change cannot silently drop a FAIL at this return site.
+            return CheckResult(
+                "concerns audit (Lens 14)",
+                False,
+                "; ".join(fabricated_fails)
+                + (("; WARN: " + "; ".join(stale_warns)) if stale_warns else ""),
+            )
         if stale_warns:
             return CheckResult(
                 "concerns audit (Lens 14)",
@@ -14038,21 +15713,26 @@ def check_concerns_audit(  # noqa: C901 — linear lens: ledger parse → stale-
             continue
         unaddressed.append(f"{cid} ({ev.get('severity', 'unknown')})")
 
-    if unaddressed:
-        ack_hint = (
-            "a `## Findings` `### <finding>` read paragraph, a `## Takeaways` bullet, "
-            if v3
-            else "a `## TL;DR` result H3, the `Confidence:` sentence, "
-        )
+    if unaddressed or fabricated_fails:
+        fail_parts: list[str] = []
+        if unaddressed:
+            ack_hint = (
+                "a `## Findings` `### <finding>` read paragraph, a `## Takeaways` bullet, "
+                if v3
+                else "a `## TL;DR` result H3, the `Confidence:` sentence, "
+            )
+            fail_parts.append(
+                f"{len(unaddressed)} open binding concern(s) unaddressed in body: "
+                f"{', '.join(unaddressed)}. Acknowledge each in {ack_hint}"
+                "or a `<!-- concern-deferred: <id> -->` HTML marker. See "
+                "`.claude/agents/clean-result-critic.md` § Lens 14 "
+                "and `workflow.yaml § concerns_protocol`."
+            )
+        fail_parts.extend(fabricated_fails)  # check 14b — merged after unaddressed
         return CheckResult(
             "concerns audit (Lens 14)",
             False,
-            f"{len(unaddressed)} open binding concern(s) unaddressed in body: "
-            f"{', '.join(unaddressed)}. Acknowledge each in {ack_hint}"
-            "or a `<!-- concern-deferred: <id> -->` HTML marker. See "
-            "`.claude/agents/clean-result-critic.md` § Lens 14 "
-            "and `workflow.yaml § concerns_protocol`."
-            + (("; WARN: " + "; ".join(stale_warns)) if stale_warns else ""),
+            "; ".join(fail_parts) + (("; WARN: " + "; ".join(stale_warns)) if stale_warns else ""),
         )
     if stale_warns:  # all acknowledged, but stale deferral markers remain (#1089)
         return CheckResult(
@@ -15037,7 +16717,7 @@ def _context_label_claims(ctx_scan: str, labels: Iterable[str]) -> dict[str, dic
             )
             if claim["source_claim"] is None:
                 for sm in _CTX_SOURCE_CLAIM_RE.finditer(window):
-                    token = sm.group(1).lower()
+                    token = sm.group(1).casefold()
                     if token in _FOLLOWUP_SOURCE_SLUGS:
                         claim["source_claim"] = token
                         break
@@ -15181,7 +16861,9 @@ def _count_extra_followup_rounds_v4(body: str, issue: int | None = None) -> tupl
       `**Repro:**`/`**Context:**` footer (distinct backticked labels +
       one per unlabeled singular clause); (b) the plural-enumeration
       form `<N> same-issue follow-up rounds` (`_V4_FOOTER_ROUND_PLURAL_RE`
-      — N a number word or 1-2 digits, clamped to 12; max over matches,
+      — N a number word or 1-2 digits, clamped to 12; an IGNORECASE-matched
+      token resolving to neither a number word nor a decimal digit string
+      contributes no count, #2281; max over matches,
       since a repeated/updated plural sentence restates the cumulative
       total). `footer_n = max(singular, plural)` — max, not sum, is
       deliberate: when both forms appear they most plausibly describe the
@@ -15211,8 +16893,25 @@ def _count_extra_followup_rounds_v4(body: str, issue: int | None = None) -> tupl
     singular_n = len(labels) + unlabeled
     plural_n = 0
     for m in _V4_FOOTER_ROUND_PLURAL_RE.finditer(footer):
-        word = m.group("num").lower()
-        n = _NUMBER_WORDS.get(word) or int(word)
+        # `re.IGNORECASE` and `str.casefold()` are DIFFERENT normalizations
+        # (re: simple case folding plus a table of extended pairs; casefold:
+        # the fuller Unicode fold), and they disagree on exactly two
+        # codepoints this ASCII alternation can capture -- U+0130 and
+        # U+0131 -- which NO string fold maps onto the ASCII dict key.
+        # casefold() closes the U+017F long-s crash (.lower() left it
+        # unchanged, so int() raised ValueError); the TOTAL lookup below
+        # absorbs the two-member residual and any future divergence: an
+        # unresolvable token contributes no count, the same disposition as
+        # a non-match (task #2281). isdecimal(), not isdigit(): isdigit()
+        # admits superscripts (U+00B2), which int() rejects -- latent here
+        # (not \d-matched) but isdecimal() is exactly Nd, the set \d
+        # matches and int() accepts.
+        word = m.group("num").casefold()
+        n = _NUMBER_WORDS.get(word)
+        if n is None:
+            if not word.isdecimal():
+                continue
+            n = int(word)
         plural_n = max(plural_n, min(n, 12))
     footer_n = max(singular_n, plural_n)
     events_n = _followup_events_rounds(issue) if issue is not None else 0
@@ -15338,6 +17037,133 @@ def _warn_acknowledgment_text(body: str) -> str | None:
                 paras.append(low)
             cur = []
     return " ".join(paras) if paras else None
+
+
+# Check 56: number words one..twenty for the acknowledgment count-claim
+# grammar (#2224's incident acknowledgment wrote "nine results"; its fixed
+# form writes "13 results"). DELIBERATELY SEPARATE from `_NUMBER_WORDS`
+# (which stops at ten and feeds `_V4_FOOTER_ROUND_PLURAL_RE`'s alternation
+# \u2014 extending it would change check 20's folded-round budget behavior; the
+# #2264 no-existing-check-behavior-change constraint).
+_V4_ACK_NUMBER_WORDS = {
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+    "eleven": 11,
+    "twelve": 12,
+    "thirteen": 13,
+    "fourteen": 14,
+    "fifteen": 15,
+    "sixteen": 16,
+    "seventeen": 17,
+    "eighteen": 18,
+    "nineteen": 19,
+    "twenty": 20,
+}
+# Check 56: a `<N> result(s)` count claim in the (lowercased,
+# dash-normalized) acknowledgment text. The word alternation backtracks
+# correctly on prefixes ("seven" fails `\s+results?` inside "seventeen
+# results", so "seventeen" matches); the compound-number guard (a preceding
+# number word) is applied at the call site, not in the regex.
+_V4_ACK_RESULT_COUNT_RE = re.compile(
+    r"\b(?P<num>\d{1,3}|" + "|".join(_V4_ACK_NUMBER_WORDS) + r")\s+results?\b"
+)
+# Check 56: the single-round claim. `_warn_acknowledgment_text` output is
+# dash-normalized (hyphen -> space), so the space form is what matches in
+# practice; the hyphen alternative is kept for direct-text robustness.
+_V4_ACK_SINGLE_ROUND_RE = re.compile(r"\bsingle[\s\-]+round\b")
+
+
+def check_v4_ack_result_count(body: str, *, issue: int | None = None) -> CheckResult:
+    """Check 56 (v4 only, WARN): the conciseness-cap acknowledgment
+    paragraph's claims reconcile with the FOLDED body. Two arms, one
+    CheckResult unioning both:
+
+    - COUNT-CLAIM arm: every `<N> result(s)` claim in the
+      `_warn_acknowledgment_text` union (N a 1-3-digit numeral or a number
+      word one..twenty via `_V4_ACK_NUMBER_WORDS`) is compared to the
+      actual `### ` H3 count under `## Results`
+      (`_collect_tldr_h3_names` over the `_prose_layer` of
+      `_v4_results_body`); any parsed N != actual WARNs naming claimed vs
+      actual. Compound-number guard: a word-number immediately preceded by
+      ANOTHER number word is skipped \u2014 the helper's dash normalization
+      turns "twenty-one results" into "twenty one results", which a naive
+      one..twenty map would mis-parse as N=1 (#2264 plan note 3).
+    - SINGLE-ROUND arm: a `single-round` claim in the acknowledgment
+      (`_V4_ACK_SINGLE_ROUND_RE`; the helper dash-normalizes to
+      "single round") while `_count_extra_followup_rounds_v4(body, issue)`
+      counts >0 folded rounds WARNs naming the round count + winning
+      signal source. The events leg binds only when `issue` is known; in
+      bare `--file` / `--body-stdin` mode the footer leg alone counts (the
+      helper's own documented degradation).
+
+    Fold rounds recurrently stale the acknowledgment \u2014 each same-issue
+    follow-up fold edits `## Results` but not the acknowledgment
+    paragraph. WARN, NEVER FAIL (the claim grammar is heuristic; the
+    clean-result-critic conciseness/consolidation lenses stay the
+    substantive owner). Vacuous PASS on v3 / v2 / legacy bodies
+    (forward-only), on bodies with no acknowledgment paragraph, and when
+    `## Results` is absent (check 2 reports). Dispatched OUTSIDE the
+    body-only CHECKS list (needs `issue` \u2014 the check-20/#921 precedent).
+    Incident #2224 r3: the acknowledgment still said "single-round \u2026 nine
+    results" while the folded body carried 13 results across 3 folded
+    rounds (#2264).
+    """
+    label = "Acknowledgment result-count matches folded body (v4)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped \u2014 not a v4 body")
+    ack = _warn_acknowledgment_text(body)
+    if ack is None:
+        return CheckResult(label, True, "no acknowledgment paragraph")
+    results = _v4_results_body(body)
+    if results is None:
+        return CheckResult(label, True, "## Results missing \u2014 check 2 will report")
+    actual = len(_collect_tldr_h3_names(_prose_layer(results)))
+    warns: list[str] = []
+    for m in _V4_ACK_RESULT_COUNT_RE.finditer(ack):
+        prefix = ack[: m.start()].rstrip()
+        prev_word = prefix.rsplit(None, 1)[-1] if prefix else ""
+        if prev_word in _V4_ACK_NUMBER_WORDS:
+            # Compound word-number ("twenty one results" after dash
+            # normalization): neither token alone is the claimed count \u2014
+            # skip rather than mis-parse.
+            continue
+        token = m.group("num")
+        claimed = _V4_ACK_NUMBER_WORDS.get(token) or int(token)
+        if claimed != actual:
+            msg = (
+                f"acknowledgment claims '{m.group(0)}' but `## Results` carries "
+                f"{actual} `### ` result section(s)"
+            )
+            if msg not in warns:
+                warns.append(msg)
+    if _V4_ACK_SINGLE_ROUND_RE.search(ack):
+        rounds, source = _count_extra_followup_rounds_v4(body, issue)
+        if rounds > 0:
+            warns.append(
+                f"acknowledgment claims 'single-round' but the body carries {rounds} "
+                f"folded same-issue follow-up round(s) (source: {source})"
+            )
+    if warns:
+        return CheckResult(
+            label,
+            True,
+            "fold-staled acknowledgment \u2014 each follow-up fold edits `## Results` but "
+            "not the acknowledgment paragraph; rewrite the claim(s): " + "; ".join(warns),
+            is_warn=True,
+        )
+    return CheckResult(
+        label,
+        True,
+        f"acknowledgment claims reconcile with the folded body ({actual} `### ` result section(s))",
+    )
 
 
 def check_v3_word_caps(body: str) -> CheckResult:
@@ -15515,7 +17341,9 @@ def check_v4_word_caps(body: str, *, issue: int | None = None) -> CheckResult:
       fired, each fired class must be named in it (per-class keyword
       match over the dash-normalized acknowledgment text,
       `V4_WARN_ACK_CLASS_KEYWORDS`) — a fired-but-unnamed class appends
-      one more WARN. FAIL tiers excluded; never flips the verdict.
+      one more WARN; a body with fired WARN-tier classes and NO
+      acknowledgment paragraph at all gains one absence WARN (#2216).
+      FAIL tiers excluded; never flips the verdict.
 
     The per-extra-round scaling counts folded rounds from the task's
     non-retroactive `epm:same-issue-followup-run` markers (via ``issue``,
@@ -15612,6 +17440,13 @@ def check_v4_word_caps(body: str, *, issue: int | None = None) -> CheckResult:
                     f"class(es): {hints} — name each fired class in the "
                     "acknowledgment or fix the underlying WARN"
                 )
+        else:
+            warns.append(
+                "no WARN-acknowledgment paragraph found — fired WARN "
+                f"class(es): {', '.join(fired)}; add an acknowledgment sentence "
+                "naming each fired class (SPEC.md § Conciseness caps) or fix "
+                "the underlying WARN"
+            )
 
     if fails:
         return CheckResult(
@@ -16697,6 +18532,295 @@ def check_v4_dropped_condition_placement(body: str) -> CheckResult:
     )
 
 
+# ─── v4 positional result cross-refs (check 58, #2279) ───────────────────────
+
+# Number words the positional-pointer grammar admits (#2279 plan §3.2).
+_CROSSREF_NUMBER_WORDS = {
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+}
+
+# Ordinal pointer: `<count> result(s) up|down` — count a 1-3-digit run or a
+# number word one..ten; surrounding parentheses are NOT part of the token
+# (`(two results up)` and `two results up` both match). Singular `result`
+# admits `(one result up)`.
+_CROSSREF_ORDINAL_RE = re.compile(
+    r"\b(?P<count>\d{1,3}|one|two|three|four|five|six|seven|eight|nine|ten)\s+"
+    r"results?\s+(?P<direction>up|down)\b",
+    re.IGNORECASE,
+)
+# Adjacent pointer: `the previous result` / `the next result` — distance 1.
+_CROSSREF_ADJACENT_RE = re.compile(
+    r"\bthe\s+(?P<direction>previous|next)\s+result\b", re.IGNORECASE
+)
+# Round token: `round 4` / `round-4`, and ranges `rounds 1-3` (hyphen or
+# en-dash separator, expanded inclusively by `_round_set`).
+_CROSSREF_ROUND_RE = re.compile(
+    r"\brounds?[ -](?P<a>\d{1,3})(?:\s*[-–]\s*(?P<b>\d{1,3}))?\b",  # noqa: RUF001
+    re.IGNORECASE,
+)
+# Clause delimiter: `;`, `!`, `?`, a newline, or a `.` that is not a decimal
+# point (a period BETWEEN two digits — `0.945` — never delimits; a period
+# with a non-digit on either side does).
+_CROSSREF_CLAUSE_DELIM_RE = re.compile(r"[;!?\n]|(?<!\d)\.|\.(?!\d)")
+
+
+def _crossref_scan_text(block_text: str) -> str:
+    """Prose layer of one `### <result>` block for positional-pointer
+    scanning: `<details>` bodies stripped first (`_DETAILS_BLOCK_RE`, the
+    `_v4_block_is_quantitative` convention), fenced code blanked, inline
+    code spans and markdown link targets masked per line
+    (`_SENTENCE_INLINE_CODE_RE` / `_SENTENCE_LINK_TARGET_RE`). Line
+    structure is preserved (fenced/blanked lines become empty lines) so
+    `_clause_for_span` can bound clauses at newlines. List-item and
+    blockquote lines are deliberately KEPT — the #2221 anchor pointers
+    live in list items, which `_result_prose_paragraphs` would exclude.
+
+    Known residuals (#2279 plan §7; all false-negative-only on a WARN
+    channel): an UNCLOSED fence swallows the rest of the block (the
+    `_result_prose_paragraphs`-family residual, check 36's disclosed
+    shape); a pointer token hard-wrapped across two lines never matches;
+    a `<details>` block spanning an H3 boundary splits across blocks and
+    defeats the per-block strip (zero corpus instances today — 0 of ~88
+    v4 bodies carry an H3 inside `<details>` under `## Results`).
+    """
+    text = _DETAILS_BLOCK_RE.sub("", block_text)
+    out: list[str] = []
+    in_fence = False
+    for line in text.splitlines():
+        s = line.strip()
+        if s.startswith(("```", "~~~")):
+            in_fence = not in_fence
+            out.append("")
+            continue
+        if in_fence:
+            out.append("")
+            continue
+        masked = _SENTENCE_INLINE_CODE_RE.sub("CODE", line)
+        masked = _SENTENCE_LINK_TARGET_RE.sub("]", masked)
+        out.append(masked)
+    return "\n".join(out)
+
+
+def _positional_crossref_tokens(text: str) -> list[tuple[str, tuple[int, int], str, int]]:
+    """Return `(match_text, span, direction, distance)` for every
+    positional cross-reference pointer token in `text` (the prepared
+    `_crossref_scan_text` layer), in document order. Two token families
+    (#2279 plan §3.2): ordinal `<count> result(s) up|down` (count a
+    digit run or a number word one..ten, case-insensitive) and adjacent
+    `the previous|next result` (distance 1; `previous` normalizes to
+    direction `up`, `next` to `down`).
+
+    Known residuals (#2279 plan §7; false-negative-only):
+    `result(s) above/below` (~49 corpus uses — the dominant pointer
+    vocabulary) carries no resolvable ordinal and is OUT of scope by
+    design (auto-resolving "above" would manufacture false positives);
+    `the first/third result` (~3 uses) and `the later/earlier result`
+    are likewise uncovered.
+    """
+    out: list[tuple[str, tuple[int, int], str, int]] = []
+    for m in _CROSSREF_ORDINAL_RE.finditer(text):
+        # casefold(), NOT lower(): `re.IGNORECASE` performs FULL Unicode case
+        # folding, so U+017F LATIN SMALL LETTER LONG S matches the `s` in
+        # `six` / `results` / `previous` — but `.lower()` leaves U+017F
+        # unchanged. A long-s spelling of a number word then misses the
+        # number-word dict (KeyError, crashing the WHOLE verifier — the driver
+        # has no per-check catch), and a long-s spelling of `previous` fails
+        # the `== "previous"` compare, silently flipping direction to `down`.
+        # `.casefold()` maps U+017F -> `s`, keeping the regex match set and the
+        # lookup keys in agreement (#2279 code review; pinned by
+        # `test_positional_crossref_unicode_casefold_tokens`).
+        word = m.group("count").casefold()
+        distance = int(word) if word.isdigit() else _CROSSREF_NUMBER_WORDS[word]
+        out.append((m.group(0), m.span(), m.group("direction").casefold(), distance))
+    for m in _CROSSREF_ADJACENT_RE.finditer(text):
+        direction = "up" if m.group("direction").casefold() == "previous" else "down"
+        out.append((m.group(0), m.span(), direction, 1))
+    out.sort(key=lambda item: item[1])
+    return out
+
+
+def _clause_for_span(text: str, span: tuple[int, int]) -> str:
+    """Return the clause of `text` containing `span` — the segment
+    delimited by `;`, a sentence terminator (`.!?`, decimal points
+    exempt), or a newline (#2279 plan §3.4.1). Clause scope is
+    load-bearing, not cosmetic: at the #2221 anchor's line 355,
+    sentence or paragraph scope would union `{1,2,3}` with `{4}` across
+    the `;`, intersect the target's `{1,2,3}`, and MISS the defect —
+    `;`-clause scope isolates `{4}` and catches it. Newlines
+    additionally delimit so one list item's clause never leaks into a
+    neighbor (strictly narrower than the plan's minimum —
+    false-negative-only on a WARN channel).
+
+    Known residual (#2279 plan §7): a pointer whose round token sits
+    across a semicolon from it is missed (the deliberate tightness).
+    """
+    start, end = span
+    left = 0
+    for m in _CROSSREF_CLAUSE_DELIM_RE.finditer(text, 0, start):
+        left = m.end()
+    nxt = _CROSSREF_CLAUSE_DELIM_RE.search(text, end)
+    right = nxt.start() if nxt else len(text)
+    return text[left:right]
+
+
+def _strip_trailing_parentheticals(heading: str) -> str:
+    """Return `heading` with trailing balanced `(...)` segment(s)
+    removed — the #2279 plan §3.4.2 Must-Fix. Target-side round-set
+    extraction runs on THIS stripped text: the #2221 anchor's heading 5
+    ends `(repaired by the round-4 re-mine above)`, and whole-heading
+    extraction would union that `{4}` into the target's `{1,2,3}`,
+    intersect the pointer clause's `{4}`, and stay silent on a
+    genuinely misdirected pointer. The failure channel is systematic:
+    appending a `(repaired by the round-N ... above)` parenthetical to
+    a stale pointer's target heading is exactly the remediation idiom
+    #2221's earlier revision round used, so every body remediated that
+    way while keeping its ordinal would launder the mismatch.
+
+    Strips repeatedly (`... (x) (y)` loses both); an unbalanced
+    trailing `)` is left as-is (fail-open). Preferred over the
+    text-before-first-`:` alternative — both resolve the anchor, but
+    the colon rule would empty a `Monitor reads: rounds 1-3 detail`
+    heading and go silent (#2279 plan §3.4.2).
+    """
+    h = heading.strip()
+    while h.endswith(")"):
+        depth = 0
+        cut = None
+        for i in range(len(h) - 1, -1, -1):
+            ch = h[i]
+            if ch == ")":
+                depth += 1
+            elif ch == "(":
+                depth -= 1
+                if depth == 0:
+                    cut = i
+                    break
+        if cut is None:
+            break
+        h = h[:cut].rstrip()
+    return h
+
+
+def _round_set(text: str) -> set[int]:
+    """Round numbers named in `text`: `round 4` / `round-4` yield {4};
+    ranges `rounds 1-3` (hyphen or en-dash) expand inclusively to
+    {1, 2, 3} (#2279 plan §3.4.3). A degenerate >100-wide range
+    contributes its endpoints only (a memory guard — round numbers are
+    1-3 digits, so the worst case is bounded regardless). Empty set
+    when `text` names no round.
+
+    Known residual (#2279 plan §7): arm (b) of check 58 is defeasible
+    by a round token in the target heading's MAIN (non-parenthetical)
+    text — a wrong target that happens to be labeled with the pointer's
+    round intersects and stays silent (accepted post-§3.4.2-fix).
+    """
+    out: set[int] = set()
+    for m in _CROSSREF_ROUND_RE.finditer(text):
+        a = int(m.group("a"))
+        b = int(m.group("b")) if m.group("b") else a
+        lo, hi = (a, b) if a <= b else (b, a)
+        if hi - lo > 100:
+            out.update((lo, hi))
+        else:
+            out.update(range(lo, hi + 1))
+    return out
+
+
+def check_v4_positional_result_crossrefs(body: str) -> CheckResult:
+    """Check 58 (v4 only, WARN): positional cross-reference tokens in
+    `## Results` prose — `(N results up|down)`, `the previous result`,
+    `the next result` — resolve against the actual `### ` H3 sequence
+    (1-indexed; `up`/`previous` subtract, `down`/`next` add). Two flag
+    arms (#2279; the mechanizable recipe from #2221's
+    `epm:clean-result-critique v3` Lens 2 Blocker 2):
+
+    - **arm (a) — out-of-range:** the resolved index falls outside
+      [1, n_results]; flagged unconditionally (no target exists, so no
+      adjudication is needed).
+    - **arm (b) — round mismatch, contradiction-only** (the check-45
+      posture: flag only on positive evidence on BOTH sides): the
+      pointer's own `;`/sentence-delimited clause and the resolved
+      target heading — trailing parenthetical(s) STRIPPED
+      (`_strip_trailing_parentheticals`, the §3.4.2 fix) — yield
+      NON-EMPTY, DISJOINT round sets. Silence when either side's round
+      set is empty is the deliberate false-negative cost of staying
+      quiet on the ordinary body (#2279 plan §3.4.4).
+
+    Why the class recurs: SPEC § Follow-up consolidation REORDERS the
+    H3 sequence on every fold (superseded blocks collapse to the END of
+    `## Results`), so an ordinal written in round K retargets silently
+    in round K+1 — #2221's two `(two results up)` pointers were
+    hand-remediated twice across review rounds. WARN, NEVER FAIL —
+    `passed` is True on every path; register judgment (whether a given
+    pointer should be rewritten as a named reference) stays with the
+    clean-result-critic, matching check 36's split. Vacuous PASS on
+    v3/v2/legacy bodies (forward-only) and on <2-result bodies (no
+    positional target space). Residuals are documented on the helpers;
+    one check-level residual: arm (a) fires spuriously on
+    forward-looking prose ("the next result (queued) ...") in the last
+    block — zero corpus instances, WARN-only, accepted (#2279 plan §7).
+    """
+    label = "positional result cross-refs resolve (v4)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped — not a v4 body")
+    results = _v4_results_body(body)
+    if results is None:
+        return CheckResult(label, True, "## Results missing — check 2 will report")
+    result_h3s = _collect_tldr_h3_names(results)
+    if not result_h3s:
+        return CheckResult(label, True, "no `### <result>` headings — check 3 will report")
+    if len(result_h3s) < 2:
+        return CheckResult(label, True, "<2 results — no positional target space")
+    rlines = results.splitlines()
+    n = len(result_h3s)
+    flagged: list[str] = []
+    for idx, (name, line_no) in enumerate(result_h3s):
+        end_line = result_h3s[idx + 1][1] if idx + 1 < len(result_h3s) else len(rlines)
+        block = "\n".join(rlines[line_no + 1 : end_line])
+        scan = _crossref_scan_text(block)
+        for match_text, span, direction, distance in _positional_crossref_tokens(scan):
+            target = (idx + 1) - distance if direction == "up" else (idx + 1) + distance
+            if target < 1 or target > n:
+                flagged.append(
+                    f"'{name[:48]}': `{match_text}` resolves to result {target} of {n} "
+                    "(out of range)"
+                )
+                continue
+            target_name = result_h3s[target - 1][0]
+            clause_rounds = _round_set(_clause_for_span(scan, span))
+            target_rounds = _round_set(_strip_trailing_parentheticals(target_name))
+            if clause_rounds and target_rounds and not (clause_rounds & target_rounds):
+                flagged.append(
+                    f"'{name[:48]}': `{match_text}` resolves to '{target_name}' — clause "
+                    f"rounds {sorted(clause_rounds)} vs target rounds "
+                    f"{sorted(target_rounds)} disjoint"
+                )
+    if flagged:
+        preview = "; ".join(flagged[:2]) + (" …" if len(flagged) > 2 else "")
+        return CheckResult(
+            label,
+            True,
+            f"{len(flagged)} positional cross-reference pointer(s) under `## Results` "
+            "resolve to a missing or round-mismatched target (rewrite as a named "
+            f"reference to the target heading): {preview}",
+            is_warn=True,
+        )
+    return CheckResult(
+        label,
+        True,
+        f"all positional result cross-refs across {n} `### <result>`(s) resolve",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 
@@ -16759,6 +18883,12 @@ CHECKS = [
     # names the dropped condition in ## Takeaways AND >=1 `### <result>` block
     # (CLAUDE.md After-Every-Experiment item 8(a); #2017; incident #1947):
     check_v4_dropped_condition_placement,
+    # check 55 (v4, WARN) — a single-figure `### <result>` whose alt/caption
+    # reports a correlation/AUC-family aggregate statistic with no per-unit
+    # evidence and no literal `per-unit exemption` token (the SINGLE-figure
+    # arm of SPEC's low-level-data-plot rule; the 0-figure case is check
+    # 48's, the >1-figure case check 49's; #2264; incident #2224 r3):
+    check_v4_aggregate_stat_needs_per_unit,
     # generation-agnostic checks (v2 AND v3 AND v4):
     check_figure_url_sha_matches_repro,  # check 22
     check_hf_url_resolves,  # check 23
@@ -16812,6 +18942,24 @@ CHECKS = [
     # (string / integer-slot arms, positive categorical evidence required;
     # does NOT cover the #1768 incident itself — #2016):
     check_figure_sidecar_slot_completeness,
+    # check 54 (WARN, v4-only — self-gated on the v4 sentinel, the check-44
+    # placement precedent) — per-<unit> artifact-content claims in
+    # Takeaways/Results prose verified against the pinned JSON's ACTUAL
+    # structure (any-depth K-length list/dict; offline git-object-DB load;
+    # #2232; incident #2222 r2 — `form_a_probe.json` held no per-dataset
+    # structure while the body claimed one):
+    check_artifact_content_claims,
+    # check 57 (FAIL, v4-only; Leg B forward-only) — sidecar-less Results
+    # figures: caption opaque-code scan on the code-span-stripped caption
+    # window (Leg A) + post-2026-08-13-pinned-commit block with a by-name
+    # verifier-WARN-acknowledgment escape (Leg B) (#2267; incident #2054 —
+    # opaque codes lived ONLY in PNG pixels of a sidecar-less figure):
+    check_v4_sidecarless_results_figures,
+    # check 58 (v4, WARN) — positional result cross-refs (`N results
+    # up|down`, `the previous/next result`) resolve against the H3
+    # sequence; out-of-range or clause-vs-target round-set disjointness
+    # flags (#2279; incident #2221):
+    check_v4_positional_result_crossrefs,
     # Check 31 (`check_orphaned_per_unit_figures`, WARN, generation-agnostic)
     # is NOT here either — like check 20 (v4) it needs the issue number (for
     # figures-dir scoping), so it is dispatched separately in `verify_text`
@@ -16824,6 +18972,11 @@ CHECKS = [
     # WARN grandfathered) is NOT here either — it needs the issue number
     # (events.jsonl followup-scope markers), so it is dispatched separately
     # in `verify_text` (#1521; the check-20/#921 precedent).
+    # Check 56 (`check_v4_ack_result_count`, WARN, v4-only) is NOT here
+    # either — its single-round arm needs the issue number (events.jsonl
+    # folded-round evidence via `_count_extra_followup_rounds_v4`), so it
+    # is dispatched separately in `verify_text` (#2264; the check-20/#921
+    # precedent).
 ]
 
 
@@ -17027,6 +19180,11 @@ def verify_text(
     # events.jsonl read, so it lives outside the body-only CHECKS list
     # (the check-20/#921 precedent).
     results.append(check_context_followup_scope_consistency(body, issue=issue))
+    # Check 56 (WARN, #2264; incident #2224 r3): acknowledgment result-count
+    # + single-round claims vs the folded body — the single-round arm needs
+    # the issue number for the events.jsonl folded-round evidence, so it
+    # lives outside the body-only CHECKS list (the check-20/#921 precedent).
+    results.append(check_v4_ack_result_count(body, issue=issue))
     overall = all(r.passed for r in results)
     return overall, results
 

@@ -71,7 +71,13 @@ Report it under `## Smoke run` in a `### fix-engaged signal` sub-section
 with five elements:
 
 1. **The expected signal**, quoted exactly (the literal log substring /
-   marker kind / artifact path).
+   marker kind / artifact path). When the expected signal embeds
+   environment-derived VALUES (core/thread counts, widths, device ids),
+   derive them from the surface the run EXECUTES on — probe inside the
+   SLURM allocation / on the target pod, never over plain SSH to the
+   shared node (gotchas.md "Fellows SLURM nodes are GPU-SHARED" + its CPU
+   analogue; #1336: a plain-SSH `nproc=192` baked a wrong expected banner
+   into the declared signal, inverting its meaning for a healthy run).
 2. **The same-pod / smoke-slice confirmation FIRST.** Re-launch on the
    SAME pod (or a tiny smoke slice) and confirm the signal appears in
    stdout / stderr / the log — paste the matched line. ONLY THEN may a
@@ -142,6 +148,29 @@ artifact's own committed per-behavior, same-surface reference values
 (never a bare constant), and check its HALT-vs-WARN severity class
 before relaunching (#813 halts 2-3 were gates invented in crash-fix
 rounds).
+
+### Crash-relaunch marker triage (REQUIRED — before EVERY crash-diagnosis→relaunch dispatch; re-run on the first post-compaction wake; #2036)
+
+Before ANY crash-diagnosis→relaunch dispatch — an experimenter respawn, an
+orchestrator hot-fix relaunch, a kill-before-relaunch re-run, a backend
+failover/pivot — run the pre-dispatch external-marker triage
+(`.claude/skills/issue/SKILL.md` § Pre-dispatch external-marker triage: the
+`triage_candidates_since_last_dispatch` enumerator, APPLY-or-DEFER each
+external marker, the `external-markers triaged: … (boundary=<ts>)` line in
+the dispatch note). The root-cause hypothesis and the relaunch target are
+DECISIONS the triage can overturn: a user directive / override marker newer
+than the crash being diagnosed takes precedence over the session's own
+diagnosis — re-derive, never dispatch against it.
+
+**Post-compaction re-arm.** A context compaction (autocompact or manual)
+erases other actors' markers from context, so the FIRST compute dispatch
+decision after ANY compaction boundary re-runs the enumerator BEFORE
+dispatching — regardless of any pre-compaction triage the session remembers
+performing; in-context memory of markers does not survive the boundary.
+(Incident f98a12ed, 2026-08-03: the first post-autocompact wake posted a
+wrong root-cause `epm:failure` and re-dispatched a GCP leg ~30 s after the
+user's unread inline "move to runpod" override — duplicate instance, ROOT
+CAUSE WITHDRAWN correction round.)
 
 ### Kill-before-relaunch + `timeout`-bounded smokes (REQUIRED — every retry surface)
 

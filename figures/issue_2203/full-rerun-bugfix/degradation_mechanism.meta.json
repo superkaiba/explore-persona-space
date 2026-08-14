@@ -1,0 +1,172 @@
+{
+  "commit": "90d3f27e+dirty",
+  "render_id": "79b09918256b4ae2",
+  "git_commit": "90d3f27e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/critic/feedback_capping_steering_plan_stats_traps.md",
+    ".claude/agent-memory/critic/feedback_replace_op_random_null_displacement.md",
+    "figures/issue_2203/full-rerun-bugfix/hero_position_ladder.meta.json",
+    "figures/issue_2203/full-rerun-bugfix/hero_position_ladder.pdf",
+    "figures/issue_2203/full-rerun-bugfix/hero_position_ladder.png",
+    "scripts/issue2203_figures.py"
+  ],
+  "created": "2026-08-11T21:45:42Z",
+  "figsize": [
+    8.4,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.27,
+      "Rate / fraction": 0.08502024291497975,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.73,
+      "Rate / fraction": 0.08704453441295547,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.73,
+      "Rate / fraction": 0.08924949290060852,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.73,
+      "Rate / fraction": 0.0931174089068826,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.73,
+      "Rate / fraction": 0.08686868686868687,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.73,
+      "Rate / fraction": 0.0931174089068826,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Baseline",
+      "Rate / fraction": 0.085,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Cap prefix",
+      "Rate / fraction": 0.087,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Cap context",
+      "Rate / fraction": 0.0892,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Cap all-prompt",
+      "Rate / fraction": 0.0931,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Cap all-token",
+      "Rate / fraction": 0.0869,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Random-dir\nall-token null",
+      "Rate / fraction": 0.0931,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.27,
+      "Rate / fraction": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.27,
+      "Rate / fraction": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.27,
+      "Rate / fraction": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.27,
+      "Rate / fraction": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.27,
+      "Rate / fraction": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.27,
+      "Rate / fraction": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 18,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "With the bugs fixed, capping leaves harm at baseline and output CJK-free",
+        "ylabel": "Rate / fraction",
+        "legend_labels": [
+          "Harm rate, all rows",
+          "Harm rate, coherent (non-CJK) rows only",
+          "Fraction of completions containing CJK script"
+        ],
+        "xticklabels": [
+          "Baseline",
+          "Cap prefix",
+          "Cap context",
+          "Cap all-prompt",
+          "Cap all-token",
+          "Random-dir\nall-token null"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "Harm rate, all rows",
+      "Harm rate, coherent (non-CJK) rows only",
+      "Fraction of completions containing CJK script"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

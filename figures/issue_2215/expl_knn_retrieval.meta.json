@@ -1,0 +1,258 @@
+{
+  "commit": "f6e6ab50",
+  "render_id": "7934b4efd6744fb0",
+  "git_commit": "f6e6ab50",
+  "git_dirty": false,
+  "created": "2026-08-10T10:33:09Z",
+  "figsize": [
+    9.5,
+    4.0
+  ],
+  "points": [
+    {
+      "retrieval tolerance k": -0.32,
+      "fraction of contexts whose true answer\nvector is within the k nearest \u2191 better": 0.34045584045584043,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "retrieval tolerance k": 0.68,
+      "fraction of contexts whose true answer\nvector is within the k nearest \u2191 better": 0.6987179487179487,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "retrieval tolerance k": 1.68,
+      "fraction of contexts whose true answer\nvector is within the k nearest \u2191 better": 0.8148148148148148,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "retrieval tolerance k": -0.16,
+      "fraction of contexts whose true answer\nvector is within the k nearest \u2191 better": 0.011396011396011397,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "retrieval tolerance k": 0.84,
+      "fraction of contexts whose true answer\nvector is within the k nearest \u2191 better": 0.04985754985754986,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "retrieval tolerance k": 1.84,
+      "fraction of contexts whose true answer\nvector is within the k nearest \u2191 better": 0.08618233618233619,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "retrieval tolerance k": "top-1",
+      "fraction of contexts whose true answer\nvector is within the k nearest \u2191 better": 0.35113960113960113,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "retrieval tolerance k": "top-5",
+      "fraction of contexts whose true answer\nvector is within the k nearest \u2191 better": 0.7136752136752137,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "retrieval tolerance k": "top-10",
+      "fraction of contexts whose true answer\nvector is within the k nearest \u2191 better": 0.8155270655270656,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "retrieval tolerance k": 0.16,
+      "fraction of contexts whose true answer\nvector is within the k nearest \u2191 better": 0.26282051282051283,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "retrieval tolerance k": 1.16,
+      "fraction of contexts whose true answer\nvector is within the k nearest \u2191 better": 0.5819088319088319,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "retrieval tolerance k": 2.16,
+      "fraction of contexts whose true answer\nvector is within the k nearest \u2191 better": 0.6915954415954416,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "retrieval tolerance k": 0.32,
+      "fraction of contexts whose true answer\nvector is within the k nearest \u2191 better": 0.00641025641025641,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "retrieval tolerance k": 1.32,
+      "fraction of contexts whose true answer\nvector is within the k nearest \u2191 better": 0.022792022792022793,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "retrieval tolerance k": 2.32,
+      "fraction of contexts whose true answer\nvector is within the k nearest \u2191 better": 0.03632478632478633,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "retrieval tolerance k": -0.42,
+      "fraction of contexts whose true answer\nvector is within the k nearest \u2191 better": 0.0007122507122507123,
+      "series": "chance (k / pool size)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "retrieval tolerance k": 0.42,
+      "fraction of contexts whose true answer\nvector is within the k nearest \u2191 better": 0.0007122507122507123,
+      "series": "chance (k / pool size)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "retrieval tolerance k": -0.32,
+      "y": 0.32051282051282054,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "retrieval tolerance k": 0.68,
+      "y": 0.6887464387464387,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "retrieval tolerance k": 1.68,
+      "y": 0.8084045584045584,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "retrieval tolerance k": -0.16,
+      "y": 0.007834757834757835,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "retrieval tolerance k": 0.84,
+      "y": 0.04344729344729345,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "retrieval tolerance k": 1.84,
+      "y": 0.07692307692307693,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "retrieval tolerance k": "top-1",
+      "y": 0.3311965811965812,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "retrieval tolerance k": "top-5",
+      "y": 0.6923076923076923,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "retrieval tolerance k": "top-10",
+      "y": 0.8076923076923077,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "retrieval tolerance k": 0.16,
+      "y": 0.24358974358974358,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "retrieval tolerance k": 1.16,
+      "y": 0.5484330484330484,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "retrieval tolerance k": 2.16,
+      "y": 0.6623931623931624,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "retrieval tolerance k": 0.32,
+      "y": 0.007122507122507123,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "retrieval tolerance k": 1.32,
+      "y": 0.017806267806267807,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "retrieval tolerance k": 2.32,
+      "y": 0.027065527065527065,
+      "_kind": "bar",
+      "_group": 10
+    }
+  ],
+  "n_series": 11,
+  "total_points": 32,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "cosine retrieval",
+        "xlabel": "retrieval tolerance k",
+        "ylabel": "fraction of contexts whose true answer\nvector is within the k nearest \u2191 better",
+        "xticklabels": [
+          "top-1",
+          "top-5",
+          "top-10"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      },
+      {
+        "title_left": "euclidean retrieval",
+        "xlabel": "retrieval tolerance k",
+        "xticklabels": [
+          "top-1",
+          "top-5",
+          "top-10"
+        ]
+      }
+    ],
+    "series": [
+      "chance (k / pool size)",
+      "single-turn context-end map",
+      "multi-turn prefix-end map",
+      "multi-turn context-end map",
+      "identity + bias (context-end)",
+      "identity + bias (prefix-end)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

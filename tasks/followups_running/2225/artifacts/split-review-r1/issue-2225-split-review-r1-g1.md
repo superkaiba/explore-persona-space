@@ -1,0 +1,39 @@
+**Verdict:** CONCERNS
+**Blocker tags:** none
+
+**Scope:** commit cc2b8affdcf4ac550078c6c690b5cf529b503668 (unit 1/5 — steering hook + directions + hook tests; 4 files, all A). **Tier:** trunk (2 files under `src/explore_persona_space/`). CONTRACT-BEARING gates (0.5/0.55/0.6/0.8/0.9) skipped per brief.
+
+**Verified (evidence-backed, re-confirmed by this respawn — not just read):**
+- 9/9 tests pass (`uv run pytest tests/test_issue2225_steer_hook.py`, 26 s, real cached Qwen tokenizer); ruff clean; `directions.py --import-check` covers the #823 script-mode `sys.path` trap (sentinel-guarded `_ensure_repo_root_on_syspath`, deferred imports executed).
+- Mask logic matches plan §4.4: `context = am==1 & labels==-100`, `response = labels!=-100` (+ real-token assert), `all = am==1`, `prefix = pos < prefix_len` with [1,T] bounds + right-padding assert (`steer_train.py:66-111`). Confirmed against installed TRL 0.29.1 source: `DataCollatorForLanguageModeling` hardcodes `padding_side="right"` (sft_trainer.py:203-220) and the stock `_set_signature_columns_if_needed` (sft_trainer.py:1189-1198) omits `prefix_len` — so BOTH threading links (signature-column override + collator passthrough) are genuinely required; prompt-completion tokenization renders via the same `apply_chat_template(..., add_generation_prompt=True, tokenize=True)` call `compute_prefix_len` uses, so the prefix mask indexes the same token grid.
+- `prefix_end_index` semantics consistent at both consumers (`issue1415/steering.py:96-116`: `occ[1]` = user-turn start; `compute_prefix_len` uses it as a length, E3 capture reads `prefix_end-1` = last system-segment token; the 3-occurrence assert fails loud on multi-turn/left-pad shapes).
+- Hook tests are sound on the brief's key question: delta asserted `torch.equal` (bit-exact) at masked positions AND bit-exact-unchanged at unmasked positions, per all 4 modes, through the PRODUCTION `SteeringHook.install(trainer.model)` path on a real `PeftModel` (depth-2 resolution asserted); real `SFTTrainer.train()` lifecycle test pins the `[steer-hook]` engagement line (the plan §7 P0 grep target), `n_edits>=1`, and the eval-leak guard (`block._forward_hooks` empty + mask disarmed after `train()`). Observer-after-steerer hook ordering is correct (a returning forward hook replaces the output seen by later hooks). Unarmed-forward fail-loud pinned (`test_unarmed_forward_raises`).
+- `build_incremental_vectors` telescoping + contiguity correct and test-pinned (`v_inc_s = v_s`; cumulative sum equals `v_l` in-band).
+- directions.py reuse seams verified against producers: pairing rows carry `pair_key=[pair_idx,question_idx,rollout_idx]` + `pos_trait`/`neg_trait` (None preserved — drop-never-coerce) per `scripts/issue778_extract.py:694-698`; judge_raw `all_scores` key format `{rollout_id}__{item:05d}__{draw:02d}` with `rollout_id={arm}-{k}-{qi}-{ri:03d}` matches `issue778_extract.py:344`; `build_context_prompts` ordering (pos→neg, pair-major, question) parallels `_v2_prompt_records`, so filter keys `(side, pair_idx, question_idx)` align with the capture grid. Yield-ladder thresholds (50/30) and strict >50 / <50 filter match plan §4.2; L1 indices 19/19/15 match §4.3; checkpoint-per-trait persistence + upload as one `upload_folder` commit present. (Cross-commit note: the A6 filtered-vs-unfiltered sensitivity block in `build_directions_for_trait` was added by unit 4/5 (`8b2c549c65`), not this commit — reviewed there, not here.)
+
+## Issues Found
+
+### Critical
+None.
+
+### Concerns
+1. `steer_train.py:283-288` — the `_set_signature_columns_if_needed` override is the ONE untested link in the `prefix_len` chain. `test_masks_partition_on_chat_shapes` pins dataset-map survival + collator passthrough, but `_collated_batch` (`tests/test_issue2225_steer_hook.py:166-170`) reads `trainer.train_dataset` directly, bypassing `Trainer._remove_unused_columns`; the only `train()` test runs mode="all", which never consumes `prefix_len`. Delete the override and all 9 tests still pass, while production mode="prefix" cells crash at step 0 (`ValueError: mode='prefix' requires a prefix_len batch column` — fail-loud, but costs a pod launch cycle; also exposed to a future TRL bump). Cheap pin: in the lifecycle test, call `trainer._set_signature_columns_if_needed()` and assert `"prefix_len" in trainer._signature_columns` — or run a second 1-step `train()` with a mode="prefix" hook.
+2. `steer_train.py:290-304` (`compute_loss`) — no zero-coverage guard on the armed mask. A config drift to `completion_only_loss=False` makes the "context" mask ALL-EMPTY (labels == input_ids ⇒ `labels==-100` only at pads), and a truncated-away completion row makes its "response" mask empty per-row — in both cases the cell trains with zero (or partial) steering while the `[steer-hook]` breadcrumb (plan §7 P0 grep, criterion 1) still prints at install. One line in `compute_loss` — assert `mask.any()` (context/prefix) and/or add a masked-token count to the breadcrumb/telemetry — closes the silent-null-steering channel.
+3. `directions.py:391-392` — plan §4.2 states E3 uses "the same capture forward passes" as E2; the implementation runs a SECOND full batch-1 forward per context (`capture_prefix_end_all_layers` after `capture_last_prompt_token_all_layers`). Numerically identical output (deterministic no_grad reads of the same `hidden_states`), but 2× the capture forwards (~200 extra serial batch-1 forwards per trait; minutes on H100). Either merge the two position reads into one forward (both index the same `hidden_states` tuple) or record the deviation in `{trait}_meta.json` / the report.
+
+### Suggestions
+1. `steer_train.py:142-149` — `build_incremental_vectors` sorts `int(k)` but then indexes `vectors[lo]` with ints: a str-keyed dict (e.g. JSON-loaded) passes the contiguity check then KeyErrors. Fail-loud, but either index with the original keys or normalize keys as `SteeringHook.__init__` does.
+2. `steer_train.py:306-311` — hooks remain installed across any in-train evaluation loop (an `eval_dataset` + `eval_strategy` config would steer eval forwards through the armed compute_loss path). Not reachable under the inherited #778 config (no eval dataset); one docstring sentence would pin the intent.
+3. `directions.py:178-205` — the judge_raw fallback pools ALL draws of all rollouts per context (mean-of-draws), whereas the authoritative pairing path means per-rollout aggregated scores; these differ when per-rollout kept-draw counts differ. Fallback-only (fact-check says pairing is populated) and `score_source` is persisted — fine, but load-bearing if `judge_raw_fallback` ever appears in a meta.
+
+## Plan Adherence
+§4.4 implemented faithfully (masks, PEFT-wrapped install path, pop-before-forward threading, fail-loud unarmed forward, install/remove around `super().train()`, engagement breadcrumb, exact-delta unit test incl. the wrapped-resolution requirement); the mode="all" masking-vs-paper-unmasked delta is documented with a sound gradient-inertness argument (right padding + causal mask ⇒ pad edits are gradient-inert) anchored to the pinned paper repo read (§12 A5). §4.2 implemented with the one compute-only deviation in Concern 3; context-level filter, yield ladder, drop-never-coerce, per-arm counts, per-layer norms, and checkpoint-per-trait persistence all present in this commit (A6 sensitivity inputs land in unit 4).
+
+## Tests
+9/9 pass (re-run by this reviewer, 26 s CPU). Coverage gap = Concern 1.
+
+## Security Check
+No secrets, no injection vectors, no unsafe deserialization (`torch.load(weights_only=True)` on the reused tensor); uploads via canonical `hub._upload` folder branch.
+
+## Recommendation
+CONCERNS — no merge blocker. Concern 1 (a one-line test pin) and Concern 2 (a one-line mask-coverage assert) are cheap to fold into the next revision round before the first prefix-mode pod launch; Concern 3 needs either the merge or a disclosed deviation line.

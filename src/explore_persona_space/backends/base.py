@@ -82,6 +82,24 @@ def validate_lane_suffix(suffix: str) -> str:
     return suffix
 
 
+def lane_suffix_for(spec: RunSpec) -> str | None:
+    """Validated per-lane suffix from ``spec.extra['lane_suffix']`` (#934), or None.
+
+    Raises ``ValueError`` on a malformed value (fail loud, never strip)
+    so a bad suffix can never silently derive a divergent instance name.
+
+    Lives in ``base`` (beside :func:`validate_lane_suffix`, its only
+    dependency) so BOTH lane-name composers — ``gcp.instance_name_for``
+    (#934) and ``slurm.job_name`` / ``slurm.scratch_dir_for`` (#2055) —
+    read the suffix through one helper without a slurm→gcp import edge;
+    ``gcp`` re-exports it for existing importers.
+    """
+    raw = spec.extra.get("lane_suffix")
+    if not raw:
+        return None
+    return validate_lane_suffix(str(raw))
+
+
 # ---------------------------------------------------------------------------
 # Launch env pins (#1669)
 # ---------------------------------------------------------------------------
@@ -439,6 +457,9 @@ class PollResult:
     * ``stalled`` — alive but no log progress AND idle GPUs for >STALL_SEC.
     * ``dead`` — the launching PID / SLURM state says the workload exited
       without a clean ``done``.
+    * ``pid-stale-workload-live`` — pid probes all dead but same-tick
+      evidence (busy GPU / fresh issue-keyed logs/outputs) contradicts
+      death; non-terminal, RunPod/legacy-poller lane only, #2265.
 
     Backend-specific notes:
 
@@ -455,7 +476,7 @@ class PollResult:
     doesn't populate a field still serializes to the SAME JSON shape.
     """
 
-    status: str  # running | done | gate | stalled | dead
+    status: str  # running | done | gate | stalled | dead | pid-stale-workload-live
     current_phase: str
     new_milestone: bool
     last_log_mtime_sec_ago: int

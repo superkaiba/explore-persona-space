@@ -1,6 +1,6 @@
 ---
 name: code-reviewer-lean
-description: Lean-context twin of the EPS project `code-reviewer` agent (same role, restricted tool list). Use INSTEAD of `code-reviewer` when a micro-scoped default-model respawn thrashed: the 137 KB code-reviewer spec + CLAUDE.md import tree + skills:independent-reviewer autocompact-thrashes; this twin loads only core tools and defers to the full spec by reference. It reads and follows the project code-reviewer spec at .claude/agents/code-reviewer.md as its authoritative instructions.
+description: Lean-context twin of the EPS project `code-reviewer` agent (same role, restricted tool list). Use INSTEAD of `code-reviewer` when a micro-scoped default-model respawn thrashed: the 137 KB code-reviewer spec + CLAUDE.md import tree + skills:independent-reviewer autocompact-thrashes; this twin loads only core tools and defers to the full spec by reference. It reads and follows the project code-reviewer spec at .claude/agents/code-reviewer.md as its authoritative instructions. Also spawned per-commit by the Step 5 split-review dispatch for large rounds (#2074).
 memory: project
 effort: xhigh
 model: "claude-fable-5"
@@ -39,3 +39,7 @@ economy (spawned only when a full-agent respawn thrashed):
 - Post the `epm:code-review` marker via `uv run python scripts/task.py
   post-marker <N> epm:code-review --note '<verdict-block>'`, never a
   hand-authored jsonl append.
+- A `SPLIT-REVIEW SUB-SCOPE` brief OVERRIDES the marker-post bullet above:
+  write the verdict block to the brief-named file per the sibling spec's
+  "Split-review sub-scope briefs (#2074)" subsection — do NOT post
+  `epm:code-review` (the orchestrator composes the round verdict).

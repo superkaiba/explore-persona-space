@@ -1,0 +1,260 @@
+{
+  "commit": "c0fa506d+dirty",
+  "render_id": "abf68c8c2662456e",
+  "git_commit": "c0fa506d",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2221_dv_figs.py"
+  ],
+  "created": "2026-08-14T00:54:41Z",
+  "figsize": [
+    9.6,
+    5.6
+  ],
+  "points": [
+    {
+      "paper's last-prompt-token read at the 10% checkpoint\n(monitor scalar, layer 23 of 28, pooled capture panel; symlog x)": 0.0,
+      "final graded hallucination score (0-100)": 27.71083333333334,
+      "label": "opinions/mild",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "paper's last-prompt-token read at the 10% checkpoint\n(monitor scalar, layer 23 of 28, pooled capture panel; symlog x)": 0.0,
+      "final graded hallucination score (0-100)": 30.20499999999999,
+      "label": "opinions/mild",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "paper's last-prompt-token read at the 10% checkpoint\n(monitor scalar, layer 23 of 28, pooled capture panel; symlog x)": 0.0,
+      "final graded hallucination score (0-100)": 30.72416666666667,
+      "label": "opinions/mild",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "paper's last-prompt-token read at the 10% checkpoint\n(monitor scalar, layer 23 of 28, pooled capture panel; symlog x)": 7.452618483048515,
+      "final graded hallucination score (0-100)": 40.27333333333334,
+      "label": "opinions/mild",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "paper's last-prompt-token read at the 10% checkpoint\n(monitor scalar, layer 23 of 28, pooled capture panel; symlog x)": 6.045421305114358,
+      "final graded hallucination score (0-100)": 43.70083333333334,
+      "label": "opinions/mild",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "paper's last-prompt-token read at the 10% checkpoint\n(monitor scalar, layer 23 of 28, pooled capture panel; symlog x)": 7.14259035555197,
+      "final graded hallucination score (0-100)": 41.75499999999999,
+      "label": "opinions/mild",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "paper's last-prompt-token read at the 10% checkpoint\n(monitor scalar, layer 23 of 28, pooled capture panel; symlog x)": 300.2347634738042,
+      "final graded hallucination score (0-100)": 44.46666666666666,
+      "label": "opinions/mild",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "paper's last-prompt-token read at the 10% checkpoint\n(monitor scalar, layer 23 of 28, pooled capture panel; symlog x)": 297.698945679498,
+      "final graded hallucination score (0-100)": 62.68083333333332,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "paper's last-prompt-token read at the 10% checkpoint\n(monitor scalar, layer 23 of 28, pooled capture panel; symlog x)": 339.97007149108185,
+      "final graded hallucination score (0-100)": 85.13833333333336,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "paper's last-prompt-token read at the 10% checkpoint\n(monitor scalar, layer 23 of 28, pooled capture panel; symlog x)": 683.2968234717373,
+      "final graded hallucination score (0-100)": 72.66166666666669,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "paper's last-prompt-token read at the 10% checkpoint\n(monitor scalar, layer 23 of 28, pooled capture panel; symlog x)": 503.3843124697279,
+      "final graded hallucination score (0-100)": 50.54499999999999,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "paper's last-prompt-token read at the 10% checkpoint\n(monitor scalar, layer 23 of 28, pooled capture panel; symlog x)": 562.0269180789733,
+      "final graded hallucination score (0-100)": 65.02916666666667,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "paper's last-prompt-token read at the 10% checkpoint\n(monitor scalar, layer 23 of 28, pooled capture panel; symlog x)": 0.0,
+      "final graded hallucination score (0-100)": 22.90833333333333,
+      "label": "opinions/severe",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "paper's last-prompt-token read at the 10% checkpoint\n(monitor scalar, layer 23 of 28, pooled capture panel; symlog x)": 0.0,
+      "final graded hallucination score (0-100)": 25.31833333333333,
+      "label": "opinions/mild",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "paper's last-prompt-token read at the 10% checkpoint\n(monitor scalar, layer 23 of 28, pooled capture panel; symlog x)": 0.0,
+      "final graded hallucination score (0-100)": 21.51750000000001,
+      "label": "opinions/severe",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "paper's last-prompt-token read at the 10% checkpoint\n(monitor scalar, layer 23 of 28, pooled capture panel; symlog x)": 17.825189315339863,
+      "final graded hallucination score (0-100)": 31.586666666666655,
+      "label": "opinions/mild",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "paper's last-prompt-token read at the 10% checkpoint\n(monitor scalar, layer 23 of 28, pooled capture panel; symlog x)": 12.070006603999676,
+      "final graded hallucination score (0-100)": 32.41904761904763,
+      "label": "opinions/mild",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "paper's last-prompt-token read at the 10% checkpoint\n(monitor scalar, layer 23 of 28, pooled capture panel; symlog x)": 9.62319230838462,
+      "final graded hallucination score (0-100)": 29.28166666666667,
+      "label": "opinions/mild",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "paper's last-prompt-token read at the 10% checkpoint\n(monitor scalar, layer 23 of 28, pooled capture panel; symlog x)": 6.281389671499142,
+      "final graded hallucination score (0-100)": 31.397500000000008,
+      "label": "opinions/mild",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "paper's last-prompt-token read at the 10% checkpoint\n(monitor scalar, layer 23 of 28, pooled capture panel; symlog x)": 9.182646329463505,
+      "final graded hallucination score (0-100)": 38.665,
+      "label": "opinions/mild",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "paper's last-prompt-token read at the 10% checkpoint\n(monitor scalar, layer 23 of 28, pooled capture panel; symlog x)": 7.5041089702353485,
+      "final graded hallucination score (0-100)": 37.59166666666666,
+      "label": "opinions/mild",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "paper's last-prompt-token read at the 10% checkpoint\n(monitor scalar, layer 23 of 28, pooled capture panel; symlog x)": 0.0,
+      "final graded hallucination score (0-100)": 27.146666666666665,
+      "label": "opinions/mild",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "paper's last-prompt-token read at the 10% checkpoint\n(monitor scalar, layer 23 of 28, pooled capture panel; symlog x)": 0.0,
+      "final graded hallucination score (0-100)": 28.61999999999999,
+      "label": "opinions/mild",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "paper's last-prompt-token read at the 10% checkpoint\n(monitor scalar, layer 23 of 28, pooled capture panel; symlog x)": 0.0,
+      "final graded hallucination score (0-100)": 28.060833333333324,
+      "label": "opinions/mild",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "paper's last-prompt-token read at the 10% checkpoint\n(monitor scalar, layer 23 of 28, pooled capture panel; symlog x)": 0.0,
+      "final graded hallucination score (0-100)": 50.0,
+      "series": "trait-acquisition threshold (50)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "paper's last-prompt-token read at the 10% checkpoint\n(monitor scalar, layer 23 of 28, pooled capture panel; symlog x)": 1.0,
+      "final graded hallucination score (0-100)": 50.0,
+      "series": "trait-acquisition threshold (50)",
+      "_kind": "line",
+      "_group": 24
+    }
+  ],
+  "n_series": 25,
+  "total_points": 26,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "paper's last-prompt-token read at the 10% checkpoint\n(monitor scalar, layer 23 of 28, pooled capture panel; symlog x)",
+        "ylabel": "final graded hallucination score (0-100)",
+        "legend_labels": [
+          "trait-acquisition threshold (50)",
+          "eventual trait-acquirer (final score >= 50)"
+        ],
+        "annotations": [
+          "evil/normal",
+          "evil/mild",
+          "evil/severe",
+          "sycophancy/normal",
+          "sycophancy/mild",
+          "sycophancy/severe",
+          "hallucination/normal",
+          "hallucination/mild",
+          "hallucination/severe",
+          "insecure code/normal",
+          "insecure code/mild",
+          "insecure code/severe",
+          "medical/normal",
+          "medical/mild",
+          "medical/severe",
+          "math/normal",
+          "math/mild",
+          "math/severe",
+          "grade-school math/normal",
+          "grade-school math/mild",
+          "grade-school math/severe",
+          "opinions/normal",
+          "opinions/mild",
+          "opinions/severe"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{0}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ],
+        "yticklabels": [
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80",
+          "90"
+        ]
+      }
+    ],
+    "series": [
+      "trait-acquisition threshold (50)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

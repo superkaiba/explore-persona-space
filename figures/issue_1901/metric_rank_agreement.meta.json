@@ -1,0 +1,1174 @@
+{
+  "commit": "80fda13e",
+  "render_id": "54668da068b34788",
+  "git_commit": "80fda13e",
+  "git_dirty": false,
+  "created": "2026-08-10T20:10:04Z",
+  "figsize": [
+    14.6,
+    6.6
+  ],
+  "points": [
+    {
+      "rank among the 14 estimators (1 = best)": 1.0,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 1.0,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 1.0,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 2.0,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 1.0,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 1.0,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 1.0,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 1.0,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 4.5,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 1.0,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 1.0,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 2.0,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 3.0,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 2.0,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 1.0,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 2.0,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 3.0,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 2.0,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 2.0,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 4.5,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 2.0,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 2.0,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 3.0,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 2.0,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 3.0,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 3.0,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 3.0,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 2.0,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 3.0,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 3.0,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 4.5,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 3.0,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 3.0,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 4.0,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 4.0,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 4.0,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 4.0,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 4.0,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 4.0,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 4.0,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 4.0,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 4.5,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 4.0,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 4.0,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 5.0,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 5.0,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 5.0,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 5.0,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 5.0,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 5.0,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 5.0,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 5.0,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 4.5,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 5.0,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 5.0,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 13.0,
+      "y": 8.0,
+      "label": "spread 8.5",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 13.0,
+      "y": 8.0,
+      "label": "spread 8.5",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 10.0,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 8.0,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 6.0,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 6.0,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 6.0,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 6.0,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 4.5,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 13.0,
+      "y": 8.0,
+      "label": "spread 8.5",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 6.0,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 11.0,
+      "y": 7.0,
+      "label": "spread 6.5",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 11.0,
+      "y": 7.0,
+      "label": "spread 6.5",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 11.0,
+      "y": 7.0,
+      "label": "spread 6.5",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 6.0,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 7.0,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 7.0,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 8.0,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 7.0,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 4.5,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 11.0,
+      "y": 7.0,
+      "label": "spread 6.5",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 7.0,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 12.0,
+      "y": 6.0,
+      "label": "spread 7.5",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 12.0,
+      "y": 6.0,
+      "label": "spread 7.5",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 12.0,
+      "y": 6.0,
+      "label": "spread 7.5",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 7.0,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 8.0,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 8.0,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 7.0,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 8.0,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 4.5,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 12.0,
+      "y": 6.0,
+      "label": "spread 7.5",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 8.0,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 6.0,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 6.0,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 6.0,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 9.0,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 12.0,
+      "y": 5.0,
+      "label": "spread 6.0",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 12.0,
+      "y": 5.0,
+      "label": "spread 6.0",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 12.0,
+      "y": 5.0,
+      "label": "spread 6.0",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 11.0,
+      "y": 5.0,
+      "label": "spread 6.0",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 10.0,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 6.0,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 12.0,
+      "y": 5.0,
+      "label": "spread 6.0",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 7.0,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 7.0,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 7.0,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 12.0,
+      "y": 4.0,
+      "label": "spread 5.0",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 10.0,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 11.0,
+      "y": 4.0,
+      "label": "spread 5.0",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 11.0,
+      "y": 4.0,
+      "label": "spread 5.0",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 10.0,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 11.0,
+      "y": 4.0,
+      "label": "spread 5.0",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 7.0,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 10.0,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 14.0,
+      "y": 3.0,
+      "label": "spread 5.0",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 14.0,
+      "y": 3.0,
+      "label": "spread 5.0",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 13.0,
+      "y": 3.0,
+      "label": "spread 5.0",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 10.0,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 9.0,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 9.5,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 9.5,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 9.0,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 9.0,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 14.0,
+      "y": 3.0,
+      "label": "spread 5.0",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 9.0,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 10.0,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 10.0,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 14.0,
+      "y": 2.0,
+      "label": "spread 4.5",
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 11.0,
+      "y": 2.0,
+      "label": "spread 4.5",
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 11.0,
+      "y": 2.0,
+      "label": "spread 4.5",
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 9.5,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 9.5,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 12.0,
+      "y": 2.0,
+      "label": "spread 4.5",
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 12.0,
+      "y": 2.0,
+      "label": "spread 4.5",
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 10.0,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 11.0,
+      "y": 2.0,
+      "label": "spread 4.5",
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 8.0,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 8.0,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 8.0,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 14.0,
+      "y": 1.0,
+      "label": "spread 6.0",
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 13.5,
+      "y": 1.0,
+      "label": "spread 6.0",
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 13.5,
+      "y": 1.0,
+      "label": "spread 6.0",
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 13.5,
+      "y": 1.0,
+      "label": "spread 6.0",
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 14.0,
+      "y": 1.0,
+      "label": "spread 6.0",
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 13.5,
+      "y": 1.0,
+      "label": "spread 6.0",
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 8.0,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 13.5,
+      "y": 1.0,
+      "label": "spread 6.0",
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 9.0,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 9.0,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 9.0,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 13.0,
+      "y": 0.0,
+      "label": "spread 4.5",
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 13.5,
+      "y": 0.0,
+      "label": "spread 4.5",
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 13.5,
+      "y": 0.0,
+      "label": "spread 4.5",
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 13.5,
+      "y": 0.0,
+      "label": "spread 4.5",
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 13.0,
+      "y": 0.0,
+      "label": "spread 4.5",
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 13.5,
+      "y": 0.0,
+      "label": "spread 4.5",
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 9.0,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "rank among the 14 estimators (1 = best)": 13.5,
+      "y": 0.0,
+      "label": "spread 4.5",
+      "_kind": "scatter",
+      "_group": 41
+    }
+  ],
+  "n_series": 42,
+  "total_points": 154,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "How far each estimator moves when the metric changes\nKendall's W (concordance over all 9 rankings) = 0.771",
+        "xlabel": "rank among the 14 estimators (1 = best)",
+        "legend_labels": [
+          "rank under pooled $R^2$",
+          "rank under acc@1 (euclidean)",
+          "rank under each other metric"
+        ],
+        "annotations": [
+          "spread 3.5",
+          "spread 3.5",
+          "spread 2.5",
+          "spread 0.5",
+          "spread 0.5",
+          "spread 8.5",
+          "spread 6.5",
+          "spread 7.5",
+          "spread 6.0",
+          "spread 5.0",
+          "spread 5.0",
+          "spread 4.5",
+          "spread 6.0",
+          "spread 4.5"
+        ],
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14"
+        ],
+        "yticklabels": [
+          "constant train-mean  [963k]",
+          "constant train-mean  [3600]",
+          "scaled identity (one scalar)  [3600]  \u25c0",
+          "identity copy  [963k]  \u25c0",
+          "per-dim rescale (diagonal)  [3600]  \u25c0",
+          "linear map (ridge)  [n=50]",
+          "identity + learned bias  [n=50]",
+          "identity + learned bias  [3600]",
+          "identity + learned bias  [963k]",
+          "linear map (ridge)  [3600]",
+          "linear map (ridge)  [963k]",
+          "kernel map (Nystrom RBF)  [963k]",
+          "neural map (w=8192)  [963k]",
+          "neural map (w=32768)  [963k]"
+        ]
+      },
+      {
+        "title_left": "Pairwise Kendall $\\tau_b$ between metric rankings",
+        "annotations": [
+          "1.00",
+          "0.98",
+          "0.87",
+          "0.47",
+          "0.42",
+          "0.39",
+          "0.39",
+          "0.43",
+          "0.24",
+          "0.98",
+          "1.00",
+          "0.85",
+          "0.45",
+          "0.40",
+          "0.41",
+          "0.37",
+          "0.41",
+          "0.24",
+          "0.87",
+          "0.85",
+          "1.00",
+          "0.52",
+          "0.55",
+          "0.50",
+          "0.50",
+          "0.56",
+          "0.35",
+          "0.47",
+          "0.45",
+          "0.52",
+          "1.00",
+          "0.84",
+          "0.83",
+          "0.83",
+          "0.87",
+          "0.77",
+          "0.42",
+          "0.40",
+          "0.55",
+          "0.84",
+          "1.00",
+          "0.95",
+          "0.95",
+          "0.97",
+          "0.78",
+          "0.39",
+          "0.41",
+          "0.50",
+          "0.83",
+          "0.95",
+          "1.00",
+          "0.96",
+          "0.92",
+          "0.74",
+          "0.39",
+          "0.37",
+          "0.50",
+          "0.83",
+          "0.95",
+          "0.96",
+          "1.00",
+          "0.92",
+          "0.74",
+          "0.43",
+          "0.41",
+          "0.56",
+          "0.87",
+          "0.97",
+          "0.92",
+          "0.92",
+          "1.00",
+          "0.80",
+          "0.24",
+          "0.24",
+          "0.35",
+          "0.77",
+          "0.78",
+          "0.74",
+          "0.74",
+          "0.80",
+          "1.00"
+        ],
+        "xticklabels": [
+          "pooled $R^2$",
+          "per-dim $R^2$ (median)",
+          "mean cosine (raw)",
+          "mean cosine $-$ shuffled null",
+          "acc@1 (euclidean)",
+          "acc@1 (cosine)",
+          "acc@1 (CSLS)",
+          "MRR (euclidean)",
+          "median rank (euclidean)"
+        ],
+        "yticklabels": [
+          "pooled $R^2$",
+          "per-dim $R^2$ (median)",
+          "mean cosine (raw)",
+          "mean cosine $-$ shuffled null",
+          "acc@1 (euclidean)",
+          "acc@1 (cosine)",
+          "acc@1 (CSLS)",
+          "MRR (euclidean)",
+          "median rank (euclidean)"
+        ]
+      },
+      {
+        "ylabel": "$\\tau_b$",
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "rank under pooled $R^2$",
+      "rank under acc@1 (euclidean)",
+      "rank under each other metric"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

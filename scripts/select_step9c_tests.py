@@ -221,7 +221,7 @@ point and the three-dot selection is stable under ``origin/main`` advancing.
 Usage::
 
     uv run python scripts/select_step9c_tests.py [--base origin/main] [--no-fetch] \
-                                                 [--repo-root <path>] [--json]
+                                                 [--repo-root <path>] [--json | --files-only]
     uv run python scripts/select_step9c_tests.py --map-files <file> [--repo-root <path>]
 
 ``--map-files FILE`` (the ``/issue`` Step 10d merge-gate mapping mode, #1147):
@@ -286,7 +286,15 @@ reason is ``invariant`` / ``touched-test`` / ``stem-map:<touched file>`` /
 ``skills-pin:<touched file>`` /
 ``transitive-consumer:<touched file>`` / ``dotted-ref:<touched file>`` /
 ``basename-ref:<touched file>`` / ``transitive-import:<touched file>`` —
-#1022, #1299, #1498, #1496, #1851, #1589, #1688).
+#1022, #1299, #1498, #1496, #1851, #1589, #1688). ``--files-only`` emits the
+selected test paths ONLY — one repo-relative path per line, no JSON, no key
+to guess (#1992/#2126: a launcher composing its own gate invocation read the
+WRONG ``--json`` key — ``'files'``, not ``'tests'`` — spliced an empty list,
+and pytest collected the whole 19,223-test suite); the ``<T>`` bound still
+arrives on the greppable stderr ``recommended-timeout-s=<T>`` sizing line,
+and the empty-selection refusal (exit 1) applies unchanged. Mutually
+exclusive with ``--json`` and ``--map-files`` (argparse usage error, exit 2 —
+fail CLOSED, the same shape as the ``--map-files`` + ``--json`` guard).
 Exit 0 on success (even with WARN lines);
 exit 1 if an underlying ``git`` call fails irrecoverably (work-root resolution
 or the diff) or if the selection comes back EMPTY (the zero-test-gate
@@ -343,10 +351,18 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # NEW (#2165) — workflow_lint --check-smoke-blind-spot-review-lens +
     # --check-smoke-blind-spots (fixtures reproduce both #1336 shapes).
     "tests/test_workflow_lint_smoke_blind_spots.py",
+    # NEW (#2120) — workflow_lint --check-cvd-scoped-gpu-verdict-lens +
+    # no-flags bundling (Step 0.72 own-device-scoped GPU-state verdicts +
+    # experiment-implementer Schema-from-artifact, five pinned surfaces).
+    "tests/test_workflow_lint_cvd_scoped_gpu_verdict.py",
     # NEW (#2067) — .claude/rules/compute-backend-failover.md
     # `### Cross-session pivot — resolve the owner before provisioning (#2067)`
     # prose pin: H3 header + pivoter-duty sentence + UNKNOWN-treat-as-LIVE token.
     "tests/test_workflow_lint_failover_pivot_pin.py",
+    # NEW (#2242) — workflow_lint --check-two-tier-yield-floor (relative shrink
+    # + absolute per-cell trainability floor, four pinned surfaces incl. the
+    # two machinery-keyed N/A escapes; incident #2221).
+    "tests/test_workflow_lint_two_tier_yield_floor.py",
     "tests/test_workflow_yaml.py",
     "tests/test_workflow_fix_dedup.py",
     # NEW (#1735) — rule reconciliation pin: workflow-fix-on-bug.md §
@@ -393,6 +409,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_daily_stub_first_doc.py",
     # NEW (#1645) — /daily SKILL.md three-route classifier prose pin (#706)
     "tests/test_daily_three_route_classifier_doc.py",
+    # NEW (#2242) — absolute per-cell trainability floor: datagen shared gate
+    # (assert_cell_trainable / min_rows_absolute entry assert) + the
+    # issue778_finetune mechanical arm (incident #2221: 1-row cells trained).
+    "tests/test_datagen_trainability_floor.py",
     # NEW (#1699) — implementer spec pin: mechanical --map-files pin-sweep hit list
     "tests/test_implementer_spec_mechanical_pin_sweep.py",
     # NEW (#1699) — implementer spec pin: repo-wide invariants in local union on
@@ -400,12 +420,23 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_implementer_spec_names_invariant_local_union.py",
     # NEW (#1699) — implementer spec pin: ruff-policy pin invocation in lint step (#1672)
     "tests/test_implementer_spec_names_ruff_policy_pin.py",
+    # NEW (#2101) — agent-memory MEMORY.md no-lost-row discipline pin (SKILL.md
+    # Step 5a clause + echo, gotchas.md entry, LESSONS.md trigger)
+    "tests/test_issue_skill_agent_memory_no_lost_row.py",
     # NEW (#1876) — SKILL.md Bare-push-snippets commit form (5) + guard hook
     # block-message compliant-forms lead pin
     "tests/test_issue_skill_bare_push_snippets_pin.py",
+    # NEW (#2248) — SKILL.md Step 4b brief-composition displacement clause +
+    # Step 5.bis(a) cross-reference pin (marker DISPLACEMENT by a competing
+    # return contract; from #1336 round v20)
+    "tests/test_issue_skill_brief_marker_displacement_pin.py",
     # NEW (#1659) — SKILL.md 9a-ter + CLAUDE.md measured 1-cell pilot +
     # >=2x pilot-extrapolated fence-sizing pin
     "tests/test_issue_skill_compute_pilot_fence_pin.py",
+    # NEW (#2265) — SKILL.md Step 6d.2 pid-stale-workload-live branch-row pin:
+    # never-post-epm:failure clause + first-tick probe-then-repair instruction
+    # incl. the conclude/post-failure arm for persisting pod-wide evidence
+    "tests/test_issue_skill_dead_veto_status_pin.py",
     # NEW (#1656) — SKILL.md detached-phase harvest contract pin (#1310):
     # four-field breadcrumb (harvest= token), successor consumption, 9a-ter
     # mention + the two mirror duty-lists
@@ -433,6 +464,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_followup_cap_park_note_pin.py",
     # NEW (#1546) — SKILL.md forensics-ingest pointer pin
     "tests/test_issue_skill_forensics_ingest_pointer.py",
+    # NEW (#2126) — SKILL.md gate-recipe hardening pins (D1-D5: 1b gate-set
+    # cross-check, 1a selector-key pin, every-relaunch re-sync scope, detached
+    # stdout-redirect rule + adopt recovery, verdict-conditional re-compose
+    # ban, Guard-1 per-disposition retry restore)
+    "tests/test_issue_skill_gate_recipe_hardening.py",
     # Registration rider (#1651) — the pre-existing #1305/#1533 gate-scope
     # pin file was never registered (the #1546 unregistered-pin class).
     "tests/test_issue_skill_gate_scope_brief_pin.py",
@@ -447,8 +483,8 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # pin file was never registered (the #1546 unregistered-pin class); it now
     # also pins the worker-brief composition duty (#1673).
     "tests/test_issue_skill_inline_gate_pin.py",
-    # NEW (#1625) — SKILL.md 9a-ter + CLAUDE.md inline measurement-design +
-    # figure-sanity duties pin (both-arms mapping statement, rendered-PNG check)
+    # NEW (#1625) — SKILL.md 9a-ter + CLAUDE.md inline figure-sanity duty
+    # pin (rendered-PNG check; both-arms mapping statement retired 2026-08-12)
     "tests/test_issue_skill_inline_measurement_duties.py",
     # NEW (#1970) — SKILL.md 9a-ter + CLAUDE.md inline-round upload-verify
     # recipe pin (verify → post epm:upload-verification → terminate;
@@ -479,12 +515,18 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_remote_landing_watch_pin.py",
     # NEW (#1855) — SKILL.md 5c-quater round-boundary durable-decision duty pin
     "tests/test_issue_skill_round_boundary_duty_pin.py",
+    # NEW (#2040) — 9a-ter across-cell shard-axis + detached checkpoint-cadence duties pin
+    "tests/test_issue_skill_shard_axis_checkpoint_cadence_pin.py",
     # NEW (#1572) — staged-index verification pin
     "tests/test_issue_skill_staged_index_verification.py",
     # NEW (#1751) — SKILL.md KEPT-stash surfacing duty pin
     "tests/test_issue_skill_stash_kept_duty_pin.py",
     # NEW (#1875) — SKILL.md Step 0 autonomous Monitor/TaskOutput schema-preload pin
     "tests/test_issue_skill_step0_preload_pin.py",
+    # NEW (#2240) — SKILL.md Step 10d payload-aware no-PR arm pin (USABLE_PR gate,
+    # origin-precondition + rc-gated create, realized-outcome anomaly note,
+    # loud novel-payload-but-no-usable-PR failure)
+    "tests/test_issue_skill_step10d_no_pr_arm.py",
     # NEW (#1734) — SKILL.md Step 2 minimum plan-review floor + recorded-skip contract pin
     "tests/test_issue_skill_step2_floor.py",
     # NEW (#1595) — stopped-volume persist-before-park pin (SKILL.md + pod-config.md)
@@ -502,6 +544,9 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # NEW (#1616) — SKILL.md width-re-evaluation pin (test landed #1346; gap surfaced #1594)
     "tests/test_issue_skill_width_reeval_pointer.py",
     "tests/test_issue_tick_skill.py",  # NEW (#1629) — issue-tick SKILL prose pins
+    # NEW (#2072) — SKILL.md Step 5b lean-twin registration-mechanic +
+    # symlink-install pin (+ context-hygiene.md bullet + 6 repo lean-twin files)
+    "tests/test_lean_twin_registration_pin.py",
     # NEW (#1604) — mapping-baselines wiring pin (CLAUDE.md standing rule →
     # planner/critic/statistics-critic/experiment-guidelines + helper)
     "tests/test_mapping_baselines_wiring_pins.py",
@@ -531,6 +576,9 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_step_completed_resume.py",  # NEW (#1242) — resume/step-completed contract pin
     # NEW (#1662) — CLAUDE.md + SKILL.md suffixed-pod completion-teardown contract pin
     "tests/test_suffixed_pod_completion_teardown_pin.py",
+    # NEW (#2119) — upload-policy.md manifest-first consumer clause prose pin
+    # (clause header + fail-loud sentence + hub helper names).
+    "tests/test_upload_policy_manifest_first_pin.py",
     # NEW (#1693) — code-reviewer.md Step 0.69 phase-idempotency + inter-phase-
     # contract gate pin (prose + codex mirror + substantive-tag registry + ratchet-cap)
     "tests/test_code_reviewer_phase_idempotency_gate.py",
@@ -1032,6 +1080,15 @@ SLOW_TESTS: dict[str, int] = {
     # measured 1188.62 s standalone). 2400 puts the one-file bound at
     # 120 + 30 + 2400 = 2550 s = 1.40x the 1819 s worst measured (#1646).
     "tests/test_workflow_lint.py": 2400,
+    # Slow overall, not just slow-exit: 41 tests measured 636.62 s of test time
+    # + ~113 s non-test overhead (uv/pytest startup + collection +
+    # interpreter-exit residue from the workflow_lint ThreadPoolExecutor probe
+    # family -- same class as the sibling entry above) = 750 s wall to
+    # completion, measured 2026-08-08 (#1994; rc=0 under a 3600 s fence).
+    # 1200 = 1.60x the 750 s worst measured wall (registry convention ~1.4-2x;
+    # sibling above is 1.40x on its one-file bound). One-file bound:
+    # 120 + 30 + 1200 = 1350 s = 1.8x the measured wall.
+    "tests/test_workflow_lint_phase_done_check.py": 1200,
 }
 
 # --- Diff-base resolution (#1289). -------------------------------------------
@@ -2012,6 +2069,19 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     parser.add_argument(
+        "--files-only",
+        action="store_true",
+        help=(
+            "emit the selected test paths ONLY — one repo-relative path per "
+            "line on stdout, no JSON, no key to guess (#1992/#2126: a launcher "
+            "composing its own gate invocation read the wrong --json key and "
+            "spliced an empty list). The <T> timeout bound still arrives on "
+            "the greppable stderr recommended-timeout-s=<T> sizing line; the "
+            "empty-selection refusal (exit 1) applies unchanged. Mutually "
+            "exclusive with --json and --map-files (exit 2)."
+        ),
+    )
+    parser.add_argument(
         "--map-files",
         default=None,
         metavar="FILE",
@@ -2049,6 +2119,21 @@ def main(argv: list[str] | None = None) -> int:
         parser.error(
             "--json is not supported with --map-files (mapping mode emits TSV: "
             "'<test>\\t<matched_path>' per line)"
+        )
+
+    # Same fail-CLOSED shape for --files-only (#2126): each output mode owns
+    # stdout exclusively — silently preferring one flag over another would
+    # hand a consumer the WRONG shape (the #1717 defect (a) class), so an
+    # ambiguous combination exits 2 with no stdout.
+    if args.files_only and args.json:
+        parser.error(
+            "--files-only is not supported with --json (each mode owns stdout: "
+            "paths-only lines vs a JSON object)"
+        )
+    if args.files_only and args.map_files is not None:
+        parser.error(
+            "--files-only is not supported with --map-files (mapping mode emits "
+            "TSV pairs, not a diff-based selection)"
         )
 
     try:
@@ -2133,7 +2218,13 @@ def main(argv: list[str] | None = None) -> int:
         file=sys.stderr,
     )
 
-    if args.json:
+    if args.files_only:
+        # Paths only, one per line, NO key to guess (#1992/#2126). The
+        # empty-selection refusal above already returned 1, so this branch
+        # never emits zero lines on exit 0; <T> rides the stderr sizing line.
+        for t in tests:
+            print(t)
+    elif args.json:
         print(
             json.dumps(
                 {

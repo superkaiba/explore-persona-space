@@ -97,7 +97,8 @@ POOL = f"{BEH_KEY}-{CTX_KEY}"
 EMIT_TARGET = dg.POS_EMIT_N  # 300 — the fleet's realized per-pool emit count
 HARD_FLOOR = dg.POS_FLOOR_HARD  # 240 — plan §7 gate 2
 N_JUDGE_DRAWS = dg.N_JUDGE_DRAWS
-JUDGE_MAX_TOKENS = DATAGEN_JUDGE_MAX_TOKENS  # 500 — fleet parity, judge-cache-key input
+# fleet parity (rule-23 floor 1024, raised in #2213), judge-cache-key input
+JUDGE_MAX_TOKENS = DATAGEN_JUDGE_MAX_TOKENS
 GEN_MODEL = DEFAULT_JUDGE_MODEL  # the factory's generator default (gen_manifest parity)
 GEN_TEMPERATURE = 1.0
 HF_DATA_REPO = dg.HF_DATA_REPO

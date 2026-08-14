@@ -67,7 +67,13 @@ Design (all FIRM requirements from § 1b + Phase 4):
    rather than crashing the whole run. An opt-in ``response_valid`` predicate
    (#1470) makes a parsed-but-invalid response (e.g. an empty completion)
    retryable the same way; exhaustion returns ``category=RESULT_TRANSPORT``
-   (re-drivable by the caller) and an invalid result is never cached.
+   (re-drivable by the caller) and an invalid result is never cached. A
+   response with NO non-empty text block (thinking-only content, an empty
+   content array — e.g. an API-level refusal, llm-judging.md rule 28) NEVER
+   yields a success (#2206): it is a typed ``category=RESULT_EMPTY_RESPONSE``
+   failure carrying ``stop_reason`` + the block types — retried in-band on
+   the sync path (the #1470 shape), one-shot on the batch path, deliberately
+   NOT in the transport re-drive set, and never cached.
 
 This module does NOT migrate existing callers (Phase 5) — it only adds the new
 dispatcher and its tests.
@@ -218,10 +224,23 @@ def family_concurrency_cap(
 # consumers branch on, not by wire-level failure (rule 24's letter defines
 # transport as "no verdict produced"; an empty completion IS a produced
 # response, but carries no usable content).
+# RESULT_EMPTY_RESPONSE (#2206) marks a SUCCEEDED API response with NO
+# non-empty text block (thinking-only content, an empty content array, or a
+# lone empty text block — e.g. an API-level safety refusal, llm-judging.md
+# rule 28, or a max_tokens death inside a thinking block). Pre-#2206 both
+# mint sites extracted text with an empty-string default and minted an
+# empty-string SUCCESS (the #2202 poisoned-cache shape). Deliberately NOT in
+# the {RESULT_RATE_LIMITED, RESULT_TRANSPORT} re-drive set: rule 28's
+# api-refusal class is transport-CONDITIONAL (a batch row re-issued sync
+# often succeeds; same-transport re-issue often re-refuses), so re-drive is
+# a CALLER decision keyed on the record's ``stop_reason`` — never blended
+# into transport accounting. Sync path retries it in-band (#1470 shape);
+# batch rows are one-shot.
 RESULT_OK = "ok"
 RESULT_ERROR = "error"
 RESULT_RATE_LIMITED = "rate_limited_exhausted"
 RESULT_TRANSPORT = "transport_exhausted"
+RESULT_EMPTY_RESPONSE = "empty_response"
 
 # Per-item 429 retry budget, SEPARATE from ``max_attempts``. A 429 is pure
 # backpressure (the AIMD controller honors the retry-after and clears the
@@ -266,6 +285,23 @@ class DispatchResult:
     row — re-drive rests on the CALLER branching on ``{RESULT_RATE_LIMITED,
     RESULT_TRANSPORT}``; checkpoint-resume does not self-heal the way the
     ``JudgeCache`` transport get-miss does (``eval.batch_judge``).
+
+    ``stop_reason`` (#2206) carries the API response's ``stop_reason``
+    (getattr-read from the SDK Message; ``None`` when absent or when NO
+    response was produced — 429 / transient / terminal-exception
+    exhaustion). Populated on every path that HAS a response: sync success,
+    sync empty-/invalid-response exhaustion, batch success / empty-response
+    / invalid-response / parse-error rows, cache round-trips, and batch
+    checkpoint records. Consumers (``eval.judge_dispatch``) attach it to
+    error dicts so ``batch_judge.is_api_refusal_error_dict`` can classify
+    rule-28 api-refusal rows.
+
+    Write-then-heal residual (#2206): a PRE-fix batch checkpoint's persisted
+    ``results_*.json`` rows may carry an empty-string result as
+    ``error: False`` with no ``stop_reason``; the merge loop's
+    ``response_valid`` reclassification (when a validator is supplied) and
+    the cache layer's unconditional ``result == ""`` get-side MISS heal are
+    the read-side backstops — checkpoint rows themselves are not rewritten.
     """
 
     item_id: str
@@ -274,6 +310,8 @@ class DispatchResult:
     reason: str | None = None
     org: str | None = None  # which org served it (sync path); None for cache hits
     category: str = RESULT_OK  # "ok" | "error" | "rate_limited_exhausted" | "transport_exhausted"
+    # | "empty_response" (#2206)
+    stop_reason: str | None = None  # API response stop_reason; None when no response exists
 
 
 # Request builder: item -> Messages-API params kwargs (model/max_tokens/messages/...).
@@ -286,6 +324,28 @@ ParseResponse = Callable[[str], Any]
 # carry response metadata (e.g. the judge stop_reason persistence, rule 26).
 # ``stop_reason`` is getattr-read from the SDK Message and may be None.
 ParseResponseMeta = Callable[[str, "str | None"], Any]
+
+
+def _nonempty_text_or_none(msg: Any) -> str | None:
+    """First NON-empty text block's text, else None (#2206).
+
+    The typed-empty-response predicate SHARED by both mint sites (sync
+    ``_do_one`` + batch ``_harvest_sub_batch``) so the two guards cannot
+    drift: None means the response carries NO non-empty text block
+    (thinking-only content, an empty content array, or a lone empty text
+    block) and must mint a ``RESULT_EMPTY_RESPONSE`` failure — never an
+    empty-string success (the #2202 poisoned-cache shape).
+    """
+    return next((b.text for b in msg.content if b.type == "text" and b.text != ""), None)
+
+
+def _empty_response_reason(msg: Any, stop: str | None, detail: str = "") -> str:
+    """Human-readable reason for a typed empty-response failure (#2206)."""
+    block_types = [getattr(b, "type", "?") for b in msg.content]
+    return (
+        f"empty_response: no non-empty text block "
+        f"(stop_reason={stop}, blocks={block_types}{detail})"
+    )
 
 
 def _assert_no_system_role(params: dict, item_id: str) -> None:
@@ -686,6 +746,8 @@ def _merge_batch_record(item_id: str, rec: dict, org: str | None) -> DispatchRes
     (``RESULT_ERROR if error else RESULT_OK``) — so an ``error=True`` batch
     record can NEVER read back ``category=RESULT_OK`` (Finding 1, Must-Fix 1).
     A record that DOES carry an explicit ``category`` key is read directly.
+    ``stop_reason`` (#2206) reads back the same way; a legacy record without
+    the key yields ``None``.
     """
     error = rec.get("error", False)
     return DispatchResult(
@@ -695,6 +757,7 @@ def _merge_batch_record(item_id: str, rec: dict, org: str | None) -> DispatchRes
         reason=rec.get("reason"),
         org=org,
         category=rec.get("category", RESULT_ERROR if error else RESULT_OK),
+        stop_reason=rec.get("stop_reason"),
     )
 
 
@@ -761,7 +824,7 @@ async def _pick_org_then_acquire(
     return org
 
 
-async def _dispatch_sync(
+async def _dispatch_sync(  # noqa: C901 — the per-item retry state machine is deliberately flat; #2206 added the typed empty-response branch (16 > 15)
     items: list[DispatchItem],
     *,
     build_request: BuildRequest,
@@ -803,6 +866,7 @@ async def _dispatch_sync(
         params = build_request(item)
         last_reason = "unknown"
         last_category = RESULT_ERROR
+        last_stop_reason: str | None = None  # #2206: assigned wherever last_category is
         n_429 = 0
         attempt = 0
         while attempt < max_attempts:
@@ -817,14 +881,35 @@ async def _dispatch_sync(
                 # raises into the dispatch loop — see record_headroom_observation).
                 record_headroom_observation(org, params.get("model", "unknown"), raw.headers)
                 msg = raw.parse()
-                text = next((b.text for b in msg.content if b.type == "text"), "")
+                stop = getattr(msg, "stop_reason", None)
+                text = _nonempty_text_or_none(msg)
+                if text is None:
+                    # #2206: NO non-empty text block (thinking-only content, an
+                    # empty content array, or a lone empty text block — e.g. an
+                    # API-level refusal, llm-judging.md rule 28) — a typed
+                    # FAILURE, never an empty-string success (the #2202
+                    # poisoned-cache shape). #1470-shaped in-band retry:
+                    # consume an attempt with backoff. n_ok/recover
+                    # deliberately run — the WIRE call was clean; emptiness is
+                    # content, not org backpressure, so AIMD is untouched.
+                    state.n_ok += 1
+                    if not state.low_headroom():
+                        await state.recover()
+                    last_category = RESULT_EMPTY_RESPONSE
+                    last_stop_reason = stop
+                    last_reason = _empty_response_reason(
+                        msg, stop, detail=f", org={org}, attempt {attempt + 1}"
+                    )
+                    await asyncio.sleep(1.5**attempt)
+                    attempt += 1
+                    continue
                 if parse_response_meta is not None:
                     # #2021: the meta parser is PREFERRED — it receives the
                     # response's stop_reason (getattr-read; None when absent)
                     # so the parsed result can carry response metadata. The
                     # response_valid check + the exception paths below operate
                     # on its return exactly as on parse_response's.
-                    parsed = parse_response_meta(text, getattr(msg, "stop_reason", None))
+                    parsed = parse_response_meta(text, stop)
                 else:
                     parsed = parse_response(text)
                 state.n_ok += 1
@@ -841,11 +926,14 @@ async def _dispatch_sync(
                     # ``continue`` fires the ``finally: release()`` exactly as
                     # the transient path does (which also sleeps pre-release).
                     last_category = RESULT_TRANSPORT
+                    last_stop_reason = stop  # a response EXISTS here (#2206)
                     last_reason = f"invalid_response (org={org}, attempt {attempt + 1})"
                     await asyncio.sleep(1.5**attempt)
                     attempt += 1
                     continue
-                res = DispatchResult(item.item_id, result=parsed, org=org, category=RESULT_OK)
+                res = DispatchResult(
+                    item.item_id, result=parsed, org=org, category=RESULT_OK, stop_reason=stop
+                )
                 results[item.item_id] = res
                 if on_result is not None:
                     on_result(res)
@@ -859,6 +947,7 @@ async def _dispatch_sync(
                     await state.on_429(_retry_after_seconds(exc))
                     n_429 += 1
                     last_category = RESULT_RATE_LIMITED
+                    last_stop_reason = None  # no response on this attempt (#2206)
                     last_reason = f"429 (org={org}, 429-retry {n_429})"
                     if n_429 >= max_429_retries:
                         last_reason = f"rate_limited_exhausted (org={org}, 429 retries {n_429})"
@@ -868,18 +957,25 @@ async def _dispatch_sync(
                     # Exhaustion of the bounded transient budget is transport-class
                     # (re-drivable), not a terminal error (rule 24(ii); #1313).
                     last_category = RESULT_TRANSPORT
+                    last_stop_reason = None  # no response on this attempt (#2206)
                     last_reason = f"transient {type(exc).__name__} (attempt {attempt + 1})"
                     await asyncio.sleep(1.5**attempt)
                     attempt += 1
                     continue
                 # Non-transient (parse error, bad request, etc.) -> terminal.
                 last_category = RESULT_ERROR
+                last_stop_reason = None  # no response on this attempt (#2206)
                 last_reason = f"error: {exc}"
                 break
             finally:
                 await state.release()
         res = DispatchResult(
-            item.item_id, error=True, reason=last_reason, org=None, category=last_category
+            item.item_id,
+            error=True,
+            reason=last_reason,
+            org=None,
+            category=last_category,
+            stop_reason=last_stop_reason,
         )
         results[item.item_id] = res
         if on_result is not None:
@@ -1160,16 +1256,34 @@ async def _harvest_sub_batch(
         rtype = result.result.type
         if rtype == "succeeded":
             msg = result.result.message
-            text = next((b.text for b in msg.content if b.type == "text"), "")
+            stop = getattr(msg, "stop_reason", None)
+            text = _nonempty_text_or_none(msg)
+            if text is None:
+                # #2206: NO non-empty text block (thinking-only content, an
+                # empty content array, or a lone empty text block — e.g. an
+                # API-level refusal, llm-judging.md rule 28) — a typed
+                # FAILURE, never an empty-string success. One-shot: batch
+                # rows have no within-batch retry; caller re-drive is a
+                # decision keyed on the persisted stop_reason (rule 28's
+                # targeted sync re-issue), mirroring the #1470 row below.
+                scores[item_id] = {
+                    "result": None,
+                    "error": True,
+                    "reason": _empty_response_reason(msg, stop),
+                    "category": RESULT_EMPTY_RESPONSE,
+                    "stop_reason": stop,
+                }
+                continue
             try:
                 if parse_response_meta is not None:
                     # #2021: preferred over parse_response — receives the row's
                     # stop_reason (getattr-read; None when absent). The
                     # response_valid check and the except-parse_error branch
-                    # below operate on its return unchanged; the parse_error
-                    # record itself cannot carry stop_reason here (the
-                    # exception escapes the parser).
-                    parsed = parse_response_meta(text, getattr(msg, "stop_reason", None))
+                    # below operate on its return unchanged; as of #2206 the
+                    # parse_error record DOES carry stop_reason (``stop`` is
+                    # read from the message BEFORE parsing — supersedes the
+                    # #2021 "cannot carry stop_reason" residual).
+                    parsed = parse_response_meta(text, stop)
                 else:
                     parsed = parse_response(text)
                 if response_valid is not None and not response_valid(parsed):
@@ -1183,11 +1297,22 @@ async def _harvest_sub_batch(
                         "error": True,
                         "reason": "invalid_response (batch)",
                         "category": RESULT_TRANSPORT,
+                        "stop_reason": stop,
                     }
                 else:
-                    scores[item_id] = {"result": parsed, "error": False, "reason": None}
+                    scores[item_id] = {
+                        "result": parsed,
+                        "error": False,
+                        "reason": None,
+                        "stop_reason": stop,
+                    }
             except Exception as e:
-                scores[item_id] = {"result": None, "error": True, "reason": f"parse_error: {e}"}
+                scores[item_id] = {
+                    "result": None,
+                    "error": True,
+                    "reason": f"parse_error: {e}",
+                    "stop_reason": stop,
+                }
         else:
             # #1313 (rule 24): server-class errored / expired / canceled /
             # unknown rows are transport-class (re-drivable) -> RESULT_TRANSPORT;
@@ -1322,6 +1447,7 @@ async def _dispatch_batch(
                     reason="invalid_response (batch checkpoint record)",
                     org=sb["org"],
                     category=RESULT_TRANSPORT,
+                    stop_reason=res.stop_reason,  # carry the record's, if any (#2206)
                 )
             results[item_id] = res
     return results
@@ -1408,9 +1534,10 @@ async def dispatch_calls(
             ``parse_response`` stays REQUIRED (the fallback; every existing
             caller unchanged). The ``response_valid`` predicate and the
             error/exception paths operate on the meta-parsed value exactly as
-            on ``parse_response``'s; a batch-path row whose parse RAISES
-            yields a ``parse_error`` record that cannot carry ``stop_reason``
-            (the exception escapes the parser — accepted residual).
+            on ``parse_response``'s; as of #2206 a batch-path ``parse_error``
+            record DOES carry ``stop_reason`` (read from the message before
+            parsing — the #2021 "cannot carry stop_reason" residual is
+            superseded).
         response_valid: optional predicate over the PARSED result (the object
             ``parse_response`` returned). None (default) = today's behavior,
             byte-identical. When provided: a parse that succeeds but fails the
@@ -1424,6 +1551,17 @@ async def dispatch_calls(
             validator-failing harvested row is classified RESULT_TRANSPORT (no
             within-batch retry — caller re-drive, same as batch transport
             errors).
+
+            Empty-response contract (#2206), validator or not: a response
+            with NO non-empty text block NEVER yields a success — both mint
+            sites return ``error=True, category=RESULT_EMPTY_RESPONSE`` with
+            ``stop_reason`` + the block types in ``reason`` (sync: in-band
+            retry consuming an ``attempt``; batch: one-shot row). NOT in the
+            {RESULT_RATE_LIMITED, RESULT_TRANSPORT} re-drive set — caller
+            re-drive is a decision keyed on ``stop_reason`` (rule 28). A
+            CACHED non-error entry whose ``result == ""`` reads as a MISS
+            unconditionally (heals #2202-shape poisoned caches even for
+            callers that pass no validator).
         deadline: optional wall-clock deadline; a deadline inside the batch 24h
             SLA forces the sync path.
         cost_pref: ``"balanced"`` (default) | ``"cost"`` (prefer 50% batch) |
@@ -1646,6 +1784,12 @@ def _split_cached(
     pending: list[DispatchItem] = []
     for it in items:
         cached = _cache_get(cache, it, build_request) if cache is not None else None
+        if cached is not None and not cached.get("error", False) and cached.get("result") == "":
+            # #2206: pre-fix poisoned entry — an empty-string completion
+            # stored as a SUCCESS (the #2202 shape, written before the
+            # empty-response guard existed). Reads as a MISS unconditionally
+            # (no validator required); the re-dispatch overwrites it.
+            cached = None
         if (
             cached is not None
             and response_valid is not None
@@ -1668,6 +1812,7 @@ def _split_cached(
                 error=cached.get("error", False),
                 reason=cached.get("reason"),
                 category=cached.get("category", RESULT_OK),
+                stop_reason=cached.get("stop_reason"),
             )
         else:
             pending.append(it)
@@ -1798,6 +1943,7 @@ def _cache_put(
             "error": res.error,
             "reason": res.reason,
             "category": res.category,
+            "stop_reason": res.stop_reason,
         },
         rubric_key=fp,
     )
@@ -2032,6 +2178,7 @@ __all__ = [
     "FANOUT_SLACK",
     "HEADROOM_SNAPSHOT_PATH",
     "ORG_ENV_KEYS",
+    "RESULT_EMPTY_RESPONSE",
     "RESULT_ERROR",
     "RESULT_OK",
     "RESULT_RATE_LIMITED",

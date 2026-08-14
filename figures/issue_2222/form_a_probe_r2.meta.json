@@ -1,0 +1,583 @@
+{
+  "commit": "5435d252",
+  "render_id": "974b1fde1ca1423d",
+  "git_commit": "5435d252",
+  "git_dirty": false,
+  "created": "2026-08-11T09:19:46Z",
+  "figsize": [
+    12.0,
+    3.4
+  ],
+  "points": [
+    {
+      "Layer index": 0.0,
+      "Held-out R\u00b2 (probe: activation \u2192 judge score)": 0.3614616043557959,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 1.0,
+      "Held-out R\u00b2 (probe: activation \u2192 judge score)": 0.43535193819058726,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 2.0,
+      "Held-out R\u00b2 (probe: activation \u2192 judge score)": 0.36557510993701936,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 3.0,
+      "Held-out R\u00b2 (probe: activation \u2192 judge score)": 0.48215675096163946,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 4.0,
+      "Held-out R\u00b2 (probe: activation \u2192 judge score)": 0.4865975261395622,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 5.0,
+      "Held-out R\u00b2 (probe: activation \u2192 judge score)": 0.49587087112335904,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 6.0,
+      "Held-out R\u00b2 (probe: activation \u2192 judge score)": 0.5052290320547286,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 7.0,
+      "Held-out R\u00b2 (probe: activation \u2192 judge score)": 0.5227828703549775,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 8.0,
+      "Held-out R\u00b2 (probe: activation \u2192 judge score)": 0.4882408242331644,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 9.0,
+      "Held-out R\u00b2 (probe: activation \u2192 judge score)": 0.4471168708989941,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 10.0,
+      "Held-out R\u00b2 (probe: activation \u2192 judge score)": 0.4393873812220239,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 11.0,
+      "Held-out R\u00b2 (probe: activation \u2192 judge score)": 0.5153559158357477,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 12.0,
+      "Held-out R\u00b2 (probe: activation \u2192 judge score)": 0.5607789213130518,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 13.0,
+      "Held-out R\u00b2 (probe: activation \u2192 judge score)": 0.551632731106254,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 14.0,
+      "Held-out R\u00b2 (probe: activation \u2192 judge score)": 0.549213459636898,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 15.0,
+      "Held-out R\u00b2 (probe: activation \u2192 judge score)": 0.5866997929089605,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 16.0,
+      "Held-out R\u00b2 (probe: activation \u2192 judge score)": 0.5603874985133672,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 17.0,
+      "Held-out R\u00b2 (probe: activation \u2192 judge score)": 0.5766562748176585,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 18.0,
+      "Held-out R\u00b2 (probe: activation \u2192 judge score)": 0.5878483291867902,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 19.0,
+      "Held-out R\u00b2 (probe: activation \u2192 judge score)": 0.5321561758199724,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 20.0,
+      "Held-out R\u00b2 (probe: activation \u2192 judge score)": 0.5053348928012685,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 21.0,
+      "Held-out R\u00b2 (probe: activation \u2192 judge score)": 0.48395863944683126,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 22.0,
+      "Held-out R\u00b2 (probe: activation \u2192 judge score)": 0.5212694500809387,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 23.0,
+      "Held-out R\u00b2 (probe: activation \u2192 judge score)": 0.4819421669902877,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 24.0,
+      "Held-out R\u00b2 (probe: activation \u2192 judge score)": 0.4777698368947071,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 25.0,
+      "Held-out R\u00b2 (probe: activation \u2192 judge score)": 0.4802564918351979,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 26.0,
+      "Held-out R\u00b2 (probe: activation \u2192 judge score)": 0.45591545538442835,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 27.0,
+      "Held-out R\u00b2 (probe: activation \u2192 judge score)": 0.4121297555058099,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer index": 0.0,
+      "y": 0.29578251053607063,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 1.0,
+      "y": 0.30004899923484263,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 2.0,
+      "y": 0.27494367459074054,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 3.0,
+      "y": 0.38744773694375345,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 4.0,
+      "y": 0.4244595652227101,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 5.0,
+      "y": 0.39535033736549163,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 6.0,
+      "y": 0.40802941321151354,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 7.0,
+      "y": 0.47309842819324033,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 8.0,
+      "y": 0.4456928903233315,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 9.0,
+      "y": 0.45601970673791203,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 10.0,
+      "y": 0.4537982353158164,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 11.0,
+      "y": 0.4021104950421863,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 12.0,
+      "y": 0.43752930667156853,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 13.0,
+      "y": 0.4947114844366155,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 14.0,
+      "y": 0.5046414443796516,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 15.0,
+      "y": 0.4923230800408507,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 16.0,
+      "y": 0.4813725926037188,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 17.0,
+      "y": 0.4604051534188863,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 18.0,
+      "y": 0.38949459248963925,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 19.0,
+      "y": 0.3610748070075661,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 20.0,
+      "y": 0.45423529690144615,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 21.0,
+      "y": 0.4369012759175106,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 22.0,
+      "y": 0.4581215936462574,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 23.0,
+      "y": 0.4285332659276374,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 24.0,
+      "y": 0.40735091909138854,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 25.0,
+      "y": 0.4305862574506031,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 26.0,
+      "y": 0.4184509206351614,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 27.0,
+      "y": 0.39105939875433104,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 0.0,
+      "y": 0.3115636099609257,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 1.0,
+      "y": 0.3750028502606255,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 2.0,
+      "y": 0.39390826602935447,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 3.0,
+      "y": 0.371507043791383,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 4.0,
+      "y": 0.4110907125923766,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 5.0,
+      "y": 0.4265969508883274,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 6.0,
+      "y": 0.4169529821437272,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 7.0,
+      "y": 0.4058154547607543,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 8.0,
+      "y": 0.4365685761232594,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 9.0,
+      "y": 0.47276528576360644,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 10.0,
+      "y": 0.4655691018348096,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 11.0,
+      "y": 0.47188324446263785,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 12.0,
+      "y": 0.5407594071017229,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 13.0,
+      "y": 0.547157878570193,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 14.0,
+      "y": 0.5710621798229087,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 15.0,
+      "y": 0.5727966363935593,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 16.0,
+      "y": 0.5614274483734529,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 17.0,
+      "y": 0.5743371656484688,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 18.0,
+      "y": 0.5935101820424593,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 19.0,
+      "y": 0.5542883784613448,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 20.0,
+      "y": 0.5382797238915769,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 21.0,
+      "y": 0.4973925469079248,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 22.0,
+      "y": 0.482026379972025,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 23.0,
+      "y": 0.46894400804127223,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 24.0,
+      "y": 0.47198696766957327,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 25.0,
+      "y": 0.45746055613829895,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 26.0,
+      "y": 0.43833898187004783,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 27.0,
+      "y": 0.43642918830473987,
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 84,
+  "text": {
+    "suptitle": "Form-A probe fit quality per layer (exploratory)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Sycophancy",
+        "xlabel": "Layer index",
+        "ylabel": "Held-out R\u00b2 (probe: activation \u2192 judge score)",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      },
+      {
+        "title_left": "Evil",
+        "xlabel": "Layer index",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      },
+      {
+        "title_left": "Hallucination",
+        "xlabel": "Layer index",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

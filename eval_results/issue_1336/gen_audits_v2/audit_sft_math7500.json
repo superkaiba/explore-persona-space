@@ -1,0 +1,36 @@
+{
+  "model": "sft",
+  "hf_id": "allenai/Llama-3.1-Tulu-3-8B-SFT",
+  "corpus": "math7500",
+  "n_prompts": 7500,
+  "n_kept": 7395,
+  "keep_rate": 0.986,
+  "keep_rate_floor": 0.8,
+  "keep_rate_floor_pass": true,
+  "drop_reasons": {
+    "chat:short_turn_a1": 86,
+    "chat:over_token_budget": 19
+  },
+  "kept_truncation_rate": 0.06220419202163624,
+  "kept_early_eos_rate": 0.024475997295469912,
+  "kept_rep3_flag_rate": 0.5275185936443543,
+  "kept_distinct_3gram_rate": 0.5841879895721703,
+  "kept_answer_tokens": {
+    "mean": 351.8685598377282,
+    "median": 248,
+    "p90": 862
+  },
+  "sampling": {
+    "n": 1,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "max_tokens": 1024,
+    "seed": 42,
+    "stop": [
+      "\n<|user|>"
+    ]
+  },
+  "answers_sha256": "d1bdb60c0ab9c9089f8f064229062b2c71b0173bed7c7fa2536a505220158de1",
+  "render_integrity": null,
+  "smoke": false
+}

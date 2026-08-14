@@ -210,17 +210,23 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    validity-domain check (#1417: fit825's GCV collapsed on judge-filtered n_train<d subsets —
    held-out R² −0.6…−1.5 vs +0.3…+0.65 on supersets and matched-n subsamples — with both
    mitigations documented in the instrument's own module comments/constants, unengaged);
+   or the plan reuses a fit/analysis core whose defaults flipped — or whose run reaches a code
+   path never executed on the production device class — without the item-(m) device-domain
+   1-cell smoke on that device class (#1345: a device-split prep in the fresh union stage killed
+   a 2h33m Fellows job AFTER all 140 per-cell fits completed);
    (ii) the plan RETRAINS / REGENERATES something an
    existing fit artifact already covers (per the step-5 artifact search) without a one-line
    justification for why the existing artifact does not fit — this wastes GPU-hours and breaks
    sibling-comparability. Not a REVISE when the plan reuses an artifact AND records its fitness
-   check (a)–(l) inline (in §10 / §11 / §12 — the planner's call) so the consistency-checker and
+   check (a)–(m) inline (in §10 / §11 / §12 — the planner's call) so the consistency-checker and
    downstream analyzer can re-check; not a REVISE when the plan retrains / regenerates AND names the
    specific fitness-check failure that licenses it (a checklist-item-(i) failure licenses NO retrain
    and NO caller-side workaround — its remedy is the source-module fix, then reuse; a
    checklist-item-(k) failure likewise licenses no retrain — its remedy is port-then-reuse; a
    checklist-item-(l) failure likewise licenses no retrain — its remedy is
-   engage-the-registered-mitigation-then-reuse).
+   engage-the-registered-mitigation-then-reuse; a checklist-item-(m) failure likewise licenses no
+   retrain — its remedy is fix-the-device-seam-at-source, re-smoke on that device class, then
+   reuse).
    REVISE also when the design carries a reuse-VALIDATION gate (a numeric parity floor, a
    behavioral install confirmation, a one-cell gate) whose threshold is a bare constant not
    derived from the reused artifact's own committed per-behavior reference values (file + field
@@ -619,6 +625,55 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     extension), or for `kind: infra|batch|survey` — a `kind: analysis` plan
     with out-root writes is IN scope (the #658-class VM store phases are
     analysis phases). Plan-time placement check only, never a mid-run gate.
+    FAN-OUT STAGING EXTENSION (#2236, from incident #1739): when §9 fans
+    `N > 1` CONCURRENT boxes / pods / shards over the SAME multi-GB HF
+    prefix — each phase row staging it independently
+    (`stage_hub_prefix` / `snapshot_download` / `hf_hub_download` per
+    box) — ALSO verify §9 names the STAGING SHAPE (per
+    `.claude/rules/plan-compute-sizing.md` § "Fan-out over the same HF
+    prefix"). REVISE when the plan names NONE of — pre-stage once and
+    fan (a shared read path, an rsync after one stage completes, or a
+    baked/persisted image), serialized per-box pulls, or jittered start
+    offsets (#1739: three boxes each staged ~144 GB from the same
+    prefix simultaneously; five attempts to land one leg).
+    Conclusion-changing because concurrent pulls of one prefix draw
+    rate-limit kills (429s / connection resets) that take the fan-out
+    legs down unevenly and re-collide on relaunch, so the cells that
+    survive are a selected-on-throughput subset rather than the planned
+    grid, and the retries burn wall-clock §9 never booked. The
+    fits-quota / no-merges / kind escapes above do NOT cover this
+    extension (its trigger is concurrent same-prefix STAGING, not
+    transient full-precision merges; only its own escape list below
+    governs it). Escapes: a single-box phase; N boxes reading DISJOINT
+    prefixes; a prefix under ~1 GB; a phase row explicitly serialized
+    (`sequential`, "one at a time"); `kind: infra|batch|survey` exempt
+    — a `kind: analysis` plan fanning boxes over a stored prefix is IN
+    scope. Plan-time staging-topology check only, never a mid-run gate.
+    FAN-OUT POD-NAME EXTENSION (#2237, from incident #2054): when §9
+    fans `N > 1` CONCURRENT pods for ONE issue, ALSO verify the plan
+    names a mechanism that mints N DISTINCT pod names on the lane it
+    actually routes to. REVISE when the plan names NONE of: per-pod
+    `pod.py provision --name-suffix <slug>` calls; a single pod with N
+    in-pod workers; a name-isolating lane (`--lane-suffix`, honored on
+    GCP + SLURM only); or explicit serialization. Conclusion-changing
+    because RunPod pod names are per-issue (`pod-<N>`,
+    `backends/runpod.py:264`) with no suffix parameter and
+    `--lane-suffix` excludes the RunPod lane, so N concurrent
+    same-issue launches collide — and the dangerous branch is silent
+    co-location of all N shards on ONE pod, which invalidates every
+    per-shard wall/RSS projection the plan booked while still producing
+    plausible-looking output. The prior extensions' escapes do NOT
+    cover this one (their triggers are per-pod disk accumulation and
+    same-prefix staging topology; only the escape list below governs
+    it). Escapes: a single-pod phase; a fan-out on a lane whose names
+    isolate; a plan whose N pods are provisioned by named per-pod
+    calls; a phase row explicitly serialized (`sequential`, "one at a
+    time"); `kind: infra|batch|survey` exempt. Plan-time pod-naming
+    check only, never a mid-run gate. Mechanical backstop (WARN-only,
+    #2237): `verify_plan.py` c58 (`c58_fanout_pod_name_collision`) —
+    explicit-`--backend runpod` argvs only (its disclosed auto-lane
+    residual), so this clause stays the lane-agnostic binding gate and
+    c58 is only the early-warning net.
 17. **Persona-vectors extraction fidelity (any plan that elects persona vectors).** If the plan
     extracts a persona/behavior direction via "use persona vectors" / "extract a persona vector" /
     "persona-vectors-style direction" or a mean-difference of positive/negative contrastive
@@ -822,14 +877,26 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    plan's §6 "N/A — no cross-condition leakage comparison" satisfies this item).
 9. **Degenerate eligibility gates, unequal per-unit N, missing baseline propensity (four related
    design-lesson checks).** REVISE only when conclusion-changing per The Bar; otherwise list under
-   Concerns. (i) **All-or-nothing eligibility gate on a continuous quantity:** a pre-registered rule
-   gates a unit's inclusion on a continuous quantity (rows filled, judge-filter yield, cells
-   surviving a data gate) as a binary keep/drop at the target value with no graceful-degradation
-   floor — a near-miss then discards the unit wholesale (#612: a "fill all 200 rows or drop" rule
-   discarded one source at 194/200 — 97% fill, 6 missing rows — and another at 169/200, together
-   halving the design's coverage; the 80%-floor + equalize-down default is in
-   `.claude/rules/on-policy-completions.md`, the general rule in planner.md §4 "No all-or-nothing
-   eligibility gates"). (ii) **Unequal per-unit N across compared conditions/units:** the headline
+   Concerns. (i) **Degenerate yield gate on a continuous quantity — two-tier contract; BOTH
+   directions flagged.** Direction (a), all-or-nothing at the TARGET (the existing check,
+   unchanged): a rule gating inclusion as binary keep/drop at the target value with no
+   graceful-degradation floor discards near-misses wholesale (#612: "fill all 200 rows or drop"
+   discarded a source at 194/200 — 97% fill — and another at 169/200, halving coverage; the
+   80%-relative-floor + equalize-down default is in `.claude/rules/on-policy-completions.md`, the
+   general rule in planner.md §4). Direction (b), NEW: an unbounded shrink — "shrink + report,
+   never abort" with no ABSOLUTE per-cell trainability floor — lets equalize-down legally land at
+   1 row, training a structurally-untrained non-condition and confounding the headline with
+   per-cell N (#2221: evil equalized to 1 row/cell, was fine-tuned, captured, and judged; 6/24
+   cells effectively untrained, "which cells acquired the trait" became a proxy for family size,
+   plus wasted judge spend). The two tiers reconcile, not compete: a shortfall that still CLEARS
+   the relative TARGET floor is KEPT / equalized-down (the #612 graceful path; below the relative
+   floor the drop + close-miss-escalation semantics of on-policy-completions.md are unchanged); a
+   miss of the absolute TRAINABILITY floor (default: rows sustaining >= 12 optimizer steps at the
+   registered recipe — on-policy-completions.md § Absolute per-cell trainability floor) is DROPPED
+   with the denominator revised everywhere and the drop named in `## Takeaways` — below that floor
+   the cell is structurally not a condition, so dropping it is the graceful path and keeping it is
+   the defect. A plan whose yield row states only one tier is flagged under whichever direction it
+   omits. (ii) **Unequal per-unit N across compared conditions/units:** the headline
    compares conditions/units whose per-unit N (training rows, samples) legitimately varies, with
    neither equalize-down (all units at the same floor-N) nor an explicit dose control — variable N
    is a dose confound and dose/schedule length is the demonstrated dominant lever (#601), so the
@@ -851,7 +918,8 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    alone, require a runtime degeneracy guard (assert the observed magnitude ≫ machine epsilon
    relative to the null scale). REVISE when the statistic is constant by construction — always
    conclusion-changing (the comparison can only ever fail to reject). Not a REVISE when:
-   the design has no continuous-quantity eligibility gate (i), per-unit N is equal by construction
+   the design has no per-cell yield machinery at all — neither a keep/drop eligibility gate NOR a
+   shrink / equalize-down rule (i), per-unit N is equal by construction
    or the headline makes no cross-unit comparison (ii), or the Goal is not an
    implantation/elicitation design (iii), or the plan registers no observed-vs-null comparison
    (iv) — the plan's §4 "N/A" lines satisfy the respective checks.
@@ -1034,6 +1102,69 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     (#1768: span-mean inherited from reused capture code vs the #779 last-token comparison
     line; ~15–18 GPU-h re-pool round, user catch). Not a REVISE when the plan fits no map,
     or the mismatch is stated + justified.
+16. **Unit of analysis / measurement grain (verify §6 Measurement validity names
+    the DV's grain + aggregation).** For EACH dependent variable, read §6's
+    Measurement-validity table for the DV's Unit of analysis column — the GRAIN
+    it is computed at (per-prefix / per-query / per-arm / per-cell / per-prompt /
+    per-seed) plus the aggregation from raw rows to that unit (e.g. "mean over
+    queries within prefix"), tied in one sentence to the Goal's construct.
+    REVISE when the concrete pattern holds: the DV's Unit-of-analysis entry is
+    absent, the aggregation from raw rows to the stated unit is unstated, OR the
+    stated grain does not match the Goal's construct — e.g. a Goal asking "which
+    PREFIXES leak most" answered by a per-(prefix, query) row-level DV without a
+    within-prefix aggregation. Conclusion-changing because a grain mismatch
+    silently swaps the QUESTION the run answers for a different one at the same
+    metric surface — a per-row leakage number is not a per-prefix leakage
+    number, and no amount of downstream statistics can recover the intended
+    unit from raw rows once the run is spent (#1900: a leakage-predictor race
+    ran per (prefix, query) row against a per-prefix Goal — "RESULTS THAT RAN
+    WERE PER QUERY WHICH IS TERRIBLE" — the answer-similarity predictor was
+    conceded "asymmetric on two axes at once", and the full redo was filed and
+    run as #1979 at ~15-25 GPU-h / ~a day wall). Cross-reference: for a
+    mapping-line DV (item 15) the unit-of-analysis line lives alongside the
+    pooling-convention row — a plan states BOTH the mapping arm's pooling AND
+    its grain, and a per-(prefix, query) row-level fit answering a per-prefix
+    Goal is a grain mismatch even when its pooling matches the cited baseline.
+    Not a REVISE when: the DV has a single natural grain (a per-prompt log-probe
+    at a fixed marker slot, a per-seed reduction with no within-seed unit) and
+    §6 states it as such with "no aggregation" — the plan's "no aggregation"
+    line satisfies this item; or `kind: analysis|infra|batch|survey` may write
+    "N/A — no unit-of-analysis choice".
+17. **Rate-denominator provenance (projection rates applied to the denominator
+    they were measured on).** Fires when the plan uses ANY measured rate
+    (coverage, yield, admission, survival, throughput) in a §7/§9/§0 sizing or
+    coverage projection. For every such rate the plan states the rate's
+    measured NUMERATOR and DENOMINATOR, grounded on an artifact (file/JSON
+    path or cited issue `#<M>`), AND the projection's APPLICATION
+    denominator — the population the rate is multiplied against. REVISE when
+    (a) the measured denominator and the application denominator are different
+    populations (X/Y applied as X/Z), or (b) a multi-stage filtered pipeline
+    (generate → filter → judge) is projected with a single collapsed rate
+    instead of an explicit per-stage chain, each stage rate carrying its own
+    measured numerator/denominator. A stage the parent pipeline demonstrably
+    ran (e.g. a verbatim-question filter) that the projection's chain omits is
+    exactly the REVISE case even when the quoted rate itself is verified
+    correct. The arithmetic-recompute blind spot: verifying the fraction X/Y
+    and recomputing every downstream number does NOT discharge this item — the
+    arithmetic downstream of a denominator substitution is internally
+    consistent, so the audit is of the BASIS (the denominator's identity),
+    never the arithmetic. Worked example (#2054
+    `coordinated-common-set-regen`): the parent's measured 49.3% admission
+    rate (9,722 admitted / 19,714 PREJUDGE rows) was applied as the
+    per-attempt success probability FROM PENDING (character, conversation)
+    pairs — silently assuming every pending pair yields a prejudge row per
+    attempt; the scaffold generator's verbatim-question filter drops 65-69% of
+    generator-kept rows, so realized per-attempt-from-pending success was
+    ~9-13%, the projection was ~3.7x optimistic, and the round ran ~1.6 GPU-h
+    + ~33.7k judge calls into a pre-registered gate-1 ABORT (|S| = 2,409 vs
+    floor 4,480). The prejudge-per-requested factor existed in the parent
+    artifacts the fact-checker was already reading — the plan passed
+    fact-check + 3 lens critics + the consistency-checker on this point.
+    Plan-side authoring duty: `.claude/rules/planner-section-reference.md` § 9
+    "Rate-basis decomposition for coverage projections". N/A escape: a plan
+    with no measured-rate projections (no coverage/yield/sizing line
+    multiplying an empirical rate against a population) writes
+    "N/A — no measured-rate projections".
 
 ### Alternative Explanations lens
 

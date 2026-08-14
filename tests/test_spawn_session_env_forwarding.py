@@ -175,20 +175,35 @@ def test_merge_explicit_payload_keys_win(monkeypatch, tmp_path):
 
 
 def test_merge_bare_body_gains_dict(monkeypatch, tmp_path):
-    """(e) A body with no environmentVariables gains the forwarded dict."""
+    """(e) A body with no environmentVariables gains the forwarded dict,
+    plus the always-stamped automated-session marker."""
     _patch_settings(monkeypatch, tmp_path)
     body: dict[str, object] = {"directory": "/x", "agent": "claude"}
     ss._merge_settings_env(body)
-    assert body["environmentVariables"] == _EXPECTED_FORWARDED
+    assert body["environmentVariables"] == {
+        "HAPPY_AUTOMATED_SESSION": "1",
+        **_EXPECTED_FORWARDED,
+    }
 
 
-def test_merge_no_overrides_leaves_body_untouched(monkeypatch, tmp_path):
-    """Nothing to forward -> the bare body stays WITHOUT an
-    environmentVariables field (no empty-dict schema noise)."""
+def test_merge_no_overrides_still_stamps_automated_marker(monkeypatch, tmp_path):
+    """Nothing to forward -> the body still gains the HAPPY_AUTOMATED_SESSION
+    marker: every spawn from this script is an automated worker, and
+    user-level interactive-only SessionStart hooks key off this var to skip
+    such sessions."""
     _patch_settings(monkeypatch, tmp_path, {"env": {"OTHER": "x"}})
     body: dict[str, object] = {"directory": "/x", "agent": "claude"}
     ss._merge_settings_env(body)
-    assert "environmentVariables" not in body
+    assert body["environmentVariables"] == {"HAPPY_AUTOMATED_SESSION": "1"}
+
+
+def test_merge_explicit_automated_marker_wins(monkeypatch, tmp_path):
+    """An explicit HAPPY_AUTOMATED_SESSION payload key is never clobbered
+    (setdefault semantics, same contract as every other explicit key)."""
+    _patch_settings(monkeypatch, tmp_path)
+    body: dict[str, object] = {"environmentVariables": {"HAPPY_AUTOMATED_SESSION": "0"}}
+    ss._merge_settings_env(body)
+    assert body["environmentVariables"]["HAPPY_AUTOMATED_SESSION"] == "0"
 
 
 # ─── per-path composed-body tests (critic MF-1) ──────────────────────────────
@@ -216,6 +231,7 @@ def _spawn_body(calls) -> dict:
 def _assert_forwarded(env: dict) -> None:
     for key, value in _EXPECTED_FORWARDED.items():
         assert env.get(key) == value, f"forwarded settings key {key} missing/wrong: {env}"
+    assert env.get("HAPPY_AUTOMATED_SESSION") == "1"  # automated-worker marker, every path
     assert "NOT_FORWARDED_VAR" not in env
     assert "CLAUDE_CODE_REF_BEARING" not in env  # ${}-guard holds end-to-end
 

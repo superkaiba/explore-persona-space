@@ -1,4 +1,4 @@
-"""Audit live RunPod team account for stale/orphaned pods.
+"""Audit live RunPod team account for stale/orphaned pods — REPORT-ONLY cron.
 
 Catches pods that the canonical lifecycle (``pod_lifecycle.py``) is blind to
 because their names don't match the managed prefixes (``pod-*`` /
@@ -6,27 +6,57 @@ because their names don't match the managed prefixes (``pod-*`` /
 ``runpod_api.create_pod()`` directly with a custom name, or when a developer
 provisions a pod manually outside the ``/issue`` flow.
 
+NOTHING IS TERMINATED ON A SCHEDULE (#2075; standing directive 2026-08-04
+after the audit destroyed 77 teammate pods over 14 days): the daily cron
+(``cron_pod_audit.sh``) runs report-only plus ``--notify-stale`` — one
+deduped recommendation push per UTC day. ``--terminate-stale`` is for MANUAL
+user-approved invocations only; the ``runpod_api.terminate_pod`` approval
+interlock (:class:`~runpod_api.PodTerminateNotApproved`) refuses unapproved
+calls as defense in depth even if terminate flags ever reappear in a
+scheduled context.
+
 The live API is authoritative — we never trust local sidecar state for
 existence. A pod is:
 
 - **active**: ``RUNNING`` AND managed-name (the lifecycle owns it).
 - **orphan-running**: ``RUNNING`` AND non-managed-name. GPU charges accruing
-  without lifecycle tracking — surface loudly.
+  without lifecycle tracking — surface loudly. A shared-infrastructure name
+  (see :data:`SHARED_INFRA_NAME_PATTERNS`) keeps this bucket but its report
+  row carries a ``SHARED-INFRA`` tag so the daily orphan section reads
+  honestly without crying wolf.
 - **stale**: ``EXITED`` for longer than ``--max-exited-hours`` (default 24h)
-  AND positively confirmed as EPS-owned (#1404, extended to all names by
-  #1471). Volume disk charges accruing for paused state. Candidate for
-  termination.
-- **unmanaged-exited**: ``EXITED`` past the threshold BUT NOT positively
-  confirmed as EPS-owned — ANY name, managed ``pod-`` prefix or not (the
-  RunPod account is team-shared; #1404/#1471).
+  measured from the EXIT TIME — parsed from the RunPod ``lastStatusChange``
+  field (#2075 defect 2; creation age is display-only) — AND positively
+  confirmed as EPS-owned via STRUCTURED provenance (#1404/#1471/#2075) AND
+  not shared-infrastructure-named. Volume disk charges accruing for paused
+  state. terminate-RECOMMENDED — user approval required; never terminated by
+  the cron.
+- **unmanaged-exited**: ``EXITED`` but not terminate-eligible: past the
+  threshold WITHOUT positive EPS-ownership — ANY name, managed ``pod-``
+  prefix or not (the RunPod account is team-shared; #1404/#1471) — or
+  carrying a shared-infrastructure name (``SHARED-INFRA`` annotation)
+  regardless of ownership signals and age (#2075).
   Report-only; NEVER consumed by ``--terminate-stale``.
 - **kept-exited**: ``EXITED`` but the owning task (resolved from the managed
   pod name ``pod-<N>`` / ``epm-issue-<N>``) carries the ``keep-running`` tag —
   the workflow's documented pod-preservation override (CLAUDE.md, /issue
   Step 8). Reported loudly but NEVER terminated by ``--terminate-stale``,
   regardless of age.
-- **fresh-exited**: ``EXITED`` but younger than threshold. Probably a pod
-  that just stopped and is about to be terminated by its owning flow — ignore.
+- **fresh-exited**: ``EXITED`` but younger than the threshold FROM EXIT — or
+  the exit time is unknown/unparseable (missing ``lastStatusChange``, a
+  non-``Exited`` verb, a timestamp that fails to parse), rendered
+  ``exited=?``. Fail-toward-KEEP (#2075 defect 3): schema or vocabulary
+  drift inflates this bucket, never the terminate-recommended one.
+
+Ownership signal 3 is STRUCTURED provenance only (#2075 defect 1 — the
+self-poisoning fix): :func:`_scan_task_references` matches ONLY
+``epm:run-launched`` / ``epm:pod-provisioned`` events whose note names the
+pod in structured position (boundary-safe ``pod=<name>`` / ``pod=<pod_id>``
+/ ``pod_id=<pod_id>`` token, or the note's leading token — the #1961
+grammar). A fleet-audit dump quoted into an ``epm:progress`` note is NOT
+ownership evidence — pre-#2075, the audit's own "not ours" report rows
+became the ownership evidence that fed teammate pods to
+``--terminate-stale``.
 
 Two additional REPORT-ONLY flag classes annotate the buckets. They never
 change bucketing, exit codes, or ``--terminate-stale`` behavior — the audit
@@ -57,10 +87,22 @@ phase is not an audit failure. ``unmanaged-exited`` likewise never trips
 exit 2: an odd-named, evidence-less ``EXITED``>threshold pod surfaces
 report-only with exit 0 — #1471.)
 
+``--notify-stale`` (the cron's alerting channel, #2075 defect 4): when the
+``stale`` bucket is non-empty, send ONE Telegram recommendation push per UTC
+day (sentinel ``~/.eps-autonomous/pod-audit-stale-notify-<day>``, touched
+only after a zero-rc send) naming each stale pod, its est $/hr-if-resumed,
+and the exact approval command — deliberately WITHOUT ``--yes``, so the y/N
+prompt shows the user the LIVE stale list they are approving::
+
+    EPS_ALLOW_COMPUTE_KILL=1 uv run python scripts/pod.py audit-stale --terminate-stale
+
 The ``--terminate-stale`` flag terminates every pod in the ``stale`` bucket
-after a y/N confirmation (suppress with ``--yes``). ``orphan-running`` pods
-are NEVER auto-terminated — they may be a real in-flight workload outside
-the lifecycle.
+after a y/N confirmation (suppress with ``--yes``) — MANUAL user-approved
+invocations only (unapproved calls are refused by the
+``runpod_api.terminate_pod`` interlock). After the loop, one push names
+every pod destroyed plus any failures. ``orphan-running`` pods are NEVER
+auto-terminated — they may be a real in-flight workload outside the
+lifecycle.
 """
 
 from __future__ import annotations
@@ -68,6 +110,8 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import os
+import re
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -100,6 +144,24 @@ DEFAULT_MIN_NO_PORT_HOURS = 0.5
 # user decision or terminally done, so a stopped pod's volume is pure billing.
 PARKED_STATUSES = frozenset({"awaiting_promotion", "blocked", "completed", "archived"})
 
+# Shared-infrastructure name guard (#2075, D4): pods whose names contain one
+# of these case-sensitive substrings are fellows-cluster nodes / shared team
+# infrastructure ("Anthropic 2-node-26-got", "cluster-EUR-IS-pod-6") and are
+# NEVER terminate-eligible regardless of ownership signals — such nodes are
+# legitimately named inside EPS task events, so provenance alone cannot
+# protect them. Extend (additive, comma-separated) via the
+# EPM_POD_AUDIT_SHARED_NAME_PATTERNS env var.
+SHARED_INFRA_NAME_PATTERNS: tuple[str, ...] = ("Anthropic ", "cluster-EUR-IS")
+
+# Marker kinds that constitute STRUCTURED pod provenance (#2075, D2). Only
+# these event kinds can establish EPS ownership via events.jsonl — an audit
+# dump quoted into an epm:progress note is NOT ownership evidence.
+_PROVENANCE_MARKER_KINDS = ("epm:run-launched", "epm:pod-provisioned")
+
+# Sentinel dir for the --notify-stale per-UTC-day dedupe (D5). Module-level so
+# tests can monkeypatch it to a tmp dir.
+SENTINEL_DIR = Path.home() / ".eps-autonomous"
+
 SSH_KEY = Path.home() / ".ssh" / "id_ed25519"
 GPU_UTIL_SSH_TIMEOUT = 20  # seconds; one short read per RUNNING managed pod
 
@@ -123,9 +185,15 @@ class TaskContext:
 class Classification:
     pod: PodInfo
     bucket: str  # active | orphan-running | stale | unmanaged-exited | kept-exited | fresh-exited
-    age_hours: float | None
+    age_hours: float | None  # hours since CREATION (display + RUNNING orphan logic only)
     referenced_in_tasks: list[int]
     kept_for_task: int | None = None  # task whose keep-running tag preserved this pod
+    # hours since EXIT (lastStatusChange, #2075); None = unknown/unparseable.
+    # THE staleness clock for EXITED pods — creation age no longer gates 'stale'.
+    exited_age_hours: float | None = None
+    # name matches SHARED_INFRA_NAME_PATTERNS (#2075 D4) — never terminate-eligible;
+    # changes EXITED bucketing (-> unmanaged-exited) and tags RUNNING report rows.
+    shared_infra: bool = False
     # ── report-only annotations (never change bucketing / terminate behavior) ──
     owning_issue: int | None = None  # parsed from the managed pod name
     task_status: str | None = None  # owning task's current status (None = unknown)
@@ -151,25 +219,218 @@ def _age_hours(ts: str | None) -> float | None:
     return delta.total_seconds() / 3600.0
 
 
+# lastStatusChange timestamp shape observed on the live team-scoped API
+# (probe 2026-08-10, #2075): "Exited by user: Thu Jul 16 2026 16:32:26
+# GMT+0000 (Coordinated Universal Time)". Verb vocabulary seen: "Exited by
+# user", "Exited by Runpod", "Rented by User" (RUNNING pods).
+_EXIT_TS_FORMAT = "%a %b %d %Y %H:%M:%S GMT%z"
+
+
+def _exited_age_hours(p: PodInfo) -> float | None:
+    """Hours since the pod EXITED, parsed from ``lastStatusChange`` (#2075, D3).
+
+    Fail-toward-KEEP contract — returns ``None`` (never a guess) unless ALL of:
+
+    - ``desired_status == "EXITED"``;
+    - ``last_status_change`` is present and its verb prefix starts with
+      ``"Exited"`` (a ``"Rented by User: ..."`` string on an EXITED pod is
+      contradictory data — treated as unknown);
+    - after stripping the ``"<verb>: "`` prefix and the trailing ``" (...)"``
+      parenthetical, the timestamp parses as :data:`_EXIT_TS_FORMAT`.
+
+    A ``None`` routes the pod to ``fresh-exited`` (rendered ``exited=?``), so
+    schema/vocabulary drift inflates the KEEP bucket, never the
+    terminate-recommended one. Creation age stays display-only.
+    """
+    if p.desired_status != "EXITED":
+        return None
+    raw = p.last_status_change or ""
+    verb, sep, rest = raw.partition(":")
+    if not sep or not verb.strip().startswith("Exited"):
+        return None
+    ts_text = rest.strip()
+    if ts_text.endswith(")") and " (" in ts_text:
+        ts_text = ts_text[: ts_text.rindex(" (")].strip()
+    try:
+        parsed = dt.datetime.strptime(ts_text, _EXIT_TS_FORMAT)
+    except ValueError:
+        return None
+    return (dt.datetime.now(dt.UTC) - parsed).total_seconds() / 3600.0
+
+
+def _structured_pod_ref_pattern(pod_id: str, pod_name: str) -> re.Pattern[str] | None:
+    """Compile the #1961 structured-provenance grammar for one pod (#2075, D2).
+
+    Replicates the 3-line pattern of
+    ``autonomous_session_watch._latest_named_run_launched_ts`` verbatim
+    rather than importing the 15k-line watcher module (parity pinned by
+    ``tests/test_pod_audit.py``): a boundary-safe ``pod=<name>`` token OR the
+    note's LEADING token — so ``pod-1768`` never matches inside
+    ``pod-1768-lt``, and a mid-prose mention ("... pod-1768-tx ... was
+    already TERMINATED") never matches at all. Additionally accepts
+    ``pod=<pod_id>`` / ``pod_id=<pod_id>`` tokens. Returns ``None`` when both
+    needles are empty.
+    """
+    parts: list[str] = []
+    if pod_name:
+        esc = re.escape(pod_name)
+        # 3-line #1961 pattern replicated from autonomous_session_watch.py.
+        parts.append(rf"(?<![\w-])pod={esc}(?![\w-])|^\s*{esc}(?![\w-])")
+    if pod_id:
+        esc_id = re.escape(pod_id)
+        parts.append(rf"(?<![\w-])(?:pod|pod_id)={esc_id}(?![\w-])")
+    if not parts:
+        return None
+    return re.compile("|".join(parts))
+
+
 def _scan_task_references(pod_id: str, pod_name: str) -> list[int]:
-    """Return list of task numbers whose events.jsonl mentions this pod."""
+    """Task numbers whose events.jsonl carries STRUCTURED provenance for this pod.
+
+    #2075 defect-1 fix (the self-poisoning ownership scan): only
+    ``epm:run-launched`` / ``epm:pod-provisioned`` events whose ``note``
+    names the pod in structured position (:func:`_structured_pod_ref_pattern`)
+    count. The pre-#2075 bare-substring scan matched the audit's OWN report
+    dumps quoted into ``epm:progress`` notes, so every "not ours" row became
+    its own ownership evidence — 77 teammate pods terminated 2026-07-22 →
+    2026-08-04. Return shape unchanged (sorted unique task ids); BOTH
+    consumers — ownership signal 3 and the refs column / RUNNING
+    active-vs-orphan split — get the structured semantics.
+    """
     td = tasks_dir()
     if not td.exists():
         return []
+    pattern = _structured_pod_ref_pattern(pod_id, pod_name)
+    if pattern is None:
+        return []
+    needles = tuple(n for n in (pod_id, pod_name) if n)
     hits: list[int] = []
-    needles = (pod_id, pod_name)
     for events_path in td.glob("*/*/events.jsonl"):
+        try:
+            task_id = int(events_path.parent.name)
+        except ValueError:
+            continue  # non-numeric folder — not a task dir
         try:
             blob = events_path.read_text(errors="ignore")
         except OSError:
             continue
-        if any(n in blob for n in needles):
-            try:
-                task_id = int(events_path.parent.name)
-            except ValueError:
+        # split("\n"), NOT splitlines() — same #950 rationale as _task_context.
+        for line in blob.split("\n"):
+            # Cheap substring prefilter (cost guard): a line must contain BOTH
+            # a provenance marker-kind literal AND a needle before we pay for
+            # json.loads.
+            if not any(k in line for k in _PROVENANCE_MARKER_KINDS):
                 continue
-            hits.append(task_id)
+            if not any(n in line for n in needles):
+                continue
+            try:
+                ev = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if ev.get("kind") not in _PROVENANCE_MARKER_KINDS:
+                continue
+            note = ev.get("note")
+            if isinstance(note, str) and pattern.search(note):
+                hits.append(task_id)
+                break  # one structured hit per task file is enough
     return sorted(set(hits))
+
+
+def _shared_infra_patterns() -> tuple[str, ...]:
+    """Built-in shared-infra name patterns plus the additive env extension."""
+    extra = os.environ.get("EPM_POD_AUDIT_SHARED_NAME_PATTERNS", "")
+    extras = tuple(p for p in (s.strip() for s in extra.split(",")) if p)
+    return SHARED_INFRA_NAME_PATTERNS + extras
+
+
+def _is_shared_infra_name(name: str) -> bool:
+    """True when the pod name matches a shared-infrastructure pattern (#2075, D4).
+
+    Case-sensitive substring match. A hit makes the pod NEVER
+    terminate-eligible regardless of ownership signals: fellows-cluster nodes
+    are legitimately named inside EPS task events, so provenance alone cannot
+    protect them.
+    """
+    return any(pat in name for pat in _shared_infra_patterns())
+
+
+def _push(msg: str) -> bool:
+    """Best-effort Telegram push; ``True`` on a zero-rc send (fail-soft; #2075 D5).
+
+    Same channel as ``runpod_api._notify_terminate_blocked``:
+    ``~/my-goat/scripts/telegram_push.sh`` (override via
+    ``EPM_TELEGRAM_PUSH_SCRIPT``). Every failure mode is swallowed — the
+    audit report is the guarantee; the push is only the notification.
+    """
+    try:
+        script = Path(
+            os.environ.get(
+                "EPM_TELEGRAM_PUSH_SCRIPT",
+                str(Path.home() / "my-goat" / "scripts" / "telegram_push.sh"),
+            )
+        )
+        if not script.exists():
+            return False
+        r = subprocess.run([str(script), msg], timeout=20, check=False, capture_output=True)
+        return r.returncode == 0
+    except Exception:
+        return False
+
+
+#: The exact command a user runs to approve + execute the recommended
+#: terminations. Deliberately WITHOUT --yes: the y/N prompt then shows the
+#: LIVE stale list being approved (#2075, D1).
+APPROVAL_COMMAND = (
+    "EPS_ALLOW_COMPUTE_KILL=1 uv run python scripts/pod.py audit-stale --terminate-stale"
+)
+
+
+def _notify_stale_recommendation(stale: list[Classification]) -> None:
+    """One deduped recommendation push per UTC day for a non-empty stale bucket.
+
+    (#2075, D1/D5.) The sentinel is touched ONLY after a zero-rc push, so a
+    failed send retries on the next audit run instead of being silently
+    marked done. Never terminates anything.
+    """
+    day = dt.datetime.now(dt.UTC).strftime("%Y%m%d")
+    sentinel = SENTINEL_DIR / f"pod-audit-stale-notify-{day}"
+    try:
+        if sentinel.exists():
+            return
+    except OSError:
+        return
+    lines = [
+        f"pod_audit: {len(stale)} stale pod(s) — terminate RECOMMENDED, your approval required:"
+    ]
+    for r in stale:
+        rate = estimate_pod_hourly_rate(r.pod.gpu_type_id, r.pod.gpu_count)
+        exited = f"{r.exited_age_hours:.1f}h" if r.exited_age_hours is not None else "?"
+        lines.append(
+            f"  {r.pod.name!r} ({r.pod.pod_id})  exited {exited} ago  ~${rate:.1f}/hr if resumed"
+        )
+    lines.append(f"Approve: {APPROVAL_COMMAND}")
+    if _push("\n".join(lines)):
+        try:
+            sentinel.parent.mkdir(parents=True, exist_ok=True)
+            sentinel.touch()
+        except OSError:
+            pass  # dedupe sentinel is best-effort; worst case one extra push
+
+
+def _notify_terminations(ok: list[Classification], failed: list[str]) -> None:
+    """One push naming every pod ``--terminate-stale`` destroyed + failures (D5).
+
+    Terminations are rare and irreversible, so every run of the loop pushes —
+    no daily dedupe. Fail-soft via :func:`_push`.
+    """
+    if not ok and not failed:
+        return
+    lines = [f"pod_audit --terminate-stale: {len(ok)} terminated, {len(failed)} failed."]
+    for r in ok:
+        lines.append(f"  destroyed: {r.pod.name!r} ({r.pod.pod_id})")
+    if failed:
+        lines.append("  failed: " + ", ".join(failed))
+    _push("\n".join(lines))
 
 
 def _is_managed_name(name: str) -> bool:
@@ -213,8 +474,11 @@ def _is_eps_owned(p: PodInfo, pod_id: str) -> bool:
        the task REGISTRY (``get_task`` raises on a miss).
     2. The pod appears in the ``pods_ephemeral.json`` sidecar by ``pod_id``
        or ``name``.
-    3. :func:`_scan_task_references` finds the ``pod_id`` or ``name`` in any
-       task's ``events.jsonl``.
+    3. :func:`_scan_task_references` finds STRUCTURED provenance for the
+       ``pod_id`` or ``name`` in any task's ``events.jsonl`` —
+       ``epm:run-launched`` / ``epm:pod-provisioned`` events naming the pod
+       in structured position (#2075; a substring hit in an arbitrary note
+       is NOT evidence).
 
     Fail-toward-KEEP on every lookup error: a missing/corrupt REGISTRY or
     sidecar contributes False here, routing the pod to ``unmanaged-exited``
@@ -352,9 +616,17 @@ def classify(
     min_parked_hours: float = DEFAULT_MIN_PARKED_HOURS,
     min_no_port_hours: float = DEFAULT_MIN_NO_PORT_HOURS,
 ) -> list[Classification]:
+    """Bucket every pod (see module docstring) + attach report-only annotations.
+
+    Staleness for EXITED pods keys on the EXIT clock
+    (:func:`_exited_age_hours`, #2075); creation age is display-only and
+    drives only the RUNNING orphan logic.
+    """
     out: list[Classification] = []
     for p in pods:
         age = _age_hours(p.created_at)
+        exited_age = _exited_age_hours(p)
+        shared_infra = _is_shared_infra_name(p.name or "")
         refs = _scan_task_references(p.pod_id, p.name)
         kept_for: int | None = None
         issue = _issue_number_from_name(p.name)
@@ -392,19 +664,30 @@ def classify(
                 # (CLAUDE.md, /issue Step 8) — never auto-terminate, however old.
                 bucket = "kept-exited"
                 kept_for = issue
-            elif age is not None and age >= max_exited_hours:
-                # #1404 ownership gate, extended to ALL names (#1471): a pod
-                # may reach the auto-terminate 'stale' bucket ONLY when
-                # POSITIVELY confirmed as EPS-owned. The RunPod account is
-                # team-shared — a non-EPS pod may carry ANY name, managed
-                # 'pod-' prefix or not; terminating it would destroy a
-                # teammate's volume irreversibly. EPS-owned odd-named pods
-                # (dispatcher-created) still auto-reap via ownership signals
-                # 2 (pods_ephemeral.json sidecar) and 3 (task references).
+            elif shared_infra:
+                # #2075 D4: shared-infrastructure names ("Anthropic ...",
+                # "cluster-EUR-IS...") are NEVER terminate-eligible, even when
+                # every ownership signal fires — fellows-cluster nodes are
+                # legitimately named inside EPS task events. Checked BEFORE
+                # the stale gate so no exit age can route them to 'stale'.
+                bucket = "unmanaged-exited"
+            elif exited_age is not None and exited_age >= max_exited_hours:
+                # #1404 ownership gate, extended to ALL names (#1471), keyed
+                # on the EXIT clock (#2075): a pod may reach the
+                # terminate-RECOMMENDED 'stale' bucket ONLY when its EXIT time
+                # parses AND is past the threshold AND the pod is POSITIVELY
+                # confirmed as EPS-owned. The RunPod account is team-shared —
+                # a non-EPS pod may carry ANY name, managed 'pod-' prefix or
+                # not; terminating it would destroy a teammate's volume
+                # irreversibly. EPS-owned odd-named pods (dispatcher-created)
+                # still qualify via ownership signals 2 (pods_ephemeral.json
+                # sidecar) and 3 (structured task provenance).
                 # Fail-toward-keep: a false keep = small volume-storage cost
                 # + a loud daily report row; a false terminate = irreversible.
                 bucket = "stale" if _is_eps_owned(p, p.pod_id or "") else "unmanaged-exited"
             else:
+                # Younger than the threshold FROM EXIT, or exit time unknown /
+                # unparseable (fail-toward-KEEP, #2075 D3) — rendered exited=?.
                 bucket = "fresh-exited"
             # Report-only parked-task flag: the stopped volume keeps billing
             # while the owning task sits parked/terminal. Unknown status or
@@ -423,6 +706,8 @@ def classify(
                 age_hours=age,
                 referenced_in_tasks=refs,
                 kept_for_task=kept_for,
+                exited_age_hours=exited_age,
+                shared_infra=shared_infra,
                 owning_issue=issue,
                 task_status=ctx.status,
                 parked_age_hours=ctx.parked_age_hours,
@@ -437,6 +722,13 @@ def classify(
 
 
 def render_report(rows: list[Classification]) -> str:
+    """Human-readable audit report: bucket counts, per-bucket rows, flag sections.
+
+    EXITED rows show BOTH clocks — ``age=`` (creation, display-only) and
+    ``exited=`` (the staleness clock; ``?`` when ``lastStatusChange`` is
+    missing/unparseable — #2075). Shared-infra rows carry a ``SHARED-INFRA``
+    tag; the stale section header names the user-approval requirement.
+    """
     by_bucket: dict[str, list[Classification]] = {}
     for r in rows:
         by_bucket.setdefault(r.bucket, []).append(r)
@@ -489,8 +781,17 @@ def render_report(rows: list[Classification]) -> str:
             continue
         lines.append("")
         lines.append(f"── {bucket} ──")
+        if bucket == "stale":
+            # #2075 D1: the stale bucket is terminate-RECOMMENDED, never
+            # terminate-AUTOMATIC — the cron runs report-only.
+            lines.append("  terminate-RECOMMENDED — user approval required; approve via:")
+            lines.append(f"  {APPROVAL_COMMAND}")
         for r in items:
             age = f"{r.age_hours:.1f}h" if r.age_hours is not None else "?"
+            exited = ""
+            if r.pod.desired_status == "EXITED":
+                ex = f"{r.exited_age_hours:.1f}h" if r.exited_age_hours is not None else "?"
+                exited = f"  exited={ex:>7}"
             refs = (
                 f"  task #{','.join(str(t) for t in r.referenced_in_tasks)}"
                 if r.referenced_in_tasks
@@ -501,26 +802,30 @@ def render_report(rows: list[Classification]) -> str:
                 if r.kept_for_task is not None
                 else ""
             )
+            shared = "  SHARED-INFRA" if r.shared_infra else ""
             gpu = f"{r.pod.gpu_count}x{r.pod.gpu_type_id}" if r.pod.gpu_count else ""
             lines.append(
-                f"  {r.pod.pod_id}  {r.pod.desired_status:8}  age={age:>7}  "
-                f"{gpu:30}  {r.pod.name!r}{refs}{kept}"
+                f"  {r.pod.pod_id}  {r.pod.desired_status:8}  age={age:>7}{exited}  "
+                f"{gpu:30}  {r.pod.name!r}{refs}{kept}{shared}"
             )
 
     unmanaged_exited = [r for r in rows if r.bucket == "unmanaged-exited"]
     if unmanaged_exited:
         lines.append("")
         lines.append("── unmanaged-exited (report-only; NEVER auto-terminated) ──")
-        lines.append("  EXITED past the threshold but NOT positively confirmed as EPS-owned —")
-        lines.append("  any name, managed pod- prefix or not (the RunPod account is TEAM-SHARED).")
+        lines.append("  EXITED but not terminate-eligible: past the threshold without positive")
+        lines.append("  EPS-ownership (any name — the RunPod account is TEAM-SHARED), or a")
+        lines.append("  shared-infrastructure name (SHARED-INFRA tag) regardless of ownership.")
         lines.append("  Do NOT terminate without confirming ownership with Thomas.")
         for r in unmanaged_exited:
             age = f"{r.age_hours:.1f}h" if r.age_hours is not None else "?"
+            ex = f"{r.exited_age_hours:.1f}h" if r.exited_age_hours is not None else "?"
             gpu = f"{r.pod.gpu_count}x{r.pod.gpu_type_id}" if r.pod.gpu_count else "?"
             rate = estimate_pod_hourly_rate(r.pod.gpu_type_id, r.pod.gpu_count)
+            shared = "  SHARED-INFRA" if r.shared_infra else ""
             lines.append(
                 f"  {r.pod.pod_id}  {gpu:30}  ~${rate:.1f}/hr (if resumed)  age={age:>7}  "
-                f"{r.pod.name!r}{_fmt_task_ctx(r)}"
+                f"exited={ex:>7}  {r.pod.name!r}{shared}{_fmt_task_ctx(r)}"
             )
 
     lines.extend(_render_flag_sections(rows))
@@ -593,6 +898,12 @@ def _render_flag_sections(rows: list[Classification]) -> list[str]:
 
 
 def cmd_audit(args: argparse.Namespace) -> int:
+    """Run the audit: classify, print (or ``--json``), notify, optionally terminate.
+
+    Exit code 2 when stale and/or orphan-running pods were found, else 0;
+    report-only flags never affect it. ``--terminate-stale`` is manual-only
+    (#2075 — the cron passes ``--notify-stale`` instead).
+    """
     pods = list_team_pods()
     rows = classify(
         pods,
@@ -610,6 +921,8 @@ def cmd_audit(args: argparse.Namespace) -> int:
                 "desired_status": r.pod.desired_status,
                 "bucket": r.bucket,
                 "age_hours": r.age_hours,
+                "exited_age_hours": r.exited_age_hours,
+                "shared_infra": r.shared_infra,
                 "gpu_count": r.pod.gpu_count,
                 "gpu_type_id": r.pod.gpu_type_id,
                 "created_at": r.pod.created_at,
@@ -635,6 +948,11 @@ def cmd_audit(args: argparse.Namespace) -> int:
     stale = [r for r in rows if r.bucket == "stale"]
     orphans = [r for r in rows if r.bucket == "orphan-running"]
 
+    if args.notify_stale and stale:
+        # #2075 D1: the daily cron runs report-only + this recommendation
+        # push — termination requires the user's approval.
+        _notify_stale_recommendation(stale)
+
     if args.terminate_stale and stale:
         if not args.yes:
             ans = input(f"\nTerminate {len(stale)} stale pod(s)? [y/N] ").strip().lower()
@@ -643,13 +961,18 @@ def cmd_audit(args: argparse.Namespace) -> int:
                 return 2
         print(f"\nTerminating {len(stale)} stale pod(s)...")
         failed: list[str] = []
+        ok: list[Classification] = []
         for r in stale:
             try:
                 terminate_pod(r.pod.pod_id)
+                ok.append(r)
                 print(f"  ok   {r.pod.pod_id}  {r.pod.name}")
             except Exception as e:
                 failed.append(r.pod.pod_id)
                 print(f"  FAIL {r.pod.pod_id}  {r.pod.name}  err={e!s:.120}")
+        # #2075 D5: an irreversible action always alerts — one push naming
+        # every destroyed pod + failures (fail-soft).
+        _notify_terminations(ok, failed)
         if failed:
             print(f"\n{len(failed)} terminate(s) failed.")
             return 2
@@ -722,7 +1045,22 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--terminate-stale",
         action="store_true",
-        help="Terminate every pod in the 'stale' bucket (asks y/N unless --yes).",
+        help=(
+            "Terminate every pod in the 'stale' bucket (asks y/N unless --yes). "
+            "MANUAL user-approved invocations only (#2075): requires "
+            "EPS_ALLOW_COMPUTE_KILL=1 — the runpod_api.terminate_pod interlock "
+            "refuses unapproved calls. The cron never passes this flag."
+        ),
+    )
+    p.add_argument(
+        "--notify-stale",
+        action="store_true",
+        help=(
+            "When the stale bucket is non-empty, send ONE deduped Telegram "
+            "recommendation push per UTC day naming the pods + the approval "
+            "command (the report-only cron's alerting channel, #2075; never "
+            "terminates anything)."
+        ),
     )
     p.add_argument(
         "--yes", action="store_true", help="Skip y/N confirmation for --terminate-stale."

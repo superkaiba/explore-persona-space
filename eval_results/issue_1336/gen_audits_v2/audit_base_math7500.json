@@ -1,0 +1,37 @@
+{
+  "model": "base",
+  "hf_id": "meta-llama/Llama-3.1-8B",
+  "corpus": "math7500",
+  "n_prompts": 7500,
+  "n_kept": 7271,
+  "keep_rate": 0.9694666666666667,
+  "keep_rate_floor": 0.8,
+  "keep_rate_floor_pass": true,
+  "drop_reasons": {
+    "chat:short_turn_a1": 200,
+    "chat:over_token_budget": 21,
+    "empty_answer": 8
+  },
+  "kept_truncation_rate": 0.3287030669784074,
+  "kept_early_eos_rate": 0.13656993535964793,
+  "kept_rep3_flag_rate": 0.3358547655068079,
+  "kept_distinct_3gram_rate": 0.6163610896637414,
+  "kept_answer_tokens": {
+    "mean": 361.4363911428964,
+    "median": 187,
+    "p90": 1024
+  },
+  "sampling": {
+    "n": 1,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "max_tokens": 1024,
+    "seed": 42,
+    "stop": [
+      "\n<|user|>"
+    ]
+  },
+  "answers_sha256": "11010f8edbee6a6b228588d4729e8eb1a227473153d2a80c61d398d30a89b49a",
+  "render_integrity": null,
+  "smoke": false
+}

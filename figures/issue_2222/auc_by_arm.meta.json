@@ -1,0 +1,185 @@
+{
+  "commit": "5435d252",
+  "render_id": "9c26a2ccd34441f1",
+  "git_commit": "5435d252",
+  "git_dirty": false,
+  "created": "2026-08-11T09:19:34Z",
+  "figsize": [
+    7.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.3333333333333333,
+      "AUC (misaligned II vs normal samples, steering layer)": 0.794988625,
+      "series": "Raw projection",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.6666666666666667,
+      "AUC (misaligned II vs normal samples, steering layer)": 0.919594640625,
+      "series": "Raw projection",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 1.6666666666666667,
+      "AUC (misaligned II vs normal samples, steering layer)": 0.68077265625,
+      "series": "Raw projection",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2,
+      "AUC (misaligned II vs normal samples, steering layer)": 0.7991962578125,
+      "series": "Exact \u0394P (base generation)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8,
+      "AUC (misaligned II vs normal samples, steering layer)": 0.8897223125,
+      "series": "Exact \u0394P (base generation)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.8,
+      "AUC (misaligned II vs normal samples, steering layer)": 0.6582099921875,
+      "series": "Exact \u0394P (base generation)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.06666666666666667,
+      "AUC (misaligned II vs normal samples, steering layer)": 0.82054296875,
+      "series": "Prompt-token \u0394P",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9333333333333333,
+      "AUC (misaligned II vs normal samples, steering layer)": 0.87675421875,
+      "series": "Prompt-token \u0394P",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9333333333333333,
+      "AUC (misaligned II vs normal samples, steering layer)": 0.6767018828125,
+      "series": "Prompt-token \u0394P",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.06666666666666667,
+      "AUC (misaligned II vs normal samples, steering layer)": 0.511700515625,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0666666666666667,
+      "AUC (misaligned II vs normal samples, steering layer)": 0.5286707734375,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.066666666666667,
+      "AUC (misaligned II vs normal samples, steering layer)": 0.50816365625,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.2,
+      "AUC (misaligned II vs normal samples, steering layer)": 0.794988625,
+      "series": "Mapped \u0394P (prefix)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.2,
+      "AUC (misaligned II vs normal samples, steering layer)": 0.919594640625,
+      "series": "Mapped \u0394P (prefix)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.2,
+      "AUC (misaligned II vs normal samples, steering layer)": 0.68077265625,
+      "series": "Mapped \u0394P (prefix)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.3333333333333333,
+      "AUC (misaligned II vs normal samples, steering layer)": 0.8163399453125,
+      "series": "Identity + learned bias \u0394P",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.3333333333333333,
+      "AUC (misaligned II vs normal samples, steering layer)": 0.86097315625,
+      "series": "Identity + learned bias \u0394P",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.3333333333333335,
+      "AUC (misaligned II vs normal samples, steering layer)": 0.67120515625,
+      "series": "Identity + learned bias \u0394P",
+      "_kind": "scatter",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 18,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Sample-level separability per predictor arm (dashed line = chance)",
+        "ylabel": "AUC (misaligned II vs normal samples, steering layer)",
+        "legend_labels": [
+          "Raw projection",
+          "Exact \u0394P (base generation)",
+          "Prompt-token \u0394P",
+          "Mapped \u0394P (context)",
+          "Mapped \u0394P (prefix)",
+          "Identity + learned bias \u0394P"
+        ],
+        "xticklabels": [
+          "Sycophancy",
+          "Evil",
+          "Hallucination"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "Raw projection",
+      "Exact \u0394P (base generation)",
+      "Prompt-token \u0394P",
+      "Mapped \u0394P (context)",
+      "Mapped \u0394P (prefix)",
+      "Identity + learned bias \u0394P"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

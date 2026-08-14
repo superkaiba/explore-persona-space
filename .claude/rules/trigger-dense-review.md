@@ -1,5 +1,5 @@
 ---
-description: Reviewing trigger-dense / security-adjacent artifacts (guard hooks, destructive-command fixtures, refusal/jailbreak corpora) without filter kills — findings by reference, durable verdict first, windowed reads; brief composition (first-pass #1503, revision-round #1413); orchestrator poll/forensics digests (#1546); ordinary guard-surface turns digest-only (#1563); real-corpus datagen decomposition (#1748); judge-run monitoring digest-grain (#1871). Prevention-side sibling of CLAUDE.md § Spurious usage-policy refusals (#1058, #1152).
+description: Reviewing trigger-dense / security-adjacent artifacts (guard hooks, destructive-command fixtures, refusal/jailbreak corpora) without filter kills — findings by reference, durable verdict first, windowed reads; brief composition (first-pass #1503, revision-round #1413); orchestrator poll/forensics digests (#1546); ordinary guard-surface turns digest-only (#1563); real-corpus datagen decomposition (#1748); judge-run monitoring digest-grain (#1871); ingest of refusal-killed subagent results, findings/scope-bearing marker bodies, and real-corpus parent bodies (#2037). Prevention-side sibling of CLAUDE.md § Spurious usage-policy refusals (#1058, #1152).
 paths:
   - ".claude/hooks/*.sh"
   - "scripts/guard_*.sh"
@@ -21,7 +21,13 @@ output (§ Orchestrator poll/forensics turns, #1546), or the ORCHESTRATOR
 runs ANY ordinary turn on a round whose task or diff targets such
 artifacts (§ Orchestrator ordinary turns, #1563), or ANY context —
 orchestrator or subagent — reads judge OUTPUT files while monitoring or
-spot-checking a judge run (§ Judge-run monitoring reads, #1871).
+spot-checking a judge run (§ Judge-run monitoring reads, #1871), or ANY
+context — orchestrator or subagent — INGESTS a refusal-killed
+subagent's returned result text, a findings/scope-bearing marker body
+(e.g. `epm:followup-scope`), or a task / PARENT-task body embedding
+real-corpus or refusal-corpus text (§ Orchestrator poll/forensics turns
+item 6, § Orchestrator ordinary turns item 6, § First-pass briefs
+item 6; #2037).
 Recognition heuristic (any one suffices):
 
 - guard / security hook scripts (`.claude/hooks/*.sh`, `scripts/guard_*.sh`)
@@ -32,7 +38,8 @@ Recognition heuristic (any one suffices):
 - test fixtures / lint allowlists that enumerate destructive or gated
   command shapes (fixture lists of banned invocations, hook-bypass probes);
 - refusal / jailbreak / harmful-content corpora and question banks (reads
-  already digest-only per the `guard_harmful_bank_read.sh` hook +
+  already digest-only per the `guard_harmful_bank_read.sh` hook — whose
+  Read arm also denies wholesale >256 KB corpus-file reads, #1217 — +
   code-reviewer.md § Harmful-content corpora digest note; #866, #1073),
   incl. unscreened real-world corpora (LMSYS/WildChat-class) whose rows
   routinely carry in-corpus jailbreak/explicit text (#1073, #1739);
@@ -148,11 +155,13 @@ closing text itself is discipline-4-minimal.
 
 ## First-pass briefs (composition-side, #1503)
 
-Fires for the ORCHESTRATOR composing any FIRST-PASS subagent brief whose
-TARGET files include a trigger-dense artifact per the recognition
-heuristic above — the Phase-1.5 fact-checker brief, the Phase-2 critic
-and consistency-checker briefs, a plan-review or first code-review
-brief. No verdict exists yet, so § Revision-round briefs cannot fire;
+Fires for the ORCHESTRATOR composing ANY FIRST-PASS subagent brief —
+e.g. implementer, experimenter, analyzer, reviewer, fact-checker,
+critic, consistency-checker — whose TARGET files (or required reading,
+e.g. a steering-content task body) match the recognition heuristic
+above (the prior narrower enumeration — Phase-1.5 fact-checker, Phase-2
+critic + consistency-checker, plan-review, first code-review — is a
+subset). No verdict exists yet, so § Revision-round briefs cannot fire;
 the duties attach to the brief itself:
 
 1. Name the guard-surface target files by PATH (plus the specific claims
@@ -171,12 +180,23 @@ the duties attach to the brief itself:
    script path, or the transcript/log path + line) or marker reference —
    never inlined into the brief (2026-07-18: 3 content-filter kills from
    briefs inlining a hook's BLOCKED message).
+6. When the task body — or its PARENT task's body — embeds real-corpus
+   (LMSYS/WildChat-class) or refusal-corpus text, every brief passes
+   that body by reference (task id + `body.md` path + grep anchors for
+   the sections the agent needs) and instructs windowed reads; this
+   binds resume/continuation contexts the same as fresh spawns (session
+   5efd349e: a critic's background resume paged the #1901
+   WildChat-corpus parent body and was refusal-killed).
 
 Rationale: rung (e) neutralizes first-pass brief VOCABULARY, but the
 READ discipline previously attached only to review roles and revision
 briefs — first-pass fact-checkers/critics paged whole guard files and
 were filter-killed before any recovery rung fired (#1436/#1443: 4
-first-pass kills).
+first-pass kills). The same class re-fired on ordinary implementer first-spawns —
+#1979 (~1.5h implementer thrash on unit 1), #1977 (~17 min reviewer
+loss), #1879, #1947 — which is what widening the enumeration to ANY
+first-pass role prevents: kill evidence is no longer required when the
+target class is already recognized (#2003).
 
 Datagen sibling: an implementer / experimenter brief for a DATAGEN
 pipeline that ingests a real-world corpus or a harmful-content bank ALSO
@@ -248,8 +268,10 @@ tick session — whenever run-failure or forensics text lands on its OWN
 turn: a poll tick reporting stalled/dead (the poll JSON's log-tail
 excerpt field), pod/VM stderr or crash-log tails, crash-persist
 artifacts (`crash_report.json` / `workload.log` under the HF
-`issue<N>_partial/` prefix), lane/queue state dumps, or a guard hook's
-BLOCKED runtime output. The composition-side sections above protect
+`issue<N>_partial/` prefix), lane/queue state dumps, a guard hook's
+BLOCKED runtime output, or a refusal-killed subagent's returned result /
+task-notification text on a guard-surface round (item 6). The
+composition-side sections above protect
 SUBAGENT briefs; this section protects the orchestrator's own context —
 the one context whose loss costs a session respawn (CLAUDE.md
 § Spurious usage-policy refusals rung (f); #1546: 7 content-filter kills
@@ -297,6 +319,16 @@ on one session's poll turns while it paged raw crash-forensics tails).
    durable (the pod/VM log file, the crash-persist upload) — this
    section changes what enters the orchestrator's CONTEXT and generated
    text, never whether forensic text is persisted.
+6. **Refusal-killed subagent results: digest to ONE neutral line.** On a
+   guard-surface round, a refusal-killed subagent's returned result /
+   task-notification text is digested to ONE neutral line — role +
+   round + "refusal-killed" — BEFORE the durable-verdict check (the
+   issue-SKILL Step 5b probe / the CLAUDE.md § Spurious usage-policy
+   refusals recovery ladder, rung (a)); the returned text is never
+   quoted into authored notes, markers, or later turns (session
+   291d866a: the orchestrator ingested a refusal-killed code-reviewer's
+   result text verbatim on guard-surface task #1928 and wedged 3
+   consecutive turns, ~30 min to watcher respawn).
 
 ## Judge-run monitoring reads (ingest-side, #1871)
 
@@ -381,6 +413,17 @@ authored; every later wake turn died, and recovery was a fresh respawn
    usage-policy refusals ladder stays authoritative (rung (f) fresh
    respawn is what recovered #1538); this section exists so it is not
    needed.
+6. **Scope/findings-bearing marker bodies: structured extraction, never
+   paged.** Scope- or findings-bearing marker bodies (esp.
+   `epm:followup-scope`) on a trigger-dense task are read via structured
+   field extraction (`task_workflow.parse_followup_note_field` /
+   `executing_followup_label`, or `jq` over `task.py view --json`) or
+   file-extraction + grep-anchored windows — never paged verbatim into
+   orchestrator context; briefs pass scope by marker kind+version / file
+   path, never inlined body text (session f98a12ed: a 14KB
+   trigger-dense followup-scope body paged verbatim killed the planner
+   spawn at 16 tool calls reading the scope, then the orchestrator
+   itself refused 3 consecutive turns).
 
 (#1538: two consecutive /issue orchestrator sessions wedged on a
 guard-hook grep-pattern round — the first kill fired immediately after
@@ -393,7 +436,8 @@ the task completed only in a third watcher-respawned session, ~1h+ lost.)
   a finding a reader cannot locate from file:line + description alone is
   mis-scoped — that is a reason to sharpen the reference, never to quote.
 - Read-side digest rules. Harmful-bank reads stay governed by
-  `guard_harmful_bank_read.sh` + the corpora digest note; diff-body sizing
+  `guard_harmful_bank_read.sh` (its Read arm also gates wholesale corpus
+  reads, #1217) + the corpora digest note; diff-body sizing
   by `.claude/rules/diff-size-budget.md`. This rule adds the
   generated-TEXT + verdict-ordering discipline those read-side rules do
   not cover. § Orchestrator ordinary turns tightens the guard-surface
@@ -415,7 +459,10 @@ Incidents: #1058, #1098, #1092, #866, #1090, #1152 (discipline 4), #1413
 (§ Revision-round briefs), #1436/#1443/#1503 (§ First-pass briefs), #1546
 (§ Orchestrator poll/forensics turns + § First-pass briefs item 5),
 #1538/#1563 (§ Orchestrator ordinary turns), #1739/#1748 (§ Real-corpus
-datagen briefs), #1871 (§ Judge-run monitoring reads).
+datagen briefs), #1871 (§ Judge-run monitoring reads), #2037 (ingest-side
+hardening, sessions 291d866a / f98a12ed / 5efd349e — § Orchestrator
+poll/forensics turns item 6, § Orchestrator ordinary turns item 6,
+§ First-pass briefs item 6).
 Enforcing pointers: `.claude/agents/code-reviewer.md` § Context budget;
 `.claude/agents/reconciler.md` § Rules (Rule 11);
 `.claude/skills/issue/SKILL.md` Step 5a, § File-only Codex verdict posting

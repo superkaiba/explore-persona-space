@@ -1,0 +1,1196 @@
+{
+  "commit": "f6e6ab50",
+  "render_id": "063ef021c0f74830",
+  "git_commit": "f6e6ab50",
+  "git_dirty": false,
+  "created": "2026-08-10T10:33:18Z",
+  "figsize": [
+    9.6,
+    4.4
+  ],
+  "points": [
+    {
+      "noise-normalized shift, tail-inclusive pooling": 2.728636605078363,
+      "noise-normalized shift, span-mean pooling": 2.700825060732285,
+      "label": "conflict format fwd",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 2.728636605078363,
+      "noise-normalized shift, span-mean pooling": 2.700825060732285,
+      "label": "conflict format fwd",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 3.366000197856033,
+      "noise-normalized shift, span-mean pooling": 3.3429350688350303,
+      "label": "conflict persona fwd",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 3.366000197856033,
+      "noise-normalized shift, span-mean pooling": 3.3429350688350303,
+      "label": "conflict persona fwd",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 2.1776042642936644,
+      "noise-normalized shift, span-mean pooling": 2.201214061061774,
+      "label": "constraint knowledge",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 0.7894369970752407,
+      "noise-normalized shift, span-mean pooling": 0.7886687717125537,
+      "label": "demo format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 0.9162834475463998,
+      "noise-normalized shift, span-mean pooling": 0.9172859581642724,
+      "label": "demo persona",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 1.8132023146563916,
+      "noise-normalized shift, span-mean pooling": 1.843082866645516,
+      "label": "fact assistant animal",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 1.2792801237235463,
+      "noise-normalized shift, span-mean pooling": 1.2926215244675694,
+      "label": "fact novel queried",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 1.0216684342831797,
+      "noise-normalized shift, span-mean pooling": 1.0751816716274922,
+      "label": "fact user name",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 0.7690783076539612,
+      "noise-normalized shift, span-mean pooling": 0.7655730379236122,
+      "label": "filler swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 49.73382072236854,
+      "noise-normalized shift, span-mean pooling": 60.46887933849808,
+      "label": "icl task mapping",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 3.007457585733769,
+      "noise-normalized shift, span-mean pooling": 3.009650934342899,
+      "label": "instr format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 3.745056582610075,
+      "noise-normalized shift, span-mean pooling": 3.6888978144562294,
+      "label": "instr language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 2.3597453196295657,
+      "noise-normalized shift, span-mean pooling": 2.357612831213449,
+      "label": "language implied",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 1.9770020368268062,
+      "noise-normalized shift, span-mean pooling": 1.9912446597972444,
+      "label": "list numeric detail",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 2.0209272869892585,
+      "noise-normalized shift, span-mean pooling": 2.0241952383580903,
+      "label": "load fact assistant animal l3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 2.039820668526357,
+      "noise-normalized shift, span-mean pooling": 2.052957455270845,
+      "label": "load fact assistant animal l5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 1.1124361995615695,
+      "noise-normalized shift, span-mean pooling": 1.156557212009607,
+      "label": "load fact user name l3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 0.9915867290035666,
+      "noise-normalized shift, span-mean pooling": 0.9867895596151788,
+      "label": "load fact user name l5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 2.2250593776937038,
+      "noise-normalized shift, span-mean pooling": 2.214743055537505,
+      "label": "load instr format l3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 2.1237764741738703,
+      "noise-normalized shift, span-mean pooling": 2.111364881430404,
+      "label": "load instr format l5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 4.791677545394751,
+      "noise-normalized shift, span-mean pooling": 4.796549233717707,
+      "label": "persona prompted",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 0.8510475503374876,
+      "noise-normalized shift, span-mean pooling": 0.8499236206718691,
+      "label": "persona role header",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 6.392635736911401,
+      "noise-normalized shift, span-mean pooling": 6.390992943564791,
+      "label": "prior topic",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 6.320486150985853,
+      "noise-normalized shift, span-mean pooling": 6.325792510334344,
+      "label": "query content",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 3.1637172795213284,
+      "noise-normalized shift, span-mean pooling": 3.138556393714214,
+      "label": "reasoning style",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 0.9727007945742239,
+      "noise-normalized shift, span-mean pooling": 0.969234545057427,
+      "label": "recency fact user name d3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 0.8688386506709175,
+      "noise-normalized shift, span-mean pooling": 0.9254644517730877,
+      "label": "recency fact user name d5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 1.99946280396163,
+      "noise-normalized shift, span-mean pooling": 1.9993806131586127,
+      "label": "recency instr format d3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 2.039377903225427,
+      "noise-normalized shift, span-mean pooling": 2.0387430038680416,
+      "label": "recency instr format d5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 3.3595082180793723,
+      "noise-normalized shift, span-mean pooling": 3.3525273627594894,
+      "label": "recency persona prompted d3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 2.79466379691631,
+      "noise-normalized shift, span-mean pooling": 2.7957145212184713,
+      "label": "recency persona prompted d5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 4.1973940950637685,
+      "noise-normalized shift, span-mean pooling": 4.171808005436448,
+      "label": "recency prior topic d3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 0.8212021492385038,
+      "noise-normalized shift, span-mean pooling": 0.8196720879489445,
+      "label": "recency prior topic d5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 1.7295316244488057,
+      "noise-normalized shift, span-mean pooling": 1.733486121575284,
+      "label": "refusal boundary",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 0.8936783845949552,
+      "noise-normalized shift, span-mean pooling": 0.8921083599538753,
+      "label": "user emotion",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 3.14540344587824,
+      "noise-normalized shift, span-mean pooling": 3.1415719239534754,
+      "label": "user expertise",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "noise-normalized shift, tail-inclusive pooling": 4.342602303647479,
+      "noise-normalized shift, span-mean pooling": 4.45462157843906,
+      "label": "verbosity",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.7916666666666666,
+      "per-type accuracy, span-mean targets": 0.7916666666666666,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.7916666666666666,
+      "per-type accuracy, span-mean targets": 0.7916666666666666,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.9722222222222222,
+      "per-type accuracy, span-mean targets": 0.9722222222222222,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.9722222222222222,
+      "per-type accuracy, span-mean targets": 0.9722222222222222,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.7083333333333334,
+      "per-type accuracy, span-mean targets": 0.6805555555555556,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5138888888888888,
+      "per-type accuracy, span-mean targets": 0.5277777777777778,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.7083333333333334,
+      "per-type accuracy, span-mean targets": 0.7083333333333334,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.6666666666666666,
+      "per-type accuracy, span-mean targets": 0.6527777777777778,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5833333333333334,
+      "per-type accuracy, span-mean targets": 0.625,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5833333333333334,
+      "per-type accuracy, span-mean targets": 0.5416666666666666,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5694444444444444,
+      "per-type accuracy, span-mean targets": 0.5694444444444444,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.7916666666666666,
+      "per-type accuracy, span-mean targets": 0.7916666666666666,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.8472222222222222,
+      "per-type accuracy, span-mean targets": 0.8472222222222222,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 1.0,
+      "per-type accuracy, span-mean targets": 1.0,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.9583333333333334,
+      "per-type accuracy, span-mean targets": 0.9583333333333334,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5972222222222222,
+      "per-type accuracy, span-mean targets": 0.5833333333333334,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.75,
+      "per-type accuracy, span-mean targets": 0.75,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.7777777777777778,
+      "per-type accuracy, span-mean targets": 0.7916666666666666,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5833333333333334,
+      "per-type accuracy, span-mean targets": 0.5555555555555556,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5555555555555556,
+      "per-type accuracy, span-mean targets": 0.5555555555555556,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.7083333333333334,
+      "per-type accuracy, span-mean targets": 0.7083333333333334,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.8055555555555556,
+      "per-type accuracy, span-mean targets": 0.8055555555555556,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 1.0,
+      "per-type accuracy, span-mean targets": 1.0,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.6805555555555556,
+      "per-type accuracy, span-mean targets": 0.6944444444444444,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 1.0,
+      "per-type accuracy, span-mean targets": 1.0,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.9722222222222222,
+      "per-type accuracy, span-mean targets": 0.9722222222222222,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.875,
+      "per-type accuracy, span-mean targets": 0.8611111111111112,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5277777777777778,
+      "per-type accuracy, span-mean targets": 0.5416666666666666,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5138888888888888,
+      "per-type accuracy, span-mean targets": 0.5138888888888888,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.8055555555555556,
+      "per-type accuracy, span-mean targets": 0.8055555555555556,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.7916666666666666,
+      "per-type accuracy, span-mean targets": 0.7916666666666666,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.9722222222222222,
+      "per-type accuracy, span-mean targets": 0.9722222222222222,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.9444444444444444,
+      "per-type accuracy, span-mean targets": 0.9444444444444444,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.8611111111111112,
+      "per-type accuracy, span-mean targets": 0.8611111111111112,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.4861111111111111,
+      "per-type accuracy, span-mean targets": 0.4861111111111111,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.8611111111111112,
+      "per-type accuracy, span-mean targets": 0.8611111111111112,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5972222222222222,
+      "per-type accuracy, span-mean targets": 0.5833333333333334,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.8611111111111112,
+      "per-type accuracy, span-mean targets": 0.8611111111111112,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.9305555555555556,
+      "per-type accuracy, span-mean targets": 0.8611111111111112,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.6944444444444444,
+      "per-type accuracy, span-mean targets": 0.6944444444444444,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.6944444444444444,
+      "per-type accuracy, span-mean targets": 0.6944444444444444,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.6527777777777778,
+      "per-type accuracy, span-mean targets": 0.6527777777777778,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.6527777777777778,
+      "per-type accuracy, span-mean targets": 0.6527777777777778,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5833333333333334,
+      "per-type accuracy, span-mean targets": 0.5833333333333334,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5694444444444444,
+      "per-type accuracy, span-mean targets": 0.5694444444444444,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.6666666666666666,
+      "per-type accuracy, span-mean targets": 0.6666666666666666,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5694444444444444,
+      "per-type accuracy, span-mean targets": 0.5416666666666666,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5,
+      "per-type accuracy, span-mean targets": 0.5138888888888888,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5138888888888888,
+      "per-type accuracy, span-mean targets": 0.5277777777777778,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5277777777777778,
+      "per-type accuracy, span-mean targets": 0.5277777777777778,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.6944444444444444,
+      "per-type accuracy, span-mean targets": 0.6944444444444444,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.875,
+      "per-type accuracy, span-mean targets": 0.875,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.875,
+      "per-type accuracy, span-mean targets": 0.875,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.7361111111111112,
+      "per-type accuracy, span-mean targets": 0.7361111111111112,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5,
+      "per-type accuracy, span-mean targets": 0.5,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5138888888888888,
+      "per-type accuracy, span-mean targets": 0.5138888888888888,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5,
+      "per-type accuracy, span-mean targets": 0.5,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5138888888888888,
+      "per-type accuracy, span-mean targets": 0.5,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5,
+      "per-type accuracy, span-mean targets": 0.5138888888888888,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.8055555555555556,
+      "per-type accuracy, span-mean targets": 0.8055555555555556,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.8472222222222222,
+      "per-type accuracy, span-mean targets": 0.8472222222222222,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.8888888888888888,
+      "per-type accuracy, span-mean targets": 0.8888888888888888,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 1.0,
+      "per-type accuracy, span-mean targets": 1.0,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.8472222222222222,
+      "per-type accuracy, span-mean targets": 0.7083333333333334,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5,
+      "per-type accuracy, span-mean targets": 0.5,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5,
+      "per-type accuracy, span-mean targets": 0.5138888888888888,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.7222222222222222,
+      "per-type accuracy, span-mean targets": 0.7361111111111112,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5277777777777778,
+      "per-type accuracy, span-mean targets": 0.5277777777777778,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.7361111111111112,
+      "per-type accuracy, span-mean targets": 0.7361111111111112,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.6944444444444444,
+      "per-type accuracy, span-mean targets": 0.6805555555555556,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5694444444444444,
+      "per-type accuracy, span-mean targets": 0.5694444444444444,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5277777777777778,
+      "per-type accuracy, span-mean targets": 0.5416666666666666,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.6111111111111112,
+      "per-type accuracy, span-mean targets": 0.6111111111111112,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5,
+      "per-type accuracy, span-mean targets": 0.5,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.6388888888888888,
+      "per-type accuracy, span-mean targets": 0.625,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.6527777777777778,
+      "per-type accuracy, span-mean targets": 0.5555555555555556,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.7916666666666666,
+      "per-type accuracy, span-mean targets": 0.7916666666666666,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.7916666666666666,
+      "per-type accuracy, span-mean targets": 0.7916666666666666,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.9722222222222222,
+      "per-type accuracy, span-mean targets": 0.9722222222222222,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.9722222222222222,
+      "per-type accuracy, span-mean targets": 0.9722222222222222,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.6944444444444444,
+      "per-type accuracy, span-mean targets": 0.7083333333333334,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5277777777777778,
+      "per-type accuracy, span-mean targets": 0.5277777777777778,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.7638888888888888,
+      "per-type accuracy, span-mean targets": 0.7638888888888888,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.7361111111111112,
+      "per-type accuracy, span-mean targets": 0.7361111111111112,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5833333333333334,
+      "per-type accuracy, span-mean targets": 0.5694444444444444,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5972222222222222,
+      "per-type accuracy, span-mean targets": 0.5694444444444444,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5555555555555556,
+      "per-type accuracy, span-mean targets": 0.5555555555555556,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.7638888888888888,
+      "per-type accuracy, span-mean targets": 0.7916666666666666,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.8333333333333334,
+      "per-type accuracy, span-mean targets": 0.8333333333333334,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 1.0,
+      "per-type accuracy, span-mean targets": 1.0,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.9861111111111112,
+      "per-type accuracy, span-mean targets": 0.9861111111111112,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.625,
+      "per-type accuracy, span-mean targets": 0.5833333333333334,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.7777777777777778,
+      "per-type accuracy, span-mean targets": 0.7638888888888888,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.8055555555555556,
+      "per-type accuracy, span-mean targets": 0.8055555555555556,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5972222222222222,
+      "per-type accuracy, span-mean targets": 0.5833333333333334,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5833333333333334,
+      "per-type accuracy, span-mean targets": 0.5694444444444444,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.7361111111111112,
+      "per-type accuracy, span-mean targets": 0.7361111111111112,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.8194444444444444,
+      "per-type accuracy, span-mean targets": 0.8194444444444444,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 1.0,
+      "per-type accuracy, span-mean targets": 1.0,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.6944444444444444,
+      "per-type accuracy, span-mean targets": 0.6944444444444444,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 1.0,
+      "per-type accuracy, span-mean targets": 1.0,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.9583333333333334,
+      "per-type accuracy, span-mean targets": 0.9583333333333334,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.8611111111111112,
+      "per-type accuracy, span-mean targets": 0.8611111111111112,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5694444444444444,
+      "per-type accuracy, span-mean targets": 0.5555555555555556,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5277777777777778,
+      "per-type accuracy, span-mean targets": 0.5138888888888888,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.8333333333333334,
+      "per-type accuracy, span-mean targets": 0.8333333333333334,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.7916666666666666,
+      "per-type accuracy, span-mean targets": 0.7916666666666666,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.9722222222222222,
+      "per-type accuracy, span-mean targets": 0.9722222222222222,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.9444444444444444,
+      "per-type accuracy, span-mean targets": 0.9444444444444444,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.8333333333333334,
+      "per-type accuracy, span-mean targets": 0.8333333333333334,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.5,
+      "per-type accuracy, span-mean targets": 0.5,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.8472222222222222,
+      "per-type accuracy, span-mean targets": 0.8611111111111112,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.625,
+      "per-type accuracy, span-mean targets": 0.6111111111111112,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.8611111111111112,
+      "per-type accuracy, span-mean targets": 0.8611111111111112,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-type accuracy, tail-inclusive targets": 0.8611111111111112,
+      "per-type accuracy, span-mean targets": 0.8194444444444444,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 154,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Answer-pooling twins: shift magnitude",
+        "xlabel": "noise-normalized shift, tail-inclusive pooling",
+        "ylabel": "noise-normalized shift, span-mean pooling",
+        "annotations": [
+          "conflict format fwd",
+          "conflict format rev",
+          "conflict persona fwd",
+          "conflict persona rev",
+          "constraint knowledge",
+          "demo format",
+          "demo persona",
+          "fact assistant animal",
+          "fact novel queried",
+          "fact user name",
+          "filler swap",
+          "icl task mapping",
+          "instr format",
+          "instr language",
+          "language implied",
+          "list numeric detail",
+          "load fact assistant animal l3",
+          "load fact assistant animal l5",
+          "load fact user name l3",
+          "load fact user name l5",
+          "load instr format l3",
+          "load instr format l5",
+          "persona prompted",
+          "persona role header",
+          "prior topic",
+          "query content",
+          "reasoning style",
+          "recency fact user name d3",
+          "recency fact user name d5",
+          "recency instr format d3",
+          "recency instr format d5",
+          "recency persona prompted d3",
+          "recency persona prompted d5",
+          "recency prior topic d3",
+          "recency prior topic d5",
+          "refusal boundary",
+          "user emotion",
+          "user expertise",
+          "verbosity"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ]
+      },
+      {
+        "title_left": "Answer-pooling twins: discrimination",
+        "xlabel": "per-type accuracy, tail-inclusive targets",
+        "ylabel": "per-type accuracy, span-mean targets",
+        "legend_labels": [
+          "single-turn context-end map",
+          "multi-turn prefix-end map",
+          "multi-turn context-end map"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "single-turn context-end map",
+      "multi-turn prefix-end map",
+      "multi-turn context-end map"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

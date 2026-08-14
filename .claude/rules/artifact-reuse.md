@@ -1,15 +1,15 @@
 ---
-description: Trained-artifact + code reuse fitness check (a)-(l) — reuse a prior HF adapter / checkpoint / mix / completions / eval JSON / fit helper vs retrain, incl. pair provenance (#922), gate calibration + HALT-vs-WARN (#813), staged-layout consumer-open (#928), parent-lineage (#1345), validity-domain transfer (#1417), with the enforcement chain (loads at plan time via plan-file paths)
+description: Trained-artifact + code reuse fitness check (a)-(m) — reuse a prior HF adapter / checkpoint / mix / completions / eval JSON / fit helper vs retrain, incl. pair provenance (#922), gate calibration + HALT-vs-WARN (#813), staged-layout consumer-open (#928), parent-lineage (#1345), validity-domain transfer (#1417), device-domain smoke (#1345), with the enforcement chain (loads at plan time via plan-file paths)
 paths:
   - ".claude/plans/**"
   - "tasks/**/plans/**"
 ---
 
-# Trained-artifact (and code) reuse — the fitness check (a)-(l)
+# Trained-artifact (and code) reuse — the fitness check (a)-(m)
 
 CLAUDE.md Critical Rules carries the always-on rule ("Reuse existing trained
 artifacts when fit-for-purpose — never reuse a wrong one") plus a one-line
-summary naming checks (a)-(l); this file is the full checklist AND, as of
+summary naming checks (a)-(m); this file is the full checklist AND, as of
 #829, the single operational copy — `planner.md` step 5 self-attests it via a
 pointer here (the former inline copy is relocated into § Plan-time search +
 verification mechanics below), `critic.md` Methodology lens item 9 enforces it
@@ -492,8 +492,36 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   split vs the signature smoke below: that smoke is
   NAME-membership only; a runtime-guard rejection is out of ITS scope and
   belongs here.
+- **(m) Device-domain smoke (reused fit/analysis CODE reaching a NEW device
+  class; N/A when no fit/analysis code artifact is reused, or when every
+  (code path × defaults) combination the run will execute has already
+  completed on the production device class).** Fit cores routinely run CPU
+  in tests and smokes and CUDA in production, and a device-placement seam —
+  a cache or prep built on the fit device while the caller's tensors stay on
+  another device — crashes only on the mixed path, potentially AFTER hours
+  of banked compute when the fresh code path sits late in the run. Before
+  any multi-hour production lattice, a reused fit/analysis core gets a
+  1-cell smoke ON the production device class whenever EITHER (1) its
+  defaults flipped since the last completed run on that device class (a new
+  lambda-selection default routes through fresh code), or (2) the run
+  reaches a code path — a union / grid / aggregation stage, a fresh branch —
+  that has never executed on that device class. The smoke must run ON the
+  device class (a CPU smoke validates nothing about CUDA placement), through
+  the SAME entrypoint + defaults production will use, and must reach the
+  LATE-stage phases too — a per-cell-fit-only smoke misses the union stage
+  where #1345 crashed. Scope split vs siblings: (i)(2) checks the device is
+  PARAMETRIZED (throughput) — a fully parametrized core can still be
+  internally device-split; (l) checks boundaries the instrument DECLARES —
+  the device axis is typically UNDECLARED, so (l)'s N/A escape does not
+  cover it. (#1345: Fellows job 17912 FAILED after 2h33m — AFTER all 140
+  per-cell fits completed — because the fresh xy_grid union path built
+  inner-CV lambda caches on the CUDA fit device while `ma._ridge_prep` kept
+  the outer prep on the caller's CPU tensors; no prior invocation had run
+  the #1417/#1887 inner-group-cv defaults on a CUDA node; the fix threaded
+  `device=` through the prep/caches and the relaunch COMPLETED. Marker:
+  #1345 `epm:progress` v239.)
 
-A failing check other than (i)/(h)(iv)/(k)/(l) → retrain / regenerate; a failing
+A failing check other than (i)/(h)(iv)/(k)/(l)/(m) → retrain / regenerate; a failing
 throughput check (i) → fix the SOURCE module (batch / parametrize / scope it
 there — never a caller-side workaround), then reuse; a failing staged-layout
 consumer-open check (h)(iv) → fix the STAGING MAPPING (pure hub-rel →
@@ -504,8 +532,12 @@ any count shortfall, then reuse — regenerate only when the shortfall traces
 to a genuine defect in the artifact itself; a failing validity-domain check
 (l) → engage the instrument's registered mitigation (or state the
 justification), then reuse — never a silent retrain: the instrument is
-sound, the CONSUMPTION REGIME crossed its declared boundary. Say why in the
-plan either way.
+sound, the CONSUMPTION REGIME crossed its declared boundary. A failing
+device-domain check (m) → fix the device seam at the SOURCE module (thread
+`device=` through prep/caches so a prep can never be internally split),
+re-run the 1-cell smoke on the failing device class, then reuse — the
+artifact and instrument are sound; the execution environment was never
+exercised. Say why in the plan either way.
 
 ## Reuse-validation gate calibration + severity (HALT vs WARN) (#813)
 

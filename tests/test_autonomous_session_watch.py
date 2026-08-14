@@ -2114,6 +2114,14 @@ def test_save_pod_safety_state_carries_first_seen_forward(isolated_registry):
         # sibling entries forward-carry VERBATIM on every save (no pod_id
         # reset: the per-pod keying IS the incarnation reset).
         "kr_pod": {},
+        # #2060: the never-ran leg's per-pod episode sub-dict is part of the
+        # schema now; same carry contract as kr_pod (sibling entries verbatim,
+        # per-pod keying is the incarnation reset).
+        "nr_pod": {},
+        # #2283: the owner-fence defer arm's per-pod episode sub-dict is part
+        # of the schema now; same carry contract as kr_pod/nr_pod (sibling
+        # entries verbatim, per-pod keying is the incarnation reset).
+        "fd_pod": {},
     }
 
     # On a second save (passing the previous payload), first_seen must persist.
@@ -3750,6 +3758,12 @@ def test_save_stalled_state_carries_first_seen_and_respawn_fields(isolated_regis
     # manual_escalate_count / manual_escalate_first_ts are the #1480
     # stalled-manual escalation counters (episode-scoped, advancement-cleared
     # via the #845 hardening-field contract); default-absent-safe.
+    # xgen_respawns / xgen_last_real_marker_ts / xgen_escalated_at are the
+    # #2084 cross-generation no-progress escalation fields (progress-keyed,
+    # advancement-clear-EXEMPT like the #1209/#1241 day caps; escalate-only
+    # consumer); default-absent-safe. REWRITTEN 2026-08-10 for the #2084
+    # schema extension (the exhaustive-shape pin below gains the three new
+    # keys) — the pre-#2084 contract is otherwise unchanged.
     assert payload == {
         "happy_session_id": "sess-7",
         "missed": 1,
@@ -3773,6 +3787,9 @@ def test_save_stalled_state_carries_first_seen_and_respawn_fields(isolated_regis
         "dead_silence_respawns_today": 0,
         "wedge_respawn_day": None,
         "wedge_respawns_today": 0,
+        "xgen_respawns": 0,
+        "xgen_last_real_marker_ts": None,
+        "xgen_escalated_at": 0,
         "last_self_report_ts": "ts-1",
         "first_seen": 1234.0,
     }
@@ -6542,8 +6559,10 @@ def test_followup_round_complete_reason_inert_while_round_in_flight():
 
 
 def test_followup_round_complete_reason_inert_on_mid_round_park():
-    # A mid-round park (e.g. step 2c over-cap plan approval, held in place
-    # at followups_running) is NOT round-end — re-parking there would
+    # A mid-round park (e.g. step 2c plan-gate park on a missing GPU-hour
+    # estimate — the retained fail-safe as of #1771; before the GPU-hour-blind
+    # gate the same park also fired over-cap — held in place at
+    # followups_running) is NOT round-end — re-parking there would
     # abandon an unapproved round. Same for a clean (non-parked) exit.
     import autonomous_session_watch as asw
 
@@ -7396,20 +7415,27 @@ def test_followup_round_repark_sentinel_in_watcher_filter():
     assert _FOLLOWUP_ROUND_REPARK_NOTE_SENTINEL in _WATCHER_NOTE_SENTINELS
 
 
-# ─── over-cap spend-approval park exemption (incident #653, 2026-06-18) ───────
-# Status-hold variant (SKILL.md Step 9b): an over-cap plan estimate parks the
-# task IN PLACE at the ACTIVE status `followups_running` (the status does NOT
-# move to plan_pending). decide() therefore sees an ACTIVE task and the
-# missing-self-report drove 5 respawn-and-park cycles in ~4h, each re-posting
-# the same epm:step-completed step=2c exit_kind=parked. This is a user-only
-# gate; the exemption diverts the would-be respawn to a budget-free alert and
-# self-disarms when the user approves / re-plans (a real progress marker newer
-# than the park).
+# ─── plan-gate spend-approval park exemption (originating incident #653) ───
+# Status-hold variant (SKILL.md Step 9b): the plan-gate park (a
+# missing/unparseable GPU-hour estimate as of #1771's GPU-hour-blind gate;
+# originating incident #653 was the retired over-cap variant of the same
+# marker) parks the task IN PLACE at the ACTIVE status `followups_running`
+# (the status does NOT move to plan_pending). decide() therefore sees an
+# ACTIVE task and the missing-self-report drove 5 respawn-and-park cycles
+# in ~4h in the origin incident, each re-posting the same
+# epm:step-completed step=2c exit_kind=parked. This is a user-only gate;
+# the exemption diverts the would-be respawn to a budget-free alert and
+# self-disarms when the user approves / re-plans (a real progress marker
+# newer than the park). The reason string / dedup keys on the marker KIND,
+# so the exemption still fires on the #1771 missing-estimate park cause.
 
 
 def _make_spend_approval_event(ts: str = "2026-06-18T00:34:11Z") -> dict:
-    """Minimal epm:awaiting-spend-approval row — the over-cap autonomous
-    plan-gate park (task.py --auto-approve-if-autonomous, parked_over_cap)."""
+    """Minimal epm:awaiting-spend-approval row — the autonomous
+    plan-gate park (task.py --auto-approve-if-autonomous, parked_no_estimate
+    as of #1771; historically also fired over-cap under the retired
+    decision literal — the exemption keys on the marker KIND, so
+    the test fixture stands unchanged in substance)."""
     return {
         "ts": ts,
         "kind": "epm:awaiting-spend-approval",
@@ -7443,7 +7469,10 @@ def test_spend_approval_park_reason_fires_on_canonical_653_shape():
     ]
     reason = asw._spend_approval_park_reason(events)
     assert reason is not None
-    assert "over-cap autonomous plan-gate" in reason
+    # #1771 renamed the reason from "over-cap autonomous plan-gate" to
+    # "autonomous plan-gate fail-safe"; both spellings historically named
+    # the same user-only gate keyed on the marker KIND.
+    assert "autonomous plan-gate fail-safe" in reason
     assert "user-only gate" in reason
 
 
@@ -7466,7 +7495,7 @@ def test_spend_approval_park_reason_self_disarms_on_real_progress():
 
 
 def test_spend_approval_park_reason_inert_without_spend_marker():
-    # No epm:awaiting-spend-approval on record = not the over-cap park shape.
+    # No epm:awaiting-spend-approval on record = not the plan-gate park shape.
     import autonomous_session_watch as asw
 
     events = [_make_step_completed_event(step="2c", exit_kind="parked")]
@@ -7574,7 +7603,7 @@ def test_check_orphan_followups_exemption_returns_spend_approval_skip(monkeypatc
     )
     assert action == "spend-approval-skip"
     assert reason is not None
-    assert "over-cap autonomous plan-gate" in reason
+    assert "autonomous plan-gate fail-safe" in reason
 
 
 def test_handle_orphan_spend_approval_skip_posts_once_and_skips_budget(
@@ -8779,6 +8808,8 @@ def test_session_reconcile_state_backcompat_missing_stop_fields(isolated_registr
 # activity clock (_WATCHER_NOTE_SENTINELS). Three additive protections:
 # session-level activity signals (registration spawned_at + transcript mtime)
 # and an explicit respawn-marker exemption ("respawn-skip").
+# (#2117 narrowed the transcript term to row CONTENT — see the work-probe
+# tests above; the mtime read survives as the arm-(iv) fallback.)
 
 
 def _reconcile_ev(kind, ts, note=""):
@@ -8951,14 +8982,16 @@ def test_session_idle_signals_stale_registration_still_idle(isolated_registry, m
 
 
 def test_session_idle_signals_fresh_transcript_not_idle(isolated_registry, monkeypatch):
-    # A fresh transcript mtime for a mapped sid flips idleness; an
+    # A fresh transcript WORK age for a mapped sid flips idleness; an
     # unresolvable transcript contributes nothing (falls back to today's
     # behavior — fail toward the other signals, here none -> idle).
+    # (#2117 migration: the call site now routes through the
+    # content-classifying _transcript_work_idle_age_s by default.)
     import autonomous_session_watch as asw
 
     _patch_session_reconcile_io(monkeypatch, status="completed")
     now = 1_000_000.0
-    monkeypatch.setattr(asw, "_transcript_idle_age_s", lambda pid, now: (60.0, None))
+    monkeypatch.setattr(asw, "_transcript_work_idle_age_s", lambda pid, now: (60.0, None))
     idle, gap_desc, _events = asw._session_idle_signals(
         42, now, sids=["sid-a"], pids_by_sid={"sid-a": 1234}
     )
@@ -8966,7 +8999,7 @@ def test_session_idle_signals_fresh_transcript_not_idle(isolated_registry, monke
     assert gap_desc == "0.0h"
 
     monkeypatch.setattr(
-        asw, "_transcript_idle_age_s", lambda pid, now: (None, "transcript unresolvable")
+        asw, "_transcript_work_idle_age_s", lambda pid, now: (None, "transcript unresolvable")
     )
     idle, gap_desc, _events = asw._session_idle_signals(
         42, now, sids=["sid-a"], pids_by_sid={"sid-a": 1234}
@@ -8996,7 +9029,7 @@ def test_session_reconcile_pass_fresh_transcript_threaded_no_stop(isolated_regis
 
     monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
     stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
-    monkeypatch.setattr(asw, "_transcript_idle_age_s", lambda pid, now: (60.0, None))
+    monkeypatch.setattr(asw, "_transcript_work_idle_age_s", lambda pid, now: (60.0, None))
     for _ in range(3):
         asw.session_reconcile_pass(
             False,
@@ -9022,7 +9055,7 @@ def test_session_reconcile_old_idle_session_with_stale_signals_still_stopped(
     monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
     stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
     monkeypatch.setattr(
-        asw, "_transcript_idle_age_s", lambda pid, now: (None, "transcript unresolvable")
+        asw, "_transcript_work_idle_age_s", lambda pid, now: (None, "transcript unresolvable")
     )
     now = 1_000_000.0
     (isolated_registry / "issue-42.json").write_text(
@@ -9039,6 +9072,455 @@ def test_session_reconcile_old_idle_session_with_stale_signals_still_stopped(
         )
     assert stops == ["sid-a"]
     assert posts == [(42, "session-reconcile-stop")]
+
+
+# ── #2117: session-reconcile transcript WORK probe (churn-only narrowing) ────
+#
+# The mtime probe read an error-storming session as live forever (every
+# failed turn refreshes mtime), so the >=2-miss counter never accumulated on
+# a DONE task (#2004: ~4h of token burn on already-completed #2004). The
+# work probe classifies row CONTENT via the #1127 wake-turn machinery.
+# Fixture rows are sanitized structural rows only (the #1104 refusal-safety
+# contract); prompt evidence uses DEQUEUE rows, never bare slash-text user
+# rows — a bare "/issue ..." string row would classify as HUMAN under
+# tick_triage.is_human_transcript_row (the real cron-injected shape is
+# <command-message>-wrapped and excluded).
+
+
+def _t2117_failed_turn(ts=None):
+    """One completed FAILED wake-turn: dequeue delivery, a mid-turn heartbeat
+    assistant row (must NOT rescue the turn — outcome keys on the LAST
+    response row), and a final api-error row (timestamped when ``ts``)."""
+    api_error = {
+        "type": "assistant",
+        "isApiErrorMessage": True,
+        "message": {"role": "assistant", "content": [{"type": "text", "text": "sanitized"}]},
+    }
+    if ts is not None:
+        api_error["timestamp"] = _iso_845(ts)
+    return [
+        {"type": "queue-operation", "operation": "dequeue"},
+        {
+            "type": "assistant",
+            "message": {"role": "assistant", "content": [{"type": "text", "text": "sanitized"}]},
+        },
+        api_error,
+    ]
+
+
+def _t2117_ok_turn(ts=None):
+    """One completed OK wake-turn: dequeue delivery + assistant response
+    (timestamped when ``ts``; a ts-less ok turn pins the arm-(iv)
+    unparseable-newest-timestamp fallback)."""
+    assistant = {
+        "type": "assistant",
+        "message": {"role": "assistant", "content": [{"type": "text", "text": "done"}]},
+    }
+    if ts is not None:
+        assistant["timestamp"] = _iso_845(ts)
+    return [{"type": "queue-operation", "operation": "dequeue"}, assistant]
+
+
+def _t2117_human_row(ts=None, text="wait, let me look at this first"):
+    """A genuine typed-text human row (tick_triage.is_human_transcript_row
+    reads it True; timestamped when ``ts``)."""
+    row = {"type": "user", "message": {"role": "user", "content": text}}
+    if ts is not None:
+        row["timestamp"] = _iso_845(ts)
+    return row
+
+
+def test_transcript_work_probe_churn_only_tail(monkeypatch):
+    # Arm (iii): >=1 completed turn, ALL failed, no human row ->
+    # (None, "churn-only"); the mtime fallback must NOT be consulted (a
+    # fresh mtime is the very signal the narrowing exists to ignore).
+    import autonomous_session_watch as asw
+
+    tail = [r for _ in range(3) for r in _t2117_failed_turn()]
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, max_bytes=0: list(tail))
+
+    def _boom(pid, now):
+        raise AssertionError("mtime fallback must not run on a churn-only tail")
+
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", _boom)
+    age, reason = asw._transcript_work_idle_age_s(4242, 1_000_000.0)
+    assert age is None and reason == "churn-only"
+
+
+def test_transcript_work_probe_unresolvable_and_256kb_width(monkeypatch):
+    # Arm (i): unresolvable tail -> (None, reason), no mtime fallback —
+    # unchanged from today (contributes nothing to ages). Also pins the
+    # criterion-6 tail width: the 256 KB wedge-lane read (#1104), not the
+    # 64 KB _transcript_tail_rows default.
+    import autonomous_session_watch as asw
+
+    seen = {}
+
+    def _tail(pid, max_bytes=65536):
+        seen["max_bytes"] = max_bytes
+        return None
+
+    monkeypatch.setattr(asw, "_transcript_tail_rows", _tail)
+
+    def _boom(pid, now):
+        raise AssertionError("mtime fallback must not run on an unresolvable tail")
+
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", _boom)
+    age, reason = asw._transcript_work_idle_age_s(4242, 1_000_000.0)
+    assert age is None and reason
+    assert seen["max_bytes"] == 256 * 1024
+
+
+def test_transcript_work_probe_recent_ok_turn_age(monkeypatch):
+    # Arm (ii), the #1670-preserving arm: the age derives from the NEWEST
+    # ok turn's end_ts, storming siblings notwithstanding.
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    tail = _t2117_failed_turn(now - 300) + _t2117_ok_turn(now - 120) + _t2117_failed_turn(now - 60)
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, max_bytes=0: list(tail))
+    age, reason = asw._transcript_work_idle_age_s(4242, now)
+    assert reason is None
+    assert age == pytest.approx(120.0)
+
+
+def test_transcript_work_probe_human_row_protects(monkeypatch):
+    # Plan pin (c): all completed turns failed, but a genuine typed-text
+    # human row is durable work — the age derives from that row's own
+    # timestamp.
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    tail = (
+        _t2117_failed_turn(now - 3000)
+        + _t2117_failed_turn(now - 2400)
+        + [_t2117_human_row(ts=now - 600)]
+    )
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, max_bytes=0: list(tail))
+    age, reason = asw._transcript_work_idle_age_s(4242, now)
+    assert reason is None
+    assert age == pytest.approx(600.0)
+
+
+def test_transcript_work_probe_interior_human_row_protects_against_last_row_only_regression(
+    monkeypatch,
+):
+    # Code-review round-1 finding 2: the human row sits INTERIOR to the tail —
+    # older than the newest failed turn, newer than the oldest — so a future
+    # refactor that only classifies the LAST row would misread this tail as
+    # churn-only (arm (iii)) or derive the age from the newest failed turn.
+    # Arm (ii) must still find the interior row and return ITS age (600.0),
+    # with no mtime fallback.
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    tail = [
+        *_t2117_failed_turn(now - 3000),
+        _t2117_human_row(ts=now - 600),
+        *_t2117_failed_turn(now - 60),
+    ]
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, max_bytes=0: list(tail))
+
+    def _boom(pid, now):
+        raise AssertionError("mtime fallback must not run when an interior human row resolves")
+
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", _boom)
+    age, reason = asw._transcript_work_idle_age_s(4242, now)
+    assert reason is None
+    assert age == pytest.approx(600.0)
+
+
+def test_transcript_work_probe_unparseable_newest_ts_falls_back_to_mtime(monkeypatch):
+    # Arm (ii) -> (iv) case (2), the critic-r1 timestamp-scoping pin: an ok
+    # turn is present but its OWN end_ts is unparseable -> mtime fallback —
+    # NEVER a max over the older parseable timestamps (which would
+    # substitute a stale age for possibly-fresh work and fail toward STOP).
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    tail = _t2117_failed_turn(now - 18_000) + _t2117_ok_turn(ts=None)
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, max_bytes=0: list(tail))
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", lambda pid, now: (77.0, None))
+    assert asw._transcript_work_idle_age_s(4242, now) == (77.0, None)
+
+    # Same scoping for the human-row leg: a ts-less human row alongside a
+    # parseable-but-older ok turn is equally indeterminate.
+    tail2 = [*_t2117_ok_turn(now - 18_000), _t2117_human_row(ts=None)]
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, max_bytes=0: list(tail2))
+    assert asw._transcript_work_idle_age_s(4242, now) == (77.0, None)
+
+
+def test_transcript_work_probe_zero_completed_turns_falls_back_to_mtime(monkeypatch):
+    # Plan pin (d) / arm (iv) case (1): a prompt-evidence-ONLY tail
+    # (dequeue rows, ZERO response rows) has zero completed turns ->
+    # behavior identical to pre-#2117 (the mtime read). NOTE the fixture
+    # recipe (critic r1 finding 2): any response row would exercise arm
+    # (ii)/(iii) instead and not cover this fallback.
+    import autonomous_session_watch as asw
+
+    dequeue = {"type": "queue-operation", "operation": "dequeue"}
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, max_bytes=0: [dequeue] * 3)
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", lambda pid, now: (88.0, None))
+    assert asw._transcript_work_idle_age_s(4242, 1_000_000.0) == (88.0, None)
+
+
+def test_session_idle_signals_churn_token_in_gap_desc(isolated_registry, monkeypatch):
+    # Criterion 5 auditability, signal layer: gap_desc gains the churn-only
+    # token when >=1 mapped sid returned arm (iii); the term contributes
+    # nothing to ages, so idleness stands on the task-side signals.
+    import autonomous_session_watch as asw
+
+    _patch_session_reconcile_io(monkeypatch, status="completed")
+    monkeypatch.setattr(asw, "_transcript_work_idle_age_s", lambda pid, now: (None, "churn-only"))
+    idle, gap_desc, _events = asw._session_idle_signals(
+        42, 1_000_000.0, sids=["sid-a"], pids_by_sid={"sid-a": 1234}
+    )
+    assert idle is True
+    assert gap_desc == "no-signal churn-only"
+
+
+def test_session_stop_marker_note_names_churn_only(isolated_registry, monkeypatch):
+    # Criterion 5 auditability, marker layer: a churn-driven stop's note is
+    # distinguishable from an ordinary idle stop's.
+    import autonomous_session_watch as asw
+
+    notes: list[str] = []
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: True)
+    monkeypatch.setattr(
+        asw, "_post_progress_marker", lambda issue, note, dry_run, label: notes.append(note)
+    )
+    now = 1_000_000.0
+    asw._handle_session_stop(
+        42, ["sid-a"], "completed", "3.0h churn-only", 2, False, {}, 1, False, now
+    )
+    asw._handle_session_stop(42, ["sid-a"], "completed", "3.0h", 2, False, {}, 1, False, now)
+    assert "CHURN-ONLY" in notes[0] and "gap=3.0h churn-only" in notes[0]
+    assert "churn" not in notes[1].lower()
+    assert "transcript" in notes[1]
+
+
+def test_session_reconcile_churn_only_storm_stopped_second_tick(isolated_registry, monkeypatch):
+    # THE #2004 regression (plan pin a): an error-storming session on a
+    # completed task — transcript mtime perpetually FRESH, every completed
+    # wake-turn failed — contributes NO liveness, so the >=2-miss counter
+    # accumulates and the session is stopped on the 2nd tick. The mtime
+    # probe is pinned fresh to prove the churn verdict (not a stale mtime)
+    # is what allows the stop.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_TRANSCRIPT_WORK_PROBE", raising=False)
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
+    tail = [r for _ in range(3) for r in _t2117_failed_turn()]
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, max_bytes=0: list(tail))
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", lambda pid, now: (60.0, None))
+    now = 1_000_000.0
+    for _ in range(2):
+        asw.session_reconcile_pass(
+            False,
+            2,
+            daemon_reachable=True,
+            live_ids={"sid-a"},
+            now=now,
+            pids_by_sid={"sid-a": 4242},
+        )
+    assert stops == ["sid-a"]
+    assert posts == [(42, "session-reconcile-stop")]
+
+
+def test_session_reconcile_ok_turn_in_storm_keeps_session(isolated_registry, monkeypatch):
+    # THE #1670 regression (plan pin b): a RECENT successfully-completed
+    # wake-turn in an otherwise-storming tail contributes a fresh age ->
+    # ("clear", 0) — never a miss, never a stop, across 3 ticks.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
+    now = 1_000_000.0
+    tail = _t2117_failed_turn(now - 300) + _t2117_ok_turn(now - 120) + _t2117_failed_turn(now - 60)
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, max_bytes=0: list(tail))
+    state_path = isolated_registry / "session-reconcile-42.json"
+    # Seed a mid-episode miss to prove the clear path RESETS it (not merely
+    # never-accumulates).
+    state_path.write_text(json.dumps({"missed": 1, "alerted": False, "sids": ["sid-a"]}))
+    for _ in range(3):
+        asw.session_reconcile_pass(
+            False,
+            2,
+            daemon_reachable=True,
+            live_ids={"sid-a"},
+            now=now,
+            pids_by_sid={"sid-a": 4242},
+        )
+    assert stops == [] and posts == []
+    assert not state_path.exists()  # ("clear", 0) drops the episode state
+
+
+def test_session_reconcile_stale_ok_turn_still_accumulates_to_stop(isolated_registry, monkeypatch):
+    # Plan pin (i), the narrowing's central new semantics: ONE ok turn OLDER
+    # than the idle window + fresher failed turns -> the contributed age is
+    # now - ok_end_ts (STALE) -> idle stays True -> stop on tick 2. Kills
+    # the "ANY ok turn in the tail => keep" mis-implementation, which would
+    # pass pins (a)-(h) and silently restore an unbounded shield for slow
+    # storms with an occasional partially-ok wake.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
+    now = 1_000_000.0
+    idle_s = asw._session_idle_s()
+    tail = (
+        _t2117_ok_turn(now - 3 * idle_s)
+        + _t2117_failed_turn(now - 120)
+        + _t2117_failed_turn(now - 60)
+    )
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, max_bytes=0: list(tail))
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", lambda pid, now: (60.0, None))
+    for _ in range(2):
+        asw.session_reconcile_pass(
+            False,
+            2,
+            daemon_reachable=True,
+            live_ids={"sid-a"},
+            now=now,
+            pids_by_sid={"sid-a": 4242},
+        )
+    assert stops == ["sid-a"]
+    assert posts == [(42, "session-reconcile-stop")]
+
+
+@pytest.mark.parametrize("shield", ["keep-running", "followup", "respawn", "pod"])
+def test_session_reconcile_shields_short_circuit_churn_tail(isolated_registry, monkeypatch, shield):
+    # Plan pin (g): each of the four decide_session_reconcile shields still
+    # short-circuits AHEAD of a churn-only tail — a churn verdict must never
+    # bypass keep-running / follow-up / respawn / RUNNING-pod.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    pods = [(42, "pod-id-1", "pod-42", {})] if shield == "pod" else []
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed", pods=pods)
+    if shield == "keep-running":
+        monkeypatch.setattr(asw, "_task_keep_running", lambda issue: True)
+    elif shield == "followup":
+        monkeypatch.setattr(asw, "_task_session_followup_active", lambda issue, **_k: True)
+    elif shield == "respawn":
+        monkeypatch.setattr(asw, "_task_recovery_respawn_active", lambda issue, **_k: True)
+    tail = [r for _ in range(3) for r in _t2117_failed_turn()]
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, max_bytes=0: list(tail))
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", lambda pid, now: (60.0, None))
+    for _ in range(3):
+        asw.session_reconcile_pass(
+            False,
+            2,
+            daemon_reachable=True,
+            live_ids={"sid-a"},
+            now=1_000_000.0,
+            pids_by_sid={"sid-a": 4242},
+        )
+    assert stops == [] and posts == []
+
+
+def test_session_reconcile_kill_switch_reverts_to_mtime_probe(isolated_registry, monkeypatch):
+    # Plan pin (f): EPM_SESSION_RECONCILE_TRANSCRIPT_WORK_PROBE=0 reverts
+    # the call site to the pure-mtime probe: the work classifier never reads
+    # the tail (raise-sentinel), and a churn-storming session with a fresh
+    # mtime is kept indefinitely — exact pre-#2117 / #1670 behavior.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    monkeypatch.setenv("EPM_SESSION_RECONCILE_TRANSCRIPT_WORK_PROBE", "0")
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
+
+    def _boom(pid, max_bytes=0):
+        raise AssertionError("work probe must not read the tail under the kill switch")
+
+    monkeypatch.setattr(asw, "_transcript_tail_rows", _boom)
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", lambda pid, now: (60.0, None))
+    for _ in range(3):
+        asw.session_reconcile_pass(
+            False,
+            2,
+            daemon_reachable=True,
+            live_ids={"sid-a"},
+            now=1_000_000.0,
+            pids_by_sid={"sid-a": 4242},
+        )
+    assert stops == [] and posts == []
+
+    # And the mtime probe's stale/unresolvable direction still stops —
+    # byte-equivalent to the pre-#2117 call site on both polarities.
+    monkeypatch.setattr(
+        asw, "_transcript_idle_age_s", lambda pid, now: (None, "transcript unresolvable")
+    )
+    for _ in range(2):
+        asw.session_reconcile_pass(
+            False,
+            2,
+            daemon_reachable=True,
+            live_ids={"sid-a"},
+            now=1_000_000.0,
+            pids_by_sid={"sid-a": 4242},
+        )
+    assert stops == ["sid-a"]
+
+
+def test_churn_only_stop_respects_dry_run(isolated_registry, monkeypatch):
+    # Plan pin (h), the dry-run thread: a churn-only tail under dry_run=True
+    # REACHES the stop branch (state seeded at missed=1, threshold 2) but
+    # executes NO stop — _stop_session is invoked with dry_run=True only
+    # (the real function no-ops and returns False there), no marker is
+    # posted, no stopped_at is recorded, and the state is not mutated. A
+    # broken dry-run kwarg thread would turn the `--dry-run` smoke into a
+    # real fleet mutation (#596/#607/#633).
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
+    calls: list[tuple[str, bool]] = []
+    monkeypatch.setattr(
+        asw,
+        "_stop_session",
+        lambda sid, dry_run: calls.append((sid, dry_run)) or (not dry_run),
+    )
+    tail = [r for _ in range(3) for r in _t2117_failed_turn()]
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, max_bytes=0: list(tail))
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", lambda pid, now: (60.0, None))
+    state_path = isolated_registry / "session-reconcile-42.json"
+    state_path.write_text(json.dumps({"missed": 1, "alerted": False, "sids": ["sid-a"]}))
+    asw.session_reconcile_pass(
+        True,  # dry_run
+        2,
+        daemon_reachable=True,
+        live_ids={"sid-a"},
+        now=1_000_000.0,
+        pids_by_sid={"sid-a": 4242},
+    )
+    assert calls == [("sid-a", True)]  # stop branch reached, dry_run threaded
+    assert stops == [] and posts == []  # no real stop, no marker
+    state = json.loads(state_path.read_text())
+    assert state.get("stopped_at") in (None, {})  # nothing recorded
+    assert state["missed"] == 1  # dry-run never persists state
+
+
+def test_transcript_work_probe_documented_and_killswitch_pinned():
+    # Plan §3.3 durability pin: the kill-switch literal appears BOTH in the
+    # watcher source and in background-automation.md's reconcile-pass prose,
+    # so a later prose edit that silently drops the documented knob fails
+    # loud.
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    src = (root / "scripts" / "autonomous_session_watch.py").read_text()
+    assert "EPM_SESSION_RECONCILE_TRANSCRIPT_WORK_PROBE" in src
+    rule = (root / ".claude" / "rules" / "background-automation.md").read_text()
+    anchor = "Reconcile pass (auto-stop of parked sessions)"
+    assert anchor in rule
+    reconcile_prose = rule.split(anchor, 1)[1].split("**Keep-running", 1)[0]
+    assert "EPM_SESSION_RECONCILE_TRANSCRIPT_WORK_PROBE" in reconcile_prose
 
 
 def test_session_reconcile_respawn_skip_resets_miss_counter(isolated_registry, monkeypatch):
@@ -15285,6 +15767,224 @@ def test_repquota_attribution_parses_per_project_rows(monkeypatch):
         lambda cmd, *a, **k: _subprocess.CompletedProcess(cmd, 1, stdout="", stderr="no prjquota"),
     )
     assert asw._top_issue_caches_by_project_quota("/mnt/eps-data") is None
+
+
+# ── Staging-root attribution (#2095 §4.3/§4.6) ────────────────────────────────
+# _staging_top_caches attributes the /mnt/eps-data/$USER staging dirs (read-only
+# du; NEVER a reap) and merges into _data_disk_top_caches' repquota-None
+# fallback. Kill switches deliberately do NOT disable it (triage channel).
+
+
+def _make_staging_root(tmp_path):
+    """Fake data-disk root: <tmp>/<user>/ holding two staging DIRS of known
+    relative size, a dot-dir, a non-issue dir, and a top-level FILE (which
+    attribution must skip — dir-scoped, #2095 §4.4)."""
+    import getpass
+
+    user_root = tmp_path / getpass.getuser()
+    big = user_root / "issue123_hf_dl"
+    big.mkdir(parents=True)
+    (big / "blob.bin").write_bytes(b"x" * 65536)
+    small = user_root / "issue_742_restage"
+    small.mkdir()
+    (small / "t.pt").write_bytes(b"y" * 4096)
+    hub = user_root / "huggingface-cache"  # non-issue dir: VISIBLE in attribution
+    hub.mkdir()
+    (hub / "z.bin").write_bytes(b"z" * 2048)
+    dot = user_root / ".hf_i1092_operator"  # dot-dir: VISIBLE in attribution
+    dot.mkdir()
+    (dot / "d.bin").write_bytes(b"d" * 1024)
+    (user_root / "issue2091_p3_judge.log").write_bytes(b"L" * 999999)  # FILE: skipped
+    return user_root
+
+
+def test_staging_top_caches_attributes_fake_root(tmp_path, monkeypatch):
+    # Fake-root attribution: every top-level DIR (any name — huggingface-cache
+    # and dot-dirs included) is du'd and size-sorted; top-level FILES are never
+    # attributed even when huge (dir-scoped).
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_STAGING_CACHE_ROOTS", raising=False)
+    _make_staging_root(tmp_path)
+
+    top = asw._staging_top_caches(str(tmp_path), top_n=10)
+
+    named = [p for p, _ in top]
+    assert any(p.endswith("issue123_hf_dl") for p in named)
+    assert any(p.endswith("issue_742_restage") for p in named)
+    assert any(p.endswith("huggingface-cache") for p in named)  # visible, not reaped
+    assert any(p.endswith(".hf_i1092_operator") for p in named)  # visible, not reaped
+    assert not any(p.endswith("issue2091_p3_judge.log") for p in named)  # FILE skipped
+    sizes = [b for _, b in top]
+    assert sizes == sorted(sizes, reverse=True)  # size-sorted desc
+    # The big dir outranks the small one (du includes the 64 KiB blob).
+    assert named[0].endswith("issue123_hf_dl")
+
+
+def test_staging_top_caches_dry_run_thread(tmp_path, monkeypatch):
+    # NAMED §4.6 row: dry_run=True ⇒ [] with ZERO subprocess.run (the #681 r3
+    # zero-observational-side-effect contract, threaded onto the NEW path);
+    # dry_run=False against the same fake root still attributes.
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_STAGING_CACHE_ROOTS", raising=False)
+    _make_staging_root(tmp_path)
+
+    calls: list[list[str]] = []
+    real_run = _subprocess.run
+
+    def recording_run(cmd, *a, **k):
+        calls.append(cmd)
+        return real_run(cmd, *a, **k)
+
+    monkeypatch.setattr(asw.subprocess, "run", recording_run)
+
+    assert asw._staging_top_caches(str(tmp_path), dry_run=True) == []
+    assert calls == []  # ZERO subprocess.run under dry-run
+
+    top = asw._staging_top_caches(str(tmp_path), dry_run=False)
+    assert calls, "the real per-entry du must run under dry_run=False"
+    assert any(p.endswith("issue123_hf_dl") for p, _ in top)
+
+
+def test_staging_top_caches_env_override_root(tmp_path, monkeypatch):
+    # EPM_STAGING_CACHE_ROOTS (colon-separated; non-dirs dropped) OVERRIDES the
+    # default <dd_path>/<user> root — the default root must NOT be scanned.
+    import autonomous_session_watch as asw
+
+    default_root = _make_staging_root(tmp_path)  # would attribute if scanned
+    override = tmp_path / "override-root"
+    ovr_dir = override / "issue999_stage"
+    ovr_dir.mkdir(parents=True)
+    (ovr_dir / "blob.bin").write_bytes(b"o" * 8192)
+    missing = tmp_path / "does-not-exist"
+    monkeypatch.setenv("EPM_STAGING_CACHE_ROOTS", f"{override}:{missing}")
+
+    top = asw._staging_top_caches(str(tmp_path), top_n=10)
+
+    named = [p for p, _ in top]
+    assert any(p.endswith("issue999_stage") for p in named)
+    # Nothing from the default per-user root leaks in under the override.
+    assert not any(str(default_root) in p for p in named)
+
+
+def test_staging_top_caches_survives_kill_switches(tmp_path, monkeypatch):
+    # KILL-SWITCH SCOPE pin (#2095 §4.3, critic r1 Should-Fix 3): the sweep
+    # kill switches do NOT disable the READ-ONLY attribution — it is the
+    # triage channel a human needs exactly while the sweep is off.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_STAGING_CACHE_ROOTS", raising=False)
+    _make_staging_root(tmp_path)
+    monkeypatch.setenv("EPM_SKIP_STAGING_CACHE_SWEEP", "1")
+    monkeypatch.setenv("EPM_SKIP_NONCANONICAL_CACHE_SWEEP", "1")
+
+    top = asw._staging_top_caches(str(tmp_path), top_n=10)
+
+    assert any(p.endswith("issue123_hf_dl") for p, _ in top), (
+        "attribution rows must survive EPM_SKIP_STAGING_CACHE_SWEEP=1"
+    )
+
+
+def test_staging_top_caches_missing_root_empty(tmp_path, monkeypatch):
+    # No per-user dir under dd_path and no override ⇒ [] (fail-soft, no crash).
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_STAGING_CACHE_ROOTS", raising=False)
+    assert asw._staging_top_caches(str(tmp_path)) == []
+
+
+def test_data_disk_top_caches_merges_staging_in_du_fallback(monkeypatch):
+    # In the repquota-None FALLBACK branch, _data_disk_top_caches returns the
+    # merged, size-sorted top-N of the du glob attribution AND the staging
+    # attribution (#2095 §4.3) — capped at VM_DISK_SUBFLOOR_TOP_N.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_top_issue_caches_by_project_quota", lambda dd, *, dry_run: None)
+    monkeypatch.setattr(
+        asw,
+        "_top_issue_cache_paths",
+        lambda *, dry_run: [("data/issue_700/hf_dl", 100), ("data/issue_701/g1_dl", 50)],
+    )
+    monkeypatch.setattr(
+        asw,
+        "_staging_top_caches",
+        lambda dd, *, dry_run: [
+            ("/mnt/eps-data/u/issue_742_restage", 900),
+            ("/mnt/eps-data/u/huggingface-cache", 10),
+        ],
+    )
+
+    top = asw._data_disk_top_caches("/mnt/eps-data")
+
+    assert len(top) == asw.VM_DISK_SUBFLOOR_TOP_N  # merged then capped (3)
+    assert top[0] == ("/mnt/eps-data/u/issue_742_restage", 900)  # staging outranks
+    assert top[1] == ("data/issue_700/hf_dl", 100)
+    sizes = [b for _, b in top]
+    assert sizes == sorted(sizes, reverse=True)
+
+
+def test_data_disk_top_caches_repquota_branch_skips_staging(monkeypatch):
+    # When repquota attribution SUCCEEDS, its rows are returned as-is — the
+    # staging merge lives ONLY in the fallback branch (#2095 §4.3).
+    import autonomous_session_watch as asw
+
+    quota_rows = [("issue-658 (project quota, /mnt/eps-data)", 100 * 2**30)]
+    monkeypatch.setattr(
+        asw, "_top_issue_caches_by_project_quota", lambda dd, *, dry_run: quota_rows
+    )
+    monkeypatch.setattr(
+        asw,
+        "_staging_top_caches",
+        lambda dd, *, dry_run: pytest.fail("staging attribution ran on the repquota branch"),
+    )
+    monkeypatch.setattr(
+        asw,
+        "_top_issue_cache_paths",
+        lambda *, dry_run: pytest.fail("du glob attribution ran on the repquota branch"),
+    )
+
+    assert asw._data_disk_top_caches("/mnt/eps-data") == quota_rows
+
+
+def test_data_disk_top_caches_dry_run_zero_subprocess_with_staging_leg(tmp_path, monkeypatch):
+    # End-to-end dry-run thread through the PRODUCTION helpers (no stubs): with
+    # a real staging root present, dry_run=True still returns [] with ZERO
+    # subprocess.run — repquota → None, du → [], staging → [] (#681 r3).
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_STAGING_CACHE_ROOTS", raising=False)
+    _make_staging_root(tmp_path)
+    monkeypatch.setattr(
+        asw.subprocess,
+        "run",
+        lambda *a, **k: pytest.fail("subprocess.run called under dry_run=True"),
+    )
+
+    assert asw._data_disk_top_caches(str(tmp_path), dry_run=True) == []
+
+
+def test_main_data_disk_only_flag(isolated_registry, monkeypatch):
+    # --data-disk-only runs JUST the data-disk pass and exits (mirrors
+    # test_main_stale_blocked_only_flag / --gc-only; #2095 §4.3).
+    import autonomous_session_watch as asw
+
+    calls: list[str] = []
+    monkeypatch.setattr(asw, "data_disk_pass", lambda *a, **kw: calls.append("data_disk"))
+    monkeypatch.setattr(
+        asw, "vm_disk_pass", lambda *a, **kw: pytest.fail("ran another pass under --only")
+    )
+    monkeypatch.setattr(
+        asw, "gc_pass", lambda *a, **kw: pytest.fail("ran another pass under --only")
+    )
+    monkeypatch.setattr(
+        asw, "capacity_retry_pass", lambda *a, **kw: pytest.fail("ran another pass under --only")
+    )
+    rc = asw.main(["--data-disk-only", "--dry-run"])
+    assert rc == 0
+    assert calls == ["data_disk"]
 
 
 # ── Data-disk pass — PRODUCTION call site (#681 round-2 BLOCKER #1) ───────────
@@ -25712,3 +26412,816 @@ def test_codex_outage_docstring_pass_count_lint_stays_green():
 
     errors = workflow_lint.check_asw_docstring_pass_count()
     assert errors == [], f"docstring pass-count lint fails after the edit: {errors!r}"
+
+
+# ─── #2060 never-ran escalation leg (incident #1947) ─────────────────────────
+
+
+T0_ISO_2060 = "2026-08-01T00:00:00Z"
+
+
+class _NeverRanRig:
+    """Recorded channels + tick driver for the #2060 never-ran leg tests."""
+
+    def __init__(self, asw, t0: float):
+        self.asw = asw
+        self.t0 = t0
+        self.markers: list[tuple[int, str, str]] = []
+        self.pushes: list[str] = []
+        self.sidecar: list[dict] = []
+        self.stops: list = []
+        self.wedge_calls: list = []
+
+    def info(self, *, name="pod-2060", pod_id="p2060", portless=True, created_at=T0_ISO_2060):
+        from runpod_api import PodInfo
+
+        return PodInfo(
+            pod_id=pod_id,
+            name=name,
+            desired_status="RUNNING",
+            gpu_count=1,
+            gpu_type_id="NVIDIA H100 80GB HBM3",
+            ssh_host=None if portless else "1.2.3.4",
+            ssh_port=None if portless else 12345,
+            created_at=created_at,
+        )
+
+    def tick(self, t: float, status: str, info, running: set[str] | None = None) -> bool:
+        return self.asw._maybe_handle_runpod_wedge(
+            2060,
+            status,
+            info,
+            self.t0 + t,
+            dry_run=False,
+            threshold=2,
+            issue_running_pod_ids=running if running is not None else {info.pod_id},
+        )
+
+    def nr_state(self) -> dict:
+        import autonomous_session_watch as asw
+
+        state = asw._load_pod_safety_state(2060)
+        nr = state.get("nr_pod")
+        return nr if isinstance(nr, dict) else {}
+
+
+@pytest.fixture
+def never_ran_rig(isolated_registry, monkeypatch):
+    """#2060 rig: real state persistence (isolated registry dir), stubbed
+    emission channels (the real marker poster shells out to task.py; the real
+    push execs telegram_push.sh), stubbed keep-running tag read, and a
+    RECORDER for _process_wedged_pod (the wedge arm is byte-untouched by
+    #2060 and pinned by its own tests — here only the ROUTING matters)."""
+    import autonomous_session_watch as asw
+
+    rig = _NeverRanRig(asw, asw._parse_event_ts(T0_ISO_2060))
+    rig.keep_running = True
+    monkeypatch.setattr(asw, "_task_keep_running", lambda issue: rig.keep_running)
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, *, label: rig.markers.append((issue, note, label)),
+    )
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: rig.pushes.append(msg) or True)
+    monkeypatch.setattr(
+        asw,
+        "_append_keep_running_wedged_event",
+        lambda payload, dry_run: rig.sidecar.append(payload),
+    )
+    monkeypatch.setattr(
+        asw, "_process_wedged_pod", lambda *a, **k: rig.wedge_calls.append(a) or None
+    )
+    monkeypatch.setattr(asw, "_stop_pod", lambda *a, **k: rig.stops.append(a) or True)
+    return rig
+
+
+@pytest.mark.parametrize("status", ["running", "awaiting_promotion"])
+def test_never_ran_leg_escalates_once_per_episode_then_realerts(never_ran_rig, status):
+    """T8 (AC6): matured (>= grace) + confirmed (>= 2 ticks) + tagged ->
+    exactly one marker+sidecar+push on the episode-opening alert; deduped
+    until the re-alert cadence; re-alert repeats push+sidecar but NOT the
+    marker. Parametrized over status (r2-MF1): the dedicated
+    awaiting_promotion node pins the #1947 incident shape — a tagged
+    DONE-status pod, which the MF6 split routes AWAY from the wedge arm."""
+    rig = never_ran_rig
+    info = rig.info()
+
+    handled = rig.tick(300, status, info)  # ticks=1: below threshold
+    assert rig.markers == [] and rig.pushes == [] and rig.sidecar == []
+    rig.tick(900, status, info)  # ticks=2: confirmed but age < grace (2700s)
+    assert rig.markers == [] and rig.pushes == []
+
+    rig.tick(2700, status, info)  # age == grace: FIRES (boundary parity)
+    assert len(rig.markers) == 1
+    assert len(rig.pushes) == 1
+    assert len(rig.sidecar) == 1
+    _issue, note, label = rig.markers[0]
+    assert "[autonomous_session_watch:runpod-never-ran-keep-running]" in note
+    assert "pod-2060" in note
+    assert "terminate --issue 2060" in note and "--approve" in note
+    assert label == "runpod-never-ran-keep-running"
+    assert rig.sidecar[0]["kind"] == "never-ran-keep-running-escalate"
+    assert rig.sidecar[0]["leg"] == "never-ran"
+    assert rig.sidecar[0]["pod_id"] == "p2060"
+    assert "pod-2060" in rig.pushes[0]
+
+    rig.tick(3300, status, info)  # inside the 6h cadence: deduped
+    assert len(rig.markers) == 1 and len(rig.pushes) == 1
+
+    rig.tick(2700 + 6 * 3600, status, info)  # cadence boundary: re-alert
+    assert len(rig.markers) == 1  # marker once per episode
+    assert len(rig.pushes) == 2
+    assert len(rig.sidecar) == 2
+    assert rig.sidecar[1]["action"] == "re-alerted"
+
+    # Routing is UNCHANGED by the leg: a running-class wedged pod is handled
+    # by the wedge arm (True; recorder called every tick); a DONE-status
+    # wedged pod falls through to the status-class arm (False, MF6).
+    if status == "running":
+        assert handled is True
+        assert len(rig.wedge_calls) == 5
+    else:
+        assert handled is False
+        assert rig.wedge_calls == []
+
+
+def test_never_ran_leg_never_stops_or_terminates(never_ran_rig, monkeypatch):
+    """T9 (AC6 hard invariant): a full alert-firing episode never touches
+    _stop_pod, never shells out (subprocess recorder raises on any call),
+    and fires no GraphQL terminate — the leg is structurally incapable of
+    destruction (escalate-only)."""
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    forbidden: list = []
+
+    def _no_subprocess(*a, **k):
+        forbidden.append(a)
+        raise AssertionError(f"never-ran leg must not shell out: {a!r}")
+
+    monkeypatch.setattr(_subprocess, "run", _no_subprocess)
+    rig = never_ran_rig
+    info = rig.info()
+    for t in (300, 900, 2700, 3300):
+        rig.tick(t, "awaiting_promotion", info)
+
+    assert len(rig.markers) == 1  # the alert DID fire...
+    assert rig.stops == []  # ...and nothing was stopped
+    assert forbidden == []  # no subprocess call of any kind
+    # In-process pin: the leg's module namespace holds no terminate binding
+    # to call even in principle (terminate_pod is not imported by the watcher).
+    assert not hasattr(asw, "terminate_pod")
+
+
+def test_never_ran_leg_fails_toward_silence(never_ran_rig):
+    """T10 (AC7): each missing/blip signal produces NO escalation —
+    created_at None/garbage, first observation past the slop window, and a
+    port blip (HAD a runtime -> lost it) which permanently disqualifies the
+    incarnation."""
+    rig = never_ran_rig
+
+    # (a) created_at absent / unparseable: silent forever.
+    for created in (None, "not-a-timestamp"):
+        info = rig.info(pod_id=f"pX-{created}", created_at=created)
+        for t in (300, 900, 2700, 30000):
+            rig.tick(t, "awaiting_promotion", info)
+        assert rig.markers == [] and rig.pushes == [] and rig.sidecar == []
+        assert rig.nr_state() == {}
+
+    # (b) first observation later than the slop window: silent forever.
+    info_late = rig.info(pod_id="pLate")
+    for t in (1500, 2700, 30000):  # first obs lag 1500 > 1200 slop
+        rig.tick(t, "awaiting_promotion", info_late)
+    assert rig.markers == [] and rig.pushes == []
+    assert rig.nr_state() == {}
+
+    # (c) a port blip DELETES the entry; the post-blip re-observation is past
+    # the slop window, so a runtime-lost pod can never fire this leg (AC7).
+    info_port = rig.info(portless=False)
+    info_portless = rig.info()
+    rig.tick(300, "awaiting_promotion", info_portless)  # ticks=1
+    assert "p2060" in rig.nr_state()
+    rig.tick(900, "awaiting_promotion", info_port)  # port appeared -> entry deleted
+    assert rig.nr_state() == {}
+    for t in (1500, 2800, 30000):  # portless again, but first-obs lag > slop
+        rig.tick(t, "awaiting_promotion", info_portless)
+    assert rig.markers == [] and rig.pushes == [] and rig.sidecar == []
+
+
+def test_never_ran_leg_kill_switch_is_inert(never_ran_rig, monkeypatch):
+    """T10 (kill switch): EPM_DISABLE_NEVER_RAN_ESCALATION=1 short-circuits
+    the leg entirely — no emissions AND no state accumulation."""
+    monkeypatch.setenv("EPM_DISABLE_NEVER_RAN_ESCALATION", "1")
+    rig = never_ran_rig
+    info = rig.info()
+    for t in (300, 900, 2700, 30000):
+        rig.tick(t, "awaiting_promotion", info)
+    assert rig.markers == [] and rig.pushes == [] and rig.sidecar == []
+    assert rig.nr_state() == {}
+
+
+def test_never_ran_leg_untagged_pod_skips_but_keeps_counting(never_ran_rig):
+    """T10 (tag absent): an untagged pod never alerts (the existing arms own
+    untagged pods) but the counter persists — a later tag add escalates
+    without re-maturing."""
+    rig = never_ran_rig
+    rig.keep_running = False
+    info = rig.info()
+    for t in (300, 900, 2700):
+        rig.tick(t, "awaiting_promotion", info)
+    assert rig.markers == [] and rig.pushes == []
+    assert rig.nr_state()["p2060"]["portless_ticks"] == 3
+
+    rig.keep_running = True
+    rig.tick(3300, "awaiting_promotion", info)  # already matured: fires now
+    assert len(rig.markers) == 1
+
+
+@pytest.mark.parametrize("status", ["running", "awaiting_promotion"])
+def test_never_ran_leg_multi_pod_state_is_per_pod(never_ran_rig, status):
+    """T11 (AC8, MF2 remedy): two pods of one issue interleaved per tick —
+    the healthy sibling's saves never reset the portless pod's counter
+    (state is the per-(issue, pod_id) nr_pod sub-dict, persisted through the
+    REAL _save_pod_safety_state path), and the GC drops entries for pods no
+    longer in the RUNNING set."""
+    import autonomous_session_watch as asw
+
+    rig = never_ran_rig
+    pod_a = rig.info(name="pod-2060", pod_id="pA")
+    pod_b = rig.info(name="pod-2060-b", pod_id="pB", portless=False)
+    running = {"pA", "pB"}
+
+    for t in (300, 900):
+        rig.tick(t, status, pod_a, running=running)
+        rig.tick(t + 1, status, pod_b, running=running)  # healthy sibling save
+    assert rig.markers == []
+    assert rig.nr_state()["pA"]["portless_ticks"] == 2
+
+    rig.tick(2700, status, pod_a, running=running)  # matured: fires
+    rig.tick(2701, status, pod_b, running=running)
+    assert len(rig.markers) == 1
+    assert rig.sidecar[0]["pod_id"] == "pA"
+    assert set(rig.nr_state()) == {"pA"}  # healthy pod never grew an entry
+
+    # GC: a stale third pod's entry (real save path) is dropped once it is
+    # no longer in the issue's RUNNING-pod set.
+    prev = asw._load_pod_safety_state(2060)
+    asw._save_pod_safety_state(
+        2060,
+        "pA",
+        missed=0,
+        alerted=False,
+        last_progress_ts=None,
+        nr_pod_entry=(
+            "pStale",
+            {"first_obs_ts": rig.t0, "created_ts": rig.t0, "portless_ticks": 5},
+        ),
+        prev=prev,
+    )
+    assert set(rig.nr_state()) == {"pA", "pStale"}
+    rig.tick(3300, status, pod_a, running=running)  # pStale not running -> GC'd
+    assert set(rig.nr_state()) == {"pA"}
+
+    # Suffixed sibling naming: a suffixed pod's alert carries the surgical
+    # --name-suffix terminate form (checked via a fresh suffixed episode).
+    pod_c = rig.info(name="pod-2060-c", pod_id="pC")
+    for t in (300, 900, 2700):
+        rig.tick(t, status, pod_c, running={"pA", "pC"})
+    assert any("--name-suffix c" in note for _i, note, _l in rig.markers[1:])
+
+
+def test_decide_never_ran_escalation_table():
+    """T12: pure decision table — fail-toward-silence branches, boundary
+    parity (ticks == threshold fires; age == grace fires; lag == slop
+    passes; re-alert at >= cadence), dedup arithmetic, and precedence
+    (kill switch checked first)."""
+    from autonomous_session_watch import decide_never_ran_escalation as decide
+
+    base = dict(
+        portless_ticks=2,
+        age_s=2700.0,
+        grace_s=2700.0,
+        first_obs_lag_s=300.0,
+        obs_slop_s=1200.0,
+        created_ts_ok=True,
+        kill_switch=False,
+        threshold=2,
+        last_alert_ts=None,
+        realert_s=6 * 3600.0,
+        now=100_000.0,
+    )
+
+    # Matured + confirmed + episode fresh: FIRES (both boundaries at equality).
+    assert decide(**base) == ("alert", {"reason": "episode-open"})
+    assert decide(**{**base, "first_obs_lag_s": 1200.0}) == (
+        "alert",
+        {"reason": "episode-open"},
+    )  # lag == slop passes (only > slop clears)
+
+    # Precedence: the kill switch wins over every clear branch.
+    assert decide(**{**base, "kill_switch": True, "created_ts_ok": False}) == (
+        "keep",
+        {"reason": "kill-switch"},
+    )
+
+    # Fail-toward-silence CLEAR branches (entry deleted).
+    assert decide(**{**base, "created_ts_ok": False})[0] == "clear"
+    assert decide(**{**base, "age_s": None})[0] == "clear"
+    assert decide(**{**base, "age_s": -1.0})[0] == "clear"
+    assert decide(**{**base, "first_obs_lag_s": None})[0] == "clear"
+    assert decide(**{**base, "first_obs_lag_s": -1.0})[0] == "clear"
+    assert decide(**{**base, "first_obs_lag_s": 1201.0}) == (
+        "clear",
+        {"reason": "unobserved-window"},
+    )
+
+    # KEEP branches (counter holds, nothing emitted).
+    assert decide(**{**base, "portless_ticks": "2"}) == ("keep", {"reason": "ticks-unreadable"})
+    assert decide(**{**base, "portless_ticks": True}) == ("keep", {"reason": "ticks-unreadable"})
+    assert decide(**{**base, "portless_ticks": 1}) == ("keep", {"reason": "below-threshold"})
+    assert decide(**{**base, "age_s": 2699.0}) == ("keep", {"reason": "grace"})
+
+    # Dedup / re-alert arithmetic: < cadence deduped, == cadence re-alerts.
+    assert decide(**{**base, "last_alert_ts": 100_000.0 - 21599.0}) == (
+        "keep",
+        {"reason": "alert-deduped"},
+    )
+    assert decide(**{**base, "last_alert_ts": 100_000.0 - 21600.0}) == (
+        "alert",
+        {"reason": "re-alert"},
+    )
+
+
+def test_never_ran_state_backcompat_and_sentinel_registered():
+    """Back-compat micro-pins: a pre-#2060 state file (no nr_pod) reads fresh
+    defaults, and the marker sentinel is a _WATCHER_NOTE_SENTINELS member so
+    the leg's own marker never counts as task progress (#1667 lesson)."""
+    import autonomous_session_watch as asw
+
+    nr_all, raw, first_obs, created, ticks, last_alert = asw._nr_pod_prev_fields({}, "p1")
+    assert (nr_all, raw, first_obs, created, ticks, last_alert) == ({}, None, None, None, 0, None)
+    assert asw._NEVER_RAN_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
+
+
+# ─── #2084: cross-generation no-progress escalation (stalled fence-spawn arm) ─
+# ESCALATE-ONLY observability arm: an advancement-clear-EXEMPT, progress-keyed
+# counter (xgen_respawns) bumps at every fence-spawn fire with no intervening
+# real (non-watcher) marker; decide_stalled_xgen_escalation fires once per
+# EPM_STALLED_XGEN_ESCALATE_AFTER band (marker + push + sidecar). The respawn
+# lane's behavior is byte-for-byte unchanged (no stop / status mutation /
+# respawn suppression / cap consumption) — pinned by the hard-invariant test.
+
+
+def _read_stalled_state_file(reg_dir, issue):
+    """Return the parsed stalled-<issue>.json payload ({} when absent)."""
+    path = reg_dir / f"stalled-{issue}.json"
+    return json.loads(path.read_text()) if path.is_file() else {}
+
+
+def _read_xgen_events(reg_dir):
+    """Return the parsed rows of the #2084 stalled-xgen sidecar ([] when the
+    file was never written)."""
+    path = reg_dir / "stalled-xgen-events.jsonl"
+    if not path.is_file():
+        return []
+    return [json.loads(ln) for ln in path.read_text().splitlines() if ln.strip()]
+
+
+@pytest.fixture
+def xgen_recorder(monkeypatch):
+    """The stalled_recorder shape with NOTE capture: markers record
+    (issue, label, note) so the tests can assert the #2084 sentinel + note
+    semantics, not just the label."""
+    import autonomous_session_watch as asw
+
+    stops: list[str] = []
+    spawns: list[tuple[int, float]] = []
+    markers: list[tuple[int, str, str]] = []
+
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: stops.append(sid) or True)
+    monkeypatch.setattr(
+        asw,
+        "_respawn_stalled_session",
+        lambda issue, cap, dry_run: spawns.append((issue, cap)) or "spawned",
+    )
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: markers.append((issue, label, note)),
+    )
+    monkeypatch.setattr(asw, "_provision_in_flight_reason", lambda issue, now: None)
+    monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: False)
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: True)
+    return stops, spawns, markers
+
+
+def _patch_xgen_signals(monkeypatch, asw, *, events, self_ts):
+    """Patch the stalled-pass I/O signals with MUTABLE containers: ``events``
+    (list — the test appends rows to simulate markers landing between
+    respawns) and ``self_ts`` ({"v": str} — the test advances it to simulate
+    a respawned generation's fresh boot self-report)."""
+    age = STALLED_WINDOW_S + 60
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
+    monkeypatch.setattr(asw, "_self_report_age_seconds", lambda issue, now: (age, self_ts["v"]))
+    monkeypatch.setattr(asw, "_task_events", lambda issue: list(events))
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
+
+
+def test_decide_stalled_xgen_threshold_and_band_semantics():
+    """Predicate units: below-threshold quiet, threshold fire, once-per-band
+    dedup (quiet at N+1..2N-1), 2N band re-fire, kill switch always quiet."""
+    import autonomous_session_watch as asw
+
+    decide = asw.decide_stalled_xgen_escalation
+    # Below threshold: quiet.
+    for n in range(4):
+        verdict, _ = decide(kill_switch=False, xgen_respawns=n, threshold=4, escalated_at=0)
+        assert verdict == "quiet", n
+    # At threshold: escalate.
+    assert decide(kill_switch=False, xgen_respawns=4, threshold=4, escalated_at=0)[0] == "escalate"
+    # Band dedup after an escalation at 4: quiet at 5..7, re-fire at 8 (= 2N).
+    for n in (5, 6, 7):
+        assert decide(kill_switch=False, xgen_respawns=n, threshold=4, escalated_at=4)[0] == "quiet"
+    assert decide(kill_switch=False, xgen_respawns=8, threshold=4, escalated_at=4)[0] == "escalate"
+    # A count past the band boundary (missed fire, e.g. a crash between
+    # persist and channels) still fires — the predicate is >=, not ==.
+    assert decide(kill_switch=False, xgen_respawns=9, threshold=4, escalated_at=4)[0] == "escalate"
+    # Kill switch: always quiet, any count.
+    for n in (4, 8, 100):
+        verdict, reason = decide(kill_switch=True, xgen_respawns=n, threshold=4, escalated_at=0)
+        assert verdict == "quiet" and "EPM_DISABLE_STALLED_XGEN_ESCALATION" in reason
+
+
+def test_stalled_xgen_threshold_env_default_and_clamp(monkeypatch):
+    """EPM_STALLED_XGEN_ESCALATE_AFTER: unset/malformed -> default 4; a
+    parsed value below 2 CLAMPS to 2 (never a per-respawn alert); >= 2 wins."""
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_STALLED_XGEN_ESCALATE_AFTER", raising=False)
+    assert asw._stalled_xgen_escalate_after() == asw.STALLED_XGEN_ESCALATE_AFTER_DEFAULT == 4
+    monkeypatch.setenv("EPM_STALLED_XGEN_ESCALATE_AFTER", "garbage")
+    assert asw._stalled_xgen_escalate_after() == 4
+    for raw, expected in (("1", 2), ("0", 2), ("-3", 2), ("2", 2), ("7", 7)):
+        monkeypatch.setenv("EPM_STALLED_XGEN_ESCALATE_AFTER", raw)
+        assert asw._stalled_xgen_escalate_after() == expected, raw
+    # Kill switch parsing (default armed).
+    monkeypatch.delenv("EPM_DISABLE_STALLED_XGEN_ESCALATION", raising=False)
+    assert asw._stalled_xgen_escalation_enabled() is True
+    monkeypatch.setenv("EPM_DISABLE_STALLED_XGEN_ESCALATION", "1")
+    assert asw._stalled_xgen_escalation_enabled() is False
+
+
+def test_stalled_xgen_sentinel_in_watcher_note_sentinels():
+    """The escalation marker must never reset the very real-progress clock
+    the counter is keyed on (anti-liveness): membership is load-bearing."""
+    import autonomous_session_watch as asw
+
+    assert asw._STALLED_XGEN_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
+    # And it is excluded from _latest_nonwatcher_event_ts like every other
+    # watcher sentinel: an xgen marker row contributes NO real-marker ts.
+    row = {
+        "kind": "epm:progress",
+        "ts": "2026-01-05T00:00:00Z",
+        "note": f"{asw._STALLED_XGEN_NOTE_SENTINEL} escalation",
+    }
+    assert asw._latest_nonwatcher_event_ts([row]) is None
+
+
+def test_stalled_xgen_fields_back_compat_and_type_guards(isolated_registry):
+    """A pre-existing stalled-<N>.json WITHOUT the xgen_* fields loads as
+    (0, None, 0); malformed values re-arm their field at the default."""
+    import autonomous_session_watch as asw
+
+    assert asw._stalled_xgen_fields({}) == (0, None, 0)
+    # Disk-level: write a legacy payload (no xgen keys), load through the
+    # real loader, then through the field guard.
+    (isolated_registry / "stalled-9.json").write_text(
+        json.dumps({"happy_session_id": "s", "missed": 1, "respawn_count": 2})
+    )
+    assert asw._stalled_xgen_fields(asw._load_stalled_state(9)) == (0, None, 0)
+    # Type guards: bools / negatives / strings re-arm at defaults.
+    garbled = {
+        "xgen_respawns": True,
+        "xgen_last_real_marker_ts": "not-a-ts",
+        "xgen_escalated_at": -5,
+    }
+    assert asw._stalled_xgen_fields(garbled) == (0, None, 0)
+    # Valid values round-trip (ints, float anchor).
+    good = {"xgen_respawns": 3, "xgen_last_real_marker_ts": 123.5, "xgen_escalated_at": 2}
+    assert asw._stalled_xgen_fields(good) == (3, 123.5, 2)
+
+
+def _mk_xgen_ctx(asw, **overrides):
+    """Minimal _StalledActionCtx for unit-testing the counting rule."""
+    kwargs = dict(
+        issue=1,
+        happy_session_id="sess-1",
+        prev_state={},
+        alerted=False,
+        respawn_count=0,
+        exhausted=False,
+        last_self_report_ts=None,
+        self_gap="none",
+        marker_gap="none",
+        has_pod=False,
+        task_status="running",
+        in_active=True,
+        threshold=2,
+        dry_run=True,
+    )
+    kwargs.update(overrides)
+    return asw._StalledActionCtx(**kwargs)
+
+
+def test_stalled_xgen_none_anchor_guard_never_overwrites(monkeypatch):
+    """A None/unreadable current read must NEVER overwrite a valid anchor
+    (a transient empty events read would otherwise cause a spurious reset
+    on the NEXT fire): None -> increment + anchor kept; equal ts ->
+    increment; strictly newer ts -> reset to 1 + escalated_at 0."""
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_DISABLE_STALLED_XGEN_ESCALATION", raising=False)
+    monkeypatch.delenv("EPM_STALLED_XGEN_ESCALATE_AFTER", raising=False)
+
+    # None current read: increment, anchor NOT overwritten.
+    ctx = _mk_xgen_ctx(asw, latest_marker_ts=None, xgen_respawns=2, xgen_last_real_marker_ts=100.0)
+    asw._update_stalled_xgen_on_spawn(ctx)
+    assert ctx.xgen_respawns == 3
+    assert ctx.xgen_last_real_marker_ts == 100.0
+
+    # Equal (not newer) ts: increment, anchor unchanged.
+    ctx = _mk_xgen_ctx(asw, latest_marker_ts=100.0, xgen_respawns=2, xgen_last_real_marker_ts=100.0)
+    asw._update_stalled_xgen_on_spawn(ctx)
+    assert ctx.xgen_respawns == 3
+    assert ctx.xgen_last_real_marker_ts == 100.0
+
+    # Strictly newer ts: real progress -> reset to 1, escalated_at 0,
+    # anchor advances (monotone max).
+    ctx = _mk_xgen_ctx(
+        asw,
+        latest_marker_ts=200.0,
+        xgen_respawns=5,
+        xgen_last_real_marker_ts=100.0,
+        xgen_escalated_at=4,
+    )
+    asw._update_stalled_xgen_on_spawn(ctx)
+    assert ctx.xgen_respawns == 1
+    assert ctx.xgen_escalated_at == 0
+    assert ctx.xgen_last_real_marker_ts == 200.0
+
+    # First-ever fire with a readable ts (anchor None): reset branch -> 1.
+    ctx = _mk_xgen_ctx(asw, latest_marker_ts=50.0)
+    asw._update_stalled_xgen_on_spawn(ctx)
+    assert ctx.xgen_respawns == 1
+    assert ctx.xgen_last_real_marker_ts == 50.0
+
+
+def test_stalled_xgen_counter_survives_advancement_clear_across_generations(
+    isolated_registry, monkeypatch, xgen_recorder
+):
+    """REAL-tick-path integration (#2084 plan §4.2 must-fix): the counter
+    survives the advancement-clear across >= 2 FULL generations, with
+    intermediate NON-SPAWN saves (miss-accumulation + fence-stop) between
+    spawn fires — xgen_respawns is MONOTONE across those saves (kills the
+    inert spawn-site-only-threading shape, where an intermediate
+    _save_stalled_state would drop the field back to 0). Also pins: fresh
+    boot self-report resets respawn_count but NOT xgen_respawns; escalation
+    fires once per band (at 2 and 4 with threshold 2) with marker + sidecar."""
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = xgen_recorder
+    monkeypatch.setenv("EPM_STALLED_XGEN_ESCALATE_AFTER", "2")
+    monkeypatch.delenv("EPM_DISABLE_STALLED_XGEN_ESCALATION", raising=False)
+    _write_autonomous_entry(isolated_registry, 2084, "sess-2084", cap=24.0)
+    now = 1_900_000_000.0
+    self_ts = {"v": "ts-a"}
+    events = [{"kind": "epm:progress", "ts": "2026-01-01T00:00:00Z", "note": "real work"}]
+    _patch_xgen_signals(monkeypatch, asw, events=events, self_ts=self_ts)
+
+    def tick():
+        asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+
+    def state():
+        return _read_stalled_state_file(isolated_registry, 2084)
+
+    def esc_markers():
+        return [m for m in markers if m[1] == "session-auto-respawn-noprogress"]
+
+    # Generation 1 — fire #1 (miss -> fence stop -> verified-dead spawn).
+    tick()  # miss=1: an intermediate NON-SPAWN save
+    assert state()["xgen_respawns"] == 0
+    tick()  # fence stop: another intermediate non-spawn save
+    assert stops == ["sess-2084"]
+    assert state()["xgen_respawns"] == 0
+    tick()  # spawn fire #1
+    assert spawns == [(2084, 24.0)]
+    assert state()["xgen_respawns"] == 1
+    assert esc_markers() == []  # 1 < threshold 2
+
+    # The respawned generation writes a fresh boot self-report: the
+    # advancement-clear resets respawn_count but NOT xgen_respawns (#2084
+    # exemption, the #1209/#1241 pattern).
+    self_ts["v"] = "ts-b"
+    tick()  # advancement tick (keep/miss save — intermediate, non-spawn)
+    st = state()
+    assert st["respawn_count"] == 0  # advancement-cleared
+    assert st["xgen_respawns"] == 1  # EXEMPT — survives the clear
+
+    # Generation 2 — fire #2: threshold 2 reached -> ESCALATE.
+    tick()  # fence stop (intermediate save; counter still monotone)
+    assert state()["xgen_respawns"] == 1
+    tick()  # spawn fire #2
+    assert state()["xgen_respawns"] == 2
+    assert len(esc_markers()) == 1
+    issue, _label, note = esc_markers()[0]
+    assert issue == 2084
+    assert asw._STALLED_XGEN_NOTE_SENTINEL in note
+    assert "threshold 2" in note
+    assert "[src:" in note  # _source_stamp() rides the note
+    rows = _read_xgen_events(isolated_registry)
+    assert len(rows) == 1
+    assert rows[0]["issue"] == 2084
+    assert rows[0]["count"] == 2
+    assert rows[0]["threshold"] == 2
+    assert rows[0]["arm"] == "stalled-fence-spawn"
+    assert "last_real_marker_ts" in rows[0]
+
+    # Fire #3: 3 < 2 + 2 -> same band, NO re-fire; the lane keeps respawning.
+    tick(), tick(), tick()
+    assert state()["xgen_respawns"] == 3
+    assert len(spawns) == 3
+    assert len(esc_markers()) == 1
+
+    # Fire #4: 4 >= 2 + 2 -> the 2N band re-fires (unbounded loops re-alert).
+    tick(), tick(), tick()
+    assert state()["xgen_respawns"] == 4
+    assert len(spawns) == 4
+    assert len(esc_markers()) == 2
+    rows = _read_xgen_events(isolated_registry)
+    assert [r["count"] for r in rows] == [2, 4]
+
+
+def test_stalled_xgen_real_marker_resets_watcher_sentinel_does_not(
+    isolated_registry, monkeypatch, xgen_recorder
+):
+    """Counting-rule integration: a REAL non-watcher marker landing between
+    respawns resets the counter to 1 (and advances the anchor); a
+    WATCHER-sentinel marker with a newer ts does NOT reset it (excluded from
+    _latest_nonwatcher_event_ts by construction)."""
+    import autonomous_session_watch as asw
+
+    _stops, spawns, _markers = xgen_recorder
+    # Default threshold (4) — no escalation noise across 3 fires.
+    monkeypatch.delenv("EPM_STALLED_XGEN_ESCALATE_AFTER", raising=False)
+    monkeypatch.delenv("EPM_DISABLE_STALLED_XGEN_ESCALATION", raising=False)
+    _write_autonomous_entry(isolated_registry, 2085, "sess-2085", cap=24.0)
+    now = 1_900_000_000.0
+    self_ts = {"v": "ts-a"}
+    e1, e2, e3 = "2026-01-01T00:00:00Z", "2026-01-02T00:00:00Z", "2026-01-03T00:00:00Z"
+    events = [{"kind": "epm:progress", "ts": e1, "note": "real work"}]
+    _patch_xgen_signals(monkeypatch, asw, events=events, self_ts=self_ts)
+
+    def tick():
+        asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+
+    def state():
+        return _read_stalled_state_file(isolated_registry, 2085)
+
+    # Fire #1: anchor = e1's epoch, counter 1.
+    tick(), tick(), tick()
+    assert len(spawns) == 1
+    assert state()["xgen_respawns"] == 1
+    assert state()["xgen_last_real_marker_ts"] == asw._parse_event_ts(e1)
+
+    # A WATCHER-sentinel marker lands with a NEWER ts: does NOT reset.
+    events.append(
+        {
+            "kind": "epm:progress",
+            "ts": e2,
+            "note": f"{asw._STALLED_RESPAWN_NOTE_SENTINEL} auto-respawn record",
+        }
+    )
+    tick(), tick(), tick()
+    assert len(spawns) == 2
+    assert state()["xgen_respawns"] == 2  # incremented, no reset
+    assert state()["xgen_last_real_marker_ts"] == asw._parse_event_ts(e1)  # anchor kept
+
+    # A REAL non-watcher marker lands (newer, still stale enough to keep the
+    # detector firing): RESETS the counter to 1 and advances the anchor.
+    events.append({"kind": "epm:progress", "ts": e3, "note": "real intervening progress"})
+    tick(), tick(), tick()
+    assert len(spawns) == 3
+    assert state()["xgen_respawns"] == 1  # reset — the generation made progress
+    assert state()["xgen_escalated_at"] == 0
+    assert state()["xgen_last_real_marker_ts"] == asw._parse_event_ts(e3)
+
+
+def test_stalled_xgen_escalation_never_stops_or_mutates(
+    isolated_registry, monkeypatch, xgen_recorder
+):
+    """HARD INVARIANT (#2084 plan §3): the escalation path performs NO
+    _stop_session, NO status mutation, NO respawn suppression, NO cap
+    consumption — the respawn lane's behavior is unchanged. With threshold 2
+    the escalation fires at fire #2, and the lane STILL respawns at fire #3
+    (counts past threshold); stops == exactly one fence stop per episode;
+    respawn_count / day-cap counters follow the lane's own bookkeeping."""
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = xgen_recorder
+    monkeypatch.setenv("EPM_STALLED_XGEN_ESCALATE_AFTER", "2")
+    monkeypatch.delenv("EPM_DISABLE_STALLED_XGEN_ESCALATION", raising=False)
+    _write_autonomous_entry(isolated_registry, 2086, "sess-2086", cap=24.0)
+    now = 1_900_000_000.0
+    self_ts = {"v": "ts-a"}
+    events = [{"kind": "epm:progress", "ts": "2026-01-01T00:00:00Z", "note": "real work"}]
+    _patch_xgen_signals(monkeypatch, asw, events=events, self_ts=self_ts)
+
+    # Status-mutation spy: nothing in the whole pass may shell out to
+    # `task.py set-status` (the escalation is observability-only).
+    real_run = _subprocess.run
+
+    def _spy_run(argv, *a, **k):
+        joined = " ".join(str(x) for x in argv) if isinstance(argv, list) else str(argv)
+        assert "set-status" not in joined, f"status mutation attempted: {joined}"
+        return real_run(argv, *a, **k)
+
+    monkeypatch.setattr(asw.subprocess, "run", _spy_run)
+
+    def tick():
+        asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+
+    def state():
+        return _read_stalled_state_file(isolated_registry, 2086)
+
+    # Three full fire cycles: fire #2 escalates; fire #3 must STILL happen.
+    for _ in range(9):
+        tick()
+    assert len(spawns) == 3  # respawns continue past the escalation threshold
+    assert stops == ["sess-2086"] * 3  # exactly one fence stop per episode
+    respawn_markers = [m for m in markers if m[1] == "session-auto-respawn"]
+    assert len(respawn_markers) == 3  # lane's own markers unchanged
+    esc = [m for m in markers if m[1] == "session-auto-respawn-noprogress"]
+    assert len(esc) == 1  # fired once (at fire #2; fire #3 is in-band)
+    st = state()
+    assert st["xgen_respawns"] == 3
+    assert st["xgen_escalated_at"] == 2
+    # No cap consumption on the new path: the lane's episode belt reads 3
+    # (its OWN bookkeeping — one bump per fire), and the #1209/#1241 day
+    # caps are untouched.
+    assert st["respawn_count"] == 3
+    assert st["dead_silence_respawns_today"] == 0
+    assert st["wedge_respawns_today"] == 0
+
+
+def test_stalled_xgen_kill_switch_leaves_lane_identical(
+    isolated_registry, monkeypatch, xgen_recorder
+):
+    """With the kill switch set, counting still persists (the counter is
+    state, the switch gates only the CHANNELS) but no escalation marker /
+    sidecar row is ever emitted — and the respawn lane is untouched either
+    way."""
+    import autonomous_session_watch as asw
+
+    _stops, spawns, markers = xgen_recorder
+    monkeypatch.setenv("EPM_STALLED_XGEN_ESCALATE_AFTER", "2")
+    monkeypatch.setenv("EPM_DISABLE_STALLED_XGEN_ESCALATION", "1")
+    _write_autonomous_entry(isolated_registry, 2087, "sess-2087", cap=24.0)
+    now = 1_900_000_000.0
+    self_ts = {"v": "ts-a"}
+    events = [{"kind": "epm:progress", "ts": "2026-01-01T00:00:00Z", "note": "real work"}]
+    _patch_xgen_signals(monkeypatch, asw, events=events, self_ts=self_ts)
+
+    for _ in range(6):  # two full fire cycles -> count 2 (>= threshold)
+        asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+
+    assert len(spawns) == 2  # lane unchanged
+    st = _read_stalled_state_file(isolated_registry, 2087)
+    assert st["xgen_respawns"] == 2  # counting continues under the switch
+    assert st["xgen_escalated_at"] == 0  # but no escalation was recorded
+    assert [m for m in markers if m[1] == "session-auto-respawn-noprogress"] == []
+    assert _read_xgen_events(isolated_registry) == []
+
+
+def test_save_stalled_state_persists_and_reloads_xgen_fields(isolated_registry):
+    """Round-trip: _save_stalled_state writes the three #2084 fields and
+    _load_stalled_state + _stalled_xgen_fields read them back verbatim."""
+    import autonomous_session_watch as asw
+
+    asw._save_stalled_state(
+        11,
+        "sess-11",
+        missed=0,
+        alerted=False,
+        last_self_report_ts="ts-x",
+        xgen_respawns=5,
+        xgen_last_real_marker_ts=1234.5,
+        xgen_escalated_at=4,
+    )
+    st = asw._load_stalled_state(11)
+    assert st["xgen_respawns"] == 5
+    assert st["xgen_last_real_marker_ts"] == 1234.5
+    assert st["xgen_escalated_at"] == 4
+    assert asw._stalled_xgen_fields(st) == (5, 1234.5, 4)

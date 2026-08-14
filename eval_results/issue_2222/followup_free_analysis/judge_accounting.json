@@ -1,0 +1,470 @@
+{
+ "note": "rule-28 accounting reduce of the Form-A production judge wave (batch + rule-24(ii) sync rejudge + merge). Arm grain = dataset VERSION class (the wave's registered grain); per-dataset fine grain included. Sources: local form_a mirrors of the HF form_a_judge uploads + chain logs.",
+ "instrument": {
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_draws": 6,
+  "max_tokens": 1024,
+  "routing": "forced-batch (threshold_base=0)",
+  "temperature_note": "temperature is NOT threaded by the batch client (API default); identical realized instrument to the #778 y-axis scoring"
+ },
+ "per_trait": {
+  "evil": {
+   "trait": "evil",
+   "n_items": 12000,
+   "n_draws_per_item": 6,
+   "batch_wave_totals": {
+    "n_total_draws": 72000,
+    "n_api_refusal_draws": 665,
+    "n_transport_lost_draws": 0,
+    "n_content_dropped_draws": 13,
+    "content_split_trait_level": {
+     "instructed_refusal": 1,
+     "truncation_rule23": 0,
+     "malformed_or_out_of_range_parse_fail": 12,
+     "note": "split persisted at trait grain only (per-item refusal/truncation breakdowns are not in the result artifact)"
+    },
+    "stop_reason_tally": {
+     "end_turn": 71335,
+     "refusal": 665
+    }
+   },
+   "by_version": {
+    "api_refusal_draws": {
+     "normal": 107,
+     "misaligned_1": 237,
+     "misaligned_2": 321
+    },
+    "api_refusal_draws_recorded": {
+     "misaligned_2": 321,
+     "normal": 107,
+     "misaligned_1": 237
+    },
+    "transport_lost_draws": {
+     "normal": 0,
+     "misaligned_1": 0,
+     "misaligned_2": 0
+    },
+    "content_dropped_draws": {
+     "normal": 1,
+     "misaligned_1": 7,
+     "misaligned_2": 5
+    },
+    "sync_recovered_draws": {
+     "normal": 107,
+     "misaligned_1": 237,
+     "misaligned_2": 321
+    },
+    "kept_draws_after_merge": {
+     "normal": 23999,
+     "misaligned_1": 23993,
+     "misaligned_2": 23995
+    },
+    "zero_kept_items": {
+     "normal": 0,
+     "misaligned_1": 0,
+     "misaligned_2": 0
+    }
+   },
+   "by_dataset": {
+    "api_refusal_draws": {
+     "evil_misaligned_1": 165,
+     "evil_misaligned_2": 177,
+     "evil_normal": 37,
+     "hallucination_misaligned_1": 50,
+     "hallucination_misaligned_2": 94,
+     "hallucination_normal": 54,
+     "mistake_medical_misaligned_1": 18,
+     "mistake_medical_misaligned_2": 47,
+     "mistake_medical_normal": 16,
+     "mistake_opinions_misaligned_1": 4,
+     "mistake_opinions_misaligned_2": 3
+    },
+    "transport_lost_draws": {},
+    "content_dropped_draws": {
+     "insecure_code_misaligned_2": 1,
+     "mistake_medical_misaligned_1": 7,
+     "mistake_medical_misaligned_2": 4,
+     "mistake_medical_normal": 1
+    }
+   },
+   "sync_reissue": {
+    "n_items_censored": 142,
+    "groups": {
+     "1": {
+      "n_items": 7,
+      "n_draws_reissued": 7,
+      "n_api_refusal_residual": 0,
+      "n_transport_residual": 0,
+      "n_dropped_content": 0
+     },
+     "2": {
+      "n_items": 20,
+      "n_draws_reissued": 40,
+      "n_api_refusal_residual": 0,
+      "n_transport_residual": 0,
+      "n_dropped_content": 0
+     },
+     "3": {
+      "n_items": 12,
+      "n_draws_reissued": 36,
+      "n_api_refusal_residual": 0,
+      "n_transport_residual": 0,
+      "n_dropped_content": 0
+     },
+     "4": {
+      "n_items": 14,
+      "n_draws_reissued": 56,
+      "n_api_refusal_residual": 0,
+      "n_transport_residual": 0,
+      "n_dropped_content": 0
+     },
+     "5": {
+      "n_items": 8,
+      "n_draws_reissued": 40,
+      "n_api_refusal_residual": 0,
+      "n_transport_residual": 0,
+      "n_dropped_content": 0
+     },
+     "6": {
+      "n_items": 81,
+      "n_draws_reissued": 486,
+      "n_api_refusal_residual": 0,
+      "n_transport_residual": 0,
+      "n_dropped_content": 0
+     }
+    }
+   },
+   "n_items_zero_kept_draws": 0,
+   "kept_draw_fraction_after_merge": 0.9998194444444445
+  },
+  "sycophancy": {
+   "trait": "sycophancy",
+   "n_items": 12000,
+   "n_draws_per_item": 6,
+   "batch_wave_totals": {
+    "n_total_draws": 72000,
+    "n_api_refusal_draws": 604,
+    "n_transport_lost_draws": 0,
+    "n_content_dropped_draws": 49,
+    "content_split_trait_level": {
+     "instructed_refusal": 11,
+     "truncation_rule23": 0,
+     "malformed_or_out_of_range_parse_fail": 38,
+     "note": "split persisted at trait grain only (per-item refusal/truncation breakdowns are not in the result artifact)"
+    },
+    "stop_reason_tally": {
+     "end_turn": 71396,
+     "refusal": 604
+    }
+   },
+   "by_version": {
+    "api_refusal_draws": {
+     "normal": 93,
+     "misaligned_1": 218,
+     "misaligned_2": 293
+    },
+    "api_refusal_draws_recorded": {
+     "normal": 93,
+     "misaligned_1": 218,
+     "misaligned_2": 293
+    },
+    "transport_lost_draws": {
+     "normal": 0,
+     "misaligned_1": 0,
+     "misaligned_2": 0
+    },
+    "content_dropped_draws": {
+     "normal": 6,
+     "misaligned_1": 11,
+     "misaligned_2": 32
+    },
+    "sync_recovered_draws": {
+     "normal": 93,
+     "misaligned_1": 218,
+     "misaligned_2": 293
+    },
+    "kept_draws_after_merge": {
+     "normal": 23994,
+     "misaligned_1": 23989,
+     "misaligned_2": 23968
+    },
+    "zero_kept_items": {
+     "normal": 1,
+     "misaligned_1": 0,
+     "misaligned_2": 0
+    }
+   },
+   "by_dataset": {
+    "api_refusal_draws": {
+     "evil_misaligned_1": 155,
+     "evil_misaligned_2": 163,
+     "evil_normal": 41,
+     "hallucination_misaligned_1": 44,
+     "hallucination_misaligned_2": 91,
+     "hallucination_normal": 39,
+     "mistake_medical_misaligned_1": 13,
+     "mistake_medical_misaligned_2": 39,
+     "mistake_medical_normal": 13,
+     "mistake_opinions_misaligned_1": 6
+    },
+    "transport_lost_draws": {},
+    "content_dropped_draws": {
+     "evil_misaligned_1": 1,
+     "evil_misaligned_2": 4,
+     "hallucination_misaligned_1": 2,
+     "hallucination_misaligned_2": 3,
+     "insecure_code_misaligned_1": 3,
+     "insecure_code_misaligned_2": 13,
+     "mistake_gsm8k_misaligned_2": 3,
+     "mistake_math_misaligned_1": 2,
+     "mistake_math_misaligned_2": 6,
+     "mistake_medical_misaligned_1": 2,
+     "mistake_medical_misaligned_2": 2,
+     "mistake_medical_normal": 6,
+     "mistake_opinions_misaligned_1": 1,
+     "mistake_opinions_misaligned_2": 1
+    }
+   },
+   "sync_reissue": {
+    "n_items_censored": 130,
+    "groups": {
+     "1": {
+      "n_items": 8,
+      "n_draws_reissued": 8,
+      "n_api_refusal_residual": 0,
+      "n_transport_residual": 0,
+      "n_dropped_content": 0
+     },
+     "2": {
+      "n_items": 19,
+      "n_draws_reissued": 38,
+      "n_api_refusal_residual": 0,
+      "n_transport_residual": 0,
+      "n_dropped_content": 0
+     },
+     "3": {
+      "n_items": 12,
+      "n_draws_reissued": 36,
+      "n_api_refusal_residual": 0,
+      "n_transport_residual": 0,
+      "n_dropped_content": 0
+     },
+     "4": {
+      "n_items": 6,
+      "n_draws_reissued": 24,
+      "n_api_refusal_residual": 0,
+      "n_transport_residual": 0,
+      "n_dropped_content": 0
+     },
+     "5": {
+      "n_items": 12,
+      "n_draws_reissued": 60,
+      "n_api_refusal_residual": 0,
+      "n_transport_residual": 0,
+      "n_dropped_content": 0
+     },
+     "6": {
+      "n_items": 73,
+      "n_draws_reissued": 438,
+      "n_api_refusal_residual": 0,
+      "n_transport_residual": 0,
+      "n_dropped_content": 0
+     }
+    }
+   },
+   "n_items_zero_kept_draws": 1,
+   "kept_draw_fraction_after_merge": 0.9993194444444444
+  },
+  "hallucination": {
+   "trait": "hallucination",
+   "n_items": 12000,
+   "n_draws_per_item": 6,
+   "batch_wave_totals": {
+    "n_total_draws": 72000,
+    "n_api_refusal_draws": 725,
+    "n_transport_lost_draws": 0,
+    "n_content_dropped_draws": 335,
+    "content_split_trait_level": {
+     "instructed_refusal": 104,
+     "truncation_rule23": 13,
+     "malformed_or_out_of_range_parse_fail": 218,
+     "note": "split persisted at trait grain only (per-item refusal/truncation breakdowns are not in the result artifact)"
+    },
+    "stop_reason_tally": {
+     "end_turn": 71262,
+     "refusal": 725,
+     "max_tokens": 13
+    }
+   },
+   "by_version": {
+    "api_refusal_draws": {
+     "normal": 87,
+     "misaligned_1": 263,
+     "misaligned_2": 375
+    },
+    "api_refusal_draws_recorded": {
+     "normal": 87,
+     "misaligned_1": 263,
+     "misaligned_2": 375
+    },
+    "transport_lost_draws": {
+     "normal": 0,
+     "misaligned_1": 0,
+     "misaligned_2": 0
+    },
+    "content_dropped_draws": {
+     "normal": 164,
+     "misaligned_1": 95,
+     "misaligned_2": 76
+    },
+    "sync_recovered_draws": {
+     "normal": 75,
+     "misaligned_1": 263,
+     "misaligned_2": 375
+    },
+    "kept_draws_after_merge": {
+     "normal": 23824,
+     "misaligned_1": 23905,
+     "misaligned_2": 23924
+    },
+    "zero_kept_items": {
+     "normal": 15,
+     "misaligned_1": 0,
+     "misaligned_2": 1
+    }
+   },
+   "by_dataset": {
+    "api_refusal_draws": {
+     "evil_misaligned_1": 179,
+     "evil_misaligned_2": 182,
+     "evil_normal": 40,
+     "hallucination_misaligned_1": 53,
+     "hallucination_misaligned_2": 133,
+     "hallucination_normal": 29,
+     "mistake_medical_misaligned_1": 25,
+     "mistake_medical_misaligned_2": 54,
+     "mistake_medical_normal": 18,
+     "mistake_opinions_misaligned_1": 6,
+     "mistake_opinions_misaligned_2": 6
+    },
+    "transport_lost_draws": {},
+    "content_dropped_draws": {
+     "evil_misaligned_1": 2,
+     "evil_misaligned_2": 10,
+     "evil_normal": 70,
+     "hallucination_misaligned_2": 1,
+     "insecure_code_misaligned_1": 68,
+     "insecure_code_misaligned_2": 46,
+     "insecure_code_normal": 55,
+     "mistake_gsm8k_misaligned_1": 7,
+     "mistake_gsm8k_misaligned_2": 6,
+     "mistake_math_misaligned_1": 18,
+     "mistake_math_misaligned_2": 13,
+     "mistake_math_normal": 10,
+     "mistake_medical_normal": 7,
+     "mistake_opinions_normal": 21,
+     "sycophancy_normal": 1
+    }
+   },
+   "sync_reissue": {
+    "n_items_censored": 135,
+    "groups": {
+     "1": {
+      "n_items": 6,
+      "n_draws_reissued": 6,
+      "n_api_refusal_residual": 0,
+      "n_transport_residual": 0,
+      "n_dropped_content": 0
+     },
+     "2": {
+      "n_items": 4,
+      "n_draws_reissued": 8,
+      "n_api_refusal_residual": 0,
+      "n_transport_residual": 0,
+      "n_dropped_content": 0
+     },
+     "3": {
+      "n_items": 9,
+      "n_draws_reissued": 27,
+      "n_api_refusal_residual": 0,
+      "n_transport_residual": 0,
+      "n_dropped_content": 0
+     },
+     "4": {
+      "n_items": 3,
+      "n_draws_reissued": 12,
+      "n_api_refusal_residual": 0,
+      "n_transport_residual": 0,
+      "n_dropped_content": 0
+     },
+     "5": {
+      "n_items": 6,
+      "n_draws_reissued": 30,
+      "n_api_refusal_residual": 0,
+      "n_transport_residual": 0,
+      "n_dropped_content": 0
+     },
+     "6": {
+      "n_items": 107,
+      "n_draws_reissued": 642,
+      "n_api_refusal_residual": 0,
+      "n_transport_residual": 0,
+      "n_dropped_content": 12
+     }
+    }
+   },
+   "n_items_zero_kept_draws": 16,
+   "kept_draw_fraction_after_merge": 0.9951805555555555
+  }
+ },
+ "chain_log_lines": {
+  "judge_chain.log": [
+   "[chain] stage=rubrics start 2026-08-11T05:58:50Z",
+   "[chain] stage=rubrics rc=0",
+   "[chain] stage=pool start 2026-08-11T05:58:54Z",
+   "[chain] stage=pool rc=0",
+   "[chain] stage=pilot start 2026-08-11T06:00:49Z",
+   "judge reduce: 4 API-refusal draws across 2 item(s) (stop_reason == 'refusal', empty content) — the wave ran a transport whose safety classifier CENSORS; transport-conditional and retriable via targeted SYNC re-issue at the identical instrument (llm-judging.md rule 28, #2151/#1739). NOT blended into content drops or transport losses.",
+   "[phase=p4_pilot] {\"phase\": \"p4_pilot\", \"msg\": \"gate\", \"trait\": \"evil\", \"verdict\": \"PASS\", \"n\": 150}",
+   "judge reduce: 3 API-refusal draws across 2 item(s) (stop_reason == 'refusal', empty content) — the wave ran a transport whose safety classifier CENSORS; transport-conditional and retriable via targeted SYNC re-issue at the identical instrument (llm-judging.md rule 28, #2151/#1739). NOT blended into content drops or transport losses.",
+   "[phase=p4_pilot] {\"phase\": \"p4_pilot\", \"msg\": \"gate\", \"trait\": \"sycophancy\", \"verdict\": \"PASS\", \"n\": 150}",
+   "judge reduce: 4 content-dropped draws (0 judge-REFUSAL — may be rubric-instructed, not instrument failure alone; 0 truncation-class [budget defect, rule 23]; 4 malformed/out-of-range) (rules 9/23)",
+   "judge reduce: 13 content-dropped draws (0 judge-REFUSAL — may be rubric-instructed, not instrument failure alone; 0 truncation-class [budget defect, rule 23]; 13 malformed/out-of-range) (rules 9/23)",
+   "judge reduce: 6 API-refusal draws across 3 item(s) (stop_reason == 'refusal', empty content) — the wave ran a transport whose safety classifier CENSORS; transport-conditional and retriable via targeted SYNC re-issue at the identical instrument (llm-judging.md rule 28, #2151/#1739). NOT blended into content drops or transport losses.",
+   "judge reduce: 5 content-dropped draws (0 judge-REFUSAL — may be rubric-instructed, not instrument failure alone; 0 truncation-class [budget defect, rule 23]; 5 malformed/out-of-range) (rules 9/23)",
+   "[phase=p4_pilot] {\"phase\": \"p4_pilot\", \"msg\": \"gate\", \"trait\": \"hallucination\", \"verdict\": \"FAIL\", \"n\": 150}",
+   "[phase=p4_pilot] {\"phase\": \"p4_pilot\", \"msg\": \"GATE FAIL \\u2014 production wave refused (rc=7)\"}",
+   "[chain] stage=pilot rc=7",
+   "[chain] HALT at pilot rc=7"
+  ],
+  "judge_chain2.log": [
+   "[chain2] stage=judge start 2026-08-11T07:15:59Z",
+   "judge reduce: 665 API-refusal draws across 142 item(s) (stop_reason == 'refusal', empty content) — the wave ran a transport whose safety classifier CENSORS; transport-conditional and retriable via targeted SYNC re-issue at the identical instrument (llm-judging.md rule 28, #2151/#1739). NOT blended into content drops or transport losses.",
+   "judge reduce: 13 content-dropped draws (1 judge-REFUSAL — may be rubric-instructed, not instrument failure alone; 0 truncation-class [budget defect, rule 23]; 12 malformed/out-of-range) (rules 9/23)",
+   "[phase=p4_judge] {\"phase\": \"p4_judge\", \"msg\": \"trait wave done\", \"trait\": \"evil\", \"n_draws_total\": 72000, \"n_api_refusal\": 665, \"n_transport\": 0, \"elapsed_s\": 932.3}",
+   "judge reduce: 604 API-refusal draws across 130 item(s) (stop_reason == 'refusal', empty content) — the wave ran a transport whose safety classifier CENSORS; transport-conditional and retriable via targeted SYNC re-issue at the identical instrument (llm-judging.md rule 28, #2151/#1739). NOT blended into content drops or transport losses.",
+   "judge reduce: 49 content-dropped draws (11 judge-REFUSAL — may be rubric-instructed, not instrument failure alone; 0 truncation-class [budget defect, rule 23]; 38 malformed/out-of-range) (rules 9/23)",
+   "[phase=p4_judge] {\"phase\": \"p4_judge\", \"msg\": \"trait wave done\", \"trait\": \"sycophancy\", \"n_draws_total\": 72000, \"n_api_refusal\": 604, \"n_transport\": 0, \"elapsed_s\": 900.7}",
+   "judge reduce: 725 API-refusal draws across 135 item(s) (stop_reason == 'refusal', empty content) — the wave ran a transport whose safety classifier CENSORS; transport-conditional and retriable via targeted SYNC re-issue at the identical instrument (llm-judging.md rule 28, #2151/#1739). NOT blended into content drops or transport losses.",
+   "judge reduce: 335 content-dropped draws (104 judge-REFUSAL — may be rubric-instructed, not instrument failure alone; 13 truncation-class [budget defect, rule 23]; 218 malformed/out-of-range) (rules 9/23)",
+   "[phase=p4_judge] {\"phase\": \"p4_judge\", \"msg\": \"trait wave done\", \"trait\": \"hallucination\", \"n_draws_total\": 72000, \"n_api_refusal\": 725, \"n_transport\": 0, \"elapsed_s\": 648.6}",
+   "[chain2] stage=judge rc=0",
+   "[chain2] stage=rejudge start 2026-08-11T07:57:28Z",
+   "[phase=p4_rejudge] {\"phase\": \"p4_rejudge\", \"msg\": \"trait merged\", \"trait\": \"evil\", \"n_censored_items\": 142, \"n_zero_kept\": 0}",
+   "[phase=p4_rejudge] {\"phase\": \"p4_rejudge\", \"msg\": \"trait merged\", \"trait\": \"sycophancy\", \"n_censored_items\": 130, \"n_zero_kept\": 1}",
+   "judge reduce: 12 content-dropped draws (12 judge-REFUSAL — may be rubric-instructed, not instrument failure alone; 0 truncation-class [budget defect, rule 23]; 0 malformed/out-of-range) (rules 9/23)",
+   "[phase=p4_rejudge] {\"phase\": \"p4_rejudge\", \"msg\": \"trait merged\", \"trait\": \"hallucination\", \"n_censored_items\": 135, \"n_zero_kept\": 16}",
+   "[chain2] stage=rejudge rc=0",
+   "[chain2] judge wave complete (probe runs after, with base_respavg staging)"
+  ]
+ },
+ "timestamp_utc": "2026-08-11T10:51:50Z",
+ "versions": {
+  "torch": "2.8.0+cu128",
+  "transformers": "4.57.6",
+  "vllm": "0.11.0",
+  "numpy": "2.2.6"
+ },
+ "git_commit": "9b75cc0d",
+ "git_dirty": false
+}

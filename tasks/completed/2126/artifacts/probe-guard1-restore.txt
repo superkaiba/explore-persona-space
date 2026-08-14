@@ -1,0 +1,58 @@
+# Probe: Guard-1 retry restore across four path shapes (task #2126, defect D5)
+# Run 2026-08-12 on the EPS VM. git version 2.34.1
+# Shapes: in-HEAD modified | in-HEAD staged-deleted | staged-ADDED (not in HEAD)
+#         | branch-DELETED (absent from HEAD, the status-git-mv shape)
+
+## A) three forms compared
+```
+=== BASELINE dirty state ===
+  status: [A  added.txt|M  keep.txt|D  staged_del.txt|?? vanished.txt|]
+
+=== FORM A: git checkout HEAD -- <all paths>  (current recipe) ===
+error: pathspec 'added.txt' did not match any file(s) known to git
+error: pathspec 'vanished.txt' did not match any file(s) known to git
+  rc=1
+  status after: [A  added.txt|M  keep.txt|D  staged_del.txt|?? vanished.txt|]
+  files: added.txt keep.txt vanished.txt 
+  HEAD tree: keep.txt staged_del.txt 
+
+=== FORM B: git restore --staged --worktree -- <all paths>  (filed proposal) ===
+error: pathspec 'vanished.txt' did not match any file(s) known to git
+  rc=1
+  status after: [A  added.txt|M  keep.txt|D  staged_del.txt|?? vanished.txt|]
+  files: added.txt keep.txt vanished.txt 
+  HEAD tree: keep.txt staged_del.txt 
+
+=== FORM C: per-path disposition (in-HEAD -> restore; not-in-HEAD -> rm) ===
+  in-HEAD: keep.txt staged_del.txt | not-in-HEAD: added.txt vanished.txt
+  rc=0
+  status after: [?? vanished.txt|]
+  files: keep.txt staged_del.txt vanished.txt 
+  HEAD tree: keep.txt staged_del.txt 
+
+=== git version ===
+git version 2.34.1
+```
+
+## B) the proposed per-disposition snippet, on a tasks/-shaped tree
+```
+/tmp/issue2126_restore_final_probe.sh: line 24: tasks/proposed/9003/body.md: No such file or directory
+status BEFORE: [A  tasks/planning/9004/body.md|M  tasks/proposed/9001/body.md|D  tasks/running/9002/body.md|]
+rc=0
+in-HEAD batch: tasks/proposed/9001/body.md tasks/running/9002/body.md
+gone batch:    tasks/planning/9004/body.md tasks/proposed/9003/body.md
+status AFTER (must be EMPTY): []
+diff vs HEAD (must be empty): []
+files: tasks/proposed/9001/body.md tasks/running/9002/body.md 
+```
+
+## finding
+- FORM A (current recipe, 'checkout HEAD -- <all>'): errors on 2 of 4 paths and restores
+  NOTHING — an unmatched pathspec ABORTS the whole operation, so the bounded retry runs
+  on the fully dirty tree. This reproduces the #2087 symptom.
+- FORM B (the filed fix, 'restore --staged --worktree -- <all>'): accepts the staged-ADDED
+  path but still errors on the branch-DELETED path and still restores NOTHING. It narrows
+  the failing set; it does NOT fix the failure mode.
+- FORM C / the proposed snippet (per-disposition: in-HEAD -> restore, absent-from-HEAD ->
+  drop): rc=0, 'git status' empty, 'git diff HEAD' empty, no residual litter.
+=> Per-disposition is load-bearing; the verb alone is not.

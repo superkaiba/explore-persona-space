@@ -63,6 +63,47 @@ What is and is NOT a cache (the safety contract):
     sidecar-escalated. ``EPM_SKIP_NONCANONICAL_CACHE_SWEEP=1`` is the
     emergency kill switch (the sweep returns no candidates).
 
+  * STAGING-ROOT caches (#2095) — the same non-canonical contract extends,
+    STRICTLY OPT-IN (``staging_roots`` — only ``main()`` passes
+    ``production_staging_roots()``: default ``/mnt/eps-data/$USER`` iff the
+    data disk is a live mount; env ``EPM_STAGING_CACHE_ROOTS`` overrides), to
+    TOP-LEVEL issue-keyed dirs at the CLAUDE.md staging convention. Extraction
+    is PREFIX-ONLY (P1 plus ``tmp_issue<N>_*`` / ``tmp-<N>-*``; NO P2 suffix
+    route — the foreign-mkdtemp false-attribution shape), recency reads
+    TOP-LEVEL-ONLY (no rglob over multi-100-GB trees), a NEW gate 1.55
+    HARD-ESCALATES cross-issue CONTENT (a dir named for issue A holding issue
+    B's files — never auto-reaped in v1), ``unverified-kept`` escalations
+    carry a class label (``:derived-partial-mirror`` / ``:orphan-no-mirror``),
+    and a branch-(b) reap license above ~1 GB must pass a SAMPLED MIRROR
+    PROBE (largest file byte-equal on the data repo) or is refused as
+    ``unverified-kept:probe-failed``. ``EPM_SKIP_STAGING_CACHE_SWEEP=1``
+    kills this leg alone (the non-canonical kill switch kills it
+    transitively).
+
+  * TOP-LEVEL /tmp GATE/SMOKE SCRATCH trees (#2127) — a SEPARATE,
+    owner-status-INDEPENDENT leg (``sweep_tmp_scratch``, driven from the
+    ``vm_disk_guard`` boot-disk pass): top-level ``/tmp`` dirs matching the
+    scratch shape globs (``*-gate*`` / ``*smoke*`` / ``eps-*-scratch-*`` /
+    ``scratch-*`` / ``mkstest-*``), never a denylisted name (``claude-*`` /
+    ``pytest-of-*`` / session+system dirs — checked FIRST). User-facing bulk
+    deletions are gated on POSITIVE VERIFIED evidence — HF-backedness
+    (mirror/hub-layout) or git-reproducibility (blob-existence proof;
+    recoverability-now, see the gc residual note) — never on age alone; age
+    (recency) is only ever a KEEP signal (#2127, user directive 2026-08-06;
+    #1092 is the standing counter-example an age gate would have destroyed).
+    The same git-blob evidence also arms the issue-keyed /tmp legs' gate 1.7
+    as branch (c) (``git_evidence_repo``, main()-only opt-in). Kill switch
+    ``EPM_SKIP_TMP_SCRATCH_SWEEP=1`` (this leg alone; the non-canonical
+    family switch kills it transitively). Named residuals: a blob proof is
+    recoverability at VERIFY time (a later ``git gc`` can drop unreachable
+    blobs); other-uid/root processes are invisible to the live-process
+    probe; and there is deliberately NO ``git worktree prune`` fallback —
+    a global prune would unregister PEER worktrees whose trees are
+    momentarily missing (e.g. a registered ``/mnt/eps-data``-rooted scratch
+    during a mount hiccup) — registration loss is repairable via
+    ``git worktree repair`` and destroys no data, but is not this janitor's
+    to inflict (a failed ``git worktree remove`` simply KEEPS the tree).
+
 There are now SIX reap gates, all composing additively (any one puts a cache
 dir in ``CleanResult.skipped`` instead of deleting it):
   1. The TERMINAL-status gate in ``vm_disk_guard.py`` (the OWNING issue must be
@@ -81,8 +122,10 @@ dir in ``CleanResult.skipped`` instead of deleting it):
      OR ``eval_results/`` blocks the whole-dir reap outright (no mirror check
      attempted — durable results never ride a whole-dir rmtree).
   6. The POSITIVE-EVIDENCE gate (#911, non-canonical only): the reap license —
-     hub-layout markers or data-repo-prefix mirror verification; a predicate
-     failure escalates (sidecar), never deletes.
+     hub-layout markers, data-repo-prefix mirror verification, or (branch (c),
+     #2127 — /tmp P1/P2 only, ``git_evidence_repo`` opt-in, never a registered
+     worktree) per-file git-blob reproducibility against the main repo; a
+     predicate failure escalates (sidecar), never deletes.
 
 The ``data/`` tree uses two naming conventions for the same N — ``issue_<N>``
 (underscore) AND ``issue<N>`` (no underscore, sometimes with a ``_<slug>``
@@ -140,7 +183,10 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import fnmatch
 import functools
+import getpass
+import hashlib
 import inspect
 import json
 import os
@@ -203,6 +249,82 @@ _DATA_NONCANONICAL_CACHE_RE = re.compile(r"^issue_?(\d+)\w*(?:_dl\d*|_hfstage|_c
 TMP_CACHE_ROOT_DEFAULT = "/tmp"  # env EPM_TMP_CACHE_ROOT (main()-only opt-in)
 NONCANONICAL_MIN_AGE_HOURS_DEFAULT = 48.0  # env EPS_NONCANONICAL_CACHE_MIN_AGE_HOURS
 NONCANONICAL_SWEEP_KILL_ENV = "EPM_SKIP_NONCANONICAL_CACHE_SWEEP"
+
+# ─── staging-root sweep (#2095) ──────────────────────────────────────────────
+# Inline rounds also stage multi-GB inputs at the CLAUDE.md staging convention
+# ``/mnt/eps-data/$USER/issue<N>_<slug>/``. Extraction there is PREFIX-ONLY:
+# the shared P1 regex first, then the two tmp-variants P1 cannot match
+# (``tmp_issue<N>_*`` / ``tmp-<N>-*`` — leading ``t``); deliberately NO P2
+# suffix route (the foreign-mkdtemp false-attribution shape — staging dirs
+# are huge, so a false attribution is unacceptable there).
+_STAGING_TMP_PREFIX_RE = re.compile(r"^tmp[-_](?:issue[-_]?)?(\d+)(?:[._-]|$)")
+STAGING_SWEEP_KILL_ENV = "EPM_SKIP_STAGING_CACHE_SWEEP"
+STAGING_ROOTS_ENV = "EPM_STAGING_CACHE_ROOTS"
+STAGING_EVIDENCE_PROBE_FLOOR_GB = 1.0  # env EPM_STAGING_EVIDENCE_PROBE_FLOOR_GB
+
+# ─── top-level /tmp gate/smoke scratch sweep (#2127) ─────────────────────────
+# Gate/smoke scratch trees (repo checkouts, registered linked worktrees, gate
+# output dirs) pile up at the /tmp TOP LEVEL under names the issue-keyed
+# sweep never matches (~70 GiB found untouched >= 48 h at 98% root-disk
+# usage, 2026-08-06). They are swept OWNER-STATUS-INDEPENDENTLY under a
+# stricter, EVIDENCE-gated contract: deletion requires a per-file
+# git-reproducibility PROOF — every non-exempt, non-tolerated regular file's
+# git blob must EXIST in the MAIN repo's object database — never age alone;
+# age (recency) is only ever a KEEP signal (#2127, user directive 2026-08-06;
+# #1092 is the standing counter-example an age gate would have destroyed).
+# See ``sweep_tmp_scratch``. NOTE the gc residual: a blob-existence proof is
+# recoverability-NOW — an unreachable blob can be gc'd later, so the proof
+# guarantees the bytes are recoverable at sweep time, not forever.
+_SCRATCH_SHAPE_GLOBS = ("*-gate*", "*smoke*", "eps-*-scratch-*", "scratch-*", "mkstest-*")
+# Hard denylist, checked FIRST (belt-and-braces on top of the structural
+# shape non-match): the live Claude task-output tree (``/tmp/claude-1001``),
+# live pytest basetemps (``pytest-of-*`` — a Step-9c gate may be running),
+# and session/system dirs must stay unreachable even if a future shape glob
+# widens. A denylist match KEEPS regardless of any evidence.
+_SCRATCH_DENYLIST_GLOBS = (
+    "claude-*",
+    "pytest-of-*",
+    "tmux-*",
+    "systemd-private-*",
+    "snap-private-tmp*",
+    "ssh-*",
+)
+# Rebuildable tool state by construction — pruned from the VERIFICATION walk
+# (their contents never need a blob proof) and from the READER-atime signal
+# (a janitor's own git probes refresh clone ``.git`` atimes; uv-hardlinked
+# ``.venv`` site-packages share atimes with the global uv cache — neither is
+# evidence of a live reader of THIS tree). Their MTIMES still count toward
+# the write-recency keep signal (a mid-build ``.venv`` reads as a live
+# writer).
+_SCRATCH_EXEMPT_DIR_NAMES = frozenset(
+    {
+        ".git",
+        ".venv",
+        "venv",
+        "__pycache__",
+        ".pytest_cache",
+        "node_modules",
+        ".ruff_cache",
+        ".mypy_cache",
+    }
+)
+# Small-text tolerance: the ONE lever that accepts (and therefore deletes)
+# bytes WITHOUT a blob proof. Deliberately narrow — process-telemetry
+# extensions only. ``.diff`` is deliberately EXCLUDED: a .diff is by
+# construction a serialization of at-the-time-UNCOMMITTED work (the
+# redirect-a-diff-before-a-risky-operation pattern puts exactly the
+# only-copy class into scratch trees). ``.md`` / ``.json`` / ``.jsonl`` are
+# NOT tolerated (notes + judge outputs live there). Widening this allowlist
+# or the byte caps widens unproven deletion.
+_SCRATCH_TOLERATED_EXTS = frozenset({".txt", ".log", ".out", ".err"})
+SCRATCH_TOLERATED_FILE_MAX_BYTES = 5 * 2**20  # 5 MiB per tolerated file
+SCRATCH_TOLERATED_TOTAL_MAX_BYTES = 64 * 2**20  # 64 MiB tolerated per candidate
+SCRATCH_SWEEP_KILL_ENV = "EPM_SKIP_TMP_SCRATCH_SWEEP"  # this leg only (family switch also binds)
+SCRATCH_VERIFY_MAX_GB_DEFAULT = 64.0  # env EPS_SCRATCH_VERIFY_MAX_GB (hash-byte cap per candidate)
+SCRATCH_ESCALATE_FLOOR_GB_DEFAULT = (
+    1.0  # env EPS_SCRATCH_ESCALATE_FLOOR_GB (keep-row sidecar floor)
+)
+SCRATCH_VERDICT_CACHE_REL = Path(".claude") / "cache" / "scratch-verify-cache.json"
 
 # The HF dataset repo a per-issue ``store/`` would have been mirrored to. Used
 # ONLY by the defensive nested-``store/`` parity guard below to verify a
@@ -520,6 +642,23 @@ def extract_issue_number(name: str) -> int | None:
     return None
 
 
+def extract_staging_issue_number(name: str) -> int | None:
+    """Issue number a STAGING-root entry NAME is keyed to, or ``None`` (#2095).
+
+    P1 (the shared :func:`extract_issue_number` prefix regex) first, then the
+    staging tmp-variant (``tmp-<N>-*``, ``tmp_issue<N>_*``). Deliberately NO
+    P2 suffix route (the foreign-mkdtemp shape; staging dirs are huge). A
+    leading ``.`` (dot-dir, e.g. ``.hf_i1092_operator``) can match neither
+    anchored regex — NEVER a candidate by construction. Pure; unit-tested."""
+    m = _TMP_ISSUE_PREFIX_RE.match(name)
+    if m is not None:
+        return int(m.group(1))
+    m = _STAGING_TMP_PREFIX_RE.match(name)
+    if m is not None:
+        return int(m.group(1))
+    return None
+
+
 def production_tmp_root() -> Path:
     """The ``/tmp`` root PRODUCTION ENTRY POINTS pass explicitly
     (env ``EPM_TMP_CACHE_ROOT``; blank -> :data:`TMP_CACHE_ROOT_DEFAULT`).
@@ -532,6 +671,35 @@ def production_tmp_root() -> Path:
     constant-terminal status monkeypatches); a both-None -> real-/tmp fallback
     would have them destructively rmtree live /tmp caches during pytest."""
     return Path(os.environ.get("EPM_TMP_CACHE_ROOT", "").strip() or TMP_CACHE_ROOT_DEFAULT)
+
+
+def production_staging_roots() -> list[Path]:
+    """Staging roots PRODUCTION ENTRY POINTS pass explicitly (#2095 —
+    main()-only, the sibling of :func:`production_tmp_root`; the I7-style AST
+    pin extends to this symbol).
+
+    Default: ``[data_disk_root()/<getpass.getuser()>]`` iff
+    ``os.path.ismount(data_disk_root())`` (an unmounted data disk is a clean
+    no-op — the #681 round-2 Major class) AND the per-user dir ``is_dir()``.
+    Env :data:`STAGING_ROOTS_ENV` (colon-separated absolute roots) OVERRIDES
+    the default — each entry kept iff ``is_dir()``, no mount guard on
+    explicit roots. :data:`STAGING_SWEEP_KILL_ENV` set -> ``[]``. Scope note:
+    that kill switch disables the SWEEP leg only — the watcher's read-only
+    ``_staging_top_caches`` attribution deliberately ignores it (#2095 §4.3).
+    Hermeticity contract mirrors the /tmp leg: library calls with
+    ``staging_roots=None`` NEVER touch any staging root (no fallback)."""
+    if os.environ.get(STAGING_SWEEP_KILL_ENV, "").strip():
+        return []
+    raw = os.environ.get(STAGING_ROOTS_ENV, "").strip()
+    if raw:
+        return [Path(p) for p in raw.split(":") if p.strip() and Path(p).is_dir()]
+    root = data_disk_root()
+    if not os.path.ismount(root):
+        return []
+    user_dir = root / getpass.getuser()
+    if not user_dir.is_dir():
+        return []
+    return [user_dir]
 
 
 def _tmp_entry_owned(path: Path) -> bool:
@@ -557,7 +725,7 @@ def _noncanonical_min_age_hours() -> float:
     return val if val >= 0.0 else NONCANONICAL_MIN_AGE_HOURS_DEFAULT
 
 
-def _dir_max_recency(path: Path) -> float | None:
+def _dir_max_recency(path: Path, *, top_level_only: bool = False) -> float | None:
     """Newest touch time over ``path`` itself + every entry under it
     (lstat-based — never follows symlinks; a per-entry stat error is skipped).
 
@@ -571,7 +739,13 @@ def _dir_max_recency(path: Path) -> float | None:
     every candidate and keep it forever (a self-keeping loop). Dir mtime
     changes only on entry create/delete/rename, a true write signal. Returns
     ``None`` when even the top-level lstat fails (the caller keeps —
-    fail-toward-keep)."""
+    fail-toward-keep).
+
+    ``top_level_only`` (#2095, staging candidates): lstat ``path`` + each
+    IMMEDIATE ``iterdir`` entry only — same ``_touch_time`` rules, no rglob
+    (a full rglob over a multi-100-GB staging tree is a real walk). Accepted
+    residual: a deep writer in a TERMINAL-status dir can look old — the
+    active-status gate protects live issues and gates 1.6/1.7 still bind."""
 
     def _touch_time(st: os.stat_result) -> float:
         if stat.S_ISREG(st.st_mode):
@@ -583,7 +757,7 @@ def _dir_max_recency(path: Path) -> float | None:
     except OSError:
         return None
     try:
-        for p in path.rglob("*"):
+        for p in path.iterdir() if top_level_only else path.rglob("*"):
             try:
                 newest = max(newest, _touch_time(p.lstat()))
             except OSError:
@@ -593,12 +767,53 @@ def _dir_max_recency(path: Path) -> float | None:
     return newest
 
 
+def _staging_cache_dirs(issue_n: int, staging_roots: list[Path] | None) -> list[Path]:
+    """TOP-LEVEL staging-root candidates keyed to ``issue_n`` (#2095).
+
+    Per root: one ``iterdir`` — dirs or symlinks only (top-level FILES like
+    ``issue<N>_p3_judge.log`` are never candidates), uid-owned
+    (:func:`_tmp_entry_owned` — root-owned strays skipped), name keyed via
+    :func:`extract_staging_issue_number` (PREFIX-ONLY — no P2 suffix route).
+    Empty when ``staging_roots`` is ``None`` (hermeticity: library callers
+    never touch any staging root — only ``main()`` passes
+    :func:`production_staging_roots`) or when either kill env is set
+    (:data:`STAGING_SWEEP_KILL_ENV` kills the staging leg alone;
+    :data:`NONCANONICAL_SWEEP_KILL_ENV` kills the whole non-canonical sweep,
+    this leg transitively)."""
+    if staging_roots is None:
+        return []
+    if os.environ.get(STAGING_SWEEP_KILL_ENV, "").strip():
+        return []
+    if os.environ.get(NONCANONICAL_SWEEP_KILL_ENV, "").strip():
+        return []
+    out: list[Path] = []
+    for root in staging_roots:
+        try:
+            if not root.is_dir():
+                continue
+            children = sorted(root.iterdir())
+        except OSError:
+            continue
+        for child in children:
+            try:
+                is_dir_or_link = child.is_dir() or child.is_symlink()
+            except OSError:
+                continue
+            if not is_dir_or_link or not _tmp_entry_owned(child):
+                continue
+            if extract_staging_issue_number(child.name) == issue_n:
+                out.append(child)
+    return out
+
+
 def noncanonical_cache_dirs(
     issue_n: int,
     *,
     data_root: Path | None = None,
     tmp_root: Path | None = None,
     sweep_tmp: bool = True,
+    staging_roots: list[Path] | None = None,
+    exclude_scratch_shapes: bool = False,
 ) -> list[Path]:
     """Non-canonical issue-keyed cache candidates for ``issue_n`` (#911).
 
@@ -613,10 +828,23 @@ def noncanonical_cache_dirs(
     data_root)`` whose name matches ``issue…<N>…{_dl,_hfstage,_cache}`` with
     the regex group equal to ``issue_n`` (dirs or symlinks).
 
+    STAGING (#2095): TOP-LEVEL entries of each EXPLICIT ``staging_roots``
+    root keyed via :func:`extract_staging_issue_number` — same strict opt-in
+    as the /tmp leg (``None`` = hermetic), plus its own kill switch
+    (:data:`STAGING_SWEEP_KILL_ENV`); see :func:`_staging_cache_dirs`.
+
+    ``exclude_scratch_shapes`` (#2127): True ONLY from a guard invocation
+    that ALSO runs the scratch leg (:func:`sweep_tmp_scratch`) in the same
+    pass — an issue-keyed /tmp entry that is ALSO scratch-shaped
+    (:func:`is_tmp_scratch_name`) is then skipped here so one dir is never
+    double-attributed (once as an issue cache, once as a scratch row). The
+    per-issue CLI keeps the old routing bit-identically (default False).
+
     Empty when :data:`NONCANONICAL_SWEEP_KILL_ENV` is set (emergency rollback
     without a revert). Every candidate returned here must STILL pass the reap
     gates in ``clean_issue_downloads`` (recency, nested-durable, positive
-    re-downloadability evidence) before anything is deleted."""
+    re-downloadability evidence — staging candidates additionally the
+    cross-issue content gate 1.55) before anything is deleted."""
     if os.environ.get(NONCANONICAL_SWEEP_KILL_ENV, "").strip():
         return []
     out: list[Path] = []
@@ -627,6 +855,8 @@ def noncanonical_cache_dirs(
             except OSError:
                 continue
             if not is_dir_or_link or not _tmp_entry_owned(child):
+                continue
+            if exclude_scratch_shapes and is_tmp_scratch_name(child.name):
                 continue
             m = _TMP_ISSUE_PREFIX_RE.match(child.name)
             if m is not None:
@@ -641,6 +871,7 @@ def noncanonical_cache_dirs(
                 and not child.is_symlink()
             ):
                 out.append(child)
+    out.extend(_staging_cache_dirs(issue_n, staging_roots))
     for root in _resolve_data_roots(issue_n, data_root):
         if not root.is_dir():
             continue
@@ -673,6 +904,7 @@ def _noncanonical_recency_blocked(
     apply: bool,
     min_age_hours: float,
     now: float,
+    staging: bool = False,
 ) -> str | None:
     """Gate 1.5 (NEW non-canonical candidates only): SKIP reason when the
     tree's newest touch time (:func:`_dir_max_recency` — file
@@ -681,8 +913,9 @@ def _noncanonical_recency_blocked(
     on a terminal task) may hold it; /tmp paths are never declared in plans,
     so the #773 consumer gate cannot see those readers and recency is the
     only signal. Sidecar kind ``noncanonical-cache-recent-kept``.
-    Fail-toward-keep on stat errors."""
-    newest = _dir_max_recency(cache_dir)
+    Fail-toward-keep on stat errors. STAGING candidates (#2095) read
+    TOP-LEVEL-ONLY recency (no rglob over a multi-100-GB staging tree)."""
+    newest = _dir_max_recency(cache_dir, top_level_only=staging)
     if newest is None:
         reason = "recency unreadable (stat failed) — fail-toward-keep; KEPT"
     else:
@@ -769,6 +1002,1107 @@ def _data_repo_toplevel_names() -> frozenset[str] | None:
         return None
 
 
+def _staging_cross_issue_content(cache_dir: Path, issue_n: int) -> list[str]:
+    """Gate 1.55 scan (#2095): relative paths (depth <= 2, ``iterdir`` only —
+    never a full rglob) of entries whose NAME keys a DIFFERENT issue than
+    ``issue_n`` (P1 regex, M != issue_n — the dir-named-for-A-holding-B's-
+    tensors shape). Fail-toward-keep on OSError: an unreadable level
+    contributes an ``<unreadable>`` sentinel entry so the caller BLOCKS.
+    Symlinked subdirs are not descended (a link can point into another
+    issue's real tree; the link's own depth-1 NAME is still scanned);
+    same-issue names contribute nothing."""
+
+    def _foreign(name: str) -> bool:
+        m = _TMP_ISSUE_PREFIX_RE.match(name)
+        return m is not None and int(m.group(1)) != issue_n
+
+    try:
+        depth1 = sorted(cache_dir.iterdir())
+    except OSError:
+        return [f"{cache_dir.name}/<unreadable>"]
+    hits: list[str] = []
+    for child in depth1:
+        if _foreign(child.name):
+            hits.append(child.name)
+            continue
+        try:
+            if child.is_dir() and not child.is_symlink():
+                hits.extend(
+                    f"{child.name}/{sub.name}"
+                    for sub in sorted(child.iterdir())
+                    if _foreign(sub.name)
+                )
+        except OSError:
+            hits.append(f"{child.name}/<unreadable>")
+    return hits
+
+
+def _staging_unverified_class(
+    cache_dir: Path, data_repo_toplevel: frozenset[str] | None
+) -> str | None:
+    """Escalation class label for a STAGING candidate gate 1.7 refused (#2095
+    delta 5): ``derived-partial-mirror`` when >=1 top-level name matches a
+    data-repo prefix (the audit's dominant ESCALATE class — derived from
+    verified-mirrored HF inputs, regenerable, not itself mirrored) vs
+    ``orphan-no-mirror`` (0 matched). ``None`` when the listing is
+    unavailable (fetch failed — no branch-(b) match counts exist to
+    classify) or the dir is unreadable; the caller then keeps the plain
+    ``unverified-kept`` disposition. Name rules mirror branch (b)'s (the
+    ``.cache`` hub-client bookkeeping dir is ignored)."""
+    if data_repo_toplevel is None:
+        return None
+    try:
+        names = [
+            c.name
+            for c in cache_dir.iterdir()
+            if not (c.name == ".cache" and c.is_dir() and not c.is_symlink())
+        ]
+    except OSError:
+        return None
+    matched = sum(1 for n in names if n in data_repo_toplevel)
+    return "derived-partial-mirror" if matched >= 1 else "orphan-no-mirror"
+
+
+def _staging_probe_floor_bytes() -> int:
+    """Sampled-mirror-probe floor in bytes (#2095 delta 9; env
+    ``EPM_STAGING_EVIDENCE_PROBE_FLOOR_GB``, invalid/negative -> the
+    :data:`STAGING_EVIDENCE_PROBE_FLOOR_GB` default)."""
+    raw = os.environ.get("EPM_STAGING_EVIDENCE_PROBE_FLOOR_GB", "").strip()
+    gb = STAGING_EVIDENCE_PROBE_FLOOR_GB
+    if raw:
+        try:
+            val = float(raw)
+        except ValueError:
+            val = -1.0
+        if val >= 0.0:
+            gb = val
+    return int(gb * 1e9)
+
+
+def _hf_path_size(rel: str) -> int | None:
+    """Byte size of ``rel`` on the HF data repo (one ``get_paths_info`` call
+    — per-path POST, safe on the ~1M-file repo), or ``None`` when the path is
+    absent. Raises on transport/auth errors — the probe caller treats ANY
+    exception as refusal (fail-toward-keep)."""
+    from huggingface_hub import HfApi
+
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+    for info in api.get_paths_info(hf_data_repo(), [rel], repo_type="dataset"):
+        if str(getattr(info, "path", "")) == rel:
+            size = getattr(info, "size", None)
+            return int(size) if size is not None else None
+    return None
+
+
+def _staging_mirror_probe(cache_dir: Path) -> str | None:
+    """Delta-9 sampled mirror probe (#2095) on a branch-(b)-LICENSED staging
+    candidate above :func:`_staging_probe_floor_bytes`. Branch (b) is
+    NAME-level prefix matching only, so a SAME-issue partial mirror (a dir
+    whose top-level names match repo prefixes while holding local-only
+    files) would be licensed by name coincidence — unacceptable when the
+    license triggers rmtree of a multi-GB tree. The probe locates the
+    LARGEST regular file under the candidate (one rglob — only on
+    already-licensed candidates; the rmtree that would follow walks the same
+    tree anyway), maps its cache-relative path onto the data repo, and
+    verifies existence + byte-equal size. Returns ``None`` when the license
+    STANDS (byte-equal mirror hit, or no regular file exists — nothing at
+    risk beyond empty dirs), else a refusal reason string; ANY exception is
+    a refusal (fail-toward-keep)."""
+    try:
+        largest: Path | None = None
+        largest_size = -1
+        for p in cache_dir.rglob("*"):
+            try:
+                st = p.lstat()
+            except OSError:
+                continue
+            if stat.S_ISREG(st.st_mode) and st.st_size > largest_size:
+                largest, largest_size = p, st.st_size
+        if largest is None:
+            return None  # no regular file — nothing at risk beyond empty dirs
+        rel = largest.relative_to(cache_dir).as_posix()
+        size = _hf_path_size(rel)
+        if size == largest_size:
+            return None
+        detail = "absent from" if size is None else f"{size} B on"
+        return f"largest local file {rel} ({largest_size} B) is {detail} {hf_data_repo()}"
+    except Exception as exc:
+        return f"probe error ({type(exc).__name__}: {exc})"
+
+
+# ─── #2127 top-level /tmp gate/smoke scratch sweep — helpers ─────────────────
+
+
+def is_tmp_scratch_name(name: str) -> bool:
+    """True iff a top-level ``/tmp`` entry NAME is a gate/smoke scratch
+    candidate (#2127): it matches one of :data:`_SCRATCH_SHAPE_GLOBS` AND
+    none of :data:`_SCRATCH_DENYLIST_GLOBS`. The denylist is checked FIRST
+    so the live Claude task-output tree (``claude-*``) and live pytest
+    basetemps (``pytest-of-*``) stay unreachable even if a future shape
+    glob widens."""
+    if any(fnmatch.fnmatchcase(name, deny) for deny in _SCRATCH_DENYLIST_GLOBS):
+        return False
+    return any(fnmatch.fnmatchcase(name, g) for g in _SCRATCH_SHAPE_GLOBS)
+
+
+def tmp_scratch_sweep_enabled() -> bool:
+    """Two-layer kill switch for the scratch leg (#2127, mirrors the #2095
+    pattern): runs only when BOTH the family switch
+    (:data:`NONCANONICAL_SWEEP_KILL_ENV`) and the leg's own switch
+    (:data:`SCRATCH_SWEEP_KILL_ENV`) are unset."""
+    if os.environ.get(NONCANONICAL_SWEEP_KILL_ENV, "").strip():
+        return False
+    return not os.environ.get(SCRATCH_SWEEP_KILL_ENV, "").strip()
+
+
+def scratch_verdict_cache_path() -> Path:
+    """Production location of the scratch-sweep verdict cache
+    (``<main checkout>/.claude/cache/scratch-verify-cache.json``).
+
+    main()-ONLY opt-in, the same hermeticity contract as
+    :func:`production_tmp_root`: library callers default to ``None`` (no
+    cache reads/writes), so tests never touch — nor are influenced by —
+    the real cache. AST-pinned by
+    ``tests/test_janitor_noncanonical_caches.py::test_production_tmp_root_only_in_mains``."""
+    return _resolution_root() / SCRATCH_VERDICT_CACHE_REL
+
+
+def _scratch_verify_cap_bytes() -> int:
+    """Per-candidate cap on bytes HASHED for blob verification (#2127); a
+    candidate whose non-exempt regular bytes exceed it is KEPT unverified
+    (``over-verify-cap``). Env ``EPS_SCRATCH_VERIFY_MAX_GB``."""
+    raw = os.environ.get("EPS_SCRATCH_VERIFY_MAX_GB", "").strip()
+    try:
+        gb = float(raw) if raw else SCRATCH_VERIFY_MAX_GB_DEFAULT
+    except ValueError:
+        gb = SCRATCH_VERIFY_MAX_GB_DEFAULT
+    return int(gb * 1e9)
+
+
+def _scratch_escalate_floor_bytes() -> int:
+    """Size floor for KEEP-row sidecar escalation (#2127) — every candidate
+    still appears in the report/JSON rows; only the durable sidecar rows are
+    floor-gated. Env ``EPS_SCRATCH_ESCALATE_FLOOR_GB``."""
+    raw = os.environ.get("EPS_SCRATCH_ESCALATE_FLOOR_GB", "").strip()
+    try:
+        gb = float(raw) if raw else SCRATCH_ESCALATE_FLOOR_GB_DEFAULT
+    except ValueError:
+        gb = SCRATCH_ESCALATE_FLOOR_GB_DEFAULT
+    return int(gb * 1e9)
+
+
+def _scratch_is_exempt_rel(rel_parts: tuple[str, ...]) -> bool:
+    """True when a candidate-relative path sits under (or is) an exempt
+    tool-state dir (:data:`_SCRATCH_EXEMPT_DIR_NAMES`), or is the root-level
+    ``.git`` worktree-pointer FILE (pure git admin metadata — rebuildable
+    via ``git worktree repair``; its content is deliberately not in any
+    odb)."""
+    if any(part in _SCRATCH_EXEMPT_DIR_NAMES for part in rel_parts[:-1]):
+        return True
+    if rel_parts and rel_parts[-1] in _SCRATCH_EXEMPT_DIR_NAMES:
+        # a DIR named e.g. ``.git`` — callers pass dir paths too; and the
+        # root-level ``.git`` regular FILE (worktree pointer) lands here.
+        return True
+    return False
+
+
+def _scratch_walk_stats(cand: Path) -> dict | None:
+    """One defensive lstat-classified walk of a scratch candidate (#2127).
+
+    Returns a dict with:
+
+    - ``newest_mtime`` — max mtime over the root dir, EVERY subdir (exempt
+      dirs included: a mid-build ``.venv`` reads as a live writer) and
+      every regular file;
+    - ``newest_nonexempt_mtime`` — the same max EXCLUDING exempt-dir
+      content (the reap re-check key: the sweep's own git probes rewrite a
+      clone's in-tree ``.git/index`` mid-verification, which must not
+      self-abort the reap — a real mid-verify writer still bumps non-exempt
+      file/dir mtimes, and a live exempt-dir writer holds a process the
+      live-process probe sees);
+    - ``newest_reader_atime`` — max atime over regular files with
+      ``st_nlink == 1`` that are NOT exempt (uv-hardlinked ``.venv`` files
+      share atimes with the global uv cache; the janitor's own git probes
+      refresh ``.git`` atimes — neither is tree-READER evidence), or
+      ``None`` when no such file exists;
+    - ``nonregular`` — str path of the first FIFO/socket/device found
+      anywhere, else ``None`` (symlinks are NOT non-regular: skipped —
+      never followed, never opened — and contribute no recency);
+    - ``total_bytes`` / ``nonexempt_bytes`` / ``n_regular`` /
+      ``n_symlinks`` — tree totals (``n_regular`` counts EVERY regular
+      file, exempt included, so the empty-tree carve-out stays strict).
+
+    Returns ``None`` on ANY walk/stat error (fail-toward-keep: callers
+    treat an unreadable tree as KEEP)."""
+    walk_errors: list[OSError] = []
+    try:
+        root_st = cand.lstat()
+        if not stat.S_ISDIR(root_st.st_mode):
+            return None
+        newest_mtime = root_st.st_mtime
+        newest_nonexempt_mtime = root_st.st_mtime
+        newest_reader_atime: float | None = None
+        nonregular: str | None = None
+        total_bytes = 0
+        nonexempt_bytes = 0
+        n_regular = 0
+        n_symlinks = 0
+        for dirpath, dirnames, filenames in os.walk(
+            cand, topdown=True, onerror=walk_errors.append, followlinks=False
+        ):
+            if walk_errors:
+                return None
+            dp = Path(dirpath)
+            rel_dir_parts = dp.relative_to(cand).parts
+            for name in list(dirnames):
+                try:
+                    st = (dp / name).lstat()
+                except OSError:
+                    return None
+                if stat.S_ISLNK(st.st_mode):
+                    dirnames.remove(name)  # never follow/descend a dir symlink
+                    n_symlinks += 1
+                    continue
+                newest_mtime = max(newest_mtime, st.st_mtime)
+                if not _scratch_is_exempt_rel((*rel_dir_parts, name)):
+                    newest_nonexempt_mtime = max(newest_nonexempt_mtime, st.st_mtime)
+            for name in filenames:
+                p = dp / name
+                try:
+                    st = p.lstat()
+                except OSError:
+                    return None
+                mode = st.st_mode
+                if stat.S_ISLNK(mode):
+                    n_symlinks += 1
+                    continue
+                if not stat.S_ISREG(mode):
+                    if nonregular is None:
+                        nonregular = str(p)
+                    continue
+                n_regular += 1
+                total_bytes += st.st_size
+                newest_mtime = max(newest_mtime, st.st_mtime)
+                if _scratch_is_exempt_rel((*rel_dir_parts, name)):
+                    continue
+                newest_nonexempt_mtime = max(newest_nonexempt_mtime, st.st_mtime)
+                nonexempt_bytes += st.st_size
+                if st.st_nlink == 1 and (
+                    newest_reader_atime is None or st.st_atime > newest_reader_atime
+                ):
+                    newest_reader_atime = st.st_atime
+        if walk_errors:
+            return None
+        return {
+            "newest_mtime": newest_mtime,
+            "newest_nonexempt_mtime": newest_nonexempt_mtime,
+            "newest_reader_atime": newest_reader_atime,
+            "nonregular": nonregular,
+            "total_bytes": total_bytes,
+            "nonexempt_bytes": nonexempt_bytes,
+            "n_regular": n_regular,
+            "n_symlinks": n_symlinks,
+        }
+    except Exception:
+        return None
+
+
+def _open_scratch_regular(path: Path) -> tuple[int, os.stat_result] | None:
+    """Open a regular file for hashing without following symlinks and
+    without blocking (``O_RDONLY | O_NOFOLLOW | O_NONBLOCK``, plus
+    ``O_NOATIME`` where permitted — retried without it on ``EPERM``), then
+    re-verify via ``fstat`` that the OPENED object is still a regular file
+    (an lstat->open race swap to a FIFO would otherwise wedge or misread —
+    ``O_NONBLOCK`` makes even that open non-blocking). Returns
+    ``(fd, fstat)`` or ``None`` (callers fail toward keep). The caller owns
+    closing ``fd``."""
+    flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK
+    fd: int | None = None
+    try:
+        try:
+            fd = os.open(path, flags | getattr(os, "O_NOATIME", 0))
+        except PermissionError:
+            fd = os.open(path, flags)  # O_NOATIME requires file ownership
+        st = os.fstat(fd)
+        if not stat.S_ISREG(st.st_mode):
+            os.close(fd)
+            return None
+        return fd, st
+    except OSError:
+        if fd is not None:
+            with contextlib.suppress(OSError):
+                os.close(fd)
+        return None
+
+
+def _blob_sha1_from_fd(fd: int, size: int) -> str | None:
+    """git blob sha1 of exactly ``size`` bytes read from ``fd``
+    (``sha1(b"blob %d\\0" + content)`` — git's own object id, sha1 object
+    format only). Returns ``None`` when the file yields FEWER bytes than
+    ``size`` or still has bytes PAST it (a concurrent truncate/grow race:
+    the hash would name a different object than the one stat'd —
+    fail-toward-keep)."""
+    h = hashlib.sha1(b"blob %d\x00" % size)
+    remaining = size
+    while remaining > 0:
+        chunk = os.read(fd, min(remaining, 1 << 20))
+        if not chunk:
+            return None  # shrank under us
+        h.update(chunk)
+        remaining -= len(chunk)
+    if os.read(fd, 1):
+        return None  # grew under us
+    return h.hexdigest()
+
+
+def _git(
+    args: list[str],
+    *,
+    cwd: Path,
+    input_text: str | None = None,
+    timeout: float = 120.0,
+) -> subprocess.CompletedProcess | None:
+    """Run ``git <args>`` in ``cwd``. Returns the completed process, or
+    ``None`` on timeout / OSError (callers fail toward keep)."""
+    try:
+        return subprocess.run(
+            ["git", *args],
+            cwd=str(cwd),
+            input=input_text,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+    except (OSError, subprocess.TimeoutExpired, ValueError):
+        return None
+
+
+def _git_first_missing_blob(main_repo: Path, shas: list[str]) -> int | None:
+    """Batched blob-existence probe against ``main_repo``'s object database
+    (``git cat-file --batch-check``, ~200 shas per call, short-circuiting).
+    Returns ``-1`` when EVERY sha exists as a blob, the index of the first
+    missing/non-blob sha otherwise, or ``None`` on any probe failure
+    (fail-toward-keep)."""
+    for start in range(0, len(shas), 200):
+        chunk = shas[start : start + 200]
+        proc = _git(
+            ["cat-file", "--batch-check=%(objectname) %(objecttype)"],
+            cwd=main_repo,
+            input_text="".join(s + "\n" for s in chunk),
+        )
+        if proc is None or proc.returncode != 0:
+            return None
+        lines = [ln for ln in proc.stdout.splitlines() if ln.strip()]
+        if len(lines) != len(chunk):
+            return None
+        for i, line in enumerate(lines):
+            parts = line.split()
+            if len(parts) < 2 or parts[1] != "blob":
+                return start + i
+    return -1
+
+
+def _git_dir_kind(cand: Path) -> tuple[str, Path | None]:
+    """Classify a candidate's git nature from its top-level ``.git`` entry:
+
+    - ``("none", None)`` — no ``.git`` at the candidate root;
+    - ``("worktree", admin_dir)`` — ``.git`` is a regular FILE with a
+      parseable ``gitdir:`` pointer to an existing admin dir;
+    - ``("clone", git_dir)`` — ``.git`` is a real directory;
+    - ``("unknown", None)`` — anything else (symlink ``.git``, unreadable,
+      unparseable pointer, dangling admin dir). Callers KEEP on unknown."""
+    dotgit = cand / ".git"
+    try:
+        st = dotgit.lstat()
+    except FileNotFoundError:
+        return "none", None
+    except OSError:
+        return "unknown", None
+    if stat.S_ISDIR(st.st_mode):
+        return "clone", dotgit
+    if not stat.S_ISREG(st.st_mode):
+        return "unknown", None
+    try:
+        text = dotgit.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return "unknown", None
+    if not text.startswith("gitdir:"):
+        return "unknown", None
+    admin = Path(text[len("gitdir:") :].strip())
+    if not admin.is_absolute():
+        admin = cand / admin
+    try:
+        admin = admin.resolve()
+        if not admin.is_dir():
+            return "unknown", None
+    except OSError:
+        return "unknown", None
+    return "worktree", admin
+
+
+def _worktree_admin_of_main(admin: Path, main_repo: Path) -> bool:
+    """True iff ``admin`` is a REGISTERED linked-worktree admin dir of
+    ``main_repo`` (realpath under ``<git-common-dir>/worktrees/``)."""
+    proc = _git(["rev-parse", "--path-format=absolute", "--git-common-dir"], cwd=main_repo)
+    if proc is None or proc.returncode != 0:
+        return False
+    try:
+        admin_real = admin.resolve()
+        wt_root = (Path(proc.stdout.strip()) / "worktrees").resolve()
+    except OSError:
+        return False
+    return wt_root in admin_real.parents
+
+
+def _reachable_in_main(main_repo: Path, sha: str) -> bool:
+    """True iff ``sha`` is reachable from a SURVIVING ref of ``main_repo``:
+    the fast path ``merge-base --is-ancestor <sha> origin/main`` (rc==0),
+    else a non-empty ``for-each-ref --contains`` over heads/tags/remotes.
+    Any probe failure reads as unreachable (fail-toward-keep)."""
+    proc = _git(["merge-base", "--is-ancestor", sha, "origin/main"], cwd=main_repo)
+    if proc is not None and proc.returncode == 0:
+        return True
+    proc = _git(
+        [
+            "for-each-ref",
+            "--format=%(refname)",
+            f"--contains={sha}",
+            "refs/heads",
+            "refs/tags",
+            "refs/remotes",
+        ],
+        cwd=main_repo,
+    )
+    return proc is not None and proc.returncode == 0 and bool(proc.stdout.strip())
+
+
+def _scratch_git_class_probes(
+    cand: Path, kind: str, admin: Path | None, *, main_repo: Path
+) -> str | None:
+    """Class-discriminated git-state safety probes (#2127). Returns ``None``
+    when the candidate's git metadata carries NOTHING the main repo would
+    lose on rmtree, else a keep-reason slug (fail-toward-keep on every
+    probe failure).
+
+    WORKTREE class (``.git`` file -> registered admin dir; object database
+    lives in the MAIN repo, so only worktree-LOCAL state matters): must be
+    a main-repo registration, unlocked, ``status --porcelain`` empty, HEAD
+    reachable from a surviving main-repo ref. The SHARED stash is
+    deliberately NOT probed — stash entries live in the main odb and
+    survive the worktree (#2127 plan §12).
+
+    CLONE class (``.git`` DIR — its whole odb dies with the tree): status
+    empty, OWN stash empty, every ref tip + HEAD reachable from the main
+    repo's surviving refs (reachability, not mere object presence — a
+    present commit object does not imply its tree/parents are)."""
+    if kind == "none":
+        return None
+    if kind != "worktree" and kind != "clone":
+        return "git-entry-unrecognized"
+    if kind == "worktree":
+        if admin is None or not _worktree_admin_of_main(admin, main_repo):
+            return "foreign-worktree"
+        try:
+            if (admin / "locked").exists():
+                return "worktree-locked"
+        except OSError:
+            return "git-probe-failed"
+    # NOTE (review round 2): `git status` reads .gitignore files WITHOUT
+    # O_NOATIME, so a cache-miss report-only run can atime-pin a would-reap
+    # tree for +48h. Bounded: the verdict cache suppresses repeat probes,
+    # relatime suppresses <24h refreshes, and the apply path's atime gate
+    # decides on PRE-probe stats, so a run can never self-block.
+    status = _git(["status", "--porcelain"], cwd=cand)
+    if status is None or status.returncode != 0:
+        return "git-probe-failed"
+    if status.stdout.strip():
+        return "worktree-dirty" if kind == "worktree" else "clone-dirty"
+    head = _git(["rev-parse", "HEAD"], cwd=cand)
+    if head is None or head.returncode != 0:
+        return "git-probe-failed"
+    head_sha = head.stdout.strip()
+    if kind == "worktree":
+        if not _reachable_in_main(main_repo, head_sha):
+            return "head-unreachable"
+        return None
+    stash = _git(["stash", "list"], cwd=cand)
+    if stash is None or stash.returncode != 0:
+        return "git-probe-failed"
+    if stash.stdout.strip():
+        return "clone-stash"
+    tips_proc = _git(["for-each-ref", "--format=%(objectname)"], cwd=cand)
+    if tips_proc is None or tips_proc.returncode != 0:
+        return "git-probe-failed"
+    tips = sorted({*tips_proc.stdout.split(), head_sha})
+    if len(tips) > 32:
+        return "clone-ref-fanout"
+    for sha in tips:
+        if not _reachable_in_main(main_repo, sha):
+            return "head-unreachable" if sha == head_sha else "clone-unpushed-ref"
+    return None
+
+
+class _ScratchVerdictCache:
+    """Fail-soft JSON verdict cache for scratch blob verification (#2127),
+    keyed ``<realpath>|<newest_mtime>|<total_bytes>`` so any tree change
+    invalidates. Only DEFINITIVE verdicts are stored (PASS /
+    ``unverified-file`` / ``tolerance-only`` / ``no-verifiable-content`` /
+    ``over-verify-cap``); transient probe errors and git CLASS-probe slugs
+    are recomputed every run (they can flip without any tree mtime change —
+    e.g. a push makes a HEAD reachable). A cached PASS still EMBEDS the
+    class-probe conclusions from verify time — reap-ward and equally
+    flippable — which is why :func:`_reap_scratch_tree` re-runs the class
+    probes on the destructive path (review round 2); the cache alone never
+    licenses a deletion. ``prune()`` drops a reaped path's entries. All IO
+    fail-soft: corrupt/unwritable degrades to no-cache.
+    Known residuals (plan §12 + review round 2): (a) a cached PASS can
+    outlive a later ``git gc`` of the proving blobs — the reap-time
+    re-checks cover recency and git class state, not blob existence; the
+    proof is recoverability at VERIFY time. (b) the cache key AND the reap
+    re-walk are both blind to mtime-preserving SAME-SIZE content overwrites
+    (``tar -x``, ``cp -p``, ``rsync --checksum`` over an existing file):
+    stale PASS + unchanged key + no fresh mtime => unverified bytes reaped.
+    A narrow, deliberate-backdating class — disclosed, not chased."""
+
+    _CACHEABLE = frozenset(
+        {"pass", "unverified-file", "tolerance-only", "no-verifiable-content", "over-verify-cap"}
+    )
+
+    def __init__(self, path: Path | None) -> None:
+        self.path = path
+        self._data: dict[str, dict] | None = None
+        self._dirty = False
+
+    def _load(self) -> dict[str, dict]:
+        if self._data is None:
+            self._data = {}
+            if self.path is not None:
+                try:
+                    raw = json.loads(self.path.read_text())
+                    if isinstance(raw, dict):
+                        self._data = {
+                            k: v for k, v in raw.items() if isinstance(v, dict) and "detail" in v
+                        }
+                except (OSError, ValueError):
+                    self._data = {}
+        return self._data
+
+    @staticmethod
+    def _key(cand: Path, stats: dict) -> str:
+        return f"{os.path.realpath(cand)}|{stats['newest_mtime']}|{stats['total_bytes']}"
+
+    def lookup(self, cand: Path, stats: dict) -> tuple[str | None, dict] | None:
+        """Cached ``(evidence, detail)`` for an unchanged tree, else None."""
+        if self.path is None:
+            return None
+        row = self._load().get(self._key(cand, stats))
+        if not isinstance(row, dict) or not isinstance(row.get("detail"), dict):
+            return None
+        ev = row.get("evidence")
+        if ev is not None and not isinstance(ev, str):
+            return None
+        return ev, dict(row["detail"])
+
+    def store(self, cand: Path, stats: dict, evidence: str | None, detail: dict) -> None:
+        """Record a verdict iff its reason class is cacheable."""
+        if self.path is None:
+            return
+        reason = "pass" if evidence is not None else str(detail.get("reason"))
+        if reason not in self._CACHEABLE:
+            return
+        self._load()[self._key(cand, stats)] = {"evidence": evidence, "detail": dict(detail)}
+        self._dirty = True
+
+    def prune(self, cand: Path) -> None:
+        """Drop every entry keyed on a just-reaped path."""
+        if self.path is None:
+            return
+        prefix = os.path.realpath(cand) + "|"
+        data = self._load()
+        stale = [k for k in data if k.startswith(prefix)]
+        for k in stale:
+            del data[k]
+        self._dirty = self._dirty or bool(stale)
+
+    def save(self) -> None:
+        """Atomic write-back (tmp + ``os.replace``); fail-soft."""
+        if self.path is None or not self._dirty or self._data is None:
+            return
+        try:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = self.path.with_name(self.path.name + ".tmp")
+            tmp.write_text(json.dumps(self._data, sort_keys=True))
+            os.replace(tmp, self.path)
+            self._dirty = False
+        except OSError:
+            pass
+
+
+def _git_blob_reproducibility_evidence(
+    cand: Path,
+    *,
+    main_repo: Path,
+    full_stats: dict,
+    verdict_cache: _ScratchVerdictCache | None = None,
+) -> tuple[str | None, dict]:
+    """Per-file git-reproducibility proof for a scratch candidate (#2127).
+
+    Returns ``(evidence, detail)``: ``evidence`` is a positive-evidence
+    string when EVERY non-exempt, non-tolerated regular file's git blob
+    exists in ``main_repo``'s object database (with ``n_verified >= 1``, or
+    the strict empty-tree carve-out), else ``None`` with
+    ``detail["reason"]`` naming the first blocker (fail-toward-keep on
+    every ambiguity). ``detail`` carries ``reason`` / ``first_unverified``
+    / ``n_verified`` / ``n_tolerated`` / ``git_class``.
+
+    Gate order: cache hit -> sha1 object-format guard -> git class probes
+    (:func:`_scratch_git_class_probes`) -> empty-tree carve-out ->
+    verify-cap -> per-file blob walk (exempt dirs pruned; symlinks skipped;
+    any non-regular file aborts; small-text tolerance per
+    :data:`_SCRATCH_TOLERATED_EXTS`, never under a ``store``/
+    ``eval_results`` component) -> batched odb existence probe."""
+    detail: dict = {
+        "reason": None,
+        "first_unverified": None,
+        "n_verified": 0,
+        "n_tolerated": 0,
+        "git_class": None,
+    }
+    if verdict_cache is not None:
+        cached = verdict_cache.lookup(cand, full_stats)
+        if cached is not None:
+            ev, det = cached
+            det["cache_hit"] = True
+            return ev, det
+
+    def _keep(reason: str, first: str | None = None) -> tuple[None, dict]:
+        detail["reason"] = reason
+        detail["first_unverified"] = first
+        if verdict_cache is not None:
+            verdict_cache.store(cand, full_stats, None, detail)
+        return None, detail
+
+    fmt = _git(["rev-parse", "--show-object-format"], cwd=main_repo)
+    if fmt is None or fmt.returncode != 0 or fmt.stdout.strip() != "sha1":
+        return _keep("object-format")
+    kind, admin = _git_dir_kind(cand)
+    detail["git_class"] = kind
+    probe = _scratch_git_class_probes(cand, kind, admin, main_repo=main_repo)
+    if probe is not None:
+        return _keep(probe)
+    if (
+        full_stats["n_regular"] == 0
+        and full_stats["nonregular"] is None
+        and full_stats["n_symlinks"] == 0
+    ):
+        evidence = "git-scratch-empty-tree: no files at all — nothing to lose"
+        if verdict_cache is not None:
+            detail["reason"] = "pass"
+            verdict_cache.store(cand, full_stats, evidence, detail)
+        return evidence, detail
+    if full_stats["nonexempt_bytes"] > _scratch_verify_cap_bytes():
+        return _keep("over-verify-cap")
+    walk_errors: list[OSError] = []
+    entries: list[tuple[str, str]] = []  # (sha, candidate-relative path)
+    tolerated_bytes = 0
+    try:
+        for dirpath, dirnames, filenames in os.walk(
+            cand, topdown=True, onerror=walk_errors.append, followlinks=False
+        ):
+            if walk_errors:
+                return _keep("walk-error")
+            dp = Path(dirpath)
+            rel_dir_parts = dp.relative_to(cand).parts
+            dirnames[:] = [d for d in dirnames if d not in _SCRATCH_EXEMPT_DIR_NAMES]
+            under_durable = any(p in ("store", "eval_results") for p in rel_dir_parts)
+            for name in sorted(filenames):
+                p = dp / name
+                rel = "/".join((*rel_dir_parts, name))
+                try:
+                    lst = p.lstat()
+                except OSError:
+                    return _keep("walk-error", rel)
+                mode = lst.st_mode
+                if stat.S_ISLNK(mode):
+                    continue  # skipped: rmtree removes the link, not the target
+                if not stat.S_ISREG(mode):
+                    return _keep("nonregular", rel)
+                if _scratch_is_exempt_rel((*rel_dir_parts, name)):
+                    continue  # rebuildable tool state (root ``.git`` pointer file)
+                ext = os.path.splitext(name)[1].lower()
+                if (
+                    ext in _SCRATCH_TOLERATED_EXTS
+                    and not under_durable
+                    and lst.st_size <= SCRATCH_TOLERATED_FILE_MAX_BYTES
+                    and tolerated_bytes + lst.st_size <= SCRATCH_TOLERATED_TOTAL_MAX_BYTES
+                ):
+                    tolerated_bytes += lst.st_size
+                    detail["n_tolerated"] += 1
+                    continue
+                opened = _open_scratch_regular(p)
+                if opened is None:
+                    return _keep("walk-error", rel)
+                fd, fst = opened
+                try:
+                    sha = _blob_sha1_from_fd(fd, fst.st_size)
+                finally:
+                    with contextlib.suppress(OSError):
+                        os.close(fd)
+                if sha is None:
+                    return _keep("concurrent-write", rel)
+                entries.append((sha, rel))
+        if walk_errors:
+            return _keep("walk-error")
+    except Exception:
+        return _keep("walk-error")
+    if not entries:
+        if detail["n_tolerated"] > 0:
+            return _keep("tolerance-only")
+        return _keep("no-verifiable-content")
+    missing = _git_first_missing_blob(main_repo, [sha for sha, _ in entries])
+    if missing is None:
+        return _keep("git-probe-failed")
+    if missing >= 0:
+        return _keep("unverified-file", entries[missing][1])
+    detail["n_verified"] = len(entries)
+    evidence = (
+        f"git-blob-reproducible: {len(entries)} files verified in the main odb, "
+        f"{detail['n_tolerated']} small-text tolerated"
+    )
+    if verdict_cache is not None:
+        det = dict(detail)
+        det["reason"] = "pass"
+        verdict_cache.store(cand, full_stats, evidence, det)
+    return evidence, detail
+
+
+def _tmp_git_evidence_branch_c(cache_dir: Path, *, main_repo: Path) -> tuple[str | None, dict]:
+    """Gate-1.7 evidence branch (c) (#2127) for the ISSUE-KEYED /tmp legs
+    (P1/P2): per-file git-blob reproducibility, reusing the scratch-leg
+    primitive. REFUSES a candidate that is a REGISTERED main-repo worktree
+    (reason ``registered-worktree``): gate 1.7 licenses a plain ``rmtree``,
+    which would strand the registration — worktree-aware removal belongs to
+    :func:`sweep_tmp_scratch`'s reap step, never here."""
+    stats = _scratch_walk_stats(cache_dir)
+    if stats is None:
+        return None, {"reason": "walk-error", "first_unverified": None}
+    if stats["nonregular"] is not None:
+        return None, {"reason": "nonregular", "first_unverified": stats["nonregular"]}
+    kind, admin = _git_dir_kind(cache_dir)
+    if kind == "worktree" and admin is not None and _worktree_admin_of_main(admin, main_repo):
+        return None, {"reason": "registered-worktree", "first_unverified": None}
+    return _git_blob_reproducibility_evidence(cache_dir, main_repo=main_repo, full_stats=stats)
+
+
+def _scratch_live_process_hit(cand: Path) -> str | None:
+    """Live-process probe (#2127 amendment 1): scan every ``/proc/<pid>``'s
+    ``cwd``/``exe``/``fd/*`` readlink for a realpath-prefix hit on the
+    candidate. Returns a short description of the first hit, the sentinel
+    ``"probe-unavailable"`` when ``/proc`` cannot be listed
+    (fail-toward-keep), or ``None`` when no visible process holds the tree.
+    Unreadable per-pid entries are SKIPPED — other-uid/root processes are
+    invisible to this probe, a NAMED residual (plan v2 §12 item 6)."""
+    try:
+        real = os.path.realpath(cand)
+        prefix = real.rstrip("/") + "/"
+        try:
+            pids = [n for n in os.listdir("/proc") if n.isdigit()]
+        except OSError:
+            return "probe-unavailable"
+        self_pid = str(os.getpid())
+        for pid in pids:
+            if pid == self_pid:
+                continue
+            base = f"/proc/{pid}"
+            links = [f"{base}/cwd", f"{base}/exe"]
+            try:
+                links.extend(f"{base}/fd/{fd}" for fd in os.listdir(f"{base}/fd"))
+            except OSError:
+                pass  # exited race / other-uid fds — named residual above
+            for link in links:
+                try:
+                    target = os.readlink(link)
+                except OSError:
+                    continue
+                if target == real or target.startswith(prefix):
+                    return f"pid={pid} via {link[len(base) + 1 :]} -> {target}"
+        return None
+    except Exception:
+        return "probe-unavailable"
+
+
+def _reap_scratch_tree(cand: Path, *, main_repo: Path, verify_started: float) -> tuple[bool, str]:
+    """Reap step for a fully-licensed scratch candidate (#2127): one FRESH
+    re-walk first (any NON-EXEMPT mtime >= ``verify_started``, or any walk
+    error, aborts the reap — the tree changed under verification; exempt-dir
+    mtimes are excluded from THIS check only, because the sweep's own git
+    probes rewrite a clone's in-tree ``.git/index`` and must not self-abort
+    every clean-clone reap — a real mid-verify writer bumps non-exempt
+    file/dir mtimes, and a still-live exempt-dir writer is the live-process
+    probe's catch), then a fresh git CLASS re-probe, then worktree-aware
+    removal.
+
+    The class re-probe (:func:`_scratch_git_class_probes`, review round 2)
+    is what makes a CACHED PASS safe: the verdict-cache key captures tree
+    content only, but a PASS embeds conclusions about EXTERNAL git state
+    (HEAD/ref reachability, lock, status) that can flip with ZERO tree
+    change — ``git branch -D``, a pruning fetch, an upstream rewrite — so
+    a cache-hit PASS would otherwise skip those probes forever. Re-probing
+    HERE (the only destructive path) keeps the cache's re-hash skip intact
+    while guaranteeing no deletion ever acts on stale external-state
+    conclusions; a hit KEEPS with ``reap-reprobe-<slug>``. The ``git
+    status`` atime side effect is mooted by deletion on success and
+    harmless on abort; blobs are NOT re-hashed, so the documented gc
+    residual stands unchanged.
+
+    A REGISTERED main-repo worktree goes through
+    ``git worktree remove --force`` with ONE ``--force``: a lock acquired
+    between gate check and reap makes the remove FAIL (git needs ``--force``
+    twice for a locked removal), and that failure KEEPS the tree
+    (amendment 2 — no ``shutil.rmtree`` fallback). There is deliberately NO
+    ``git worktree prune`` fallback either: a GLOBAL prune would unregister
+    PEER worktrees whose trees are momentarily missing (e.g. a registered
+    ``/mnt/eps-data``-rooted scratch during a mount hiccup) — repairable
+    via ``git worktree repair`` and data-preserving, but not this
+    janitor's to inflict (amendment 3, the named global-prune residual).
+    Everything else is ``shutil.rmtree``. Returns ``(reaped, reason)``."""
+    fresh = _scratch_walk_stats(cand)
+    if fresh is None or fresh["newest_nonexempt_mtime"] >= verify_started:
+        return False, "reap-recheck-recency"
+    kind, admin = _git_dir_kind(cand)
+    probe = _scratch_git_class_probes(cand, kind, admin, main_repo=main_repo)
+    if probe is not None:
+        return False, f"reap-reprobe-{probe}"
+    if kind == "worktree" and admin is not None and _worktree_admin_of_main(admin, main_repo):
+        proc = _git(["worktree", "remove", "--force", str(cand)], cwd=main_repo, timeout=600.0)
+        if proc is None or proc.returncode != 0:
+            try:
+                locked = (admin / "locked").exists()
+            except OSError:
+                locked = False
+            err = "timeout" if proc is None else (proc.stderr.strip() or "unknown error")
+            tag = "locked" if locked else "remove-failed"
+            return False, f"worktree-remove-failed ({tag}: {err.splitlines()[-1] if err else ''})"
+        return True, "worktree-removed"
+    try:
+        shutil.rmtree(cand)
+    except OSError as exc:
+        return False, f"rmtree-failed ({exc})"
+    return True, "rmtree"
+
+
+def _tmp_scratch_candidates(tmp_root: Path) -> list[Path]:
+    """Top-level scratch-shaped candidates under ``tmp_root`` (#2127): the
+    entry must be a REAL directory (lstat ``S_ISDIR`` — a scratch-named
+    symlink is never followed), uid-owned, shape-matched and not denylisted
+    (:func:`is_tmp_scratch_name`). Kill switches are the caller's
+    (:func:`sweep_tmp_scratch`) concern."""
+    try:
+        names = sorted(os.listdir(tmp_root))
+    except OSError:
+        return []
+    out: list[Path] = []
+    for name in names:
+        if not is_tmp_scratch_name(name):
+            continue
+        p = tmp_root / name
+        try:
+            st = p.lstat()
+        except OSError:
+            continue
+        if not stat.S_ISDIR(st.st_mode) or not _tmp_entry_owned(p):
+            continue
+        out.append(p)
+    return out
+
+
+@dataclass
+class ScratchSweepResult:
+    """Outcome of one :func:`sweep_tmp_scratch` run (#2127)."""
+
+    rows: list[dict] = field(default_factory=list)
+    bytes_freed: int = 0
+    total_discovered_bytes: int = 0
+
+
+def sweep_tmp_scratch(
+    tmp_root: Path | None,
+    *,
+    apply: bool,
+    main_repo: Path | None,
+    min_age_hours: float | None = None,
+    now: float | None = None,
+    verdict_cache_path: Path | None = None,
+) -> ScratchSweepResult:
+    """Owner-status-INDEPENDENT sweep of top-level ``/tmp`` gate/smoke
+    scratch trees (#2127), gated on VERIFIED git-reproducibility — never on
+    age (age is only ever a KEEP signal). Report-only unless ``apply``.
+
+    STRICT opt-in, same hermeticity contract as the #911 leg: runs only
+    when ``tmp_root`` AND ``main_repo`` are explicitly non-None (production
+    ``main()`` bodies pass :func:`production_tmp_root` /
+    :func:`_resolution_root`; library/test callers default to no-/tmp) and
+    both kill-switch layers are unset (:func:`tmp_scratch_sweep_enabled`).
+
+    Per-candidate gate order (every early exit is a KEEP):
+
+    1. shape + denylist + uid + real-dir (:func:`_tmp_scratch_candidates`);
+    2. one defensive walk (:func:`_scratch_walk_stats`) — walk error =>
+       ``tmp-scratch-unverified-kept``; any FIFO/socket/device =>
+       ``tmp-scratch-nonregular-kept``;
+    3. WRITE recency (newest mtime over everything, exempt dirs included)
+       younger than ``min_age_hours`` => ``tmp-scratch-recent-kept``;
+    4. evidence (:func:`_git_blob_reproducibility_evidence`, verdict-cached)
+       — no proof => ``tmp-scratch-{unverified,tolerance-only,
+       worktree-locked,nonregular}-kept`` by reason;
+    5. READER recency (nlink==1 non-exempt atimes) younger than the window
+       on a VERIFIED tree => ``tmp-scratch-verified-atime-pinned`` (kept +
+       escalated: reproducible, but someone read it recently);
+    6. live-process probe (:func:`_scratch_live_process_hit`, amendment 1)
+       => ``tmp-scratch-live-process-kept``;
+    7. reap (:func:`_reap_scratch_tree`) — fresh re-walk abort =>
+       ``tmp-scratch-reap-aborted-recency``; reap-time git class RE-probe
+       hit (external git state flipped since the — possibly cached —
+       verification: ref deleted, lock taken, tree dirtied) =>
+       ``tmp-scratch-reap-reprobe-kept``; worktree-remove failure =>
+       ``tmp-scratch-worktree-remove-failed`` (kept); else
+       ``tmp-scratch-reaped`` (or ``would-reap`` in report mode).
+
+    Sidecar escalation rows are floor-gated (``EPS_SCRATCH_ESCALATE_FLOOR_GB``)
+    for KEEP dispositions; reap/would-reap/atime-pinned rows always land.
+    Every candidate appears in ``rows`` regardless."""
+    result = ScratchSweepResult()
+    if tmp_root is None or main_repo is None or not tmp_scratch_sweep_enabled():
+        return result
+    now = time.time() if now is None else now
+    if min_age_hours is None:
+        min_age_hours = _noncanonical_min_age_hours()
+    window_start = now - min_age_hours * 3600.0
+    cache = _ScratchVerdictCache(verdict_cache_path)
+    floor = _scratch_escalate_floor_bytes()
+    for cand in _tmp_scratch_candidates(tmp_root):
+        row: dict = {"path": str(cand), "name": cand.name, "leg": "tmp-scratch"}
+        result.rows.append(row)
+
+        def _finish(
+            disposition: str,
+            reason: str,
+            *,
+            row: dict = row,
+            escalate: bool | None = None,
+        ) -> None:
+            row["disposition"] = disposition
+            row["reason"] = reason
+            size = row.get("bytes", 0)
+            if escalate is None:
+                escalate = size >= floor
+            print(
+                f"  [tmp-scratch] {disposition}: {row['path']} ({size / 1e9:.2f} GB) — {reason}",
+                file=sys.stderr,
+            )
+            if escalate:
+                append_disk_guard_event(
+                    {
+                        "kind": disposition
+                        if disposition.startswith("tmp-scratch-")
+                        else f"tmp-scratch-{disposition}",
+                        "path": row["path"],
+                        "bytes": size,
+                        "reason": reason,
+                        "evidence": row.get("evidence"),
+                    },
+                    apply=apply,
+                )
+
+        stats = _scratch_walk_stats(cand)
+        if stats is None:
+            _finish("tmp-scratch-unverified-kept", "walk error — unreadable tree; KEPT")
+            continue
+        row["bytes"] = stats["total_bytes"]
+        row["age_hours"] = round((now - stats["newest_mtime"]) / 3600.0, 2)
+        result.total_discovered_bytes += stats["total_bytes"]
+        if stats["nonregular"] is not None:
+            _finish(
+                "tmp-scratch-nonregular-kept",
+                f"non-regular file in tree ({stats['nonregular']}); KEPT",
+            )
+            continue
+        if stats["newest_mtime"] > window_start:
+            _finish(
+                "tmp-scratch-recent-kept",
+                f"written within the last {min_age_hours:.0f}h; KEPT (age is only a keep signal)",
+                escalate=False,
+            )
+            continue
+        evidence, detail = _git_blob_reproducibility_evidence(
+            cand, main_repo=main_repo, full_stats=stats, verdict_cache=cache
+        )
+        row["git_class"] = detail.get("git_class")
+        row["n_verified"] = detail.get("n_verified")
+        row["n_tolerated"] = detail.get("n_tolerated")
+        if evidence is None:
+            reason_slug = str(detail.get("reason"))
+            row["first_unverified"] = detail.get("first_unverified")
+            disposition = {
+                "worktree-locked": "tmp-scratch-worktree-locked-kept",
+                "tolerance-only": "tmp-scratch-tolerance-only-kept",
+                "nonregular": "tmp-scratch-nonregular-kept",
+            }.get(reason_slug, "tmp-scratch-unverified-kept")
+            first = detail.get("first_unverified")
+            _finish(
+                disposition,
+                f"no git-reproducibility proof ({reason_slug}"
+                + (f"; first unverified: {first}" if first else "")
+                + "); KEPT",
+            )
+            continue
+        row["evidence"] = evidence
+        atime = stats["newest_reader_atime"]
+        if atime is not None and atime > window_start:
+            row["reader_atime_age_hours"] = round((now - atime) / 3600.0, 2)
+            _finish(
+                "tmp-scratch-verified-atime-pinned",
+                "verified reproducible, but a non-hardlinked file was READ within the "
+                f"window (atime {row['reader_atime_age_hours']}h ago); KEPT",
+                escalate=True,
+            )
+            continue
+        hit = _scratch_live_process_hit(cand)
+        if hit is not None:
+            _finish(
+                "tmp-scratch-live-process-kept",
+                f"live process holds the tree ({hit}); KEPT",
+            )
+            continue
+        if not apply:
+            _finish("would-reap", f"evidence: {evidence}", escalate=True)
+            continue
+        reaped, reap_reason = _reap_scratch_tree(cand, main_repo=main_repo, verify_started=now)
+        if reaped:
+            result.bytes_freed += stats["total_bytes"]
+            cache.prune(cand)
+            _finish("tmp-scratch-reaped", f"{reap_reason}; evidence: {evidence}", escalate=True)
+        elif reap_reason == "reap-recheck-recency":
+            _finish(
+                "tmp-scratch-reap-aborted-recency",
+                "tree changed between verification and reap; KEPT",
+                escalate=True,
+            )
+        elif reap_reason.startswith("reap-reprobe-"):
+            _finish(
+                "tmp-scratch-reap-reprobe-kept",
+                "git state flipped since (possibly cached) verification "
+                f"({reap_reason.removeprefix('reap-reprobe-')}); KEPT",
+                escalate=True,
+            )
+        elif reap_reason.startswith("worktree-remove-failed"):
+            _finish("tmp-scratch-worktree-remove-failed", f"{reap_reason}; KEPT", escalate=True)
+        else:
+            _finish("tmp-scratch-reap-failed", f"{reap_reason}; KEPT", escalate=True)
+    cache.save()
+    return result
+
+
 def _noncanonical_reap_gates(
     cache_dir: Path,
     *,
@@ -777,11 +2111,34 @@ def _noncanonical_reap_gates(
     min_age_hours: float,
     now: float,
     data_repo_toplevel_cache: dict[str, frozenset[str] | None],
+    staging: bool = False,
+    size_bytes: int = 0,
+    git_evidence_repo: Path | None = None,
 ) -> str | tuple[str, str]:
     """Run gates 1.5 -> 1.6 -> 1.7 on a NON-CANONICAL candidate (#911),
     ordered cheap-first (recency needs only stats, the durable scan is a name
     rglob, the evidence gate may make one HF call — memoized in
     ``data_repo_toplevel_cache``).
+
+    STAGING candidates (#2095, ``staging=True``): gate 1.5 reads
+    TOP-LEVEL-ONLY recency; a NEW gate 1.55 (cross-issue CONTENT
+    hard-escalate) runs between 1.5 and 1.6; gate 1.7's ``unverified-kept``
+    disposition carries a class label (``derived-partial-mirror`` /
+    ``orphan-no-mirror``), the empty-dir license is allowed (prefix-only
+    extraction removes the P2 foreign-mkdtemp concern), and a branch-(b)
+    license on a candidate above the probe floor (``size_bytes`` vs
+    :func:`_staging_probe_floor_bytes`) must additionally pass the sampled
+    mirror probe (:func:`_staging_mirror_probe`) or it is refused as
+    ``unverified-kept:probe-failed``.
+
+    Gate 1.7 evidence branch (c) (#2127, ``git_evidence_repo`` non-None):
+    an ISSUE-KEYED /tmp candidate (P1/P2 — never staging, never a P3
+    ``data/`` name) with no HF evidence may still be licensed by per-file
+    git-blob reproducibility against the main repo
+    (:func:`_tmp_git_evidence_branch_c`). STRICT opt-in: only production
+    ``main()`` bodies pass a repo (the hermetic default keeps library/test
+    callers' fixtures from being licensed by the REAL repo's odb — an empty
+    file's blob exists in every repo).
 
     Returns the positive-evidence STRING when the reap is licensed, or a
     ``(disposition, skip_reason)`` tuple when blocked (fail-toward-keep; the
@@ -789,10 +2146,46 @@ def _noncanonical_reap_gates(
     rel = _rel_name(cache_dir)
     # Gate 1.5 — recency (sidecar row appended inside on a block).
     recency_reason = _noncanonical_recency_blocked(
-        cache_dir, issue_n=issue_n, apply=apply, min_age_hours=min_age_hours, now=now
+        cache_dir,
+        issue_n=issue_n,
+        apply=apply,
+        min_age_hours=min_age_hours,
+        now=now,
+        staging=staging,
     )
     if recency_reason is not None:
         return ("recency-kept", recency_reason)
+    # Gate 1.55 (STAGING only, #2095) — cross-issue CONTENT hard-escalates:
+    # a dir named for issue A holding issue B's tensors is NEVER auto-reaped
+    # in v1, even with full mirror evidence (a name-keyed terminal reap would
+    # destroy a parked task's store; the human acts off the escalation row).
+    if staging:
+        cross = _staging_cross_issue_content(cache_dir, issue_n)
+        if cross:
+            content_issues = sorted(
+                {
+                    int(m.group(1))
+                    for h in cross
+                    if (m := _TMP_ISSUE_PREFIX_RE.match(Path(h).name)) is not None
+                }
+            )
+            shown = ", ".join(cross[:5])
+            reason = (
+                f"staging content names other issue(s) {content_issues or ['<unreadable>']} "
+                f"({shown}) — cross-issue content hard-escalates; KEPT "
+                f"(human decision off the escalation row; never auto-reaped in v1)"
+            )
+            append_disk_guard_event(
+                {
+                    "kind": "staging-cache-cross-issue-kept",
+                    "task": issue_n,
+                    "path": rel,
+                    "content_issues": content_issues,
+                    "reason": reason,
+                },
+                apply=apply,
+            )
+            return ("cross-issue-kept", reason)
     # Gate 1.6 — nested durable content blocks the whole-dir reap outright.
     durable = _nested_durable_dirs(cache_dir)
     if durable:
@@ -819,7 +2212,10 @@ def _noncanonical_reap_gates(
     # ``*_<N>`` name with no P1/P3 route — the foreign-mkdtemp shape,
     # ``tmpdu2m4w_7``) never gets the empty-dir license: it must show REAL
     # non-empty evidence (r2 fix, concern ``p2-empty-tempdir-false-reap``).
-    p2_only = _p2_suffix_only(cache_dir.name)
+    # STAGING candidates keep the empty-dir license unconditionally (#2095 —
+    # prefix-only extraction removes the P2 foreign-mkdtemp concern that
+    # motivated the /tmp restriction).
+    p2_only = False if staging else _p2_suffix_only(cache_dir.name)
     evidence = _positive_redownloadability_evidence(
         cache_dir, data_repo_toplevel=None, allow_empty_license=not p2_only
     )
@@ -832,23 +2228,74 @@ def _noncanonical_reap_gates(
             data_repo_toplevel=data_repo_toplevel_cache[repo],
             allow_empty_license=not p2_only,
         )
+    branch_c_note = ""
+    if (
+        evidence is None
+        and git_evidence_repo is not None
+        and not staging
+        and _DATA_NONCANONICAL_CACHE_RE.match(cache_dir.name) is None
+    ):
+        # Gate-1.7 evidence branch (c) (#2127) — /tmp P1/P2 legs only.
+        git_ev, git_detail = _tmp_git_evidence_branch_c(cache_dir, main_repo=git_evidence_repo)
+        if git_ev is not None:
+            evidence = git_ev
+        else:
+            first = git_detail.get("first_unverified")
+            branch_c_note = f"; git-blob branch (c): {git_detail.get('reason')}" + (
+                f" (first unverified: {first})" if first else ""
+            )
     if evidence is None:
+        disposition = "unverified-kept"
+        if staging:
+            label = _staging_unverified_class(
+                cache_dir, data_repo_toplevel_cache.get(hf_data_repo())
+            )
+            if label is not None:
+                disposition = f"unverified-kept:{label}"
         reason = (
             "no positive re-downloadability evidence (no hub-layout markers; "
             "top-level names not verified as data-repo prefixes"
             + ("; P2 suffix-only route — requires non-empty positive evidence" if p2_only else "")
+            + branch_c_note
             + ") — KEPT (escalate-only, never deleted)"
         )
-        append_disk_guard_event(
-            {
-                "kind": "noncanonical-cache-unverified-kept",
-                "task": issue_n,
-                "path": rel,
-                "reason": reason,
-            },
-            apply=apply,
-        )
-        return ("unverified-kept", reason)
+        row = {
+            "kind": "noncanonical-cache-unverified-kept",
+            "task": issue_n,
+            "path": rel,
+            "reason": reason,
+        }
+        if disposition != "unverified-kept":
+            row["disposition"] = disposition  # staging class label (#2095)
+        append_disk_guard_event(row, apply=apply)
+        return (disposition, reason)
+    # Delta-9 sampled mirror probe (#2095, STAGING only): a branch-(b)
+    # name-match license on a candidate above the probe floor must survive a
+    # byte-equal existence probe of the candidate's largest file on the data
+    # repo. Branch (a) hub-layout and the empty-dir license are unchanged.
+    if (
+        staging
+        and evidence.startswith("data-repo-prefix mirror")
+        and size_bytes > _staging_probe_floor_bytes()
+    ):
+        probe_fail = _staging_mirror_probe(cache_dir)
+        if probe_fail is not None:
+            reason = (
+                f"branch-(b) name-match license refused for a "
+                f"{size_bytes / 1e9:.2f} GB staging candidate — sampled mirror probe: "
+                f"{probe_fail}; KEPT (escalate-only, never deleted)"
+            )
+            append_disk_guard_event(
+                {
+                    "kind": "noncanonical-cache-unverified-kept",
+                    "task": issue_n,
+                    "path": rel,
+                    "disposition": "unverified-kept:probe-failed",
+                    "reason": reason,
+                },
+                apply=apply,
+            )
+            return ("unverified-kept:probe-failed", reason)
     return evidence
 
 
@@ -1311,7 +2758,10 @@ class CleanResult:
     # v4 structured reporting (#911): rel -> disposition for every discovered
     # NON-CANONICAL candidate ("removed" | "would-remove" | "recency-kept" |
     # "durable-content-kept" | "unverified-kept" | "consumer-kept" |
-    # "external-target-kept" | "failed"). Canonical hf_dl/g*_dl caches are
+    # "external-target-kept" | "failed"; STAGING candidates (#2095) may add
+    # "cross-issue-kept" and the labeled "unverified-kept:derived-partial-
+    # mirror" / "unverified-kept:orphan-no-mirror" /
+    # "unverified-kept:probe-failed" variants). Canonical hf_dl/g*_dl caches are
     # deliberately ABSENT (their reap license is the canonical name convention
     # + the #679 parity gate). vm_disk_guard's tier (b) surfaces these in its
     # --json output — report-only escalation persists NOTHING to the sidecar,
@@ -1353,6 +2803,9 @@ def clean_issue_downloads(
     data_root: Path | None = None,
     tmp_root: Path | None = None,
     sweep_tmp: bool = True,
+    staging_roots: list[Path] | None = None,
+    exclude_scratch_shapes: bool = False,
+    git_evidence_repo: Path | None = None,
     _skip_active_consumer_guard: bool = False,
 ) -> CleanResult:
     """Delete (``apply=True``) or report (default) ``issue_n``'s download caches.
@@ -1417,6 +2870,30 @@ def clean_issue_downloads(
     non-canonical ones). ``EPM_SKIP_NONCANONICAL_CACHE_SWEEP=1`` disables the
     non-canonical sweep entirely (emergency kill switch).
 
+    STAGING candidates (#2095): with an EXPLICIT ``staging_roots`` (same
+    strict opt-in as ``tmp_root`` — only the CLI ``main()`` bodies pass
+    :func:`production_staging_roots`; the library default ``None`` never
+    touches any staging root), the sweep additionally covers TOP-LEVEL
+    issue-keyed dirs under each root (:func:`_staging_cache_dirs`,
+    PREFIX-ONLY extraction — no P2 suffix route). They ride the SAME gate
+    chain with three staging-specific tightenings: gate 1.5 reads
+    TOP-LEVEL-ONLY recency (no rglob over a multi-100-GB tree); a NEW gate
+    1.55 between 1.5 and 1.6 HARD-ESCALATES cross-issue CONTENT (sidecar
+    kind ``staging-cache-cross-issue-kept`` with content-issue attribution —
+    never auto-reaped in v1, even mirror-verified); gate 1.7's
+    ``unverified-kept`` disposition carries a class label
+    (``:derived-partial-mirror`` / ``:orphan-no-mirror``) and a branch-(b)
+    license above ~1 GB (:func:`_staging_probe_floor_bytes`) must pass the
+    sampled mirror probe or is refused as ``unverified-kept:probe-failed``.
+    ``EPM_SKIP_STAGING_CACHE_SWEEP=1`` kills the staging leg alone.
+
+    #2127 knobs (both hermetic-default, main()-only opt-ins like
+    ``tmp_root``): ``git_evidence_repo`` arms gate 1.7's evidence branch (c)
+    — git-blob reproducibility against that repo for the /tmp P1/P2 legs;
+    ``exclude_scratch_shapes`` skips issue-keyed /tmp entries that are ALSO
+    scratch-shaped, for the ONE guard invocation that runs
+    :func:`sweep_tmp_scratch` in the same pass (no double-attribution).
+
     ``_skip_active_consumer_guard`` (private, keyword-only, defaulted False) opts
     out of gate 1, skipping the ``tasks/`` walk entirely. It is a TEST SEAM only
     — no production caller passes it. In particular
@@ -1445,15 +2922,27 @@ def clean_issue_downloads(
     )
     canonical = download_cache_dirs(issue_n, data_root)
     noncanon = noncanonical_cache_dirs(
-        issue_n, data_root=data_root, tmp_root=tmp_root, sweep_tmp=sweep_tmp
+        issue_n,
+        data_root=data_root,
+        tmp_root=tmp_root,
+        sweep_tmp=sweep_tmp,
+        staging_roots=staging_roots,
+        exclude_scratch_shapes=exclude_scratch_shapes,
     )
     noncanon_keys = {os.path.normpath(str(p)) for p in noncanon}
+    # Staging-origin tagging (#2095): the staging discovery is deterministic,
+    # so re-running it yields the same set — a second normalized-path set
+    # mirrors ``noncanon_keys`` and routes those candidates through the
+    # staging-specific gate variants (top-level recency, gate 1.55, class
+    # labels, the sampled mirror probe).
+    staging_keys = {os.path.normpath(str(p)) for p in _staging_cache_dirs(issue_n, staging_roots)}
     now = time.time()
     min_age = _noncanonical_min_age_hours()
     for cache_dir in _dedup_nested([*canonical, *noncanon]):
         rel = _rel_name(cache_dir)
         res.sizes_bytes[rel] = _dir_size_bytes(cache_dir)
         is_noncanonical = os.path.normpath(str(cache_dir)) in noncanon_keys
+        is_staging = os.path.normpath(str(cache_dir)) in staging_keys
         # Gate 1 (#773): a DIFFERENT active task consumes data/issue_<N>/ as a
         # planned input. Cheap set lookup, checked FIRST so a consumer hit
         # short-circuits before the parity gate's potential HF call.
@@ -1471,12 +2960,14 @@ def clean_issue_downloads(
             res,
             cache_dir,
             is_noncanonical=is_noncanonical,
+            staging=is_staging,
             issue_n=issue_n,
             apply=apply,
             min_age_hours=min_age,
             now=now,
             hf_sizes_cache=hf_sizes_cache,
             data_repo_toplevel_cache=data_repo_toplevel_cache,
+            git_evidence_repo=git_evidence_repo,
         ):
             continue
         # Symlink disposition (#915): a cache relocated onto the managed data
@@ -1599,10 +3090,14 @@ def _apply_reap_gates(
     now: float,
     hf_sizes_cache: dict[str, dict[str, int] | None],
     data_repo_toplevel_cache: dict[str, frozenset[str] | None],
+    staging: bool = False,
+    git_evidence_repo: Path | None = None,
 ) -> bool:
     """Run the per-candidate reap gates AFTER gate 1 (#773): gates 1.5/1.6/1.7
-    (#911) on a NON-CANONICAL candidate, or gate 2 (#679 nested-store parity)
-    on a canonical one. Records the skip + disposition/evidence on ``res``.
+    (#911) on a NON-CANONICAL candidate — with the staging variants (1.55,
+    top-level recency, class labels, mirror probe; #2095) when ``staging`` —
+    or gate 2 (#679 nested-store parity) on a canonical one. Records the
+    skip + disposition/evidence on ``res``.
     Returns True when the candidate is BLOCKED (caller skips it) — every
     block is fail-toward-keep and sidecar-escalated by the gate that fired."""
     rel = _rel_name(cache_dir)
@@ -1614,6 +3109,9 @@ def _apply_reap_gates(
             min_age_hours=min_age_hours,
             now=now,
             data_repo_toplevel_cache=data_repo_toplevel_cache,
+            staging=staging,
+            size_bytes=res.sizes_bytes.get(rel, 0),
+            git_evidence_repo=git_evidence_repo,
         )
         if isinstance(gate, tuple):
             disposition, reason = gate
@@ -1672,6 +3170,8 @@ def clean_issue_downloads_incremental(
     data_root: Path | None = None,
     tmp_root: Path | None = None,
     sweep_tmp: bool = True,
+    staging_roots: list[Path] | None = None,
+    git_evidence_repo: Path | None = None,
 ) -> CleanResult:
     """Between-phase cleanup of ``issue_n``'s consumed download caches (within-run).
 
@@ -1699,9 +3199,17 @@ def clean_issue_downloads_incremental(
     cross-issue protection on the incremental path entirely (a fail-OPEN strand
     of the #742 class). It defaults to ON; ``clean_issue_downloads`` retains the
     private ``_skip_active_consumer_guard`` kwarg only as a test seam.
-    ``tmp_root`` / ``sweep_tmp`` forward verbatim (#911 — same strict opt-in)."""
+    ``tmp_root`` / ``sweep_tmp`` forward verbatim (#911 — same strict opt-in);
+    ``staging_roots`` forwards verbatim too (#2095 — same strict opt-in), as
+    does ``git_evidence_repo`` (#2127 gate-1.7 branch (c) opt-in)."""
     return clean_issue_downloads(
-        issue_n, apply=apply, data_root=data_root, tmp_root=tmp_root, sweep_tmp=sweep_tmp
+        issue_n,
+        apply=apply,
+        data_root=data_root,
+        tmp_root=tmp_root,
+        sweep_tmp=sweep_tmp,
+        staging_roots=staging_roots,
+        git_evidence_repo=git_evidence_repo,
     )
 
 
@@ -1739,16 +3247,30 @@ def main(argv: list[str] | None = None) -> int:
             "staging caches: top-level /tmp i<N>*/issue<N>*/*_<N> dirs and "
             "data/ issue…<N>…{_dl,_hfstage,_cache} dirs — the latter set "
             "gated on a 48h recency window, a nested store/+eval_results/ "
-            "block, and positive re-downloadability evidence). "
+            "block, and positive re-downloadability evidence; plus the "
+            "issue's own /mnt/eps-data/$USER staging dirs (#2095 — prefix-"
+            "keyed, cross-issue content hard-escalates, kill switch "
+            "EPM_SKIP_STAGING_CACHE_SWEEP=1). "
             "Re-downloadable; store/ + eval_results/ are never touched. "
             "Dry-run by default."
         )
     )
     ap.add_argument("issue", type=int, help="Issue / task number N.")
-    ap.add_argument(
+    mode = ap.add_mutually_exclusive_group()
+    mode.add_argument(
         "--apply",
         action="store_true",
         help="Actually delete (default: dry-run, report what would be removed).",
+    )
+    mode.add_argument(
+        "--dry-run",
+        action="store_true",
+        help=(
+            "Explicit no-op alias of the default preview mode (report what would "
+            "be removed, delete nothing). Accepted so the sibling janitor's "
+            "`pod.py cleanup --dry-run` spelling does not exit 2; mutually "
+            "exclusive with --apply."
+        ),
     )
     ap.add_argument(
         "--incremental",
@@ -1775,8 +3297,15 @@ def main(argv: list[str] | None = None) -> int:
     # accept it, so the production CLI always opts in.
     kwargs: dict = {"apply": args.apply}
     with contextlib.suppress(TypeError, ValueError):
-        if "tmp_root" in inspect.signature(cleaner).parameters:
+        params = inspect.signature(cleaner).parameters
+        if "tmp_root" in params:
             kwargs["tmp_root"] = production_tmp_root()
+        if "staging_roots" in params:
+            kwargs["staging_roots"] = production_staging_roots()
+        if "git_evidence_repo" in params:
+            # #2127 gate-1.7 branch (c): git-blob evidence against the main
+            # checkout — a main()-only opt-in like tmp_root above.
+            kwargs["git_evidence_repo"] = _resolution_root()
     res = cleaner(args.issue, **kwargs)
     mode = "incremental " if args.incremental else ""
     verb = "removed" if args.apply else "would remove"

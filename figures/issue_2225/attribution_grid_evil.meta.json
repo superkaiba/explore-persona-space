@@ -1,0 +1,45 @@
+{
+  "commit": "849c79c4",
+  "render_id": "a127c50415704b79",
+  "git_commit": "849c79c4",
+  "git_dirty": false,
+  "created": "2026-08-11T20:39:56Z",
+  "figsize": [
+    6.5,
+    3.4
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Direction \u00d7 token-mask attribution (evil corpus)",
+        "xticklabels": [
+          "All tokens",
+          "Context tokens",
+          "Response tokens"
+        ],
+        "yticklabels": [
+          "Response-avg direction",
+          "Context-end direction"
+        ]
+      },
+      {
+        "ylabel": "Trait score at matched-coherence coefficient",
+        "yticklabels": [
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80",
+          "90"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -333,11 +333,24 @@ _FLEET_MUTATING_PASS_NAMES = (
     # dir and can write real sidecar rows / state / pushes from a full-main()
     # unit test; its own tests stub the collector / push / path seams instead.
     "stash_rescue_audit_pass",
+    # #2134: escalate-only too, but it reads the LIVE registry + task
+    # body.md files, runs real bounded `git log` subprocesses against the
+    # live repo, and can post REAL epm:progress flag markers on live queued
+    # tasks + write real sidecar rows / state / pushes from a full-main()
+    # unit test; its own tests monkeypatch the collect/git seams +
+    # PROJECT_ROOT / AUTONOMOUS_REGISTRY_DIR / _telegram_push instead.
+    "predispatch_staleness_pass",
     # #2015: escalate-only too, but it runs a REAL `git status` against the
     # LIVE shared root and can write real sidecar rows / state / pushes from
     # a full-main() unit test; its own tests stub the collector / push / path
     # seams instead.
     "root_unstaged_audit_pass",
+    # #2115: escalate-only too, but it iterates the LIVE registration dir,
+    # reads real session transcripts via _transcript_tail_rows, and can write
+    # real sidecar rows under .claude/cache/ + ~/.eps-autonomous/ state +
+    # fire real Telegram pushes from a full-main() unit test; its own tests
+    # monkeypatch PROJECT_ROOT / AUTONOMOUS_REGISTRY_DIR / the reader seams.
+    "pending_call_wedge_pass",
     # #1564: flag-only too, but it sweeps the LIVE registry's completed set,
     # runs real gh/git probes, and can post REAL epm:progress markers on live
     # tasks + sidecar rows + pushes from a full-main() unit test.
@@ -363,6 +376,12 @@ _FLEET_MUTATING_PASS_NAMES = (
     "gc_pass",
     # Live ~/.task-workflow/vm-ledger.json reap (round 2).
     "vm_ledger_reap_pass",
+    # #2129: the settings model-id guard can REWRITE the real
+    # ~/.claude/settings.json (+ settings.local.json) from a full-main()
+    # unit test — the strongest live-HOME-mutating class here; its own
+    # tests inject tmp files via the `paths=` param and monkeypatch the
+    # sidecar / state / backup-dir constants + _telegram_push instead.
+    "settings_model_guard_pass",
 )
 
 

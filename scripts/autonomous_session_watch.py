@@ -1,7 +1,7 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions (plus campaign sessions, task #586).
 
-36 passes ("pass" = one top-level per-tick action block in ``main()``'s
+39 passes ("pass" = one top-level per-tick action block in ``main()``'s
 production run order; helpers invoked INSIDE a pass — e.g. the sub-floor
 disk sentinel inside pass 1 — and the ``--*-only`` debug entrypoints do
 not count; a NEW inline pass block that is not a ``*_pass``-named function
@@ -12,12 +12,15 @@ order. The per-tick execution order is: 1 (VM disk) -> 15 (data-disk) ->
 16 (happy-patch) -> 12 (CPU-guard) -> 17 (triage-observer) ->
 18 (verdict-disagree) -> 26 (root-draft) -> 27 (registry-drift) ->
 34 (stash-rescue) -> 36 (root-unstaged) -> 31 (codex-outage) ->
+38 (settings-model guard) ->
 29 (completed-unmerged) ->
 32 (partial-bundle) ->
 33 (unfolded-round) -> 30 (urgent-park router) -> 19 (VM-ledger reap) ->
 20 (program-orchestrator
 recovery) -> 13 (auth-outage guard) -> 2 (crash-recovery) -> 9 (campaign)
--> 3 (pod-safety) -> 4 (stalled-detector) -> 5 (orphan sweep) ->
+-> 3 (pod-safety) -> 4 (stalled-detector) -> 37 (pending-call wedge) ->
+5 (orphan sweep) ->
+39 (predispatch-staleness) ->
 11 (infra-drain) -> 21 (proposed-infra-sweep) -> 22 (capacity-retry) ->
 14 (stale-blocked flag) -> 6 (session-reconcile) -> 23 (gate-push) ->
 25 (boot-death) -> 35 (no-progress-respawn) -> 24 (stale-registration) ->
@@ -72,6 +75,34 @@ adding a pass means adding a numbered item here AND bumping the digit:
      deliberately paused), so a still-RUNNING pod is an escaped pod (Step-8
      terminate failed, the pause teardown failed, or it was never run
      through Step 8). Stopping it is unambiguously correct.
+   - **FENCE-DEFER (#2283 owner-fence arm — defer-only, bounded)**: the
+     AUTO-STOP above is DEFERRED (miss counter reset, one marker per
+     episode + a 24h-TTL push/sidecar re-alert) while the pod carries an
+     UNEXPIRED #2277 owner fence with NO owner-matching
+     upload-verification PASS — the SAME
+     ``pod_lifecycle.owner_fence_state`` reader chain the terminate guard
+     runs (``blocks_teardown``), so the watcher can no longer stop a pod
+     mid-run that the guard would refuse to destroy. Eligibility keys
+     STRICTLY on ``status in AUTO_STOP_DONE`` — a USER-paused ``on_hold``
+     task (the merged ``"auto-stop-done"`` class also covers it) NEVER
+     defers: a self-posted fence must not override a user pause. Both
+     existing shields (``keep-running`` tag, live follow-up) take
+     precedence; a not-EVALUATED fence read (kill switch
+     ``EPM_DISABLE_POD_FENCE_DEFER=1``, read failure — one loud WARN)
+     never defers (fail-open to the plain stop) and never clears episode
+     state. Bounded TWICE: by the fence's own expiry, and by a cumulative
+     per-(issue, pod) deferral ceiling ``EPM_POD_FENCE_DEFER_MAX_H``
+     (default 24h, floor-clamped 1h) measured from the episode's first
+     deferred tick — a continuously-refreshed fence cannot shield a pod
+     forever (once-per-episode ceiling marker announces the re-armed
+     stop). Episode state is the pod_id-keyed ``fd_pod`` sub-dict of the
+     pod-safety state file (the ``kr_pod``/``nr_pod`` contract — sibling
+     pods' saves forward-carry it verbatim); an evaluated-and-inactive
+     read (expired / cleared / owner PASS) CLEARS the entry. DEFER-ONLY
+     hard invariant: the arm can only turn a stop into a wait — with the
+     fence params at their False defaults ``decide_pod_safety`` is
+     byte-identical to its pre-#2283 table. Sidecar:
+     ``.claude/cache/pod-owner-fence-events.jsonl``.
    - **ALERT** (loud log + one-time dashboard-visible marker, NO stop) a
      RUNNING pod whose task is in a pod-active status (``approved`` /
      ``running`` / ``verifying`` / ``followups_running``) but has shown no
@@ -139,6 +170,24 @@ adding a pass means adding a numbered item here AND bumping the digit:
      TTL window. Closes the #1739 shape: ``runpod_workload_start_failed``
      parks the task ``blocked`` (deliberately not watcher-re-drivable)
      while the pod bills unbounded behind the diagnosis contract.
+   - **ESCALATE (never-ran leg, #2060 — escalate-only, structurally
+     incapable of a stop/terminate)** a RUNNING keep-running-tagged pod
+     that NEVER exposed a runtime/port since creation (the #1947
+     ``runtime: null`` bootstrap-failure class; raw predicate =
+     ``backend_poll._pod_is_runpod_runtime_wedged``, observed portless on
+     EVERY tick since a first observation within
+     ``EPM_NEVER_RAN_OBSERVE_SLOP_S`` (1200s) of ``created_at``), past
+     ``EPM_NEVER_RAN_GRACE_MIN`` (45 min), confirmed >= 2 consecutive
+     ticks: one task marker per episode + a Telegram push + a sidecar row
+     (reason ``never-ran-keep-running-escalate``, the #1582 jsonl), each
+     naming the pod, its hourly burn, and the exact ``pod.py terminate``
+     command; re-pushed every ``EPM_NEVER_RAN_REALERT_H`` (6h). Both
+     sibling legs structurally miss this class (a portless pod is
+     SSH-unreachable, so the #2149 probe can never fire; busy-task marker
+     traffic keeps the owner leg's gap closed). Per-(issue, pod_id) state
+     (``nr_pod`` sub-dict); a port appearance DELETES the entry;
+     fail-toward-silence on every missing signal. Kill switch
+     ``EPM_DISABLE_NEVER_RAN_ESCALATION=1``.
 
    The pod-safety pass does NOT use session-cwd liveness as a stop trigger
    (see "Why STOP is keyed on task status, not session liveness" below) and
@@ -182,7 +231,20 @@ adding a pass means adding a numbered item here AND bumping the digit:
    task progress — escalates to an UNREGISTER-ONLY action (#1480): the
    manual registration file is deleted (the session is NEVER stopped) so
    the registration-independent orphan sweep re-drives the task; kill
-   switch ``EPM_DISABLE_STALLED_MANUAL_ESCALATION``.
+   switch ``EPM_DISABLE_STALLED_MANUAL_ESCALATION``.  An ESCALATE-ONLY
+   cross-generation no-progress arm (#2084) additionally counts
+   consecutive fence-spawn respawns with no intervening real (non-watcher)
+   marker in an advancement-clear-EXEMPT, progress-keyed counter
+   (``xgen_respawns`` in ``stalled-<N>.json``, the #1209/#1241 exempt
+   pattern) and, at every ``EPM_STALLED_XGEN_ESCALATE_AFTER`` band
+   (default 4, clamp >= 2; fires at N, 2N, 3N, ...), surfaces the loop
+   loudly — one deduped marker
+   (``[autonomous_session_watch:session-auto-respawn-noprogress]``) +
+   Telegram push + a sidecar row in
+   ``~/.eps-autonomous/stalled-xgen-events.jsonl`` — while leaving the
+   respawn lane's behavior COMPLETELY unchanged (no stop, no status
+   mutation, no respawn suppression, no cap consumption); kill switch
+   ``EPM_DISABLE_STALLED_XGEN_ESCALATION``.
 5. **Orphan sweep (registration-INDEPENDENT safety net).** Every other
    session pass starts from the registry files (``issue-<N>.json`` /
    ``manual-issue-<N>.json``), so an ACTIVE-status task with NO registration
@@ -225,9 +287,16 @@ adding a pass means adding a numbered item here AND bumping the digit:
    same >=2-consecutive-checks guard as the pod pass:
 
    - **idle** — every activity signal (the newest NON-watcher marker of
-     ANY kind on the task, plus the per-issue self-report file) is older
-     than :func:`_session_idle_s` (default 2h, env
-     ``EPM_SESSION_RECONCILE_IDLE_S``);
+     ANY kind on the task, the per-issue self-report file, the freshest
+     registration ``spawned_at``, and — lazily — each mapped sid's
+     transcript WORK signal: completed-wake-turn CONTENT, not mtime
+     (#2117 — a tail whose completed wake-turns ALL failed with no
+     genuine human row is churn-only and contributes nothing, so an
+     error-storming session on a done task accumulates the miss counter;
+     a recent ``"ok"`` turn or human row still protects, #1670; kill
+     switch ``EPM_SESSION_RECONCILE_TRANSCRIPT_WORK_PROBE=0`` reverts to
+     the pure-mtime probe)) is older than :func:`_session_idle_s`
+     (default 2h, env ``EPM_SESSION_RECONCILE_IDLE_S``);
    - **no live inline follow-up** — the latest follow-up signal marker
      (:data:`_SESSION_FOLLOWUP_SIGNAL_KINDS`: ``epm:run-launched`` /
      ``epm:followup-scope`` / ``epm:free-analysis-followup-run``) is
@@ -929,6 +998,100 @@ adding a pass means adding a numbered item here AND bumping the digit:
    runs just this pass (pair with ``--dry-run`` for a zero-write live
    smoke). Full mechanics: ``.claude/rules/repo-root-uncommitted-state.md``.
    (:func:`root_unstaged_audit_pass`.)
+37. **Pending-call wedge observer pass (#2115; ESCALATE-ONLY; runs right
+   after pass 4 stalled-detector, sharing its ``{sid: wrapper pid}``
+   ``/list`` snapshot).** Flags a registered session whose transcript tail
+   ends in an assistant **Bash** ``tool_use`` with no matching
+   ``tool_result`` older than ``EPM_PENDING_CALL_WEDGE_MIN`` (25 min) —
+   the #2115 class: ~12-18 autonomous sessions each sat 1.2-2.4h at a
+   forever-pending Step 10d lint-gate Bash dispatch (no tool_result, not
+   even the instant bg-Bash ack) with the ~2.2h stall fence as the only
+   exit. Four candidate mechanisms were excluded under control (permission
+   prompt, git index-lock, unbounded hook cost, dirty cancellation — plan
+   v3 §0.0), so the stall sits in the harness/transport layer outside this
+   repo: DETECTION is the deliverable. Bash-only keying is LOAD-BEARING:
+   the Agent tool legitimately pends 30-90+ min in nearly every healthy
+   autonomous session (AskUserQuestion / TaskOutput / Monitor likewise),
+   so ANY pending non-Bash call in the final assistant turn suppresses the
+   flag — an untyped predicate would flag routine health and the lane
+   would be ignored or kill-switched. Channels: one sidecar row per
+   flagged tick (``.claude/cache/pending-call-wedge-events.jsonl``) + ONE
+   deduped fail-soft push per (issue, tool_use id) episode. NEVER mutates
+   task or git state, posts NO task markers, emits NO respawn/stop; a
+   malformed / unresolvable transcript fails toward silence (an
+   escalate-only lane must not spam the fleet on a parse bug).
+   Daemon-DEPENDENT for sid->pid resolution only (no map -> silent skip).
+   State singleton ``~/.eps-autonomous/pending-call-wedge.json``. Kill
+   switch ``EPM_DISABLE_PENDING_CALL_WEDGE=1``;
+   ``--pending-call-wedge-only`` runs just this pass (pair with
+   ``--dry-run`` for a zero-write live smoke).
+   (:func:`pending_call_wedge_pass`.)
+38. **Settings model-id guard pass (#2129; AUTO-NORMALIZE + alert;
+   daemon-INDEPENDENT; kill switch
+   EPM_DISABLE_SETTINGS_MODEL_GUARD_PASS)** — detects the fleet-killing
+   ``claude-fable-5[1m]``-class model id in the GLOBAL Claude settings
+   files (``~/.claude/settings.json`` + ``settings.local.json``) each tick
+   and AUTO-NORMALIZES it by stripping the ``[1m]`` suffix. Fable/Mythos
+   are 1M-native and expose NO ``[1m]`` variant, so the suffixed id kills
+   every subagent fleet-wide (#545, ~72h outage; live recurrence
+   hand-normalized 2026-08-13, #2129); scope is fable/mythos ONLY —
+   ``claude-opus-*[1m]`` is legitimate and never touched. The rewrite is a
+   byte-exact quoted-string replacement (never a whole-file re-serialize;
+   the harness's formatting is preserved), gated on three post-conditions
+   (new text parses as JSON; a re-walk finds zero bad ids; the parsed
+   structure equals the old one except at the replaced string leaves) plus
+   a concurrent-write re-read guard, with a timestamped backup (pruned to
+   the newest 10 per filename) and a tmp-chmod-to-original-mode +
+   ``os.replace`` atomic write. Unparseable JSON / failed post-conditions
+   (incl. a ``\\uXXXX``-escaped bad value, which fails SAFE) / a
+   concurrent write all degrade to ALERT-ONLY — never a write. Channels:
+   sidecar ``.claude/cache/settings-model-guard-events.jsonl`` (per-event)
+   + ONE deduped fail-soft push per (path, bad-values) episode (re-alert
+   ``EPM_SETTINGS_MODEL_GUARD_REALERT_H``, default 24h); NO task markers
+   (fleet-level concern, no single owning task — codex-outage precedent).
+   Episode state ``~/.eps-autonomous/settings-model-guard.json``.
+   ``--settings-model-guard-only`` runs just this pass (pair with
+   ``--dry-run`` for a zero-write live smoke).
+   (:func:`settings_model_guard_pass`.)
+39. **Pre-dispatch staleness pass (#2134; ESCALATE-ONLY; daemon-INDEPENDENT;
+   kill switch EPM_DISABLE_PREDISPATCH_STALENESS)** — once-daily
+   (``EPM_PREDISPATCH_STALENESS_INTERVAL_HOURS``, attempt-stamped BEFORE
+   collecting) scan of queued ``proposed`` + ``blocked`` infra/batch tasks
+   whose ``workflow_fix_target:`` files were rewritten by commits newer
+   than the task's creation (>= 3 shared informative tokens between a
+   landed commit subject and the task title+body — the #1985
+   stale-dispatch shape: blocked #1217/#1771 kept instructing a gate
+   c20aabc59a removed), plus same-file queue collisions and landed-sibling
+   commits. Pure detection lives in ``scripts/predispatch_staleness.py``
+   (injected ``git_log_fn`` seam; report-only ``--json`` CLI). Bounded:
+   per-pass task cap ``EPM_PREDISPATCH_STALENESS_TASK_CAP`` (40) with a
+   persisted cursor (partial-bundle pattern) scoping the git-backed
+   signals only (the git-free queue-collision grouping reads the FULL
+   queue each firing, so cross-window collisions co-detect), <= 1 bounded
+   ``git log`` subprocess per scanned task, per-tick flag-marker cap
+   ``EPM_PREDISPATCH_STALENESS_MARKER_CAP`` (5) with sidecar-recorded
+   overflow (triage-observer pattern; only MARKERED flags TTL-stamp, so
+   overflow re-enters the marker queue next firing), per-(issue,
+   fingerprint) fire-once + ``EPM_PREDISPATCH_STALENESS_REALERT_HOURS``
+   (168h) TTL re-alert.
+   Channels: sidecar ``.claude/cache/predispatch-staleness-events.jsonl``
+   + ONE deduped push digest per firing tick + capped per-task
+   ``epm:progress`` flag markers (sentinel
+   ``[autonomous_session_watch:predispatch-staleness]``, a
+   ``_WATCHER_NOTE_SENTINELS`` member so a flag never resets the staleness
+   clocks watching that parked task) naming the evidence + the
+   adjudication affordance. REPORT-ONLY hard invariant: never composes a
+   status mutation, never gates/defers a dispatch, never touches the
+   infra-drain queue or proposed-infra-sweep state — mootness is
+   adjudicated by the spawned clarifier (Step 0 context pass) or a human
+   (#1918 archive-license discipline). ADVISORY, not a guarantee: at the
+   daily cadence a task filed and dispatched within <24h of the
+   invalidating commit is never scanned pre-dispatch. State singleton
+   ``~/.eps-autonomous/predispatch-staleness.json``; fail toward silence
+   on every unreadable input (a failed git log never reads as "no
+   staleness"). ``--predispatch-staleness-only`` runs just this pass (pair
+   with ``--dry-run`` for a zero-write live smoke).
+   (:func:`predispatch_staleness_pass`.)
 
 
 Why each pass exists
@@ -1010,7 +1173,8 @@ Mechanism
 ---------
 Respawn: `spawn_session.py spawn-issue --auto` writes one registry file per issue
 at ``~/.eps-autonomous/issue-<N>.json`` recording the Happy session id + cwd +
-the GPU-hour cap. This watcher, each run:
+the ``auto_approve_gpu_hours`` value (inert for plan approval as of #1771 —
+retained for provenance / registry compatibility). This watcher, each run:
 
   * reads the task's current status (via `task.py view --json`);
   * decides per :func:`decide` whether to RESPAWN / KEEP / DELETE the entry;
@@ -1050,6 +1214,7 @@ Run: ``uv run python scripts/autonomous_session_watch.py [--dry-run] [--threshol
 from __future__ import annotations
 
 import argparse
+import contextlib
 import fcntl
 import functools
 import getpass
@@ -1122,6 +1287,7 @@ from spawn_session import (  # noqa: E402
 from tick_triage import (  # noqa: E402
     compute_head_sha,
     compute_progress_fingerprint,
+    is_human_transcript_row,
     no_progress_state_path,
     no_progress_threshold,
     plan_pending_over_cap,
@@ -1458,6 +1624,88 @@ KEEP_RUNNING_POD_UTIL_IDLE_MIN_S = 12 * 3600
 #: (:func:`_keep_running_pod_probe_fail_rows`).
 KEEP_RUNNING_POD_PROBE_FAIL_ROWS = 6
 
+# Substring stamped into the #2060 NEVER-RAN escalation marker — a third,
+# ESCALATE-ONLY leg beside the #1582 owner / #2149 pod-idle legs, keyed on
+# a keep-running-tagged RUNNING pod that NEVER exposed a runtime/port since
+# creation (never had one — not lost one; the #1947 `runtime: null`
+# bootstrap-failure class). Both sibling legs structurally miss it: a
+# portless pod is unreachable by SSH, so the #2149 probe path can never
+# fire, and a busy task's marker traffic keeps the owner leg's gap closed.
+# Posted as epm:progress, so it MUST be a member of _WATCHER_NOTE_SENTINELS
+# (same self-defer rationale as the sibling sentinels above).
+_NEVER_RAN_NOTE_SENTINEL = "[autonomous_session_watch:runpod-never-ran-keep-running]"
+
+#: Grace floor (MINUTES) for the #2060 never-ran leg: no escalation while the
+#: pod is younger than this — past the 10-min ssh wait + the #1931
+#: bootstrap retry + the bootstrap wall, so a healthy slow provision never
+#: alerts. Env-overridable at CALL time via ``EPM_NEVER_RAN_GRACE_MIN``
+#: (MINUTES; :func:`_never_ran_grace_s`).
+NEVER_RAN_GRACE_MIN = 45
+
+#: Max lag (seconds) between pod creation and the watcher's FIRST
+#: observation of the pod for the never-ran read to be trusted (#2060):
+#: beyond it the unobserved window could hide a port that appeared and
+#: vanished, so the leg stays silent (fail-toward-silence). ~2 cron
+#: periods. Env-overridable at CALL time via
+#: ``EPM_NEVER_RAN_OBSERVE_SLOP_S`` (SECONDS; :func:`_never_ran_obs_slop_s`).
+NEVER_RAN_OBSERVE_SLOP_S = 1200.0
+
+#: Re-alert TTL (seconds) for the #2060 never-ran leg: 6h — a shorter
+#: cadence than the 24h house default (deliberate, plan-stated): a
+#: never-bootstrapped pod is a pure billing leak with zero work at risk,
+#: so it deserves faster re-pages. Env-overridable at CALL time via
+#: ``EPM_NEVER_RAN_REALERT_H`` (HOURS; :func:`_never_ran_realert_s`).
+NEVER_RAN_REALERT_S = 6 * 3600
+
+# Substring stamped into the #2283 OWNER-FENCE DEFER marker — posted (once
+# per fence episode, keyed by the pod's `fd_pod` entry in the pod-safety
+# state file) when the status-class AUTO-STOP arm would have fired on a
+# DONE-status task's RUNNING pod but the pod carries an UNEXPIRED #2277
+# owner fence with NO owner-matching upload-verification PASS
+# (pod_lifecycle.OwnerFenceState.blocks_teardown — the SAME reader chain the
+# terminate guard runs, never a second parser). The stop is DEFERRED (miss
+# counter reset), bounded by the fence's own expiry AND a cumulative
+# per-(issue, pod) ceiling (EPM_POD_FENCE_DEFER_MAX_H). DEFER-ONLY hard
+# invariant: the arm can only turn a stop into a wait — never accelerate
+# one. Posted as epm:progress, so it MUST be a member of
+# _WATCHER_NOTE_SENTINELS (excluded from "real progress" in
+# _latest_progress_ts — otherwise the defer marker would refresh the
+# staleness clocks of the very parked task it defers on). CRITICALLY, the
+# note text never binds the pod in structured position (no `pod=<name>`
+# token, sentinel-leading so no leading-token match): an epm:progress note
+# naming the pod with a fence token would REGISTER/CLEAR the owner's fence
+# (_OWNER_REGISTRATION_KINDS includes epm:progress) — the marker must be
+# registration-inert (pinned by
+# test_fence_defer_marker_is_registration_inert).
+_FENCE_DEFER_NOTE_SENTINEL = "[autonomous_session_watch:pod-owner-fence-defer]"
+
+# Substring stamped into the #2283 fence-defer CEILING marker — posted ONCE
+# per fence episode when the cumulative deferral age crosses
+# EPM_POD_FENCE_DEFER_MAX_H while the fence is STILL active (a
+# continuously-refreshed fence must not shield a pod forever): announces
+# that the ordinary >=threshold auto-stop accumulation has RE-ARMED. Same
+# _WATCHER_NOTE_SENTINELS membership + registration-inertness contract as
+# the defer sentinel above.
+_FENCE_CEILING_NOTE_SENTINEL = "[autonomous_session_watch:pod-owner-fence-ceiling]"
+
+#: Cumulative per-(issue, pod incarnation) deferral ceiling (HOURS) for the
+#: #2283 fence-defer arm: measured from the episode's first deferred tick
+#: (`fd_pod.first_ts`), NOT from the fence value — an owner re-posting a
+#: fresh `fence_until=` every few hours extends the fence forever, but not
+#: this clock. 24h matches the watcher's standing unresolved-condition
+#: cadence (KEEP_RUNNING_OWNER_REALERT_S et al.) and caps the worst-case
+#: non-owner burn at ~1 day. Env-overridable at CALL time via
+#: ``EPM_POD_FENCE_DEFER_MAX_H`` (HOURS; :func:`_pod_fence_defer_max_s` —
+#: floor-clamped to :data:`POD_FENCE_DEFER_FLOOR_H`).
+POD_FENCE_DEFER_MAX_H = 24.0
+
+#: Floor clamp (HOURS) for ``EPM_POD_FENCE_DEFER_MAX_H``: a positive
+#: sub-1h override is clamped UP to 1h (a near-zero ceiling would turn the
+#: defer arm into a no-op while READING as enabled); malformed /
+#: non-positive values fall back to the default instead (the
+#: :func:`_keep_running_owner_realert_s` defensive shape).
+POD_FENCE_DEFER_FLOOR_H = 1.0
+
 # Substring stamped into the one-time "inline-follow-up exemption" marker
 # posted when the auto-stop arm would have fired but the task's events.jsonl
 # shows a `epm:run-launched` marker NEWER than its transition into the current
@@ -1630,6 +1878,19 @@ _STALLED_ALERT_NOTE_SENTINEL = "[autonomous_session_watch:session-stalled-alert]
 # successful respawn would mask the next staleness episode).
 _STALLED_RESPAWN_NOTE_SENTINEL = "[autonomous_session_watch:session-auto-respawn]"
 
+# Substring stamped into the #2084 cross-generation NO-PROGRESS escalation
+# marker: the stalled fence-spawn arm has fired >= EPM_STALLED_XGEN_ESCALATE_
+# AFTER consecutive respawns with NO intervening real (non-watcher) marker —
+# the loop the per-episode STALLED_MAX_RESPAWNS belt cannot see because each
+# respawned generation writes a fresh boot self-report and the advancement
+# clear resets the belt (#2004: 7 respawns over 7h34m, zero real progress).
+# ESCALATE-ONLY: the marker + push + sidecar are the whole act; the respawn
+# lane's behavior is unchanged. MUST be a member of
+# :data:`_WATCHER_NOTE_SENTINELS` — the escalation marker would otherwise
+# reset ``_latest_nonwatcher_event_ts`` (the very real-progress clock the
+# counter is keyed on) and shield the wedged session (anti-liveness).
+_STALLED_XGEN_NOTE_SENTINEL = "[autonomous_session_watch:session-auto-respawn-noprogress]"
+
 # Substring stamped into the one-time "auto-recovery cap exhausted" marker
 # fired when STALLED_MAX_RESPAWNS respawns in the same episode have all
 # failed to restore progress. Same staleness-filter contract as the others.
@@ -1774,9 +2035,10 @@ _FOLLOWUP_ROUND_REPARK_NOTE_SENTINEL = "[autonomous_session_watch:followup-round
 
 # Substring stamped into the one-time alert the stalled / orphan-respawn passes
 # post when they would have respawned a task whose latest non-watcher event is
-# the over-cap autonomous plan-gate park (``epm:awaiting-spend-approval`` —
-# est GPU-h exceeds EPM_PLAN_AUTOAPPROVE_GPU_HOURS, optionally followed only by
-# an ``epm:step-completed exit_kind=parked``). This is a user-only gate
+# the plan-gate fail-safe park (``epm:awaiting-spend-approval`` — missing /
+# unparseable GPU-hour estimate; before #1771 the same marker also fired on
+# the retired over-cap branch), optionally followed only by an
+# ``epm:step-completed exit_kind=parked``. This is a user-only gate
 # (``task.py set-status <N> approved`` / a re-plan): respawning the session
 # only re-reads the same parked plan and re-posts the same step-completed park,
 # never advancing. The status-hold variant (SKILL.md Step 9b) keeps the task at
@@ -1787,9 +2049,11 @@ _FOLLOWUP_ROUND_REPARK_NOTE_SENTINEL = "[autonomous_session_watch:followup-round
 # sentinel already exists NEWER than the gating ``epm:awaiting-spend-approval``
 # (a fresh spend-approval episode re-arms the alert). Same staleness-filter
 # contract as the others. Incident: task #653, 2026-06-18 — 5 respawn-and-park
-# cycles in ~4h while a 132 GPU-h plan sat over the 100h auto-approve cap, each
-# respawn re-posting the same ``epm:step-completed step=2c exit_kind=parked``
-# and exiting.
+# cycles in ~4h while a 132 GPU-h plan sat over the 100h auto-approve cap
+# (a case the #1771 gate no longer parks — the exemption logic keys on the
+# marker KIND, not the note text, so a fresh missing-estimate park still
+# triggers it), each respawn re-posting the same
+# ``epm:step-completed step=2c exit_kind=parked`` and exiting.
 _SPEND_APPROVAL_SKIP_NOTE_SENTINEL = "[autonomous_session_watch:spend-approval-skip]"
 
 # Substring stamped into the one-time alert the stalled / orphan-respawn passes
@@ -1902,6 +2166,15 @@ _INFRA_DRAIN_NOTE_SENTINEL = "[autonomous_session_watch:infra-drain-dispatch]"
 # dispatch note must never count as "real progress" for the orphan/stalled
 # staleness clocks (same contract as _INFRA_DRAIN_NOTE_SENTINEL).
 _PROPOSED_INFRA_SWEEP_NOTE_SENTINEL = "[autonomous_session_watch:proposed-infra-sweep-dispatch]"
+
+# Substring stamped into the advisory epm:progress flag marker the
+# pre-dispatch staleness pass (#2134) posts on a queued/blocked infra task
+# whose workflow_fix_target premises a newer landed commit likely
+# invalidated (or that collides with a sibling on the same target file).
+# Anti-liveness contract: the flagged task is exactly the kind of parked
+# task the staleness clocks watch, so a watcher-authored advisory flag must
+# never count as "real progress" and reset them.
+_PREDISPATCH_STALENESS_NOTE_SENTINEL = "[autonomous_session_watch:predispatch-staleness]"
 
 # Substring stamped into the marker the capacity-retry pass posts after it
 # re-drives a `blocked`-on-transient-infra task (task #642 class:
@@ -2128,6 +2401,12 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _KEEP_RUNNING_NOTE_SENTINEL,
         _KEEP_RUNNING_WEDGED_NOTE_SENTINEL,
         _KEEP_RUNNING_POD_IDLE_NOTE_SENTINEL,
+        _NEVER_RAN_NOTE_SENTINEL,
+        # #2283 fence-defer arm: both markers are epm:progress on a PARKED
+        # task — counting them as progress would refresh the reconcile /
+        # stalled staleness clocks (anti-liveness contract, #2084 family).
+        _FENCE_DEFER_NOTE_SENTINEL,
+        _FENCE_CEILING_NOTE_SENTINEL,
         _FOLLOWUP_NOTE_SENTINEL,
         _WEDGE_ALERT_NOTE_SENTINEL,
         _WEDGE_STOP_NOTE_SENTINEL,
@@ -2142,6 +2421,7 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _DIAGNOSIS_WINDOW_STOP_NOTE_SENTINEL,
         _STALLED_ALERT_NOTE_SENTINEL,
         _STALLED_RESPAWN_NOTE_SENTINEL,
+        _STALLED_XGEN_NOTE_SENTINEL,
         _STALLED_EXHAUSTED_NOTE_SENTINEL,
         _STALLED_STOP_FAILED_NOTE_SENTINEL,
         _STALLED_DEAD_SILENCE_STOP_NOTE_SENTINEL,
@@ -2168,6 +2448,10 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _TTY_UNMAPPED_REPORT_NOTE_SENTINEL,
         _INFRA_DRAIN_NOTE_SENTINEL,
         _PROPOSED_INFRA_SWEEP_NOTE_SENTINEL,
+        # #2134 pre-dispatch staleness flag: advisory marker on a QUEUED
+        # task — must never read as real progress or it would reset the
+        # very staleness clocks watching that parked task.
+        _PREDISPATCH_STALENESS_NOTE_SENTINEL,
         _CAPACITY_RETRY_NOTE_SENTINEL,
         _CAPACITY_RETRY_EXHAUSTED_NOTE_SENTINEL,
         _STALE_BLOCKED_FLAG_NOTE_SENTINEL,
@@ -2723,6 +3007,41 @@ def _stalled_manual_escalate_confirms() -> int:
     if parsed < 1:
         return STALLED_MANUAL_ESCALATE_CONFIRMS_DEFAULT
     return parsed
+
+
+# #2084 cross-generation no-progress escalation — see
+# _update_stalled_xgen_on_spawn / decide_stalled_xgen_escalation. Default 4:
+# quiet on the benign 2-respawn fast recovery (#2079), fires ~4h into the
+# observed 4-8-respawn no-progress loops (#2022/#1992/#2004). Purely
+# progress-keyed (NOT day-keyed, NOT elapsed-time — elapsed-silence
+# heuristics had 5 false positives on 2026-08-04; the reliable signal is
+# "N respawns with no intervening real marker").
+STALLED_XGEN_ESCALATE_AFTER_DEFAULT = 4
+
+
+def _stalled_xgen_escalation_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_STALLED_XGEN_ESCALATION`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled (armed).
+    Mirrors :func:`_stalled_manual_escalation_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_STALLED_XGEN_ESCALATION", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _stalled_xgen_escalate_after() -> int:
+    """Escalation threshold in consecutive no-progress fence-spawn fires
+    (env ``EPM_STALLED_XGEN_ESCALATE_AFTER``; default
+    :data:`STALLED_XGEN_ESCALATE_AFTER_DEFAULT`). Malformed falls back to
+    the default; a parsed value below 2 CLAMPS to 2 (a threshold of 1 would
+    escalate on every single respawn — pure noise — and 0/negative would be
+    a stealth per-tick alert; the disable var is the only off switch)."""
+    raw = os.environ.get("EPM_STALLED_XGEN_ESCALATE_AFTER")
+    if not raw:
+        return STALLED_XGEN_ESCALATE_AFTER_DEFAULT
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return STALLED_XGEN_ESCALATE_AFTER_DEFAULT
+    return max(parsed, 2)
 
 
 def decide_session_stalled(
@@ -3623,6 +3942,45 @@ def decide_stalled_manual_escalation(
     return ("count", new_count, new_first)
 
 
+def decide_stalled_xgen_escalation(
+    *,
+    kill_switch: bool,
+    xgen_respawns: int,
+    threshold: int,
+    escalated_at: int,
+) -> tuple[str, str]:
+    """Pure decision for the #2084 cross-generation no-progress escalation.
+
+    Returns ``(verdict, reason)``; verdict in ``{"escalate", "quiet"}``.
+
+    ``xgen_respawns`` is the ALREADY-UPDATED consecutive count of fence-spawn
+    respawns with no intervening real (non-watcher) marker
+    (:func:`_update_stalled_xgen_on_spawn` applies the counting rule before
+    calling here); ``escalated_at`` is the counter value at the most recent
+    escalation (0 = never). Fires when BOTH ``xgen_respawns >= threshold``
+    AND ``xgen_respawns >= escalated_at + threshold`` — once per threshold
+    BAND (at N, 2N, 3N, ... for one-at-a-time increments), so an unbounded
+    loop re-alerts but never spams per respawn. ``kill_switch=True``
+    (``EPM_DISABLE_STALLED_XGEN_ESCALATION``) -> always quiet. ESCALATE-ONLY
+    by construction: the verdict drives observability channels only — never
+    a stop, status mutation, respawn suppression, or cap consumption.
+    """
+    if kill_switch:
+        return ("quiet", "kill switch EPM_DISABLE_STALLED_XGEN_ESCALATION is set")
+    if xgen_respawns < threshold:
+        return ("quiet", f"count {xgen_respawns} below threshold {threshold}")
+    if xgen_respawns < escalated_at + threshold:
+        return (
+            "quiet",
+            f"already escalated at count {escalated_at} (next band at {escalated_at + threshold})",
+        )
+    return (
+        "escalate",
+        f"{xgen_respawns} consecutive fence-spawn respawns with no intervening "
+        f"real marker (threshold {threshold}, last escalated at {escalated_at})",
+    )
+
+
 def decide_boot_death(
     *,
     sid_alive: bool,
@@ -3823,13 +4181,16 @@ def decide_pod_safety(
     *,
     keep_running: bool = False,
     followup_active: bool = False,
+    fence_active: bool = False,
+    fence_defer_exhausted: bool = False,
 ) -> tuple[str, int]:
     """Pure decision for the pod-safety pass on a RUNNING managed pod.
 
     Trigger is the task's STATUS CLASS (unambiguous), NOT session liveness —
     see the module docstring "Why STOP is keyed on task status". Returns
     ``(action, new_missed)`` where action is ``"stop"`` | ``"alert"`` |
-    ``"keep"`` | ``"keep-running-skip"`` | ``"followup-skip"``.
+    ``"keep"`` | ``"keep-running-skip"`` | ``"followup-skip"`` |
+    ``"fence-defer"``.
 
     Parameters
     ----------
@@ -3878,6 +4239,31 @@ def decide_pod_safety(
         pattern as ``keep_running``). Incident #477 (2026-06-10): the
         watcher stopped a healthy follow-up pod 3 times before the user
         manually added the ``keep-running`` tag.
+    fence_active
+        Whether the pod carries an UNEXPIRED #2277 owner fence with NO
+        owner-matching upload-verification PASS
+        (``pod_lifecycle.OwnerFenceState.blocks_teardown``, read through
+        the tri-state ``_pod_owner_fence_active`` wrapper — the caller
+        passes ``fence_read is True``, so a not-evaluated ``None`` read
+        NEVER defers: fail-open toward the pre-#2283 stop). Consulted ONLY
+        on the auto-stop arm, AFTER ``keep_running`` and
+        ``followup_active`` (both existing shields take precedence — the
+        fence arm can only ADD a defer where a stop would have fired,
+        never displace a skip). Eligibility is computed by the caller
+        strictly on ``status in AUTO_STOP_DONE``: ``"auto-stop-done"`` is
+        a MERGED status-class label that also covers user-paused
+        ``on_hold`` (:data:`AUTO_STOP_PAUSED`), and a self-posted fence
+        must NEVER defer a USER-ordered pause stop (#2283 blocker 1) — so
+        for an ``on_hold`` task the caller passes ``fence_active=False``
+        by construction.
+    fence_defer_exhausted
+        Whether the pod's cumulative fence-deferral episode age has
+        crossed the ``EPM_POD_FENCE_DEFER_MAX_H`` ceiling (default 24h,
+        measured from the episode's first deferred tick — NOT from the
+        fence value, so a continuously-refreshed fence cannot shield a
+        pod forever). When True the defer branch is bypassed and the
+        ordinary >=``threshold`` accumulation resumes (the caller posts
+        the once-per-episode ceiling marker).
 
     Cases (``"auto-stop-done"`` = task in :data:`POD_SAFETY_AUTO_STOP` —
     DONE, or user-paused ``on_hold``):
@@ -3894,6 +4280,15 @@ def decide_pod_safety(
       later finishes (the next ``epm:status-changed`` / ``epm:promoted``
       lands AFTER the latest ``epm:run-launched``) the predicate flips
       False on the next tick and the auto-stop re-arms normally.
+    - ``status_class == "auto-stop-done"`` AND ``fence_active`` AND NOT
+      ``fence_defer_exhausted`` (and neither shield above) ->
+      ``("fence-defer", 0)``. The stop is DEFERRED and the miss counter
+      reset, so a fence expiry / owner PASS / ceiling crossing later
+      re-arms a fresh >=``threshold`` accumulation before any stop (the
+      keep-running-skip reset semantics). DEFER-ONLY hard invariant: with
+      both new params at their False defaults this function is
+      byte-identical to its pre-#2283 decision table — the arm can only
+      turn a stop into a wait, never accelerate one.
     - ``status_class == "auto-stop-done"`` -> increment ``missed``; return
       ``"stop"`` once it reaches ``threshold`` (default 2 = ~20 min at a 10-min
       cron, so a single transient API/status glitch never stops a pod), else
@@ -3912,6 +4307,8 @@ def decide_pod_safety(
             return ("keep-running-skip", 0)
         if followup_active:
             return ("followup-skip", 0)
+        if fence_active and not fence_defer_exhausted:
+            return ("fence-defer", 0)
         new_missed = missed + 1
         if new_missed >= threshold:
             return ("stop", 0)
@@ -4407,6 +4804,83 @@ def decide_keep_running_pod_idle_escalation(
     if last_alert_ts is None or now - last_alert_ts >= realert_s:
         return ("re-alert", new_missed)
     return ("hold", new_missed)
+
+
+def decide_never_ran_escalation(
+    *,
+    portless_ticks: int,
+    age_s: float | None,
+    grace_s: float,
+    first_obs_lag_s: float | None,
+    obs_slop_s: float,
+    created_ts_ok: bool,
+    kill_switch: bool,
+    threshold: int,
+    last_alert_ts: float | None,
+    realert_s: float,
+    now: float,
+) -> tuple[str, dict]:
+    """Pure decision for the #2060 never-ran escalation leg (incident #1947).
+
+    Returns ``(action, detail)`` with ``action`` in ``{"alert", "keep",
+    "clear"}`` and ``detail`` a small dict carrying a ``reason`` string for
+    the caller's log line. ``"clear"`` means the pod's ``nr_pod`` entry
+    should be DELETED (the read can never be trusted for this incarnation);
+    ``"keep"`` accumulates/holds silently; ``"alert"`` fires the channels
+    (``detail["reason"]`` distinguishes the episode-opening ``episode-open``
+    from a cadence ``re-alert``).
+
+    Every missing/garbage input fails TOWARD SILENCE (plan §4.2):
+
+    - ``kill_switch`` set -> ``("keep", ...)`` (no state churn semantics —
+      the caller short-circuits before any write anyway).
+    - ``created_ts_ok`` False (missing/unparseable ``created_at``) ->
+      ``("clear", ...)`` — the age anchor is gone for this incarnation.
+    - ``age_s`` / ``first_obs_lag_s`` unreadable or negative ->
+      ``("clear", ...)``.
+    - ``first_obs_lag_s > obs_slop_s`` -> ``("clear", ...)`` — the
+      unobserved window could hide a port that appeared and vanished, so
+      "never ran" cannot be asserted (stated residual SF3: a port blip
+      strictly inside the slop window still reads never-ran; accepted —
+      alert-only, bounded by the grace + tag-scoped audience).
+    - ``portless_ticks`` garbage -> ``("keep", ...)``; below ``threshold``
+      -> ``("keep", ...)`` (the >=2-consecutive-tick house convention;
+      ``ticks == threshold`` FIRES — boundary parity with the sibling
+      legs).
+    - ``age_s < grace_s`` -> ``("keep", ...)``; ``age == grace`` FIRES.
+    - Matured: ``last_alert_ts`` ``None`` -> ``("alert",
+      {"reason": "episode-open"})``; ``now - last_alert_ts >= realert_s``
+      -> ``("alert", {"reason": "re-alert"})``; else deduped
+      ``("keep", ...)``.
+
+    ESCALATE-ONLY by contract — the caller NEVER stops/terminates on this
+    leg's account (hard invariant, pinned test).
+    """
+    if kill_switch:
+        return ("keep", {"reason": "kill-switch"})
+    if not created_ts_ok:
+        return ("clear", {"reason": "created-ts-unreadable"})
+    if not isinstance(age_s, int | float) or isinstance(age_s, bool) or age_s < 0:
+        return ("clear", {"reason": "age-unreadable"})
+    if (
+        not isinstance(first_obs_lag_s, int | float)
+        or isinstance(first_obs_lag_s, bool)
+        or first_obs_lag_s < 0
+    ):
+        return ("clear", {"reason": "first-obs-unreadable"})
+    if first_obs_lag_s > obs_slop_s:
+        return ("clear", {"reason": "unobserved-window"})
+    if not isinstance(portless_ticks, int) or isinstance(portless_ticks, bool):
+        return ("keep", {"reason": "ticks-unreadable"})
+    if portless_ticks < threshold:
+        return ("keep", {"reason": "below-threshold"})
+    if age_s < grace_s:
+        return ("keep", {"reason": "grace"})
+    if last_alert_ts is None:
+        return ("alert", {"reason": "episode-open"})
+    if now - last_alert_ts >= realert_s:
+        return ("alert", {"reason": "re-alert"})
+    return ("keep", {"reason": "alert-deduped"})
 
 
 # ─── VM disk-headroom watcher (task #552 incident, 2026-06-10) ───────────────
@@ -5232,26 +5706,106 @@ def _clear_data_disk_state() -> None:
     _data_disk_state_path().unlink(missing_ok=True)
 
 
+def _staging_top_caches(
+    dd_path: str, top_n: int = VM_DISK_SUBFLOOR_TOP_N, *, dry_run: bool = False
+) -> list[tuple[str, int]]:
+    """Top-``top_n`` largest TOP-LEVEL entries of the staging root(s) under
+    ``dd_path`` (dirs only, ANY name — ``huggingface-cache`` and dot-dirs
+    included: attribution is not reap), as ``(abs_path, bytes)`` via one
+    bounded ``du -sx --block-size=1`` per entry
+    (:data:`VM_DISK_SUBFLOOR_DU_TIMEOUT_S`). Top-level FILES are excluded
+    (dir-scoped attribution — #2095 §4.4: observed instances are KB-to-MB
+    logs/launchers, not a disk-pressure class).
+
+    Root resolution mirrors ``clean_experiment_downloads.
+    production_staging_roots`` WITHOUT importing it (the watcher deliberately
+    avoids importing the janitors at module load — fail-isolation; the same
+    established convention as the duplicated ``data_disk_path``): env
+    ``EPM_STAGING_CACHE_ROOTS`` (colon-separated absolute roots, each kept
+    iff ``is_dir()``) OVERRIDES the default
+    ``<dd_path>/<getpass.getuser()>`` (kept iff ``is_dir()``).
+
+    KILL-SWITCH SCOPE (#2095 §4.3, pinned by test):
+    ``EPM_SKIP_STAGING_CACHE_SWEEP`` and ``EPM_SKIP_NONCANONICAL_CACHE_SWEEP``
+    do NOT disable this helper — it is READ-ONLY attribution, and
+    observability must survive a sweep kill (it is the triage channel a
+    human needs exactly while the sweep is off).
+
+    Under ``dry_run`` performs NO ``subprocess.run`` at all and returns
+    ``[]`` immediately (#681 r3 — a dry-run pass has zero observational
+    side-effects). Fail-soft: a per-entry ``du`` failure / timeout degrades
+    to fewer rows; any other error -> ``[]``, never a crash."""
+    if dry_run:
+        return []
+    try:
+        raw = os.environ.get("EPM_STAGING_CACHE_ROOTS", "").strip()
+        if raw:
+            roots = [Path(p) for p in raw.split(":") if p.strip() and Path(p).is_dir()]
+        else:
+            user_dir = Path(dd_path) / getpass.getuser()
+            roots = [user_dir] if user_dir.is_dir() else []
+        sizes: list[tuple[str, int]] = []
+        for root in roots:
+            try:
+                entries = sorted(root.iterdir())
+            except OSError:
+                continue
+            for entry in entries:
+                try:
+                    if not entry.is_dir():
+                        continue  # top-level FILES / dangling symlinks: dir-scoped
+                    rc = subprocess.run(
+                        ["du", "-sx", "--block-size=1", str(entry)],
+                        capture_output=True,
+                        text=True,
+                        timeout=VM_DISK_SUBFLOOR_DU_TIMEOUT_S,
+                        check=False,
+                    )
+                except (OSError, subprocess.SubprocessError):
+                    continue  # fail-soft: fewer rows, never a crash (R5)
+                if rc.returncode != 0 or not rc.stdout.strip():
+                    continue
+                try:
+                    nbytes = int(rc.stdout.split()[0])
+                except (ValueError, IndexError):
+                    continue
+                sizes.append((str(entry), nbytes))
+        sizes.sort(key=lambda x: x[1], reverse=True)
+        return sizes[:top_n]
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return []
+
+
 def _data_disk_top_caches(dd_path: str, *, dry_run: bool = False) -> list[tuple[str, int]]:
     """Attribution for the data-disk escalation: PRIMARY per-PROJECT usage via
-    ``repquota -P`` (one cheap call, project id == issue number), falling back
-    to the ``du``-based glob attribution when ``repquota`` is unavailable / the
-    disk has no prjquota / parsing fails. Fail-soft — any error yields an empty
-    list (no attribution), never a crash.
+    ``repquota -P`` (one cheap call, project id == issue number). When
+    ``repquota`` is unavailable / the disk has no prjquota / parsing fails,
+    the fallback returns the merged, size-sorted top-N of the ``du``-based
+    glob attribution (:func:`_top_issue_cache_paths`) AND the staging-root
+    attribution (:func:`_staging_top_caches` — the ``/mnt/eps-data/$USER``
+    staging dirs, #2095), so a staging-dominated data disk is attributable
+    even without prjquota. Fail-soft — a failing leg degrades to the other
+    leg's rows; any error yields an empty list, never a crash.
 
-    Under ``dry_run`` both helpers short-circuit (repquota → ``None``, du →
-    ``[]``) so this returns ``[]`` with NO ``subprocess.run`` (#681 r3): the
-    data-disk dry-run smoke must have zero observational side-effects."""
+    Under ``dry_run`` every helper short-circuits (repquota → ``None``,
+    du/staging → ``[]``) so this returns ``[]`` with NO ``subprocess.run``
+    (#681 r3): the data-disk dry-run smoke must have zero observational
+    side-effects."""
     try:
         rows = _top_issue_caches_by_project_quota(dd_path, dry_run=dry_run)
     except (subprocess.SubprocessError, OSError):
         rows = None
     if rows is not None:
         return rows
-    try:
-        return _top_issue_cache_paths(dry_run=dry_run)
-    except (subprocess.SubprocessError, OSError):
-        return []
+    merged: list[tuple[str, int]] = []
+    # Fail-soft per leg: a failing glob leg must not drop the staging rows
+    # (and vice versa) — attribution degrades to fewer rows, never a crash.
+    with contextlib.suppress(subprocess.SubprocessError, OSError):
+        merged.extend(_top_issue_cache_paths(dry_run=dry_run))
+    with contextlib.suppress(subprocess.SubprocessError, OSError):
+        merged.extend(_staging_top_caches(dd_path, dry_run=dry_run))
+    merged.sort(key=lambda x: x[1], reverse=True)
+    return merged[:VM_DISK_SUBFLOOR_TOP_N]
 
 
 def data_disk_pass(dry_run: bool, used_pct: float | None = None) -> bool:
@@ -8005,6 +8559,351 @@ def registry_drift_pass(dry_run: bool) -> bool:
         return False
 
 
+# ─── Pre-dispatch staleness pass (task #2134) ─────────────────────────────────
+#
+# WHY: nothing surfaced queued/blocked infra tasks whose premises a recent
+# commit invalidated — blocked #1217/#1771 kept instructing a gate removed by
+# c20aabc59a; #1718 targeted a scripts/workflow_lint.py that completed #2079
+# had rewritten; 11 queued tasks all touched CLAUDE.md with pairwise
+# merge-conflict risk. A stale dispatch burns a session before the clarifier
+# discovers mootness (the #1985 shape). Every pre-existing "staleness"
+# mechanism is SESSION-staleness; this pass is the first TASK-PREMISE
+# staleness reader. Pure detection logic lives in
+# scripts/predispatch_staleness.py (injected git_log_fn seam + report-only
+# CLI); this block is the thin bounded I/O wrapper, cloning the
+# registry-drift throttle/attempt-stamp shape, the triage-observer marker
+# cap + sidecar overflow, and the partial-bundle listing cap + cursor.
+# ESCALATE-ONLY hard invariant: NEVER a set-status/archive mutation, NEVER a
+# dispatch gate/deferral, NEVER a write to the infra-drain queue or
+# proposed-infra-sweep state — mootness is adjudicated by the spawned
+# clarifier (its Step 0 context pass reads the flag marker) or a human, per
+# the #1918 archive-license discipline.
+
+# Once-daily cadence (surfacing, not tick-rate monitoring; registry-drift
+# precedent). Env EPM_PREDISPATCH_STALENESS_INTERVAL_HOURS, read at CALL
+# time; lo=0.0 lets a live smoke force a run.
+PREDISPATCH_STALENESS_INTERVAL_HOURS = 24.0
+# Re-alert TTL for an UNCHANGED (issue, fingerprint) flag: weekly — a queued
+# task's stale premise is inert until dispatch/triage acts on it. A NEW
+# invalidating commit changes the fingerprint and re-fires immediately.
+PREDISPATCH_STALENESS_REALERT_HOURS = 168.0
+# Per-pass scanned-task cap + persisted cursor (partial-bundle pattern) so
+# tail-of-queue tasks never starve; <= 1 bounded git-log subprocess per
+# scanned task keeps the daily budget fixed.
+PREDISPATCH_STALENESS_TASK_CAP = 40
+# Per-tick epm:progress flag-marker cap (triage-observer pattern). Overflow
+# flags stay sidecar-recorded and UNstamped (only markered flags enter the
+# dedup TTL), so they re-enter the marker queue at the next daily firing.
+PREDISPATCH_STALENESS_MARKER_CAP = 5
+
+
+def _predispatch_staleness_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_PREDISPATCH_STALENESS`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_registry_drift_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_PREDISPATCH_STALENESS", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _predispatch_staleness_sidecar_path() -> Path:
+    """DEDICATED pre-dispatch staleness event stream (own stream for clean
+    grep — the registry-drift / triage-observer sidecar precedent)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "predispatch-staleness-events.jsonl"
+
+
+def _predispatch_staleness_state_path() -> Path:
+    """Singleton throttle+dedup+cursor state (deliberately NOT a per-issue GC
+    target): ``{"last_run_ts": <float>, "cursor_idx": <int>,
+    "flagged": {"<issue>": {"<fingerprint>": <last_alert_ts>}}}``. Issue keys
+    are pruned inside the pass once the task leaves the scan scope."""
+    return AUTONOMOUS_REGISTRY_DIR / "predispatch-staleness.json"
+
+
+def _load_predispatch_staleness_state() -> dict:
+    """``{}`` on missing/garbled state; every field read back goes through
+    ``isinstance`` type-guards (mirrors :func:`_load_registry_drift_state`)."""
+    path = _predispatch_staleness_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_predispatch_staleness_state(state: dict, dry_run: bool) -> None:
+    """Atomic temp+rename write (fail-soft; mirrors
+    :func:`_save_registry_drift_state`); ``dry_run`` performs zero writes."""
+    if dry_run:
+        print(
+            "  [dry-run] would save predispatch-staleness state "
+            f"(cursor={state.get('cursor_idx')}, flagged={len(state.get('flagged') or {})})"
+        )
+        return
+    dest = _predispatch_staleness_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  predispatch-staleness: state save failed: {exc}", file=sys.stderr)
+
+
+def _append_predispatch_staleness_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the predispatch-staleness sidecar (fail-soft).
+    A ``ts`` is stamped; ``dry_run`` reports only (mirrors
+    :func:`_append_registry_drift_sidecar`)."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append predispatch-staleness sidecar row: {line[:160]}")
+        return
+    dest = _predispatch_staleness_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  predispatch-staleness: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _predispatch_marker_targets(records) -> list[tuple[int, str, object]]:
+    """Pure expansion of scan records into (issue, fingerprint, record)
+    marker targets: a stale-premise / landed-sibling record flags its own
+    task; a queue-collision record flags EVERY colliding task (each one's
+    clarifier needs the flag), all sharing the record's fingerprint."""
+    out: list[tuple[int, str, object]] = []
+    for rec in records:
+        if rec.kind == "queue-collision":
+            issues = rec.evidence.get("colliding_issues") or [rec.issue]
+        else:
+            issues = [rec.issue]
+        for issue in issues:
+            out.append((int(issue), rec.fingerprint, rec))
+    return out
+
+
+def decide_predispatch_staleness_flags(
+    targets: list[tuple[int, str, object]],
+    flagged: dict,
+    now: float,
+    realert_s: float,
+    marker_cap: int,
+) -> list[dict]:
+    """Pure fire/dedup/cap decision. ``flagged`` is the persisted
+    ``{"<issue>": {"<fp>": last_alert_ts}}`` map. A target FIRES when its
+    (issue, fp) was never alerted or the last alert is STRICTLY older than
+    ``realert_s`` (garbled timestamps degrade to fire-as-if-unalerted — the
+    registry-drift corrupt-state contract). The first ``marker_cap`` fired
+    targets get a marker; overflow stays sidecar-only. Deterministic order:
+    targets are processed sorted by (issue, fingerprint)."""
+    actions: list[dict] = []
+    markers_left = marker_cap
+    for issue, fp, rec in sorted(targets, key=lambda t: (t[0], t[1])):
+        per_issue = flagged.get(str(issue))
+        prev = per_issue.get(fp) if isinstance(per_issue, dict) else None
+        fire = not isinstance(prev, int | float) or (now - prev) > realert_s
+        marker = False
+        if fire and markers_left > 0:
+            marker = True
+            markers_left -= 1
+        actions.append(
+            {"issue": issue, "fingerprint": fp, "record": rec, "fire": fire, "marker": marker}
+        )
+    return actions
+
+
+def _predispatch_staleness_note(issue: int, rec) -> str:
+    """Compose the advisory epm:progress flag note (sentinel-led). The
+    adjudication affordance QUOTES `set-status <N> archived` for the
+    human/clarifier — this pass itself never composes that mutation."""
+    ev = json.dumps(rec.evidence, sort_keys=True)
+    return (
+        f"{_PREDISPATCH_STALENESS_NOTE_SENTINEL} advisory {rec.kind} flag "
+        f"(report-only #2134 pass, fingerprint {rec.fingerprint}): target(s) "
+        f"{rec.target}; evidence: {ev[:1500]}. The premise may be stale or "
+        "collide with sibling work — the clarifier adjudicates at dispatch; "
+        f"to archive: `task.py set-status {issue} archived` — human/clarifier "
+        "only. Nothing was changed automatically."
+    )
+
+
+def predispatch_staleness_pass(dry_run: bool) -> bool:
+    """ESCALATE-ONLY once-daily pre-dispatch task-premise staleness observer
+    (#2134). Scans queued ``proposed`` + ``blocked`` infra/batch tasks whose
+    ``workflow_fix_target:`` files were rewritten by commits newer than the
+    task's creation (>= 3 shared informative tokens between commit subject
+    and task title+body), plus same-file queue collisions and landed-sibling
+    commits; SURFACES the list (sidecar rows + ONE deduped push digest per
+    firing tick + capped per-task ``epm:progress`` flag markers) and mutates
+    NOTHING — never a set-status/archive, never a dispatch gate, never a
+    write to the infra-drain queue or proposed-infra-sweep state (the #1918
+    archive-license discipline; the flag's consumer is the spawned
+    clarifier's Step 0 context pass, or a human).
+
+    ADVISORY pass, not a guarantee: the daily cadence means a task filed and
+    dispatched within <24h of the invalidating commit is never scanned
+    pre-dispatch. Cursor cycle time: at the per-pass cap of
+    ``PREDISPATCH_STALENESS_TASK_CAP`` (40) and the current ~60-task queue
+    depth, a full queue cycle takes ~2 daily firings.
+
+    Bounds: once-daily throttle with the attempt stamp saved BEFORE
+    collecting (registry-drift pattern); per-pass task cap + persisted
+    cursor (partial-bundle pattern) scoping the GIT-BACKED signals only —
+    the git-free queue-collision grouping is built from the FULL collected
+    queue every firing, so two colliding tasks on opposite sides of a
+    window boundary still co-detect (#2134 v2); <= 1 bounded git-log
+    subprocess per scanned task; marker cap per tick with sidecar-recorded
+    overflow (triage-observer pattern) — the dedup TTL is stamped ONLY for
+    flags whose marker was composed this firing, so an over-cap flag
+    re-enters the marker queue at the next daily firing (cap 5/day -> full
+    coverage of a 28-flag backlog in ~6 days) while its sidecar row lands
+    every firing; per-(issue, fingerprint) fire-once + 168h TTL re-alert.
+    Fail toward silence on every unreadable input (registry, body,
+    git — a failed git log never reads as "no staleness"). Daemon-INDEPENDENT
+    (read-only registry/body/git reads; marker posts go via the ``task.py``
+    subprocess from PROJECT_ROOT on ``main``). Returns True when any flag
+    fired this run."""
+    if not _predispatch_staleness_enabled():
+        print("  predispatch-staleness: disabled via EPM_DISABLE_PREDISPATCH_STALENESS; skipping")
+        return False
+    try:
+        now = time.time()
+        interval_h = _env_float(
+            "EPM_PREDISPATCH_STALENESS_INTERVAL_HOURS",
+            PREDISPATCH_STALENESS_INTERVAL_HOURS,
+            lo=0.0,
+            hi=720.0,
+        )
+        realert_h = _env_float(
+            "EPM_PREDISPATCH_STALENESS_REALERT_HOURS",
+            PREDISPATCH_STALENESS_REALERT_HOURS,
+            lo=1.0,
+            hi=2160.0,
+        )
+        task_cap = int(
+            _env_float(
+                "EPM_PREDISPATCH_STALENESS_TASK_CAP",
+                float(PREDISPATCH_STALENESS_TASK_CAP),
+                lo=1.0,
+                hi=500.0,
+            )
+        )
+        marker_cap = int(
+            _env_float(
+                "EPM_PREDISPATCH_STALENESS_MARKER_CAP",
+                float(PREDISPATCH_STALENESS_MARKER_CAP),
+                lo=0.0,
+                hi=50.0,
+            )
+        )
+        state = _load_predispatch_staleness_state()
+        last = state.get("last_run_ts")
+        if isinstance(last, int | float) and (now - last) < interval_h * 3600.0:
+            return False  # throttled — silent (once-daily surfacing cadence)
+        state["last_run_ts"] = now
+        # Stamp the ATTEMPT before collecting: a crashing collect/scan is
+        # bounded to one error sidecar row per throttle interval instead of
+        # spamming every 10-min tick (registry-drift precedent).
+        _save_predispatch_staleness_state(state, dry_run)
+
+        # Lazy sibling import (watcher convention — resolves via the
+        # scripts/ sys.path bootstrap at module top).
+        import predispatch_staleness as pds
+
+        tasks, repo_root = pds.collect_tasks()
+        tasks.sort(key=lambda t: t["id"])
+        raw_cursor = state.get("cursor_idx")
+        cursor = int(raw_cursor) if isinstance(raw_cursor, int | float) else 0
+        if cursor >= len(tasks):
+            cursor = 0
+        window = tasks[cursor : cursor + task_cap]
+        next_cursor = (cursor + task_cap) if (cursor + task_cap) < len(tasks) else 0
+
+        # Git-backed signals scan the WINDOW (cap + cursor bound the git
+        # budget); the git-free queue-collision grouping reads the FULL
+        # collected queue, so cross-window collisions co-detect (#2134 v2).
+        records = pds.scan(
+            window,
+            git_log_fn=lambda paths, since: pds.git_log_for_paths(repo_root, paths, since),
+            collision_tasks=tasks,
+        )
+        raw_flagged = state.get("flagged")
+        flagged: dict = raw_flagged if isinstance(raw_flagged, dict) else {}
+        actions = decide_predispatch_staleness_flags(
+            _predispatch_marker_targets(records), flagged, now, realert_h * 3600.0, marker_cap
+        )
+        fired = [a for a in actions if a["fire"]]
+        for a in fired:
+            rec = a["record"]
+            _append_predispatch_staleness_sidecar(
+                {
+                    "kind": "predispatch-staleness",
+                    "issue": a["issue"],
+                    "flag_kind": rec.kind,
+                    "target": rec.target,
+                    "fingerprint": a["fingerprint"],
+                    "evidence": rec.evidence,
+                    # `marker` records the compose DECISION (cap bookkeeping);
+                    # _post_progress_marker is fail-soft and post != seen.
+                    "marker": a["marker"],
+                },
+                dry_run,
+            )
+            if a["marker"]:
+                _post_progress_marker(
+                    a["issue"],
+                    _predispatch_staleness_note(a["issue"], rec),
+                    dry_run,
+                    label="predispatch-staleness",
+                )
+                # Stamp the dedup TTL ONLY for markered flags (#2134 v2):
+                # an over-cap flag stays UNstamped so it re-enters the
+                # marker queue at the next daily firing instead of waiting
+                # out the 168h TTL with a sidecar-only record.
+                per_issue = flagged.setdefault(str(a["issue"]), {})
+                if isinstance(per_issue, dict):
+                    per_issue[a["fingerprint"]] = now
+                else:
+                    flagged[str(a["issue"])] = {a["fingerprint"]: now}
+        for a in fired[:5]:
+            print(
+                f"  predispatch-staleness: #{a['issue']} {a['record'].kind} "
+                f"[{a['fingerprint']}] {a['record'].target}"
+            )
+        if fired:
+            n_markers = sum(1 for a in fired if a["marker"])
+            _telegram_push(
+                f"predispatch-staleness (report-only #2134 pass): {len(fired)} "
+                "stale-premise/collision flag(s) on queued infra tasks — e.g. "
+                + "; ".join(f"#{a['issue']} {a['record'].kind}" for a in fired[:3])
+                + f". {n_markers} flag marker(s) posted; details: "
+                ".claude/cache/predispatch-staleness-events.jsonl. The clarifier "
+                "adjudicates at dispatch. Nothing was changed automatically.",
+                dry_run,
+            )
+        # Self-prune flagged entries whose issue left the scan scope for good
+        # (dispatched / completed / archived / parked on_hold).
+        in_scope = {str(t["id"]) for t in tasks}
+        for key in list(flagged):
+            if key not in in_scope:
+                flagged.pop(key, None)
+        state["flagged"] = flagged
+        state["cursor_idx"] = next_cursor
+        _save_predispatch_staleness_state(state, dry_run)
+        return bool(fired)
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  predispatch-staleness: pass failed (fail-soft): {exc}", file=sys.stderr)
+        # Error row only — NO flagged/cursor write (the next in-interval tick
+        # stays throttled by the attempt stamp saved before the collect).
+        _append_predispatch_staleness_sidecar(
+            {"kind": "predispatch-staleness-error", "error": str(exc)[:500]}, dry_run
+        )
+        return False
+
+
 # ─── Stash/rescue-backlog audit pass (task #1806) ─────────────────────────────
 #
 # WHY: #1751 surfaces NEW `stash: KEPT` events at Step 10d merge sites only.
@@ -8662,6 +9561,309 @@ def root_unstaged_audit_pass(dry_run: bool) -> bool:
         _append_root_unstaged_sidecar(
             {"kind": "root-unstaged-error", "error": str(exc)[:500]}, dry_run
         )
+        return False
+
+
+# ─── Pending-call wedge observer pass (task #2115) ────────────────────────────
+#
+# WHY: ~12-18 autonomous /issue sessions (2026-08-04..08-06) wedged 1.2-2.4h
+# each at a Step 10d pre-push lint-gate Bash dispatch — the orchestrator
+# issued the tool call and NO tool_result ever arrived (not even the instant
+# "Async task launched" ack a run_in_background call returns). Four candidate
+# mechanisms were excluded under control (permission prompt, git index-lock,
+# unbounded hook cost, cancellation leaving survivors — #2115 plan v3 §0.0),
+# so the stall sits in the harness/transport layer OUTSIDE this repo:
+# DETECTION is the deliverable. The ~2.2h stall fence was the only exit and
+# several respawns re-wedged at the identical call; this pass converts the
+# silent stall into a bounded, attributable detection within ~one watcher
+# cycle past the window. ESCALATE-ONLY (the #2015 pass-36 posture): sidecar
+# rows + one deduped push per episode; NEVER mutates task or git state,
+# posts NO task markers, emits NO respawn/stop.
+
+# Flag threshold (minutes) for a pending Bash tool call. Source: parity with
+# tick_triage.py's staleness window (STALE_S_DEFAULT = 25 * 60) so this lane
+# introduces no third, inconsistent staleness notion; a FOREGROUND Bash call
+# hard-caps at 10 min and a background Bash acks instantly, so 25 min gives
+# >= 2.5x headroom over the longest legitimate Bash pend — which is what
+# makes the window safe under the Bash-only keying below. Env
+# EPM_PENDING_CALL_WEDGE_MIN.
+PENDING_CALL_WEDGE_MIN = 25.0
+# The ONLY tool whose pending call is wedge evidence. Bash-only keying is
+# LOAD-BEARING, not a detail (#2115 plan v3 §6 prong 1): the Agent tool
+# legitimately pends 30-90+ min in nearly every healthy autonomous session —
+# an untyped predicate would flag routine health and the lane would be
+# ignored or kill-switched. AskUserQuestion / TaskOutput / Monitor (and
+# every other non-Bash tool) are exempt the same way: ANY pending non-Bash
+# block in the final assistant turn suppresses the flag (fail toward
+# silence).
+PENDING_CALL_WEDGE_TOOL = "Bash"
+# Dedup-episode retention: a (issue, tool_use id) episode key older than
+# this is pruned from the state singleton (tool_use ids are unique per
+# call, so a stale key can never re-fire — pruning is pure hygiene).
+PENDING_CALL_EPISODE_TTL_S = 7 * 86400.0
+
+
+def _pending_call_wedge_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_PENDING_CALL_WEDGE`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_root_unstaged_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_PENDING_CALL_WEDGE", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _pending_call_sidecar_path() -> Path:
+    """DEDICATED pending-call wedge event stream (own stream for clean grep
+    — the root-unstaged / stash-rescue sidecar precedent)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "pending-call-wedge-events.jsonl"
+
+
+def _pending_call_state_path() -> Path:
+    """Singleton push-dedup state (deliberately NOT a per-issue GC target):
+    ``{"episodes": {"<issue>:<tool_use_id>": <first-flag ts>}}``."""
+    return AUTONOMOUS_REGISTRY_DIR / "pending-call-wedge.json"
+
+
+def _load_pending_call_state() -> dict:
+    """``{}`` on missing/garbled state; ``isinstance`` type-guards on read
+    (mirrors :func:`_load_root_unstaged_state`)."""
+    path = _pending_call_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_pending_call_state(state: dict, dry_run: bool) -> None:
+    """Atomic temp+rename write of the pending-call wedge state (fail-soft;
+    mirrors :func:`_save_root_unstaged_state`); ``dry_run`` performs zero
+    writes."""
+    if dry_run:
+        print(
+            f"  [dry-run] would save pending-call-wedge state "
+            f"({len(state.get('episodes', {}))} episode(s))"
+        )
+        return
+    dest = _pending_call_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  pending-call-wedge: state save failed: {exc}", file=sys.stderr)
+
+
+def _append_pending_call_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the pending-call wedge sidecar (fail-soft). A
+    ``ts`` is stamped; ``dry_run`` reports only (mirrors
+    :func:`_append_root_unstaged_sidecar`)."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append pending-call-wedge sidecar row: {line[:160]}")
+        return
+    dest = _pending_call_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  pending-call-wedge: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _last_assistant_tool_uses(rows: list) -> tuple[int, dict, list[tuple[str, str]]] | None:
+    """Locate the tail's LAST ``type == "assistant"`` row and extract its
+    ``(id, name)`` tool_use pairs. Returns ``(index, row, pairs)``; ``None``
+    — fail toward silence — when no assistant row exists, its content is not
+    a list, any tool_use block is malformed (missing / non-str ``id`` or
+    ``name``), or the row carries no tool_use block at all (the turn ended
+    in text). Predicate helper of :func:`decide_pending_call_wedge`."""
+    for i in range(len(rows) - 1, -1, -1):
+        row = rows[i]
+        if not isinstance(row, dict) or row.get("type") != "assistant":
+            continue
+        msg = row.get("message")
+        content = msg.get("content") if isinstance(msg, dict) else None
+        if not isinstance(content, list):
+            return None
+        tool_uses: list[tuple[str, str]] = []
+        for block in content:
+            if not isinstance(block, dict) or block.get("type") != "tool_use":
+                continue
+            tid, name = block.get("id"), block.get("name")
+            if not isinstance(tid, str) or not tid or not isinstance(name, str) or not name:
+                return None  # malformed tool_use block — fail toward silence
+            tool_uses.append((tid, name))
+        if not tool_uses:
+            return None
+        return i, row, tool_uses
+    return None
+
+
+def _resolved_tool_result_ids(rows: list, after_idx: int) -> set[str]:
+    """``tool_use_id``s of every ``tool_result`` block in ``type == "user"``
+    rows AFTER ``after_idx`` — a matching result resolves its call. Predicate
+    helper of :func:`decide_pending_call_wedge`."""
+    resolved: set[str] = set()
+    for later in rows[after_idx + 1 :]:
+        if not isinstance(later, dict) or later.get("type") != "user":
+            continue
+        lmsg = later.get("message")
+        lcontent = lmsg.get("content") if isinstance(lmsg, dict) else None
+        if not isinstance(lcontent, list):
+            continue
+        for block in lcontent:
+            if isinstance(block, dict) and block.get("type") == "tool_result":
+                rid = block.get("tool_use_id")
+                if isinstance(rid, str):
+                    resolved.add(rid)
+    return resolved
+
+
+def decide_pending_call_wedge(
+    rows: list[dict] | None, *, window_s: float, now: float
+) -> dict | None:
+    """Pure #2115 pending-call wedge predicate over parsed transcript-tail
+    rows. Fires — returns ``{"tool_use_id", "n_pending", "age_s",
+    "row_ts"}`` — iff ALL hold:
+
+    - the tail's LAST ``type == "assistant"`` row carries >= 1 ``tool_use``
+      content block (a later assistant row means the session took another
+      turn — not this wedge shape; non-assistant rows AFTER it, e.g. the
+      tick cron's queue-operation records, do not reset the read);
+    - EVERY block of that row still PENDING (no ``tool_result`` block with
+      a matching ``tool_use_id`` in any LATER ``type == "user"`` row) is a
+      **Bash** call (:data:`PENDING_CALL_WEDGE_TOOL`) — ANY pending
+      non-Bash block (Agent / AskUserQuestion / TaskOutput / Monitor /
+      anything else) suppresses the flag, the LOAD-BEARING typed keying;
+    - >= 1 block is pending at all (a fully-resolved turn never fires);
+    - the row's top-level ISO timestamp parses (:func:`_row_ts`) and is
+      >= ``window_s`` older than ``now``.
+
+    Fail-toward-silence contract (escalate-only lane — a parse bug must
+    never spam the fleet): ``None``/empty ``rows``, no assistant row, no
+    ``tool_use`` blocks (the turn ended in text), a malformed ``tool_use``
+    block (missing / non-str ``id`` or ``name``), a missing/unparseable
+    row timestamp, a future-dated row, and an age under the window ALL
+    return ``None``."""
+    if not isinstance(rows, list) or not rows:
+        return None
+    found = _last_assistant_tool_uses(rows)
+    if found is None:
+        return None
+    last_idx, last, tool_uses = found
+    resolved = _resolved_tool_result_ids(rows, last_idx)
+    pending = [(tid, name) for tid, name in tool_uses if tid not in resolved]
+    if not pending:
+        return None
+    if any(name != PENDING_CALL_WEDGE_TOOL for _tid, name in pending):
+        return None  # Bash-only keying — a pending Agent/etc. is routine health
+    ts = _row_ts(last)
+    if ts is None:
+        return None
+    age_s = now - ts
+    if age_s < window_s:
+        return None
+    return {
+        "tool_use_id": pending[0][0],
+        "n_pending": len(pending),
+        "age_s": age_s,
+        "row_ts": ts,
+    }
+
+
+def pending_call_wedge_pass(dry_run: bool, *, pids_by_sid: dict[str, int] | None) -> bool:
+    """ESCALATE-ONLY observer for the #2115 forever-pending Bash tool-call
+    wedge: for every registered session (auto + manual), read the
+    transcript tail (happy-log-resolved, 256 KB — the #1104 wedge-probe
+    width) and flag when :func:`decide_pending_call_wedge` fires. Channels:
+    one sidecar row per flagged tick + ONE deduped fail-soft push per
+    (issue, tool_use id) episode. NEVER mutates task or git state, posts NO
+    task markers, emits NO respawn/stop — detection only (the stall
+    mechanism is outside this repo; #2115 plan v3 §1). Fail-soft top-level
+    guard; an unresolvable transcript / missing pid map skips silently.
+    Returns True when >= 1 session was FLAGGED this run (the decision, not
+    push delivery — ``dry_run`` computes flags but performs zero writes and
+    no real push)."""
+    if not _pending_call_wedge_enabled():
+        print("  pending-call-wedge: disabled via EPM_DISABLE_PENDING_CALL_WEDGE; skipping")
+        return False
+    if not pids_by_sid:
+        print("  pending-call-wedge: no live sid->pid map (daemon down or empty); skipping")
+        return False
+    try:
+        now = time.time()
+        window_min = _env_float(
+            "EPM_PENDING_CALL_WEDGE_MIN", PENDING_CALL_WEDGE_MIN, lo=1.0, hi=1440.0
+        )
+        state = _load_pending_call_state()
+        episodes = state.get("episodes")
+        if not isinstance(episodes, dict):
+            episodes = {}
+        flagged_any = False
+        for issue, rec in sorted(_issue_registrations().items()):
+            hit: dict | None = None
+            hit_sid: str | None = None
+            for sid in sorted(rec.get("sids", ())):
+                pid = pids_by_sid.get(sid)
+                if not isinstance(pid, int):
+                    continue
+                rows = _transcript_tail_rows(pid, max_bytes=262144)
+                if rows is None:
+                    continue
+                hit = decide_pending_call_wedge(rows, window_s=window_min * 60.0, now=now)
+                if hit is not None:
+                    hit_sid = sid
+                    break
+            if hit is None:
+                continue
+            flagged_any = True
+            episode_key = f"{issue}:{hit['tool_use_id']}"
+            fire = episode_key not in episodes
+            episodes[episode_key] = episodes.get(episode_key, now)
+            age_min = hit["age_s"] / 60.0
+            _append_pending_call_sidecar(
+                {
+                    "kind": "pending-call-wedge",
+                    "issue": issue,
+                    "sid": hit_sid,
+                    "tool_use_id": hit["tool_use_id"],
+                    "n_pending": hit["n_pending"],
+                    "age_min": round(age_min, 1),
+                    # `pushed` records the fire DECISION (dedup bookkeeping),
+                    # not delivery — _telegram_push is fail-soft.
+                    "pushed": fire,
+                },
+                dry_run,
+            )
+            print(
+                f"  pending-call-wedge: issue #{issue} session {hit_sid} has "
+                f"{hit['n_pending']} pending Bash tool_use call(s) with no tool_result "
+                f"for ~{age_min:.0f} min (tool_use_id {hit['tool_use_id']})"
+            )
+            if fire:
+                _telegram_push(
+                    f"PENDING-CALL WEDGE (escalate-only #2115 pass): issue #{issue} "
+                    f"session {hit_sid} ends in a Bash tool_use pending ~{age_min:.0f} min "
+                    f"with NO tool_result (tool_use_id {hit['tool_use_id']}, "
+                    f"{hit['n_pending']} pending). The forever-pending dispatch class — "
+                    f"the stalled fence would otherwise take ~2.2h. Investigate the "
+                    f"session / stop+respawn it manually. Nothing was changed "
+                    f"automatically.",
+                    dry_run,
+                )
+        pruned = {
+            k: v
+            for k, v in episodes.items()
+            if isinstance(v, int | float) and (now - v) <= PENDING_CALL_EPISODE_TTL_S
+        }
+        _save_pending_call_state({"episodes": pruned}, dry_run)
+        return flagged_any
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  pending-call-wedge: pass failed (fail-soft): {exc}", file=sys.stderr)
         return False
 
 
@@ -10482,6 +11684,400 @@ def codex_outage_pass(dry_run: bool) -> bool:
         return False
 
 
+# ─── Settings model-id guard pass (task #2129) — AUTO-NORMALIZE + alert ──────
+#
+# WHY: the built-in /model command (and any harness settings write) can
+# persist `claude-fable-5[1m]` into ~/.claude/settings.json. Fable/Mythos are
+# 1M-native and expose NO `[1m]` variant, so that id kills every subagent
+# fleet-wide (#545, ~72h outage; re-planted + hand-normalized 2026-08-13,
+# #2129). Nothing else watches the GLOBAL settings files — workflow_lint's
+# AGENT_MODEL_ALLOWLIST covers only project agent files. This pass detects
+# the bad id class each 10-min tick and AUTO-NORMALIZES it (strip the
+# trailing `[1m]`), degrading to alert-only on every unsafe-write case.
+# Scope is fable/mythos ONLY — Opus 4.5-4.8 legitimately takes `[1m]`
+# (`claude-opus-*[1m]` is never touched).
+
+SETTINGS_MODEL_GUARD_REALERT_H = 24.0
+SETTINGS_MODEL_GUARD_BACKUP_KEEP = 10
+# Anchored form for parsed string VALUES; unanchored scan form for raw text
+# (the unparseable-JSON detection path). The optional version group covers
+# version-less ids (`claude-fable[1m]`).
+_SETTINGS_BAD_MODEL_RE = re.compile(r"^claude-(?:fable|mythos)(?:-[A-Za-z0-9.\-]+)?\[1m\]$")
+_SETTINGS_BAD_MODEL_SCAN_RE = re.compile(r"claude-(?:fable|mythos)(?:-[A-Za-z0-9.\-]+)?\[1m\]")
+# Module-level Path constants (not path-builder functions — tests monkeypatch
+# these directly; the `paths=` param on the pass covers the settings files).
+SETTINGS_MODEL_GUARD_SIDECAR = (
+    PROJECT_ROOT / ".claude" / "cache" / "settings-model-guard-events.jsonl"
+)
+SETTINGS_MODEL_GUARD_STATE = AUTONOMOUS_REGISTRY_DIR / "settings-model-guard.json"
+SETTINGS_MODEL_GUARD_BACKUP_DIR = AUTONOMOUS_REGISTRY_DIR
+
+
+def _settings_model_guard_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_SETTINGS_MODEL_GUARD_PASS`` is
+    set truthy ("1"/"true"/"yes", case-insensitive). Default enabled.
+    Mirrors :func:`_codex_outage_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_SETTINGS_MODEL_GUARD_PASS", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _settings_guard_default_paths() -> list[Path]:
+    """The two GLOBAL settings files the guard watches. A missing file is a
+    silent skip in the pass (``settings.local.json`` is commonly absent)."""
+    base = Path.home() / ".claude"
+    return [base / "settings.json", base / "settings.local.json"]
+
+
+def _iter_json_strings(obj: object):
+    """Yield every STRING VALUE in a parsed JSON structure, recursively
+    (dict values, list items, bare strings). Keys are deliberately not
+    yielded — a model id lives in a VALUE (``model``,
+    ``env.CLAUDE_CODE_SUBAGENT_MODEL``, any future key)."""
+    if isinstance(obj, str):
+        yield obj
+    elif isinstance(obj, dict):
+        for v in obj.values():
+            yield from _iter_json_strings(v)
+    elif isinstance(obj, list):
+        for v in obj:
+            yield from _iter_json_strings(v)
+
+
+def _structure_equal_modulo(old: object, new: object, mapping: dict[str, str]) -> bool:
+    """True when ``new`` equals ``old`` EXCEPT that string leaves may be
+    rewritten per ``mapping`` (bad id -> normalized id) — post-condition
+    (iii) of the byte-exact rewrite: nothing else in the parsed structure
+    moved (a bad string doubling as a dict KEY would fail here, correctly
+    routing to alert-only)."""
+    if isinstance(old, str):
+        return isinstance(new, str) and new == mapping.get(old, old)
+    if isinstance(old, dict):
+        return (
+            isinstance(new, dict)
+            and old.keys() == new.keys()
+            and all(_structure_equal_modulo(old[k], new[k], mapping) for k in old)
+        )
+    if isinstance(old, list):
+        return (
+            isinstance(new, list)
+            and len(old) == len(new)
+            and all(_structure_equal_modulo(a, b, mapping) for a, b in zip(old, new, strict=True))
+        )
+    # Numbers / bools / None: exact equality incl. type (bool vs int guard).
+    return type(old) is type(new) and old == new
+
+
+def _normalize_model_ids_text(raw: str) -> tuple[str | None, list[str], str | None]:
+    """Detect fable/mythos ``[1m]`` model ids in a settings-JSON text and
+    compute the byte-exact, format-preserving rewrite.
+
+    Returns ``(new_raw, bad_values, reason)``:
+
+    - ``(None, [], None)`` — clean (no bad ids detected);
+    - ``(new_raw, bad, None)`` — rewrite computed and ALL post-conditions
+      hold: (i) ``new_raw`` parses as JSON; (ii) a re-walk of the parsed
+      result finds zero bad ids; (iii) the parsed structure equals the old
+      one except at the replaced string leaves;
+    - ``(None, bad, reason)`` — detection WITHOUT a safe rewrite
+      (``unparseable-json`` / ``postcondition-failed``): the caller goes
+      ALERT-ONLY, never writes. A ``\\uXXXX``-escaped bad value fails SAFE
+      here — detected in parsed form, the raw quoted-string replacement
+      no-ops, post-condition (ii) fails.
+    """
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        hits = sorted(set(_SETTINGS_BAD_MODEL_SCAN_RE.findall(raw)))
+        if hits:
+            return None, hits, "unparseable-json"
+        return None, [], None
+    bad = sorted({s for s in _iter_json_strings(parsed) if _SETTINGS_BAD_MODEL_RE.match(s)})
+    if not bad:
+        return None, [], None
+    mapping = {b: b.removesuffix("[1m]") for b in bad}
+    new_raw = raw
+    for old_val, new_val in mapping.items():
+        # Byte-exact QUOTED-string replacement — never a whole-file
+        # json.dumps re-serialize (preserves the harness's formatting). The
+        # id alphabet (ASCII letters/digits/dots/hyphens/brackets) needs no
+        # JSON escaping, so json.dumps(old_val) == '"' + old_val + '"', and
+        # the surrounding quotes keep a longer string containing the id as
+        # a substring from being corrupted.
+        new_raw = new_raw.replace(json.dumps(old_val), json.dumps(new_val))
+    try:
+        new_parsed = json.loads(new_raw)  # post-condition (i)
+    except json.JSONDecodeError:
+        return None, bad, "postcondition-failed"
+    still_bad = any(_SETTINGS_BAD_MODEL_RE.match(s) for s in _iter_json_strings(new_parsed))
+    if still_bad:  # post-condition (ii) — covers the \uXXXX-escaped no-op
+        return None, bad, "postcondition-failed"
+    if not _structure_equal_modulo(parsed, new_parsed, mapping):  # post-condition (iii)
+        return None, bad, "postcondition-failed"
+    return new_raw, bad, None
+
+
+def _apply_settings_normalization(path: Path, old_raw: str, new_raw: str) -> tuple[bool, str]:
+    """Write ``new_raw`` over ``path`` with the safety belts, in order:
+
+    1. concurrent-write guard — re-read ``path``; current text !=
+       ``old_raw`` -> ``(False, "concurrent-write")``, no write, no backup
+       (the next 10-min tick re-detects and converges; this closes the
+       lost-update direction — a harness/user write landing between the
+       pass's read and the replace would otherwise be destroyed
+       whole-file);
+    2. timestamped backup copy under
+       :data:`SETTINGS_MODEL_GUARD_BACKUP_DIR`, pruned to the newest
+       :data:`SETTINGS_MODEL_GUARD_BACKUP_KEEP` per filename;
+    3. tmp file in the same directory, chmod'd to the ORIGINAL file's mode
+       (a default 0600 tmp would drop group-read), then ``os.replace``.
+
+    Returns ``(True, "normalized")`` on success; ``(False, <reason>)`` on
+    any failure (the caller goes alert-only). Accepted residual: a write
+    landing between the step-1 re-read and the step-3 replace is still
+    lost — the window is microseconds (was: the full detection+parse
+    span), the 10-min re-tick + the backup bound the damage, and a
+    compare-and-swap is not available over POSIX rename."""
+    try:
+        current = path.read_text()
+    except OSError as exc:
+        return False, f"reread-failed: {exc}"
+    if current != old_raw:
+        return False, "concurrent-write"
+    try:
+        SETTINGS_MODEL_GUARD_BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+        backup = SETTINGS_MODEL_GUARD_BACKUP_DIR / (
+            f"settings-model-guard-backup-{int(time.time())}-{path.name}"
+        )
+        backup.write_text(old_raw)
+        # Prune to the newest KEEP backups per filename (mtime order) — an
+        # unbounded accumulation guard on the registry dir.
+        siblings = sorted(
+            SETTINGS_MODEL_GUARD_BACKUP_DIR.glob(f"settings-model-guard-backup-*-{path.name}"),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+        for stale in siblings[SETTINGS_MODEL_GUARD_BACKUP_KEEP:]:
+            stale.unlink(missing_ok=True)
+    except OSError as exc:
+        return False, f"backup-failed: {exc}"
+    try:
+        mode = path.stat().st_mode & 0o7777
+        tmp = path.with_name(path.name + ".settings-guard-tmp")
+        tmp.write_text(new_raw)
+        os.chmod(tmp, mode)
+        os.replace(tmp, path)
+    except OSError as exc:
+        return False, f"write-failed: {exc}"
+    return True, "normalized"
+
+
+def _append_settings_guard_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the settings-model-guard sidecar (fail-soft);
+    a ``ts`` is stamped; ``dry_run`` reports only (mirrors
+    :func:`_append_codex_outage_sidecar`)."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append settings-model-guard sidecar row: {line[:200]}")
+        return
+    dest = SETTINGS_MODEL_GUARD_SIDECAR
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  settings-model-guard: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _load_settings_guard_state() -> dict:
+    """``{}`` on missing/garbled state (mirrors
+    :func:`_load_codex_outage_state`)."""
+    path = SETTINGS_MODEL_GUARD_STATE
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_settings_guard_state(state: dict, dry_run: bool) -> None:
+    """Atomic temp+rename write (fail-soft; mirrors
+    :func:`_save_codex_outage_state`); ``dry_run`` performs zero writes."""
+    if dry_run:
+        print("  [dry-run] would save settings-model-guard state")
+        return
+    dest = SETTINGS_MODEL_GUARD_STATE
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  settings-model-guard: state save failed: {exc}", file=sys.stderr)
+
+
+def _settings_guard_push(path: Path, bad: list[str], action: str, dry_run: bool) -> bool:
+    """Episode-deduped push: ONE push per (path, sorted bad-values) EPISODE —
+    the first event opens the episode, re-alerted after
+    ``EPM_SETTINGS_MODEL_GUARD_REALERT_H`` (default 24h) while the
+    condition persists. Applies to normalized AND alert-only pushes (a
+    persistent re-planter otherwise yields up to 144 pushes/day); sidecar
+    rows stay per-event so the full normalization history is durable.
+    Returns True when a push fired this call."""
+    realert_h = _env_float(
+        "EPM_SETTINGS_MODEL_GUARD_REALERT_H",
+        SETTINGS_MODEL_GUARD_REALERT_H,
+        lo=0.0,
+        hi=720.0,
+    )
+    now = time.time()
+    key = f"{path}|{','.join(bad)}"
+    state = _load_settings_guard_state()
+    last = state.get(key)
+    if isinstance(last, int | float) and (now - last) < realert_h * 3600.0:
+        return False  # in-episode dedup — the sidecar row already carries the event
+    if action == "normalized":
+        tail = "Auto-normalized (suffix stripped); timestamped backup kept."
+    else:
+        tail = "ALERT-ONLY (no safe rewrite) — normalize by hand."
+    _telegram_push(
+        f"Settings model-id guard [{action}]: {path} carried {', '.join(bad)} — "
+        f"fable/mythos expose no [1m] variant; the suffixed id kills every "
+        f"subagent fleet-wide (#545). {tail} "
+        f"Kill switch: EPM_DISABLE_SETTINGS_MODEL_GUARD_PASS=1.",
+        dry_run,
+    )
+    state[key] = now
+    _save_settings_guard_state(state, dry_run)
+    return True
+
+
+def settings_model_guard_pass(dry_run: bool, paths: list[Path] | None = None) -> bool:
+    """AUTO-NORMALIZE + alert pass (#2129): detect the fleet-killing
+    ``claude-fable-5[1m]``-class model id in the GLOBAL Claude settings
+    files each tick and strip the ``[1m]`` suffix in place (byte-exact
+    quoted-string rewrite, post-condition-gated, backup + atomic replace).
+
+    Fable/Mythos are 1M-native and expose NO ``[1m]`` variant — the
+    suffixed id kills every subagent fleet-wide (#545, ~72h outage; live
+    recurrence hand-normalized 2026-08-13, #2129). Scope is fable/mythos
+    ONLY — ``claude-opus-*[1m]`` is legitimate and never touched.
+    Unparseable JSON, failed post-conditions, and a concurrent write
+    between read and replace all degrade to ALERT-ONLY (sidecar + deduped
+    push), never a write. Daemon-INDEPENDENT (pure filesystem
+    reads/writes); NEVER posts task markers (fleet-level concern, no
+    single owning task — codex-outage precedent); fail-soft throughout.
+    No throttle by design — two <10 KB file reads per 10-min tick;
+    detection latency is the point (#545 blast radius).
+
+    ``paths=None`` resolves to ``~/.claude/settings.json`` +
+    ``settings.local.json``; the param exists for test injection.
+    ``dry_run``: detect + dry-run sidecar report + stdout line; no write,
+    no push. Returns True when anything fired (detection, normalization,
+    or alert)."""
+    if not _settings_model_guard_enabled():
+        print(
+            "  settings-model-guard: disabled via EPM_DISABLE_SETTINGS_MODEL_GUARD_PASS; skipping"
+        )
+        return False
+    fired = False
+    try:
+        if paths is None:
+            paths = _settings_guard_default_paths()
+        for path in paths:
+            try:
+                if not path.is_file():
+                    continue  # settings.local.json commonly absent — silent skip
+                raw = path.read_text()
+                new_raw, bad, reason = _normalize_model_ids_text(raw)
+                if not bad:
+                    continue
+                fired = True
+                if dry_run:
+                    would = "normalize" if new_raw is not None else f"alert-only ({reason})"
+                    print(
+                        f"  settings-model-guard: [dry-run] {path} carries bad "
+                        f"model id(s) {bad} — would {would}"
+                    )
+                    _append_settings_guard_sidecar(
+                        {
+                            "kind": "settings-model-guard",
+                            "action": "dry-run",
+                            "ok": True,
+                            "path": str(path),
+                            "bad_values": bad,
+                            **({"reason": reason} if reason else {}),
+                        },
+                        dry_run,
+                    )
+                    continue
+                if new_raw is None:
+                    # Detection WITHOUT a safe rewrite — alert-only branch.
+                    print(
+                        f"  settings-model-guard: ALERT-ONLY on {path}: {bad} ({reason})",
+                        file=sys.stderr,
+                    )
+                    _append_settings_guard_sidecar(
+                        {
+                            "kind": "settings-model-guard",
+                            "action": "alert-only",
+                            "ok": False,
+                            "path": str(path),
+                            "bad_values": bad,
+                            "reason": reason,
+                        },
+                        dry_run,
+                    )
+                    _settings_guard_push(path, bad, "alert-only", dry_run)
+                    continue
+                ok, apply_reason = _apply_settings_normalization(path, raw, new_raw)
+                if ok:
+                    print(f"  settings-model-guard: NORMALIZED {path}: {bad}")
+                    _append_settings_guard_sidecar(
+                        {
+                            "kind": "settings-model-guard",
+                            "action": "normalized",
+                            "ok": True,
+                            "path": str(path),
+                            "bad_values": bad,
+                        },
+                        dry_run,
+                    )
+                    _settings_guard_push(path, bad, "normalized", dry_run)
+                else:
+                    print(
+                        f"  settings-model-guard: write skipped on {path} ({apply_reason})",
+                        file=sys.stderr,
+                    )
+                    _append_settings_guard_sidecar(
+                        {
+                            "kind": "settings-model-guard",
+                            "action": "alert-only",
+                            "ok": False,
+                            "path": str(path),
+                            "bad_values": bad,
+                            "reason": apply_reason,
+                        },
+                        dry_run,
+                    )
+                    _settings_guard_push(path, bad, "alert-only", dry_run)
+            except Exception as exc:  # per-path fail-soft
+                print(
+                    f"  settings-model-guard: {path} failed (fail-soft): {exc}",
+                    file=sys.stderr,
+                )
+        if not fired:
+            # One legible clean-verdict line per tick (the --*-only smoke's
+            # observable; mirrors the per-tick status prints of pass 1).
+            print(f"  settings-model-guard: clean — no bad model ids in {len(paths)} file(s)")
+        return fired
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  settings-model-guard: pass failed (fail-soft): {exc}", file=sys.stderr)
+        return fired
+
+
 # ─── Urgent-park router pass (task #1681) — "main is red" fast path ──────────
 #
 # Route a PARKED workflow-fix candidate that self-declares a LIVE red test on
@@ -12234,6 +13830,35 @@ def _clear_wedge_state(issue: int, pod_id: str) -> None:
     )
 
 
+def _clear_never_ran_entry(issue: int, pod_id: str) -> None:
+    """Delete the #2060 ``nr_pod`` entry for ``pod_id`` — called on the
+    NOT-wedged branch of :func:`_maybe_handle_runpod_wedge`: a pod with a
+    live port HAS a runtime, so it can never be "never-ran" again for this
+    incarnation (a port appearance permanently ends the episode; the
+    continuous-portless counter is continuous-by-construction). No-op (no
+    write) when no entry exists — the overwhelmingly common healthy-pod
+    case never pays an extra state write."""
+    prev = _load_pod_safety_state(issue)
+    nr_pod = prev.get("nr_pod")
+    if not isinstance(nr_pod, dict) or pod_id not in nr_pod:
+        return
+    prev_missed = prev.get("missed", 0)
+    if not isinstance(prev_missed, int):
+        prev_missed = 0
+    prev_progress = prev.get("last_progress_ts")
+    if not isinstance(prev_progress, int | float):
+        prev_progress = None
+    _save_pod_safety_state(
+        issue,
+        pod_id,
+        missed=prev_missed,
+        alerted=bool(prev.get("alerted", False)),
+        last_progress_ts=prev_progress,
+        nr_pod_keep_ids=set(nr_pod) - {pod_id},
+        prev=prev,
+    )
+
+
 # Marker kinds that record a transition INTO a DONE status. The latest ts
 # among these is "when did this task become DONE"; compared against the
 # latest `epm:run-launched` ts to decide whether an `epm:run-launched`
@@ -12772,7 +14397,13 @@ def _respawn(entry: dict, dry_run: bool) -> str:
     Claude Code defaults (matching the pre-feature behavior).
 
     ``"suppressed"`` ALSO covers the #1027 auth-outage gate (fleet respawn
-    suppression during an active outage episode) — same no-booking contract."""
+    suppression during an active outage episode) — same no-booking contract.
+
+    The re-passed ``auto_approve_gpu_hours`` from the registry entry is
+    inert for plan approval as of #1771 (GPU-hour-blind gate) — retained
+    on the argv for provenance / registry compatibility only; the fresh
+    session's Step-2c gate now auto-approves any parseable estimate and
+    parks only on a missing one."""
     issue = entry["issue"]
     if _auth_outage_spawn_gate(issue, "crash", dry_run=dry_run) is not None:
         print(f"  RESPAWN issue #{issue}: suppressed — auth-outage episode active")
@@ -12858,6 +14489,48 @@ def _carry_kr_pod(
     return kr_pod
 
 
+def _carry_nr_pod(
+    prev: dict | None,
+    nr_pod_entry: tuple[str, dict] | None,
+    nr_pod_keep_ids: set[str] | None,
+) -> dict:
+    """Compute the #2060 ``nr_pod`` sub-dict for a :func:`_save_pod_safety_state`
+    payload — byte-parallel to :func:`_carry_kr_pod`: forward-carry every
+    prior entry verbatim (missing/garbled prev -> ``{}``), set/replace the
+    one caller-owned entry when given, then GC against the RUNNING-pod id
+    set when the caller holds it (``None`` = carry everything, no GC)."""
+    prev_nr_pod = (prev or {}).get("nr_pod")
+    nr_pod: dict = dict(prev_nr_pod) if isinstance(prev_nr_pod, dict) else {}
+    if nr_pod_entry is not None:
+        nr_pod[nr_pod_entry[0]] = nr_pod_entry[1]
+    if nr_pod_keep_ids is not None:
+        nr_pod = {k: v for k, v in nr_pod.items() if k in nr_pod_keep_ids}
+    return nr_pod
+
+
+def _carry_fd_pod(
+    prev: dict | None,
+    fd_pod_entry: tuple[str, dict] | None,
+    fd_pod_keep_ids: set[str] | None,
+) -> dict:
+    """Compute the #2283 ``fd_pod`` sub-dict for a :func:`_save_pod_safety_state`
+    payload — byte-parallel to :func:`_carry_kr_pod` / :func:`_carry_nr_pod`:
+    forward-carry every prior entry verbatim (missing/garbled prev -> ``{}``),
+    set/replace the one caller-owned entry when given, then GC against the
+    RUNNING-pod id set when the caller holds it (``None`` = carry everything,
+    no GC). The pod_id-keyed sub-dict shape is the #2283 blocker-2 contract:
+    the singular-field alternative goes structurally inert on multi-pod
+    issues (the #2149/#2060 lesson — a busy sibling pod's save must never
+    reset a fenced pod's episode)."""
+    prev_fd_pod = (prev or {}).get("fd_pod")
+    fd_pod: dict = dict(prev_fd_pod) if isinstance(prev_fd_pod, dict) else {}
+    if fd_pod_entry is not None:
+        fd_pod[fd_pod_entry[0]] = fd_pod_entry[1]
+    if fd_pod_keep_ids is not None:
+        fd_pod = {k: v for k, v in fd_pod.items() if k in fd_pod_keep_ids}
+    return fd_pod
+
+
 def _load_pod_safety_state(issue: int) -> dict:
     """Read the per-pod state for ``issue`` (``{}`` if absent / unreadable — a
     fresh/garbled file just starts the miss count at 0 and alerted at False)."""
@@ -12892,6 +14565,10 @@ def _save_pod_safety_state(
     kr_owner_last_alert_ts: float | None = _CARRY,
     kr_pod_entry: tuple[str, dict] | None = None,
     kr_pod_keep_ids: set[str] | None = None,
+    nr_pod_entry: tuple[str, dict] | None = None,
+    nr_pod_keep_ids: set[str] | None = None,
+    fd_pod_entry: tuple[str, dict] | None = None,
+    fd_pod_keep_ids: set[str] | None = None,
     prev: dict | None = None,
 ) -> None:
     """Persist the per-pod state atomically (temp + rename).
@@ -12975,6 +14652,27 @@ def _save_pod_safety_state(
     holds it) GCs entries whose pod is no longer a live RUNNING pod of the
     issue; ``None`` for either means carry-everything, no GC. Old state
     files without the sub-dict parse fine (missing key -> ``{}``).
+
+    The #2060 never-ran leg's state is the ``nr_pod`` top-level sub-dict
+    (one entry per pod incarnation: ``{"first_obs_ts", "created_ts",
+    "portless_ticks", "last_alert_ts"}``) — byte-parallel carry semantics
+    to ``kr_pod`` via ``nr_pod_entry`` / ``nr_pod_keep_ids``
+    (:func:`_carry_nr_pod`): sibling entries forward-carried VERBATIM on
+    every save, per-pod keying IS the incarnation reset, GC'd against the
+    caller's RUNNING-pod set when provided, back-compat missing key ->
+    ``{}``.
+
+    The #2283 fence-defer arm's state is the ``fd_pod`` top-level sub-dict
+    (one entry per pod incarnation: ``{"first_ts", "noted",
+    "last_push_ts", "ceiling_noted"}``) — byte-parallel carry semantics to
+    ``kr_pod`` / ``nr_pod`` via ``fd_pod_entry`` / ``fd_pod_keep_ids``
+    (:func:`_carry_fd_pod`): sibling entries forward-carried VERBATIM on
+    every save (a busy sibling pod's save must never reset a fenced pod's
+    24h-ceiling clock — the #2283 blocker-2 contract), per-pod keying IS
+    the incarnation reset, GC'd against the caller's RUNNING-pod set when
+    provided, back-compat missing key -> ``{}``. The episode CLEAR on an
+    evaluated-and-inactive fence read writes a FRESH-defaults entry via
+    ``fd_pod_entry`` (never a delete variant — mirror, don't invent).
     """
     AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
     dest = _pod_safety_state_path(issue)
@@ -13061,6 +14759,12 @@ def _save_pod_safety_state(
     # in-save incarnation reset is needed. GC'd against the caller's
     # RUNNING-pod set when provided; back-compat: missing/garbled -> {}.
     kr_pod = _carry_kr_pod(prev, kr_pod_entry, kr_pod_keep_ids)
+    # #2060 nr_pod sub-dict: identical carry contract (sibling entries
+    # forward-carried verbatim; per-pod keying is the incarnation reset).
+    nr_pod = _carry_nr_pod(prev, nr_pod_entry, nr_pod_keep_ids)
+    # #2283 fd_pod sub-dict: identical carry contract again (fence-defer
+    # episodes; a sibling pod's save forward-carries a fenced pod's entry).
+    fd_pod = _carry_fd_pod(prev, fd_pod_entry, fd_pod_keep_ids)
     payload = {
         "pod_id": pod_id,
         "missed": missed,
@@ -13081,6 +14785,8 @@ def _save_pod_safety_state(
         "kr_owner_first_ts": kr_owner_first_ts,
         "kr_owner_last_alert_ts": kr_owner_last_alert_ts,
         "kr_pod": kr_pod,
+        "nr_pod": nr_pod,
+        "fd_pod": fd_pod,
     }
     tmp = dest.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(payload, indent=2))
@@ -13128,6 +14834,41 @@ def _append_stalled_live_event(
         print(f"  WARNING: appending stalled-live event failed: {e}", file=sys.stderr)
 
 
+def _append_stalled_xgen_event(
+    *,
+    issue: int,
+    count: int,
+    threshold: int,
+    last_real_marker_ts: float | None,
+    dry_run: bool,
+) -> None:
+    """Durable trace for the #2084 cross-generation no-progress escalation:
+    one JSON line per escalation fire appended to
+    ``~/.eps-autonomous/stalled-xgen-events.jsonl`` (a ``.jsonl`` suffix —
+    outside the ``*.json`` state-GC glob by convention). Fail-soft,
+    mirroring :func:`_append_stalled_live_event`."""
+    dest = AUTONOMOUS_REGISTRY_DIR / "stalled-xgen-events.jsonl"
+    line = json.dumps(
+        {
+            "ts": datetime.now().astimezone().isoformat(),
+            "issue": issue,
+            "count": count,
+            "threshold": threshold,
+            "last_real_marker_ts": last_real_marker_ts,
+            "arm": "stalled-fence-spawn",
+        }
+    )
+    if dry_run:
+        print(f"  [dry-run] would append stalled-xgen event to {dest}")
+        return
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as e:
+        print(f"  WARNING: appending stalled-xgen event failed: {e}", file=sys.stderr)
+
+
 def _load_stalled_state(issue: int) -> dict:
     """Read the per-session stalled-detector state for ``issue`` (``{}`` if
     absent / unreadable — a fresh/garbled file just starts the miss count at 0
@@ -13167,10 +14908,30 @@ def _save_stalled_state(
     dead_silence_respawns_today: int = 0,
     wedge_respawn_day: str | None = None,
     wedge_respawns_today: int = 0,
+    xgen_respawns: int = 0,
+    xgen_last_real_marker_ts: float | None = None,
+    xgen_escalated_at: int = 0,
     prev: dict | None = None,
 ) -> None:
     """Persist the per-session stalled-detector state atomically (temp +
     rename), mirroring :func:`_save_pod_safety_state`.
+
+    #2084 cross-generation no-progress fields: ``xgen_respawns`` counts
+    CONSECUTIVE fence-spawn respawns (:func:`_fence_spawn_stalled`'s spawn
+    branch — the sole ``session-auto-respawn`` post site) with no
+    intervening real (non-watcher) marker; ``xgen_last_real_marker_ts`` is
+    the newest real-marker epoch ts observed at the LAST counted respawn
+    (monotone max; a ``None``/unreadable current read never overwrites a
+    valid anchor); ``xgen_escalated_at`` is the counter value at the most
+    recent escalation (0 = never — once-per-threshold-band dedup). All
+    three are deliberately EXEMPT from the advancement-clear the #845
+    hardening fields get, alongside the #1209/#1241 day-keyed counters and
+    for the same reason: each respawned generation writes a fresh boot
+    self-report, so an advancement-cleared counter could never see across
+    generations — exactly the loop the counter measures (#2004: 7 respawns
+    over 7h34m with zero real markers). NOT day-keyed — the predicate is
+    purely progress-keyed. Absent in older on-disk files -> loaded as
+    ``(0, None, 0)`` (:func:`_stalled_xgen_fields`).
 
     #1480 stalled-manual escalation fields: ``manual_escalate_count`` is the
     number of CONSECUTIVE stalled-confirmed ticks observed for a MANUAL
@@ -13275,6 +15036,9 @@ def _save_stalled_state(
         "dead_silence_respawns_today": dead_silence_respawns_today,
         "wedge_respawn_day": wedge_respawn_day,
         "wedge_respawns_today": wedge_respawns_today,
+        "xgen_respawns": xgen_respawns,
+        "xgen_last_real_marker_ts": xgen_last_real_marker_ts,
+        "xgen_escalated_at": xgen_escalated_at,
         "last_self_report_ts": last_self_report_ts,
         "first_seen": prev_first_seen,
     }
@@ -13347,6 +15111,27 @@ def _day_scoped_count(prev_state: dict, day_field: str, count_field: str, day_ke
         and n >= 0
     )
     return n if ok else 0
+
+
+def _stalled_xgen_fields(prev_state: dict) -> tuple[int, float | None, int]:
+    """Load the #2084 cross-generation no-progress fields
+    ``(xgen_respawns, xgen_last_real_marker_ts, xgen_escalated_at)`` from
+    the prior on-disk stalled-state payload with type guards. A pre-existing
+    file without them loads as ``(0, None, 0)`` (backward compatible); a
+    malformed value re-arms its field at the default — a corruption costs at
+    most one late/early escalation ALERT, never a stop (the arm is
+    escalate-only). Deliberately EXEMPT from the advancement clear
+    (:func:`_stalled_hardening_fields`) — see :func:`_save_stalled_state`
+    (#2084, the #1209/#1241 exempt-counter pattern)."""
+
+    def _nonneg_int(key: str) -> int:
+        val = prev_state.get(key, 0)
+        ok = isinstance(val, int) and not isinstance(val, bool) and val >= 0
+        return val if ok else 0
+
+    ts = prev_state.get("xgen_last_real_marker_ts")
+    anchor = float(ts) if isinstance(ts, int | float) and not isinstance(ts, bool) else None
+    return _nonneg_int("xgen_respawns"), anchor, _nonneg_int("xgen_escalated_at")
 
 
 def _clear_fence_state_on_disk(issue: int) -> None:
@@ -14449,7 +16234,13 @@ def _running_managed_issue_pods(
 
 
 def _maybe_handle_runpod_wedge(
-    issue: int, status: str | None, info: PodInfo, now: float, dry_run: bool, threshold: int
+    issue: int,
+    status: str | None,
+    info: PodInfo,
+    now: float,
+    dry_run: bool,
+    threshold: int,
+    issue_running_pod_ids: set[str] | None = None,
 ) -> bool:
     """#692 wedge arm dispatch: detect the RAW #664 RunPod no-port wedge from the
     live ``info`` and route it.
@@ -14466,12 +16257,33 @@ def _maybe_handle_runpod_wedge(
     ``on_hold`` (#980) the wedge arm's confirmed-safe path would additionally
     terminate + RELAUNCH a workload the user deliberately paused).
 
+    #2060 never-ran leg (ESCALATE-ONLY) evaluates HERE — where the raw wedge
+    predicate first reads True, BEFORE the MF6 status split (plan §4.2 step
+    2, r2-MF1) — because the split routes a wedged DONE-status pod (#1947
+    was a tagged ``awaiting_promotion`` parent) AWAY from
+    :func:`_process_wedged_pod` into the status-class auto-stop arm, which
+    the ``keep-running`` tag exempts; a leg wired after the split would
+    never fire on the motivating incident. The leg only alerts (its own
+    tag-scoping keeps it disjoint from the untagged-pod arms) and never
+    affects this function's routing. ``issue_running_pod_ids`` threads
+    through for the ``nr_pod`` GC.
+
     Detect the raw condition via the SAME
     ``backend_poll._pod_is_runpod_runtime_wedged`` the poller calls (composition
     surface (b), never re-defined)."""
     from backend_poll import _pod_is_runpod_runtime_wedged  # sibling import
 
     if _pod_is_runpod_runtime_wedged(info):
+        # #2060: never-ran escalation (alert-only; routing unchanged).
+        _maybe_escalate_never_ran_pod(
+            issue,
+            info,
+            status,
+            now,
+            threshold,
+            dry_run,
+            running_pod_ids=issue_running_pod_ids,
+        )
         if status not in POD_SAFETY_AUTO_STOP:
             _process_wedged_pod(issue, info, now, dry_run, threshold)
             return True
@@ -14482,6 +16294,10 @@ def _maybe_handle_runpod_wedge(
     # blip never accumulates, and the next true onset re-stamps.
     if not dry_run:
         _clear_wedge_state(issue, info.pod_id)
+        # #2060: a live port means the pod HAS a runtime — it can never be
+        # "never-ran" again this incarnation; delete its nr_pod entry (no-op
+        # when absent, which is the common healthy-pod case).
+        _clear_never_ran_entry(issue, info.pod_id)
     return False
 
 
@@ -15156,6 +16972,99 @@ def _keep_running_pod_probe_fail_rows() -> int:
     if parsed <= 0:
         return KEEP_RUNNING_POD_PROBE_FAIL_ROWS
     return parsed
+
+
+def _pod_fence_defer_max_s() -> float:
+    """#2283 cumulative fence-deferral ceiling in seconds (env
+    ``EPM_POD_FENCE_DEFER_MAX_H``, HOURS; default
+    :data:`POD_FENCE_DEFER_MAX_H` = 24h). Malformed / non-positive /
+    non-finite env falls back to the default (the
+    :func:`_keep_running_owner_realert_s` defensive shape — a typo'd var
+    must not disable the ceiling); a POSITIVE sub-floor value is clamped UP
+    to :data:`POD_FENCE_DEFER_FLOOR_H` (a near-zero ceiling would make the
+    arm read as enabled while never deferring)."""
+    raw = os.environ.get("EPM_POD_FENCE_DEFER_MAX_H")
+    if not raw:
+        return POD_FENCE_DEFER_MAX_H * 3600.0
+    try:
+        val = float(raw)
+    except ValueError:
+        return POD_FENCE_DEFER_MAX_H * 3600.0
+    if not (0 < val < 24 * 366):  # rejects 0/negative AND inf/nan (the #1739 shape)
+        return POD_FENCE_DEFER_MAX_H * 3600.0
+    return max(val, POD_FENCE_DEFER_FLOOR_H) * 3600.0
+
+
+def _pod_fence_defer_enabled() -> bool:
+    """#2283 fence-defer kill switch: False when
+    ``EPM_DISABLE_POD_FENCE_DEFER`` is set truthy ("1"/"true"/"yes"/"on",
+    case-insensitive). Default enabled. Disabled means the fence is NOT
+    EVALUATED (tri-state ``None`` from :func:`_pod_owner_fence_active`) —
+    the stop proceeds exactly as pre-#2283 and episode state is CARRIED,
+    never cleared (an unevaluated read must not erase a live episode).
+    Mirrors :func:`_keep_running_owner_audit_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_POD_FENCE_DEFER", "").strip().lower()
+    return raw not in {"1", "true", "yes", "on"}
+
+
+def _never_ran_grace_s() -> float:
+    """#2060 never-ran grace floor in seconds (env ``EPM_NEVER_RAN_GRACE_MIN``,
+    MINUTES; default :data:`NEVER_RAN_GRACE_MIN` = 45 min). Malformed /
+    non-positive env falls back (the :func:`_keep_running_owner_realert_s`
+    defensive shape)."""
+    raw = os.environ.get("EPM_NEVER_RAN_GRACE_MIN")
+    if not raw:
+        return float(NEVER_RAN_GRACE_MIN) * 60.0
+    try:
+        parsed = float(raw) * 60.0
+    except ValueError:
+        return float(NEVER_RAN_GRACE_MIN) * 60.0
+    if parsed <= 0:
+        return float(NEVER_RAN_GRACE_MIN) * 60.0
+    return parsed
+
+
+def _never_ran_obs_slop_s() -> float:
+    """#2060 max creation-to-first-observation lag in seconds (env
+    ``EPM_NEVER_RAN_OBSERVE_SLOP_S``, SECONDS; default
+    :data:`NEVER_RAN_OBSERVE_SLOP_S` = 1200s). Malformed / non-positive env
+    falls back (same defensive shape)."""
+    raw = os.environ.get("EPM_NEVER_RAN_OBSERVE_SLOP_S")
+    if not raw:
+        return float(NEVER_RAN_OBSERVE_SLOP_S)
+    try:
+        parsed = float(raw)
+    except ValueError:
+        return float(NEVER_RAN_OBSERVE_SLOP_S)
+    if parsed <= 0:
+        return float(NEVER_RAN_OBSERVE_SLOP_S)
+    return parsed
+
+
+def _never_ran_realert_s() -> float:
+    """#2060 never-ran re-alert TTL in seconds (env ``EPM_NEVER_RAN_REALERT_H``,
+    HOURS; default :data:`NEVER_RAN_REALERT_S` = 6h — deliberately shorter
+    than the 24h house cadence: a never-bootstrapped pod is a pure billing
+    leak). Malformed / non-positive env falls back (same defensive shape)."""
+    raw = os.environ.get("EPM_NEVER_RAN_REALERT_H")
+    if not raw:
+        return float(NEVER_RAN_REALERT_S)
+    try:
+        parsed = float(raw) * 3600.0
+    except ValueError:
+        return float(NEVER_RAN_REALERT_S)
+    if parsed <= 0:
+        return float(NEVER_RAN_REALERT_S)
+    return parsed
+
+
+def _never_ran_escalation_enabled() -> bool:
+    """#2060 never-ran leg kill switch: False when
+    ``EPM_DISABLE_NEVER_RAN_ESCALATION`` is set truthy ("1"/"true"/"yes"/
+    "on", case-insensitive). Default enabled. Mirrors
+    :func:`_keep_running_owner_audit_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_NEVER_RAN_ESCALATION", "").strip().lower()
+    return raw not in {"1", "true", "yes", "on"}
 
 
 def _wedge_owner_recent_s() -> float:
@@ -15891,6 +17800,37 @@ def _append_keep_running_wedged_event(payload: dict, dry_run: bool) -> None:
         print(f"  keep-running-wedged: sidecar append failed: {exc}", file=sys.stderr)
 
 
+def _pod_owner_fence_sidecar_path() -> Path:
+    """DEDICATED #2283 fence-defer event stream (the one-concern-one-stream
+    convention — ``keep-running-wedged-events.jsonl`` sibling)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "pod-owner-fence-events.jsonl"
+
+
+def _append_pod_owner_fence_event(payload: dict, dry_run: bool) -> None:
+    """Append one JSON line to the #2283 fence-defer sidecar (fail-soft;
+    ``ts`` + ``kind`` stamped here). ``dry_run`` reports only — no write.
+    A ``kind`` key in ``payload`` deliberately OVERRIDES the stamped default
+    (ceiling rows post ``kind="fence-ceiling"``; defer rows are the
+    default ``"fence-defer"``) — the
+    :func:`_append_keep_running_wedged_event` convention."""
+    row = {
+        "ts": datetime.now().astimezone().isoformat(),
+        "kind": "fence-defer",
+        **payload,
+    }
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append pod-owner-fence sidecar row: {line[:160]}")
+        return
+    dest = _pod_owner_fence_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  fence-defer: sidecar append failed: {exc}", file=sys.stderr)
+
+
 def _emit_keep_running_wedged_alert(
     *,
     issue: int,
@@ -16444,6 +18384,38 @@ def _kr_pod_prev_fields(
     )
 
 
+def _fd_pod_prev_fields(
+    prev_state: dict, pod_id: str
+) -> tuple[dict, dict | None, float | None, bool, float | None, bool]:
+    """Sanitized reads of the #2283 per-pod fence-defer episode entry (the
+    :func:`_kr_pod_prev_fields` shape). Returns ``(fd_pod_all,
+    prev_entry_raw, first_ts, noted, last_push_ts, ceiling_noted)`` — every
+    garbled/missing field at its fresh default (back-compat: a pre-#2283
+    state file with no ``fd_pod`` reads ``{}``)."""
+    fd_pod_all = prev_state.get("fd_pod")
+    if not isinstance(fd_pod_all, dict):
+        fd_pod_all = {}
+    prev_entry_raw = fd_pod_all.get(pod_id)
+    prev_entry = prev_entry_raw if isinstance(prev_entry_raw, dict) else {}
+    first_ts = prev_entry.get("first_ts")
+    if not isinstance(first_ts, int | float) or isinstance(first_ts, bool):
+        first_ts = None
+    noted = bool(prev_entry.get("noted", False))
+    last_push_ts = prev_entry.get("last_push_ts")
+    if not isinstance(last_push_ts, int | float) or isinstance(last_push_ts, bool):
+        last_push_ts = None
+    ceiling_noted = bool(prev_entry.get("ceiling_noted", False))
+    return (fd_pod_all, prev_entry_raw, first_ts, noted, last_push_ts, ceiling_noted)
+
+
+def _fresh_fd_pod_entry() -> dict:
+    """A fresh-defaults #2283 ``fd_pod`` entry — the episode-CLEAR payload
+    (an evaluated-and-inactive fence read resets the episode by WRITING
+    fresh defaults through :func:`_carry_fd_pod`'s set/replace arm; never a
+    delete variant — mirror, don't invent)."""
+    return {"first_ts": None, "noted": False, "last_push_ts": None, "ceiling_noted": False}
+
+
 def _note_pod_idle_probe_failure(
     issue: int,
     pod_id: str,
@@ -16686,18 +18658,568 @@ def _maybe_escalate_keep_running_idle_pod(
     return True
 
 
+def _nr_pod_prev_fields(
+    prev_state: dict, pod_id: str
+) -> tuple[dict, dict | None, float | None, float | None, int, float | None]:
+    """Sanitized reads of the #2060 per-pod never-ran entry (the
+    :func:`_kr_pod_prev_fields` shape). Returns ``(nr_pod_all,
+    prev_entry_raw, first_obs_ts, created_ts, portless_ticks,
+    last_alert_ts)`` — every garbled/missing field at its fresh default
+    (back-compat: a pre-#2060 state file with no ``nr_pod`` reads ``{}``)."""
+    nr_pod_all = prev_state.get("nr_pod")
+    if not isinstance(nr_pod_all, dict):
+        nr_pod_all = {}
+    prev_entry_raw = nr_pod_all.get(pod_id)
+    prev_entry = prev_entry_raw if isinstance(prev_entry_raw, dict) else {}
+    first_obs_ts = prev_entry.get("first_obs_ts")
+    if not isinstance(first_obs_ts, int | float) or isinstance(first_obs_ts, bool):
+        first_obs_ts = None
+    created_ts = prev_entry.get("created_ts")
+    if not isinstance(created_ts, int | float) or isinstance(created_ts, bool):
+        created_ts = None
+    portless_ticks = prev_entry.get("portless_ticks", 0)
+    if not isinstance(portless_ticks, int) or isinstance(portless_ticks, bool):
+        portless_ticks = 0
+    last_alert_ts = prev_entry.get("last_alert_ts")
+    if not isinstance(last_alert_ts, int | float) or isinstance(last_alert_ts, bool):
+        last_alert_ts = None
+    return (nr_pod_all, prev_entry_raw, first_obs_ts, created_ts, portless_ticks, last_alert_ts)
+
+
+def _emit_never_ran_alert(
+    *,
+    issue: int,
+    info: PodInfo,
+    status: str | None,
+    age_s: float,
+    reason: str,
+    dry_run: bool,
+) -> None:
+    """Emit the #2060 never-ran escalation channels: one sidecar row (kind
+    ``never-ran-keep-running-escalate``, the #1582 jsonl) + one fail-soft
+    Telegram push on EVERY alert, plus the recovery-recipe task marker ONLY
+    on the episode-opening alert (``reason == "episode-open"``). Every
+    channel carries the pod name + pod_id, its age, the hourly burn
+    (:func:`estimate_pod_hourly_rate`), and the exact ``pod.py terminate``
+    command. Pure emission — no state writes here, and NEVER a
+    stop/terminate (escalate-only hard invariant)."""
+    pod_name = info.name
+    age_h = age_s / 3600.0
+    realert_h = _never_ran_realert_s() / 3600.0
+    rate = estimate_pod_hourly_rate(info.gpu_type_id, info.gpu_count)
+    spec = f"{info.gpu_count or '?'}x{info.gpu_type_id or 'unknown-gpu'}"
+    rate_part = f", est. ${rate:.2f}/hr" if rate > 0 else ""
+    suffix = ""
+    prefix = f"pod-{issue}-"
+    if pod_name.startswith(prefix):
+        suffix = f" --name-suffix {pod_name[len(prefix) :]}"
+    terminate_cmd = (
+        f"uv run python scripts/pod.py terminate --issue {issue}{suffix} --yes --approve"
+    )
+    payload = {
+        "kind": "never-ran-keep-running-escalate",
+        "leg": "never-ran",
+        "issue": issue,
+        "pod_id": info.pod_id,
+        "pod_name": pod_name,
+        "status": status,
+        "age_h": round(age_h, 2),
+        "est_hourly_usd": round(rate, 2) if rate > 0 else None,
+        "action": "escalated" if reason == "episode-open" else "re-alerted",
+        "recovery": terminate_cmd,
+    }
+    _append_keep_running_wedged_event(payload, dry_run)
+    _telegram_push(
+        f"pod-safety #2060: keep-running pod {pod_name} (pod_id={info.pod_id}, {spec}"
+        f"{rate_part}) on task #{issue} ('{status}') has been RUNNING {age_h:.1f}h and NEVER "
+        f"exposed a runtime/port — a never-bootstrapped billing leak (the #1947 class). "
+        f"Escalate-only: NOT auto-stopped. Recovery (needs your word): remove the tag if no "
+        f"round needs it (`task.py remove-tag {issue} keep-running`), then `{terminate_cmd}`.",
+        dry_run,
+    )
+    if reason == "episode-open":
+        _post_progress_marker(
+            issue,
+            f"{_NEVER_RAN_NOTE_SENTINEL} NEVER-RAN POD (#2060): RUNNING pod {pod_name} "
+            f"(pod_id={info.pod_id}, {spec}{rate_part}) is shielded by the keep-running tag "
+            f"on task #{issue} ('{status}') but has NEVER exposed a runtime/port in "
+            f"{age_h:.1f}h since creation — the #1947 never-bootstrapped billing-leak class "
+            f"(bootstrap/ssh-wait failure; nothing ever ran, nothing to upload). NOT "
+            f"auto-stopped (escalate-only by the 2026-08-04 standing directive — pods are "
+            f"destroyed only with the user's word). Recovery: (1) confirm no live provision "
+            f"is mid-bootstrap (`pod.py list-ephemeral --issue {issue}`); (2) "
+            f"`task.py remove-tag {issue} keep-running` if no named round needs the shield; "
+            f"(3) `{terminate_cmd}`. Re-pushed every {realert_h:.0f}h while unresolved; "
+            f"marker posted once per episode.",
+            dry_run,
+            label="runpod-never-ran-keep-running",
+        )
+
+
+def _maybe_escalate_never_ran_pod(
+    issue: int,
+    info: PodInfo,
+    status: str | None,
+    now: float,
+    threshold: int,
+    dry_run: bool,
+    running_pod_ids: set[str] | None = None,
+) -> bool:
+    """ESCALATE-ONLY #2060 never-ran leg (incident #1947): a RUNNING
+    keep-running-tagged pod that NEVER exposed a runtime/port since
+    creation, past the bootstrap grace floor, is surfaced loudly —
+    marker/sidecar/push via :func:`_emit_never_ran_alert` — and NOTHING is
+    ever stopped/terminated/unregistered on this leg's account (hard
+    invariant, pinned test).
+
+    Called from :func:`_maybe_handle_runpod_wedge` where the raw wedge
+    predicate (``backend_poll._pod_is_runpod_runtime_wedged``) first reads
+    True, BEFORE the MF6 status split (plan §4.2 step 2, r2-MF1) — so it
+    fires for a tagged portless pod in BOTH status classes, including the
+    ``awaiting_promotion`` + tag #1947 incident shape the status-class
+    auto-stop arm exempts. Its keep-running scoping keeps it disjoint from
+    the untagged-pod arms (they own untagged pods).
+
+    State is the per-(issue, pod_id) ``nr_pod`` sub-dict entry
+    ``{first_obs_ts, created_ts, portless_ticks, last_alert_ts}`` — the
+    #2149 ``kr_pod`` pattern, immune to the MF4 per-issue pod_id-slot
+    thrash on multi-pod issues (MF2 remedy). ``portless_ticks`` increments
+    only on ticks where the raw predicate holds; a port appearance DELETES
+    the entry (:func:`_clear_never_ran_entry` on the not-wedged branch), so
+    the counter is continuous-by-construction. The keep-running tag is read
+    LAZILY — only when the pure decision already says "alert" — and a
+    False/unknown read skips (untagged pods are the existing arms'
+    population). Every missing signal fails toward silence
+    (:func:`decide_never_ran_escalation`)."""
+    if not _never_ran_escalation_enabled():
+        return False
+    pod_id = info.pod_id
+    prev_state = _load_pod_safety_state(issue)
+    (
+        nr_pod_all,
+        _prev_entry_raw,
+        first_obs_ts,
+        stored_created_ts,
+        prev_ticks,
+        last_alert_ts,
+    ) = _nr_pod_prev_fields(prev_state, pod_id)
+
+    live_created_ts = _parse_event_ts(info.created_at) if info.created_at else None
+    created_ts = stored_created_ts if stored_created_ts is not None else live_created_ts
+    if first_obs_ts is None:
+        first_obs_ts = now
+    ticks = prev_ticks + 1
+    age_s = (now - created_ts) if created_ts is not None else None
+    first_obs_lag_s = (first_obs_ts - created_ts) if created_ts is not None else None
+
+    def _persist(alert_ts: float | None) -> None:
+        """Persist this pod's nr_pod entry (write only on change; sibling
+        entries forward-carried + GC'd in-save) and mirror the updated
+        sub-dict into the in-memory ``prev_state`` (the #1490 r2 / #1519
+        clobber lesson) so any later same-tick save forward-carries it."""
+        entry = {
+            "first_obs_ts": first_obs_ts,
+            "created_ts": created_ts,
+            "portless_ticks": ticks,
+            "last_alert_ts": alert_ts,
+        }
+        if _prev_entry_raw == entry:
+            return
+        if not dry_run:
+            _save_pod_safety_state(
+                issue,
+                pod_id,
+                missed=(
+                    prev_state.get("missed", 0) if isinstance(prev_state.get("missed"), int) else 0
+                ),
+                alerted=bool(prev_state.get("alerted", False)),
+                last_progress_ts=(
+                    prev_state.get("last_progress_ts")
+                    if isinstance(prev_state.get("last_progress_ts"), int | float)
+                    else None
+                ),
+                nr_pod_entry=(pod_id, entry),
+                nr_pod_keep_ids=running_pod_ids,
+                prev=prev_state,
+            )
+        new_map = dict(nr_pod_all)
+        new_map[pod_id] = entry
+        if running_pod_ids is not None:
+            new_map = {k: v for k, v in new_map.items() if k in running_pod_ids or k == pod_id}
+        prev_state["nr_pod"] = new_map
+
+    action, detail = decide_never_ran_escalation(
+        portless_ticks=ticks,
+        age_s=age_s,
+        grace_s=_never_ran_grace_s(),
+        first_obs_lag_s=first_obs_lag_s,
+        obs_slop_s=_never_ran_obs_slop_s(),
+        created_ts_ok=created_ts is not None,
+        kill_switch=False,  # the leg-level switch short-circuited above
+        threshold=threshold,
+        last_alert_ts=last_alert_ts,
+        realert_s=_never_ran_realert_s(),
+        now=now,
+    )
+    if action == "clear":
+        # The read can never be trusted for this incarnation — delete the
+        # entry if one exists (no write when absent).
+        if _prev_entry_raw is not None and not dry_run:
+            _clear_never_ran_entry(issue, pod_id)
+            nr_map = prev_state.get("nr_pod")
+            if isinstance(nr_map, dict):
+                nr_map.pop(pod_id, None)
+        return False
+    if action != "alert":
+        _persist(last_alert_ts)
+        return False
+    # ALERT per the pure decision — now pay the lazy tag read. False/unknown
+    # -> skip (untagged pods are the existing arms' population), but still
+    # persist the counter so a later tag add escalates without re-maturing.
+    if not _task_keep_running(issue):
+        _persist(last_alert_ts)
+        return False
+    reason = str(detail.get("reason", "episode-open"))
+    _emit_never_ran_alert(
+        issue=issue,
+        info=info,
+        status=status,
+        age_s=age_s if isinstance(age_s, int | float) else 0.0,
+        reason=reason,
+        dry_run=dry_run,
+    )
+    _persist(now)
+    print(
+        f"  NEVER-RAN-POD issue #{issue}: {reason} — pod {info.name} "
+        f"(pod_id={pod_id}) RUNNING with no runtime/port since creation "
+        f"({(age_s or 0.0) / 3600.0:.1f}h); escalate-only, NOT stopping.",
+        file=sys.stderr,
+    )
+    return True
+
+
+def _pod_owner_fence_active(pod_name: str, events: list, now: float) -> bool | None:
+    """Tri-state #2277 owner-fence read for the #2283 fence-defer arm.
+
+    - ``True``  — the pod carries an UNEXPIRED owner fence with NO
+      owner-matching upload-verification PASS
+      (``pod_lifecycle.OwnerFenceState.blocks_teardown`` — the SAME reader
+      chain the terminate guard runs; never a second parser).
+    - ``False`` — the read EVALUATED and no unwaived fence exists (no
+      tokens, expired, cleared via ``fence_until=none``, or the owner's
+      pod-bound PASS discharges it). The caller may CLEAR episode state.
+    - ``None``  — NOT EVALUATED: kill switch
+      (``EPM_DISABLE_POD_FENCE_DEFER=1``), import failure, or any exception
+      from the reader chain (one loud stderr WARN — never silent). ``None``
+      makes no fence claim: the caller neither defers NOR clears episode
+      state (fail-open toward the pre-#2283 stop; a transient read failure
+      must not erase a live episode's 24h-ceiling clock).
+
+    ``now`` is the pass's Unix-epoch float clock (plan §12 assumption 2 —
+    ``pod_safety_pass`` passes ``time.time()``); converted here to the
+    tz-aware UTC datetime the pod_lifecycle fence comparison requires. The
+    import is LAZY (function-local, the plan §4.3 contract): pod_lifecycle
+    imports runpod_api at module scope, and a fence read must degrade to
+    ``None`` — not kill the whole watcher pass — if that chain breaks."""
+    if not _pod_fence_defer_enabled():
+        return None
+    try:
+        from pod_lifecycle import owner_fence_state
+
+        now_dt = datetime.fromtimestamp(now, UTC)
+        assert now_dt.tzinfo is not None, "fence comparison requires an aware datetime"
+        return bool(owner_fence_state(events, pod_name, now_dt).blocks_teardown)
+    except Exception as exc:  # fail-open by design: WARN loud, make no claim
+        print(
+            f"  fence-defer: owner-fence read FAILED for pod {pod_name} "
+            f"({type(exc).__name__}: {exc}); NOT EVALUATED — no defer, episode "
+            f"state carried (#2283 fail-open).",
+            file=sys.stderr,
+        )
+        return None
+
+
+def _fence_until_display(pod_name: str, events: list, now: float) -> str:
+    """Best-effort ISO display of the pod's registered fence expiry for the
+    #2283 defer marker/push text. Fail-soft ``"unknown"`` on ANY failure —
+    the tri-state :func:`_pod_owner_fence_active` carries the DECISION; this
+    is display only, so it must never raise into the emission path."""
+    try:
+        from pod_lifecycle import owner_fence_state
+
+        st = owner_fence_state(events, pod_name, datetime.fromtimestamp(now, UTC))
+        return st.fence_until.isoformat() if st.fence_until is not None else "unknown"
+    except Exception:
+        return "unknown"
+
+
+def _fence_defer_exhausted_and_note_ceiling(
+    issue: int,
+    pod_id: str,
+    info: PodInfo | None,
+    status: str | None,
+    fence_active: bool,
+    now: float,
+    prev_state: dict,
+    dry_run: bool,
+    issue_running_pod_ids: set[str] | None,
+) -> bool:
+    """Compute the #2283 cumulative-deferral ceiling verdict for one pod and
+    fire the ONCE-per-episode ceiling escalation when it is freshly crossed
+    (split out of :func:`_process_pod` for C901).
+
+    Exhaustion is measured from the episode's first deferred tick
+    (``fd_pod.first_ts``) — never from the fence value, so a
+    continuously-refreshed fence cannot shield a pod past
+    ``EPM_POD_FENCE_DEFER_MAX_H``. On a fresh crossing while the fence is
+    STILL active: one task marker + one fail-soft push + one sidecar row
+    (``kind="fence-ceiling"``), then ``ceiling_noted=True`` is persisted AND
+    mirrored into the in-memory ``prev_state`` so the tick's later
+    status-class save forward-carries it (the #1490 r2 / #1519 clobber
+    lesson). Returns the exhaustion bool regardless of emission."""
+    (fd_all, _raw, first_ts, noted, last_push_ts, ceiling_noted) = _fd_pod_prev_fields(
+        prev_state, pod_id
+    )
+    exhausted = first_ts is not None and (now - first_ts) > _pod_fence_defer_max_s()
+    if not (fence_active and exhausted) or ceiling_noted:
+        return exhausted
+    pod_name = info.name if info is not None else f"pod-{issue}"
+    max_h = _pod_fence_defer_max_s() / 3600.0
+    # Registration-inertness contract (see _FENCE_CEILING_NOTE_SENTINEL):
+    # never a `pod=<real name>` token, never the pod name as leading token.
+    _post_progress_marker(
+        issue,
+        f"{_FENCE_CEILING_NOTE_SENTINEL} OWNER-FENCE DEFER CEILING EXHAUSTED: the "
+        f"pod-safety auto-stop of RUNNING pod {pod_name} (pod_id={pod_id}) on a "
+        f"task at DONE status '{status}' was deferred behind an unexpired #2277 "
+        f"owner fence for a cumulative {max_h:.0f}h (EPM_POD_FENCE_DEFER_MAX_H) "
+        f"and the fence is STILL active — a continuously-refreshed fence must "
+        f"not shield a pod forever, so the ordinary >=threshold auto-stop "
+        f"accumulation is RE-ARMED (stop in ~20 min at the 10-min cadence). If "
+        f"the run is genuinely live, tag it (`task.py add-tag {issue} "
+        f"keep-running`) or stop it yourself (`pod.py stop --issue {issue}`). "
+        f"Posted once per fence episode.",
+        dry_run,
+        label="fence-ceiling",
+    )
+    _telegram_push(
+        f"pod-safety #2283: fence-defer ceiling EXHAUSTED for {pod_name} "
+        f"(task #{issue}, status '{status}') — {max_h:.0f}h of cumulative "
+        f"deferral behind a still-active owner fence; ordinary auto-stop "
+        f"re-armed (~20 min). Tag keep-running or stop it yourself to "
+        f"intervene.",
+        dry_run,
+    )
+    _append_pod_owner_fence_event(
+        {
+            "kind": "fence-ceiling",
+            "issue": issue,
+            "pod_id": pod_id,
+            "pod_name": pod_name,
+            "status": status,
+            "episode_first_ts": first_ts,
+            "deferred_h": round((now - first_ts) / 3600.0, 2),
+            "ceiling_h": max_h,
+        },
+        dry_run,
+    )
+    entry = {
+        "first_ts": first_ts,
+        "noted": noted,
+        "last_push_ts": last_push_ts,
+        "ceiling_noted": True,
+    }
+    if not dry_run:
+        prev_missed = prev_state.get("missed", 0)
+        if not isinstance(prev_missed, int) or isinstance(prev_missed, bool):
+            prev_missed = 0
+        _save_pod_safety_state(
+            issue,
+            pod_id,
+            missed=prev_missed,
+            alerted=bool(prev_state.get("alerted", False)),
+            last_progress_ts=prev_state.get("last_progress_ts")
+            if isinstance(prev_state.get("last_progress_ts"), int | float)
+            else None,
+            fd_pod_entry=(pod_id, entry),
+            fd_pod_keep_ids=issue_running_pod_ids,
+            prev=prev_state,
+        )
+    # Mirror into prev_state (dry-run included — in-memory only there) so the
+    # tick's later save forward-carries ceiling_noted (#1490 r2 / #1519).
+    new_map = dict(fd_all)
+    new_map[pod_id] = entry
+    if issue_running_pod_ids is not None:
+        new_map = {k: v for k, v in new_map.items() if k in issue_running_pod_ids}
+    prev_state["fd_pod"] = new_map
+    return exhausted
+
+
+def _handle_fence_defer_action(
+    *,
+    issue: int,
+    pod_id: str,
+    status: str | None,
+    now: float,
+    dry_run: bool,
+    alerted: bool,
+    latest_progress: float | None,
+    prev_state: dict,
+    info: PodInfo | None,
+    events: list | None,
+    issue_running_pod_ids: set[str] | None,
+) -> None:
+    """Apply the #2283 ``fence-defer`` action (split out of
+    :func:`_apply_pod_safety_action` for C901): stdout line every tick, task
+    marker + push + sidecar row ONCE per fence episode (keyed on the
+    ``fd_pod.noted`` flag; ``first_ts`` stamps the episode onset the 24h
+    ceiling measures from), push + sidecar re-fired every
+    ``EPM_KEEP_RUNNING_WEDGED_REALERT_H`` (24h — the house unresolved-
+    condition cadence, deliberately the SAME knob as the #1582 arm) while
+    the deferral holds. DEFER-ONLY: never a stop/terminate; the miss counter
+    is persisted at 0 (the keep-running-skip reset semantics).
+
+    Named residuals (recorded DECISIONS, not corners — #2283 plan §4.4):
+
+    * **lapse-recycle** — the episode clears on an evaluated-and-inactive
+      tick, so a fence that lapses for a single sub-threshold tick and is
+      then re-posted resets the ceiling (an indefinite shield at ~ceiling
+      periods). Adversarial-only, outside the accidents-not-adversaries
+      trust model inherited from #2277, and visible: every fresh episode
+      re-fires its own marker + push.
+    * **CARRY across a long shield handover** — a NOT-evaluated tick carries
+      the entry untouched, so an episode carried through a >ceiling
+      `keep-running` / `followup-skip` / wrong-status stretch re-enters
+      already exhausted and the returning fence gets zero fence-side
+      deferral. Intended: the ceiling measures one continuous SHIELDED
+      stretch, and clear-on-handover would let shield ALTERNATION recycle it
+      indefinitely. Degrades to pre-#2283 behavior plus a loud ceiling
+      escalation.
+    * **copied-token** — `owner_matched` is unauthenticated string equality,
+      exactly as on the `pod_lifecycle` terminate side (task non-goal; pinned
+      there by ``test_terminate_copied_owner_token_waives_fence_known_residual``).
+      A copied `owner=` token waives the fence here too."""
+    pod_name = info.name if info is not None else f"pod-{issue}"
+    (_fd_all, _raw, first_ts, noted, last_push_ts, ceiling_noted) = _fd_pod_prev_fields(
+        prev_state, pod_id
+    )
+    episode_first = first_ts if first_ts is not None else now
+    fence_display = _fence_until_display(pod_name, events if events is not None else [], now)
+    max_h = _pod_fence_defer_max_s() / 3600.0
+    realert_s = _keep_running_owner_realert_s()
+    print(
+        f"  FENCE-DEFER issue #{issue}: task status '{status}' is DONE but pod "
+        f"{pod_name} (pod_id={pod_id}) carries an UNEXPIRED #2277 owner fence "
+        f"(expires {fence_display}) with no owner-matching PASS — pod-safety "
+        f"stop DEFERRED (re-arms on fence expiry / owner PASS / the "
+        f"{max_h:.0f}h cumulative ceiling)."
+    )
+    if not noted:
+        # Registration-inertness contract (see _FENCE_DEFER_NOTE_SENTINEL):
+        # the note must NEVER bind the pod in structured position — no
+        # `pod=<real name>` token (the release recipe keeps the literal
+        # `<pod-name>` placeholder), no pod name as the leading token —
+        # because an epm:progress note naming the pod with a fence token
+        # would itself REGISTER/CLEAR the owner's fence.
+        _post_progress_marker(
+            issue,
+            f"{_FENCE_DEFER_NOTE_SENTINEL} OWNER-FENCE DEFER: the pod-safety "
+            f"auto-stop of RUNNING pod {pod_name} (pod_id={pod_id}) on a task "
+            f"at DONE status '{status}' is DEFERRED — the pod carries an "
+            f"UNEXPIRED #2277 owner fence (expires {fence_display}) with no "
+            f"owner-matching upload-verification PASS, so a live owner may "
+            f"still be mid-run (#2283; the 2026-08-13 pod-2054-tiers incident "
+            f"class). The stop re-arms when the fence expires, when the "
+            f"owner's pod-bound PASS discharges it, or after a cumulative "
+            f"{max_h:.0f}h deferral ceiling (EPM_POD_FENCE_DEFER_MAX_H). "
+            f"Release early by posting a registration note naming the pod "
+            f"with the cleared token — `task.py post-marker {issue} "
+            f"epm:progress --note 'pod=<pod-name> fence_until=none'` (replace "
+            f"<pod-name> with the pod name above) — or stop by hand: `pod.py "
+            f"stop --issue {issue}`. Marker posted once per fence episode; "
+            f"push re-fires every {realert_s / 3600.0:.0f}h while the "
+            f"deferral holds.",
+            dry_run,
+            label="fence-defer",
+        )
+        _telegram_push(
+            f"pod-safety #2283: auto-stop of {pod_name} (task #{issue}, "
+            f"status '{status}') DEFERRED behind an unexpired owner fence "
+            f"(expires {fence_display}); cumulative ceiling {max_h:.0f}h. "
+            f"Release: post fence_until=none naming the pod, or `pod.py stop "
+            f"--issue {issue}`.",
+            dry_run,
+        )
+        _append_pod_owner_fence_event(
+            {
+                "issue": issue,
+                "pod_id": pod_id,
+                "pod_name": pod_name,
+                "status": status,
+                "fence_until": fence_display,
+                "episode_first_ts": episode_first,
+                "action": "defer-episode-open",
+            },
+            dry_run,
+        )
+        noted = True
+        last_push_ts = now
+    elif last_push_ts is None or (now - last_push_ts) >= realert_s:
+        _telegram_push(
+            f"pod-safety #2283: {pod_name} (task #{issue}) STILL deferred "
+            f"behind an unexpired owner fence (expires {fence_display}; "
+            f"episode open {(now - episode_first) / 3600.0:.1f}h, ceiling "
+            f"{max_h:.0f}h). Release: post fence_until=none naming the pod, "
+            f"or `pod.py stop --issue {issue}`.",
+            dry_run,
+        )
+        _append_pod_owner_fence_event(
+            {
+                "issue": issue,
+                "pod_id": pod_id,
+                "pod_name": pod_name,
+                "status": status,
+                "fence_until": fence_display,
+                "episode_first_ts": episode_first,
+                "action": "defer-re-alert",
+            },
+            dry_run,
+        )
+        last_push_ts = now
+    if not dry_run:
+        _save_pod_safety_state(
+            issue,
+            pod_id,
+            missed=0,
+            alerted=alerted,
+            last_progress_ts=latest_progress,
+            fd_pod_entry=(
+                pod_id,
+                {
+                    "first_ts": episode_first,
+                    "noted": noted,
+                    "last_push_ts": last_push_ts,
+                    "ceiling_noted": ceiling_noted,
+                },
+            ),
+            fd_pod_keep_ids=issue_running_pod_ids,
+            prev=prev_state,
+        )
+
+
 def _escaped_pod_exemptions(
     issue: int,
     status_class: str,
     events: list,
     pod_name: str | None = None,
     now: float | None = None,
-) -> tuple[bool, bool]:
+    status: str | None = None,
+) -> tuple[bool, bool, bool | None]:
     """Lazy escaped-pod auto-stop exemptions for :func:`_process_pod`.
 
-    Returns ``(keep_running, followup_active)``. Both only matter when the
-    auto-stop arm is in play (``status_class == "auto-stop-done"``), so the
-    extra ``task.py view`` subprocess + events scan are paid only for
+    Returns ``(keep_running, followup_active, fence_read)``. All only matter
+    when the auto-stop arm is in play (``status_class == "auto-stop-done"``),
+    so the extra ``task.py view`` subprocess + events scans are paid only for
     escaped-pod candidates. ``keep_running`` (the explicit user tag) is
     consulted first; ``followup_active`` (the inferred-from-events live inline
     follow-up) is the fallback, computed only when ``keep_running`` is False.
@@ -16705,14 +19227,36 @@ def _escaped_pod_exemptions(
     shield for SUFFIXED pods (see :func:`_task_followup_active`); ``None``
     keeps the issue-grain behavior byte-identical.
     Extracted from :func:`_process_pod` to keep its cyclomatic complexity under
-    the C901 cap after the #692 wedge arm landed (behavior unchanged)."""
+    the C901 cap after the #692 wedge arm landed (behavior unchanged).
+
+    ``fence_read`` (#2283) is the tri-state #2277 owner-fence read
+    (:func:`_pod_owner_fence_active`: True = unwaived unexpired fence /
+    False = evaluated, no unwaived fence / None = not evaluated), computed
+    LAZILY — only when every cheaper shield has declined AND the fence arm
+    is ELIGIBLE. Eligibility keys STRICTLY on ``status in``
+    :data:`AUTO_STOP_DONE` (blocker 1): ``"auto-stop-done"`` is a MERGED
+    status-class label that also covers user-paused ``on_hold``
+    (:data:`AUTO_STOP_PAUSED`), and a self-posted fence must NEVER defer a
+    USER-ordered pause stop — an ``on_hold`` task reads ``None`` here (not
+    evaluated) by construction. A missing ``pod_name``/``now``/``status``
+    also reads ``None`` (no fence claim without the inputs)."""
     keep_running = status_class == "auto-stop-done" and _task_keep_running(issue)
     followup_active = (
         status_class == "auto-stop-done"
         and not keep_running
         and _task_followup_active(issue, events=events, pod_name=pod_name, now=now)
     )
-    return keep_running, followup_active
+    fence_read: bool | None = None
+    if (
+        status_class == "auto-stop-done"
+        and status in AUTO_STOP_DONE  # NOT the merged class: on_hold never defers (#2283 b1)
+        and not keep_running
+        and not followup_active
+        and pod_name is not None
+        and now is not None
+    ):
+        fence_read = _pod_owner_fence_active(pod_name, events, now)
+    return keep_running, followup_active, fence_read
 
 
 def _process_pod(
@@ -16770,19 +19314,29 @@ def _process_pod(
     # wedged pod), return; otherwise fall through to the status-class branches
     # (a non-wedged pod, OR a wedged DONE-task pod that the status-class DONE
     # auto-stop arm handles canonically) exactly as before #692.
-    if _maybe_handle_runpod_wedge(issue, status, info, now, dry_run, threshold):
+    if _maybe_handle_runpod_wedge(
+        issue,
+        status,
+        info,
+        now,
+        dry_run,
+        threshold,
+        issue_running_pod_ids=issue_running_pod_ids,
+    ):
         return
 
     events = _task_events(issue)
     latest_progress = _latest_progress_ts(events)
     status_class = _status_class(status, latest_progress, now)
-    keep_running, followup_active = _escaped_pod_exemptions(
+    keep_running, followup_active, fence_read = _escaped_pod_exemptions(
         issue,
         status_class,
         events,
         pod_name=info.name if info is not None else f"pod-{issue}",
         now=now,
+        status=status,
     )
+    fence_active = fence_read is True  # tri-state: None (not evaluated) never defers
 
     prev_state = _load_pod_safety_state(issue)
     prev_missed = prev_state.get("missed", 0)
@@ -16847,6 +19401,21 @@ def _process_pod(
     alerted = False if (progressed or status_class == "pod-active-fresh") else prev_alerted
 
     stale = status_class == "pod-active-stale"
+    # ── #2283 fence-defer ceiling (computed BEFORE decide so an exhausted
+    # episode resumes ordinary accumulation this very tick; fires the
+    # once-per-episode ceiling escalation on a fresh crossing and mirrors
+    # ceiling_noted into prev_state for the later save's forward-carry) ──────
+    fence_defer_exhausted = _fence_defer_exhausted_and_note_ceiling(
+        issue,
+        pod_id,
+        info,
+        status,
+        fence_active,
+        now,
+        prev_state,
+        dry_run,
+        issue_running_pod_ids,
+    )
     action, new_missed = decide_pod_safety(
         status_class=status_class,
         missed=prev_missed,
@@ -16855,6 +19424,8 @@ def _process_pod(
         threshold=threshold,
         keep_running=keep_running,
         followup_active=followup_active,
+        fence_active=fence_active,
+        fence_defer_exhausted=fence_defer_exhausted,
     )
     gap_h = f"{(now - latest_progress) / 3600:.1f}h" if latest_progress is not None else "none"
     print(
@@ -16880,6 +19451,8 @@ def _process_pod(
         prev_stop_failed_noted=prev_stop_failed_noted,
         info=info,
         issue_running_pod_ids=issue_running_pod_ids,
+        fence_read=fence_read,
+        events=events,
     )
 
 
@@ -16902,12 +19475,15 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
     prev_stop_failed_noted: bool,
     info: PodInfo | None = None,
     issue_running_pod_ids: set[str] | None = None,
+    fence_read: bool | None = None,
+    events: list | None = None,
 ) -> None:
     """Apply the status-class :func:`decide_pod_safety` ``action`` for one pod.
 
     Extracted verbatim from :func:`_process_pod` (behavior unchanged) to keep its
     cyclomatic complexity under the C901 cap after the #692 wedge arm landed. The
-    five actions — ``keep-running-skip`` / ``followup-skip`` / ``stop`` (whose
+    six actions — ``keep-running-skip`` / ``followup-skip`` / ``fence-defer``
+    (#2283, dispatched to :func:`_handle_fence_defer_action`) / ``stop`` (whose
     REAL-failure sub-branch posts a once-per-episode durable ``stop-failed``
     marker and keeps the episode retryable, #1155) / ``alert`` / ``keep`` — post
     the appropriate once-per-episode marker (deduped
@@ -16920,7 +19496,20 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
     ``keep-running-skip`` branch — the pod ``created_at`` gap fallback + the
     marker/push spec text. ``issue_running_pod_ids`` (this issue's live
     RUNNING pod-id set, threaded from :func:`pod_safety_pass`; ``None`` =
-    unknown, no GC) feeds the #2149 pod-idle leg's ``kr_pod`` sub-dict GC."""
+    unknown, no GC) feeds the #2149 pod-idle leg's ``kr_pod`` sub-dict GC and
+    the #2283 ``fd_pod`` GC.
+
+    ``fence_read`` (#2283) is the tri-state owner-fence read from
+    :func:`_escaped_pod_exemptions`: an EVALUATED-and-inactive ``False``
+    CLEARS the pod's ``fd_pod`` episode entry (fresh-defaults write through
+    every branch's save — a fence that expired / was discharged ends the
+    episode so a LATER fence opens a fresh one); ``True`` (a live episode —
+    the ``fence-defer`` branch owns its own save) and ``None`` (not
+    evaluated: kill switch / shielded / read failure) both CARRY the entry
+    untouched — an unevaluated read must never erase a live episode's
+    ceiling clock. ``events`` threads the task's events list to the defer
+    branch's fence-expiry display (fail-soft, display only)."""
+    fd_clear_entry = (pod_id, _fresh_fd_pod_entry()) if fence_read is False else None
     if action == "keep-running-skip":
         print(
             f"  KEEP-RUNNING issue #{issue}: task status '{status}' is DONE but the "
@@ -16988,6 +19577,7 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
                 alerted=alerted,
                 last_progress_ts=latest_progress,
                 keep_running_noted=True,
+                fd_pod_entry=fd_clear_entry,
                 prev=prev_state,
             )
         return
@@ -17031,8 +19621,29 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
                 alerted=alerted,
                 last_progress_ts=latest_progress,
                 followup_noted=True,
+                fd_pod_entry=fd_clear_entry,
                 prev=prev_state,
             )
+        return
+
+    if action == "fence-defer":
+        # #2283 owner-fence defer arm (DEFER-ONLY — can only turn a stop
+        # into a wait): marker once per fence episode, push/sidecar
+        # re-alerted on the 24h TTL, miss counter reset, episode onset
+        # stamped for the cumulative ceiling. Split out for C901.
+        _handle_fence_defer_action(
+            issue=issue,
+            pod_id=pod_id,
+            status=status,
+            now=now,
+            dry_run=dry_run,
+            alerted=alerted,
+            latest_progress=latest_progress,
+            prev_state=prev_state,
+            info=info,
+            events=events,
+            issue_running_pod_ids=issue_running_pod_ids,
+        )
         return
 
     if action == "stop":
@@ -17091,6 +19702,7 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
             alerted=alerted,
             last_progress_ts=latest_progress,
             stop_failed_noted=True,
+            fd_pod_entry=fd_clear_entry,
             prev=prev_state,
         )
         return
@@ -17120,6 +19732,7 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
                 missed=0,
                 alerted=True,
                 last_progress_ts=latest_progress,
+                fd_pod_entry=fd_clear_entry,
                 prev=prev_state,
             )
         return
@@ -17134,6 +19747,7 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
             missed=new_missed,
             alerted=alerted,
             last_progress_ts=latest_progress,
+            fd_pod_entry=fd_clear_entry,
             prev=prev_state,
         )
 
@@ -17381,9 +19995,11 @@ _FOLLOWUPS_CHILDREN_WAIT_EXIT_KIND = "parked"
 # (SKILL.md Step 9b § Same-issue follow-up loop — the §5 marker posted at
 # the tail of the clean-result re-gate) and ``10`` is the "classification
 # pending; awaiting promotion" park a re-driven session posts when it finds
-# the pipeline already complete. A mid-round park (e.g. step 2c over-cap
-# plan approval, which holds at ``followups_running`` in place) is NOT
-# round-end — re-parking there would abandon an unapproved round.
+# the pipeline already complete. A mid-round park (e.g. step 2c plan-gate
+# park on a missing GPU-hour estimate — the retained fail-safe as of #1771;
+# before the GPU-hour-blind gate the same park also fired over-cap — which
+# holds at ``followups_running`` in place) is NOT round-end — re-parking
+# there would abandon an unapproved round.
 _FOLLOWUP_ROUND_END_STEPS = frozenset({"9a-bis", "10"})
 
 # Event kinds that can ONLY be posted by an EXECUTING pipeline round (#837
@@ -17746,7 +20362,9 @@ def _followup_round_complete_reason(events: list[dict], *, issue: int | None = N
 
 
 # Marker kind posted by ``task.py set-status --auto-approve-if-autonomous`` when
-# an autonomous plan estimate exceeds ``EPM_PLAN_AUTOAPPROVE_GPU_HOURS``. In the
+# an autonomous plan-gate call cannot auto-approve (missing/unparseable
+# GPU-hour estimate — the retained fail-safe as of #1771's GPU-hour-blind gate;
+# historically also fired over-cap). In the
 # status-hold variant (SKILL.md Step 9b same-issue follow-up loop) the task is
 # HELD at the ACTIVE status ``followups_running`` and only this marker records
 # the park; in the plan_pending variant the status moves to ``plan_pending``
@@ -17756,7 +20374,9 @@ _SPEND_APPROVAL_MARKER_KIND = "epm:awaiting-spend-approval"
 
 def _latest_spend_approval_ts(events: list[dict]) -> float | None:
     """Newest epoch ts of an ``epm:awaiting-spend-approval`` marker in
-    ``events`` (the over-cap autonomous plan-gate park), or ``None``."""
+    ``events`` (the plan-gate park — missing/unparseable GPU-hour
+    estimate as of #1771; before the GPU-hour-blind gate the same marker
+    also fired over-cap), or ``None``."""
     best: float | None = None
     for ev in events:
         if ev.get("kind") != _SPEND_APPROVAL_MARKER_KIND:
@@ -17770,10 +20390,11 @@ def _latest_spend_approval_ts(events: list[dict]) -> float | None:
 
 
 def _spend_approval_park_reason(events: list[dict]) -> str | None:
-    """Human-readable exemption reason when the task is parked at the over-cap
-    autonomous plan-gate (``epm:awaiting-spend-approval``) — a user-only gate
-    that respawning the session cannot clear. Returns ``None`` when the
-    exemption does not apply.
+    """Human-readable exemption reason when the task is parked at the
+    autonomous plan-gate fail-safe (``epm:awaiting-spend-approval`` — a
+    missing/unparseable GPU-hour estimate as of #1771; historically also
+    fired over-cap) — a user-only gate that respawning the session cannot
+    clear. Returns ``None`` when the exemption does not apply.
 
     Fires when the latest ``epm:awaiting-spend-approval`` marker is NOT
     superseded by any later REAL progress — i.e. nothing newer than it except,
@@ -17799,9 +20420,11 @@ def _spend_approval_park_reason(events: list[dict]) -> str | None:
     # in the progress/watcher filter would have shown above; a parked
     # step-completed is the expected accompaniment, so the park stands.
     return (
-        "parked at the over-cap autonomous plan-gate "
-        "(epm:awaiting-spend-approval is the latest non-watcher event; est "
-        "GPU-h exceeds the auto-approve cap) — a user-only gate "
+        "parked at the autonomous plan-gate fail-safe "
+        "(epm:awaiting-spend-approval is the latest non-watcher event; "
+        "missing/unparseable GPU-hour estimate — the retained fail-safe "
+        "as of #1771; before the GPU-hour-blind gate the same park also "
+        "fired over-cap) — a user-only gate "
         "(task.py set-status <N> approved, or re-plan); respawning the session "
         "only re-reads the parked plan and re-posts the same "
         "epm:step-completed exit_kind=parked, never advancing"
@@ -18354,11 +20977,15 @@ def _respawn_stalled_session(issue: int, cap_gpu_hours: float, dry_run: bool) ->
 
 def _stalled_cap_gpu_hours(issue: int) -> float:
     """Read the per-issue autonomous registry entry's
-    ``auto_approve_gpu_hours`` cap (falling back to
+    ``auto_approve_gpu_hours`` value (falling back to
     ``task_workflow.resolve_plan_gate_cap()`` — the single cap resolution
     point, #2164 — when the entry is missing/garbled), so the auto-respawn
-    reuses the same cap the user originally chose.
-    Mirrors the lookup :func:`_respawn` does on its registry entry."""
+    reuses the same argv the user originally chose.
+    Mirrors the lookup :func:`_respawn` does on its registry entry.
+
+    The returned value is INERT for plan approval as of #1771 (the
+    Step-2c gate is GPU-hour-blind); it rides the respawn argv for
+    provenance / registry compatibility only."""
     # Lazy in-process import (watcher convention).
     from explore_persona_space.task_workflow import resolve_plan_gate_cap
 
@@ -18464,6 +21091,10 @@ class _StalledActionCtx:
         dead_silence_respawns_today: int = 0,
         wedge_respawn_day: str | None = None,
         wedge_respawns_today: int = 0,
+        latest_marker_ts: float | None = None,
+        xgen_respawns: int = 0,
+        xgen_last_real_marker_ts: float | None = None,
+        xgen_escalated_at: int = 0,
     ) -> None:
         self.issue = issue
         self.happy_session_id = happy_session_id
@@ -18568,6 +21199,23 @@ class _StalledActionCtx:
         # (advancement-clear-EXEMPT load; bumped only at stop-initiation).
         self.wedge_respawn_day = wedge_respawn_day
         self.wedge_respawns_today = wedge_respawns_today
+        # #2084 cross-generation no-progress escalation. ``latest_marker_ts``
+        # is the pass-entry newest real (non-watcher) marker epoch ts
+        # (:func:`_latest_nonwatcher_event_ts`, computed once per tick) —
+        # PER-TICK EVIDENCE like ``wedge_note`` / ``downgrade_note``,
+        # deliberately NOT persisted. The three ``xgen_*`` fields ARE
+        # persisted, advancement-clear-EXEMPT (the #1209/#1241 pattern; the
+        # caller loads them via :func:`_stalled_xgen_fields` OUTSIDE the
+        # advancement clear). :func:`_update_stalled_xgen_on_spawn` mutates
+        # them at the fence's spawn fire to the values THIS tick must
+        # persist; every persist site forwards them via
+        # :func:`_persist_stalled_ctx`, so miss-accumulation / fence-stop /
+        # retry-stop / alert-handler saves never wipe the counter
+        # (spawn-site-only overrides are the banned inert shape).
+        self.latest_marker_ts = latest_marker_ts
+        self.xgen_respawns = xgen_respawns
+        self.xgen_last_real_marker_ts = xgen_last_real_marker_ts
+        self.xgen_escalated_at = xgen_escalated_at
 
     @property
     def happy_session_id_str(self) -> str | None:
@@ -18605,6 +21253,9 @@ def _persist_stalled_ctx(ctx: _StalledActionCtx, sid: str | None, missed: int, *
         dead_silence_respawns_today=ctx.dead_silence_respawns_today,
         wedge_respawn_day=ctx.wedge_respawn_day,
         wedge_respawns_today=ctx.wedge_respawns_today,
+        xgen_respawns=ctx.xgen_respawns,
+        xgen_last_real_marker_ts=ctx.xgen_last_real_marker_ts,
+        xgen_escalated_at=ctx.xgen_escalated_at,
         prev=ctx.prev_state,
     )
     kwargs.update(overrides)
@@ -18695,6 +21346,109 @@ def _fence_stop_failed(ctx: _StalledActionCtx, sid: str) -> None:
     _persist_stalled_ctx(ctx, sid, ctx.threshold, stop_failed_alerted=True)
 
 
+def _update_stalled_xgen_on_spawn(ctx: _StalledActionCtx) -> tuple[str, str]:
+    """#2084: apply the cross-generation no-progress COUNTING RULE at the
+    fence's spawn fire and evaluate the escalation predicate. Mutates the
+    three ``ctx.xgen_*`` fields to the values THIS tick must persist (the
+    spawn branch's ``_persist_stalled_ctx`` forwards them); returns the
+    :func:`decide_stalled_xgen_escalation` ``(verdict, reason)``.
+
+    Counting rule (counts respawn EVENTS the watcher fires — never marker
+    literals grepped from ``task.py view`` output): at each fence-spawn fire
+    read the pass's already-computed newest real (non-watcher) marker ts
+    (``ctx.latest_marker_ts``). Newer than the anchor => the intervening
+    generation made real progress => reset (``xgen_respawns = 1``,
+    ``xgen_escalated_at = 0``); else increment. Anchor update is MONOTONE
+    (``max(old, new)``), skipping a ``None``/unreadable current read — a
+    transient empty events read must never overwrite a valid anchor and
+    cause a spurious reset. Scope: fence-spawn fires ONLY — wedge /
+    dead-silence episodes whose respawn completes via the crash-recovery
+    arm are not counted (the escalation note states these semantics).
+
+    On ``"escalate"``, ``xgen_escalated_at`` is set to the new count HERE —
+    BEFORE the caller's persist — so the once-per-band dedup is durable
+    even when a crash lands between the persist and the fail-soft channels
+    (worst case: one lost alert, re-fired at the next band)."""
+    cur = ctx.latest_marker_ts
+    anchor = ctx.xgen_last_real_marker_ts
+    if cur is not None and (anchor is None or cur > anchor):
+        ctx.xgen_respawns = 1
+        ctx.xgen_escalated_at = 0
+    else:
+        ctx.xgen_respawns += 1
+    if cur is not None:
+        ctx.xgen_last_real_marker_ts = cur if anchor is None else max(anchor, cur)
+    verdict, reason = decide_stalled_xgen_escalation(
+        kill_switch=not _stalled_xgen_escalation_enabled(),
+        xgen_respawns=ctx.xgen_respawns,
+        threshold=_stalled_xgen_escalate_after(),
+        escalated_at=ctx.xgen_escalated_at,
+    )
+    if verdict == "escalate":
+        ctx.xgen_escalated_at = ctx.xgen_respawns
+    return verdict, reason
+
+
+def _emit_stalled_xgen_escalation(ctx: _StalledActionCtx) -> None:
+    """#2084 escalation channels — marker + Telegram push + sidecar row,
+    EACH fail-soft, run AFTER the spawn branch's state persist: an exception
+    on this observability-only path must never abort respawn bookkeeping
+    (the respawn already happened and its state is already saved).
+
+    ESCALATE-ONLY hard invariant: NO ``_stop_session``, NO status mutation,
+    NO respawn suppression, NO cap consumption — the respawn lane's behavior
+    is byte-for-byte unchanged apart from reading already-computed values
+    (pinned by ``test_stalled_xgen_escalation_never_stops_or_mutates``)."""
+    threshold = _stalled_xgen_escalate_after()
+    anchor = ctx.xgen_last_real_marker_ts
+    anchor_str = (
+        time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(anchor))
+        if isinstance(anchor, int | float)
+        else "none on record"
+    )
+    note = (
+        f"{_STALLED_XGEN_NOTE_SENTINEL} CROSS-GENERATION NO-PROGRESS "
+        f"escalation (#2084, ESCALATE-ONLY): the stalled fence-spawn arm has "
+        f"fired {ctx.xgen_respawns} consecutive auto-respawn(s) on "
+        f"#{ctx.issue} with NO intervening real (non-watcher) marker "
+        f"(threshold {threshold}; semantics: fence-spawn fires since the "
+        f"last real marker — wedge/dead-silence episodes completed by the "
+        f"crash-recovery arm are not counted). Last real non-watcher marker "
+        f"ts: {anchor_str}. The respawn lane keeps running UNCHANGED (no "
+        f"stop, no status change, no cap consumed) — this loop is burning "
+        f"respawns without progress. Manual triage: inspect the session "
+        f"transcript + `task.py latest-marker {ctx.issue}`; consider "
+        f"`task.py set-status {ctx.issue} blocked` (park it for a human) or "
+        f"a deliberate takeover (rename the registration per the "
+        f"paused-takeover recipe). Kill switch: "
+        f"EPM_DISABLE_STALLED_XGEN_ESCALATION=1. {_source_stamp()}"
+    )
+    try:
+        _post_progress_marker(ctx.issue, note, ctx.dry_run, label="session-auto-respawn-noprogress")
+    except Exception as e:  # fail-soft by design (#2084 plan §3)
+        print(f"  WARNING: xgen escalation marker failed for #{ctx.issue}: {e}", file=sys.stderr)
+    try:
+        _telegram_push(
+            f"[EPS watcher] #{ctx.issue} cross-generation NO-PROGRESS respawn "
+            f"loop: {ctx.xgen_respawns} fence-spawn respawns with zero real "
+            f"markers (threshold {threshold}). Respawns continue unchanged; "
+            f"manual triage needed (#2084).",
+            ctx.dry_run,
+        )
+    except Exception as e:  # fail-soft by design (#2084 plan §3)
+        print(f"  WARNING: xgen escalation push failed for #{ctx.issue}: {e}", file=sys.stderr)
+    try:
+        _append_stalled_xgen_event(
+            issue=ctx.issue,
+            count=ctx.xgen_respawns,
+            threshold=threshold,
+            last_real_marker_ts=anchor if isinstance(anchor, int | float) else None,
+            dry_run=ctx.dry_run,
+        )
+    except Exception as e:  # fail-soft by design (#2084 plan §3)
+        print(f"  WARNING: xgen escalation sidecar failed for #{ctx.issue}: {e}", file=sys.stderr)
+
+
 def _fence_spawn_stalled(ctx: _StalledActionCtx, sid: str) -> None:
     """Verified-dead spawn branch of the stop-verify fence (the pre-#845
     respawn body): the pending sid is confirmed absent from the daemon's
@@ -18742,6 +21496,13 @@ def _fence_spawn_stalled(ctx: _StalledActionCtx, sid: str) -> None:
     spawn_ok = spawn_result == "spawned"
     new_respawn_count = ctx.respawn_count + 1
     if spawn_ok:
+        # #2084: count this fence-spawn fire (the sole session-auto-respawn
+        # post site) against the cross-generation no-progress counter and
+        # decide the escalation BEFORE the persist below, so the updated
+        # xgen_* fields — including the once-per-band xgen_escalated_at bump
+        # — ride the spawn branch's own state save. The channels fire AFTER
+        # the persist (fail-soft; see _emit_stalled_xgen_escalation).
+        xgen_verdict, _xgen_reason = _update_stalled_xgen_on_spawn(ctx)
         wedge_suffix = f" Wedge evidence: {ctx.wedge_note}." if ctx.wedge_note else ""
         hold_suffix = (
             f" (respawn was held {ctx.wt_hold_count} tick(s) for worktree activity)"
@@ -18782,6 +21543,11 @@ def _fence_spawn_stalled(ctx: _StalledActionCtx, sid: str) -> None:
             stop_failed_alerted=False,
             wt_hold_count=0,
         )
+        # #2084 escalation channels — AFTER the state persist, each
+        # fail-soft; observability only (never a stop / status mutation /
+        # respawn suppression / cap consume).
+        if xgen_verdict == "escalate":
+            _emit_stalled_xgen_escalation(ctx)
         return
     # "failed": keep the pre-#845 no-booking behavior (respawn_count NOT
     # bumped; retried on a later tick) — but the fence's stop_pending_*
@@ -19161,9 +21927,10 @@ def _apply_stalled_followups_exemption(
     dry_run: bool,
 ) -> tuple[str, int, bool]:
     """Check the alive-but-stalled exemptions for the stalled-detector pass
-    (the prose USER-PAUSE hold, the over-cap spend-approval park, the
-    deliberate-blocked-park suppression (#1137), the round-complete re-park,
-    and the followups_running-parent-waiting-on-open-child suppression);
+    (the prose USER-PAUSE hold, the plan-gate spend-approval park —
+    missing-estimate as of #1771 —, the deliberate-blocked-park
+    suppression (#1137), the round-complete re-park, and the
+    followups_running-parent-waiting-on-open-child suppression);
     rewrite ``(action, new_missed, followups_child_alerted)`` accordingly.
 
     No-op unless ``action != "keep" or new_missed > 0`` (so the healthy-
@@ -19196,12 +21963,15 @@ def _apply_stalled_followups_exemption(
         )
         _maybe_post_user_pause_skip(issue, pause_reason, events, dry_run)
         return "keep", 0, followups_child_alerted
-    # Over-cap spend-approval park (incident #653, 2026-06-18): the latest
-    # non-watcher event is `epm:awaiting-spend-approval` (a 132 GPU-h plan over
-    # the 100h auto-approve cap), and the status-hold variant (SKILL.md Step 9b)
-    # keeps the task at the ACTIVE status `followups_running`, so decide() sees
-    # an ACTIVE task and the missing-self-report drives respawn. A respawned
-    # session only re-reads the same parked plan and re-posts the same
+    # Plan-gate spend-approval park (originating incident #653, 2026-06-18:
+    # a 132 GPU-h plan over the retired 100h cap; the #1771 GPU-hour-blind
+    # gate removed the over-cap arm — the retained park cause is a
+    # missing/unparseable GPU-hour estimate fail-safe). The latest non-watcher
+    # event is `epm:awaiting-spend-approval`, and the status-hold variant
+    # (SKILL.md Step 9b) keeps the task at the ACTIVE status
+    # `followups_running`, so decide() sees an ACTIVE task and the
+    # missing-self-report drives respawn. A respawned session only re-reads
+    # the same parked plan and re-posts the same
     # `epm:step-completed step=2c exit_kind=parked`. This is a user-only gate
     # (`task.py set-status <N> approved`, or re-plan) — checked FIRST because it
     # is the most specific gate signal and status-agnostic. Dedup'd in the
@@ -19218,7 +21988,7 @@ def _apply_stalled_followups_exemption(
                 issue,
                 f"{_SPEND_APPROVAL_SKIP_NOTE_SENTINEL} {spend_reason}. "
                 f"Respawn suppressed (does NOT consume the respawn budget); "
-                f"the user must approve the over-cap plan "
+                f"the user must approve the parked plan "
                 f"(`task.py set-status {issue} approved`) or re-plan "
                 f"(`task.py set-status {issue} planning` + re-invoke "
                 f"/adversarial-planner) to advance this task.",
@@ -20122,6 +22892,18 @@ def _process_stalled_session(
         prev_state, "wedge_respawn_day", "wedge_respawns_today", dead_silence_day_key
     )
 
+    # #2084 cross-generation no-progress fields — deliberately OUTSIDE the
+    # advancement-clear above, alongside the #1209/#1241 day-keyed counters
+    # and for the same reason: every fence-spawn respawn boots a fresh
+    # session that writes a fresh boot self-report, so an advancement-
+    # cleared counter could never see across generations — which is exactly
+    # the loop this counter measures (#2004: 7 respawns over 7h34m with
+    # zero real markers, the episode belt reset on every boot). NOT
+    # day-keyed: the predicate is purely progress-keyed (reset only when
+    # the newest real non-watcher marker ts advances — see
+    # :func:`_update_stalled_xgen_on_spawn`).
+    xgen_respawns, xgen_last_real_marker_ts, xgen_escalated_at = _stalled_xgen_fields(prev_state)
+
     # Compute respawn_eligible: the task must be in an ACTIVE status (we
     # never restart a session at a PARK / gate / terminal state) AND the
     # Happy daemon must be reachable (we can't issue stop+spawn without
@@ -20317,6 +23099,10 @@ def _process_stalled_session(
         dead_silence_respawns_today=dead_silence_respawns_today,
         wedge_respawn_day=dead_silence_day_key,
         wedge_respawns_today=wedge_respawns_today,
+        latest_marker_ts=latest_marker_ts,
+        xgen_respawns=xgen_respawns,
+        xgen_last_real_marker_ts=xgen_last_real_marker_ts,
+        xgen_escalated_at=xgen_escalated_at,
     )
 
     # #1480 stalled-manual escalation rung (no-op for autonomous entries,
@@ -21076,7 +23862,8 @@ def _check_orphan_followups_exemption(
     action: str,
 ) -> tuple[str, str | None]:
     """Probe the orphan-sweep exemptions (the prose USER-PAUSE hold, the
-    over-cap spend-approval park, the round-complete re-park, and the
+    plan-gate spend-approval park — missing-estimate as of #1771 —, the
+    round-complete re-park, and the
     followups_running-parent-waiting-on-open-child suppression). Returns the
     (possibly rewritten) ``action`` plus the human-readable reason string
     (for the alert prose) or ``None`` when no exemption applies.
@@ -21105,11 +23892,13 @@ def _check_orphan_followups_exemption(
             f"diverting to alert-only (does NOT consume respawn budget)."
         )
         return "user-pause-hold-skip", pause_reason
-    # Over-cap spend-approval park (incident #653, 2026-06-18): mirror of the
-    # same exemption in :func:`_apply_stalled_followups_exemption`. The
-    # status-hold variant keeps the task at the ACTIVE status
-    # `followups_running`, so an orphan candidate (no live registered session)
-    # parked at the spend-approval gate would be respawned straight back into
+    # Plan-gate spend-approval park (originating incident #653, 2026-06-18;
+    # #1771 removed the over-cap arm — the retained park cause is a
+    # missing-estimate fail-safe): mirror of the same exemption in
+    # :func:`_apply_stalled_followups_exemption`. The status-hold variant
+    # keeps the task at the ACTIVE status `followups_running`, so an orphan
+    # candidate (no live registered session) parked at the spend-approval
+    # gate would be respawned straight back into
     # the same parked plan. Diverted to a one-time alert that does NOT consume
     # the daily respawn budget. Checked FIRST — most specific gate, status-
     # agnostic. Pure (events-only); the dispatch posts the marker.
@@ -21242,8 +24031,10 @@ def _handle_orphan_spend_approval_skip(
     state: dict,
     dry_run: bool,
 ) -> None:
-    """Orphan-sweep handler for the over-cap spend-approval exemption (incident
-    #653): post the one-time alert and persist state WITHOUT incrementing
+    """Orphan-sweep handler for the plan-gate spend-approval exemption
+    (originating incident #653; #1771 removed the over-cap arm — the
+    retained park cause is a missing-estimate fail-safe): post the
+    one-time alert and persist state WITHOUT incrementing
     ``respawns_today`` — the exemption deliberately does NOT consume the daily
     respawn budget. Dedup is self-contained in the events log (a marker
     carrying :data:`_SPEND_APPROVAL_SKIP_NOTE_SENTINEL` newer than the gating
@@ -21255,7 +24046,7 @@ def _handle_orphan_spend_approval_skip(
             issue,
             f"{_SPEND_APPROVAL_SKIP_NOTE_SENTINEL} {reason}. "
             f"Orphan-respawn suppressed (does NOT consume the daily respawn "
-            f"budget); the user must approve the over-cap plan "
+            f"budget); the user must approve the parked plan "
             f"(`task.py set-status {issue} approved`) or re-plan "
             f"(`task.py set-status {issue} planning` + re-invoke "
             f"/adversarial-planner) to advance this task.",
@@ -21771,8 +24562,9 @@ INFRA_DRAIN_STATE_BASENAME = "infra-drain-state.json"
 # default; a benign omission must not silently disable the drain).
 INFRA_DRAIN_CAP_DEFAULT = 5
 # Task kinds the drain may dispatch. A mis-queued experiment/campaign ID must
-# never be spawned with --auto: it would auto-approve <=100 GPU-h AND sit
-# outside this pass's cap arithmetic.
+# never be spawned with --auto: it would auto-approve ANY estimated plan
+# (the Step-2c gate is GPU-hour-blind as of #1771) AND sit outside this
+# pass's cap arithmetic.
 INFRA_DRAIN_KINDS = frozenset({"infra", "batch"})
 # Statuses that occupy a drain slot: the task-#633 contract set PLUS
 # followups_running (a same-issue follow-up round is in-flight work holding a
@@ -23655,8 +26447,11 @@ def proposed_infra_sweep_pass(
 # guards below — exponential-style backoff from the block timestamp + a
 # per-UTC-day retry cap — exactly the candidate's stated fallback ("if a clean
 # precheck is infeasible, prefer backoff + a tight day-cap over respawning
-# blind"). The re-driven `--auto` session re-enters `/issue` and enforces its
-# OWN plan-approval GPU-hour cap; this pass opens NO new spend path.
+# blind"). The re-driven `--auto` session re-enters `/issue` and re-runs the
+# SAME already-approved plan (its plan-approval gate has been GPU-hour-blind
+# since #1771); this pass opens NO new spend path beyond that plan — cost
+# oversight lives in plan review, spend-escalation pushes, and backend
+# fences, not in a watcher-side cap.
 #
 # SCOPE (do NOT broaden): ONLY a `blocked` task whose LATEST `epm:failure`
 # marker is `failure_class: infra` with a reason in the conservative
@@ -24749,6 +27544,20 @@ def _session_reconcile_autostop_enabled() -> bool:
     return raw.strip().lower() not in {"0", "false", "no"}
 
 
+def _session_reconcile_transcript_work_probe_enabled() -> bool:
+    """True unless ``EPM_SESSION_RECONCILE_TRANSCRIPT_WORK_PROBE`` is
+    explicitly set to a falsy value (``0`` / ``false`` / ``no``). Default ON
+    (#2117). When ON, :func:`_session_idle_signals`' per-sid transcript term
+    uses the content-classifying :func:`_transcript_work_idle_age_s` (a
+    churn-only tail — every completed wake-turn failed, no human row —
+    contributes no liveness); when OFF, the call site reverts to the
+    pure-mtime :func:`_transcript_idle_age_s` (exact pre-#2117 / #1670
+    behavior). Env-parse mirrors
+    :func:`_session_reconcile_autostop_enabled`."""
+    raw = os.environ.get("EPM_SESSION_RECONCILE_TRANSCRIPT_WORK_PROBE", "")
+    return raw.strip().lower() not in {"0", "false", "no"}
+
+
 def decide_session_reconcile(
     status: str | None,
     idle: bool,
@@ -25008,14 +27817,21 @@ def _session_idle_signals(
     ``manual-issue-<N>.json`` (#1670 — a just-spawned session may not have
     posted any marker yet), and — probed LAZILY, only when the cheaper
     signals already read idle and ``pids_by_sid`` was provided — each
-    mapped sid's own transcript mtime (:func:`_transcript_idle_age_s`) —
+    mapped sid's own transcript WORK signal
+    (:func:`_transcript_work_idle_age_s`, #2117: row CONTENT is classified,
+    so a churn-only tail — every completed wake-turn failed, no genuine
+    human row — contributes nothing; kill switch
+    ``EPM_SESSION_RECONCILE_TRANSCRIPT_WORK_PROBE=0`` reverts the term to
+    the pure-mtime :func:`_transcript_idle_age_s`) —
     is older than :func:`_session_idle_s` (default 2h, env
     ``EPM_SESSION_RECONCILE_IDLE_S``). When NO signal is readable at all the
     issue counts as idle (mirrors the orphan sweep's None-is-stale rule; the
     status gate + follow-up/pod/keep-running skips + 2-miss guard keep that
     safe). ``gap_desc`` is the human-readable freshest-signal age for
-    log/marker text; ``events`` is returned so the caller can reuse the
-    fetch for the follow-up predicate."""
+    log/marker text, plus a trailing ``churn-only`` token when >=1 mapped
+    sid's transcript classified as churn (#2117 auditability); ``events``
+    is returned so the caller can reuse the fetch for the follow-up
+    predicate."""
     events = _task_events(issue)
     latest_marker = _latest_nonwatcher_event_ts(events)
     sr_age, _sr_ts = _self_report_age_seconds(issue, now)
@@ -25037,21 +27853,36 @@ def _session_idle_signals(
     if spawned is not None:
         ages.append(max(0.0, now - spawned))
     idle = (min(ages) >= _session_idle_s()) if ages else True
+    churn_only = False
     if idle and pids_by_sid:
-        # Transcript mtime = the truest per-SESSION activity signal.
-        # Probed LAZILY: only when the cheap task-level signals already
-        # read idle (zero cost on the common fresh-activity path). An
-        # unresolvable transcript contributes nothing — falls back to
-        # today's behavior; a wrong signal is worse than a missing one
-        # (the helper's happy-log-only rationale).
+        # Transcript = the truest per-SESSION activity signal. Probed
+        # LAZILY: only when the cheap task-level signals already read idle
+        # (zero cost on the common fresh-activity path). An unresolvable
+        # transcript contributes nothing — falls back to today's behavior;
+        # a wrong signal is worse than a missing one (the helper's
+        # happy-log-only rationale). Default probe (#2117):
+        # _transcript_work_idle_age_s classifies row CONTENT — a tail whose
+        # completed wake-turns ALL failed is churn, not liveness, and
+        # contributes nothing (reason "churn-only"), so an error-storming
+        # session on a DONE task accumulates the >=2-miss counter (#2004).
+        # The ages-append logic is otherwise unchanged: the fix is strictly
+        # WHAT number the transcript term contributes, never WHEN it is
+        # consulted (plan criterion 2).
+        work_probe = _session_reconcile_transcript_work_probe_enabled()
         for sid in sids:
             pid = pids_by_sid.get(sid)
             if isinstance(pid, int):
-                t_age, _reason = _transcript_idle_age_s(pid, now)
+                if work_probe:
+                    t_age, reason = _transcript_work_idle_age_s(pid, now)
+                    churn_only = churn_only or reason == "churn-only"
+                else:
+                    t_age, _reason = _transcript_idle_age_s(pid, now)
                 if t_age is not None:
                     ages.append(t_age)
         idle = (min(ages) >= _session_idle_s()) if ages else True
     gap_desc = f"{min(ages) / 3600:.1f}h" if ages else "no-signal"
+    if churn_only:
+        gap_desc += " churn-only"
     return idle, gap_desc, events
 
 
@@ -25076,6 +27907,19 @@ def _handle_session_stop(
     live-session-keyed GC). An ACK failure keeps the accumulated miss count
     so the next tick retries the stop for the remaining live session(s)."""
     stopped = [sid for sid in sids if _stop_session(sid, dry_run)]
+    # #2117 auditability: a churn-driven stop (the work probe classified the
+    # transcript tail as all-failed wake-turns) reads differently from an
+    # ordinary idle stop. The verdict rides gap_desc's trailing "churn-only"
+    # token (appended by _session_idle_signals), so no signature change.
+    if "churn-only" in gap_desc:
+        activity_desc = (
+            "non-watcher marker / self-report / session registration; the "
+            "transcript term was CHURN-ONLY — every recent completed "
+            "wake-turn failed, so transcript churn did not count as "
+            "activity (#2117)"
+        )
+    else:
+        activity_desc = "non-watcher marker / self-report / session registration / transcript"
     if stopped:
         _post_progress_marker(
             issue,
@@ -25083,8 +27927,8 @@ def _handle_session_stop(
             f"{len(stopped)} idle session(s) ({', '.join(stopped)}) by the "
             f"autonomous_session_watch session-reconcile pass — task status "
             f"'{status}' is parked/terminal, no live follow-up signal, no "
-            f"RUNNING pod, no keep-running tag, and no activity (non-watcher "
-            f"marker / self-report / session registration / transcript) was observed for > "
+            f"RUNNING pod, no keep-running tag, and no activity ("
+            f"{activity_desc}) was observed for > "
             f"{_session_idle_s() / 3600:.1f}h (gap={gap_desc}), confirmed "
             f"for >= {threshold} checks. An idle session pins its worktree "
             f"against the stale-worktree sweep and holds deleted-file "
@@ -28233,6 +31077,108 @@ def _transcript_idle_age_s(node_pid: int, now: float) -> tuple[float | None, str
     return max(0.0, now - mtime), None
 
 
+# #2117: the session-reconcile work probe reads the tail at the wedge lane's
+# 256 KB width (#1104), not _transcript_tail_rows' 64 KB default — a heavy
+# api-error storm can push the last ok turn out of a 64 KB window, and the
+# probe runs at most once per mapped sid per tick, only for DONE-status
+# candidates already reading idle (_process_session_reconcile's laziness).
+_SESSION_RECONCILE_TRANSCRIPT_TAIL_BYTES = 256 * 1024
+
+
+def _transcript_work_idle_age_s(node_pid: int, now: float) -> tuple[float | None, str | None]:
+    """Content-classifying session-reconcile sibling of
+    :func:`_transcript_idle_age_s` (#2117): seconds since the transcript
+    last showed durable WORK, or ``(None, reason)`` when the tail carries no
+    countable liveness. The mtime probe reads a thrashing session as live
+    forever — every failed turn, compaction row, and SKILL re-read refreshes
+    mtime — so the reconcile pass's >=2-miss counter could never accumulate
+    on an error-storming session parked on a completed task (#2004: ~4h of
+    token burn on already-completed work). A SIBLING of the mtime probe, not
+    a rewrite: :func:`_transcript_idle_age_s` keeps its other callers (the
+    #1582 keep-running owner leg, the #845 d stale-registration pass)
+    byte-untouched, and the same deliberate happy-log-only resolution
+    contract applies (via :func:`_transcript_tail_rows`).
+
+    Four-way contract (#2117 plan criterion 1):
+
+    (i) UNRESOLVABLE / UNREADABLE transcript -> ``(None, reason)`` —
+        contributes nothing to the caller's ``ages`` (unchanged from the
+        mtime probe).
+    (ii) DURABLE WORK -> ``(now - ts, None)`` where ``ts`` is the newest of:
+        the ``end_ts`` of the newest successfully-completed wake-turn
+        (:func:`_segment_wake_turns` outcome ``"ok"``) and the timestamp of
+        the newest genuine human row
+        (``tick_triage.is_human_transcript_row``). The #1670-preserving
+        arm — an OLD session doing real work with no recent markers keeps
+        its protection. Timestamp scoping: the age derives from THAT newest
+        row specifically; when its timestamp is unparseable
+        (:func:`_row_ts` -> ``None``) the verdict is (iv) — NEVER a max
+        over older parseable timestamps, which would substitute a stale age
+        for possibly-minutes-fresh work and fail toward STOP.
+    (iii) POSITIVE CHURN EVIDENCE -> ``(None, "churn-only")``: the tail
+        holds >=1 completed wake-turn, EVERY completed turn is ``"failed"``,
+        and no genuine human row is present. The transcript contributes
+        nothing, task-side idleness stands, and the miss counter
+        accumulates. A turn's outcome keys on its LAST response row, so
+        mid-turn SKILL-re-read assistant rows do NOT rescue a turn that
+        ends in an api-error — exactly the #2004 shape.
+    (iv) INDETERMINATE -> fall back to :func:`_transcript_idle_age_s`
+        (today's mtime read). Fail toward KEEP. Exactly two cases: (1) zero
+        completed turns — a tail whose only trailing delivery is
+        prompt-evidence rows with ZERO response rows yet (an in-flight turn
+        is deliberately uncounted by :func:`_segment_wake_turns`); (2) the
+        unparseable-newest-timestamp case of (ii).
+
+    Named residuals — DESIGNED, not missed (#2117 plan §1):
+
+    - (a) Window eviction. An ``"ok"`` turn younger than the idle floor can
+      be pushed out of the 256 KB tail by a fast api-error storm, yielding
+      a churn-only verdict where today's mtime read would keep the session.
+      Requires >=256 KB of pure churn AND >=2 h of task-side marker silence
+      AND a DONE status — for that conjunction the stop is arguably the
+      correct verdict, and the >=2-tick guard still applies.
+    - (b) Slash-command-only rescue. ``is_human_transcript_row``
+      deliberately reads slash commands as automation (``tick_triage.py``),
+      so a user rescuing a thrashing DONE-task session *purely* via slash
+      commands is stop-eligible. Typed text and interrupt rows ARE
+      protected. Crediting slash rows is NOT the fix — the 45-min
+      ``/issue-tick`` cron injects slash prompts, i.e. the churn driver
+      itself would become its own liveness proof. Recorded as a residual
+      instead.
+    - (c) Dequeue-only swallowed-delivery storm. A DONE-task session
+      emitting prompt-evidence rows with no responses produces zero
+      completed turns -> arm (iv) -> mtime-fresh -> kept indefinitely.
+      Identical to today's behavior (the prompt-wedge lane owns ACTIVE
+      tasks only); this change does not widen it and does not close it.
+    """
+    rows = _transcript_tail_rows(node_pid, max_bytes=_SESSION_RECONCILE_TRANSCRIPT_TAIL_BYTES)
+    if rows is None:
+        return None, "transcript unresolvable-or-unreadable"  # arm (i)
+    turns = _segment_wake_turns(rows)
+    has_ok = False
+    newest_ok_ts: float | None = None
+    for outcome, end_ts in reversed(turns):
+        if outcome == "ok":
+            has_ok = True
+            newest_ok_ts = end_ts  # may be None (unparseable) -> arm (iv)
+            break
+    human_row = next((r for r in reversed(rows) if is_human_transcript_row(r)), None)
+    human_ts = _row_ts(human_row) if human_row is not None else None
+    if has_ok or human_row is not None:
+        if (has_ok and newest_ok_ts is None) or (human_row is not None and human_ts is None):
+            # arm (iv) case (2): the newest durable-work row's OWN timestamp
+            # is unparseable — indeterminate; fall back to the mtime read
+            # (fail toward KEEP; never a max over older parseable rows).
+            return _transcript_idle_age_s(node_pid, now)
+        ts = max(t for t in (newest_ok_ts, human_ts) if t is not None)
+        return max(0.0, now - ts), None  # arm (ii)
+    if turns:
+        # arm (iii): >=1 completed turn, every one failed, no human row.
+        return None, "churn-only"
+    # arm (iv) case (1): zero completed turns.
+    return _transcript_idle_age_s(node_pid, now)
+
+
 def decide_idle_unmapped(
     mapped: bool,
     has_tty: bool,
@@ -31310,8 +34256,10 @@ def campaign_pass(
 #
 # Also owns the §4 runaway parachute: `tick_triage.py` writes
 # ``tick-runaway-<N>.flag`` on the 3rd consecutive TEARDOWN-verdict tick
-# (TERMINAL or GATE-TRANSITION — terminal statuses, over-cap plan_pending,
-# stranded campaign crons; cleared by the triage on any streak reset).
+# (TERMINAL or GATE-TRANSITION — terminal statuses, plan-gate-parked
+# plan_pending (missing-estimate fail-safe as of #1771; the plan_pending_over_cap
+# predicate name is preserved for stable imports), stranded campaign crons;
+# cleared by the triage on any streak reset).
 # CRON-TEARDOWN keeps whiffing — the #501 class, 1,951 wasted ticks; this
 # pass force-stops the flagged issue's session(s), which kills the
 # session-scoped cron with them. The force-stop reuses the session-reconcile
@@ -31325,9 +34273,11 @@ def campaign_pass(
 GATE_NOTIFY_STATE_PREFIX = "gate-notify-"
 
 # User-gate statuses for the push channel. ``plan_pending`` is INCLUDED only
-# when the over-cap spend-approval marker confirms it is the user gate (an
-# under-cap plan_pending is an in-skill park) — see tick_triage's
-# plan_pending_over_cap, shared with the /issue-tick triage.
+# when the plan-gate spend-approval marker confirms it is the user gate
+# (missing-estimate fail-safe as of #1771; before the GPU-hour-blind gate the
+# same marker also fired over-cap) — an in-skill park with no such marker is
+# not a user gate. See tick_triage's plan_pending_over_cap predicate (name
+# retained for stable imports), shared with the /issue-tick triage.
 GATE_PUSH_STATUSES = frozenset({"awaiting_promotion", "blocked"})
 
 # The runaway force-stop acts ONLY on the session-reconcile DONE set. A
@@ -31446,25 +34396,23 @@ def _task_title(issue: int) -> str:
     return title.strip()[:45] if isinstance(title, str) else ""
 
 
-def _gate_push_message(issue: int, status: str, events: list[dict], over_cap: bool) -> str:
+def _gate_push_message(issue: int, status: str, events: list[dict], gate_parked: bool) -> str:
     """Mirror the /issue-tick 3d message shapes (kept under ~200 chars).
 
-    The over-cap branch names the cap the session actually decided against:
-    the per-issue registered ``auto_approve_gpu_hours`` when one exists
-    (:func:`_stalled_cap_gpu_hours` — the watcher cron never sees the
-    session's env, so the registry is the only faithful source), degrading
-    to the single cap resolution point
-    ``task_workflow.resolve_plan_gate_cap()`` when the entry is
-    missing/garbled (#2164 — no hand-rolled env read with its own literal
-    default, which is how the park message came to name a threshold the
-    plan never crossed)."""
+    ``gate_parked`` is True when the plan-gate parked at plan_pending —
+    a missing/unparseable GPU-hour estimate fail-safe (#1771 removed the
+    over-cap arm; the retained park cause has one shape now, so the push
+    names the missing estimate rather than any cap — the #2164
+    registered-cap rendering had no threshold left to report)."""
     slug = _task_title(issue)
     head = f"#{issue} {slug}".rstrip()  # no double space when the title read failed
     if status == "awaiting_promotion":
         msg = f"{head} · clean-result ready — open to promote"
-    elif status == "plan_pending" and over_cap:
-        cap = _stalled_cap_gpu_hours(issue)
-        msg = f"{head} parked at plan_pending — over {cap:g} GPU-h cap; open to approve"
+    elif status == "plan_pending" and gate_parked:
+        msg = (
+            f"{head} parked at plan_pending — plan-gate park "
+            "(no GPU-hour estimate); open to approve"
+        )
     else:  # blocked
         reason = ""
         for row in reversed(events):
@@ -31848,6 +34796,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "GC in isolation without waiting on a daemon probe.",
     )
     parser.add_argument(
+        "--data-disk-only",
+        action="store_true",
+        help="run ONLY the data-disk headroom pass (#681/#2095) and exit; "
+        "skip every other pass. Daemon-independent (statvfs + bounded "
+        "repquota/du attribution); pair with --dry-run for a "
+        "zero-subprocess read-only smoke.",
+    )
+    parser.add_argument(
         "--infra-drain-only",
         action="store_true",
         help="run ONLY the infra-drain pass (execute the PM dispatch queue) "
@@ -31941,6 +34897,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "--dry-run for a zero-write live smoke.",
     )
     parser.add_argument(
+        "--predispatch-staleness-only",
+        action="store_true",
+        help="run ONLY the pre-dispatch staleness pass (#2134, escalate-only "
+        "— once-daily scan of queued proposed/blocked infra/batch tasks "
+        "whose workflow_fix_target files were rewritten by newer commits, "
+        "plus same-file queue collisions; never mutates task status or "
+        "dispatch state) and exit; skip every other pass. "
+        "Daemon-independent; pair with --dry-run for a zero-write live "
+        "smoke against the real queue.",
+    )
+    parser.add_argument(
         "--stash-rescue-audit-only",
         action="store_true",
         help="run ONLY the stash/rescue-backlog audit pass (#1806, "
@@ -31959,6 +34926,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "cycle on every fleet commit; never mutates git or filesystem "
         "state) and exit; skip every other pass. Daemon-independent; pair "
         "with --dry-run for a zero-write live smoke.",
+    )
+    parser.add_argument(
+        "--pending-call-wedge-only",
+        action="store_true",
+        help="run ONLY the pending-call wedge observer pass (#2115, "
+        "escalate-only — a registered session whose transcript tail ends "
+        "in an assistant Bash tool_use with no matching tool_result older "
+        "than EPM_PENDING_CALL_WEDGE_MIN; never mutates task or git state, "
+        "posts no task markers, emits no respawn) and exit; skip every "
+        "other pass. Probes the daemon itself (sid->pid resolution needs "
+        "/list); pair with --dry-run for a zero-write live smoke.",
     )
     parser.add_argument(
         "--completed-unmerged-only",
@@ -31994,6 +34972,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "Daemon-independent (reads the sentinel + REGISTRY events.jsonl "
         "only). Pair with --dry-run for a zero-write live smoke against the "
         "real sentinel.",
+    )
+    parser.add_argument(
+        "--settings-model-guard-only",
+        action="store_true",
+        help="run ONLY the settings model-id guard pass (#2129 — detect + "
+        "AUTO-NORMALIZE the fleet-killing claude-fable-5[1m]-class model id "
+        "in ~/.claude/settings.json + settings.local.json, fable/mythos "
+        "only; alert-only on any unsafe-write case) and exit; skip every "
+        "other pass. Daemon-independent (pure filesystem reads/writes; "
+        "posts no task markers). Pair with --dry-run for a zero-write live "
+        "smoke against the real settings files.",
     )
     parser.add_argument(
         "--urgent-wf-park-only",
@@ -32062,6 +35051,13 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # doesn't accidentally trip the destructive paths.
     if args.gc_only:
         gc_pass(args.dry_run)
+        return 0
+
+    # --data-disk-only mirrors --gc-only: run the single pass under the lock
+    # and exit (#2095 — gives the data-disk pass an isolated smoke). The pass
+    # is daemon-INDEPENDENT (statvfs + bounded repquota/du attribution only).
+    if args.data_disk_only:
+        data_disk_pass(args.dry_run)
         return 0
 
     # --infra-drain-only mirrors --gc-only: run the single pass under the
@@ -32143,6 +35139,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         registry_drift_pass(args.dry_run)
         return 0
 
+    # --predispatch-staleness-only mirrors --registry-drift-only: the pass
+    # is daemon-independent (read-only registry + body.md reads + bounded
+    # read-only git-log subprocesses + its own state file; marker posts go
+    # via the task.py subprocess), so run it alone. Pair with --dry-run for
+    # a zero-write live smoke against the real queue.
+    if args.predispatch_staleness_only:
+        predispatch_staleness_pass(args.dry_run)
+        return 0
+
     # --stash-rescue-audit-only mirrors --registry-drift-only: the pass is
     # daemon-independent (one read-only git subprocess + one dir scan + its
     # own state file), so run it alone. Pair with --dry-run for a zero-write
@@ -32157,6 +35162,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # smoke.
     if args.root_unstaged_audit_only:
         root_unstaged_audit_pass(args.dry_run)
+        return 0
+
+    # --pending-call-wedge-only mirrors --boot-death-only: run the single
+    # pass under the lock (it needs the daemon's {sid: wrapper pid} /list
+    # snapshot to resolve transcripts — no map is a silent skip) and exit.
+    # Pair with --dry-run for a zero-write live smoke.
+    if args.pending_call_wedge_only:
+        pending_call_wedge_pass(
+            args.dry_run,
+            pids_by_sid=_live_pids_by_sid_or_none() if _daemon_reachable() else None,
+        )
         return 0
 
     # --completed-unmerged-only mirrors --registry-drift-only: the FLAG half
@@ -32181,6 +35197,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # only; marker never posts to a task), so run it alone.
     if args.codex_outage_only:
         codex_outage_pass(args.dry_run)
+        return 0
+
+    # --settings-model-guard-only mirrors --codex-outage-only: the pass is
+    # daemon-independent (reads/rewrites the two ~/.claude settings files
+    # only; posts no task markers), so run it alone. Pair with --dry-run
+    # for a zero-write live smoke.
+    if args.settings_model_guard_only:
+        settings_model_guard_pass(args.dry_run)
         return 0
 
     # --urgent-wf-park-only mirrors --completed-unmerged-only: the pass is
@@ -32363,6 +35387,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # independent, so it runs on a daemon outage too.
     codex_outage_pass(args.dry_run)
 
+    # Settings model-id guard (#2129): AUTO-NORMALIZE + alert on the
+    # fleet-killing `claude-fable-5[1m]`-class model id in the GLOBAL
+    # ~/.claude settings files (fable/mythos only — 1M-native models expose
+    # NO [1m] variant; the suffixed id kills every subagent fleet-wide,
+    # #545). Byte-exact post-condition-gated rewrite with a concurrent-write
+    # re-read guard, timestamped backup + atomic replace; every unsafe-write
+    # case degrades to alert-only. Posts NO task markers (fleet-level
+    # concern — codex-outage precedent). Daemon-independent, so it runs on
+    # a daemon outage too.
+    settings_model_guard_pass(args.dry_run)
+
     # Completed-unmerged pass (#1564 flag + #1653 bounded respawn; incident
     # #1540): hourly audit of `completed` tasks whose events carry epm:done
     # but NO epm:merged while the issue-<N> PR/branch is still unmerged —
@@ -32509,6 +35544,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         pids_by_sid=live_pids_by_sid,
     )
 
+    # Pending-call wedge observer (#2115): ESCALATE-ONLY flag of a
+    # registered session whose transcript tail ends in an assistant Bash
+    # tool_use with no matching tool_result past the 25-min window — the
+    # forever-pending Step 10d lint-gate dispatch class the ~2.2h stall
+    # fence was the only exit for. Bash-only keying (Agent/AskUserQuestion/
+    # TaskOutput/Monitor pends are routine health); sidecar + one deduped
+    # push per (issue, tool_use id) episode; never mutates task/git state,
+    # posts no task markers, emits no respawn. Shares the stalled pass's
+    # {sid: wrapper pid} /list snapshot (silent skip when the daemon is
+    # down — the map is unresolvable then).
+    pending_call_wedge_pass(args.dry_run, pids_by_sid=live_pids_by_sid)
+
     # Orphan sweep: registration-INDEPENDENT cross-check of ACTIVE-status
     # tasks vs live registered sessions. Catches the class the registry-driven
     # passes structurally cannot see: an active task with NO registration at
@@ -32525,6 +35572,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         live_ids=live_ids if daemon_reachable else None,
         live_pids=live_pids_by_sid,
     )
+
+    # Pre-dispatch staleness (#2134): ESCALATE-ONLY once-daily flag of
+    # queued/blocked infra/batch tasks whose workflow_fix_target premises a
+    # newer landed commit likely invalidated, plus same-file queue
+    # collisions. Runs BEFORE the two dispatch passes (infra-drain, then
+    # proposed-infra-sweep — whose pinned runs-right-after-drain adjacency
+    # is preserved) so this tick's flags land on events.jsonl before this
+    # tick's dispatches; the spawned clarifier reads the flag marker at its
+    # Step 0 context pass. Report-only + daemon-INDEPENDENT (read-only
+    # registry/body/git reads; marker posts go via the task.py subprocess);
+    # never mutates status or dispatch state.
+    predispatch_staleness_pass(args.dry_run)
 
     # Infra-drain: execute the PM session's adjudicated infra dispatch queue
     # (task #633) into free slots under the cap. Pure executor — the PM is

@@ -20,6 +20,7 @@
 - [Watcher-incident forensics map](reference_watcher_forensics_surfaces.md) — logs/autonomous_session_watch/, ~/.eps-autonomous/ state, ~/.happy/sessions.json generations; --auto spawns register cwd=worktree
 - [Watcher dry-run from worktree](reference_watcher_dryrun_from_worktree.md) — override asw.PROJECT_ROOT to main before calling a `*_pass(dry_run=True)`; ruff C901 cap is 15
 - [Watcher has TWO test files](reference_watcher_two_test_files.md) — run test_autonomous_session_watch.py AND test_stalled_detector_and_gc.py; monkeypatch helpers with `lambda *_a, **_k`
+- [Watcher new-pass fan-out](reference_watcher_new_pass_fanout.md) — 7 surfaces: docstring count/chain/item, pass block, main() flag+dispatch+call, conftest stub list; decide_* predicates ≤ C901 15 (full-ruleset pin, #2115)
 - [backend_poll safe test recipe](reference_backend_poll_safe_test.md) — never poll a LIVE issue (sentinel drain posts markers); use a synthetic --handle-file with fake issue + nonexistent pod
 - [Grep producers before regex-tighten](feedback_verify_log_shapes_before_regex_tighten.md) — parser-regex anchors can break real emitters (#545 suffixed terminal lines); verify producer line shapes first
 - [Happy daemon session semantics](reference_happy_daemon_session_semantics.md) — live wrapper revives in-place; resumeSession spawns fresh; stopSession kills daemon-resume; PM needs explicit pm-session.json
@@ -52,5 +53,7 @@
 - [Cert-blob recovery after clobber](reference_cert_blob_recovery_after_clobber.md) — inline-lint-gate cert SHAs are git blobs; `git cat-file blob <sha>` restores uncommitted shared-root edits a concurrent session wiped
 - [workflow_lint new-check fan-out](reference_workflow_lint_new_check_fanout.md) — 5 in-file surfaces (docstring bullet, constants+check, flag, no_flags term, dispatch) + in-process bundling test; file is full-ruleset-pinned via test_ruff_policy; tmp-tree tests neutralize live allowlists (#2079)
 - [Union runs under gate contention](reference_union_run_under_gate_contention.md) — chunk timed-out test unions; map -q F's via --collect-only index math; bg-Bash queue serializes (polls delay the watched job)
+- [SKILL.md edit companion duties](reference_skillmd_edit_companion_duties.md) — sweep sibling prose-pin tests for removed strings FIRST; re-check the SKILL_DOC_SIZE_GRANDFATHER ratchet (same-round landing-bytes cap raise, #2240)
 - [VM subreaper orphan reparent](reference_vm_subreaper_orphan_reparent.md) — setsid orphans reparent to systemd --user (subreaper), not PID 1; ppid==1 asserts fail environmentally — check /proc/<ppid>/comm before chasing a diff regression
 - [Clause-5 blob provenance](reference_git_blob_provenance_clause5.md) — find-object lists un-detected renames (min() wins, not invisibility); pathspec-bound the walk (24s→8s); %cI + marker ts are second-resolution — force committer dates in ordering tests
+- [Section-reference span pointer check](reference_section_reference_span_pointer_check.md) — a new H2 span in *-section-reference.md needs a one-line `§ <exact heading>` pointer in the owning spec (#850/#1159 lint); abbreviated pointers FAIL (#2120)

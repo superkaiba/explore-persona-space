@@ -159,8 +159,10 @@ PARK_STATUS = "awaiting_promotion"
 WORKFLOW_VERSIONS = ("v1", "v2")
 DEFAULT_WORKFLOW_VERSION = "v1"
 
-# Env var carrying the Step-2c autonomous plan-approval GPU-hour cap
-# (spawn_session injects it into every `--auto` session's env).
+# Env var carrying the legacy Step-2c autonomous plan-approval GPU-hour cap
+# (spawn_session injects it into every `--auto` session's env). DECISION-INERT
+# as of #1771 — the gate is GPU-hour-blind; the value survives for
+# reporting/provenance parity only (see `resolve_plan_gate_cap`).
 PLAN_GATE_CAP_ENV = "EPM_PLAN_AUTOAPPROVE_GPU_HOURS"
 
 # The ONE code default for that cap (#2164). Before this constant existed the
@@ -175,15 +177,22 @@ AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS: float = 100.0
 
 
 def resolve_plan_gate_cap(env: Mapping[str, str] | None = None) -> float:
-    """Single resolution point for the Step-2c autonomous plan-approval cap.
+    """Single resolution point for the Step-2c plan-gate cap (reporting-only).
 
-    Every deciding, reporting, and respawn site reads the cap through this
-    function so the decided threshold and the reported threshold cannot
-    diverge (#2164). An absent, blank, or unparseable
-    ``EPM_PLAN_AUTOAPPROVE_GPU_HOURS`` falls back to
+    REPORTING-ONLY / DECISION-INERT as of #1771: the autonomous
+    plan-approval gate is GPU-hour-blind — the decision path
+    (`scripts/task.py` `_resolve_autonomous_plan_gate`) auto-approves ANY
+    plan carrying a parseable GPU-hour estimate and parks ONLY on a
+    missing/unparseable one, so no decision branch compares an estimate
+    against this value. Reporting / respawn / provenance sites (the
+    watcher's stalled-cap plumbing, spawn_session's per-issue registry)
+    still read the cap through this function so they all name the SAME
+    number (#2164's single-sourcing, retained for parity). An absent,
+    blank, or unparseable ``EPM_PLAN_AUTOAPPROVE_GPU_HOURS`` falls back to
     ``AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS`` (a blank value resolves like
     an absent one rather than raising). Negative / zero values parse as-is —
-    no clamping, so a deliberate cap of 0 still means "park everything".
+    no clamping (historical: pre-#1771, when the value decided the gate, a
+    deliberate cap of 0 meant "park everything"; it now decides nothing).
 
     ``env`` defaults to ``os.environ``; pass a mapping only in tests.
     """
@@ -812,11 +821,33 @@ def _load_registry() -> dict[str, Any]:
 
 
 def _save_registry(registry: dict[str, Any]) -> None:
+    """Atomically write REGISTRY.json, then best-effort ``git add`` it.
+
+    #2064/#2015: stage the just-written registry immediately. Staged content
+    survives the pre-commit stash cycle (``git write-tree`` snapshots the
+    index; ``checkout -- .`` reverts TO index content), so this narrows the
+    destroyable tracked-modified-unstaged window from "until ``_git_commit``'s
+    sequencer wait clears" (seconds-minutes under fleet load) to milliseconds.
+    Fail-soft BY DESIGN (prevention layer, not correctness — the allocation
+    heal in ``create_task`` is the correctness layer): on any failure
+    (non-git test tmp dir, exhausted lock budget) WARN and degrade to the
+    prior behavior — ``_git_commit`` stages again at commit time.
+    """
     rp = registry_path()
     rp.parent.mkdir(parents=True, exist_ok=True)
     tmp = rp.with_suffix(".tmp")
     tmp.write_text(json.dumps(registry, indent=2, sort_keys=True) + "\n")
     tmp.replace(rp)
+    try:
+        proc = _run_git(["add", "--", str(rp)], check=False)
+        if proc.returncode != 0:
+            _log.warning(
+                "best-effort registry stage failed (rc=%s): %s",
+                proc.returncode,
+                (proc.stderr or "").strip()[:200],
+            )
+    except Exception as exc:  # never let staging break a registry write
+        _log.warning("best-effort registry stage failed: %s", exc)
 
 
 def _registry_set(registry: dict[str, Any], task_id: int, path: Path, fm: dict[str, Any]) -> None:
@@ -2092,6 +2123,7 @@ def ensemble_verdicts_present(
     round_n: int,
     *,
     reconcile_role: str | None = None,
+    since_ts: str | None = None,
 ) -> dict[str, dict[str, Any]]:
     """Per-kind durable-verdict presence for one ensemble round (#1149).
 
@@ -2137,20 +2169,72 @@ def ensemble_verdicts_present(
     a sentinel-less terse note whose ``version`` drifted from the round
     (a defaulted re-spawn that omitted the sentinel) reads absent — rule
     item 2 (the durable output-FILE probe) is the prose backstop for that
-    path. Pure function over :func:`list_events` output — no I/O; the
-    rule's item 2 (output-file probe) and precedence clauses stay
-    orchestrator prose.
+    path.
+
+    Freshness anchor (``since_ts``, #2136): marker versions auto-derive
+    as max+1 per kind while review rounds are counted independently, so
+    a PRIOR round's sentinel-less marker whose drifted ``version``
+    happens to equal a LATER round number false-PRESENTs through the
+    version fallback (the #1336 shape: a round-3 PASS answered a round-4
+    query two days later). When ``since_ts`` is given (each call site
+    passes its own round-opener ts via
+    :func:`review_round_anchor_ts`), a ``version``-fallback match must
+    ADDITIONALLY (i) postdate ``since_ts`` and (ii) be the newest
+    same-kind marker after it (an older same-kind marker inside the
+    opener window belongs to an earlier round; the 23.8% shared-opener
+    sub-shape). The anchor gates the VERSION-FALLBACK branch ONLY —
+    a sentinel-bearing round-exact match is NEVER time-gated (Step 5b
+    exists partly to REUSE a legitimate round-N verdict posted by a
+    session that was later killed, which necessarily predates the
+    current dispatch), and the reconcile kind's sentinel/``**Round:**``
+    matching is untouched. Fail-safe direction: an unparseable/absent
+    event ``ts``, or an unparseable ``since_ts``, SUPPRESSES the
+    fallback match (routes to the rule's item-2 output-file probe — the
+    same direction as the reconcile role-scoping). ``since_ts=None``
+    (the default, incl. "no opener found on the log") reproduces the
+    ungated pre-#2136 behavior exactly; the head sentinel remains the
+    only COMPLETE protection against a stale-round match. Pure function
+    over :func:`list_events` output — no I/O; the rule's item 2
+    (output-file probe) and precedence clauses stay orchestrator prose.
     """
     if isinstance(kinds, str):
         # A bare string iterates per-character, mechanically producing false
         # no-shows — the exact class this predicate exists to close.
         raise TypeError("kinds must be a sequence of marker-kind strings, not a bare str")
+    anchor_epoch = _event_epoch(since_ts) if since_ts is not None else None
     out: dict[str, dict[str, Any]] = {}
     for kind in kinds:
+        # Condition (ii) precomputation: the newest same-kind epoch after the
+        # anchor (events with an unparseable ts never count — fail-quiet, the
+        # #1170 convention).
+        newest_after_anchor: float | None = None
+        if anchor_epoch is not None:
+            for event in events:
+                if event.get("kind", "") != kind:
+                    continue
+                epoch = _event_epoch(event.get("ts"))
+                if epoch is None or epoch <= anchor_epoch:
+                    continue
+                if newest_after_anchor is None or epoch > newest_after_anchor:
+                    newest_after_anchor = epoch
         match: dict | None = None
         for event in events:  # chronological; latest match wins
-            if _ensemble_event_matches(event, kind, round_n, reconcile_role):
-                match = event
+            mode = _ensemble_event_matches(event, kind, round_n, reconcile_role)
+            if mode is None:
+                continue
+            if mode == "version" and since_ts is not None:
+                # #2136 anchor — gates the version fallback ONLY; sentinel
+                # and round-field matches are never time-gated (see
+                # docstring). Fail-safe: an unparseable ``since_ts`` or
+                # event ``ts`` suppresses the match.
+                if anchor_epoch is None:
+                    continue
+                epoch = _event_epoch(event.get("ts"))
+                if epoch is None or epoch <= anchor_epoch:
+                    continue  # (i) must postdate the round opener
+                if newest_after_anchor is not None and epoch < newest_after_anchor:
+                    continue  # (ii) an older same-kind marker in the window
+            match = event
         if match is None:
             out[kind] = {"present": False, "verdict": None, "ts": None}
         else:
@@ -2161,38 +2245,86 @@ def ensemble_verdicts_present(
 
 def _ensemble_event_matches(
     event: dict, kind: str, round_n: int, reconcile_role: str | None
-) -> bool:
-    """True iff ``event`` is a round-``round_n`` verdict marker of ``kind``.
+) -> str | None:
+    """Match MODE when ``event`` is a round-``round_n`` verdict marker of
+    ``kind``, else ``None``.
 
-    Round matching is sentinel-authoritative: a head sentinel naming a
-    DIFFERENT round suppresses the version-field match, and the reconcile
-    kind never matches on its round-meaningless ``version`` field (#1092:
-    version 1 / sentinel v5) — sentinel first, then the note's
-    ``**Round:**`` field, else no match. Role scoping applies to the
-    reconcile kind only.
+    Modes: ``"sentinel"`` (head sentinel names the round — AUTHORITATIVE),
+    ``"round-field"`` (sentinel-less reconcile matched via the note's
+    ``**Round:**`` field), ``"version"`` (sentinel-less non-reconcile
+    matched via the drift-prone top-level ``version`` field — the ONLY
+    mode the #2136 ``since_ts`` anchor in
+    :func:`ensemble_verdicts_present` gates). Round matching is
+    sentinel-authoritative: a head sentinel naming a DIFFERENT round
+    suppresses the version-field match, and the reconcile kind never
+    matches on its round-meaningless ``version`` field (#1092: version 1
+    / sentinel v5) — sentinel first, then the note's ``**Round:**``
+    field, else no match. Role scoping applies to the reconcile kind
+    only.
     """
     if event.get("kind", "") != kind:
-        return False
+        return None
     note = event.get("note", "") or ""
     head_round = _sentinel_round(note, kind)
+    mode: str
     if kind == _RECONCILE_KIND:
         if head_round is not None:
             if head_round != round_n:
-                return False
+                return None
+            mode = "sentinel"
         else:
             round_field = parse_followup_note_field(note, "Round")
             if round_field is None or not round_field.isdigit() or int(round_field) != round_n:
-                return False
+                return None
+            mode = "round-field"
     elif head_round is not None:
         if head_round != round_n:
-            return False  # sentinel authoritative — suppress the version match
+            return None  # sentinel authoritative — suppress the version match
+        mode = "sentinel"
     elif event.get("version") != round_n:
-        return False
+        return None
+    else:
+        mode = "version"
     if kind == _RECONCILE_KIND and reconcile_role is not None:
         role = parse_followup_note_field(note, "Role under adjudication")
         if role != reconcile_role:
-            return False
-    return True
+            return None
+    return mode
+
+
+def review_round_anchor_ts(events: list[dict], *, opening_kinds: Sequence[str]) -> str | None:
+    """``ts`` of the chronologically LAST round-opening event, else ``None``.
+
+    The freshness anchor for :func:`ensemble_verdicts_present`'s
+    ``since_ts`` (#2136). ``opening_kinds`` is deliberately REQUIRED with
+    no default: each ensemble collection site names its OWN round-opener
+    kinds (the per-site table lives in ``.claude/skills/issue/SKILL.md``
+    Step 5b), and a wrong default would silently produce an inert or
+    misleading anchor. The code-review site passes BOTH implementer kinds
+    — ``("epm:experiment-implementation", "epm:results")`` — because
+    ``kind: infra`` tasks open a review round with ``epm:results`` while
+    experiment tasks use ``epm:experiment-implementation``
+    (workflow.yaml § markers). Chronology is by parsed ``ts`` (ties: the
+    later row wins; an opener with an unparseable/absent ``ts`` cannot
+    anchor and is skipped); ``None`` — no usable opener on the log —
+    degrades the caller to the ungated pre-#2136 behavior, never worse.
+    Pure function over :func:`list_events` output — no I/O.
+    """
+    if isinstance(opening_kinds, str):
+        # Same footgun as the `kinds` guard above: a bare string would
+        # substring-match kind names instead of comparing them.
+        raise TypeError("opening_kinds must be a sequence of marker-kind strings, not a bare str")
+    best_ts: str | None = None
+    best_epoch: float | None = None
+    for event in events:
+        if event.get("kind", "") not in opening_kinds:
+            continue
+        epoch = _event_epoch(event.get("ts"))
+        if epoch is None:
+            continue
+        if best_epoch is None or epoch >= best_epoch:
+            best_epoch, best_ts = epoch, event.get("ts")
+    return best_ts
 
 
 # --- Authorized-stub grant (#2171; Step 6d.0 `PASS_AUTHORIZED_STUB`) -------
@@ -3119,7 +3251,11 @@ def _latest_site_pair(events: list[dict], site: dict) -> dict | None:
     pair — Tier 2 is never attempted past a both-present round). Tier 2
     (proximity fallback — the #825 founding shape): the chronologically
     LAST event of EACH kind, with ``round_n=None`` and a
-    timestamp-embedding round label.
+    timestamp-embedding round label. Deliberately passes NO ``since_ts``
+    anchor (#2136): ``round_n`` is derived from the last pair event's OWN
+    sentinel-else-``version``, so the fallback match on that same event is
+    correct by construction — an anchor would suppress the very event the
+    round number came from.
     """
     claude_kind = site["claude_kind"]
     codex_kind = site["codex_kind"]
@@ -3174,7 +3310,10 @@ def _reconcile_satisfied(
     ``None`` on Tier 2) OR any role-matched reconcile event timestamped
     at/after the earlier pair verdict (both tiers — #825's real reconcile
     named round 1 while the sides read 5 and 7, so a purely round-scoped
-    lookup would false-flag a legitimately reconciled round)."""
+    lookup would false-flag a legitimately reconciled round). Deliberately
+    passes NO ``since_ts`` anchor (#2136): the query is
+    ``epm:review-reconcile``, whose matcher never reaches the version
+    fallback, so an anchor is structurally inert here."""
     if round_n is not None:
         rres = ensemble_verdicts_present(events, (_RECONCILE_KIND,), round_n, reconcile_role=role)
         if rres[_RECONCILE_KIND]["present"]:
@@ -5612,6 +5751,13 @@ class NewTaskRequest:
 def create_task(req: NewTaskRequest) -> int:
     """Create tasks/<status>/<NEW_ID>/ with body.md (frontmatter + body),
     empty events.jsonl, empty comments.jsonl. Returns the new ID.
+
+    Registry drift at the allocated id (an on-disk task folder REGISTRY.json
+    does not know about — e.g. a registry write destroyed by the #2015
+    pre-commit stash race) is self-healed in-lock via the reconcile helpers
+    (#2064) and the allocation retried ONCE; a second collision raises
+    ``RuntimeError`` naming the manual repair command instead of a bare
+    ``FileExistsError``.
     """
     if req.status not in STATUSES:
         raise ValueError(f"unknown status: {req.status!r}")
@@ -5621,7 +5767,23 @@ def create_task(req: NewTaskRequest) -> int:
         reg = _load_registry()
         task_id = reg.get("highest_id", 0) + 1
         path = tasks_dir() / req.status / str(task_id)
-        path.mkdir(parents=True, exist_ok=False)
+        heal_note = ""
+        try:
+            path.mkdir(parents=True, exist_ok=False)
+        except FileExistsError:
+            healed = _heal_registry_drift_locked(reg, colliding_id=task_id)
+            task_id = reg.get("highest_id", 0) + 1
+            path = tasks_dir() / req.status / str(task_id)
+            try:
+                path.mkdir(parents=True, exist_ok=False)
+            except FileExistsError as exc:
+                raise RuntimeError(
+                    f"task id allocation still colliding at {path} after a full "
+                    "in-lock registry reconcile; repair manually: "
+                    "uv run python scripts/task.py audit --repair --apply"
+                ) from exc
+            if healed:
+                heal_note = " (+registry drift heal, #2064)"
         (path / "artifacts").mkdir()
         (path / "plans").mkdir()
         fm: dict[str, Any] = {
@@ -5668,7 +5830,7 @@ def create_task(req: NewTaskRequest) -> int:
         # (#1030) instead of raising into the caller's retry recipe.
         _commit_after_durable_append(
             [path, registry_path()],
-            f"task #{task_id}: create — {req.title[:60]}",
+            f"task #{task_id}: create — {req.title[:60]}{heal_note}",
             task_id=task_id,
             op="create",
         )
@@ -6217,6 +6379,43 @@ def set_track(task_id: int, track: str) -> None:
 _PLAN_HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
 _PLAN_HEADER_VERSION_RE = re.compile(r"(?i)^plan\s+v(\d+)\b")
 
+# ── Amendment-shape detection (#2255) ──
+# Three conjunctive signals — each alone is false-positive-dominated on the
+# 4,028-version persisted-plan corpus (marker phrase alone: 200 hits, ~198
+# full plans; size alone: 31 hits, 29 legitimate small full re-plans; the
+# conjunction fires on exactly the 2 true thin amendments — #2223 v4 at
+# ratio 0.051 and #377 v2 at 0.154).
+AMENDMENT_SIZE_RATIO = 0.4  # new bytes < 0.4 x predecessor bytes
+AMENDMENT_MARKER_RE = re.compile(
+    r"(?i)\b(?:amendment\s+of\s+v\d+|amends\s+v\d+|ports?\s+from\s+v\d+|unchanged\s+from\s+v\d+)\b"
+)
+# Parity copy of scripts/verify_plan.py GPU_LINE_RE (pattern equality is
+# pin-tested by tests/test_task_workflow.py::
+# test_amendment_gpu_regex_parity_with_verify_plan — the one deliberate
+# regex duplication; verify_plan.py is a script, not importable from here).
+AMENDMENT_GPU_LINE_RE = re.compile(
+    r"(?i)estimated\s+gpu-?hours\s+\(total\):\**\s*`?([0-9]+(?:\.[0-9]+)?)`?"
+)
+
+
+def is_amendment_shaped(plan_md: str, predecessor_bytes: int | None) -> bool:
+    """True iff ``plan_md`` looks like a thin delta over a predecessor plan
+    version: ALL THREE of (a) size < ``AMENDMENT_SIZE_RATIO`` x predecessor,
+    (b) an amendment-marker phrase (``AMENDMENT_MARKER_RE``), (c) NO
+    parseable ``Estimated GPU-hours (total): <number>`` declaration.
+    Conjunctive by calibration (#2255 §2): each signal alone is
+    false-positive-dominated on the 4,028-version persisted-plan corpus.
+    ``predecessor_bytes`` falsy/non-positive (no predecessor) → ``False``.
+    """
+    if not predecessor_bytes or predecessor_bytes <= 0:
+        return False
+    small = len(plan_md.encode("utf-8")) < AMENDMENT_SIZE_RATIO * predecessor_bytes
+    return (
+        small
+        and AMENDMENT_MARKER_RE.search(plan_md) is not None
+        and AMENDMENT_GPU_LINE_RE.search(plan_md) is None
+    )
+
 
 def _split_plan_frontmatter(text: str) -> tuple[str, str]:
     """Split ``text`` into ``(frontmatter_prefix, body)``, byte-preserving.
@@ -6282,7 +6481,7 @@ def _align_plan_header_version(plan_md: str, next_v: int) -> str:
     return plan_md
 
 
-def new_plan_version(task_id: int, plan_md: str) -> int:
+def new_plan_version(task_id: int, plan_md: str, *, allow_amendment: bool = False) -> int:
     """Append plans/v{next}.md, update plans/plan.md symlink. Returns the
     new version number.
 
@@ -6296,6 +6495,15 @@ def new_plan_version(task_id: int, plan_md: str) -> int:
     belt-and-suspenders guard, refuse loudly if the computed target file
     somehow already exists (e.g. a concurrent writer between the glob and
     the write, or a manually pre-staged file).
+
+    An AMENDMENT-SHAPED input (``is_amendment_shaped`` vs the highest
+    existing version: thin delta + amendment-marker phrase + no GPU-hours
+    declaration) is REFUSED with an actionable ``ValueError`` unless
+    ``allow_amendment=True`` (CLI ``--allow-amendment``) — every persisted
+    version must be self-contained because subagent briefs handed
+    ``plans/plan.md``, ``verify_plan.py --issue``, and the Step-2c
+    GPU-hours read all assume ONE self-contained file (#2255). Detection
+    runs on the INPUT text, before header alignment.
 
     Before writing, a self-declared ``Plan v<X>`` version in the plan's
     first markdown heading is rewritten to the assigned ``v{next}``
@@ -6319,6 +6527,28 @@ def new_plan_version(task_id: int, plan_md: str) -> int:
                 f"the highest-version+1 resolver computed v{next_v} but "
                 f"that file already exists on disk"
             )
+        if existing_nums and not allow_amendment:
+            predecessor = plans_dir / f"v{max(existing_nums)}.md"
+            predecessor_bytes = predecessor.stat().st_size
+            if is_amendment_shaped(plan_md, predecessor_bytes):
+                ratio = len(plan_md.encode("utf-8")) / predecessor_bytes
+                marker = AMENDMENT_MARKER_RE.search(plan_md)
+                phrase = marker.group(0) if marker else "<unmatched>"
+                raise ValueError(
+                    f"refusing to persist an AMENDMENT-SHAPED plan version for task "
+                    f"#{task_id}: the input is {ratio:.3f}x the size of its predecessor "
+                    f"{predecessor.name} (< AMENDMENT_SIZE_RATIO={AMENDMENT_SIZE_RATIO}), "
+                    f"carries the amendment-marker phrase {phrase!r}, and has NO parseable "
+                    f"`Estimated GPU-hours (total): <number>` declaration. Every persisted "
+                    f"plans/v{{K}}.md must be SELF-CONTAINED — subagent briefs handed "
+                    f"plans/plan.md, verify_plan.py --issue, and the Step-2c GPU-hours "
+                    f"gate all read ONE file (#2255). Remedies, in order: (1) compose a "
+                    f"FULL plan (base {predecessor.name} + this delta merged into one "
+                    f"self-contained document — trivially scriptable) and re-persist; or "
+                    f"(2) if the thin delta is deliberate (user-authorized), re-run with "
+                    f"--allow-amendment (library: allow_amendment=True) AND restate the "
+                    f"`Estimated GPU-hours (total):` line inside the amendment."
+                )
         plan_md = _align_plan_header_version(plan_md, next_v)
         target.write_text(plan_md if plan_md.endswith("\n") else plan_md + "\n")
         # Symlink plan.md → v{next}.md
@@ -6575,6 +6805,58 @@ def _jsonl_lines_subsequence(husk_bytes: bytes, live_bytes: bytes) -> bool:
     return all(any(h == line for line in live_iter) for h in husk_lines)
 
 
+def _husk_file_symlink_covered(hp: Path, lp: Path, live: Path, husk_resolved: Path) -> bool:
+    """True iff the husk FILE-symlink entry ``hp`` is covered by the live
+    dir (#2138); False == unique. Routes, in order: (1) the live
+    counterpart ``lp`` is a symlink with an identical ``os.readlink()``
+    target (the pre-existing rule); (2) the fully-resolved target stays
+    INSIDE the husk and its husk-relative path also exists in the live
+    dir; (3) the in-husk resolved bytes are covered by the live
+    counterpart at the same relative path under the regular-file rules.
+    Fail-safe: a dangling, husk-escaping, looping, or non-regular-target
+    symlink returns False. Route (2) classifies the SYMLINK entry ONLY --
+    it never suppresses the walk's independent comparison of the target
+    file itself (``resolve()`` strips symlink components, so every
+    intermediate dir on the resolved path is REAL and ``os.walk`` reaches
+    the target file; a diverged target is that entry's own unique verdict
+    and escalates the husk regardless of this route)."""
+    if lp.is_symlink() and os.readlink(hp) == os.readlink(lp):
+        return True  # existing rule: identical pointer on both sides
+    # NEW (#2138): a FILE-symlink may still be safe when its resolved
+    # content is carried by the live dir. Fail-safe gates first:
+    # hp.is_file() follows the chain -- False for dangling / non-regular
+    # targets; the resolved path must stay INSIDE the husk dir.
+    if not hp.is_file():
+        return False
+    try:
+        resolved = hp.resolve(strict=True)
+    except (OSError, RuntimeError):
+        # RuntimeError: py311 raises it for symlink LOOPS at
+        # resolve(strict=True) (unified into OSError only in 3.13);
+        # unreachable in practice -- hp.is_file() screens loops (ELOOP is
+        # in pathlib's ignored errnos) -- kept as a belt against
+        # resolve-time races. Either way: unique.
+        return False
+    if not resolved.is_relative_to(husk_resolved):
+        return False  # husk-escaping target: byte coverage never rescues it
+    target_rel = resolved.relative_to(husk_resolved)
+    # (b) pointer-carries-no-data: the target path also exists in the live
+    # dir (the walk verifies husk/<target_rel> against live/<target_rel>
+    # independently -- see the docstring's non-suppression clause).
+    if (live / target_rel).exists():
+        return True
+    # (a) same-rel-path content coverage: resolved bytes covered by the
+    # live counterpart under the regular-file rules.
+    if lp.is_file():
+        sym_bytes = hp.read_bytes()  # follows the chain
+        lp_bytes = lp.read_bytes()
+        if lp_bytes.startswith(sym_bytes):
+            return True
+        if hp.suffix == ".jsonl" and _jsonl_lines_subsequence(sym_bytes, lp_bytes):
+            return True
+    return False
+
+
 def _husk_unique_content(husk: Path, live: Path) -> list[str]:
     """Entries under ``husk`` NOT covered by ``live``. Empty list == safe
     subset (every husk entry is redundant with the live dir; nothing is
@@ -6585,8 +6867,22 @@ def _husk_unique_content(husk: Path, live: Path) -> list[str]:
     symlink-to-file in ``filenames`` — BOTH are classified here so a
     dir-symlink can never reach ``rmtree`` unverified):
 
-    - symlink (dir OR file): safe iff the live counterpart is a symlink
-      with an identical ``os.readlink()`` target; else unique.
+    - symlink to a DIRECTORY: safe iff the live counterpart is a symlink
+      with an identical ``os.readlink()`` target; else unique. The walk
+      never traverses INTO a symlinked dir, so its contents are never
+      subset-verified — content-based leniency for dir-symlinks would be
+      unsound; readlink equality stays their only safe route.
+    - symlink to a FILE: safe via ANY of (1) the live counterpart is a
+      symlink with an identical ``os.readlink()`` target; (2) the target,
+      fully resolved via ``resolve(strict=True)``, stays INSIDE the husk
+      and the same husk-relative path also exists in the live dir (#2138:
+      the pointer itself carries no data; the walk still compares the
+      husk's target file against the live counterpart independently, so a
+      diverged target stays unique and escalates the husk); (3) the
+      resolved target stays INSIDE the husk and the resolved bytes are
+      covered by the live counterpart at the SAME relative path under the
+      regular-file rules below. A dangling, husk-escaping, looping, or
+      non-regular-target symlink is unique (fail-safe).
     - regular file: safe iff a live counterpart file exists AND (bytes
       identical OR husk bytes are a byte-prefix of live bytes OR — for
       ``.jsonl`` files — husk lines are an ordered subsequence of live
@@ -6598,6 +6894,7 @@ def _husk_unique_content(husk: Path, live: Path) -> list[str]:
       under tasks/).
     """
     unique: list[str] = []
+    husk_resolved = husk.resolve()
     for root, dirnames, filenames in os.walk(husk, followlinks=False):
         root_p = Path(root)
         rel_root = root_p.relative_to(husk)
@@ -6615,9 +6912,8 @@ def _husk_unique_content(husk: Path, live: Path) -> list[str]:
             rel = rel_root / name
             lp = live / rel
             if hp.is_symlink():
-                if lp.is_symlink() and os.readlink(hp) == os.readlink(lp):
-                    continue
-                unique.append(str(rel))
+                if not _husk_file_symlink_covered(hp, lp, live, husk_resolved):
+                    unique.append(str(rel))
                 continue
             if not hp.is_file():
                 unique.append(str(rel))  # fifo/socket/device — never covered
@@ -7088,6 +7384,43 @@ def _reconcile_apply_pending(
         _registry_set(reg, pend.task_id, pend.actual, fm)
         applied.append(pend)
     return applied
+
+
+def _heal_registry_drift_locked(reg: dict[str, Any], *, colliding_id: int) -> bool:
+    """Self-heal registry drift discovered at the ``create_task`` allocation
+    site (#2064: an on-disk task folder missing from REGISTRY.json re-issued
+    the same colliding id to every caller after the #2015 stash race destroyed
+    a registry write). MUST be called while ALREADY holding ``_locked()`` —
+    ``reconcile_registry(apply=True)`` would self-deadlock (``_locked()``
+    opens a fresh flock fd per call), so this inlines its apply body minus
+    lock + commit: the caller's own ``_save_registry`` + commit persist the
+    heal. Mutates ``reg`` in place; returns True iff anything changed
+    (an entry re-pointed/registered, or ``highest_id`` bumped). The two
+    ERROR-level log lines keep every drift episode forensically visible —
+    the heal repairs the symptom, never silences it.
+    """
+    _log.error(
+        "registry drift at allocated task id %s: on-disk folder exists with no "
+        "REGISTRY.json entry (#2064; see #2015 for the likely destroyer). "
+        "Self-healing via in-lock reconcile.",
+        colliding_id,
+    )
+    repo, td = repo_root(), tasks_dir()
+    highest_before = reg.get("highest_id", 0)
+    stale, missing, empty_stubs, skipped, disk = _reconcile_plan(repo, td, reg)
+    applied_stale = _reconcile_apply_pending(reg, stale, skipped)
+    applied_missing = _reconcile_apply_pending(reg, missing, skipped)
+    _reconcile_highest_id(reg, max((int(t) for t in disk), default=0))
+    _log.error(
+        "drift heal: %d stale re-pointed, %d missing registered, %d empty stubs "
+        "bumped past (never registered), %d skipped; highest_id now %s",
+        len(applied_stale),
+        len(applied_missing),
+        len(empty_stubs),
+        len(skipped),
+        reg.get("highest_id"),
+    )
+    return bool(applied_stale or applied_missing or reg.get("highest_id", 0) > highest_before)
 
 
 def reconcile_registry(*, apply: bool = False) -> ReconcileReport:
@@ -8175,7 +8508,8 @@ def raise_concern(
     if len(summary) > 200:
         raise ValueError(
             f"summary too long ({len(summary)} chars; max 200). Move detail to "
-            "evidence (the task.py CLI auto-truncates at a word boundary instead)."
+            "evidence, or pass the full text via the task.py CLI's --summary-file "
+            "(preserved verbatim in the evidence field)."
         )
     if not isinstance(raised_by, str) or not raised_by.strip():
         raise ValueError("raised_by must be a non-empty string")
@@ -8217,6 +8551,7 @@ def address_concern(
     addressed_by: str,
     addressed_at_round: int,
     summary: str | None = None,
+    evidence: str | None = None,
 ) -> dict[str, Any]:
     """Append an ``addressed`` event recording that the implementer (or
     analyzer / planner, depending on the stage) believes the concern has
@@ -8229,6 +8564,10 @@ def address_concern(
     ``concern_id`` MUST refer to a concern that has been raised at least
     once on this task; ``ValueError`` otherwise (defends against
     address-without-raise typos that would orphan the audit log).
+
+    ``evidence`` (optional, #2121) is stored on the payload only when
+    truthy — the same additive shape ``raise_concern`` has carried since
+    inception, so no reader of ``concerns.jsonl`` needs to change.
     """
     _validate_concern_id(concern_id)
     if not isinstance(addressed_at_round, int) or addressed_at_round < 1:
@@ -8250,8 +8589,9 @@ def address_concern(
         if len(carried_summary) > 200:
             raise ValueError(
                 f"summary too long ({len(carried_summary)} chars; max 200). Pass a "
-                "shorter summary — detail belongs in the round report (the task.py "
-                "CLI auto-truncates explicit summaries at a word boundary)."
+                "shorter summary — detail belongs in the round report, or pass the "
+                "full text via the task.py CLI's --summary-file (preserved verbatim "
+                "in the evidence field)."
             )
         payload: dict[str, Any] = {
             "ts": _utcnow_iso(),
@@ -8262,6 +8602,8 @@ def address_concern(
             "addressed_by": addressed_by,
             "addressed_at_round": addressed_at_round,
         }
+        if evidence:
+            payload["evidence"] = evidence
         _append_concern_event(task_id, payload)
         return payload
 
@@ -8403,6 +8745,7 @@ __all__ = [
     "get_task",
     "has_event",
     "invalidate_cache",
+    "is_amendment_shaped",
     "keep_running_tag_state",
     "latest_event",
     "list_by_status",

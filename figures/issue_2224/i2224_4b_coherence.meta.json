@@ -1,0 +1,574 @@
+{
+  "commit": "01ab4ce3",
+  "render_id": "2c331e4991bd4d40",
+  "git_commit": "01ab4ce3",
+  "git_dirty": false,
+  "created": "2026-08-11T19:11:48Z",
+  "figsize": [
+    8.8,
+    3.6
+  ],
+  "points": [
+    {
+      "coherence (graded 0–100)": 84.2582,
+      "trait expression (graded 0–100)": 0.3445,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "coherence (graded 0–100)": 80.7086,
+      "trait expression (graded 0–100)": 0.1173,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "coherence (graded 0–100)": 66.9668,
+      "trait expression (graded 0–100)": 3.3934,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "coherence (graded 0–100)": 65.5479,
+      "trait expression (graded 0–100)": 3.4631,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "coherence (graded 0–100)": 82.1844,
+      "trait expression (graded 0–100)": 0.0021,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence (graded 0–100)": 79.4486,
+      "trait expression (graded 0–100)": 0.378,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence (graded 0–100)": 79.8532,
+      "trait expression (graded 0–100)": 0.3895,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence (graded 0–100)": 79.3479,
+      "trait expression (graded 0–100)": 0.563,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "coherence (graded 0–100)": 79.8148,
+      "trait expression (graded 0–100)": 0.0021,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "coherence (graded 0–100)": 80.4247,
+      "trait expression (graded 0–100)": 0.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "coherence (graded 0–100)": 85.6831,
+      "trait expression (graded 0–100)": 0.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "coherence (graded 0–100)": 62.4181,
+      "trait expression (graded 0–100)": 3.1918,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "coherence (graded 0–100)": 58.6724,
+      "trait expression (graded 0–100)": 2.8839,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "coherence (graded 0–100)": 76.2983,
+      "trait expression (graded 0–100)": 0.8138,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "coherence (graded 0–100)": 85.5041,
+      "trait expression (graded 0–100)": 31.8431,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "coherence (graded 0–100)": 75.4134,
+      "trait expression (graded 0–100)": 9.2345,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "coherence (graded 0–100)": 79.663,
+      "trait expression (graded 0–100)": 43.1861,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "coherence (graded 0–100)": 83.4455,
+      "trait expression (graded 0–100)": 38.5284,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "coherence (graded 0–100)": 85.1058,
+      "trait expression (graded 0–100)": 32.4761,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "coherence (graded 0–100)": 83.4687,
+      "trait expression (graded 0–100)": 30.909,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "coherence (graded 0–100)": 83.946,
+      "trait expression (graded 0–100)": 26.4363,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "coherence (graded 0–100)": 83.665,
+      "trait expression (graded 0–100)": 31.7256,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "coherence (graded 0–100)": 81.2902,
+      "trait expression (graded 0–100)": 29.3439,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "coherence (graded 0–100)": 84.1192,
+      "trait expression (graded 0–100)": 29.1556,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "coherence (graded 0–100)": 71.7969,
+      "trait expression (graded 0–100)": 6.7829,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "coherence (graded 0–100)": 79.0477,
+      "trait expression (graded 0–100)": 48.1794,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "coherence (graded 0–100)": 84.265,
+      "trait expression (graded 0–100)": 38.8847,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "coherence (graded 0–100)": 80.9614,
+      "trait expression (graded 0–100)": 34.7515,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "coherence (graded 0–100)": 83.3081,
+      "trait expression (graded 0–100)": 10.9371,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "coherence (graded 0–100)": 71.1439,
+      "trait expression (graded 0–100)": 10.209,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "coherence (graded 0–100)": 62.2983,
+      "trait expression (graded 0–100)": 12.5915,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "coherence (graded 0–100)": 63.4346,
+      "trait expression (graded 0–100)": 12.3985,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "coherence (graded 0–100)": 79.8664,
+      "trait expression (graded 0–100)": 12.3431,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "coherence (graded 0–100)": 78.0745,
+      "trait expression (graded 0–100)": 11.1522,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "coherence (graded 0–100)": 78.4259,
+      "trait expression (graded 0–100)": 11.7571,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "coherence (graded 0–100)": 79.285,
+      "trait expression (graded 0–100)": 10.8841,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "coherence (graded 0–100)": 78.1521,
+      "trait expression (graded 0–100)": 11.5882,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "coherence (graded 0–100)": 78.4328,
+      "trait expression (graded 0–100)": 11.8911,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "coherence (graded 0–100)": 79.2191,
+      "trait expression (graded 0–100)": 9.2656,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "coherence (graded 0–100)": 67.9772,
+      "trait expression (graded 0–100)": 13.3796,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "coherence (graded 0–100)": 64.5063,
+      "trait expression (graded 0–100)": 12.2991,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "coherence (graded 0–100)": 76.8304,
+      "trait expression (graded 0–100)": 10.7461,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "coherence (graded 0–100)": 83.0466,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "coherence (graded 0–100)": 85.6825,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "coherence (graded 0–100)": 83.7107,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "coherence (graded 0–100)": 82.6368,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "coherence (graded 0–100)": 86.3192,
+      "y": 0.012,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "coherence (graded 0–100)": 84.7232,
+      "y": 0.002,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "coherence (graded 0–100)": 83.8432,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "coherence (graded 0–100)": 83.4693,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "coherence (graded 0–100)": 85.442,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "coherence (graded 0–100)": 86.2645,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "coherence (graded 0–100)": 85.1878,
+      "y": 0.07,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "coherence (graded 0–100)": 84.1333,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "coherence (graded 0–100)": 84.1462,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "coherence (graded 0–100)": 85.0464,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "coherence (graded 0–100)": 85.3667,
+      "y": 30.4868,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "coherence (graded 0–100)": 85.8812,
+      "y": 16.059,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "coherence (graded 0–100)": 87.1098,
+      "y": 32.3686,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "coherence (graded 0–100)": 86.3892,
+      "y": 28.2754,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "coherence (graded 0–100)": 87.4069,
+      "y": 28.7354,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "coherence (graded 0–100)": 86.282,
+      "y": 27.4679,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "coherence (graded 0–100)": 87.5578,
+      "y": 28.3417,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "coherence (graded 0–100)": 87.9286,
+      "y": 26.3,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "coherence (graded 0–100)": 86.3869,
+      "y": 28.4496,
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "coherence (graded 0–100)": 86.8857,
+      "y": 28.8783,
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "coherence (graded 0–100)": 86.3038,
+      "y": 11.4151,
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "coherence (graded 0–100)": 87.5285,
+      "y": 30.1655,
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "coherence (graded 0–100)": 87.7236,
+      "y": 26.2535,
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "coherence (graded 0–100)": 86.92,
+      "y": 27.2465,
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "coherence (graded 0–100)": 83.7239,
+      "y": 11.0292,
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "coherence (graded 0–100)": 86.1692,
+      "y": 9.0529,
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "coherence (graded 0–100)": 83.1744,
+      "y": 10.5955,
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "coherence (graded 0–100)": 83.2168,
+      "y": 8.6622,
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "coherence (graded 0–100)": 85.1657,
+      "y": 10.5445,
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "coherence (graded 0–100)": 84.1475,
+      "y": 11.4442,
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "coherence (graded 0–100)": 84.1424,
+      "y": 10.9003,
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "coherence (graded 0–100)": 87.5271,
+      "y": 9.7984,
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "coherence (graded 0–100)": 85.7988,
+      "y": 11.8336,
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "coherence (graded 0–100)": 86.1788,
+      "y": 10.2636,
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "coherence (graded 0–100)": 85.514,
+      "y": 10.0408,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "coherence (graded 0–100)": 85.6901,
+      "y": 11.965,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "coherence (graded 0–100)": 85.7896,
+      "y": 10.7223,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "coherence (graded 0–100)": 85.2976,
+      "y": 10.9027,
+      "_kind": "scatter",
+      "_group": 83
+    }
+  ],
+  "n_series": 84,
+  "total_points": 84,
+  "text": {
+    "suptitle": "4b coherence vs trait expression per cell (x = incoherent-flagged)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "lmsys",
+        "xlabel": "coherence (graded 0–100)",
+        "ylabel": "trait expression (graded 0–100)",
+        "xticklabels": [
+          "45",
+          "50",
+          "55",
+          "60",
+          "65",
+          "70",
+          "75",
+          "80",
+          "85",
+          "90"
+        ],
+        "yticklabels": [
+          "−10",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60"
+        ]
+      },
+      {
+        "title_left": "ultrachat",
+        "xlabel": "coherence (graded 0–100)",
+        "xticklabels": [
+          "45",
+          "50",
+          "55",
+          "60",
+          "65",
+          "70",
+          "75",
+          "80",
+          "85",
+          "90"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "supervision_ledger": "map=trait-agnostic; persona vector=trait-description+judge-filter; probe=judge-labels",
+  "dv_note": "graded_mean is the headline DV (llm-judging graded-primary); rate_gt50 is the human-legible companion; screening scores are predictors, never the construct (plan §6)"
+}

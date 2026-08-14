@@ -1,6 +1,6 @@
 ---
 name: vLLM teardown SIGABRT after stage completion — verify outputs, plain-relaunch
-description: A vLLM sub-stage can SIGABRT at engine teardown AFTER its work is fully persisted; treat as resume, not data loss
+description: A sub-stage can SIGABRT at TEARDOWN after its work is fully persisted (vLLM engine teardown; also HF-datasets/pyarrow streaming finalization) — treat as resume, not data loss
 type: feedback
 ---
 
@@ -19,3 +19,12 @@ exist on disk. If present, plain-relaunch the IDENTICAL command and let the
 dispatcher's resume-skip carry the completed stages (incident #605, 2026-06-11:
 gen+tf skipped with 0 pending, judge reached in <60s). Classify `failure_class: infra`,
 never `code`.
+
+**Non-vLLM sibling (#2221 smoke, 2026-08-13):** an HF-datasets STREAMING staging
+child (pyarrow/zstd/aiohttp stack, CPU-only, no vLLM) hit the same shape — logged
+its own `done` line, wrote its pool JSONL, then died rc=-6 with
+`Fatal Python error: PyGILState_Release ... Python runtime state: finalizing`
+(a background prefetch thread racing interpreter shutdown). Nondeterministic:
+the same entrypoint had exited rc=0 one step earlier. Plain relaunch resume-carried
+the persisted pool and the crash did not recur. Same rule: verify the persisted
+artifact above the traceback, plain-relaunch once before classifying.

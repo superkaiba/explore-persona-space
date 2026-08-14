@@ -1,0 +1,52 @@
+{
+  "commit": "cf60dfc3",
+  "render_id": "65bac8995fc54417",
+  "git_commit": "cf60dfc3",
+  "git_dirty": false,
+  "created": "2026-08-08T21:25:40Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Top-10 in-degree is heavy-tailed in both graphs",
+        "xlabel": "times a pool answer appears in a top-10 list (in-degree)",
+        "ylabel": "number of pool answers (log)",
+        "legend_labels": [
+          "retrieval in-degree (skew 3.8)",
+          "prediction-collapse in-degree (skew 2.0)"
+        ],
+        "xticklabels": [
+          "\u221225",
+          "0",
+          "25",
+          "50",
+          "75",
+          "100",
+          "125",
+          "150",
+          "175",
+          "200"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

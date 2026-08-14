@@ -390,6 +390,7 @@ def generate_batch(
     seed_base: int = 42,
     render_fn=None,
     ids_fn=None,
+    top_p: float | None = None,
 ) -> list[list[str]]:
     """Batched HF ``generate()``: N draws for each context, optional DeltaHook.
 
@@ -408,6 +409,11 @@ def generate_batch(
     pass the ``*_2094`` helpers, because this module's ``context_messages``
     silently ignores ``history`` and the hook's row_lengths/positions would
     then be computed against a DIFFERENT render than the one generated from.
+
+    ``top_p`` (optional, DEFAULT ``None`` = greedy/full sampling, behaviour
+    unchanged for existing callers) applies nucleus sampling ONLY when
+    ``temperature > 0`` (the paper's 32B setting is temp 0.7 / top_p 0.9; #2203
+    Fix C). It is ignored under greedy decoding.
 
     Returns ``results[b][i]`` = draw ``i`` of context ``b`` (new tokens only,
     special tokens skipped).
@@ -453,7 +459,7 @@ def generate_batch(
             attention_mask=attention_mask,
             do_sample=do_sample,
             temperature=temperature if do_sample else None,
-            top_p=None,
+            top_p=(top_p if do_sample else None),
             top_k=None,
             max_new_tokens=max_new_tokens,
             pad_token_id=tokenizer.pad_token_id,

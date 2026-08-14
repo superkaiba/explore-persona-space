@@ -1,0 +1,12 @@
+ALLOW  wt   S9  literal exit-guard, origin-ref
+BLOCK  wt   S10a literal &&,        bare main   ['cd <worktree> && git merge main (LOCAL-main merge imports unpushed ro]
+BLOCK  wt   S10b literal exit-guard, bare main   ['cd <worktree> && git merge main (LOCAL-main merge imports unpushed ro]
+BLOCK  wt   S10c variable &&,        bare main   ['cd <worktree> && git merge main (LOCAL-main merge imports unpushed ro]
+BLOCK  wt   S10d variable exit-guard,bare main   ['cd <worktree> && git merge main (LOCAL-main merge imports unpushed ro]
+
+BLOCK  tmp  S9  literal exit-guard, origin-ref   ['git merge (branch merge on the shared root)' would move the SHARED re]
+ALLOW  tmp  S10a literal &&,        bare main
+BLOCK  tmp  S10b literal exit-guard, bare main   ['git merge (branch merge on the shared root)' would move the SHARED re]
+BLOCK  tmp  S10c variable &&,        bare main   ['git merge (branch merge on the shared root)' would move the SHARED re]
+BLOCK  tmp  S10d variable exit-guard,bare main   ['git merge (branch merge on the shared root)' would move the SHARED re]
+

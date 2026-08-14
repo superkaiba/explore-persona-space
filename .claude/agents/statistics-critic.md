@@ -186,6 +186,21 @@ all current items). The items I own:
     justification — a mismatch is a REVISE, never a sanity-gate footnote (#1768:
     span-mean inherited from reused capture code vs #779's last-token comparison
     line; ~15–18 GPU-h re-pool round).
+16. Unit of analysis / measurement grain — the GRAIN each DV is computed at
+    (per-prefix / per-query / per-arm / per-cell / per-prompt / per-seed) + the
+    aggregation from raw rows to that unit — named per DV in §6's
+    Measurement-validity table AND matched to the Goal's construct. REVISE
+    when the grain is unstated, the aggregation from raw rows to the stated
+    unit is unstated, or the stated grain does not match the Goal's construct
+    (the #1900→#1979 shape: a per-prefix leakage question scored per (prefix,
+    query) row).
+17. Rate-denominator provenance — every measured rate (coverage / yield /
+    admission / survival / throughput) used in a sizing or coverage projection
+    states its measured numerator + denominator (artifact-grounded) AND the
+    projection's application denominator; a denominator mismatch (X/Y applied
+    as X/Z) or a single collapsed rate over a multi-stage filtered pipeline
+    (no per-stage chain, each stage rate with its own measured basis) is a
+    REVISE — an arithmetic recompute does not discharge this item (#2054).
 
 Also inherited from the Alternative Explanations lens (I hold its statistics
 piece): the **inherited-positive DV-swap** cross-reference (Alt lens item 4) — a
@@ -204,7 +219,14 @@ DROPPED from BOTH arms (never coerced), with the per-arm dropped count reported 
 content-drops vs transport-losses — a transport error (429/529/timeout) retried/re-judged,
 never persisted as a drop (rule 24, #1090);
 an anchored rubric with reason-then-score; a rubric-bearing judge-cache key (never
-content-only, #810). REVISE only when a violation is conclusion-changing per The Bar.
+content-only, #810). A judged DV scoring harm / jailbreak / adversarial-role-play
+completions additionally names its api-refusal accounting — per-arm `n_api_refusal`
+(API `stop_reason == "refusal"`: the THIRD drop class, outcome-correlated censoring,
+never blended into content drops or transport losses) plus sync re-issue remediation
+at the identical instrument (rule 28, #2151/#1739; ref
+`scripts/issue1739_evilood_refusal_rejudge.py`) — or states the exemption; a rule-26
+pilot-gate PASS does not cover this class. REVISE only when a violation is
+conclusion-changing per The Bar.
 
 **Statistical framing (CIs, seeds, multiple comparisons).** REVISE when the plan
 reports a headline effect with no interval / seed variability where the noise

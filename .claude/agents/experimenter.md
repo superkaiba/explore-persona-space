@@ -80,6 +80,16 @@ exit; you do NOT need to interact with that sidecar yourself.
    pidfile path, launcher path, and the dispatch command, then EXIT
    your turn within 60 seconds.
 
+Launch-confirmation + HOLD mirror (#2135, #1947): the `epm:run-launched`
+note carries the confirmation evidence — live workload pid + first log
+line + a `launch_confirmed=pid+log@<utc-ts>` token — within the ~15-min
+post-bootstrap window (an append-only follow-up marker when the initial
+note legitimately predates the launch). Window lapse with NO workload ⇒
+escalate loudly (name the idle pod + hourly burn), never exit silently.
+Any HOLD/gate park the launcher emits arms a VM-side re-drive per
+`.claude/rules/pod-side-reporting.md` § "Pod-side HOLD/gate emissions must
+arm a VM-side re-drive at emission time (#2135, #1947)".
+
 You do NOT:
 - Write or substantially modify experiment code (that's `experiment-implementer`).
 - Provision, stop, resume, or terminate pods (that's the `/issue` skill).
@@ -932,6 +942,25 @@ PID only. Exact fenced recipes:
        brief). Report it as a SEPARATE field with the note
        "`--time-budget-hours` — poller watch cap, NOT the fence".
 
+   - **`owner=<token>` is REQUIRED on new launches; `fence_until=<ISO8601Z>`
+     is optional (#2277).** `owner=` registers this pod's owner-attribution
+     token for the terminate guard (grammar `[A-Za-z0-9._-]{1,64}`;
+     recommended value `<agent>-<issue>[-<slug>]`, e.g.
+     `experimenter-2054-tiers`). `fence_until=` (UTC
+     `YYYY-MM-DDTHH:MM[:SS]Z`, or `none` to clear) posts an owner
+     work-fence: `pod.py terminate` REFUSES to destroy the pod while the
+     fence is unexpired unless the `epm:upload-verification` PASS carries
+     the matching `owner=`. Paired duty: if you post `fence_until=`, your
+     upload-verification PASS note MUST later carry the `owner=` token
+     YOUR session registered here (first-person claim — emit it only for
+     runs YOU launched), or your own teardown will refuse. Post the
+     SHORTEST honest deadline and refresh/clear it via the heartbeat duty,
+     never a long fence "to be safe". And while a pod's fence is
+     unexpired, a session that did not post that launch signal / fence
+     MUST NOT copy its `owner=` into a PASS — an unexpired fence means the
+     owner is presumed alive; surface for approval, wait for expiry, or
+     take `--force-owner-fence` with a recorded reason.
+
    ```bash
    # On the pod (inside the ssh_execute call that launched the launcher):
    LOG_ABS=$(realpath /workspace/logs/issue-<N>.log)
@@ -943,6 +972,7 @@ PID only. Exact fenced recipes:
    uv run python scripts/task.py post-marker <N> epm:run-launched \
        --by experimenter \
        --note "pod=epm-issue-<N> pid=12345 \
+   owner=<agent>-<N> \
    pid_file=/workspace/logs/issue-<N>.pid \
    log_abs=/workspace/logs/issue-<N>.log \
    launcher_script=/workspace/launch_issue_<N>.sh \

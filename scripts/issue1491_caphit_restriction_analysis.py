@@ -317,6 +317,15 @@ def phase_b_restriction(
     draws_cap = np.asarray([r[3] for r in rows], dtype=bool)
     target_cap = np.asarray([r[4] for r in rows], dtype=bool)
     ceil_full = _ceiling_from_draws(vx_a[ia], vx_b[jb])
+    # #2130 read-side defense: a committed short-pair ceiling (the scale15
+    # 875/1000 incident shape) must never anchor the recompute tolerance — raise.
+    committed_pairs = committed["ceiling_two_draw"].get("n_pairs")
+    if committed_pairs != LF.CEILING_EXPECTED_N:
+        raise RuntimeError(
+            f"{slug}: ceiling_two_draw.n_pairs={committed_pairs} != "
+            f"{LF.CEILING_EXPECTED_N} in committed fits JSON — short/partial "
+            "ceiling pairing (#2130); refusing to validate against it"
+        )
     committed_ceil = committed["ceiling_two_draw"]["ceiling_var_weighted_r"]
     assert abs(ceil_full - committed_ceil) < REFIT_TOL, (
         f"{slug}: ceiling recompute {ceil_full:.6f} vs committed {committed_ceil:.6f}"

@@ -286,6 +286,61 @@ def test_json_output_shape(tmp_path: Path, monkeypatch, capsys):
     assert out["slow_tests_selected"] == [t for t in out["tests"] if t in sel.SLOW_TESTS]
 
 
+# --- Case 10a-bis (#2126): --files-only — paths only, no key to guess ---------
+def test_files_only_emits_paths_one_per_line(tmp_path: Path, monkeypatch, capsys):
+    """#1992/#2126: `--files-only` emits the SAME selection `--json` would put
+    under key `tests`, as bare repo-relative paths (one per line, no JSON), so
+    a launcher composing its own gate invocation has no key to guess."""
+    repo = _make_tree(tmp_path, ["test_widget.py"])
+    monkeypatch.setattr(sel, "_resolve_work_root", lambda _arg: repo)
+    monkeypatch.setattr(sel, "compute_touched", lambda *_a, **_k: ["scripts/widget.py"])
+    rc = sel.main(["--files-only", "--no-fetch", "--repo-root", str(repo)])
+    assert rc == 0
+    captured = capsys.readouterr()
+    lines = captured.out.splitlines()
+    assert lines, "--files-only must emit at least the invariant set"
+    assert "tests/test_widget.py" in lines
+    # Every line is a bare path — no JSON braces/quotes, no key, no command:
+    assert all(ln.startswith("tests/") for ln in lines), lines
+    assert "{" not in captured.out and '"' not in captured.out
+    assert "uv run pytest" not in captured.out
+    # The selection is identical to the --json `tests` list (sorted, deduped):
+    tests, _unused, _reasons = sel.select_tests_with_reasons(["scripts/widget.py"], repo)
+    assert lines == tests
+    # The <T> bound still arrives on the greppable stderr sizing line:
+    assert re.search(r"recommended-timeout-s=\d+", captured.err)
+
+
+def test_files_only_empty_selection_exits_1(tmp_path: Path, monkeypatch, capsys):
+    """--files-only inherits the pre-emit empty-selection refusal (exit 1) —
+    it can never emit zero lines on exit 0 (the zero-test-gate class)."""
+    repo = _make_tree(tmp_path, [])
+    monkeypatch.setattr(sel, "_resolve_work_root", lambda _arg: repo)
+    monkeypatch.setattr(sel, "compute_touched", lambda *_a, **_k: [])
+    monkeypatch.setattr(sel, "select_tests_with_reasons", lambda *_a, **_k: ([], [], {}))
+    rc = sel.main(["--files-only", "--repo-root", str(repo)])
+    assert rc == 1
+    captured = capsys.readouterr()
+    assert captured.out == ""  # no partial paths-only output on the refusal
+    assert "EMPTY test selection" in captured.err
+
+
+@pytest.mark.parametrize(
+    "conflicting",
+    [
+        ["--files-only", "--json"],
+        ["--files-only", "--map-files", "some-list.txt"],
+    ],
+)
+def test_files_only_mutually_exclusive_exits_2(tmp_path: Path, conflicting: list[str]):
+    """Fail CLOSED (argparse exit 2, empty stdout) on --files-only + --json /
+    --map-files — each output mode owns stdout; silently preferring one flag
+    hands a consumer the wrong shape (#1717 defect (a) class)."""
+    with pytest.raises(SystemExit) as exc:
+        sel.main([*conflicting, "--repo-root", str(tmp_path)])
+    assert exc.value.code == 2
+
+
 # --- Case 10b (#1022): select_tests_with_reasons — reasons content ------------
 def test_selection_reasons_content(tmp_path: Path):
     """Pins the reason vocabulary (invariant / touched-test / stem-map:<f> /
@@ -1526,7 +1581,7 @@ def test_cli_map_files_rules_pin_pair(tmp_path: Path, capsys):
 # --- Case 62: --map-files EXCLUDES invariant members; the 9c arm keeps them --------
 def test_cli_map_files_rules_pin_excludes_invariant(tmp_path: Path, capsys):
     """The deliberate asymmetry (#1496 D3): tests/test_workflow_lint.py (a
-    WORKFLOW_INVARIANT member and the only SLOW_TESTS entry) is filtered from
+    WORKFLOW_INVARIANT member and a SLOW_TESTS entry) is filtered from
     the --map-files pairs, while select_tests_with_reasons still carries the
     rules-pin reason on it (the union dedupes; the extra reason is
     informative)."""
@@ -2704,7 +2759,7 @@ def test_skills_pin_live_tree_known_pairs():
 # --- Skills-pin: --map-files EXCLUDES invariant members; the 9c arm keeps them -----
 def test_cli_map_files_skills_pin_excludes_invariant(tmp_path: Path, capsys):
     """The rules_pin_pairs asymmetry, skills edition (plan criterion 3):
-    tests/test_workflow_lint.py (a WORKFLOW_INVARIANT member and the only
+    tests/test_workflow_lint.py (a WORKFLOW_INVARIANT member and a
     SLOW_TESTS entry) is filtered from the --map-files pairs while a
     non-invariant referencing test appears; select_tests_with_reasons still
     carries the skills-pin reason on the invariant member (the union dedupes;

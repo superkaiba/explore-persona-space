@@ -1716,7 +1716,7 @@ def test_default_list_hf_repo_files_body_scoped_and_full(monkeypatch) -> None:
     """#988 body test (code-style: one production-body test per seam-stubbed
     function): execute the REAL ``ra._default_list_hf_repo_files`` — fakes only
     at the Hub boundary (``HfApi`` construction + the paginated
-    ``list_repo_files_complete`` walk, signature-conformant by construction).
+    ``list_repo_entries_complete`` walk (#2097), signature-conformant by construction).
     ``path_in_repo`` routes through the REAL ``list_hf_files_under_path`` body;
     ``None`` keeps the seam-compat full listing."""
     import huggingface_hub
@@ -1735,10 +1735,10 @@ def test_default_list_hf_repo_files_body_scoped_and_full(monkeypatch) -> None:
         assert isinstance(api, _StubApi), "the stub api must reach the scoped walk"
         calls.append((repo_id, repo_type, revision, path_in_repo))
         if path_in_repo is not None:
-            return [f"{path_in_repo}/adapter.bin"]
-        return ["root.bin", "router_acceptance/issue-1-nibi/adapter.bin"]
+            return [(f"{path_in_repo}/adapter.bin", 1)]
+        return [("root.bin", 1), ("router_acceptance/issue-1-nibi/adapter.bin", 1)]
 
-    monkeypatch.setattr(hub, "list_repo_files_complete", _fake_complete)
+    monkeypatch.setattr(hub, "list_repo_entries_complete", _fake_complete)
 
     out = ra._default_list_hf_repo_files(
         "org/model", repo_type="model", path_in_repo="router_acceptance/issue-1-nibi"

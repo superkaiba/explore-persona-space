@@ -1,0 +1,466 @@
+{
+  "topology": {
+    "base": null,
+    "sft": "base",
+    "dpo": "sft",
+    "rlvr": "dpo",
+    "rlvr_long": "dpo"
+  },
+  "per_stage": {
+    "unique": {
+      "sft": 939343,
+      "dpo": 272898,
+      "rlvr": 29946,
+      "rlvr_long": 29946
+    },
+    "examples": {
+      "sft": 1878686,
+      "dpo": 272898,
+      "rlvr": 100000,
+      "rlvr_long": 1474560
+    },
+    "steps": {
+      "sft": 14677,
+      "dpo": 2132,
+      "rlvr": 446,
+      "rlvr_long": 1920
+    }
+  },
+  "layer": 30,
+  "stats": {
+    "unique/t0": {
+      "rho_all": 0.9621023987294831,
+      "n_all": 9,
+      "rho_post_only": 0.9486832980505138,
+      "n_post_only": 5
+    },
+    "unique/t5": {
+      "rho_all": 0.981980506061966,
+      "n_all": 7,
+      "rho_post_only": 0.8660254037844387,
+      "n_post_only": 3
+    },
+    "examples/t0": {
+      "rho_all": 0.9,
+      "n_all": 9,
+      "rho_post_only": 0.7,
+      "n_post_only": 5
+    },
+    "examples/t5": {
+      "rho_all": 0.9642857142857145,
+      "n_all": 7,
+      "rho_post_only": 0.5,
+      "n_post_only": 3
+    },
+    "steps/t0": {
+      "rho_all": 0.9500000000000001,
+      "n_all": 9,
+      "rho_post_only": 0.9999999999999999,
+      "n_post_only": 5
+    },
+    "steps/t5": {
+      "rho_all": 1.0,
+      "n_all": 7,
+      "rho_post_only": 1.0,
+      "n_post_only": 3
+    }
+  },
+  "pairs": {
+    "unique/t0": [
+      {
+        "pair": "base\u2192SFT",
+        "src": "base",
+        "tgt": "sft",
+        "amount": 939343,
+        "deficit": 0.3795772355439776,
+        "base_source": true
+      },
+      {
+        "pair": "base\u2192DPO",
+        "src": "base",
+        "tgt": "dpo",
+        "amount": 1212241,
+        "deficit": 0.6631497678635919,
+        "base_source": true
+      },
+      {
+        "pair": "base\u2192RLVR-PPO",
+        "src": "base",
+        "tgt": "rlvr",
+        "amount": 1242187,
+        "deficit": 0.6878028424107814,
+        "base_source": true
+      },
+      {
+        "pair": "base\u2192RLVR-GRPO",
+        "src": "base",
+        "tgt": "rlvr_long",
+        "amount": 1242187,
+        "deficit": 0.6249460644429378,
+        "base_source": true
+      },
+      {
+        "pair": "SFT\u2192DPO",
+        "src": "sft",
+        "tgt": "dpo",
+        "amount": 272898,
+        "deficit": 0.13449032000491912,
+        "base_source": false
+      },
+      {
+        "pair": "SFT\u2192RLVR-PPO",
+        "src": "sft",
+        "tgt": "rlvr",
+        "amount": 302844,
+        "deficit": 0.15060931605408356,
+        "base_source": false
+      },
+      {
+        "pair": "SFT\u2192RLVR-GRPO",
+        "src": "sft",
+        "tgt": "rlvr_long",
+        "amount": 302844,
+        "deficit": 0.15557478167271432,
+        "base_source": false
+      },
+      {
+        "pair": "DPO\u2192RLVR-PPO",
+        "src": "dpo",
+        "tgt": "rlvr",
+        "amount": 29946,
+        "deficit": 0.00910957910828225,
+        "base_source": false
+      },
+      {
+        "pair": "DPO\u2192RLVR-GRPO",
+        "src": "dpo",
+        "tgt": "rlvr_long",
+        "amount": 29946,
+        "deficit": 0.08413624810204612,
+        "base_source": false
+      }
+    ],
+    "unique/t5": [
+      {
+        "pair": "base\u2192SFT",
+        "src": "base",
+        "tgt": "sft",
+        "amount": 939343,
+        "deficit": 0.13156328077297164,
+        "base_source": true
+      },
+      {
+        "pair": "base\u2192DPO",
+        "src": "base",
+        "tgt": "dpo",
+        "amount": 1212241,
+        "deficit": 0.16232801958495957,
+        "base_source": true
+      },
+      {
+        "pair": "base\u2192RLVR-PPO",
+        "src": "base",
+        "tgt": "rlvr",
+        "amount": 1242187,
+        "deficit": 0.17159454897351423,
+        "base_source": true
+      },
+      {
+        "pair": "base\u2192RLVR-GRPO",
+        "src": "base",
+        "tgt": "rlvr_long",
+        "amount": 1242187,
+        "deficit": 0.18145600156517983,
+        "base_source": true
+      },
+      {
+        "pair": "SFT\u2192DPO",
+        "src": "sft",
+        "tgt": "dpo",
+        "amount": 272898,
+        "deficit": 0.03578078629982895,
+        "base_source": false
+      },
+      {
+        "pair": "DPO\u2192RLVR-PPO",
+        "src": "dpo",
+        "tgt": "rlvr",
+        "amount": 29946,
+        "deficit": 0.0033670641328094053,
+        "base_source": false
+      },
+      {
+        "pair": "DPO\u2192RLVR-GRPO",
+        "src": "dpo",
+        "tgt": "rlvr_long",
+        "amount": 29946,
+        "deficit": 0.01875648379647976,
+        "base_source": false
+      }
+    ],
+    "examples/t0": [
+      {
+        "pair": "base\u2192SFT",
+        "src": "base",
+        "tgt": "sft",
+        "amount": 1878686,
+        "deficit": 0.3795772355439776,
+        "base_source": true
+      },
+      {
+        "pair": "base\u2192DPO",
+        "src": "base",
+        "tgt": "dpo",
+        "amount": 2151584,
+        "deficit": 0.6631497678635919,
+        "base_source": true
+      },
+      {
+        "pair": "base\u2192RLVR-PPO",
+        "src": "base",
+        "tgt": "rlvr",
+        "amount": 2251584,
+        "deficit": 0.6878028424107814,
+        "base_source": true
+      },
+      {
+        "pair": "base\u2192RLVR-GRPO",
+        "src": "base",
+        "tgt": "rlvr_long",
+        "amount": 3626144,
+        "deficit": 0.6249460644429378,
+        "base_source": true
+      },
+      {
+        "pair": "SFT\u2192DPO",
+        "src": "sft",
+        "tgt": "dpo",
+        "amount": 272898,
+        "deficit": 0.13449032000491912,
+        "base_source": false
+      },
+      {
+        "pair": "SFT\u2192RLVR-PPO",
+        "src": "sft",
+        "tgt": "rlvr",
+        "amount": 372898,
+        "deficit": 0.15060931605408356,
+        "base_source": false
+      },
+      {
+        "pair": "SFT\u2192RLVR-GRPO",
+        "src": "sft",
+        "tgt": "rlvr_long",
+        "amount": 1747458,
+        "deficit": 0.15557478167271432,
+        "base_source": false
+      },
+      {
+        "pair": "DPO\u2192RLVR-PPO",
+        "src": "dpo",
+        "tgt": "rlvr",
+        "amount": 100000,
+        "deficit": 0.00910957910828225,
+        "base_source": false
+      },
+      {
+        "pair": "DPO\u2192RLVR-GRPO",
+        "src": "dpo",
+        "tgt": "rlvr_long",
+        "amount": 1474560,
+        "deficit": 0.08413624810204612,
+        "base_source": false
+      }
+    ],
+    "examples/t5": [
+      {
+        "pair": "base\u2192SFT",
+        "src": "base",
+        "tgt": "sft",
+        "amount": 1878686,
+        "deficit": 0.13156328077297164,
+        "base_source": true
+      },
+      {
+        "pair": "base\u2192DPO",
+        "src": "base",
+        "tgt": "dpo",
+        "amount": 2151584,
+        "deficit": 0.16232801958495957,
+        "base_source": true
+      },
+      {
+        "pair": "base\u2192RLVR-PPO",
+        "src": "base",
+        "tgt": "rlvr",
+        "amount": 2251584,
+        "deficit": 0.17159454897351423,
+        "base_source": true
+      },
+      {
+        "pair": "base\u2192RLVR-GRPO",
+        "src": "base",
+        "tgt": "rlvr_long",
+        "amount": 3626144,
+        "deficit": 0.18145600156517983,
+        "base_source": true
+      },
+      {
+        "pair": "SFT\u2192DPO",
+        "src": "sft",
+        "tgt": "dpo",
+        "amount": 272898,
+        "deficit": 0.03578078629982895,
+        "base_source": false
+      },
+      {
+        "pair": "DPO\u2192RLVR-PPO",
+        "src": "dpo",
+        "tgt": "rlvr",
+        "amount": 100000,
+        "deficit": 0.0033670641328094053,
+        "base_source": false
+      },
+      {
+        "pair": "DPO\u2192RLVR-GRPO",
+        "src": "dpo",
+        "tgt": "rlvr_long",
+        "amount": 1474560,
+        "deficit": 0.01875648379647976,
+        "base_source": false
+      }
+    ],
+    "steps/t0": [
+      {
+        "pair": "base\u2192SFT",
+        "src": "base",
+        "tgt": "sft",
+        "amount": 14677,
+        "deficit": 0.3795772355439776,
+        "base_source": true
+      },
+      {
+        "pair": "base\u2192DPO",
+        "src": "base",
+        "tgt": "dpo",
+        "amount": 16809,
+        "deficit": 0.6631497678635919,
+        "base_source": true
+      },
+      {
+        "pair": "base\u2192RLVR-PPO",
+        "src": "base",
+        "tgt": "rlvr",
+        "amount": 17255,
+        "deficit": 0.6878028424107814,
+        "base_source": true
+      },
+      {
+        "pair": "base\u2192RLVR-GRPO",
+        "src": "base",
+        "tgt": "rlvr_long",
+        "amount": 18729,
+        "deficit": 0.6249460644429378,
+        "base_source": true
+      },
+      {
+        "pair": "SFT\u2192DPO",
+        "src": "sft",
+        "tgt": "dpo",
+        "amount": 2132,
+        "deficit": 0.13449032000491912,
+        "base_source": false
+      },
+      {
+        "pair": "SFT\u2192RLVR-PPO",
+        "src": "sft",
+        "tgt": "rlvr",
+        "amount": 2578,
+        "deficit": 0.15060931605408356,
+        "base_source": false
+      },
+      {
+        "pair": "SFT\u2192RLVR-GRPO",
+        "src": "sft",
+        "tgt": "rlvr_long",
+        "amount": 4052,
+        "deficit": 0.15557478167271432,
+        "base_source": false
+      },
+      {
+        "pair": "DPO\u2192RLVR-PPO",
+        "src": "dpo",
+        "tgt": "rlvr",
+        "amount": 446,
+        "deficit": 0.00910957910828225,
+        "base_source": false
+      },
+      {
+        "pair": "DPO\u2192RLVR-GRPO",
+        "src": "dpo",
+        "tgt": "rlvr_long",
+        "amount": 1920,
+        "deficit": 0.08413624810204612,
+        "base_source": false
+      }
+    ],
+    "steps/t5": [
+      {
+        "pair": "base\u2192SFT",
+        "src": "base",
+        "tgt": "sft",
+        "amount": 14677,
+        "deficit": 0.13156328077297164,
+        "base_source": true
+      },
+      {
+        "pair": "base\u2192DPO",
+        "src": "base",
+        "tgt": "dpo",
+        "amount": 16809,
+        "deficit": 0.16232801958495957,
+        "base_source": true
+      },
+      {
+        "pair": "base\u2192RLVR-PPO",
+        "src": "base",
+        "tgt": "rlvr",
+        "amount": 17255,
+        "deficit": 0.17159454897351423,
+        "base_source": true
+      },
+      {
+        "pair": "base\u2192RLVR-GRPO",
+        "src": "base",
+        "tgt": "rlvr_long",
+        "amount": 18729,
+        "deficit": 0.18145600156517983,
+        "base_source": true
+      },
+      {
+        "pair": "SFT\u2192DPO",
+        "src": "sft",
+        "tgt": "dpo",
+        "amount": 2132,
+        "deficit": 0.03578078629982895,
+        "base_source": false
+      },
+      {
+        "pair": "DPO\u2192RLVR-PPO",
+        "src": "dpo",
+        "tgt": "rlvr",
+        "amount": 446,
+        "deficit": 0.0033670641328094053,
+        "base_source": false
+      },
+      {
+        "pair": "DPO\u2192RLVR-GRPO",
+        "src": "dpo",
+        "tgt": "rlvr_long",
+        "amount": 1920,
+        "deficit": 0.01875648379647976,
+        "base_source": false
+      }
+    ]
+  }
+}

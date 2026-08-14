@@ -1,0 +1,271 @@
+{
+  "commit": "1c918a6d6f",
+  "created": "2026-08-14T00:27:41Z",
+  "figsize": [
+    9.5,
+    5.0
+  ],
+  "points": [
+    {
+      "Activation checkpoint the map is fit at": -0.19,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.412577163534647,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Activation checkpoint the map is fit at": 0.81,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.5778464737384732,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Activation checkpoint the map is fit at": 1.81,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.597919828039505,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Activation checkpoint the map is fit at": 2.81,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.6022832271021715,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Activation checkpoint the map is fit at": 3.81,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.6194515549193196,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Activation checkpoint the map is fit at": 0.19,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.5538078850101729,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Activation checkpoint the map is fit at": 1.19,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.44816000566537373,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Activation checkpoint the map is fit at": 2.19,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.45871172043677755,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Activation checkpoint the map is fit at": 3.19,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.4636119676374306,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Activation checkpoint the map is fit at": 4.19,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.4580445063782943,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Activation checkpoint the map is fit at": 0.19,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.5738842488949514,
+      "label": "DPO",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Activation checkpoint the map is fit at": 0.19,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.5654594167417151,
+      "label": "DPO",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Activation checkpoint the map is fit at": 0.19,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.5403953021048025,
+      "label": "RLVR",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Activation checkpoint the map is fit at": 0.19,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.5329171427661465,
+      "label": "RLVR",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Activation checkpoint the map is fit at": 1.19,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.5672727706145333,
+      "label": "DPO",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Activation checkpoint the map is fit at": 1.19,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.5617213160188202,
+      "label": "DPO",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Activation checkpoint the map is fit at": 1.19,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.5324952407908994,
+      "label": "RLVR",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Activation checkpoint the map is fit at": 1.19,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.1305163527287665,
+      "label": "Base",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Activation checkpoint the map is fit at": 2.19,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.5620830572385154,
+      "label": "RLVR",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Activation checkpoint the map is fit at": 2.19,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.5352901895138236,
+      "label": "SFT",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Activation checkpoint the map is fit at": 2.19,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.5296192786813161,
+      "label": "SFT",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Activation checkpoint the map is fit at": 2.19,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.1790313183292539,
+      "label": "Base",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Activation checkpoint the map is fit at": 3.19,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.5676147145355286,
+      "label": "DPO",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Activation checkpoint the map is fit at": 3.19,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.5379950654085974,
+      "label": "longer RLVR",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Activation checkpoint the map is fit at": 3.19,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.5353738988629417,
+      "label": "longer RLVR",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Activation checkpoint the map is fit at": 3.19,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.18591305452089324,
+      "label": "Base",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Activation checkpoint the map is fit at": 4.19,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.5558204061475682,
+      "label": "RLVR",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Activation checkpoint the map is fit at": 4.19,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.5545373995693035,
+      "label": "RLVR",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Activation checkpoint the map is fit at": 4.19,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.5248681506762003,
+      "label": "DPO",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Activation checkpoint the map is fit at": 4.19,
+      "Pooled held-out R\u00b2, test side, layer 30": 0.17708061212181403,
+      "label": "Base",
+      "_kind": "scatter",
+      "_group": 21
+    }
+  ],
+  "n_series": 22,
+  "total_points": 30,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Map strength by training-text arm",
+        "xlabel": "Activation checkpoint the map is fit at",
+        "ylabel": "Pooled held-out R\u00b2, test side, layer 30",
+        "legend_labels": [
+          "fit on own generated text (on-policy)",
+          "fit on other checkpoints' text, concatenated (off-policy)"
+        ],
+        "annotations": [
+          "DPO",
+          "RLVR",
+          "longer RLVR",
+          "SFT",
+          "DPO",
+          "RLVR",
+          "longer RLVR",
+          "Base",
+          "RLVR",
+          "SFT",
+          "longer RLVR",
+          "Base",
+          "DPO",
+          "longer RLVR",
+          "SFT",
+          "Base",
+          "RLVR",
+          "DPO",
+          "SFT",
+          "Base",
+          "open circles: off-policy fit sliced by which checkpoint wrote the text"
+        ],
+        "xticklabels": [
+          "Base",
+          "SFT",
+          "DPO",
+          "RLVR",
+          "longer RLVR"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ],
+    "series": [
+      "fit on own generated text (on-policy)",
+      "fit on other checkpoints' text, concatenated (off-policy)"
+    ]
+  }
+}

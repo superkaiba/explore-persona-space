@@ -1,0 +1,56 @@
+{
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "max_tokens": 1024,
+  "n_windows": 3,
+  "anchor_draws": 10,
+  "cells": [
+    "joint_all",
+    "joint_mid",
+    "L16"
+  ],
+  "setting": "matched_query",
+  "telemetry": {
+    "full.fp-bare": {
+      "n_items": 330,
+      "n_total_draws": 330,
+      "n_dropped_draws": 0,
+      "n_transport_lost_draws": 0,
+      "n_truncation_dropped_draws": 0,
+      "n_refusal_draws": 0,
+      "n_api_refusal_draws": 0,
+      "stop_reason_tally": {
+        "end_turn": 330
+      }
+    },
+    "full.fp-conv": {
+      "n_items": 330,
+      "n_total_draws": 330,
+      "n_dropped_draws": 0,
+      "n_transport_lost_draws": 0,
+      "n_truncation_dropped_draws": 0,
+      "n_refusal_draws": 0,
+      "n_api_refusal_draws": 0,
+      "stop_reason_tally": {
+        "end_turn": 330
+      }
+    },
+    "full.fp-persona": {
+      "n_items": 330,
+      "n_total_draws": 330,
+      "n_dropped_draws": 0,
+      "n_transport_lost_draws": 0,
+      "n_truncation_dropped_draws": 0,
+      "n_refusal_draws": 0,
+      "n_api_refusal_draws": 0,
+      "stop_reason_tally": {
+        "end_turn": 330
+      }
+    }
+  },
+  "git_commit": "2a33f51f",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2094_position_judge.py",
+    "tasks/running/2221/events.jsonl"
+  ]
+}

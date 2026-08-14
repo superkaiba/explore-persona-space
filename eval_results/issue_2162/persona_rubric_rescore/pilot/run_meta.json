@@ -1,0 +1,11 @@
+{
+  "telemetry": {
+    "cj-v3-address": {
+      "n_items": 100,
+      "n_scored": 100,
+      "n_dropped": 0,
+      "drop_frac": 0.0
+    }
+  },
+  "n_scores": 100
+}

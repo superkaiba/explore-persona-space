@@ -49,6 +49,21 @@ WORKLOAD = "bash scripts/issue909_dispatch.sh --arm a"
 ATTEMPT = "rp-20260703T000000Z-ab12"
 
 
+@pytest.fixture(autouse=True)
+def _no_live_pods_ephemeral(monkeypatch):
+    """#2038: ``launch()`` reads the LIVE pods_ephemeral.json for the pod id.
+
+    Pin the read to ``None`` so every launch test here stays hermetic
+    (fleet-state-independent — the live sidecar is a shared-VM mutable file).
+    The real read body is covered in
+    ``tests/test_issue2038_fallback_teardown.py`` via the documented
+    ``pod_config.PODS_EPHEMERAL_JSON`` tmp seam; ``None`` keeps the legacy
+    id-less ``extra`` shape the ``_PRE_954_SUCCESS_EXTRA_KEYS`` exact-set
+    pins below assert.
+    """
+    monkeypatch.setattr(RP, "_provisioned_pod_id", lambda pod_name: None)
+
+
 def _noop_provision(monkeypatch) -> None:
     """No-op the ``pod_lifecycle.py provision`` subprocess call.
 
@@ -938,6 +953,11 @@ def test_launch_ok_regex_shapes():
 #: so this exact set still holds (the omit-when-absent contract is what the
 #: exact-set assertions pin; the conditional keys are covered by
 #: ``test_launch_handle_extra_carries_boot_disk_gb``).
+#: #2038 adds a third CONDITIONAL key (``pod_id``, round-tripped from
+#: pods_ephemeral.json), OMITTED when the read yields nothing — the autouse
+#: ``_no_live_pods_ephemeral`` fixture pins the read to ``None`` here, so
+#: the exact set still holds; the present-key shape is covered by
+#: ``tests/test_issue2038_fallback_teardown.py``.
 _PRE_954_SUCCESS_EXTRA_KEYS = frozenset(
     {
         "intent",

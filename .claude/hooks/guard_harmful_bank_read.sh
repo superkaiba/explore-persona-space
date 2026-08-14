@@ -83,6 +83,28 @@
 #           behavior — conservative, counted by the sidecar log.
 #   mcp__ssh__ssh_execute — same command-string shape; reuses the Bash arm.
 #
+# CORPUS CLASS (#1217, READ-ARM-ONLY): a second, strictly weaker path class
+# for real-world-corpus rollout/prompt text — raw_completions trees, files
+# named raw_completions.<ext>, and LMSYS/WildChat-class name tokens
+# (query_banks/ excluded: the bank enumeration governs there). Allow-set
+# difference from banks: banks are digest-only on EVERY arm; corpus files
+# are excerpt-sanctioned — only the Read arm denies, and only its WHOLESALE
+# shape (no explicit limit <= 200 on a >256 KB file). Files <= 256 KB are
+# exempt (size gate: metadata/summaries inside corpus trees stay freely
+# readable). Bash + ssh_execute are deliberately NOT corpus-classed (#1217
+# round-2 narrowing): the pre-ship historical replay denied >= 221
+# sanctioned shapes on the Bash leg (14.66% deny rate; task #1217 record,
+# epm:results v1), and the token walk's per-token cost arms multi-second
+# hook stalls on common tokens like raw_completions (task #1217 record,
+# round-1 report). Wholesale Bash/ssh paging of corpus files is DELEGATED
+# to the CLAUDE.md clause-(d) prose rule, guard_log_dump.sh's size/window
+# cap (registered on the Bash matcher only), and trigger-dense discipline.
+# FP-triage asymmetry note: a >256 KB corpus file Bash-paged is NOT denied
+# by this hook (delegated, above) while its unbounded Read IS — designed
+# posture, not a bug. Sidecar-log note: the target field truncates at 200
+# chars (%.200s), which can clip a long command before the corpus token
+# appears — classify such lines manually when counting corpus: FPs.
+#
 # Contract: reads the PreToolUse JSON on stdin; exit 0 = allow, exit 2 =
 # blocking deny (stderr fed back to Claude). Fail-OPEN: any parse failure /
 # unrecognized shape exits 0 (a broken guard must never brick every tool
@@ -101,6 +123,16 @@ BARE_RE="(^|/)${STEM_RE}[^/]*\.json\$"
 BANKDIR_RE='(^|/)query_banks/?$'
 DENY_VERBS_RE='^(cat|tac|nl|head|tail|sed|awk|cut|sort|uniq|rev|strings|less|more|most|bat|od|xxd|hexdump|base64|fold|fmt|pr|column|paste|comm|join|json\.tool)$'
 JQ_DIGEST_RE='^(keys|keys_unsorted|length|type|empty)$'
+# Corpus class (#1217, READ-ARM-ONLY after the round-2 narrowing):
+# real-world-corpus rollout/prompt text. STRICTLY WEAKER rules than banks —
+# only the Read arm's WHOLESALE shape (no bounded window on a >256 KB file)
+# is denied; every other route (bounded Read, grep-family pulls, jq access,
+# Bash/ssh, pipeline consumption) stays open in THIS hook. Constants
+# inherit the guard_log_dump.sh precedent (plan §11.1/§11.2).
+RAWC_RE='(^|/)raw_completions(/|\.[A-Za-z0-9]+$|$)'
+CORPUS_TOK_RE='(lmsys|wildchat|sharegpt|chatbot[-_]?arena)'
+CORPUS_WINDOW=200   # lines; = guard_log_dump.sh MAX_LINES
+CORPUS_BYTES=262144 # = guard_log_dump.sh MAX_BYTES
 GUARD_LOG="${EPM_BANK_GUARD_LOG:-/home/thomasjiralerspong/explore-persona-space/.claude/cache/bank-guard-denies.log}"
 
 # Session-env escape hatch (all tool arms).
@@ -142,6 +174,30 @@ is_bank_dir() {
   return 1
 }
 
+deny_corpus() {  # $1 = what was attempted, $2 = the corpus path/token.
+  # Sidecar reasons carry a `corpus:` prefix so FP counting splits classes
+  # (grep -c 'corpus:' <log>; plan #1217 §4.2).
+  log_deny "corpus: $1" "$2"
+  echo "BLOCKED: $1 ($2). CLAUDE.md § Spurious usage-policy refusals (d): real-world-corpus rollout/prompt text (raw_completions trees, LMSYS/WildChat-class files) is excerpt/digest-only — wholesale paging refusal-kills sessions (incident #1073: the same analyzer was killed twice). Sanctioned retry routes: (1) a bounded Read with an explicit offset + limit <= ${CORPUS_WINDOW}; (2) grep-family excerpt pulls (Grep tool content mode, or grep/rg by line offset); (3) jq field access / digests (jq 'length' | '.meta' | '.[0]'). A sanctioned-maintenance override exists — see CLAUDE.md § Spurious usage-policy refusals clause (d)." >&2
+  exit 2
+}
+
+is_corpus_path() {  # corpus class (#1217): a raw_completions dir component,
+  # a file NAMED raw_completions.<ext> (the largest live corpus file has that
+  # shape, plan §11.3), or a case-insensitive corpus-name token (§11.4).
+  # query_banks/ paths are EXCLUDED: that directory is governed by the bank
+  # class's deliberate six-stem enumeration (#965 §11.8 classifies the rest
+  # benign — e.g. wildchat_random_v1.json), so the corpus class never
+  # re-claims it (zero bank-class behavior change, plan §6.1).
+  local p="$1"
+  p=${p#\'}; p=${p%\'}; p=${p#\"}; p=${p%\"}
+  [ -n "$p" ] || return 1
+  printf '%s' "$p" | grep -qE '(^|/)query_banks/' && return 1
+  printf '%s' "$p" | grep -qE "$RAWC_RE" && return 0
+  printf '%s' "$p" | grep -qiE "$CORPUS_TOK_RE" && return 0
+  return 1
+}
+
 input=$(cat) || exit 0
 tool=$(printf '%s' "$input" | jq -r '.tool_name // empty' 2>/dev/null) || exit 0
 
@@ -149,6 +205,27 @@ tool=$(printf '%s' "$input" | jq -r '.tool_name // empty' 2>/dev/null) || exit 0
 fp=$(printf '%s' "$input" | jq -r '.tool_input.file_path // empty' 2>/dev/null) || exit 0
 if [ -n "$fp" ] && { [ -z "$tool" ] || [ "$tool" = Read ]; }; then
   is_bank_path "$fp" && deny "Read" "$fp"
+  if is_corpus_path "$fp"; then
+    # Corpus Read gate (#1217 §4.2): an explicit numeric limit 1..CORPUS_WINDOW
+    # is the sanctioned bounded-excerpt window -> allow. A non-numeric limit is
+    # treated as ABSENT (extra-deny direction, documented). Otherwise size-gate:
+    # stat failure (nonexistent path) fails OPEN (Read errors anyway);
+    # files <= CORPUS_BYTES are exempt (metadata/summaries inside corpus trees).
+    limit=$(printf '%s' "$input" | jq -r '.tool_input.limit // empty' 2>/dev/null) || exit 0
+    case "$limit" in
+      '' | *[!0-9]*) : ;;
+      *)
+        if [ "$limit" -ge 1 ] 2>/dev/null && [ "$limit" -le "$CORPUS_WINDOW" ] 2>/dev/null; then
+          exit 0
+        fi
+        ;;
+    esac
+    sz=$(stat -c %s -- "$fp" 2>/dev/null) || exit 0
+    case "$sz" in '' | *[!0-9]*) exit 0 ;; esac
+    if [ "$sz" -gt "$CORPUS_BYTES" ]; then
+      deny_corpus "Read without a bounded window (explicit limit <= ${CORPUS_WINDOW}) would page a >256 KB corpus file wholesale into context" "$fp"
+    fi
+  fi
   exit 0
 fi
 

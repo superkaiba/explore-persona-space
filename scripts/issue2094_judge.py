@@ -105,9 +105,11 @@ COHERENCE_MEDIAN_MIN = 80.0
 COHERENCE_GT60_FRAC_MIN = 0.90
 COHERENCE_THRESHOLD = 60.0
 
-# Pilot sizing (plan §7 gate 4: ~300 draws spanning settings × slots × rubrics).
-PILOT_TARGET_COHERENCE = 102  # 6 arms × 17
-PILOT_TARGET_BEHAVIOR = 30  # 3 arms × 10 (== the gate's min-draws floor)
+# Pilot sizing (plan §7 gate 4, resized by #2124: n_arms x n_draws(1) x 51 —
+# the 2% parse-fail threshold needs >= 51 draws/arm to resolve; the old
+# 102/30 realized 17/10 draws per arm, below the floor).
+PILOT_TARGET_COHERENCE = 306  # 6 arms × 51
+PILOT_TARGET_BEHAVIOR = 153  # 3 arms × 51
 PILOT_SEED = 2094
 FORCED_BATCH_PROBE_N = 6  # live Batch request-shape probe (gotchas: mock-judge smoke)
 
@@ -626,12 +628,18 @@ def run_wave(
     prompt: str,
     units: list[JudgeUnit],
     cfg: JudgeConfig,
+    threshold_base: int | None = None,
 ) -> dict | None:
     """One production wave: manifest → dispatch → bounded transport retry → scores.
 
     Returns the meta dict (None on ``--dry-run``). Resumable at two grains: the
     wave-level meta skip, and intra-wave via the rubric-keyed JudgeCache + the
     #1019 dispatch checkpoints under ``cache_dir/.dispatch``.
+
+    ``threshold_base`` (keyword seam, default ``None`` = byte-equivalent client
+    routing for every existing caller) threads to ``judge_graded`` so a caller
+    with a REGISTERED routing (the #2162 ladder's all-sync plan) can force it
+    (``scripts/issue2162_ladder_judge.py``).
     """
     assert units, f"wave {wave}: no items"
     meta_path = cfg.scores_dir / f"{wave}.meta.json"
@@ -667,6 +675,7 @@ def run_wave(
         judge_model=cfg.judge_model,
         max_tokens=cfg.max_tokens,
         dry_run=cfg.dry_run,
+        threshold_base=threshold_base,
     )
     if cfg.dry_run:
         logger.info("[wave %s] dry-run complete (no API calls)", wave)
@@ -689,6 +698,7 @@ def run_wave(
             save_raw=cfg.raw_dir / f"{wave}.retry1.json",
             judge_model=cfg.judge_model,
             max_tokens=cfg.max_tokens,
+            threshold_base=threshold_base,
         )
         retry_meta = _telemetry(result2)
         for iid in lost_ids:

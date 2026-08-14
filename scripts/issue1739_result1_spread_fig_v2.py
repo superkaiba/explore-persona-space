@@ -78,7 +78,9 @@ OUT_NUM = ER / "result1_spread"
 STATS_PATH = OUT_NUM / "spread_stats.json"
 
 PVSYNTH = "pvsynth"
-SETTINGS = {b: [*RUNGS[b], PVSYNTH] for b in BEHAVIORS}
+# Setting roster per behavior is resolved through `settings_for(b, extended)`
+# (defined below, once the extended-rung registry exists) so the base and
+# extended renders share one source of truth.
 
 # Row labels are two-part: the ROLE the dataset plays in the design, then WHAT
 # THE DATASET ACTUALLY IS. Figure-LOCAL by design — `RUNG_LABEL` in
@@ -150,9 +152,56 @@ for _b in BEHAVIORS:
     SETTING_IDENTITY[(_b, "wildchat_rung")] = "random WildChat conversations"
     SETTING_IDENTITY[(_b, PVSYNTH)] = "persona-vectors eval grid"
 
+# --- extended rung roster (--extended-rungs) ---------------------------------
+#
+# Seven OOD rungs landed AFTER the committed 14-cell cut and therefore carry no
+# row in spread_stats.json. They are opt-in so the default render stays byte-for
+# byte the committed figure; under --extended-rungs they are appended to their
+# behavior's setting list and their statistics are computed fresh (the committed
+# agreement check still binds on all 14 original cells).
+#
+# Provenance of the DV rows, one file per behavior:
+#   evil        eval_results/issue_1739/evil_ood_full/dv_dataset/evil/labeling.json
+#               rungs evil_mhj / evil_pair / evil_tomgibbs (2,954 rows)
+#   sycophancy  eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json
+#               rungs sycoans / sycoays / sycofb / sycomim / sycomwe (2,613 rows)
+# Both carry the same row schema as the own-rung labeling.json the base roster
+# reads, so `_rollout_vectors_graded` applies unchanged.
+EXTRA_RUNGS: dict[str, tuple[str, ...]] = {
+    "evil": ("evil_mhj", "evil_pair", "evil_tomgibbs"),
+    "sycophancy": ("sycoans", "sycoays", "sycofb", "sycomim", "sycomwe"),
+    "hallucination": (),
+}
+EXTRA_LABELING = {
+    "evil": ER / "evil_ood_full/dv_dataset/evil/labeling.json",
+    "sycophancy": ER / "syco_ood/dv_dataset/sycophancy/labeling.json",
+}
+for _s in ("evil_mhj", "evil_pair", "evil_tomgibbs", "sycoans", "sycoays", "sycofb", "sycomim"):
+    SETTING_ROLE[_s] = "OOD transfer"
+SETTING_ROLE["sycomwe"] = "synthetic elicitation suite"
+SETTING_IDENTITY.update(
+    {
+        ("evil", "evil_mhj"): "MHJ multi-turn human jailbreaks",
+        ("evil", "evil_pair"): "PAIR optimizer-generated attacks",
+        ("evil", "evil_tomgibbs"): "tom-gibbs multi-turn jailbreaks",
+        ("sycophancy", "sycoans"): "SycophancyEval answer",
+        ("sycophancy", "sycoays"): "SycophancyEval are-you-sure",
+        ("sycophancy", "sycofb"): "SycophancyEval feedback",
+        ("sycophancy", "sycomim"): "SycophancyEval mimicry",
+        ("sycophancy", "sycomwe"): "model-written evals (Perez et al.)",
+    }
+)
+
+
+def settings_for(b: str, extended: bool) -> list[str]:
+    """Setting roster for one behavior; PVSYNTH stays last in both modes."""
+    extra = list(EXTRA_RUNGS[b]) if extended else []
+    return [*RUNGS[b], *extra, PVSYNTH]
+
+
 # Fail loud rather than mislabel: every plotted cell must have both parts.
 for _b in BEHAVIORS:
-    for _s in [*RUNGS[_b], PVSYNTH]:
+    for _s in settings_for(_b, extended=True):
         if _s not in SETTING_ROLE or (_b, _s) not in SETTING_IDENTITY:
             raise SystemExit(f"no role/identity label for {_b}/{_s}")
 
@@ -160,7 +209,7 @@ for _b in BEHAVIORS:
 SETTING_LABEL = {
     (b, s): f"{SETTING_ROLE[s]} — {SETTING_IDENTITY[(b, s)]}"
     for b in BEHAVIORS
-    for s in [*RUNGS[b], PVSYNTH]
+    for s in settings_for(b, extended=True)
 }
 
 # Hallucination's own rungs score the fabricated FRACTION rescaled x100, not the
@@ -297,12 +346,16 @@ def cell_stats(per_ctx: list[np.ndarray]) -> dict:
     }
 
 
-def load() -> tuple[dict[tuple[str, str], list[np.ndarray]], dict[tuple[str, str], dict]]:
+def load(
+    extended: bool = False,
+) -> tuple[dict[tuple[str, str], list[np.ndarray]], dict[tuple[str, str], dict]]:
     """Per-context rollout vectors + per-cell statistics under the `drop` coding.
 
     Raises if a recomputed statistic disagrees with the committed
     `spread_stats.json` row, so neither the figure nor the recode can drift from
-    the numbers the original script published.
+    the numbers the original script published. Under `extended` the seven
+    post-cut OOD rungs are loaded too; they carry NO committed row, so they are
+    computed fresh while every one of the 14 original cells stays gated.
     """
     committed = {
         (c["behavior"], c["setting"]): c for c in json.loads(STATS_PATH.read_text())["cells"]
@@ -325,13 +378,30 @@ def load() -> tuple[dict[tuple[str, str], list[np.ndarray]], dict[tuple[str, str
             d = json.loads(path.read_text())
             vectors[(b, rung)] = next(iter(_rollout_vectors_graded(d["rows"]).values()))
 
+        if extended and EXTRA_RUNGS[b]:
+            extra = json.loads(EXTRA_LABELING[b].read_text())
+            extra_vecs = _rollout_vectors_graded(extra["rows"])
+            missing = [r for r in EXTRA_RUNGS[b] if r not in extra_vecs]
+            if missing:
+                raise SystemExit(f"{b}: extended labeling has no rows for {missing}")
+            for rung in EXTRA_RUNGS[b]:
+                vectors[(b, rung)] = extra_vecs[rung]
+
     stats: dict[tuple[str, str], dict] = {}
     for b in BEHAVIORS:
-        for s in SETTINGS[b]:
-            per_ctx, want = vectors.get((b, s)), committed.get((b, s))
-            if per_ctx is None or want is None:
+        for s in settings_for(b, extended):
+            per_ctx = vectors.get((b, s))
+            if per_ctx is None:
                 raise SystemExit(f"missing cell {b}/{s}")
+            want = committed.get((b, s))
             got = cell_stats(per_ctx)
+            if want is None:
+                # A post-cut rung: no committed row exists to gate against. Only
+                # the extended roster may reach this branch.
+                if s not in EXTRA_RUNGS[b]:
+                    raise SystemExit(f"{b}/{s}: no committed row and not an extended rung")
+                stats[(b, s)] = got
+                continue
             for key, wv in want.items():
                 if key not in got or isinstance(wv, str | dict | list):
                     continue
@@ -495,15 +565,20 @@ def _rows(beh: str, settings: list[str]) -> tuple[list[float], float | None]:
     return pos, divider
 
 
-def main(coding: str = "drop") -> None:
-    vectors, stats = load()
+def main(coding: str = "drop", extended: bool = False) -> None:
+    if extended and coding != "drop":
+        raise SystemExit("--extended-rungs is only defined for --coding drop")
+    vectors, stats = load(extended=extended)
     audit = None
     if coding == "refusal-zero":
         recoded, audit = load_evil_refusal_zero(vectors)
         vectors = {**vectors, **recoded}
         stats = {**stats, **{key: cell_stats(v) for key, v in recoded.items()}}
     ybar = {key: np.array([v.mean() for v in per_ctx]) for key, per_ctx in vectors.items()}
-    slug = "spread_grid_simple" if coding == "drop" else "spread_grid_refusal_zero"
+    if extended:
+        slug = "spread_grid_extended"
+    else:
+        slug = "spread_grid_simple" if coding == "drop" else "spread_grid_refusal_zero"
     OUT_FIG.mkdir(parents=True, exist_ok=True)
 
     set_paper_style("blog")
@@ -511,15 +586,16 @@ def main(coding: str = "drop") -> None:
     # subplots_adjust this figure needs; cleared before the figure is created so
     # no layout engine is ever attached.
     plt.rcParams["figure.constrained_layout.use"] = False
+    rows_per = [len(settings_for(b, extended)) for b in BEHAVIORS]
     fig, axes = plt.subplots(
         len(BEHAVIORS),
         2,
-        figsize=(13.0, 11.6),
-        gridspec_kw={"width_ratios": [1.7, 1.0]},
+        figsize=(13.0, 11.6 if not extended else 0.83 * sum(rows_per) + 4.0),
+        gridspec_kw={"width_ratios": [1.7, 1.0], "height_ratios": rows_per},
     )
 
     for row, b in enumerate(BEHAVIORS):
-        settings = SETTINGS[b]
+        settings = settings_for(b, extended)
         pos, divider = _rows(b, settings)
         axl, axr = axes[row]
 
@@ -594,7 +670,17 @@ def main(coding: str = "drop") -> None:
     savefig_paper(fig, slug, dir=OUT_FIG)
     plt.close(fig)
     print(f"wrote {OUT_FIG / f'{slug}.png'}")
-    print(f"parity vs committed spread_stats.json: {len(stats)}/{len(stats)} cells reconciled")
+    # Only cells with a committed row were gated; post-cut extended rungs have
+    # none and were computed fresh. Reporting one count for both would overstate
+    # what the parity check covered.
+    n_gated = sum(
+        1 for b in BEHAVIORS for s in settings_for(b, extended) if s not in EXTRA_RUNGS[b]
+    )
+    n_fresh = len(stats) - n_gated
+    print(
+        f"parity vs committed spread_stats.json: {n_gated}/{n_gated} cells reconciled"
+        + (f"; {n_fresh} post-cut rungs computed fresh (no committed row)" if n_fresh else "")
+    )
 
     if coding == "refusal-zero":
         committed = {
@@ -602,7 +688,7 @@ def main(coding: str = "drop") -> None:
         }
         table = []
         for b in BEHAVIORS:
-            for s in SETTINGS[b]:
+            for s in settings_for(b, extended):
                 row = {
                     "behavior": b,
                     "setting": s,
@@ -666,4 +752,14 @@ def main(coding: str = "drop") -> None:
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--coding", choices=("drop", "refusal-zero"), default="drop")
-    main(**{"coding": ap.parse_args().coding})
+    ap.add_argument(
+        "--extended-rungs",
+        action="store_true",
+        help=(
+            "append the seven post-cut OOD rungs (evil MHJ/PAIR/tom-gibbs; "
+            "sycophancy SycophancyEval x4 + model-written evals) and render "
+            "spread_grid_extended. The default render is byte-unchanged."
+        ),
+    )
+    _a = ap.parse_args()
+    main(coding=_a.coding, extended=_a.extended_rungs)

@@ -35,7 +35,7 @@ SELECTOR_PY = REPO / "scripts" / "select_step9c_tests.py"
 
 ANCHOR_SKILL = "Compute-character pre-launch statement (REQUIRED — one paragraph"
 ANCHOR_CLAUDE = "Compute-character pre-launch statement (REQUIRED — this carve-out skips"
-DUTIES = "Inline measurement-design + figure-sanity duties"
+DUTIES = "Inline figure-sanity duty"
 PIN_FILE_RELPATH = "tests/test_issue_skill_compute_pilot_fence_pin.py"
 
 

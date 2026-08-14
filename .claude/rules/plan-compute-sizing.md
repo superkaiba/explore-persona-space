@@ -39,6 +39,49 @@ A plan that quietly picks `lora-7b` (1× H100) for an embarrassingly parallel
 20-condition sweep is wrong, even if the GPU-hours total is the same.
 
 
+**Ladder-rung RAM floor — declare `--min-ram-gb` whenever the per-leg peak
+RSS exceeds the smallest reachable rung's host RAM.** The `--min-gpu-mem-gb`
+capture-phase floor above has a HOST-RAM sibling: any dispatch — and
+especially any fan-out — whose per-leg peak RSS estimate exceeds the
+smallest reachable ladder rung's host RAM
+(`gcp.MACHINE_RAM_GIB["a2-highgpu-1g"]` = 85 GiB) MUST declare
+`--min-ram-gb <per-leg peak RSS>` on its launch command: the #1998 rung
+guard walks past undersized machines ONLY when the flag is present, and a
+flag-less fan-out silently lands on whatever rung capacity serves (#1739
+wave-1: 5-6 of 12 GCE legs rc=137 OOM after the spot rung downgraded half
+the fleet to 85 GB-RAM `a2-highgpu-1g` boxes). Key the declared value on
+the LARGEST cell/lane (§ CPU-phase RAM/RSS routing, LARGEST-CELL KEYING —
+the #1739 host-RAM incident is that section's own worked example).
+Mechanically backstopped (WARN-only) by `verify_plan.py` c52
+(`c52_fanout_ram_floor`) for PLAN-EMBEDDED `dispatch_issue.py launch`
+commands — both dimensions: a missing `--min-ram-gb` under a declared
+per-leg RSS peak > 85 GiB, a missing `--min-gpu-mem-gb` under a declared
+per-leg VRAM/HBM peak > 38 GiB, and a present flag strictly below its
+declared estimate. This prose ALSO binds driver-script / teammate fan-outs
+that never embed a `dispatch_issue.py launch` line in the plan — the
+actual #1739 wave-1 dispatch channel, structurally invisible to c52 (its
+residual (ii)) — so there the rule IS the coverage, the check is only the
+mechanical backstop for plan-embedded launches, and a c52 SKIP is never
+read as coverage.
+
+On SLURM lanes the floor now binds MECHANICALLY (#2275): `--min-ram-gb`
+threads to `spec.extra["min_ram_gb"]` and the sbatch renderer RAISES the
+rendered `#SBATCH --mem` to the requirement (both GPU and CPU branches,
+`slurm._apply_min_ram`), refusing pre-submit above the cluster
+`mem_gb_cap` — never a silent clamp below the declared requirement. Size
+per-unit RSS × within-job width against the LANE-RENDERED `--mem`
+(fellows GPU branch: `min(128 × gpus, 1800)` G), NOT against per-VM /
+per-rung reads: N units of one job share ONE cgroup, so the AGGREGATE
+binds while each unit can sit below every per-rung constant (#1336:
+8 pooled-fit units needing ≈1,550 GiB total OOM-killed under the
+GPU-count-derived 1024G `--mem`, each unit only 65–70 GiB). SLURM twin of
+c52: `verify_plan.py` c61 (`c61_slurm_mem_coverage`, WARN-only) compares
+declared per-leg peaks — and `peak × width` when a within-job width token
+rides the same line/paragraph — against the WOULD-RENDER `--mem` of every
+plan-embedded SLURM-reachable launch argv; the custom-driver residual is
+unchanged (the rule IS the coverage there).
+
+
 **Merge-disk budget — bound coexisting full-precision artifacts against
 the per-pod quota.** Any phase that materializes full-precision model
 artifacts DURING iteration — a LoRA adapter merged onto base weights for
@@ -267,7 +310,18 @@ pre-launch statement: staging path named up front + the filesystem it
 resolves to via `df -P` + ≥1.5× headroom) is the inline-analysis sibling.
 Critic enforcement: Methodology lens item 16 MOUNT-BINDING EXTENSION
 (`.claude/rules/critic-lens-reference.md`) REVISEs a bare-GB / unbound-mount
-disk row; no verify_plan.py backstop in v1 of this block.
+disk row. Mechanical backstop (WARN-only, #2097): `verify_plan.py` c56
+(`c56_staging_mount_binding`) WARNs a multi-GB (>=5 GB) staging/footprint
+row naming no mount/staging path within ±2 lines (a doc-global `df -P` /
+`findmnt` probe satisfies), AND a worktree-bind citation (`worktree`/`#681`
+co-occurring with `bind`) lacking a literal `findmnt --mountpoint` liveness
+assertion — the #2091 shape (the #681 bind is NOT live on this VM; cited
+for a 42 GB stage, PASSed verify_plan twice). Heuristic surface only; the
+semantic adequacy of a stated mount stays with the lens. The runtime legs
+are mechanized too (#2097): `hub.stage_hub_prefix` asserts destination-mount
+headroom by default (missing-files-only sizing × 1.5, kill switch
+`EPM_HF_STAGE_HEADROOM_SKIP=1`), and preflight gains the `/mnt/eps-data`
+percent floor (`_check_data_disk_floor`; WARN 90% / ERROR 98%).
 
 
 **Fan-out over the same HF prefix — pre-stage once and fan from the staged
@@ -290,8 +344,16 @@ boxes each staged ~144 GB from the same prefix simultaneously; 5 total
 attempts to land one leg). A §9 plan with `N > 1` same-prefix
 concurrent stages and NO named staging shape is a REVISE. Critic
 enforcement: Methodology lens item 16
-FAN-OUT STAGING EXTENSION (`.claude/rules/critic-lens-reference.md`);
-no verify_plan.py backstop in v1.
+FAN-OUT STAGING EXTENSION (`.claude/rules/critic-lens-reference.md`) —
+the BINDING gate. Mechanical backstop (WARN-only, #2236):
+`verify_plan.py` c57 (`c57_fanout_prefix_staging`) WARNs a §9 window
+declaring an `N > 1` concurrent box-level fan-out in a plan that also
+names Hub-prefix staging (`stage_hub_prefix` / `snapshot_download` /
+`hf_hub_download`) with no staging-shape remedy vocabulary (pre-stage /
+serialize / jitter). WARN-only by design — whether N shard rows each
+PULL the prefix or read a shared path is finally a property of the
+dispatcher, not the plan text, so c57 is the early-warning net and the
+lens stays the binding gate.
 
 
 **Sentinel-signaling workloads need a /workspace-contract lane — never
@@ -410,6 +472,25 @@ lane at ≥2× the worst-case extrapolation and mark its row
 `pilot-gated` (#1739: per-group walls measured on the evil behavior
 were proxied to other budget regimes; 4 of 6 lanes halted at their own
 pilot gates and needed relaunches with measured fences).
+HETEROGENEOUS FAN-OUTS (per-family pilot floor) — when the lanes one
+wall/fence derivation covers span families (behavior × budget/grid
+regimes) whose budget / grid / cell-size multipliers differ by more
+than ~4× (max/min ratio across the covered families, per axis — or
+the cross-axis product where axes co-vary), ONE arm-level reference
+cell is NOT a sizing basis for the fan-out: the §9 row (or dispatch
+note) grounds each family band on its OWN measured pilot — one pilot
+per family whose cells the fence covers (the TRIVIALITY EXEMPTION
+below still applies PER ROW, with its sub-floor projection
+family-scaled per the COMPUTED definition here). Below that
+heterogeneity the ≥2×-worst-case escape above remains available, and
+"worst-case extrapolation" is COMPUTED, never carried: the pilot wall
+scaled by the target family's own budget/grid multiplier ratio (with
+the kernel's scaling exponent where superlinear — cf. POOL-SCALE
+PILOTS above), not the pilot family's wall verbatim (#1739: budgets
+spanned 250→16000 = 64×; MEASURED evil-family pilots proxied to
+sibling budget families under-projected 2.5–4× — coresyc ratio 3.98,
+coreevil 2.52 — and the fan-out took re-fenced relaunches at
+13.6–21.6 h plus an rc=137 OOM wave at the largest-budget unit).
 TRIVIALITY EXEMPTION — never
 self-certified by an asserted cost: a row may skip the pilot ONLY when
 total_calls ≤ ~500 AND its sub-floor (~15–30 min) projection is computed
@@ -464,6 +545,28 @@ whose own basis derives a GPU-h figure > 2× the row's booked
 per-cell abort threshold sits BELOW the per-cell wall its own booking
 implies (#1336 `EXT_off`: basis 90 GPU-h vs booked 30; abort > 30 min/cell
 vs a booked ~91 min/cell).
+
+
+**Decoding/sampling regime change — a parent run's realized wall is NOT a
+sizing basis for the regime-changed rerun; re-pilot before quoting a
+user-facing cost (#1491).** Any rerun change that shifts the
+completion-LENGTH distribution invalidates the parent's wall — generation
+wall-time is length-bound. The canonical class is a DECODING/SAMPLING
+regime change: sampling→greedy (or the reverse), a temperature change, a
+`max_new_tokens`/cap change, a stop-condition change. Under any of these
+the parent run's realized wall / GPU-h (Repro-footer figure included)
+becomes a GUESSED basis for the rerun, not a measured one. Before any
+user-facing cost quote for a regime-changed rerun, run a ONE-RUNG measured
+pilot under the NEW regime (one model size / one lane through the
+production entrypoint), extrapolate from that, and carry the parent figure
+only as a labelled lower bound; fence the rerun off the pilot (≥2×
+dispersion default), never off the parent wall. This is the
+generation-rerun sibling of PER-REGIME BINDING above (fit-lane
+behavior/budget regimes, #1739) — the regime axis there is the lane's
+corpus/budget; here it is the decode sampler itself. (#1491: a greedy
+rerun was quoted at 40–50 GPU-h off the parent's 5.4 h sampled-regime
+wall; greedy repetition loops pushed cap-hit 6.66%→18.47% at 0.5B and
+realized cost to ~78–82 GPU-h, ~1.7–2.0× the approved figure.)
 
 
 **GPU-utilization / "GPU-bound" claims in dispatch, checkpoint, and
@@ -688,6 +791,26 @@ the phase mid-run (#599: the pre-registered §7.3 extension probe was
 hard-deleted at step 149/2400 by the 24h fence).
 
 
+**Reconcile the §9 wall against the SLURM `--time` default bin whenever
+the launch omits `--time-budget-hours` (#2027).** On a SLURM-reachable
+route (`dispatch_issue._slurm_lane_reachable` — fellows/nibi/fir/mila
+explicit pins, or an `auto` order carrying a SLURM lane) a launch with no
+`--time-budget-hours` gets sbatch `--time` from the INTENT's default bin
+(`slurm._DEFAULT_TIME_BUDGETS_HOURS`: lora-7b 6.0 h, eval 4.0 h, ft-7b
+23.5 h, ...), so a §9 projected wall above that bin TIMEOUTs mid-run —
+the #1336 shape reached WITHOUT `--max-run-duration`, which is exactly
+why the runtime `max_run_duration_slurm_inert_without_time_budget`
+refusal and its c46 arm-2 plan-time twin are structurally blind to it.
+RULE: when the plan's max `planned_wall_h` exceeds the launch intent's
+bin, declare `--time-budget-hours >= <max wall>` on the launch command
+(the repo's own margin style is an explicit in-table value, e.g. ft-7b
+23.5 under the 24 h bin), or pin a non-SLURM backend. Mechanically
+backstopped (WARN-only, heuristic) by `verify_plan.py` c50 — fires only
+on exactly-one-DISTINCT-launch plans (multi-dispatch wall-row↔dispatch
+joins are a documented false negative); 2026-08 corpus calibration: 5
+true-positive WARNs of 5,244 plans (#1345 v7-v9, #597 v4-v5).
+
+
 **Multi-arm min-width + stall-time down-width split — the down-going
 sibling of the #1121 wide-first rung walk.** A plan whose §9 couples two
 or more arms with DIFFERENT minimum GPU requirements behind ONE provision
@@ -732,10 +855,19 @@ PRODUCTION shape (or a cited prior-issue MEASURED figure for the SAME
 kernel + shape), a measured / ×2-presumed RSS basis keyed to the
 LARGEST cell/lane, and a self-set fence ≥2× the pilot-extrapolated wall
 (measured per-cell wall × remaining cells / parallelism — the p90-style
-×2 dispersion default). Mechanics are UNCHANGED and NOT DUPLICATED —
+×2 dispersion default), plus the two statement elements this rule's own
+mechanics do not carry: the ACROSS-CELL shard axis + realized width for
+a many-cell battery projected > ~1h (or explicitly `not shardable —
+<one-line reason>`; within-cell vectorization alone does not discharge
+it — #1345), and the CHECKPOINT CADENCE for a detached VM-side
+fit/phase > ~15 min (partial artifacts per phase / per cell-chunk into
+the durable out-root, never only at process exit — #1482). Mechanics
+are UNCHANGED and NOT DUPLICATED —
 they live at § Per-cell fit phases (the measured-pilot recipe + fence
 sizing) and § CPU-phase RAM/RSS routing (the LARGEST-CELL keying + the
-≥~16 GB VM-routing bar). This section only widens the BINDING SURFACE
+≥~16 GB VM-routing bar), and — for the shard-axis + checkpoint-cadence
+elements — the `.claude/skills/issue/SKILL.md` Step 9a-ter canonical
+block. This section only widens the BINDING SURFACE
 set: (a) plan §9 rows are bound by their own §-scoped wording, (b) the
 CLAUDE.md § "User-chat inline free analysis" carve-out block binds
 user-chat inline runs, and (c) this section binds the residual class —

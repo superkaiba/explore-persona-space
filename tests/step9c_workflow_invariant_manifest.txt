@@ -17,6 +17,7 @@ tests/test_consistency_checker_parentless_infra_skip.py
 tests/test_daily_skill_commit_pathspec_pin.py
 tests/test_daily_stub_first_doc.py
 tests/test_daily_three_route_classifier_doc.py
+tests/test_datagen_trainability_floor.py
 tests/test_diff_base_origin_main_pin.py
 tests/test_experimenter_md.py
 tests/test_failure_classifier.py
@@ -26,8 +27,11 @@ tests/test_guard_trigger_dense_read.py
 tests/test_implementer_spec_mechanical_pin_sweep.py
 tests/test_implementer_spec_names_invariant_local_union.py
 tests/test_implementer_spec_names_ruff_policy_pin.py
+tests/test_issue_skill_agent_memory_no_lost_row.py
 tests/test_issue_skill_bare_push_snippets_pin.py
+tests/test_issue_skill_brief_marker_displacement_pin.py
 tests/test_issue_skill_compute_pilot_fence_pin.py
+tests/test_issue_skill_dead_veto_status_pin.py
 tests/test_issue_skill_detached_harvest_pin.py
 tests/test_issue_skill_disk_routing_pin.py
 tests/test_issue_skill_dispatch_preflight_pin.py
@@ -35,6 +39,7 @@ tests/test_issue_skill_exit_breadcrumb.py
 tests/test_issue_skill_fellows_launch_contract_pin.py
 tests/test_issue_skill_followup_cap_park_note_pin.py
 tests/test_issue_skill_forensics_ingest_pointer.py
+tests/test_issue_skill_gate_recipe_hardening.py
 tests/test_issue_skill_gate_scope_brief_pin.py
 tests/test_issue_skill_gate_single_flight.py
 tests/test_issue_skill_gist_update_recipe.py
@@ -54,10 +59,12 @@ tests/test_issue_skill_pre_split_composition.py
 tests/test_issue_skill_presplit_dispatch_pin.py
 tests/test_issue_skill_remote_landing_watch_pin.py
 tests/test_issue_skill_round_boundary_duty_pin.py
+tests/test_issue_skill_shard_axis_checkpoint_cadence_pin.py
 tests/test_issue_skill_staged_index_verification.py
 tests/test_issue_skill_stash_kept_duty_pin.py
 tests/test_issue_skill_step0_preload_pin.py
 tests/test_issue_skill_step10_teardown_ordering.py
+tests/test_issue_skill_step10d_no_pr_arm.py
 tests/test_issue_skill_step2_floor.py
 tests/test_issue_skill_stopped_volume_persist_pin.py
 tests/test_issue_skill_terminal_landing_pin.py
@@ -66,6 +73,7 @@ tests/test_issue_skill_triage_boundary_token.py
 tests/test_issue_skill_trigger_dense_tag_adoption.py
 tests/test_issue_skill_width_reeval_pointer.py
 tests/test_issue_tick_skill.py
+tests/test_lean_twin_registration_pin.py
 tests/test_mapping_baselines_wiring_pins.py
 tests/test_no_auto_runpod_path_under_any_failure.py
 tests/test_no_direct_task_path_construction.py
@@ -92,6 +100,7 @@ tests/test_task_workflow_list_children.py
 tests/test_task_workflow_post_marker_echo.py
 tests/test_task_workflow_worktree.py
 tests/test_teammate_coordination_pins.py
+tests/test_upload_policy_manifest_first_pin.py
 tests/test_verify_clean_result.py
 tests/test_verify_clean_result_body_stdin.py
 tests/test_verify_paper.py
@@ -107,8 +116,10 @@ tests/test_workflow_hub_upload_as_file.py
 tests/test_workflow_lint.py
 tests/test_workflow_lint_agent_spec_caps.py
 tests/test_workflow_lint_agent_spec_size.py
+tests/test_workflow_lint_cvd_scoped_gpu_verdict.py
 tests/test_workflow_lint_dotenv_check.py
 tests/test_workflow_lint_failover_pivot_pin.py
 tests/test_workflow_lint_inline_round_duty_mirror.py
 tests/test_workflow_lint_smoke_blind_spots.py
+tests/test_workflow_lint_two_tier_yield_floor.py
 tests/test_workflow_yaml.py

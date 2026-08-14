@@ -16,6 +16,14 @@ Covers (plan §5.1):
   * EPS_VM_DATA_DISK_PATH redirects the watched mount,
   * the data-disk escalation/sub-floor pass under dry_run mutates nothing.
 
+#2095 staging-roots rows (plan §4.6):
+  * the data-disk pass threads ``staging_roots`` into tier (b) — a
+    staging-ONLY issue is discovered and its per-issue cleanup receives the
+    roots verbatim,
+  * the boot-disk (/) pass does NOT get staging roots (no-double-sweep pin,
+    the inverted twin of the #911 "data-disk pass never sweeps /tmp" pin),
+  * ``run_guard`` never calls ``production_staging_roots`` (source-scan).
+
 Loaded via importlib exactly like tests/test_vm_disk_guard.py.
 """
 
@@ -306,6 +314,147 @@ def test_main_runs_data_disk_pass_for_real_mount(tmp_path, monkeypatch):
     assert "/" in calls and "/mnt/eps-data" in calls, (
         f"both the boot-disk and data-disk passes must run for a live mount; got {calls}"
     )
+
+
+# ─── #2095: staging-roots threading (data-disk pass ONLY; no double-sweep) ───
+
+
+def test_data_disk_pass_threads_staging_roots_into_tier_b(tmp_path, monkeypatch):
+    """``run_guard(staging_roots=[...])`` reaches tier (b): a staging-ONLY
+    issue (no ``data/issue*`` dir anywhere — only a
+    ``/mnt/eps-data/$USER/issue<N>_<slug>/`` dir) is DISCOVERED via
+    ``_discover_staging_issue_numbers`` and its per-issue cleanup call
+    receives the staging roots VERBATIM (with ``tmp_root`` staying None —
+    the data-disk pass never sweeps /tmp)."""
+    data_root = tmp_path / "wt-data"
+    data_root.mkdir()  # empty: issue 940 exists ONLY under the staging root
+    sroot = tmp_path / "eps-data-user"
+    (sroot / "issue940_hf_dl").mkdir(parents=True)
+    monkeypatch.setattr(vdg, "_resolve_issue_status", lambda n: "completed")
+
+    calls: list[dict] = []
+
+    def _spy(
+        issue_n,
+        *,
+        apply=False,
+        data_root=None,
+        tmp_root=None,
+        sweep_tmp=True,
+        staging_roots=None,
+        exclude_scratch_shapes=False,  # #2127: threaded by tier (b); inert here
+        git_evidence_repo=None,
+    ):
+        calls.append({"issue_n": issue_n, "staging_roots": staging_roots, "tmp_root": tmp_root})
+        return ced.CleanResult(issue_n=issue_n, apply=apply)
+
+    monkeypatch.setattr(vdg, "clean_issue_downloads", _spy)
+    _patch_disk(monkeypatch, before_pct=96.0, after_pct=40.0)
+
+    res = vdg.run_guard(
+        apply=True,
+        threshold=85.0,
+        data_root=data_root,
+        disk_path="/mnt/eps-data",
+        reclaim_tiers=False,
+        staging_roots=[sroot],
+    )
+    assert res.triggered is True
+    assert {t.name for t in res.tiers} == {"terminal-download-caches"}
+    # The staging-ONLY issue was discovered and the roots forwarded verbatim.
+    assert [c["issue_n"] for c in calls] == [940]
+    assert calls[0]["staging_roots"] == [sroot]
+    assert calls[0]["tmp_root"] is None
+
+
+def test_run_guard_staging_default_none_never_discovers(tmp_path, monkeypatch):
+    """Hermeticity (the tmp_root contract's staging twin): a library call with
+    the default ``staging_roots=None`` NEVER runs staging discovery — the
+    existing suite's ``run_guard(apply=True, data_root=...)`` call sites must
+    never touch the real ``/mnt/eps-data/$USER`` tree during pytest."""
+    data_root = tmp_path / "data"
+    data_root.mkdir()
+
+    def _boom(*a, **k):
+        raise AssertionError("staging discovery must not run with staging_roots=None")
+
+    monkeypatch.setattr(vdg, "_discover_staging_issue_numbers", _boom)
+    _patch_disk(monkeypatch, before_pct=96.0, after_pct=96.0)
+    res = vdg.run_guard(
+        apply=True,
+        threshold=85.0,
+        data_root=data_root,
+        disk_path="/mnt/eps-data",
+        reclaim_tiers=False,
+    )
+    assert res.triggered is True
+    assert {t.name for t in res.tiers} == {"terminal-download-caches"}
+
+
+def test_main_threads_staging_roots_to_data_disk_pass_only(monkeypatch):
+    """NO-DOUBLE-SWEEP pin (#2095, the inverted twin of the #911 "data-disk
+    pass never sweeps /tmp" pin): ``main()`` threads
+    ``production_staging_roots()`` into the DATA-DISK pass ONLY — the
+    boot-disk (/) pass gets none (the staging roots live ON the data disk).
+    The /tmp opt-in stays inverted: boot pass gets ``production_tmp_root()``,
+    data-disk pass gets ``tmp_root=None``."""
+    sentinel = [Path("/mnt/eps-data/someuser")]
+    monkeypatch.setattr(vdg, "production_staging_roots", lambda: sentinel)
+
+    calls: list[dict] = []
+
+    def fake_run_guard(apply, *, threshold=None, log_max_age=None, **kw):
+        calls.append(
+            {
+                "disk_path": kw.get("disk_path", "/"),
+                "staging_roots": kw.get("staging_roots"),
+                "tmp_root": kw.get("tmp_root"),
+            }
+        )
+        return vdg.GuardResult(
+            used_pct_before=40.0,
+            used_pct_after=40.0,
+            free_gb_before=200.0,
+            free_gb_after=200.0,
+            threshold_pct=85.0,
+            triggered=False,
+            apply=apply,
+        )
+
+    monkeypatch.setattr(vdg, "run_guard", fake_run_guard)
+    monkeypatch.setattr(vdg, "_is_mounted", lambda p: True)  # simulate a live mount
+    rc = vdg.main(["--data-disk-path", "/mnt/eps-data", "--json"])
+    assert rc == 0
+    by_path = {c["disk_path"]: c for c in calls}
+    assert set(by_path) == {"/", "/mnt/eps-data"}
+    # Staging roots: data-disk pass ONLY (no double-sweep per run).
+    assert by_path["/"]["staging_roots"] is None
+    assert by_path["/mnt/eps-data"]["staging_roots"] == sentinel
+    # The inverted /tmp pin is unchanged: boot pass opts in, data pass never.
+    assert by_path["/"]["tmp_root"] is not None
+    assert by_path["/mnt/eps-data"]["tmp_root"] is None
+
+
+def test_run_guard_never_calls_production_staging_roots():
+    """Source-scan pin (#2095 §4.2 — the I7-style hermeticity invariant scoped
+    to ``run_guard``): the staging opt-in lives ONLY in ``main()``; a
+    ``run_guard``-side ``production_staging_roots()`` fallback would sweep the
+    real staging tree from every library/pytest call site. Same for the
+    sibling ``production_tmp_root`` symbol (#911)."""
+    import ast
+
+    tree = ast.parse((_SCRIPTS / "vm_disk_guard.py").read_text())
+    run_guard_fn = next(
+        n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "run_guard"
+    )
+    for symbol in ("production_staging_roots", "production_tmp_root"):
+        refs = [
+            node
+            for node in ast.walk(run_guard_fn)
+            if (isinstance(node, ast.Name) and node.id == symbol)
+            or (isinstance(node, ast.Attribute) and node.attr == symbol)
+        ]
+        assert refs == [], f"run_guard must never reference {symbol} (main()-only opt-in)"
 
 
 if __name__ == "__main__":

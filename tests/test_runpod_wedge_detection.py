@@ -359,9 +359,9 @@ def test_list_issue664_hub_files_scoped(monkeypatch):
         tree_calls.append((repo_id, repo_type, revision, path_in_repo))
         if path_in_repo == "absent_prefix":
             raise EntryNotFoundError("entry absent_prefix not found")
-        return [f"{path_in_repo}/cell/file.json"]
+        return [(f"{path_in_repo}/cell/file.json", 1)]
 
-    monkeypatch.setattr(hub, "list_repo_files_complete", _fake_complete)
+    monkeypatch.setattr(hub, "list_repo_entries_complete", _fake_complete)
     import huggingface_hub
 
     monkeypatch.setattr(huggingface_hub, "HfApi", _StubApi)

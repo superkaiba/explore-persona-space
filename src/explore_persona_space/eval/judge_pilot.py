@@ -20,6 +20,14 @@ drop profile:
 - **FAIL on any transport-hollowed / under-sized arm** whose ANSWERED draw count
   falls below ``min_effective_draws_per_arm`` — the gate never PASSes on hollow
   evidence (transport losses are freely re-judgeable; re-run the pilot).
+- **REFUSE (ValueError, before any API spend) an UNSATISFIABLE configuration**
+  (#2124, rule 26's sizing clause): any arm whose REALIZED draws —
+  ``min(per_arm_items, len(arm_items)) * n_draws`` — fall below
+  ``max(min_effective_draws_per_arm, floor(1/parse_fail_threshold) + 1)``
+  cannot RESOLVE the parse-fail threshold (at n draws the smallest observable
+  nonzero rate is 1/n), so the gate would FAIL on the first parse failure and
+  a PASS would carry no evidence. ``allow_subresolution_pilot=True``
+  downgrades the refusal to a recorded report warning.
 
 Multi-rubric waves call the gate ONCE PER RUBRIC (each rubric is its own
 instrument; one pilot cannot certify another rubric's drop profile).
@@ -42,6 +50,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import math
 import random
 from collections.abc import Collection, Mapping, Sequence
 from dataclasses import asdict, dataclass
@@ -83,9 +92,20 @@ class ArmPilotStats:
     (non-transport, non-refusal) content DROPS lacking a persisted
     ``stop_reason`` — nonzero PARTIALLY detects a stale pre-#2021 judge cache
     being replayed (expect ~0 against a fresh pilot ``cache_dir``).
+
+    Per-ITEM fields (#2124, rule 29): ``n_items``, ``n_items_zero_valid``
+    (items whose EVERY draw dropped — content, transport, and api-refusal
+    alike), and ``frac_items_complete``
+    (= ``(n_items - n_items_zero_valid) / n_items``) are the ONLY per-item
+    fields; every ``n_*`` counter above remains per-DRAW. REPORT-ONLY like
+    ``n_api_refusal`` — no gate condition keys on them: rule 29's floor is a
+    production-wave read (``JudgeResult.frac_items_complete``), and a
+    ~200-draw pilot resolves completeness only to ~1/n_items anyway.
     """
 
     n_items: int
+    n_items_zero_valid: int
+    frac_items_complete: float
     n_draws: int
     n_scored: int
     n_content_dropped: int
@@ -270,6 +290,149 @@ def _gate_verdict(
     return failures, warnings
 
 
+def _config_satisfiability_guard(
+    arms: Mapping[str, list[tuple[str, str, str]]],
+    *,
+    per_arm_items: int,
+    n_draws: int,
+    parse_fail_threshold: float,
+    min_effective_draws_per_arm: int,
+    waive_parse_fail_arms: Collection[str],
+    allow_subresolution_pilot: bool,
+) -> tuple[list[str], set[str], int | None]:
+    """#2124 config-time satisfiability guard (rule 26 sizing clause).
+
+    Rule 26(b) FAILs on parse_fail_rate >= parse_fail_threshold (STRICT, see
+    ``_gate_verdict``), so at n effective draws the smallest observable NONZERO
+    rate is 1/n and a single parse failure survives only when 1/n < threshold:
+    the per-arm floor is max(min_effective_draws_per_arm, floor(1/threshold)
+    + 1) — 51 at the default 2%, not 50. Realized per-arm draws are DISCRETIZED
+    (the caller's floor division) and ARM-SIZE-CAPPED (``_seeded_subsample``),
+    so the guard keys on ``min(per_arm_items, len(items)) * n_draws``, never
+    ``per_arm_items * n_draws``. Refuses BEFORE any ``judge_graded`` call / API
+    spend (fail fast); ``allow_subresolution_pilot=True`` downgrades the
+    refusal to a recorded report warning (the deliberate escape for smoke legs
+    and unavoidably tiny runtime arms).
+
+    Returns ``(pre_warnings, bypassed_arms, min_resolvable)``. Raises
+    ``ValueError`` on a non-positive threshold, an empty arm, or an
+    unsatisfiable configuration under the default strict mode.
+    """
+    if parse_fail_threshold <= 0:
+        raise ValueError(
+            f"parse_fail_threshold={parse_fail_threshold} must be > 0: the rule-26(b) "
+            "check FAILs on rate >= threshold, so a non-positive threshold fails "
+            "every arm unconditionally — no pilot size can resolve it"
+        )
+    d_eff = max(1, n_draws)
+    # threshold >= 1.0 has no finite resolution floor (only a 100% parse-fail
+    # rate can reach it, observable at any n >= 1) — the min-effective floor
+    # alone binds there.
+    min_resolvable = (
+        math.floor(1.0 / parse_fail_threshold) + 1 if parse_fail_threshold < 1.0 else None
+    )
+    waived_set = set(waive_parse_fail_arms)
+    budget_limited: dict[str, tuple[int, int]] = {}  # arm -> (realized, required)
+    item_limited: dict[str, tuple[int, int, int]] = {}  # arm -> (realized, required, need)
+    for arm, items in arms.items():
+        if not items:
+            raise ValueError(f"arm {arm!r} has no items")
+        required = min_effective_draws_per_arm
+        if min_resolvable is not None and arm not in waived_set:
+            # A waived arm's parse-fail check never fires (rule 26(b) escape),
+            # so only the min-effective hollow-evidence floor binds it.
+            required = max(required, min_resolvable)
+        realized = min(per_arm_items, len(items)) * d_eff
+        if realized >= required:
+            continue
+        items_needed = math.ceil(required / d_eff)
+        if len(items) < items_needed:
+            item_limited[arm] = (realized, required, items_needed)
+        else:
+            budget_limited[arm] = (realized, required)
+    pre_warnings: list[str] = []
+    bypassed_arms: set[str] = set()
+    if budget_limited or item_limited:
+        parts: list[str] = []
+        if budget_limited:
+            req_max = max(required for _realized, required in budget_limited.values())
+            suggested = len(arms) * d_eff * math.ceil(req_max / d_eff)
+            arms_txt = "; ".join(
+                f"arm {arm!r}: realized {realized} draw(s) < required {required}"
+                for arm, (realized, required) in sorted(budget_limited.items())
+            )
+            parts.append(
+                f"budget-limited: {arms_txt} — raise target_total_draws >= {suggested} "
+                f"(= n_arms {len(arms)} * n_draws {d_eff} * ceil(required / n_draws) "
+                f"{math.ceil(req_max / d_eff)}; the budget is floor-divided across "
+                "arms, so the naive required * n_arms under-provisions)"
+            )
+        if item_limited:
+            arms_txt = "; ".join(
+                f"arm {arm!r}: {len(arms[arm])} item(s) < {items_needed} needed "
+                f"(realized {realized} draw(s) < required {required})"
+                for arm, (realized, required, items_needed) in sorted(item_limited.items())
+            )
+            parts.append(
+                f"item-limited: {arms_txt} — NO target_total_draws can fix an arm "
+                "holding fewer than ceil(required / n_draws) items; waive it "
+                "(waive_parse_fail_arms, with a recorded reason) or accept a "
+                "sub-resolution pilot (allow_subresolution_pilot=True)"
+            )
+        msg = (
+            "judge_pilot_gate: unsatisfiable pilot configuration — the rule-26(b) "
+            f"parse-fail check (FAIL on rate >= parse_fail_threshold="
+            f"{parse_fail_threshold}) needs >= max(min_effective_draws_per_arm="
+            f"{min_effective_draws_per_arm}, floor(1/threshold)+1={min_resolvable}) "
+            "effective draws per unwaived arm to RESOLVE the threshold (at n draws "
+            "the smallest observable nonzero rate is 1/n). " + " | ".join(parts)
+        )
+        if not allow_subresolution_pilot:
+            raise ValueError(msg)
+        bypassed_arms = set(budget_limited) | set(item_limited)
+        pre_warnings.append(
+            "sub-resolution pilot ACCEPTED (allow_subresolution_pilot=True): " + msg
+        )
+    return pre_warnings, bypassed_arms, min_resolvable
+
+
+def _runtime_shrink_warnings(
+    arm_stats: dict[str, ArmPilotStats],
+    *,
+    bypassed_arms: set[str],
+    min_resolvable: int | None,
+) -> list[str]:
+    """#2124 D-1b runtime-shrink advisory (rule 26 sizing clause).
+
+    The config-time guard sizes PLANNED draws; realized ANSWERED draws can
+    still shrink below the resolution floor through transport losses (rule 24)
+    and api-refusals (rule 28), re-creating the granularity artifact after the
+    guard passed. WARN only, never a FAIL — an under-powered pilot, not
+    evidence the instrument is bad (the ``min_effective_draws_per_arm`` FAIL in
+    ``_gate_verdict`` stays the hollow-evidence gate). Skipped for waived arms
+    (their parse-fail check never fires) and for arms already accepted as
+    sub-resolution under ``allow_subresolution_pilot``.
+    """
+    warnings: list[str] = []
+    if min_resolvable is None:
+        return warnings
+    for arm, a in arm_stats.items():
+        if arm in bypassed_arms or a.waived:
+            continue
+        n_answered_arm = a.n_draws - a.n_transport_lost - a.n_api_refusal
+        if n_answered_arm < min_resolvable:
+            warnings.append(
+                f"arm {arm}: only {n_answered_arm} answered draw(s) < "
+                f"floor(1/parse_fail_threshold)+1={min_resolvable} after "
+                f"{a.n_transport_lost} transport loss(es) + {a.n_api_refusal} "
+                "api-refusal(s) — the pilot is UNDER-POWERED for its own "
+                "parse-fail threshold (the smallest observable nonzero rate "
+                "is 1/n); top up / re-run the pilot (rules 24/28) — NOT "
+                "evidence the instrument is bad"
+            )
+    return warnings
+
+
 def judge_pilot_gate(
     arms: Mapping[str, list[tuple[str, str, str]]],
     eval_prompt: str,
@@ -284,6 +447,7 @@ def judge_pilot_gate(
     parse_fail_threshold: float = 0.02,
     waive_parse_fail_arms: Collection[str] = (),
     min_effective_draws_per_arm: int = 10,
+    allow_subresolution_pilot: bool = False,
     threshold_base: int | None = None,
     report_path: Path | None = None,
     seed: int = 0,
@@ -335,6 +499,13 @@ def judge_pilot_gate(
             silently PASSing on hollow evidence — a transport-hollowed arm proves
             nothing about the instrument, and transport losses are freely
             re-judgeable: re-run the pilot.
+        allow_subresolution_pilot: when True, the #2124 config-time
+            satisfiability refusal (an arm whose realized
+            ``min(per_arm_items, len(arm_items)) * n_draws`` cannot RESOLVE
+            ``parse_fail_threshold`` — rule 26's sizing clause) is downgraded
+            from ``ValueError`` to a recorded report warning and the pilot
+            proceeds. The deliberate escape for smoke legs and unavoidably
+            tiny runtime arms; production callers keep the default False.
         threshold_base: ``judge_graded`` passthrough (``0`` forces the Batch-API
             path — the pre-launch request-shape probe).
         report_path: when set, the report JSON is written there (the run-digest /
@@ -345,11 +516,17 @@ def judge_pilot_gate(
         :class:`PilotGateReport` — ``passed``/``verdict`` plus per-arm stats;
         ``failures`` lists every gate violation (empty on PASS), ``warnings``
         carries the non-verdict advisories (sub-floor ``max_tokens``, unknown
-        stop_reason drops, transport losses, waived overshoots).
+        stop_reason drops, transport losses, waived overshoots, accepted
+        sub-resolution arms, and the #2124 runtime-shrink advisory).
 
     Raises:
         ValueError: empty ``arms``, an empty arm, a non-filesystem-safe arm name,
-            an unknown ``waive_parse_fail_arms`` entry, or (re-raised verbatim
+            an unknown ``waive_parse_fail_arms`` entry, a non-positive
+            ``parse_fail_threshold``, an UNSATISFIABLE pilot configuration
+            (#2124 — any arm's realized draws below
+            ``max(min_effective_draws_per_arm, floor(1/threshold) + 1)``
+            unless ``allow_subresolution_pilot=True``; raised BEFORE any
+            ``judge_graded`` call / API spend), or (re-raised verbatim
             from ``judge_graded``) an ``item_id`` containing ``"__"``.
     """
     if not arms:
@@ -366,10 +543,23 @@ def judge_pilot_gate(
     save_raw_dir.mkdir(parents=True, exist_ok=True)
     per_arm_items = max(1, target_total_draws // (len(arms) * max(1, n_draws)))
 
+    # --- #2124 config-time satisfiability guard (rule 26 sizing clause) ------
+    # Refuses an unsatisfiable configuration BEFORE any judge_graded call /
+    # API spend (fail fast); allow_subresolution_pilot=True downgrades the
+    # refusal to a recorded report warning. Arithmetic + escape semantics:
+    # _config_satisfiability_guard.
+    pre_warnings, bypassed_arms, min_resolvable = _config_satisfiability_guard(
+        arms,
+        per_arm_items=per_arm_items,
+        n_draws=n_draws,
+        parse_fail_threshold=parse_fail_threshold,
+        min_effective_draws_per_arm=min_effective_draws_per_arm,
+        waive_parse_fail_arms=waive_parse_fail_arms,
+        allow_subresolution_pilot=allow_subresolution_pilot,
+    )
+
     arm_stats: dict[str, ArmPilotStats] = {}
     for arm, items in arms.items():
-        if not items:
-            raise ValueError(f"arm {arm!r} has no items")
         sub = _seeded_subsample(items, per_arm_items, seed=seed, arm=arm)
         save_raw = save_raw_dir / f"judge_raw_pilot_{arm}.json"
         result = judge_graded(
@@ -390,8 +580,14 @@ def judge_pilot_gate(
         n_answered = (
             result.n_total_draws - result.n_transport_lost_draws - result.n_api_refusal_draws
         )
+        # #2124 (rule 29): per-item completeness, off the reduce's scores map —
+        # the reduce pre-seeds every item, so scores[item] is None marks
+        # all-draws-dropped. REPORT-only (see the ArmPilotStats docstring).
+        n_items_zero_valid = sum(1 for v in result.scores.values() if v is None)
         arm_stats[arm] = ArmPilotStats(
             n_items=len(sub),
+            n_items_zero_valid=n_items_zero_valid,
+            frac_items_complete=(len(sub) - n_items_zero_valid) / len(sub),
             n_draws=result.n_total_draws,
             n_scored=n_answered - result.n_dropped_draws,
             n_content_dropped=result.n_dropped_draws,
@@ -412,6 +608,16 @@ def judge_pilot_gate(
         max_tokens=max_tokens,
         parse_fail_threshold=parse_fail_threshold,
         min_effective_draws_per_arm=min_effective_draws_per_arm,
+    )
+    warnings = pre_warnings + warnings
+
+    # #2124 D-1b runtime-shrink advisory (rule 26 sizing clause): WARN when an
+    # arm's realized ANSWERED draws shrank below the resolution floor after
+    # the config-time guard passed. Full semantics: _runtime_shrink_warnings.
+    warnings.extend(
+        _runtime_shrink_warnings(
+            arm_stats, bypassed_arms=bypassed_arms, min_resolvable=min_resolvable
+        )
     )
 
     passed = not failures

@@ -1,38 +1,19 @@
 {
-  "commit": "5c91482f+dirty",
-  "git_commit": "5c91482f",
+  "commit": "9eed3e57+dirty",
+  "render_id": "2cef04efe36a4ed3",
+  "git_commit": "9eed3e57",
   "git_dirty": true,
   "git_dirty_paths": [
-    ".claude/agent-memory/analyzer/MEMORY.md",
-    ".claude/agent-memory/analyzer/feedback_word_cap_relief_new_section_plus_methodology.md",
-    ".claude/agent-memory/critic/MEMORY.md",
-    ".claude/agent-memory/experiment-implementer/MEMORY.md",
-    ".claude/agent-memory/experimenter/MEMORY.md",
-    ".claude/agent-memory/implementer/MEMORY.md",
-    ".claude/agent-memory/implementer/reference_worktree_pytest_resolves_main_src.md",
-    "eval_results/issue_2094/r2_decomposition/r2_decomposition.json",
-    "figures/issue_1739/issue1739_pv_settings_pa.pdf",
-    "figures/issue_1739/issue1739_pv_settings_pb.pdf",
-    "figures/issue_1739/issue1739_r2v2_settings_pa.pdf",
-    "figures/issue_1739/issue1739_r2v2_settings_pb.pdf",
-    "figures/issue_1739/pv_regime_view/pv_regime_pa.pdf",
-    "figures/issue_1739/pv_regime_view/pv_regime_pb.pdf",
+    "docs/results_summaries/2026-08-11-framing-character-map-transfer.md",
     "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_attrib_quoted.meta.json",
     "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_attrib_quoted.pdf",
     "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_attrib_quoted.png",
-    "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_bare_label.meta.json",
-    "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_bare_label.pdf",
-    "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_bare_label.png",
-    "figures/issue_2054/framing_character_transfer/framing_transfer_provenance.meta.json",
-    "figures/issue_2054/framing_character_transfer/framing_transfer_provenance.pdf",
-    "figures/issue_2054/framing_character_transfer/framing_transfer_provenance.png",
     "figures/issue_2054/framing_character_transfer/framing_transfer_tiers.meta.json",
     "figures/issue_2054/framing_character_transfer/framing_transfer_tiers.pdf",
     "figures/issue_2054/framing_character_transfer/framing_transfer_tiers.png",
-    "scripts/issue2054_framing_character_transfer_figs.py",
-    "scripts/issue2094_r2_decomposition.py"
+    "scripts/issue2054_framing_character_transfer_figs.py"
   ],
-  "created": "2026-08-07T18:04:02Z",
+  "created": "2026-08-11T16:51:20Z",
   "figsize": [
     11.6,
     8.8
@@ -1311,6 +1292,7 @@
         "title_left": "Qwen2.5-7B-Instruct \u00b7 inserted answer text\nn=4,135\u20134,945 paired rows per character",
         "ylabel": "held-out $R^2$ (context arm, layer 19)",
         "annotations": [
+          "assistant source map on its OWN data: 0.306",
           "rungs 7\u20139: $n_{train}$\u22483,308 < $d$=3,584\nregularization-limit"
         ],
         "yticklabels": [
@@ -1320,12 +1302,15 @@
           "0.10",
           "0.15",
           "0.20",
-          "0.25"
+          "0.25",
+          "0.30",
+          "0.35"
         ]
       },
       {
         "title_left": "Qwen2.5-7B (base) \u00b7 inserted answer text\nn=4,135\u20134,945 paired rows per character",
         "annotations": [
+          "assistant source map on its OWN data: 0.299",
           "rungs 7\u20139: $n_{train}$\u22483,308 < $d$=3,584\nregularization-limit"
         ]
       },
@@ -1334,6 +1319,7 @@
         "xlabel": "transfer tier (more correction allowed \u2192)",
         "ylabel": "held-out $R^2$ (context arm, layer 19)",
         "annotations": [
+          "assistant source map on its OWN data: 0.253",
           "rungs 7\u20139: $n_{train}$\u22482,360 < $d$=3,584\nregularization-limit"
         ],
         "xticklabels": [
@@ -1354,13 +1340,16 @@
           "0.05",
           "0.10",
           "0.15",
-          "0.20"
+          "0.20",
+          "0.25",
+          "0.30"
         ]
       },
       {
         "title_left": "Qwen2.5-7B (base) \u00b7 on-policy answer text\nn=2,950\u20133,473 paired rows per character",
         "xlabel": "transfer tier (more correction allowed \u2192)",
         "annotations": [
+          "assistant source map on its OWN data: 0.202",
           "rungs 7\u20139: $n_{train}$\u22482,360 < $d$=3,584\nregularization-limit"
         ],
         "xticklabels": [
@@ -1383,5 +1372,9 @@
       "\u2192 Vex (AI-likeness 55)",
       "\u2192 Dana (AI-likeness 53)"
     ]
-  }
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
 }

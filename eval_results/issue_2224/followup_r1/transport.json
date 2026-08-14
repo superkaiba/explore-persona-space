@@ -1,0 +1,669 @@
+{
+  "meta": {
+    "script": "issue2224_followup_r1.transport",
+    "issue": 2224,
+    "timestamp": "2026-08-12T22:22:14+0000",
+    "versions": {
+      "torch": "2.8.0+cu128",
+      "transformers": "4.57.6",
+      "datasets": "4.8.4",
+      "numpy": "2.2.6"
+    },
+    "git_commit": "950f48d5",
+    "git_dirty": false,
+    "probe_convention": "Form-A ridge (issue2224_predictor_scores.probe_score shape): answer-space resp_avg_dataset at the trait read-out layer -> graded judge label; dof-capped GCV ridge (vendored #2222 cores), NOT logistic",
+    "subset_note": "judged subset only (union of the selection arms' top-k candidates per cell — selection-conditioned, not a random pool draw; matches the free-analysis AUC read)",
+    "trait_layers": {
+      "evil": 19,
+      "hallucination": 15,
+      "sycophancy": 19
+    },
+    "smoke": false
+  },
+  "cells": {
+    "lmsys/evil": {
+      "n_judged": 6795,
+      "n_labels_null_dropped": 159,
+      "d": 3584,
+      "n_train_min_across_folds": 5436,
+      "n_train_vs_d": "n_train_min=5436 > d=3584",
+      "heldout_label_r2": 0.41888527235155704,
+      "same_corpus_heldout_auc": {
+        "trait_bearing_ge1": {
+          "auc": 0.9597553727646168,
+          "ci95": [
+            0.9506394843073497,
+            0.9673672631978557
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, 2000 valid",
+          "n": 6795,
+          "n_pos": 549,
+          "degenerate": false
+        },
+        "strong_gt50": {
+          "auc": 0.9684518854614876,
+          "ci95": [
+            0.9585863989692979,
+            0.9766043329571162
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, 2000 valid",
+          "n": 6795,
+          "n_pos": 234,
+          "degenerate": false
+        }
+      },
+      "transport_to_ultrachat": {
+        "n_train": 6795,
+        "n_eval": 7232,
+        "auc": {
+          "trait_bearing_ge1": {
+            "auc": 0.9319817326321617,
+            "ci95": [
+              0.7924425601364028,
+              0.9993079800200297
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, 1998 valid",
+            "n": 7232,
+            "n_pos": 6,
+            "degenerate": true
+          },
+          "strong_gt50": {
+            "auc": 0.9991702392476836,
+            "ci95": [
+              0.9984785194564616,
+              0.9997234130825612
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, 1273 valid",
+            "n": 7232,
+            "n_pos": 1,
+            "degenerate": true
+          }
+        },
+        "selected_lambda_median": 1000.0
+      }
+    },
+    "ultrachat/evil": {
+      "n_judged": 7232,
+      "n_labels_null_dropped": 7,
+      "d": 3584,
+      "n_train_min_across_folds": 5785,
+      "n_train_vs_d": "n_train_min=5785 > d=3584",
+      "heldout_label_r2": 0.00010586099026543838,
+      "same_corpus_heldout_auc": {
+        "trait_bearing_ge1": {
+          "auc": 0.8728434357413045,
+          "ci95": [
+            0.7286870503597123,
+            0.9627333467159924
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, 1997 valid",
+          "n": 7232,
+          "n_pos": 6,
+          "degenerate": true
+        },
+        "strong_gt50": {
+          "auc": 0.8784400497856452,
+          "ci95": [
+            0.8709722030147974,
+            0.8856289368446483
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, 1247 valid",
+          "n": 7232,
+          "n_pos": 1,
+          "degenerate": true
+        }
+      },
+      "transport_to_lmsys": {
+        "n_train": 7232,
+        "n_eval": 6795,
+        "auc": {
+          "trait_bearing_ge1": {
+            "auc": 0.9223931731608777,
+            "ci95": [
+              0.9144096336300654,
+              0.930703617829007
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, 2000 valid",
+            "n": 6795,
+            "n_pos": 549,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.9060017951193077,
+            "ci95": [
+              0.8917778937886327,
+              0.9192531352028174
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, 2000 valid",
+            "n": 6795,
+            "n_pos": 234,
+            "degenerate": false
+          }
+        },
+        "selected_lambda_median": 316227.7660168379
+      }
+    },
+    "lmsys/hallucination": {
+      "n_judged": 6944,
+      "n_labels_null_dropped": 182,
+      "d": 3584,
+      "n_train_min_across_folds": 5555,
+      "n_train_vs_d": "n_train_min=5555 > d=3584",
+      "heldout_label_r2": 0.6516629133194614,
+      "same_corpus_heldout_auc": {
+        "trait_bearing_ge1": {
+          "auc": 0.9398237133115976,
+          "ci95": [
+            0.9343327667725977,
+            0.9450929024412066
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, 2000 valid",
+          "n": 6944,
+          "n_pos": 3685,
+          "degenerate": false
+        },
+        "strong_gt50": {
+          "auc": 0.9399811255225737,
+          "ci95": [
+            0.9344706019637221,
+            0.9451974622274958
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, 2000 valid",
+          "n": 6944,
+          "n_pos": 2733,
+          "degenerate": false
+        }
+      },
+      "transport_to_ultrachat": {
+        "n_train": 6944,
+        "n_eval": 7004,
+        "auc": {
+          "trait_bearing_ge1": {
+            "auc": 0.5980352148880773,
+            "ci95": [
+              0.5841553732739456,
+              0.6122663389542479
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, 2000 valid",
+            "n": 7004,
+            "n_pos": 4576,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.7487806320728122,
+            "ci95": [
+              0.735380978886981,
+              0.7620909647127613
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, 2000 valid",
+            "n": 7004,
+            "n_pos": 1424,
+            "degenerate": false
+          }
+        },
+        "selected_lambda_median": 100.0
+      }
+    },
+    "ultrachat/hallucination": {
+      "n_judged": 7004,
+      "n_labels_null_dropped": 13,
+      "d": 3584,
+      "n_train_min_across_folds": 5603,
+      "n_train_vs_d": "n_train_min=5603 > d=3584",
+      "heldout_label_r2": 0.4235066804800205,
+      "same_corpus_heldout_auc": {
+        "trait_bearing_ge1": {
+          "auc": 0.7964809593207451,
+          "ci95": [
+            0.7854971445368819,
+            0.8079305822260067
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, 2000 valid",
+          "n": 7004,
+          "n_pos": 4576,
+          "degenerate": false
+        },
+        "strong_gt50": {
+          "auc": 0.8619890459506262,
+          "ci95": [
+            0.8512961430984556,
+            0.8725467367636938
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, 2000 valid",
+          "n": 7004,
+          "n_pos": 1424,
+          "degenerate": false
+        }
+      },
+      "transport_to_lmsys": {
+        "n_train": 7004,
+        "n_eval": 6944,
+        "auc": {
+          "trait_bearing_ge1": {
+            "auc": 0.8809827123136306,
+            "ci95": [
+              0.8730873365033166,
+              0.8887247934798109
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, 2000 valid",
+            "n": 6944,
+            "n_pos": 3685,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.8906394252746822,
+            "ci95": [
+              0.8834332398320439,
+              0.8977569736528287
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, 2000 valid",
+            "n": 6944,
+            "n_pos": 2733,
+            "degenerate": false
+          }
+        },
+        "selected_lambda_median": 316.2277660168379
+      }
+    },
+    "lmsys/sycophancy": {
+      "n_judged": 5847,
+      "n_labels_null_dropped": 364,
+      "d": 3584,
+      "n_train_min_across_folds": 4677,
+      "n_train_vs_d": "n_train_min=4677 > d=3584",
+      "heldout_label_r2": 0.5271005473510102,
+      "same_corpus_heldout_auc": {
+        "trait_bearing_ge1": {
+          "auc": 0.8077367037462622,
+          "ci95": [
+            0.7961248264926373,
+            0.819329626622596
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, 2000 valid",
+          "n": 5847,
+          "n_pos": 1799,
+          "degenerate": false
+        },
+        "strong_gt50": {
+          "auc": 0.9495691611883585,
+          "ci95": [
+            0.9374463619810217,
+            0.960353216047053
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, 2000 valid",
+          "n": 5847,
+          "n_pos": 440,
+          "degenerate": false
+        }
+      },
+      "transport_to_ultrachat": {
+        "n_train": 5847,
+        "n_eval": 6548,
+        "auc": {
+          "trait_bearing_ge1": {
+            "auc": 0.8178559938359772,
+            "ci95": [
+              0.8065861327494345,
+              0.8287708105617898
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, 2000 valid",
+            "n": 6548,
+            "n_pos": 2071,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.9119521364386576,
+            "ci95": [
+              0.8930804675145126,
+              0.9286829186145298
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, 2000 valid",
+            "n": 6548,
+            "n_pos": 164,
+            "degenerate": false
+          }
+        },
+        "selected_lambda_median": 1000.0
+      }
+    },
+    "ultrachat/sycophancy": {
+      "n_judged": 6548,
+      "n_labels_null_dropped": 15,
+      "d": 3584,
+      "n_train_min_across_folds": 5238,
+      "n_train_vs_d": "n_train_min=5238 > d=3584",
+      "heldout_label_r2": 0.47903226372106356,
+      "same_corpus_heldout_auc": {
+        "trait_bearing_ge1": {
+          "auc": 0.8545832247162303,
+          "ci95": [
+            0.8450802978296674,
+            0.8648090420420922
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, 2000 valid",
+          "n": 6548,
+          "n_pos": 2071,
+          "degenerate": false
+        },
+        "strong_gt50": {
+          "auc": 0.9256554113943395,
+          "ci95": [
+            0.905694790775126,
+            0.9446396660135664
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, 2000 valid",
+          "n": 6548,
+          "n_pos": 164,
+          "degenerate": false
+        }
+      },
+      "transport_to_lmsys": {
+        "n_train": 6548,
+        "n_eval": 5847,
+        "auc": {
+          "trait_bearing_ge1": {
+            "auc": 0.7681342511320518,
+            "ci95": [
+              0.7554529761321966,
+              0.7806055445699154
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, 2000 valid",
+            "n": 5847,
+            "n_pos": 1799,
+            "degenerate": false
+          },
+          "strong_gt50": {
+            "auc": 0.8276636346823142,
+            "ci95": [
+              0.8069093067974883,
+              0.8463006259558976
+            ],
+            "ci_method": "bootstrap percentile, 2000 draws, 2000 valid",
+            "n": 5847,
+            "n_pos": 440,
+            "degenerate": false
+          }
+        },
+        "selected_lambda_median": 1000.0
+      }
+    }
+  },
+  "banked_probe_diff_reference": {
+    "lmsys/evil": {
+      "probe_diff_context": {
+        "trait_bearing_ge1": {
+          "auc": 0.17070305687807774,
+          "ci95": [
+            0.15724305985950213,
+            0.1844054922704982
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+          "n_valid_draws": 2000,
+          "degenerate": false
+        },
+        "strong_gt50": {
+          "auc": 0.2028940762365545,
+          "ci95": [
+            0.18431280428578883,
+            0.22414176148021667
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+          "n_valid_draws": 2000,
+          "degenerate": false
+        }
+      },
+      "probe_diff_prefix": {
+        "trait_bearing_ge1": {
+          "auc": 0.9130783592209396,
+          "ci95": [
+            0.9033730603974022,
+            0.9228355189707603
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+          "n_valid_draws": 2000,
+          "degenerate": false
+        },
+        "strong_gt50": {
+          "auc": 0.8971584225356516,
+          "ci95": [
+            0.8817029685948414,
+            0.9107207385597801
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+          "n_valid_draws": 2000,
+          "degenerate": false
+        }
+      }
+    },
+    "lmsys/hallucination": {
+      "probe_diff_context": {
+        "trait_bearing_ge1": {
+          "auc": 0.4666080737488046,
+          "ci95": [
+            0.45244233941188394,
+            0.48038816954962327
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+          "n_valid_draws": 2000,
+          "degenerate": false
+        },
+        "strong_gt50": {
+          "auc": 0.4948760772645789,
+          "ci95": [
+            0.4805390011986143,
+            0.5090450271252719
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+          "n_valid_draws": 2000,
+          "degenerate": false
+        }
+      },
+      "probe_diff_prefix": {
+        "trait_bearing_ge1": {
+          "auc": 0.7566078780689983,
+          "ci95": [
+            0.7452297477294684,
+            0.7682208178379073
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+          "n_valid_draws": 2000,
+          "degenerate": false
+        },
+        "strong_gt50": {
+          "auc": 0.7793415273346695,
+          "ci95": [
+            0.7686250910482878,
+            0.790048277354219
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+          "n_valid_draws": 2000,
+          "degenerate": false
+        }
+      }
+    },
+    "lmsys/sycophancy": {
+      "probe_diff_context": {
+        "trait_bearing_ge1": {
+          "auc": 0.43032374705314985,
+          "ci95": [
+            0.41481573931263327,
+            0.4458618849052902
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+          "n_valid_draws": 2000,
+          "degenerate": false
+        },
+        "strong_gt50": {
+          "auc": 0.17689232812683894,
+          "ci95": [
+            0.16203243884607146,
+            0.19250795908355348
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+          "n_valid_draws": 2000,
+          "degenerate": false
+        }
+      },
+      "probe_diff_prefix": {
+        "trait_bearing_ge1": {
+          "auc": 0.7065095864632746,
+          "ci95": [
+            0.692794907691229,
+            0.7196898969133148
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+          "n_valid_draws": 2000,
+          "degenerate": false
+        },
+        "strong_gt50": {
+          "auc": 0.8950611160616709,
+          "ci95": [
+            0.8825315910534413,
+            0.9069093577142952
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+          "n_valid_draws": 2000,
+          "degenerate": false
+        }
+      }
+    },
+    "ultrachat/evil": {
+      "probe_diff_context": {
+        "trait_bearing_ge1": {
+          "auc": 0.359788725897223,
+          "ci95": [
+            0.1716916851134477,
+            0.5109813196773311
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+          "n_valid_draws": 1994,
+          "degenerate": true
+        },
+        "strong_gt50": {
+          "auc": 0.14880376158207717,
+          "ci95": [
+            0.14064444751763241,
+            0.15684159258976593
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+          "n_valid_draws": 1290,
+          "degenerate": true
+        }
+      },
+      "probe_diff_prefix": {
+        "trait_bearing_ge1": {
+          "auc": 0.8722437494233786,
+          "ci95": [
+            0.6355305200419307,
+            0.9989875604464448
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+          "n_valid_draws": 1994,
+          "degenerate": true
+        },
+        "strong_gt50": {
+          "auc": 0.9991702392476836,
+          "ci95": [
+            0.998478561549101,
+            0.9997234130825612
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+          "n_valid_draws": 1290,
+          "degenerate": true
+        }
+      }
+    },
+    "ultrachat/hallucination": {
+      "probe_diff_context": {
+        "trait_bearing_ge1": {
+          "auc": 0.5003870203108259,
+          "ci95": [
+            0.48554028042470104,
+            0.5161014205053679
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+          "n_valid_draws": 2000,
+          "degenerate": false
+        },
+        "strong_gt50": {
+          "auc": 0.3632289275502396,
+          "ci95": [
+            0.3467168585431952,
+            0.3801149497468493
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+          "n_valid_draws": 2000,
+          "degenerate": false
+        }
+      },
+      "probe_diff_prefix": {
+        "trait_bearing_ge1": {
+          "auc": 0.641949689519706,
+          "ci95": [
+            0.6275585444589504,
+            0.6556155388064278
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+          "n_valid_draws": 2000,
+          "degenerate": false
+        },
+        "strong_gt50": {
+          "auc": 0.668988550098667,
+          "ci95": [
+            0.6534866151988488,
+            0.68442906179339
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+          "n_valid_draws": 2000,
+          "degenerate": false
+        }
+      }
+    },
+    "ultrachat/sycophancy": {
+      "probe_diff_context": {
+        "trait_bearing_ge1": {
+          "auc": 0.3696024759630396,
+          "ci95": [
+            0.3550189018052218,
+            0.38298785363981125
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+          "n_valid_draws": 2000,
+          "degenerate": false
+        },
+        "strong_gt50": {
+          "auc": 0.26343774833425027,
+          "ci95": [
+            0.2414735494734795,
+            0.285432521556686
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+          "n_valid_draws": 2000,
+          "degenerate": false
+        }
+      },
+      "probe_diff_prefix": {
+        "trait_bearing_ge1": {
+          "auc": 0.7322054986336625,
+          "ci95": [
+            0.7200376653679466,
+            0.7449566074974395
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+          "n_valid_draws": 2000,
+          "degenerate": false
+        },
+        "strong_gt50": {
+          "auc": 0.8427509322085702,
+          "ci95": [
+            0.8226935482008507,
+            0.8623364907412823
+          ],
+          "ci_method": "bootstrap percentile, 2000 draws, seed=20260812",
+          "n_valid_draws": 2000,
+          "degenerate": false
+        }
+      }
+    }
+  }
+}

@@ -7,7 +7,7 @@ Phase 1.5.0 BEFORE the fact-checker + critic ensemble spawn. The plan-side
 sibling of ``scripts/verify_task_body.py`` (clean-result bodies): pure
 regex / string presence checks, NO LLM calls, no network, no side effects
 (the orchestrator running the adversarial-planner skill posts the
-``epm:plan-verify`` marker — never this script). Seven disclosed read-only
+``epm:plan-verify`` marker — never this script). Eight disclosed read-only
 exceptions: check 31, when its trigger fires and a pin-form satisfier names
 a ``tests/`` path, existence-``stat()``s the named pin-test file(s) under
 the repo root — read-only, no import, no network (#1557); check 34, when
@@ -32,12 +32,26 @@ fail-open contract as check 42); and check 46, when its trigger fires,
 path-loads ``scripts/dispatch_issue.py`` (stdlib-only module-level
 imports, ~40 ms measured) and dry-parses plan-embedded dispatch commands
 against its public ``build_argparser()`` — read-only, no network, load
-failure degrades to a loud SKIP (#2161). Check 47 adds NO read exception:
+failure degrades to a loud SKIP (#2161); and check 51, when its kind +
+trigger gates fire, reads the live workflow-surface prose files
+(``.claude/{skills,agents,rules,hooks}``, ``CLAUDE.md``,
+``.claude/workflow.yaml``) and ``tests/**/*.py`` under the repo root to
+locate existing pins on plan-edited literals — read-only, no import, no
+network; missing dirs degrade to a loud SKIP (#2029). Check 47 adds NO
+read exception:
 its shared wall-budget parser (``explore_persona_space.plan_wall_budget``,
 stdlib-only, the same parser the poll_pipeline.py phase-ETA tripwire
 consumes) is a module-level import through the src/ shim below (#2172).
-Measured ~0.7-0.9 s on the live tree (re-measured 2026-08-07 with the c47
-import: 0.79-0.87 s warm — unchanged).
+Check 50, when its trigger fires, path-loads ``scripts/dispatch_issue.py``
+a second time (cached one-shot) for its ``_slurm_lane_reachable`` RUNTIME
+predicate and imports the ``backends.slurm`` intent-default table — the
+same loud-SKIP degradation on any load failure (#2027).
+Measured ~0.7-0.9 s on the live tree for NON-FIRING plans (re-measured
+2026-08-08 with c51: 0.45-0.82 s, shared-VM load-dependent — envelope
+unchanged; c51 itself costs < 1 ms when kind-exempt or non-triggering). A
+c51-FIRING infra/batch plan adds ~0.54 s cold / ~0.09 s warm on top (lazy
+surface + tests/ corpus reads, cached per process; #2029 budget ≤ ~0.6 s —
+the R2 fallback lever stays unpulled).
 
 Check catalog (id — classification — kind scope)
 ------------------------------------------------
@@ -131,19 +145,52 @@ Check catalog (id — classification — kind scope)
       predictor companion
   c46 plan-embedded dispatch    WARN-only, conditional    all kinds
       command CLI-parses
-  c47 planned_wall_h cells      WARN-only, conditional    all kinds
-      parse (poller tripwire)
+  c47 planned_wall_h cells      WARN-only, conditional    all kinds (absent-
+      parse (poller tripwire);                            table WARN arm:
+      absent table + booked                               experiment only)
+      GPU-h > 0 WARNs (#2123)
   c48 §9 basis-vs-booked        WARN-only, conditional    experiment +
       arithmetic                                          analysis
   c49 authorized-smoke-stubs    FAIL, conditional         all kinds
       block well-formed
+  c50 §9 max wall vs SLURM      WARN-only, conditional    all kinds
+      --time bin (one dispatch)
+  c51 edited workflow-surface   WARN-only, conditional    infra + batch only
+      literal pin-test coverage
+  c52 fan-out RAM/GPU-mem       WARN-only, conditional    all kinds
+      floor vs ladder rung
+  c53 harm-class judged DV      WARN-only, conditional    experiment only
+      api-refusal accounting
+  c54 --workload-cmd bare       WARN-only, conditional    all kinds
+      lane-specific env vars
+  c55 inherited argparse row-   WARN-only, conditional    all kinds
+      count default vs target n
+  c56 staging mount binding     WARN-only, conditional    experiment only
+  c57 fan-out same-prefix       WARN-only, conditional    all kinds
+      staging shape
+  c58 fan-out RunPod pod-name   WARN-only, conditional    all kinds
+      collision
+  c59 GPU-hours token           WARN-only, conditional    all kinds
+      consumer/declaration
+      conflict
+  c60 amendment composed with   WARN-only, conditional    all kinds,
+      base for checking                                   --issue mode only
+  c61 SLURM would-render --mem  WARN-only, conditional    all kinds
+      vs declared RSS peak
+  c62 §9 backend pin-claim vs   WARN-only, conditional    all kinds,
+      body.md frontmatter       (FAIL→WARN downgrade per  --issue mode only
+                                the pre-registered
+                                calibration rule, #2276)
+  c63 §9 declared GPU width vs  WARN-only, conditional    all kinds
+      launch-fence width
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49) also SKIP when their
-content trigger does not fire.
+37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54,
+55, 56, 57, 58, 59, 61, 62, 63) also SKIP when their content trigger does
+not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -154,6 +201,20 @@ heading's self-declared ``# Plan v<X>`` label against the persisted
 ``v{K}.md`` filename, so ``main()`` appends it in BOTH modes; it SKIPs when
 the filename carries no version (e.g. a ``.claude/plans/issue-<N>.md``
 draft).
+Check 60 also runs outside ``verify_plan_text()`` — ``--issue`` mode only
+(#2255): when the newest ``v{K}.md`` is AMENDMENT-SHAPED
+(``task_workflow.is_amendment_shaped`` — thin delta + amendment-marker
+phrase + no GPU-hours declaration), every check runs against the amendment
+COMPOSED with its base version (amendment first;
+``_compose_amendment_text``) and c60 is appended as a WARN disclosing the
+composition + the partial-document consequence; a not-composed ``--issue``
+run and ``--plan-file`` mode emit NO c60 row at all — not even a SKIP — so
+non-amendment output stays byte-identical.
+Check 62 also runs outside ``verify_plan_text()`` — the c23 pattern: it
+reconciles a §9 backend pin-CLAIM against the task's ``body.md``
+frontmatter ``backend:`` key, so ``main()`` appends it in ``--issue`` mode
+(frontmatter read from the resolved task folder) and renders it SKIP in
+``--plan-file`` mode (no task context; #2276, incident #2225 v5/v9).
 
 Canonical N/A escape phrases (quote verbatim in bounce briefs; each
 satisfies its check ONLY as a standalone declaration line — see
@@ -239,6 +300,50 @@ labeled-line forms):
     row-scoped reconciliation marker — superseded/reconciled/upper-bound/
     worst-case/ceiling or an includes/excludes scope note — or re-books
     the row / raises its abort threshold)
+  - ``N/A — no workflow-surface literal edits`` (check 50 — the plan's
+    workflow-surface edit adds NEW prose only, or quotes surface literals
+    it does not change; a plan genuinely editing an EXISTING pinned
+    literal instead names every pinning ``tests/`` file in its
+    edit-target/File-paths list)
+  - ``rule 28 exemption: <reason>`` (check 53 — standalone line WITHOUT
+    the N/A prefix, the c43 shape; the ``N/A — rule 28 exemption:
+    <reason>`` form is also accepted via the shared helper. Use it when
+    the harm-class judged-DV vocabulary is incidental / quotes a sibling
+    or incident, or the judged completions genuinely carry no api-refusal
+    exposure; a plan genuinely judging harm-class completions instead
+    names per-arm ``n_api_refusal`` accounting + the targeted SYNC
+    re-issue remediation at the identical instrument)
+  - ``N/A — no inherited row-count defaults`` (check 55 — the plan-named
+    script paths are lint/edit targets, not reused generation/splice
+    scripts, or no reused script's argparse row-count default can
+    under-cover this plan's per-cell target; a plan genuinely reusing a
+    script whose row-count default sits below its stated per-cell target n
+    instead embeds the explicit ``--<flag> <value>`` override in a command)
+  - ``N/A — no multi-GB staging`` (check 56 — the staging + size vocabulary
+    is incidental (quotes a sibling / an incident) and this plan stages no
+    multi-GB inputs; a plan genuinely staging >=5 GB instead names the
+    staging path + the filesystem/mount it resolves to within +-2 lines of
+    the staging row — and, when it cites the #681 worktree bind, carries a
+    literal ``findmnt --mountpoint`` liveness assertion, since the bind is
+    NOT live on this VM, #2091)
+  - ``N/A — GPU-hours token conflict reconciled`` (check 59 — the plan
+    deliberately carries more than one declaration-shaped
+    ``Estimated GPU-hours (total):`` value (e.g. a declaration-shaped
+    revision-comparison table) or a prose-quoted value ahead of the
+    declaration, and the conflict is reconciled in prose; a genuinely
+    conflicting plan instead keeps ONE declaration-shaped value and moves
+    every other mention mid-sentence / into a wrapped or fenced form so
+    the first-match consumer (``GPU_LINE_RE``) reads the declared value)
+  - ``N/A — backend pin-claim reconciled`` (check 62 — the §9 pin-claim
+    vocabulary is deliberate and the claim/frontmatter divergence is
+    reconciled in prose; a plan genuinely claiming a frontmatter pin
+    instead has the `backend: <lane>` key actually set in the task's
+    body.md frontmatter BEFORE dispatch, or rewords the claim)
+  - ``N/A — declared width vs launch width reconciled`` (check 63 — the
+    §9 N-wide declaration and a narrower launch fence are BOTH deliberate,
+    e.g. a narrow smoke launch beside a wide production provision; a plan
+    genuinely dispatching N-wide through the fence instead adds
+    `--gpus <N>` to it, or re-costs the §9 walls at the realized width)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -969,17 +1074,17 @@ def check_gpu_hours(plan: str, kind: str) -> CheckResult:
 
 def check_reuse_fitness(plan: str, kind: str) -> CheckResult:
     """Plans reusing trained HF artifacts must carry the fitness
-    attestations (a)-(l) (.claude/rules/artifact-reuse.md). WARN not FAIL:
+    attestations (a)-(m) (.claude/rules/artifact-reuse.md). WARN not FAIL:
     trigger and item-detection are both heuristic, and the demonstrated
     failure modes (#545/#600/#601) are semantic — the gate's value is
-    forcing the section to exist and naming the twelve letters.
+    forcing the section to exist and naming the thirteen letters.
 
     Accepted declaration shapes (#1314): the historical 'fitness'
     vocabulary, a 'reuse map' / 'reuse-map' section (the #1090 v7
     '### D3 — Reuse map' shape; artifact-reuse.md's own term for the
-    plan record), '(self-)attestation(s)', or the literal (a)-(l) range
-    token ((a)-(j)/(a)-(k) grandfathered for in-flight plans; #1366/#1522)
-    (hyphen / en-dash / em-dash / ellipsis)."""
+    plan record), '(self-)attestation(s)', or the literal (a)-(m) range
+    token ((a)-(j)/(a)-(k)/(a)-(l) grandfathered for in-flight plans;
+    #1366/#1522/#2043) (hyphen / en-dash / em-dash / ellipsis)."""
     cid, name = "c6_reuse_fitness", "reused-artifact fitness attestation"
     if kind != "experiment":
         return _skip(cid, name, "kind-exempt")
@@ -999,30 +1104,31 @@ def check_reuse_fitness(plan: str, kind: str) -> CheckResult:
         r"(?i)fitness"  # historical vocabulary (the pre-#1314 detector, unchanged)
         r"|reuse[- ]map"  # 'Reuse map' section shape (#1090 v7 D3; artifact-reuse.md's own term)
         r"|(?:self[- ])?attestation"  # 'self-attestation' / 'attestation(s)'
-        r"|\(a\)\s*[-–—…]\s*\([jkl]\)",  # (a)-(l); older ranges grandfathered  # noqa: RUF001
+        r"|\(a\)\s*[-–—…]\s*\([jklm]\)",  # (a)-(m); older ranges grandfathered  # noqa: RUF001
         text,
     )
-    letters = {m.group(1) for m in re.finditer(r"\(([a-l])\)", text)}
+    letters = {m.group(1) for m in re.finditer(r"\(([a-m])\)", text)}
     if declaration and len(letters) >= 4:
         return _pass(
             cid,
             name,
-            f"fitness/reuse-map declaration present ({len(letters)}/12 lettered items spotted)",
+            f"fitness/reuse-map declaration present ({len(letters)}/13 lettered items spotted)",
         )
     if declaration:
         return _warn(
             cid,
             name,
             f"fitness/reuse-map declaration vocabulary present but only {len(letters)} of the "
-            "(a)–(l) items detectable — verify all twelve attestations (recipe/regime/cells/"  # noqa: RUF001
+            "(a)–(m) items detectable — verify all thirteen attestations (recipe/regime/cells/"  # noqa: RUF001
             "single-var/hub-resolution/content-identity/scaling/backend-fetchability/"
-            "code-throughput/pair-provenance/parent-lineage/validity-domain) before approval",
+            "code-throughput/pair-provenance/parent-lineage/validity-domain/device-domain) "
+            "before approval",
         )
     return _warn(
         cid,
         name,
-        "plan reuses HF artifacts but no fitness check / (a)–(l) reuse-map attestation found — "  # noqa: RUF001
-        "CLAUDE.md reuse rule requires attestations (a)–(l); consistency-checker + Methodology "  # noqa: RUF001
+        "plan reuses HF artifacts but no fitness check / (a)–(m) reuse-map attestation found — "  # noqa: RUF001
+        "CLAUDE.md reuse rule requires attestations (a)–(m); consistency-checker + Methodology "  # noqa: RUF001
         "critic must gate this",
     )
 
@@ -8567,7 +8673,7 @@ def check_dispatch_cmd_cli_parse(plan: str, kind: str) -> CheckResult:
 
 
 def check_wall_cell_parseable(plan: str, kind: str) -> CheckResult:
-    """WARN-only, conditional, all kinds (trigger-conditional, not
+    """WARN-only, conditional, all kinds (trigger-conditional, mostly not
     kind-gated — the ``poll_pipeline.py`` phase-ETA tripwire reads ANY
     task's plan regardless of ``kind``): every §9 ``planned_wall_h`` data
     cell must parse under the SHARED cosmetic-prefix float rule
@@ -8576,16 +8682,34 @@ def check_wall_cell_parseable(plan: str, kind: str) -> CheckResult:
     cannot drift, #2172 AC #3/#4). ONE unparseable cell fail-safes the
     poller's WHOLE-run tripwire off; pre-#2172 that was silent — #2163's
     parenthesized ``(1.5)`` conditional cell cost a ~6h run its backstop
-    with one poll-tick INFO line to show for it. No ``planned_wall_h``
-    table located (or a zero-sum one) => SKIP: such a plan arms no
-    tripwire, so there is nothing to lose. NEVER FAILs in v1 (the
+    with one poll-tick INFO line to show for it. Absent-table branch
+    (#2123, narrowing the former unconditional SKIP): a ``kind:
+    experiment`` plan with BOOKED GPU-hours > 0 (the c5 ``GPU_LINE_RE``
+    first-match value — the same value the Step 2c consumer reads) and NO
+    ``planned_wall_h`` table WARNs — for a plan that books compute, the
+    tripwire never arming IS the loss (#2091: #2061 booked 70 GPU-h and
+    #1739 booked 14, both table-less, both unprotected). With 0 booked
+    GPU-hours, no GPU token at all, or a non-experiment kind, the
+    original justification still holds — such a plan arms no tripwire,
+    so there is nothing to lose => SKIP. NEVER FAILs in v1 (the
     c26/c29/c33 precedent — heuristic compute-table checks stay WARN-only
-    until a clean corpus baseline licenses escalation).
+    until a clean corpus baseline licenses escalation; corpus 2026-08-12:
+    13 of 229 experiment tasks' latest plans sit in the new-WARN bucket,
+    not a clean baseline).
     """
-    del kind  # all kinds: the poller parses every task's plan identically
     cid, name = "c47_wall_cell_parseable", "planned_wall_h cells parse for the poller tripwire"
     budget = parse_plan_wall_budget(plan)
     if budget.reason == "no_table":
+        booked = GPU_LINE_RE.search(plan)
+        if kind == "experiment" and booked is not None and float(booked.group(1)) > 0:
+            return _warn(
+                cid,
+                name,
+                f"no `planned_wall_h` table while this experiment books "
+                f"{booked.group(1)} GPU-hours — the poll_pipeline.py phase-ETA "
+                f"tripwire never arms for the whole run (#2091: the #2061/#1739 "
+                f"shape); add a §9 compute table with a `planned_wall_h` column",
+            )
         return _skip(cid, name, "no `planned_wall_h` table — this plan arms no poller tripwire")
     if budget.unparseable:
         shown = "; ".join(
@@ -9016,6 +9140,2880 @@ def check_authorized_stub_block(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 50 — §9 projected wall vs the intent's SLURM --time bin (#2027) ──
+
+_c50_reachable_cache: list = []  # [(fn | None, detail)] once resolved
+
+
+def _c50_slurm_lane_reachable_fn():
+    """Lazily path-load ``scripts/dispatch_issue.py`` (the c46 idiom:
+    stdlib-only module-level imports; NOT registered in ``sys.modules``)
+    and return its RUNTIME reachability predicate
+    ``_slurm_lane_reachable`` — reused verbatim for exact parity with the
+    #2161 exit-2 refusal (a divergent second plan-time reachability rule
+    is worse than no check; #2027 kill criterion). Returns ``(fn, "")``
+    on success or ``(None, <detail>)`` on ANY load failure (file absent
+    on off-repo ``--plan-file`` runs, a pre-#2161 checkout without the
+    predicate) — the caller SKIPs loudly on ``None``. Cached one-shot;
+    env sensitivity is unaffected (``auto_lane_order()`` reads
+    ``EPM_AUTO_LANE_ORDER`` at CALL time, not load time).
+    """
+    if not _c50_reachable_cache:
+        fn, detail = None, ""
+        try:
+            if not _C46_DISPATCH_CLI_PATH.is_file():
+                raise FileNotFoundError(_C46_DISPATCH_CLI_PATH)
+            spec = importlib.util.spec_from_file_location(
+                "_c50_dispatch_issue", _C46_DISPATCH_CLI_PATH
+            )
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            fn = mod._slurm_lane_reachable
+        except Exception as exc:  # any load failure -> loud SKIP at the caller
+            fn, detail = None, f"{type(exc).__name__}: {exc}"
+        _c50_reachable_cache.append((fn, detail))
+    return _c50_reachable_cache[0]
+
+
+def _c50_launch_argvs(plan: str) -> tuple[list[list[str]], list[str]]:
+    """DISTINCT launch-shaped dispatch argvs in ``plan`` (+ skip notes).
+
+    Reuses the c46 candidate/tokenize/argv chain verbatim; keeps only
+    launch-shaped argvs (explicit ``launch`` subcommand, or the #1336
+    leads-with-a-flag shape — the ``_c46_drift_arms`` test), DEDUPED on
+    ``tuple(argv)`` preserving first-seen order. The dedupe is
+    load-bearing, not cosmetic: 27 of the 170 multi-launch corpus plans
+    (2026-08 sweep) restate ONE command verbatim in §4 and §9 — one real
+    dispatch, recovered at zero false-positive cost, since identical
+    argvs resolve an identical intent and bin.
+    """
+    argvs: list[list[str]] = []
+    seen: set[tuple[str, ...]] = set()
+    notes: list[str] = []
+    for cmd in _c46_command_candidates(plan):
+        cleaned = _C46_COND_EXPANSION_RE.sub("", cmd)
+        try:
+            tokens = shlex.split(cleaned)
+        except ValueError as exc:
+            notes.append(f"unsplittable line skipped ({exc}): {cmd[:60]!r}")
+            continue
+        argv = _c46_argv_from_tokens(tokens)
+        if argv is None:
+            continue  # bare file reference / prose mention, not a command
+        if not (argv[0] == "launch" or argv[0].startswith("-")):
+            continue  # finalize/poll command — never carries a wall to fence
+        key = tuple(argv)
+        if key in seen:
+            continue
+        seen.add(key)
+        argvs.append(argv)
+    return argvs, notes
+
+
+def _c50_section9_walls(plan: str) -> list[tuple[float, str]]:
+    """Parseable §9 ``planned_wall_h`` reads as ``(value, component)`` pairs.
+
+    Combined ``Wall / GPU-h`` header rows are skipped for the wall read
+    (``gpu_is_wall_col`` — the c47 #2177 precedent); no-float cells are
+    dropped (c47 owns warning on those).
+    """
+    walls: list[tuple[float, str]] = []
+    for row in _compute_table_rows(plan):
+        if row.gpu_is_wall_col:
+            continue
+        val = _c48_first_number(row.wall)
+        if val is not None:
+            walls.append((val, row.component.strip()))
+    return walls
+
+
+def check_plan_wall_vs_slurm_time_bin(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds: when the plan embeds EXACTLY ONE
+    DISTINCT launch-shaped ``dispatch_issue.py`` command (deduped on
+    ``tuple(argv)``) that dry-parses, declares NO ``--time-budget-hours``,
+    resolves a SLURM-reachable route
+    (``dispatch_issue._slurm_lane_reachable`` — the #2161 RUNTIME
+    predicate, reused for exact parity), and names an intent in
+    ``slurm._DEFAULT_TIME_BUDGETS_HOURS``, the §9 MAX parseable
+    ``planned_wall_h`` must not EXCEED that intent's default ``--time``
+    bin — strictly greater WARNs; equality passes (the repo's own sizing
+    style is an explicit in-table margin, e.g. ``ft-7b: 23.5`` under the
+    24 h bin — never a tuned margin constant here). Mechanizes the #2027
+    arm-2 gap: sbatch ``--time`` silently becomes the intent default
+    (lora-7b -> 6.0 h) and a 12 h projected run TIMEOUTs mid-flight — the
+    #1336 shape reached WITHOUT ``--max-run-duration``, which is exactly
+    why the runtime ``max_run_duration_slurm_inert_without_time_budget``
+    refusal (and its c46 arm-2 plan-time twin) is structurally blind to
+    it. Every ambiguity SKIPs with a stated reason; the check NEVER FAILs
+    (the c46/c47 posture — a heuristic wall/bin join must not become the
+    #1388 fleet-wedge shape).
+
+    Named accepted FALSE NEGATIVES: (a) multi-dispatch plans SKIP — with
+    >=2 DISTINCT launch commands the wall-row <-> dispatch join is
+    ambiguous (a big row may belong to a differently-budgeted dispatch)
+    and a MAX-over-all-rows read would false-fire; (b)
+    ``max_wall_h == bin_h`` passes (strictly-greater; no tuned margin);
+    (c) an intent absent from ``_DEFAULT_TIME_BUDGETS_HOURS`` SKIPs
+    (``slurm.time_budget_hours`` already raises there — a different,
+    already-fail-fast failure); (d) combined ``Wall / GPU-h`` header rows
+    are skipped for the wall read (``gpu_is_wall_col`` — the c47 #2177
+    precedent); (e) frontmatter ``backend:`` pins are invisible to the
+    argv-only reachability read — deliberate exact parity with the
+    runtime guard's own ``args.backend`` semantics. Named residual FALSE
+    POSITIVE (0 of the 46 conjunct-passing plans in the 2026-08 corpus
+    sweep): a single-dispatch plan whose MAX §9 row is an off-pod /
+    VM-side analysis row exceeding the bin while the DISPATCHED job's own
+    wall sits under it — WARN-only polarity absorbs it. Corpus
+    calibration (5,244 plans, 2026-08): 359 exactly-one-launch plans, 46
+    passing all six conjuncts, 5 WARN hits (~0.1%) — #1345 v7-v9 + #597
+    v4-v5, every one a true #1336-shaped positive.
+    """
+    del kind  # all kinds: a wall/bin mismatch times out identically everywhere
+    cid, name = "c50_plan_wall_vs_slurm_time_bin", "§9 projected wall vs SLURM --time bin"
+    argvs, notes = _c50_launch_argvs(plan)
+    tail = ("; " + "; ".join(notes)) if notes else ""
+    if not argvs:
+        return _skip(cid, name, f"no launch-shaped dispatch_issue.py command in the plan{tail}")
+    if len(argvs) > 1:
+        return _skip(
+            cid,
+            name,
+            f"{len(argvs)} DISTINCT launch commands — the wall-row <-> dispatch join is "
+            f"ambiguous (documented false negative; a per-phase join is a follow-up){tail}",
+        )
+    parser, load_detail = _c46_argparser()
+    if parser is None:
+        return _skip(cid, name, f"dispatch_issue.build_argparser unavailable ({load_detail})")
+    argv = argvs[0]
+    ns, err = _c46_dry_parse(parser, argv)
+    if ns is None:
+        return _skip(cid, name, f"launch argv does not parse ({err}) — c46 arm 1 owns that")
+    if _c46_has_flag(argv, "--time-budget-hours"):
+        return _skip(cid, name, "--time-budget-hours declared — the SLURM --time fence is explicit")
+    reachable_fn, reach_detail = _c50_slurm_lane_reachable_fn()
+    if reachable_fn is None:
+        return _skip(
+            cid, name, f"dispatch_issue._slurm_lane_reachable unavailable ({reach_detail})"
+        )
+    try:
+        reachable = reachable_fn(ns)
+    except Exception as exc:  # router import failure on off-repo runs -> loud SKIP
+        return _skip(cid, name, f"SLURM reachability unresolvable ({type(exc).__name__}: {exc})")
+    if not reachable:
+        return _skip(
+            cid,
+            name,
+            f"no SLURM lane reachable for backend {(ns.backend or 'auto')!r} — "
+            "the sbatch --time bin never binds",
+        )
+    try:
+        from explore_persona_space.backends.slurm import _DEFAULT_TIME_BUDGETS_HOURS
+    except ImportError as exc:  # off-repo --plan-file run
+        return _skip(cid, name, f"slurm intent-default table unavailable ({exc})")
+    intent = str(getattr(ns, "intent", ""))
+    if intent not in _DEFAULT_TIME_BUDGETS_HOURS:
+        return _skip(
+            cid,
+            name,
+            f"intent {intent!r} has no _DEFAULT_TIME_BUDGETS_HOURS row — "
+            "slurm.time_budget_hours() already fails fast at dispatch",
+        )
+    bin_h = _DEFAULT_TIME_BUDGETS_HOURS[intent]
+    walls = _c50_section9_walls(plan)
+    if not walls:
+        return _skip(cid, name, "no parseable §9 planned_wall_h row — nothing to compare")
+    max_wall, comp = max(walls, key=lambda t: t[0])
+    if max_wall > bin_h:
+        return _warn(
+            cid,
+            name,
+            f"§9 projects max planned_wall_h {max_wall:g} h (row {comp[:60]!r}) but the plan's "
+            f"single launch command resolves intent {intent!r} to the SLURM --time default of "
+            f"{bin_h:g} h with no --time-budget-hours — on a SLURM lane sbatch --time is set "
+            f"to {bin_h:g} h and the job TIMEOUTs mid-run (the #1336 shape, reached WITHOUT "
+            "--max-run-duration, so the runtime "
+            "max_run_duration_slurm_inert_without_time_budget refusal never fires): pass "
+            f"--time-budget-hours >= {max_wall:g} on the launch command, or pin a non-SLURM "
+            "backend",
+        )
+    return _pass(
+        cid,
+        name,
+        f"max §9 planned_wall_h {max_wall:g} h fits intent {intent!r}'s SLURM --time "
+        f"default of {bin_h:g} h",
+    )
+
+
+# ─── Check 51 — edited workflow-surface literal pin-test coverage ──────────
+
+# Extraction dials (heuristic constants, not model hyperparameters — #2029
+# plan §11; each value below was landed by the calibration sweep recorded
+# after this block). MIN_LEN keeps the 28-char incident literal while
+# dropping short vocabulary; the span cap bounds worst-case concat scans;
+# the anchored cap bounds offender-scan work on pathological plans.
+_C51_MIN_LEN = 12
+_C51_MAX_SPAN_CLASS = 10
+_C51_MAX_ANCHORED = 30
+_C51_MAX_SURFACE_FILES = 2
+_C51_MAX_TEST_FILES = 3
+_C51_EDIT_PROX_CHARS = 120  # the c31 proximity window, copied not shared
+_C51_FENCE_ADJ_LINES = 3  # a fenced block within 3 lines joins its paragraph
+
+# Workflow-surface path token: .claude/{skills,agents,rules,hooks}/... paths,
+# slash-prefixed or bare SKILL.md, bare CLAUDE.md, .claude/workflow.yaml.
+_C51_PATH_RE = re.compile(
+    r"\.claude/(?:skills|agents|rules|hooks)/[\w./-]+"
+    r"|(?:[\w.-]+/)*SKILL\.md|(?<![\w./-])SKILL\.md"
+    r"|(?<![\w./-])CLAUDE\.md|\.claude/workflow\.yaml"
+)
+# c31's verb set widened with the #1948 plan's own edit verbs (widen / swap /
+# replace / update / teach + "new ... pattern"). COPIED, not shared: c31's
+# calibration comment mandates a corpus re-scan on any change to ITS regexes
+# (#1557), so c51 owns separate constants.
+_C51_EDIT_RE = re.compile(
+    r"(?i)\b(?:add(?:s|ed|ing)?|insert\w*|append\w*|amend\w*|edit\w*|splice\w*"
+    r"|prepend\w*|reword\w*|rewrit\w*|revise[sd]?|patch\w*|widen\w*|swap\w*"
+    r"|replac\w*|updat\w*|teach\w*"
+    r"|new (?:section|paragraph|bullet|sentence|step|clause|line|pattern))\b"
+)
+# c31's negation guard, copied for the same no-shared-calibration reason
+# (minus c31's plan_pending arm, which is durability-pin-specific).
+_C51_NEG_RE = re.compile(
+    r"(?i)\b(?:no|zero|not?|without|never)\b(?:[^|;:.]|\.(?!\s)){0,24}"
+    r"\b(?:edit(?:s|ed|ing)?|chang(?:e|es|ed))\b"
+    r"|\bunchanged\b|\bincidental\b|must-ask|must bounce"
+)
+# Removal-context tier — REQUIRED for incident recall: the #1948 old literal
+# is quoted only in a "neither carries the bare legacy X" paragraph, which
+# carries removal vocabulary but no edit verb (#2029 plan §6.1 replay).
+_C51_REMOVAL_RE = re.compile(
+    r"(?i)\b(?:legacy|old|removed?|dropp\w*|no longer|neither|banned|retired"
+    r"|deprecated|obsolete|stale)\b"
+)
+_C51_INLINE_CODE_RE = re.compile(r"`([^`]+)`")
+_C51_SQUOTED_RE = re.compile(rf"'([^'\n]{{{_C51_MIN_LEN},}})'")
+_C51_DQUOTED_RE = re.compile(rf'"([^"\n]{{{_C51_MIN_LEN},}})"')
+# A top-level list-item line starts its OWN paragraph: consecutive numbered /
+# bulleted items with no blank separator otherwise fuse, letting item A's
+# path token license item B's literal — the #2029 plan's own §6 items 1+3
+# fused exactly so (item 1's issue/SKILL.md target + item 3's cited
+# vocabulary-FP example) and self-WARNed the prototype; item-grain binding
+# is the tighter form of the design's paragraph-level target binding.
+_C51_LIST_ITEM_RE = re.compile(r"^\s{0,3}(?:[-*+]|\d{1,3}[.)])\s")
+_C51_FLAG_RE = re.compile(r"^--[\w=-]+$")
+_C51_IDENT_RE = re.compile(r"^[A-Za-z_][\w.]*$")
+_C51_STRIP_CHARS = "`'\"()[],:;"
+# A tests/ file counts as a workflow-surface pin test only when it visibly
+# reads the surface — a code test that never opens a surface file cannot
+# break from a prose edit.
+_C51_SURFACE_PIN_MARKERS = (
+    "SKILL.md",
+    ".claude/skills",
+    ".claude/agents",
+    ".claude/rules",
+    ".claude/hooks",
+    "CLAUDE.md",
+    "workflow.yaml",
+)
+_C51_REPO_ROOT = Path(__file__).resolve().parent.parent  # tests monkeypatch (c31/c34/c41 pattern)
+# Lazy corpus cache; every entry is keyed on the resolved repo root (or an
+# absolute file path), so monkeypatched fixture roots stay disjoint. Tests
+# additionally clear it in fixtures.
+_c51_cache: dict = {}
+
+# Calibration (#2029; prototype /tmp/c50_proto4.py at the final design,
+# restated in plan §4.1): corpus = tasks/*/*/plans/v*.md (3,713 files at the
+# 2026-08-08 sweep; kind read from each task's body.md). Design iterations
+# measured 1,848 -> 833 -> 437 -> 393 WARN / 913 PASS / 2,407 SKIP as the
+# discriminators landed (kind gate + paragraph binding + reference/flag/
+# identifier drops + rarity caps + removal tier + quoted-pin-line +
+# surface-marker filter); prototype fire rate 393/3,713 = 10.6% — the c31
+# #1557 band (WARN on 328/3,024 ~ 11%). Landed-implementation re-scan
+# (2026-08-08, this file, 3,714-file corpus): 302 WARN / 816 PASS /
+# 2,596 SKIP — fire rate 8.1%, within the plan's ~1.5x acceptance bound of
+# the prototype's 393; the decrease is the landed ITEM-GRAIN paragraph
+# binding (_C51_LIST_ITEM_RE — consecutive list items no longer fuse, so a
+# sibling item's path token cannot license a literal; the same tightening
+# cleared the #2029 self-application, where the prototype fused plan §6
+# items 1+3 and false-offended on their cited vocabulary-FP example).
+# Stratified WARN classification (36 sampled WARN plans, one per (offending
+# test file x literal shape) stratum; #2029 plan §6 item iii): 12 genuine
+# under-listing / 20 citation-context FP / 4 vocabulary FP — both TP and FP
+# classes non-empty, consistent with the plan's n=10 hand inspection; 8.1%
+# is a FIRE rate, not an FP rate, and the mixed composition is why this
+# check is WARN-only. Recall spot-check under the LANDED grammar against the
+# three genuine instances plan §6.3 named: #1032 (v1-v3) still WARNs
+# (tests/test_adversarial_planner_warn_disposition.py) and #1138 (v1-v3)
+# still WARNs (tests/test_issue_skill_bare_push_snippets_pin.py), so the
+# item-grain tightening did not cost the motivating class; #815 (v1/v2) now
+# PASSes — a prototype-era genuine hit LOST to the re-tune (or to corpus
+# drift; not discriminated). Accepted for a WARN-only check with the
+# disclosed accepted-FN list, and recorded here so the next regex change has
+# the datum. Post-minors re-scan (2026-08-08, after the _c51_within_root
+# traversal guard): 303 WARN / 3,717 plan files = 8.2%, with the three recall
+# probes unchanged — the +1 WARN tracks the +3 plan files that landed between
+# scans, so the guard is behavior-neutral on the live corpus (PASS/SKIP were
+# not re-split; WARN is the load-bearing count).
+# ANY change to the _C51_* regexes or caps re-runs the
+# corpus scan and updates these recorded numbers (the c31 #1557 / c27 / c32
+# precedent).
+
+
+def _c51_read(path: Path) -> str:
+    """Cached whole-file read (errors="replace" — hooks may be non-UTF-8)."""
+    key = ("file", str(path))
+    if key not in _c51_cache:
+        _c51_cache[key] = path.read_text(encoding="utf-8", errors="replace")
+    return _c51_cache[key]
+
+
+def _c51_trigger_line(plan: str) -> str | None:
+    """First non-fenced, non-negated line carrying a workflow-surface path
+    token with an edit verb within +/-``_C51_EDIT_PROX_CHARS`` of the path
+    match (the c31 trigger shape over the wider c51 path + verb sets)."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    for line, fenced in zip(lines, mask, strict=True):
+        if fenced or _C51_NEG_RE.search(line):
+            continue
+        for m in _C51_PATH_RE.finditer(line):
+            lo = max(0, m.start() - _C51_EDIT_PROX_CHARS)
+            hi = min(len(line), m.end() + _C51_EDIT_PROX_CHARS)
+            if _C51_EDIT_RE.search(line[lo:hi]):
+                return line.strip()
+    return None
+
+
+def _c51_token_tails(text: str) -> list[str]:
+    """Final path components of slash-bearing whitespace tokens — tests pin
+    basenames while plans quote /tmp/-prefixed forms (the #1948 shape)."""
+    out: list[str] = []
+    for tok in text.split():
+        tok = tok.strip(_C51_STRIP_CHARS)
+        if "/" in tok:
+            tail = tok.rstrip("/").rsplit("/", 1)[-1]
+            if len(tail) >= _C51_MIN_LEN:
+                out.append(tail)
+    return out
+
+
+def _c51_quoted_spans(text: str) -> list[str]:
+    """Single- and double-quoted spans of at least ``_C51_MIN_LEN`` chars."""
+    return _C51_SQUOTED_RE.findall(text) + _C51_DQUOTED_RE.findall(text)
+
+
+def _c51_surface_paths(root: Path) -> list[Path]:
+    """Live workflow-surface prose files under ``root`` (cached)."""
+    key = (str(root), "surface_paths")
+    if key not in _c51_cache:
+        paths: list[Path] = []
+        for pat in (
+            ".claude/skills/**/*.md",
+            ".claude/agents/**/*.md",
+            ".claude/rules/*.md",
+            ".claude/hooks/*",
+        ):
+            paths += [p for p in root.glob(pat) if p.is_file()]
+        for p in (root / "CLAUDE.md", root / ".claude" / "workflow.yaml"):
+            if p.is_file():
+                paths.append(p)
+        _c51_cache[key] = paths
+    return _c51_cache[key]
+
+
+def _c51_concat_index(paths: list[Path]) -> tuple[str, list[int]]:
+    """(concatenated corpus text, per-file start offsets) with an unmatchable
+    3-char separator, for offset-indexed distinct-file substring counting."""
+    parts: list[str] = []
+    offsets: list[int] = []
+    pos = 0
+    for p in paths:
+        text = _c51_read(p)
+        offsets.append(pos)
+        parts.append(text)
+        pos += len(text) + 3
+    return "\n\x00\n".join(parts), offsets
+
+
+def _c51_surface_union(root: Path):
+    """(concat, offsets, paths, stripped-line set, token+tail set) over the
+    surface corpus — the cheap union structures every candidate class is
+    pre-screened against before any per-file anchor read."""
+    key = (str(root), "union")
+    if key not in _c51_cache:
+        paths = _c51_surface_paths(root)
+        lineset: set[str] = set()
+        tokset: set[str] = set()
+        for p in paths:
+            text = _c51_read(p)
+            for line in text.splitlines():
+                lineset.add(line.strip())
+            for tok in text.split():
+                tok = tok.strip(_C51_STRIP_CHARS)
+                if len(tok) >= _C51_MIN_LEN:
+                    tokset.add(tok)
+                    if "/" in tok:
+                        tail = tok.rstrip("/").rsplit("/", 1)[-1]
+                        if len(tail) >= _C51_MIN_LEN:
+                            tokset.add(tail)
+        concat, offsets = _c51_concat_index(paths)
+        _c51_cache[key] = (concat, offsets, paths, lineset, tokset)
+    return _c51_cache[key]
+
+
+def _c51_tests_corpus(root: Path):
+    """(concat, offsets, paths) over ``tests/**/*.py`` (cached)."""
+    key = (str(root), "tests")
+    if key not in _c51_cache:
+        paths = sorted((root / "tests").glob("**/*.py"))
+        concat, offsets = _c51_concat_index(paths)
+        _c51_cache[key] = (concat, offsets, paths)
+    return _c51_cache[key]
+
+
+def _c51_repo_basenames(root: Path) -> set[str]:
+    """Basenames of repo files a plan can cite as bare file REFERENCES."""
+    key = (str(root), "basenames")
+    if key not in _c51_cache:
+        names: set[str] = set()
+        for pat in (
+            ".claude/skills/**/*",
+            ".claude/agents/**/*",
+            ".claude/rules/*",
+            ".claude/hooks/*",
+            "scripts/*",
+            "tests/**/*",
+            "src/explore_persona_space/**/*.py",
+        ):
+            names.update(p.name for p in root.glob(pat))
+        _c51_cache[key] = names
+    return _c51_cache[key]
+
+
+def _c51_distinct_file_hits(
+    cand: str, concat: str, offsets: list[int], paths: list[Path], cap: int
+) -> list[Path]:
+    """Distinct files whose text contains ``cand``, early-exiting once
+    ``cap + 1`` are seen (rarity decisions never need the full count)."""
+    import bisect
+
+    hits: list[Path] = []
+    i = concat.find(cand)
+    while i != -1:
+        fi = bisect.bisect_right(offsets, i) - 1
+        if not hits or hits[-1] != paths[fi]:
+            hits.append(paths[fi])
+            if len(hits) > cap:
+                return hits
+        nxt = offsets[fi + 1] if fi + 1 < len(offsets) else len(concat)
+        i = concat.find(cand, nxt)
+    return hits
+
+
+def _c51_within_root(root: Path, p: Path) -> bool:
+    """True when ``p`` resolves INSIDE ``root``.
+
+    ``_C51_PATH_RE``'s ``[\\w./-]+`` character class admits ``..``, so a
+    plan-quoted token like ``.claude/skills/../../<path>`` would otherwise
+    resolve outside the repo and be read during the membership checks below.
+    Returns False on an unresolvable path (OSError) — conservative.
+    """
+    try:
+        return p.resolve().is_relative_to(root.resolve())
+    except OSError:
+        return False
+
+
+def _c51_resolve_targets(root: Path, tokens: list[str]) -> list[Path]:
+    """Existing surface files a paragraph's path tokens resolve to (bare
+    ``SKILL.md`` resolves to every ``.claude/skills/*/SKILL.md``).
+
+    Tokens resolving outside ``root`` are dropped (``_c51_within_root``)."""
+    key = (str(root), "resolve", tuple(sorted(set(tokens))))
+    if key not in _c51_cache:
+        out: list[Path] = []
+        for tok in set(tokens):
+            tok = tok.strip(_C51_STRIP_CHARS)
+            if tok.endswith("SKILL.md") and not tok.startswith(".claude/"):
+                if "/" in tok:
+                    cands = [root / ".claude" / "skills" / tok]
+                else:
+                    cands = list(root.glob(".claude/skills/*/SKILL.md"))
+            elif tok == "CLAUDE.md":
+                cands = [root / "CLAUDE.md"]
+            else:
+                cands = [root / tok]
+            out += [p for p in cands if p.is_file() and _c51_within_root(root, p)]
+        _c51_cache[key] = out
+    return _c51_cache[key]
+
+
+def _c51_is_reference(cand: str, root: Path) -> bool:
+    """True when ``cand`` is a file/tool REFERENCE rather than a prose
+    literal: glob-shaped, a CLI flag, a bare code identifier (pinned via its
+    code file, not the prose), a repo-file basename, an existing repo path,
+    or pathological (> 180 chars / embedded newline / escapes the repo root)."""
+    t = cand.strip().strip(_C51_STRIP_CHARS)
+    if len(t) > 180 or "\n" in t or "*" in t:
+        return True
+    if _C51_FLAG_RE.match(t) or _C51_IDENT_RE.match(t):
+        return True
+    if t in _c51_repo_basenames(root):
+        return True
+    if "/" in t or t.endswith(".py") or t.endswith(".md"):
+        # A path-shaped token escaping the repo root is pathological, not a
+        # prose literal — drop it WITHOUT reading it (traversal hardening).
+        if not _c51_within_root(root, root / t):
+            return True
+        try:
+            if (root / t).exists():
+                return True
+        except OSError:
+            return True  # un-stattable candidate (embedded NUL etc.) — not a literal
+    return False
+
+
+def _c51_pin_line_quoted(cand: str, test_path: Path) -> bool:
+    """True when some line of ``test_path`` containing ``cand`` also carries
+    a quote char — the literal is pinned in test CODE, not merely cited in a
+    comment/docstring narrative line."""
+    for line in _c51_read(test_path).splitlines():
+        if cand in line and ('"' in line or "'" in line):
+            return True
+    return False
+
+
+def _c51_paragraph_spans(lines: list[str], mask: list[bool]) -> list[tuple[int, int]]:
+    """Inclusive ``(start, end)`` line spans of paragraph runs: a fence or
+    blank line closes the current run, and a top-level list-item line closes
+    it AND starts its own run (item-grain target binding — see
+    ``_C51_LIST_ITEM_RE``); an item's indented continuation lines stay with
+    it."""
+    paras: list[tuple[int, int]] = []
+    start: int | None = None
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced or not line.strip():
+            if start is not None:
+                paras.append((start, i - 1))
+                start = None
+        elif _C51_LIST_ITEM_RE.match(line):
+            if start is not None:
+                paras.append((start, i - 1))
+            start = i
+        elif start is None:
+            start = i
+    if start is not None:
+        paras.append((start, len(lines) - 1))
+    return paras
+
+
+def _c51_adopted_fence_lines(lines: list[str], end: int) -> list[str]:
+    """Stripped body lines of the first fenced block opening within
+    ``_C51_FENCE_ADJ_LINES`` lines after a paragraph's ``end`` (blank lines
+    skipped; any other prose stops the adoption)."""
+    j = end + 1
+    while j < len(lines) and j <= end + _C51_FENCE_ADJ_LINES:
+        s = lines[j].strip()
+        if s.startswith(("```", "~~~")):
+            out: list[str] = []
+            k = j + 1
+            while k < len(lines) and not lines[k].strip().startswith(("```", "~~~")):
+                out.append(lines[k].strip())
+                k += 1
+            return out
+        if s:
+            return []
+        j += 1
+    return []
+
+
+def _c51_paragraph_candidates(plan: str, root: Path):
+    """Yield ``(targets, line_class, token_class, span_class)`` per admitted
+    paragraph: a blank-line-delimited non-fenced run carrying a surface path
+    token AND edit-or-removal context, plus one fenced block opening within
+    ``_C51_FENCE_ADJ_LINES`` lines after it (its lines join the paragraph's
+    candidate pool)."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    for a, b in _c51_paragraph_spans(lines, mask):
+        text = "\n".join(lines[a : b + 1])
+        toks = _C51_PATH_RE.findall(text)
+        if not toks:
+            continue
+        if not (_C51_EDIT_RE.search(text) or _C51_REMOVAL_RE.search(text)):
+            continue  # cites a surface file with neither edit nor removal context
+        targets = _c51_resolve_targets(root, toks)
+        if not targets:
+            continue
+        spans = [
+            c
+            for c in _C51_INLINE_CODE_RE.findall(text) + _c51_quoted_spans(text)
+            if len(c) >= _C51_MIN_LEN
+        ]
+        line_class: list[str] = []
+        token_class: list[str] = list(_c51_token_tails(text))
+        span_class: list[str] = []
+        for c in spans:
+            (token_class if " " not in c else span_class).append(c)
+        for fenced_line in _c51_adopted_fence_lines(lines, b):
+            if len(fenced_line) < _C51_MIN_LEN:
+                continue
+            line_class.append(fenced_line)
+            token_class += _c51_token_tails(fenced_line)
+            for c in _c51_quoted_spans(fenced_line):
+                (token_class if " " not in c else span_class).append(c)
+        yield targets, line_class, token_class, span_class
+
+
+def _c51_anchored_candidates(plan: str, root: Path) -> list[str]:
+    """Deduped candidates that survive the reference drops AND anchor
+    verbatim in a surface file their OWN paragraph names (cheap union
+    pre-screen first, per-paragraph target verify second)."""
+    concat, _offsets, _paths, lineset, tokset = _c51_surface_union(root)
+    anchored: list[str] = []
+    span_budget = _C51_MAX_SPAN_CLASS
+    seen: set[str] = set()
+    for targets, line_class, token_class, span_class in _c51_paragraph_candidates(plan, root):
+        pre = [c for c in line_class if c in lineset]
+        for c in token_class:
+            c = c.strip().strip(_C51_STRIP_CHARS)
+            if len(c) >= _C51_MIN_LEN and c in tokset:
+                pre.append(c)
+        for c in span_class:
+            if span_budget <= 0:
+                break
+            span_budget -= 1
+            if c in concat:
+                pre.append(c)
+        for c in pre:
+            if c in seen or _c51_is_reference(c, root):
+                continue
+            seen.add(c)
+            if any(c in _c51_read(t) for t in targets):
+                anchored.append(c)
+    return anchored[:_C51_MAX_ANCHORED]
+
+
+def _c51_offender_items(plan: str, rare: list[str], root: Path) -> list[tuple[str, str]]:
+    """Sorted ``(tests/<file>, literal)`` offender rows: each pinning
+    tests/ file (quoted pin line + surface marker present) whose basename
+    appears nowhere in the raw plan (the c31 RAW-scan satisfier)."""
+    t_concat, t_offsets, t_paths = _c51_tests_corpus(root)
+    offenders: dict[str, str] = {}
+    for c in rare:
+        pins = _c51_distinct_file_hits(c, t_concat, t_offsets, t_paths, _C51_MAX_TEST_FILES)
+        if not pins or len(pins) > _C51_MAX_TEST_FILES:
+            continue  # unpinned, or > cap distinct test files = vocabulary (disclosed FN)
+        for tp in pins:
+            if tp.name in plan or not _c51_pin_line_quoted(c, tp):
+                continue
+            if not any(mk in _c51_read(tp) for mk in _C51_SURFACE_PIN_MARKERS):
+                continue  # a code test, not a workflow-surface pin test
+            offenders.setdefault(str(tp.relative_to(root)), c)
+    return sorted(offenders.items())
+
+
+def check_edited_literal_pin_tests(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, infra + batch only: when a plan declares an
+    edit to an EXISTING workflow-surface literal (a ``.claude/{skills,agents,
+    rules,hooks}`` / SKILL.md / CLAUDE.md / workflow.yaml string), every
+    ``tests/`` file that already pins that literal verbatim must be named
+    somewhere in the raw plan (the c31 RAW-scan satisfier convention) — an
+    unlisted pin makes the plan's own Step 9c exit-0 acceptance criterion
+    deterministically unsatisfiable as scoped (incident #1948: plan v2
+    edited the SKILL.md inline-gate single-flight probe pattern without
+    listing tests/test_issue_skill_gate_single_flight.py, whose asserts
+    pinned the old literal; only the Claude critic caught it). The existing
+    pin logic (c31, its #1557 arm, the pin-form satisfiers) runs the INVERSE
+    direction — a plan must declare a pin for NEW prose — and does not
+    overlap. Candidates come from admitted paragraphs (surface path token +
+    edit-or-removal context; a top-level list item is its OWN paragraph, so
+    one item's path token never licenses a sibling item's literal —
+    item-grain target binding): stripped fenced lines, single-token
+    inline/quoted spans + slash-token path tails, and capped multi-token
+    spans; reference shapes (globs, CLI flags, bare code identifiers,
+    repo-file basenames, existing repo paths) are dropped; a candidate must
+    anchor verbatim in a surface file its OWN paragraph names; rarity caps
+    drop surface boilerplate (> ``_C51_MAX_SURFACE_FILES`` surface files)
+    and test vocabulary (> ``_C51_MAX_TEST_FILES`` test files), and the
+    pinning line must carry a quote char in a test file that visibly reads
+    the workflow surface. Accepted false negatives (disclosed by design):
+    multi-line pin strings built by implicit concatenation in tests;
+    ``not in`` pins broken by ADDING text; plans that elide the old literal
+    entirely ("(~L7793) -> NEW"); a path token 4+ lines above its fenced
+    block; and the > 3-test-file vocabulary-cap drop — a literal
+    legitimately pinned in 4+ test files is silently dropped, though
+    widely-pinned literals are exactly where a missed enumeration breaks
+    the most tests (#2029 plan §8 R3). The critic layer remains the
+    semantic backstop, exactly as for c46/c47. NEVER FAILs — a heuristic
+    text check must not hard-block a legitimately-worded plan (the c14/c47
+    doctrine); Phase 1.5.0 forwards WARN lines verbatim into the
+    fact-checker + critic briefs (#2029).
+    """
+    cid, name = "c51_edited_literal_pin_tests", "edited workflow-surface literal pin-test coverage"
+    if kind not in ("infra", "batch"):
+        return _skip(cid, name, "kind-exempt")
+    trigger = _c51_trigger_line(plan)
+    if trigger is None:
+        return _skip(cid, name, "no workflow-surface edit declaration")
+    if _standalone_na_declared(plan, r"no workflow-?surface literal edits"):
+        return _pass(cid, name, "explicit N/A declared (no workflow-surface literal edits)")
+    root = Path(_C51_REPO_ROOT)
+    missing_dirs = [str(d) for d in (root / ".claude" / "skills", root / "tests") if not d.is_dir()]
+    if missing_dirs:
+        return _skip(
+            cid,
+            name,
+            "workflow-surface/tests dirs unavailable under the repo root "
+            f"({', '.join(missing_dirs)}) — pin scan impossible off-repo "
+            "(the c46 --plan-file degradation precedent)",
+        )
+    anchored = _c51_anchored_candidates(plan, root)
+    if not anchored:
+        return _skip(
+            cid,
+            name,
+            f"trigger fired but no plan-quoted literal anchors in the workflow surface "
+            f"({trigger[:50]!r})",
+        )
+    concat, offsets, paths, _lineset, _tokset = _c51_surface_union(root)
+    rare = [
+        c
+        for c in anchored
+        if len(_c51_distinct_file_hits(c, concat, offsets, paths, _C51_MAX_SURFACE_FILES))
+        <= _C51_MAX_SURFACE_FILES
+    ]
+    if not rare:
+        return _skip(cid, name, "anchored candidates are all multi-file surface boilerplate")
+    items = _c51_offender_items(plan, rare, root)
+    if items:
+        shown = "; ".join(f"{tf} (pins literal '{lit[:60]}')" for tf, lit in items[:3])
+        more = f" (+{len(items) - 3} more)" if len(items) > 3 else ""
+        return _warn(
+            cid,
+            name,
+            f"plan edits workflow-surface literal(s) already pinned by unlisted tests/ "
+            f"file(s): {shown}{more} — add each file to the plan's edit-target/File-paths "
+            "list, or declare `N/A — no workflow-surface literal edits` on its own line "
+            "(unwrapped) (incident #1948; this check #2029)",
+        )
+    return _pass(
+        cid,
+        name,
+        f"{len(rare)} anchored candidate(s); every pinning tests/ file is named in the plan",
+    )
+
+
+# ─── Check 52 — fan-out RAM/GPU-mem floor vs ladder rung (#2033) ───────────
+
+_C52_GIB_RE = re.compile(r"(\d+(?:\.\d+)?)\s*Gi?B\b")
+#: RAM-side peak tokens. ``RSS`` (word-bounded, uppercase — the repo's own
+#: spelling) and the ``host RAM`` / ``peak RAM`` phrases are inherently
+#: peak-context terms, so the RAM arm needs no SEPARATE peak token — unlike
+#: the GPU arm, whose VRAM/HBM/GPU-mem tokens also live on hardware-SPEC
+#: lines ("1x H100 (80 GB HBM)").
+_C52_RAM_TOKEN_RE = re.compile(r"\bRSS\b|(?i:\bhost\s+RAM\b|\bpeak\s+RAM\b)")
+_C52_GPU_TOKEN_RE = re.compile(r"(?i)\bVRAM\b|\bHBM\b|\bGPU[- ]mem\w*")
+#: Peak-context tokens the GPU arm ADDITIONALLY requires on the same line,
+#: so hardware-spec lines never extract (#2033 critic concern 1 — AC3's
+#: "declares a per-leg VRAM/HBM peak" is the binding semantics; a bare-token
+#: regex would blow the <1% corpus WARN target on spec lines).
+_C52_PEAK_CONTEXT_RE = re.compile(r"(?i)\bpeak\b|\bper[- ]leg\b|\bco-resident\b|\bestimat\w*")
+
+
+def _c52_nearest_gib(line: str, anchor: int) -> float | None:
+    """The GiB/GB value on ``line`` whose match sits NEAREST ``anchor`` (the
+    arm token's position) — 'peak RSS 100 GB on the 128 GB box' extracts
+    100, not the machine size. ``None`` when the line has no GiB number."""
+    vals = [(abs(m.start() - anchor), float(m.group(1))) for m in _C52_GIB_RE.finditer(line)]
+    return min(vals)[1] if vals else None
+
+
+def _c52_declared_peaks(plan: str) -> tuple[float | None, float | None, list[str]]:
+    """Max declared per-leg host-RAM and per-GPU device-memory peaks (GiB)
+    read off ``plan``, plus provenance notes naming the extracted lines.
+
+    Line-anchored, whole-plan — fenced code blocks are NOT excluded (launch
+    commands live in fences while estimate prose usually sits outside; the
+    scan stays conservative by construction). RAM arm: a line carrying a
+    RAM token (see ``_C52_RAM_TOKEN_RE``) AND a GiB/GB number. GPU arm: a
+    line carrying a VRAM/HBM/GPU-mem token AND a GiB/GB number AND a
+    peak-context token on the SAME line. Per line the number NEAREST the
+    arm token wins; across lines the MAX wins (LARGEST-CELL keying,
+    `.claude/rules/plan-compute-sizing.md` § CPU-phase RAM/RSS routing).
+    GB is read as GiB — conservative at these thresholds.
+    """
+    max_ram: float | None = None
+    max_vram: float | None = None
+    notes: list[str] = []
+    for line in plan.splitlines():
+        m_ram = _C52_RAM_TOKEN_RE.search(line)
+        if m_ram is not None:
+            val = _c52_nearest_gib(line, m_ram.start())
+            if val is not None and (max_ram is None or val > max_ram):
+                max_ram = val
+                notes.append(f"RAM peak {val:g} GiB from {line.strip()[:70]!r}")
+        m_gpu = _C52_GPU_TOKEN_RE.search(line)
+        if m_gpu is not None and _C52_PEAK_CONTEXT_RE.search(line):
+            val = _c52_nearest_gib(line, m_gpu.start())
+            if val is not None and (max_vram is None or val > max_vram):
+                max_vram = val
+                notes.append(f"VRAM peak {val:g} GiB from {line.strip()[:70]!r}")
+    return max_ram, max_vram, notes
+
+
+def _c52_argv_label(i: int, argv: list[str]) -> str:
+    """Short human label for launch argv ``i`` (0-based) — the index plus a
+    distinctive token (the ``--intent`` pair when present), so a
+    multi-launch WARN names WHICH argv lacks the floor (AC8/t8)."""
+    for j, tok in enumerate(argv):
+        if tok == "--intent" and j + 1 < len(argv):
+            return f"launch argv #{i + 1} (--intent {argv[j + 1]})"
+        if tok.startswith("--intent="):
+            return f"launch argv #{i + 1} ({tok})"
+    return f"launch argv #{i + 1} ({' '.join(argv[:2])})"
+
+
+def _c52_arm_warns(
+    argv: list[str],
+    ns,
+    label: str,
+    flag: str,
+    dest: str,
+    declared_peak: float | None,
+    rung: float,
+    rung_name: str,
+    peak_desc: str,
+) -> list[str]:
+    """AC2/AC3 (missing floor flag while the declared peak strictly exceeds
+    the rung constant) + AC4 (flag present but strictly below the declared
+    estimate) for ONE launch argv and ONE dimension. Returns WARN clauses."""
+    if declared_peak is None:
+        return []
+    if not _c46_has_flag(argv, flag):
+        if declared_peak > rung:
+            return [
+                f"plan declares {peak_desc} ~{declared_peak:g} GiB, strictly above the "
+                f"ladder rung gcp.{rung_name} = {rung:g} GiB, but {label} lacks {flag} — "
+                f"add {flag} {math.ceil(declared_peak)} so the rung walk skips undersized "
+                f"machines"
+            ]
+        return []
+    flag_val = getattr(ns, dest, None)
+    if flag_val is not None and float(flag_val) < declared_peak:
+        return [
+            f"{label} declares {flag} {flag_val}, strictly below the plan's declared "
+            f"{peak_desc} ~{declared_peak:g} GiB — raise the floor to the declared estimate"
+        ]
+    return []
+
+
+def check_fanout_ram_floor(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds: EVERY plan-embedded launch-shaped
+    ``dispatch_issue.py`` argv is checked against the plan's own declared
+    per-leg peaks — a declared host-RAM peak strictly above the ladder's
+    smallest-RAM GPU rung (``gcp.MACHINE_RAM_GIB["a2-highgpu-1g"]`` =
+    85 GiB) requires ``--min-ram-gb`` on every launch argv (AC2), a
+    declared per-GPU device-memory peak strictly above
+    ``gcp.A100_40_USABLE_GIB`` (38.0 GiB) requires ``--min-gpu-mem-gb``
+    (AC3), and a PRESENT floor flag strictly below the declared estimate
+    WARNs as floor-too-low (AC4). Mechanizes the #1739 wave-1 gap: the
+    dispatch-side guards (#1998 ``--min-ram-gb`` rung walk; #1468 A100-40
+    rung skip) are armed ONLY by the flags, and nothing plan-side required
+    declaring them — 5-6 of 12 GCE legs rc=137 OOM'd after the spot rung
+    downgraded half the fleet to 85 GB-RAM ``a2-highgpu-1g`` boxes.
+
+    Composes the c46/c50 helper family (``_c50_launch_argvs`` argv
+    extraction; ``_c46_argparser`` / ``_c46_dry_parse`` / ``_c46_has_flag``
+    parsing) but deliberately does NOT copy c50's ``len(argvs) > 1`` SKIP
+    (AC8): c52 evaluates EVERY launch argv independently — the multi-launch
+    fan-out is the DEFINING case, and per-argv flag presence needs no
+    wall-row <-> dispatch join. Deliberately NOT conditioned on live router
+    policy (``GCP_PROVISIONING_DISABLED``) or lane reachability: plans
+    outlive policy flips, ``--min-ram-gb`` is threaded lane-generically,
+    and WARN-only polarity absorbs inert-lane false positives. Every
+    ambiguity SKIPs with a stated reason; the check NEVER FAILs (the
+    c46/c47/c50 posture).
+
+    TWO named residuals: (i) FLEET-TOTAL false-WARN — a plan quoting a
+    fleet-total RSS ("720 GB across 12 legs") on one line reads as a
+    per-leg peak and can WARN a correctly-floored plan (WARN-only absorbs
+    it; the message names the extracted line); (ii) a fan-out driven by a
+    CUSTOM DRIVER script with NO plan-embedded ``dispatch_issue.py launch``
+    argv — the actual #1739 wave-1 dispatch channel — is structurally
+    INVISIBLE to c52 (SKIP at "no launch argvs"); the binding surface there
+    is `.claude/rules/plan-compute-sizing.md` (§ Ladder-rung RAM floor),
+    and a c52 SKIP must never be read as coverage.
+    """
+    del kind  # all kinds: an OOM'd leg dies identically regardless of task kind
+    cid, name = "c52_fanout_ram_floor", "fan-out RAM/GPU-mem floor vs ladder rung"
+    max_ram, max_vram, peak_notes = _c52_declared_peaks(plan)
+    if max_ram is None and max_vram is None:
+        return _skip(cid, name, "no per-leg RSS / VRAM / HBM peak-estimate token in the plan")
+    argvs, notes = _c50_launch_argvs(plan)
+    tail = ("; " + "; ".join(notes)) if notes else ""
+    if not argvs:
+        return _skip(
+            cid,
+            name,
+            "no launch-shaped dispatch_issue.py command in the plan — a custom-driver "
+            "fan-out is structurally invisible here (docstring residual (ii)): the binding "
+            "surface is plan-compute-sizing.md, and this SKIP is not coverage" + tail,
+        )
+    try:
+        from explore_persona_space.backends.gcp import A100_40_USABLE_GIB, MACHINE_RAM_GIB
+
+        ram_rung = float(MACHINE_RAM_GIB["a2-highgpu-1g"])
+        vram_rung = float(A100_40_USABLE_GIB)
+    except Exception as exc:  # off-repo --plan-file run -> loud SKIP
+        return _skip(
+            cid, name, f"gcp ladder-rung constants unavailable ({type(exc).__name__}: {exc})"
+        )
+    parser, load_detail = _c46_argparser()
+    if parser is None:
+        return _skip(cid, name, f"dispatch_issue.build_argparser unavailable ({load_detail})")
+    warns: list[str] = []
+    argv_notes: list[str] = []
+    n_parsed = 0
+    for i, argv in enumerate(argvs):
+        ns, err = _c46_dry_parse(parser, argv)
+        if ns is None:  # per-argv note, never a WARN — c46 arm 1 owns parse drift
+            argv_notes.append(f"argv #{i + 1} does not dry-parse ({err}) — c46 arm 1 owns that")
+            continue
+        n_parsed += 1
+        label = _c52_argv_label(i, argv)
+        warns.extend(
+            _c52_arm_warns(
+                argv,
+                ns,
+                label,
+                "--min-ram-gb",
+                "min_ram_gb",
+                max_ram,
+                ram_rung,
+                'MACHINE_RAM_GIB["a2-highgpu-1g"]',
+                "per-leg peak RSS / host RAM",
+            )
+        )
+        warns.extend(
+            _c52_arm_warns(
+                argv,
+                ns,
+                label,
+                "--min-gpu-mem-gb",
+                "min_gpu_mem_gb",
+                max_vram,
+                vram_rung,
+                "A100_40_USABLE_GIB",
+                "per-leg VRAM/HBM peak",
+            )
+        )
+    if n_parsed == 0:
+        return _skip(cid, name, "; ".join(argv_notes) + tail)
+    extra = "; ".join(argv_notes + peak_notes[:2])
+    if warns:
+        return _warn(cid, name, "; ".join(warns) + (f" [{extra}]" if extra else ""))
+    ram_txt = f"{max_ram:g} GiB" if max_ram is not None else "n/a"
+    vram_txt = f"{max_vram:g} GiB" if max_vram is not None else "n/a"
+    return _pass(
+        cid,
+        name,
+        f"declared peaks (RAM {ram_txt} / VRAM {vram_txt}) are floor-covered or under "
+        f"the smallest-rung constants across {n_parsed} launch argv(s)",
+    )
+
+
+# ─── Check 53 — harm-class judged DV api-refusal accounting (#2207) ────────
+
+# Trigger arm (a): judged-DV vocabulary — the conservative \bjudg stem
+# (judge / judged / judges / judging / judge-scored). Raw scan, fences
+# INCLUDED (the c43/c44 family convention): judged-DV designs live in fenced
+# measurement-validity tables as often as in prose.
+_C53_JUDGE_VOCAB_RE = re.compile(r"(?i)\bjudg(?:e|ed|es|ing)")
+
+# Trigger arm (b): harm-class vocabulary. Deliberately narrow — the bare
+# word "adversarial" must NEVER fire (every plan quotes
+# `/adversarial-planner`); only the role-play compound does. The
+# `harmful_compliance` behavior-class token (#906/#1090) is folded in.
+_C53_HARM_VOCAB_RE = re.compile(
+    r"(?i)(?:\bjailbreak|\bharmfulness\b|\bharm[- ](?:judge|rate|score)s?\b"
+    r"|\badversarial[- ]role[- ]?play|\bharmful[-_ ]compliance\b)"
+)
+
+# Trigger arm (b2) — line-windowed evil/toxic (#2227, the #2221 silent pass).
+# Bare \bevil\b stays REJECTED (saturates persona-vector trait prose); an
+# evil/toxic token is harm-class vocabulary ONLY on a line that also carries
+# judging/severity/grading/rubric vocabulary. `\btoxic(?:ity)?\b`-with-boundary
+# deliberately does NOT match bare corpus names (ToxicChat, _stage_toxicchat:
+# no word boundary between "toxic" and the joined "chat"). The `\bband...\b`
+# and `\bscor...\b` context stems were DROPPED after the round-1 corpus
+# replay (plan §10's pre-authorized tightening): `band` fired on a marker
+# "readable implant band" (#505), a statistics "null bands" line (#958), and
+# a lit-review line (#685); `scores` fired on a Persona-Vectors-paper
+# citation line (#471) — none of the genuine fires depended on either stem.
+_C53_HARM_WINDOW_TOKEN_RE = re.compile(r"(?i)(?:\bevil\b|\btoxic(?:ity)?\b)")
+_C53_HARM_WINDOW_CTX_RE = re.compile(
+    r"(?i)(?:\bjudg(?:e|ed|es|ing)|\bsever(?:ity|e)\b|\bgrad(?:e|ed|ing)\b|\brubric\b)"
+)
+
+# Satisfier: any api-refusal token — api-refusal / api_refusal / "API
+# refusal" / n_api_refusal (deliberately NOT \b-anchored at the front so the
+# `n_api_refusal` counter name, whose `_` is a word char, matches too).
+_C53_API_REFUSAL_RE = re.compile(r"(?i)api[-_ ]refusal")
+
+# Satisfier: `refusal` in the VALUE position of a `stop_reason`
+# comparison/assignment (stop_reason == "refusal" / stop_reason: refusal).
+# Tightened from the loose same-line co-mention (#2227): #2221 v5 L103
+# carries rule-9 boilerplate (REFUSAL dropped) plus the rule-26 pilot gate
+# (`stop_reason=="max_tokens"`) on ONE line, which co-mention falsely
+# accepted — content-drop handling and a pilot gate are NOT api-refusal
+# accounting (rule 28's own non-coverage note).
+_C53_STOPREASON_REFUSAL_RE = re.compile(r"(?i)stop_reason\s*[=:]+\s*[\"'`]?\s*refusal")
+
+_C53_ESCAPE_RE = re.compile(r"(?i)^rule[- ]28 exempt(?:ion)?\b")
+
+
+def _c53_escape_declared(plan: str) -> bool:
+    """Standalone ``rule 28 exemption: <reason>`` declaration (no N/A
+    prefix — the c43 shape), or the shared-helper ``N/A — rule 28
+    exemption`` form. Fenced lines and wrapped pastes never satisfy (see
+    ``_standalone_na_declared``)."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    for line, fenced in zip(lines, mask, strict=True):
+        if fenced:
+            continue
+        if _C53_ESCAPE_RE.match(line.lstrip(" \t>*-")):
+            return True
+    return _standalone_na_declared(plan, r"rule[- ]28 exempt")
+
+
+def check_judged_dv_api_refusal(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, experiment-only: a plan whose judged DV
+    scores harm-class completions (jailbreak / harmfulness / harm-rate /
+    adversarial-role-play / harmful-compliance vocabulary alongside judge
+    vocabulary, or — arm (b2), #2227 — an evil/toxic token line-windowed
+    with judging/severity/grading/rubric vocabulary) must
+    name its api-refusal accounting — per-arm
+    ``n_api_refusal`` reported separately from BOTH content drops and
+    transport losses, plus the targeted SYNC re-issue remediation at the
+    IDENTICAL instrument (reference implementation:
+    ``scripts/issue1739_evilood_refusal_rejudge.py``) — or declare the
+    ``rule 28 exemption: <reason>`` escape. Mechanizes the llm-judging.md
+    rule-28 Enforcement rider (#2151): the Batch API can return a
+    SUCCEEDED row whose ``stop_reason`` is ``"refusal"`` with an EMPTY
+    content array — the THIRD drop class, transport-conditional and
+    retriable, NEITHER a rule-9 content drop NOR a rule-24 transport
+    loss. The censoring is OUTCOME-CORRELATED (highest-harm rows first),
+    so absorbing it into the content tally biases the harm DV DOWN on
+    exactly its highest-scoring rows. Founding incident #1739: 34.1% of
+    harm-judge draws (15,091/44,310) were api-refusal-censored and filed
+    as ``parse_error`` content drops; a rule-26 pilot-gate PASS does NOT
+    cover this class BY DESIGN (rule 28's non-coverage note: api-refusal
+    draws leave both the parse-fail numerator and denominator).
+    Satisfiers (any): an api-refusal token (``api-refusal`` /
+    ``api_refusal`` / ``n_api_refusal``), a ``stop_reason``
+    comparison/assignment with ``refusal`` in the VALUE position
+    (``stop_reason == "refusal"``; a bare same-line co-mention of the two
+    words — the rule-9/rule-26 boilerplate shape on #2221 v5 L103 — no
+    longer satisfies, #2227), or the standalone exemption line. Trigger AND
+    satisfiers scan the RAW plan text (fences INCLUDED, the c43
+    precedent — judged-DV designs and remediation notes live in fenced
+    tables/blocks). NEVER FAILs (the c39/c31/c34/c43 family convention).
+    kind-exempt outside experiment: infra workflow-fix plans (this
+    check's own plan included) legitimately QUOTE the trigger vocabulary
+    without dispatching a harm-judged eval. DESIGN HISTORY (re-scoped by
+    #2227): BARE ``\\bevil\\b`` stays REJECTED — it saturates
+    persona-vector trait prose across the persisted corpus — but arm (b2)
+    now admits an evil/toxic token when it CO-OCCURS ON ONE LINE with
+    judging/severity/grading/rubric vocabulary (the #2221 shape: "graded 0-100
+    judged on-policy trait-expression score ... for
+    evil/sycophancy/hallucination"). The earlier rejection of
+    "judge-proximity tuning" was about SUPPRESSING benign fires of the
+    EXISTING arm-(b) vocabulary — using same-line co-occurrence to ADMIT
+    a new trigger arm without false positives is the complementary
+    direction and is what #2227 prescribes. KNOWN FALSE NEGATIVES that
+    REMAIN (disclosed by design): evil/toxic phrasing split across lines
+    from all judging vocabulary; "misaligned"/"EM"-phrased judged DVs
+    (still rejected — they saturate the project's standing vocabulary);
+    refusal-bait corpora phrased as "harmful advice"/"unsafe content";
+    and safety-benchmark names quoted bare (mhj, pair, tom-gibbs) — the
+    Statistics & Measurement lens REVISE stays the binding gate for
+    those shapes. NAMED RESIDUAL (2026-08 corpus replay, 3,751 plan
+    versions / 26 distinct WARN'd tasks at real kinds): 24/26 fire-tasks
+    genuinely judge harm-class panels; 2 benign single-mention fires —
+    a downstream-motivation "persona-jailbreak detection" mention in a
+    judge-free marker plan (#382) and a duplicate-clustering "template
+    jailbreaks" example in a zero-new-judge-call analysis plan (#1073).
+    Occurrence-count and judge-proximity tuning (as SUPPRESSORS) were
+    both REJECTED: the genuine single-mention fires
+    (#545/#591/#2091/#459) are byte-shaped identically to the benign
+    ones — WARN-only polarity + the exemption escape absorb the residual
+    (the c52 named-residual posture). #2227 RESIDUAL (2026-08-10 corpus
+    replay, 3,882 plan versions at real kinds, patched-vs-unpatched
+    delta): 20 newly-WARN tasks — 18 via the windowed arm, 2 via the
+    satisfier tightening (#1739 v15 + #2203 v1, both genuinely
+    harm-judged, previously PASSing on the loose boilerplate
+    co-mention); 17/20 genuine (the persona-vectors evil/syco/hallu
+    judging line #778/#779/#816/#1415/#1769/#1774/#2220-#2225 plus
+    #537/#685/#1092/#1776), 3 benign — #841/#922 ("no new judging"
+    artifact-reuse lines) + #1768 (an N/A screen disclaimer) — absorbed
+    by WARN-only polarity + the exemption escape. The round-1 replay
+    (context window still carrying the `band`/`scor` stems) fired 23
+    tasks with 7 benign (~30%), driving the §10-preauthorized stem
+    drop (#471/#505/#685/#958 were the stem-only fires)."""
+    cid, name = "c53_judged_dv_api_refusal", "harm-class judged DV api-refusal accounting"
+    if kind != "experiment":
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: api-refusal accounting is an experiment-plan (harm-judged-DV) shape",
+        )
+    if not _C53_JUDGE_VOCAB_RE.search(plan):
+        return _skip(cid, name, "no judged-DV vocabulary in the plan")
+    harm_hits = sorted({m.group(0).lower() for m in _C53_HARM_VOCAB_RE.finditer(plan)})
+    if not harm_hits:
+        # Arm (b2) — line-windowed evil/toxic (#2227): fire only when an
+        # evil/toxic token co-occurs on ONE line with judging/severity/
+        # grading/rubric vocabulary. First hit suffices; the WARN carries the
+        # token + line number so a reader can see WHY it fired. Plain
+        # string appended so the WARN's join keeps working.
+        for lineno, line in enumerate(plan.splitlines(), start=1):
+            tok = _C53_HARM_WINDOW_TOKEN_RE.search(line)
+            if tok and _C53_HARM_WINDOW_CTX_RE.search(line):
+                harm_hits.append(f"{tok.group(0).lower()} (L{lineno}, windowed)")
+                break
+    if not harm_hits:
+        return _skip(
+            cid,
+            name,
+            "no harm-class judged-DV vocabulary (jailbreak / harmfulness / harm-rate / "
+            "adversarial-role-play / harmful-compliance; nor a windowed evil/toxic token "
+            "co-occurring on one line with judging/severity/grading/rubric vocabulary, #2227)",
+        )
+    if _C53_API_REFUSAL_RE.search(plan):
+        return _pass(
+            cid, name, "api-refusal accounting token present (api-refusal / n_api_refusal)"
+        )
+    for ln in plan.splitlines():
+        if _C53_STOPREASON_REFUSAL_RE.search(ln):
+            return _pass(
+                cid,
+                name,
+                'stop_reason comparison with "refusal" in value position names the drop class',
+            )
+    if _c53_escape_declared(plan):
+        return _pass(cid, name, "explicit escape declared (rule 28 exemption)")
+    return _warn(
+        cid,
+        name,
+        f"plan judges harm-class completions ({', '.join(harm_hits[:4])!r}) with no "
+        "api-refusal accounting — llm-judging.md rule 28 (#2151): Batch rows returning "
+        '`stop_reason == "refusal"` with empty content are the THIRD drop class, '
+        "outcome-correlated (highest-harm rows first; #1739: 34.1% of harm-judge draws "
+        "censored), and a rule-26 pilot-gate PASS is NOT a substitute. Name per-arm "
+        "`n_api_refusal` reported separately from content drops and transport losses, plus "
+        "the targeted SYNC re-issue remediation at the identical instrument (reference: "
+        "`scripts/issue1739_evilood_refusal_rejudge.py` — the llm-judging.md § Enforcement "
+        'rule-28 rider); naming the drop class in value position (`stop_reason == "refusal"`) '
+        "also satisfies — a bare same-line co-mention of `stop_reason` and `refusal` "
+        "(rule-9/rule-26 boilerplate) does NOT (#2227) — or declare "
+        "`rule 28 exemption: <reason>` on its own line, unwrapped (no backticks/quotes)",
+    )
+
+
+# ─── Check 54 — bare lane-specific env vars in --workload-cmd (#2047) ──────
+
+_c54_lint_fn_cache: list = []  # [(fn | None, detail)] once resolved (the c46 idiom)
+
+
+def _c54_lint_fn():
+    """Lazily import the #1329 runtime lane-env lint
+    (``explore_persona_space.backends.issue_dispatch.
+    lint_workload_cmd_lane_env`` — the single source of truth for
+    ``LANE_WORKLOAD_ENV_EXPORTS``, reachable-lane mapping, the
+    bare-reference regex with its set-u-safe exclusions, and
+    single-quoted-segment stripping).
+
+    Returns ``(fn, "")`` on success or ``(None, <detail>)`` on ANY import
+    failure (an off-repo ``--plan-file`` run without the package
+    importable) — the caller SKIPs loudly on ``None``, the c46 fail-open
+    idiom: c54 is a plan-drift detector, never a gate on the helper
+    module itself. Cached one-shot so corpus sweeps import once.
+    """
+    if not _c54_lint_fn_cache:
+        fn, detail = None, ""
+        try:
+            from explore_persona_space.backends.issue_dispatch import (
+                lint_workload_cmd_lane_env,
+            )
+
+            fn = lint_workload_cmd_lane_env
+        except Exception as exc:  # any import failure -> loud SKIP at the caller
+            fn, detail = None, f"{type(exc).__name__}: {exc}"
+        _c54_lint_fn_cache.append((fn, detail))
+    return _c54_lint_fn_cache[0]
+
+
+def _c54_flag_value(tokens: list[str], flag: str) -> str | None:
+    """Value of ``flag`` in ``tokens`` (``--flag value`` AND
+    ``--flag=value`` forms), or ``None`` when absent."""
+    for i, tok in enumerate(tokens):
+        if tok == flag and i + 1 < len(tokens):
+            return tokens[i + 1]
+        if tok.startswith(flag + "="):
+            return tok.split("=", 1)[1]
+    return None
+
+
+def check_workload_cmd_lane_env(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds: the ``--workload-cmd`` value of
+    every plan-embedded ``dispatch_issue.py`` command (the c46 candidate
+    sources: fenced code blocks + inline-code spans, backslash
+    continuations joined) must not reference a lane-specific env var
+    BARE — a var exported by only SOME reachable lanes (canonical
+    offender: GCE-only ``$WORKLOAD_ROOT``) aborts under another lane's
+    ``set -u`` stage. Detection is delegated whole to the #1329 runtime
+    lint ``lint_workload_cmd_lane_env`` (lazy import; unavailable →
+    loud SKIP): set-u-safe ``${VAR:-<default>}`` forms and
+    single-quoted segments never flag, and the raw ``--backend`` value
+    (both flag forms; absent → auto) scopes the reachable lanes.
+    CRITICAL extraction detail: ``${VAR:+...}`` spans are stripped
+    whole pre-shlex (``_C46_COND_EXPANSION_RE`` — set-u-safe by
+    construction and unsplittable otherwise) but ``_C46_PLACEHOLDER_RE``
+    is NOT applied — the raw ``$VAR`` text IS the evidence this check
+    scans. Mechanizes the #1979 f1g incident: the plan §10 command used
+    bare ``$WORKLOAD_ROOT`` on an unpinned auto route, the fellows SLURM
+    lane's ``set -u`` custom stage died on ``WORKLOAD_ROOT: unbound
+    variable``, and a full dispatch burned before a set-u-safe relaunch.
+    No dispatch command → SKIP; no ``--workload-cmd`` token in any
+    candidate → SKIP; unsplittable lines get a per-line note, never a
+    crash. NEVER FAILs (the c43/c46/c50 posture) — the #1329 runtime
+    exit-2 refusal (``workload_cmd_lane_env_unbound``) fires only on the
+    ``certain`` arm (explicit SLURM-lane pin, or runpod with
+    ``--execute-workload``); for AUTO-lane plans — the #1979 incident
+    shape — the runtime is advisory-only, so c54 is the earliest and
+    often only pre-burn surfacing. KNOWN v1 FALSE NEGATIVE (disclosed by
+    design): a ``--workload-cmd "$WCMD"`` indirection (the value held in
+    a shell variable) scans the literal ``$WCMD``, which is outside the
+    helper's lint universe — no WARN (same class as the helper's own
+    documented v1 false negatives, issue_dispatch.py ~L437-440).
+    """
+    del kind  # all kinds: a bare lane-specific env var dies identically everywhere
+    cid, name = "c54_workload_cmd_lane_env", "--workload-cmd bare lane-specific env vars"
+    candidates = _c46_command_candidates(plan)
+    if not candidates:
+        return _skip(cid, name, "no dispatch_issue.py command in fenced blocks or inline code")
+    lint_fn, load_detail = _c54_lint_fn()
+    if lint_fn is None:
+        return _skip(cid, name, f"lane-env lint helper unavailable ({load_detail})")
+    offenders: list[str] = []
+    notes: list[str] = []
+    n_scanned = 0
+    for cmd in candidates:
+        # Strip ${VAR:+...} spans whole; do NOT substitute placeholders —
+        # the raw `$VAR` text is exactly what the lane-env lint scans.
+        cleaned = _C46_COND_EXPANSION_RE.sub("", cmd)
+        try:
+            tokens = shlex.split(cleaned)
+        except ValueError as exc:
+            notes.append(f"unsplittable line skipped ({exc}): {cmd[:60]!r}")
+            continue
+        wcmd = _c54_flag_value(tokens, "--workload-cmd")
+        if wcmd is None:
+            continue  # provision-only / finalize command — nothing to scan
+        n_scanned += 1
+        # backend passed raw: an unparseable placeholder value degrades to
+        # auto inside the helper (its own normalize_backend_value catch).
+        lint = lint_fn(wcmd, backend_value=_c54_flag_value(tokens, "--backend"))
+        for var, lanes in sorted(lint.flagged.items()):
+            offenders.append(
+                f"{cmd[:70]!r}: {var} bare but unexported on lane(s) {', '.join(lanes)}"
+            )
+    if offenders:
+        shown = " | ".join(offenders[:3])
+        more = f" (+{len(offenders) - 3} more)" if len(offenders) > 3 else ""
+        tail = ("; " + "; ".join(notes)) if notes else ""
+        return _warn(
+            cid,
+            name,
+            f"plan-embedded --workload-cmd value(s) carry bare lane-specific env vars: {shown}"
+            f"{more} — use the set-u-safe `${{VAR:-<default>}}` expansion or pin `backend:` "
+            "to a lane exporting the var; runtime refusal: workload_cmd_lane_env_unbound "
+            "(#1329); incident #1979/#2047: bare $WORKLOAD_ROOT died under the fellows "
+            f"lane's set -u{tail}",
+        )
+    if n_scanned == 0:
+        detail = "no --workload-cmd in plan-embedded dispatch commands"
+        if notes:
+            detail += "; " + "; ".join(notes)
+        return _skip(cid, name, detail)
+    detail = f"{n_scanned} --workload-cmd value(s) clean of bare lane-specific env vars"
+    if notes:
+        detail += "; " + "; ".join(notes)
+    return _pass(cid, name, detail)
+
+
+# ─── Check 55 — inherited argparse row-count default vs per-cell target ─────
+
+_C55_REPO_ROOT = Path(__file__).resolve().parent.parent  # tests monkeypatch (c34/c41 pattern)
+
+#: Plan-named candidate script paths (scripts/ or src/, ``.py``). Cost
+#: bound: at most ``_C55_MAX_SCRIPTS`` are resolved per plan.
+_C55_SCRIPT_RE = re.compile(r"\b(?:scripts|src)/[A-Za-z0-9_./-]+\.py\b")
+_C55_MAX_SCRIPTS = 12
+
+#: Issue-branch tokens the plan names — the ``git show`` resolution fallback
+#: for scripts living only on an unmerged issue branch (#2054's phase_c.py).
+_C55_BRANCH_RE = re.compile(r"\bissue-\d+[a-z0-9-]*\b")
+_C55_MAX_BRANCHES = 4
+
+#: argparse flag token at an ``add_argument(`` call head.
+_C55_ADD_ARG_RE = re.compile(r"add_argument\(\s*[\"'](--[A-Za-z0-9][\w-]*)[\"']")
+#: Integer default within the bounded post-flag window; the negative
+#: lookahead rejects float defaults (``default=0.5``), and ``\d[\d_]*``
+#: accepts the underscore-separator literal (``default=8_000``, the verbatim
+#: #2054 offender shape, issue2054 phase_c.py).
+_C55_DEFAULT_RE = re.compile(r"default\s*=\s*(\d[\d_]*)(?![.\d_])")
+#: Chars scanned after the flag token for kwargs — bounds multi-line
+#: ``add_argument`` calls without paren-matching.
+_C55_KWARG_WINDOW = 300
+
+#: Row-count flag-name axes: the flag must carry BOTH a cap-ish token
+#: (target/max/limit) and a row-ish token (conv*/row(s)/id(s)), in any
+#: order, each anchored at a ``-``/``_`` token boundary so e.g.
+#: ``--target-grid`` ("id" inside "grid") never matches. The row axis is
+#: prefix-tolerant at the boundary (``conv`` covers ``conversations``).
+_C55_CAP_AXIS_RE = re.compile(r"(?:^|[-_])(?:target|max|limit)(?=[-_]|$)")
+_C55_ROW_AXIS_RE = re.compile(r"(?:^|[-_])(?:conv|rows?|ids?)")
+
+#: Plan-prose per-cell target patterns (the fuzzy leg — WARN-only absorbs
+#: the false-positive surface). Values under ``_C55_TARGET_FLOOR`` (seed
+#: counts, tiny ints) are dropped; the MAX surviving candidate is the
+#: stated target (conservative: the max is what the plan claims to reach).
+_C55_TARGET_RES = [
+    re.compile(r"per[- ]cell[^.\n]{0,60}?(\d[\d,]{2,})", re.I),
+    re.compile(r"\bn(?:_train)?\s*[=≈~]\s*(\d[\d,]{2,})", re.I),
+    re.compile(r"\|S\|\s*[=≈]\s*(\d[\d,]{2,})"),
+    re.compile(r"target(?:\s+of)?\s+[^.\n]{0,40}?(\d[\d,]{2,})", re.I),
+]
+_C55_TARGET_FLOOR = 100
+
+
+def _c55_candidate_scripts(plan: str) -> tuple[list[str], bool]:
+    """Ordered, deduped plan-named script paths, capped at
+    ``_C55_MAX_SCRIPTS`` (cost bound; the second element reports the cap
+    firing so the detail can note the truncation). Traversal-shaped
+    candidates (``..``) are dropped."""
+    seen: list[str] = []
+    for m in _C55_SCRIPT_RE.finditer(plan):
+        rel = m.group(0)
+        if ".." in rel or rel in seen:
+            continue
+        seen.append(rel)
+    return seen[:_C55_MAX_SCRIPTS], len(seen) > _C55_MAX_SCRIPTS
+
+
+def _c55_git_show(ref: str, rel: str) -> str | None:
+    """``git show <ref>:<rel>`` in ``_C55_REPO_ROOT``; ``None`` on any
+    failure (missing ref/path, git unavailable, timeout) — c55 is WARN-only
+    lint, so resolution failures degrade to caller-side notes, never a
+    crash (the c42/c44 fail-open contract)."""
+    try:
+        r = subprocess.run(
+            ["git", "show", f"{ref}:{rel}"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            cwd=str(_C55_REPO_ROOT),
+            check=False,
+        )
+    except (subprocess.TimeoutExpired, OSError):
+        return None
+    return r.stdout if r.returncode == 0 else None
+
+
+def _c55_resolve_script(rel: str, branches: list[str]) -> str | None:
+    """Script text: working-tree read first, then ``git show <branch>:``
+    then ``git show origin/<branch>:`` per plan-named issue branch — a
+    branch fetched but never checked out locally resolves only via the
+    ``origin/`` ref (#2054's phase_c.py lived on the ``issue-2054``
+    branch). ``None`` when nothing resolves (caller notes it, fail-soft)."""
+    p = _C55_REPO_ROOT / rel
+    text: str | None = None
+    try:
+        if p.is_file():
+            text = p.read_text(errors="replace")
+    except OSError:
+        text = None  # unreadable working-tree copy — fall through to the git refs
+    if text is not None:
+        return text
+    for branch in branches:
+        for ref in (branch, f"origin/{branch}"):
+            text = _c55_git_show(ref, rel)
+            if text is not None:
+                return text
+    return None
+
+
+def _c55_rowcount_defaults(text: str) -> list[tuple[str, int]]:
+    """``(flag, default)`` pairs for row-count-shaped argparse flags with an
+    integer literal default. The kwarg scan is a bounded window after the
+    flag token (multi-line ``add_argument`` calls match without
+    paren-matching); ``default=0`` is skipped — the conventional no-limit
+    value cannot under-cover a target."""
+    out: list[tuple[str, int]] = []
+    for m in _C55_ADD_ARG_RE.finditer(text):
+        name = m.group(1)[2:]  # strip the leading --
+        if not (_C55_CAP_AXIS_RE.search(name) and _C55_ROW_AXIS_RE.search(name)):
+            continue
+        window = text[m.end() : m.end() + _C55_KWARG_WINDOW]
+        dm = _C55_DEFAULT_RE.search(window)
+        if dm is None:
+            continue
+        value = int(dm.group(1).replace("_", ""))
+        if value == 0:
+            continue
+        out.append((m.group(1), value))
+    return out
+
+
+def _c55_plan_target_n(plan: str) -> int | None:
+    """MAX plan-stated per-cell target ``>= _C55_TARGET_FLOOR``, or ``None``
+    when no target-shaped integer is recognized (caller SKIPs)."""
+    candidates: list[int] = []
+    for pat in _C55_TARGET_RES:
+        for m in pat.finditer(plan):
+            value = int(m.group(1).replace(",", ""))
+            if value >= _C55_TARGET_FLOOR:
+                candidates.append(value)
+    return max(candidates) if candidates else None
+
+
+def check_inherited_rowcount_default(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds: a plan that reuses a
+    generation/splice script whose argparse integer ROW-COUNT default (a
+    flag carrying both a target/max/limit and a conv/rows/ids token) sits
+    BELOW the plan's own stated per-cell target n, with the flag token
+    appearing NOWHERE in the plan text, silently caps coverage — the run
+    truncates deterministically (first-N prefix) and every gate that runs
+    before the consuming phase reads PASS without seeing the breach.
+    Mechanizes the #2054 amendment-plan v11 incident: the reused
+    ``--target-conv-ids`` default (8,000; phase_c.py on the ``issue-2054``
+    branch) would have capped 28 of 48 in-scope cells below the registered
+    |S| = 9,000 intersection target; the mechanical pre-pass passed the
+    plan clean twice (v10, v11) and only the Methodology critic caught it.
+    Scripts resolve working-tree-first, then ``git show <branch>:`` /
+    ``origin/<branch>:`` for plan-named ``issue-<M>`` branch tokens
+    (fail-soft note on a miss — never a crash); the plan-side target
+    extraction is deliberately fuzzy (per-cell / n= / |S|= / target-of
+    patterns, MAX aggregation, >= 100 floor) — WARN-only absorbs the
+    false-positive surface, and a flag token mentioned ANYWHERE in the
+    plan (an embedded override command, a prose acknowledgment) suppresses
+    the WARN (plan-aware, per the #2054 critic sketch). Escape: standalone
+    ``N/A — no inherited row-count defaults``. NEVER FAILs (the
+    c43/c46/c50/c54 posture).
+    """
+    del kind  # all kinds: an inherited under-covering default truncates identically everywhere
+    cid = "c55_inherited_rowcount_default"
+    name = "inherited argparse row-count default vs per-cell target"
+    if _standalone_na_declared(plan, r"no inherited row-count defaults"):
+        return _pass(cid, name, "explicit N/A declared (no inherited row-count defaults)")
+    scripts, truncated = _c55_candidate_scripts(plan)
+    if not scripts:
+        return _skip(cid, name, "no reused script paths named in plan")
+    branches: list[str] = []
+    for m in _C55_BRANCH_RE.finditer(plan):
+        tok = m.group(0)
+        if tok not in branches:
+            branches.append(tok)
+    branches = branches[:_C55_MAX_BRANCHES]
+    notes: list[str] = []
+    if truncated:
+        notes.append(f"candidate scripts capped at {_C55_MAX_SCRIPTS}")
+    defaults: list[tuple[str, str, int]] = []  # (script, flag, default)
+    n_resolved = 0
+    for rel in scripts:
+        text = _c55_resolve_script(rel, branches)
+        if text is None:
+            notes.append(f"script unresolved: {rel}")
+            continue
+        n_resolved += 1
+        for flag, value in _c55_rowcount_defaults(text):
+            defaults.append((rel, flag, value))
+    tail = ("; " + "; ".join(notes)) if notes else ""
+    if n_resolved == 0:
+        return _skip(cid, name, f"none of {len(scripts)} plan-named script(s) resolved{tail}")
+    if not defaults:
+        return _pass(
+            cid,
+            name,
+            f"no inherited row-count defaults in {n_resolved} plan-named script(s){tail}",
+        )
+    target = _c55_plan_target_n(plan)
+    if target is None:
+        return _skip(cid, name, f"no stated per-cell target n recognized{tail}")
+    offenders = [
+        f"{rel}: {flag} default={value:,} < stated target {target:,} and the flag "
+        "never appears in the plan"
+        for rel, flag, value in defaults
+        if target > value and flag not in plan
+    ]
+    if offenders:
+        shown = " | ".join(offenders[:3])
+        more = f" (+{len(offenders) - 3} more)" if len(offenders) > 3 else ""
+        return _warn(
+            cid,
+            name,
+            f"inherited argparse row-count default(s) under-cover the plan's stated per-cell "
+            f"target: {shown}{more} — pass the flag explicitly in an embedded command or raise "
+            "the source default; incident #2054: the reused `--target-conv-ids` default 8,000 "
+            "silently capped cells below the |S| = 9,000 target (deterministic first-N "
+            f"truncation){tail}",
+        )
+    return _pass(
+        cid,
+        name,
+        f"{len(defaults)} row-count default(s) in {n_resolved} script(s) covered by the stated "
+        f"target ({target:,}) or explicitly overridden in the plan{tail}",
+    )
+
+
+# ─── Check 56 — multi-GB staging row names its mount / bind liveness (#2097) ─
+
+# Trigger: a STRIPPED-prose line carrying BOTH a staging signal AND a >=5 GB
+# size figure (TB always qualifies). Calibration (#2097, implementation-time,
+# AS-SHIPPED regexes; the c39/c33 gate precedent — any future c56-regex
+# change re-runs the corpus scan and records the realized numbers here) over
+# 3,890 persisted plan-versions (tasks/*/*/plans/v*.md; in-process, own task
+# excluded, kind from body.md): 499 pv triggered (kind==experiment,
+# non-SKIP); 343 pv would-WARN — 307 arm-(a)-only / 15 arm-(b)-only / 21
+# both; 6 recent-era issues (>= 2000) carry WARNs. The founding incident
+# #2091 (a 42 GB VM stage citing the NOT-live #681 worktree bind; zero
+# `findmnt`, PASSed verify_plan twice) arm-(b)-WARNs on plans v1-v3, and its
+# POST-incident revisions v4/v5 — which added the `findmnt --mountpoint`
+# probe — PASS: the incident's own fix trajectory exercises both verdicts
+# (pinned by tests/test_verify_plan.py::test_c56_calibration_committed_2091_v3).
+# Arm-(a) adjudication of the recent-era would-WARNs: size-bearing
+# risk-table / RSS-routing / compute-table rows whose staging path lives
+# elsewhere in the plan — the #869 document-global-evidence shape the
+# window-scoping deliberately refuses; a widened satisfier set (+MooseFS /
+# container-disk / $SCRATCH mount-name tokens) was MEASURED at 343 -> 311
+# would-WARN and DECLINED — it blesses filesystem-name-without-path rows,
+# weakening the duty's PATH requirement for a ~10% noise cut. WARN-only +
+# forward-looking (legacy plans never bounce retroactively, the
+# c39/c31/c34/c43 family convention).
+_C56_STAGE_RE = re.compile(
+    r"(?i)\bstag(?:e|es|ed|ing)\b|\bdownload|\bsnapshot|\bmateriali[sz]e"
+    r"|hf_dl|local_dir|\bprefetch"
+)
+_C56_SIZE_RE = re.compile(r"(\d+(?:\.\d+)?)\s*(GB|GiB|TB)\b")
+_C56_SIZE_MIN_GB = 5.0
+# Arm (a): PATH tokens satisfy ONLY within the trigger line +-2 STRIPPED
+# lines (window-scoped — house style pushes `/workspace` merge-disk
+# boilerplate + launch out-roots into nearly every plan, so a doc-global
+# path satisfier vacuously PASSes a pathless staging row: the #869
+# document-global-evidence shape; 9 `/workspace` mentions in #2091 v3
+# alone). The mount-PROBE tokens (`df -P`, `findmnt`) satisfy from anywhere
+# in the RAW plan — probe commands legitimately live in fenced
+# preflight/repro blocks far from the staging row.
+_C56_PATH_RE = re.compile(r"/mnt/eps-data|data/issue_|/workspace")
+_C56_PROBE_RE = re.compile(r"df -P|findmnt")
+# Arm (b): the incident's OWN vocabulary — `worktree`/`#681` co-occurring
+# with word-boundary `bind` within the same stripped line or +-2 adjacent
+# stripped lines. `\bbind\b` (not `bind`): "binding"-class house prose can
+# never false-fire, while hyphens ARE word boundaries so "bind-mounted" /
+# "bind-migration" still match. NOT keyed on the literal `.claude/worktrees`
+# path: that string appears ZERO times in #2091 v3, whose actual wording is
+# "resolves to `/mnt/eps-data` via the #681 worktree bind" (v3 L110/L272) —
+# a literal-path trigger provably never fires on its own motivating incident.
+_C56_BIND_RE = re.compile(r"(?i)\bbind\b")
+_C56_WORKTREE_RE = re.compile(r"(?i)\bworktrees?\b|#681\b")
+_C56_WINDOW = 2  # +-2 lines; the c12 window-shape convention
+
+
+def _c56_size_qualifies(line: str) -> bool:
+    """True when ``line`` carries a >=5 GB size figure (any TB qualifies)."""
+    for m in _C56_SIZE_RE.finditer(line):
+        if m.group(2) == "TB" or float(m.group(1)) >= _C56_SIZE_MIN_GB:
+            return True
+    return False
+
+
+def check_staging_mount_binding(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, experiment-only: a multi-GB staging/footprint
+    row must name its mount/staging path IN the trigger window (arm a), and
+    a plan citing the #681 worktree bind for a multi-GB stage must carry a
+    literal ``findmnt --mountpoint`` liveness assertion (arm b — the bind is
+    NOT live on this VM; #2091's plans v2 AND v3 cited it for a 42 GB stage
+    and PASSed verify_plan). Mechanizes the explicitly-deferred staging-row
+    backstop of `.claude/rules/plan-compute-sizing.md` § Out-root mount
+    binding (the >=5 GB inline-staging clause: staging path named up front +
+    the filesystem it resolves to; incident #1393 — a 14 GB inline HF pull
+    filled ``/`` -> ENOSPC).
+
+    Fence masking is LINE-COUNT-PRESERVING (fenced lines masked in place,
+    never deleted) so the stripped->raw +-2 window maps by identity index.
+    Arm (b) is evaluated INDEPENDENTLY of arm (a)'s verdict — the #2091 rows
+    name ``/mnt/eps-data`` in-window (arm a satisfied) and still must WARN
+    on the missing liveness probe. NEVER FAILs (the c39/c31/c34/c43 family
+    convention). kind-exempt outside experiment: infra workflow-fix plans —
+    this check's own lineage included — legitimately discuss staging without
+    having staging phases."""
+    cid, name = "c56_staging_mount_binding", "staging mount binding"
+    if kind != "experiment":
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: multi-GB staging rows are an experiment-plan shape "
+            "(infra workflow-fix plans legitimately discuss staging without staging phases)",
+        )
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)  # line-count-preserving: indexes map raw<->stripped
+    trigger_idx = [
+        i
+        for i, (line, fenced) in enumerate(zip(lines, mask, strict=True))
+        if not fenced and _C56_STAGE_RE.search(line) and _c56_size_qualifies(line)
+    ]
+    if not trigger_idx:
+        return _skip(cid, name, "no multi-GB staging vocabulary detected")
+    if _standalone_na_declared(plan, r"no multi-GB staging\b"):
+        return _pass(cid, name, "explicit N/A declared (no multi-GB staging)")
+    # Arm (a): every trigger line needs a path token within +-2 stripped
+    # lines, unless a mount-probe token appears anywhere in the RAW plan.
+    offenders_a: list[str] = []
+    if not _C56_PROBE_RE.search(plan):
+        for i in trigger_idx:
+            lo, hi = max(0, i - _C56_WINDOW), min(len(lines), i + _C56_WINDOW + 1)
+            window = "\n".join(lines[j] for j in range(lo, hi) if not mask[j])
+            if not _C56_PATH_RE.search(window):
+                offenders_a.append(lines[i].strip()[:90])
+    # Arm (b): independent of arm (a) — a worktree-bind citation in a disk
+    # context requires the literal `findmnt --mountpoint` in the RAW plan.
+    bind_hits: list[int] = []
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced or not _C56_BIND_RE.search(line):
+            continue
+        lo, hi = max(0, i - _C56_WINDOW), min(len(lines), i + _C56_WINDOW + 1)
+        if any(not mask[j] and _C56_WORKTREE_RE.search(lines[j]) for j in range(lo, hi)):
+            bind_hits.append(i)
+    arm_b_offends = bool(bind_hits) and "findmnt --mountpoint" not in plan
+    if not offenders_a and not arm_b_offends:
+        bits = [f"{len(trigger_idx)} multi-GB staging line(s) mount-bound"]
+        if bind_hits:
+            bits.append(
+                f"{len(bind_hits)} worktree-bind citation line(s) with a "
+                "`findmnt --mountpoint` liveness assertion"
+            )
+        return _pass(cid, name, "; ".join(bits))
+    msgs: list[str] = []
+    if offenders_a:
+        shown = "; ".join(offenders_a[:3])
+        more = f" (+{len(offenders_a) - 3} more)" if len(offenders_a) > 3 else ""
+        msgs.append(
+            f"{len(offenders_a)} multi-GB staging row(s) name no mount/staging path within "
+            f"+-2 lines ({shown!r}{more}) — name the staging path + the filesystem it "
+            "resolves to next to the row (the CLAUDE.md compute-character element 5: "
+            "a correct GB figure on the WRONG mount still ENOSPCs, #1393; a distant "
+            "`/workspace` in Repro boilerplate does not bind the row)"
+        )
+    if arm_b_offends:
+        msgs.append(
+            f"{len(bind_hits)} worktree-bind citation line(s) route a multi-GB stage "
+            "via the #681 worktree bind with NO `findmnt --mountpoint` liveness "
+            "assertion — the bind is NOT live on this VM (#2091: cited for a 42 GB "
+            "stage, PASSed verify_plan twice; the path then resolves to the boot "
+            "disk, gotchas.md `/mnt/eps-data` entry). Add a fenced "
+            "`findmnt --mountpoint <repo>/.claude/worktrees` probe (no output = no "
+            "bind) or re-route the staging path"
+        )
+    msgs.append(
+        "or declare `N/A — no multi-GB staging` on its own line, unwrapped "
+        "(no backticks/quotes), if the staging vocabulary is incidental"
+    )
+    return _warn(cid, name, " | ".join(msgs))
+
+
+# ─── Check 57 — fan-out same-prefix staging shape (#2236, incident #1739) ───
+
+# Trigger (conjunctive): T1 — a STRIPPED §9 line declaring a box-level
+# fan-out (count 2-99 + shards/boxes/pods/nodes/instances) with same-line
+# parallel/concurrent vocabulary and no same-line negation; AND T2 —
+# Hub-prefix staging named anywhere in the plan. Satisfier: T3 — staging-
+# remedy vocabulary anywhere in the plan (pre-stage / serialize / jitter —
+# the remedies of `.claude/rules/plan-compute-sizing.md` § "Fan-out over
+# the same HF prefix"). Calibration (#2236, implementation-time, AS-SHIPPED
+# regexes; the c39/c33 gate precedent — any future c57-regex change re-runs
+# the corpus scan and records the realized numbers here;
+# `scripts/issue2236_c57_corpus_sweep.py` is the reproduction tool) over
+# 3,935 persisted plan-versions (tasks/*/*/plans/v*.md, 2026-08-11):
+# 6 WARNs / 2 distinct tasks, all true positives —
+#   - TP #2054 v13/v14 — the founding shape: 8 concurrent `cpu-bigmem`
+#     pods each `stage_hub_prefix`-ing the SAME ~12 GB
+#     `issue2054_lattice/activations` prefix, no staging shape named
+#     (PASSed the pre-c57 verify_plan 0 FAIL / 0 WARN of 57 checks);
+#   - TP #1491 v1-v4 — up to ~48 concurrent shards staging HF data-repo
+#     paths; the only named mitigation is UPLOAD commit-rate batching, so
+#     the DOWNLOAD staging duty is genuinely unaddressed.
+# Negative control: #2054 v12 (the R4/R5 multi-pod staging precedent the
+# Methodology critic judged functionally acceptable) does NOT fire.
+# n_skip (no parseable section-9 heading) = 673 under the §-tolerant
+# locator. FPs eliminated during predicate development, each by a named
+# lever: #460 v2 matched `4 workers` on a SINGLE 4x H100 pod (-> box-level
+# noun set, no `workers`); #507 v1/v2 matched an assumptions-table row
+# ("2 concurrent pods") while the sweep is explicitly sequential (-> the
+# section-9 window confinement); #552 v1 matched "one multi-GPU pod, NOT
+# 3 pods, per the standing rule" — an explicitly REJECTED fan-out — so the
+# plan-spec'd negation list gained the `not <n> pods` form at
+# implementation time (re-measured: 6 WARNs / 0 FP).
+# Regex-change record (review round 1, per this block's own contract): the
+# initially-shipped strict `^9[.):\s]` locator skipped 897 plans as
+# "no parseable section 9", but >=224 of those carried a literal
+# `§9 <title>` house-style heading (13% of plans with id >= 2000 were
+# invisible to the check — the exact future-plan population the net
+# serves). Both the opener AND the window-closer regexes are now
+# §-tolerant (`^(?:§\s*)?...`) — the closer tolerance is load-bearing: a
+# `## §10` heading that failed to CLOSE the window would run it to EOF and
+# become a false-positive surface. Corpus re-scan after the change:
+# WARN set byte-identical (same 6 files), pass=2, no-heading skips
+# 897 -> 673 (the residual 673 genuinely lack a `9.`/`§9`-form heading).
+_C57_FANOUT_RE = re.compile(
+    r"(?i)\b([2-9]|[1-9][0-9])\s*(×\s*)?(pod |parallel |concurrent )?"  # noqa: RUF001 — the multiplication sign is real plan text
+    r"(shards?|boxes|pods|nodes|instances)\b"
+)
+_C57_CONCURRENT_RE = re.compile(r"(?i)parallel|concurrent(ly)?")
+_C57_NEGATION_RE = re.compile(
+    r"(?i)sequential|rejected|instead of|rather than|declined|not parallel"
+    r"|no fan-out|one at a time"
+    r"|\bnot\s+\d+\s*(×\s*)?(shards?|boxes|pods|nodes|instances)\b"  # noqa: RUF001 — the multiplication sign is real plan text
+)
+_C57_STAGING_RE = re.compile(r"stage_hub_prefix|snapshot_download|hf_hub_download")
+_C57_REMEDY_RE = re.compile(
+    r"(?i)pre-stage|prestage|stage[ds]? once|shared read path"
+    r"|rsync (after|the|from)|baked image|serializ\w* (the )?(pull|stag|download)"
+    r"|stagger|jittered start|start-offset"
+)
+_C57_SECTION9_RE = re.compile(r"^(?:§\s*)?9[.):\s]")
+_C57_NUMBERED_HEADING_RE = re.compile(r"^(?:§\s*)?(\d+)[.):\s]")
+
+
+def _c57_section9_window(lines: list[str], mask: list[bool]) -> tuple[int, int] | None:
+    """Line span [start, end) of the section-9 window: the first non-fenced
+    heading whose text starts `9.` / `9)` / `9:` OR the house-style
+    `§9 <title>` form (review round 1: >=224 of the strict locator's 897
+    corpus skips carried a literal `§9`-prefixed heading — 13% of recent
+    plans were invisible to the check), up to the next numbered heading
+    whose leading integer is not 9 (so `9.1`-style subsections stay INSIDE
+    the window). The closer is §-tolerant too — load-bearing, not
+    symmetry: a `## §10` heading that failed to CLOSE the window would run
+    it to EOF and become a false-positive surface. None when no such
+    heading parses."""
+    heads: list[tuple[int, str]] = []
+    for i, line in enumerate(lines):
+        if mask[i]:
+            continue
+        m = _HEADING_RE.match(line.strip())
+        if m:
+            heads.append((i, m.group(2).strip()))
+    start = None
+    for i, text in heads:
+        if _C57_SECTION9_RE.match(text):
+            start = i
+            break
+    if start is None:
+        return None
+    end = len(lines)
+    for i, text in heads:
+        if i <= start:
+            continue
+        m = _C57_NUMBERED_HEADING_RE.match(text)
+        if m and int(m.group(1)) != 9:
+            end = i
+            break
+    return start, end
+
+
+def _c57_match_snippet(line: str, width: int = 90) -> str:
+    """A ~``width``-char window of ``line`` centered on the T1 fan-out MATCH
+    SPAN — never the line head: on #1491 the match sits at char ~785 of a
+    922-char line, so a head-slice printed unrelated serial-fit prose and
+    the WARN evidence read as spurious (review round 1, Minor)."""
+    m = _C57_FANOUT_RE.search(line)
+    if m is None:  # defensive: trigger lines matched by construction
+        return line.strip()[:width]
+    lo = max(0, m.start() - (width - (m.end() - m.start())) // 2)
+    return line[lo : lo + width].strip()
+
+
+def check_fanout_prefix_staging(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds: a section-9 fan-out of N > 1
+    CONCURRENT boxes/pods/shards, in a plan that also stages an HF prefix
+    (`stage_hub_prefix` / `snapshot_download` / `hf_hub_download`), must
+    name its staging shape — pre-stage once and fan, serialized per-box
+    pulls, or jittered start offsets (per
+    `.claude/rules/plan-compute-sizing.md` § "Fan-out over the same HF
+    prefix"; incident #1739: three boxes each staged ~144 GB from one
+    prefix simultaneously, five attempts to land one leg). NEVER FAILs
+    (the c39/c43/c46/c50/c54 fail-open convention); a plan with no
+    parseable section-9 heading (neither the numbered `9.` form nor the
+    house-style `§9 <title>` form) is a SKIP, counted separately from
+    passes.
+
+    Three points of honesty. (1) The calibrated 0-FP figure above is
+    IN-SAMPLE — the regexes were tuned on the same persisted-plan corpus
+    the acceptance sweep re-runs — so it bounds nuisance cost on
+    yesterday's planner distribution, not on future plans. (2) The naive
+    whole-document predicate WARNed 100 plans, which is why this ships
+    confined to the section-9 window; the disclosed cost of that
+    confinement is a fan-out declared ONLY outside section 9, which is
+    invisible to c57 — a c52-style named residual, never to be read as
+    coverage. (3) WARN-only because whether N shard rows each PULL the
+    prefix or read a shared path is finally a property of the DISPATCHER,
+    not the plan text — the Methodology lens item 16 FAN-OUT STAGING
+    EXTENSION is the binding gate; c57 is only the early-warning net."""
+    del kind  # all kinds: the staging-topology duty is kind-agnostic here
+    cid, name = "c57_fanout_prefix_staging", "fan-out same-prefix staging shape"
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)  # line-count-preserving: indexes map raw<->stripped
+    window = _c57_section9_window(lines, mask)
+    if window is None:
+        return _skip(
+            cid,
+            name,
+            "no parseable section-9 heading (`9.` / `§9` opener ... next numbered "
+            "heading) — a fan-out in a plan with no such heading is a named "
+            "residual, not coverage",
+        )
+    lo, hi = window
+    trigger_idx = [
+        i
+        for i in range(lo, hi)
+        if not mask[i]
+        and _C57_FANOUT_RE.search(lines[i])
+        and _C57_CONCURRENT_RE.search(lines[i])
+        and not _C57_NEGATION_RE.search(lines[i])
+    ]
+    if not trigger_idx:
+        return _skip(cid, name, "no concurrent box-level fan-out declared in section 9")
+    if not _C57_STAGING_RE.search(plan):
+        return _skip(
+            cid,
+            name,
+            "section-9 fan-out present but no Hub-prefix staging vocabulary "
+            "(stage_hub_prefix / snapshot_download / hf_hub_download) anywhere in the plan",
+        )
+    remedy = _C57_REMEDY_RE.search(plan)
+    if remedy:
+        return _pass(
+            cid,
+            name,
+            f"{len(trigger_idx)} section-9 fan-out line(s) with a staging-shape "
+            f"remedy named ({remedy.group(0)!r})",
+        )
+    shown = "; ".join(_c57_match_snippet(lines[i]) for i in trigger_idx[:3])
+    more = f" (+{len(trigger_idx) - 3} more)" if len(trigger_idx) > 3 else ""
+    return _warn(
+        cid,
+        name,
+        f"{len(trigger_idx)} section-9 line(s) fan N > 1 concurrent boxes/pods/shards "
+        f"({shown!r}{more}) while the plan stages an HF prefix, and no staging shape is "
+        "named — N concurrent same-prefix multi-GB pulls are a rate-limit kill risk "
+        "(429s / rc=137 resets; #1739: three boxes staged ~144 GB from one prefix "
+        "simultaneously, five attempts to land one leg). Name ONE of: pre-stage once "
+        "and fan (shared read path / rsync after one stage completes / baked image), "
+        "serialized per-box pulls, or jittered start offsets — or mark the pulls "
+        "explicitly sequential on the fan-out row (per "
+        "`.claude/rules/plan-compute-sizing.md` § Fan-out over the same HF prefix; "
+        "the Methodology lens item 16 FAN-OUT STAGING EXTENSION is the binding gate)",
+    )
+
+
+# ─── Check 58 — fan-out RunPod pod-name collision (#2237, incident #2054) ──
+
+# Trigger (conjunction of three arms; all three must hold to WARN):
+#   T1 multiplicity (either sub-arm): T1a — >=1 non-fenced section-9 line
+#     declaring N > 1 CONCURRENT pods/shards/boxes/nodes/instances,
+#     negation-free (c57's detector — `_C57_FANOUT_RE` /
+#     `_C57_CONCURRENT_RE` / `_C57_NEGATION_RE` over the
+#     `_c57_section9_window`, reused verbatim; NO third fan-out detector);
+#     OR T1b — >=2 DISTINCT dry-parsing RunPod-resolved launch argvs (the
+#     converse shape: multiplicity expressed in argvs, absent from §9
+#     prose vocabulary).
+#   T2 lane: >=1 plan-embedded launch-shaped argv that dry-parses (the
+#     c46/c50/c52 argv chain, reused verbatim) AND resolves to RunPod
+#     under the SHIPPED posture (`_C58_T2_INCLUDE_AUTO` below).
+#   T3 remedy absence: the plan names NO per-pod provisioning mechanism.
+# T3's key is the literal `pod.py provision` COMMAND CONSTRUCT carrying
+# `--name-suffix` on the same line — NOT the bare `--name-suffix` token
+# and NOT the bare noun "provision": #2054 v16 line 298 carries BOTH
+# (inside its teardown command `pod.py terminate ... --name-suffix` and
+# the pod-safety prose "BEFORE the first provision") on ONE line, so a
+# naive `provision\w*.*--name-suffix` MATCHES it (measured) and would
+# suppress the WARN on the very fixture the check exists to catch, while
+# `pod.py provision` matches nowhere in v16 (measured). The other
+# remedies the lens clause names are STRUCTURAL here, not regex-keyed:
+# one-pod-with-N-in-pod-workers never trips T1a (`workers` is not in the
+# c57 noun set — the #460 FP lever); a name-isolating GCP/SLURM lane
+# never trips T2 (no RunPod-resolved argv); explicit serialization is
+# absorbed by T1a's negation arm. `--lane-suffix` on a RunPod argv does
+# NOT satisfy anything — RunPod is exactly the lane
+# `dispatch_issue._lane_suffix_honored_kinds()` excludes (pinned by
+# test 4 in tests/test_verify_plan_c58_fanout_pod_name.py).
+#
+# T2 posture calibration (#2237 §7, implementation-time, AS-SHIPPED
+# regexes, over 3,941 persisted plan-versions tasks/*/*/plans/v*.md at
+# origin/main 5eba504a7d, 2026-08-11 — the c39/c33/c57 gate precedent:
+# any future c58-arm change re-runs the corpus scan and records the
+# realized numbers here; `scripts/issue2237_c58_corpus_sweep.py` is the
+# reproduction tool and measures BOTH postures every run). Measured:
+#   - explicit-only (T2 = `--backend runpod` pins only): 8 WARNs /
+#     2 distinct tasks. TRUE POSITIVES (7): #2054 v13-v16 via T1a (the
+#     founding unsatisfiable §9 — "8/10 shards on N parallel
+#     `cpu-bigmem` pods" + explicit runpod pins, no minting mechanism;
+#     v16 is the incident fixture) and #2054 v10-v12 via T1b (the
+#     parent R4/R5 rounds: 3-4 distinct runpod argvs whose "x4 each,
+#     parallel" / "6 parallel pod jobs" multiplicity lives in FENCED
+#     bash comments T1a's mask correctly skips — the same gap, caught
+#     by the argv arm). FALSE POSITIVE (1): #2203 v6 via T1b — 3
+#     distinct runpod argvs that are SEQUENTIAL phase provisions
+#     (1xH100 -> 4xH100 -> 1xH200), not a concurrent fan-out; the named
+#     T1b FP class (sequential multi-phase multi-launch plans),
+#     absorbed by WARN-only polarity.
+#   - explicit+auto (T2 also counts `--backend` absent/`auto`, the
+#     runpod-first order since #2054): 33 WARNs / 7 distinct tasks —
+#     the 8 above + 25 additions (#1417 v1-v7, #1774 v1-v4, #2163
+#     v1-v6, #810 v13-v18, #1336 v8-v9), EVERY addition adjudicated a
+#     false positive of the same sequential-phases T1b class (Phase
+#     A/C, GPU-phase + CPU-phase, E1 + conditional-E2 launch pairs).
+#     Over the >~20 corpus ceiling (#2237 §15.2) and FP-dominated.
+#   SHIPPED POSTURE: explicit-only (`_C58_T2_INCLUDE_AUTO = False`) —
+#   the auto arm's FP class proved large, so per the pre-registered
+#   #2237 §4 rule it is DISABLED behind the stated residual (i) rather
+#   than silently dropped; the lens clause stays lane-agnostic. n_skip
+#   (explicit-only) = 3,933: no-section-9 = 673, no-launch-argv =
+#   2,803, none-parses = 246, no-runpod-argv = 195, no-fanout(T1) = 16;
+#   pass (remedy named) = 0 on the corpus — the corrected #2054 v17
+#   amendment (which names `pod.py provision --name-suffix` per shard)
+#   is quiet via the no-launch-argv SKIP (it provisions directly, not
+#   through dispatch_issue.py), the intended silence.
+_C58_REMEDY_RE = re.compile(r"pod\.py\s+provision\b[^\n]*--name-suffix")
+_C58_T2_INCLUDE_AUTO = False  # shipped posture — see the calibration block
+
+
+def _c58_runpod_resolved(ns, include_auto: bool) -> bool:
+    """True when a dry-parsed launch Namespace resolves to the RunPod lane
+    under the given T2 posture: explicit ``--backend runpod``, plus (when
+    ``include_auto``) an absent/empty/``auto`` backend — the runpod-first
+    ``DEFAULT_AUTO_LANE_ORDER`` since #2054."""
+    backend = (getattr(ns, "backend", None) or "auto").strip().lower()
+    if backend == "runpod":
+        return True
+    return include_auto and backend == "auto"
+
+
+def _c58_check(plan: str, include_auto: bool) -> CheckResult:
+    """c58 core, posture-parameterized so the calibration sweep can measure
+    both T2 postures against the SHIPPED trigger code (the public
+    ``check_fanout_pod_name_collision`` pins ``_C58_T2_INCLUDE_AUTO``)."""
+    cid, name = "c58_fanout_pod_name_collision", "fan-out RunPod pod-name collision"
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)  # line-count-preserving: indexes map raw<->stripped
+    window = _c57_section9_window(lines, mask)
+    if window is None:
+        return _skip(
+            cid,
+            name,
+            "no parseable section-9 heading (`9.` / `§9` opener ... next numbered "
+            "heading) — a fan-out in a plan with no such heading is residual (iii), "
+            "not coverage",
+        )
+    argvs, notes = _c50_launch_argvs(plan)
+    tail = ("; " + "; ".join(notes)) if notes else ""
+    if not argvs:
+        return _skip(
+            cid,
+            name,
+            "no launch-shaped dispatch_issue.py command in the plan — a custom-driver "
+            "fan-out is structurally invisible here (residual (ii), the same channel "
+            "c52 discloses); this SKIP is not coverage" + tail,
+        )
+    parser, load_detail = _c46_argparser()
+    if parser is None:
+        return _skip(cid, name, f"dispatch_issue.build_argparser unavailable ({load_detail})")
+    runpod_argvs: list[list[str]] = []
+    argv_notes: list[str] = []
+    n_parsed = 0
+    for i, argv in enumerate(argvs):
+        ns, err = _c46_dry_parse(parser, argv)
+        if ns is None:  # per-argv note, never a WARN — c46 arm 1 owns parse drift
+            argv_notes.append(f"argv #{i + 1} does not dry-parse ({err})")
+            continue
+        n_parsed += 1
+        if _c58_runpod_resolved(ns, include_auto=include_auto):
+            runpod_argvs.append(argv)
+    note_tail = ("; " + "; ".join(argv_notes)) if argv_notes else ""
+    if n_parsed == 0:
+        return _skip(
+            cid,
+            name,
+            "launch argvs present but none dry-parses — c46 arm 1 owns parse "
+            "warnings" + note_tail + tail,
+        )
+    if not runpod_argvs:
+        posture = (
+            "explicit `--backend runpod` or absent/`auto` (runpod-first, #2054)"
+            if include_auto
+            else "explicit `--backend runpod` only"
+        )
+        return _skip(
+            cid,
+            name,
+            f"no RunPod-resolved launch argv under the shipped T2 posture ({posture}) "
+            "— residual (i): an off-posture launch landing on RunPod is invisible "
+            "here; the lens clause is lane-agnostic and binding" + note_tail,
+        )
+    lo, hi = window
+    trigger_idx = [
+        i
+        for i in range(lo, hi)
+        if not mask[i]
+        and _C57_FANOUT_RE.search(lines[i])
+        and _C57_CONCURRENT_RE.search(lines[i])
+        and not _C57_NEGATION_RE.search(lines[i])
+    ]
+    t1b = len(runpod_argvs) >= 2  # _c50_launch_argvs already dedupes on tuple(argv)
+    if not trigger_idx and not t1b:
+        return _skip(
+            cid,
+            name,
+            "no concurrent box-level fan-out declared in section 9 (T1a) and fewer "
+            "than 2 distinct RunPod-resolved launch argvs (T1b)",
+        )
+    remedy = _C58_REMEDY_RE.search(plan)
+    if remedy:
+        return _pass(
+            cid,
+            name,
+            f"RunPod fan-out with a per-pod provisioning construct named "
+            f"({remedy.group(0)[:70]!r})",
+        )
+    if trigger_idx:
+        shown = "; ".join(_c57_match_snippet(lines[i]) for i in trigger_idx[:3])
+        more = f" (+{len(trigger_idx) - 3} more)" if len(trigger_idx) > 3 else ""
+        evidence = f"{len(trigger_idx)} section-9 fan-out line(s) ({shown!r}{more})"
+    else:
+        evidence = (
+            f"{len(runpod_argvs)} distinct RunPod-resolved launch argvs (T1b — "
+            "multiplicity in argvs, no section-9 fan-out prose)"
+        )
+    return _warn(
+        cid,
+        name,
+        f"{evidence} while every RunPod-lane launch mints the SAME pod name — "
+        "`backends/runpod.py` `_runpod_pod_name(issue)` returns `pod-<N>` with no "
+        "suffix parameter, and `--lane-suffix` is honored on GCP + SLURM only — so "
+        "N concurrent same-issue launches collide; the dangerous branch is silent "
+        "co-location of all N shards on ONE pod, invalidating every per-shard "
+        "wall/RSS projection the plan booked (#2054 v16, caught only at dispatch). "
+        "Name ONE of: per-pod `pod.py provision --issue <N> --name-suffix <slug>` "
+        "calls; one pod with N in-pod workers; a name-isolating lane (GCP/SLURM "
+        "`--lane-suffix`); or mark the fan-out explicitly serialized (the "
+        "Methodology lens item 16 FAN-OUT POD-NAME EXTENSION is the binding gate; "
+        "c58's silence is not evidence of safety — residual (i))",
+    )
+
+
+def check_fanout_pod_name_collision(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds: a section-9 fan-out of N > 1
+    CONCURRENT pods (T1a — c57's detector, reused verbatim) OR >= 2
+    DISTINCT RunPod-resolved launch argvs (T1b, the converse shape), in a
+    plan whose plan-embedded ``dispatch_issue.py`` launch commands resolve
+    to the RunPod lane (T2), must name a mechanism that mints N DISTINCT
+    pod names (T3 — the literal ``pod.py provision ... --name-suffix``
+    command construct). RunPod structurally cannot mint them itself:
+    ``backends/runpod.py`` ``_runpod_pod_name(issue)`` returns
+    ``f"pod-{issue}"`` with no suffix parameter, and ``--lane-suffix`` is
+    honored on GCP + SLURM only
+    (``dispatch_issue._lane_suffix_honored_kinds``), so N concurrent
+    same-issue launches collide — best case an error, worst case silent
+    co-location of all N shards on ONE pod, invalidating every per-shard
+    wall/RSS projection the plan booked (#2054 plan v16: a 10-way
+    ``cpu-bigmem`` RunPod fan-out whose own pod-safety paragraph required
+    ``pod-2054-rb789-<shard>`` names; it PASSed verify_plan 0 FAIL /
+    0 WARN twice plus two critic-round APPROVEs and was caught only at
+    dispatch). NEVER FAILs (the c39/c43/c46/c50/c52/c54/c57 fail-open
+    posture); every ambiguity SKIPs with a stated reason, and a SKIP is
+    never coverage.
+
+    Named residuals, disclosed in the c52/c57 honesty convention — none
+    is ever to be read as coverage:
+    (i) AUTO-LANE residual (PRIMARY): the shipped T2 posture counts
+    explicit ``--backend runpod`` pins ONLY — the explicit+auto posture
+    measured 25 additional WARNs, every one an adjudicated false
+    positive (the calibration block above), so the auto arm is DISABLED
+    behind this residual per the pre-registered #2237 §4 rule. A
+    bare-``auto``/absent-backend fan-out that lands on RunPod (the
+    runpod-first ``DEFAULT_AUTO_LANE_ORDER``, #2054), a frontmatter-pin
+    route, or non-``dispatch_issue.py`` tooling is therefore INVISIBLE
+    to c58; the Methodology lens item 16 FAN-OUT POD-NAME EXTENSION is
+    lane-agnostic and is the binding gate.
+    (i-bis) WIDTH-ACHIEVABILITY: neither arm verifies a declared width is
+    ACHIEVABLE — T1a only reads prose, T1b only counts argvs; a plan
+    declaring 10 shards with 2 template argvs satisfies T1 but c58 cannot
+    tell 10 from 2 (v16's multiplicity lives in prose + a "repeat over
+    shards" loop instruction); the lens clause's mint-N-DISTINCT-names
+    requirement is what covers it. (ii) CUSTOM-DRIVER fan-out: a fan-out
+    driven by a bespoke script with no plan-embedded
+    ``dispatch_issue.py launch`` argv SKIPs at T2 — the same channel c52
+    discloses. (iii) SECTION-9 CONFINEMENT: a fan-out declared ONLY
+    outside section 9 is invisible to T1a — c57's disclosed
+    window-confinement cost, inherited with its detector (T1b partially
+    compensates, argv-count multiplicity only). (iv) IN-SAMPLE
+    CALIBRATION: the FP figures in the calibration block above are
+    measured on the same persisted-plan corpus the acceptance sweep
+    re-runs — they bound nuisance cost on yesterday's planner
+    distribution, not on future plans.
+
+    WARN-only, not FAIL, because whether N shard rows each provision
+    their own pod or share one is finally a property of the DISPATCHER,
+    not the plan text — and residual (i) means c58's silence is not
+    evidence of safety: the lens clause is the binding gate and c58 is
+    only the early-warning net (c57's stated polarity rationale)."""
+    del kind  # all kinds: colliding pod names bill/confound identically everywhere
+    return _c58_check(plan, include_auto=_C58_T2_INCLUDE_AUTO)
+
+
+# ─── Check 59 — GPU-hours token consumer/declaration conflict ──────────────
+# Declaration-shaped token (#2123 §3.3): the `Estimated GPU-hours (total):
+# <number>` token LINE-ANCHORED with nothing else on the line — optional
+# bullet / blockquote markers (stripped by the caller), optional bold
+# (`**`) / backtick wrap admitted by the character class — over
+# fence-stripped text. The value grammar is GPU_LINE_RE's (a single plain
+# number). Deliberately NARROW: a count-based predicate over ALL token
+# occurrences FAILs 62.2% of the plan corpus (2468/3971 — repeats are
+# overwhelmingly legitimate), and distinct-RAW-values flags 11 files that
+# are ALL false positives (prose quotes #2177 v1:56, meta-discussion
+# #625 v1-v3, revision-comparison tables #524 v6/v7:19).
+_C59_DECL_LINE_RE = re.compile(
+    r"(?i)^[`*\s]*estimated\s+gpu-?hours\s+\(total\):[`*\s]*([0-9]+(?:\.[0-9]+)?)[`*\s]*$"
+)
+
+
+def _c59_declared_values(plan: str) -> list[str]:
+    """Every DECLARATION-SHAPED ``Estimated GPU-hours (total): <n>`` value
+    (raw captured string), in document order, over FENCE-STRIPPED text —
+    the declaration side strips fences (a fenced example command is not a
+    declaration); the CONSUMER side deliberately does not (see
+    :func:`check_gpu_hours_token_conflict`)."""
+    values: list[str] = []
+    for line in strip_fences(plan).splitlines():
+        m = _C59_DECL_LINE_RE.match(line.lstrip(" \t>-"))
+        if m is not None:
+            values.append(m.group(1))
+    return values
+
+
+def check_gpu_hours_token_conflict(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds: when a plan carries at least one
+    DECLARATION-SHAPED ``Estimated GPU-hours (total):`` line (line-anchored,
+    optional bullet/bold/backtick wrap, nothing else on the line, fenced
+    blocks stripped — :data:`_C59_DECL_LINE_RE`), two arms compare (#2123):
+
+    * **Arm A** — more than one DISTINCT declaration-shaped value (corpus
+      2026-08-12: 2/3971 versioned plan files — #524 v2/v3, 590 vs 900).
+    * **Arm B** — the value a FIRST-MATCH consumer reads differs from the
+      first declaration-shaped value (corpus: 5/3971, zero false
+      positives — incl. the motivating #2061 v7/v8: first-match 70 vs
+      declared 80; #2177 v1: 65 vs 0). Consumer fidelity is load-bearing:
+      the real consumer is ``GPU_LINE_RE.search`` on the RAW plan (the
+      ``task.py`` Step 2c gate + every marker note that records the
+      estimate), so Arm B re-runs ``GPU_LINE_RE`` on RAW
+      (un-fence-stripped) text — deriving the consumer value from
+      fence-stripped text would validate a consumer that does not exist.
+
+    Hard constraint: 646 corpus files carry a matching token but NO
+    declaration-shaped token — the check NEVER requires declaration shape;
+    it compares only when at least one exists and SKIPs otherwise (c5's
+    presence contract is untouched).
+
+    WARN-only, never FAIL: ``_resolve_autonomous_plan_gate`` is
+    GPU-HOUR-BLIND as of #1771 (auto-approves any parseable estimate,
+    parks only on None), so a mis-read cannot flip the gate DECISION — the
+    harm is a corrupted RECORDED estimate (the value riding the status
+    marker note, the watcher's re-passed ``auto_approve_gpu_hours``, and
+    what a reviewer skims off the plan): a provenance defect, not a
+    spend-control defect, squarely under the
+    c39/c43/c46/c50/c52/c54/c57/c58 fail-open convention. Escalation to
+    FAIL is a later separately-justified step (the c26/c29/c33 precedent).
+
+    Named residual (the c52/c57 honesty convention): a conflicting value
+    appearing ONLY in non-declaration shapes on both sides is invisible to
+    c59 — its silence is not evidence of a single consistent estimate.
+
+    Escape: the standalone declaration line
+    ``N/A — GPU-hours token conflict reconciled``."""
+    del kind  # all kinds: the consumer parses every task's plan identically
+    cid, name = "c59_gpu_hours_token_conflict", "GPU-hours token consumer/declaration conflict"
+    if _standalone_na_declared(plan, r"GPU[- ]?hours token conflict reconciled"):
+        return _skip(cid, name, "escape declared: `N/A — GPU-hours token conflict reconciled`")
+    decls = _c59_declared_values(plan)
+    if not decls:
+        return _skip(
+            cid,
+            name,
+            "no declaration-shaped `Estimated GPU-hours (total):` line (646-file corpus "
+            "class) — c59 never requires declaration shape; presence stays c5's contract",
+        )
+    problems: list[str] = []
+    distinct = sorted({float(v) for v in decls})
+    if len(distinct) > 1:
+        shown = ", ".join(f"{v:g}" for v in distinct)
+        problems.append(
+            f"arm A: {len(distinct)} DISTINCT declaration-shaped values ({shown}) — a reader "
+            f"cannot tell which is the estimate of record"
+        )
+    consumer = GPU_LINE_RE.search(plan)  # RAW text — the real consumer's own read
+    if consumer is not None and float(consumer.group(1)) != float(decls[0]):
+        problems.append(
+            f"arm B: the first-match consumer (GPU_LINE_RE on the raw plan — the Step 2c "
+            f"gate's read) resolves {consumer.group(1)} while the first declaration-shaped "
+            f"value is {decls[0]} — the RECORDED estimate (status-marker note, watcher "
+            f"auto_approve_gpu_hours re-pass) is corrupted (#2061 v7/v8: 70-for-80; "
+            f"#2177 v1: 65-for-0)"
+        )
+    if not problems:
+        return _pass(
+            cid,
+            name,
+            f"{len(decls)} declaration-shaped value(s), consumer first-match agrees ({decls[0]})",
+        )
+    return _warn(
+        cid,
+        name,
+        "; ".join(problems)
+        + " — keep ONE declaration-shaped value and move every other mention mid-sentence / "
+        "into a wrapped or fenced form, or declare the standalone escape "
+        "`N/A — GPU-hours token conflict reconciled`",
+    )
+
+
+# ─── Check 61 — SLURM would-render --mem vs declared RSS peak (#2275) ──────
+
+# Within-job width tokens (the #2275 plan's registered conservative regexes —
+# a fleet-total "12 legs" with no in-parallel qualifier deliberately stays
+# out; only widths sharing ONE job cgroup should multiply the peak).
+_C61_WIDTH_RES = (
+    re.compile(r"(?i)\b(\d+)[- ]wide\b"),
+    re.compile(r"(?i)\bwidth[= ]?(\d+)\b"),
+    re.compile(r"(?i)\b(\d+)\s+(?:units|legs|fits|workers)\s+in\s+parallel\b"),
+)
+
+
+def _c61_ram_peak_lines(plan: str) -> list[tuple[int, float, str]]:
+    """``(line index, GiB value, line)`` triples for RAM-token peak lines —
+    the RAM arm of ``_c52_declared_peaks`` kept PER LINE, so the c61
+    aggregate arm can pair each peak with a within-job width token on the
+    SAME line/paragraph (the #1336 shape: N units share one job cgroup)."""
+    out: list[tuple[int, float, str]] = []
+    for i, line in enumerate(plan.splitlines()):
+        m = _C52_RAM_TOKEN_RE.search(line)
+        if m is None:
+            continue
+        val = _c52_nearest_gib(line, m.start())
+        if val is not None:
+            out.append((i, val, line))
+    return out
+
+
+def _c61_width_for(lines: list[str], idx: int) -> tuple[int, str] | None:
+    """Within-job width token on RSS line ``idx``, else in its paragraph
+    (the contiguous non-blank block around it). Returns
+    ``(width, matched token)`` or ``None``; same-line hits win, then the
+    LARGEST width in the paragraph (conservative aggregate); width 1 is
+    not a fan-out."""
+    lo = idx
+    while lo > 0 and lines[lo - 1].strip():
+        lo -= 1
+    hi = idx
+    while hi + 1 < len(lines) and lines[hi + 1].strip():
+        hi += 1
+    order = [idx] + [j for j in range(lo, hi + 1) if j != idx]
+    for j in order:
+        hits = [
+            (int(m.group(1)), m.group(0)) for rx in _C61_WIDTH_RES for m in rx.finditer(lines[j])
+        ]
+        hits = [(w, t) for w, t in hits if w > 1]
+        if hits:
+            return max(hits)
+    return None
+
+
+def _c61_would_render_mem(ns) -> tuple[int | None, str]:
+    """The ``--mem`` (G) the SLURM renderer WOULD emit for parsed launch
+    ``ns`` — computed through the renderer's OWN
+    ``slurm._resource_header_lines`` (the c50 exact-parity idiom), so the
+    read carries post-#2275 semantics for free: an argv ``--min-ram-gb``
+    raises the render via ``_apply_min_ram``, and a requirement above
+    ``mem_gb_cap`` raises (already fail-fast at dispatch — SKIP-class
+    here). Cluster = the argv's explicit SLURM ``--backend`` pin when it
+    names a known cluster, else fellows (the first SLURM lane in
+    ``DEFAULT_AUTO_LANE_ORDER``); GPU count = ``--gpus`` when declared,
+    else the intent's ``_DEFAULT_GPUS_FOR_INTENT`` row. Returns
+    ``(mem_gb | None, detail)`` — ``None`` means unresolvable, with the
+    stated reason."""
+    try:
+        from explore_persona_space.backends import RunSpec
+        from explore_persona_space.backends.slurm import (
+            _DEFAULT_GPUS_FOR_INTENT,
+            _resource_header_lines,
+            get_cluster_config,
+        )
+    except Exception as exc:  # off-repo --plan-file run -> loud SKIP-class note
+        return None, f"slurm renderer unavailable ({type(exc).__name__}: {exc})"
+    intent = str(getattr(ns, "intent", ""))
+    if intent not in _DEFAULT_GPUS_FOR_INTENT:
+        return None, (
+            f"intent {intent!r} has no _DEFAULT_GPUS_FOR_INTENT row — "
+            "slurm.default_gpus_for_intent() already fails fast at dispatch"
+        )
+    gpus = int(getattr(ns, "gpus", None) or _DEFAULT_GPUS_FOR_INTENT[intent])
+    backend = getattr(ns, "backend", None)
+    cluster_name = backend if backend in ("fellows", "nibi", "fir", "mila") else "fellows"
+    try:
+        cluster = get_cluster_config(cluster_name)
+        spec = RunSpec(
+            issue=0,
+            intent=intent,
+            backend="cluster",
+            cluster=cluster_name,
+            extra=({"min_ram_gb": int(ns.min_ram_gb)} if getattr(ns, "min_ram_gb", None) else {}),
+        )
+        header = "\n".join(_resource_header_lines(cluster, spec, gpus))
+    except Exception as exc:  # incl. the #2275 > mem_gb_cap pre-submit refusal
+        return None, f"renderer refuses ({type(exc).__name__}: {exc})"
+    m = re.search(r"--mem=(\d+)G", header)
+    if m is None:
+        return None, "renderer emitted no --mem line"
+    return int(m.group(1)), f"{cluster_name}/{intent} at {gpus} GPU(s)"
+
+
+def check_slurm_mem_coverage(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds: for EVERY plan-embedded
+    launch-shaped ``dispatch_issue.py`` argv that dry-parses and resolves a
+    SLURM-reachable route (``dispatch_issue._slurm_lane_reachable`` — the
+    c50 runtime-parity predicate), the plan's own declared per-leg RSS
+    peak (``_c52_declared_peaks``'s RAM arm, per line) must fit the
+    WOULD-RENDER ``#SBATCH --mem`` — the renderer's own
+    ``min(mem_gb_per_gpu x gpus, mem_gb_cap)`` / CPU-table formula PLUS
+    the argv's ``--min-ram-gb`` when present (post-#2275 semantics,
+    computed through ``slurm._resource_header_lines`` itself). Two WARN
+    arms: (a) PER-LEG — the declared peak strictly exceeds the
+    would-render ``--mem`` with no covering ``--min-ram-gb``; (b)
+    AGGREGATE (the #1336 shape) — a within-job width token
+    (``N-wide`` / ``width=N`` / ``N units|legs|fits|workers in
+    parallel``, ``_C61_WIDTH_RES``) on the SAME line/paragraph as the RSS
+    token multiplies the peak (N units share ONE job cgroup), and
+    ``peak x width`` exceeds the would-render ``--mem`` — WARN naming the
+    arithmetic. Remedy named either way: ``--min-ram-gb <requirement>``
+    (the #2275 renderer raises ``--mem`` to it, refusing pre-submit above
+    ``mem_gb_cap``). Every ambiguity SKIPs with a stated reason; the
+    check NEVER FAILs (the c46/c50/c52 posture).
+
+    Scope split vs c52: c52 compares declared peaks against the GCP
+    LADDER-RUNG constants (85 GiB host-RAM / 38 GiB VRAM) — #1336's
+    65-70 GiB per-unit RSS sits BELOW that rung while 8 units share one
+    SLURM job cgroup, so c52 structurally cannot catch the
+    aggregate-on-one-node case; c61 compares against the SLURM lane's
+    OWN rendered ``--mem``. Named residual (the c52 residual (ii)
+    posture): a fan-out driven by a CUSTOM DRIVER with no plan-embedded
+    ``dispatch_issue.py launch`` argv is structurally invisible — the
+    binding surface is `.claude/rules/plan-compute-sizing.md`
+    § Ladder-rung RAM floor, and a c61 SKIP is never read as coverage.
+    Second named residual: the fleet-total-vs-per-leg token ambiguity
+    inherited from the c52 extractor (WARN-only polarity absorbs it; the
+    message names the extracted line).
+    """
+    del kind  # all kinds: a SLURM cgroup OOM kills identically everywhere
+    cid, name = "c61_slurm_mem_coverage", "SLURM would-render --mem vs declared RSS peak"
+    peak_lines = _c61_ram_peak_lines(plan)
+    if not peak_lines:
+        return _skip(cid, name, "no per-leg RSS / host-RAM peak-estimate token in the plan")
+    argvs, notes = _c50_launch_argvs(plan)
+    tail = ("; " + "; ".join(notes)) if notes else ""
+    if not argvs:
+        return _skip(
+            cid,
+            name,
+            "no launch-shaped dispatch_issue.py command in the plan — a custom-driver "
+            "fan-out is structurally invisible here (docstring residual): the binding "
+            "surface is plan-compute-sizing.md § Ladder-rung RAM floor, and this SKIP is "
+            "not coverage" + tail,
+        )
+    parser, load_detail = _c46_argparser()
+    if parser is None:
+        return _skip(cid, name, f"dispatch_issue.build_argparser unavailable ({load_detail})")
+    reachable_fn, reach_detail = _c50_slurm_lane_reachable_fn()
+    if reachable_fn is None:
+        return _skip(
+            cid, name, f"dispatch_issue._slurm_lane_reachable unavailable ({reach_detail})"
+        )
+    max_peak = max(v for _, v, _ in peak_lines)
+    agg = _c61_max_aggregate(plan.splitlines(), peak_lines)
+    return _c61_verdict(cid, name, argvs, parser, reachable_fn, max_peak, agg, tail)
+
+
+def _c61_max_aggregate(
+    lines: list[str], peak_lines: list[tuple[int, float, str]]
+) -> tuple[float, int, float, str] | None:
+    """Largest (aggregate GiB, width, per-leg peak, width token) over peak lines
+    carrying a same-line/paragraph width token; None when no width token pairs."""
+    agg: tuple[float, int, float, str] | None = None
+    for idx, val, _line in peak_lines:
+        w = _c61_width_for(lines, idx)
+        if w is not None:
+            cand = (val * w[0], w[0], val, w[1])
+            if agg is None or cand[0] > agg[0]:
+                agg = cand
+    return agg
+
+
+def _c61_eval_argv(
+    parser,
+    reachable_fn,
+    i: int,
+    argv: list[str],
+    max_peak: float,
+    agg: tuple[float, int, float, str] | None,
+) -> tuple[str, str, str | None]:
+    """Evaluate ONE launch argv for c61. Returns (kind, text, warn) where kind is
+    'skip' (loud SKIP the whole check: text = reason), 'note' (per-argv note),
+    or 'ok' (text = the rendered --mem line; warn = the WARN text or None)."""
+    ns, err = _c46_dry_parse(parser, argv)
+    if ns is None:  # per-argv note, never a WARN — c46 arm 1 owns parse drift
+        return ("note", f"argv #{i + 1} does not dry-parse ({err}) — c46 arm 1 owns that", None)
+    try:
+        reachable = reachable_fn(ns)
+    except Exception as exc:  # router import failure on off-repo runs -> loud SKIP
+        return ("skip", f"SLURM reachability unresolvable ({type(exc).__name__}: {exc})", None)
+    if not reachable:
+        return (
+            "note",
+            f"argv #{i + 1}: no SLURM lane reachable for backend "
+            f"{(getattr(ns, 'backend', None) or 'auto')!r}",
+            None,
+        )
+    mem_gb, detail = _c61_would_render_mem(ns)
+    if mem_gb is None:
+        return ("note", f"argv #{i + 1}: would-render --mem unresolvable ({detail})", None)
+    label = _c52_argv_label(i, argv)
+    warn: str | None = None
+    if max_peak > mem_gb:
+        warn = (
+            f"plan declares per-leg peak RSS ~{max_peak:g} GiB but {label} would render "
+            f"#SBATCH --mem={mem_gb}G ({detail}) — the SLURM job cgroup OOM-kills at "
+            f"that cap (the #1336 shape): add --min-ram-gb {math.ceil(max_peak)} to the "
+            f"launch command (#2275 raises the rendered --mem to it)"
+        )
+    elif agg is not None and agg[0] > mem_gb:
+        warn = (
+            f"plan declares a within-job aggregate of {agg[2]:g} GiB x width {agg[1]} "
+            f"({agg[3]!r}) = {agg[0]:g} GiB but {label} would render #SBATCH "
+            f"--mem={mem_gb}G ({detail}) — N units share ONE SLURM job cgroup, so the "
+            f"AGGREGATE binds (the #1336 shape: 8 pooled fit units OOM-killed at the "
+            f"GPU-count-derived cap): add --min-ram-gb {math.ceil(agg[0])} to the launch "
+            f"command (#2275 raises the rendered --mem to it)"
+        )
+    return ("ok", f"{label}: --mem={mem_gb}G ({detail})", warn)
+
+
+def _c61_verdict(
+    cid: str,
+    name: str,
+    argvs: list[list[str]],
+    parser,
+    reachable_fn,
+    max_peak: float,
+    agg: tuple[float, int, float, str] | None,
+    tail: str,
+) -> CheckResult:
+    """Fold per-argv c61 evaluations into the check verdict (SKIP/WARN/PASS)."""
+    warns: list[str] = []
+    argv_notes: list[str] = []
+    mems: list[str] = []
+    for i, argv in enumerate(argvs):
+        outcome, text, warn = _c61_eval_argv(parser, reachable_fn, i, argv, max_peak, agg)
+        if outcome == "skip":
+            return _skip(cid, name, text)
+        if outcome == "note":
+            argv_notes.append(text)
+            continue
+        mems.append(text)
+        if warn is not None:
+            warns.append(warn)
+    if not mems:
+        joined = "; ".join(argv_notes) + tail
+        if argv_notes and all("no SLURM lane reachable" in n for n in argv_notes):
+            return _skip(
+                cid,
+                name,
+                "no SLURM lane reachable for any launch argv — the rendered --mem never "
+                "binds; " + joined,
+            )
+        return _skip(cid, name, joined or "no launch argv evaluated")
+    if warns:
+        extra = "; ".join(argv_notes)
+        return _warn(cid, name, "; ".join(warns) + (f" [{extra}]" if extra else ""))
+    return _pass(
+        cid,
+        name,
+        f"declared peak RSS {max_peak:g} GiB"
+        + (f" (within-job aggregate {agg[0]:g} GiB)" if agg is not None else "")
+        + f" fits the would-render --mem across {len(mems)} launch argv(s): "
+        + "; ".join(mems),
+    )
+
+
+# ─── Check 62 — §9 backend pin-claim vs body.md frontmatter (#2276) ─────────
+
+# Incident #2225 (fu1 lineage): plan v5:274 claimed an "explicit frontmatter
+# pin" (`backend: runpod`) and v9:236 claimed to inherit it ("parent pin
+# inherited") while the task's body.md frontmatter carried NO `backend:`
+# key. dispatch_issue.py reads the FRONTMATTER, so the plan's own dispatch
+# command routes `auto`, and the free-SLURM fall-through rungs (no
+# `/workspace`, #608) become reachable for exactly the sentinel-signaling
+# workload whose §9 prose declared them unsafe. c43 (check_sentinel_lane)
+# is text-hermetic — the prose CLAIM of a pin quiets its WARN — so the
+# claim-vs-frontmatter reconciliation needs task context and runs OUTSIDE
+# verify_plan_text() (the c23 pattern: kwargs signature, appended by
+# main() in --issue mode, explicit SKIP row in --plan-file mode).
+#
+# Trigger grammar (deliberately tight — designed at FAIL polarity; shipped
+# WARN-only per the calibration block below): non-fenced lines
+# INSIDE the §9 window (_c57_section9_window) carrying BOTH a known-lane
+# `backend: <lane>` token AND a same-line claim token
+# (pin/pinned/inherit*/frontmatter). Window scoping is the FP guard —
+# narrative mentions of ANOTHER task's pin ("#2225's `backend: runpod`
+# pin") live outside §9. Residuals (disclosed, not covered): a pin claim
+# OUTSIDE the §9 window escapes; a claim phrased without any claim token
+# escapes; on amendment-COMPOSED text (_compose_amendment_text) the window
+# resolves the FIRST §9 heading — the amendment's when both amendment and
+# base carry one — so a base-version §9 pin claim can escape. Miss
+# direction is SKIP (fail-safe).
+#
+# Calibration (#2276 §4 step 6, over 4,089 persisted plan versions
+# tasks/*/*/plans/v*.md at origin/main 5d9eeb30ee, 2026-08-13; sweep tool:
+# scripts/issue2276_c62c63_corpus_sweep.py — the c58 precedent: any future
+# c62-grammar change re-runs the sweep and records the realized numbers
+# here). Measured at the PLANNED FAIL polarity: 107 FAILs / 33 distinct
+# tasks, 26 PASSes (tasks whose frontmatter pin is genuinely set — #1335
+# fm=gcp, #1586 fm=runpod, ...), n_skip = 3,956 (all `no-claim`).
+# Adjudicated FALSE-POSITIVE classes among the 107:
+#   (a) `backend: auto` claims with the key absent (10 rows) — absent/
+#       empty frontmatter IS the auto route (CLAUDE.md § Compute
+#       backends), so the flagged state is the CORRECT configuration;
+#       fixed in the verdict logic (an all-`auto` claim set with the key
+#       absent now PASSes — a routing-semantics equivalence, not a
+#       grammar widening);
+#   (b) prospective / dispatch-flag pins — the DOMINANT class (~55
+#       gcp-era rows + most runpod/fellows rows): §9 says "pinned
+#       `backend: gcp`" while the pin traveled via the dispatch command's
+#       `--backend` flag, or the key was set-then-removed after the task
+#       completed; the frontmatter read at sweep time cannot distinguish
+#       never-set from since-removed, and the flagged tasks launched
+#       correctly — false ALARMS as FAIL evidence;
+#   (c) compute-table lane mentions with an incidental same-row claim
+#       token (#1689 v11 `backend: fellows` table cells).
+# TRUE POSITIVES: #2225 v2-v9 (8 rows — the founding incident; the named
+# expected-TPs v5-v9 recovered, sweep-validity criterion satisfied) plus
+# the #2203 v11-v13 "runpod (pinned — /workspace sentinels" shape.
+# PRE-REGISTERED POSTURE RULE FIRED: >2 adjudicated false-positive FAILs
+# on the corpus ⇒ c62 SHIPS WARN-ONLY (the #2276 plan §4 step 6 downgrade
+# rule; recorded here + in the #2276 round marker). The trigger grammar is
+# NOT widened or narrowed. Post-downgrade re-sweep: 97 WARNs / 36 PASSes
+# (the 26 matching pins + 10 auto-equivalence passes), n_skip unchanged.
+
+#: Known dispatch lanes (compute-backends.md); an unknown token after
+#: `backend:` (e.g. "backend: the same as the parent") is ignored — FP
+#: guard for the deliberately tight trigger grammar.
+_C62_KNOWN_LANES = frozenset({"runpod", "gcp", "fellows", "nibi", "fir", "mila", "auto"})
+
+#: `backend: <lane>` capture (inline-code or bare; optional opening
+#: backtick tolerated between the colon and the lane value).
+_C62_LANE_RE = re.compile(r"backend:\s*`?([a-z][a-z0-9_-]*)")
+
+#: Same-line claim vocabulary: the line must CLAIM a pin, not merely
+#: mention a lane ("pin"/"pinned", "inherit"/"inherited"/"inherits",
+#: "frontmatter").
+_C62_CLAIM_TOKEN_RE = re.compile(r"(?i)\b(?:pin(?:ned)?|inherit(?:ed|s)?|frontmatter)\b")
+
+
+def _c62_pin_claims(plan: str) -> list[tuple[str, str]]:
+    """(claim-line, lane) pairs for §9 backend pin-claims.
+
+    A hit is a non-fenced line inside the §9 window carrying BOTH a
+    known-lane ``backend: <lane>`` token and a same-line claim token; one
+    line can contribute several pairs (the pin+fallback-lane shape).
+    Returns ``[]`` when no §9 window parses (miss direction: SKIP).
+    """
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    window = _c57_section9_window(lines, mask)
+    if window is None:
+        return []
+    lo, hi = window
+    hits: list[tuple[str, str]] = []
+    for i in range(lo, hi):
+        if mask[i]:
+            continue
+        line = lines[i]
+        if not _C62_CLAIM_TOKEN_RE.search(line):
+            continue
+        for m in _C62_LANE_RE.finditer(line):
+            lane = m.group(1).lower()
+            if lane in _C62_KNOWN_LANES:
+                hits.append((line.strip(), lane))
+    return hits
+
+
+def check_backend_pin_claim(plan: str, *, frontmatter_backend: str | None) -> CheckResult:
+    """WARN-only, conditional, all kinds, ``--issue`` mode only: a §9 line
+    that CLAIMS a frontmatter backend pin (``backend: <lane>`` + a
+    same-line pin/inherited/frontmatter claim token) must match the task's
+    actual ``body.md`` frontmatter ``backend:`` key — a pin-claim with no
+    frontmatter key routes ``auto`` at dispatch (#2225 v5/v9), and a
+    mismatched lane routes the WRONG pin. WARN-only: the planned FAIL
+    polarity was DOWNGRADED by the pre-registered #2276 §4 step 6
+    calibration rule (>2 adjudicated false-positive FAILs on the corpus —
+    see the calibration block above). An all-``auto`` claim set with the
+    key absent PASSes (absent/empty frontmatter IS the auto route).
+    ``frontmatter_backend`` is the str-coerced, stripped frontmatter value
+    (``None`` when absent/empty); main() passes it in ``--issue`` mode and
+    appends an explicit SKIP row in ``--plan-file`` mode (the c23 pattern
+    — no task context there). No §9 window / no claim lines → SKIP
+    (trigger-conditional). NEVER FAILs."""
+    cid, name = "c62_backend_pin_claim", "§9 backend pin-claim matches body.md frontmatter"
+    claims = _c62_pin_claims(plan)
+    if not claims:
+        return _skip(cid, name, "no §9 backend pin-claim in plan prose")
+    if _standalone_na_declared(plan, r"backend pin-claim reconciled"):
+        return _pass(cid, name, "explicit N/A declared (backend pin-claim reconciled)")
+    fm_lane = frontmatter_backend.strip().lower() if frontmatter_backend else None
+    if fm_lane is None:
+        non_auto = [(line, lane) for line, lane in claims if lane != "auto"]
+        if not non_auto:
+            return _pass(
+                cid,
+                name,
+                "claims `backend: auto` and the frontmatter key is absent — absent/empty "
+                "routes `auto` (the documented default); no drift",
+            )
+        line, lane = non_auto[0]
+        return _warn(
+            cid,
+            name,
+            f"§9 claims a frontmatter backend pin (`backend: {lane}`: {line[:90]!r}) but the "
+            "task's body.md frontmatter carries NO `backend:` key — the claim is phantom: "
+            "dispatch_issue.py reads the frontmatter and routes `auto` at dispatch "
+            f"(#2225 v5/v9). Add `backend: {lane}` to the task's body.md frontmatter BEFORE "
+            "dispatch, or reword the §9 claim, or declare "
+            "'N/A — backend pin-claim reconciled' on its own line, unwrapped "
+            "(no backticks/quotes)",
+        )
+    mismatched = [(line, lane) for line, lane in claims if lane != fm_lane]
+    if mismatched:
+        line, lane = mismatched[0]
+        return _warn(
+            cid,
+            name,
+            f"§9 pin-claim names lane `{lane}` ({line[:90]!r}) but the body.md frontmatter "
+            f"carries `backend: {fm_lane}` — reconcile the claim with the frontmatter "
+            "(dispatch follows the frontmatter, not the prose), or declare "
+            "'N/A — backend pin-claim reconciled' on its own line, unwrapped "
+            "(no backticks/quotes)",
+        )
+    return _pass(
+        cid, name, f"{len(claims)} §9 pin-claim(s) match the frontmatter `backend: {fm_lane}`"
+    )
+
+
+# ─── Check 63 — §9 declared GPU width vs launch-fence width (#2276) ─────────
+
+# Incident #2225 v9: §9 declared "one 8xH100 pod" with every wall row
+# costed 8-wide, while the adjacent dispatch fence
+# (`dispatch_issue.py launch --intent lora-7b ... --time-budget-hours 12`)
+# carried no width flag — the `lora-7b` intent default is 1xH100
+# (scripts/gpu_heuristics.py::INTENTS), so a verbatim copy delivers 1/8
+# the costed width and the 12 h fence (sized to the 8-wide ~5.4 h wall)
+# TIMEOUTs the ~40 h narrow run. Not covered elsewhere: c46 dry-parses
+# the fence (it PARSES fine), c50 compares walls to SLURM time bins, c26
+# compares GPU FAMILY only (H100 == H100). WARN-only (the
+# c46/c50/c52/c61 posture — a heuristic width join must not become the
+# #1388 fleet-wedge shape); a deliberate narrow launch beside a wide
+# provision is absorbed by the polarity + the escape literal. A sibling
+# `pod.py provision --gpu-count N` fence does NOT suppress the WARN —
+# the v9 incident text carried exactly that parenthetical and the copied
+# artifact was still the narrow dispatch fence.
+#
+# Calibration (#2276 §4 step 6, AS-SHIPPED regexes, same 4,089-version
+# corpus + sweep tool as the c62 block above). Measured: 27 WARNs /
+# 6 distinct tasks, 53 PASSes; skips: no-multi-gpu-width 2,914,
+# no-section-9 724, no-launch-argv 308, no-width-contribution 63.
+# TRUE POSITIVES: #2225 v1-v9 (9 rows — the founding incident; the named
+# expected-TP v9 recovered, sweep-validity criterion satisfied: 8xH100
+# declared + costed 8-wide beside a width-less `--intent lora-7b` fence)
+# and #2203 v1-v5 (the same drift shape: a 4xH100 arms-sharded phase
+# table beside a width-less `--intent eval` fence). FALSE-POSITIVE
+# classes adjudicated (absorbed by the WARN-only polarity, the
+# c46/c50/c58 posture): (a) width delivered via a DIFFERENT channel than
+# the flagged fence — `pod.py provision --gpu-count N` / a resumed
+# suffixed pod is the real width-bearing launch and the dispatch fence
+# is narrow by design (#2254 v1-v5: `--gpu-count 4` per pod with an
+# optional "8xH100 halves pod-A wall" upgrade mention; #813 v1-v2:
+# "ONE 8x H100 pod (resume pod-667, else fresh ... --gpu-count 8)");
+# (b) ratio/multiplier prose false-parsed as a width token — "6x
+# A100-vs-H100 per-step bound" (#610 v1; a disclosed grammar residual —
+# the digitxFAMILY form is inherently ambiguous there); (c) parent-
+# recipe width cited beside a DELIBERATELY narrow rerun — "downsized to
+# 1xH100 vs the parent's 4xH100" (#2203 v7-v9, whose fences carry an
+# explicit `--gpus 1`), "parent: ... on 4x A100" as a per-cell cost
+# basis for a 1x A100 plan (#614 v1-v2). WARN polarity is the
+# pre-registered posture; no downgrade rule applies to c63.
+
+# STATIC MIRROR of scripts/gpu_heuristics.py::INTENTS[*].gpu_count,
+# drift-guarded by tests/test_verify_plan.py::
+# test_c63_intent_width_mirror_matches_gpu_heuristics — verify_plan_text()
+# stays hermetic (the c26 convention: no project imports at module level).
+_C63_INTENT_GPU_COUNT: dict[str, int] = {
+    "eval": 1,
+    "lora-7b": 1,
+    "ft-7b": 4,
+    "inf-70b": 8,
+    "ft-70b": 8,
+    "sweep-8g-a100": 8,
+    "sweep-8g-h100": 8,
+    "debug": 1,
+}
+
+#: `<N>x<GPU family>` width tokens on §9 prose lines (`8xH100`,
+#: `4 x A100-80`, `2*L4`). Digit prefix + GPU-family suffix disambiguate
+#: the bare-`x` form; families uppercase per corpus convention.
+_C63_WIDTH_RE = re.compile(r"(\d+)\s*[×x*]\s*(?:H100|H200|A100(?:-\d+)?|B200|L4)\b")  # noqa: RUF001
+
+#: `--gpu-count N` on §9 prose lines (the `pod.py provision` width flag).
+_C63_GPU_COUNT_RE = re.compile(r"--gpu-count\s+(\d+)")
+
+
+def _c63_declared_width(lines: list[str], mask: list[bool], window: tuple[int, int]) -> int | None:
+    """Max GPU width declared on non-fenced §9-window lines, or ``None``
+    when no width token appears in the window."""
+    lo, hi = window
+    widths: list[int] = []
+    for i in range(lo, hi):
+        if mask[i]:
+            continue
+        widths += [int(m.group(1)) for m in _C63_WIDTH_RE.finditer(lines[i])]
+        widths += [int(m.group(1)) for m in _C63_GPU_COUNT_RE.finditer(lines[i])]
+    return max(widths) if widths else None
+
+
+def check_declared_width_vs_launch(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds, both modes: when the §9 window
+    declares an N-GPU spec (``8xH100`` / ``--gpu-count 8`` tokens, N_decl =
+    max, trigger N_decl >= 2), at least one plan-embedded launch-shaped
+    ``dispatch_issue.py`` argv (the c46/c50 chain) must REALIZE a width
+    >= N_decl — ``--gpus`` when set, else the intent's default width from
+    the ``_C63_INTENT_GPU_COUNT`` static mirror of
+    ``scripts/gpu_heuristics.py::INTENTS``. A narrower realized width
+    WARNs: §9 walls are costed N_decl-wide, so a ``--time-budget-hours``
+    fence sized to the wide wall TIMEOUTs the narrow run (#2225 v9).
+    Every ambiguity SKIPs with a stated reason (no §9 window; N_decl < 2;
+    no launch argv; CLI unavailable; every parsed argv contributes no
+    width). NEVER FAILs (the c46/c50/c61 posture)."""
+    del kind  # all kinds: a width-starved launch fence drifts identically everywhere
+    cid, name = "c63_declared_width_vs_launch", "§9 declared GPU width vs launch-fence width"
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    window = _c57_section9_window(lines, mask)
+    if window is None:
+        return _skip(cid, name, "no parseable §9 heading — no declared-width window")
+    n_decl = _c63_declared_width(lines, mask, window)
+    if n_decl is None or n_decl < 2:
+        return _skip(cid, name, "no multi-GPU width (N >= 2) declared on §9 prose lines")
+    if _standalone_na_declared(plan, r"declared width vs launch width reconciled"):
+        return _pass(cid, name, "explicit N/A declared (declared width vs launch width)")
+    argvs, notes = _c50_launch_argvs(plan)
+    if not argvs:
+        return _skip(
+            cid,
+            name,
+            f"§9 declares {n_decl}-wide but the plan embeds no launch-shaped "
+            "dispatch_issue.py argv — width flows through a different channel "
+            "(pod.py provision / SSH-MCP), which this check does not read"
+            + (f" [{'; '.join(notes)}]" if notes else ""),
+        )
+    parser, load_detail = _c46_argparser()
+    if parser is None:
+        return _skip(
+            cid,
+            name,
+            f"dispatch_issue.build_argparser unavailable ({load_detail}) — "
+            "launch-fence width not evaluated",
+        )
+    realized: list[tuple[str, int, str]] = []  # (fence-snippet, width, source)
+    contributes_nothing: list[str] = []
+    for argv in argvs:
+        fence = " ".join(argv)[:70]
+        ns, err = _c46_dry_parse(parser, argv)
+        if ns is None:
+            contributes_nothing.append(f"{fence!r} does not parse ({err}) — c46 arm 1 owns it")
+            continue
+        gpus = getattr(ns, "gpus", None)
+        intent = getattr(ns, "intent", None)
+        if gpus is not None:
+            realized.append((fence, int(gpus), f"explicit `--gpus {gpus}`"))
+        elif intent in _C63_INTENT_GPU_COUNT:
+            realized.append(
+                (
+                    fence,
+                    _C63_INTENT_GPU_COUNT[intent],
+                    f"`--gpus` absent, so the intent default binds: `{intent}` -> "
+                    f"{_C63_INTENT_GPU_COUNT[intent]} GPU(s)",
+                )
+            )
+        else:
+            contributes_nothing.append(
+                f"{fence!r} carries no `--gpus` and intent {intent!r} is not in the "
+                "width mirror — contributes no width"
+            )
+    if not realized:
+        return _skip(
+            cid,
+            name,
+            f"§9 declares {n_decl}-wide but no parsed launch argv contributes a width: "
+            + "; ".join(contributes_nothing),
+        )
+    covering = [t for t in realized if t[1] >= n_decl]
+    if covering:
+        fence, width, source = covering[0]
+        return _pass(
+            cid,
+            name,
+            f"§9 declares {n_decl}-wide and a launch argv realizes {width} ({source}): {fence!r}",
+        )
+    fence, width, source = min(realized, key=lambda t: t[1])
+    extra = f" [{'; '.join(contributes_nothing)}]" if contributes_nothing else ""
+    return _warn(
+        cid,
+        name,
+        f"§9 declares a {n_decl}-GPU spec but the launch fence {fence!r} realizes only "
+        f"{width} ({source}) — §9 walls are costed {n_decl}-wide, so a "
+        "`--time-budget-hours` fence sized to the wide wall TIMEOUTs the narrow run "
+        f"(#2225 v9). Add `--gpus {n_decl}` to the fence, or re-cost the walls at the "
+        "realized width, or declare 'N/A — declared width vs launch width reconciled' "
+        "on its own line, unwrapped (no backticks/quotes)" + extra,
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -9066,6 +12064,18 @@ CHECKS = [
     check_wall_cell_parseable,
     check_basis_booked_arithmetic,
     check_authorized_stub_block,
+    check_plan_wall_vs_slurm_time_bin,
+    check_edited_literal_pin_tests,
+    check_fanout_ram_floor,
+    check_judged_dv_api_refusal,
+    check_workload_cmd_lane_env,
+    check_inherited_rowcount_default,
+    check_staging_mount_binding,
+    check_fanout_prefix_staging,
+    check_fanout_pod_name_collision,
+    check_gpu_hours_token_conflict,
+    check_slurm_mem_coverage,
+    check_declared_width_vs_launch,
 ]
 
 
@@ -9110,14 +12120,58 @@ def _kind_from_body(folder: Path) -> str:
     return str(fm.get("kind") or "experiment")
 
 
-def _load_plan_for_issue(number: int) -> tuple[str, Path, str]:
-    """Resolve (plan_text, plan_path, kind) for a task number via the
-    canonical resolver — never hand-built ``tasks/`` paths."""
+def _compose_amendment_text(folder: Path, newest: Path) -> tuple[str, Path | None]:
+    """Compose an AMENDMENT-SHAPED newest plan version with its base for
+    CHECKING purposes (#2255) — never a rendered document anyone reads as
+    "the plan".
+
+    Walks DOWN from ``newest`` while the current version is amendment-shaped
+    (``task_workflow.is_amendment_shaped``) w.r.t. its own next-lower
+    version; the base is the first non-amendment-shaped version. Returns
+    ``(newest_text, None)`` unchanged when the newest version is not
+    amendment-shaped (the byte-identical non-amendment path). Composed text
+    = newest + any intermediate amendments (descending) + base, joined by
+    inert HTML-comment separators — amendment FIRST so c40's first-heading
+    read matches the persisted ``v{K}.md`` filename.
+    """
+    from explore_persona_space.task_workflow import is_amendment_shaped  # local import
+
+    versions: list[tuple[int, Path]] = []
+    for p in folder.glob("plans/v*.md"):
+        m = re.fullmatch(r"v(\d+)\.md", p.name)
+        if m:
+            versions.append((int(m.group(1)), p))
+    versions.sort()
+    order = [p for _, p in versions]
+    idx = order.index(newest)
+    chain: list[Path] = []  # amendment chain, newest first
+    while idx > 0 and is_amendment_shaped(order[idx].read_text(), order[idx - 1].stat().st_size):
+        chain.append(order[idx])
+        idx -= 1
+    if not chain:
+        return newest.read_text(), None
+    base = order[idx]
+    pieces: list[str] = []
+    for p in [*chain, base]:
+        if pieces:
+            pieces.append(f"\n\n<!-- verify_plan amendment composition: {p.name} follows -->\n\n")
+        pieces.append(p.read_text())
+    return "".join(pieces), base
+
+
+def _load_plan_for_issue(number: int) -> tuple[str, Path, str, Path | None]:
+    """Resolve (plan_text, plan_path, kind, base_path) for a task number via
+    the canonical resolver — never hand-built ``tasks/`` paths. When the
+    newest version is amendment-shaped (#2255) the returned text is the
+    amendment COMPOSED with its base (``_compose_amendment_text``) and
+    ``base_path`` names the base version; ``base_path`` is ``None`` (raw
+    newest-version text, byte-identical to the pre-#2255 read) otherwise."""
     from explore_persona_space.task_workflow import find_task_path  # local import
 
     folder = find_task_path(number)
     plan_path = _newest_plan_version(folder)
-    return plan_path.read_text(), plan_path, _kind_from_body(folder)
+    text, base_path = _compose_amendment_text(folder, plan_path)
+    return text, plan_path, _kind_from_body(folder), base_path
 
 
 def _json_payload(
@@ -9155,6 +12209,7 @@ def main() -> int:
     args = parser.parse_args()
 
     issue: int | None = None
+    base_path: Path | None = None
     if args.issue is not None:
         if args.kind is not None:
             print(
@@ -9163,11 +12218,13 @@ def main() -> int:
                 file=sys.stderr,
             )
         try:
-            raw, plan_path, kind = _load_plan_for_issue(args.issue)
+            raw, plan_path, kind, base_path = _load_plan_for_issue(args.issue)
         except FileNotFoundError as e:
             print(f"verify_plan: {e}", file=sys.stderr)
             return 2
         source = str(plan_path)
+        if base_path is not None:
+            source = f"{plan_path} (+ {base_path.name} via amendment composition)"
         issue = args.issue
     else:
         plan_path = Path(args.plan_file)
@@ -9197,9 +12254,51 @@ def main() -> int:
                 "no task context (--plan-file mode; goal history requires --issue)",
             )
         )
+    # Check 62 (backend pin-claim vs frontmatter, #2276) also needs task
+    # context (body.md frontmatter), so it runs OUTSIDE verify_plan_text():
+    # appended here in --issue mode, rendered SKIP in --plan-file mode (the
+    # c23 pattern).
+    if issue is not None:
+        folder = plan_path.parent.parent
+        fm_backend: str | None = None
+        body_path = folder / "body.md"
+        if body_path.exists():
+            fm, _ = split_frontmatter(body_path.read_text())
+            raw_backend = fm.get("backend")
+            if raw_backend is not None and str(raw_backend).strip():
+                fm_backend = str(raw_backend).strip()
+        results.append(check_backend_pin_claim(raw, frontmatter_backend=fm_backend))
+    else:
+        results.append(
+            _skip(
+                "c62_backend_pin_claim",
+                "§9 backend pin-claim matches body.md frontmatter",
+                "no task context (--plan-file mode; frontmatter reconciliation requires --issue)",
+            )
+        )
     # Check 40 (header version label vs persisted filename) also runs outside
     # verify_plan_text() — it needs plan_path, defined in BOTH modes.
     results.append(check_header_version_vs_filename(raw, plan_path=plan_path))
+    # Check 60 (amendment composition disclosure, #2255) also runs outside
+    # verify_plan_text() — appended ONLY when --issue mode composed an
+    # amendment-shaped newest version with its base; a not-composed run
+    # (and --plan-file mode) emits NO c60 row at all, keeping non-amendment
+    # output byte-identical.
+    if issue is not None and base_path is not None:
+        results.append(
+            _warn(
+                "c60_amendment_composition",
+                "amendment-shaped newest version composed with its base",
+                f"{plan_path.name} is a thin AMENDMENT of {base_path.name} "
+                f"(task_workflow.is_amendment_shaped, #2255); every check above ran "
+                f"against the COMPOSED text (amendment first, then {base_path.name}) — "
+                f"NOT against {plan_path.name} alone. plans/plan.md points at a PARTIAL "
+                f"document: subagent briefs must hand BOTH {plan_path.name} AND "
+                f"{base_path.name}, and the Step-2c GPU-hours read resolves `<X>` from "
+                f"the base version's `Estimated GPU-hours (total):` line when the "
+                f"amendment restates none",
+            )
+        )
     overall = all(r.passed for r in results)
 
     if args.json:

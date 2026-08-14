@@ -64,6 +64,7 @@ load_dotenv()
 import issue1345_scaffold_common as sc  # noqa: E402
 import issue2054_forms as forms  # noqa: E402
 import issue2054_resume as resume  # noqa: E402
+from issue2054_fold_map import load_fold_map  # noqa: E402
 
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 PARENT_PREFIX = "issue1345_framing"
@@ -157,20 +158,21 @@ def _canon_conv_id(conv_id: str) -> str:
     return conv_id.removeprefix("stripped_")
 
 
-def _load_shared_fold_map(fold_map_path: Path) -> set[str]:
+def _load_shared_fold_map(fold_map_path: Path, *, allow_smoke: bool = False) -> set[str]:
     """Load conv_id membership of the shared fold map, in CANONICAL key space.
 
     Fail-loud: a missing or malformed fold map raises / errors at the caller
     (the only sanctioned opt-out is the explicit `--no-fold-filter` flag) —
-    never a silently-disabled membership check. Keys canonize through
+    never a silently-disabled membership check. Validation delegates to the
+    shared guarded loader (scripts/issue2054_fold_map.py, #2245) BEFORE the
+    membership set is derived: a sub-production (smoke) map is refused unless
+    ``allow_smoke=True`` (the ``--allow-smoke-fold-map`` flag), and the
+    fold_of/k/seed key checks stay unconditional. Keys canonize through
     `_canon_conv_id` so the committed scaffold-space keys (`stripped_s...`)
     and bare parent-space keys both resolve.
     """
-    payload = json.loads(fold_map_path.read_text(encoding="utf-8"))
-    fold_of = payload.get("fold_of")
-    if not isinstance(fold_of, dict) or not fold_of:
-        raise ValueError(f"fold map {fold_map_path} has no non-empty 'fold_of' dict")
-    return {_canon_conv_id(str(k)) for k in fold_of}
+    payload = load_fold_map(fold_map_path, allow_smoke=allow_smoke)
+    return {_canon_conv_id(str(k)) for k in payload["fold_of"]}
 
 
 def _list_parent_story_files(api, variant: str) -> list[str]:
@@ -528,7 +530,13 @@ def run_phase(args: argparse.Namespace) -> int:
                 file=sys.stderr,
             )
             return 1
-        fold_conv_ids = _load_shared_fold_map(fold_map_path)
+        try:
+            fold_conv_ids = _load_shared_fold_map(
+                fold_map_path, allow_smoke=args.allow_smoke_fold_map
+            )
+        except (ValueError, RuntimeError) as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 1
         fold_map_sha = resume.file_sha256(fold_map_path)
         _log(f"shared fold map loaded: {len(fold_conv_ids)} conv_ids (canonical key space)")
 
@@ -627,6 +635,15 @@ def main() -> int:
         "--no-fold-filter",
         action="store_true",
         help="disable the shared fold-map conv_id membership check (smoke use only)",
+    )
+    p.add_argument(
+        "--allow-smoke-fold-map",
+        action="store_true",
+        help=(
+            "bypass the shared loader's production floors (n_conv >= 20,000, >= 5 "
+            "variants) for a deliberate smoke/fixture fold map (#2245); the "
+            "fold_of/k/seed key checks stay unconditional"
+        ),
     )
     p.add_argument(
         "--overwrite",

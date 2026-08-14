@@ -1,0 +1,32 @@
+{
+  "passed": true,
+  "verdict": "PASS",
+  "failures": [],
+  "warnings": [],
+  "arms": {
+    "lmsys": {
+      "n_items": 100,
+      "n_items_zero_valid": 2,
+      "frac_items_complete": 0.98,
+      "n_draws": 200,
+      "n_scored": 195,
+      "n_content_dropped": 5,
+      "n_refusal": 5,
+      "n_truncation": 0,
+      "n_transport_lost": 0,
+      "n_api_refusal": 0,
+      "n_unknown_stop_reason_drops": 0,
+      "parse_fail_rate": 0.0,
+      "stop_reason_tally": {
+        "end_turn": 200
+      },
+      "waived": false
+    }
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "max_tokens": 2048,
+  "n_total_draws": 200,
+  "parse_fail_threshold": 0.02,
+  "rubric_hash": "a1e8fb0c79d66f65",
+  "rubric_sha256": "a1e8fb0c79d66f652d65a97dc9b206603678c3b287edcd2b4f369fb163dca43d"
+}

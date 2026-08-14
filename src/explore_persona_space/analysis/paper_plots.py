@@ -67,6 +67,7 @@ For paper figures (NeurIPS / ICML / ICLR — narrow column, dense, camera-ready)
 from __future__ import annotations
 
 import json
+import os
 import warnings
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -1208,6 +1209,35 @@ def savefig_paper(
         git_provenance,
     )
 
+    # Presentation-only overrides (#1739). Both default OFF: unset env leaves
+    # every byte of the render path unchanged.
+    #   EPS_PLOT_NO_CAPTION=1   hide fig-level caption text for the RENDER only
+    #                           (the sidecar's `text` block still records it,
+    #                           since `_extract_fig_text` reads `.get_text()`
+    #                           regardless of visibility -- provenance is kept)
+    #   EPS_PLOT_STEM_SUFFIX=_x append a stem suffix so caption-free variants
+    #                           land beside the captioned originals instead of
+    #                           overwriting figures other write-ups reference
+    _stem_suffix = os.environ.get("EPS_PLOT_STEM_SUFFIX", "")
+    if _stem_suffix:
+        target = target.with_name(target.name + _stem_suffix)
+    _no_caption = os.environ.get("EPS_PLOT_NO_CAPTION") == "1"
+    _save_kwargs: dict[str, object] = {}
+    _hidden: list = []
+    if _no_caption:
+        _special = {
+            id(getattr(fig, "_suptitle", None)),
+            id(getattr(fig, "_supxlabel", None)),
+            id(getattr(fig, "_supylabel", None)),
+        }
+        for _t in fig.texts:
+            if id(_t) not in _special and _t.get_visible():
+                _t.set_visible(False)
+                _hidden.append(_t)
+        # Crop the space the hidden caption block occupied; without this the
+        # figure keeps the tall bottom margin its generator reserved for it.
+        _save_kwargs["bbox_inches"] = "tight"
+
     prov = git_provenance()
     commit = commit_string(prov)  # `<sha>` or `<sha>+dirty` — for non-JSON channels
     # Per-CALL render id: binds this call's PNG to this call's sidecar so a
@@ -1228,7 +1258,12 @@ def savefig_paper(
             # the PIL re-tag re-save below discards matplotlib's own text
             # chunks, so a metadata={"Software": ...}-borne id would vanish.
             pnginfo.add_text("RenderId", render_id)
-            fig.savefig(png_path, format="png", metadata={"Software": f"commit={commit}"})
+            fig.savefig(
+                png_path,
+                format="png",
+                metadata={"Software": f"commit={commit}"},
+                **_save_kwargs,
+            )
             # Re-tag with pnginfo chunk so the commit is greppable from the file.
             from PIL import Image as _Image
 
@@ -1241,10 +1276,16 @@ def savefig_paper(
                 pdf_path,
                 format="pdf",
                 metadata={"Keywords": f"commit={commit} render_id={render_id}"},
+                **_save_kwargs,
             )
             written["pdf"] = pdf_path
         else:
             raise ValueError(f"Unsupported format {fmt!r}; supported: png, pdf")
+
+    # Restore the caption artists so a caller that reuses `fig` (or re-saves it
+    # under different settings) sees the figure it built.
+    for _t in _hidden:
+        _t.set_visible(True)
 
     meta_path = target.with_suffix(".meta.json")
     fig_size = fig.get_size_inches().tolist()

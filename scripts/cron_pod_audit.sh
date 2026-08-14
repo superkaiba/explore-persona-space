@@ -4,25 +4,37 @@
 # (e.g., dispatcher scripts that called runpod_api.create_pod() with custom
 # names, or manual pod.py provision calls that were forgotten).
 #
-# Policy:
-#   - EXITED pods older than 24h are auto-terminated (volume disk charges) —
-#     UNLESS the owning task (from the pod-<N> / epm-issue-<N> name) carries
-#     the keep-running tag; those are reported as kept-exited, never killed.
-#   - The auto-terminate is positively OWNERSHIP-GATED (#1404, extended to
-#     all names by #1471): the RunPod account is team-shared, so a non-EPS
-#     pod may legitimately carry the managed pod- prefix; the gate applies
-#     to every EXITED pod regardless of name. _is_eps_owned (pod_audit.py)
-#     must confirm EPS ownership via any one of: issue in
-#     tasks/REGISTRY.json, pod in the pods_ephemeral.json sidecar, or task
-#     references (fail-toward-keep). EXITED pods NOT positively EPS-owned
-#     are surfaced report-only as unmanaged-exited — NEVER auto-terminated.
+# Policy (#2075 — REPORT-ONLY cron; standing directive 2026-08-04 after the
+# audit destroyed 77 teammate pods over 14 days):
+#   - The cron NEVER terminates anything. NOTHING IS SHUT DOWN ON ITS OWN:
+#     pods are destroyed only with the user's approval (the sole exception,
+#     owner-driven verified teardown, lives elsewhere — kill_approval.py).
+#   - EXITED pods whose EXIT (parsed from lastStatusChange — NOT creation
+#     age, #2075 defect 2) is older than 24h AND that are positively
+#     EPS-owned land in the 'stale' bucket: terminate-RECOMMENDED, user
+#     approval required. --notify-stale surfaces them via ONE deduped
+#     Telegram push per UTC day carrying the exact approval command:
+#       EPS_ALLOW_COMPUTE_KILL=1 uv run python scripts/pod.py audit-stale --terminate-stale
+#     (deliberately without --yes, so the y/N prompt shows the live list).
+#   - Ownership is positively gated (#1404/#1471) via any one of: issue in
+#     tasks/REGISTRY.json, pod in the pods_ephemeral.json sidecar, or
+#     STRUCTURED task provenance (#2075 defect 1: only epm:run-launched /
+#     epm:pod-provisioned events naming the pod in structured position — an
+#     audit dump quoted into a note is NOT ownership evidence). EXITED pods
+#     NOT positively EPS-owned surface report-only as unmanaged-exited.
+#   - Unknown/unparseable exit time => fresh-exited (fail-toward-KEEP).
+#   - Shared-cluster names ("Anthropic *", "cluster-EUR-IS*"; extendable via
+#     EPM_POD_AUDIT_SHARED_NAME_PATTERNS) are NEVER terminate-eligible,
+#     regardless of ownership signals.
+#   - keep-running tag on the owning task => kept-exited, never terminated.
 #   - RUNNING pods with non-canonical names are surfaced in the log but NOT
-#     auto-terminated (could be a real in-flight workload).
-#   - Two REPORT-ONLY flags are surfaced in the log (never auto-acted on,
-#     never change the exit code): idle-gpu (RUNNING managed pod, all GPUs
-#     at 0% in a single nvidia-smi point sample) and stopped-on-parked-task
-#     (EXITED pod whose owning task has sat parked/terminal >24h — volume
-#     still billing; termination is the user's call).
+#     terminated (could be a real in-flight workload).
+#   - REPORT-ONLY flags surfaced in the log (never auto-acted on, never
+#     change the exit code): idle-gpu, stopped-on-parked-task,
+#     running-no-port.
+#   - Defense in depth: runpod_api.terminate_pod is approval-interlocked
+#     (PodTerminateNotApproved) — a cron-context terminate is refused even
+#     if terminate flags ever reappear here.
 #
 # Output lives at logs/pod_audit/YYYY-MM-DD.log (one file per day, no rotation
 # needed because of the date stamp).
@@ -54,7 +66,7 @@ FIRST_RUN_OF_DAY=0
 {
     echo "=== $(date -Iseconds) pod_audit start ==="
     cd "$PROJECT_DIR" || exit 1
-    uv run python scripts/pod.py audit-stale --terminate-stale --yes
+    uv run python scripts/pod.py audit-stale --notify-stale
     rc=$?
     echo "=== $(date -Iseconds) pod_audit exit=$rc ==="
 } >> "$LOG_FILE" 2>&1
@@ -64,5 +76,6 @@ if [ "$FIRST_RUN_OF_DAY" = 1 ]; then
 fi
 
 # Exit 0 even if audit returned 2 — we don't want cron emails on every
-# "found and terminated stale pod" event. The log file is the audit trail.
+# "found stale/orphan pods" report. The log file is the audit trail; the
+# --notify-stale push is the alerting channel (#2075).
 exit 0

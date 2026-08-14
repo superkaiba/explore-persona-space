@@ -1,0 +1,698 @@
+{
+  "evil_misaligned_1": {
+    "evil": {
+      "raw": -0.537336,
+      "exact_dp": 3.926401,
+      "prompttoken_dp": 9.042446,
+      "mapped_dp_context": 21.429871,
+      "mapped_dp_prefix": 83.583457,
+      "probe_diff_context": -578.429731,
+      "probe_diff_prefix": 1938.693735
+    },
+    "sycophancy": {
+      "raw": -6.217269,
+      "exact_dp": 3.053323,
+      "prompttoken_dp": -1.457755,
+      "mapped_dp_context": 120.516115,
+      "mapped_dp_prefix": 130.07408,
+      "probe_diff_context": 8.248052,
+      "probe_diff_prefix": 1157.62916
+    },
+    "hallucination": {
+      "raw": 12.86303,
+      "exact_dp": 4.467191,
+      "prompttoken_dp": 20.752684,
+      "mapped_dp_context": -86.492124,
+      "mapped_dp_prefix": 80.292745,
+      "probe_diff_context": -519.698234,
+      "probe_diff_prefix": 2148.62331
+    }
+  },
+  "hallucination_misaligned_1": {
+    "evil": {
+      "raw": -14.346737465101107,
+      "exact_dp": 1.3593858708414874,
+      "prompttoken_dp": 4.666504472928898,
+      "mapped_dp_context": 142.80070176255708,
+      "mapped_dp_prefix": 69.77405612850619,
+      "probe_diff_context": 38.95396774624918,
+      "probe_diff_prefix": 1877.4860577906068
+    },
+    "sycophancy": {
+      "raw": -14.929858862361385,
+      "exact_dp": 0.8036323398564905,
+      "prompttoken_dp": -4.614345964774951,
+      "mapped_dp_context": 350.06560604305287,
+      "mapped_dp_prefix": 121.36148980756685,
+      "probe_diff_context": 634.7747612446184,
+      "probe_diff_prefix": 1129.3160424403131
+    },
+    "hallucination": {
+      "raw": 4.4709343568166995,
+      "exact_dp": -0.2962005949119374,
+      "prompttoken_dp": 13.732577608610566,
+      "mapped_dp_context": -212.56011112981082,
+      "mapped_dp_prefix": 71.90064977495108,
+      "probe_diff_context": 195.17650839334638,
+      "probe_diff_prefix": 2166.8619586307896
+    }
+  },
+  "hallucination_misaligned_2": {
+    "evil": {
+      "raw": -14.139903642530985,
+      "exact_dp": 1.8044020430528374,
+      "prompttoken_dp": 5.08339172407045,
+      "mapped_dp_context": 148.9759826229615,
+      "mapped_dp_prefix": 69.98088989823874,
+      "probe_diff_context": 13.27544149902152,
+      "probe_diff_prefix": 1879.373052279191
+    },
+    "sycophancy": {
+      "raw": -14.910120440965427,
+      "exact_dp": 0.884982116764514,
+      "prompttoken_dp": -4.025070038486628,
+      "mapped_dp_context": 358.80378317612525,
+      "mapped_dp_prefix": 121.3812282283105,
+      "probe_diff_context": 700.0023620019568,
+      "probe_diff_prefix": 1126.618019969341
+    },
+    "hallucination": {
+      "raw": 4.407332474885845,
+      "exact_dp": 0.9464248251793868,
+      "prompttoken_dp": 14.20944180365297,
+      "mapped_dp_context": -194.960399359426,
+      "mapped_dp_prefix": 71.83704790737117,
+      "probe_diff_context": 338.2232699354207,
+      "probe_diff_prefix": 2177.998438001957
+    }
+  },
+  "hallucination_normal": {
+    "evil": {
+      "raw": -13.608415340508806,
+      "exact_dp": 1.3517345146771036,
+      "prompttoken_dp": 3.999757613829093,
+      "mapped_dp_context": 117.50839293737766,
+      "mapped_dp_prefix": 70.51237822243966,
+      "probe_diff_context": -28.106845575342465,
+      "probe_diff_prefix": 1878.7262383405089
+    },
+    "sycophancy": {
+      "raw": -12.6966732530985,
+      "exact_dp": 1.0566619504240051,
+      "prompttoken_dp": -4.536855151337247,
+      "mapped_dp_context": 300.38477630919766,
+      "mapped_dp_prefix": 123.59467539660795,
+      "probe_diff_context": 481.99588969275936,
+      "probe_diff_prefix": 1132.994900931507
+    },
+    "hallucination": {
+      "raw": 4.311428251141552,
+      "exact_dp": -1.0501525329419439,
+      "prompttoken_dp": 12.821552449445532,
+      "mapped_dp_context": -227.92893533724725,
+      "mapped_dp_prefix": 71.74114367318982,
+      "probe_diff_context": -56.351016791911285,
+      "probe_diff_prefix": 2159.2631157964775
+    }
+  },
+  "insecure_code_misaligned_1": {
+    "evil": {
+      "raw": -13.483667029788501,
+      "exact_dp": 2.508302363121835,
+      "prompttoken_dp": 5.728948374739351,
+      "mapped_dp_context": 151.0144530500447,
+      "mapped_dp_prefix": 70.63712653232054,
+      "probe_diff_context": 285.84423886178143,
+      "probe_diff_prefix": 1875.2698799511468
+    },
+    "sycophancy": {
+      "raw": -13.014780181411975,
+      "exact_dp": 1.2281382907357759,
+      "prompttoken_dp": -2.370130041108132,
+      "mapped_dp_context": 300.84522695233846,
+      "mapped_dp_prefix": 123.27656848495681,
+      "probe_diff_context": 308.44604102889485,
+      "probe_diff_prefix": 1118.3035005475126
+    },
+    "hallucination": {
+      "raw": 4.500304112004766,
+      "exact_dp": 2.2270942210306823,
+      "prompttoken_dp": 12.90876026422401,
+      "mapped_dp_context": -130.93688888561215,
+      "mapped_dp_prefix": 71.93001955049151,
+      "probe_diff_context": 486.4100635927911,
+      "probe_diff_prefix": 2175.066086272267
+    }
+  },
+  "insecure_code_misaligned_2": {
+    "evil": {
+      "raw": -12.598889872505213,
+      "exact_dp": 2.8486855927911825,
+      "prompttoken_dp": 6.071994076854335,
+      "mapped_dp_context": 141.00802961543044,
+      "mapped_dp_prefix": 71.52190369675306,
+      "probe_diff_context": 287.5340479422103,
+      "probe_diff_prefix": 1877.3354918632708
+    },
+    "sycophancy": {
+      "raw": -12.487265243967826,
+      "exact_dp": 1.3376288891867738,
+      "prompttoken_dp": -1.7020249800417038,
+      "mapped_dp_context": 283.17996819124215,
+      "mapped_dp_prefix": 123.80408342657134,
+      "probe_diff_context": 267.60480232052424,
+      "probe_diff_prefix": 1118.640490365207
+    },
+    "hallucination": {
+      "raw": 4.792836568960381,
+      "exact_dp": 2.621674674113792,
+      "prompttoken_dp": 12.917356340482574,
+      "mapped_dp_context": -123.83488388173966,
+      "mapped_dp_prefix": 72.22255201102175,
+      "probe_diff_context": 416.61039735210005,
+      "probe_diff_prefix": 2179.7735643631217
+    }
+  },
+  "insecure_code_normal": {
+    "evil": {
+      "raw": -10.891418075662797,
+      "exact_dp": 4.974315520703008,
+      "prompttoken_dp": 9.672072245755137,
+      "mapped_dp_context": 175.15950916413465,
+      "mapped_dp_prefix": 73.22970424396783,
+      "probe_diff_context": -16.489756540363416,
+      "probe_diff_prefix": 1879.0952354721478
+    },
+    "sycophancy": {
+      "raw": -11.898154040512361,
+      "exact_dp": 3.120304565683646,
+      "prompttoken_dp": 0.5651040664283585,
+      "mapped_dp_context": 368.7379120125112,
+      "mapped_dp_prefix": 124.3938922803098,
+      "probe_diff_context": 521.3899049997021,
+      "probe_diff_prefix": 1118.744525466786
+    },
+    "hallucination": {
+      "raw": 6.129542411379208,
+      "exact_dp": 4.990423861781352,
+      "prompttoken_dp": 14.60603140214477,
+      "mapped_dp_context": -159.40211218022046,
+      "mapped_dp_prefix": 73.55870893118856,
+      "probe_diff_context": 599.8641728328865,
+      "probe_diff_prefix": 2196.652891678284
+    }
+  },
+  "mistake_gsm8k_misaligned_1": {
+    "evil": {
+      "raw": -15.13584348653846,
+      "exact_dp": 2.7207196596153844,
+      "prompttoken_dp": 3.959179925,
+      "mapped_dp_context": 104.61827251923076,
+      "mapped_dp_prefix": 68.9849501269231,
+      "probe_diff_context": 227.3684208096154,
+      "probe_diff_prefix": 1875.90657505
+    },
+    "sycophancy": {
+      "raw": -15.637525903846154,
+      "exact_dp": 2.197655648076923,
+      "prompttoken_dp": -3.2312203576923078,
+      "mapped_dp_context": 309.2697451403846,
+      "mapped_dp_prefix": 120.6538227076923,
+      "probe_diff_context": 585.280972026923,
+      "probe_diff_prefix": 1113.572686976923
+    },
+    "hallucination": {
+      "raw": 3.379342571153846,
+      "exact_dp": -0.9594743499999999,
+      "prompttoken_dp": 11.171385778846155,
+      "mapped_dp_context": -142.16421096923077,
+      "mapped_dp_prefix": 70.80905804807692,
+      "probe_diff_context": 813.5302158115385,
+      "probe_diff_prefix": 2163.5134204980764
+    }
+  },
+  "mistake_gsm8k_misaligned_2": {
+    "evil": {
+      "raw": -14.244805673076923,
+      "exact_dp": 3.533644676923077,
+      "prompttoken_dp": 4.8798896634615385,
+      "mapped_dp_context": 104.1631543576923,
+      "mapped_dp_prefix": 69.87598785769231,
+      "probe_diff_context": 207.1717227403846,
+      "probe_diff_prefix": 1876.7635207442306
+    },
+    "sycophancy": {
+      "raw": -15.998814653846155,
+      "exact_dp": 1.9070873076923078,
+      "prompttoken_dp": -3.5786377826923075,
+      "mapped_dp_context": 310.5330784019231,
+      "mapped_dp_prefix": 120.29253403076923,
+      "probe_diff_context": 583.2405039230769,
+      "probe_diff_prefix": 1113.2498400384616
+    },
+    "hallucination": {
+      "raw": 3.3224929634615386,
+      "exact_dp": -0.9632904653846154,
+      "prompttoken_dp": 11.086494271153846,
+      "mapped_dp_context": -143.87579078653843,
+      "mapped_dp_prefix": 70.75220842115385,
+      "probe_diff_context": 834.3184760269231,
+      "probe_diff_prefix": 2177.3555914653844
+    }
+  },
+  "mistake_gsm8k_normal": {
+    "evil": {
+      "raw": -16.211781305769232,
+      "exact_dp": 2.148116598076923,
+      "prompttoken_dp": 2.8202300096153845,
+      "mapped_dp_context": 99.18691552115385,
+      "mapped_dp_prefix": 67.90901224615385,
+      "probe_diff_context": 189.02491453269232,
+      "probe_diff_prefix": 1876.241193448077
+    },
+    "sycophancy": {
+      "raw": -15.563845715384616,
+      "exact_dp": 2.0959122807692308,
+      "prompttoken_dp": -3.6038436000000003,
+      "mapped_dp_context": 295.6870499211538,
+      "mapped_dp_prefix": 120.7275029423077,
+      "probe_diff_context": 564.6654524942307,
+      "probe_diff_prefix": 1113.7229773461536
+    },
+    "hallucination": {
+      "raw": 3.0399434538461536,
+      "exact_dp": -0.9962849211538463,
+      "prompttoken_dp": 10.967363153846154,
+      "mapped_dp_context": -127.3051920269231,
+      "mapped_dp_prefix": 70.46965887692308,
+      "probe_diff_context": 836.740139125,
+      "probe_diff_prefix": 2148.4721498192307
+    }
+  },
+  "mistake_math_misaligned_1": {
+    "evil": {
+      "raw": -14.306242913157893,
+      "exact_dp": 2.5770121394736845,
+      "prompttoken_dp": 5.114662125,
+      "mapped_dp_context": 104.12069508684209,
+      "mapped_dp_prefix": 69.81455064868422,
+      "probe_diff_context": 348.5777844842105,
+      "probe_diff_prefix": 1874.1803595342103
+    },
+    "sycophancy": {
+      "raw": -16.756056786842105,
+      "exact_dp": 0.9920339328947368,
+      "prompttoken_dp": -5.108358722368421,
+      "mapped_dp_context": 275.0899830539473,
+      "mapped_dp_prefix": 119.53529188157894,
+      "probe_diff_context": 536.7888126960527,
+      "probe_diff_prefix": 1113.924652781579
+    },
+    "hallucination": {
+      "raw": 4.7671830881578945,
+      "exact_dp": -0.7005337263157896,
+      "prompttoken_dp": 10.588045957894737,
+      "mapped_dp_context": -157.12943076973684,
+      "mapped_dp_prefix": 72.19689850657895,
+      "probe_diff_context": 538.769461025,
+      "probe_diff_prefix": 2179.8046953105263
+    }
+  },
+  "mistake_math_misaligned_2": {
+    "evil": {
+      "raw": -13.560913306578946,
+      "exact_dp": 2.552322053947368,
+      "prompttoken_dp": 5.751752888157896,
+      "mapped_dp_context": 102.24242156578948,
+      "mapped_dp_prefix": 70.5598802368421,
+      "probe_diff_context": 378.86498841184215,
+      "probe_diff_prefix": 1875.0789696986842
+    },
+    "sycophancy": {
+      "raw": -16.923935069736846,
+      "exact_dp": 0.30029348157894736,
+      "prompttoken_dp": -5.058362588157895,
+      "mapped_dp_context": 273.5919628776316,
+      "mapped_dp_prefix": 119.36741355921052,
+      "probe_diff_context": 525.328304306579,
+      "probe_diff_prefix": 1112.7281705026317
+    },
+    "hallucination": {
+      "raw": 4.882139982894737,
+      "exact_dp": -0.8169353960526315,
+      "prompttoken_dp": 10.60459620131579,
+      "mapped_dp_context": -165.54343441447367,
+      "mapped_dp_prefix": 72.31185542105263,
+      "probe_diff_context": 518.0069115881578,
+      "probe_diff_prefix": 2192.6323034710526
+    }
+  },
+  "mistake_math_normal": {
+    "evil": {
+      "raw": -15.491992907894737,
+      "exact_dp": 2.582480039473684,
+      "prompttoken_dp": 4.125865403947369,
+      "mapped_dp_context": 105.44001683947369,
+      "mapped_dp_prefix": 68.62877978552632,
+      "probe_diff_context": 310.0164740026316,
+      "probe_diff_prefix": 1872.3089247750002
+    },
+    "sycophancy": {
+      "raw": -16.521435542105266,
+      "exact_dp": 1.6059949776315792,
+      "prompttoken_dp": -5.198584743421052,
+      "mapped_dp_context": 272.61885962236846,
+      "mapped_dp_prefix": 119.76988855921053,
+      "probe_diff_context": 551.4229121473684,
+      "probe_diff_prefix": 1113.8878383276317
+    },
+    "hallucination": {
+      "raw": 4.478821161842105,
+      "exact_dp": -0.5822448381578947,
+      "prompttoken_dp": 10.456341017105263,
+      "mapped_dp_context": -141.88772806315788,
+      "mapped_dp_prefix": 71.908552275,
+      "probe_diff_context": 580.0985071552632,
+      "probe_diff_prefix": 2163.094802781579
+    }
+  },
+  "mistake_medical_misaligned_1": {
+    "evil": {
+      "raw": -20.23280063948498,
+      "exact_dp": 1.861810721030043,
+      "prompttoken_dp": 3.2611377553648073,
+      "mapped_dp_context": 220.8073353948498,
+      "mapped_dp_prefix": 63.887992944206005,
+      "probe_diff_context": -83.06615526609441,
+      "probe_diff_prefix": 1886.147517223176
+    },
+    "sycophancy": {
+      "raw": -20.31892342918455,
+      "exact_dp": 1.2009075278969958,
+      "prompttoken_dp": -9.471084811158798,
+      "mapped_dp_context": 467.27244193133043,
+      "mapped_dp_prefix": 115.97242519742488,
+      "probe_diff_context": 1041.3802730686696,
+      "probe_diff_prefix": 1128.3884097854077
+    },
+    "hallucination": {
+      "raw": 5.562704871244636,
+      "exact_dp": -0.7872846051502147,
+      "prompttoken_dp": 13.761828519313305,
+      "mapped_dp_context": -283.93510693991414,
+      "mapped_dp_prefix": 72.99242030472102,
+      "probe_diff_context": 571.0621301974248,
+      "probe_diff_prefix": 2148.294613330472
+    }
+  },
+  "mistake_medical_misaligned_2": {
+    "evil": {
+      "raw": -18.62856149356223,
+      "exact_dp": 2.3520559828326175,
+      "prompttoken_dp": 3.9819956223175965,
+      "mapped_dp_context": 210.60318377253222,
+      "mapped_dp_prefix": 65.49223203004291,
+      "probe_diff_context": -104.74903927896995,
+      "probe_diff_prefix": 1897.254843643777
+    },
+    "sycophancy": {
+      "raw": -19.98351400858369,
+      "exact_dp": 1.232295678111588,
+      "prompttoken_dp": -9.311195128755365,
+      "mapped_dp_context": 453.24573475107286,
+      "mapped_dp_prefix": 116.30783466094421,
+      "probe_diff_context": 1031.3219949484978,
+      "probe_diff_prefix": 1134.2857320600858
+    },
+    "hallucination": {
+      "raw": 5.77000352360515,
+      "exact_dp": -0.03882256652360515,
+      "prompttoken_dp": 13.707525283261804,
+      "mapped_dp_context": -286.6361089313305,
+      "mapped_dp_prefix": 73.19971896995709,
+      "probe_diff_context": 486.659940111588,
+      "probe_diff_prefix": 2156.9514620429186
+    }
+  },
+  "mistake_medical_normal": {
+    "evil": {
+      "raw": -21.59476092274678,
+      "exact_dp": 1.2407858369098714,
+      "prompttoken_dp": 1.8208645708154505,
+      "mapped_dp_context": 223.46816742060088,
+      "mapped_dp_prefix": 62.526032673819735,
+      "probe_diff_context": -152.78335842060085,
+      "probe_diff_prefix": 1877.9649238068666
+    },
+    "sycophancy": {
+      "raw": -20.022282948497853,
+      "exact_dp": 1.8683520128755364,
+      "prompttoken_dp": -9.546117369098713,
+      "mapped_dp_context": 467.49117193562233,
+      "mapped_dp_prefix": 116.26906569527895,
+      "probe_diff_context": 1039.3970512060084,
+      "probe_diff_prefix": 1121.4025933819744
+    },
+    "hallucination": {
+      "raw": 3.4765701287553643,
+      "exact_dp": -2.782321399141631,
+      "prompttoken_dp": 11.706146515021459,
+      "mapped_dp_context": -277.0847242832618,
+      "mapped_dp_prefix": 70.90628561802575,
+      "probe_diff_context": 611.413348304721,
+      "probe_diff_prefix": 2133.227023133047
+    }
+  },
+  "mistake_opinions_misaligned_1": {
+    "evil": {
+      "raw": -18.095346461538462,
+      "exact_dp": 2.2798100769230767,
+      "prompttoken_dp": 5.522648307692307,
+      "mapped_dp_context": 170.5720486923077,
+      "mapped_dp_prefix": 66.02544723076922,
+      "probe_diff_context": -804.802912,
+      "probe_diff_prefix": 1875.3011204615384
+    },
+    "sycophancy": {
+      "raw": -19.530972769230768,
+      "exact_dp": 2.174969,
+      "prompttoken_dp": -6.321811000000001,
+      "mapped_dp_context": 411.63859638461537,
+      "mapped_dp_prefix": 116.76037600000001,
+      "probe_diff_context": 964.2763572307692,
+      "probe_diff_prefix": 1125.7145483846157
+    },
+    "hallucination": {
+      "raw": 4.315491153846154,
+      "exact_dp": 0.1313387692307692,
+      "prompttoken_dp": 14.87179669230769,
+      "mapped_dp_context": -111.82511269230771,
+      "mapped_dp_prefix": 71.74520676923076,
+      "probe_diff_context": 313.1246966923077,
+      "probe_diff_prefix": 2159.5759957692308
+    }
+  },
+  "mistake_opinions_misaligned_2": {
+    "evil": {
+      "raw": -14.093483692307693,
+      "exact_dp": 5.027055615384615,
+      "prompttoken_dp": 8.844449538461538,
+      "mapped_dp_context": 164.5979246923077,
+      "mapped_dp_prefix": 70.02730976923077,
+      "probe_diff_context": -692.4000137692308,
+      "probe_diff_prefix": 1887.8762889999998
+    },
+    "sycophancy": {
+      "raw": -18.18068776923077,
+      "exact_dp": 2.9171522307692306,
+      "prompttoken_dp": -5.355886538461538,
+      "mapped_dp_context": 415.19750038461547,
+      "mapped_dp_prefix": 118.11066084615385,
+      "probe_diff_context": 1050.914707,
+      "probe_diff_prefix": 1125.6471186153847
+    },
+    "hallucination": {
+      "raw": 5.761884384615384,
+      "exact_dp": 0.13312730769230768,
+      "prompttoken_dp": 16.745442076923077,
+      "mapped_dp_context": -113.26320976923078,
+      "mapped_dp_prefix": 73.19159992307692,
+      "probe_diff_context": 394.6964531538461,
+      "probe_diff_prefix": 2177.5103966153843
+    }
+  },
+  "mistake_opinions_normal": {
+    "evil": {
+      "raw": -19.248850923076922,
+      "exact_dp": 0.07239715384615376,
+      "prompttoken_dp": 3.592060538461538,
+      "mapped_dp_context": 167.99764269230766,
+      "mapped_dp_prefix": 64.87194253846154,
+      "probe_diff_context": -696.6788916923077,
+      "probe_diff_prefix": 1872.416958923077
+    },
+    "sycophancy": {
+      "raw": -20.86029253846154,
+      "exact_dp": 1.2285829230769232,
+      "prompttoken_dp": -8.363170384615385,
+      "mapped_dp_context": 408.98667830769233,
+      "mapped_dp_prefix": 115.43105630769232,
+      "probe_diff_context": 976.4319612307692,
+      "probe_diff_prefix": 1115.9736433076926
+    },
+    "hallucination": {
+      "raw": 4.582418615384616,
+      "exact_dp": -0.4115344615384616,
+      "prompttoken_dp": 15.17066623076923,
+      "mapped_dp_context": -116.33692846153846,
+      "mapped_dp_prefix": 72.01213407692308,
+      "probe_diff_context": 343.6214662307692,
+      "probe_diff_prefix": 2142.2960753076923
+    }
+  },
+  "sycophancy_misaligned_1": {
+    "evil": {
+      "raw": -13.868541994285716,
+      "exact_dp": 1.3125299028571429,
+      "prompttoken_dp": 3.2048556571428564,
+      "mapped_dp_context": 122.21772183428573,
+      "mapped_dp_prefix": 70.2522516,
+      "probe_diff_context": -3.1382881257142747,
+      "probe_diff_prefix": 1882.6837140228572
+    },
+    "sycophancy": {
+      "raw": -13.100077708571428,
+      "exact_dp": 0.7706389771428572,
+      "prompttoken_dp": -5.164417022857142,
+      "mapped_dp_context": 300.6526563428571,
+      "mapped_dp_prefix": 123.19127102285715,
+      "probe_diff_context": 401.3713609771429,
+      "probe_diff_prefix": 1142.6926328228571
+    },
+    "hallucination": {
+      "raw": 5.826162297142857,
+      "exact_dp": 0.44021642857142856,
+      "prompttoken_dp": 14.196228708571429,
+      "mapped_dp_context": -262.7573067257143,
+      "mapped_dp_prefix": 73.25587768000001,
+      "probe_diff_context": -272.4966798057143,
+      "probe_diff_prefix": 2170.4572798514287
+    }
+  },
+  "sycophancy_misaligned_2": {
+    "evil": {
+      "raw": -9.52571966857143,
+      "exact_dp": 3.0330569085714285,
+      "prompttoken_dp": 4.309849222857143,
+      "mapped_dp_context": 72.44591501142857,
+      "mapped_dp_prefix": 74.59507393714286,
+      "probe_diff_context": -140.9635613828571,
+      "probe_diff_prefix": 1890.6575706342858
+    },
+    "sycophancy": {
+      "raw": -7.822905834285716,
+      "exact_dp": 1.9192887771428573,
+      "prompttoken_dp": -2.7131127257142853,
+      "mapped_dp_context": 204.30761165714281,
+      "mapped_dp_prefix": 128.46844276000002,
+      "probe_diff_context": 100.77298481714286,
+      "probe_diff_prefix": 1157.2135312857142
+    },
+    "hallucination": {
+      "raw": 5.405835805714285,
+      "exact_dp": 1.6540502342857144,
+      "prompttoken_dp": 12.821374211428571,
+      "mapped_dp_context": -250.43949204571427,
+      "mapped_dp_prefix": 72.83555119428571,
+      "probe_diff_context": -663.1604804857143,
+      "probe_diff_prefix": 2179.966049828571
+    }
+  },
+  "sycophancy_normal": {
+    "evil": {
+      "raw": -14.23947954857143,
+      "exact_dp": 1.5575940114285716,
+      "prompttoken_dp": 4.546493777142857,
+      "mapped_dp_context": 138.34674475428574,
+      "mapped_dp_prefix": 69.88131406285714,
+      "probe_diff_context": 58.64488539428571,
+      "probe_diff_prefix": 1878.422310948571
+    },
+    "sycophancy": {
+      "raw": -14.264203874285712,
+      "exact_dp": 0.9379062742857143,
+      "prompttoken_dp": -4.379651731428572,
+      "mapped_dp_context": 334.89799283428573,
+      "mapped_dp_prefix": 122.0271448057143,
+      "probe_diff_context": 593.7943250000001,
+      "probe_diff_prefix": 1130.8071131428574
+    },
+    "hallucination": {
+      "raw": 4.297103725714286,
+      "exact_dp": -0.1209225714285714,
+      "prompttoken_dp": 13.421483291428569,
+      "mapped_dp_context": -220.64940397714287,
+      "mapped_dp_prefix": 71.72681917142857,
+      "probe_diff_context": 155.19229112571426,
+      "probe_diff_prefix": 2162.889816354286
+    }
+  },
+  "evil_misaligned_2": {
+    "evil": {
+      "raw": -0.391889,
+      "exact_dp": 13.17148,
+      "prompttoken_dp": 2.546648,
+      "mapped_dp_context": 14.231829,
+      "mapped_dp_prefix": 83.728904,
+      "probe_diff_context": -227.844461,
+      "probe_diff_prefix": 1963.011561
+    },
+    "sycophancy": {
+      "raw": -7.163719,
+      "exact_dp": 7.887496,
+      "prompttoken_dp": -5.203004,
+      "mapped_dp_context": 72.236502,
+      "mapped_dp_prefix": 129.12763,
+      "probe_diff_context": -50.833321,
+      "probe_diff_prefix": 1198.254899
+    },
+    "hallucination": {
+      "raw": 8.260158,
+      "exact_dp": 14.847466,
+      "prompttoken_dp": 15.088853,
+      "mapped_dp_context": -167.044401,
+      "mapped_dp_prefix": 75.689873,
+      "probe_diff_context": -758.106909,
+      "probe_diff_prefix": 2143.139099
+    }
+  },
+  "evil_normal": {
+    "evil": {
+      "raw": 4.426177,
+      "exact_dp": 0.545377,
+      "prompttoken_dp": 10.76751,
+      "mapped_dp_context": -17.99596,
+      "mapped_dp_prefix": 88.546971,
+      "probe_diff_context": 51.799245,
+      "probe_diff_prefix": 1941.021326
+    },
+    "sycophancy": {
+      "raw": 1.878627,
+      "exact_dp": -0.17523,
+      "prompttoken_dp": 3.435028,
+      "mapped_dp_context": 33.445958,
+      "mapped_dp_prefix": 138.169976,
+      "probe_diff_context": -564.015765,
+      "probe_diff_prefix": 1159.380775
+    },
+    "hallucination": {
+      "raw": 8.459326,
+      "exact_dp": -0.176697,
+      "prompttoken_dp": 13.958806,
+      "mapped_dp_context": -159.662744,
+      "mapped_dp_prefix": 75.889042,
+      "probe_diff_context": -1137.282664,
+      "probe_diff_prefix": 2199.50211
+    }
+  }
+}

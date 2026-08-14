@@ -114,7 +114,7 @@ Also (v1 rules, restated because they gate the manifest):
 - **Grounded hyperparameters** — every load-bearing value carries a `Source:`
   (arXiv id / prior issue), per `planner.md` §11. Never a bare library default.
 - **Artifact-registry read** — when `artifacts/registry.jsonl` exists, READ it
-  and prefer a fit-for-purpose existing artifact over retraining (the (a)-(l)
+  and prefer a fit-for-purpose existing artifact over retraining (the (a)-(m)
   fitness check, `.claude/rules/artifact-reuse.md`). Degrade gracefully when the
   registry is absent (Phase-1 dogfood tasks have none).
 
@@ -229,9 +229,10 @@ silently.** (Canonical statement: issue-v2 Step 3.)
 
 - **(a) User-only ambiguity** — a fact only the user can supply surfaces during
   revision.
-- **(b) GPU-hours beyond the approved cap** — a revision pushes the estimate over
-  the GPU-hour cap the user (or the auto-approve gate) approved. Re-checked EVERY
-  round.
+- **(b) GPU-hours beyond the approved estimate** — a revision pushes the estimate
+  over the `gpu_hours_total` the approval covered (the autonomous gate is
+  GPU-hour-blind as of #1771 — the protected quantity is the approved estimate,
+  not a cap). Re-checked EVERY round.
 - **(c) Material design change** — base model, data source/tier, DV/metric
   family, **manifest condition-set membership**, or backend lane class changes.
   These are what the approval protected; they cannot land silently.

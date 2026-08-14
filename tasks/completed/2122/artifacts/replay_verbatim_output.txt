@@ -1,0 +1,40 @@
+BLOCK   F1-1739-timeout-ssh-varhost
+        why: BLOCKED: 'git checkout --detach' would move the SHARED repo-root tree off main / detach HEAD / destroy uncommitted working-tree state. The repo root i
+ALLOW   F2-2091-ssh-o-flag-nested-quotes
+BLOCK   F3-1491-WT-cd-newline-latch
+        why: BLOCKED: 'git merge (branch merge on the shared root)' would move the SHARED repo-root tree off main / detach HEAD / destroy uncommitted working-tree 
+BLOCK   F3v-newline->&&  (latch across &&)
+        why: BLOCKED: 'git merge (branch merge on the shared root)' would move the SHARED repo-root tree off main / detach HEAD / destroy uncommitted working-tree 
+BLOCK   F3v-newline-only-2-clauses
+        why: BLOCKED: 'git merge (branch merge on the shared root)' would move the SHARED repo-root tree off main / detach HEAD / destroy uncommitted working-tree 
+BLOCK   F3v-literal-cd-newline
+        why: BLOCKED: 'git merge (branch merge on the shared root)' would move the SHARED repo-root tree off main / detach HEAD / destroy uncommitted working-tree 
+ALLOW   F2v-ssh-plain-host-simple-payload
+ALLOW   F2v-ssh-o-flag-simple-payload
+ALLOW   F2v-ssh-o-flag-payload-nested-dquote
+ALLOW   F1v-timeout-ssh-literal-host
+ALLOW   F1v-timeout-ssh-var-host
+ALLOW   F1v-echo-quoted-then-ssh
+BLOCK   C1-root-checkout-b-MUSTBLOCK
+        why: BLOCKED: 'git checkout -b' would move the SHARED repo-root tree off main / detach HEAD / destroy uncommitted working-tree state. The repo root is the 
+BLOCK   C2-root-merge-MUSTBLOCK
+        why: BLOCKED: 'git merge (branch merge on the shared root)' would move the SHARED repo-root tree off main / detach HEAD / destroy uncommitted working-tree 
+BLOCK   C3-cd-root-newline-merge-MUSTBLOCK
+        why: BLOCKED: 'git merge (branch merge on the shared root)' would move the SHARED repo-root tree off main / detach HEAD / destroy uncommitted working-tree 
+
+=== SUMMARY ===
+  BLOCK   F1-1739-timeout-ssh-varhost
+  ALLOW   F2-2091-ssh-o-flag-nested-quotes
+  BLOCK   F3-1491-WT-cd-newline-latch
+  BLOCK   F3v-newline->&&  (latch across &&)
+  BLOCK   F3v-newline-only-2-clauses
+  BLOCK   F3v-literal-cd-newline
+  ALLOW   F2v-ssh-plain-host-simple-payload
+  ALLOW   F2v-ssh-o-flag-simple-payload
+  ALLOW   F2v-ssh-o-flag-payload-nested-dquote
+  ALLOW   F1v-timeout-ssh-literal-host
+  ALLOW   F1v-timeout-ssh-var-host
+  ALLOW   F1v-echo-quoted-then-ssh
+  BLOCK   C1-root-checkout-b-MUSTBLOCK
+  BLOCK   C2-root-merge-MUSTBLOCK
+  BLOCK   C3-cd-root-newline-merge-MUSTBLOCK

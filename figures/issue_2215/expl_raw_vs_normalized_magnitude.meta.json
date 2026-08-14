@@ -1,0 +1,693 @@
+{
+  "commit": "f6e6ab50",
+  "render_id": "4705e49434da4936",
+  "git_commit": "f6e6ab50",
+  "git_dirty": false,
+  "created": "2026-08-10T10:33:15Z",
+  "figsize": [
+    9.6,
+    4.4
+  ],
+  "points": [
+    {
+      "carrier-shift yardstick (median)": 49.670645298995375,
+      "median context-vector shift": 57.01809079277734,
+      "label": "conflict format fwd",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 49.670645298995375,
+      "median context-vector shift": 57.01809079277734,
+      "label": "conflict format fwd",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 51.83471459151404,
+      "median context-vector shift": 49.70086919162221,
+      "label": "conflict persona fwd",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 51.83471459151404,
+      "median context-vector shift": 49.70086919162221,
+      "label": "conflict persona fwd",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 53.737680250887315,
+      "median context-vector shift": 31.385591179103606,
+      "label": "constraint knowledge",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 64.25626781691355,
+      "median context-vector shift": 12.350488101443133,
+      "label": "demo format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 61.74538259642099,
+      "median context-vector shift": 22.66111714898102,
+      "label": "demo persona",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 46.49006376402246,
+      "median context-vector shift": 9.140275234524587,
+      "label": "fact assistant animal",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 56.45818917670591,
+      "median context-vector shift": 4.275344492462384,
+      "label": "fact novel queried",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 65.38145602270245,
+      "median context-vector shift": 6.309395394051398,
+      "label": "fact user name",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 61.971948441443686,
+      "median context-vector shift": 8.509211555062787,
+      "label": "filler swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 29.808189369601106,
+      "median context-vector shift": 47.06169890415164,
+      "label": "icl task mapping",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 48.30446230570425,
+      "median context-vector shift": 66.67361426426021,
+      "label": "instr format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 55.20558139548682,
+      "median context-vector shift": 43.689359019622046,
+      "label": "instr language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 61.351589844332466,
+      "median context-vector shift": 30.14755989127825,
+      "label": "language implied",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 53.518471045944075,
+      "median context-vector shift": 4.471661551305571,
+      "label": "list numeric detail",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 44.17164430736838,
+      "median context-vector shift": 8.465042465787283,
+      "label": "load fact assistant animal l3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 44.1317073113781,
+      "median context-vector shift": 7.837013836784575,
+      "label": "load fact assistant animal l5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 64.30287962885144,
+      "median context-vector shift": 6.268293486674457,
+      "label": "load fact user name l3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 64.00500569221404,
+      "median context-vector shift": 6.254355907101312,
+      "label": "load fact user name l5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 45.312122079541396,
+      "median context-vector shift": 62.24819014830325,
+      "label": "load instr format l3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 44.86613473719056,
+      "median context-vector shift": 59.424502133331586,
+      "label": "load instr format l5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 47.17339039336771,
+      "median context-vector shift": 65.24721329563928,
+      "label": "persona prompted",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 63.74080469312614,
+      "median context-vector shift": 21.077200984219175,
+      "label": "persona role header",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 54.58560117398466,
+      "median context-vector shift": 30.029409236433487,
+      "label": "prior topic",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 65.99471028244031,
+      "median context-vector shift": 64.19847769995694,
+      "label": "query content",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 62.02668447604795,
+      "median context-vector shift": 60.18441974592098,
+      "label": "reasoning style",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 66.16894482880132,
+      "median context-vector shift": 4.091546983986289,
+      "label": "recency fact user name d3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 64.22491153267573,
+      "median context-vector shift": 3.0009096941803763,
+      "label": "recency fact user name d5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 54.28342093330443,
+      "median context-vector shift": 50.08337296229962,
+      "label": "recency instr format d3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 54.161244818879986,
+      "median context-vector shift": 39.323172518727205,
+      "label": "recency instr format d5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 53.614270374783494,
+      "median context-vector shift": 57.77693324266272,
+      "label": "recency persona prompted d3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 54.86618362968615,
+      "median context-vector shift": 48.21380341550644,
+      "label": "recency persona prompted d5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 55.44917629192617,
+      "median context-vector shift": 21.447267491267933,
+      "label": "recency prior topic d3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 47.56690686082989,
+      "median context-vector shift": 7.583569028636971,
+      "label": "recency prior topic d5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 44.869346764843655,
+      "median context-vector shift": 38.9499617665467,
+      "label": "refusal boundary",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 55.995142538079214,
+      "median context-vector shift": 13.456953437068059,
+      "label": "user emotion",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 54.67807743468553,
+      "median context-vector shift": 35.262121445301865,
+      "label": "user expertise",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "carrier-shift yardstick (median)": 63.68621072154974,
+      "median context-vector shift": 48.4749828267482,
+      "label": "verbosity",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "split-half draw-noise floor (median)": 6.703813054030267,
+      "median answer-vector shift": 18.29226969282916,
+      "label": "conflict format fwd",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 6.703813054030267,
+      "median answer-vector shift": 18.29226969282916,
+      "label": "conflict format fwd",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 7.393992378522741,
+      "median answer-vector shift": 24.888179809053547,
+      "label": "conflict persona fwd",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 7.393992378522741,
+      "median answer-vector shift": 24.888179809053547,
+      "label": "conflict persona fwd",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 6.134432291945109,
+      "median answer-vector shift": 13.358365917960427,
+      "label": "constraint knowledge",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 5.503675058246707,
+      "median answer-vector shift": 4.344804710860181,
+      "label": "demo format",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 6.7527550274510935,
+      "median answer-vector shift": 6.187437656989172,
+      "label": "demo persona",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 8.086295173204643,
+      "median answer-vector shift": 14.662089125049466,
+      "label": "fact assistant animal",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 4.824699343992465,
+      "median answer-vector shift": 6.172141973711592,
+      "label": "fact novel queried",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 7.174957544959808,
+      "median answer-vector shift": 7.330427641007374,
+      "label": "fact user name",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 7.253709552768746,
+      "median answer-vector shift": 5.578670667056759,
+      "label": "filler swap",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 0.7490807935450532,
+      "median answer-vector shift": 37.25464989273924,
+      "label": "icl task mapping",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 5.945742660921418,
+      "median answer-vector shift": 17.881568868409005,
+      "label": "instr format",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 6.213434069640364,
+      "median answer-vector shift": 23.26966216312035,
+      "label": "instr language",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 7.055181563203853,
+      "median answer-vector shift": 16.648431672907094,
+      "label": "language implied",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 4.402818085788462,
+      "median answer-vector shift": 8.704380323381688,
+      "label": "list numeric detail",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 7.5381716496750615,
+      "median answer-vector shift": 15.234096780837167,
+      "label": "load fact assistant animal l3",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 7.730332037635416,
+      "median answer-vector shift": 15.768491064940193,
+      "label": "load fact assistant animal l5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 7.460319666255327,
+      "median answer-vector shift": 8.299129657043512,
+      "label": "load fact user name l3",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 7.894917266922302,
+      "median answer-vector shift": 7.828495188461263,
+      "label": "load fact user name l5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 6.258736808720038,
+      "median answer-vector shift": 13.926061028759285,
+      "label": "load instr format l3",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 6.2349849004733935,
+      "median answer-vector shift": 13.241714248454702,
+      "label": "load instr format l5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 6.769934826938558,
+      "median answer-vector shift": 32.43934469402738,
+      "label": "persona prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 6.025165995577257,
+      "median answer-vector shift": 5.127702760912754,
+      "label": "persona role header",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 5.132998688621552,
+      "median answer-vector shift": 32.81339085440149,
+      "label": "prior topic",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 6.8075039662428996,
+      "median answer-vector shift": 43.026734541419515,
+      "label": "query content",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 7.021167151087416,
+      "median answer-vector shift": 22.212987838302794,
+      "label": "reasoning style",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 7.754825786775074,
+      "median answer-vector shift": 7.543125204580795,
+      "label": "recency fact user name d3",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 7.726365401571717,
+      "median answer-vector shift": 6.712964890092032,
+      "label": "recency fact user name d5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 6.628886982173751,
+      "median answer-vector shift": 13.254212952521875,
+      "label": "recency instr format d3",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 5.864418598181398,
+      "median answer-vector shift": 11.959765704395377,
+      "label": "recency instr format d5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 6.463357270100876,
+      "median answer-vector shift": 21.71370186528695,
+      "label": "recency persona prompted d3",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 6.499671691167079,
+      "median answer-vector shift": 18.164397167146443,
+      "label": "recency persona prompted d5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 6.69855742836653,
+      "median answer-vector shift": 28.116485395271216,
+      "label": "recency prior topic d3",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 7.333284514639911,
+      "median answer-vector shift": 6.0221090043997325,
+      "label": "recency prior topic d5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 5.406155372422835,
+      "median answer-vector shift": 9.350116683289103,
+      "label": "refusal boundary",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 5.827628610657789,
+      "median answer-vector shift": 5.208025722791996,
+      "label": "user emotion",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 6.221175125715401,
+      "median answer-vector shift": 19.568105677837217,
+      "label": "user expertise",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half draw-noise floor (median)": 6.654634188765949,
+      "median answer-vector shift": 28.898429758066282,
+      "label": "verbosity",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 78,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "context vector, context-end",
+        "xlabel": "carrier-shift yardstick (median)",
+        "ylabel": "median context-vector shift",
+        "annotations": [
+          "conflict format fwd",
+          "conflict format rev",
+          "conflict persona fwd",
+          "conflict persona rev",
+          "constraint knowledge",
+          "demo format",
+          "demo persona",
+          "fact assistant animal",
+          "fact novel queried",
+          "fact user name",
+          "filler swap",
+          "icl task mapping",
+          "instr format",
+          "instr language",
+          "language implied",
+          "list numeric detail",
+          "load fact assistant animal l3",
+          "load fact assistant animal l5",
+          "load fact user name l3",
+          "load fact user name l5",
+          "load instr format l3",
+          "load instr format l5",
+          "persona prompted",
+          "persona role header",
+          "prior topic",
+          "query content",
+          "reasoning style",
+          "recency fact user name d3",
+          "recency fact user name d5",
+          "recency instr format d3",
+          "recency instr format d5",
+          "recency persona prompted d3",
+          "recency persona prompted d5",
+          "recency prior topic d3",
+          "recency prior topic d5",
+          "refusal boundary",
+          "user emotion",
+          "user expertise",
+          "verbosity"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ]
+      },
+      {
+        "title_left": "answer vector, tail-inclusive mean",
+        "xlabel": "split-half draw-noise floor (median)",
+        "ylabel": "median answer-vector shift",
+        "annotations": [
+          "conflict format fwd",
+          "conflict format rev",
+          "conflict persona fwd",
+          "conflict persona rev",
+          "constraint knowledge",
+          "demo format",
+          "demo persona",
+          "fact assistant animal",
+          "fact novel queried",
+          "fact user name",
+          "filler swap",
+          "icl task mapping",
+          "instr format",
+          "instr language",
+          "language implied",
+          "list numeric detail",
+          "load fact assistant animal l3",
+          "load fact assistant animal l5",
+          "load fact user name l3",
+          "load fact user name l5",
+          "load instr format l3",
+          "load instr format l5",
+          "persona prompted",
+          "persona role header",
+          "prior topic",
+          "query content",
+          "reasoning style",
+          "recency fact user name d3",
+          "recency fact user name d5",
+          "recency instr format d3",
+          "recency instr format d5",
+          "recency persona prompted d3",
+          "recency persona prompted d5",
+          "recency prior topic d3",
+          "recency prior topic d5",
+          "refusal boundary",
+          "user emotion",
+          "user expertise",
+          "verbosity"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

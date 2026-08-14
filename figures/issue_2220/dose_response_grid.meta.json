@@ -1,0 +1,887 @@
+{
+  "commit": "a7a28054",
+  "render_id": "14d7f87f4b1f4c95",
+  "git_commit": "a7a28054",
+  "git_dirty": false,
+  "created": "2026-08-11T18:59:19Z",
+  "figsize": [
+    10.5,
+    7.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Map read (context arm)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.5,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Map read (context arm)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "\u0394 judged behavior rate": 0.1,
+      "series": "Map read (context arm)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Map read (context arm)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Map read (context arm)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Map read (prefix arm)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.5,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Map read (prefix arm)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Map read (prefix arm)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Map read (prefix arm)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Map read (prefix arm)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Persona vector",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.5,
+      "\u0394 judged behavior rate": 0.7666666666666667,
+      "series": "Persona vector",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "\u0394 judged behavior rate": 0.8,
+      "series": "Persona vector",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "\u0394 judged behavior rate": 1.0,
+      "series": "Persona vector",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "\u0394 judged behavior rate": 1.0,
+      "series": "Persona vector",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Raw mean-difference",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.5,
+      "\u0394 judged behavior rate": 0.27586206896551724,
+      "series": "Raw mean-difference",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "\u0394 judged behavior rate": 0.5666666666666667,
+      "series": "Raw mean-difference",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "\u0394 judged behavior rate": 0.13333333333333333,
+      "series": "Raw mean-difference",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "\u0394 judged behavior rate": 0.7666666666666667,
+      "series": "Raw mean-difference",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Shuffled-label map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.5,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Shuffled-label map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Shuffled-label map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Shuffled-label map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Shuffled-label map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Random",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.5,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Random",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Random",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Random",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Random",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "series": "Map read (context arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.5,
+      "y": 0.03333333333333333,
+      "series": "Map read (context arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "series": "Map read (context arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "series": "Map read (prefix arm)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.5,
+      "y": 0.0,
+      "series": "Map read (prefix arm)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "series": "Map read (prefix arm)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "series": "Map read (prefix arm)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "series": "Persona vector",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.5,
+      "y": 0.2692307692307692,
+      "series": "Persona vector",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "y": 0.5555555555555556,
+      "series": "Persona vector",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "series": "Persona vector",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "series": "Raw mean-difference",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.5,
+      "y": 0.03333333333333333,
+      "series": "Raw mean-difference",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "series": "Raw mean-difference",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "series": "Raw mean-difference",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "series": "Shuffled-label map",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.5,
+      "y": 0.0,
+      "series": "Shuffled-label map",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "series": "Shuffled-label map",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "series": "Random",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.5,
+      "y": 0.0,
+      "series": "Random",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "series": "Random",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "series": "Random",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 0.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Map read (context arm)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 0.5,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Map read (context arm)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 1.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Map read (context arm)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 2.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Map read (context arm)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 4.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Map read (context arm)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 0.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Map read (prefix arm)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 0.5,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Map read (prefix arm)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 1.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Map read (prefix arm)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 2.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Map read (prefix arm)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 4.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Map read (prefix arm)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 0.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Persona vector",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 0.5,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Persona vector",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 1.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Persona vector",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 2.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Persona vector",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 4.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Persona vector",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 0.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Raw mean-difference",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 0.5,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Raw mean-difference",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 1.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Raw mean-difference",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 2.0,
+      "\u0394 judged behavior rate": 0.03333333333333333,
+      "series": "Raw mean-difference",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 4.0,
+      "\u0394 judged behavior rate": 0.4,
+      "series": "Raw mean-difference",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 0.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Shuffled-label map",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 0.5,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Shuffled-label map",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 1.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Shuffled-label map",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 2.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Shuffled-label map",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 4.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Shuffled-label map",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 0.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Random",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 0.5,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Random",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 1.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Random",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 2.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Random",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 4.0,
+      "\u0394 judged behavior rate": 0.0,
+      "series": "Random",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 0.0,
+      "y": 0.0,
+      "series": "Map read (context arm)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 0.5,
+      "y": 0.0,
+      "series": "Map read (context arm)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 1.0,
+      "y": 0.0,
+      "series": "Map read (context arm)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 2.0,
+      "y": 0.0,
+      "series": "Map read (context arm)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 4.0,
+      "y": 0.038461538461538464,
+      "series": "Map read (context arm)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 0.0,
+      "y": 0.0,
+      "series": "Map read (prefix arm)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 0.5,
+      "y": 0.0,
+      "series": "Map read (prefix arm)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 1.0,
+      "y": 0.0,
+      "series": "Map read (prefix arm)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 2.0,
+      "y": 0.0,
+      "series": "Map read (prefix arm)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 4.0,
+      "y": 0.0,
+      "series": "Map read (prefix arm)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 0.0,
+      "y": 0.0,
+      "series": "Persona vector",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 0.5,
+      "y": 0.06666666666666667,
+      "series": "Persona vector",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 1.0,
+      "y": 0.0,
+      "series": "Persona vector",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 2.0,
+      "y": 0.03571428571428571,
+      "series": "Persona vector",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 4.0,
+      "y": 0.07692307692307693,
+      "series": "Persona vector",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 0.0,
+      "y": 0.0,
+      "series": "Raw mean-difference",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 0.5,
+      "y": 0.03333333333333333,
+      "series": "Raw mean-difference",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 1.0,
+      "y": 0.0,
+      "series": "Raw mean-difference",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 2.0,
+      "y": 0.0,
+      "series": "Raw mean-difference",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 4.0,
+      "y": 0.0,
+      "series": "Raw mean-difference",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 0.0,
+      "y": 0.0,
+      "series": "Shuffled-label map",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 0.5,
+      "y": 0.0,
+      "series": "Shuffled-label map",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 1.0,
+      "y": 0.0,
+      "series": "Shuffled-label map",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 2.0,
+      "y": 0.0,
+      "series": "Shuffled-label map",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 4.0,
+      "y": 0.0,
+      "series": "Shuffled-label map",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 0.0,
+      "y": 0.0,
+      "series": "Random",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 0.5,
+      "y": 0.0,
+      "series": "Random",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 1.0,
+      "y": 0.0,
+      "series": "Random",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 2.0,
+      "y": 0.0,
+      "series": "Random",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "dose c  (injection norm = c \u00d7 median residual norm)": 4.0,
+      "y": 0.0,
+      "series": "Random",
+      "_kind": "line",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 112,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "evil \u2014 injected at answer tokens (layer 14)",
+        "ylabel": "\u0394 judged behavior rate",
+        "legend_labels": [
+          "Map read (context arm)",
+          "Map read (prefix arm)",
+          "Persona vector",
+          "Raw mean-difference",
+          "Shuffled-label map",
+          "Random"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "sycophancy \u2014 injected at answer tokens (layer 18)"
+      },
+      {
+        "title_left": "evil \u2014 injected at context token (layer 14)",
+        "xlabel": "dose c  (injection norm = c \u00d7 median residual norm)",
+        "ylabel": "\u0394 judged behavior rate",
+        "xticklabels": [
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0",
+          "3.5",
+          "4.0",
+          "4.5"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "sycophancy \u2014 injected at context token (layer 18)",
+        "xlabel": "dose c  (injection norm = c \u00d7 median residual norm)",
+        "xticklabels": [
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0",
+          "3.5",
+          "4.0",
+          "4.5"
+        ]
+      }
+    ],
+    "series": [
+      "Map read (context arm)",
+      "Map read (prefix arm)",
+      "Persona vector",
+      "Raw mean-difference",
+      "Shuffled-label map",
+      "Random"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

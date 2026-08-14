@@ -92,6 +92,10 @@ FU1_LABEL = "fu1-margin-qwen"
 # 300 recovered 98.8% in the dropclosure refresh (free_analysis meta
 # refresh_max_tokens=300). Tier-1 in-loop reads are NOT changed (dose-selection
 # parity with the other cells).
+# JUSTIFIED DEVIATION from llm-judging rule 23's 1024 floor (#2063): completed-run
+# instrument constant; parity/metadata consumers: issue1090_fu2.py,
+# issue1090_fu2_judge_fold.py, issue1112_dispatch.py, issue1315_rejudge_529.py.
+# Fresh waves owe >=1024.
 JUDGE_MAX_TOKENS_FU1 = 300
 # The c5 record was never retuned to the amendment's fence-maximal 2.0 budget
 # (recorded oversample_mult=1.0, kept 19/36 >= near-miss floor 18); the

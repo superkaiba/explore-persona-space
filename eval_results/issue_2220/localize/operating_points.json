@@ -1,0 +1,224 @@
+{
+  "evil": {
+    "mapread_ctx__context": {
+      "layer": 14,
+      "c": 0.5,
+      "delta_rate": 0.0,
+      "coherence_rate": 1.0
+    },
+    "mapread_ctx__answer": {
+      "layer": 14,
+      "c": 1.0,
+      "delta_rate": 0.1,
+      "coherence_rate": 0.9
+    },
+    "mapread_prefix__context": {
+      "layer": 14,
+      "c": 0.5,
+      "delta_rate": 0.0,
+      "coherence_rate": 1.0
+    },
+    "mapread_prefix__answer": {
+      "layer": 14,
+      "c": 0.5,
+      "delta_rate": 0.0,
+      "coherence_rate": 1.0
+    },
+    "rb__context": {
+      "layer": 14,
+      "c": 0.5,
+      "delta_rate": 0.0,
+      "coherence_rate": 1.0
+    },
+    "rb__answer": {
+      "layer": 14,
+      "c": 2.0,
+      "delta_rate": 1.0,
+      "coherence_rate": 1.0
+    },
+    "rawmeandiff__context": {
+      "layer": 14,
+      "c": 4.0,
+      "delta_rate": 0.4,
+      "coherence_rate": 1.0
+    },
+    "rawmeandiff__answer": {
+      "layer": 14,
+      "c": 4.0,
+      "delta_rate": 0.7666666666666667,
+      "coherence_rate": 1.0
+    },
+    "shuffled__context": {
+      "layer": 14,
+      "c": 0.5,
+      "delta_rate": 0.0,
+      "coherence_rate": 1.0
+    },
+    "shuffled__answer": {
+      "layer": 14,
+      "c": 0.5,
+      "delta_rate": 0.0,
+      "coherence_rate": 1.0
+    },
+    "random__context": {
+      "layer": 14,
+      "c": 0.5,
+      "delta_rate": 0.0,
+      "coherence_rate": 1.0
+    },
+    "random__answer": {
+      "layer": 14,
+      "c": 0.5,
+      "delta_rate": 0.0,
+      "coherence_rate": 0.9
+    }
+  },
+  "hallucination": {
+    "mapread_ctx__context": {
+      "layer": 18,
+      "c": 0.5,
+      "delta_rate": 0.10000000000000009,
+      "coherence_rate": 1.0
+    },
+    "mapread_ctx__answer": {
+      "layer": 14,
+      "c": 1.0,
+      "delta_rate": 0.13333333333333341,
+      "coherence_rate": 1.0
+    },
+    "mapread_prefix__context": {
+      "layer": 20,
+      "c": 1.0,
+      "delta_rate": 0.10000000000000009,
+      "coherence_rate": 1.0
+    },
+    "mapread_prefix__answer": {
+      "layer": 14,
+      "c": 0.5,
+      "delta_rate": 0.2333333333333334,
+      "coherence_rate": 1.0
+    },
+    "rb__context": {
+      "layer": 18,
+      "c": 0.5,
+      "delta_rate": 0.13333333333333341,
+      "coherence_rate": 1.0
+    },
+    "rb__answer": {
+      "layer": 14,
+      "c": 0.5,
+      "delta_rate": 0.2666666666666667,
+      "coherence_rate": 1.0
+    },
+    "rawmeandiff__context": {
+      "layer": 20,
+      "c": 4.0,
+      "delta_rate": 0.16666666666666674,
+      "coherence_rate": 1.0
+    },
+    "rawmeandiff__answer": {
+      "layer": 20,
+      "c": 0.5,
+      "delta_rate": 0.2666666666666667,
+      "coherence_rate": 1.0
+    },
+    "shuffled__context": {
+      "layer": 18,
+      "c": 4.0,
+      "delta_rate": 0.16666666666666674,
+      "coherence_rate": 1.0
+    },
+    "shuffled__answer": {
+      "layer": 20,
+      "c": 1.0,
+      "delta_rate": 0.16321839080459777,
+      "coherence_rate": 1.0
+    },
+    "random__context": {
+      "layer": 14,
+      "c": 1.0,
+      "delta_rate": 0.06666666666666676,
+      "coherence_rate": 1.0
+    },
+    "random__answer": {
+      "layer": 18,
+      "c": 1.0,
+      "delta_rate": 0.16666666666666674,
+      "coherence_rate": 1.0
+    }
+  },
+  "sycophancy": {
+    "mapread_ctx__context": {
+      "layer": 18,
+      "c": 4.0,
+      "delta_rate": 0.038461538461538464,
+      "coherence_rate": 0.8
+    },
+    "mapread_ctx__answer": {
+      "layer": 18,
+      "c": 0.5,
+      "delta_rate": 0.03333333333333333,
+      "coherence_rate": 1.0
+    },
+    "mapread_prefix__context": {
+      "layer": 14,
+      "c": 0.5,
+      "delta_rate": 0.0,
+      "coherence_rate": 1.0
+    },
+    "mapread_prefix__answer": {
+      "layer": 14,
+      "c": 0.5,
+      "delta_rate": 0.0,
+      "coherence_rate": 1.0
+    },
+    "rb__context": {
+      "layer": 18,
+      "c": 4.0,
+      "delta_rate": 0.07692307692307693,
+      "coherence_rate": 0.9
+    },
+    "rb__answer": {
+      "layer": 18,
+      "c": 1.0,
+      "delta_rate": 0.5555555555555556,
+      "coherence_rate": 1.0
+    },
+    "rawmeandiff__context": {
+      "layer": 18,
+      "c": 0.5,
+      "delta_rate": 0.03333333333333333,
+      "coherence_rate": 0.9
+    },
+    "rawmeandiff__answer": {
+      "layer": 14,
+      "c": 1.0,
+      "delta_rate": 0.4,
+      "coherence_rate": 1.0
+    },
+    "shuffled__context": {
+      "layer": 20,
+      "c": 4.0,
+      "delta_rate": 0.03333333333333333,
+      "coherence_rate": 0.9
+    },
+    "shuffled__answer": {
+      "layer": 14,
+      "c": 0.5,
+      "delta_rate": 0.0,
+      "coherence_rate": 1.0
+    },
+    "random__context": {
+      "layer": 14,
+      "c": 0.5,
+      "delta_rate": 0.0,
+      "coherence_rate": 1.0
+    },
+    "random__answer": {
+      "layer": 14,
+      "c": 0.5,
+      "delta_rate": 0.0,
+      "coherence_rate": 1.0
+    }
+  }
+}

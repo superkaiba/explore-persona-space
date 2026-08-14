@@ -166,7 +166,14 @@ def _prepare_prefill(row: dict, variant: str, form: str) -> dict | None:
 
 
 def _splice_generated(base: dict, answer: str, form: str) -> dict | None:
-    """Render the generated answer under `form`; return the row-out dict."""
+    """Render the generated answer under `form`; return the row-out dict.
+
+    Phase C answers are always CONTINUATIONS of the form's own prefill, so the
+    `indirect_continuation` opt-in is passed unconditionally: it legalizes the
+    `indirect` splice (the generated text is already reported speech) and is
+    inert for every other form. Phase B (inserted, verbatim answers) never
+    passes it — `indirect` keeps its deterministic drop there.
+    """
     if not answer:
         return None
     try:
@@ -176,6 +183,7 @@ def _splice_generated(base: dict, answer: str, form: str) -> dict | None:
             form,
             base["character"],
             attrib_template=base["attrib_template"],
+            indirect_continuation=True,
         )
     except (ValueError, NotImplementedError) as exc:
         _log(f"splice skip {base.get('scaffold_id')}: {exc}")

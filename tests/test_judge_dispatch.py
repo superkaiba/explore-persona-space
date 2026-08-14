@@ -67,6 +67,7 @@ class FakeBatchClient:
         shuffle: bool = False,
         create_exc: Exception | None = None,
         retrieve_exc: Exception | None = None,
+        probe_exc: Exception | None = None,
         request_validator=None,
     ):
         self.judge_text_for = judge_text_for or (lambda cid: JUDGE_TEXT)
@@ -76,6 +77,7 @@ class FakeBatchClient:
         self.shuffle = shuffle
         self.create_exc = create_exc
         self.retrieve_exc = retrieve_exc
+        self.probe_exc = probe_exc
         self.request_validator = request_validator
         self.submitted: dict[str, list[dict]] = {}
         self.create_calls = 0
@@ -133,6 +135,8 @@ class FakeBatchClient:
         class _RawMessages:
             def create(_self, **kwargs):
                 client.probe_calls += 1
+                if client.probe_exc is not None:
+                    raise client.probe_exc
                 headers: dict[str, str] = {}
                 if client.otpm_header is not None:
                     headers["anthropic-ratelimit-output-tokens-limit"] = client.otpm_header
@@ -942,6 +946,41 @@ def test_probe_otpm_limit(tmp_path, caplog):
     assert len(result) == 500
 
 
+def test_probe_otpm_limit_429_takes_assumed_tier_path(caplog):
+    """A 429'd probe returns None (assumed Tier-4), never kills the run (#2254).
+
+    Under a sustained org-wide output-TPM storm the production requests
+    survive via client backoff + per-row retries; the probe propagating its
+    RateLimitError killed four consecutive judge launches at t=0. Only the
+    429 shape is absorbed — any OTHER API error still propagates fail-loud.
+    """
+    import anthropic
+    import httpx
+
+    req = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+    rate_limited = anthropic.RateLimitError(
+        "429 rate limited", response=httpx.Response(429, request=req), body=None
+    )
+    client = FakeBatchClient(probe_exc=rate_limited)
+    with caplog.at_level(logging.WARNING):
+        assert probe_otpm_limit(client, "m") is None
+    assert client.probe_calls == 1
+    assert "429" in caplog.text
+    assert "assuming" in caplog.text  # names the assumed-tier fallback
+
+    # A non-429 APIStatusError (500) keeps propagating.
+    server_err = anthropic.InternalServerError(
+        "boom", response=httpx.Response(500, request=req), body=None
+    )
+    with pytest.raises(anthropic.InternalServerError):
+        probe_otpm_limit(FakeBatchClient(probe_exc=server_err), "m")
+
+    # A transport-level APIConnectionError (not an APIStatusError) propagates too.
+    conn_err = anthropic.APIConnectionError(request=req)
+    with pytest.raises(anthropic.APIConnectionError):
+        probe_otpm_limit(FakeBatchClient(probe_exc=conn_err), "m")
+
+
 # ── 20: strict batch request shape ───────────────────────────────────────────
 
 
@@ -1546,6 +1585,54 @@ def test_multiorg_reduce_flags_transport_dispatch_results(monkeypatch):
     assert "transport" not in results["cid_term"]
     assert results["cid_ok"] == {"aligned": 90, "coherent": 95, "reasoning": "ok"}
     assert seen.get("meta_composes") is True  # the [A1] compose pin actually ran
+
+
+def test_multiorg_error_dict_carries_stop_reason_for_api_refusal_classification(monkeypatch):
+    """D7-14 (#2206): the multi-org sync reduce attaches the DispatchResult's
+    ``stop_reason`` to error dicts, so an api_dispatch-minted empty-response
+    record (an API-level refusal) classifies as the #2151 api-refusal class —
+    NOT transport (rule 28: never blended into transport tallies)."""
+    from explore_persona_space.eval.judge_dispatch import (
+        _default_error_dict,
+        _judge_items_sync_multiorg,
+    )
+    from explore_persona_space.llm import api_dispatch
+
+    fake_results = {
+        "cid_refusal": api_dispatch.DispatchResult(
+            "cid_refusal",
+            error=True,
+            reason=(
+                "empty_response: no non-empty text block "
+                "(stop_reason=refusal, blocks=['thinking'], org=a, attempt 5)"
+            ),
+            category=api_dispatch.RESULT_EMPTY_RESPONSE,
+            stop_reason="refusal",
+        ),
+    }
+
+    async def fake_dispatch_calls(
+        items, *, model, build_request, parse_response, parse_response_meta, cost_pref, force_path
+    ):
+        return {it.item_id: fake_results[it.item_id] for it in items}
+
+    monkeypatch.setattr(api_dispatch, "dispatch_calls", fake_dispatch_calls)
+
+    results = asyncio.run(
+        _judge_items_sync_multiorg(
+            [("cid_refusal", "q1", "c1", "u1")],
+            judge_model="claude-sonnet-4-5-20250929",
+            judge_system_prompt="rubric",
+            max_tokens=64,
+            error_dict_factory=_default_error_dict,
+        )
+    )
+    score = results["cid_refusal"]
+    assert score["error"] is True
+    assert score["stop_reason"] == "refusal"
+    assert "transport" not in score  # RESULT_EMPTY_RESPONSE is NOT transportish
+    assert batch_judge.is_api_refusal_error_dict(score) is True  # the #2151 composition
+    assert batch_judge.is_transport_error_dict(score) is False
 
 
 # ── custom_id grammar validation at dispatch entry (#1795) ───────────────────

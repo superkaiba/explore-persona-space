@@ -17,7 +17,7 @@ TWO subcommands in one driver (launched pod-side by ``scripts/issue1090_fu3_disp
   ``issue1090_fu3_dispatch.sh`` after this process exits 0.
 
 - ``cell`` — one fu3 cell end-to-end: datagen -> train (+ per-rung Tier-1 judged
-  dose reads at max_tokens=300, llm-judging rule 23) -> Tier-2 generation at the
+  dose reads at max_tokens=1024, llm-judging rule 23) -> Tier-2 generation at the
   cell's OWN training context -> bystander-panel generation (plan §D6 fixed panel;
   source_context==bystander_context rows recorded distinctly) -> tf-margin
   companion (behavior-level fixed pools, staged from the round-1 v4 datagen) ->
@@ -83,7 +83,9 @@ logger = logging.getLogger("issue1090.fu3")
 ISSUE = 1090
 DATA_PREFIX_FU3 = "issue1090_fu3"  # distinct from the round-1 DATA_PREFIX
 MODEL_PREFIX_FU3 = "adapters/issue1090_fu3"
-JUDGE_MAX_TOKENS = 300  # llm-judging rule 23 — the #1090 truncation fix, EXPLICIT everywhere
+# llm-judging rule 23 floor (single-rationale; raised from 300, #2063) — the #1090
+# truncation fix, EXPLICIT everywhere.
+JUDGE_MAX_TOKENS = 1024
 # fu3 crash-fix 2 (launch-3 yield-miss recalibration): DEFAULT positive
 # request-budget multipliers, grounded in the launch-3 offline yield replay
 # (scripts/issue1090_fu3_yield_replay.py over the 23 uploaded datagen sidecars):

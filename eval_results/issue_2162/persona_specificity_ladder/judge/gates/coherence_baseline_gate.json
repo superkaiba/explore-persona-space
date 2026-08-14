@@ -1,0 +1,31 @@
+{
+  "passed": true,
+  "median": 100.0,
+  "frac_gt60": 0.95,
+  "n_kept": 420,
+  "n_dropped": 0,
+  "thresholds": {
+    "median_min": 80.0,
+    "gt60_frac_min": 0.9,
+    "coherence_threshold": 60.0
+  },
+  "repro": {
+    "git_commit": "addfe81f",
+    "git_dirty": false,
+    "script": "scripts/issue2094_judge.py"
+  },
+  "audits": {
+    "kind": "anchors",
+    "n_rows": 420,
+    "thresholds": {
+      "nonlatin_letter_frac": 0.05,
+      "dup_4gram_frac": 0.5
+    },
+    "flag_counts": {
+      "flag_empty": 0,
+      "flag_script_intrusion": 27,
+      "flag_repetition": 0
+    },
+    "path": "eval_results/issue_2162/persona_specificity_ladder/judge/audits/anchors.audit.jsonl"
+  }
+}

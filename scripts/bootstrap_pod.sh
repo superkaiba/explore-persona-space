@@ -18,7 +18,10 @@
 #                              not affect step 3 / .env distribution.
 #   ISSUE=<n>                  Issue whose committed artifact cones
 #                              (eval_results/issue_<n>, figures/issue_<n>) are
-#                              opened in the pod's cone sparse-checkout (#2051).
+#                              opened in the pod's cone sparse-checkout (#2051)
+#                              on top of the default cone set
+#                              `src scripts configs tests docs data` (tracked
+#                              data/ inputs joined the defaults in #2211).
 #                              Set by pod_lifecycle.py::_bootstrap (provision)
 #                              and derived from the pod name by
 #                              `pod.py bootstrap`. CONSUMED LOCALLY (captured
@@ -28,7 +31,8 @@
 #                              2026-08-04 #1739 code-only-cones bug.
 #   BOOTSTRAP_EXTRA_CONES=...  Space-separated extra sparse-checkout cone dirs
 #                              (repo-relative) for a pod that reads ANOTHER
-#                              issue's committed artifacts, e.g.
+#                              issue's committed artifacts (or any tracked dir
+#                              outside the default cones), e.g.
 #                              BOOTSTRAP_EXTRA_CONES="eval_results/issue_722".
 #                              Export before `pod.py provision` / `pod.py
 #                              bootstrap` (passed through via os.environ).
@@ -269,16 +273,18 @@ if [ -d $REMOTE_DIR/.git ]; then
         git config remote.origin.promisor true
         git config remote.origin.partialclonefilter blob:none
         git sparse-checkout init --cone 2>/dev/null || true
-        git sparse-checkout set src scripts configs tests docs 2>/dev/null || true
+        git sparse-checkout set src scripts configs tests docs data 2>/dev/null || true
     fi
-    # Per-issue / extra artifact cones — OUTSIDE the promisor-retrofit guard
-    # above, on purpose (#1739): that guard is false on every pod bootstrapped
-    # after #2051, so cone-setting nested inside it ran at most once per repo
-    # and a re-bootstrap could never open a new issue's cones. sparse-checkout
+    # Default 'data' cone + per-issue / extra artifact cones — OUTSIDE the
+    # promisor-retrofit guard above, on purpose (#1739): that guard is false
+    # on every pod bootstrapped after #2051, so cone-setting nested inside it
+    # ran at most once per repo and a re-bootstrap could never open a new
+    # issue's cones (nor gain the #2211 default 'data' cone). sparse-checkout
     # add is idempotent. ISSUE_VAL / EXTRA_CONES_VAL are baked in LOCALLY by
     # the driver above (ssh forwards no env vars). A legacy full (non-sparse)
     # checkout already has every path and is left untouched.
     if [ \"\$(git config --get core.sparseCheckout 2>/dev/null || true)\" = \"true\" ]; then
+        git sparse-checkout add data || echo \"WARN: sparse-checkout add data failed\" >&2
         if [ -n \"$ISSUE_VAL\" ]; then
             git sparse-checkout add \"eval_results/issue_$ISSUE_VAL\" \"figures/issue_$ISSUE_VAL\" || echo \"WARN: sparse-checkout add for issue $ISSUE_VAL failed\" >&2
         fi
@@ -320,22 +326,25 @@ else
     # Partial clone + cone sparse-checkout (#2051): the repo carries ~10.5GB /
     # 175k files of committed eval_results/figures/external artifacts a fresh pod
     # never reads. --filter=blob:none makes blobs promisor-fetched on demand, and
-    # cone sparse-checkout hides everything outside the CODE cones so uv sync /
-    # preflight / train.py / eval.py see only the code they need. On demand
-    # git will still fetch a blob when a file inside the cone is touched.
+    # cone sparse-checkout hides everything outside the CODE + tracked-data
+    # cones so uv sync / preflight / train.py / eval.py see only what they
+    # need. On demand git will still fetch a blob when a file inside the cone
+    # is touched.
     git config remote.origin.promisor true
     git config remote.origin.partialclonefilter blob:none
     git sparse-checkout init --cone
-    # Default cones: source, configs, tests, docs. A per-issue pod also opens
+    # Default cones: source, configs, tests, docs, plus tracked data/ —
+    # git-tracked experiment inputs, ~63 MB vs the ~10.5 GB a full checkout
+    # would pull (#2211). A per-issue pod also opens
     # its own eval_results/figures cones: ISSUE_VAL / EXTRA_CONES_VAL are
     # captured LOCALLY before step 4 and baked into this payload — a
     # remote-side, escaped ISSUE read is always empty (ssh forwards no env
     # vars; the #1739 bug). Workloads may still open further cones on demand with
     # git sparse-checkout add.
     if [ -n \"$ISSUE_VAL\" ]; then
-        git sparse-checkout set src scripts configs tests docs \"eval_results/issue_$ISSUE_VAL\" \"figures/issue_$ISSUE_VAL\"
+        git sparse-checkout set src scripts configs tests docs data \"eval_results/issue_$ISSUE_VAL\" \"figures/issue_$ISSUE_VAL\"
     else
-        git sparse-checkout set src scripts configs tests docs
+        git sparse-checkout set src scripts configs tests docs data
     fi
     if [ -n \"$EXTRA_CONES_VAL\" ]; then
         git sparse-checkout add $EXTRA_CONES_VAL
@@ -360,6 +369,9 @@ if [ \"\$(git config --get core.sparseCheckout 2>/dev/null || true)\" = \"true\"
     echo \"Sparse cones: \$(git sparse-checkout list 2>/dev/null | tr '\\n' ' ')\"
     if [ -n \"$ISSUE_VAL\" ] && ! git sparse-checkout list 2>/dev/null | grep -qx \"eval_results/issue_$ISSUE_VAL\"; then
         echo \"WARNING: issue-$ISSUE_VAL artifact cones MISSING from the sparse checkout — committed eval_results/figures for issue $ISSUE_VAL will be ABSENT on this pod and workloads reading them will crash FileNotFoundError. Remedy: cd $REMOTE_DIR && git sparse-checkout add eval_results/issue_$ISSUE_VAL figures/issue_$ISSUE_VAL\" >&2
+    fi
+    if ! git sparse-checkout list 2>/dev/null | grep -qx \"data\"; then
+        echo \"WARNING: default 'data' cone MISSING from the sparse checkout — git-tracked data/ inputs will be ABSENT on this pod and workloads reading them will crash FileNotFoundError (#2211). Remedy: cd $REMOTE_DIR && git sparse-checkout add data\" >&2
     fi
 else
     echo \"Sparse cones: (none — full checkout)\"
@@ -389,6 +401,14 @@ POD_INTENT_VAL="${POD_INTENT:-custom}"
 step 5 "Syncing Python environment (uv sync --locked; intent=$POD_INTENT_VAL)"
 ssh_cmd "export PATH=\"\$HOME/.local/bin:\$PATH\"
 cd /workspace/explore-persona-space
+# Dangling .venv symlink guard (#2278): /root is the container overlay and is
+# recreated on pod stop/resume, so a .venv symlink into /root (the overlay-venv
+# recovery for the MooseFS errno-116 trap) survives the stop as a DANGLING
+# link; without this guard the sync below fails on a link that points nowhere.
+if [ -L .venv ] && [ ! -e .venv ]; then
+    echo \"WARN: clearing dangling .venv symlink (overlay venv wiped by stop/resume)\" >&2
+    rm -f .venv
+fi
 uv sync --locked 2>&1 | tail -5
 echo \"Python: \$(python3 --version)\"
 echo \"Packages: \$(uv pip list 2>/dev/null | wc -l) installed\"
@@ -486,6 +506,28 @@ RC3EOF
     fi
 done
 
+# UV_PYTHON pin in the rc files (defense-in-depth for #2278, fail-soft):
+# interactive/login shells get uv interpreter discovery pinned to the venv
+# base interpreter so it never probes a PATH shim. Derived from the live venv
+# rather than hardcoded; skipped with a WARN when underivable. The
+# LOAD-BEARING fix is the uv-free /usr/local/bin/python shim below — this pin
+# cannot reach non-interactive SSH shells (rc files bail on the PS1 guard).
+# Separately guarded with grep -q (NOT grep -qF: the #1794 test extracts the
+# scripts sole grep -qF by first match).
+UV_PYTHON_BASE=""
+if [ -x /workspace/explore-persona-space/.venv/bin/python ]; then
+    UV_PYTHON_BASE="$(/workspace/explore-persona-space/.venv/bin/python -c "import sys; print(sys._base_executable or sys.base_prefix + \"/bin/python3\")")"
+fi
+if [ -n "$UV_PYTHON_BASE" ] && [ -x "$UV_PYTHON_BASE" ]; then
+    for f in /root/.bashrc /root/.profile; do
+        if ! grep -q "^export UV_PYTHON=" "$f" 2>/dev/null; then
+            echo "export UV_PYTHON=$UV_PYTHON_BASE" >> "$f"
+        fi
+    done
+else
+    echo "WARN: could not derive a base interpreter from the venv; skipping the UV_PYTHON rc pin" >&2
+fi
+
 # Append to project .env (for dotenv-loading subprocesses)
 ENV_FILE=/workspace/explore-persona-space/.env
 touch "$ENV_FILE"
@@ -546,22 +588,54 @@ ln -sf "$UV_BIN" /usr/local/bin/uv
 if [ -x "$UV_DIR/uvx" ]; then
     ln -sf "$UV_DIR/uvx" /usr/local/bin/uvx
 fi
-# `python` shim: forwards to the project venv via `uv run python` so that a
+# `python` shim: execs the project venv interpreter DIRECTLY so that a
 # bare `ssh pod "python ..."` resolves to the locked project interpreter.
+# The shim body must NEVER invoke uv (#2278): /usr/local/bin is first on the
+# default non-interactive-SSH PATH, so uv interpreter discovery executes this
+# shim as a candidate — a body that re-enters uv then blocks on the project
+# lock the parent `uv sync` already holds (silent futex deadlock, stacked
+# get_interpreter_info probes, zero output). SECOND WRITER of this shim:
+# pod_lifecycle._UV_RESTORE_SNIPPET (the pod.py resume path) — keep the two
+# bodies in sync; tests/test_bootstrap_pod_path.py scans BOTH heredocs.
 cat > /usr/local/bin/python <<"PYEOF"
 #!/bin/bash
-# Bootstrap-installed shim: run the project venv python via uv.
+# Bootstrap-installed shim: exec the project venv python DIRECTLY.
 # Lets non-interactive `ssh pod "python ..."` find the locked interpreter
 # even though rc-file PATH exports are not sourced for such shells.
-export PATH="/root/.local/bin:$PATH"
+# NO package-manager re-entry here (#2278): interpreter discovery executes
+# PATH candidates, and a shim that re-enters the launcher deadlocks a sync
+# already holding the project lock (silent futex wait, stacked probes).
+# .venv/bin first so console scripts (ruff, pytest) keep resolving, as
+# they did when the launcher managed the child PATH.
+export PATH="/workspace/explore-persona-space/.venv/bin:/root/.local/bin:$PATH"
 # Repo root on sys.path for script-mode scripts.* imports (#1172)
 export PYTHONPATH="/workspace/explore-persona-space${PYTHONPATH:+:$PYTHONPATH}"
 cd /workspace/explore-persona-space || exit 1
-exec uv run python "$@"
+if [ -x /workspace/explore-persona-space/.venv/bin/python ]; then
+    exec /workspace/explore-persona-space/.venv/bin/python "$@"
+fi
+echo "WARN: venv python missing at /workspace/explore-persona-space/.venv/bin/python" >&2
+echo "WARN: falling back to a system interpreter (project deps unavailable)" >&2
+for cand in /usr/bin/python3.11 python3.11 python3; do
+    if command -v "$cand" >/dev/null 2>&1; then
+        exec "$cand" "$@"
+    fi
+done
+echo "ERROR: no python interpreter found (.venv absent and no system python3)" >&2
+exit 1
 PYEOF
 chmod +x /usr/local/bin/python
+# Post-install shim self-test (#2278): prove the shim resolves an interpreter
+# NOW, at provision time, instead of surfacing hours later as a silent hang.
+# The failure branch MUST exit 1 explicitly: this remote payload carries no
+# set -e and ssh_cmd propagates only the LAST command status, so an implicit
+# failure here would be swallowed by the closing echo lines below.
+if ! /usr/local/bin/python -c "import sys; print(sys.executable)"; then
+    echo "ERROR: python shim self-test FAILED - shim did not resolve an interpreter" >&2
+    exit 1
+fi
 echo "uv shim:      /usr/local/bin/uv -> $UV_BIN"
-echo "python shim:  /usr/local/bin/python (exec uv run python)"
+echo "python shim:  /usr/local/bin/python (execs the project venv interpreter directly)"
 '
 log_ok "All cache dirs redirected to /workspace"
 log_ok "uv/uvx symlinked + python shim installed in /usr/local/bin (non-login SSH PATH)"

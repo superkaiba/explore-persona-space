@@ -17,9 +17,12 @@ through to the re-drivable ``no_compute_available`` terminal). Paths that
 only ACT ON existing GCP handles — poll, teardown, crash persist, the
 GCP→RunPod failovers of an in-flight handle, the ``gcp_audit.py`` janitor —
 are deliberately UNGATED (in-flight cleanup + rollback support). CPU intents
-route RunPod-only (``cpu-bigmem`` gained the ``cpu5m-16-128`` RunPod row,
-superseding the #677 no-RunPod-lane terminal for it; the typed terminal
-stays as the fail-loud floor for a future unmapped CPU intent). The GCP
+walk ``runpod → fellows`` (#2059: fellows declares ``supports_cpu_jobs`` and
+renders a 0-GPU sbatch; nibi/mila stay excluded — no ``/workspace``, #608),
+then the end-of-chain RunPod terminal retry (``cpu-bigmem`` gained the
+``cpu5m-16-128`` RunPod row, superseding the #677 no-RunPod-lane terminal
+for it; the typed terminal stays as the fail-loud floor for a future
+unmapped CPU intent). The GCP
 ladder / failover prose below is therefore scoped to IN-FLIGHT handles plus
 the single-constant rollback (flip the constant to ``False``); it is not
 reachable for fresh dispatches while the flag is on.
@@ -212,9 +215,14 @@ reachable for fresh dispatches while the flag is on.
    call when the mapped instance cannot hold it, and
    ``RunPodBackend.launch`` threads the disk requirement into the provision
    argv (``--container-disk-gb max(50, boot_disk_gb)``) for mapped CPU
-   intents. Free SLURM lanes are excluded from the auto chain for CPU-only
-   intents (:func:`_is_cpu_only_intent` at ``_auto_route`` candidate
-   assembly) — the lane has no 0-GPU sbatch render (#1464).
+   intents. SLURM lanes participate in the CPU auto chain ONLY when their
+   :class:`~explore_persona_space.backends.slurm.ClusterConfig` declares
+   ``supports_cpu_jobs`` (#2059: fellows — a 0-GPU sbatch render exists
+   there); lanes without it (nibi/mila — no ``/workspace``, #608) are
+   filtered at ``_auto_route`` candidate assembly
+   (:func:`_is_cpu_only_intent` + :func:`_slurm_lane_supports_cpu`), so a
+   CPU auto route walks ``runpod → fellows`` then the end-of-chain RunPod
+   terminal retry (the #1464 blanket exclusion, narrowed).
 8b. **GCP-only GPU intent translation (#940).** The RunPod launch paths
    (terminal rung + explicit override) translate a GCP-only GPU intent to
    its nearest same-or-narrower RunPod intent via
@@ -285,7 +293,9 @@ from explore_persona_space.backends.gcp import (
     QuotaHeadroom,
     a100_40_fallback_for_intent,
     machine_for_intent,
+    machine_satisfies_min_ram_gb,
     quota_metric_for,
+    ram_gib_for_machine,
     resolve_provisioning_model,
 )
 
@@ -401,7 +411,12 @@ ROUTE_REASON_RUNPOD_FIRST: str = "auto_runpod_first"
 #: mapped (cpu-small / cpu-mid #747; cpu-bigmem #2028), so this terminal is a
 #: fail-loud FLOOR for a future unmapped CPU intent rather than a live path —
 #: it surfaces a typed terminal instead of attempting an unservable RunPod
-#: launch. DISTINCT from :data:`ROUTE_REASON_RUNPOD_FALLBACK` /
+#: launch. Ordering note (#2059): on the auto chain the runpod lane runs
+#: FIRST, so an unmapped CPU intent's typed terminal fires at lane 1 —
+#: BEFORE the fellows 0-GPU rung is ever probed (pinned by
+#: tests/test_router.py::
+#: test_auto_route_cpu_unmapped_intent_typed_terminal_fires_before_fellows).
+#: DISTINCT from :data:`ROUTE_REASON_RUNPOD_FALLBACK` /
 #: :data:`ROUTE_REASON_NO_COMPUTE` so the marker trail shows the
 #: CPU-unservable cause, and DISTINCT from ``no_compute_available`` so the
 #: watcher's capacity-retry pass (which keys on ``no_compute_available``) does
@@ -435,7 +450,11 @@ ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD: str = "cpu_exhausted_no_runpod_lane"
 #: :data:`RUNPOD_CPU_INSTANCE_CAPS` by the feasibility gate in
 #: :func:`_runpod_terminal_rung` — an unsatisfiable footprint refuses the
 #: fallback typed (:class:`CpuFallbackInfeasibleError`) instead of
-#: provisioning an undersized pod (incident #958).
+#: provisioning an undersized pod (incident #958). Lane note (#2059): on
+#: the auto chain a mapped CPU intent now walks ``runpod → fellows`` (the
+#: fellows ClusterConfig declares ``supports_cpu_jobs`` and renders a 0-GPU
+#: sbatch; ``slurm._CPU_SBATCH_RESOURCES`` mirrors these instance shapes)
+#: before the end-of-chain RunPod terminal retry.
 RUNPOD_CPU_INSTANCE_FOR_INTENT: dict[str, str] = {
     "cpu-small": "cpu3g-2-8",  # 2 vCPU / 8 GB, gen-3 general purpose
     "cpu-mid": "cpu3c-8-16",  # 8 vCPU / 16 GB, gen-3 compute-optimized
@@ -587,6 +606,16 @@ def _is_cpu_only_intent(intent: str) -> bool:
     """
     machine = INTENT_TO_MACHINE.get(intent)
     return machine is not None and machine.gpu_count == 0
+
+
+def _slurm_lane_supports_cpu(kind: str) -> bool:
+    """True iff SLURM lane ``kind``'s ClusterConfig declares supports_cpu_jobs
+    (#2059). Lazy import (the #1899 get_cluster_config pattern); unknown kinds
+    read False (fail-closed)."""
+    from explore_persona_space.backends.slurm import CLUSTER_CONFIGS
+
+    cfg = CLUSTER_CONFIGS.get(kind)
+    return cfg is not None and cfg.supports_cpu_jobs
 
 
 #: The router fell back to RunPod because a GCP attempt FAILED THE WORKLOAD
@@ -812,6 +841,17 @@ def gcp_provisioning_disabled() -> bool:
 #: (``issue_dispatch.py``).
 ROUTE_REASON_GCP_DISABLED: str = "gcp_backend_disabled"
 
+#: A GCP GPU dispatch declared a host-RAM floor via ``--min-ram-gb`` but the
+#: resolved machine (pinned intent) OR every eligible ladder rung falls
+#: below it. Raised as :class:`GpuRamBelowMinRamGbError` before any create
+#: call; ``classify_terminal_exception`` maps it to
+#: ``failure_class: infra`` / ``status: blocked`` (a DESIGN mismatch, NOT a
+#: transient capacity miss — not in the watcher's
+#: ``TRANSIENT_CAPACITY_REASONS``). The fix is dropping / lowering the
+#: ``--min-ram-gb`` requirement OR pinning a wider intent, never a retry
+#: (#1998).
+ROUTE_REASON_GPU_RAM_BELOW_MIN_RAM_GB: str = "gpu_ram_below_min_ram_gb"
+
 #: SLURM free-lane subset (DRAC + Mila), in legacy precedence order.
 #: Kept as a public constant for callers that need "the free lanes";
 #: the AUTO chain's order is :data:`DEFAULT_AUTO_LANE_ORDER` /
@@ -937,6 +977,48 @@ class GcpDisabledError(RouteError):
     ``TRANSIENT_CAPACITY_REASONS`` — the fix is a human changing the pin
     (or a deliberate rollback flip of the constant), never an auto-retry.
     """
+
+
+class GpuRamBelowMinRamGbError(RouteError):
+    """Terminal: a GCP GPU dispatch declared ``--min-ram-gb`` but the
+    resolved machine (pinned intent) OR every eligible ladder rung falls
+    below the requested value (#1998).
+
+    Raised BEFORE any ``gcloud compute instances create`` call — a
+    DESIGN mismatch (the plan asked for RAM no ladder rung can satisfy),
+    NOT a transient capacity outcome. Deliberately a DIRECT
+    :class:`RouteError` subclass (never :class:`NoComputeAvailableError`)
+    so ``classify_terminal_exception`` (``issue_dispatch.py``) can map it
+    to a DISTINCT ``epm:failure`` note (``reason:
+    gpu_ram_below_min_ram_gb``) that the watcher's capacity-retry pass
+    (``TRANSIENT_CAPACITY_REASONS``) never re-drives — a design mismatch
+    is fixed by dropping / lowering the ``--min-ram-gb`` requirement or
+    pinning a wider intent, never by an auto-retry.
+
+    Distinguishes pinned-intent refusal vs ladder-exhausted refusal via
+    the ``(intent, machine)`` fields the exception carries (for a
+    ladder-exhausted case, the widest-attempted rung's machine); both
+    paths yield identical ``classify_terminal_exception`` classifications
+    — the exception CLASS drives the mapping, not the internal fields.
+    """
+
+    def __init__(
+        self,
+        *,
+        intent: str,
+        machine: str,
+        resolved_ram_gib: int,
+        requested_min_ram_gb: int,
+    ) -> None:
+        self.intent = intent
+        self.machine = machine
+        self.resolved_ram_gib = resolved_ram_gib
+        self.requested_min_ram_gb = requested_min_ram_gb
+        super().__init__(
+            f"intent {intent!r} resolved machine {machine!r} has "
+            f"{resolved_ram_gib} GiB host RAM < required {requested_min_ram_gb} GB "
+            "(#1998: --min-ram-gb exceeds every reachable GCP GPU rung)"
+        )
 
 
 class RunPodStoppedPodCollisionError(RouteError):
@@ -3408,7 +3490,7 @@ def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
       — the CPU analogue of the GPU length-aware axis; still NO flex /
       A100-40 rung. (While :data:`GCP_PROVISIONING_DISABLED` is on this
       ladder is reachable only via the rollback flip — fresh CPU dispatches
-      land straight on the RunPod terminal rung.)
+      walk ``runpod → fellows`` (#2059) then the RunPod terminal retry.)
 
     The short-circuit is load-bearing because :func:`_is_short_job` floors
     ``gpu_count`` to 1, so without it the GPU ladder would (mis)classify a CPU
@@ -3563,6 +3645,119 @@ def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
             )
     rungs.extend(degrade_rungs)  # #1379: degraded suffix AFTER the base tail
     return rungs
+
+
+def _min_ram_gb_from_spec(spec: RunSpec) -> int | None:
+    """Extract ``spec.extra["min_ram_gb"]`` as a positive int, or ``None``.
+
+    Absent / falsy / non-integer / non-positive values return ``None`` —
+    the guard is opt-in via the ``--min-ram-gb`` flag; the ladder is
+    byte-identical to pre-#1998 when the value is unset. Fail-loud on a
+    genuinely-malformed present value (raises via ``int()`` on non-numeric)
+    matches ``_footprint_int``'s convention.
+    """
+    raw = (spec.extra or {}).get("min_ram_gb")
+    if not raw:
+        return None
+    try:
+        value = int(raw)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"spec.extra['min_ram_gb'] is not an integer: {raw!r} "
+            f"(malformed --min-ram-gb on issue {spec.issue})"
+        ) from exc
+    return value if value > 0 else None
+
+
+def _rung_machine_type(rung_spec: RunSpec) -> str:
+    """Resolve the machine_type the rung ACTUALLY provisions.
+
+    Every ladder rung threads its :class:`MachineSpec` via
+    ``spec.extra["machine_spec_override"]`` (see :func:`_with_machine`),
+    so the override — when present — is authoritative; the tail rung
+    (base ondemand) is the caller spec AS-IS and resolves via
+    :func:`gcp.machine_for_intent`.
+    """
+    override = (rung_spec.extra or {}).get("machine_spec_override")
+    if isinstance(override, dict) and "machine_type" in override:
+        return str(override["machine_type"])
+    return machine_for_intent(rung_spec).machine_type
+
+
+def _filter_ladder_by_min_ram_gb(
+    ladder: list[tuple[RunSpec, str]],
+    *,
+    spec: RunSpec,
+    min_ram_gb: int | None,
+) -> list[tuple[RunSpec, str]]:
+    """Filter GCP GPU ladder rungs whose realized machine has host RAM
+    below ``min_ram_gb`` (#1998).
+
+    Semantics mirror the #1468 A100-40 ``--min-gpu-mem-gb`` rung-skip
+    for HOST RAM instead of per-GPU device memory:
+
+    * ``min_ram_gb`` is None / zero (no requirement declared) — the
+      ladder is returned unmodified (byte-identical to pre-#1998).
+    * CPU intents (``base.gpu_count == 0``) — the guard is a no-op on the
+      GCP GPU path (RunPod-CPU-fallback RAM feasibility is #1010,
+      :func:`_refuse_infeasible_cpu_footprint`; CPU rungs are UNGATED
+      here).
+    * Otherwise, each rung is filtered on
+      :func:`gcp.machine_satisfies_min_ram_gb`. If the input ladder was
+      non-empty AND every rung fails the guard, raise
+      :class:`GpuRamBelowMinRamGbError` naming the intent + the WIDEST
+      attempted machine (largest RAM in the input ladder) — this is a
+      DESIGN mismatch (``--min-ram-gb`` above every reachable rung),
+      NOT a transient capacity miss.
+
+    The empty-input case (a CPU-only intent whose ladder short-circuits
+    to a single CPU rung, or an already-filtered ladder) returns
+    unchanged — nothing to raise against.
+    """
+    if not min_ram_gb:
+        return ladder
+    base = machine_for_intent(spec)
+    if base.gpu_count == 0:
+        # CPU intents are UNGATED on the GPU path (#1010 owns CPU-side
+        # RAM feasibility via _refuse_infeasible_cpu_footprint).
+        return ladder
+    if not ladder:
+        return ladder
+    kept: list[tuple[RunSpec, str]] = []
+    widest_machine: str = ""
+    widest_ram_gib: int = -1
+    required = int(min_ram_gb)
+    for rung_spec, label in ladder:
+        machine_type = _rung_machine_type(rung_spec)
+        # A machine reachable via the ladder without a MACHINE_RAM_GIB
+        # entry raises KeyError here — fail loud (the completeness test
+        # forbids that state) rather than silently keeping / dropping
+        # the rung.
+        ram_gib = ram_gib_for_machine(machine_type)
+        if ram_gib > widest_ram_gib:
+            widest_ram_gib = ram_gib
+            widest_machine = machine_type
+        if machine_satisfies_min_ram_gb(machine_type, required):
+            kept.append((rung_spec, label))
+        else:
+            logger.info(
+                "route: GCP rung %r skipped for issue %s: machine %r has "
+                "%s GiB host RAM < required %s GB (#1998 min_ram_gb gate)",
+                label,
+                spec.issue,
+                machine_type,
+                ram_gib,
+                required,
+            )
+    if not kept:
+        # Every reachable rung fails the guard — DESIGN MISMATCH.
+        raise GpuRamBelowMinRamGbError(
+            intent=spec.intent,
+            machine=widest_machine,
+            resolved_ram_gib=max(widest_ram_gib, 0),
+            requested_min_ram_gb=required,
+        )
+    return kept
 
 
 def _skip_gcp_lane_no_headroom(
@@ -4480,8 +4675,16 @@ def retry_gcp_ondemand_after_queue_vanish(
         extra={**dict(spec.extra or {}), "provisioning_model": "STANDARD"},
     )
     underlying: BaseException | None = None
+    # #1998: filter GCP GPU rungs by --min-ram-gb before iteration. An
+    # unsatisfiable requirement raises GpuRamBelowMinRamGbError here
+    # (before any create), never a silent fall-through.
+    ladder = _filter_ladder_by_min_ram_gb(
+        _gcp_ladder_specs(pinned),
+        spec=pinned,
+        min_ram_gb=_min_ram_gb_from_spec(pinned),
+    )
     try:
-        for rung_spec, rung_label in _gcp_ladder_specs(pinned):
+        for rung_spec, rung_label in ladder:
             outcome = _attempt_one_gcp_rung(
                 spec=rung_spec,
                 rung_label=rung_label,
@@ -5253,12 +5456,15 @@ def _auto_candidates(
     """Build the auto chain's candidate list in lane order.
 
     Skips unwired lanes, Mila-when-down, and (for CPU-only intents) the
-    free SLURM lanes. ``runpod`` (#2054) is a first-class auto lane and is
-    always wired — the ``route()`` signature requires ``runpod_backend`` —
-    and CPU-only intents keep it: RunPod CPU (deployCpuPod) IS the
-    documented CPU chain (#747/#2028). The stage-1 reconnect scan is a
-    no-op for runpod (the production ``reconnect_fn`` returns ``None`` for
-    it — pod_lifecycle's own flow is idempotent).
+    free SLURM lanes whose ClusterConfig does NOT declare
+    ``supports_cpu_jobs`` (#2059 narrowing of the #1464 blanket exclusion).
+    ``runpod`` (#2054) is a first-class auto lane and is always wired — the
+    ``route()`` signature requires ``runpod_backend`` — and CPU-only
+    intents keep it: RunPod CPU (deployCpuPod) leads the documented CPU
+    chain (#747/#2028), with the fellows 0-GPU rung behind it (#2059). The
+    stage-1 reconnect scan is a no-op for runpod (the production
+    ``reconnect_fn`` returns ``None`` for it — pod_lifecycle's own flow is
+    idempotent).
     """
     candidates: list[tuple[ComputeBackend, BackendKind]] = []
     for kind in lane_order:
@@ -5269,12 +5475,14 @@ def _auto_candidates(
             if gcp_backend is not None:
                 candidates.append((gcp_backend, "gcp"))
             continue
-        if cpu_only:
-            # Excluding the free lanes from ``candidates`` also removes them
-            # from the stage-1 reconnect scan — deliberately: a CPU-only
-            # intent can never have a live SLURM job to reconnect to (the lane
-            # has no 0-GPU sbatch render, so no prior route() could have
-            # submitted one there). Nothing is lost by not scanning (#1464).
+        if cpu_only and not _slurm_lane_supports_cpu(kind):
+            # #1464 exclusion, narrowed by #2059: only lanes whose
+            # ClusterConfig declares supports_cpu_jobs (fellows) render
+            # 0-GPU sbatch; nibi/mila stay excluded (no /workspace, #608).
+            # Excluded lanes also stay out of the stage-1 reconnect scan —
+            # deliberately: a CPU-only intent can never have a live SLURM
+            # job to reconnect to on a lane with no 0-GPU render, so no
+            # prior route() could have submitted one there.
             continue
         backend = free_backends.get(kind)
         if backend is None:
@@ -5444,14 +5652,19 @@ def _auto_route(
     # intents, #1464).
     cpu_only = _is_cpu_only_intent(spec.intent)
     if cpu_only and free_backends:
+        excluded = sorted(k for k in free_backends if not _slurm_lane_supports_cpu(k))
+        kept = sorted(k for k in free_backends if _slurm_lane_supports_cpu(k))
         logger.info(
-            "route: CPU-only intent %r — free SLURM lanes (%s) excluded from "
-            "the auto chain. The documented CPU chain is RunPod CPU for mapped "
-            "intents (#747/#2028; GCP provisioning disabled — the E2 rung is "
-            "rollback-only); the SLURM lane has no 0-GPU sbatch render (#1464, "
-            "incident #1336).",
+            "route: CPU-only intent %r — free SLURM lanes without a 0-GPU "
+            "sbatch render (%s) excluded from the auto chain; supports_cpu_jobs "
+            "lanes (%s) kept (#2059 — fellows renders 0-GPU sbatch; nibi/mila "
+            "have no /workspace, #608). The documented CPU chain walks RunPod "
+            "CPU for mapped intents (#747/#2028; GCP provisioning disabled — "
+            "the E2 rung is rollback-only), then the kept lanes, then the "
+            "RunPod terminal retry.",
             spec.intent,
-            ", ".join(sorted(free_backends)),
+            ", ".join(excluded) or "none",
+            ", ".join(kept) or "none",
         )
     candidates = _auto_candidates(
         lane_order=lane_order,
@@ -6633,7 +6846,12 @@ def _attempt_gcp_lane(
         # falls through (to SLURM / the RunPod terminal rung).
         return None
 
-    rungs = _gcp_ladder_specs(spec)
+    # #1998: filter GCP GPU rungs by --min-ram-gb before iteration.
+    rungs = _filter_ladder_by_min_ram_gb(
+        _gcp_ladder_specs(spec),
+        spec=spec,
+        min_ram_gb=_min_ram_gb_from_spec(spec),
+    )
     for rung_spec, rung_label in rungs:
         outcome = _attempt_one_gcp_rung(
             spec=rung_spec,
@@ -7531,7 +7749,7 @@ def _gcp_marker_extras(spec: RunSpec) -> dict[str, Any]:
         # Unmapped intent on a reconnect to a live instance whose original
         # intent has no INTENT_TO_MACHINE row. Degrade rather than crash.
         pool = None
-    return {
+    extras: dict[str, Any] = {
         "provisioning_model": provisioning,
         "quota_pool": pool,
         # True only when the router switched this launch STANDARD->SPOT via
@@ -7539,6 +7757,28 @@ def _gcp_marker_extras(spec: RunSpec) -> dict[str, Any]:
         # plain STANDARD or explicitly-requested SPOT/FLEX_START launch.
         "spot_fallback": bool((spec.extra or {}).get("spot_fallback", False)),
     }
+    # #1998: emit host-RAM extras ONLY when --min-ram-gb is set on a GPU
+    # dispatch. Preserves the #934 omit-when-absent spec-hash discipline:
+    # marker byte-identity when the flag is unused. CPU intents (gpu_count
+    # == 0) are ungated on the GPU path — the CPU-side RAM feasibility gate
+    # (#1010) uses distinct RunPod-CPU-instance-caps machinery.
+    min_ram_gb = _min_ram_gb_from_spec(spec)
+    if min_ram_gb:
+        try:
+            base = machine_for_intent(spec)
+        except ValueError:
+            base = None
+        if base is not None and base.gpu_count > 0:
+            try:
+                resolved_ram_gib = ram_gib_for_machine(base)
+            except KeyError:
+                # Unmapped machine — omit both keys rather than crash
+                # observability code on an incomplete MACHINE_RAM_GIB.
+                pass
+            else:
+                extras["requested_ram_gb"] = int(min_ram_gb)
+                extras["resolved_machine_ram_gb"] = int(resolved_ram_gib)
+    return extras
 
 
 def _post_backend_selected(
@@ -7725,6 +7965,7 @@ __all__ = [
     "ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD",
     "ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD",
     "ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC",
+    "ROUTE_REASON_GPU_RAM_BELOW_MIN_RAM_GB",
     "ROUTE_REASON_NO_COMPUTE",
     "ROUTE_REASON_OVERRIDE",
     "ROUTE_REASON_PREPARE_FAILED",
@@ -7745,6 +7986,7 @@ __all__ = [
     "FreeLaneStillWaitingError",
     "GcpAttemptCapExceededError",
     "GcpDisabledError",
+    "GpuRamBelowMinRamGbError",
     "Lease",
     "LeaseStore",
     "ManualAttentionRequiredError",

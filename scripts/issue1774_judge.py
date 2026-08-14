@@ -18,7 +18,7 @@ Judging (plan §4 P5, llm-judging rules 4/9/22/23/24):
   rows whose condition names the evil direction (the 3 evil-direction arms
   sanity read) — ~1,800×2 + 3×60 items, N=5 draws ≈ 18,900 Batch-API calls.
 - judge = claude-sonnet-4-5-20250929 via ``eval.graded_judge.judge_graded``
-  (the #663-hardened Batch client); max_tokens=300 (reason-then-score floor,
+  (the #663-hardened Batch client); max_tokens=1024 (reason-then-score floor,
   rule 23); FRESH per-rubric cache_dir under --out-dir (rule 22).
 - output per rubric: mean 0-100 scores per row + per-draw kept scores, with the
   CONTENT-drop vs TRANSPORT-loss split reported separately (rules 9/24).
@@ -46,7 +46,9 @@ import issue1774_common as c  # noqa: E402
 
 JUDGE_TRAITS = ("sycophancy", "hallucination", "evil")
 JUDGE_N_DRAWS = 5
-JUDGE_MAX_TOKENS = 300  # reason-then-score floor (llm-judging rule 23; #1090)
+# llm-judging rule 23 floor (single-rationale; raised from 300, #2063); pre-#2021
+# truncation-era cache entries: use a fresh cache_dir at next wave (rule 23 cache caveat).
+JUDGE_MAX_TOKENS = 1024
 MAX_ITEM_ID_LEN = 53  # Batch custom_id cap 64 − 11 encoder chars (#1415)
 
 # Canonical repo-root copy of the #779 extraction-artifact cache (the rubric

@@ -1,13 +1,17 @@
 """Tests for the pod-side disk guard helper (scripts/pod_disk_guard.py).
 
 Covers: intermediate-vs-final classification, reclaim dry-run listing, the --apply
-guard refusing to touch non-intermediate dirs, and clear-git-lock idempotency.
+guard refusing to touch non-intermediate dirs, clear-git-lock idempotency, and the
+#1979-class per-invocation probe-filename + widened errno fallback (siblings of
+`tests/test_preflight_disk.py` for the pod-side probe).
 """
 
 from __future__ import annotations
 
 import argparse
+import errno
 import importlib.util
+import os
 import sys
 from pathlib import Path
 
@@ -203,3 +207,94 @@ def test_probe_quota_headroom_rejects_nonpositive_min_gb(tmp_path):
     """min_gb must be positive (boundary assert)."""
     with pytest.raises(AssertionError):
         guard.probe_quota_headroom(tmp_path, min_gb=0)
+
+
+# ── #1983 (#1979 sibling): per-invocation probe filename + widened errno fallback ───
+#
+# `probe_quota_headroom` in scripts/pod_disk_guard.py mirrors the #1979 fix
+# already landed on `preflight._probe_writable_bytes` (commit 22c2ddb2d3): a
+# unique per-invocation probe filename so concurrent workers on ONE shared
+# filesystem cannot invalidate each other's fd mid-fallocate, and a widened
+# fallback errno set (EOPNOTSUPP + ENOSYS + EINVAL + EBADF).
+
+
+def test_probe_survives_sibling_interference_on_legacy_shared_name(tmp_path, monkeypatch):
+    """A sibling unlinking/recreating the LEGACY fixed probe name cannot EBADF us.
+
+    Simulates the shared-filesystem semantics of the #1979 crash class (fellows
+    fallocate on a valid fd on VAST/NFS-class filesystems): a sibling worker's
+    unlink/recreate of the fixed-name probe path invalidates our already-open
+    fd mid-`posix_fallocate` (OSError EBADF). The fake fallocate performs that
+    sibling interference against the OLD fixed name `.pod_disk_guard_probe.tmp`
+    and applies shared-FS semantics: EBADF iff this fd's path no longer
+    resolves to the same inode. Pre-fix (fixed name) the interference hits our
+    own path and the probe raised; post-fix (unique per-invocation name) the
+    probe is untouched and returns ok=True with EDQUOT still detectable.
+    """
+
+    def shared_fs_fallocate(fd, offset, length):
+        fd_path = os.readlink(f"/proc/self/fd/{fd}")
+        fd_stat = os.fstat(fd)
+        # Sibling running the legacy fixed-name protocol: unlink + recreate + unlink.
+        legacy = Path(fd_path).parent / ".pod_disk_guard_probe.tmp"
+        legacy.unlink(missing_ok=True)
+        legacy.touch()
+        legacy.unlink()
+        # Cluster-share semantics: fallocate on an fd whose path was replaced fails.
+        try:
+            st = os.stat(fd_path)
+            same = st.st_ino == fd_stat.st_ino and st.st_dev == fd_stat.st_dev
+        except FileNotFoundError:
+            same = False
+        if not same:
+            raise OSError(errno.EBADF, "Bad file descriptor")
+
+    monkeypatch.setattr(guard.os, "posix_fallocate", shared_fs_fallocate)
+    ok, share_free_gb, detail = guard.probe_quota_headroom(tmp_path, min_gb=1)
+    assert ok is True
+    assert share_free_gb >= 0.0
+    assert "unsupported" not in detail.lower()  # Uniquified name never fell back.
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_probe_paths_unique_per_invocation(tmp_path, monkeypatch):
+    """Two sequential probes use DISTINCT probe filenames (the #1983 invariant)."""
+    seen: list[str] = []
+
+    def recording_fallocate(fd, offset, length):
+        seen.append(os.readlink(f"/proc/self/fd/{fd}"))
+
+    monkeypatch.setattr(guard.os, "posix_fallocate", recording_fallocate)
+    guard.probe_quota_headroom(tmp_path, min_gb=1)
+    guard.probe_quota_headroom(tmp_path, min_gb=1)
+    assert len(seen) == 2
+    assert seen[0] != seen[1], seen
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_probe_ebadf_falls_back(tmp_path, monkeypatch):
+    """EBADF degrades to the share-level free fallback (widened errno set)."""
+
+    def fake_fallocate(fd, offset, length):
+        raise OSError(errno.EBADF, "Bad file descriptor")
+
+    monkeypatch.setattr(guard.os, "posix_fallocate", fake_fallocate)
+    ok, share_free_gb, detail = guard.probe_quota_headroom(tmp_path, min_gb=1)
+    # share_free_gb on any real tmp_path is >> 1 GB, so ok reflects the fallback.
+    assert ok is (share_free_gb >= 1)
+    assert "unsupported" in detail.lower()
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_probe_ebadf_never_masks_edquot(tmp_path, monkeypatch):
+    """EDQUOT stays the real quota signal (ok=False, no fallback) even after the
+    EBADF fallback widened the caught-errno set — the MooseFS quota detection
+    must never be swallowed."""
+
+    def fake_fallocate(fd, offset, length):
+        raise OSError(errno.EDQUOT, "Disk quota exceeded")
+
+    monkeypatch.setattr(guard.os, "posix_fallocate", fake_fallocate)
+    ok, _share_free_gb, detail = guard.probe_quota_headroom(tmp_path, min_gb=1)
+    assert ok is False
+    assert "QUOTA EXHAUSTED" in detail

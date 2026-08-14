@@ -1,0 +1,57 @@
+{
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "max_tokens": 1024,
+  "n_windows": 3,
+  "anchor_draws": 10,
+  "cells": [
+    "joint_all",
+    "joint_mid",
+    "L16"
+  ],
+  "setting": "matched_query",
+  "telemetry": {
+    "pilot.fp-bare": {
+      "n_items": 8,
+      "n_total_draws": 8,
+      "n_dropped_draws": 0,
+      "n_transport_lost_draws": 0,
+      "n_truncation_dropped_draws": 0,
+      "n_refusal_draws": 0,
+      "n_api_refusal_draws": 0,
+      "stop_reason_tally": {
+        "end_turn": 8
+      }
+    },
+    "pilot.fp-conv": {
+      "n_items": 9,
+      "n_total_draws": 9,
+      "n_dropped_draws": 0,
+      "n_transport_lost_draws": 0,
+      "n_truncation_dropped_draws": 0,
+      "n_refusal_draws": 0,
+      "n_api_refusal_draws": 0,
+      "stop_reason_tally": {
+        "end_turn": 9
+      }
+    },
+    "pilot.fp-persona": {
+      "n_items": 7,
+      "n_total_draws": 7,
+      "n_dropped_draws": 0,
+      "n_transport_lost_draws": 0,
+      "n_truncation_dropped_draws": 0,
+      "n_refusal_draws": 0,
+      "n_api_refusal_draws": 0,
+      "stop_reason_tally": {
+        "end_turn": 7
+      }
+    }
+  },
+  "git_commit": "00451ed8",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/code-reviewer-lean/gate_threshold_vs_shard_config.md",
+    "scripts/issue2054_framing_character_transfer_figs.py",
+    "scripts/issue2094_position_judge.py"
+  ]
+}

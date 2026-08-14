@@ -1209,6 +1209,92 @@ def test_adversarial_planner_skill_documents_header_autoalignment():
     )
 
 
+# ─── Amendment-shaped plan-version refusal (#2255) ─────────────────────────
+
+# Full self-contained v1 fixture: a few KB, carries the machine-readable
+# GPU-hours declaration + section headers (the shape every consumer assumes).
+_FULL_PLAN_V1 = (
+    "# Plan v1 — task #999: full self-contained fixture\n\n"
+    "## 0. Summary\n\n"
+    "Estimated GPU-hours (total): 4\n\n"
+    "## 4. Design\n\n" + ("Design prose line for the full self-contained v1 fixture.\n" * 60)
+)
+
+# The #2223-v4 shape: thin delta, amendment-marker phrases, NO GPU declaration.
+_THIN_AMENDMENT_V2 = (
+    "# Plan v2 (AMENDMENT of v1) — thin delta fixture\n\n"
+    "Adds one follow-up arm. Everything else PORTS FROM v1 unchanged.\n"
+)
+
+
+def test_new_plan_version_rejects_2223_shape_amendment(fake_repo):
+    """#2255 success criterion 2: the persist REFUSES the #2223-shape thin
+    amendment with an actionable message naming the --allow-amendment escape;
+    nothing is written and the symlink stays on v1."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="infra", title="X"))
+    assert tw.new_plan_version(new_id, _FULL_PLAN_V1) == 1
+    plans_dir = repo / "tasks" / "proposed" / str(new_id) / "plans"
+    with pytest.raises(ValueError, match="--allow-amendment"):
+        tw.new_plan_version(new_id, _THIN_AMENDMENT_V2)
+    versions = sorted(p.name for p in plans_dir.glob("v*.md"))
+    assert versions == ["v1.md"], versions
+    assert (plans_dir / "plan.md").resolve().name == "v1.md"
+
+
+def test_new_plan_version_allow_amendment_escape(fake_repo):
+    """The deliberate escape stays reachable (the #2223 user-authorized case):
+    allow_amendment=True persists the thin delta and rotates the symlink."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="infra", title="X"))
+    assert tw.new_plan_version(new_id, _FULL_PLAN_V1) == 1
+    assert tw.new_plan_version(new_id, _THIN_AMENDMENT_V2, allow_amendment=True) == 2
+    plans_dir = repo / "tasks" / "proposed" / str(new_id) / "plans"
+    assert (plans_dir / "plan.md").resolve().name == "v2.md"
+
+
+def test_new_plan_version_full_plan_with_unchanged_phrase_persists(fake_repo):
+    """Pins the ~198-hit corpus class as non-rejected: a FULL revision whose
+    changelog says 'unchanged from v1' AND that carries its own GPU-hours
+    declaration persists normally (marker phrase alone must never reject)."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="infra", title="X"))
+    assert tw.new_plan_version(new_id, _FULL_PLAN_V1) == 1
+    full_v2 = (
+        "# Plan v2 — full revision fixture\n\n"
+        "## 0. Summary\n\n"
+        "Estimated GPU-hours (total): 4\n\n"
+        "Changelog: §4 unchanged from v1.\n\n"
+        "## 4. Design\n\n" + ("Design prose line for the full revision fixture body.\n" * 60)
+    )
+    assert tw.new_plan_version(new_id, full_v2) == 2
+
+
+def test_new_plan_version_small_full_replan_persists(fake_repo):
+    """Pins the 29-hit corpus class as non-rejected: a small (~20% of v1)
+    full re-plan with NO amendment-marker phrase and its own GPU-hours
+    declaration persists normally (size alone must never reject)."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="infra", title="X"))
+    assert tw.new_plan_version(new_id, _FULL_PLAN_V1) == 1
+    small_v2 = (
+        "# Plan v2 — small full re-plan fixture\n\n"
+        "Estimated GPU-hours (total): 2\n\n"
+        "## 4. Design\n\n" + ("Short but complete re-plan prose.\n" * 12)
+    )
+    assert len(small_v2.encode()) < 0.4 * len(_FULL_PLAN_V1.encode())
+    assert tw.new_plan_version(new_id, small_v2) == 2
+
+
+def test_amendment_gpu_regex_parity_with_verify_plan(fake_repo):
+    """Pins the ONE deliberate regex duplication (#2255 §4): the amendment
+    predicate's GPU-declaration signal must stay pattern-identical to
+    verify_plan.py's GPU_LINE_RE (the Step-2c consumer's own read)."""
+    _, tw = fake_repo
+    vp = _load_verify_plan_module()
+    assert tw.AMENDMENT_GPU_LINE_RE.pattern == vp.GPU_LINE_RE.pattern
+
+
 # ─── Promotion ───────────────────────────────────────────────────────────
 
 
@@ -3046,7 +3132,7 @@ def test_cli_handlers_raise_address_defer_list_roundtrip(concerns_task, capsys):
 def test_raise_concern_library_rejects_overlong_summary(concerns_task):
     """The library layer keeps the hard 200-char cap (defense-in-depth for
     programmatic callers) and its message names the escape + the CLI
-    auto-truncation alternative."""
+    --summary-file alternative (#2121: no more auto-truncation claim)."""
     _, tw, tid = concerns_task
     with pytest.raises(ValueError, match="summary too long") as excinfo:
         tw.raise_concern(
@@ -3059,12 +3145,12 @@ def test_raise_concern_library_rejects_overlong_summary(concerns_task):
         )
     msg = str(excinfo.value)
     assert "evidence" in msg
-    assert "truncat" in msg
+    assert "--summary-file" in msg
 
 
 def test_address_concern_library_overlong_message_names_escape(concerns_task):
     """address_concern's >200 ValueError names the cap AND an actionable
-    escape (round report) AND mentions the CLI auto-truncation."""
+    escape (round report) AND the CLI --summary-file channel (#2121)."""
     _, tw, tid = concerns_task
     tw.raise_concern(
         tid,
@@ -3085,7 +3171,7 @@ def test_address_concern_library_overlong_message_names_escape(concerns_task):
     msg = str(excinfo.value)
     assert "max 200" in msg
     assert "round report" in msg
-    assert "truncat" in msg
+    assert "--summary-file" in msg
 
 
 def test_truncate_summary_word_boundary():
@@ -3166,39 +3252,42 @@ def test_cli_raise_concern_truncates_overlong_summary_and_preserves_in_evidence(
     assert row["evidence"] == original
 
 
-def test_cli_raise_concern_truncation_keeps_given_evidence(concerns_task, capsys):
-    """When --evidence IS given, it is never mutated; the dropped tail is
-    printed in the stderr warning instead."""
+def test_cli_raise_concern_overcap_with_evidence_hard_errors(concerns_task, capsys):
+    """R6 (#2121): an over-cap --summary WITH --evidence supplied is the
+    LOSSY branch (nothing can hold the full text) — hard error, exit 2,
+    nothing stored. The pre-fix behavior silently dropped the tail."""
     import argparse
 
     task_cli = _import_task_cli()
     _repo, tw, tid = concerns_task
     original = "alpha " * 50 + "OMEGA-DISTINCTIVE-TOKEN"  # 323 chars
-    task_cli.cmd_raise_concern(
-        argparse.Namespace(
-            number=tid,
-            concern_id="overlong-raise-evidence",
-            severity="CONCERN",
-            summary=original,
-            by="code-reviewer",
-            round=1,
-            evidence="src/foo.py:42",
+    with pytest.raises(SystemExit) as excinfo:
+        task_cli.cmd_raise_concern(
+            argparse.Namespace(
+                number=tid,
+                concern_id="overlong-raise-evidence",
+                severity="CONCERN",
+                summary=original,
+                by="code-reviewer",
+                round=1,
+                evidence="src/foo.py:42",
+            )
         )
-    )
+    assert excinfo.value.code == 2
     err = capsys.readouterr().err
-    assert "WARNING" in err
-    assert "Dropped tail" in err
-    assert "OMEGA-DISTINCTIVE-TOKEN" in err
+    assert "ERROR" in err
+    assert "--summary-file" in err
+    assert "--evidence" in err
     concerns_path = tw.find_task_path(tid) / "concerns.jsonl"
-    rows = [json.loads(line) for line in concerns_path.read_text().splitlines() if line.strip()]
-    row = rows[-1]
-    assert len(row["summary"]) <= 200
-    assert row["evidence"] == "src/foo.py:42"
+    assert not concerns_path.exists()  # nothing was appended
 
 
-def test_cli_address_concern_truncates_overlong_summary(concerns_task, capsys):
-    """The #1090 replay: a 203-char address-concern --summary completes in
-    ONE invocation with a loud warning."""
+def test_cli_address_concern_rejects_overlong_summary(concerns_task, capsys):
+    """R1/R2 (#2121): a 203-char address-concern --summary hard-errors
+    (exit 2) instead of silently dropping the tail (the pre-fix #1739
+    incident destroyed 1,589 chars). The error names the actual length,
+    the cap, and the --summary-file escape; the stored rows are
+    unchanged."""
     import argparse
 
     task_cli = _import_task_cli()
@@ -3211,25 +3300,27 @@ def test_cli_address_concern_truncates_overlong_summary(concerns_task, capsys):
         raised_by="code-reviewer",
         raised_at_round=1,
     )
-    updated = ("addressed by rekeying the lookup " * 7)[:203]
+    updated = ("addressed by rekeying the lookup " * 7)[:203].rstrip()
     assert len(updated) == 203
-    task_cli.cmd_address_concern(
-        argparse.Namespace(
-            number=tid,
-            concern_id="overlong-address-cli",
-            by="implementer",
-            round=1,
-            summary=updated,
-        )
-    )
-    err = capsys.readouterr().err
-    assert "WARNING" in err
-    assert "cap 200" in err
     concerns_path = tw.find_task_path(tid) / "concerns.jsonl"
-    rows = [json.loads(line) for line in concerns_path.read_text().splitlines() if line.strip()]
-    row = rows[-1]
-    assert row["event"] == "addressed"
-    assert len(row["summary"]) <= 200
+    rows_before = concerns_path.read_text()
+    with pytest.raises(SystemExit) as excinfo:
+        task_cli.cmd_address_concern(
+            argparse.Namespace(
+                number=tid,
+                concern_id="overlong-address-cli",
+                by="implementer",
+                round=1,
+                summary=updated,
+            )
+        )
+    assert excinfo.value.code == 2
+    err = capsys.readouterr().err
+    assert "ERROR" in err
+    assert "203 chars" in err  # the actual length
+    assert "max 200" in err  # the cap
+    assert "--summary-file" in err  # the escape
+    assert concerns_path.read_text() == rows_before  # stored rows unchanged
 
 
 def test_cli_concern_summary_at_cap_passes_untouched(concerns_task, capsys):
@@ -3261,6 +3352,362 @@ def test_cli_concern_summary_at_cap_passes_untouched(concerns_task, capsys):
     assert "evidence" not in row
 
 
+def _concern_rows(tw, tid):
+    """Parsed concerns.jsonl rows for task ``tid`` (test helper)."""
+    concerns_path = tw.find_task_path(tid) / "concerns.jsonl"
+    return [json.loads(ln) for ln in concerns_path.read_text().splitlines() if ln.strip()]
+
+
+def test_cli_address_concern_summary_file_overcap_preserves_full_text_in_evidence(
+    concerns_task, capsys, tmp_path
+):
+    """R3 (#2121): --summary-file accepts text of ANY length; over-cap text
+    lands VERBATIM in the event's evidence field with a <=200-char derived
+    lead as the summary. Replays the actual #1739 payload length (1,785
+    chars — the text the pre-fix CLI destroyed)."""
+    import argparse
+
+    task_cli = _import_task_cli()
+    _repo, tw, tid = concerns_task
+    tw.raise_concern(
+        tid,
+        "summary-file-address",
+        severity="CONCERN",
+        summary="A concern with a normal-length summary.",
+        raised_by="code-reviewer",
+        raised_at_round=1,
+    )
+    full_text = ("evidence sentence with real content " * 50)[:1785].rstrip()
+    assert len(full_text) > 1700
+    sf = tmp_path / "address-summary.md"
+    sf.write_text(full_text, encoding="utf-8")
+    task_cli.cmd_address_concern(
+        argparse.Namespace(
+            number=tid,
+            concern_id="summary-file-address",
+            by="implementer",
+            round=1,
+            summary=None,
+            summary_file=str(sf),
+            evidence=None,
+        )
+    )
+    err = capsys.readouterr().err
+    assert "evidence field" in err  # the one informational stderr line
+    row = _concern_rows(tw, tid)[-1]
+    assert row["event"] == "addressed"
+    assert row["evidence"] == full_text  # full text, verbatim
+    assert len(row["summary"]) <= 200
+    assert row["summary"].endswith("...")
+    assert full_text.startswith(row["summary"][:-3])
+
+
+def test_cli_raise_concern_summary_file_overcap_preserves_full_text_in_evidence(
+    concerns_task, capsys, tmp_path
+):
+    """R8 (#2121): raise-concern --summary-file has the same semantics as
+    address-concern's (over-cap text preserved verbatim in evidence)."""
+    import argparse
+
+    task_cli = _import_task_cli()
+    _repo, tw, tid = concerns_task
+    full_text = ("a long raised concern description with detail " * 12).rstrip()
+    assert len(full_text) > 200
+    sf = tmp_path / "raise-summary.md"
+    sf.write_text(full_text, encoding="utf-8")
+    task_cli.cmd_raise_concern(
+        argparse.Namespace(
+            number=tid,
+            concern_id="summary-file-raise",
+            severity="CONCERN",
+            summary=None,
+            summary_file=str(sf),
+            by="code-reviewer",
+            round=1,
+            evidence=None,
+        )
+    )
+    err = capsys.readouterr().err
+    assert "evidence field" in err
+    row = _concern_rows(tw, tid)[-1]
+    assert row["event"] == "raised"
+    assert row["evidence"] == full_text
+    assert len(row["summary"]) <= 200
+    assert row["summary"].endswith("...")
+
+
+def test_cli_concern_summary_file_under_cap_is_summary_verbatim(concerns_task, capsys, tmp_path):
+    """An under-cap --summary-file is a pure quoting convenience: the file
+    text becomes the summary (trailing newline stripped), no evidence."""
+    import argparse
+
+    task_cli = _import_task_cli()
+    _repo, tw, tid = concerns_task
+    sf = tmp_path / "short-summary.md"
+    sf.write_text("A short summary read from a file.\n", encoding="utf-8")
+    task_cli.cmd_raise_concern(
+        argparse.Namespace(
+            number=tid,
+            concern_id="summary-file-short",
+            severity="CONCERN",
+            summary=None,
+            summary_file=str(sf),
+            by="code-reviewer",
+            round=1,
+            evidence=None,
+        )
+    )
+    assert "WARNING" not in capsys.readouterr().err
+    row = _concern_rows(tw, tid)[-1]
+    assert row["summary"] == "A short summary read from a file."
+    assert "evidence" not in row
+
+
+def test_cli_address_concern_evidence_flag_roundtrips(concerns_task, capsys):
+    """R4 (#2121): address-concern --evidence exists and round-trips into
+    the stored `addressed` row, symmetric with raise-concern's."""
+    import argparse
+
+    task_cli = _import_task_cli()
+    _repo, tw, tid = concerns_task
+    tw.raise_concern(
+        tid,
+        "evidence-roundtrip",
+        severity="CONCERN",
+        summary="A concern with a normal-length summary.",
+        raised_by="code-reviewer",
+        raised_at_round=1,
+    )
+    task_cli.cmd_address_concern(
+        argparse.Namespace(
+            number=tid,
+            concern_id="evidence-roundtrip",
+            by="implementer",
+            round=1,
+            summary="Fixed by rekeying the lookup.",
+            summary_file=None,
+            evidence="src/foo.py:42 — the rekeyed lookup",
+        )
+    )
+    capsys.readouterr()
+    row = _concern_rows(tw, tid)[-1]
+    assert row["event"] == "addressed"
+    assert row["summary"] == "Fixed by rekeying the lookup."
+    assert row["evidence"] == "src/foo.py:42 — the rekeyed lookup"
+
+
+def test_cli_address_concern_summary_file_overcap_with_evidence_hard_errors(
+    concerns_task, capsys, tmp_path
+):
+    """R5 (#2121): an over-cap --summary-file PLUS an explicit --evidence is
+    a hard error — the CLI refuses to pick which text survives."""
+    import argparse
+
+    task_cli = _import_task_cli()
+    _repo, tw, tid = concerns_task
+    tw.raise_concern(
+        tid,
+        "summary-file-vs-evidence",
+        severity="CONCERN",
+        summary="A concern with a normal-length summary.",
+        raised_by="code-reviewer",
+        raised_at_round=1,
+    )
+    sf = tmp_path / "overcap.md"
+    sf.write_text("x" * 300, encoding="utf-8")
+    rows_before = _concern_rows(tw, tid)
+    with pytest.raises(SystemExit) as excinfo:
+        task_cli.cmd_address_concern(
+            argparse.Namespace(
+                number=tid,
+                concern_id="summary-file-vs-evidence",
+                by="implementer",
+                round=1,
+                summary=None,
+                summary_file=str(sf),
+                evidence="an explicit evidence pointer",
+            )
+        )
+    assert excinfo.value.code == 2
+    err = capsys.readouterr().err
+    assert "ERROR" in err
+    assert "--summary-file" in err
+    assert "--evidence" in err
+    assert _concern_rows(tw, tid) == rows_before  # nothing appended
+
+
+def test_cli_address_concern_summary_and_summary_file_mutually_exclusive(monkeypatch, capsys):
+    """R5 (#2121): --summary and --summary-file are argparse-mutually-
+    exclusive on address-concern, exercised through the REAL parser via
+    main() (a pre-built Namespace cannot pin the parser surface)."""
+    task_cli = _import_task_cli()
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "task.py",
+            "address-concern",
+            "1",
+            "--concern-id",
+            "x",
+            "--by",
+            "implementer",
+            "--round",
+            "1",
+            "--summary",
+            "inline",
+            "--summary-file",
+            "/tmp/nonexistent.md",
+        ],
+    )
+    with pytest.raises(SystemExit) as excinfo:
+        task_cli.main()
+    assert excinfo.value.code == 2
+    assert "not allowed with" in capsys.readouterr().err
+
+
+def test_cli_raise_concern_requires_summary_or_summary_file(monkeypatch, capsys):
+    """raise-concern's flag group is required=True: neither --summary nor
+    --summary-file → argparse error (exit 2). Preserves the historical
+    'summary is mandatory' contract under the new group (#2121)."""
+    task_cli = _import_task_cli()
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "task.py",
+            "raise-concern",
+            "1",
+            "--concern-id",
+            "x",
+            "--severity",
+            "CONCERN",
+            "--by",
+            "code-reviewer",
+            "--round",
+            "1",
+        ],
+    )
+    with pytest.raises(SystemExit) as excinfo:
+        task_cli.main()
+    assert excinfo.value.code == 2
+    assert "required" in capsys.readouterr().err
+
+
+def test_cli_concern_summary_file_empty_or_missing_hard_errors(concerns_task, capsys, tmp_path):
+    """D2b rows (#2121): an empty / whitespace-only --summary-file is a hard
+    error naming the path (a falsy summary would otherwise silently no-op
+    into the carried-forward original); an unreadable path likewise."""
+    import argparse
+
+    task_cli = _import_task_cli()
+    _repo, tw, tid = concerns_task
+    tw.raise_concern(
+        tid,
+        "empty-summary-file",
+        severity="CONCERN",
+        summary="A concern with a normal-length summary.",
+        raised_by="code-reviewer",
+        raised_at_round=1,
+    )
+    empty = tmp_path / "empty.md"
+    empty.write_text("   \n\n", encoding="utf-8")
+    ns = dict(number=tid, concern_id="empty-summary-file", by="implementer", round=1)
+    with pytest.raises(SystemExit) as excinfo:
+        task_cli.cmd_address_concern(
+            argparse.Namespace(**ns, summary=None, summary_file=str(empty), evidence=None)
+        )
+    assert excinfo.value.code == 2
+    err = capsys.readouterr().err
+    assert "ERROR" in err
+    assert str(empty) in err  # names the path
+
+    missing = tmp_path / "does-not-exist.md"
+    with pytest.raises(SystemExit) as excinfo:
+        task_cli.cmd_address_concern(
+            argparse.Namespace(**ns, summary=None, summary_file=str(missing), evidence=None)
+        )
+    assert excinfo.value.code == 2
+    assert str(missing) in capsys.readouterr().err
+
+
+def test_cli_concern_handlers_tolerate_minimal_namespace(concerns_task, capsys):
+    """The mechanical pin for the getattr contract R7 depends on (#2121):
+    both handlers accept a hand-built Namespace lacking BOTH the new
+    ``summary_file`` AND ``evidence`` attributes (existing tests — e.g.
+    the lifecycle test — drive the handlers with pre-#2121 Namespaces, so
+    a direct attribute read would break them)."""
+    import argparse
+
+    task_cli = _import_task_cli()
+    _repo, tw, tid = concerns_task
+    task_cli.cmd_raise_concern(
+        argparse.Namespace(
+            number=tid,
+            concern_id="minimal-namespace",
+            severity="CONCERN",
+            summary="A concern raised from a minimal namespace.",
+            by="code-reviewer",
+            round=1,
+            # no evidence, no summary_file
+        )
+    )
+    task_cli.cmd_address_concern(
+        argparse.Namespace(
+            number=tid,
+            concern_id="minimal-namespace",
+            by="implementer",
+            round=1,
+            summary=None,
+            # no evidence, no summary_file
+        )
+    )
+    capsys.readouterr()
+    rows = _concern_rows(tw, tid)
+    assert [r["event"] for r in rows] == ["raised", "addressed"]
+
+
+def test_address_concern_library_evidence_omitted_when_falsy(concerns_task):
+    """D1a (#2121): address_concern stores ``evidence`` only when truthy —
+    the same additive shape raise_concern has carried since inception, so
+    no concerns.jsonl reader needs to change."""
+    _, tw, tid = concerns_task
+    tw.raise_concern(
+        tid,
+        "evidence-falsy-lib",
+        severity="CONCERN",
+        summary="A concern with a normal-length summary.",
+        raised_by="code-reviewer",
+        raised_at_round=1,
+    )
+    p1 = tw.address_concern(
+        tid,
+        "evidence-falsy-lib",
+        addressed_by="implementer",
+        addressed_at_round=1,
+        summary="Addressed without evidence.",
+    )
+    assert "evidence" not in p1
+    p2 = tw.address_concern(
+        tid,
+        "evidence-falsy-lib",
+        addressed_by="implementer",
+        addressed_at_round=2,
+        summary="Addressed again, empty-string evidence.",
+        evidence="",
+    )
+    assert "evidence" not in p2
+    p3 = tw.address_concern(
+        tid,
+        "evidence-falsy-lib",
+        addressed_by="implementer",
+        addressed_at_round=3,
+        summary="Addressed with evidence.",
+        evidence="src/foo.py:42",
+    )
+    assert p3["evidence"] == "src/foo.py:42"
+
+
 def test_cli_address_concern_accepts_note_alias(monkeypatch, capsys):
     """#1867: `--note` parses as an argparse alias of `--summary` on
     address-concern (dest=summary), exercised through the REAL parser via
@@ -3272,14 +3719,16 @@ def test_cli_address_concern_accepts_note_alias(monkeypatch, capsys):
     captured = {}
 
     def fake_address_concern(
-        task_id, concern_id, *, addressed_by, addressed_at_round, summary=None
+        task_id, concern_id, *, addressed_by, addressed_at_round, summary=None, evidence=None
     ):
+        # signature mirrors the real address_concern (evidence added by #2121)
         captured.update(
             task_id=task_id,
             concern_id=concern_id,
             addressed_by=addressed_by,
             addressed_at_round=addressed_at_round,
             summary=summary,
+            evidence=evidence,
         )
         return {"event": "addressed", "concern_id": concern_id}
 
@@ -5480,6 +5929,118 @@ def test_husk_subset_verifier_jsonl_and_symlink_arms(fake_repo):
     assert tw._husk_unique_content(h, live) == []
 
 
+def test_husk_file_symlink_vs_materialized_arms(fake_repo):
+    """#2138 file-symlink coverage arms of _husk_unique_content: a husk
+    plans/plan.md SYMLINK against a live MATERIALIZED counterpart. Routes
+    in code order: (b) the in-husk fully-resolved target's husk-relative
+    path also exists in the live dir (classifies the SYMLINK entry ONLY --
+    T2b pins that the target file's own comparison still runs); then (a)
+    resolved bytes covered by the live counterpart at the same rel path.
+    Pre-fix, EVERY symlink-vs-non-symlink pairing here read unique (T1
+    returned ["plans/plan.md"]; T2b returned both entries)."""
+    repo, tw = fake_repo
+
+    def _pair(name: str) -> tuple[Path, Path]:
+        h = repo / f"husk-{name}"
+        lv = repo / f"live-{name}"
+        (h / "plans").mkdir(parents=True)
+        (lv / "plans").mkdir(parents=True)
+        return h, lv
+
+    # T1 -- SAFE, the traced #2051 shape ((b) fires): live plan.md is a
+    # MATERIALIZED POINTER -- a 5-byte regular file whose content is the
+    # target STRING, exactly as traced at commit f4f057c6af8b.
+    h, lv = _pair("t1")
+    (h / "plans" / "plan.md").symlink_to("v1.md")
+    (h / "plans" / "v1.md").write_text("the full plan body\n")
+    (lv / "plans" / "plan.md").write_text("v1.md")
+    (lv / "plans" / "v1.md").write_text("the full plan body\n")
+    assert tw._husk_unique_content(h, lv) == []
+    # T2 -- SAFE, later-version live plan ((b) fires, (a) fails): live
+    # plan.md advanced past the husk's version; live v1.md persists.
+    h, lv = _pair("t2")
+    (h / "plans" / "plan.md").symlink_to("v1.md")
+    (h / "plans" / "v1.md").write_text("PLAN-V1\n")
+    (lv / "plans" / "plan.md").write_text("TOTALLY DIFFERENT V2 PLAN\n")
+    (lv / "plans" / "v1.md").write_text("PLAN-V1\n")
+    assert tw._husk_unique_content(h, lv) == []
+    # T2b -- UNIQUE, (b) fires on the symlink but the TARGET diverges (the
+    # load-bearing soundness arm): the symlink is absent from the unique
+    # list (proving (b) fired) AND the diverged target is present (proving
+    # (b) did NOT suppress the walk's independent check of the target).
+    h, lv = _pair("t2b")
+    (h / "plans" / "plan.md").symlink_to("v1.md")
+    (h / "plans" / "v1.md").write_text("PLAN-V1\n")
+    (lv / "plans" / "plan.md").write_text("v1.md")
+    (lv / "plans" / "v1.md").write_text("PLAN-V2\n")
+    assert tw._husk_unique_content(h, lv) == ["plans/v1.md"]
+    # T3 -- (a) fires in isolation ((b) fails): live plan.md is a
+    # FULL-CONTENT materialization, no live v1.md; the symlink reads safe
+    # via byte coverage while the uncovered target file stays unique.
+    h, lv = _pair("t3")
+    (h / "plans" / "plan.md").symlink_to("v1.md")
+    (h / "plans" / "v1.md").write_text("PLAN-V1\n")
+    (lv / "plans" / "plan.md").write_text("PLAN-V1\n")
+    assert tw._husk_unique_content(h, lv) == ["plans/v1.md"]
+    # T4 -- UNIQUE, diverged: both new routes fail; symlink AND target
+    # stay unique.
+    h, lv = _pair("t4")
+    (h / "plans" / "plan.md").symlink_to("v1.md")
+    (h / "plans" / "v1.md").write_text("PLAN-V1\n")
+    (lv / "plans" / "plan.md").write_text("DIVERGED\n")
+    assert tw._husk_unique_content(h, lv) == sorted(["plans/plan.md", "plans/v1.md"])
+    # T5a -- UNIQUE, ABSOLUTE escape: byte coverage does NOT rescue a link
+    # resolving outside the husk.
+    outside = repo / "outside.md"
+    outside.write_text("SHARED\n")
+    h, lv = _pair("t5a")
+    (h / "plans" / "plan.md").symlink_to(outside)
+    (lv / "plans" / "plan.md").write_text("SHARED\n")
+    assert "plans/plan.md" in tw._husk_unique_content(h, lv)
+    # T5b -- UNIQUE, relative escape (../.. exits the husk).
+    h, lv = _pair("t5b")
+    (h / "plans" / "plan.md").symlink_to("../../outside.md")
+    (lv / "plans" / "plan.md").write_text("SHARED\n")
+    assert "plans/plan.md" in tw._husk_unique_content(h, lv)
+    # T5c -- UNIQUE, dangling target.
+    h, lv = _pair("t5c")
+    (h / "plans" / "plan.md").symlink_to("missing.md")
+    (lv / "plans" / "plan.md").write_text("v1.md")
+    assert "plans/plan.md" in tw._husk_unique_content(h, lv)
+    # T6 -- inverse-direction regression pin: husk REGULAR file vs live
+    # symlink-to-file carrying the same bytes (already safe today --
+    # is_file()/read_bytes() follow symlinks on the regular-file branch).
+    h, lv = _pair("t6")
+    (h / "plans" / "plan.md").write_text("PLAN-V1\n")
+    (lv / "plans" / "v1.md").write_text("PLAN-V1\n")
+    (lv / "plans" / "plan.md").symlink_to("v1.md")
+    assert tw._husk_unique_content(h, lv) == []
+    # T7 -- dir-symlink strictness preserved: the file-symlink leniency
+    # must NOT extend to dirnames; a live REAL materialized DIRECTORY does
+    # not cover a husk dir-symlink.
+    h, lv = _pair("t7")
+    (h / "artifacts").mkdir()
+    (h / "artlink").symlink_to("artifacts")
+    (lv / "artifacts").mkdir()
+    (lv / "artlink").mkdir()
+    assert "artlink" in tw._husk_unique_content(h, lv)
+    # T8 -- fifo stays unique (non-regular file type, never covered).
+    h, lv = _pair("t8")
+    os.mkfifo(h / "pipe")
+    assert "pipe" in tw._husk_unique_content(h, lv)
+    # T9 -- multi-hop chain SAFE: resolve() collapses the chain, (b) keys
+    # on the FULLY-resolved target; both symlinks read safe and the target
+    # file verifies independently.
+    h, lv = _pair("t9")
+    (h / "plans" / "plan.md").symlink_to("link2.md")
+    (h / "plans" / "link2.md").symlink_to("v1.md")
+    (h / "plans" / "v1.md").write_text("PLAN-V1\n")
+    (lv / "plans" / "plan.md").write_text("v1.md")
+    (lv / "plans" / "link2.md").write_text("v1.md")
+    (lv / "plans" / "v1.md").write_text("PLAN-V1\n")
+    assert tw._husk_unique_content(h, lv) == []
+
+
 def test_reap_skips_non_terminal_and_blocked(fake_repo):
     """Plan test (d): duplicate dirs on running and blocked tasks are
     skipped-non-terminal (D2: blocked is re-drivable, NOT reap-eligible)."""
@@ -5567,6 +6128,36 @@ def test_reap_symlink_and_untracked_shapes(fake_repo):
     assert "0 tracked file(s)" in rep3.actions[0].reason
     assert not husk3.exists()
     assert _git_log_count(repo) == commits_before  # rmtree-only, no commit
+
+
+def test_reap_symlink_vs_materialized_husk(fake_repo):
+    """T10 (#2138 end-to-end, the traced #2051 shape): a tracked husk whose
+    plans/plan.md is a SYMLINK to v1.md reaps against a live dir whose
+    plan.md is a MATERIALIZED 5-byte pointer file; the live plans/ files
+    stay UNTRACKED, mirroring the real incident (the comparator reads disk
+    state, not git). The live dir is untouched by the reap."""
+    repo, tw = fake_repo
+    tid, live, husk = _make_terminal_task_with_husk(repo, tw)
+    # Live side: materialized pointer + the versioned plan body, untracked.
+    (live / "plans").mkdir(exist_ok=True)
+    (live / "plans" / "v1.md").write_text("the full plan body\n")
+    (live / "plans" / "plan.md").write_text("v1.md")
+    # Husk side: the symlink shape, git-tracked (as at commit f4f057c6af8b).
+    (husk / "plans").mkdir()
+    (husk / "plans" / "v1.md").write_text("the full plan body\n")
+    (husk / "plans" / "plan.md").symlink_to("v1.md")
+    _git(repo, "add", "--", str(husk.relative_to(repo)))
+    _git(repo, "commit", "-q", "-m", f"husk plans for #{tid}")
+    rep = tw.reap_stale_status_husks(apply=True, task_id=tid)
+    assert [a.action for a in rep.actions] == ["reaped"]
+    assert not husk.exists()
+    # Live dir untouched: plan.md still a REGULAR pointer file, v1.md intact.
+    assert live.is_dir()
+    assert not (live / "plans" / "plan.md").is_symlink()
+    assert (live / "plans" / "plan.md").read_text() == "v1.md"
+    assert (live / "plans" / "v1.md").read_text() == "the full plan body\n"
+    rows = _husk_sidecar_rows(repo)
+    assert any(r["action"] == "reaped" and r["task_id"] == tid for r in rows)
 
 
 def test_reap_kill_switch(fake_repo, monkeypatch):

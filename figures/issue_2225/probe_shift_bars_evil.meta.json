@@ -1,0 +1,351 @@
+{
+  "commit": "849c79c4",
+  "render_id": "577c245a51ae4bf9",
+  "git_commit": "849c79c4",
+  "git_dirty": false,
+  "created": "2026-08-11T20:40:00Z",
+  "figsize": [
+    13.200000000000001,
+    3.6
+  ],
+  "points": [
+    {
+      "x": -0.3,
+      "Probe-score shift vs base (steering layer)": 0.37588366866111755,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.7,
+      "Probe-score shift vs base (steering layer)": 0.3367663621902466,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.7,
+      "Probe-score shift vs base (steering layer)": 1.2458375692367554,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.7,
+      "Probe-score shift vs base (steering layer)": 0.9921193271875381,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.7,
+      "Probe-score shift vs base (steering layer)": 0.6219080090522766,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.7,
+      "Probe-score shift vs base (steering layer)": 1.2683516144752502,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.7,
+      "Probe-score shift vs base (steering layer)": -1.8999133706092834,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.7,
+      "Probe-score shift vs base (steering layer)": 0.3733530044555664,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.7,
+      "Probe-score shift vs base (steering layer)": 1.3513391017913818,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 8.7,
+      "Probe-score shift vs base (steering layer)": 0.195389986038208,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 9.7,
+      "Probe-score shift vs base (steering layer)": 1.373353898525238,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 10.7,
+      "Probe-score shift vs base (steering layer)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.1,
+      "Probe-score shift vs base (steering layer)": 4.3185484409332275,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.9,
+      "Probe-score shift vs base (steering layer)": 3.754549741744995,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.9,
+      "Probe-score shift vs base (steering layer)": 4.358922004699707,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.9,
+      "Probe-score shift vs base (steering layer)": 3.5079505443573,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.9,
+      "Probe-score shift vs base (steering layer)": 2.960327625274658,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.9,
+      "Probe-score shift vs base (steering layer)": 4.448854207992554,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.9,
+      "Probe-score shift vs base (steering layer)": 3.0166244506835938,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.9,
+      "Probe-score shift vs base (steering layer)": 4.166433572769165,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.9,
+      "Probe-score shift vs base (steering layer)": 4.328678131103516,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 8.9,
+      "Probe-score shift vs base (steering layer)": 1.4843426942825317,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 9.9,
+      "Probe-score shift vs base (steering layer)": 4.259305715560913,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 10.9,
+      "Probe-score shift vs base (steering layer)": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.1,
+      "Probe-score shift vs base (steering layer)": 0.5475395023822784,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.1,
+      "Probe-score shift vs base (steering layer)": 0.3445093631744385,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.1,
+      "Probe-score shift vs base (steering layer)": 1.573474645614624,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.1,
+      "Probe-score shift vs base (steering layer)": 1.3140755593776703,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.1,
+      "Probe-score shift vs base (steering layer)": 0.7001758068799973,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.1,
+      "Probe-score shift vs base (steering layer)": 1.554243564605713,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 6.1,
+      "Probe-score shift vs base (steering layer)": 0.45878341794013977,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 7.1,
+      "Probe-score shift vs base (steering layer)": 0.6028010845184326,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 8.1,
+      "Probe-score shift vs base (steering layer)": 1.5665250420570374,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 9.1,
+      "Probe-score shift vs base (steering layer)": 0.16083639860153198,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 10.1,
+      "Probe-score shift vs base (steering layer)": 1.5630431771278381,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 11.1,
+      "Probe-score shift vs base (steering layer)": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.3,
+      "Probe-score shift vs base (steering layer)": 0.5761703997850418,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.3,
+      "Probe-score shift vs base (steering layer)": 0.35328683257102966,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.3,
+      "Probe-score shift vs base (steering layer)": 1.581152856349945,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.3,
+      "Probe-score shift vs base (steering layer)": 1.3150161802768707,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.3,
+      "Probe-score shift vs base (steering layer)": 0.6876240074634552,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 5.3,
+      "Probe-score shift vs base (steering layer)": 1.5571208000183105,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 6.3,
+      "Probe-score shift vs base (steering layer)": -0.2579229474067688,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 7.3,
+      "Probe-score shift vs base (steering layer)": 0.6283369958400726,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 8.3,
+      "Probe-score shift vs base (steering layer)": 1.5645679831504822,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 9.3,
+      "Probe-score shift vs base (steering layer)": 0.1574798822402954,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 10.3,
+      "Probe-score shift vs base (steering layer)": 1.5606571435928345,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 11.3,
+      "Probe-score shift vs base (steering layer)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 48,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Off-direction probe shift \u2014 Evil",
+        "ylabel": "Probe-score shift vs base (steering layer)",
+        "legend_labels": [
+          "full",
+          "orthogonal to E1",
+          "orthogonal to E2",
+          "orthogonal to E3"
+        ],
+        "xticklabels": [
+          "Paper 1-layer @ 1.5",
+          "Paper 3-layer @ 1.5",
+          "Context 1-layer @ 5.0",
+          "Context 2-layer @ 1.5",
+          "Context 3-layer @ 1.5",
+          "Paper dir, ctx tokens @ 3.0",
+          "Context dir, all tokens @ 3.0",
+          "Paper dir, resp tokens @ 1.5",
+          "Prefix dir, prefix tokens @ 3.0",
+          "Preventative prompt",
+          "Unsteered finetune (Evil)",
+          "Base model"
+        ],
+        "yticklabels": [
+          "\u22124",
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6"
+        ]
+      }
+    ],
+    "series": [
+      "full",
+      "orthogonal to E1",
+      "orthogonal to E2",
+      "orthogonal to E3"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

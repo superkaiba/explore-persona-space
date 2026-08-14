@@ -391,7 +391,59 @@ Run the structural verifier against the plan version just persisted:
   prose; a genuinely contradictory row instead carries a row-scoped
   reconciliation marker — superseded/reconciled/upper-bound/worst-case/
   ceiling or an includes/excludes scope note — or re-books the row /
-  raises its abort threshold).
+  raises its abort threshold), and
+  `N/A — no workflow-surface literal edits` (check 51 — the plan's
+  workflow-surface edit adds NEW prose only, or quotes surface literals it
+  does not change; a plan genuinely editing an EXISTING pinned literal
+  instead names every pinning tests/ file in its edit-target list), and
+  `rule 28 exemption: <reason>` (check 53 — standalone line WITHOUT the
+  N/A prefix, the c43 shape; the `N/A — rule 28 exemption: <reason>` form
+  is also accepted. Use it when the harm-class judged-DV vocabulary
+  (jailbreak / harmfulness / harm-rate / adversarial-role-play /
+  harmful-compliance) is incidental or quotes a sibling/incident, or the
+  judged completions genuinely carry no api-refusal exposure; a plan
+  genuinely judging harm-class completions instead names per-arm
+  `n_api_refusal` accounting — reported separately from content drops and
+  transport losses — plus the targeted SYNC re-issue remediation at the
+  identical instrument, llm-judging.md rule 28), and
+  `N/A — no inherited row-count defaults` (check 55 — the plan-named script
+  paths are lint/edit targets, not reused generation/splice scripts, or no
+  reused script's argparse row-count default (a target/max/limit +
+  conv/rows/ids flag) can under-cover this plan's per-cell target; a plan
+  genuinely reusing a script whose row-count default sits below its stated
+  per-cell target n instead embeds the explicit `--<flag> <value>` override
+  in a fenced command — the #2054 `--target-conv-ids` 8,000 < 9,000
+  deterministic first-N truncation class), and
+  `N/A — no multi-GB staging` (check 56 — the staging + size vocabulary is
+  incidental (quotes a sibling / an incident) and this plan stages no
+  multi-GB inputs; a plan genuinely staging >=5 GB instead names the
+  staging path + the filesystem/mount it resolves to within ±2 lines of
+  the staging row — and, when it cites the #681 worktree bind, carries a
+  literal `findmnt --mountpoint` liveness assertion, since the bind is NOT
+  live on this VM: #2091 cited it for a 42 GB stage and PASSed verify_plan
+  twice), and
+  `N/A — GPU-hours token conflict reconciled` (check 59 — the plan
+  deliberately carries more than one declaration-shaped
+  `Estimated GPU-hours (total):` value (e.g. a declaration-shaped
+  revision-comparison table) or a prose-quoted value ahead of the
+  declaration, and the conflict is reconciled in prose; a genuinely
+  conflicting plan instead keeps ONE declaration-shaped value and moves
+  every other mention mid-sentence / into a wrapped or fenced form so the
+  first-match consumer (`GPU_LINE_RE` on the raw plan — the Step 2c
+  gate's read) resolves the declared value; #2123), and
+  `N/A — backend pin-claim reconciled` (check 62 — the §9 pin-claim
+  vocabulary is deliberate and the claim/frontmatter divergence is
+  reconciled in prose; a plan genuinely claiming a frontmatter pin instead
+  has the `backend: <lane>` key actually set in the task's body.md
+  frontmatter BEFORE dispatch, or rewords the claim — a phantom pin-claim
+  routes `auto` at dispatch; #2276, incident #2225 v5/v9), and
+  `N/A — declared width vs launch width reconciled` (check 63 — the §9
+  N-wide declaration and a narrower launch fence are BOTH deliberate,
+  e.g. a narrow smoke launch beside a wide production provision; a plan
+  genuinely dispatching N-wide through the fence instead adds `--gpus <N>`
+  to it, or re-costs the §9 walls at the realized width — a
+  `--time-budget-hours` fence sized to the wide wall TIMEOUTs the narrow
+  run; #2276, incident #2225 v9).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).
@@ -1075,6 +1127,6 @@ in as a post-park plan v2.
 - **Never skip the Implementation Critic.** The Implementation Critic catches what the implementer missed. The implementer is biased toward seeing success.
 - **Max 5 revision rounds (planning; the per-reviewer round cap — reconciler invocations don't count), max 2 fix rounds (implementation).** If it's not converging, surface the disagreement to the user.
 - **The user has final say.** Present the plan + critique + revision to the user before executing.
-- **Log the plan.** Register every plan revision via `uv run python scripts/task.py new-plan-version <N> --file <draft>.md`. This writes `tasks/<status>/<N>/plans/v<K>.md` and updates the `plans/plan.md` symlink. Downstream subagents read through the symlink. The persist auto-aligns a self-declared `# Plan v<K>` first-heading version to the assigned version at write time (#1745), so a freshly-persisted plan cannot WARN on c40 for a stale header. Never re-persist a plan solely to retitle its header — that burns a plan version for zero content change (the #1715 churn loop); prefer version-neutral headers (`# Plan — task #<N>: …`) for new drafts. A scripted edit gates its persist on verified edit success — `&&`-chain edit
+- **Log the plan.** Register every plan revision via `uv run python scripts/task.py new-plan-version <N> --file <draft>.md`. This writes `tasks/<status>/<N>/plans/v<K>.md` and updates the `plans/plan.md` symlink. Downstream subagents read through the symlink. The persist REFUSES an amendment-shaped version — a thin delta (< 40% of its predecessor) carrying an amendment-marker phrase ("AMENDMENT of vJ" / "PORTS FROM vJ" / "unchanged from vJ") with no own `Estimated GPU-hours (total):` declaration — because three consumers assume every `plans/v{K}.md` is self-contained: subagent briefs handed `plans/plan.md`, `verify_plan.py --issue`, and the Step-2c GPU-hours read (#2255). Remedy: compose a FULL plan (base + delta merged into one self-contained document) and re-persist; the deliberate escape is `--allow-amendment`, which obligates RESTATING the `Estimated GPU-hours (total):` line inside the amendment and handing base+delta together in every brief (`verify_plan --issue` composes them automatically). The persist auto-aligns a self-declared `# Plan v<K>` first-heading version to the assigned version at write time (#1745), so a freshly-persisted plan cannot WARN on c40 for a stale header. Never re-persist a plan solely to retitle its header — that burns a plan version for zero content change (the #1715 churn loop); prefer version-neutral headers (`# Plan — task #<N>: …`) for new drafts. A scripted edit gates its persist on verified edit success — `&&`-chain edit
 → verify → persist, abort loudly on failure (§ Edit-success gate).
 - **Read a Bash-materialized plan copy before Editing it.** When a revision round creates the draft via Bash (`cp plans/plan.md /tmp/...`, a heredoc, or a python writer), the harness requires an in-session `Read` of that file before any `Edit` — firing Edits straight at a just-copied file bounces every one with "File has not been read yet" (7 consecutive bounces in one 2026-07-04 session). Read once, then edit.

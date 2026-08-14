@@ -1,0 +1,123 @@
+{
+ "per_arm": {
+  "evil/raw": {
+   "p975_max_selected": 0.5592764025603276,
+   "p975_fixed_steer": 0.4686371209694943,
+   "observed_max_abs_r": 0.9163421502707647,
+   "n_perms": 10000
+  },
+  "evil/exact_dp": {
+   "p975_max_selected": 0.5297211803575915,
+   "p975_fixed_steer": 0.46687040057705514,
+   "observed_max_abs_r": 0.9533777292747816,
+   "n_perms": 10000
+  },
+  "evil/prompt_dp": {
+   "p975_max_selected": 0.5690560284027153,
+   "p975_fixed_steer": 0.46492514053227946,
+   "observed_max_abs_r": 0.9588977855479828,
+   "n_perms": 10000
+  },
+  "evil/mapped_ctx": {
+   "p975_max_selected": 0.5539397646179101,
+   "p975_fixed_steer": 0.4501664107309865,
+   "observed_max_abs_r": 0.6198654375487694,
+   "n_perms": 10000
+  },
+  "evil/mapped_pfx": {
+   "p975_max_selected": 0.5592764025603274,
+   "p975_fixed_steer": 0.4686371209694944,
+   "observed_max_abs_r": 0.9163421502707647,
+   "n_perms": 10000
+  },
+  "evil/id_bias": {
+   "p975_max_selected": 0.5721784439831832,
+   "p975_fixed_steer": 0.4649436533562803,
+   "observed_max_abs_r": 0.9584789551766537,
+   "n_perms": 10000
+  },
+  "sycophancy/raw": {
+   "p975_max_selected": 0.5526385874829898,
+   "p975_fixed_steer": 0.44981792893530936,
+   "observed_max_abs_r": 0.8285278119537831,
+   "n_perms": 10000
+  },
+  "sycophancy/exact_dp": {
+   "p975_max_selected": 0.5407963114785319,
+   "p975_fixed_steer": 0.45274404585039435,
+   "observed_max_abs_r": 0.9216842945867083,
+   "n_perms": 10000
+  },
+  "sycophancy/prompt_dp": {
+   "p975_max_selected": 0.578716521100528,
+   "p975_fixed_steer": 0.4525944599917649,
+   "observed_max_abs_r": 0.8247920533965899,
+   "n_perms": 10000
+  },
+  "sycophancy/mapped_ctx": {
+   "p975_max_selected": 0.5695685158746758,
+   "p975_fixed_steer": 0.4629438536892805,
+   "observed_max_abs_r": 0.41424813760988954,
+   "n_perms": 10000
+  },
+  "sycophancy/mapped_pfx": {
+   "p975_max_selected": 0.5526385874829898,
+   "p975_fixed_steer": 0.4498179289353096,
+   "observed_max_abs_r": 0.8285278119537829,
+   "n_perms": 10000
+  },
+  "sycophancy/id_bias": {
+   "p975_max_selected": 0.5801438659216429,
+   "p975_fixed_steer": 0.4536458554278864,
+   "observed_max_abs_r": 0.8035048608033107,
+   "n_perms": 10000
+  },
+  "hallucination/raw": {
+   "p975_max_selected": 0.5383710725414796,
+   "p975_fixed_steer": 0.42445881979473793,
+   "observed_max_abs_r": 0.6593664289893805,
+   "n_perms": 10000
+  },
+  "hallucination/exact_dp": {
+   "p975_max_selected": 0.5263964923453321,
+   "p975_fixed_steer": 0.44576881967627213,
+   "observed_max_abs_r": 0.6819280652376837,
+   "n_perms": 10000
+  },
+  "hallucination/prompt_dp": {
+   "p975_max_selected": 0.5569805194321399,
+   "p975_fixed_steer": 0.446705017508731,
+   "observed_max_abs_r": 0.6861884016060901,
+   "n_perms": 10000
+  },
+  "hallucination/mapped_ctx": {
+   "p975_max_selected": 0.5698507322919572,
+   "p975_fixed_steer": 0.45571663114331545,
+   "observed_max_abs_r": 0.22868221735787575,
+   "n_perms": 10000
+  },
+  "hallucination/mapped_pfx": {
+   "p975_max_selected": 0.5383710725414796,
+   "p975_fixed_steer": 0.42445881979473776,
+   "observed_max_abs_r": 0.6593664289893804,
+   "n_perms": 10000
+  },
+  "hallucination/id_bias": {
+   "p975_max_selected": 0.5587123235092232,
+   "p975_fixed_steer": 0.44697954677708246,
+   "observed_max_abs_r": 0.6776050801270204,
+   "n_perms": 10000
+  }
+ },
+ "matrices_dir": "/workspace/explore-persona-space/data/issue_2222/nulls",
+ "hf_destination": "issue2222_pvscreen/analysis_tensors/nulls/",
+ "timestamp_utc": "2026-08-11T06:45:30Z",
+ "versions": {
+  "torch": "2.8.0+cu128",
+  "transformers": "4.57.6",
+  "vllm": "0.11.0",
+  "numpy": "2.2.6"
+ },
+ "git_commit": "4cadf313",
+ "git_dirty": false
+}

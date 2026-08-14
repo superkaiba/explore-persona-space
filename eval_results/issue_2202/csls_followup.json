@@ -1,0 +1,170 @@
+{
+  "meta": {
+    "issue": 2202,
+    "generated_utc": "2026-08-08T22:44:12.086811+00:00",
+    "numpy_version": "2.2.6",
+    "python_version": "3.11.15",
+    "elapsed_s": 53.5,
+    "inputs": {
+      "repo": "superkaiba1/explore-persona-space-data",
+      "revision": "09788eef2f85330c6f9c6b7cd3d28cb47cfb8429",
+      "paths": [
+        "issue1738_multiturn/analysis_tensors/pred16/context_L19_ridge.npz",
+        "issue1738_multiturn/analysis_tensors/y_holdout/L19.npz"
+      ]
+    },
+    "git_commit": "d2a82ee3",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "figures/issue_2202/fig_indegree_v2.meta.json",
+      "figures/issue_2202/fig_indegree_v2.pdf",
+      "figures/issue_2202/fig_indegree_v2.png"
+    ]
+  },
+  "config": {
+    "k_csls": 10,
+    "ks": [
+      1,
+      5,
+      10
+    ],
+    "n": 9941,
+    "n_pool": 9941,
+    "fresh_draw_ref_acc1": 0.9425,
+    "csls_convention": "cosine-native: S = 1 - cosine_distance(pred, y); csls_scores from issue1901_metric_battery (arXiv 1710.04087); retrieval distance = -score; mid-rank ties per knn_retrieval"
+  },
+  "baseline": {
+    "euclidean": {
+      "metric": "euclidean",
+      "n": 9941,
+      "n_pool": 9941,
+      "acc_at_k": {
+        "1": 0.816014485464239,
+        "5": 0.9105723770244443,
+        "10": 0.9328035408912584
+      },
+      "chance_at_k": {
+        "1": 0.00010059350165979277,
+        "5": 0.0005029675082989639,
+        "10": 0.0010059350165979278
+      },
+      "median_rank": 1.0,
+      "mrr": 0.8595930632290242
+    },
+    "cosine": {
+      "metric": "cosine",
+      "n": 9941,
+      "n_pool": 9941,
+      "acc_at_k": {
+        "1": 0.8281862991650739,
+        "5": 0.9166079871240318,
+        "10": 0.9345136304194749
+      },
+      "chance_at_k": {
+        "1": 0.00010059350165979277,
+        "5": 0.0005029675082989639,
+        "10": 0.0010059350165979278
+      },
+      "median_rank": 1.0,
+      "mrr": 0.868480274216372
+    }
+  },
+  "baseline_reconciliation": {
+    "euclidean": {
+      "deltas": {
+        "acc_at_k": {
+          "1": 0.0,
+          "5": 0.0,
+          "10": 0.0
+        },
+        "mrr": 1.5024184751855074e-07
+      },
+      "ok": true
+    },
+    "cosine": {
+      "deltas": {
+        "acc_at_k": {
+          "1": 0.0,
+          "5": 0.00020118700331961392,
+          "10": 0.0
+        },
+        "mrr": 3.943550734852863e-06
+      },
+      "ok": true
+    }
+  },
+  "csls": {
+    "acc_at_k": {
+      "1": 0.9094658485061865,
+      "5": 0.9565436072829695,
+      "10": 0.9662005834423096
+    },
+    "chance_at_k": {
+      "1": 0.00010059350165979277,
+      "5": 0.0005029675082989639,
+      "10": 0.0010059350165979278
+    },
+    "median_rank": 1.0,
+    "mrr": 0.9310306942719809,
+    "n": 9941,
+    "n_pool": 9941
+  },
+  "gap_closure": {
+    "formula": "(csls_acc1 - base_acc1) / (fresh_draw_ref_acc1 - base_acc1)",
+    "euclidean_primary": {
+      "base_acc1": 0.816014485464239,
+      "csls_acc1": 0.9094658485061865,
+      "fresh_draw_ref_acc1": 0.9425,
+      "fraction": 0.7388305560912761
+    },
+    "cosine": {
+      "base_acc1": 0.8281862991650739,
+      "csls_acc1": 0.9094658485061865,
+      "fresh_draw_ref_acc1": 0.9425,
+      "fraction": 0.711021940042723
+    }
+  },
+  "fail1": {
+    "vs_euclidean_primary": {
+      "n_fail_base": 1829,
+      "recovered_rank1_under_csls": 969,
+      "new_failures_under_csls": 40,
+      "n_fail_csls": 900
+    },
+    "vs_cosine": {
+      "n_fail_base": 1708,
+      "recovered_rank1_under_csls": 844,
+      "new_failures_under_csls": 36,
+      "n_fail_csls": 900
+    }
+  },
+  "hubness_top10": {
+    "euclidean": {
+      "n10_max": 182,
+      "top_hub_ci": 22248,
+      "n10_skewness": 3.754666995105639,
+      "n10_frac_zero": 0.03158635952117493,
+      "banked_reconcile": {
+        "banked_top_hub_ci": 22248,
+        "banked_top_hub_count": 182,
+        "recomputed_count": 182,
+        "abs_delta": 0,
+        "tol_rows": 2,
+        "ok": true
+      }
+    },
+    "cosine": {
+      "n10_max": 162,
+      "top_hub_ci": 98619,
+      "n10_skewness": 3.0136719106353214,
+      "n10_frac_zero": 0.030882205009556383
+    },
+    "csls": {
+      "n10_max": 72,
+      "top_hub_ci": 16615,
+      "n10_skewness": 1.6589068722076874,
+      "n10_frac_zero": 0.00543204908962881,
+      "banked_euclidean_top_hub_count_after": 50
+    }
+  }
+}

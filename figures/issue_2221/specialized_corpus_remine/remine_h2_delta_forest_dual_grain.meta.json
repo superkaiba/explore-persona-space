@@ -1,0 +1,174 @@
+{
+  "commit": "bf5c67e7+dirty",
+  "render_id": "334ea77321fe4a8b",
+  "git_commit": "bf5c67e7",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2221/specialized_corpus_remine/remine_mix_size_vs_acquisition.meta.json",
+    "figures/issue_2221/specialized_corpus_remine/remine_mix_size_vs_acquisition.pdf",
+    "figures/issue_2221/specialized_corpus_remine/remine_mix_size_vs_acquisition.png",
+    "scripts/issue2221_dv_figs.py"
+  ],
+  "created": "2026-08-14T00:03:37Z",
+  "figsize": [
+    7.2,
+    4.8
+  ],
+  "points": [
+    {
+      "$\\Delta$ Spearman r (mapped read $-$ paper read); achievable range [-2, +2]": 0.05292275894473231,
+      "y": -0.14,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\Delta$ Spearman r (mapped read $-$ paper read); achievable range [-2, +2]": 1.6623174283922348,
+      "y": 0.86,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\Delta$ Spearman r (mapped read $-$ paper read); achievable range [-2, +2]": 0.012212944371861267,
+      "y": 1.8599999999999999,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\Delta$ Spearman r (mapped read $-$ paper read); achievable range [-2, +2]": 1.1695652173913045,
+      "y": 2.86,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\Delta$ Spearman r (mapped read $-$ paper read); achievable range [-2, +2]": -0.013043478260869601,
+      "y": 3.86,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\Delta$ Spearman r (mapped read $-$ paper read); achievable range [-2, +2]": -0.03913043478260869,
+      "y": 4.86,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\Delta$ Spearman r (mapped read $-$ paper read); achievable range [-2, +2]": 0.017391304347825987,
+      "y": 5.86,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\Delta$ Spearman r (mapped read $-$ paper read); achievable range [-2, +2]": -0.017391304347826098,
+      "y": 6.86,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\Delta$ Spearman r (mapped read $-$ paper read); achievable range [-2, +2]": 0.01304347826086949,
+      "y": 7.86,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\Delta$ Spearman r (mapped read $-$ paper read); achievable range [-2, +2]": 0.05292275894473231,
+      "y": 0.14,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\Delta$ Spearman r (mapped read $-$ paper read); achievable range [-2, +2]": 1.6623174283922348,
+      "y": 1.1400000000000001,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\Delta$ Spearman r (mapped read $-$ paper read); achievable range [-2, +2]": 0.012212944371861267,
+      "y": 2.14,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\Delta$ Spearman r (mapped read $-$ paper read); achievable range [-2, +2]": 1.1695652173913045,
+      "y": 3.14,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\Delta$ Spearman r (mapped read $-$ paper read); achievable range [-2, +2]": -0.013043478260869601,
+      "y": 4.14,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\Delta$ Spearman r (mapped read $-$ paper read); achievable range [-2, +2]": -0.03913043478260869,
+      "y": 5.14,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\Delta$ Spearman r (mapped read $-$ paper read); achievable range [-2, +2]": 0.017391304347825987,
+      "y": 6.14,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\Delta$ Spearman r (mapped read $-$ paper read); achievable range [-2, +2]": -0.017391304347826098,
+      "y": 7.14,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\Delta$ Spearman r (mapped read $-$ paper read); achievable range [-2, +2]": 0.01304347826086949,
+      "y": 8.14,
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 18,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "$\\Delta$ Spearman r (mapped read $-$ paper read); achievable range [-2, +2]",
+        "legend_labels": [
+          "fine-tune-grain bootstrap CI",
+          "family-grain bootstrap CI (binding)"
+        ],
+        "xticklabels": [
+          "\u22122.5",
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5"
+        ],
+        "yticklabels": [
+          "evil / paper capture",
+          "evil / lmsys capture",
+          "evil / pooled capture",
+          "sycophancy / paper capture",
+          "sycophancy / lmsys capture",
+          "sycophancy / pooled capture",
+          "hallucination / paper capture",
+          "hallucination / lmsys capture",
+          "hallucination / pooled capture"
+        ]
+      }
+    ],
+    "series": [
+      "fine-tune-grain bootstrap CI",
+      "family-grain bootstrap CI (binding)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -427,7 +427,7 @@ of the full claimed text: the functional fix routinely lands under a
 SHORTER substring. Probe SEMANTICALLY — PREFER running the
 predicate/classifier against the claimed text where the guard is
 executable, with repo-wide fragment/substring greps as the fallback
-(`grep -rn '<fragment>' src/ scripts/ .claude/`) — AND record a
+(`grep -rn --exclude-dir=worktrees '<fragment>' src/ scripts/ .claude/`) — AND record a
 landed-fix history check on the target file
 (`git log --oneline --since='7 days ago' -- <target_file>`): the dedup
 predicate (OPEN tasks only, by design) and the #1446 closed-sibling
@@ -437,8 +437,16 @@ full error text read 0 hits ~9h after #1360 landed the shorter substring).
 
 (b) **relocation grep before any nonexistence claim** — asserting a cited
 symbol / test / file "no longer exists" requires a recorded repo-wide
-relocation grep (`grep -rn '<symbol>' tests/ scripts/ .claude/ src/`); a
-single-path probe cannot distinguish "removed" from "moved" (#1296).
+relocation grep (`grep -rn --exclude-dir=worktrees '<symbol>' tests/
+scripts/ .claude/ src/` — the exclusion per gotchas.md #1773) PLUS a
+BOUNDED worktree probe: worktrees (`.claude/worktrees/*/`) are a REQUIRED
+location class — in-flight untracked artifacts live there and are
+invisible to `git ls-files`, a repo-root `find`, and the excluded grep —
+probe the specific expected path (`ls`/`find` under each worktree — the
+reliable form, it sees gitignored artifacts — or
+`git -C <wt> status --porcelain --ignored`), never an unbounded `grep -r`
+over worktrees (#2080); a single-path probe cannot distinguish "removed"
+from "moved" (#1296).
 
 (c) **context consistency** — a presence hit binds only after its
 surrounding lines are READ: a hit whose context ALREADY IMPLEMENTS the
@@ -764,7 +772,10 @@ because the CHILD workflow-fix task's body DOES carry the
 Removed by user directive 2026-08-04: every in-scope fix — architectural /
 public-contract changes included — is filed + spawned `--auto` with no human
 greenlight; the full `/issue` pipeline (critic ensemble + Claude+Codex code
-review + Step 9c test-verdict) is the review. Planners must NOT set the inert
+review + Step 9c test-verdict) is the review. The spawned session's plan
+auto-approves (the Step-2c gate is GPU-hour-blind as of #1771; the
+missing-estimate fail-safe is the sole autonomous park trigger, and a
+0-GPU-h plan clears it by construction). Planners must NOT set the inert
 `architectural: true` flag or emit a greenlight banner — nothing reads them, so
 the banner promises a review that never happens. Rollback: restore the old
 section from git history (`git log -p --follow -- .claude/rules/workflow-fix-on-bug.md`);

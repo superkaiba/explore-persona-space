@@ -10,6 +10,7 @@ paths:
   - "scripts/cron_pod_audit.sh"
   - "scripts/gcp_audit.py"
   - "scripts/cron_gcp_audit.sh"
+  - "scripts/cron_step9c_ledger_refresh.sh"
   - "scripts/codex_task.py"
 ---
 
@@ -48,9 +49,9 @@ silently with nothing catching the residue:
 | `autonomous_session_watch.py:614` | unmerged `origin/main` otherwise waits ~24h for the nightly Step C sweep |
 | `autonomous_session_watch.py:6958` | abandoned-session phrase detection — "the /daily sweep owns" |
 | `autonomous_session_watch.py:8144` | "each fails toward SILENCE by design; the /daily sweep stays the backstop for all four" |
-| `autonomous_session_watch.py:9945` | Step 9c known-red ledger refresh |
+| `autonomous_session_watch.py:9945` | Step 9c known-red ledger refresh — **BACKED since #2114** by the nightly `cron_step9c_ledger_refresh.sh` (§ "Step 9c known-red ledger refresh" below) |
 | `.claude/workflow.yaml:2222` | living-docs backstop for parked proposals |
-| this file, §833/§872 | completed-unmerged v1 bounds; Step 9c gate ledger |
+| this file, §833/§872 | completed-unmerged v1 bounds (still unbacked); Step 9c gate ledger — **BACKED since #2114** (§ below) |
 
 Closing these needs either explicit escalation in each lane or a narrower
 replacement sweep. Do NOT re-add `/daily` to close them without addressing
@@ -74,22 +75,48 @@ the lint-pinned canonical pass enumeration
 narratives compressed out of this file live in its git history
 pre-2026-08-05.
 
-## Stale-pod audit (09:37 daily + on `pod.py provision`)
+## Stale-pod audit (09:37 daily + on `pod.py provision`) — REPORT-ONLY (#2075)
 
-Auto-terminate pods EXITED >24h — EXEMPT when the owning task carries the
-`keep-running` tag (reported `kept-exited`).
+The cron NEVER terminates pods (standing directive 2026-08-04: pods are
+destroyed only with the user's approval — the audit had destroyed 77
+teammate pods over 14 days). `cron_pod_audit.sh` runs
+`pod.py audit-stale --notify-stale`: classify + report, plus ONE deduped
+Telegram recommendation push per UTC day when the `stale` bucket is
+non-empty (pod names, ids, est $/hr-if-resumed, and the exact approval
+command `EPS_ALLOW_COMPUTE_KILL=1 uv run python scripts/pod.py audit-stale
+--terminate-stale` — deliberately without `--yes`, so the y/N prompt shows
+the LIVE stale list being approved; sentinel touched only after a zero-rc
+send, so a failed push retries next run). `--terminate-stale` is for MANUAL
+user-approved invocations only; the `runpod_api.terminate_pod` approval
+interlock (`PodTerminateNotApproved` + refusal push) refuses any
+cron/watcher/janitor-context terminate as defense in depth.
 
-**Team-shared account — the EXITED auto-terminate is positively
-ownership-gated for EVERY pod name (#1404/#1471).** The RunPod account is
-TEAM-SHARED: non-EPS teammates may run pods whose names carry the managed
-`pod-` prefix, so NO name is proof of EPS ownership. The auto-terminate
-fires only when `_is_eps_owned` (`scripts/pod_audit.py`) POSITIVELY
+**Staleness clock = time since EXIT (#2075 defect 2).** `stale` /
+`unmanaged-exited` key on `exited_age >= 24h` parsed from the RunPod
+`lastStatusChange` field (`"Exited by user: <date>"`); an unknown /
+unparseable / non-`Exited`-verb exit time routes to `fresh-exited`
+(fail-toward-KEEP, rendered `exited=?`). Creation age is display-only +
+the RUNNING orphan logic. The `keep-running` tag still exempts
+(`kept-exited`).
+
+**Team-shared account — terminate-eligibility is positively
+ownership-gated for EVERY pod name (#1404/#1471), on STRUCTURED provenance
+(#2075 defect 1).** Non-EPS teammates may run pods whose names carry the
+managed `pod-` prefix, so NO name is proof of EPS ownership. A pod reaches
+`stale` only when `_is_eps_owned` (`scripts/pod_audit.py`) POSITIVELY
 confirms ownership via any of three signals — the parsed issue number
 resolves in `tasks/REGISTRY.json`, the pod appears in the
-`pods_ephemeral.json` sidecar, or `_scan_task_references` finds task
-references — each wrapped fail-toward-keep. An EXITED pod failing all
-three surfaces REPORT-ONLY in the `unmanaged-exited` bucket ("NEVER
-auto-terminated" advisory); termination there is the user's call.
+`pods_ephemeral.json` sidecar, or `_scan_task_references` finds STRUCTURED
+provenance: only `epm:run-launched` / `epm:pod-provisioned` events whose
+note names the pod in structured position (boundary-safe `pod=<name>` /
+`pod_id=<id>` token or the note's leading token — the #1961 grammar); a
+fleet-audit dump quoted into an `epm:progress` note is NOT ownership
+evidence (the self-poisoning defect). Each signal is wrapped
+fail-toward-keep. Shared-cluster names (`Anthropic *`, `cluster-EUR-IS*`;
+extendable via `EPM_POD_AUDIT_SHARED_NAME_PATTERNS`) are NEVER
+terminate-eligible regardless of ownership signals (`SHARED-INFRA`
+annotation). An EXITED pod failing the gates surfaces REPORT-ONLY in the
+`unmanaged-exited` bucket; termination there is the user's call.
 
 ## Stale-GCP-VM janitor (09:37 daily, `cron_gcp_audit.sh` → `gcp_audit.py`)
 
@@ -189,6 +216,31 @@ Kill switch: `EPM_SKIP_HUSK_REAP=1`.
 `codex_task.py` complements this by pinning every codex-companion dispatch
 to the main checkout root (`DISPATCH_ROOT`), so codex workers never root
 themselves in a worktree.
+
+## Step 9c known-red ledger refresh (05:31 daily, `cron_step9c_ledger_refresh.sh`)
+
+Nightly `scripts/step9c_baseline.py refresh --json` from the main repo root
+(#2114) — the narrower replacement sweep for the RETIRED-table "Step 9c
+known-red ledger refresh" lane. The gate's baseline ledger
+(`.claude/cache/step9c-baseline.json`, gitignored VM-local state — no
+commit/push leg) goes stale (age > 24 h or > 150 code-path commits) on main
+red waves, and sessions then pay the ~31-40 min refresh mid-gate (#2105,
+#1992, #2106); the 05:31 PT unconditional refresh resets the freshness clock
+so the workday sits inside the window. In-session lazy refresh stays the
+fallback. Concurrency + failure semantics are the refresh command's OWN, not
+reimplemented: the `.claude/cache/step9c-baseline.lock` flock makes a
+concurrent in-session refresh a single-flight no-op (rc 0);
+timeout/junit-parse/0-collected failures are rc=2 with NO ledger write; the
+refresh's own `--timeout-s` default (4350 s) is the wall fence. Wrapper
+behavior: per-day log `logs/step9c_ledger_refresh/YYYY-MM-DD.log`, shared-VM
+thread-cap prefix + fail-open self-choom, ALWAYS exit 0; on rc != 0 one
+audit sidecar row (`.claude/cache/step9c-refresh-cron-events.jsonl`) + a
+once-per-day sentinel-gated Telegram push (a FAILED push writes no sentinel
+— the next pass retries; cron email is structurally dead on this VM). Env
+knobs: `EPS_STEP9C_REFRESH_{LOG_DIR,SENTINEL_DIR,SIDECAR,BIN}` (`BIN` is
+TEST-ONLY), `EPS_TELEGRAM_PUSH_SCRIPT`. Kill switch: remove the crontab line
+(the wrapper is inert without it). Pinned by
+`tests/test_cron_step9c_ledger_refresh.py`.
 
 ## Autonomous-session watcher (every 10 min, `3-59/10 * * * *`, `autonomous_session_watch.py`)
 
@@ -306,9 +358,36 @@ the two respawn arms carry these mechanisms:
   every unresolvable input fails toward keep. Kill switch:
   `EPM_DISABLE_STALLED_MANUAL_ESCALATION=1`.
 
+- *(h) Cross-generation no-progress escalation (#2084) — ESCALATE-ONLY.*
+  The per-episode `STALLED_MAX_RESPAWNS` belt is advancement-cleared on
+  every fresh boot self-report, so a die-after-boot loop can burn 6-8
+  fence-spawn respawns over hours with zero real markers and zero
+  escalation (#2004: 7 respawns / 7h34m). An advancement-clear-EXEMPT,
+  progress-keyed counter (`xgen_respawns` in `stalled-<N>.json`, the
+  #1209/#1241 exempt pattern; NOT day-keyed) counts consecutive
+  fence-spawn fires with no intervening real (non-watcher) marker —
+  reset only when the newest real-marker ts advances past the monotone
+  anchor `xgen_last_real_marker_ts` (a `None`/unreadable read never
+  overwrites the anchor). Pure predicate
+  `decide_stalled_xgen_escalation` fires at every
+  `EPM_STALLED_XGEN_ESCALATE_AFTER` band (default 4, clamp >= 2; fires
+  at N, 2N, 3N... via the `xgen_escalated_at` once-per-band dedup). On
+  fire, three fail-soft channels run AFTER the spawn branch's state
+  persist: one `epm:progress` marker (sentinel
+  `[autonomous_session_watch:session-auto-respawn-noprogress]`, a
+  `_WATCHER_NOTE_SENTINELS` member so the escalation never resets the
+  very real-progress clock it measures) + a Telegram push + a sidecar
+  row in `~/.eps-autonomous/stalled-xgen-events.jsonl`. ESCALATE-ONLY
+  hard invariant: no stop, no status mutation, no respawn suppression,
+  no cap consumption — the respawn lane's behavior is unchanged (pinned
+  by `test_stalled_xgen_escalation_never_stops_or_mutates`). Kill
+  switch `EPM_DISABLE_STALLED_XGEN_ESCALATION=1`.
+
 Per-episode state rides `stalled-<N>.json`, cleared on self-report
-advancement; pre-#845 files load with safe defaults. While a fence episode
-is pending, the #759 K corroboration is skipped.
+advancement (the #1209/#1241 day caps and the #2084 `xgen_*` fields are
+deliberately EXEMPT from that clear); pre-#845 files load with safe
+defaults. While a fence episode is pending, the #759 K corroboration is
+skipped.
 
 **Terminal-status act guard + source stamp (#1247).** The orphan sweep and
 the stalled fence's spawn branch act only after a same-instant live-status
@@ -421,8 +500,10 @@ switch: `EPM_DISABLE_STALE_BLOCKED_FLAG=1`; `--stale-blocked-only`.
 (my-goat `telegram_push.sh`; override `EPM_TELEGRAM_PUSH_SCRIPT`),
 transition-deduped via `~/.eps-autonomous/gate-notify-<N>.json`: fires
 exactly once per transition INTO a user gate (`awaiting_promotion`,
-`blocked`, or `plan_pending` only when the over-cap spend-approval marker
-confirms it — shared `plan_pending_over_cap` predicate with
+`blocked`, or `plan_pending` only when the plan-gate park marker
+(`epm:awaiting-spend-approval` — fired on a missing/unparseable estimate,
+the sole autonomous park cause since #1771) confirms it — shared
+`plan_pending_over_cap` predicate (historical name) with
 `tick_triage.py`). Covers CAMPAIGN registrations too; because the respawn
 / campaign passes delete registrations on the first tick observing a
 terminal park, the watcher snapshots issue + campaign registrations
@@ -447,9 +528,20 @@ is AUTO-STOPPED after ≥2 consecutive checks once ALL hold: no live
 follow-up inferred from events.jsonl (latest
 `epm:run-launched`/`epm:followup-scope`/`epm:free-analysis-followup-run`
 OLDER than the latest done-transition), every non-watcher marker +
-self-report idle > ~2h (`EPM_SESSION_RECONCILE_IDLE_S`), no RUNNING
+self-report + registration `spawned_at` + per-sid transcript WORK signal
+idle > ~2h (`EPM_SESSION_RECONCILE_IDLE_S`), no RUNNING
 `pod-<N>`, no `keep-running` tag (`EPM_SESSION_RECONCILE_AUTOSTOP=0`
-reverts to alert-only). Sessions at any other status, the PM session, and
+reverts to alert-only). **The transcript term classifies row CONTENT, not
+mtime (#2117):** a 256 KB tail whose completed wake-turns ALL failed —
+with no genuine human row — is churn-only and contributes NO liveness, so
+an error-storming session on a done task accumulates the ≥2-miss counter
+(the #2004 shape: mtime churn previously reset the counter every tick); a
+recent successfully-completed wake-turn or a genuine human row still
+protects (#1670), and an unresolvable transcript / zero-completed-turn
+tail falls back to the mtime read (fail toward KEEP). Kill switch
+`EPM_SESSION_RECONCILE_TRANSCRIPT_WORK_PROBE=0` reverts the transcript
+term to the pure-mtime probe (exact pre-#2117 behavior). Sessions at any
+other status, the PM session, and
 unmapped chat sessions are never touched by this pass.
 
 **Keep-running wedged-owner escalation arm (#1582).** ESCALATE-ONLY arm
@@ -514,6 +606,84 @@ third-party non-watcher marker resets the progress-gap clock
 face of this); a tagged pod on an ACTIVE task keeps the one-shot
 `pod-active-stale` alert; GCE instances are bounded by their fences + the
 janitor, not this arm.
+
+**Never-ran escalation leg (#2060, incident #1947 — ESCALATE-ONLY, never a
+stop/terminate).** A RUNNING keep-running-tagged pod that NEVER exposed a
+runtime/port since creation (the `runtime: null` bootstrap-failure class;
+raw predicate = `backend_poll._pod_is_runpod_runtime_wedged`, observed
+portless on EVERY tick since a first observation within
+`EPM_NEVER_RAN_OBSERVE_SLOP_S` (1200s) of `created_at`), past
+`EPM_NEVER_RAN_GRACE_MIN` (45 min) and confirmed ≥2 consecutive ticks, is
+surfaced loudly: one task marker per episode (sentinel
+`[autonomous_session_watch:runpod-never-ran-keep-running]`) + a fail-soft
+push + a sidecar row (reason `never-ran-keep-running-escalate`, the #1582
+jsonl) — each naming the pod + pod_id, its age, the hourly burn, and the
+exact `pod.py terminate --issue <N> [--name-suffix <slug>] --yes --approve`
+recovery command; re-pushed every `EPM_NEVER_RAN_REALERT_H` (6h, deliberately
+shorter than the 24h house cadence — a never-bootstrapped pod is a pure
+billing leak). Evaluates where the raw wedge predicate first reads True,
+BEFORE the DONE-status split, so it fires on the #1947 tagged
+`awaiting_promotion` shape both sibling legs structurally miss (a portless
+pod is SSH-unreachable, so the #2149 probe can never fire; busy-task marker
+traffic keeps the #1582 owner gap closed). Per-(issue, pod_id) state
+(`nr_pod` sub-dict of the pod-safety file, the `kr_pod` pattern); a port
+appearance DELETES the entry; every missing signal fails toward silence.
+**ESCALATE-ONLY is a hard invariant** (pinned by
+`tests/test_autonomous_session_watch.py::test_never_ran_leg_never_stops_or_terminates`).
+Kill switch `EPM_DISABLE_NEVER_RAN_ESCALATION=1`. Provision-side sibling:
+`pod.py provision` now tears the pod down ITSELF by default on a
+bootstrap/ssh-wait failure (`--keep-on-bootstrap-failure` opts out), so this
+leg is the backstop for pods that escape that path.
+
+**Owner-fence defer arm (#2283, incident #2277 — DEFER-ONLY, bounded).** The
+pod-safety AUTO-STOP arm is DEFERRED (miss counter reset; one anti-liveness
+marker per fence episode + a push/sidecar re-alert every
+`EPM_KEEP_RUNNING_WEDGED_REALERT_H` (24h); sidecar
+`.claude/cache/pod-owner-fence-events.jsonl`) while the pod carries an
+UNEXPIRED #2277 owner fence with NO owner-matching upload-verification PASS —
+read through the SAME `pod_lifecycle.owner_fence_state` chain the terminate
+guard runs (`blocks_teardown`; evidence window, newest-wins tokens, two-tier
+PASS owner — never a second parser), so the watcher can no longer STOP a pod
+mid-run that the guard would refuse to DESTROY (2026-08-13 pod-2054-tiers:
+a non-owner drove the task to a DONE status and the softer verb had no fence
+awareness). Eligibility keys STRICTLY on `status in AUTO_STOP_DONE` — a
+USER-paused `on_hold` task (merged into the same `"auto-stop-done"` class)
+NEVER defers: a self-posted fence must not override a user pause. The
+`keep-running` tag and the live-follow-up shield take precedence (the arm
+only ADDS a defer where a stop would have fired); a NOT-EVALUATED read (kill
+switch `EPM_DISABLE_POD_FENCE_DEFER=1`, reader failure — one loud WARN)
+never defers (fail-open to the plain stop) and never clears episode state.
+Bounded TWICE: the fence's own expiry, and a cumulative per-(issue, pod)
+ceiling `EPM_POD_FENCE_DEFER_MAX_H` (default 24h, floor-clamped 1h) measured
+from the episode's FIRST deferred tick — a continuously-refreshed fence
+cannot shield a pod forever (a once-per-episode ceiling marker announces the
+re-armed stop). Episode state is the pod_id-keyed `fd_pod` sub-dict of the
+pod-safety state file (the `kr_pod`/`nr_pod` carry contract: sibling pods'
+saves forward-carry it verbatim; GC against the live RUNNING-pod set); an
+evaluated-and-inactive read (expired / `fence_until=none` / owner PASS)
+CLEARS the entry. **Named consequence — wedge fall-through:**
+`_process_pod`'s MF6 carve-out deliberately falls a PORTLESS-WEDGED pod at a
+`POD_SAFETY_AUTO_STOP` status THROUGH to this status-class arm, so such a pod
+on a DONE task now bills for up to `min(fence_until, 24h)` instead of stopping
+in ~20 min — accepted for v1 (bounded by the same ceiling, escalated on the
+same channels, and consistent with the directive's priority ordering, where
+never-stop-autonomously outranks spend); the named future tightening is to
+bypass the fence when the raw wedge predicate reads True. **Named residual —
+lapse-recycle:** because the clear fires on an evaluated-and-inactive tick, an
+owner whose fence lapses for a single sub-threshold tick and is then re-posted
+resets the 24h ceiling — an indefinite shield at ~24h periods. That is
+adversarial-only and sits outside the accidents-not-adversaries trust model
+this arm inherits from #2277 (whose `owner=` match is likewise unauthenticated
+string equality), and each fresh episode re-fires its own marker + push, so the
+recycling is visible rather than silent. Both watcher markers are
+REGISTRATION-INERT by
+construction (an `epm:progress` note binding the pod in structured position
+with a fence token would itself register/clear the owner's fence — the
+self-defeat hazard; pinned by
+`tests/test_autonomous_session_watch_owner_fence.py::test_fence_defer_marker_is_registration_inert`).
+**DEFER-ONLY is a hard invariant** — with the fence params at their False
+defaults `decide_pod_safety` is byte-identical to its pre-#2283 table
+(pinned by `test_decide_fence_arm_never_accelerates_a_stop`).
 
 **Zombie-wrapper pass.** A daemon-tracked session whose process tree has
 carried NO inner Claude process for ≥2 consecutive checks AND ≥ the
@@ -818,7 +988,11 @@ fallback (`EPM_VERDICT_DISAGREE_PAIR_PROXIMITY_S`, 6h) for
 sentinel/version round drift; a 1h grace
 (`EPM_VERDICT_DISAGREE_GRACE_S`) lets an in-flight reconcile land;
 no-show evidence (`epm:codex-task-failed`, a codex-scoped `epm:failure`,
-the #1204 quota-skip note) suppresses TIER-2 pairings only. **Channels:**
+the #1204 quota-skip note) suppresses TIER-2 pairings only. The pass's
+`ensemble_verdicts_present` queries deliberately pass NO `since_ts`
+anchor (#2136): Tier 1 derives its round from the last pair event's own
+sentinel-else-`version`, so an anchor would suppress the very event the
+round number came from. **Channels:**
 sidecar `.claude/cache/verdict-disagree-observer-events.jsonl` + one
 deduped push; **NO task marker** (the flag's consumer is a human).
 Fire-once dedup key `(issue, role, round_label)` in
@@ -1054,12 +1228,17 @@ every spawn arm.
 ## Dedicated data disk for `.claude/worktrees/` (#681)
 
 The heavy active-task footprint (every `issue-<N>` worktree + its
-per-issue `data/issue_<N>/{hf_dl,g*_dl,store}` caches) lives on a
-dedicated **512 GB `pd-balanced` GCP persistent disk mounted at
-`/mnt/eps-data`** (env `EPS_VM_DATA_DISK_PATH`), bind-mounted back onto
-`.claude/worktrees` so every consumer resolves the SAME path. The disk is
-provisioned in the `introsp-experiments` project (where the VM lives), NOT
-the GPU project.
+per-issue `data/issue_<N>/{hf_dl,g*_dl,store}` caches) is DESIGNED to
+live on the dedicated `pd-balanced` GCP persistent disk mounted at
+`/mnt/eps-data` (env `EPS_VM_DATA_DISK_PATH`), bind-mounted back onto
+`.claude/worktrees` so every consumer resolves the SAME path — **the
+bind cutover is a RUNTIME-CHECKED state, not an accomplished fact
+(cutover tracked at #2132)**: probe
+`findmnt --mountpoint <repo>/.claude/worktrees` (no output = cutover
+still pending; worktree paths then land on `/`) before relying on the
+bind, and read sizes live via `df -P` — figures drift, never quote this
+file's as current. The disk is provisioned in the `introsp-experiments`
+project (where the VM lives), NOT the GPU project.
 
 **Per-task ext4 project quotas.** Each `issue-<N>` subtree carries an ext4
 project id == the issue number with a hard byte cap
@@ -1080,7 +1259,11 @@ runs only tier (b) (terminal-cache reap + active-cache escalation), and
 the watcher's `data_disk_pass` drives `decide_vm_disk_pct` +
 `decide_subfloor_pct` (`EPM_VM_DATA_DISK_SUBFLOOR_PCT` default 85%) off
 `statvfs(/mnt/eps-data)`, attributing worktree-internal caches via
-`repquota -P` (du fallback). Both passes are clean no-ops when the mount
+`repquota -P` (du fallback — since #2095 merged with the read-only
+`/mnt/eps-data/$USER` staging-root attribution `_staging_top_caches`,
+which is kill-switch-INDEPENDENT: `EPM_SKIP_STAGING_CACHE_SWEEP` disables
+only the sweep leg, never the attribution; `--data-disk-only` runs the
+pass in isolation). Both passes are clean no-ops when the mount
 is absent. Since #1392 the BOOT-disk sub-floor sentinel's sibling arm
 (`subfloor_reclaim_pass`) additionally launches a detached, single-flight,
 rate-limited `vm_disk_guard.py --apply --ignore-threshold --no-push

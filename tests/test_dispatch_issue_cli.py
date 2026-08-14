@@ -4863,11 +4863,10 @@ def test_launch_invalid_lane_suffix_rejected_at_parse_time(monkeypatch, tmp_path
         assert excinfo.value.code == 2
 
 
-def test_launch_lane_suffix_non_gcp_lane_warns(monkeypatch, tmp_path, caplog) -> None:
-    """--lane-suffix on a launch that resolves to a NON-GCP lane: the
-    instance/job-name isolation is GCP-only, so the JSON carries
-    lane_suffix_unhonored_by_lane + a loud warning (the gap is loud, not
-    silent — plan §3.7)."""
+def test_launch_lane_suffix_slurm_lane_is_honored_no_warning(monkeypatch, tmp_path, caplog) -> None:
+    """#2055 §6.8 (was: GCP-only warns on nibi): SLURM job names + scratch
+    dirs now carry the lane suffix, so a launch resolving to a SLURM lane
+    must NOT emit lane_suffix_unhonored_by_lane (nor the warning)."""
     _cd_to_tmp(monkeypatch, tmp_path)
     nibi = _MockBackend(kind="nibi")
     factory = _build_mock_factory(nibi=nibi)
@@ -4894,9 +4893,65 @@ def test_launch_lane_suffix_non_gcp_lane_warns(monkeypatch, tmp_path, caplog) ->
     body = json.loads(buf.getvalue().strip())
     assert body["ok"] is True
     assert body["lane_suffix"] == "cpu"
-    assert body["lane_suffix_unhonored_by_lane"] == "nibi"
+    assert "lane_suffix_unhonored_by_lane" not in body
     messages = [r.getMessage() for r in caplog.records]
-    assert any("GCP-only" in m for m in messages), messages
+    assert not any("keeps per-issue naming" in m for m in messages), messages
+    # The suffix actually reached the SLURM spec (job_name/scratch_dir_for
+    # read it from spec.extra — the #2055 fix root).
+    assert len(nibi.launches) == 1
+    assert nibi.launches[0].extra.get("lane_suffix") == "cpu"
+
+
+def test_launch_lane_suffix_runpod_lane_warns(monkeypatch, tmp_path, caplog) -> None:
+    """#2055 §6.8 residual: RunPod pod names remain per-issue (pod-<N>),
+    so a --lane-suffix launch resolving to RunPod still carries
+    lane_suffix_unhonored_by_lane + the loud warning."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as cli
+
+    monkeypatch.setattr(cli, "_frontmatter_backend_value", lambda _issue: "runpod")
+    runpod = _MockBackend(kind="runpod")
+    factory = _build_mock_factory(runpod=runpod, nibi=_MockBackend(kind="nibi"))
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with caplog.at_level(logging.WARNING), redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "9348",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "runpod",
+                "--hydra",
+                "smoke=1",
+                "--lane-suffix",
+                "cpu",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is True
+    assert body["chosen_kind"] == "runpod"
+    assert body["lane_suffix"] == "cpu"
+    assert body["lane_suffix_unhonored_by_lane"] == "runpod"
+    messages = [r.getMessage() for r in caplog.records]
+    assert any("keeps per-issue naming" in m for m in messages), messages
+
+
+def test_lane_suffix_honored_kinds_match_reconnect_slurm_set() -> None:
+    """#2055 critic (b): the warning predicate's honored set and the
+    _reconnect closure's SLURM-kind set derive from ONE source
+    (CLUSTER_CONFIGS via _slurm_kinds) — pin both against the literal
+    sets so a registry drift is test-breaking, not silent."""
+    import scripts.dispatch_issue as di
+
+    assert di._slurm_kinds() == frozenset({"nibi", "fir", "mila", "fellows"})
+    assert di._lane_suffix_honored_kinds() == frozenset({"gcp", "nibi", "fir", "mila", "fellows"})
 
 
 # ---------------------------------------------------------------------------
@@ -5251,6 +5306,154 @@ def test_reconnect_fellows_threads_job_name_suffix(monkeypatch) -> None:
     assert out is None, "patched query_by_name returns None (no live job)"
     assert captured["job_name"] == "eps-issue-1609-superkaiba"
     assert captured["robot_alias"] == "charmander"
+
+
+# ---------------------------------------------------------------------------
+# issue #2055 — suffixed-lane SLURM reconnect + the legacy-name probe
+# ---------------------------------------------------------------------------
+
+
+def _reconnect_deps(monkeypatch, query_stub) -> Any:
+    """Production backends with query_by_name stubbed + network probes off."""
+    from explore_persona_space.backends import gcp as gcp_module
+    from explore_persona_space.backends import slurm as slurm_module
+    from explore_persona_space.backends import slurm_monitor as slurm_monitor_module
+    from scripts import dispatch_issue as di
+
+    monkeypatch.setattr(slurm_monitor_module, "query_by_name", query_stub)
+    monkeypatch.setattr(gcp_module, "reconnect_or_none", lambda **_kw: None)
+    monkeypatch.setattr(slurm_module, "mila_socket_alive", lambda: False)
+    return di._build_production_backends()
+
+
+def _suffixed_spec(issue: int = 2055, lane: str = "b") -> RunSpec:
+    return RunSpec(
+        issue=issue,
+        intent="lora-7b",
+        backend="nibi",
+        cluster="nibi",
+        hydra_args=("condition=c1_evil_wrong_em",),
+        extra={"lane_suffix": lane, "plan_hash": "deadbeefdeadbeef"},
+    )
+
+
+def test_reconnect_suffixed_lane_probes_suffixed_then_legacy_name(monkeypatch) -> None:
+    """#2055 §6.9: a suffixed spec's reconnect probes the SUFFIXED name
+    first; on a miss it runs ONE advisory legacy (unsuffixed) probe with
+    the SAME plan hash, then fresh-submits (returns None)."""
+    calls: list[str] = []
+
+    def _stub(*, robot_alias, job_name, timeout=30):  # type: ignore[no-untyped-def]
+        calls.append(job_name)
+        return None
+
+    deps = _reconnect_deps(monkeypatch, _stub)
+    out = deps["reconnect_fn"](deps["free_backends"]["nibi"], "nibi", _suffixed_spec())
+    assert out is None
+    assert calls == ["eps-issue-2055-deadbeef-b", "eps-issue-2055-deadbeef"]
+
+
+def test_reconnect_legacy_probe_live_job_warns_and_fresh_submits(monkeypatch, caplog) -> None:
+    """#2055 §4d.1: a LIVE legacy unsuffixed job on a suffixed-lane miss
+    gets a LOUD warning naming the job id — and the reconnect STILL
+    returns None (fresh suffixed submit; silently reconnecting across the
+    suffix boundary is exactly the #1947 bug)."""
+
+    def _stub(*, robot_alias, job_name, timeout=30):  # type: ignore[no-untyped-def]
+        return "19036499" if job_name == "eps-issue-2055-deadbeef" else None
+
+    deps = _reconnect_deps(monkeypatch, _stub)
+    with caplog.at_level(logging.WARNING):
+        out = deps["reconnect_fn"](deps["free_backends"]["nibi"], "nibi", _suffixed_spec())
+    assert out is None
+    messages = [r.getMessage() for r in caplog.records]
+    assert any("19036499" in m and "FRESH suffixed submit" in m for m in messages), messages
+
+
+def test_reconnect_legacy_probe_failure_is_best_effort(monkeypatch, caplog) -> None:
+    """#2055 critic (a): the ADVISORY legacy probe is best-effort — a
+    SlurmProbeError there logs a warning and proceeds to the fresh
+    submit (returns None), never turning a healthy suffixed launch into
+    a lane skip."""
+    from explore_persona_space.backends.slurm_monitor import SlurmProbeError
+
+    def _stub(*, robot_alias, job_name, timeout=30):  # type: ignore[no-untyped-def]
+        if job_name == "eps-issue-2055-deadbeef":
+            raise SlurmProbeError("squeue probe rc=1 (transport)")
+        return None
+
+    deps = _reconnect_deps(monkeypatch, _stub)
+    with caplog.at_level(logging.WARNING):
+        out = deps["reconnect_fn"](deps["free_backends"]["nibi"], "nibi", _suffixed_spec())
+    assert out is None
+    messages = [r.getMessage() for r in caplog.records]
+    assert any("legacy-name probe failed" in m for m in messages), messages
+
+
+def test_reconnect_unsuffixed_spec_runs_no_legacy_probe(monkeypatch) -> None:
+    """An unsuffixed spec keeps the pre-#2055 single-probe behavior —
+    exactly ONE query_by_name call, no legacy probe."""
+    calls: list[str] = []
+
+    def _stub(*, robot_alias, job_name, timeout=30):  # type: ignore[no-untyped-def]
+        calls.append(job_name)
+        return None
+
+    deps = _reconnect_deps(monkeypatch, _stub)
+    spec = RunSpec(
+        issue=2055,
+        intent="lora-7b",
+        backend="nibi",
+        cluster="nibi",
+        extra={"plan_hash": "deadbeefdeadbeef"},
+    )
+    out = deps["reconnect_fn"](deps["free_backends"]["nibi"], "nibi", spec)
+    assert out is None
+    assert calls == ["eps-issue-2055-deadbeef"]
+
+
+def test_reconnect_suffixed_hit_rebuilds_lane_isolated_handle(monkeypatch) -> None:
+    """A LIVE suffixed job reconnects to a handle carrying the suffixed
+    pod_name AND the lane-isolated scratch dir — no legacy probe runs."""
+    calls: list[str] = []
+
+    def _stub(*, robot_alias, job_name, timeout=30):  # type: ignore[no-untyped-def]
+        calls.append(job_name)
+        return "77001"
+
+    deps = _reconnect_deps(monkeypatch, _stub)
+    handle = deps["reconnect_fn"](deps["free_backends"]["nibi"], "nibi", _suffixed_spec())
+    assert handle is not None
+    assert handle.job_id == "77001"
+    assert handle.pod_name == "eps-issue-2055-deadbeef-b"
+    assert handle.scratch_dir.endswith("/eps/issue-2055-b")
+    assert calls == ["eps-issue-2055-deadbeef-b"]
+
+
+def test_slurm_legacy_unsuffixed_job_name_keeps_plan_hash(monkeypatch) -> None:
+    """#2055 critic (c): the legacy probe name is composed from a spec
+    copy differing ONLY in lane_suffix — SAME plan hash + cluster suffix
+    as the suffixed probe."""
+    import dataclasses
+
+    from explore_persona_space.backends.slurm import get_cluster_config, job_name
+    from scripts import dispatch_issue as di
+
+    spec = _suffixed_spec()
+    cluster = get_cluster_config("nibi")
+    suffixed = job_name(spec, plan_hash=spec.extra.get("plan_hash"), cluster=cluster)
+    legacy = di._slurm_legacy_unsuffixed_job_name(spec, cluster)
+    assert suffixed == "eps-issue-2055-deadbeef-b"
+    assert legacy == "eps-issue-2055-deadbeef"
+    # Identity: legacy == job_name of the lane-stripped spec (same hash).
+    stripped = dataclasses.replace(spec, extra={"plan_hash": spec.extra["plan_hash"]})
+    assert legacy == job_name(stripped, plan_hash=spec.extra.get("plan_hash"), cluster=cluster)
+    # Cluster suffix stays terminal on the legacy compose too.
+    suffixed_cluster = dataclasses.replace(cluster, job_name_suffix="-superkaiba")
+    assert (
+        di._slurm_legacy_unsuffixed_job_name(spec, suffixed_cluster)
+        == "eps-issue-2055-deadbeef-superkaiba"
+    )
 
 
 # ---------------------------------------------------------------------------

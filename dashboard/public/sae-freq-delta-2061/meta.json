@@ -1,0 +1,10 @@
+{
+ "git_commit": "abb3b2ac",
+ "git_dirty": false,
+ "generated_utc": "2026-08-13 16:57Z",
+ "generator": "scripts/issue2061_freq_delta_dashboard.py",
+ "interp_source": "EleutherAI/auto_interp_interpretations:Llama/262k/res/model.layers.29_feature.json",
+ "n_union_features": 46154,
+ "n_points_total": 742806,
+ "n_descriptions": 31043
+}

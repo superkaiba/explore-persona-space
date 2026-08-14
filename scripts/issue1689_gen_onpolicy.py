@@ -8,7 +8,7 @@ persona-header steering "you are the user, write your next turn" prompt.
 Route: vLLM batched at Qwen-2.5-7B base + instruct, sharded across
 CUDA_VISIBLE_DEVICES via a launcher-set per-cell env pin (per
 `.claude/rules/gotchas.md` CVD-clobber entry). Judge-filter via
-`api_dispatch.py` (Sonnet 4.5, N=3 draws, T=0.7, max_tokens=300,
+`api_dispatch.py` (Sonnet 4.5, N=3 draws, T=0.7, max_tokens=1024 (raised from 300, #2063),
 anchored rubric, reason-then-score, drop-never-coerce, rubric-fingerprint
 partition per rubric class per plan §9).
 

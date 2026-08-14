@@ -1,0 +1,174 @@
+{
+  "commit": "4be13868",
+  "render_id": "779c4da27d234a04",
+  "git_commit": "4be13868",
+  "git_dirty": false,
+  "created": "2026-08-10T14:57:00Z",
+  "figsize": [
+    12.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "Jailbreak harm rate": 0.06048387096774194,
+      "error": 0.021021538916884047,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "Jailbreak harm rate": 0.06438631790744467,
+      "error": 0.021644007401102686,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "Jailbreak harm rate": 0.08651911468812877,
+      "error": 0.02479124643173782,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "Jailbreak harm rate": 0.09274193548387097,
+      "error": 0.02557973807190511,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Jailbreak harm rate": 0.096579476861167,
+      "series": "Baseline (no edit)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Jailbreak harm rate": 0.096579476861167,
+      "series": "Baseline (no edit)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.18,
+      "Discordant paired prompts (count)": 7.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.82,
+      "Discordant paired prompts (count)": 12.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.18,
+      "Discordant paired prompts (count)": 20.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.18,
+      "Discordant paired prompts (count)": 26.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "Extra harm reduction, axis \u2212 random": 0.02631578947368421,
+      "error": 0.02125506072874494,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "Extra harm reduction, axis \u2212 random": 0.02834008097165992,
+      "error": 0.024291497975708502,
+      "_kind": "errorbar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Harm rate per arm",
+        "ylabel": "Jailbreak harm rate",
+        "legend_labels": [
+          "Baseline (no edit)",
+          "Assistant axis",
+          "Random direction"
+        ],
+        "xticklabels": [
+          "All prompt",
+          "All tokens"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12",
+          "0.14"
+        ]
+      },
+      {
+        "title_left": "Per-prompt paired outcomes",
+        "ylabel": "Discordant paired prompts (count)",
+        "legend_labels": [
+          "Harmful only under axis replace",
+          "Harmful only under random replace"
+        ],
+        "xticklabels": [
+          "All prompt",
+          "All tokens"
+        ],
+        "yticklabels": [
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      },
+      {
+        "title_left": "Paired difference (95% cluster-bootstrap CI)",
+        "ylabel": "Extra harm reduction, axis \u2212 random",
+        "xticklabels": [
+          "All prompt",
+          "All tokens"
+        ],
+        "yticklabels": [
+          "\u22120.01",
+          "0.00",
+          "0.01",
+          "0.02",
+          "0.03",
+          "0.04",
+          "0.05",
+          "0.06"
+        ]
+      }
+    ],
+    "series": [
+      "Baseline (no edit)",
+      "Assistant axis",
+      "Random direction",
+      "Harmful only under axis replace",
+      "Harmful only under random replace"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -6,7 +6,7 @@ paths:
   - "src/explore_persona_space/train/**"
   - "src/explore_persona_space/eval/**"
   - "src/explore_persona_space/analysis/**"
-  - "scripts/issue*.py"
+  - "scripts/*marker*.py"
 ---
 
 # Marker-leakage measurement

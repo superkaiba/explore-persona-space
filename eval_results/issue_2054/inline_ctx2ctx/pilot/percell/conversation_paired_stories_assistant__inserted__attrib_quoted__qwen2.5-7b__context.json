@@ -1,0 +1,165 @@
+{
+ "metadata": {
+  "git_commit": "f01b5b83",
+  "git_dirty": true,
+  "git_dirty_paths": [
+   ".claude/agent-memory/critic/MEMORY.md"
+  ],
+  "script_version": "issue2054_ctx2ctx_fit_v1",
+  "argv": [
+   "scripts/issue2054_ctx2ctx_fit.py",
+   "--pilot",
+   "--activations-dir",
+   "/mnt/eps-data/thomasjiralerspong/issue2054_crossrender/activations",
+   "--null-draws",
+   "10",
+   "--null-chunk",
+   "5"
+  ],
+  "utc": "2026-08-12T16:36:53Z",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "fold_map": {
+   "source": "origin/issue-2054:eval_results/issue_2054/shared_fold_map.json",
+   "sha256": "4ab1839a0e8c5e8705147cbb529b2df36975ac46b987fe71ab3f919265e4c39e",
+   "k": 5,
+   "seed": 137,
+   "n_conv": 26889
+  },
+  "debug_max_rows": null,
+  "pilot": true
+ },
+ "source_cell": "conversation_paired_stories_assistant__inserted__attrib_quoted__qwen2.5-7b",
+ "arm": "context",
+ "config_fingerprint": "89e934f4613d4f09",
+ "pairs": [
+  {
+   "target_cell": "conversation_paired_stories_assistant__inserted__bare_label__qwen2.5-7b",
+   "family": "framing_pairs",
+   "n_src_rows": 11901,
+   "n_tgt_rows": 11901,
+   "n_join": 11901,
+   "n_train_min": 9477,
+   "d_ambient": 3584,
+   "regime": "ambient",
+   "reduced_k": null,
+   "folds": [
+    {
+     "fold": 0,
+     "n_train": 9524,
+     "n_test": 2377,
+     "xy_max_abs_diff": 22.125,
+     "degenerate_identical_xy": false,
+     "fitted": {
+      "r2": 0.5939878290492955,
+      "mean_cosine": 0.9542288940302446,
+      "best_lambda": 3162.2776601683795,
+      "dof": 1198.0391516037096,
+      "selector": "gcv_dof_cap_0.9",
+      "side": "cov",
+      "n_train": 9524,
+      "d_fit": 3584
+     },
+     "identity_bias": {
+      "r2": -0.346489404339672,
+      "mean_cosine": 0.8541727910023605
+     },
+     "knn_fitted": {
+      "euclidean": {
+       "metric": "euclidean",
+       "n": 2377,
+       "n_pool": 2377,
+       "acc_at_k": {
+        "1": 0.815313420277661,
+        "5": 0.8830458561211612,
+        "10": 0.9015565839293227
+       },
+       "chance_at_k": {
+        "1": 0.00042069835927639884,
+        "5": 0.002103491796381994,
+        "10": 0.004206983592763988
+       },
+       "median_rank": 1.0,
+       "mrr": 0.8445144999442868
+      },
+      "cosine": {
+       "metric": "cosine",
+       "n": 2377,
+       "n_pool": 2377,
+       "acc_at_k": {
+        "1": 0.8262515776188473,
+        "5": 0.8826251577618848,
+        "10": 0.9007151872107699
+       },
+       "chance_at_k": {
+        "1": 0.00042069835927639884,
+        "5": 0.002103491796381994,
+        "10": 0.004206983592763988
+       },
+       "median_rank": 1.0,
+       "mrr": 0.8522224818181349
+      }
+     },
+     "knn_identity": {
+      "euclidean": {
+       "metric": "euclidean",
+       "n": 2377,
+       "n_pool": 2377,
+       "acc_at_k": {
+        "1": 0.3866217921750105,
+        "5": 0.4627681952040387,
+        "10": 0.4930584770719394
+       },
+       "chance_at_k": {
+        "1": 0.00042069835927639884,
+        "5": 0.002103491796381994,
+        "10": 0.004206983592763988
+       },
+       "median_rank": 12.0,
+       "mrr": 0.42517623983700775
+      },
+      "cosine": {
+       "metric": "cosine",
+       "n": 2377,
+       "n_pool": 2377,
+       "acc_at_k": {
+        "1": 0.41144299537231804,
+        "5": 0.48632730332351704,
+        "10": 0.522086663862011
+       },
+       "chance_at_k": {
+        "1": 0.00042069835927639884,
+        "5": 0.002103491796381994,
+        "10": 0.004206983592763988
+       },
+       "median_rank": 7.0,
+       "mrr": 0.448737452282801
+      }
+     },
+     "null": {
+      "kind": "shuffled_pair_fit_side",
+      "n_draws": 10,
+      "seed": 2625828442,
+      "mean": -0.03197981351591199,
+      "sd": 0.006581877550215266,
+      "q05": -0.04206481504869569,
+      "q95": -0.024435901298501057,
+      "max": -0.022202572619390182,
+      "p_value_fitted": 0.09090909090909091
+     },
+     "wall_s": 31.6
+    }
+   ],
+   "pooled": {
+    "fitted_r2": 0.5939878290492955,
+    "identity_bias_r2": -0.346489404339672,
+    "delta_r2_fitted_minus_identity": 0.9404772333889675,
+    "clears_identity_baseline": true,
+    "null_mean": -0.03197981351591199,
+    "null_p_value_fitted": 0.09090909090909091,
+    "degenerate_identical_xy": false
+   },
+   "verdict": "fitted R2=+0.5940 vs identity+bias R2=-0.3465 -> CLEARS identity+bias baseline"
+  }
+ ]
+}

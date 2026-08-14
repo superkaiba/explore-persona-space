@@ -5,10 +5,18 @@
 # Semantics: read by workflow_lint.AGENT_SPEC_SIZE_GRANDFATHER — the module
 # attribute keeps its name + type (dict[str, int]) so every consumer site,
 # test monkeypatch, and verify_plan reference is unchanged.
+# Each cap = measured size + <=3 KB margin (headroom mechanically enforced —
+# see AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES). A grandfathered file FAILs
+# above its cap (regrowth ratchet) and FAILs as stale once it drops to
+# <= AGENT_SPEC_FAIL_BYTES ("remove the entry"). Ratchet DOWN when trimmed.
+# Raising a cap edits ONE line here — that is the point of the split (#1718).
+# The full per-entry cap chronicle (every prior value and its incident) is
+# preserved in `git log --follow scripts/workflow_lint.py` at commits before
+# the #1718 migration; new history accrues in this file's own git log.
 
-code-reviewer.md            102_800   # measured 100,461 B post-#2165 (Step 0.71 smoke blind-spot gate); cap = worse-merge-order measured 101,757 + ~1.0 KB
-codex-clean-result-critic.md 48_400   # measured 47,431 B post composer-common hard-rule dedupe (2026-08-05 compaction lineage); cap = measured + ~1 KB
-codex-code-reviewer.md       49_200   # measured 48,212 B post-#2165 (Step 0.71 copy-list bullet + Blocker-tags entry); cap = measured + ~1.0 KB
-experiment-implementer.md    65_500   # measured 64,480 B post 2026-08-05 compaction (detail relocated to experiment-implementer-section-reference.md); cap = measured + ~1 KB
-experimenter.md              66_600   # measured 65,619 B post 2026-08-05 compaction (detail relocated to experimenter-section-reference.md); cap = measured + ~1 KB
-research-pm.md              47_000   # measured 46,785 B post-#1618 (Mode-2 audit template relocated to pm-audit-reference.md); cap = measured + ~0.2 KB
+code-reviewer.md             107_300  # measured 106,285 B post-#2120 (Step 0.72 own-device-scoped GPU-state verdict gate + Blocker-tags host-wide-gpu-verdict entry); cap = measured + ~1.0 KB. Prior: 104_800.
+codex-clean-result-critic.md  48_400  # measured 47,431 B post the composer-common hard-rule dedupe (2026-08-05 compaction lineage); cap = measured + ~1 KB.
+codex-code-reviewer.md        50_500  # measured 49,481 B post-#2120 (Step 0.72 copy-list bullet + inlined-rubric 0.72 slot + Blocker-tags host-wide-gpu-verdict entry); cap = measured + ~1.0 KB. Prior: 49_200.
+experiment-implementer.md     67_800  # measured 66,804 B post-#2120 (Before-writing-code item 8 Schema-from-artifact banked-loader observed-keys duty + packed-format src-filter clause); cap = measured + ~1.0 KB. Prior: 65_500.
+experimenter.md               67_600  # measured 65,619 B post the 2026-08-05 compaction (bootstrap probe / GCP salvage / vLLM hang triad relocated to experimenter-section-reference.md); cap = measured + ~1 KB.
+research-pm.md                47_000  # #829 trim after the 5d84120ac9 overage to 47,861; cap = measured + ~0.2 KB. Prior: 46,187 B post-#1082, 43_500, 40_990.

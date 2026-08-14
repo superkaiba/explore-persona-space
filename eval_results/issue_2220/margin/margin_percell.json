@@ -1,0 +1,40 @@
+{
+  "experiment": "issue2220_readwrite",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "ts": "2026-08-11T18:10:38Z",
+  "store_revision": "e5901706",
+  "rb_revision": "037fcbb",
+  "labeling_tar_revision": "5bd378408b7ee2f9c166eb2a059ab96478a28de7",
+  "git_commit": "74075092",
+  "git_dirty": false,
+  "tf_margin": {
+    "evil": {
+      "mapread_ctx__context": -7.184195684541192,
+      "mapread_ctx__answer": -6.964237311797862,
+      "mapread_prefix__context": -7.179936869877707,
+      "mapread_prefix__answer": -7.0501477937230685,
+      "rb__context": -7.187797651129418,
+      "rb__answer": -2.0936037285104456,
+      "rawmeandiff__context": -7.145804504265982,
+      "rawmeandiff__answer": 3.7472611058290815,
+      "shuffled__context": -7.1786173139219285,
+      "shuffled__answer": -7.582969305219829,
+      "random__context": -7.19476808330919,
+      "random__answer": -7.333604606963286
+    },
+    "sycophancy": {
+      "mapread_ctx__context": -0.0004970018636173745,
+      "mapread_ctx__answer": 0.08845870990262168,
+      "mapread_prefix__context": -0.03254791856318286,
+      "mapread_prefix__answer": 0.13436432050579886,
+      "rb__context": 0.06527157575314965,
+      "rb__answer": 5.19126700481216,
+      "rawmeandiff__context": -0.0131441941390105,
+      "rawmeandiff__answer": 1.1991734880568279,
+      "shuffled__context": -0.009331914641577354,
+      "shuffled__answer": 0.06830629983847122,
+      "random__context": -0.023455359515396956,
+      "random__answer": 0.05623358096726368
+    }
+  }
+}

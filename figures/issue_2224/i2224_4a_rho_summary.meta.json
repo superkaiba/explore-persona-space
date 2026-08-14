@@ -1,0 +1,490 @@
+{
+  "commit": "2012c00b+dirty",
+  "render_id": "d4ff95cb680849a9",
+  "git_commit": "2012c00b",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2162/persona_rubric_rescore/pilot/raw/cj-v3-address.json",
+    "eval_results/issue_2162/persona_rubric_rescore/pilot/run_meta.json",
+    "eval_results/issue_2162/persona_rubric_rescore/pilot/scores.jsonl",
+    "eval_results/issue_2162/persona_rubric_rescore/raw/cj-v3-address.json",
+    "eval_results/issue_2162/persona_rubric_rescore/raw/cj-v3-courtesy.json",
+    "eval_results/issue_2162/persona_rubric_rescore/raw/cj-v3-formality.json",
+    "eval_results/issue_2162/persona_rubric_rescore/raw/cj-v3-household.json",
+    "eval_results/issue_2162/persona_rubric_rescore/raw/hol-v1.json",
+    "eval_results/issue_2162/persona_rubric_rescore/raw/hol-v2.json",
+    "eval_results/issue_2162/persona_rubric_rescore/raw/hol-v3.json",
+    "eval_results/issue_2162/persona_rubric_rescore/run_meta.json",
+    "eval_results/issue_2162/persona_rubric_rescore/scores.jsonl",
+    "eval_results/issue_2162/persona_rubric_rescore/summary.json",
+    "figures/issue_1336/ladder_full_transfer_lattice.pdf",
+    "figures/issue_1336/ladder_full_transfer_lattice_by_dataset.pdf",
+    "figures/issue_1336/ladder_full_transfer_lattice_by_dataset.png",
+    "scripts/issue2162_persona_rubric_rescore.py"
+  ],
+  "created": "2026-08-12T17:32:49Z",
+  "figsize": [
+    12.600000000000001,
+    3.6
+  ],
+  "points": [
+    {
+      "category": "raw projection",
+      "Spearman \u03c1 (LOFO jackknife whiskers)": -0.0183,
+      "error": 0.32145,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "exact \u0394P (ground truth)",
+      "Spearman \u03c1 (LOFO jackknife whiskers)": 0.0265,
+      "error": 0.14455,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "prompt-token \u0394P (paper)",
+      "Spearman \u03c1 (LOFO jackknife whiskers)": -0.0278,
+      "error": 0.251,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "mapped \u0394P (context)",
+      "Spearman \u03c1 (LOFO jackknife whiskers)": 0.3131,
+      "error": 0.278,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "mapped \u0394P (prefix)",
+      "Spearman \u03c1 (LOFO jackknife whiskers)": -0.0183,
+      "error": 0.32145,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "probe diff (context)",
+      "Spearman \u03c1 (LOFO jackknife whiskers)": 0.3536,
+      "error": 0.21240000000000003,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "probe diff (prefix)",
+      "Spearman \u03c1 (LOFO jackknife whiskers)": -0.1083,
+      "error": 0.25034999999999996,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Spearman \u03c1 (LOFO jackknife whiskers)": -0.2403,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Spearman \u03c1 (LOFO jackknife whiskers)": -0.141,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "Spearman \u03c1 (LOFO jackknife whiskers)": -0.3189,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "Spearman \u03c1 (LOFO jackknife whiskers)": 0.042899999999999994,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "Spearman \u03c1 (LOFO jackknife whiskers)": -0.2403,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "Spearman \u03c1 (LOFO jackknife whiskers)": 0.09289999999999998,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "Spearman \u03c1 (LOFO jackknife whiskers)": -0.2319,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Spearman \u03c1 (LOFO jackknife whiskers)": 0.4026,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Spearman \u03c1 (LOFO jackknife whiskers)": 0.1481,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "Spearman \u03c1 (LOFO jackknife whiskers)": 0.1831,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "Spearman \u03c1 (LOFO jackknife whiskers)": 0.5989,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "Spearman \u03c1 (LOFO jackknife whiskers)": 0.4026,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "Spearman \u03c1 (LOFO jackknife whiskers)": 0.5177,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "Spearman \u03c1 (LOFO jackknife whiskers)": 0.2688,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "category": "raw projection",
+      "y": 0.0304,
+      "error": 0.1896,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "exact \u0394P (ground truth)",
+      "y": 0.0661,
+      "error": 0.1701,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "prompt-token \u0394P (paper)",
+      "y": -0.0852,
+      "error": 0.20455,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "mapped \u0394P (context)",
+      "y": 0.4,
+      "error": 0.11234999999999998,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "mapped \u0394P (prefix)",
+      "y": 0.0304,
+      "error": 0.1896,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "probe diff (context)",
+      "y": 0.2026,
+      "error": 0.17855,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "probe diff (prefix)",
+      "y": 0.387,
+      "error": 0.22080000000000002,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "y": -0.1532,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "y": -0.06880000000000001,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "y": -0.3416,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "y": 0.3039,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "y": -0.1532,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "y": 0.0403,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.0,
+      "y": 0.1688,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "y": 0.226,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "y": 0.2714,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "y": 0.0675,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "y": 0.5286,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "y": 0.226,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "y": 0.3974,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "y": 0.6104,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "category": "raw projection",
+      "y": -0.2696,
+      "error": 0.2078,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "exact \u0394P (ground truth)",
+      "y": -0.0965,
+      "error": 0.3123,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "prompt-token \u0394P (paper)",
+      "y": -0.3678,
+      "error": 0.2312,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "mapped \u0394P (context)",
+      "y": -0.2583,
+      "error": 0.2565,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "mapped \u0394P (prefix)",
+      "y": -0.2696,
+      "error": 0.2078,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "probe diff (context)",
+      "y": 0.4,
+      "error": 0.21885,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "probe diff (prefix)",
+      "y": 0.3383,
+      "error": 0.0974,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "y": -0.4247,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "y": -0.474,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "y": -0.5364,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "y": -0.4273,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "y": -0.4247,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "y": 0.1948,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.0,
+      "y": 0.2039,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "y": -0.009099999999999997,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "y": 0.1506,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "y": -0.07400000000000001,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "y": 0.0857,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "y": -0.009099999999999997,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.0,
+      "y": 0.6325,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 6.0,
+      "y": 0.3987,
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 63,
+  "text": {
+    "suptitle": "Dataset-level screening-score vs post-finetune trait-shift correlation, by predictor arm",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "evil (n=24 datasets, 8 families)",
+        "ylabel": "Spearman \u03c1 (LOFO jackknife whiskers)",
+        "xticklabels": [
+          "raw projection",
+          "exact \u0394P (ground truth)",
+          "prompt-token \u0394P (paper)",
+          "mapped \u0394P (context)",
+          "mapped \u0394P (prefix)",
+          "probe diff (context)",
+          "probe diff (prefix)"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "sycophancy (n=24 datasets, 8 families)",
+        "xticklabels": [
+          "raw projection",
+          "exact \u0394P (ground truth)",
+          "prompt-token \u0394P (paper)",
+          "mapped \u0394P (context)",
+          "mapped \u0394P (prefix)",
+          "probe diff (context)",
+          "probe diff (prefix)"
+        ]
+      },
+      {
+        "title_left": "hallucination (n=24 datasets, 8 families)",
+        "xticklabels": [
+          "raw projection",
+          "exact \u0394P (ground truth)",
+          "prompt-token \u0394P (paper)",
+          "mapped \u0394P (context)",
+          "mapped \u0394P (prefix)",
+          "probe diff (context)",
+          "probe diff (prefix)"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
