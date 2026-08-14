@@ -34,7 +34,11 @@ import json
 import re
 from pathlib import Path
 
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()  # shared-VM thread caps (#847) must bind before numpy import
+
+import numpy as np  # noqa: E402
 
 CJK = re.compile(r"[一-鿿㐀-䶿豈-﫿぀-ヿ가-힯]")
 
