@@ -38,10 +38,18 @@ Phases (``--phase {anchors,bank,grid,upload}``; anchors runs FIRST):
   (``assert_butler_donor``); realized exactly as the parent's replace-arm
   null: ``norm_match(V_B(donor), V_B(recipient))`` (payload_kind="state"),
   with the realized ``donor_pair_id`` recorded per null row.
-- ``upload`` — bulk ``upload_folder`` commits under
-  ``issue2094_singlepos/raw_completions/butler_grid/`` (+ anchors/judge/
-  manifests sub-prefixes, tensors under ``analysis_tensors/``) + the pod
-  sentinel.
+- ``upload`` — persistence + the pod sentinel. DEFAULT ``--persist git``
+  (task #2300: the HF data repo is AT the Hub's hard 1,000,000-file cap —
+  EVERY net-new-file upload fails fleet-wide, size-independent): the phase
+  consolidates all round TEXT artifacts (rollouts, anchor texts, coherence
+  flags, judge scores/meta/raw, gate + floor/ceiling, run manifest) into a
+  FEW line-sharded JSONL/JSON files (9.5 MB shard splits, never gzip) under
+  ``eval_results/issue_2094/butler_grid/`` in the repo tree for a git
+  commit by the orchestrator's harvest step; tensors (vc_bank, butler
+  anchor states) are EXCLUDED from git (eval_results is JSON/text-only)
+  and declared REGENERABLE with recipes in the run manifest. ``--persist
+  hf`` keeps the original ``upload_folder`` path (fail-loud at the cap by
+  construction) for after #2300 lands.
 
 Judge-instrument parity: the rubric templates here are byte-copies of
 ``scripts/issue2094_judge.py``'s production instrument (equality pinned by
@@ -1206,8 +1214,19 @@ def phase_grid(cfg: RUN.RunConfig, args: argparse.Namespace) -> int:
 # ── upload + sentinel ─────────────────────────────────────────────────
 
 
-def _sentinel_payload(cfg: RUN.RunConfig, uploaded: dict[str, list[str]]) -> dict:
-    """The /issue Step 7 results payload (all 10 keys), butler-grid numbers."""
+def _sentinel_payload(
+    cfg: RUN.RunConfig,
+    uploaded: dict[str, list[str]],
+    *,
+    persist: str = "hf",
+    payload_root: Path | None = None,
+) -> dict:
+    """The /issue Step 7 results payload (all 10 keys), butler-grid numbers.
+
+    ``persist="git"``: eval_paths lead with the git payload root, hf_hub_url
+    is None (nothing landed on HF this round), and plan_deviations carry the
+    #2300 routing record so upload-verification reconciles against git.
+    """
     n_shards = len(list(cfg.rollouts_dir.glob("shard_*.jsonl")))
     cap_hits, cap_total = 0, 0
     for done in sorted((cfg.manifest_dir / "blocks").glob("*.done.json")):
@@ -1216,6 +1235,29 @@ def _sentinel_payload(cfg: RUN.RunConfig, uploaded: dict[str, list[str]]) -> dic
         cap_total += int(rec.get("n_cells", 0))
     gate = json.loads(gate_path(cfg).read_text()) if gate_path(cfg).exists() else {}
     fc_path = floor_ceiling_path(cfg)
+    assert persist in ("git", "hf"), persist
+    eval_paths = {
+        str(cfg.rollouts_dir),
+        str(butler_anchors_dir(cfg)),
+        str(judge_dir(cfg)),
+        str(gate_path(cfg)),
+        str(fc_path),
+        str(cfg.manifest_dir),
+    }
+    deviations_extra: list[str] = []
+    if persist == "git":
+        assert payload_root is not None
+        eval_paths.add(str(payload_root))
+        deviations_extra.append(
+            "persistence routed to GIT this round (#2300: the HF data repo is at the "
+            "Hub's hard 1,000,000-file cap — every net-new-file upload fails, "
+            "size-independent): rollout text + anchor text + coherence flags + judge "
+            f"scores/meta/raw + gate + floor/ceiling + run manifest at {payload_root} "
+            "(low-file-count line-sharded JSONL, no gzip); tensors (vc_bank, butler "
+            "anchor states) NOT persisted — regen recipes in run_manifest.json "
+            "(eval_results is JSON/text-only). Upload-verification reconciles against "
+            "the GIT payload, not HF."
+        )
     return {
         "eval_numbers": {
             "butler_grid_shards": n_shards,
@@ -1228,16 +1270,7 @@ def _sentinel_payload(cfg: RUN.RunConfig, uploaded: dict[str, list[str]]) -> dic
                 len(json.loads(fc_path.read_text())["pairs"]) if fc_path.exists() else 0
             ),
         },
-        "eval_paths": sorted(
-            {
-                str(cfg.rollouts_dir),
-                str(butler_anchors_dir(cfg)),
-                str(judge_dir(cfg)),
-                str(gate_path(cfg)),
-                str(fc_path),
-                str(cfg.manifest_dir),
-            }
-        ),
+        "eval_paths": sorted(eval_paths),
         "reproducibility_card": {
             **RUN._repro(cfg),
             "seed_base": cfg.seed_base,
@@ -1257,7 +1290,9 @@ def _sentinel_payload(cfg: RUN.RunConfig, uploaded: dict[str, list[str]]) -> dic
         },
         "wandb_url": None,
         "hf_hub_url": (
-            f"https://huggingface.co/datasets/{RUN.HF_DATA_REPO}/tree/main/{BUTLER_HF_PREFIX}"
+            None
+            if persist == "git"  # nothing landed on HF this round (#2300)
+            else f"https://huggingface.co/datasets/{RUN.HF_DATA_REPO}/tree/main/{BUTLER_HF_PREFIX}"
         ),
         "worktree_path": str(RUN.REPO_ROOT),
         "final_commit_sha": RUN._git_sha(),
@@ -1275,14 +1310,212 @@ def _sentinel_payload(cfg: RUN.RunConfig, uploaded: dict[str, list[str]]) -> dic
             "(butler appears in no parent pair) and is asserted per pairing; "
             "realized as the parent's replace-arm donor-STATE null "
             "(norm_match(V_B(donor), V_B)), donor_pair_id recorded per null row",
+            *deviations_extra,
         ],
         "uploaded_prefixes": {k: len(v) for k, v in uploaded.items()},
     }
 
 
-def phase_upload(cfg: RUN.RunConfig) -> int:
-    """Bulk-upload the staged butler-round artifacts, then the sentinel."""
-    logger.info("[phase=upload]")
+DEFAULT_GIT_PAYLOAD_ROOT = RUN.REPO_ROOT / "eval_results" / "issue_2094" / "butler_grid"
+SHARD_MAX_BYTES = 9_500_000  # text >9.5 MB per file line-splits (upload-policy)
+
+# Tensors are EXCLUDED from the git payload (eval_results is JSON/text-only)
+# and regenerable from the pinned commit + the persisted TEXT — recorded in
+# the run manifest so the discard is verifier-legible, never silent.
+DISCARDED_TENSOR_RECIPES = {
+    "vc_bank (20-context all-layer V bank, *.pt)": (
+        "re-run `--phase bank` at the run manifest's git commit (deterministic "
+        "capture: model + bank.py + seed; injection gate re-verifies)"
+    ),
+    "va_butler_anchors.pt (butler anchor answer states)": (
+        "one teacher-forced RUN.capture_answer_states pass over the persisted "
+        "butler_anchors JSONL texts at the run manifest's git commit"
+    ),
+}
+
+
+def _read_jsonl(path: Path) -> list[dict]:
+    """Text-mode line iteration (never splitlines — U+2028-in-strings safe)."""
+    return [json.loads(line) for line in path.open(encoding="utf-8") if line.strip()]
+
+
+def _write_jsonl_sharded(
+    dest_dir: Path, stem: str, rows: list[dict], max_bytes: int = SHARD_MAX_BYTES
+) -> list[Path]:
+    """Write ``rows`` as ``<stem>.shardNN.jsonl`` line shards of <= max_bytes.
+
+    Never gzip (``*.gz`` is LFS-matched); at least one shard is always
+    written for a non-empty row set; an EMPTY row set fails loud (a
+    well-formed empty artifact is the #1739 misdiagnosis trap).
+    """
+    assert rows, f"refusing to write an EMPTY payload artifact {stem} (never a silent no-op)"
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    paths: list[Path] = []
+    buf: list[str] = []
+    size = 0
+    for row in rows:
+        line = json.dumps(row, ensure_ascii=False) + "\n"
+        nbytes = len(line.encode("utf-8"))
+        if buf and size + nbytes > max_bytes:
+            paths.append(dest_dir / f"{stem}.shard{len(paths):02d}.jsonl")
+            paths[-1].write_text("".join(buf), encoding="utf-8")
+            buf, size = [], 0
+        buf.append(line)
+        size += nbytes
+    paths.append(dest_dir / f"{stem}.shard{len(paths):02d}.jsonl")
+    paths[-1].write_text("".join(buf), encoding="utf-8")
+    return paths
+
+
+def build_git_payload(cfg: RUN.RunConfig, payload_root: Path) -> dict:
+    """Consolidate the round's TEXT artifacts into a low-file-count git payload.
+
+    Returns a summary dict (per-class file lists + row counts). Fail-loud on
+    an empty rollout set; anchor/judge/gate classes are included when present
+    (the grid can be uploaded before judging on a resumed pod) with each
+    absence logged loud — never silently swallowed.
+    """
+    payload_root.mkdir(parents=True, exist_ok=True)
+    summary: dict[str, dict] = {}
+
+    # 1. rollout TEXT (never a legal discard): all per-block shards -> one sharded set.
+    block_shards = sorted(cfg.rollouts_dir.glob("shard_*.jsonl"))
+    rollout_rows = [row for p in block_shards for row in _read_jsonl(p)]
+    assert rollout_rows, (
+        f"no grid rollout rows staged under {cfg.rollouts_dir} — refusing to build "
+        "an empty git payload (rollout text is never a legal discard)"
+    )
+    paths = _write_jsonl_sharded(payload_root, "rollouts", rollout_rows)
+    summary["rollouts"] = {
+        "files": [p.name for p in paths],
+        "n_rows": len(rollout_rows),
+        "n_source_blocks": len(block_shards),
+    }
+
+    # 2. butler anchor TEXT + coherence flags.
+    anchors_jsonl = butler_anchors_dir(cfg) / "butler_anchors.jsonl"
+    if anchors_jsonl.is_file():
+        rows = _read_jsonl(anchors_jsonl)
+        paths = _write_jsonl_sharded(payload_root, "butler_anchors", rows)
+        summary["butler_anchors"] = {"files": [p.name for p in paths], "n_rows": len(rows)}
+    else:
+        logger.warning("[git-payload] no butler anchor text at %s — NOT included", anchors_jsonl)
+    draws_jsonl = butler_anchors_dir(cfg) / "butler_anchor_draws.jsonl"
+    if draws_jsonl.is_file():
+        rows = _read_jsonl(draws_jsonl)
+        paths = _write_jsonl_sharded(payload_root, "butler_anchor_draws", rows)
+        summary["butler_anchor_draws"] = {"files": [p.name for p in paths], "n_rows": len(rows)}
+    else:
+        logger.warning("[git-payload] no coherence flags at %s — NOT included", draws_jsonl)
+
+    # 3. judge outputs: scores (+wave field), meta, raw rationales.
+    jdir = judge_dir(cfg)
+    score_rows: list[dict] = []
+    metas: dict[str, dict] = {}
+    raw_rows: list[dict] = []
+    for scores_path in sorted(jdir.glob("*.scores.jsonl")):
+        wave = scores_path.name[: -len(".scores.jsonl")]
+        score_rows += [{"wave": wave, **row} for row in _read_jsonl(scores_path)]
+        meta_path = jdir / f"{wave}.meta.json"
+        if meta_path.is_file():
+            metas[wave] = json.loads(meta_path.read_text(encoding="utf-8"))
+    for raw_path in sorted((jdir / "raw").glob("*.json")):
+        raw_rows.append(
+            {"wave": raw_path.stem, "raw": json.loads(raw_path.read_text(encoding="utf-8"))}
+        )
+    if score_rows:
+        paths = _write_jsonl_sharded(payload_root, "judge_scores", score_rows)
+        summary["judge_scores"] = {
+            "files": [p.name for p in paths],
+            "n_rows": len(score_rows),
+            "waves": sorted(metas),
+        }
+        RUN._write_json_atomic(payload_root / "judge_meta.json", metas)
+        summary["judge_meta"] = {"files": ["judge_meta.json"], "n_waves": len(metas)}
+    else:
+        logger.warning("[git-payload] no judge score rows under %s — NOT included", jdir)
+    if raw_rows:
+        paths = _write_jsonl_sharded(payload_root, "judge_raw", raw_rows)
+        summary["judge_raw"] = {"files": [p.name for p in paths], "n_waves": len(raw_rows)}
+
+    # 4. gate + floor/ceiling verbatim copies.
+    for name, src in (
+        ("butler_gate", gate_path(cfg)),
+        ("butler_floor_ceiling", floor_ceiling_path(cfg)),
+    ):
+        if src.is_file():
+            (payload_root / f"{name}.json").write_text(src.read_text(encoding="utf-8"))
+            summary[name] = {"files": [f"{name}.json"]}
+        else:
+            logger.warning("[git-payload] %s missing at %s — NOT included", name, src)
+
+    # 5. run manifest: plans/done manifests + pilot + anchors-done + repro +
+    #    the verifier-legible tensor-discard record.
+    manifests: dict[str, dict] = {}
+    for p in sorted(cfg.manifest_dir.glob("butler_grid_*.json")):
+        manifests[p.name] = json.loads(p.read_text(encoding="utf-8"))
+    for extra in (
+        cfg.out_root / "butler_pilot_report.json",
+        butler_anchors_dir(cfg) / "anchors_done.json",
+    ):
+        if extra.is_file():
+            manifests[extra.name] = json.loads(extra.read_text(encoding="utf-8"))
+    RUN._write_json_atomic(
+        payload_root / "run_manifest.json",
+        {
+            "persist_mode": "git (#2300: HF data repo at the 1,000,000-file Hub cap)",
+            "discarded_tensors": DISCARDED_TENSOR_RECIPES,
+            "manifests": manifests,
+            "repro": RUN._repro(cfg),
+        },
+    )
+    summary["run_manifest"] = {"files": ["run_manifest.json"], "n_manifests": len(manifests)}
+
+    n_files = sum(len(v.get("files", [])) for v in summary.values())
+    for cls, rec in summary.items():
+        logger.info(
+            "[git-payload] %s: %s rows=%s", cls, ",".join(rec["files"]), rec.get("n_rows", "-")
+        )
+    logger.info("[git-payload] %d files total -> %s", n_files, payload_root)
+    return summary
+
+
+def phase_upload(cfg: RUN.RunConfig, args: argparse.Namespace) -> int:
+    """Persist the staged butler-round artifacts, then write the sentinel.
+
+    ``--persist git`` (DEFAULT, #2300): consolidated low-file-count text
+    payload into the repo tree (the orchestrator's harvest step commits it —
+    this driver never runs git). ``--persist hf``: the original HF
+    ``upload_folder`` path, which FAILS LOUD at the current file cap
+    (``RUN._upload_dir`` raises after its bounded retry — never swallowed).
+    """
+    logger.info("[phase=upload] persist=%s", args.persist)
+    if args.persist == "git":
+        payload_root = args.git_payload_root or DEFAULT_GIT_PAYLOAD_ROOT
+        logger.info(
+            "[upload] HF data repo persistence DISABLED this round (#2300: repo at the "
+            "1,000,000-file Hub cap) — writing the consolidated git payload instead; "
+            "tensors excluded per the eval_results JSON/text-only policy, regen "
+            "recipes recorded in run_manifest.json"
+        )
+        payload_summary = build_git_payload(cfg, Path(payload_root))
+        payload = _sentinel_payload(
+            cfg,
+            {cls: rec.get("files", []) for cls, rec in payload_summary.items()},
+            persist="git",
+            payload_root=Path(payload_root),
+        )
+        RUN._write_json_atomic(cfg.manifest_dir / "butler_upload_done.json", payload)
+        sentinel = cfg.log_dir / SENTINEL_NAME
+        RUN._write_json_atomic(
+            sentinel,
+            {"sentinel_schema_version": 1, "kind": "epm:results", "version": 1, "note": payload},
+        )
+        logger.info("[upload] sentinel written: %s", sentinel)
+        logger.info("[phase=upload_done]")
+        return RUN.RC_OK
+
+    assert args.persist == "hf", args.persist
     uploaded: dict[str, list[str]] = {}
     uploaded["butler_text"] = RUN._upload_dir(
         cfg, cfg.rollouts_dir, BUTLER_HF_PREFIX, ["shard_*.jsonl"]
@@ -1313,7 +1546,7 @@ def phase_upload(cfg: RUN.RunConfig) -> int:
         f"{RUN.HF_PREFIX}/analysis_tensors/butler_vc_bank",
         ["*.pt", "*.json"],
     )
-    payload = _sentinel_payload(cfg, uploaded)
+    payload = _sentinel_payload(cfg, uploaded, persist="hf", payload_root=None)
     RUN._write_json_atomic(cfg.manifest_dir / "butler_upload_done.json", payload)
     sentinel = cfg.log_dir / SENTINEL_NAME
     RUN._write_json_atomic(
@@ -1374,6 +1607,23 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--num-workers", type=int, default=1)
     ap.add_argument("--gpu-id", type=int, default=None, help="informational; CVD pins the device")
     ap.add_argument("--upload", choices=("hf", "local-mirror", "none"), default="hf")
+    ap.add_argument(
+        "--persist",
+        choices=("git", "hf"),
+        default="git",
+        help="upload-phase persistence: git = consolidated line-sharded text payload "
+        "into eval_results/issue_2094/butler_grid/ (DEFAULT while #2300 — the HF data "
+        "repo's 1,000,000-file Hub cap — is unresolved); hf = the original "
+        "upload_folder path (fails loud at the cap)",
+    )
+    ap.add_argument(
+        "--git-payload-root",
+        type=Path,
+        default=None,
+        help="git-persist destination dir (default: <repo>/eval_results/issue_2094/"
+        "butler_grid; smokes MUST redirect to scratch so committed paths are never "
+        "overwritten)",
+    )
     ap.add_argument(
         "--upload-every",
         type=int,
@@ -1450,7 +1700,7 @@ def main(argv: list[str] | None = None) -> int:
     if cfg.phase == "grid":
         return phase_grid(cfg, args)
     assert cfg.phase == "upload", cfg.phase
-    return phase_upload(cfg)
+    return phase_upload(cfg, args)
 
 
 if __name__ == "__main__":

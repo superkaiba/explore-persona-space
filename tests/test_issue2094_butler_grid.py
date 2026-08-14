@@ -396,3 +396,153 @@ def test_grid_accepts_passed_gate(tmp_path, butler_pairs):
     rec = {"passed": True, "pair_ids": BUTLER_PAIR_IDS, "mean_denominator_bare_butler": 1.1}
     (tmp_path / "butler_gate.json").write_text(json.dumps(rec))
     BG._require_butler_gate(_gate_cfg(tmp_path), butler_pairs)  # no raise
+
+
+# ── git-persist payload (#2300: HF data repo at the 1M-file Hub cap) ─────
+
+
+def test_write_jsonl_sharded_splits_round_trips_and_refuses_empty(tmp_path):
+    rows = [{"i": i, "text": "x" * 100} for i in range(50)]
+    paths = BG._write_jsonl_sharded(tmp_path, "t", rows, max_bytes=1000)
+    assert len(paths) > 1  # split fired at the tiny cap
+    assert [p.name for p in paths] == [f"t.shard{i:02d}.jsonl" for i in range(len(paths))]
+    assert all(p.stat().st_size <= 1000 for p in paths)
+    assert not list(tmp_path.glob("*.gz"))  # never gzip (LFS-matched)
+    back = [row for p in paths for row in BG._read_jsonl(p)]
+    assert back == rows  # order-preserving round trip
+    # one shard when under the cap
+    assert len(BG._write_jsonl_sharded(tmp_path, "small", rows[:2])) == 1
+    with pytest.raises(AssertionError, match="EMPTY payload"):
+        BG._write_jsonl_sharded(tmp_path, "empty", [])
+
+
+def _payload_cfg(tmp_path: Path) -> SimpleNamespace:
+    out = tmp_path / "out"
+    cfg = SimpleNamespace(
+        out_root=out,
+        rollouts_dir=out / "rollouts",
+        manifest_dir=out / "manifests",
+        model_id="m",
+        tiny=True,
+        smoke=False,
+        n_layers=4,
+        hidden=64,
+        max_new_tokens=8,
+        seed_base=42,
+        anchor_draws=2,
+        gen_batch=16,
+        num_workers=1,
+        gpu_hours_budgeted=1.0,
+    )
+    cfg.rollouts_dir.mkdir(parents=True)
+    cfg.manifest_dir.mkdir(parents=True)
+    return cfg
+
+
+def _stage_round_artifacts(cfg: SimpleNamespace) -> None:
+    for slug in ("ce__L2__replace__A__steered", "ce__L2__replace__A__null"):
+        rows = [
+            {"block_key": slug, "pair_id": BUTLER_PAIR_IDS[i], "text": f"r{i}"} for i in range(10)
+        ]
+        (cfg.rollouts_dir / f"shard_{slug}.jsonl").write_text(
+            "".join(json.dumps(r) + "\n" for r in rows)
+        )
+    adir = BG.butler_anchors_dir(cfg)
+    adir.mkdir(parents=True)
+    (adir / "butler_anchors.jsonl").write_text(
+        "".join(
+            json.dumps({"context_id": f"butler__q{i}", "draw": 0, "text": f"a{i}"}) + "\n"
+            for i in range(1, 4)
+        )
+    )
+    (adir / "butler_anchor_draws.jsonl").write_text(
+        json.dumps({"context_id": "butler__q1", "draw": 0, "coherent": True}) + "\n"
+    )
+    (adir / "anchors_done.json").write_text(json.dumps({"n_rows": 3}))
+    (adir / "va_butler_anchors.pt").write_bytes(b"\x00tensor")  # must NOT enter git
+    jdir = BG.judge_dir(cfg)
+    (jdir / "raw").mkdir(parents=True)
+    for wave, rid in (
+        ("fp-butler.butler-anchors", "fp-butler"),
+        ("coherence.butler-anchors", "coherence"),
+    ):
+        (jdir / f"{wave}.scores.jsonl").write_text(
+            json.dumps({"rubric_id": rid, "context_id": "butler__q1", "draw": 0, "score": 80.0})
+            + "\n"
+        )
+        (jdir / f"{wave}.meta.json").write_text(json.dumps({"complete": True}))
+        (jdir / "raw" / f"{wave}.json").write_text(json.dumps({"n": 1}))
+    (cfg.manifest_dir / "butler_gate.json").write_text(
+        json.dumps({"passed": True, "pair_ids": BUTLER_PAIR_IDS})
+    )
+    (cfg.manifest_dir / "butler_floor_ceiling.json").write_text(json.dumps({"pairs": []}))
+    (cfg.manifest_dir / "butler_grid_plan_w0.json").write_text(json.dumps({"worker_index": 0}))
+
+
+def test_build_git_payload_consolidates_low_file_count(tmp_path):
+    cfg = _payload_cfg(tmp_path)
+    _stage_round_artifacts(cfg)
+    root = tmp_path / "payload"
+    summary = BG.build_git_payload(cfg, root)
+    # rollouts: 2 per-block shards -> ONE consolidated sharded set, 20 rows
+    assert summary["rollouts"]["n_rows"] == 20 and summary["rollouts"]["n_source_blocks"] == 2
+    rollout_files = [root / f for f in summary["rollouts"]["files"]]
+    assert all(f.is_file() for f in rollout_files)
+    assert sum(len(BG._read_jsonl(f)) for f in rollout_files) == 20
+    # judge scores carry the wave field; meta + raw present
+    score_rows = [r for f in summary["judge_scores"]["files"] for r in BG._read_jsonl(root / f)]
+    assert {r["wave"] for r in score_rows} == {
+        "fp-butler.butler-anchors",
+        "coherence.butler-anchors",
+    }
+    assert set(json.loads((root / "judge_meta.json").read_text())) == {
+        "fp-butler.butler-anchors",
+        "coherence.butler-anchors",
+    }
+    assert summary["judge_raw"]["n_waves"] == 2
+    # gate + floor/ceiling verbatim copies
+    assert json.loads((root / "butler_gate.json").read_text())["passed"] is True
+    assert (root / "butler_floor_ceiling.json").is_file()
+    # run manifest: discard record + grid plan folded in
+    man = json.loads((root / "run_manifest.json").read_text())
+    assert set(man["discarded_tensors"]) == set(BG.DISCARDED_TENSOR_RECIPES)
+    assert "butler_grid_plan_w0.json" in man["manifests"]
+    assert "anchors_done.json" in man["manifests"]
+    # NO tensors and NO gzip in the payload; file count stays low
+    assert not list(root.glob("*.pt")) and not list(root.glob("*.gz"))
+    assert len(list(root.iterdir())) <= 12
+
+
+def test_build_git_payload_refuses_empty_rollouts(tmp_path):
+    cfg = _payload_cfg(tmp_path)  # no artifacts staged
+    with pytest.raises(AssertionError, match="no grid rollout rows"):
+        BG.build_git_payload(cfg, tmp_path / "payload")
+
+
+def test_sentinel_payload_git_mode_routes_and_discloses(tmp_path):
+    cfg = _payload_cfg(tmp_path)
+    _stage_round_artifacts(cfg)
+    root = tmp_path / "payload"
+    note = BG._sentinel_payload(
+        cfg, {"rollouts": ["rollouts.shard00.jsonl"]}, persist="git", payload_root=root
+    )
+    required = (
+        "eval_numbers",
+        "eval_paths",
+        "reproducibility_card",
+        "wandb_url",
+        "hf_hub_url",
+        "worktree_path",
+        "final_commit_sha",
+        "gpu_hours_used",
+        "gpu_hours_budgeted",
+        "plan_deviations",
+    )
+    assert all(k in note for k in required)
+    assert note["hf_hub_url"] is None  # nothing landed on HF this round
+    assert str(root) in note["eval_paths"]
+    assert any("#2300" in d and "GIT" in d for d in note["plan_deviations"])
+    # hf mode keeps the original destination + no #2300 routing line
+    note_hf = BG._sentinel_payload(cfg, {}, persist="hf", payload_root=None)
+    assert note_hf["hf_hub_url"] and "butler_grid" in note_hf["hf_hub_url"]
+    assert not any("#2300" in d for d in note_hf["plan_deviations"])
