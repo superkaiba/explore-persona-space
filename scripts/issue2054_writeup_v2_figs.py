@@ -52,6 +52,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.lines import Line2D  # noqa: E402
+from matplotlib.patches import Patch  # noqa: E402
 
 from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     savefig_paper,
@@ -64,6 +65,7 @@ PTL_PATH = REPO / "eval_results/issue_2054/specialization_ladder/pooled_tier_lad
 POOL_RUNGS_DIR = REPO / "data/issue_2054/ladderstage/issue2054_lattice/pool_rungs/percell_rungs"
 LOCO_SPEAKER_PATH = REPO / "eval_results/issue_2054/specialization_ladder/loco_pooled.json"
 LOCO_FRAMING_PATH = REPO / "eval_results/issue_2054/specialization_ladder/loco_framing_pooled.json"
+NULLS_PATH = REPO / "eval_results/issue_2054/specialization_ladder/remap_pair_nulls.json"
 OUT_DIR = REPO / "figures/issue_2054/writeup_v2"
 
 ASSIST = "conversation_paired_stories_assistant"
@@ -145,6 +147,37 @@ def find_row(rows: list[dict], **kw) -> dict | None:
     return hits[0]
 
 
+def load_nulls() -> dict[tuple[str, str], dict]:
+    """(src, tgt) -> shuffled-pair null summary; empty when not yet computed."""
+    if not NULLS_PATH.exists():
+        return {}
+    payload = json.loads(NULLS_PATH.read_text())
+    return {(u["src"], u["tgt"]): u["mean"] for u in payload["units"]}
+
+
+def _draw_null_bands(ax, null_means: list[dict]) -> bool:
+    """Shade the p95 range of the shuffled-pair nulls at the two re-map tiers.
+
+    One band per tier position (x = 3 ctx re-map, x = 4 ans re-map) spanning
+    min..max of the panel's per-pair null p95 values. Returns True if drawn.
+    """
+    if not null_means:
+        return False
+    for xi, key in ((3, "null_7_p95"), (4, "null_8_p95")):
+        vals = [m[key] for m in null_means]
+        lo, hi = min(vals), max(vals)
+        if hi - lo < 0.008:  # keep a visible sliver when the nulls coincide
+            pad = (0.008 - (hi - lo)) / 2
+            lo, hi = lo - pad, hi + pad
+        ax.fill_between([xi - 0.3, xi + 0.3], lo, hi, color="#8a8a8a", alpha=0.30, zorder=1)
+    return True
+
+
+NULL_BAND_HANDLE = Patch(
+    facecolor="#8a8a8a", alpha=0.30, label="shuffled-pair null (p95 range, re-map tiers)"
+)
+
+
 def tier_values(row: dict) -> tuple[list[float], list[bool]]:
     """(values per TIERS, filled-marker flags — hollow when a refit rung is under-determined)."""
     vals = [row["rungs"][t] for t in TIERS]
@@ -190,16 +223,20 @@ def fig_tier_grid(
     label_map: dict,
     row_specs: list[tuple[str, str]],
     src_ceiling_fn=None,
+    nulls: dict | None = None,
 ):
     """2x2 grid: rows = row_specs (condition views), cols = instruct | instruct - base.
 
     `pair_fn(cond_key, model, series_key) -> row or None` supplies the ladder row.
     Absolute panels carry dotted target-ceiling lines (series color) and, when
     `src_ceiling_fn(cond_key, model)` is given, a gray dotted source-map ceiling.
+    `nulls` (optional) adds gray shuffled-pair null p95 bands at the re-map tiers.
     """
+    drew_nulls = False
     fig, axes = plt.subplots(2, 2, figsize=(11.0, 7.2), sharex=True)
     for ri, (cond_key, cond_title) in enumerate(row_specs):
         ax_abs, ax_diff = axes[ri]
+        panel_nulls: list[dict] = []
         for sk in series:
             r_i = pair_fn(cond_key, INSTRUCT, sk)
             r_b = pair_fn(cond_key, BASE, sk)
@@ -208,11 +245,14 @@ def fig_tier_grid(
             vals_i, filled_i = tier_values(r_i)
             _plot_tier_line(ax_abs, vals_i, filled_i, color_map[sk], label=label_map[sk])
             ax_abs.axhline(r_i["ceiling"], color=color_map[sk], lw=1.0, ls=":", alpha=0.8)
+            if nulls and (r_i["src"], r_i["tgt"]) in nulls:
+                panel_nulls.append(nulls[(r_i["src"], r_i["tgt"])])
             if r_b is not None:
                 vals_b, filled_b = tier_values(r_b)
                 diff = [a - b for a, b in zip(vals_i, vals_b)]
                 both = [fa and fb for fa, fb in zip(filled_i, filled_b)]
                 _plot_tier_line(ax_diff, diff, both, color_map[sk])
+        drew_nulls = _draw_null_bands(ax_abs, panel_nulls) or drew_nulls
         if src_ceiling_fn is not None:
             sc = src_ceiling_fn(cond_key, INSTRUCT)
             if sc is not None:
@@ -241,6 +281,8 @@ def fig_tier_grid(
         handles.append(
             Line2D([0], [0], color="#888888", lw=1.2, ls="--", label="source's own-map $R^2$")
         )
+    if drew_nulls:
+        handles.append(NULL_BAND_HANDLE)
     fig.legend(handles=handles, loc="lower center", ncol=len(handles), frameon=False, fontsize=9)
     fig.tight_layout(rect=(0, 0.05, 1, 1))
     savefig_paper(fig, stem, dir=OUT_DIR)
@@ -256,11 +298,14 @@ def fig_base_abs(
     label_map: dict,
     row_specs: list[tuple[str, str]],
     src_ceiling_fn=None,
+    nulls: dict | None = None,
 ):
     """1x2: base-model absolute R^2 per tier (the other term of the difference)."""
+    drew_nulls = False
     fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.0), sharex=True)
     for ci, (cond_key, cond_title) in enumerate(row_specs):
         ax = axes[ci]
+        panel_nulls: list[dict] = []
         for sk in series:
             r_b = pair_fn(cond_key, BASE, sk)
             if r_b is None:
@@ -268,6 +313,9 @@ def fig_base_abs(
             vals, filled = tier_values(r_b)
             _plot_tier_line(ax, vals, filled, color_map[sk], label=label_map[sk])
             ax.axhline(r_b["ceiling"], color=color_map[sk], lw=1.0, ls=":", alpha=0.8)
+            if nulls and (r_b["src"], r_b["tgt"]) in nulls:
+                panel_nulls.append(nulls[(r_b["src"], r_b["tgt"])])
+        drew_nulls = _draw_null_bands(ax, panel_nulls) or drew_nulls
         if src_ceiling_fn is not None:
             sc = src_ceiling_fn(cond_key, BASE)
             if sc is not None:
@@ -285,6 +333,8 @@ def fig_base_abs(
     handles.append(
         Line2D([0], [0], color="#333", lw=1.0, ls=":", label="target's own-map $R^2$ (dotted)")
     )
+    if drew_nulls:
+        handles.append(NULL_BAND_HANDLE)
     fig.legend(handles=handles, loc="lower center", ncol=len(handles), frameon=False, fontsize=9)
     fig.tight_layout(rect=(0, 0.08, 1, 1))
     savefig_paper(fig, stem, dir=OUT_DIR)
@@ -421,6 +471,7 @@ def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     rows = load_rows()
     units = load_pooled_units()
+    nulls = load_nulls()
 
     story_forms = ["bare_text", "bare_label", "attrib_quoted"]
 
@@ -452,6 +503,7 @@ def main() -> int:
         FRAMING_LABEL,
         row_specs,
         src_ceiling_fn=r1_src_ceiling,
+        nulls=nulls,
     )
     fig_base_abs(
         rows,
@@ -462,6 +514,7 @@ def main() -> int:
         FRAMING_LABEL,
         row_specs,
         src_ceiling_fn=r1_src_ceiling,
+        nulls=nulls,
     )
 
     def r1_pool_cell(cond, model, framing):
@@ -520,6 +573,7 @@ def main() -> int:
         CHAR_LABEL,
         row_specs,
         src_ceiling_fn=r2_src_ceiling,
+        nulls=nulls,
     )
     fig_base_abs(
         rows,
@@ -530,6 +584,7 @@ def main() -> int:
         CHAR_LABEL,
         row_specs,
         src_ceiling_fn=r2_src_ceiling,
+        nulls=nulls,
     )
 
     def r2_pool_cell(cond, model, ch):
@@ -582,6 +637,7 @@ def main() -> int:
         CHAR_LABEL,
         [("on_policy", "on-policy targets"), ("inserted", "inserted targets")],
         src_ceiling_fn=r3_src_ceiling,
+        nulls=nulls,
     )
 
     print(f"[writeup-v2-figs] wrote figures under {OUT_DIR}")
