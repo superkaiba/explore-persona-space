@@ -96,6 +96,8 @@ relates_to:
 
 I acknowledge this body's conciseness WARNs: the six Takeaways bullets run over the per-bullet length cap (each folds a round-2 honesty disclosure into its claim), several per-result reads sit above the 120-word soft cap, and total content prose exceeds the 800-word budget — seven standalone results each carry a figure and a distinct read.
 
+Three open rig-observability concerns are deferred as non-verdict-bearing: the per-phase pod sentinels lack envelope keys so the poller observed them by file presence only <!-- concern-deferred: sentinel-envelope-poller-drain -->; the pod-B parity seam waives banked cells drifting in the (5e-3, 2e-2] band with only a provenance-waived record <!-- concern-deferred: seam-banked-waiver-audit-read -->; and the wave-2 generation upload remains per-cell against the data repo's file-count ceiling, which is also why the decisive raw completions are deferred (see the durability note) <!-- concern-deferred: wave2-gen-percell-upload-ceiling -->.
+
 ## Results
 
 ### The pre-image cannot steer at the context vector, while a directly-measured direction can
