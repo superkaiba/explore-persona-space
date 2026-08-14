@@ -10098,8 +10098,8 @@
     "2307": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2307",
-      "status": "proposed",
+      "path": "tasks/planning/2307",
+      "status": "planning",
       "title": "workflow-fix: Determine which side regressed before touching either. EITHE"
     },
     "231": {
