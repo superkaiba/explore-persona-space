@@ -1,6 +1,7 @@
 ---
-title: Steering only context tokens does not prevent trait acquisition — it shows
-  almost no dose-response, while steering response tokens does (MODERATE confidence)
+title: Single-layer steering of context tokens does not prevent trait acquisition
+  — it shows almost no dose-response, while steering response tokens does (MODERATE
+  confidence)
 kind: experiment
 tags:
 - trigger-dense

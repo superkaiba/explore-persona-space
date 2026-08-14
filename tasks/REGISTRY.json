@@ -9468,7 +9468,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/2225",
       "status": "followups_running",
-      "title": "Steering only context tokens does not prevent trait acquisition \u2014 it shows almost no dose-response, while steering response tokens does (MODERATE confidence)"
+      "title": "Single-layer steering of context tokens does not prevent trait acquisition \u2014 it shows almost no dose-response, while steering response tokens does (MODERATE confidence)"
     },
     "2226": {
       "has_clean_result": false,
