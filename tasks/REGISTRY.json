@@ -10009,7 +10009,7 @@
       "kind": "infra",
       "path": "tasks/proposed/2295",
       "status": "proposed",
-      "title": "sync_repo_root deadlocks on the abandoned-rebase husk it exists to clear (task.py holds the flock while waiting on the husk)"
+      "title": "workflow-fix: sync_repo_root deadlocks on the abandoned-rebase husk it exists to clear (task.py holds the flock while waiting on the husk)"
     },
     "23": {
       "has_clean_result": false,

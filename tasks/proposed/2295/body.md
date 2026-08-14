@@ -1,6 +1,6 @@
 ---
-title: sync_repo_root deadlocks on the abandoned-rebase husk it exists to clear (task.py
-  holds the flock while waiting on the husk)
+title: 'workflow-fix: sync_repo_root deadlocks on the abandoned-rebase husk it exists
+  to clear (task.py holds the flock while waiting on the husk)'
 kind: infra
 tags:
 - wf-fix
