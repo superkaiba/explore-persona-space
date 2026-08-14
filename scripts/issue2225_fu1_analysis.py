@@ -407,7 +407,9 @@ def _paired_contrast(qx: dict, qy: dict, *, seed: int, n_boot: int, inherited_fn
                 else None
             ),
             "n_draws_no_coherent_coef": n_invalid,
-            "verdict": (
+            # plan §3: the selection-inherited flavour is a sensitivity
+            # diagnostic and never bears a verdict label
+            "sensitivity_read": (
                 fu_lattice_verdict(
                     float(np.nanmean(inh)),
                     float(np.percentile(valid, 2.5)),
