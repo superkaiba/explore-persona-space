@@ -37,6 +37,28 @@ Phases (plan §4):
                        patch_vs_ceiling; selection-symmetric null bands).
   figures              off-pod: hero + diagnostic figures (issue2254_figures).
 
+ctxext-subspace-split amendment phases (plan v7; follow-up
+`ctxext-subspace-split-steering`; all take --grid ctxext-split where noted):
+  derive_split_directions  VM CPU: d_par/d_perp per (behavior, layer) from the
+                       pinned round-1 maps + ctxext bundles; 4 HALT asserts
+                       (parity vs the committed reachability read,
+                       standardized-frame orthogonality, non-degeneracy, unit
+                       fold norms); bundles + split_construction.json upload
+                       BEFORE any pod provision.
+  ctxext_split_localize    GPU pod C (--grid ctxext-split): 2 dirs x
+                       {own-single, mid} x 8 doses = 32 cells/behavior at
+                       10q x 3 draws x s42; no fresh alpha0/null cells.
+  ctxext_split_decisive    GPU pod D (--grid ctxext-split): <=8 operating-point
+                       cells at 20q x 5 draws x seeds {42,43}; rho seam
+                       re-asserted.
+  margin_split         GPU pod D: rw2220 margin at the split SINGLE-breadth
+                       operating points (mid-breadth skipped loudly — the
+                       reused instrument steers one layer per forward).
+  judge_reduce --reduce-phase localize_split|decisive_split (--grid
+                       ctxext-split): split waves — restricted POOLED
+                       selection-symmetric null band re-argmaxed from the
+                       PARENT's persisted localize packs (0 new control GPU).
+
 Reuse provenance (plan §10 "Reused code" row):
   - ``ridge_fit_matrix`` is copied VERBATIM from
     ``eval_results/issue_779/pinv_topk_contexts/pinv_topk_contexts.py`` L92-120
@@ -1704,7 +1726,15 @@ PATCH_OPS = ("proj", "ablate")
 PATCH_BREADTHS = ("single", "mid")
 SEED_LOCALIZE = 42
 SEEDS_DECISIVE = (42, 43)
-JUDGE_DRAWS = {"localize": 3, "baseline_ceiling": 5, "decisive": 5, "patch": 5}
+JUDGE_DRAWS = {
+    "localize": 3,
+    "baseline_ceiling": 5,
+    "decisive": 5,
+    "patch": 5,
+    # split amendment (plan v7 §4.2): inherited grain — localize 3, decisive 5
+    "ctxext_split_localize": 3,
+    "ctxext_split_decisive": 5,
+}
 # multi-field #2220 trait rubric => the 2048 floor (llm-judging.md rule 23);
 # the issue_1739 JUDGE_MAX_TOKENS=400 parity pin is NOT inherited here.
 JUDGE_MAX_TOKENS_2254 = 2048
@@ -1720,9 +1750,54 @@ POOL_MIN = 3
 MARGIN_BATCH_2254 = int(os.environ.get("EPM_MARGIN_BATCH", "4"))
 RW2220_POOL_PREFIX = "issue2220_readwrite/margin/pools"
 JUDGE_PILOT_MIN_EFFECTIVE = 51  # rule-26 floor at the 2% threshold (#2124)
-_WAVE_SRC = {"localize": ("baseline_ceiling", "localize"), "decisive": ("decisive", "patch")}
-_DIR_SHORT = {"pre": "pre", "rb": "rb", "ctxext": "cxd", "random": "rnd", "preshuf": "shf"}
+_WAVE_SRC = {
+    "localize": ("baseline_ceiling", "localize"),
+    "decisive": ("decisive", "patch"),
+    # ctxext-subspace-split amendment waves (plan v7 §4.2/§9)
+    "localize_split": ("ctxext_split_localize",),
+    "decisive_split": ("ctxext_split_decisive",),
+}
+_DIR_SHORT = {
+    "pre": "pre",
+    "rb": "rb",
+    "ctxext": "cxd",
+    "random": "rnd",
+    "preshuf": "shf",
+    # split amendment arms (plan v7 §4.2; tokens par/prp — collision-free vs the
+    # parent set, pinned by tests/test_issue2254_split.py)
+    "par": "par",
+    "perp": "prp",
+}
 _POS_SHORT = {"context": "ctx", "answer": "ans"}
+
+# ---------------------------------------------------------------------------
+# ctxext-subspace-split amendment (plan v7, follow-up `ctxext-subspace-split-
+# steering`): d_par = fold(P_k* (d_ctxext/xsd)), d_perp = fold((I-P_k*) ...),
+# steered at the CONTEXT VECTOR only on the restricted sub-grid.
+# ---------------------------------------------------------------------------
+SPLIT_DIRECTIONS = ("par", "perp")
+SPLIT_BEHAVIORS = ("evil", "sycophancy")  # hallucination stays gate-3 demoted (round 1)
+# Own-single layer configs = the realized pre@context operating layers
+# (decisive/verdicts.json margins cell ids; plan v7 §4.2).
+SPLIT_OWN_CONFIG = {"evil": "L14", "sycophancy": "L17"}
+SPLIT_LAYERS = MID_BAND  # (14, 17, 20): own-single members + the mid band
+SPLIT_BREADTHS = ("single", "mid")
+# Round-2 input pin (plan v7 §10): the reachability read's own revision.
+SPLIT_HF_REV = "2f2ab5822bad3a9a52736698e2a9ec9667353f07"
+SPLIT_REACHABILITY_JSON_REL = "eval_results/issue_2254/directions/ctxext_reachability.json"
+# HALT assert (i) calibration values — the committed round-2
+# ctxext_reachability.json (cross-asserted against the committed file at
+# derive time; plan v7 §4.1).
+SPLIT_PARITY = {
+    "evil": {"layer": 14, "kstar": 1433, "reachability_ctxext": 0.4939568737828016},
+    "sycophancy": {"layer": 17, "kstar": 1565, "reachability_ctxext": 0.531899740128843},
+}
+SPLIT_PARITY_ATOL = 1e-9  # plan v7 §4.1 assert (i)
+SPLIT_ORTHO_TOL = 1e-10  # assert (ii): <w_par, w_perp> in the standardized frame
+SPLIT_PYTHAGORAS_ATOL = 1e-9  # assert (ii): ||w_par||^2 + ||w_perp||^2 == 1
+SPLIT_NONDEGEN_FLOOR = 0.05  # assert (iii): min component norm
+SPLIT_UNIT_NORM_ATOL = 1e-9  # assert (iv): folded unit norms (float64, pre-save)
+SPLIT_STAGE_DIR = Path("data/issue_2254/hf_dl/split_inputs")
 
 
 def _c_token(c: float) -> str:
@@ -2083,32 +2158,80 @@ def _positive_instructions(behavior: str) -> list[str]:
 # ---------------------------------------------------------------------------
 
 
+def _split_grid(args) -> bool:
+    """True when the ctxext-subspace-split restricted sub-grid is selected."""
+    return getattr(args, "grid", "full") == "ctxext-split"
+
+
+def _require_split_grid(args) -> None:
+    """Fail-loud launch guard for the split phases (plan v7 §4.2)."""
+    if not _split_grid(args):
+        raise SystemExit(
+            "this phase runs the plan-v7 restricted sub-grid: relaunch with "
+            "--grid ctxext-split (and --behaviors evil sycophancy)"
+        )
+
+
+def _split_behaviors(args) -> list[str]:
+    """Behaviors in the amendment's scope; hallucination stays demoted (v7 §4.2).
+
+    Raises when nothing remains; out-of-scope behaviors are skipped LOUDLY."""
+    kept = [b for b in args.behaviors if b in SPLIT_BEHAVIORS]
+    skipped = [b for b in args.behaviors if b not in SPLIT_BEHAVIORS]
+    if not kept:
+        raise RuntimeError(
+            f"split phases run evil/sycophancy only (plan v7 § Divergences); got {args.behaviors}"
+        )
+    if skipped:
+        logger.info("[split] behaviors outside the amendment scope skipped: %s", skipped)
+    return kept
+
+
 def _grid_combos(args) -> list[tuple[str, str]]:
     """(direction, position) combos: 5 context + 3 answer = 8 (plan §4.2);
-    smoke keeps one steered combo per position class plus a null direction."""
+    smoke keeps one steered combo per position class plus a null direction.
+    --grid ctxext-split: the 2 split arms at context only (smoke: d_perp only —
+    plan v7 smoke (ii)/(iii))."""
+    if _split_grid(args):
+        if args.smoke:
+            return [("perp", "context")]
+        return [(d, "context") for d in SPLIT_DIRECTIONS]
     if args.smoke:
         return [("pre", "context"), ("rb", "answer"), ("random", "context")]
     return [(d, "context") for d in CONTEXT_DIRECTIONS] + [(d, "answer") for d in ANSWER_DIRECTIONS]
 
 
-def _grid_layer_configs(args) -> tuple[str, ...]:
-    """Layer configs: 4 singles + mid band + all-28 (smoke: one single + mid)."""
+def _grid_layer_configs(args, behavior: str | None = None) -> tuple[str, ...]:
+    """Layer configs: 4 singles + mid band + all-28 (smoke: one single + mid).
+    --grid ctxext-split: the behavior's OWN pre@context operating single + mid
+    (plan v7 §4.2) — behavior-dependent, so the split branch REQUIRES it."""
+    if _split_grid(args):
+        assert behavior in SPLIT_OWN_CONFIG, behavior
+        return (SPLIT_OWN_CONFIG[behavior], "mid")
     return ("L14", "mid") if args.smoke else tuple(LAYER_CONFIGS)
 
 
 def _grid_doses(args) -> tuple[float, ...]:
-    return (-0.5, 1.0) if args.smoke else DOSES
+    if args.smoke:
+        # split smoke = the plan-v7 c=+1 tiny cells (one single + one mid)
+        return (1.0,) if _split_grid(args) else (-0.5, 1.0)
+    return DOSES
 
 
 def _localize_cells(args, behaviors) -> list[dict]:
     """Localize grid: 8 combos x 6 layer-configs x 8 doses + alpha0 = 385
-    cells/behavior (1,155 total at 3 behaviors; plan §4.2)."""
+    cells/behavior (1,155 total at 3 behaviors; plan §4.2). --grid
+    ctxext-split: 2 dirs x 2 configs x 8 doses = 32 cells/behavior, NO fresh
+    alpha0 (the parent's persisted decisive-grain alpha0 packs are the floor;
+    plan v7 §4.2)."""
+    split = _split_grid(args)
     cells: list[dict] = []
     for b in behaviors:
         n_before = len(cells)
-        cells.append({"behavior": b, "kind": "alpha0"})
+        if not split:
+            cells.append({"behavior": b, "kind": "alpha0"})
         for d, p in _grid_combos(args):
-            for lc in _grid_layer_configs(args):
+            for lc in _grid_layer_configs(args, behavior=b if split else None):
                 for c in _grid_doses(args):
                     cells.append(
                         {
@@ -2121,7 +2244,8 @@ def _localize_cells(args, behaviors) -> list[dict]:
                         }
                     )
         if not args.smoke:
-            assert len(cells) - n_before == 385, len(cells) - n_before
+            expected = 32 if split else 385
+            assert len(cells) - n_before == expected, (b, len(cells) - n_before, expected)
     return cells
 
 
@@ -2164,6 +2288,250 @@ def _gate_ok_behaviors(gates: dict, behaviors: list[str]) -> tuple[list[str], li
             raise RuntimeError(f"gates.json missing behavior {b!r} — wave-1 reduce incomplete")
         (kept if gates["behaviors"][b]["proceed"] else skipped).append(b)
     return kept, skipped
+
+
+# ---------------------------------------------------------------------------
+# ctxext-subspace-split: direction construction (plan v7 §4.1; VM CPU)
+# ---------------------------------------------------------------------------
+
+
+def _fetch_split_input(rel: str) -> Path:
+    """Pinned-revision fetch of a round-1 artifact (rev SPLIT_HF_REV — the
+    round-2 reachability read's own pin; `issue2254_heldout_and_reachability.
+    _hf_fetch` pattern, retry-wrapped). Inputs always come from the CANONICAL
+    prefix — smoke consumes the same pinned inputs (parent convention)."""
+    from huggingface_hub import hf_hub_download
+
+    from explore_persona_space.orchestrate import hub
+
+    return Path(
+        hub.retry_transient(
+            lambda: hf_hub_download(
+                HF_DATA_REPO,
+                f"{HF_PREFIX}/{rel}",
+                repo_type="dataset",
+                revision=SPLIT_HF_REV,
+                local_dir=SPLIT_STAGE_DIR,
+            ),
+            what=f"fetch {rel} (split-direction inputs, rev {SPLIT_HF_REV[:8]})",
+        )
+    )
+
+
+def split_components(W, kstar: int, xsd, d_ctx) -> dict:
+    """Split d_ctx into retained-subspace / complement components (plan v7 §4.1).
+
+    Frame conventions VERBATIM from the round-2 read
+    (`scripts/issue2254_heldout_and_reachability.py::ctxext_reachability`
+    L221-261): M = W.T, V from the SVD of M, retained rows Vmt[:kstar],
+    w = d_ctx / xsd, unit-normalize; the split lives in the STANDARDIZED frame
+    (exactly orthogonal there); each component folds to the raw injection
+    frame via the registered de-standardization fold d = normalize(xsd * w)
+    (the v5 §11 d_pre convention, `destandardized_direction`).
+
+    Pure float64, no I/O (CPU-testable at small d). Returns the
+    standardized-frame components + norms and the folded unit directions.
+    ||w_par|| equals the round-2 `reachability_ctxext` statistic
+    ||Vmt[:kstar] @ w_hat|| up to float roundoff (orthonormal rows) — the
+    HALT parity identity."""
+    W = np.asarray(W, dtype=np.float64)
+    xsd = np.asarray(xsd, dtype=np.float64).reshape(-1)
+    d_ctx = np.asarray(d_ctx, dtype=np.float64).reshape(-1)
+    dim = xsd.shape[0]
+    assert W.shape == (dim, dim) and d_ctx.shape == (dim,), (W.shape, xsd.shape, d_ctx.shape)
+    _m, _um, sm, vmt = map_svd(W)
+    kk = int(kstar)
+    assert 0 < kk <= vmt.shape[0], (kk, vmt.shape)
+    w = d_ctx / xsd
+    w_hat = w / np.linalg.norm(w)
+    coords = vmt[:kk] @ w_hat
+    w_par = vmt[:kk].T @ coords  # P_k* @ w_hat (associativity-equal to float roundoff)
+    w_perp = w_hat - w_par
+    return {
+        "w_hat": w_hat,
+        "w_par": w_par,
+        "w_perp": w_perp,
+        "w_par_norm": float(np.linalg.norm(w_par)),
+        "w_perp_norm": float(np.linalg.norm(w_perp)),
+        "d_par": destandardized_direction(xsd, w_par),
+        "d_perp": destandardized_direction(xsd, w_perp),
+        "n_singular_components": int(sm.shape[0]),
+    }
+
+
+def assert_split_halt(behavior: str, layer: int, comp: dict, kstar: int) -> None:
+    """The four plan-v7 §4.1 HALT-class asserts — fail loud BEFORE any GPU
+    spend. Parity (i) binds at the behavior's operating layer only; (ii)-(iv)
+    bind at every (behavior, layer)."""
+    dot = float(comp["w_par"] @ comp["w_perp"])
+    if not abs(dot) < SPLIT_ORTHO_TOL:
+        raise RuntimeError(
+            f"[split-halt-ortho] {behavior} L{layer}: <w_par, w_perp> = {dot:.3e} "
+            f">= {SPLIT_ORTHO_TOL} (standardized frame must be exactly orthogonal)"
+        )
+    pyth = comp["w_par_norm"] ** 2 + comp["w_perp_norm"] ** 2
+    if not abs(pyth - 1.0) < SPLIT_PYTHAGORAS_ATOL:
+        raise RuntimeError(
+            f"[split-halt-ortho] {behavior} L{layer}: ||w_par||^2 + ||w_perp||^2 = "
+            f"{pyth!r} != 1 within {SPLIT_PYTHAGORAS_ATOL}"
+        )
+    if not min(comp["w_par_norm"], comp["w_perp_norm"]) > SPLIT_NONDEGEN_FLOOR:
+        raise RuntimeError(
+            f"[split-halt-degenerate] {behavior} L{layer}: component norms "
+            f"({comp['w_par_norm']:.4f}, {comp['w_perp_norm']:.4f}) — one side is a "
+            f"renormalized noise sliver (floor {SPLIT_NONDEGEN_FLOOR})"
+        )
+    for key in ("d_par", "d_perp"):
+        nrm = float(np.linalg.norm(comp[key]))
+        if not abs(nrm - 1.0) < SPLIT_UNIT_NORM_ATOL:
+            raise RuntimeError(
+                f"[split-halt-unitnorm] {behavior} L{layer}: ||{key}|| = {nrm!r} != 1"
+            )
+    ref = SPLIT_PARITY[behavior]
+    if int(layer) == int(ref["layer"]):
+        if int(kstar) != int(ref["kstar"]):
+            raise RuntimeError(
+                f"[split-halt-parity] {behavior} L{layer}: kstar {kstar} != committed "
+                f"{ref['kstar']} (drifted/incoherent input set)"
+            )
+        dev = abs(comp["w_par_norm"] - float(ref["reachability_ctxext"]))
+        if not dev <= SPLIT_PARITY_ATOL:
+            raise RuntimeError(
+                f"[split-halt-parity] {behavior} L{layer}: ||w_par|| = "
+                f"{comp['w_par_norm']!r} vs committed reachability_ctxext "
+                f"{ref['reachability_ctxext']!r} (|dev| = {dev:.3e} > {SPLIT_PARITY_ATOL})"
+            )
+
+
+def _split_reachability_reference() -> dict:
+    """Cross-assert SPLIT_PARITY against the COMMITTED round-2 reachability
+    JSON so a drifted constants table cannot pass (plan v7 §4.1 assert (i);
+    the parity values must be the committed file's own)."""
+    path = Path(__file__).resolve().parents[1] / SPLIT_REACHABILITY_JSON_REL
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"{SPLIT_REACHABILITY_JSON_REL} missing — derive_split_directions runs on the "
+            "VM inside the issue-2254 checkout (the committed round-2 read is the parity "
+            "source of record)"
+        )
+    ref = json.loads(path.read_text())["behaviors"]
+    for b, exp in SPLIT_PARITY.items():
+        got = ref[b]
+        for key in ("layer", "kstar"):
+            assert int(got[key]) == int(exp[key]), (b, key, got[key], exp[key])
+        assert float(got["reachability_ctxext"]) == float(exp["reachability_ctxext"]), (
+            b,
+            got["reachability_ctxext"],
+            exp["reachability_ctxext"],
+        )
+    return ref
+
+
+def phase_derive_split_directions(args) -> None:
+    """Plan v7 §4.1: build d_par/d_perp per (behavior, layer in SPLIT_LAYERS)
+    from the pinned round-1 maps + ctxext bundles, run the four HALT asserts,
+    persist split_construction.json diagnostics, and upload the direction
+    bundles fail-loud BEFORE any pod provision. VM CPU. Smoke == production
+    for this phase modulo the behavior narrowing + smoke/ upload sub-prefix;
+    SPLIT_LAYERS is used regardless of args.layers (the mid band needs all
+    three layers' bundles even under --smoke)."""
+    import torch
+
+    behaviors = _split_behaviors(args)
+    out_root = _out_root(args)
+    _split_reachability_reference()
+    dir_out = out_root / "directions"
+    dir_out.mkdir(parents=True, exist_ok=True)
+    manifest: list = []
+    diag: dict = {b: {} for b in behaviors}
+    units = [(b, ly) for b in behaviors for ly in SPLIT_LAYERS]
+    t0 = time.time()
+    for k, (b, ly) in enumerate(units, 1):
+        npz = np.load(_fetch_split_input(f"analysis_tensors/maps_perlayer/perlayer/L{ly:02d}.npz"))
+        # Realized-keys verification (plan §10 check c): consumer-open pre-GPU.
+        missing = {"W", "kstar", "xsd"} - set(npz.files)
+        if missing:
+            raise RuntimeError(f"perlayer L{ly:02d}.npz missing keys {sorted(missing)}")
+        assert npz["W"].shape == (HIDDEN_DIM, HIDDEN_DIM), npz["W"].shape
+        assert npz["xsd"].shape == (HIDDEN_DIM,), npz["xsd"].shape
+        kstar = int(npz["kstar"])
+
+        def _load_bundle(slug: str, b=b, ly=ly):
+            bundle = torch.load(
+                _fetch_split_input(f"directions/{b}_{slug}_L{ly}.pt"), weights_only=True
+            )
+            missing_b = {"behavior", "layer", "direction"} - set(bundle)
+            if missing_b:
+                raise RuntimeError(f"{b}_{slug}_L{ly}.pt missing keys {sorted(missing_b)}")
+            assert bundle["behavior"] == b and int(bundle["layer"]) == ly, (b, slug, ly)
+            vec = np.asarray(bundle["direction"].to(torch.float64).numpy()).reshape(-1)
+            assert vec.shape == (HIDDEN_DIM,), (slug, vec.shape)
+            return vec
+
+        d_ctx = _load_bundle("ctxext")
+        d_pre = _load_bundle("pre")
+        comp = split_components(npz["W"], kstar, npz["xsd"], d_ctx)
+        assert_split_halt(b, ly, comp, kstar=kstar)
+        xsd = np.asarray(npz["xsd"], dtype=np.float64)
+        w_pre_hat = d_pre / xsd  # un-fold recovers the standardized direction up to scale
+        diag[b][f"L{ly}"] = {
+            "kstar": kstar,
+            "w_par_norm": comp["w_par_norm"],
+            "w_perp_norm": comp["w_perp_norm"],
+            "raw_cos_d_par_d_perp": _cos(comp["d_par"], comp["d_perp"]),
+            "cos_d_par_d_ctxext": _cos(comp["d_par"], d_ctx),
+            "cos_d_perp_d_ctxext": _cos(comp["d_perp"], d_ctx),
+            "std_cos_w_par_w_pre": _cos(comp["w_par"], w_pre_hat),
+            "n_singular_components": comp["n_singular_components"],
+        }
+        _save_direction(dir_out, b, "par", ly, comp["d_par"], manifest)
+        _save_direction(dir_out, b, "perp", ly, comp["d_perp"], manifest)
+        _progress("derive_split_directions", k, len(units), f"{b}_L{ly}", t0)
+    construction = _run_metadata(
+        {
+            "read": (
+                "d_par = fold(P_k* (d_ctxext/xsd)), d_perp = fold((I-P_k*) (d_ctxext/xsd)), "
+                "fold = normalize(xsd * .), per (behavior, layer) — plan v7 §4.1; frame "
+                "conventions verbatim from the round-2 ctxext_reachability read"
+            ),
+            "hf_input_revision": SPLIT_HF_REV,
+            "parity_reference": SPLIT_PARITY,
+            "halt_tolerances": {
+                "parity_atol": SPLIT_PARITY_ATOL,
+                "ortho_tol": SPLIT_ORTHO_TOL,
+                "pythagoras_atol": SPLIT_PYTHAGORAS_ATOL,
+                "nondegen_floor": SPLIT_NONDEGEN_FLOOR,
+                "unit_norm_atol": SPLIT_UNIT_NORM_ATOL,
+            },
+            "fold_note": (
+                "raw-frame cos(d_par, d_perp) is nonzero after the xsd fold by "
+                "construction — the hypothesis lives in the standardized frame, where "
+                "the split is exactly orthogonal (plan v7 §4.1, disclosed)"
+            ),
+            "behaviors": diag,
+            "bundles": manifest,
+        }
+    )
+    _write_json_atomic(
+        out_root / "ctxext_split" / "directions" / "split_construction.json", construction
+    )
+    # Exact-name allowlist: _upload_folder_to_hf's local file-count check is
+    # suffix-shaped (endswith after a leading-* strip), so mid-pattern globs
+    # like *_par_L*.pt would match nothing — enumerate the bundle names.
+    bundle_names = sorted({m["path"] for m in manifest})
+    _upload_folder_to_hf(dir_out, f"{_hf_prefix()}/directions", allow=bundle_names)
+    _upload_folder_to_hf(
+        out_root / "ctxext_split" / "directions",
+        f"{_hf_prefix()}/ctxext_split/directions",
+        allow=["split_construction.json"],
+    )
+    _write_sentinel(
+        out_root,
+        "derive_split_directions",
+        "done",
+        {"bundles": len(manifest), "behaviors": list(behaviors)},
+    )
+    _breadcrumb("derive_split_directions", status="done", bundles=len(manifest))
 
 
 # ---------------------------------------------------------------------------
@@ -2747,6 +3115,292 @@ def phase_margin(args) -> None:
 
 
 # ---------------------------------------------------------------------------
+# ctxext-subspace-split: gen + margin phases (plan v7 §4.2; GPU, pods C/D)
+# ---------------------------------------------------------------------------
+
+
+def phase_ctxext_split_localize(args) -> None:
+    """Restricted split-direction localize grid (plan v7 §4.2, pod C): per
+    behavior 2 dirs x {own-single, mid} x 8 doses = 32 cells, context vector
+    only, 10 q x 3 draws x seed 42; NO fresh alpha0/null cells — the parent's
+    persisted localize packs carry the floor + the restricted null band.
+    Same hooks / dose convention / checkpointing as the parent localize."""
+    _require_split_grid(args)
+    behaviors = _split_behaviors(args)
+    out_root = _out_root(args)
+    rho_pooled, _ = _load_rho(out_root)
+    cells = _localize_cells(args, behaviors)
+    q_cache = {b: _eval_questions(b)[: args.q_localize] for b in behaviors}
+
+    def contexts_of(cell):
+        return _contexts_for_questions(q_cache[cell["behavior"]])
+
+    def q_of(cell):
+        return list(range(len(q_cache[cell["behavior"]])))
+
+    def hookf_builder(model):
+        def hookf(cell):
+            return _steer_hook_factory(model, out_root, cell, rho_pooled)
+
+        return hookf
+
+    _run_gen_grid(
+        args,
+        "ctxext_split_localize",
+        cells,
+        contexts_of=contexts_of,
+        q_of=q_of,
+        hookf_builder=hookf_builder,
+        n_draws_of=lambda c: args.draws_localize,
+        seeds_of=lambda c: (SEED_LOCALIZE,),
+    )
+
+
+def phase_ctxext_split_decisive(args) -> None:
+    """Split decisive grid at the wave-1 restricted operating points (plan v7
+    §4.2, pod D): per behavior, one cell per (direction x breadth) with a
+    coherent operating point (<= 8 total), 20 q x 5 draws x seeds {42,43};
+    NO fresh alpha0 (parent persisted). Pod-D seam: rho re-assert (inherited
+    RTOL contract). An arm with no coherent wave-1 region is RECORDED as
+    missing, never zero-barred (plan §8)."""
+    _require_split_grid(args)
+    behaviors = _split_behaviors(args)
+    out_root = _out_root(args)
+    ops = _load_reduce_json(
+        out_root,
+        "ctxext_split/localize/operating_points.json",
+        "run --phase judge_reduce --reduce-phase localize_split (split wave 1) first",
+    )
+    absent = [b for b in behaviors if b not in ops.get("behaviors", {})]
+    if absent:
+        raise RuntimeError(
+            f"ctxext_split_decisive: operating_points.json lacks behaviors {absent} — "
+            "split wave-1 reduce incomplete"
+        )
+    rho_pooled, _ = _load_rho(out_root)
+
+    cells: list[dict] = []
+    missing: list[str] = []
+    for b in behaviors:
+        ops_b = ops["behaviors"][b]
+        for d, p in _grid_combos(args):
+            for breadth in SPLIT_BREADTHS:
+                point = ops_b.get(f"{d}__{p}__{breadth}")
+                if point is None:
+                    missing.append(f"{b}/{d}/{p}/{breadth}")
+                    continue
+                cells.append(
+                    {
+                        "behavior": b,
+                        "kind": "steer",
+                        "direction": d,
+                        "position": p,
+                        "layer_config": point["layer_config"],
+                        "c": float(point["c"]),
+                    }
+                )
+    _write_json_atomic(
+        out_root / "ctxext_split" / "decisive" / "selection_meta.json",
+        _run_metadata({"missing_operating_points": missing, "behaviors": list(behaviors)}),
+    )
+    # Wave-2 completeness-gate input: upload BEFORE generation starts (a pod
+    # death mid-grid must never strand the expected-set record).
+    _upload_folder_to_hf(
+        out_root / "ctxext_split" / "decisive",
+        f"{_hf_prefix()}/ctxext_split/decisive",
+        allow=["selection_meta.json"],
+    )
+    if not cells:
+        raise RuntimeError(
+            "ctxext_split_decisive: zero coherent operating points across both split arms "
+            "— plan v7 §7 coherence-kill outcome; report the wave-1 coherence surfaces, "
+            "no decisive spend"
+        )
+    q_cache = {b: _eval_questions(b)[: args.q_decisive] for b in behaviors}
+
+    def contexts_of(cell):
+        return _contexts_for_questions(q_cache[cell["behavior"]])
+
+    def q_of(cell):
+        return list(range(len(q_cache[cell["behavior"]])))
+
+    def hookf_builder(model):
+        def hookf(cell):
+            return _steer_hook_factory(model, out_root, cell, rho_pooled)
+
+        return hookf
+
+    _run_gen_grid(
+        args,
+        "ctxext_split_decisive",
+        cells,
+        contexts_of=contexts_of,
+        q_of=q_of,
+        hookf_builder=hookf_builder,
+        n_draws_of=lambda c: args.draws_decisive,
+        seeds_of=lambda c: SEEDS_DECISIVE,
+        pre_gen=lambda model, tok: _rho_seam_assert(args, model, tok),
+    )
+
+
+def phase_margin_split(args) -> None:
+    """Teacher-forced fixed +/- pool margin at the split SINGLE-breadth
+    operating points (plan v7 §4.2 dual-DV companion; rw2220
+    `_batched_ln_logp` verbatim reuse, batch 4, pod D).
+
+    Stated deviation (recorded in the output + the round report): the reused
+    instrument steers ONE layer per forward (`_batched_ln_logp(..., layer,
+    alpha, ...)`), exactly as the parent margin phase consumed only
+    `*__single` operating points — MID-breadth split cells are SKIPPED and
+    listed under `skipped_mid_breadth_cells`, never silently dropped.
+    Extending the #2220 instrument to multi-layer bands is out of this
+    amendment's scope (single-variable guarantee)."""
+    _ensure_repo_root_on_syspath()
+    import scripts.issue2220_readwrite as rw2220
+    from explore_persona_space.experiments.issue1415 import steering
+    from explore_persona_space.orchestrate import hub
+
+    behaviors = _split_behaviors(args)
+    out_root = _out_root(args)
+    ops = _load_reduce_json(
+        out_root,
+        "ctxext_split/localize/operating_points.json",
+        "run --phase judge_reduce --reduce-phase localize_split (split wave 1) first",
+    )
+    pools: dict[str, dict] = {}
+    for b in behaviors:
+        pool_path = out_root / "pools" / f"{b}.json"
+        if not pool_path.exists():
+            # evil + sycophancy pools are VERBATIM rw2220 stages (plan §4.2) —
+            # self-stage so pod D needs no separate build_pools run.
+            hub.stage_hub_file(
+                HF_DATA_REPO, f"{RW2220_POOL_PREFIX}/{b}.json", pool_path, repo_type="dataset"
+            )
+        pools[b] = json.loads(pool_path.read_text())
+        assert len(pools[b]["pos"]) >= POOL_MIN and len(pools[b]["neg"]) >= POOL_MIN, (
+            b,
+            len(pools[b]["pos"]),
+            len(pools[b]["neg"]),
+        )
+
+    cells: list[dict] = []
+    skipped_mid: list[str] = []
+    for b in behaviors:
+        ops_b = ops["behaviors"].get(b, {})
+        for d in SPLIT_DIRECTIONS:
+            point = ops_b.get(f"{d}__context__single")
+            if point is None:
+                skipped_mid.append(f"{b}/{d}/single: no coherent operating point")
+                continue
+            cells.append(
+                {
+                    "behavior": b,
+                    "direction": d,
+                    "position": "context",
+                    "layer": int(LAYER_CONFIGS[point["layer_config"]][0]),
+                    "c": float(point["c"]),
+                }
+            )
+        for d in SPLIT_DIRECTIONS:
+            if ops_b.get(f"{d}__context__mid") is not None:
+                skipped_mid.append(
+                    f"{b}/{d}/mid: skipped — rw2220._batched_ln_logp steers one layer "
+                    "per forward (parent margin convention: single-breadth only)"
+                )
+    if not cells:
+        raise RuntimeError(f"margin_split: empty cell list (skipped={skipped_mid})")
+
+    _require_cuda("margin_split")
+    _assert_phase_headroom(out_root, 1.0, "margin_split")
+    model, tok = _load_model_and_tokenizer()
+    seam = _rho_seam_assert(args, model, tok)
+    rho_pooled, _ = _load_rho(out_root)
+    pad_id = tok.pad_token_id if tok.pad_token_id is not None else tok.eos_token_id
+    assert pad_id is not None, "tokenizer exposes neither pad nor eos id"
+
+    out_path = out_root / "ctxext_split" / "margin" / "margin_percell.json"
+    records: dict[str, dict] = {}
+    if out_path.exists() and not args.force:
+        records = json.loads(out_path.read_text()).get("cells", {})
+
+    t0 = time.time()
+    for k, cell in enumerate(cells, 1):
+        b = cell["behavior"]
+        key = "__".join(
+            [
+                b,
+                _DIR_SHORT[cell["direction"]],
+                _POS_SHORT[cell["position"]],
+                f"L{cell['layer']}",
+                _c_token(cell["c"]),
+                "mg",
+            ]
+        )
+        if key in records and not args.force:
+            _progress("margin_split", k, len(cells), f"{key} (cached)", t0)
+            continue
+        direction = _ensure_direction_vec(out_root, b, cell["direction"], cell["layer"])
+        alpha = float(cell["c"]) * rho_pooled[f"L{cell['layer']}"]
+        qs = _eval_questions(b)[: args.q_decisive]
+        pos_ids = [tok.encode(a, add_special_tokens=False) for a in pools[b]["pos"]]
+        neg_ids = [tok.encode(a, add_special_tokens=False) for a in pools[b]["neg"]]
+        n_pos = len(pos_ids)
+        per_context = []
+        for ctx in _contexts_for_questions(qs):
+            prompt_ids = steering.context_token_ids(tok, ctx)
+            lps = rw2220._batched_ln_logp(
+                model,
+                prompt_ids,
+                pos_ids + neg_ids,
+                direction,
+                cell["layer"],
+                alpha,
+                cell["position"],
+                pad_id=pad_id,
+                batch_size=MARGIN_BATCH_2254,
+            )
+            pos_lp = [x for x in lps[:n_pos] if np.isfinite(x)]
+            neg_lp = [x for x in lps[n_pos:] if np.isfinite(x)]
+            per_context.append(
+                float(np.mean(pos_lp) - np.mean(neg_lp)) if pos_lp and neg_lp else float("nan")
+            )
+        records[key] = {
+            "behavior": b,
+            "direction": cell["direction"],
+            "position": cell["position"],
+            "layer": cell["layer"],
+            "c": cell["c"],
+            "alpha": alpha,
+            "per_context_margin": per_context,
+            "margin_mean": float(np.nanmean(per_context)),
+            "n_pos": n_pos,
+            "n_neg": len(neg_ids),
+            "batch_size": MARGIN_BATCH_2254,
+        }
+        _write_json_atomic(
+            out_path,
+            _run_metadata(
+                {
+                    "cells": records,
+                    "rho_seam": seam,
+                    "skipped_mid_breadth_cells": skipped_mid,
+                }
+            ),
+        )
+        _progress("margin_split", k, len(cells), key, t0)
+    _upload_folder_to_hf(
+        out_root / "ctxext_split" / "margin", f"{_hf_prefix()}/ctxext_split/margin"
+    )
+    _write_sentinel(
+        out_root,
+        "margin_split",
+        "done",
+        {"cells": len(records), "skipped": len(skipped_mid), **seam},
+    )
+    _breadcrumb("margin_split", status="done")
+
+
+# ---------------------------------------------------------------------------
 # phase: judge_reduce (off-pod VM; Batch-API judging + wave reduces)
 # ---------------------------------------------------------------------------
 
@@ -2808,6 +3462,52 @@ def _expected_gen_cell_ids(args, out_root: Path, wave: str) -> tuple[dict[str, s
     `missing_operating_points`; patch = the 12-cell grid per kept behavior.
     """
     behaviors = list(args.behaviors)
+    if wave == "localize_split":
+        _require_split_grid(args)
+        kept = _split_behaviors(args)
+        loc = {_cell_id(c) for c in _localize_cells(args, kept)}
+        return {"ctxext_split_localize": loc}, kept
+    if wave == "decisive_split":
+        _require_split_grid(args)
+        kept = _split_behaviors(args)
+        ops = _load_reduce_json(
+            out_root,
+            "ctxext_split/localize/operating_points.json",
+            "run --phase judge_reduce --reduce-phase localize_split (split wave 1) first",
+        )
+        meta = _load_reduce_json(
+            out_root,
+            "ctxext_split/decisive/selection_meta.json",
+            "run --phase ctxext_split_decisive first (pod D uploads it before generating)",
+        )
+        missing = set(meta.get("missing_operating_points", []))
+        dec: set[str] = set()
+        for b in kept:
+            for d, p in _grid_combos(args):
+                for breadth in SPLIT_BREADTHS:
+                    if f"{b}/{d}/{p}/{breadth}" in missing:
+                        continue
+                    point = ops["behaviors"][b].get(f"{d}__{p}__{breadth}")
+                    if point is None:
+                        raise RuntimeError(
+                            f"judge_reduce: split operating point {b}/{d}/{p}/{breadth} is "
+                            "null in operating_points.json but NOT recorded in "
+                            "selection_meta.json missing_operating_points — split wave-1/"
+                            "decisive artifacts inconsistent"
+                        )
+                    dec.add(
+                        _cell_id(
+                            {
+                                "behavior": b,
+                                "kind": "steer",
+                                "direction": d,
+                                "position": p,
+                                "layer_config": point["layer_config"],
+                                "c": float(point["c"]),
+                            }
+                        )
+                    )
+        return {"ctxext_split_decisive": dec}, kept
     if wave == "localize":
         base = {
             _cell_id({"behavior": b, "kind": k}) for b in behaviors for k in ("alpha0", "ceiling")
@@ -2886,11 +3586,17 @@ def _assert_gen_grid_complete(args, out_root: Path, wave: str, comp_roots: dict)
     return pilot_behaviors
 
 
-def _run_judge_pilot(args, out_root: Path, gen_phase: str, behavior: str, rubric: str, n_draws):
+def _run_judge_pilot(
+    args, out_root: Path, gen_phase: str, behavior: str, rubric: str, n_draws, *, fallback_phases=()
+):
     """Rule-26 pilot gate, ONE judge_pilot_gate call per behavior per wave
     (>=51 effective draws per arm at the 2% threshold; truncation FAIL
     unwaivable). Fingerprint sidecar skips a prior PASS at the identical
-    instrument (rubric + n_draws + max_tokens) unless --force.
+    instrument (rubric + n_draws + max_tokens) unless --force;
+    `fallback_phases` lets the split waves inherit the PARENT waves' PASS at
+    the identical fingerprint (plan v7 §6: "the driver's instrument-
+    fingerprint skip applies when the fingerprint matches the parent's
+    already-gated waves"), recorded as an inherited sidecar.
 
     Draw-count note (review minor g3): the pilot runs at the STEERED phase's
     draw count (wave 1: localize's 3) while the same wave also judges
@@ -2911,6 +3617,30 @@ def _run_judge_pilot(args, out_root: Path, gen_phase: str, behavior: str, rubric
                 "[judge-pilot] %s/%s: prior PASS, identical instrument", gen_phase, behavior
             )
             return
+    if not args.force:
+        for fb in fallback_phases:
+            fb_path = out_root / "judge" / "pilot" / fb / f"{behavior}.pass.json"
+            if fb_path.exists() and json.loads(fb_path.read_text()).get("fingerprint") == fp:
+                logger.info(
+                    "[judge-pilot] %s/%s: inheriting PASS from %s (identical fingerprint)",
+                    gen_phase,
+                    behavior,
+                    fb,
+                )
+                _write_json_atomic(
+                    pass_path,
+                    {
+                        "fingerprint": fp,
+                        "verdict": "PASS (inherited)",
+                        "inherited_from": fb,
+                        "note": (
+                            "identical instrument fingerprint (behavior + rubric + n_draws "
+                            "+ max_tokens) as the parent wave's rule-26 PASS — plan v7 §6 "
+                            "fingerprint-gated skip"
+                        ),
+                    },
+                )
+                return
     comp_root = out_root / gen_phase / "raw_completions"
     files = sorted(comp_root.glob(f"{behavior}__*.json"))
     if not files:
@@ -3546,6 +4276,400 @@ def _reduce_wave2(args, out_root: Path) -> None:
     )
 
 
+# ---------------------------------------------------------------------------
+# ctxext-subspace-split: restricted reduces (plan v7 §6; the wave-2 statistics
+# _boot_idx / _q_arr / _boot_diff_ci / _null_band are reused VERBATIM)
+# ---------------------------------------------------------------------------
+
+
+def _split_restricted_null_ids(args, b: str) -> list[str]:
+    """Parent-localize cell ids of the RESTRICTED null sub-grid: {random,
+    preshuf} x {own-single, mid} x the FULL 8-dose row (the production
+    selection scope — deliberately NEVER smoke-narrowed): 32 ids/behavior."""
+    ids: list[str] = []
+    for nd in NULL_STEER["context"]:
+        for lc in _grid_layer_configs(args, behavior=b):
+            for c in DOSES:
+                ids.append(
+                    _cell_id(
+                        {
+                            "behavior": b,
+                            "kind": "steer",
+                            "direction": nd,
+                            "position": "context",
+                            "layer_config": lc,
+                            "c": float(c),
+                        }
+                    )
+                )
+    return ids
+
+
+def _split_parent_judged(out_root: Path, tree: str, cid: str, *, n_q: int, n_draws: int) -> dict:
+    """Load one PARENT judged pack, asserting presence + full production grain
+    BEFORE any band/verdict relies on it (plan v7 assumption 3)."""
+    path = out_root / "judge" / tree / "judged" / f"{cid}.json"
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"parent judged pack judge/{tree}/judged/{cid}.json missing — the split "
+            "reduce re-uses the parent's persisted packs (worktree-committed; HF "
+            f"fallback: unpack {HF_PREFIX}/judge/{tree}/judged_pack)"
+        )
+    j = json.loads(path.read_text())
+    got_q = len(j["per_question_mean_score"])
+    got_d = int(j["judge"]["n_draws"])
+    if got_q != int(n_q) or got_d != int(n_draws):
+        raise RuntimeError(
+            f"parent pack {cid}: grain {got_q}q x {got_d} draws != required {n_q}q x "
+            f"{n_draws} draws — the split reduces run at PRODUCTION grain only (plan v7 "
+            "blind-spot (e): the reduce is synthetic-test-covered, not smoke-covered)"
+        )
+    return j
+
+
+def _split_null_band_inputs(args, out_root: Path, b: str) -> tuple[dict, list, dict]:
+    """(parent alpha0 pack, coherence-gated restricted null q-arrays, audit).
+
+    Enumerates ALL 32 restricted null ids + the alpha0 pack fail-loud (the
+    plan-v7 'verify the persisted packs exist' binding). The POOLED band over
+    these — both breadths x both null directions, max-over-cells per bootstrap
+    draw inside `_null_band` — matches the §3 cross-breadth argmax selection
+    scope of E_par/E_perp (reviewers' shared note: a per-breadth 8-dose band
+    under-selects and is anti-conservative)."""
+    a0 = _split_parent_judged(out_root, "localize", f"{b}__a0", n_q=int(args.q_localize), n_draws=3)
+    gated: list[np.ndarray] = []
+    dropped: list[str] = []
+    ids = _split_restricted_null_ids(args, b)
+    for cid in ids:
+        j = _split_parent_judged(out_root, "localize", cid, n_q=int(args.q_localize), n_draws=3)
+        if j["coherence_pass"]:
+            gated.append(_q_arr(j))
+        else:
+            dropped.append(cid)
+    audit = {
+        "null_cells_expected": len(ids),
+        "null_cells_coherence_gated": len(gated),
+        "null_cells_coherence_dropped": dropped,
+        "band_scope_note": (
+            "restricted selection-symmetric band: POOLED over both breadths x 8 doses "
+            "x {random, preshuf} from the PARENT's persisted localize judged packs "
+            "(max-over-cells per bootstrap draw), matching the cross-breadth argmax "
+            "selection scope of E_par/E_perp (plan v7 §3/§6 + reviewers' shared note; "
+            "0 new control GPU)"
+        ),
+    }
+    return a0, gated, audit
+
+
+def _reduce_split_wave1(args, out_root: Path) -> None:
+    """Split wave-1 reduce (plan v7 §4.2): per-cell dose-response deltas vs the
+    PARENT localize alpha0 (frozen CIs), coherence-gated operating-point
+    argmax per (direction x breadth), the restricted POOLED null band
+    (informational at this wave; the verdict band re-derives at 2000 draws in
+    wave 2), rule-29 completeness, HF upload of the pod-D staging inputs."""
+    _require_split_grid(args)
+    behaviors = _split_behaviors(args)
+    jl = out_root / "judge" / "ctxext_split_localize" / "judged"
+    dose: dict = {"behaviors": {}}
+    op_out: dict = {"behaviors": {}}
+    for b in behaviors:
+        a0, null_qarrs, audit = _split_null_band_inputs(args, out_root, b)
+        a0_q = _q_arr(a0)
+        steer = []
+        for f in sorted(jl.glob(f"{b}__*.json")):
+            j = json.loads(f.read_text())
+            if j["cell"]["kind"] == "steer":
+                steer.append(j)
+        if not steer:
+            raise RuntimeError(f"split reduce wave1: no steered split cells for {b}")
+        percell: dict = {}
+        for j in steer:
+            cid = j["cell_id"]
+            cq = _q_arr(j)
+            if len(cq) != len(a0_q):
+                raise RuntimeError(
+                    f"split cell {cid}: {len(cq)}q vs parent alpha0 {len(a0_q)}q — the "
+                    "split reduce pairs against the parent's production-grain packs"
+                )
+            point, lo, hi = _boot_diff_ci(cq, a0_q, _boot_idx(len(a0_q), N_BOOT_CELL, cid))
+            percell[cid] = {
+                "cell": j["cell"],
+                "delta_score": point,
+                "ci_frozen": [lo, hi],
+                "ci_label": f"frozen (split localize sub-grid, n_q={len(a0_q)})",
+                "delta_rate": (
+                    None
+                    if j["rate"] is None or a0["rate"] is None
+                    else float(j["rate"] - a0["rate"])
+                ),
+                "mean_score": j["mean_score"],
+                "coherence_rate": j["coherence_rate"],
+                "coherence_pass": j["coherence_pass"],
+                "frac_items_complete": j["accounting"]["frac_items_complete"],
+                "cap_hit_fraction": j.get("cap_hit_fraction"),
+            }
+        band = _null_band(null_qarrs, a0_q, f"{b}__splitnullctx")
+        ops_b: dict = {}
+        for d in SPLIT_DIRECTIONS:
+            for breadth in SPLIT_BREADTHS:
+                cands = [
+                    j
+                    for j in steer
+                    if j["cell"]["direction"] == d
+                    and j["cell"]["position"] == "context"
+                    and BREADTH_OF_CONFIG[j["cell"]["layer_config"]] == breadth
+                    and j["coherence_pass"]
+                ]
+                if not cands:
+                    ops_b[f"{d}__context__{breadth}"] = None
+                    continue
+                bestj = max(cands, key=lambda j: percell[j["cell_id"]]["delta_score"])
+                ops_b[f"{d}__context__{breadth}"] = {
+                    "cell_id": bestj["cell_id"],
+                    "layer_config": bestj["cell"]["layer_config"],
+                    "c": bestj["cell"]["c"],
+                    "delta_score": percell[bestj["cell_id"]]["delta_score"],
+                }
+        dose["behaviors"][b] = {
+            "alpha0_mean": float(np.nanmean(a0_q)),
+            "alpha0_rate": a0["rate"],
+            "n_q": int(len(a0_q)),
+            "cells": percell,
+            "null_band_context_restricted": band,
+            **audit,
+        }
+        op_out["behaviors"][b] = ops_b
+    _write_json_atomic(
+        out_root / "ctxext_split" / "localize" / "dose_response.json", _run_metadata(dose)
+    )
+    _write_json_atomic(
+        out_root / "ctxext_split" / "localize" / "operating_points.json", _run_metadata(op_out)
+    )
+    files = sorted(jl.glob("*.json"))
+    _write_json_atomic(
+        out_root / "ctxext_split" / "judge_completeness_wave1.json",
+        _run_metadata(_completeness_block(files)),
+    )
+    # pod-D staging source: ctxext_split_decisive / margin_split fetch these via
+    # _load_reduce_json — upload BEFORE the sentinel.
+    _upload_folder_to_hf(
+        out_root / "ctxext_split" / "localize",
+        f"{_hf_prefix()}/ctxext_split/localize",
+        allow=["dose_response.json", "operating_points.json"],
+    )
+
+
+def _split_selection_inherited(out_root: Path, b: str, d: str):
+    """Selection-inherited CI for a split arm (selection-symmetric-nulls rule):
+    per bootstrap draw, re-argmax over the arm's SPLIT localize sub-grid cells
+    vs the parent localize alpha0; labeled with its own grid + n_q."""
+    jl = out_root / "judge" / "ctxext_split_localize" / "judged"
+    a0_path = out_root / "judge" / "localize" / "judged" / f"{b}__a0.json"
+    if not a0_path.exists():
+        return None
+    a0_q = _q_arr(json.loads(a0_path.read_text()))
+    cells = []
+    for f in sorted(jl.glob(f"{b}__{_DIR_SHORT[d]}__ctx__*.json")):
+        j = json.loads(f.read_text())
+        if j["coherence_pass"]:
+            cells.append(_q_arr(j))
+    if not cells:
+        return None
+    idx = _boot_idx(len(a0_q), N_BOOT_VERDICT, f"{b}__{d}__ctx__splitselinh")
+    a0_b = np.nanmean(a0_q[idx], axis=1)
+    per_cell = np.stack([np.nanmean(q[idx], axis=1) - a0_b for q in cells], axis=1)
+    maxes = np.nanmax(per_cell, axis=1)
+    return {
+        "ci": [float(np.nanquantile(maxes, 0.025)), float(np.nanquantile(maxes, 0.975))],
+        "label": (
+            f"selection_inherited (split localize sub-grid, n_q={len(a0_q)}, n_cells={len(cells)})"
+        ),
+    }
+
+
+def _split_lattice_label(margins: dict) -> tuple[str, str]:
+    """Registered plan-v7 §3 verdict lattice — DISJOINT + exhaustive on the two
+    binary CI-exclusion outcomes. A margin absent because its arm produced no
+    coherent operating cell trivially 'does not exclude 0 positively' (absence
+    cannot exclude 0); both absent => Undefined."""
+    e_par, e_perp = margins.get("E_par"), margins.get("E_perp")
+    if e_par is None and e_perp is None:
+        return "Undefined", "neither split arm produced a coherent operating cell"
+    par_pos = e_par is not None and e_par["ci"][0] > 0
+    perp_pos = e_perp is not None and e_perp["ci"][0] > 0
+    absent = [n for n, m in (("E_par", e_par), ("E_perp", e_perp)) if m is None]
+    suffix = (
+        f" ({', '.join(absent)} absent — no coherent cell, treated not-positive)" if absent else ""
+    )
+    if perp_pos and not par_pos:
+        return "Complement-carries", (
+            "E_perp CI excludes 0 positively; E_par does not — the causal signal lives "
+            "in the map-invisible complement" + suffix
+        )
+    if par_pos and not perp_pos:
+        return "Retained-carries", (
+            "E_par CI excludes 0 positively; E_perp does not — the retained subspace is "
+            "exonerated; pre-image failure is member selection (arms P3)" + suffix
+        )
+    if par_pos and perp_pos:
+        return "Both-carry", "both split components steer (CIs exclude 0 positively)" + suffix
+    return "Neither", (
+        "neither component's CI excludes 0 positively — the split destroys the causal "
+        "combination (informative non-decomposability read)" + suffix
+    )
+
+
+def _reduce_split_wave2(args, out_root: Path) -> None:
+    """Split wave-2 reduce (plan v7 §3/§6): per-cell deltas vs the PARENT
+    decisive alpha0 (frozen CIs), E_par/E_perp against the restricted POOLED
+    null band (2000 draws, re-argmaxed from the parent's persisted localize
+    packs — 0 new control GPU), the paired G contrast, descriptive gaps vs the
+    parent's persisted d_ctxext operating cell, selection-inherited CIs, and
+    the registered 4-cell verdict lattice."""
+    _require_split_grid(args)
+    behaviors = _split_behaviors(args)
+    jd = out_root / "judge" / "ctxext_split_decisive" / "judged"
+    parent_verdicts_path = out_root / "decisive" / "verdicts.json"
+    if not parent_verdicts_path.is_file():
+        raise FileNotFoundError(
+            "decisive/verdicts.json (parent round-1 verdict record) missing — needed "
+            "for the persisted d_ctxext comparator cell ids"
+        )
+    parent_verdicts = json.loads(parent_verdicts_path.read_text())
+    percell_out: dict = {"behaviors": {}}
+    verdicts: dict = {"behaviors": {}}
+    for b in behaviors:
+        a0 = _split_parent_judged(
+            out_root,
+            "decisive",
+            f"{b}__a0",
+            n_q=int(args.q_decisive),
+            n_draws=int(args.draws_decisive),
+        )
+        a0_q = _q_arr(a0)
+        steer = []
+        for f in sorted(jd.glob(f"{b}__*.json")):
+            j = json.loads(f.read_text())
+            if j["cell"]["kind"] == "steer":
+                steer.append(j)
+        if not steer:
+            raise RuntimeError(f"split reduce wave2: no steered split decisive cells for {b}")
+        cells_b: dict = {}
+        qarrs: dict = {}
+        for j in steer:
+            cid = j["cell_id"]
+            cq = _q_arr(j)
+            if len(cq) != len(a0_q):
+                raise RuntimeError(
+                    f"split decisive cell {cid}: {len(cq)}q vs parent alpha0 {len(a0_q)}q"
+                )
+            qarrs[cid] = (j, cq)
+            point, lo, hi = _boot_diff_ci(cq, a0_q, _boot_idx(len(a0_q), N_BOOT_CELL, cid + "__w2"))
+            cells_b[cid] = {
+                "cell": j["cell"],
+                "delta_score": point,
+                "ci_frozen": [lo, hi],
+                "ci_label": f"frozen (split decisive grid, n_q={len(a0_q)})",
+                "coherence_pass": j["coherence_pass"],
+                "frac_items_complete": j["accounting"]["frac_items_complete"],
+            }
+        la0, null_qarrs, audit = _split_null_band_inputs(args, out_root, b)
+        band = _null_band(null_qarrs, _q_arr(la0), f"{b}__w2splitnullctx", n_draws=N_BOOT_VERDICT)
+        if band is None:
+            raise RuntimeError(
+                f"split reduce wave2: zero coherence-passing restricted null cells for {b}"
+            )
+
+        def _best(d, qarrs=qarrs, cells_b=cells_b):
+            cands = [
+                (cells_b[cid]["delta_score"], cid, cq)
+                for cid, (j, cq) in qarrs.items()
+                if j["cell"]["direction"] == d and j["coherence_pass"]
+            ]
+            return max(cands, key=lambda kv: kv[0]) if cands else None
+
+        best = {d: _best(d) for d in SPLIT_DIRECTIONS}
+        margins: dict = {}
+        bp = band["p975"]
+        for d, name in (("par", "E_par"), ("perp", "E_perp")):
+            hit = best[d]
+            if hit is None:
+                continue
+            ci = cells_b[hit[1]]["ci_frozen"]
+            margins[name] = {
+                "value": hit[0] - bp,
+                "cell_id": hit[1],
+                "ci": [ci[0] - bp, ci[1] - bp],
+                "band_p975": bp,
+            }
+        if best["par"] is not None and best["perp"] is not None:
+            point, lo, hi = _boot_diff_ci(
+                best["perp"][2],
+                best["par"][2],
+                _boot_idx(len(a0_q), N_BOOT_VERDICT, f"{b}__splitgap"),
+            )
+            margins["G_perp_minus_par"] = {"value": point, "ci": [lo, hi]}
+        ctx_cell_id = parent_verdicts["behaviors"][b]["margins"]["E_ctxdir"]["cell_id"]
+        ctx_q = _q_arr(
+            _split_parent_judged(
+                out_root,
+                "decisive",
+                ctx_cell_id,
+                n_q=int(args.q_decisive),
+                n_draws=int(args.draws_decisive),
+            )
+        )
+        gaps: dict = {}
+        for d in SPLIT_DIRECTIONS:
+            hit = best[d]
+            if hit is None:
+                continue
+            gp, gl, gh = _boot_diff_ci(
+                hit[2], ctx_q, _boot_idx(len(a0_q), N_BOOT_VERDICT, f"{b}__{d}__gapctxext")
+            )
+            gaps[d] = {"value": gp, "ci": [gl, gh], "vs_cell_id": ctx_cell_id}
+        margins["gap_vs_parent_ctxext"] = gaps
+        label, reason = _split_lattice_label(margins)
+        sel = {}
+        for d in SPLIT_DIRECTIONS:
+            si = _split_selection_inherited(out_root, b, d)
+            if si is not None:
+                sel[f"{d}__context"] = si
+        verdicts["behaviors"][b] = {
+            "label": label,
+            "reason": reason,
+            "margins": margins,
+            "null_band_context_restricted": band,
+            **audit,
+            "selection_inherited": sel,
+            "ci_label_note": (
+                f"margin CIs are frozen-at-operating-point (split decisive grid, "
+                f"n_q={len(a0_q)}) shifted by the RESTRICTED pooled null band "
+                f"(re-argmaxed per draw at {N_BOOT_VERDICT} draws from the parent's "
+                "persisted 10q localize packs — 0 new control GPU, plan v7 §6); "
+                "selection_inherited entries re-argmax the split localize sub-grid per draw"
+            ),
+        }
+        percell_out["behaviors"][b] = cells_b
+    _write_json_atomic(
+        out_root / "ctxext_split" / "decisive" / "delta_score_percell.json",
+        _run_metadata(percell_out),
+    )
+    _write_json_atomic(
+        out_root / "ctxext_split" / "decisive" / "verdicts.json", _run_metadata(verdicts)
+    )
+    files = sorted(jd.glob("*.json"))
+    _write_json_atomic(
+        out_root / "ctxext_split" / "judge_completeness_wave2.json",
+        _run_metadata(_completeness_block(files)),
+    )
+    _upload_folder_to_hf(
+        out_root / "ctxext_split" / "decisive",
+        f"{_hf_prefix()}/ctxext_split/decisive",
+        allow=["delta_score_percell.json", "verdicts.json", "selection_meta.json"],
+    )
+
+
 def _upload_judge_outputs(out_root: Path, phases) -> None:
     """Pack EVERY per-cell judge tree (judged/cache/raw) into <=9 MB plain
     JSONL line-shards (rw2220 packer; never gzip — *.gz is LFS-matched) and
@@ -3600,9 +4724,23 @@ def phase_judge_reduce(args) -> None:
     rubrics = {b: load_trait_rubric(b) for b in behaviors}
     comp_roots = {phase: _stage_phase_completions(out_root, phase) for phase in phases}
     pilot_behaviors = _assert_gen_grid_complete(args, out_root, wave, comp_roots)
-    steered = "localize" if wave == "localize" else "decisive"
+    steered = {
+        "localize": "localize",
+        "decisive": "decisive",
+        "localize_split": "ctxext_split_localize",
+        "decisive_split": "ctxext_split_decisive",
+    }[wave]
+    fallback = {"localize_split": ("localize",), "decisive_split": ("decisive",)}.get(wave, ())
     for b in pilot_behaviors:
-        _run_judge_pilot(args, out_root, steered, b, rubrics[b], _judge_draws(args, steered))
+        _run_judge_pilot(
+            args,
+            out_root,
+            steered,
+            b,
+            rubrics[b],
+            _judge_draws(args, steered),
+            fallback_phases=fallback,
+        )
     for phase in phases:
         files = sorted(comp_roots[phase].glob("*.json"))
         if not files:
@@ -3617,8 +4755,12 @@ def phase_judge_reduce(args) -> None:
             _progress(f"judge_{phase}", k, len(files), f.stem, t0)
     if wave == "localize":
         _reduce_wave1(args, out_root)
-    else:
+    elif wave == "decisive":
         _reduce_wave2(args, out_root)
+    elif wave == "localize_split":
+        _reduce_split_wave1(args, out_root)
+    else:
+        _reduce_split_wave2(args, out_root)
     _upload_judge_outputs(out_root, phases)
     _write_sentinel(out_root, f"judge_reduce_{wave}", "done", {"phases": list(phases)})
     _breadcrumb("judge_reduce", wave=wave, status="done")
@@ -3674,6 +4816,11 @@ PHASES = {
     "margin": phase_margin,
     "judge_reduce": phase_judge_reduce,
     "figures": phase_figures,
+    # ctxext-subspace-split amendment (plan v7 §4; --grid ctxext-split)
+    "derive_split_directions": phase_derive_split_directions,
+    "ctxext_split_localize": phase_ctxext_split_localize,
+    "ctxext_split_decisive": phase_ctxext_split_decisive,
+    "margin_split": phase_margin_split,
 }
 
 
@@ -3720,9 +4867,23 @@ def build_argparser() -> argparse.ArgumentParser:
     )
     ap.add_argument(
         "--reduce-phase",
-        choices=("localize", "decisive"),
+        choices=("localize", "decisive", "localize_split", "decisive_split"),
         default="localize",
-        help="judge_reduce wave: localize = wave 1 (gates), decisive = wave 2 (verdicts)",
+        help=(
+            "judge_reduce wave: localize = wave 1 (gates), decisive = wave 2 (verdicts); "
+            "localize_split / decisive_split = the plan-v7 split-amendment waves "
+            "(require --grid ctxext-split)"
+        ),
+    )
+    ap.add_argument(
+        "--grid",
+        choices=("full", "ctxext-split"),
+        default="full",
+        help=(
+            "steering grid: full = the parent plan-v5 grid (default, unchanged); "
+            "ctxext-split = the plan-v7 restricted sub-grid (d_par/d_perp @ context, "
+            "own-single + mid, 8 doses; evil + sycophancy only)"
+        ),
     )
     ap.add_argument(
         "--q-localize",
@@ -3945,6 +5106,47 @@ def _dry_run_phase(args) -> None:
 
         assert callable(render_all)
         _breadcrumb(phase, dry_run=1, fig_dir=args.fig_dir)
+    elif phase == "derive_split_directions":
+        import torch  # noqa: F401
+        from huggingface_hub import hf_hub_download  # noqa: F401
+
+        from explore_persona_space.orchestrate import hub
+
+        assert callable(hub.retry_transient)
+        assert set(SPLIT_PARITY) == set(SPLIT_BEHAVIORS)
+        assert all(SPLIT_OWN_CONFIG[b] == f"L{SPLIT_PARITY[b]['layer']}" for b in SPLIT_BEHAVIORS)
+        _split_reachability_reference()  # committed parity source readable + consistent
+        _breadcrumb(
+            phase, dry_run=1, behaviors=len(_split_behaviors(args)), layers=len(SPLIT_LAYERS)
+        )
+    elif phase in ("ctxext_split_localize", "ctxext_split_decisive"):
+        import inspect
+
+        from explore_persona_space.experiments.issue1415 import steering
+        from explore_persona_space.experiments.issue2254.hooks import multi_layer_delta_hooks
+
+        assert callable(multi_layer_delta_hooks)
+        # Signature-bind the smoke-fenced generate_batch call shape (#606/#1332).
+        inspect.signature(steering.generate_batch).bind(
+            None, None, ["c"], n=1, hook=None, max_new_tokens=8, seed_base=42
+        )
+        _require_split_grid(args)
+        if phase == "ctxext_split_localize":
+            cells = _localize_cells(args, _split_behaviors(args))
+            _breadcrumb(phase, dry_run=1, cells=len(cells))
+        else:
+            n = len(_grid_combos(args)) * len(SPLIT_BREADTHS)
+            _breadcrumb(phase, dry_run=1, max_cells_per_behavior=n)
+    elif phase == "margin_split":
+        import inspect
+
+        _ensure_repo_root_on_syspath()
+        import scripts.issue2220_readwrite as rw2220
+
+        inspect.signature(rw2220._batched_ln_logp).bind(
+            None, [1], [[1]], None, 14, 0.0, "context", pad_id=0, batch_size=MARGIN_BATCH_2254
+        )
+        _breadcrumb(phase, dry_run=1, behaviors=len(_split_behaviors(args)))
     else:
         raise SystemExit(f"dry-run: no wiring branch for phase {phase!r}")
     print(f"[dry-run] {phase} wiring OK", flush=True)
