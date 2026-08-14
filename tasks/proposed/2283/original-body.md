@@ -46,5 +46,3 @@ So the fence is currently honoured on the destroy path and ignored on the interr
 ## Provenance
 
 Deferred from #2277 at plan-critique round 1 (orchestrator finding OC-1, resolved via the alternatives lens's option (b): name the boundary as an explicit residual with its compensating control). Filing was deliberately held until #2277 merged — the `fence_until=` convention had to exist on `main` before a session could sensibly read it. #2277 merged as `f573b6291acf8c094350aa90288a27677de5d15d` (PR #1951) at 2026-08-14T04:14:07Z.
-
-workflow_fix_target: scripts/autonomous_session_watch.py
