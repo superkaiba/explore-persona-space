@@ -9874,8 +9874,8 @@
     "2278": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2278",
-      "status": "running",
+      "path": "tasks/completed/2278",
+      "status": "completed",
       "title": "workflow-fix: bootstrap_pod.sh python shim deadlocks uv interpreter discovery on pod venv rebuilds (uv.lock branch change)"
     },
     "2279": {
