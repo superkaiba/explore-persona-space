@@ -21129,9 +21129,21 @@ def test_number_word_guard_uses_isdecimal():
         verify_task_body._NUMBER_WORDS.get(sup_two) or int(sup_two)
     # ...an isdigit() guard would NOT have rejected it (the latent hole)...
     assert sup_two.isdigit() and not sup_two.isdecimal()
-    # ...and the shipped guard keys on isdecimal, never isdigit.
+    # ...and the shipped guard keys on isdecimal, never isdigit. Asserted over
+    # the AST, not the source text: a substring check also scans COMMENTS, so a
+    # future in-function comment mentioning the rejected predicate would
+    # false-fail the pin. Comments are absent from the AST by construction.
+    import ast
     import inspect
+    import textwrap
 
-    src = inspect.getsource(verify_task_body._count_extra_followup_rounds_v4)
-    assert ".isdecimal()" in src
-    assert ".isdigit(" not in src
+    fn_ast = ast.parse(
+        textwrap.dedent(inspect.getsource(verify_task_body._count_extra_followup_rounds_v4))
+    )
+    called = {
+        node.func.attr
+        for node in ast.walk(fn_ast)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+    }
+    assert "isdecimal" in called
+    assert "isdigit" not in called
