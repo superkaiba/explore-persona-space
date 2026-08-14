@@ -8790,8 +8790,8 @@
     "2136": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2136",
-      "status": "proposed",
+      "path": "tasks/planning/2136",
+      "status": "planning",
       "title": "daily-fix: stale prior-round PASS in verdict-present check"
     },
     "2137": {
