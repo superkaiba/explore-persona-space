@@ -60,7 +60,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import Any, NoReturn
+from typing import Any, NamedTuple, NoReturn
 
 # Same package — sibling modules.
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -3900,6 +3900,50 @@ def _latest_pass_owner_for_pod(events: list[dict], pod_name: str) -> str | None:
     return tier2_owner
 
 
+class OwnerFenceState(NamedTuple):
+    """One pod's #2277 owner-fence read at a fixed instant (pure data).
+
+    Extracted from :func:`_guard_owner_fence_before_terminate`'s per-pod loop
+    (#2283) so the watcher's pod-safety pass can consume the SAME reader chain
+    (evidence window -> owner token -> fence -> two-tier PASS owner) without a
+    second parser. ``blocks_teardown`` is the guard's refusal predicate:
+    an unexpired fence whose latest pod-bound PASS lacks the matching
+    ``owner=`` token."""
+
+    fence_until: dt.datetime | None
+    owner_registered: str | None
+    pass_owner: str | None
+    fence_unexpired: bool
+    owner_matched: bool
+
+    @property
+    def blocks_teardown(self) -> bool:
+        """True when an unexpired fence exists without an owner-matching PASS."""
+        return self.fence_unexpired and not self.owner_matched
+
+
+def owner_fence_state(events: list[dict], pod_name: str, now: dt.datetime) -> OwnerFenceState:
+    """Pure #2277 owner-fence read for ONE pod over a task's events list.
+
+    Same reader chain, same order, same semantics as the terminate guard's
+    per-pod loop body (this IS that body, extracted — #2283): the evidence
+    window resets at the newest ``epm:run-launched`` naming the pod, tokens
+    are newest-wins within the window, and the PASS owner uses the two-tier
+    (pod-bound first, unbound fallback) selection. ``now`` must be a tz-aware
+    UTC datetime (the guard passes ``dt.datetime.now(dt.UTC)``)."""
+    window = _pod_evidence_window(events, pod_name)
+    owner_reg = _latest_pod_token(window, pod_name, "owner")
+    fence = _latest_pod_fence_until(window, pod_name)
+    pass_owner = _latest_pass_owner_for_pod(window, pod_name)
+    return OwnerFenceState(
+        fence_until=fence,
+        owner_registered=owner_reg,
+        pass_owner=pass_owner,
+        fence_unexpired=fence is not None and fence > now,
+        owner_matched=owner_reg is not None and pass_owner == owner_reg,
+    )
+
+
 def _guard_owner_fence_before_terminate(
     issue: int, pod_names: list[str], *, force_flag: bool, dry_run: bool
 ) -> None:
@@ -3943,12 +3987,12 @@ def _guard_owner_fence_before_terminate(
         return
     now = dt.datetime.now(dt.UTC)
     for name in pod_names:
-        window = _pod_evidence_window(events, name)
-        owner_reg = _latest_pod_token(window, name, "owner")
-        fence = _latest_pod_fence_until(window, name)
-        pass_owner = _latest_pass_owner_for_pod(window, name)
-        if fence is not None and fence > now:
-            if owner_reg is not None and pass_owner == owner_reg:
+        st = owner_fence_state(events, name, now)  # the extracted loop body (#2283)
+        owner_reg = st.owner_registered
+        fence = st.fence_until
+        pass_owner = st.pass_owner
+        if st.fence_unexpired:
+            if st.owner_matched:
                 continue  # owner tearing down its own verified pod: ask-free
             if force_flag:
                 print(
