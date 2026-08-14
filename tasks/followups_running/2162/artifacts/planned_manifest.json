@@ -1,6 +1,6 @@
 {
  "issue": 2162,
- "round": "persona-specificity-ladder",
+ "round": "turn-boundary-multipatch",
  "replaces_parent_manifest_for_round_figures": true,
  "conditions": [
   "Steered (donor persona state patch)",
@@ -40,7 +40,8 @@
   "target-descriptor-only fraction-of-swap (persona cells registered primary)",
   "raw-scale signed movement (judge-contrast units, denominator-free)",
   "d1 identity gap (tb at depth 1 minus parent context-end F)",
-  "per-boundary steered minus shuffled-null F difference"
+  "per-boundary steered minus shuffled-null F difference",
+  "realized patch mode per cell (realized_mode; expected constant replace_multi under the extended multi-position replace hook)"
  ],
  "figures": [
   {
@@ -96,14 +97,14 @@
    "id": "tb_hero",
    "title": "Joint turn-boundary patch vs single context-end across depth",
    "source": "eval_results/issue_2162/turn_boundary/{f_cells_tb,null_shuffled_cells_tb,null_crosstype_cells_tb}.jsonl + eval_results/issue_2162/f_metrics/f_cells.jsonl",
-   "transform": "per (cell x arm): pair value = mean F over K=5 coherent draws (registered space: netted dual-rubric for instruction-format cells + control, target-descriptor-only for persona cells); cell mean over surviving pairs (|separation| >= 0.5, reused parent anchors); pair-clustered bootstrap 95% CI (B=10000, seed 21620); overlay = parent single-ce steered cell means from f_cells.jsonl; per-pair points behind each bar",
+   "transform": "per (cell x arm): pair value = mean F over K=5 coherent draws (registered space: netted dual-rubric for instruction-format cells + control, target-descriptor-only for persona cells); cell mean over surviving pairs (|separation| >= 0.5, reused parent anchors); pair-clustered bootstrap 95% CI (B=10000, seed 21620); overlay = parent single-ce steered cell means (instruction-format cells + control from f_cells.jsonl; persona-cell overlay points RE-AGGREGATED into the target-descriptor-only space from the parent's per-rubric judge scores); per-pair points behind each bar",
    "plotted_quantity": "mean fraction-of-swap F at the joint turn-boundary set (unitless; 0 = unpatched floor, 1 = full context swap), per base x depth x arm"
   },
   {
    "id": "tb_sweep",
    "title": "Per-boundary localization sweep (steered minus shuffled null)",
    "source": "eval_results/issue_2162/turn_boundary/{f_cells_tb,null_shuffled_cells_tb}.jsonl + eval_results/issue_2162/f_metrics/{f_cells,null_shuffled_cells}.jsonl",
-   "transform": "per single-boundary variant k: per-pair paired difference (steered F minus shuffled-null F), mean over surviving pairs, pair-clustered bootstrap 95% CI (B=10000); x = boundary index k (earliest assistant turn .. final); the final-boundary point is the PARENT ce read (parent-run provenance labeled)",
+   "transform": "per single-boundary variant k: per-pair paired difference (steered F minus shuffled-null F), mean over surviving pairs, pair-clustered bootstrap 95% CI (B=10000); x = boundary index k (earliest assistant turn .. final); the final-boundary point is the PARENT ce read (parent-run provenance labeled; persona-cell points re-aggregated into the target-descriptor-only space)",
    "plotted_quantity": "mean steered-minus-null F difference per boundary index k, per base x depth"
   },
   {
@@ -117,7 +118,7 @@
    "id": "tb_identity_d1",
    "title": "Depth-1 identity gate: tb reproduces the parent context-end read",
    "source": "eval_results/issue_2162/turn_boundary/f_cells_tb.jsonl + eval_results/issue_2162/f_metrics/f_cells.jsonl + eval_results/issue_2162/turn_boundary/gates/identity_gate.json",
-   "transform": "per pair (both d1 cells, steered + shuffled arms): scatter of this round's tb@d1 pair F (netted space) vs the parent ce pair F; identity diagonal + the +/-0.10 gate band; pooled mean delta + pair-clustered bootstrap CI annotated from identity_gate.json",
+   "transform": "per pair (both d1 cells, steered + shuffled arms): scatter of this round's tb@d1 pair F (netted space) vs the parent ce pair F; identity diagonal + the +/-0.10 gate band; the gate statistic (mean delta + pair-clustered bootstrap CI, annotated from identity_gate.json) is pooled over SURVIVING pairs only (66/arm: instr_format 36/36 + persona 30/36 at |separation| >= 0.5); non-surviving pairs shown greyed, excluded from the gate statistic",
    "plotted_quantity": "per-pair F at tb depth-1 vs parent context-end F (unitless)"
   },
   {
@@ -134,5 +135,9 @@
    "transform": "persona cells only, joint tb blocks: per-arm cell means computed BOTH ways from the same judge calls - netted dual-rubric F and target-descriptor-only F - over surviving pairs; pair-clustered bootstrap 95% CIs; side-by-side per depth",
    "plotted_quantity": "mean F per arm x depth under the two aggregation spaces (unitless)"
   }
- ]
+ ],
+ "prior_rounds": [
+  "persona-specificity-ladder"
+ ],
+ "replaces_parent_manifest_for_round_figures_scope": "persona-specificity-ladder figures only (figures[0:7]); the turn-boundary-multipatch figures (tb_*) APPEND to the parent manifest and replace nothing"
 }
