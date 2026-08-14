@@ -188,6 +188,14 @@ elif _TIER_SEL:
         raise SystemExit(f"--tiers: unknown tier(s) {_bad}; valid tiers are 0-8")
     SUFFIX += "_t" + "".join(str(_t) for _t in TIERS)
 
+# The alignment panel plots the identity+bias baselines of A_ctx and A_ans —
+# the two remaps t6 and t7 apply. With NEITHER tier drawn it describes maps
+# that appear nowhere in the figure, so it is dropped rather than left
+# orphaned (user call 2026-08-14: t6/t7 out of the reporting set). Both values
+# still ride the .meta.json sidecar either way. MUST sit after the tier
+# selection above — TIERS holds the stt default until then.
+HAS_ALIGN_PANEL = HAS_IDENTITY and bool({6, 7} & set(TIERS))
+
 if LAYER != 30:
     SELFMAP_PAIRS = set()
     stt.SELFMAP_STEPS = SELFMAP_PAIRS
@@ -710,6 +718,24 @@ def fig_aggregate(D: dict) -> Path:
         ax = fig.add_axes([0.075, 0.235, 0.920, 0.675])
         axb = None
         axa = None
+    elif not HAS_ALIGN_PANEL:
+        # identity+bias still needs its broken lower panel; the alignment panel
+        # is dropped (see HAS_ALIGN_PANEL). Same ax/axb coupling as the 3-panel
+        # form, one row shorter.
+        fig = plt.figure(figsize=(12.4, 8.8))
+        gs = fig.add_gridspec(
+            2,
+            1,
+            height_ratios=[4.3, 1.0],
+            hspace=0.08,
+            left=0.075,
+            right=0.995,
+            top=0.912,
+            bottom=0.175,
+        )
+        ax = fig.add_subplot(gs[0])
+        axa = None
+        axb = fig.add_subplot(gs[1], sharex=ax)
     else:
         # Three stacked panels over ONE shared x (the ten pairs):
         #   axa — the two ALIGNMENT-map identity+bias baselines, on their OWN axis
