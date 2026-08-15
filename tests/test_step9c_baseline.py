@@ -209,6 +209,37 @@ def _materialize_compare_tree(
     return root, wt, junit
 
 
+def _install_oracle_fakes(
+    monkeypatch,
+    calls: dict[str, list],
+    *,
+    merge_base: str | None,
+    oracle_sha_known: bool,
+    sha_known: bool,
+    root_head: str,
+) -> None:
+    """Install the #2293 oracle-resolution fakes (git_merge_base / git_sha_known / git_head)."""
+
+    def fake_git_sha_known(root_: Path, sha: str) -> bool:
+        # #2293: sha-discriminating — the ORACLE sha (== merge_base) answers
+        # oracle_sha_known; every other sha (the LEDGER sha "a"*40) keeps
+        # sha_known, so stale-ledger[sha] cases cannot collide with the oracle.
+        if merge_base is not None and sha == merge_base:
+            return oracle_sha_known
+        return sha_known
+
+    def fake_git_merge_base(base: str, wt_: Path) -> str | None:
+        calls["merge_base"].append((base, wt_))
+        return merge_base
+
+    def fake_git_head(root_: Path) -> str:
+        return root_head
+
+    monkeypatch.setattr(sb, "git_sha_known", fake_git_sha_known)
+    monkeypatch.setattr(sb, "git_merge_base", fake_git_merge_base)
+    monkeypatch.setattr(sb, "git_head", fake_git_head)
+
+
 def _install_compare_fakes(
     monkeypatch,
     *,
@@ -229,6 +260,9 @@ def _install_compare_fakes(
     shadow_probe_exc: Exception | None = None,
     paired_failing=(),
     paired_exc: Exception | None = None,
+    merge_base: str | None = "f" * 40,
+    oracle_sha_known: bool = True,
+    root_head: str = "f" * 40,
 ) -> dict[str, list]:
     """Monkeypatch signature-conformant fakes onto the module; return the call recorder.
 
@@ -242,7 +276,15 @@ def _install_compare_fakes(
     #2024 knobs: ``live_dirty`` may ALSO be a zero-arg callable (the B2
     dirt-appears-between-loop-and-paired-run case); ``paired_failing`` /
     ``paired_exc`` fake ``run_pristine_selection`` (the paired-selection
-    ordering re-check seam).
+    ordering re-check seam). #2293 knobs: ``merge_base`` fakes
+    ``git_merge_base`` (None models the unrelated-histories rc-1 arm);
+    ``oracle_sha_known`` steers the sha-DISCRIMINATING ``git_sha_known`` fake
+    for the ORACLE sha only (the LEDGER sha keeps ``sha_known``, so the stale-
+    ledger[sha] case cannot collide); ``root_head`` fakes ``git_head``
+    (compare-env only — ``_refresh_env`` keeps its own fake). Defaults keep
+    every pre-#2293 test green: root_head == merge_base == the fake scratch
+    sha ``"f" * 40`` ⇒ the D5 degradation gate passes and the D6 skew note
+    reads False.
     """
     calls: dict[str, list] = {
         "pristine": [],
@@ -256,6 +298,7 @@ def _install_compare_fakes(
         "paired_detail": [],  # (files, cwd, venv_root) per paired call (#2024)
         "paired_timeout": [],  # timeout_s per paired call (#2024)
         "paired_pythonpath": [],  # pythonpath kwarg per paired call (#2024)
+        "merge_base": [],  # (base, wt) per git_merge_base call (#2293 oracle resolution)
     }
     _install_scratch_fakes(
         monkeypatch,
@@ -278,8 +321,14 @@ def _install_compare_fakes(
             return list(live_dirty())
         return list(live_dirty)
 
-    def fake_git_sha_known(root_: Path, sha: str) -> bool:
-        return sha_known
+    _install_oracle_fakes(
+        monkeypatch,
+        calls,
+        merge_base=merge_base,
+        oracle_sha_known=oracle_sha_known,
+        sha_known=sha_known,
+        root_head=root_head,
+    )
 
     def fake_code_commits_since(root_: Path, sha: str) -> int:
         return code_commits
@@ -330,7 +379,6 @@ def _install_compare_fakes(
     monkeypatch.setattr(sb, "load_selector_module", fake_load_selector_module)
     monkeypatch.setattr(sb, "changed_test_files_since", fake_changed_test_files_since)
     monkeypatch.setattr(sb, "dirty_code_paths", fake_dirty_code_paths)
-    monkeypatch.setattr(sb, "git_sha_known", fake_git_sha_known)
     monkeypatch.setattr(sb, "code_commits_since", fake_code_commits_since)
     monkeypatch.setattr(sb, "run_single_file_pristine", fake_run_single_file_pristine)
     monkeypatch.setattr(sb, "run_pristine_selection", fake_run_pristine_selection)
@@ -350,9 +398,6 @@ def _install_scratch_fakes(
     shadow_probe_exc=None,
 ) -> None:
     """Install the #1077 scratch-fallback (+ #1251 shadow-probe) fakes."""
-    fake_scratch = sb._ScratchTree(
-        parent=root / "scratch-parent", path=root / "scratch-fake", sha="f" * 40
-    )
 
     def fake_scratch_contamination_probe(root_: Path) -> list[str]:
         if callable(contamination_paths):
@@ -362,10 +407,17 @@ def _install_scratch_fakes(
     def fake_work_root_sparse_cones(wt_: Path) -> list[str] | None:
         return list(wt_cones) if wt_cones is not None else None
 
-    def fake_create_scratch_worktree(root_: Path, cones: list[str], timeout_s: float):
-        calls["scratch_created"].append((root_, tuple(cones), timeout_s))
+    def fake_create_scratch_worktree(
+        root_: Path, cones: list[str], timeout_s: float, *, base_sha: str
+    ):
+        # #2293 contract parity with the real function: the scratch detaches at
+        # the RESOLVED oracle base, so the fake's sha IS the passed base_sha.
+        calls["scratch_created"].append((root_, tuple(cones), timeout_s, base_sha))
         if scratch_exc is not None:
             raise scratch_exc
+        fake_scratch = sb._ScratchTree(
+            parent=root / "scratch-parent", path=root / "scratch-fake", sha=base_sha
+        )
         fake_scratch.path.mkdir(parents=True, exist_ok=True)
         return fake_scratch
 
@@ -412,6 +464,9 @@ def _compare_env(
     shadow_probe_exc: Exception | None = None,
     paired_failing=(),
     paired_exc: Exception | None = None,
+    merge_base: str | None = "f" * 40,
+    oracle_sha_known: bool = True,
+    root_head: str = "f" * 40,
     sel_attrs: dict | None = None,
     extra_args=(),
 ):
@@ -454,6 +509,9 @@ def _compare_env(
         shadow_probe_exc=shadow_probe_exc,
         paired_failing=paired_failing,
         paired_exc=paired_exc,
+        merge_base=merge_base,
+        oracle_sha_known=oracle_sha_known,
+        root_head=root_head,
     )
     argv = [
         "compare",
@@ -1744,9 +1802,10 @@ def test_compare_non_sparse_green_at_pristine_classifies_new(tmp_path: Path, mon
     # Floor call shape: wt_cones=() — the real _scratch_cones(root, []) is the
     # floor (top-level tracked dirs minus SCRATCH_EXCLUDES) union HEAD-pinned registry.
     assert len(calls["scratch_created"]) == 1
-    created_root, created_cones, _timeout = calls["scratch_created"][0]
+    created_root, created_cones, _timeout, created_base = calls["scratch_created"][0]
     assert created_root == root
     assert created_cones == ()
+    assert created_base == "f" * 40  # #2293: the resolved oracle base reaches the scratch
     # Scratch cwd + ROOT venv interpreter; #1251 shadow machinery reused unchanged.
     assert calls["pristine_detail"] == [(node.file, root / "scratch-fake", root)]
     assert calls["shadow_probe"] == [(root, root / "scratch-fake")]
@@ -2183,6 +2242,207 @@ def test_compare_scratch_failure_clean_root_degrades_to_root(
     assert any("CLEAN root" in w for w in out["warns"])
 
 
+# --- #2293: oracle cut at the resolved diff base (merge-base), not root HEAD -------
+
+
+def test_compare_scratch_sha_pinned_to_resolved_oracle_base(tmp_path: Path, monkeypatch, capsys):
+    """Criteria 2 + 4 (#2293): the scratch detaches at the RESOLVED oracle base
+    (merge-base of the diff base and the work root's HEAD), the resolution runs
+    EXACTLY ONCE for a 2-file bucket (cached on ctx — the per-file loop never
+    re-shells), and the JSON records oracle_base_ref / oracle_base_sha
+    alongside scratch_sha.
+
+    FAILS on pre-#2293 code STRUCTURALLY (no checkout run needed): the old
+    payload lacks the "oracle_base_sha" key (KeyError on the read below), and
+    the old create_scratch_worktree ignored the base entirely (sha =
+    git_head(root)), so scratch_sha could never equal the "b"*40 merge-base
+    fake value.
+    """
+    n1 = sb.Node(file="tests/test_ob1.py", classname="tests.test_ob1", name="test_x")
+    n2 = sb.Node(file="tests/test_ob2.py", classname="tests.test_ob2", name="test_x")
+    argv, calls, _r, wt = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(n.file, n.classname, n.name, "failed") for n in (n1, n2)],
+        ledger_kw={"failing": ()},
+        pristine_failing=(n1, n2),
+        merge_base="b" * 40,
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    # ONE cached resolution, against the default-_FakeSel "main" fallback base.
+    assert calls["merge_base"] == [("main", wt)]
+    assert calls["scratch_created"][0][3] == "b" * 40
+    assert out["scratch_sha"] == "b" * 40
+    assert out["oracle_base_sha"] == "b" * 40
+    assert out["oracle_base_ref"] == "main"
+    # Scratch-path compare: no root-venue pristine execution -> skew is null.
+    assert out["root_oracle_base_skew"] is None
+    assert {s["via"] for s in out["stripped"]} == {"pristine-scratch"}
+    assert len(out["stripped"]) == 2
+
+
+def test_compare_explicit_base_controls_oracle_cut(tmp_path: Path, monkeypatch, capsys):
+    """Criterion 2 (#2293): an explicit --base REF reaches the merge-base argv
+    verbatim and rides the JSON as oracle_base_ref — closing the task body's
+    "--base cannot correct the oracle" defect."""
+    node = sb.Node(file="tests/test_ob.py", classname="tests.test_ob", name="test_x")
+    argv, calls, _r, wt = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(node.file, node.classname, node.name, "failed")],
+        ledger_kw={"failing": ()},
+        pristine_failing=(node,),
+        extra_args=("--base", "feature-x", "--run-pristine"),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert calls["merge_base"] == [("feature-x", wt)]
+    assert out["oracle_base_ref"] == "feature-x"
+    assert out["scratch_sha"] == "f" * 40  # the resolved merge-base fake value
+
+
+@pytest.mark.parametrize("trigger", ["probe", "create"])
+def test_compare_clean_root_degradation_refused_on_base_skew(
+    tmp_path: Path, monkeypatch, capsys, trigger
+):
+    """Criterion 3 (#2293): the #1408 clean-root degradation is REFUSED
+    (exit 2) when root HEAD != the resolved oracle base — "clean" alone is no
+    longer sufficient grounds to use the root working tree as oracle. The
+    ``probe`` cell fails the shadow probe AFTER a scratch handle exists, so
+    teardown genuinely runs; the ``create`` cell raises BEFORE any handle
+    exists, so there is nothing to tear down (scratch_removed stays empty)
+    while the refusal itself is identical."""
+    node = sb.Node(file="tests/test_sk.py", classname="tests.test_sk", name="test_x")
+    kw = (
+        {"shadow_probe_exc": sb.PristineRunError("src-shadow probe rc=3")}
+        if trigger == "probe"
+        else {"scratch_exc": subprocess.TimeoutExpired(cmd=["git"], timeout=120.0)}
+    )
+    argv, calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(node.file, node.classname, node.name, "failed")],
+        ledger_kw={"failing": ()},
+        live_dirty=(),
+        pristine_failing=(node,),
+        root_head="a" * 40,  # != the "f"*40 resolved oracle base
+        extra_args=("--run-pristine",),
+        **kw,
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 2
+    assert out["indeterminate"] is True
+    assert "a" * 12 in out["reason"] and "f" * 12 in out["reason"]
+    assert "refusing the #1408 degradation" in out["reason"]
+    if trigger == "probe":
+        assert calls["scratch_removed"], "partial scratch must be torn down"
+    else:
+        assert calls["scratch_removed"] == []  # pre-handle failure: nothing to tear down
+    assert calls["pristine"] == []  # no verdict rested on the skewed root
+
+
+def test_compare_clean_root_degradation_allowed_when_root_at_base(
+    tmp_path: Path, monkeypatch, capsys
+):
+    """Criterion 3 complement (#2293): with root HEAD == the resolved oracle
+    base, the #1408 clean-root degradation behaves exactly as today — root
+    oracle used, scratch_degraded flagged, rc 0 — and the D6 skew note reads
+    False at the root venue."""
+    node = sb.Node(file="tests/test_sk2.py", classname="tests.test_sk2", name="test_x")
+    argv, calls, root, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(node.file, node.classname, node.name, "failed")],
+        ledger_kw={"failing": ()},
+        live_dirty=(),
+        pristine_failing=(node,),
+        shadow_probe_exc=sb.PristineRunError("src-shadow probe rc=3"),
+        root_head="f" * 40,  # == the resolved oracle base (the default)
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert out["scratch_degraded"] is True
+    assert out["pristine_oracle"] == "root"
+    assert calls["pristine_detail"] == [(node.file, root, None)]
+    assert out["stripped"] == [{**node._asdict(), "via": "pristine"}]
+    assert out["root_oracle_base_skew"] is False
+    assert not any("BASE-SKEW" in w for w in out["warns"])
+
+
+@pytest.mark.parametrize("mode", ["no-merge-base", "sha-unknown"])
+def test_compare_oracle_base_unresolvable_is_indeterminate(
+    tmp_path: Path, monkeypatch, capsys, mode
+):
+    """D4's two fail-closed arms (#2293): no merge base (unrelated histories)
+    and a merge base absent from root's object store both refuse to classify
+    (exit 2) — never a silent cut at some other sha."""
+    node = sb.Node(file="tests/test_ur.py", classname="tests.test_ur", name="test_x")
+    kw = {"merge_base": None} if mode == "no-merge-base" else {"oracle_sha_known": False}
+    argv, calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(node.file, node.classname, node.name, "failed")],
+        ledger_kw={"failing": ()},
+        pristine_failing=(node,),
+        extra_args=("--run-pristine",),
+        **kw,
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 2
+    assert out["indeterminate"] is True
+    if mode == "no-merge-base":
+        assert "no merge base" in out["reason"]
+    else:
+        assert "not in" in out["reason"] and "object store" in out["reason"]
+    assert calls["scratch_created"] == []  # refused BEFORE any scratch spend
+    assert calls["pristine"] == []
+
+
+def test_compare_root_oracle_base_skew_warn_only(tmp_path: Path, monkeypatch, capsys):
+    """Criterion 5 residual (#2293 D6): a base-skewed ROOT-tree oracle venue
+    (--no-scratch-fallback here) keeps its verdict UNCHANGED this round — the
+    strip still lands via "pristine" — with ONE BASE-SKEW WARN + the
+    root_oracle_base_skew JSON flag as pure observability."""
+    node = sb.Node(file="tests/test_rs.py", classname="tests.test_rs", name="test_x")
+    argv, _calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(node.file, node.classname, node.name, "failed")],
+        ledger_kw={"failing": ()},
+        pristine_failing=(node,),
+        root_head="a" * 40,  # != the "f"*40 resolved oracle base
+        extra_args=("--no-scratch-fallback", "--run-pristine"),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert out["indeterminate"] is False
+    assert out["stripped"] == [{**node._asdict(), "via": "pristine"}]  # verdict UNCHANGED
+    assert out["root_oracle_base_skew"] is True
+    assert len([w for w in out["warns"] if "BASE-SKEW" in w]) == 1
+
+
+def test_compare_root_oracle_no_skew_no_warn(tmp_path: Path, monkeypatch, capsys):
+    """D6 complement (#2293): a root-tree venue with root HEAD == the resolved
+    oracle base records skew False and emits NO BASE-SKEW WARN."""
+    node = sb.Node(file="tests/test_rs2.py", classname="tests.test_rs2", name="test_x")
+    argv, _calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(node.file, node.classname, node.name, "failed")],
+        ledger_kw={"failing": ()},
+        pristine_failing=(node,),
+        root_head="f" * 40,
+        extra_args=("--no-scratch-fallback", "--run-pristine"),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert out["root_oracle_base_skew"] is False
+    assert not any("BASE-SKEW" in w for w in out["warns"])
+
+
 # --- #1408: gate temp-write routing (gate_tmp_root / run_pytest / tmproot) ---------
 
 
@@ -2314,10 +2574,11 @@ def test_scratch_mkdtemp_and_pristine_junit_use_tmp_root(tmp_path: Path, monkeyp
     route.mkdir()
     monkeypatch.setattr(sb, "gate_tmp_root", lambda **_kw: route)
     # (a) scratch parent: fake the git lifecycle; the mkdtemp is real.
-    monkeypatch.setattr(sb, "git_head", lambda root: "e" * 40)
     monkeypatch.setattr(sb, "_git_bounded", lambda argv, cwd, timeout_s: None)
     monkeypatch.setattr(sb, "_scratch_cones", lambda root, wt_cones: ["tests"])
-    scratch = sb.create_scratch_worktree(tmp_path / "root", ["tests"], timeout_s=30.0)
+    scratch = sb.create_scratch_worktree(
+        tmp_path / "root", ["tests"], timeout_s=30.0, base_sha="e" * 40
+    )
     assert scratch.parent.parent == route
     assert scratch.parent.name.startswith("step9c-scratch-")
     sb.shutil.rmtree(scratch.parent, ignore_errors=True)
@@ -2617,6 +2878,16 @@ def test_git_helpers_real_body(tmp_path: Path):
     dirty = sb.dirty_code_paths(repo)
     assert "scripts/tool.py" in dirty
     assert all(not p.endswith(".json") for p in dirty)
+    # git_merge_base (#2293), real rc contract: same-lineage -> the ancestor sha
+    # (rc 0); a bad ref raises (rc 128); an ORPHAN history -> None (rc 1) —
+    # verified on real git BEFORE any reliance on the assumed exit codes (E5).
+    assert sb.git_merge_base(sha1, repo) == sha1
+    with pytest.raises(subprocess.CalledProcessError):
+        sb.git_merge_base("no-such-ref", repo)
+    _git(repo, "checkout", "--orphan", "orphan")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-m", "orphan root")
+    assert sb.git_merge_base("main", repo) is None
 
 
 def _scratch_repo(repo: Path) -> None:
@@ -2661,7 +2932,7 @@ def test_scratch_worktree_real_git_roundtrip(tmp_path: Path):
     head_before = sb.git_head(repo)
     porcelain_before = _porcelain()
     config_before = (repo / ".git" / "config").read_bytes()
-    scratch = sb.create_scratch_worktree(repo, ["tests"], 120.0)
+    scratch = sb.create_scratch_worktree(repo, ["tests"], 120.0, base_sha=head_before)
     try:
         assert scratch.sha == head_before
         assert (scratch.path / "tests" / "test_a.py").exists()  # committed file materialized
@@ -2693,7 +2964,7 @@ def test_real_pristine_in_scratch_worktree_nodes_match_root_relative(tmp_path: P
     _git(root, "commit", "-m", "baseline")
     marker = tmp_path / "scratch-shim-invocations.txt"
     shim = _write_python_shim(root, marker)  # the root venv shim is NOT committed
-    scratch = sb.create_scratch_worktree(root, ["tests"], 120.0)
+    scratch = sb.create_scratch_worktree(root, ["tests"], 120.0, base_sha=sb.git_head(root))
     try:
         assert not (scratch.path / ".venv").exists()  # the scratch has no venv of its own
         failing = sb.run_single_file_pristine(
@@ -2706,6 +2977,80 @@ def test_real_pristine_in_scratch_worktree_nodes_match_root_relative(tmp_path: P
     }
     assert marker.exists(), "the MAIN root's venv shim was never invoked (venv_root split)"
     assert str(shim) in marker.read_text()
+
+
+def test_real_scratch_oracle_cut_at_merge_base_classifies_preexisting(tmp_path: Path):
+    """Criterion 1 (#2293) — the #2288 incident reproduced on REAL git: a node
+    failing ONLY because of a commit present on the base lineage (B1, = the
+    merge base of the branch and main) and ABSENT from the root's detached
+    HEAD (B0, the divergence-window state) is RED at the merge-base-cut
+    scratch — so it classifies PRE-EXISTING (strip). The in-test negative
+    control cuts a second scratch at the OLD sha (git_head(root) == B0): the
+    offender is absent there, the pristine run PASSES, and the node would
+    classify NEW — the #2288 misclassification, demonstrated in-test.
+
+    FAILS on pre-#2293 code STRUCTURALLY (no checkout run needed): the pre-fix
+    ``create_scratch_worktree`` signature has no ``base_sha`` parameter
+    (TypeError at the call below), and its semantics (sha = git_head(root) =
+    B0) contradict the primary assertions (scratch.sha == B1, offender
+    present, pristine red) — the negative control IS the pre-fix outcome.
+    """
+    root = tmp_path / "root"
+    _scratch_repo(root)
+    (root / "tests").mkdir()
+    (root / "scripts").mkdir()
+    (root / "pyproject.toml").write_text('[tool.pytest.ini_options]\naddopts = ""\n')
+    (root / "tests" / "test_scan.py").write_text(
+        "import pathlib\n\n\ndef test_no_offender():\n"
+        "    root = pathlib.Path(__file__).resolve().parent.parent\n"
+        "    assert not (root / 'scripts' / 'offender.py').exists()\n"
+    )
+    _git(root, "add", "-A")
+    _git(root, "commit", "-m", "B0 baseline: no offender (test_scan green)")
+    b0 = sb.git_head(root)
+    (root / "scripts" / "offender.py").write_text("X = 1\n")
+    _git(root, "add", "scripts/offender.py")
+    _git(root, "commit", "-m", "B1: add the offender (test_scan RED here)")
+    b1 = sb.git_head(root)  # main's tip == the branch's fork point
+    wt = tmp_path / "wt"
+    _git(root, "worktree", "add", "-b", "issue-x", str(wt), "main")
+    (wt / "notes.md").write_text("w1\n")
+    _git(wt, "add", "notes.md")
+    _git(wt, "commit", "-m", "W1: unrelated branch commit")
+    # Simulate the divergence window: detach the ROOT at B0 — its HEAD lineage
+    # now LACKS a file the base lineage HAS; B1 stays in the shared odb.
+    _git(root, "checkout", b0)
+    # Fixture-divergence pin: guards against a vacuous fixture where the
+    # merge-base cut and the old root-HEAD cut would agree.
+    assert sb.git_merge_base("main", wt) == b1
+    assert sb.git_head(root) == b0
+    assert b0 != b1
+    marker = tmp_path / "incident-shim-invocations.txt"
+    _write_python_shim(root, marker)
+    node = sb.Node(file="tests/test_scan.py", classname="tests.test_scan", name="test_no_offender")
+    scratch = sb.create_scratch_worktree(root, ["tests", "scripts"], 120.0, base_sha=b1)
+    try:
+        assert scratch.sha == b1
+        assert (scratch.path / "scripts" / "offender.py").exists()
+        failing = sb.run_single_file_pristine(
+            "tests/test_scan.py", cwd=scratch.path, timeout_s=180.0, venv_root=root
+        )
+    finally:
+        sb.remove_scratch_worktree(root, scratch)
+    assert node in failing  # RED at the merge-base oracle -> classifies pre-existing
+    # Negative control — the OLD cut (root HEAD == B0), i.e. pre-#2293 behavior:
+    # the offender is ABSENT, the pristine run PASSES, and the node would
+    # misclassify NEW (#2288 verbatim).
+    scratch_old = sb.create_scratch_worktree(root, ["tests", "scripts"], 120.0, base_sha=b0)
+    try:
+        assert scratch_old.sha == b0 == sb.git_head(root)
+        assert not (scratch_old.path / "scripts" / "offender.py").exists()
+        failing_old = sb.run_single_file_pristine(
+            "tests/test_scan.py", cwd=scratch_old.path, timeout_s=180.0, venv_root=root
+        )
+    finally:
+        sb.remove_scratch_worktree(root, scratch_old)
+    assert failing_old == set()
 
 
 def test_scratch_contamination_probe_real_git(tmp_path: Path):
