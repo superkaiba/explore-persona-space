@@ -8818,8 +8818,8 @@
     "2140": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2140",
-      "status": "running",
+      "path": "tasks/completed/2140",
+      "status": "completed",
       "title": "daily-fix: watcher daemon-liveness pass (3h17m outage)"
     },
     "2141": {
