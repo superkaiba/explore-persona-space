@@ -139,6 +139,11 @@ RUNAWAY_STREAK_DEFAULT = 3
 HUMAN_ACTIVE_S_DEFAULT = 45 * 60
 # Transcript tail-read bound: watcher parity (the #1104 wedge-probe widening).
 TRANSCRIPT_TAIL_BYTES = 262_144
+# Auto-compaction injects a continuation row whose `message.content` is a
+# plain STRING opening with this text (#2139). Belt-and-braces only — the
+# `isCompactSummary` flag check in `is_human_transcript_row` is the primary
+# discriminator.
+COMPACT_CONTINUATION_PREFIX = "This session is being continued from a previous conversation"
 # /proc ancestry walk bound (measured chain depth to `claude` is 4 hops from a
 # `uv run python` child; 15 covers deeper shell nesting with margin).
 _ANCESTRY_MAX_DEPTH = 15
@@ -1022,8 +1027,23 @@ def is_human_transcript_row(row: object) -> bool:
     string-row class in autonomous transcripts: 149/149 measured across
     two transcripts, r2 Must-Fix) classify automation via the prefix
     exclusion below.
+    Auto-compaction continuation rows (#2139) classify automation via the
+    row-level ``isCompactSummary`` flag (corpus-measured: 584 of 609 flagged
+    rows read HUMAN pre-fix, each granting a bogus 45-min stall mask per
+    compaction; the flag is top-level on all 609, ``isMeta`` absent from
+    them entirely) plus the belt-and-braces
+    :data:`COMPACT_CONTINUATION_PREFIX` string exclusion. A MANUAL
+    ``/compact`` produces the same flagged row and is excluded
+    DELIBERATELY — the row text is harness-written summary, not the user's
+    words; the user's own ``/compact`` invocation is a slash-command row,
+    already automation by #1629 design.
     """
-    if not isinstance(row, dict) or row.get("type") != "user" or row.get("isMeta"):
+    if (
+        not isinstance(row, dict)
+        or row.get("type") != "user"
+        or row.get("isMeta")
+        or row.get("isCompactSummary")  # #2139
+    ):
         return False
     msg = row.get("message")
     if not isinstance(msg, dict) or msg.get("role") != "user":
@@ -1033,8 +1053,10 @@ def is_human_transcript_row(row: object) -> bool:
         s = content.lstrip()
         if not s:
             return False
-        if "<command-name>" in content or s.startswith(
-            ("<command-message>", "<local-command", "<task-notification")
+        if (
+            "<command-name>" in content
+            or s.startswith(("<command-message>", "<local-command", "<task-notification"))
+            or s.startswith(COMPACT_CONTINUATION_PREFIX)  # #2139 belt-and-braces
         ):
             return False
         return True

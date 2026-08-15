@@ -871,8 +871,9 @@ def _iso_ms(epoch: float) -> str:
 
 
 def _transcript_row(kind: str, age_s: float, text: str = "hello") -> dict:
-    """A transcript JSONL row in one of the measured §4.2 shapes:
-    ``human`` / ``cron`` / ``meta`` / ``tool_result`` / ``interrupt``."""
+    """A transcript JSONL row in one of the measured shapes: ``human`` /
+    ``cron`` / ``meta`` / ``tool_result`` / ``interrupt`` /
+    ``notification`` / ``compact``."""
     base: dict = {
         "type": "user",
         "isMeta": None,
@@ -914,6 +915,22 @@ def _transcript_row(kind: str, age_s: float, text: str = "hello") -> dict:
             "role": "user",
             "content": (
                 f"<task-notification>Background task bash_1 completed</task-notification>\n{text}"
+            ),
+        }
+    elif kind == "compact":
+        # Auto-compaction continuation row (#2139), MEASURED shape verbatim:
+        # top-level `isCompactSummary: True` (all 609 corpus rows),
+        # `isVisibleInTranscriptOnly: True`, NO `isMeta` key at all, and
+        # `message.content` a plain STRING opening with the continuation
+        # sentence.
+        base.pop("isMeta")
+        base["isCompactSummary"] = True
+        base["isVisibleInTranscriptOnly"] = True
+        base["message"] = {
+            "role": "user",
+            "content": (
+                "This session is being continued from a previous conversation that "
+                f"ran out of context. The conversation is summarized below:\n{text}"
             ),
         }
     else:
@@ -974,6 +991,30 @@ def test_agent_notification_row_does_not_suppress(state_dir, monkeypatch, tmp_pa
     _patch_issue_state(monkeypatch, "running", [_event("epm:progress v1", 3600)])
     verdict, _ = tick_triage.triage(1629, "issue")
     assert verdict == "STALE-REDRIVE"
+
+
+def test_compact_summary_row_does_not_suppress(state_dir, monkeypatch, tmp_path):
+    """#2139 (AC3, end-to-end): a FRESH auto-compaction continuation row is
+    harness automation — a transcript whose only user row is a compact
+    summary keeps the STALE-REDRIVE (the pre-fix predicate granted a bogus
+    45-min stall mask per compaction). Negative-control leg: a genuine typed
+    human row in the SAME transcript still suppresses, so this test cannot
+    pass by breaking the predicate wholesale."""
+    path = _write_transcript(tmp_path, [_transcript_row("compact", 60)])
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: path)
+    _patch_issue_state(monkeypatch, "running", [_event("epm:progress v1", 3600)])
+    verdict, _ = tick_triage.triage(2139, "issue")
+    assert verdict == "STALE-REDRIVE"
+
+    both = _write_transcript(
+        tmp_path,
+        [_transcript_row("compact", 60), _transcript_row("human", 120)],
+        name="with_human.jsonl",
+    )
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: both)
+    verdict, reason = tick_triage.triage(2140, "issue")
+    assert verdict == "HEALTHY", reason
+    assert "human-active" in reason
 
 
 def test_debug_error_rung_on_raising_probe(state_dir, monkeypatch, capsys):
@@ -1124,6 +1165,25 @@ def test_terminal_and_gate_verdicts_unchanged_when_human_active(state_dir, monke
             {
                 "type": "user",
                 "message": {"role": "user", "content": [{"type": "text", "text": "plain text"}]},
+            },
+            False,
+        ),
+        (  # #2139 AC1: auto-compaction continuation row (isCompactSummary
+            # flag, measured shape) is harness automation, never human
+            _transcript_row("compact", 60),
+            False,
+        ),
+        (  # #2139 AC2 belt-and-braces: a flag-LESS row whose content opens
+            # with the continuation sentence still classifies automation
+            {
+                "type": "user",
+                "message": {
+                    "role": "user",
+                    "content": (
+                        "This session is being continued from a previous "
+                        "conversation that ran out of context."
+                    ),
+                },
             },
             False,
         ),
