@@ -11701,29 +11701,58 @@ rebase-merged. Five guards:
 3. **Branch-content / non-`main`-base guard.** Compute:
 
    ```bash
-   BEHIND=$(git -C "$WT" rev-list --count HEAD..origin/main)
-   MB=$(git -C "$WT" merge-base HEAD origin/main)
-   # is the merge-base reachable on origin/main's first-parent mainline?
-   ON_MAINLINE=$(git -C "$WT" rev-list --first-parent origin/main \
-     | grep -Fxq -- "$MB" && echo yes || echo no)
+   # MB probe runs FIRST: on an unfetched origin/main the BEHIND count would
+   # itself die rc=128 before the hard-stop message could print.
+   MB=$(git -C "$WT" merge-base HEAD origin/main) || MB=""
+   if [ -z "$MB" ]; then
+     echo "GUARD3 HARD-STOP: no merge-base between HEAD and origin/main (unfetched main / unrelated histories)"
+     MB_VALID=no
+   else
+     MB_VALID=yes
+     BEHIND=$(git -C "$WT" rev-list --count HEAD..origin/main)   # Guard-3 diagnostic; the
+                                                                 # fast-path pre-check below
+                                                                 # separately keys on BEHIND > 1000
+     # Diagnostic ONLY (never an UNSAFE trigger): did the merge-base land on
+     # main's first-parent mainline, or as a merge's SECOND parent (the
+     # #1489/#1128 scratch-worktree landing shape)?
+     MB_FIRST_PARENT=$(git -C "$WT" rev-list --first-parent origin/main \
+       | grep -Fxq -- "$MB" && echo yes || echo no)
+   fi
+   # TERMINAL STATUS LINE — must remain the LAST statement of this fenced block.
+   [ "$MB_VALID" = yes ]
    ```
 
-   The branch is **unsafe to blind-rebase** if EITHER `ON_MAINLINE=no`
-   (branch was forked off another `issue-<M>` branch that is itself
-   still unmerged) OR the branch's **own commit content** is out of
-   scope (the content check below). `BEHIND` alone is NEVER an
-   automatic unsafe verdict — in this repo every `task.py` marker is a
-   commit (~100+/hr fleet-wide), so a same-day, single-own-commit,
-   mainline-based branch routinely reads `BEHIND` in the hundreds
-   (#598: `BEHIND=305` tripped the old fixed-200
-   threshold, routing `src/` deliverables toward the
-   artifact-confirmed path, which cannot carry them). `BEHIND` exceeding the
-   threshold (default `200` commits) instead TRIGGERS the own-commit
-   content check:
+   `MB_VALID=no` ⇒ UNSAFE + HARD STOP: the block above terminates
+   non-zero — fix the fetch / repo state and re-run this guard; NEVER
+   route a no-merge-base branch to the artifact-confirmed degrade
+   (without a merge-base the own-diff below cannot even be computed).
+   The **own-commit content check below is Guard 3's single load-bearing
+   UNSAFE trigger, and it runs on EVERY branch** — unconditionally,
+   regardless of `BEHIND` and regardless of how the merge-base landed on
+   `main`. `MB_FIRST_PARENT` is a recorded diagnostic, NEVER an UNSAFE
+   trigger — the first-parent read is false-POSITIVE on the fleet's own
+   prescribed #1489/#1128 scratch-worktree merge-form landings (a
+   merge-base that entered `main` as a merge's SECOND parent IS an
+   ancestor of `origin/main`; #2319/#1144) and false-NEGATIVE on the
+   #479 fork-off-unmerged-sibling class (such a fork's merge-base is the
+   ordinary mainline commit where the sibling itself forked from
+   `main`), so it records HOW the base landed, not whether a rebase is
+   safe; it rides the `epm:merged` note as `mb_first_parent: <yes|no>`
+   on both landing paths. `BEHIND` alone is NEVER an automatic unsafe
+   verdict, and it no longer gates the content check either — in this
+   repo every `task.py` marker is a commit (~100+/hr fleet-wide), so a
+   same-day, single-own-commit branch routinely reads `BEHIND` in the
+   hundreds (#598: `BEHIND=305` tripped the long-retired fixed-200
+   threshold, routing `src/` deliverables toward the artifact-confirmed
+   path, which cannot carry them). `BEHIND` stays COMPUTED and
+   LOAD-BEARING downstream — the fast-path pre-check below keys on
+   `BEHIND > 1000`; do not delete the computation as dead. The
+   unconditional own-commit content check:
 
    ```bash
-   # The branch's OWN commits (merge-base..HEAD) — with ON_MAINLINE=yes
-   # this is exactly what `gh pr merge --rebase` will replay onto main
+   # The branch's OWN commits (merge-base..HEAD) — when this diff passes the
+   # content check, it is exactly what `gh pr merge --rebase` will replay
+   # onto main
    # (the `--squash` form lands the same own-diff content as one commit).
    # quotePath=false: each $f below feeds a literal `git log ... -- "$f"`
    # pathspec — a `"`-quoted non-ASCII path matches nothing, non_sync reads
@@ -11795,9 +11824,14 @@ rebase-merged. Five guards:
    `src/` / `scripts/` regressions (NOT handled by Guard 1) onto
    `main`. (#479: a branch based on a still-unmerged parent — a blind
    `gh pr merge --rebase` replays the parent's old commits onto
-   `main`. The reworked guard trips the class twice over:
-   `ON_MAINLINE=no` flags it directly, and the `origin/main...HEAD`
-   diff carries the whole parent payload, failing the content check.)
+   `main`. The CONTENT CHECK is what catches this class — the
+   `origin/main...HEAD` diff carries the whole parent payload,
+   out-of-scope by construction, failing the scope judgment. The
+   retired first-parent read never was a sound test here in either
+   direction: this fork's merge-base is the ordinary mainline commit
+   where the parent itself forked from `main`, so the class read `yes`
+   in the common shape, while the fleet's own prescribed #1489/#1128
+   merge-form landings read `no` on benign branches — #2319/#1144.)
 
 4. **Lost-update refusal (shared workflow-surface files).** A branch
    whose copy of a SHARED workflow-surface file predates a sibling's
@@ -13904,8 +13938,9 @@ most one probe re-entry, then `epm:merge-failed`).
   shape, blocking the whole call (#1756). Resolve dynamic values — SHAs,
   counts — in PRIOR Bash calls and embed them as literals in the Write
   content) carrying the SHA
-  list plus `merge_form: squash|rebase` and `merge_attempts: <n>` (note-token
-  convention — no schema change, #1288). The `--file` channel bypasses the
+  list plus `merge_form: squash|rebase`, `merge_attempts: <n>`, and
+  `mb_first_parent: <yes|no>` (the Guard-3 first-parent diagnostic;
+  note-token convention — no schema change, #1288). The `--file` channel bypasses the
   argv-prose scan `guard_repo_root_branch.sh` runs on `--note`; merge-recovery
   notes routinely quote `git merge`, `git rebase`, and the pre-fix guard's
   own blocked argv would fire on any of
@@ -14468,7 +14503,7 @@ fall through to the surgical additive checkout (it would strand the
 infra). Instead either (a) resolve the actual guard-3 condition so the
 SAFE full-rebase path runs (e.g. the parent `issue-<M>` branch this one
 forked off has since merged — re-run the guard-3 check; once
-`ON_MAINLINE=yes` and the content check is clean, `gh pr merge --rebase`
+the content check is clean, `gh pr merge --rebase`
 carries the `src/` infra correctly), or (b) if the full rebase still
 cannot run, post `epm:merge-failed v1` with `{reason: "new shared src/
 infra cannot land via artifact-confirmed surgical checkout", new_src:
@@ -14478,6 +14513,43 @@ CONTINUE (the task still parks / completes; the merge retries
 idempotently on the next `/issue <N>`). NEVER surgical-checkout a branch
 that added shared `src/` — that is the exact #595 stranding this guard
 prevents.
+
+**Stranded-MODIFIED surfacing (#1144) — run NEXT, before the decision tree
+below, so it covers BOTH artifact-confirmed sub-branches** (the fast-path
+route cannot carry stranded shared files by construction — predicate (e)
+is ADDED-only over an in-scope pathspec that excludes shared `src/` /
+`scripts/`):
+
+```bash
+# MODIFIED / RENAMED / DELETED (not ADDED) shared infra this branch carries —
+# the A-only surgical checkout structurally cannot land it (#1144). Not a
+# refusal: land the artifacts, but never let the stranding be silent.
+#
+# PRODUCER GUARD — materialize-then-check, mirroring the surgical
+# additive-list producer guard below: unchecked, a FAILED diff (bad ref, no
+# merge-base) writes an empty file indistinguishable from "nothing stranded",
+# and this scan silently suppresses the very surfacing it exists to add.
+if ! git -C "$WT" -c core.quotePath=false diff --name-only --diff-filter=MRD origin/main...HEAD -- \
+    "src/explore_persona_space/" "scripts/" > /tmp/issue-<N>-stranded-modified.txt; then
+  echo "STRANDED-SCAN FAILED: cannot enumerate branch-side shared-infra modifications"
+  STRANDED_STATUS=unknown
+else
+  STRANDED_STATUS=ok
+fi
+```
+
+`STRANDED_STATUS=unknown` ⇒ record `stranded_modified: UNKNOWN — producer
+diff failed` on the `epm:merged` note AND surface ONE chat line; never a
+silent continue. `ok` + non-empty list ⇒ `stranded_modified: [...]` on the
+note + ONE chat line naming the branch, the worktree path, and the stranded
+paths — reporting only: the merge still lands the artifacts, the round is
+not blocked, no new refusal route. `ok` + empty ⇒ nothing to record (an
+empty list is the legitimate common case here, unlike the
+deliverables-missing surgical landing, so this scan deliberately has NO
+empty-list abort arm). `MRD` rather than `M` alone: a renamed or deleted
+shared file is equally uncarryable by the A-only checkout. The three-dot
+form is REQUIRED — branch-side modifications only; files `main` advanced
+but the branch never touched must not enter the list.
 
 ```bash
 # Verify task deliverables resolve on origin/main.
@@ -14523,9 +14595,15 @@ Decision tree:
   Write tool immediately before the post-marker call — never a Bash
   heredoc/printf; see the safe-case Success bullet, #1756) carrying fields
   `{artifact_confirmed: true, full_rebase_deferred: true, reason:
-  "<the tripped guard-3 condition: based on <PARENT> (not on mainline)
-  | own commits touch foreign / out-of-scope paths: <paths>>",
-  verified_paths: [...]}`. Same `--file` rationale as the safe-case
+  "own commits touch foreign / out-of-scope paths: <paths>" (the content
+  check is the only Guard-3 condition that can trip into this degrade —
+  a missing merge-base hard-stops upstream and never reaches here),
+  mb_first_parent: <yes|no>, verified_paths: [...]}` — plus
+  `stranded_modified: [...]` when the stranded-MODIFIED scan above found
+  branch-side MODIFIED/RENAMED/DELETED shared infra, or
+  `stranded_modified: UNKNOWN — producer diff failed` when that scan's
+  producer diff failed (field omitted when the scan came back empty).
+  Same `--file` rationale as the safe-case
   Success bullet above — the argv-prose scan on `--note` blocks
   `reason:` text that quotes git verbs (session `7ce3a81f`).
   Update the chat title with `merged (artifact-confirmed)`. Skip the
@@ -14911,8 +14989,8 @@ Decision tree:
     git diff --cached --name-only   # sanity echo: spot any foreign staged entries
     xargs -r -a /tmp/issue-<N>-additive-files.txt git commit -m "issue-<N>: surgical additive checkout (full rebase deferred — guard 3)
 
-  Branch unsafe to blind-rebase: <based on <PARENT> (not on mainline) |
-  own commits touch foreign / out-of-scope paths>. Cherry-picked this
+  Branch unsafe to blind-rebase: own commits touch foreign /
+  out-of-scope paths (the guard-3 content check). Cherry-picked this
   task's own added files only; shared src/ / scripts/ unchanged." --
     # PARTIAL-APPLY VERIFICATION (this task's Edit A): the branch's own ADDED
     # files were just staged from the branch tip and committed. Confirm — by

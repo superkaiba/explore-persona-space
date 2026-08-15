@@ -28,7 +28,10 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 import subprocess
+import tempfile
+import textwrap
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -1579,7 +1582,9 @@ def test_guard_greps_carry_end_of_options_separator():
     text = _skill_text()
     # (a) The separator-bearing forms are present.
     assert 'grep -Fxq -- "$ADD_LINE"' in text, "Guard-4 membership grep lost its -- separator"
-    assert 'grep -Fxq -- "$MB"' in text, "Guard-3 ON_MAINLINE grep lost its -- separator"
+    assert 'grep -Fxq -- "$MB"' in text, (
+        "Guard-3 first-parent (MB_FIRST_PARENT) grep lost its -- separator"
+    )
     # (b) No separator-less VARIABLE-pattern form remains, in EITHER flag
     # ordering. Literal-pattern greps (e.g. -qxF 'scripts/workflow_lint.py')
     # are exempt by construction: the regex requires the pattern argument to
@@ -1594,3 +1599,277 @@ def test_guard_greps_carry_end_of_options_separator():
         "separator-less variable-pattern grep -Fxq/-qxF site(s) in SKILL.md "
         "(add `--` before the pattern): " + "; ".join(offenders)
     )
+
+
+# --------------------------------------------------------------------------
+# Task #2320 — Guard-3 first-parent false-UNSAFE fix
+# (D1 MB_VALID hard-stop probe · D2 unconditional content check ·
+#  D3-ter retired-condition templates · D4 stranded-MODIFIED surfacing)
+# --------------------------------------------------------------------------
+
+
+def _guard3_probe_fence(text: str) -> str:
+    """The D1 merge-base probe fence — the FIRST bash fence of the Guard-3
+    region — dedented for subprocess execution."""
+    region = _guard3_region(text)
+    fences = re.findall(r"```bash\n(.*?)```", region, re.DOTALL)
+    assert fences, "Guard-3 region carries no fenced bash block"
+    fence = fences[0]
+    assert "GUARD3 HARD-STOP" in fence, "first Guard-3 fence must be the MB probe block"
+    return textwrap.dedent(fence)
+
+
+def _guard3_own_diff_fence(text: str) -> str:
+    """The own-commits three-dot content-check fence — the SECOND bash fence
+    of the Guard-3 region — dedented for subprocess execution."""
+    region = _guard3_region(text)
+    fences = re.findall(r"```bash\n(.*?)```", region, re.DOTALL)
+    assert len(fences) >= 2, "Guard-3 region must carry the own-diff fence"
+    fence = fences[1]
+    assert "origin/main...HEAD" in fence, "second Guard-3 fence must be the own-diff"
+    return textwrap.dedent(fence)
+
+
+def _git(repo: Path, *args: str) -> str:
+    """Run git in a fixture repo; assert success; return stripped stdout."""
+    proc = subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True)
+    assert proc.returncode == 0, f"git {' '.join(args)} failed:\n{proc.stderr}"
+    return proc.stdout.strip()
+
+
+def _init_guard3_repo(parent: Path) -> Path:
+    """A throwaway repo with a `main` branch and hermetic committer identity."""
+    repo = parent / "repo"
+    repo.mkdir(parents=True)
+    _git(repo, "init", "-q", "-b", "main")
+    _git(repo, "config", "user.email", "guard3-fixture@example.invalid")
+    _git(repo, "config", "user.name", "guard3-fixture")
+    _git(repo, "config", "commit.gpgsign", "false")
+    return repo
+
+
+def _fixture_commit(repo: Path, fname: str, msg: str) -> str:
+    """Write `fname`, commit it, return the commit SHA."""
+    path = repo / fname
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(msg + "\n", encoding="utf-8")
+    _git(repo, "add", fname)
+    _git(repo, "commit", "-q", "-m", msg)
+    return _git(repo, "rev-parse", "HEAD")
+
+
+def _run_fence(repo: Path, fence: str, trailer: str = "") -> subprocess.CompletedProcess:
+    """Drive an extracted SKILL.md fence against a fixture repo (WT bound).
+
+    Assertions are on rc/stdout of the subprocess — the predicate is bash
+    prose, not importable Python (the #1253 strong-pin convention above).
+    """
+    script = f'WT="{repo}"\n{fence}{trailer}'
+    return subprocess.run(["bash", "-c", script], capture_output=True, text=True)
+
+
+def test_skillmd_guard3_probe_shape_pinned():
+    """#2320 D6: the Guard-3 region carries the MB_VALID hard-stop, the
+    variable-gated terminal status line, the retained first-parent DIAGNOSTIC,
+    and the unconditional content-check prose; the retired first-parent
+    verdict token is BANNED file-wide — BOTH the variable name AND the
+    D3-ter retired-condition template phrase, which carried no such token
+    and would otherwise ship untouched (round-2 blocker 4: two unambiguous
+    zero-hit checks, no region carve-out)."""
+    text = _skill_text()
+    region = _guard3_region(text)
+    fence = _guard3_probe_fence(text)
+    # The hard-stop arm + the variable-gated terminal status line (the
+    # documented Must-Fix convention: a `false` inside a non-final arm does
+    # NOT set a fenced block's exit status — a variable-gated conditional
+    # as the LAST statement is required).
+    assert "GUARD3 HARD-STOP: no merge-base between HEAD and origin/main" in fence
+    assert "MB_VALID=no" in fence and "MB_VALID=yes" in fence
+    assert fence.rstrip().splitlines()[-1].strip() == '[ "$MB_VALID" = yes ]', (
+        "the variable-gated terminal status line must be the LAST statement of the probe fence"
+    )
+    # The retained first-parent DIAGNOSTIC (never a verdict) keeps the exact
+    # separator-bearing grep the #1788 pin asserts.
+    assert 'MB_FIRST_PARENT=$(git -C "$WT" rev-list --first-parent origin/main' in fence
+    assert 'grep -Fxq -- "$MB"' in fence
+    # Unconditional content check: no BEHIND-threshold trigger survives.
+    assert "runs on EVERY branch" in region, (
+        "the content check must be documented as running on EVERY branch"
+    )
+    assert "TRIGGERS the own-commit" not in region, (
+        "the retired BEHIND-threshold trigger sentence must be gone"
+    )
+    # The diagnostic has a recording carrier on BOTH landing paths
+    # (safe case + artifact-confirmed) — never set-and-never-recorded.
+    assert text.count("mb_first_parent: <yes|no>") >= 2, (
+        "mb_first_parent must ride the epm:merged note on both landing paths"
+    )
+    # File-wide literal bans (unambiguous zero-hit checks).
+    assert "ON_MAINLINE" not in text, (
+        "the retired first-parent verdict variable must not survive anywhere in SKILL.md"
+    )
+    assert "not on mainline" not in text, (
+        "the retired-condition template phrase must not survive anywhere in SKILL.md"
+    )
+
+
+def test_empty_merge_base_hard_stops():
+    """#2320 D6 fail-loud pin: the extracted D1 probe exits NON-ZERO with the
+    GUARD3 HARD-STOP line on (a) unrelated histories (merge-base exits 1,
+    empty output) and (b) an UNFETCHED origin/main (the ref is absent, so
+    merge-base dies rc=128) — the negative control proving the failure is
+    not swallowed into rc=0 — and exits ZERO on a healthy fork, so the
+    non-zero rc is attributable to the hard-stop arm."""
+    fence = _guard3_probe_fence(_skill_text())
+    scratch = Path(tempfile.mkdtemp(prefix="eps-guard3-fixture-"))
+    try:
+        script = scratch / "guard3_probe.sh"
+        script.write_text(fence, encoding="utf-8")
+        bn = subprocess.run(["bash", "-n", str(script)], capture_output=True, text=True)
+        assert bn.returncode == 0, f"bash -n failed on the extracted probe:\n{bn.stderr}"
+
+        # (a) unrelated histories: origin/main resolves to a DISJOINT root.
+        repo_a = _init_guard3_repo(scratch / "a")
+        _fixture_commit(repo_a, "f.txt", "main root")
+        _git(repo_a, "checkout", "-q", "--orphan", "other")
+        _fixture_commit(repo_a, "g.txt", "disjoint root")
+        other = _git(repo_a, "rev-parse", "HEAD")
+        _git(repo_a, "checkout", "-q", "main")
+        _git(repo_a, "update-ref", "refs/remotes/origin/main", other)
+        proc = _run_fence(repo_a, fence)
+        assert proc.returncode != 0, "no-merge-base must terminate the block NON-ZERO"
+        assert "GUARD3 HARD-STOP: no merge-base" in proc.stdout
+
+        # (b) negative control — UNFETCHED origin/main (ref absent entirely).
+        repo_b = _init_guard3_repo(scratch / "b")
+        _fixture_commit(repo_b, "f.txt", "main root")
+        proc = _run_fence(repo_b, fence)
+        assert proc.returncode != 0, "an unfetched origin/main must hard-stop, never rc=0"
+        assert "GUARD3 HARD-STOP: no merge-base" in proc.stdout
+
+        # Healthy control: an ordinary fork exits ZERO.
+        repo_c = _init_guard3_repo(scratch / "c")
+        base = _fixture_commit(repo_c, "f.txt", "base")
+        _git(repo_c, "update-ref", "refs/remotes/origin/main", base)
+        _fixture_commit(repo_c, "own.txt", "own work")
+        proc = _run_fence(repo_c, fence)
+        assert proc.returncode == 0, (
+            f"healthy fork must not hard-stop:\n{proc.stdout}\n{proc.stderr}"
+        )
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+
+
+def test_second_parent_landing_classifies_safe():
+    """#2320 acceptance criterion 1 (the #2319 shape): a branch whose
+    merge-base reached main ONLY as a merge commit's SECOND parent (the
+    #1489/#1128 scratch-worktree merge-form landing) must NOT hard-stop —
+    the probe exits 0, the first-parent DIAGNOSTIC reads no, and the
+    three-dot own-diff (the content check's input) carries only the branch's
+    own deliverable. Pre-fix, the first-parent verdict flagged exactly this
+    shape UNSAFE."""
+    text = _skill_text()
+    fence = _guard3_probe_fence(text)
+    own_fence = _guard3_own_diff_fence(text)
+    scratch = Path(tempfile.mkdtemp(prefix="eps-guard3-fixture-"))
+    try:
+        repo = _init_guard3_repo(scratch / "r")
+        c0 = _fixture_commit(repo, "base.txt", "main base")
+        _fixture_commit(repo, "main_adv.txt", "main advance")
+        _git(repo, "checkout", "-q", "-b", "markers", c0)
+        w1 = _fixture_commit(repo, "marker.txt", "fleet marker commit")
+        _git(repo, "checkout", "-q", "main")
+        _git(repo, "merge", "-q", "--no-ff", "-m", "merge-form landing", "markers")
+        landed = _git(repo, "rev-parse", "HEAD")
+        _git(repo, "update-ref", "refs/remotes/origin/main", landed)
+        _git(repo, "checkout", "-q", "-b", "issue-9999", w1)
+        _fixture_commit(repo, "own_deliverable.txt", "own deliverable")
+
+        # Fixture sanity: w1 IS an ancestor of origin/main (second parent only).
+        ia = subprocess.run(["git", "-C", str(repo), "merge-base", "--is-ancestor", w1, landed])
+        assert ia.returncode == 0, "fixture: merge-base must be an ancestor of origin/main"
+
+        proc = _run_fence(repo, fence)
+        assert proc.returncode == 0, (
+            "a second-parent-landed merge-base must NOT hard-stop "
+            f"(rc={proc.returncode}):\n{proc.stdout}\n{proc.stderr}"
+        )
+        probe = _run_fence(
+            repo, fence, trailer='\nprintf "MBFP=%s MB=%s\\n" "$MB_FIRST_PARENT" "$MB"'
+        )
+        assert f"MBFP=no MB={w1}" in probe.stdout, (
+            "fixture must reproduce the #2319 shape: first-parent read no on an "
+            f"origin/main-ancestor merge-base:\n{probe.stdout}"
+        )
+        own = _run_fence(repo, own_fence)
+        assert own.returncode == 0, f"own-diff fence failed:\n{own.stderr}"
+        assert own.stdout.split() == ["own_deliverable.txt"], (
+            "the content check's input must carry ONLY the branch's own "
+            f"deliverable (SAFE classification): {own.stdout!r}"
+        )
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+
+
+def test_fork_off_unmerged_sibling_caught_by_content_check():
+    """#2320 acceptance criterion 2 (the #479 class): a branch forked off a
+    still-unmerged sibling is caught via the CONTENT CHECK — its three-dot
+    own-diff carries the sibling's out-of-scope payload. The probe itself
+    does NOT flag it: the merge-base is an ordinary mainline commit (the
+    retired first-parent arm read yes here — false-NEGATIVE on the very
+    class it claimed to catch), so the in-scope/out-of-scope judgment over
+    the own-diff is the load-bearing arm."""
+    text = _skill_text()
+    fence = _guard3_probe_fence(text)
+    own_fence = _guard3_own_diff_fence(text)
+    scratch = Path(tempfile.mkdtemp(prefix="eps-guard3-fixture-"))
+    try:
+        repo = _init_guard3_repo(scratch / "r")
+        c0 = _fixture_commit(repo, "base.txt", "main base")
+        _git(repo, "update-ref", "refs/remotes/origin/main", c0)
+        _git(repo, "checkout", "-q", "-b", "issue-9998")
+        _fixture_commit(repo, "scripts/issue9998_tool.py", "sibling payload")
+        _git(repo, "checkout", "-q", "-b", "issue-9999")
+        _fixture_commit(repo, "own_deliverable.txt", "own deliverable")
+
+        proc = _run_fence(repo, fence)
+        assert proc.returncode == 0, "the probe alone must not flag the #479 class"
+        probe = _run_fence(repo, fence, trailer='\nprintf "MBFP=%s\\n" "$MB_FIRST_PARENT"')
+        assert "MBFP=yes" in probe.stdout, (
+            "fixture sanity: the fork-off-unmerged-sibling merge-base is an "
+            "ordinary mainline commit (the retired first-parent arm read yes)"
+        )
+        own = _run_fence(repo, own_fence)
+        files = own.stdout.split()
+        assert "scripts/issue9998_tool.py" in files, (
+            "the three-dot own-diff must carry the unmerged sibling's "
+            f"out-of-scope payload (the content check's catching input): {files}"
+        )
+        assert "own_deliverable.txt" in files
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+
+
+def test_stranded_modified_scan_producer_guarded():
+    """#2320 D4: the artifact-confirmed path's stranded-MODIFIED surfacing
+    scan is materialize-then-check (the test_gate_trigger_diff_exit_guarded
+    pattern): a FAILED producer diff sets STRANDED_STATUS=unknown — never an
+    empty file read as "nothing stranded" — and the scan precedes the
+    deliverables decision tree so it covers both sub-branches."""
+    region = _artifact_confirmed_region(_skill_text())
+    guard = region.find(
+        'if ! git -C "$WT" -c core.quotePath=false diff --name-only '
+        "--diff-filter=MRD origin/main...HEAD"
+    )
+    assert guard != -1, (
+        "the stranded-MODIFIED scan must check its OWN exit code (materialize-then-check)"
+    )
+    assert "> /tmp/issue-<N>-stranded-modified.txt" in region
+    assert "STRANDED-SCAN FAILED" in region
+    assert "STRANDED_STATUS=unknown" in region and "STRANDED_STATUS=ok" in region
+    # Placement: BEFORE the deliverables decision tree (covers both arms).
+    verify = region.find("# Verify task deliverables resolve on origin/main.")
+    assert -1 < guard < verify, "the stranded scan must precede the decision tree"
+    # Note-carrier fields for both scan outcomes.
+    assert "stranded_modified: [...]" in region
+    assert "stranded_modified: UNKNOWN — producer diff failed" in region
