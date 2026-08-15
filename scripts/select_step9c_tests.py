@@ -527,6 +527,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # origin-precondition + rc-gated create, realized-outcome anomaly note,
     # loud novel-payload-but-no-usable-PR failure)
     "tests/test_issue_skill_step10d_no_pr_arm.py",
+    # NEW (#2312) — SKILL.md Step 10d rewritten-branch arm pin (mutual-non-ancestry
+    # descendancy guards at every push/pull copy site, zero-PR stale-ref arm,
+    # PR-head parity gate, force-free landing route + tmp_path git fixtures)
+    "tests/test_issue_skill_step10d_rewritten_branch.py",
     # NEW (#1734) — SKILL.md Step 2 minimum plan-review floor + recorded-skip contract pin
     "tests/test_issue_skill_step2_floor.py",
     # NEW (#1595) — stopped-volume persist-before-park pin (SKILL.md + pod-config.md)

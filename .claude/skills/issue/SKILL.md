@@ -11243,10 +11243,59 @@ pushes, the failure-lesson memory persist, Step 9a-ter re-analysis commits,
 the Step 9b auto-merge trigger) point here:
 
 ```bash
-# (1) Worktree branch push, rebase-retry on reject (the safe-case form):
-git -C "$WT" push origin issue-<N> \
-  || { git -C "$WT" pull --rebase=merges --autostash \
-       && git -C "$WT" push origin issue-<N>; }
+# (1) Worktree branch push, rebase-retry on reject (the safe-case form).
+#     DESCENDANCY-GUARDED (#2312): the guard fires only on MUTUAL
+#     non-ancestry (the Step-4a root-divergence probe's own two-leg shape).
+#     A remote that is STRICTLY AHEAD (HEAD an ancestor of it) is
+#     unambiguously NOT a rewrite — it takes the push arm, where the
+#     rejected push (non-fast-forward: local is behind) falls into the
+#     pull-retry below, which rebases onto the CORRECT same-branch
+#     upstream and re-pushes — today's behavior, and exactly the #1880
+#     fetch+rebase self-heal. MUTUAL
+#     non-ancestry means ONE OF TWO states, and no mechanical predicate
+#     separates them (a conflict-reconciling rebase defeats git-cherry
+#     patch-equivalence):
+#       (a) local history REWRITTEN — a mid-flight rebase onto origin/main
+#           (itself prescribed for reconciling a sibling landing). The push
+#           would be rejected non-fast-forward and the refspec-less pull
+#           fallback would rebase HEAD onto the STALE remote branch,
+#           replaying hundreds of main commits as new objects — the #1128
+#           shape (#2296 measured [ahead 363, behind 1]; recurring: #1999,
+#           #2171, #2296).
+#       (b) remote genuinely DIVERGED — novel FOREIGN commits on the
+#           branch while local holds unpushed commits. This is DOCUMENTED
+#           fleet behavior, not a corner case: pod/GCE lanes commit results
+#           to the issue branch by contract (pod-side-reporting.md
+#           § Result-push verification contract, #1205) and their
+#           prescribed fetch+rebase push races orchestrator branch commits
+#           (#1880; #1739: a healthy 31h run exited 1 at its terminal
+#           push). The pull-retry pair below is the SANCTIONED self-heal
+#           for exactly this state — the VM-side twin of #1880's
+#           lane-side fetch+rebase recipe.
+#     DISCRIMINATE BY INSPECTION before acting:
+#       git -C "$WT" log --oneline HEAD..origin/issue-<N>
+#       git -C "$WT" cherry HEAD origin/issue-<N>   # '-' = already in HEAD
+#     ALL remote-only commits novel FOREIGN work (b) ⇒ run the pull-retry
+#     pair below BY HAND — it is the correct recovery. ANY remote-only
+#     commit that is (or may be) this branch's own superseded pre-rebase
+#     payload (a) ⇒ the Step 10d § Rewritten-branch landing route. Mixed ⇒
+#     cherry-pick the foreign commits onto HEAD first, then the route.
+#     MID-RUN COPY SITES (Step-5 round pushes etc. — no PASSing lint
+#     verdict exists): the landing route is a Step-10d procedure;
+#     leave the branch UNPUSHED, surface the state in the round note, and
+#     let Step 10d land it. Never force-push (standing user-ask; the
+#     policy question is task #2313). A MISSING remote ref takes the push
+#     arm (push -u semantics unchanged — fails toward pushing):
+if git -C "$WT" rev-parse --quiet --verify origin/issue-<N> >/dev/null 2>&1 \
+   && ! git -C "$WT" merge-base --is-ancestor origin/issue-<N> HEAD \
+   && ! git -C "$WT" merge-base --is-ancestor HEAD origin/issue-<N>; then
+  echo "mutually non-ancestral remote (#2312): REWRITTEN or DIVERGED — inspect HEAD..origin/issue-<N> per the comment above before ANY push/pull; never force-push"
+  false
+else
+  git -C "$WT" push origin issue-<N> \
+    || { git -C "$WT" pull --rebase=merges --autostash \
+         && git -C "$WT" push origin issue-<N>; }
+fi
 
 # (2) Repo-root push to main, single-flight recovery on reject
 #     (sync_repo_root exit 0 can mean "another sync in flight — your push
@@ -13001,6 +13050,29 @@ if [ "$USABLE_PR" != yes ]; then
       PR_TITLE="issue-<N>: <task title>"
       PR_BODY="Closes task #<N>. Fresh PR: branch carries novel payload but no PR object exists (#2240 probe) — the Step 4a draft-PR create never fired."
     fi
+    # STALE-REF ARM (#2312): the empty-ls-remote probe below covers a MISSING
+    # ref (#2240's local-only branch); an EXISTING ref that is MUTUALLY
+    # non-ancestral with HEAD — REWRITTEN branch or DIVERGED remote
+    # (pod-side-reporting.md § Result-push, #1205/#1880) — makes the probe
+    # non-empty, so no push fires and the create would open the PR on
+    # content the sha-bound lint verdict never certified (#2296: the stale
+    # head calls a helper signature #2293 removed — a fleet-wide break had
+    # it merged). A STRICTLY-AHEAD remote (HEAD an ancestor) takes the else
+    # arm unchanged. Route by descendancy BEFORE any create, then
+    # discriminate per the safe-case guard comment below: all-foreign novel
+    # remote-only commits ⇒ the pull-retry self-heal (after which the ref
+    # is an ancestor and this arm re-enters cleanly); own superseded
+    # payload or unsure ⇒ the § Rewritten-branch landing route — never a PR
+    # on the stale ref. A one-script fall-through past the false lands in
+    # the loud no-usable-PR epm:merge-failed arm below — never a silent
+    # wrong merge (the safe-case and parity guards also block downstream).
+    timeout --kill-after=30s 120s git -C "$WT" fetch origin issue-<N> --quiet 2>/dev/null || true
+    if git -C "$WT" rev-parse --quiet --verify origin/issue-<N> >/dev/null 2>&1 \
+       && ! git -C "$WT" merge-base --is-ancestor origin/issue-<N> HEAD \
+       && ! git -C "$WT" merge-base --is-ancestor HEAD origin/issue-<N>; then
+      echo "[step10d] zero-PR arm BLOCKED — origin/issue-<N> and HEAD are mutually non-ancestral (#2312): REWRITTEN or DIVERGED. Refusing to open a PR on this ref. Discriminate (log/cherry HEAD..origin/issue-<N>): all-foreign ⇒ pull-retry self-heal (#1880's VM-side twin) then re-enter; own superseded payload or unsure ⇒ § Rewritten-branch landing route below."
+      false
+    else
     # ORIGIN PRECONDITION (#2240). `gh pr create --head` fails when the
     # head branch is not on the remote. The #1897 donor arm never needed
     # this guard — a prior PR object IMPLIES the branch reached origin,
@@ -13046,6 +13118,7 @@ if [ "$USABLE_PR" != yes ]; then
       fi
       uv run python "$REPO_ROOT/scripts/task.py" post-marker <N> epm:progress \
         --note "$ANOMALY_NOTE"
+    fi
     fi
   fi
 fi
@@ -13107,12 +13180,43 @@ else
   # direction; a redundant push is a no-op "Everything up-to-date").
   if [ "$(git -C "$WT" rev-list --count origin/issue-<N>..HEAD 2>/dev/null || echo 1)" -gt 0 ] \
      || [ "$STRIPPED_FOREIGN" = "yes" ] || [ "$MEM_COMMITTED" = "yes" ]; then
+    # REWRITTEN-OR-DIVERGED GUARD (#2312): a MUTUALLY non-ancestral
+    # origin/issue-<N> (two-leg test — the Step-4a root-divergence probe's
+    # own shape; a STRICTLY-AHEAD remote takes the else arm, where the
+    # rejected push falls into the pull-retry that rebases onto the correct
+    # same-branch upstream — today's behavior, #1880's self-heal) means the
+    # branch was REWRITTEN (a mid-flight rebase onto
+    # origin/main — the count predicate above is then satisfied trivially,
+    # the push is rejected non-fast-forward, and the refspec-less pull
+    # fallback would rebase HEAD onto the STALE remote branch: the #1128
+    # replay shape; #2296 measured [ahead 363, behind 1]) OR the remote
+    # genuinely DIVERGED (novel FOREIGN commits: pod/GCE lanes commit
+    # results to the issue branch by contract — pod-side-reporting.md
+    # § Result-push verification contract, #1205/#1880 — and the pull-retry
+    # pair IS the sanctioned self-heal, the VM-side twin of #1880's
+    # lane-side fetch+rebase). No mechanical discriminator separates the
+    # two (a conflict-reconciling rebase defeats git-cherry
+    # patch-equivalence), so the guard fails CLOSED for both and the echo
+    # instructs the inspection. Descendancy, not count, is the safe-to-push
+    # test (precedents: the Step-4a root-divergence probe, gotchas.md
+    # fix-engaged verification). Missing ref ⇒ push arm (fail-toward-
+    # pushing, same direction as the `|| echo 1` above). Guarded
+    # exclusive-arm shape (#1184); the wrapped else arm is deliberately NOT
+    # re-indented (pure #2312 insertion — provably byte-identical ordinary
+    # path).
+    if git -C "$WT" rev-parse --quiet --verify origin/issue-<N> >/dev/null 2>&1 \
+       && ! git -C "$WT" merge-base --is-ancestor origin/issue-<N> HEAD \
+       && ! git -C "$WT" merge-base --is-ancestor HEAD origin/issue-<N>; then
+      echo "[step10d] safe-case push BLOCKED — origin/issue-<N> and HEAD are mutually non-ancestral (#2312): REWRITTEN or DIVERGED remote. Do NOT push blind and never force-push. Discriminate per the guard comment above (log/cherry the remote-only commits): all-foreign novel work ⇒ run the pull-retry pair by hand (the sanctioned self-heal, the VM-side twin of the #1880 lane-side fetch+rebase recipe), then re-enter this block; own superseded pre-rebase payload, or unsure ⇒ the § Rewritten-branch landing route below; mixed ⇒ cherry-pick the foreign commits onto HEAD (the tip moves — re-run the lint gate), then the landing route."
+      false
+    else
     # Run every push / gh pr command BARE — never piped through tail/grep/head
     # (guard_piped_git_push.sh blocks the pipe; a pipe masks the exit code).
     # This applies to IMPROVISED recovery commands too, not just this snippet.
     git -C "$WT" push origin issue-<N> \
       || { git -C "$WT" pull --rebase=merges --autostash \
            && git -C "$WT" push origin issue-<N>; }
+    fi
   fi
   # Merge-form routing (#1288): infra-fleet code branches (kind infra|batch —
   # the watcher's INFRA_DRAIN_KINDS, the population same-batch racing this
@@ -13230,9 +13334,18 @@ else
         git -C "$WT" commit -m "issue-<N>: sync workflow-surface specs from origin/main (spec-freshness)" -- $SAFE_SPECS_10D
         SYNC_SHA=$(git -C "$WT" rev-parse HEAD | head -c 12)
         # Push the new sync commit so gh pr merge sees it on the PR head ref
+        # (descendancy-guarded, #2312 — canonical snippet (1) form; reachable
+        # on shape-0/3 re-entries without re-running the safe-case guard):
+        if git -C "$WT" rev-parse --quiet --verify origin/issue-<N> >/dev/null 2>&1 \
+           && ! git -C "$WT" merge-base --is-ancestor origin/issue-<N> HEAD \
+           && ! git -C "$WT" merge-base --is-ancestor HEAD origin/issue-<N>; then
+          echo "[step10d] post-gate re-sync push BLOCKED — mutually non-ancestral remote (#2312): REWRITTEN or DIVERGED; discriminate per the safe-case guard comment (all-foreign ⇒ pull-retry self-heal; else § Rewritten-branch landing route)."
+          false
+        else
         git -C "$WT" push origin issue-<N> \
           || { git -C "$WT" pull --rebase=merges --autostash \
                && git -C "$WT" push origin issue-<N>; }
+        fi
       fi
     fi
     SYNC_COUNT=$(echo $SAFE_SPECS_10D | wc -w)
@@ -13306,7 +13419,7 @@ else
             && [ "${HS%% *}" = "$TIP" ] && [ "${HS##* }" != "UNKNOWN" ]; do
         HS_TRIES=$((HS_TRIES + 1))
         if [ "$HS_TRIES" -ge 6 ]; then
-          echo "head-sync pre-check: PR object still stale after ~2 min (saw: ${HS:-<no read>}; local tip: $TIP) — proceeding; Known failure shape 3 below is the recovery"
+          echo "head-sync pre-check: PR object still stale after ~2 min (saw: ${HS:-<no read>}; local tip: $TIP) — routing to the PR-head parity gate (#2312) below"
           break
         fi
         sleep 20
@@ -13314,6 +13427,23 @@ else
       if [ "${HS%% *}" = "$TIP" ]; then
         echo "head-sync pre-check: parity at $TIP (mergeable=${HS##* })"
       fi
+      # PR-HEAD PARITY GATE (#2312 — extends the #1657 pre-check above): the
+      # poll treats a headRefOid mismatch as PR-object LAG to wait out; on a
+      # REWRITTEN branch (origin/issue-<N> not an ancestor of HEAD) the
+      # mismatch is GENUINE staleness — the head ref does not hold the
+      # gate-certified tip, and gh pr merge would land PRE-rebase content no
+      # gate certified (#2296's near-miss: a helper signature #2293 removed).
+      # Discriminate by the REMOTE REF (authoritative), not the PR object:
+      # ref == TIP ⇒ pure object lag (proceed — today's behavior; shape 3
+      # recovers), otherwise fail CLOSED — the verdict sha-bind's posture,
+      # extended to the PR head. A transport-failed/empty ls-remote read
+      # fails CLOSED too (re-enter after a re-probe). Wrapped else arm
+      # deliberately NOT re-indented (pure #2312 insertion).
+      REMOTE_REF=$(git -C "$WT" ls-remote --heads origin issue-<N> | cut -f1)
+      if [ "${HS%% *}" != "$TIP" ] && [ "$REMOTE_REF" != "$TIP" ]; then
+        echo "BLOCKED: PR-head parity (#2312) — neither the PR object (saw: ${HS:-<no read>}) nor the remote ref (${REMOTE_REF:-<none>}) holds the gate-certified tip $TIP. The tip never landed on the head ref (rejected push, or a rewritten/diverged branch): if origin/issue-<N> is not an ancestor of HEAD, discriminate per the safe-case guard comment above (all-foreign ⇒ pull-retry self-heal; else § Rewritten-branch landing route below); otherwise re-run the safe-case push and re-enter this conditional. Do NOT merge; verdict NOT consumed."
+        false
+      else
       # Draft-merge precondition (#2240 pin): this single `gh pr ready` call
       # marks the PR ready before the merge below and covers PRs opened as
       # drafts by EITHER fresh-PR arm (the #1897 terminal-PR create and the
@@ -13355,6 +13485,7 @@ else
       else
         echo "MERGE FAILED — classify the gh error text: (0) \"Base branch was modified\" -> transient base-advance (Known failure shape 0 below): wait ~20s via a bounded until-loop or a bg-Bash re-check — NEVER a leading foreground \`sleep\` (harness-blocked; 3 wasted turns on 2026-07-18 alone) — then re-enter this SAME conditional (the verdict still certifies the tip; max 2 re-entries per Step 10d invocation, counted regardless of re-bind, #1807); (1) \"can't be rebased\" (--rebase form only) -> the #1041 --squash retry (Known failure shape 1 below; SHA-bound verdict remains valid for the SAME tip); (2) \"Pull Request has merge conflicts\" -> the #1128 re-snapshot-and-retry-once (Known failure shape 2 below); (3) \"Head branch is out of date\" -> PR head-sync lag (Known failure shape 3 below): confirm pushed, bounded headRefOid re-poll, close/reopen nudge ONCE if still stale, then re-enter this SAME conditional (the verdict still certifies the tip; max 2 re-entries per Step 10d invocation, counted regardless of re-bind — #1807); (4) anything else -> the Failure bullet (merge-conflict recovery ONCE, then epm:merge-failed). Do NOT hand-write the verdict file."
         false
+      fi
       fi
     else
       echo "BLOCKED: verdict re-bind failed — the post-gate sync moved the tip and its delta could not be verified as origin/main-identical A/M-only (or the re-bind write failed): the stale SHA-bound verdict cannot certify the new tip. Re-run the pre-push workflow-lint gate against the new tip, then re-enter this conditional. Do NOT merge; do NOT hand-write the verdict file (#1082)."
@@ -13498,6 +13629,16 @@ if [ "$(git -C "$WT" rev-parse HEAD)" = "$TIP_BEFORE" ] \
   echo "re-snapshot changed nothing (tip unchanged, nothing unpushed) — a retry would fail identically; record resnapshot_retry outcome: skipped and run the merge-conflict recovery below"
   false
 else
+  # Descendancy-guarded (#2312) — canonical snippet (1) form: a rewritten
+  # branch must never take the refspec-less pull fallback here (it would
+  # rebase onto the stale remote branch — the very #1128 shape this retry
+  # recovers); a diverged remote self-heals by instruction, never blind.
+  if git -C "$WT" rev-parse --quiet --verify origin/issue-<N> >/dev/null 2>&1 \
+     && ! git -C "$WT" merge-base --is-ancestor origin/issue-<N> HEAD \
+     && ! git -C "$WT" merge-base --is-ancestor HEAD origin/issue-<N>; then
+    echo "[step10d] shape-2 retry push BLOCKED — mutually non-ancestral remote (#2312): REWRITTEN or DIVERGED; discriminate per the safe-case guard comment (all-foreign ⇒ pull-retry self-heal then re-enter; else § Rewritten-branch landing route instead of the retry)."
+    false
+  else
   git -C "$WT" push origin issue-<N> \
     || { git -C "$WT" pull --rebase=merges --autostash \
          && git -C "$WT" push origin issue-<N>; }
@@ -13505,6 +13646,7 @@ else
   # block's own precedent) — re-check before the retried merge so a
   # stale mergeability read cannot burn the single retry:
   gh pr view <PR> --json mergeable -q .mergeable   # brief wait/retry until MERGEABLE
+  fi
 fi
 # If the tip changed, the SHA-bound lint verdict is now STALE and the
 # gated conditional would fail CLOSED: re-run the executable Pre-push
@@ -14008,6 +14150,131 @@ recovered merge DOES land, run the **post-merge stale-task-folder guard**
 below — the recovery's `git merge origin/main` adds a merge commit that
 can re-import this task's old-status folder, exactly the case the guard
 catches.
+
+#### Rewritten-branch landing route (#2312 — force-free; origin/issue-<N> not an ancestor of HEAD)
+
+Entry points: the zero-PR prelude's stale-ref arm, the safe-case /
+re-sync / shape-2 push guards, and the PR-head parity gate — any of them
+firing means `origin/issue-<N>` EXISTS and is MUTUALLY non-ancestral with
+HEAD (a strictly-ahead remote never reaches here — it stays on the
+ordinary push arm). That is a TWO-state signal: (a) local history
+REWRITTEN (typically the prescribed mid-flight rebase onto `origin/main`
+after a sibling landing — recurring: #1999, #2171, #2296), or (b) the
+remote genuinely DIVERGED (novel FOREIGN commits — the documented
+result-push channel: pod-side-reporting.md § Result-push verification
+contract, #1205/#1880). This route is the landing for state (a) — for
+state (b) the guards' discrimination step names the pull-retry self-heal
+instead (the VM-side twin of #1880's lane-side fetch+rebase recipe), and
+precondition 2 below re-checks the same judgment at landing time. In state (a) a branch push is rejected
+non-fast-forward; the pull-rebase retry would replay hundreds of main
+commits onto the stale remote tip (the #1128 shape); a PR merge off the
+stale head would land content no gate certified (#2296's stale head called
+`create_scratch_worktree(..., sha=...)` — a `TypeError` against post-#2293
+main). `git push --force-with-lease` would fix the ref in one command, but
+force-push is a standing user-ask (`.claude/rules/auto-continuation.md`
+STATE-TO-`blocked` criterion 2) with NO autonomous carve-out, and recorded
+practice has DIVERGED on exactly this question (#2171 and #1999 recorded it
+as the correct form; #2181 recorded it as a policy violation). That policy
+question — surfaced by #2312 — is task #2313 (`proposed`; decided by the
+user, never here). Until it resolves, this force-free route is the ONLY
+sanctioned landing for state (a) — and it needs no user, so never block a
+gate-PASSed task on it.
+
+PRECONDITIONS (all four, before any landing command):
+
+0. Guards 0-3 have run this invocation (same bar as the safe-case merge;
+   a Guard-3 "unsafe" verdict routes to the artifact-confirmed merge below
+   INSTEAD, unchanged).
+1. The pre-push workflow-lint gate has PASSed and the verdict file's line 2
+   equals `git -C "$WT" rev-parse HEAD` — the route lands EXACTLY the
+   certified tip (fail-closed conventions unchanged: never hand-write the
+   verdict, #1082). MID-RUN (no verdict exists): this route does not apply —
+   leave the branch unpushed, surface, land at Step 10d.
+2. Remote-only payload check — enumerate what the stale remote holds that
+   HEAD does not: `git -C "$WT" log --oneline HEAD..origin/issue-<N>` and
+   `git -C "$WT" cherry HEAD origin/issue-<N>` (`-` = patch-equivalent,
+   already contained in HEAD). The EXPECTED shape for state (a) is the
+   superseded pre-rebase copy of this branch's own payload (a `+` is
+   legitimate — a conflict-reconciling rebase changes the patch, #2296).
+   ALL remote-only commits novel FOREIGN work ⇒ this is state (b): abandon
+   the route, run the pull-retry self-heal, re-enter the safe-case flow.
+   Mixed ⇒ cherry-pick the foreign commits onto HEAD first (this moves the
+   tip — the sha-bound verdict goes stale and the lint gate MUST re-run),
+   then proceed. NEVER discard novel remote-only content silently.
+3. Post the heartbeat: `[long-phase-heartbeat] step10d-merge attempt=<k>
+   shape=rewritten` (same family as shapes 0/2/3; #1723).
+
+THE LANDING (the CLAUDE.md § Concurrent repo-root committers / #1489
+scratch-worktree form; in-file precedent: the post-merge stale-task-folder
+guard's `push HEAD:main`). Exclusive-arm shape (#1184) — a failed stage
+takes the echo+false arm and the next stage is structurally unreachable:
+
+```bash
+# Own Bash call. LOCAL_TIP is the gate-certified tip; every command is
+# git -C-scoped (repo-root guards stay out of the way; never a repo-root
+# checkout/merge). NO global `worktree prune` here — a GLOBAL prune
+# unregisters ANY worktree whose directory is momentarily missing (every
+# live issue worktree during a data-disk mount hiccup; disk-hygiene.md
+# bans the janitor from exactly this shape) — the add's -f overrides a
+# stale registered-at-this-path record instead. Crash-mid-add residue:
+# `worktree add` holds an "initializing" lock while creating, so a crash
+# there leaves a locked-and-missing registration that a single -f refuses
+# (it needs -f twice) and `worktree remove --force` also refuses — manual
+# recovery: `git worktree unlock "$SCRATCH"`, or `worktree add --detach
+# -f -f "$SCRATCH" origin/main`.
+LOCAL_TIP=$(git -C "$WT" rev-parse HEAD)
+SCRATCH=/tmp/issue-<N>-rewritten-landing
+git -C "$REPO_ROOT" worktree remove --force "$SCRATCH" 2>/dev/null || true
+rm -rf "$SCRATCH"
+if ! { timeout --kill-after=30s 120s git -C "$REPO_ROOT" fetch origin main --quiet \
+       && git -C "$REPO_ROOT" worktree add --detach -f "$SCRATCH" origin/main \
+       && git -C "$SCRATCH" merge --no-edit "$LOCAL_TIP"; }; then
+  git -C "$SCRATCH" merge --abort 2>/dev/null
+  echo "[step10d/rewritten] scratch merge FAILED (a REAL content conflict vs main) — resolve IN THE SCRATCH per the merge-conflict recovery conventions (foreign tasks/ pinned to the fetched origin/main snapshot; own deliverables keep the branch content), commit, and continue at the landing push; or epm:merge-failed."
+  false
+# Land: push HEAD:main; on rejection (origin advanced under fleet churn) ONE
+# bounded fetch + RE-MERGE + push retry INSIDE the scratch. Merge, not
+# rebase: rebasing the scratch's merge commit flattens it and re-manufactures
+# the replay shape this route exists to avoid.
+elif ! { git -C "$SCRATCH" push origin HEAD:main \
+         || { git -C "$SCRATCH" fetch origin main --quiet \
+              && git -C "$SCRATCH" merge --no-edit origin/main \
+              && git -C "$SCRATCH" push origin HEAD:main; }; }; then
+  echo "[step10d/rewritten] landing push did NOT land after 1 retry — epm:merge-failed; scratch kept at $SCRATCH for manual completion."
+  false
+fi
+```
+
+LANDING VERIFICATION + bookkeeping (verify-then-consume, the #1897 posture
+with ancestry instead of PR state — a fast-forwarded OR merge-committed
+landing both satisfy it):
+
+```bash
+if git -C "$REPO_ROOT" fetch origin main --quiet \
+   && git -C "$REPO_ROOT" merge-base --is-ancestor "$LOCAL_TIP" origin/main; then
+  rm -f /tmp/issue-<N>-lint-verdict.txt   # consume on VERIFIED landing only
+  git -C "$REPO_ROOT" worktree remove --force "$SCRATCH" 2>/dev/null || true
+  echo "[step10d/rewritten] landed: certified tip $LOCAL_TIP is an ancestor of origin/main"
+else
+  echo "[step10d/rewritten] LANDING NOT VERIFIED — verdict NOT consumed; re-probe (fetch + ancestry) before any retry."
+  false
+fi
+```
+
+Then: (a) if a PR exists, CLOSE it — `gh pr close "$PR" --comment "Landed
+force-free via the Step 10d rewritten-branch route (#2312): certified tip
+$LOCAL_TIP is on origin/main. The PR head ref holds superseded pre-rebase
+history."` — NEVER `gh pr merge` it, and leave `origin/issue-<N>` untouched
+(stale and inert; never force-updated); (b) post `epm:merged` per the
+Success bullet above (compose via the Write tool, `--file` channel),
+adding one line `route: rewritten-branch-landing (#2312)`; run the
+pre-marker `sync_repo_root.py` exactly as the safe-case success arm does;
+(c) run the **post-merge stale-task-folder guard** below — a merge commit
+can re-import this task's old-status folder, the same reason the
+merge-conflict recovery routes there. Revert-grain note: the route lands the
+branch's own commits (plus at most a merge commit) rather than the
+`kind: infra|batch` `--squash` single commit — an accepted deviation for
+this rare arm; the branch's own commits remain individually revertible.
 
 #### The artifact-confirmed merge procedure (unsafe case: guard 3 tripped)
 
