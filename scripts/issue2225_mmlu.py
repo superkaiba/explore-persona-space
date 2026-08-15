@@ -279,16 +279,12 @@ def _run_lm_eval(model_args: str, scratch: Path, log_prefix: str, *, limit: int 
 
 
 def _resolve_single_target(tag: str) -> evalgen.EvalTarget:
-    """86-registry-only lookup with a legible error (g3 minor: pilot/scaled
-    slugs deliberately have no MMLU/capture — say so instead of a bare KeyError)."""
-    by_tag = evalgen.targets_by_tag()
-    if tag not in by_tag:
-        raise ValueError(
-            f"unknown eval-target tag {tag!r}: not one of the {len(by_tag)} registry "
-            "targets (pilot / §7-scaled cell slugs deliberately get no MMLU eval — "
-            "list tags via issue2225_eval_gen.py --list-targets)"
-        )
-    return by_tag[tag]
+    """Registry lookup with the resolve_targets cell fallback (fu1 seam).
+
+    The parent 86-target registry wins; a non-registry tag resolves through
+    ``evalgen.resolve_targets`` (train.resolve_cell — fu1 cells + §7 scaled
+    slugs). Unknown/non-canonical tags still fail loud with a legible error."""
+    return evalgen.resolve_targets([tag])[0]
 
 
 def run_single(args) -> None:
@@ -363,13 +359,11 @@ def run_single(args) -> None:
 
 
 def run_fan_out(args) -> None:
-    by_tag = evalgen.targets_by_tag()
     if args.targets:
         wanted = [s.strip() for s in args.targets.split(",") if s.strip()]
-        missing = [s for s in wanted if s not in by_tag]
-        if missing:
-            raise ValueError(f"unknown eval-target tags: {missing}")
-        targets = [by_tag[s] for s in wanted]
+        # Registry lookup with the resolve_cell fallback (fu1 seam) — fu1 cells
+        # evaluate without a registry edit; unknown tags still fail loud.
+        targets = evalgen.resolve_targets(wanted)
     else:
         targets = evalgen.build_eval_targets()
     if args.smoke:
@@ -427,8 +421,13 @@ def run_fan_out(args) -> None:
     lib.log_phase("mmlu", "fan-out complete")
 
 
-def upload_mmlu(out_root: Path) -> str:
-    """Upload the canonical + raw MMLU JSONs as ONE folder commit (P3)."""
+# Parent-default-identical seam: parent #2225 call sites pass no prefix and must keep it.
+# UPLOAD_PREFIX_EXEMPT: parent-default-identical seam; fu1 threads its own via --hf-prefix
+def upload_mmlu(out_root: Path, hf_prefix: str = MMLU_HF_PREFIX, hf_repo: str = DATA_REPO) -> str:
+    """Upload the canonical + raw MMLU JSONs as ONE folder commit (P3).
+    Follow-up rounds thread their OWN prefix (fu1: issue2225_ctxsteer/fu1_mmlu
+    — never the parent-clobbering default, #1452) and, when routed off the
+    canonical data repo (fu2's #2287 overflow routing), their OWN ``hf_repo``."""
     from explore_persona_space.orchestrate.hub import _upload
 
     local = out_root / "mmlu"
@@ -439,7 +438,7 @@ def upload_mmlu(out_root: Path) -> str:
         residue = local / transient
         if residue.exists():
             shutil.rmtree(residue)
-    url = _upload(local, DATA_REPO, "dataset", MMLU_HF_PREFIX, raise_on_error=True)
+    url = _upload(local, hf_repo, "dataset", hf_prefix, raise_on_error=True)
     print(f"[mmlu] uploaded {local} -> {url}", flush=True)
     return url
 
@@ -468,6 +467,20 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--smoke", action="store_true", help="base target only")
     ap.add_argument("--dry-run", action="store_true", help="print invocations, no CUDA")
     ap.add_argument("--upload", action="store_true", help="upload-only mode (pod-side, later)")
+    # UPLOAD_PREFIX_EXEMPT: parent-default-identical seam — issue2225's own dispatcher calls
+    # this flag-less and must keep the parent prefix; fu1 rounds pass an explicit --hf-prefix.
+    ap.add_argument(
+        "--hf-prefix",
+        default=MMLU_HF_PREFIX,
+        help="HF prefix for the MMLU upload (fu rounds thread issue2225_ctxsteer/fu1_mmlu)",
+    )
+    # UPLOAD_PREFIX_EXEMPT: parent-default-identical seam — fu2 threads the
+    # overflow repo (#2287); parent/fu1 keep the canonical data repo.
+    ap.add_argument(
+        "--hf-repo",
+        default=DATA_REPO,
+        help="HF dataset repo for the MMLU upload (fu2 threads the overflow repo)",
+    )
     ap.add_argument("--import-check", action="store_true")
     return ap
 
@@ -495,7 +508,8 @@ def main(argv: Sequence[str] | None = None) -> None:
         raise SystemExit(0)
 
     if args.upload:
-        upload_mmlu(Path(args.out_root))
+        # UPLOAD_PREFIX_EXEMPT: parent-default-identical seam; fu1 passes an explicit --hf-prefix
+        upload_mmlu(Path(args.out_root), hf_prefix=args.hf_prefix, hf_repo=args.hf_repo)
         sys.stdout.flush()
         sys.exit(0)
 
