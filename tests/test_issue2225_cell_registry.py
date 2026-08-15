@@ -347,7 +347,10 @@ def test_should_skip_redrives_upload_on_local_done_hf_incomplete(tmp_path, monke
     def fake_hf_files_present(cell_arg) -> bool:  # network boundary (signature-mirrored)
         return False
 
-    def fake_upload_cell_adapter(out_dir_arg, cell_slug: str) -> str:  # hub boundary
+    def fake_upload_cell_adapter(
+        out_dir_arg, cell_slug: str, hf_prefix: str = M.ADAPTERS_HF_PREFIX
+    ) -> str:  # hub boundary (signature-mirrored, incl. the fu1 hf_prefix seam)
+        assert hf_prefix == M.ADAPTERS_HF_PREFIX  # parent cells keep the parent prefix
         calls.append((Path(out_dir_arg), cell_slug))
         return f"https://hf/{cell_slug}"
 
@@ -378,7 +381,10 @@ def test_should_skip_redrives_upload_even_when_stale_hf_files_present(tmp_path, 
     def fake_hf_files_present(cell_arg) -> bool:  # stale F1-era files present
         return True
 
-    def fake_upload_cell_adapter(out_dir_arg, cell_slug: str) -> str:  # hub boundary
+    def fake_upload_cell_adapter(
+        out_dir_arg, cell_slug: str, hf_prefix: str = M.ADAPTERS_HF_PREFIX
+    ) -> str:  # hub boundary (signature-mirrored, incl. the fu1 hf_prefix seam)
+        assert hf_prefix == M.ADAPTERS_HF_PREFIX  # parent cells keep the parent prefix
         calls.append((Path(out_dir_arg), cell_slug))
         return f"https://hf/{cell_slug}"
 
