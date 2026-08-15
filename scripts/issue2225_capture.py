@@ -152,14 +152,9 @@ def seam_audit(tokenizer, prompts: Sequence[str], responses: Sequence[str]) -> i
 
 def capture_one_model(args) -> None:
     """Capture all pending (trait) units for ONE target on the pinned GPU."""
-    by_tag = evalgen.targets_by_tag()
-    if args.single not in by_tag:
-        raise ValueError(
-            f"unknown eval-target tag {args.single!r}: not one of the {len(by_tag)} "
-            "registry targets (pilot / §7-scaled cell slugs deliberately get no "
-            "capture — list tags via issue2225_eval_gen.py --list-targets)"
-        )
-    target = by_tag[args.single]
+    # Registry lookup with the resolve_targets cell fallback (fu1 seam):
+    # fu1 cells capture without a registry edit; unknown tags still fail loud.
+    target = evalgen.resolve_targets([args.single])[0]
     out_root = Path(args.out_root)
     gen_root = Path(args.gen_root) if args.gen_root else out_root
     model_name = args.model or lib.MODEL_NAME
@@ -336,13 +331,11 @@ def _write_model_manifest(out_root: Path, target: evalgen.EvalTarget, adapter: P
 
 
 def run_fan_out(args) -> None:
-    by_tag = evalgen.targets_by_tag()
     if args.targets:
         wanted = [s.strip() for s in args.targets.split(",") if s.strip()]
-        missing = [s for s in wanted if s not in by_tag]
-        if missing:
-            raise ValueError(f"unknown eval-target tags: {missing}")
-        targets = [by_tag[s] for s in wanted]
+        # Registry lookup with the resolve_cell fallback (fu1 seam) — fu1 cells
+        # capture without a registry edit; unknown tags still fail loud.
+        targets = evalgen.resolve_targets(wanted)
     else:
         targets = evalgen.build_eval_targets()
     if args.smoke:
@@ -404,9 +397,22 @@ def run_fan_out(args) -> None:
 # ── upload ───────────────────────────────────────────────────────────────────
 
 
-def upload_capture(out_root: Path, tags: Sequence[str] | None = None) -> list[str]:
+# Parent-default-identical seam: parent #2225 call sites pass no prefix and must keep it.
+# UPLOAD_PREFIX_EXEMPT: parent-default-identical seam; fu1 threads its own via --hf-prefix
+def upload_capture(
+    out_root: Path,
+    tags: Sequence[str] | None = None,
+    *,
+    hf_prefix: str = CAPTURE_HF_PREFIX,
+    hf_repo: str = DATA_REPO,
+) -> list[str]:
     """Upload capture tensors to the HF data repo. Default: ONE folder commit of
-    ``capture/``; ``tags`` uploads per-model subdirs (the §9 per-chunk path)."""
+    ``capture/``; ``tags`` uploads per-model subdirs (the §9 per-chunk path).
+    Follow-up rounds thread their OWN prefix (fu1: analysis_tensors/fu1_capture
+    — never the parent-clobbering default, #1452). ``hf_repo`` (default: the
+    canonical data repo) lets a round route the capture class to the private
+    overflow repo under the SAME prefix layout when the canonical repo is at
+    the 1M-file ceiling (#1108 contract; fu1 round 5)."""
     from explore_persona_space.orchestrate.hub import _upload
 
     urls: list[str] = []
@@ -415,16 +421,14 @@ def upload_capture(out_root: Path, tags: Sequence[str] | None = None) -> list[st
             local = out_root / "capture" / tag
             if not local.exists():
                 raise FileNotFoundError(f"capture dir missing for upload: {local}")
-            url = _upload(
-                local, DATA_REPO, "dataset", f"{CAPTURE_HF_PREFIX}/{tag}", raise_on_error=True
-            )
+            url = _upload(local, hf_repo, "dataset", f"{hf_prefix}/{tag}", raise_on_error=True)
             print(f"[capture] uploaded {local} -> {url}", flush=True)
             urls.append(url)
         return urls
     local = out_root / "capture"
     if not local.exists():
         raise FileNotFoundError(f"nothing to upload: {local} absent")
-    url = _upload(local, DATA_REPO, "dataset", CAPTURE_HF_PREFIX, raise_on_error=True)
+    url = _upload(local, hf_repo, "dataset", hf_prefix, raise_on_error=True)
     print(f"[capture] uploaded {local} -> {url}", flush=True)
     return [url]
 
@@ -447,6 +451,22 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--dry-run", action="store_true", help="print invocations, no CUDA")
     ap.add_argument("--upload", action="store_true", help="upload-only mode (pod-side, later)")
     ap.add_argument("--upload-tags", default=None, help="with --upload: per-model subdirs")
+    # UPLOAD_PREFIX_EXEMPT: parent-default-identical seam — issue2225's own dispatcher calls
+    # this flag-less and must keep the parent prefix; fu1 rounds pass an explicit --hf-prefix.
+    ap.add_argument(
+        "--hf-prefix",
+        default=CAPTURE_HF_PREFIX,
+        help="HF prefix for the capture upload (fu rounds thread analysis_tensors/fu1_capture)",
+    )
+    ap.add_argument(
+        "--hf-repo",
+        default=DATA_REPO,
+        help=(
+            "HF dataset repo for the capture upload (default: canonical data repo; "
+            "fu1 threads the private overflow repo when the canonical repo is at "
+            "the 1M-file ceiling — #1108 contract, same prefix layout)"
+        ),
+    )
     ap.add_argument("--import-check", action="store_true")
     return ap
 
@@ -487,7 +507,8 @@ def main(argv: Sequence[str] | None = None) -> None:
             if args.upload_tags
             else None
         )
-        upload_capture(Path(args.out_root), tags)
+        # UPLOAD_PREFIX_EXEMPT: parent-default-identical seam; fu1 passes an explicit --hf-prefix
+        upload_capture(Path(args.out_root), tags, hf_prefix=args.hf_prefix, hf_repo=args.hf_repo)
         sys.stdout.flush()
         sys.exit(0)
 

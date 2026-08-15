@@ -120,7 +120,14 @@ GRID_ATTRIBUTION: tuple[float, ...] = (0.5, 1.5, 3.0)  # attribution/anchor (F, 
 # slug mask token -> SteeringHook mask mode (unit 1's steer_train MASK_MODES).
 # S1 = all (the paper's unmasked all-position steering_intervention, config A);
 # S2 = context (prompt tokens); S3 = response (completion tokens); SP = prefix.
-_MASK_MODE = {"all": "all", "context": "context", "response": "response", "prefix": "prefix"}
+# context_end = fu1's one-hot last-context-position mode (#2225 fu1 plan §4.2).
+_MASK_MODE = {
+    "all": "all",
+    "context": "context",
+    "response": "response",
+    "prefix": "prefix",
+    "context_end": "context_end",
+}
 
 
 @dataclass(frozen=True)
@@ -165,11 +172,16 @@ class Cell:
     config: str
     dataset: str  # finetuning corpus family (evil / sycophancy / hallucination / mistake_opinions)
     steered_trait: str  # the SINGLE trait direction the hook steers
-    variant: str | None  # E1/E2/E3 direction, or None (H)
-    mask_mode: str | None  # all/context/response/prefix, or None (H)
+    variant: str | None  # E1/E2/E3 direction (fu1: PRE/RND), or None (H)
+    mask_mode: str | None  # all/context/response/prefix/context_end, or None (H)
     layer_spec: str | None  # L1/L2/L3, or None (H)
     coef: float | None  # steering coefficient, or None (H)
     prompt_mode: bool  # True only for config H (no hook)
+    # fu1 extension fields (#2225 fu1 plan §4.2) — parent cells keep the None
+    # defaults, so parent slugs/fingerprints/behavior are byte-identical.
+    l1_idx: int | None = None  # per-cell L1 layer override (None -> L1_LAYER_IDX)
+    direction_filename: str | None = None  # bank filename override (None -> {trait}_{variant}.pt)
+    adapters_hf_prefix: str | None = None  # HF adapter prefix override (None -> ADAPTERS_HF_PREFIX)
 
 
 def _coef_tag(coef: float | None) -> str:
@@ -262,6 +274,50 @@ def synth_cell(config: str, dataset: str, coef: float) -> Cell:
     )
 
 
+# ── external cell-resolver seam (#2225 fu1; the #1947 r13 registry-lookup seam) ─
+#
+# Follow-up rounds define their OWN cell registries (e.g. issue2225_fu1_train's
+# 80 pre-image cells) without touching the 81-cell parent registry above. A
+# resolver is a callable ``slug -> Cell | None`` consulted by ``resolve_cell``
+# AFTER the parent registry + scaled-slug parse both miss. Because the fan-out
+# runs each cell as a fresh subprocess (which inherits NO module state), the
+# seam also honors ``EPM_I2225_EXTRA_CELLS_MODULE=<module>``: on a miss it
+# imports that module (which must expose ``register_extra_cells()``) ONCE and
+# retries — the env var propagates into every child via ``{**os.environ}``.
+_EXTRA_RESOLVERS: list = []
+_EXTRA_MODULES_LOADED: set[str] = set()
+
+EXTRA_CELLS_MODULE_ENV = "EPM_I2225_EXTRA_CELLS_MODULE"
+
+
+def register_cell_resolver(fn) -> None:
+    """Register an extra ``slug -> Cell | None`` resolver (idempotent by identity)."""
+    if fn not in _EXTRA_RESOLVERS:
+        _EXTRA_RESOLVERS.append(fn)
+
+
+def _resolve_via_extras(slug: str) -> Cell | None:
+    for fn in _EXTRA_RESOLVERS:
+        cell = fn(slug)
+        if cell is not None:
+            if cell.slug != slug:
+                raise ValueError(f"extra resolver returned slug {cell.slug!r} for lookup {slug!r}")
+            return cell
+    return None
+
+
+def _load_extra_cells_module() -> bool:
+    """Import the env-named extra-cells module once per process; True if loaded."""
+    mod_name = os.environ.get(EXTRA_CELLS_MODULE_ENV, "").strip()
+    if not mod_name or mod_name in _EXTRA_MODULES_LOADED:
+        return False
+    import importlib
+
+    importlib.import_module(mod_name).register_extra_cells()
+    _EXTRA_MODULES_LOADED.add(mod_name)
+    return True
+
+
 def resolve_cell(slug: str) -> Cell:
     """Registry lookup first; on miss, parse a canonical-scheme scaled slug.
 
@@ -269,16 +325,26 @@ def resolve_cell(slug: str) -> Cell:
     eval-gen's ``--targets`` path) materialize §7 re-pilot cells trained at
     octave-shifted coefficients without a registry edit. A slug whose
     coefficient spelling is non-canonical (``c2.50`` vs ``c2.5``) is REFUSED so
-    manifests/adapter paths stay slug-stable.
+    manifests/adapter paths stay slug-stable. Fu-round cells resolve through
+    the external-resolver seam (``register_cell_resolver`` /
+    ``EPM_I2225_EXTRA_CELLS_MODULE``) — the parent registry stays untouched.
     """
     by_slug = cells_by_slug()
     if slug in by_slug:
         return by_slug[slug]
+    extra = _resolve_via_extras(slug)
+    if extra is not None:
+        return extra
+    if _load_extra_cells_module():
+        extra = _resolve_via_extras(slug)
+        if extra is not None:
+            return extra
     m = _SCALED_SLUG_RE.match(slug)
     if not m:
         raise ValueError(
-            f"unknown cell slug {slug!r} (not in the 81-cell registry and not a "
-            "canonical '{config}__{dataset}__c<coef>' scaled-cell slug)"
+            f"unknown cell slug {slug!r} (not in the 81-cell registry, not resolvable "
+            "by a registered extra resolver, and not a canonical "
+            "'{config}__{dataset}__c<coef>' scaled-cell slug)"
         )
     config, dataset, coef_txt = m.groups()
     cell = synth_cell(config, dataset, float(coef_txt))
@@ -300,7 +366,15 @@ def _dataset_path(dataset_root: Path, dataset: str) -> Path:
 def _direction_path(directions_dir: Path, cell: Cell) -> Path | None:
     if cell.prompt_mode:
         return None
+    if cell.direction_filename is not None:  # fu1 override (e.g. the shared RND.pt bank)
+        return directions_dir / cell.direction_filename
     return directions_dir / f"{cell.steered_trait}_{cell.variant}.pt"
+
+
+def _adapters_prefix(cell: Cell) -> str:
+    """Per-cell HF adapter prefix: fu1 cells thread their own round prefix
+    (#1452 never-clobber-the-parent rule); parent cells keep ADAPTERS_HF_PREFIX."""
+    return cell.adapters_hf_prefix or ADAPTERS_HF_PREFIX
 
 
 def _sha256(path: Path) -> str:
@@ -443,7 +517,7 @@ def _hf_files_present(cell: Cell) -> bool:
 
     from explore_persona_space.orchestrate.hub import verify_repo_paths_uploaded
 
-    prefix = f"{ADAPTERS_HF_PREFIX}/{cell.slug}"
+    prefix = f"{_adapters_prefix(cell)}/{cell.slug}"
     expected = [f"{prefix}/{f}" for f in _ADAPTER_FILES]
     try:
         missing = verify_repo_paths_uploaded(
@@ -500,7 +574,7 @@ def should_skip(
         # (raise_on_error=True) — a broken upload path should halt the fan-out
         # early with a clear error, never silently strand the #664 contract.
         logger.info("[resume] %s local-done, uploaded flag absent -> re-driving upload", cell.slug)
-        _upload_cell_adapter(ckpt_root / cell.slug, cell.slug)
+        _upload_cell_adapter(ckpt_root / cell.slug, cell.slug, hf_prefix=_adapters_prefix(cell))
         mark_manifest_uploaded(ckpt_root, cell)
         logger.info("[resume] %s local-done + upload re-driven -> skip", cell.slug)
         return True
@@ -535,6 +609,17 @@ def _build_steering_vectors(direction, layer_spec: str, l1_idx: int) -> dict:
         assert 0 <= layer < n, (layer, n, layer_spec)
     base = {layer: direction[layer].clone() for layer in band}
     return build_incremental_vectors(base)
+
+
+def _assert_finite_steering_vectors(vectors: dict, source: str) -> None:
+    """fu1 bank rows outside {14, 19} are NaN by construction — a wrong layer
+    slice must fail HERE, not as silent NaN training (fu1 plan §4.1)."""
+    import torch
+
+    for layer, vec in vectors.items():
+        assert bool(torch.isfinite(vec).all()), (
+            f"non-finite steering vector at layer {layer} (direction file {source})"
+        )
 
 
 # ── dataset row transforms ──────────────────────────────────────────────────────
@@ -773,8 +858,11 @@ def train_steered_cell(
     else:
         direction = torch.load(_direction_path(directions_dir, cell), map_location="cpu")
         assert direction.shape == (lib.N_LAYERS, lib.HIDDEN_DIM), direction.shape
-        l1_idx = L1_LAYER_IDX[steered_trait]
+        # fu1 cells pin their layer per-cell (14 or 19); parent cells keep the
+        # trait-keyed default (#2225 fu1 plan §4.2).
+        l1_idx = cell.l1_idx if cell.l1_idx is not None else L1_LAYER_IDX[steered_trait]
         vectors = _build_steering_vectors(direction, layer_spec, l1_idx)
+        _assert_finite_steering_vectors(vectors, str(_direction_path(directions_dir, cell)))
         hook = SteeringHook(vectors, alpha=float(coef), mode=mask_mode)
         if mask_mode == "prefix":
             # mode="prefix" needs a prefix_len column computed at map time from
@@ -805,13 +893,15 @@ def train_steered_cell(
     logger.info("[%s] adapter saved to %s", cell_slug, out_dir)
 
     if upload:
-        _upload_cell_adapter(out_dir, cell_slug)
+        _upload_cell_adapter(out_dir, cell_slug, hf_prefix=_adapters_prefix(cell))
         mark_manifest_uploaded(ckpt_root, cell)
     _reap_training_residue(out_dir)
     return out_dir
 
 
-def _upload_cell_adapter(out_dir: Path, cell_slug: str) -> str:
+# Parent-default-identical seam: parent cells keep the parent adapters prefix.
+# UPLOAD_PREFIX_EXEMPT: fu1 cells thread cell.adapters_hf_prefix via _adapters_prefix()
+def _upload_cell_adapter(out_dir: Path, cell_slug: str, hf_prefix: str = ADAPTERS_HF_PREFIX) -> str:
     """Per-cell adapter upload to the HF model repo (#664 per-cell contract)."""
     from explore_persona_space.orchestrate.hub import _upload
 
@@ -819,7 +909,7 @@ def _upload_cell_adapter(out_dir: Path, cell_slug: str) -> str:
         Path(out_dir),
         MODEL_REPO,
         "model",
-        f"{ADAPTERS_HF_PREFIX}/{cell_slug}",
+        f"{hf_prefix}/{cell_slug}",
         raise_on_error=True,
     )
     logger.info("[%s] adapter uploaded -> %s", cell_slug, url)
@@ -904,12 +994,13 @@ def _single_cell_cmd(
     no_upload: bool = False,
     trainability_floor_override: int | None = None,
     trainability_override_reason: str | None = None,
+    script_path: Path | None = None,
 ) -> list[str]:
     cmd = [
         "uv",
         "run",
         "python",
-        str(Path(__file__).resolve()),
+        str(script_path or Path(__file__).resolve()),
         "--single-cell",
         cell.slug,
         "--gpu-id",
@@ -952,6 +1043,7 @@ def run_fan_out(
     allow_upload: bool = True,
     trainability_floor_override: int | None = None,
     trainability_override_reason: str | None = None,
+    script_path: Path | None = None,
 ) -> dict:
     """Work-stealing fan-out: N GPU slots each pull the next PENDING cell.
 
@@ -960,6 +1052,9 @@ def run_fan_out(
     BOTH the launcher env (``CUDA_VISIBLE_DEVICES``) and the ``--gpu-id`` arg
     (the CVD-clobber gotcha), logging to a per-cell file. Work-conserving: an
     idle slot with a pending cell dispatches immediately — no wave barrier.
+    ``script_path`` re-targets the ``--single-cell`` child argv at a WRAPPER
+    entrypoint (fu1's issue2225_fu1_train.py, which re-registers its cells at
+    process entry — the subprocess-registry gotcha); default = this script.
     """
     log_dir.mkdir(parents=True, exist_ok=True)
     total = len(cells)
@@ -1003,6 +1098,7 @@ def run_fan_out(
                 no_upload=not allow_upload,
                 trainability_floor_override=trainability_floor_override,
                 trainability_override_reason=trainability_override_reason,
+                script_path=script_path,
             )
             print(
                 f"[fanout][dry-run] CUDA_VISIBLE_DEVICES={gpu_entries[g]} {' '.join(cmd)}",
@@ -1032,6 +1128,7 @@ def run_fan_out(
                 no_upload=not allow_upload,
                 trainability_floor_override=trainability_floor_override,
                 trainability_override_reason=trainability_override_reason,
+                script_path=script_path,
             )
             # g-th ENTRY of the parent CVD when set (g2 Concern 3), else ordinal.
             env = {**os.environ, "CUDA_VISIBLE_DEVICES": gpu_entries[g]}

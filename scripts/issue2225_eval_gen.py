@@ -200,7 +200,14 @@ def resolve_targets(wanted: Sequence[str]) -> list[EvalTarget]:
             cell = train.resolve_cell(tag)
         except ValueError as e:
             raise ValueError(f"unknown eval-target tag {tag!r}: {e}") from e
-        out.append(EvalTarget(cell.slug, "cell", cell.dataset, _traits_for_dataset(cell.dataset)))
+        # fu1 cells (l1_idx set) eval their STEERED trait only — plan §2
+        # divergence 4 / §4.4: "Opinions + random cells: evil eval set" (the
+        # registered cost scoping; 80 cells x 1 trait). Parent §7-scaled slugs
+        # (l1_idx None) keep the parent's all-trait behavior for opinions.
+        traits = (
+            (cell.steered_trait,) if cell.l1_idx is not None else _traits_for_dataset(cell.dataset)
+        )
+        out.append(EvalTarget(cell.slug, "cell", cell.dataset, traits))
     return out
 
 
@@ -230,7 +237,9 @@ def resolve_adapter(target: EvalTarget, *, ckpt_root: Path, staging_dir: Path) -
         local = ckpt_root / target.tag
         if all((local / f).exists() for f in _ADAPTER_FILES):
             return local
-        hf_prefix = f"{train.ADAPTERS_HF_PREFIX}/{target.tag}"
+        # Per-cell HF prefix: fu1 cells carry their own round prefix on the
+        # resolved Cell (train._adapters_prefix); parent cells keep the default.
+        hf_prefix = f"{train._adapters_prefix(train.resolve_cell(target.tag))}/{target.tag}"
     elif target.kind == "baseline_ft":
         hf_prefix = f"{BASELINE_ADAPTER_HF_PREFIX}/{target.dataset}_misaligned_2"
     else:
@@ -797,18 +806,27 @@ def write_digest(out_root: Path, targets: Sequence[EvalTarget], *, narrow: bool)
 # ── upload (one folder commit per subtree; never on the generate path) ───────
 
 
-def upload_raw_completions(out_root: Path) -> list[str]:
+def upload_raw_completions(
+    out_root: Path,
+    *,
+    final_prefix: str = RAW_FINAL_HF_PREFIX,
+    narrow_prefix: str = RAW_NARROW_HF_PREFIX,
+    hf_repo: str = DATA_REPO,
+) -> list[str]:
     """Upload each present raw_completions subtree as ONE ``upload_folder``
-    commit (hub._upload folder branch; #664 — never per-file loops)."""
+    commit (hub._upload folder branch; #664 — never per-file loops). Follow-up
+    rounds thread their OWN prefixes (fu1: ``.../fu1_final`` — never the
+    parent-clobbering default, #1452) and, when routed off the canonical data
+    repo (fu2's #2287 overflow routing), their OWN ``hf_repo``."""
     from explore_persona_space.orchestrate.hub import _upload
 
     urls: list[str] = []
-    for subdir, prefix in (("final", RAW_FINAL_HF_PREFIX), ("narrow_domain", RAW_NARROW_HF_PREFIX)):
+    for subdir, prefix in (("final", final_prefix), ("narrow_domain", narrow_prefix)):
         local = out_root / "raw_completions" / subdir
         if not local.exists():
             logger.info("[upload] %s absent — skipping", local)
             continue
-        url = _upload(local, DATA_REPO, "dataset", prefix, raise_on_error=True)
+        url = _upload(local, hf_repo, "dataset", prefix, raise_on_error=True)
         print(f"[eval-gen] uploaded {local} -> {url}", flush=True)
         urls.append(url)
     if not urls:
@@ -836,6 +854,26 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--smoke", action="store_true", help="base target only (tiny N via dials)")
     ap.add_argument("--dry-run", action="store_true", help="print worker commands, no CUDA")
     ap.add_argument("--upload", action="store_true", help="upload-only mode (pod-side, later)")
+    # UPLOAD_PREFIX_EXEMPT: parent-default-identical seam — issue2225's own dispatcher calls
+    # this flag-less and must keep the parent prefix; fu1 rounds pass explicit prefixes.
+    ap.add_argument(
+        "--hf-prefix-final",
+        default=RAW_FINAL_HF_PREFIX,
+        help="HF prefix for the final rollouts upload (fu rounds thread fu1_final)",
+    )
+    # UPLOAD_PREFIX_EXEMPT: parent-default-identical seam (same rationale as above).
+    ap.add_argument(
+        "--hf-prefix-narrow",
+        default=RAW_NARROW_HF_PREFIX,
+        help="HF prefix for the narrow-domain rollouts upload (fu rounds thread fu1_*)",
+    )
+    # UPLOAD_PREFIX_EXEMPT: parent-default-identical seam — fu2 threads the
+    # overflow repo (#2287); parent/fu1 keep the canonical data repo.
+    ap.add_argument(
+        "--hf-repo",
+        default=DATA_REPO,
+        help="HF dataset repo for the raw-completions upload (fu2 threads the overflow repo)",
+    )
     ap.add_argument("--list-targets", action="store_true", help="print the 86-target enumeration")
     ap.add_argument("--import-check", action="store_true")
     return ap
@@ -883,7 +921,12 @@ def main(argv: Sequence[str] | None = None) -> None:
         raise SystemExit(0)
 
     if args.upload:
-        upload_raw_completions(Path(args.out_root))
+        upload_raw_completions(
+            Path(args.out_root),
+            final_prefix=args.hf_prefix_final,
+            narrow_prefix=args.hf_prefix_narrow,
+            hf_repo=args.hf_repo,
+        )
         sys.stdout.flush()
         sys.exit(0)
 
