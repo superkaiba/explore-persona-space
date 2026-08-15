@@ -1323,6 +1323,29 @@ def _run_labels(events: list[dict]) -> set[str]:
 # mid-segment anchoring #1111 forbids could parse it. The parser is NOT
 # widened; the rounds are accounted by this allowlist, and the #2307
 # poster-side advisory is the recurrence guard.)
+# (#2225's two run markers — (2225, "2026-08-15T00:50:51Z") and (2225,
+# "2026-08-15T00:50:56Z") — are a FOURTH class, and they LANDED MID-ROUND
+# (hours after the six above were catalogued, while this fix was in review):
+# the note head carries the marker's OWN sentinel comment before the fields
+# (`<!-- epm:same-issue-followup-run v1 --> source: user-chat
+# followup_label: fu1_preimage_prevention — ...`). The parser's leading strip
+# is `[\s\-*]+`, which cannot remove `<!--`, so the field never reaches
+# segment start; the fields are space-joined besides. Plausible mechanism: the
+# `<!-- epm:<kind> v<n> -->` block shape IS correct for several OTHER marker
+# bodies (e.g. the `epm:failure v1` / `epm:failure-lesson v1` blocks agents
+# compose by hand), so the sentinel was carried onto a note whose consumer
+# parses FIELDS, not blocks. The parser is NOT widened to strip HTML comments:
+# same #1111 field-only + generic-caller grounds as classes A-C.
+#
+# STANDING CAVEAT (#2307): four distinct malformation classes across five days
+# and five tasks, two of them landing DURING this round. This allowlist is a
+# manual chase over live append-only agent-authored data, and the #2307
+# emitter guard is an ADVISORY printed AFTER post_event has already appended —
+# it cannot PREVENT a malformed note. So this invariant is expected to red
+# main again whenever a hand-composed run marker misses the field-led contract.
+# A durable fix (refusing or normalizing at the single writer, or relaxing what
+# this test asserts over live fleet data) is a contract change beyond #2307's
+# scope and is surfaced for user routing, not decided here.
 # Vintage guard (#2010): the corpus-replay tests below enforce this fleet-data
 # invariant on MAIN-VINTAGE trees only (`_corpus_tree_is_main_vintage` — the
 # `main` checkout + trees detached at main's tip, i.e. the Step 9c
@@ -1338,6 +1361,9 @@ KNOWN_MALFORMED_RUN_MARKERS = {
     (2224, "2026-08-13T03:47:32Z"),  # C: bare-space `v1 ` stamp + space-joined
     (2224, "2026-08-13T03:47:37Z"),  # C: bare-space `v1 ` stamp + space-joined
     (2254, "2026-08-14T18:14:08Z"),  # C: + colon-no-space
+    # D: marker sentinel comment heads the note (landed mid-round, #2307)
+    (2225, "2026-08-15T00:50:51Z"),
+    (2225, "2026-08-15T00:50:56Z"),
 }
 
 
