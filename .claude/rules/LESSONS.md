@@ -54,7 +54,7 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - replication-fidelity.md — the Goal replicates a published finding (match the paper's data + recipe FIRST; change only the tested variable).
 - repo-root-uncommitted-state.md — tracked files left modified/deleted-but-uncommitted at the shared repo root, root files reverting/resurrecting within seconds, or verifying a commit landed under concurrency (pre-commit stash race; SHA-blob landing check).
 - research-project-structure.md — you write result artifacts / results index / queue (one source of truth per layer).
-- selection-symmetric-nulls.md — a max/argmax/top-k headline over a free axis vs a null band or bootstrap CI, or difference-vector legs sharing one SAMPLED baseline vs noise-free nulls.
+- selection-symmetric-nulls.md — a max/argmax/top-k headline over a free axis vs a null band or bootstrap CI; difference-vector legs sharing one SAMPLED baseline vs noise-free nulls; a numeric gate on a null statistic.
 - smoke-blind-spots.md — a plan declares a pre-launch smoke run, or code adds/edits a smoke-conditional branch that substitutes an implementation, downgrades an assertion, or leaves a production-only third-party import.
 - trigger-dense-review.md — reviewing/reconciling a guard/security artifact or refusal corpus, composing briefs on such targets (#1503/#1413), orchestrator run-failure ingest, judge-monitor reads, or ANY orchestrator turn on a guard-surface round.
 - upload-policy.md — you write training/Hub/sweep code, or sequence phases around a regeneration-costly store (Hub-API verification, verify + staging-download transport retry, delete-after-eval persist, store-before-long-fit #825, quota-403 recovery, upload-wedge ladder).

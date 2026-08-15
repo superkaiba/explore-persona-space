@@ -169,7 +169,7 @@ structurally-constant observed-vs-null statistic · 10 dual-DV for
 content-behavior leakage/implantation (judge-rate PRIMARY, continuous
 companion SECONDARY) · 11 selection-symmetric nulls (max-over-axis
 headlines; band vs DV ceiling; shared-baseline noise structure;
-bootstrap-CI selection inheritance) · 12
+bootstrap-CI selection inheritance; null-statistic gate calibration) · 12
 same-round re-cost of affected §9 rows
 for any power-raising recommendation · 13 OOD generalization folds
 (group-level fold for group-structured held-out DVs) · 14 fail-loud

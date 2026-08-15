@@ -12360,6 +12360,189 @@ def check_smoke_blind_spot_review_lens(  # noqa: C901 -- flat per-surface token 
     return errors
 
 
+def check_null_gate_calibration_lens(  # noqa: C901 -- flat per-surface token ladder (six pinned surfaces, #2144), mirroring check_smoke_blind_spot_review_lens
+    *, repo_root: Path | None = None
+) -> list[str]:
+    """FAIL if the #1491/#2144 null-statistic gate-calibration lens is absent
+    from ANY of its six surfaces.
+
+    Task #1491 pre-registered Gate 1 as ``abs(r2_null) < 0.05`` on a
+    shuffle-REFIT null whose realized values ran -1 to -4 — unsatisfiable by
+    construction: a refit null's expected held-out R2 is strictly negative
+    (-d/(n-d-1)-scale under the ``1 - SS_res/SS_tot`` convention) with depth
+    non-monotone in the shape parameters, so NO constant threshold is
+    portable. All 8 shards of the 0.5B rung hard-aborted with the GPUs at 0%
+    on an 8xH200 pod; the first fix asserted ``null_floor = -3.0`` and the
+    1.5B rung (realized -3.40 to -3.80) died the same way. The fix (#2144)
+    requires every pre-registered numeric gate on a NULL statistic to cite a
+    MEASURED 1-cell calibration pilot at production shape and to default to
+    ADVISORY logging. This check pins the lens across its surfaces,
+    region-anchored, so a future refactor cannot silently strip one (the
+    #606 copy-list-omission class):
+
+    (1) `.claude/rules/selection-symmetric-nulls.md` exists and carries the
+        ``## Gate thresholds on a NULL statistic need a MEASURED calibration
+        basis`` H2;
+    (2) planner-section-reference.md — the ``## 7. Decision Gates`` region
+        (up to the next ``## `` heading) names
+        ``Measured calibration basis for NULL-statistic gates``;
+    (3) planner.md — the ``### 7. Decision Gates`` region (up to the next
+        ``### `` heading) names ``MEASURED 1-cell calibration pilot``;
+    (4) critic-lens-reference.md — the ``### Statistics & Measurement lens``
+        region (up to the next ``### `` heading) names ``null-statistic
+        gate`` AND ``defaults to ADVISORY``. The second token is pinned in
+        that exact casing because a lowercase ``advisory`` ALREADY occurs
+        in-region ("its gates are advisory monitoring thresholds") — a pin
+        with a pre-existing in-region hit can never fail independently, so
+        a refactor stripping the advisory-default sentence would pass GREEN
+        (the #2144 critic-F2 token collision);
+    (5) critic.md — the item-11 capsule token
+        ``null-statistic gate calibration``;
+    (6) statistics-critic.md — the item-11 region (``11.`` up to the next
+        ``12.`` item) names ``null-statistic gate``.
+
+    ``repo_root`` is a unit-test override hook; production callers pass None
+    (canonical repo root; behavioral subprocess tests may point the check at
+    a tmp corpus via ``EPS_WORKFLOW_LINT_REPO_ROOT``). Bundled into the
+    no-flags default run.
+    """
+    if repo_root is not None:
+        root = repo_root
+    else:
+        env_root = os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    errors: list[str] = []
+
+    # (1) the rule file exists and carries the new H2.
+    rule = root / ".claude" / "rules" / "selection-symmetric-nulls.md"
+    heading = "## Gate thresholds on a NULL statistic need a MEASURED calibration basis"
+    if not rule.is_file():
+        errors.append(
+            f"{rule}: missing — the null-gate calibration clause (#1491/#2144) "
+            f"must live in selection-symmetric-nulls.md (#1491: an asserted "
+            f"constant on a shuffle-refit null hard-aborted all 8 shards of a "
+            f"healthy run, twice)."
+        )
+    elif heading not in rule.read_text(encoding="utf-8"):
+        errors.append(
+            f"{rule}: missing the {heading!r} H2 (#1491/#2144) — the primary "
+            f"null-gate calibration clause was stripped; every downstream "
+            f"surface points at this section."
+        )
+
+    # (2) planner-section-reference.md: the ## 7. Decision Gates region.
+    psr = root / ".claude" / "rules" / "planner-section-reference.md"
+    psr_token = "Measured calibration basis for NULL-statistic gates"
+    if not psr.is_file():
+        errors.append(
+            f"{psr}: missing — the #2144 null-gate calibration planner bullet "
+            f"must live in planner-section-reference.md § 7."
+        )
+    else:
+        text = psr.read_text(encoding="utf-8")
+        idx = text.find("## 7. Decision Gates")
+        region = ""
+        if idx != -1:
+            nxt = text.find("\n## ", idx + 1)
+            region = text[idx:nxt] if nxt != -1 else text[idx:]
+        if psr_token not in region:
+            errors.append(
+                f"{psr}: the '## 7. Decision Gates' region no longer names "
+                f"{psr_token!r} (#2144) — the plan-side measured-pilot duty "
+                f"for null-statistic gates would be silently stripped "
+                f"(#1491's gate passed plan approval without it)."
+            )
+
+    # (3) planner.md: the always-loaded §7 capsule token.
+    planner = root / ".claude" / "agents" / "planner.md"
+    planner_token = "MEASURED 1-cell calibration pilot"
+    if not planner.is_file():
+        errors.append(
+            f"{planner}: missing — the #2144 null-gate calibration capsule "
+            f"token must live in planner.md §7."
+        )
+    else:
+        text = planner.read_text(encoding="utf-8")
+        idx = text.find("### 7. Decision Gates")
+        region = ""
+        if idx != -1:
+            nxt = text.find("\n### ", idx + 1)
+            region = text[idx:nxt] if nxt != -1 else text[idx:]
+        if planner_token not in region:
+            errors.append(
+                f"{planner}: the '### 7. Decision Gates' region no longer "
+                f"names {planner_token!r} (#2144) — the always-loaded planner "
+                f"surface would drop the null-gate calibration duty (the #606 "
+                f"silent-strip class)."
+            )
+
+    # (4) critic-lens-reference.md: the Statistics & Measurement lens region.
+    clr = root / ".claude" / "rules" / "critic-lens-reference.md"
+    if not clr.is_file():
+        errors.append(
+            f"{clr}: missing — the #2144 null-gate calibration REVISE trigger "
+            f"(Statistics & Measurement item 11) must live in "
+            f"critic-lens-reference.md."
+        )
+    else:
+        text = clr.read_text(encoding="utf-8")
+        idx = text.find("### Statistics & Measurement lens")
+        region = ""
+        if idx != -1:
+            nxt = text.find("\n### ", idx + 1)
+            region = text[idx:nxt] if nxt != -1 else text[idx:]
+        for token in ("null-statistic gate", "defaults to ADVISORY"):
+            if token not in region:
+                errors.append(
+                    f"{clr}: the '### Statistics & Measurement lens' region "
+                    f"no longer names {token!r} (#2144) — the critic's REVISE "
+                    f"bar for an uncalibrated null-statistic gate (or its "
+                    f"advisory-default arm) would be silently stripped; a "
+                    f"pre-existing in-region lowercase 'advisory' cannot "
+                    f"satisfy this pin (the critic-F2 collision)."
+                )
+
+    # (5) critic.md: the item-11 capsule token.
+    critic = root / ".claude" / "agents" / "critic.md"
+    critic_token = "null-statistic gate calibration"
+    if not critic.is_file():
+        errors.append(
+            f"{critic}: missing — the #2144 null-gate calibration capsule "
+            f"item must live in critic.md."
+        )
+    elif critic_token not in critic.read_text(encoding="utf-8"):
+        errors.append(
+            f"{critic}: the item-11 capsule no longer names "
+            f"{critic_token!r} (#2144) — the critic's always-loaded item "
+            f"roster would drop the null-gate arm (the #606 silent-strip "
+            f"class)."
+        )
+
+    # (6) statistics-critic.md: the item-11 region (v2 owner).
+    stats = root / ".claude" / "agents" / "statistics-critic.md"
+    stats_token = "null-statistic gate"
+    if not stats.is_file():
+        errors.append(
+            f"{stats}: missing — the #2144 null-gate calibration trigger "
+            f"must live in statistics-critic.md item 11 (the v2 owner)."
+        )
+    else:
+        text = stats.read_text(encoding="utf-8")
+        idx = text.find("\n11. ")
+        region = ""
+        if idx != -1:
+            nxt = text.find("\n12. ", idx + 1)
+            region = text[idx:nxt] if nxt != -1 else text[idx:]
+        if stats_token not in region:
+            errors.append(
+                f"{stats}: the item-11 region no longer names "
+                f"{stats_token!r} (#2144) — the v2 Statistics & Measurement "
+                f"owner would drop the null-gate trigger while the v1 lens "
+                f"keeps it (lens-coverage drift)."
+            )
+    return errors
+
+
 def check_two_tier_yield_floor(  # noqa: C901 -- flat per-surface token ladder (four pinned surfaces, #2242), mirroring check_smoke_blind_spot_review_lens
     *, repo_root: Path | None = None
 ) -> list[str]:
@@ -16904,6 +17087,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_smoke_architecture_review_lens": lambda wf: check_smoke_architecture_review_lens(),
     "check_authorized_stub_wiring": lambda wf: check_authorized_stub_wiring(),
     "check_smoke_blind_spot_review_lens": lambda wf: check_smoke_blind_spot_review_lens(),
+    "check_null_gate_calibration_lens": lambda wf: check_null_gate_calibration_lens(),
     "check_two_tier_yield_floor": lambda wf: check_two_tier_yield_floor(),
     "check_cvd_scoped_gpu_verdict_lens": lambda wf: check_cvd_scoped_gpu_verdict_lens(),
     "check_verdict_round_anchor": lambda wf: check_verdict_round_anchor(),
@@ -17014,6 +17198,7 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_hollow_verification_gate_review_lens": CheckScope("global", (".claude/agents/",)),
     "check_smoke_architecture_review_lens": CheckScope("global", (".claude/",)),
     "check_smoke_blind_spot_review_lens": CheckScope("global", (".claude/",)),
+    "check_null_gate_calibration_lens": CheckScope("global", (".claude/",)),
     "check_two_tier_yield_floor": CheckScope("global", (".claude/",)),
     "check_cvd_scoped_gpu_verdict_lens": CheckScope("global", (".claude/",)),
     "check_verdict_round_anchor": CheckScope("global", (".claude/skills/",)),
@@ -17737,6 +17922,21 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "structurally bypassed). Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-null-gate-calibration-lens",
+        action="store_true",
+        help="FAIL if the #1491/#2144 null-statistic gate-calibration lens "
+        "is absent from any of its six surfaces: the new H2 in "
+        "selection-symmetric-nulls.md, the planner-section-reference.md § 7 "
+        "measured-calibration-basis bullet, the planner.md §7 capsule token, "
+        "the critic-lens-reference.md Statistics & Measurement item-11 "
+        "tokens (null-statistic gate + defaults to ADVISORY), the critic.md "
+        "capsule token, and the statistics-critic.md item-11 token "
+        "(incident #1491: a pre-registered abs(r2_null) < 0.05 gate on a "
+        "shuffle-refit null — realized -1 to -4 — hard-aborted all 8 shards "
+        "of a healthy run; the asserted -3.0 floor died the same way at the "
+        "next rung). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-two-tier-yield-floor",
         action="store_true",
         help="FAIL if the #2242 two-tier yield-floor contract (relative "
@@ -18368,6 +18568,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_smoke_architecture_review_lens
         or args.check_authorized_stub_wiring
         or args.check_smoke_blind_spot_review_lens
+        or args.check_null_gate_calibration_lens
         or args.check_two_tier_yield_floor
         or args.check_cvd_scoped_gpu_verdict_lens
         or args.check_verdict_round_anchor
@@ -18529,6 +18730,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_authorized_stub_wiring())
     if args.check_smoke_blind_spot_review_lens or no_flags:
         errors.extend(check_smoke_blind_spot_review_lens())
+    if args.check_null_gate_calibration_lens or no_flags:
+        errors.extend(check_null_gate_calibration_lens())
     if args.check_two_tier_yield_floor or no_flags:
         errors.extend(check_two_tier_yield_floor())
     if args.check_cvd_scoped_gpu_verdict_lens or no_flags:
