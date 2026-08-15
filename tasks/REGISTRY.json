@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2307,
+  "highest_id": 2308,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10101,6 +10101,13 @@
       "path": "tasks/approved/2307",
       "status": "approved",
       "title": "workflow-fix: Determine which side regressed before touching either. EITHE"
+    },
+    "2308": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2308",
+      "status": "proposed",
+      "title": "Step 9c 1b launcher: --files-only list spliced into the bash -c string runs one command per path (rc=126); gate-set cross-check is blind to newlines"
     },
     "231": {
       "has_clean_result": false,
