@@ -10063,8 +10063,8 @@
     "2302": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2302",
-      "status": "running",
+      "path": "tasks/completed/2302",
+      "status": "completed",
       "title": "workflow-fix: Step 5a sibling sync puts main's own files in the branch diff, disabling the #2024 ordering carve-out and false-BLOCKing Step 9c"
     },
     "2303": {
@@ -10140,8 +10140,8 @@
     "2312": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2312",
-      "status": "approved",
+      "path": "tasks/running/2312",
+      "status": "running",
       "title": "Step 10d safe-case push has no arm for a REBASED issue branch \u2014 rejection fallback rebases onto the stale remote branch (#1128 replay shape); stale PR head can land pre-rebase payload"
     },
     "2313": {

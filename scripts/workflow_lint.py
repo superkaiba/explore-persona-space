@@ -14799,14 +14799,34 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 # (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
 # change). Each entry names its trim direction; none is licensed to grow.
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
-    # measured 961,693 B after #2312 added the Step 10d rewritten-branch
-    # arm (+18,660 B on main's 943,033 B: the five mutual-non-ancestry
+    # measured 963,447 B after #2312 added the Step 10d rewritten-branch
+    # arm (+18,660 B on #2302's 944,787 B main: the five mutual-non-ancestry
     # descendancy guards at the push/pull copy sites — canonical snippet
     # (1), the safe-case push, the zero-PR stale-ref arm, the post-gate
     # re-sync push, the shape-2 retry — plus the fail-closed PR-head
     # parity gate and the "Rewritten-branch landing route" subsection);
     # cap = measured + ~1.2 KB (#1753/#1727 landing-bytes rule; headroom
-    # 1,207 B <= the 3,000 B loose-cap hygiene bar).
+    # 1,203 B <= the 3,000 B loose-cap hygiene bar). MEASURED POST-MERGE:
+    # the branch absorbed #2302's landed +1,754 B before this cap was set,
+    # so the value is the real landing size, not a projection off a stale
+    # merge-base (a cap computed against the pre-#2302 base would have
+    # FAILED by 547 B the moment this branch landed).
+    # Prior: 945_400 —
+    # measured 944,138 B after #2302 round 2 de-duplicated the stale-sync
+    # residual prose (the Step 9c 1d parenthetical now cross-references
+    # "Step 5a § Base-identity invariant (#2302)" instead of restating it,
+    # -184 B on round 1's 944,322 B) and the cap was LOWERED back to the new
+    # minimum + ~1.2 KB (#1753/#1727 landing-bytes rule; headroom 1,262 B
+    # <= the 3,000 B loose-cap hygiene bar — a ratchet is a real cost;
+    # give budget back when prose shrinks).
+    # Prior: 945_600 — measured 944,322 B after #2302 round 1 documented the
+    # base-identity invariant at BOTH consumers of the Step 5a sibling-sync
+    # output (+1,938 B on the #2136 942,384 B base): the Step 5a
+    # "Base-identity invariant" paragraph (synced paths are base-identical BY
+    # CONSTRUCTION; selector `base_identical_excluded` + compare
+    # `base_identical_files` reporting; the stale-sync residual + its re-sync
+    # remedy) and the Step 9c 1d COMPARE_RC=0 bullet's content-test
+    # parenthetical (#2024 precondition 1 is a CONTENT test as of #2302).
     # Prior: 943_600 —
     # measured 942,384 B after #2136 anchored the Step 5b durable-verdict
     # snippet (+1,370 B: the since_ts=review_round_anchor_ts call form,
@@ -14936,7 +14956,7 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 942_000: that value predates this landing and would FAIL it by 384 B,
     # so the higher cap is the correct resolution, not a regrowth licence
     # (headroom 1,216 B, the same ~1 KB the #1753 rule prescribes).
-    "issue/SKILL.md": 962_900,
+    "issue/SKILL.md": 964_650,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,

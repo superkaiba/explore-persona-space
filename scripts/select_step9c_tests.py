@@ -279,7 +279,11 @@ BACKGROUND invocation — SKILL.md 9c step 1b). ``--json`` emits
 ``{"tests": [...], "untested_touched": [...], "base": "...",
 "missing_invariants": [...], "selection_reasons": {test: [reasons]},
 "n_tests": <int>, "recommended_timeout_s": <int>,
-"slow_tests_selected": [...]}`` (a
+"slow_tests_selected": [...], "base_identical_excluded": [...]}``
+(``base_identical_excluded`` — #2302: three-dot-diff paths whose content at
+HEAD is verified byte-identical to the *base* TIP, e.g. Step 5a sibling-sync
+copies of main's own files; excluded from ``tests`` selection and from the
+``untested_touched`` WARN, never silently — a stderr NOTE names each one) (a
 reason is ``invariant`` / ``touched-test`` / ``stem-map:<touched file>`` /
 ``glob-scan:<touched file>`` / ``import-map:<touched file>`` /
 ``literal-path:<touched file>`` / ``rules-pin:<touched file>`` /
@@ -1243,12 +1247,91 @@ def compute_touched(
 ) -> list[str]:
     """Return the repo-relative paths the current branch changed vs *base*.
 
-    Uses the three-dot ``git diff --name-only <base>...HEAD`` form: it diffs the
-    merge-base of *base* and HEAD against HEAD — exactly the branch's own
+    The three-dot ``git diff --name-only <base>...HEAD`` form (merge-base of
+    *base* and HEAD vs HEAD) is the CANDIDATE set — exactly the branch's own
     additions/modifications, not changes on *base* that HEAD lacks. The diff
     runs with *work_root* as cwd, so HEAD is the invoking checkout's branch
     (the issue branch from a worktree — #851). ``_runner`` is injectable for
     tests (it receives the argv list and returns stdout).
+
+    #2302: paths whose content at HEAD is byte-identical to the *base* TIP
+    are then SUBTRACTED (see :func:`compute_base_identical`): a Step 5a
+    sibling-sync commit copies main's OWN ``scripts/issue<M>_*`` /
+    ``tests/test_issue<M>_*`` content into the branch, which puts those paths
+    in the three-dot diff even though landing the branch changes nothing at
+    them — inflating the gate set (#2296: 61 invariant files -> 217, wall
+    1:46:36) and disabling the #2024 ordering carve-out downstream. Landing
+    the branch changes NOTHING at a base-identical path, so it is not the
+    branch's to test, lint, or cover.
+    """
+    touched, _excluded = _touched_and_base_identical(base, work_root, _runner)
+    return touched
+
+
+def compute_base_identical(
+    base: str,
+    work_root: Path,
+    _runner: Callable[[list[str]], str] | None = None,
+) -> list[str]:
+    """Sorted three-dot-diff paths VERIFIED byte-identical to the *base* tip (#2302).
+
+    The set :func:`compute_touched` excludes. Exclusion candidates are
+    ``three_dot - two_dot`` (``git diff --name-only <base> HEAD`` with the
+    same flags, so rename heuristics cannot make the lists asymmetric in a
+    way that drops a real change); each candidate is excluded ONLY on
+    verified blob-OID equality of ``HEAD:<p>`` vs ``<base>:<p>`` (one batched
+    ``git cat-file --batch-check``). Fail-closed: an unresolvable or
+    ambiguous path — and, on any git error in the two-dot/blob probes, EVERY
+    path — stays branch-touched (returned set empty).
+    """
+    _touched, excluded = _touched_and_base_identical(base, work_root, _runner)
+    return excluded
+
+
+def _base_identical_audit(base: str, work_root: Path, touched: list[str]) -> list[str]:
+    """Verified base-identical exclusions for the ``--json`` audit key (#2302).
+
+    Runs even when *touched* is empty: a branch whose ENTIRE three-dot diff is
+    base-identical (a sync-commit-only branch) filters ``touched`` to ``[]``,
+    and "the exclusion is never silent" must still hold — the audit key names
+    the excluded paths and the caller's NOTE fires. Derived through the PUBLIC
+    :func:`compute_base_identical` seam; a derivation failure degrades to ZERO
+    exclusions with a stderr NOTE (fail-closed — nothing is claimed excluded),
+    never a crash: the caller's touched list carries its own fail-loud
+    three-dot contract. Any entry still present in *touched* is DROPPED from
+    the audit (an asymmetric transient git failure between the two seam calls
+    could otherwise report an exclusion the realized filtering did not apply —
+    the audit key never contradicts the selection).
+    """
+    try:
+        audit = compute_base_identical(base, work_root)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
+        print(
+            "select_step9c_tests: NOTE — base-identical audit derivation failed "
+            f"({exc}); reporting zero exclusions (fail-closed, #2302)",
+            file=sys.stderr,
+        )
+        return []
+    still_touched = set(touched)
+    return [p for p in audit if p not in still_touched]
+
+
+def _touched_and_base_identical(
+    base: str,
+    work_root: Path,
+    _runner: Callable[[list[str]], str] | None = None,
+) -> tuple[list[str], list[str]]:
+    """(filtered touched list, sorted verified base-identical exclusions) (#2302).
+
+    One diff pass backing both :func:`compute_touched` and
+    :func:`compute_base_identical`. main() routes through those two PUBLIC
+    seams (not this helper) so tests that monkeypatch ``compute_touched``
+    keep working; both seams delegate here, so a real invocation derives
+    both lists from the same deterministic diff recipe. The three-dot diff
+    failing raises
+    ``CalledProcessError`` (unchanged fail-loud contract); a failure in the
+    AUXILIARY two-dot / blob probes degrades to ZERO exclusions with a stderr
+    NOTE — everything stays touched, the fail-closed (blocking) direction.
     """
 
     def _default_runner(argv: list[str]) -> str:
@@ -1263,7 +1346,77 @@ def compute_touched(
 
     runner = _runner or _default_runner
     out = runner(["git", "diff", "--name-only", f"{base}...HEAD"])
-    return [line.strip() for line in out.splitlines() if line.strip()]
+    three_dot = [line.strip() for line in out.splitlines() if line.strip()]
+    if not three_dot:
+        return [], []
+    try:
+        out_two = runner(["git", "diff", "--name-only", base, "HEAD"])
+        two_dot = {line.strip() for line in out_two.splitlines() if line.strip()}
+        candidates = [p for p in three_dot if p not in two_dot]
+        excluded = (
+            set(_verified_base_identical(candidates, base, work_root)) if candidates else set()
+        )
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
+        print(
+            f"select_step9c_tests: NOTE — base-identity filter failed ({exc}); keeping every "
+            "three-dot path as branch-touched (fail-closed, #2302)",
+            file=sys.stderr,
+        )
+        return three_dot, []
+    return [p for p in three_dot if p not in excluded], sorted(excluded)
+
+
+def _verified_base_identical(candidates: list[str], base: str, work_root: Path) -> list[str]:
+    """The subset of *candidates* whose HEAD blob OID equals its *base*-tip blob OID.
+
+    ONE batched ``git cat-file --batch-check`` over ``HEAD:<p>`` + ``<base>:<p>``
+    for every candidate. A path is returned ONLY when BOTH specs resolve to an
+    OID and the OIDs are equal — a ``missing``/``ambiguous``/unparseable row
+    keeps its path branch-touched (fail-closed). Raises ``CalledProcessError``
+    on a non-zero git exit (the caller degrades to zero exclusions).
+    """
+    specs = [f"HEAD:{p}" for p in candidates] + [f"{base}:{p}" for p in candidates]
+    oids = _blob_oid_map(specs, work_root)
+    identical: list[str] = []
+    for p in candidates:
+        head_oid = oids.get(f"HEAD:{p}")
+        base_oid = oids.get(f"{base}:{p}")
+        if head_oid is not None and base_oid is not None and head_oid == base_oid:
+            identical.append(p)
+    return identical
+
+
+_HEX_OID_RE = re.compile(r"^[0-9a-f]{40}(?:[0-9a-f]{24})?$")  # SHA-1 or SHA-256 object ids
+
+
+def _blob_oid_map(specs: list[str], work_root: Path) -> dict[str, str]:
+    """Resolve ``<rev>:<path>`` specs to object OIDs via one batched git call (#2302).
+
+    Returns a mapping ONLY for specs that resolved cleanly: a resolved
+    ``--batch-check`` row is ``<oid> <type> <size>``; a ``missing`` /
+    ``ambiguous`` / short / unparseable row leaves its spec OUT of the map
+    (callers treat an absent spec as unresolvable -> the path stays
+    branch-touched, fail-closed). Rows are POSITIONAL (i-th response row ==
+    i-th input spec); a row-count mismatch makes every row unattributable,
+    so NOTHING resolves. Raises ``CalledProcessError`` on non-zero git exit.
+    """
+    proc = subprocess.run(
+        ["git", "cat-file", "--batch-check"],
+        cwd=str(work_root),
+        input="".join(s + "\n" for s in specs),
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    lines = proc.stdout.splitlines()
+    oids: dict[str, str] = {}
+    if len(lines) != len(specs):
+        return oids
+    for spec, line in zip(specs, lines, strict=True):
+        parts = line.split()
+        if len(parts) == 3 and _HEX_OID_RE.match(parts[0]):
+            oids[spec] = parts[0]
+    return oids
 
 
 # --- Import-map arm (#1299). ---------------------------------------------------
@@ -2170,11 +2323,24 @@ def main(argv: list[str] | None = None) -> int:
     # consumer (NOTE, sizing line, --json "base") sees the RESOLVED base.
     base = resolve_base(args.base, work_root, fetch=not args.no_fetch)
     try:
+        # The PUBLIC seam (tests monkeypatch compute_touched; #2302): the
+        # returned list already has verified base-identical paths subtracted.
         touched = compute_touched(base, work_root)
     except subprocess.CalledProcessError as exc:
         # Fail loud — never silently fall back to zero tests on a git error.
         print(f"select_step9c_tests: git diff failed: {exc}", file=sys.stderr)
         return 1
+    base_identical = _base_identical_audit(base, work_root, touched)
+
+    if base_identical:
+        # The exclusion is never silent — same discipline as the
+        # untested_touched / missing_invariants reporting (#2302).
+        print(
+            "select_step9c_tests: NOTE — base-identical paths excluded from the branch "
+            f"diff (HEAD blob == '{base}' tip blob; Step 5a sibling-sync class, #2302): "
+            + ", ".join(base_identical),
+            file=sys.stderr,
+        )
 
     if not touched:
         # Loud, exit-0 NOTE (the documented degenerate fallback stays legitimate
@@ -2240,6 +2406,7 @@ def main(argv: list[str] | None = None) -> int:
                     "n_tests": len(tests),
                     "recommended_timeout_s": timeout_s,
                     "slow_tests_selected": [t for t in tests if t in SLOW_TESTS],
+                    "base_identical_excluded": base_identical,  # #2302 — never a silent exclusion
                 }
             )
         )

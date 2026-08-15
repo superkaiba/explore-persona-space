@@ -2725,6 +2725,23 @@ echo "[step5a] sibling-file sync: ${#SIBLING_SYNCED[@]} file(s)"
 fi
 ```
 
+**Base-identity invariant (#2302).** Synced sibling paths are base-identical
+BY CONSTRUCTION — their content at HEAD equals the fetched origin/main TIP —
+so they never count as branch changes downstream:
+`select_step9c_tests.compute_touched` subtracts verified base-identical paths
+(three-dot-minus-two-dot candidates, each confirmed by blob-OID equality
+against the base tip; reported as `base_identical_excluded`, never silently),
+and the Step 9c compare derives its OWN base-identical set and subtracts it
+from #2024 precondition 1 — so a pre-existing order-dependent failure in a
+synced sibling classifies `ordering_suspect` instead of blocking NEW, and the
+sync no longer inflates the gate set (#2296: 61 invariant files → 217, wall
+1:46:36, two false-blocking NEW nodes). **Stale-sync residual:** a path synced
+on an EARLIER round that origin/main has since ADVANCED legitimately differs
+from the base tip, so it stays branch-touched and blocking — that is CORRECT,
+not a #2302 regression (a rebase-landing of the branch would revert main's
+newer content at that path); the remedy is a RE-SYNC (this arm re-runs on
+each refresh), never a bug filed against the filter.
+
 The refresh touches ONLY the workflow surface (never experiment code).
 Issue branches must not carry their own workflow-surface edits as a
 rule (those go through their own filed workflow-fix `/issue --auto`
@@ -10542,7 +10559,15 @@ suite directly and posts an `epm:test-verdict` event with the result.
         listed in `stripped` are pre-existing on main and do NOT block (the
         round may PASS steps 1–2 with PYTEST_RC=1). Compare may additionally
         report the NON-BLOCKING `ordering_suspect` class (#2024): a failure
-        whose test FILE is untouched by the branch diff, PASSes the
+        whose test FILE is untouched by the branch diff (a CONTENT test as of
+        #2302: "branch-touched" means the file's content at HEAD differs from
+        its content at the resolved base TIP — so a Step 5a sibling-sync copy
+        of main's OWN file, base-identical by construction, never disables
+        this carve-out and never inflates the selector's gate set; the
+        exclusions are always visible, as `base_identical_excluded` in the
+        selector JSON and `base_identical_files` in the compare JSON;
+        stale-sync residual + re-sync remedy: Step 5a § Base-identity
+        invariant (#2302)), PASSes the
         single-file pristine oracle, and REPRODUCES on pristine main when
         re-run together with the co-selected predecessors that preceded it in
         the gate run (ONE paired invocation in the selector's deterministic
