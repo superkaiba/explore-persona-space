@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2315,
+  "highest_id": 2316,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10164,6 +10164,13 @@
       "path": "tasks/proposed/2315",
       "status": "proposed",
       "title": "workflow-fix: Step 9c 1b --files-only output needs newline-flattening before launcher interpolation; the count cross-check cannot see the un-flattened shape"
+    },
+    "2316": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2316",
+      "status": "proposed",
+      "title": "workflow-fix: step9c compare classifies whole-repo SCAN-test nodes per-NODE, so a branch ADDING a violation to an already-red scan node reads as pre-existing"
     },
     "232": {
       "has_clean_result": true,
