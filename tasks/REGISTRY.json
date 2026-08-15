@@ -8839,8 +8839,8 @@
     "2143": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2143",
-      "status": "planning",
+      "path": "tasks/approved/2143",
+      "status": "approved",
       "title": "daily-fix: bare-API blinded-read recipe as a rule"
     },
     "2144": {
