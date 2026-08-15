@@ -2,7 +2,8 @@
 title: 'workflow-fix: Step 9c 1b --files-only output needs newline-flattening before
   launcher interpolation; the count cross-check cannot see the un-flattened shape'
 kind: infra
-tags: []
+tags:
+- wf-fix
 created_at: '2026-08-15T07:12:29Z'
 has_clean_result: false
 origin_prompt: 'Surfaced by #2312''s own Step 9c gate round 1: rc=126 with 185x Permission
