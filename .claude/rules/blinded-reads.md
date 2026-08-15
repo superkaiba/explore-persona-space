@@ -22,8 +22,9 @@ on is the bytes in the request.
 1. **Content-only packets** — item text + neutral tags + the question; no
    system prompt, no project context, no file paths, no criterion name, no
    item type. Packets open neutrally (`# Group A` / `100 items.`).
-2. **No reader tools** — the request carries `system_prompt: None` and
-   `tools: None`; nothing beyond the request bytes is reachable.
+2. **No reader tools** — the request carries no system prompt and no tools
+   (the audit sidecar records both as `None`); nothing beyond the request
+   bytes is reachable.
 3. **Blinding key frozen to a file BEFORE the first packet is sent**, so
    the mapping cannot be reconstructed post-hoc to fit the answer — and
    the key filename goes on the outbound ban list so it can never travel
