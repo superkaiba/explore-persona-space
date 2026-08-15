@@ -10182,8 +10182,8 @@
     "2318": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2318",
-      "status": "planning",
+      "path": "tasks/approved/2318",
+      "status": "approved",
       "title": "workflow-fix: 9a-ter inline payload lint gate \u2014 violation-grain classification for whole-repo scan nodes red on pristine main"
     },
     "232": {
