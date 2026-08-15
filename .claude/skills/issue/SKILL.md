@@ -8284,6 +8284,15 @@ explicit eval-data path):
      them in the round's `epm:progress` completion note (visible, not
      re-buried). Every payload path is certified; push.
 
+   Phase A ledger demotion (#2235) decides at VIOLATION grain for
+   whole-repo scan nodes (#2318): a sha-fresh baseline-ledger red that
+   is a `step9c_baseline.VIOLATION_SET_SCAN_NODES` member demotes its
+   FAILURES block to reported ONLY when `extract_violation_paths(<block>)`
+   contains no payload path — a payload path in the extracted set means
+   the round ADDED a violation to the already-red node and the block
+   stands; non-registry ledger nodes keep the node-grain `FAILED`-line
+   demotion.
+
    The gate is mechanically enforced for CODE payload:
    `guard_root_code_commit.sh` (PreToolUse) refuses a repo-root commit
    of uncertified `scripts/`/`src/`/`tests/` payload until
@@ -10207,7 +10216,37 @@ suite directly and posts an `epm:test-verdict` event with the result.
       # wrong key, a stale copy, or an unsubstituted placeholder:
       S9C_N=$(uv run python scripts/select_step9c_tests.py --files-only 2>/dev/null | grep -c .) \
         || { echo "FATAL: selector failed — do NOT launch the gate" >&2; exit 1; }
-      S9C_FILES="<files>"   # verbatim from step 1a's printed command
+      # <files> sourcing, route (1): verbatim from step 1a's printed command
+      # (already space-joined on ONE line). Route (2), self-composing from the
+      # selector: NORMALIZE to spaces —
+      #   S9C_FILES=$(uv run python scripts/select_step9c_tests.py --files-only | tr '\n' ' ')
+      # --files-only emits one path per LINE (correct for the Step 10d
+      # `mapfile -t` array consumers); a newline-bearing string spliced into
+      # the launcher's `bash -c "…"` command TEXT is parsed by the inner shell
+      # as N COMMANDS, not one pytest argv (#2314: 1 of 120 files ran; the
+      # trailing flags — --junitxml included — attached to the last bogus
+      # line; rc=126). Both routes hit the shape + count checks below.
+      S9C_FILES="<files>"
+      # Splice-shape check (#2317) — the count check below validates
+      # CARDINALITY only: unquoted word-splitting counts a newline list
+      # correctly, so it PASSES the very shape that splices as N commands
+      # (#2314). printf '%s' adds no trailing newline, so wc -l counts
+      # EMBEDDED newlines exactly (0 for a space list). Deliberately wc -l,
+      # NOT the readable-looking `case` glob whose pattern wraps a command
+      # substitution emitting a bare newline: command substitution strips
+      # trailing newlines, so that pattern degenerates to the empty string — a
+      # match-everything glob that fires unconditionally (#2314's second
+      # attempt; it failed SAFE, but a guard that cannot fail correctly is not
+      # a guard). Self-test first — a space list must score 0, a newline list
+      # must score 1:
+      [ "$(printf 'a b' | wc -l)" -eq 0 ] && [ "$(printf 'a\nb' | wc -l)" -eq 1 ] \
+        || { echo "FATAL: splice-shape assertion is itself broken on this shell — do NOT launch" >&2; exit 1; }
+      [ "$(printf '%s' "$S9C_FILES" | wc -l)" -eq 0 ] \
+        || { echo "FATAL: substituted <files> contains NEWLINES — the launcher's inner bash -c would parse each path after the first as its own COMMAND (pytest would run 1 of N files, the trailing flags incl. --junitxml would attach to the last bogus line, and rc would be 126); re-source with | tr '\n' ' '; do NOT launch" >&2; exit 1; }
+      # Site-scoped by design (#2317 sweep): this 1b splice is the ONLY
+      # bash -c-spliced file list; the Step 10d / 9a-ter legs use `mapfile -t`
+      # + quoted array expansion, where newline input is correct by
+      # construction — a future SECOND bash -c splice site needs its own guard.
       S9C_GOT=$(printf '%s\n' $S9C_FILES | grep -c . || true)   # unquoted: word-split is the intent
       [ "${S9C_GOT:-0}" -eq "${S9C_N:-0}" ] \
         || { echo "FATAL: substituted <files> has $S9C_GOT path(s), selector says $S9C_N — wrong --json key (the list key is 'tests'), stale copy, or unsubstituted placeholder; re-run step 1a and re-substitute; do NOT launch (a bare pytest collects the WHOLE suite)" >&2; exit 1; }

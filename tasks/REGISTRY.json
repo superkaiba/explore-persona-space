@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2319,
+  "highest_id": 2320,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8811,15 +8811,15 @@
     "2139": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2139",
-      "status": "proposed",
+      "path": "tasks/running/2139",
+      "status": "running",
       "title": "daily-fix: tick_triage counts compact rows as human"
     },
     "2140": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2140",
-      "status": "proposed",
+      "path": "tasks/planning/2140",
+      "status": "planning",
       "title": "daily-fix: watcher daemon-liveness pass (3h17m outage)"
     },
     "2141": {
@@ -10175,15 +10175,15 @@
     "2317": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2317",
-      "status": "running",
+      "path": "tasks/completed/2317",
+      "status": "completed",
       "title": "workflow-fix: Step 9c gate-set cross-check validates cardinality but not splice shape \u2014 a newline-separated --files-only list runs 1 of N files behind a green guard"
     },
     "2318": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2318",
-      "status": "running",
+      "path": "tasks/completed/2318",
+      "status": "completed",
       "title": "workflow-fix: 9a-ter inline payload lint gate \u2014 violation-grain classification for whole-repo scan nodes red on pristine main"
     },
     "2319": {
@@ -10199,6 +10199,13 @@
       "path": "tasks/archived/232",
       "status": "archived",
       "title": "Marker coupling strength tracks representational distance from assistant, not behavioral distance (MODERATE confidence)"
+    },
+    "2320": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2320",
+      "status": "proposed",
+      "title": "workflow-fix: Step 10d Guard 3 ON_MAINLINE uses first-parent reachability, so a sibling's merge-form landing false-flags later branches UNSAFE"
     },
     "233": {
       "has_clean_result": false,

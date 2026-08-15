@@ -15046,7 +15046,19 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # +1,754 B, absorbed before the earlier cap was set). Two consecutive
     # SKILL.md-bearing siblings landing inside one branch's gate window is now
     # the norm, not the exception: re-measure at Step 10d, never at Step 4.
-    "issue/SKILL.md": 972_600,
+    #
+    # 974_900 — #2317 MEASURED 973,681 B on the branch's own origin/main
+    # (ec10edbcb0) merge: main's 971,235 B + this branch's +2,446 B (the
+    # Step 9c 1b splice-shape guard: the --files-only tr-to-spaces sourcing
+    # note, the wc -l embedded-newline assertion + shell self-test, and the
+    # site-scope note), additive — the 1b region was untouched by
+    # #2296/#2312. Prior: 972_600 (#2296/#2312, above) and this branch's own
+    # 950_300 measured against the pre-#2296 base bbc5d75807 — the
+    # moving-main class again, absorbed by the branch-side re-merge BEFORE
+    # the gate this time. Cap = landing bytes + ~1.2 KB (#1753/#1727
+    # landing-bytes rule; headroom 1,219 B <= the 3,000 B loose-cap hygiene
+    # bar). Re-measure at Step 10d if main moves again.
+    "issue/SKILL.md": 974_900,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
