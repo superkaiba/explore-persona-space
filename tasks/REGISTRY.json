@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2317,
+  "highest_id": 2318,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10178,6 +10178,13 @@
       "path": "tasks/running/2317",
       "status": "running",
       "title": "workflow-fix: Step 9c gate-set cross-check validates cardinality but not splice shape \u2014 a newline-separated --files-only list runs 1 of N files behind a green guard"
+    },
+    "2318": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2318",
+      "status": "proposed",
+      "title": "workflow-fix: 9a-ter inline payload lint gate \u2014 violation-grain classification for whole-repo scan nodes red on pristine main"
     },
     "232": {
       "has_clean_result": true,
