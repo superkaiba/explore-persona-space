@@ -1,7 +1,7 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions (plus campaign sessions, task #586).
 
-39 passes ("pass" = one top-level per-tick action block in ``main()``'s
+40 passes ("pass" = one top-level per-tick action block in ``main()``'s
 production run order; helpers invoked INSIDE a pass — e.g. the sub-floor
 disk sentinel inside pass 1 — and the ``--*-only`` debug entrypoints do
 not count; a NEW inline pass block that is not a ``*_pass``-named function
@@ -17,7 +17,8 @@ order. The per-tick execution order is: 1 (VM disk) -> 15 (data-disk) ->
 32 (partial-bundle) ->
 33 (unfolded-round) -> 30 (urgent-park router) -> 19 (VM-ledger reap) ->
 20 (program-orchestrator
-recovery) -> 13 (auth-outage guard) -> 2 (crash-recovery) -> 9 (campaign)
+recovery) -> 40 (daemon-liveness) -> 13 (auth-outage guard) ->
+2 (crash-recovery) -> 9 (campaign)
 -> 3 (pod-safety) -> 4 (stalled-detector) -> 37 (pending-call wedge) ->
 5 (orphan sweep) ->
 39 (predispatch-staleness) ->
@@ -1126,6 +1127,43 @@ adding a pass means adding a numbered item here AND bumping the digit:
    staleness"). ``--predispatch-staleness-only`` runs just this pass (pair
    with ``--dry-run`` for a zero-write live smoke).
    (:func:`predispatch_staleness_pass`.)
+40. **Daemon-liveness pass (#2140; ESCALATE-ONLY; runs right after the tick's
+   single daemon probe, in BOTH daemon states; kill switch
+   EPM_DISABLE_DAEMON_LIVENESS_PASS)** — makes a Happy-daemon outage LOUD on
+   the tick the spawn lanes start skipping. Origin: 2026-08-04T21:13Z ->
+   04:30Z (3h17m), ``~/.happy/daemon.state.json`` absent, every spawn lane
+   no-oped with only stdout lines — no push, no sidecar, no marker; detection
+   was a human opening a PM session (the only pre-existing daemon-outage
+   escalation, :func:`decide_daemon_blocked_escalation` #845c, needs a
+   respawn-worthy stalled session to exist first, so a stall-free outage
+   escalated nothing). Pure predicate
+   :func:`decide_daemon_liveness_escalation` over singleton state
+   ``~/.eps-autonomous/daemon-liveness.json``, fed the tick's
+   already-computed ``daemon_reachable`` as a kwarg — NEVER a second probe.
+   The 2nd consecutive unreachable tick (:data:`DAEMON_LIVENESS_THRESHOLD`,
+   ~20 min at the 10-min cron) opens the episode: ONE IMMEDIATE push via
+   :func:`_telegram_push_urgent` (the telegram_push.sh direct-send carve-out
+   — the 3x/day digest's worst-case latency exceeds the motivating outage,
+   and the usual tick-side second channel spawns through the very daemon
+   that is down) + ONE sidecar row
+   (``.claude/cache/daemon-liveness-events.jsonl``), naming the
+   suppressed-work counts (autonomous registrations + ripe infra-queue
+   depth; each read fail-soft to ``?``) and the exact LOGIN-SHELL recovery
+   command. A persisting outage re-alerts every
+   ``EPM_DAEMON_LIVENESS_REALERT_MIN`` (60 min) on the DIGEST channel
+   (:func:`_telegram_push`); the first reachable tick after an escalated
+   episode fires ONE immediate recovery push naming the measured outage
+   duration (stamped at the FIRST unreachable tick), then state resets.
+   State is saved BEFORE any emit — a persistent save failure degrades to
+   stderr + sidecar rows, never a per-tick push storm — and every state
+   field read back goes through ``isinstance`` guards failing toward "no
+   escalation" (worst case ONE delayed escalation, never a spurious one).
+   ESCALATE-ONLY hard invariant: never restarts the daemon (a cron-context
+   restart risks the #1466 tmux split-brain, and probe-false != process-dead
+   would double-daemon a hung-but-alive one), never stops/spawns a session,
+   never posts a task marker, never mutates task status.
+   ``--daemon-liveness-only`` runs just this pass (pair with ``--dry-run``
+   for a zero-write live smoke). (:func:`daemon_liveness_pass`.)
 
 
 Why each pass exists
@@ -7681,6 +7719,386 @@ def root_draft_pass(dry_run: bool) -> bool:
         return bool(fires)
     except Exception as exc:  # top-level fail-soft: never take down the tick
         print(f"  root-draft: pass failed (fail-soft): {exc}", file=sys.stderr)
+        return False
+
+
+# ─── Daemon-liveness pass (task #2140; origin outage 2026-08-04) ─────────────
+#
+# WHY: a Happy-daemon outage silently disables EVERY autonomous spawn lane —
+# crash-recovery respawns, infra-drain, proposed-infra-sweep, capacity-retry,
+# boot-death, idle-unmapped, stale-registration and no-progress-respawn all
+# no-op behind the tick's single daemon probe with only stdout lines
+# ("respawn: Happy daemon unreachable; skipping ..."). On 2026-08-04T21:13Z ->
+# 2026-08-05T04:30Z (3h17m) `~/.happy/daemon.state.json` was absent,
+# _daemon_reachable() returned False on every tick, and detection came from a
+# HUMAN opening a PM session at 22:48Z; recovery was manual. The only
+# pre-existing daemon-outage escalation (decide_daemon_blocked_escalation,
+# #845c) fires only for an already-alerted stalled session whose respawn is
+# deferred — an outage with no respawn-worthy stall (exactly the #2140
+# window) escalated nothing. This pass is the fleet-level, stall-independent
+# complement, modeled architecturally on root_draft_pass (pure decide_*
+# predicate + singleton atomic state + dedicated JSONL sidecar + fail-soft
+# pushes + a top-level except so an internal error never takes down the
+# tick).
+#
+# ESCALATE-ONLY HARD INVARIANT: the pass never restarts the daemon, never
+# stops/spawns a session, never posts a task marker, never mutates task
+# status (pinned by tests/test_autonomous_session_watch_daemon_liveness.py
+# ::test_daemon_liveness_pass_never_restarts_or_mutates). A restart arm is
+# deliberately OUT of v1 for two independent reasons recorded in the #2140
+# plan: (a) #1466 tmux split-brain — daemon durability hinges on a
+# LOGIN-SHELL start (~/.profile sources scripts/eps_tmux_env.sh so
+# TMUX_TMPDIR resolves to the fleet's single tmux server); the watcher cron
+# env sources no profile, so a cron-started daemon risks spawning sessions
+# onto a SECOND tmux server (39 sessions went invisible in #1466); and
+# (b) probe-false != process-dead — _daemon_reachable() returns False for a
+# HUNG-but-alive daemon by documented conservative contract, so an unguarded
+# start would double-daemon. The alert therefore carries the exact
+# login-shell recovery command instead of acting.
+
+# Consecutive unreachable ticks before the episode opens (~20 min at the
+# 10-min cron). One tick is a flap (each tick's probe is itself the
+# 3-attempt _daemon_reachable_with_retry); two consecutive full ticks is a
+# real outage. Deliberately a plain constant (not env-tunable) — the
+# threshold IS the pass's false-positive guard.
+DAEMON_LIVENESS_THRESHOLD = 2
+# Re-alert cadence (minutes) during a PERSISTING outage: the #2140 window
+# (3h17m ~= 20 ticks) yields ~4 alerts, not 20. Env
+# EPM_DAEMON_LIVENESS_REALERT_MIN, read at call time (the root-draft knob
+# shape).
+DAEMON_LIVENESS_REALERT_MIN = 60.0
+
+# IMMEDIATE push channel for the episode `open` / `recovered` events: the
+# my-goat direct-send script — the sanctioned urgent carve-out named in
+# notif_enqueue.sh's own header ("Urgent paths ... still call
+# telegram_push.sh directly"). _telegram_push (the 3x/day digest queue) is
+# DELIBERATELY not used for these two events: worst-case digest latency
+# (~8h) exceeds the 3h17m outage this pass exists to catch, and the digest
+# docstring's "the tick-side PushNotification remains the second channel"
+# premise does not hold here — per-issue tick sessions spawn through the
+# very daemon that is down. `realert` events stay on the digest queue
+# (volume hygiene; criterion: ~4 rows for the #2140 window, not 20).
+# Override for tests via EPM_TELEGRAM_PUSH_URGENT_SCRIPT.
+_TELEGRAM_PUSH_URGENT_SCRIPT_DEFAULT = Path.home() / "my-goat" / "scripts" / "telegram_push.sh"
+
+
+def _telegram_push_urgent_script() -> Path:
+    """Resolve the IMMEDIATE-send script (env override for tests; mirrors
+    :func:`_telegram_push_script`)."""
+    override = os.environ.get("EPM_TELEGRAM_PUSH_URGENT_SCRIPT", "").strip()
+    return Path(override) if override else _TELEGRAM_PUSH_URGENT_SCRIPT_DEFAULT
+
+
+def _telegram_push_urgent(msg: str, dry_run: bool) -> bool:
+    """Best-effort IMMEDIATE phone notification via telegram_push.sh (the
+    urgent carve-out — see the channel-split block comment above). Mirrors
+    :func:`_telegram_push`'s subprocess/timeout/never-raise shape exactly,
+    minus the digest queue's NOTIF_CAT env (a direct send has no category).
+    Failure is logged LOUDLY but never raises and never crashes the pass.
+    Returns True on a confirmed zero-rc send."""
+    script = _telegram_push_urgent_script()
+    if dry_run:
+        print(f"  [dry-run] would telegram-push-urgent: {msg[:120]}")
+        return False
+    if not script.is_file():
+        print(
+            f"  WARNING: urgent telegram push script missing at {script}; push dropped",
+            file=sys.stderr,
+        )
+        return False
+    try:
+        res = subprocess.run(
+            ["bash", str(script), msg],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (subprocess.SubprocessError, OSError) as e:
+        print(f"  WARNING: urgent telegram push failed: {e}", file=sys.stderr)
+        return False
+    if res.returncode != 0:
+        print(
+            f"  WARNING: urgent telegram push failed: {(res.stderr or res.stdout).strip()[:200]}",
+            file=sys.stderr,
+        )
+        return False
+    return True
+
+
+def _daemon_liveness_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_DAEMON_LIVENESS_PASS`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_root_draft_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_DAEMON_LIVENESS_PASS", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _daemon_liveness_sidecar_path() -> Path:
+    """DEDICATED daemon-liveness event stream (own stream for clean grep —
+    the root-draft / triage-observer sidecar precedent)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "daemon-liveness-events.jsonl"
+
+
+def _daemon_liveness_state_path() -> Path:
+    """Singleton episode state (deliberately NOT a per-issue GC target):
+    ``{"consecutive_unreachable": 0, "episode_open_ts": null,
+    "last_push_ts": null, "escalated": false}``."""
+    return AUTONOMOUS_REGISTRY_DIR / "daemon-liveness.json"
+
+
+def _load_daemon_liveness_state() -> dict:
+    """``{}`` on missing/garbled state; every field read back goes through
+    ``isinstance`` type-guards in :func:`decide_daemon_liveness_escalation`
+    (mirrors :func:`_load_root_draft_state`)."""
+    path = _daemon_liveness_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_daemon_liveness_state(state: dict, dry_run: bool) -> bool:
+    """Atomic temp+rename write of the daemon-liveness episode state
+    (fail-soft; mirrors :func:`_save_root_draft_state`); ``dry_run``
+    performs zero writes. Returns True on success (dry-run included — the
+    dry-run emit paths are themselves zero-write): the caller's
+    save-BEFORE-emit storm guard keys on a False return to suppress the
+    push (a persistent save failure must degrade to stderr + sidecar only,
+    never re-fire the `open` push every tick)."""
+    if dry_run:
+        print("  [dry-run] would save daemon-liveness state")
+        return True
+    dest = _daemon_liveness_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  daemon-liveness: state save failed: {exc}", file=sys.stderr)
+        return False
+    return True
+
+
+def _append_daemon_liveness_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the daemon-liveness sidecar (fail-soft). A
+    ``ts`` is stamped; ``dry_run`` reports only (mirrors
+    :func:`_append_root_draft_sidecar`)."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append daemon-liveness sidecar row: {line[:160]}")
+        return
+    dest = _daemon_liveness_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  daemon-liveness: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _daemon_liveness_suppressed_work() -> dict:
+    """Bounded, fail-soft alert enrichment: what the outage is actually
+    suppressing. ``registrations`` = autonomous ``issue-*.json``
+    registrations whose crash-recovery is currently disabled; ``ripe_infra``
+    = the infra-drain queue's ``ripe_oldest_first`` depth (dispatches the
+    drain pass cannot execute while the daemon is down). Each read is
+    wrapped INDEPENDENTLY; any failure yields ``None`` for that field and
+    the push renders ``?``. Never raises, never blocks the push."""
+    registrations: int | None
+    try:
+        registrations = len(list(AUTONOMOUS_REGISTRY_DIR.glob("issue-*.json")))
+    except OSError:
+        registrations = None
+    ripe_infra: int | None
+    try:
+        data = json.loads(_infra_drain_queue_path().read_text())
+        ripe = data.get("ripe_oldest_first") if isinstance(data, dict) else None
+        ripe_infra = len(ripe) if isinstance(ripe, list) else None
+    except (OSError, json.JSONDecodeError):
+        ripe_infra = None
+    return {"registrations": registrations, "ripe_infra": ripe_infra}
+
+
+def decide_daemon_liveness_escalation(
+    *,
+    daemon_reachable: bool,
+    state: dict,
+    now: float,
+    threshold: int = DAEMON_LIVENESS_THRESHOLD,
+    realert_s: float,
+) -> tuple[dict, str | None]:
+    """Pure escalation decision (no IO). Returns ``(new_state, event)``
+    with ``event in {None, "open", "realert", "recovered"}``.
+
+    Reachable: ``"recovered"`` when a prior escalation is open (the caller
+    reads ``episode_open_ts`` off the OLD state for the reported duration),
+    else ``None``; either way the new state is the zero reset — a single
+    flapped tick below threshold leaves no trace, matching the retry
+    helper's intent. Unreachable: the consecutive counter increments;
+    ``episode_open_ts`` is stamped at the FIRST unreachable tick (so the
+    reported duration covers the whole outage, not just the escalated
+    part); ``"open"`` fires at the first threshold crossing while not yet
+    escalated (``>=`` rather than ``==`` — an extra fail-soft guard so a
+    hand-edited counter above threshold still escalates); ``"realert"``
+    fires while escalated once ``now - last_push_ts >= realert_s``.
+    ``last_push_ts`` updates on ``open``/``realert`` only.
+
+    Fail-safe direction: a garbled/absent state (every field re-validated
+    with ``isinstance``; bools rejected as counters/timestamps) reads as
+    ``consecutive=0, escalated=False`` — the worst case is ONE delayed
+    escalation (~10 min), never a spurious one."""
+    raw_consec = state.get("consecutive_unreachable")
+    consecutive = (
+        raw_consec
+        if isinstance(raw_consec, int) and not isinstance(raw_consec, bool) and raw_consec >= 0
+        else 0
+    )
+    raw_open = state.get("episode_open_ts")
+    episode_open_ts: float | None = (
+        float(raw_open)
+        if isinstance(raw_open, int | float) and not isinstance(raw_open, bool)
+        else None
+    )
+    raw_push = state.get("last_push_ts")
+    last_push_ts: float | None = (
+        float(raw_push)
+        if isinstance(raw_push, int | float) and not isinstance(raw_push, bool)
+        else None
+    )
+    escalated = state.get("escalated") is True
+
+    reset = {
+        "consecutive_unreachable": 0,
+        "episode_open_ts": None,
+        "last_push_ts": None,
+        "escalated": False,
+    }
+    if daemon_reachable:
+        return reset, ("recovered" if escalated else None)
+
+    consecutive += 1
+    if episode_open_ts is None:
+        episode_open_ts = now
+    event: str | None = None
+    if not escalated and consecutive >= threshold:
+        event = "open"
+        escalated = True
+        last_push_ts = now
+    elif escalated and (last_push_ts is None or (now - last_push_ts) >= realert_s):
+        event = "realert"
+        last_push_ts = now
+    return (
+        {
+            "consecutive_unreachable": consecutive,
+            "episode_open_ts": episode_open_ts,
+            "last_push_ts": last_push_ts,
+            "escalated": escalated,
+        },
+        event,
+    )
+
+
+def _daemon_liveness_duration_label(seconds: float) -> str:
+    """Render an outage duration as ``<H>h<MM>m`` (e.g. ``3h17m``)."""
+    total = max(0, int(seconds))
+    return f"{total // 3600}h{(total % 3600) // 60:02d}m"
+
+
+def daemon_liveness_pass(dry_run: bool, *, daemon_reachable: bool) -> bool:
+    """ESCALATE-ONLY fleet-level daemon-outage escalation (#2140; see the
+    block comment above). Runs on EVERY tick in BOTH daemon states,
+    consuming the tick's already-computed ``daemon_reachable`` — never a
+    second probe. Same skeleton as :func:`root_draft_pass` with ONE
+    deliberate ordering change: state is saved BEFORE the emit, and a
+    failed save suppresses the PUSH (stderr + sidecar only) — a
+    save-after-emit order would recompute the threshold crossing and
+    re-fire the `open` push on every tick of a persistent save failure
+    (~6 pushes/hr). Channel split per event: ``open``/``recovered`` ->
+    :func:`_telegram_push_urgent` (immediate); ``realert`` ->
+    :func:`_telegram_push` (digest). Returns True when an event fired
+    this tick."""
+    if not _daemon_liveness_enabled():
+        print("  daemon-liveness: disabled via EPM_DISABLE_DAEMON_LIVENESS_PASS; skipping")
+        return False
+    try:
+        now = time.time()
+        realert_min = _env_float(
+            "EPM_DAEMON_LIVENESS_REALERT_MIN", DAEMON_LIVENESS_REALERT_MIN, lo=10.0, hi=1440.0
+        )
+        old_state = _load_daemon_liveness_state()
+        new_state, event = decide_daemon_liveness_escalation(
+            daemon_reachable=daemon_reachable,
+            state=old_state,
+            now=now,
+            realert_s=realert_min * 60.0,
+        )
+        if event is None:
+            if new_state != old_state:
+                _save_daemon_liveness_state(new_state, dry_run)
+            return False
+        # Save FIRST (storm guard — see the docstring); only a confirmed
+        # save (or a zero-write dry-run) may push.
+        saved = _save_daemon_liveness_state(new_state, dry_run)
+        if event == "recovered":
+            # Duration off the OLD state: the predicate already reset the
+            # new one.
+            raw_open = old_state.get("episode_open_ts")
+        else:
+            raw_open = new_state.get("episode_open_ts")
+        open_ts = (
+            float(raw_open)
+            if isinstance(raw_open, int | float) and not isinstance(raw_open, bool)
+            else now
+        )
+        duration_s = max(0.0, now - open_ts)
+        dur = _daemon_liveness_duration_label(duration_s)
+        if event == "recovered":
+            msg = f"Happy daemon reachable again after {dur}; spawn lanes re-armed this tick."
+        else:
+            work = _daemon_liveness_suppressed_work()
+            regs = work.get("registrations")
+            ripe = work.get("ripe_infra")
+            n_ticks = new_state.get("consecutive_unreachable")
+            msg = (
+                f"Happy daemon UNREACHABLE for {dur} ({n_ticks} consecutive watcher "
+                f"ticks). Every autonomous spawn lane is no-oping: "
+                f"{'?' if regs is None else regs} registered autonomous session(s) "
+                f"unwatched, {'?' if ripe is None else ripe} ripe infra task(s) "
+                "undispatched. Recovery (login shell, so the #1466 tmux shim "
+                "applies): bash -lc 'happy daemon status; happy daemon start'. "
+                "Watcher never restarts the daemon itself."
+            )
+        print(f"  daemon-liveness: {event} — {msg[:200]}")
+        _append_daemon_liveness_sidecar(
+            {
+                "kind": f"daemon-liveness-{event}",
+                "event": event,
+                "duration_s": round(duration_s, 1),
+                "consecutive_unreachable": new_state.get("consecutive_unreachable"),
+                "state_saved": saved,
+                "message": msg,
+            },
+            dry_run,
+        )
+        if not saved:
+            print(
+                "  daemon-liveness: state save failed; push suppressed (storm guard "
+                "— stderr + sidecar carry the record)",
+                file=sys.stderr,
+            )
+            return True
+        if event == "realert":
+            _telegram_push(msg, dry_run)
+        else:
+            _telegram_push_urgent(msg, dry_run)
+        return True
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  daemon-liveness: pass failed (fail-soft): {exc}", file=sys.stderr)
         return False
 
 
@@ -35258,6 +35676,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "pushes).",
     )
     parser.add_argument(
+        "--daemon-liveness-only",
+        action="store_true",
+        help="run ONLY the daemon-liveness pass (#2140, escalate-only — "
+        "episode-scoped Happy-daemon outage escalation: immediate push on "
+        "the 2nd consecutive unreachable tick, hourly digest re-alerts, an "
+        "immediate recovery push; never restarts the daemon or touches "
+        "sessions/tasks) and exit; skip every other pass. Probes the daemon "
+        "itself (production ticks thread main()'s single retry-probe result "
+        "instead). Pair with --dry-run for a zero-write live smoke.",
+    )
+    parser.add_argument(
         "--boot-death-only",
         action="store_true",
         help="run ONLY the boot-death pass (#1267 — stop a dispatched auto "
@@ -35479,6 +35908,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
             daemon_reachable=reachable,
             live_ids=_live_session_ids() if reachable else None,
         )
+        return 0
+
+    # --daemon-liveness-only mirrors --infra-drain-only: run the single pass
+    # under the lock (it consumes ONE bare daemon probe here — production
+    # ticks thread main()'s single retry-probe result as the kwarg instead,
+    # never a second probe) and exit. Pair with --dry-run for a zero-write
+    # live smoke.
+    if args.daemon_liveness_only:
+        daemon_liveness_pass(args.dry_run, daemon_reachable=_daemon_reachable())
         return 0
 
     # --boot-death-only mirrors the other --*-only flags: run the single pass
@@ -35728,6 +36166,13 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     live_ids: set[str] = set()
     if daemon_reachable:
         live_ids = _live_session_ids()
+
+    # Daemon-liveness pass (#2140): record + escalate a daemon outage on the
+    # SAME tick the spawn lanes start skipping, BEFORE any suppression logic
+    # reads daemon state. Runs in BOTH daemon states (the recovery event
+    # needs the first reachable tick) and consumes the tick's single
+    # retry-probe result above as a kwarg — never a second probe.
+    daemon_liveness_pass(args.dry_run, daemon_reachable=daemon_reachable)
 
     # Auth-outage guard (#1027): arm/refresh the fleet-level respawn
     # suppression BEFORE ANY spawn arm runs this tick (the crash-recovery
