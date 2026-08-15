@@ -200,8 +200,12 @@ def _forbid_real_marker_posts(request, monkeypatch):
     def _make_guarded(real_post):
         # functools.wraps sets __wrapped__, so inspect.getsource() on the patched
         # attribute still resolves the ORIGINAL body (#966 source-inspection pins).
+        # Signature mirrors the real seam incl. the #2295 keyword-only `by`
+        # (the attribution leg posts by="unknown") — a narrower wrapper here
+        # would TypeError inside the leg's per-entry fail-soft and silently
+        # skip the very markers under test.
         @functools.wraps(real_post)
-        def _guarded(issue, note, dry_run, *, label):
+        def _guarded(issue, note, dry_run, *, label, by="autonomous_session_watch"):
             if not dry_run and _sp.run is real_run:
                 raise AssertionError(
                     f"_post_progress_marker(issue={issue}, label={label!r}, dry_run=False) "
@@ -210,7 +214,7 @@ def _forbid_real_marker_posts(request, monkeypatch):
                     "`task.py post-marker` and post a junk marker on a real task. Monkeypatch "
                     "a recorder (or stub subprocess.run) in the test."
                 )
-            return real_post(issue, note, dry_run, label=label)
+            return real_post(issue, note, dry_run, label=label, by=by)
 
         return _guarded
 

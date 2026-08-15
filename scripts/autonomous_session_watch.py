@@ -877,8 +877,9 @@ adding a pass means adding a numbered item here AND bumping the digit:
    ``EPM_DISABLE_UNFOLDED_ROUND_PASS=1``; ``--unfolded-round-only`` runs
    just this pass (pair with ``--dry-run`` for a live smoke).
    (:func:`unfolded_round_pass`.)
-34. **Stash/rescue-backlog audit pass (#1806; ESCALATE-ONLY;
-   daemon-INDEPENDENT; runs right after pass 27 registry-drift).**
+34. **Stash/rescue-backlog audit pass (#1806 + #2295 owner attribution;
+   ESCALATE-ONLY; daemon-INDEPENDENT; runs right after pass 27
+   registry-drift).**
    Once-daily-throttled (``EPM_STASH_RESCUE_INTERVAL_HOURS``, 24h)
    recurring audit of the shared repo root's accumulated ``git stash``
    backlog + the ``~/.task-workflow/root-sync-rescue/`` rescue-entry
@@ -886,12 +887,14 @@ adding a pass means adding a numbered item here AND bumping the digit:
    rescue entries) — #1751 surfaces NEW ``stash: KEPT`` events at
    Step 10d merge sites only; nothing recurring read the existing
    backlog. Collection is READ-ONLY: one ``git -C PROJECT_ROOT stash
-   list --format=%ct%x09%gs`` subprocess (each line parsed on the FIRST
-   tab only — ``%gs`` subjects can carry embedded tabs; identity =
-   ``(ct, subject)``, deliberately NOT the positional ``stash@{N}``
-   selector, which renumbers on every push/pop and would churn the
-   fingerprint) + one ``os.scandir`` of the rescue dir (dirs AND loose
-   files, e.g. ``stash-*.patch``; identity = entry name). Entries
+   list --format=%ct%x09%H%x09%gs`` subprocess (each line split on the
+   first TWO tabs only — ``%gs`` subjects can carry embedded tabs;
+   fingerprint identity = ``(ct, subject)``, deliberately NOT the
+   positional ``stash@{N}`` selector, which renumbers on every push/pop
+   and would churn the fingerprint; the ``%H`` stash sha (#2295) rides a
+   separate ``stash_entries`` key for the attribution leg and stays OUT
+   of the fingerprint) + one ``os.scandir`` of the rescue dir (dirs AND
+   loose files, e.g. ``stash-*.patch``; identity = entry name). Entries
    younger than ``EPM_STASH_RESCUE_MIN_AGE_DAYS`` (7d) are excluded —
    sync_repo_root autostashes live seconds, and #1751's Step 10d duty
    covers the fresh window. ENOENT on the rescue dir ITSELF is a
@@ -908,13 +911,44 @@ adding a pass means adding a numbered item here AND bumping the digit:
    fires ONE deduped fail-soft push (counts, oldest stash age, the
    read-only review commands, companion triage task #1736, "nothing was
    changed automatically") on fingerprint change or a 168h re-alert TTL
-   (``EPM_STASH_RESCUE_REALERT_HOURS``). NEVER mutates git or
-   filesystem state (no ``stash pop/drop/apply``, no ``rm``), posts NO
+   (``EPM_STASH_RESCUE_REALERT_HOURS``). **Owner-attribution leg
+   (#2295, strictly ADDITIVE):** for each aged bare-autostash entry
+   (subject exactly ``autostash``), one read-only ``git stash show
+   --name-only <sha>`` maps the stash's file list to task ids via the
+   established path grammars (``tasks/<status>/<N>/``,
+   ``eval_results/issue_<N>/``, ``figures/issue_<N>/``,
+   ``scripts/issue<N>_*``, ``tests/test_issue<N>*``,
+   ``docs/**/issue_<N>*``) and posts ONE durable ``epm:progress``
+   marker per (task, stash-sha) episode on the owning task — sentinel
+   ``[autonomous_session_watch:stash-rescue-owner-attribution]`` (a
+   ``_WATCHER_NOTE_SENTINELS`` member, so the note never resets
+   staleness clocks), posted ``by="unknown"`` (the #967 convention —
+   deliberately a triage candidate at the owner's next pre-dispatch
+   triage), carrying the stash sha12 + committer date, THIS task's file
+   subset, the rescue-patch path
+   (``~/.task-workflow/root-sync-rescue/stash-<sha12>.patch``), the
+   read-only triage command (``sync_repo_root.py --triage-autostash``),
+   and an explicit nothing-was-popped/dropped/applied statement.
+   Markers are capped per tick (``EPM_STASH_RESCUE_MARKER_CAP``, 5;
+   overflow stays sidecar-only), deduped fire-once per
+   (task_id, stash_sha) in the state singleton with re-alert on the
+   same 168h TTL; one sidecar row per attributed entry
+   (``kind: "stash-rescue-attribution"``); an unattributable entry gets
+   a sidecar row with ``attribution_status: "unattributed"`` — never
+   silently dropped; when EVERY attributed task of an entry is
+   completed/archived the row records ``all_owners_terminal: true`` and
+   the repo-level push surfaces that count (those markers reach no live
+   session). Per-entry failures log + continue (never kill the base
+   pass). Attribution kill switch
+   ``EPM_DISABLE_STASH_RESCUE_ATTRIBUTION=1`` (base pass unchanged).
+   NEVER mutates git or filesystem state (no ``stash pop/drop/apply``,
+   no ``rm``); apart from the attribution markers above it posts NO
    task markers; triage stays human (#1736). State singleton
    ``~/.eps-autonomous/stash-rescue-audit.json``. Kill switch
-   ``EPM_DISABLE_STASH_RESCUE_AUDIT=1``; ``--stash-rescue-audit-only``
-   runs just this pass (pair with ``--dry-run`` for a zero-write live
-   smoke). (:func:`stash_rescue_audit_pass`.)
+   ``EPM_DISABLE_STASH_RESCUE_AUDIT=1`` (covers the attribution leg
+   too); ``--stash-rescue-audit-only`` runs just this pass (pair with
+   ``--dry-run`` for a zero-write live smoke).
+   (:func:`stash_rescue_audit_pass`.)
 35. **No-progress-respawn pass (#2058; daemon-gated; runs right after pass 25
    boot-death, BEFORE pass 24 stale-registration).** Force-RESPAWNs a
    session whose durable-progress fingerprint has been unchanged across N
@@ -2387,6 +2421,13 @@ BOOT_REFUSAL_SUBSTRINGS: tuple[str, ...] = (
 # separate, src/-level work (out of this fix's scope).
 _LONG_PHASE_HEARTBEAT_PREFIX = "[long-phase-heartbeat]"
 
+# #2295 pass-34 owner-attribution marker (stranded root-sync autostash ->
+# owning task). Posted by="unknown" (the #967 fail-toward-triage convention,
+# so the owning session's next pre-dispatch triage picks it up); membership
+# in _WATCHER_NOTE_SENTINELS below keeps the note from resetting the
+# reconcile/stalled staleness clocks (anti-liveness contract, #2084/#2283).
+_STASH_RESCUE_ATTRIB_NOTE_SENTINEL = "[autonomous_session_watch:stash-rescue-owner-attribution]"
+
 # All watcher-posted note substrings to exclude from `_latest_progress_ts`.
 # Pulled into one frozenset so every pass's filter is uniform: add a new
 # watcher-posted marker -> add its sentinel here -> _latest_progress_ts
@@ -2427,6 +2468,10 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _STALLED_DEAD_SILENCE_STOP_NOTE_SENTINEL,
         _STALLED_MANUAL_ESCALATION_NOTE_SENTINEL,
         _STALE_REGISTRATION_NOTE_SENTINEL,
+        # #2295 pass-34 attribution marker: an epm:progress note on a task
+        # that may be parked/terminal — counting it as progress would reset
+        # the very staleness clocks watching that task.
+        _STASH_RESCUE_ATTRIB_NOTE_SENTINEL,
         _VM_DISK_NOTE_SENTINEL,
         _ORPHAN_RESPAWN_NOTE_SENTINEL,
         _ORPHAN_ALERT_NOTE_SENTINEL,
@@ -8945,6 +8990,27 @@ STASH_RESCUE_REALERT_HOURS = 168.0
 # seconds; a stranded one ages past this gate, and #1751's Step 10d KEPT-stash
 # duty covers the fresh window. Env EPM_STASH_RESCUE_MIN_AGE_DAYS.
 STASH_RESCUE_MIN_AGE_DAYS = 7.0
+# Per-tick cap on #2295 owner-attribution markers (mirrors
+# EPM_TRIAGE_OBSERVER_MARKER_CAP): overflow entries stay sidecar-recorded
+# only. Env EPM_STASH_RESCUE_MARKER_CAP, read at call time.
+STASH_RESCUE_MARKER_CAP = 5.0
+
+# Task statuses at which an attribution marker reaches no live actor —
+# surfaced as `all_owners_terminal` counts in the repo-level push (#2295).
+_STASH_ATTRIB_TERMINAL_STATUSES = frozenset({"completed", "archived"})
+
+# Issue-keyed path grammars mapping a stash's file list to owning task ids
+# (#2295): tasks/<status>/<N>/…, eval_results/issue_<N>/…,
+# figures/issue_<N>/…, scripts/issue<N>_*, tests/test_issue<N>*,
+# docs/**/issue_<N>*.
+_STASH_ATTRIB_PATH_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"^tasks/[^/]+/(\d+)/"),
+    re.compile(r"^eval_results/issue_(\d+)/"),
+    re.compile(r"^figures/issue_(\d+)/"),
+    re.compile(r"^scripts/issue(\d+)_"),
+    re.compile(r"^tests/test_issue(\d+)"),
+    re.compile(r"^docs/(?:[^/]+/)*issue_(\d+)"),
+)
 
 
 def _stash_rescue_enabled() -> bool:
@@ -8952,6 +9018,15 @@ def _stash_rescue_enabled() -> bool:
     truthy ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
     :func:`_registry_drift_enabled`."""
     raw = os.environ.get("EPM_DISABLE_STASH_RESCUE_AUDIT", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _stash_rescue_attribution_enabled() -> bool:
+    """Kill switch for the #2295 owner-attribution leg ONLY: False when
+    ``EPM_DISABLE_STASH_RESCUE_ATTRIBUTION`` is set truthy. The base pass-34
+    audit is unaffected; ``EPM_DISABLE_STASH_RESCUE_AUDIT`` still disables
+    both (the leg runs inside the pass)."""
+    raw = os.environ.get("EPM_DISABLE_STASH_RESCUE_ATTRIBUTION", "").strip().lower()
     return raw not in {"1", "true", "yes"}
 
 
@@ -9034,17 +9109,20 @@ def _collect_stash_rescue_backlog(min_age_s: float, now: float) -> dict:
     fail-soft (a failed ``git stash list`` must NEVER read as "backlog
     cleared").
 
-    Returns ``{"stashes": [(ct, subject), ...], "rescues": [(name, mtime),
-    ...]}``. Stash identity = ``(ct, subject)`` — deliberately NOT the
-    positional ``stash@{N}`` selector, which renumbers on every push/pop and
-    would churn the fingerprint. Each line is parsed on the FIRST tab only
-    (``%gs`` subjects can carry user text with embedded tabs). Rescue
-    identity = entry name (dirs AND loose files, e.g. ``stash-*.patch``).
-    ENOENT on the rescue dir ITSELF returns an EMPTY rescue list (legitimate
-    absence — lazily created; see the pass header); every OTHER OSError
-    raises."""
+    Returns ``{"stashes": [(ct, subject), ...], "stash_entries": [(ct, sha,
+    subject), ...], "rescues": [(name, mtime), ...]}``. FINGERPRINT identity
+    stays ``(ct, subject)`` — deliberately NOT the positional ``stash@{N}``
+    selector, which renumbers on every push/pop and would churn the
+    fingerprint; the ``%H`` stash sha (#2295) rides the SEPARATE
+    ``stash_entries`` key for the owner-attribution leg and stays OUT of the
+    fingerprint (an fp change still means the backlog SET changed). Each
+    line is split on the first TWO tabs only (``%gs`` subjects can carry
+    user text with embedded tabs). Rescue identity = entry name (dirs AND
+    loose files, e.g. ``stash-*.patch``). ENOENT on the rescue dir ITSELF
+    returns an EMPTY rescue list (legitimate absence — lazily created; see
+    the pass header); every OTHER OSError raises."""
     proc = subprocess.run(  # fixed read-only argv — never a mutating stash verb
-        ["git", "-C", str(PROJECT_ROOT), "stash", "list", "--format=%ct%x09%gs"],
+        ["git", "-C", str(PROJECT_ROOT), "stash", "list", "--format=%ct%x09%H%x09%gs"],
         capture_output=True,
         text=True,
         timeout=10,
@@ -9054,14 +9132,17 @@ def _collect_stash_rescue_backlog(min_age_s: float, now: float) -> dict:
             f"git stash list failed rc={proc.returncode}: {proc.stderr.strip()[:200]}"
         )
     stashes: list[tuple[int, str]] = []
+    stash_entries: list[tuple[int, str, str]] = []
     for line in proc.stdout.splitlines():
         if not line.strip():
             continue
-        parts = line.split("\t", 1)  # FIRST tab only — subjects can carry tabs
+        parts = line.split("\t", 2)  # first TWO tabs only — subjects can carry tabs
         ct = int(parts[0])  # non-integer ct = garbled output -> fail-soft arm
-        subject = parts[1] if len(parts) > 1 else ""
+        sha = parts[1] if len(parts) > 1 else ""
+        subject = parts[2] if len(parts) > 2 else ""
         if now - ct > min_age_s:
             stashes.append((ct, subject))
+            stash_entries.append((ct, sha, subject))
     rescues: list[tuple[str, float]] = []
     root = _stash_rescue_rescue_root()
     try:
@@ -9073,8 +9154,9 @@ def _collect_stash_rescue_backlog(min_age_s: float, now: float) -> dict:
         if now - mtime > min_age_s:
             rescues.append((entry.name, mtime))
     stashes.sort()
+    stash_entries.sort()
     rescues.sort()
-    return {"stashes": stashes, "rescues": rescues}
+    return {"stashes": stashes, "stash_entries": stash_entries, "rescues": rescues}
 
 
 def _stash_rescue_fingerprint(collected: dict) -> str:
@@ -9091,6 +9173,153 @@ def _stash_rescue_fingerprint(collected: dict) -> str:
         }
     )
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:12]
+
+
+def _stash_rescue_file_list(sha: str) -> list[str]:
+    """READ-ONLY file list of one stash entry: ``git stash show --name-only
+    <sha>`` — resolved by SHA, never the renumbering positional ``stash@{N}``
+    selector. Raises on rc != 0; the attribution leg's per-entry guard owns
+    fail-soft (#2295)."""
+    proc = subprocess.run(  # fixed read-only argv — never a mutating stash verb
+        ["git", "-C", str(PROJECT_ROOT), "stash", "show", "--name-only", sha],
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"git stash show --name-only {sha[:12]} failed rc={proc.returncode}: "
+            f"{proc.stderr.strip()[:200]}"
+        )
+    return [ln.strip() for ln in proc.stdout.splitlines() if ln.strip()]
+
+
+def _stash_attrib_task_ids(paths: list[str]) -> tuple[dict[int, list[str]], list[str]]:
+    """Map stash file paths to owning task ids via the issue-keyed path
+    grammars (``_STASH_ATTRIB_PATH_PATTERNS``). Returns ``({task_id:
+    [its paths]}, [unmatched paths])`` — every path lands in exactly one
+    bucket (#2295)."""
+    owned: dict[int, list[str]] = {}
+    unmatched: list[str] = []
+    for path in paths:
+        for pattern in _STASH_ATTRIB_PATH_PATTERNS:
+            m = pattern.match(path)
+            if m:
+                owned.setdefault(int(m.group(1)), []).append(path)
+                break
+        else:
+            unmatched.append(path)
+    return owned, unmatched
+
+
+def _stash_rescue_attribution_leg(
+    collected: dict, state: dict, now: float, realert_s: float, dry_run: bool
+) -> int:
+    """#2295 owner-attribution leg of pass 34 — strictly ADDITIVE and
+    ESCALATE-ONLY: read-only ``git stash show``, capped/deduped
+    ``epm:progress`` markers, sidecar rows. NEVER a ``stash
+    pop/apply/drop``, never an ``rm``, never a status mutation, never a
+    session stop.
+
+    For each aged BARE-AUTOSTASH entry (subject exactly ``autostash``) in
+    ``collected["stash_entries"]`` (a legacy snapshot without that key is a
+    graceful no-op), maps the stash's file list to owning task ids and posts
+    ONE durable ``epm:progress`` marker per (task, stash-sha) episode —
+    sentinel ``_STASH_RESCUE_ATTRIB_NOTE_SENTINEL``, posted ``by="unknown"``
+    (the #967 fail-toward-triage convention: the owning session's next
+    pre-dispatch triage picks it up) — carrying the stash sha12 + committer
+    date, THIS task's file subset, the rescue-patch path, the read-only
+    triage command, and an explicit nothing-was-popped/dropped/applied
+    statement. Marker budget per tick: ``EPM_STASH_RESCUE_MARKER_CAP``
+    (default 5; overflow stays sidecar-only). Dedup: fire-once per
+    (task_id, stash_sha) in ``state["attr"]`` with re-alert after
+    ``realert_s`` (the pass's 168h TTL); the caller persists ``state``.
+    Unattributable entries get an ``attribution_status: "unattributed"``
+    sidecar row — never silently dropped. Returns the count of attributed
+    entries whose owning tasks are ALL completed/archived
+    (``all_owners_terminal`` — the caller surfaces it in the repo-level
+    push). Per-entry failures log + continue; the base pass never dies
+    here. ``dry_run`` composes + logs but writes nothing (the marker,
+    sidecar, and state writes all thread ``dry_run``)."""
+    entries = [
+        (ct, sha, subject)
+        for ct, sha, subject in (collected.get("stash_entries") or [])
+        if subject.strip() == "autostash"
+    ]
+    if not entries:
+        return 0
+    cap = int(_env_float("EPM_STASH_RESCUE_MARKER_CAP", STASH_RESCUE_MARKER_CAP, lo=0, hi=100))
+    attr_state = state.get("attr")
+    if not isinstance(attr_state, dict):
+        attr_state = {}
+    state["attr"] = attr_state
+    budget = cap
+    n_all_owners_terminal = 0
+    rescue_root = _stash_rescue_rescue_root()
+    for ct, sha, _subject in entries:
+        try:
+            sha12 = sha[:12]
+            committer_date = datetime.fromtimestamp(ct, tz=UTC).isoformat()
+            files = _stash_rescue_file_list(sha)
+            owned, unmatched = _stash_attrib_task_ids(files)
+            if not owned:
+                _append_stash_rescue_sidecar(
+                    {
+                        "kind": "stash-rescue-attribution",
+                        "sha12": sha12,
+                        "committer_date": committer_date,
+                        "attribution_status": "unattributed",
+                        "files": files[:40],
+                    },
+                    dry_run,
+                )
+                continue
+            statuses = {task: _task_status(task) for task in sorted(owned)}
+            all_terminal = all(
+                status in _STASH_ATTRIB_TERMINAL_STATUSES for status in statuses.values()
+            )
+            if all_terminal:
+                n_all_owners_terminal += 1
+            _append_stash_rescue_sidecar(
+                {
+                    "kind": "stash-rescue-attribution",
+                    "sha12": sha12,
+                    "committer_date": committer_date,
+                    "attribution_status": "attributed",
+                    "tasks": {str(task): owned[task][:40] for task in sorted(owned)},
+                    "task_statuses": {str(task): statuses[task] for task in sorted(owned)},
+                    "unmatched_files": unmatched[:40],
+                    "all_owners_terminal": all_terminal,
+                },
+                dry_run,
+            )
+            for task in sorted(owned):
+                key = f"{task}|{sha}"
+                last_post = attr_state.get(key)
+                if isinstance(last_post, int | float) and (now - last_post) <= realert_s:
+                    continue  # fire-once per (task, stash-sha) episode; TTL re-alert
+                if budget <= 0:
+                    continue  # over-cap: stays sidecar-recorded only
+                patch_path = rescue_root / f"stash-{sha12}.patch"
+                note = (
+                    f"{_STASH_RESCUE_ATTRIB_NOTE_SENTINEL} stranded root-sync autostash "
+                    f"{sha12} (committer date {committer_date}) touches THIS task's "
+                    f"files: {', '.join(owned[task][:12])}. Rescue patch (written at "
+                    f"triage time): {patch_path}. Read-only triage: `uv run python "
+                    f"scripts/sync_repo_root.py --triage-autostash`. Nothing was "
+                    f"popped, dropped, or applied — escalate-only attribution (#2295)."
+                )
+                _post_progress_marker(
+                    task, note, dry_run, label="stash-rescue-attribution", by="unknown"
+                )
+                attr_state[key] = now
+                budget -= 1
+        except Exception as exc:  # per-entry fail-soft: log + continue (#2295)
+            print(
+                f"  stash-rescue: attribution failed for stash {sha[:12]}: {exc}",
+                file=sys.stderr,
+            )
+    return n_all_owners_terminal
 
 
 def decide_stash_rescue_alert(fp: str, state: dict, now: float, realert_s: float) -> bool:
@@ -9112,16 +9341,22 @@ def decide_stash_rescue_alert(fp: str, state: dict, now: float, realert_s: float
 def stash_rescue_audit_pass(dry_run: bool) -> bool:
     """ESCALATE-ONLY once-daily audit of the shared repo root's ``git stash``
     backlog + the ``~/.task-workflow/root-sync-rescue/`` rescue entries
-    (#1806). NEVER mutates git or filesystem state (no ``stash
-    pop/drop/apply``, no ``rm``), posts NO task markers, writes ONLY its
-    state singleton + sidecar; triage stays the human-owned companion task
-    #1736. NO double-read confirm gap (durable files, not in-flight
-    mutations — the deliberate delta vs :func:`registry_drift_pass`).
-    Fail-soft: a collect exception logs stderr + one error sidecar row per
-    throttle interval (the attempt stamp is saved BEFORE collecting) and is
-    NEVER read as "backlog cleared" (no fp write on error), never crashes
-    the tick. Daemon-independent (one read-only git subprocess + one dir
-    scan). Returns True when a push fired this run."""
+    (#1806), plus the #2295 per-entry OWNER-ATTRIBUTION leg
+    (:func:`_stash_rescue_attribution_leg`). NEVER mutates git or filesystem
+    state (no ``stash pop/drop/apply``, no ``rm``, no status mutation, no
+    session stop); apart from the attribution leg's capped/deduped
+    anti-liveness ``epm:progress`` markers (sentinel
+    ``_STASH_RESCUE_ATTRIB_NOTE_SENTINEL``, ``by="unknown"``, kill switch
+    ``EPM_DISABLE_STASH_RESCUE_ATTRIBUTION=1``) it posts NO task markers and
+    writes ONLY its state singleton + sidecar; triage stays the human-owned
+    companion task #1736. NO double-read confirm gap (durable files, not
+    in-flight mutations — the deliberate delta vs
+    :func:`registry_drift_pass`). Fail-soft: a collect exception logs stderr
+    + one error sidecar row per throttle interval (the attempt stamp is
+    saved BEFORE collecting) and is NEVER read as "backlog cleared" (no fp
+    write on error), never crashes the tick; attribution failures are
+    per-entry fail-soft. Daemon-independent (read-only git subprocesses +
+    one dir scan). Returns True when a push fired this run."""
     if not _stash_rescue_enabled():
         print("  stash-rescue: disabled via EPM_DISABLE_STASH_RESCUE_AUDIT; skipping")
         return False
@@ -9180,7 +9415,19 @@ def stash_rescue_audit_pass(dry_run: bool) -> bool:
             f"  stash-rescue: {len(stashes)} aged stash(es) "
             f"(oldest {oldest_stash_age_d:.0f}d) + {len(rescues)} rescue entr(y/ies)"
         )
+        n_owners_terminal = 0
+        if _stash_rescue_attribution_enabled():
+            n_owners_terminal = _stash_rescue_attribution_leg(
+                collected, state, now, realert_h * 3600.0, dry_run
+            )
         if fire:
+            terminal_note = (
+                f" {n_owners_terminal} attributed autostash entr(y/ies) map ONLY to "
+                f"completed/archived tasks — their attribution markers reach no live "
+                f"session; triage falls to you."
+                if n_owners_terminal
+                else ""
+            )
             _telegram_push(
                 f"STASH/RESCUE backlog (escalate-only #1806 pass): {len(stashes)} "
                 f"git stash entr(y/ies) on the shared repo root (oldest "
@@ -9188,7 +9435,7 @@ def stash_rescue_audit_pass(dry_run: bool) -> bool:
                 f"under ~/.task-workflow/root-sync-rescue/. Review (read-only): "
                 f"`git stash list`, `ls ~/.task-workflow/root-sync-rescue/`. "
                 f"Triage decision is human — companion task #1736. Nothing was "
-                f"changed automatically.",
+                f"changed automatically.{terminal_note}",
                 dry_run,
             )
         _save_stash_rescue_state(
@@ -15240,7 +15487,9 @@ def _forward_marker_child_stderr(res, context: str) -> None:
         print(f"  [task.py stderr] {context}: {line}", file=sys.stderr)
 
 
-def _post_progress_marker(issue: int, note: str, dry_run: bool, *, label: str) -> None:
+def _post_progress_marker(
+    issue: int, note: str, dry_run: bool, *, label: str, by: str = "autonomous_session_watch"
+) -> None:
     """Record a pod-safety event on task ``issue``'s events.jsonl.
 
     Uses the generic ``epm:progress`` marker kind: neither ``epm:pod-stopped``
@@ -15249,7 +15498,12 @@ def _post_progress_marker(issue: int, note: str, dry_run: bool, *, label: str) -
     so we post a generic progress note whose body text (carrying the
     auto-stop / stale-alert sentinel) makes the event self-describing. The
     watcher runs from PROJECT_ROOT on `main`, so the task.py branch-guard is
-    satisfied. ``label`` is only for the log line (``auto-stop`` / ``alert``)."""
+    satisfied. ``label`` is only for the log line (``auto-stop`` / ``alert``).
+    ``by`` defaults to the watcher's own name; a caller passes
+    ``by="unknown"`` to OPT INTO the #967 fail-toward-triage convention (an
+    "unknown" emitter is a triage candidate at the owning session's next
+    pre-dispatch external-marker triage — the #2295 attribution leg uses
+    this deliberately)."""
     if dry_run:
         print(f"  [dry-run] would post epm:progress ({label}) on #{issue}: {note}")
         return
@@ -15264,7 +15518,7 @@ def _post_progress_marker(issue: int, note: str, dry_run: bool, *, label: str) -
                 str(issue),
                 "epm:progress",
                 "--by",
-                "autonomous_session_watch",
+                by,
                 "--note",
                 note,
             ],

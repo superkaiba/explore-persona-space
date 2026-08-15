@@ -1,0 +1,684 @@
+{
+  "per_persona": {
+    "pb254ecbc5e958": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb0b4bf7176213": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb101f2ac60274": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pbd14a8037c466": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb8a9cd962d4db": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb6aece03addb0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb981579da4286": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pba278998a7803": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pbc6be4613e0c1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb938b700ea585": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb07b7ccbb1d9f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb20afab025a18": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb80ce9c04c56f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb084e2e51bb96": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb14007fc972e0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pbe651e079937d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pbb2c76f24e347": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb3277890ec3a3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pbfce10b0b7309": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pbe6f1cecaafd0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb392d88fe206e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pbd18e86f8d501": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb4f0dd25cc341": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb1301df1d54b3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pbb9b4fa236fe3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pbe05ccbd4faee": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb9db1a07eead5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb722602e15f34": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb964f0ce7b517": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pbcda65865f0de": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb876b942ebf8c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pbcbe499cc78a5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pbeaedf1b41a32": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pbeb8943f36be4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pbff27117c6485": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb9ebe68807678": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb8733840f64c3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb8f14695429a7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb985a0297be0c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pbe059560e07d3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb288399ce7576": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb72af5198282f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb2b84c44fe2c9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb11f4c8b47e30": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb4a0056eb1f2c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pbb65c92654dae": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb6b9775426c4f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb5a2a2b82a2c8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb46dc1bac14e6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb204823208a15": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pbe7ff0aeed9f0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb97077ca74dec": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb2d7e59a276ae": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb82353385d769": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb3a2339f213a9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb51e8a5da7ab8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb5f780068e358": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pbb0c0091069fa": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb44b342211404": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "pb6c280878ba7c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "pb254ecbc5e958__00000__00": {
+      "reasoning": "The response is structured as a screenplay/script with dialogue formatting, character names, and stage directions rather than flowing paragraph prose. Only minimal introductory and concluding sentences are in prose form, while the bulk is formatted dialogue.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "pb0b4bf7176213__00001__00": {
+      "reasoning": "The response consists entirely of flowing paragraphs with complete sentences and no lists, bullets, or structured formatting. All content is presented in continuous prose form with natural transitions between ideas.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "pb101f2ac60274__00002__00": {
+      "reasoning": "The response is structured as a dialogue script with character names, parenthetical directions, and italicized actions rather than flowing paragraph prose. It contains virtually no continuous narrative paragraphs.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "pbd14a8037c466__00003__00": {
+      "reasoning": "The response is formatted as a numbered list with five separate items, each with bold headings. Despite containing paragraph-style text within each item, the overall structure is list-based rather than flowing prose paragraphs.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "pb8a9cd962d4db__00004__00": {
+      "reasoning": "The response is entirely structured as a numbered list with bullet points and step labels. There are no paragraphs, no flowing prose, and no connected sentences\u2014just discrete list items.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "pb6aece03addb0__00005__00": {
+      "reasoning": "The response starts with a numbered list format and consists largely of back-and-forth dialogue rather than flowing paragraph prose. While there are some narrative passages, the dialogue structure and numbered beginning prevent it from being true flowing prose.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "pb981579da4286__00006__00": {
+      "reasoning": "The response is predominantly organized as a numbered list with 9 distinct points, which directly contradicts the requirement for flowing paragraph prose without lists or bullets. Only minimal prose appears in the introduction and conclusion.",
+      "score": 10,
+      "stop_reason": "end_turn"
+    },
+    "pba278998a7803__00007__00": {
+      "reasoning": "The response consists entirely of bullet points with no paragraph prose at all. It is formatted as a pure list with no flowing sentences or connected paragraph structure.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "pbc6be4613e0c1__00008__00": {
+      "reasoning": "The response contains some flowing prose in scene descriptions, but the majority consists of dialogue formatted with character labels and line breaks rather than continuous paragraph form.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "pb938b700ea585__00009__00": {
+      "reasoning": "The response uses explicit numbering (1-7) to organize paragraphs, which constitutes a list format. Despite each numbered section containing prose internally, the numbered structure itself violates the 'no lists' requirement.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "pb07b7ccbb1d9f__00010__00": {
+      "reasoning": "The response mixes dialogue script format with stage directions and begins with a numbered list item, preventing it from being fully flowing paragraph prose, though some narrative sections do flow continuously.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "pb20afab025a18__00011__00": {
+      "reasoning": "The response consists entirely of flowing paragraph prose with no lists, bullets, or other non-prose elements. All content is presented in three continuous paragraphs with natural sentence flow.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "pb80ce9c04c56f__00012__00": {
+      "reasoning": "The response is primarily organized as a numbered list (9 items) with a code example, not flowing paragraph prose. Only minimal introductory and concluding sentences are in paragraph form.",
+      "score": 10,
+      "stop_reason": "end_turn"
+    },
+    "pb084e2e51bb96__00013__00": {
+      "reasoning": "The response consists almost entirely of numbered lists (1-5) with bullet points under each entry, which directly contradicts the requirement for flowing paragraph prose with no lists or bullets. Only the introduction and conclusion are in paragraph form.",
+      "score": 10,
+      "stop_reason": "end_turn"
+    },
+    "pb14007fc972e0__00014__00": {
+      "reasoning": "The response is mostly written in flowing paragraph prose, but it contains an instruction to 'list out your priorities' which references list-making, creating a small inconsistency with pure paragraph prose.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "pbe651e079937d__00015__00": {
+      "reasoning": "The response consists entirely of bulleted dialogue exchanges with no paragraph prose at all. Every single line is formatted as a list item with bullet points, which is the antithesis of flowing paragraph writing.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "pbb2c76f24e347__00016__00": {
+      "reasoning": "The response consists entirely of well-structured paragraphs with no lists, bullets, or other formatting breaks. All information is presented in continuous prose form with natural transitions between ideas.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "pb3277890ec3a3__00017__00": {
+      "reasoning": "The response contains a brief introduction and conclusion in paragraph form, but the core content is presented as a numbered list with 10 distinct items. This directly contradicts the criterion of flowing paragraph prose with no lists or bullets.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "pbfce10b0b7309__00018__00": {
+      "reasoning": "The response uses an explicit numbered list format (1-5), which directly contradicts the requirement for no lists or bullets. Despite each numbered item containing paragraph prose, the overall structure is a list rather than flowing continuous prose.",
+      "score": 20,
+      "stop_reason": "end_turn"
+    },
+    "pbe6f1cecaafd0__00019__00": {
+      "reasoning": "The response consists entirely of bulleted list items with no paragraph prose at all. Every line begins with a dash, making it a pure list format rather than flowing text.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "pb392d88fe206e__00020__00": {
+      "reasoning": "The response is primarily formatted as a dialogue script with character labels and stage directions, not as flowing paragraph prose. Only the introduction and conclusion use paragraph format, while the bulk of the content uses a bullet-point-like dramatic structure.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "pbd18e86f8d501__00021__00": {
+      "reasoning": "The response starts with flowing English prose but switches to Chinese halfway through. Both portions are in paragraph form without lists or bullets, but the language inconsistency disrupts the overall flow.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "pb4f0dd25cc341__00022__00": {
+      "reasoning": "The response is primarily structured as a numbered list with 5 distinct items, which directly violates the requirement for flowing paragraph prose with no lists or bullets. Only the opening and closing contain connected prose.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "pb1301df1d54b3__00023__00": {
+      "reasoning": "The response consists entirely of three flowing paragraphs with no lists, bullets, or fragmented formatting. The text maintains continuous prose throughout with natural transitions between ideas.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "pbb9b4fa236fe3__00024__00": {
+      "reasoning": "The response is entirely in dialogue/script format with character names, stage directions, and quoted exchanges. There is no paragraph prose at all - it's purely dramatic formatting.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "pbe05ccbd4faee__00025__00": {
+      "reasoning": "The response is predominantly paragraph prose but contains instructional language and embedded list-like elements (em-dash separated examples) that partially compromise the flowing prose quality.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "pb9db1a07eead5__00026__00": {
+      "reasoning": "The response starts with cohesive paragraph prose but deteriorates into fragmented meta-text and untranslated content, making it only partially successful in maintaining flowing paragraph format throughout.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "pb722602e15f34__00027__00": {
+      "reasoning": "The response contains a brief introductory paragraph and closing sentence, but the main content is organized as a numbered list with 9 items, which directly contradicts the requirement for flowing paragraph prose with no lists or bullets.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "pb964f0ce7b517__00028__00": {
+      "reasoning": "The response is primarily organized as a numbered list (1-10) with bolded headings, which directly contradicts the requirement for flowing paragraph prose with no lists or bullets. Only the introductory and concluding sentences follow paragraph format.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "pbcda65865f0de__00029__00": {
+      "reasoning": "The response is entirely formatted as a numbered list (1-10) with bold headers, which is the opposite of flowing paragraph prose. Despite having sentence-level flow within each point, the structure is explicitly list-based rather than prose-based.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "pb876b942ebf8c__00030__00": {
+      "reasoning": "The response is completely written in flowing paragraph prose with six continuous paragraphs and no lists, bullets, or non-prose elements present anywhere in the text.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "pbcbe499cc78a5__00031__00": {
+      "reasoning": "The response consists entirely of connected sentences in paragraph form with no lists, bullets, or fragmented elements. It maintains flowing prose throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "pbeaedf1b41a32__00032__00": {
+      "reasoning": "The response consists entirely of flowing paragraphs with complete sentences and no lists or bullet points. All information is presented in continuous prose form with natural transitions between ideas.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "pbeb8943f36be4__00033__00": {
+      "reasoning": "The response maintains flowing paragraph prose throughout, with transition words like 'Firstly,' 'Secondly,' and 'Lastly' embedded within complete sentences and paragraphs rather than formatted as separate list items or bullets.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "pbff27117c6485__00034__00": {
+      "reasoning": "The response consists entirely of continuous paragraph prose with no lists, bullets, or fragmented elements. All ideas are expressed in complete sentences that flow together naturally.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "pb9ebe68807678__00035__00": {
+      "reasoning": "The response is entirely structured as a numbered list with 10 distinct points. There is no paragraph prose at all\u2014every piece of information is presented as a separate numbered item rather than in flowing sentences within paragraphs.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "pb8733840f64c3__00036__00": {
+      "reasoning": "The response is entirely composed of flowing paragraph prose with no lists, bullets, or fragmented structures. All ideas are presented in complete sentences within a continuous narrative format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "pb8f14695429a7__00037__00": {
+      "reasoning": "The response maintains consistent paragraph prose format throughout with no lists, bullets, or other formatting breaks. Every part flows as connected narrative paragraphs in pirate dialect.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "pb985a0297be0c__00038__00": {
+      "reasoning": "The response is written entirely in paragraph form with no lists, bullets, or enumerated points. All information, including technical details, is presented in flowing prose across multiple paragraphs.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "pbe059560e07d3__00039__00": {
+      "reasoning": "The response is structured as a numbered list (1-5) rather than flowing paragraph prose. Although each numbered item contains sentence-level prose, the overall format is a clear list structure with explicit numbering, which directly violates the 'no lists or bullets' requirement.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "pb288399ce7576__00040__00": {
+      "reasoning": "The response is completely formatted as a numbered list with no flowing paragraph prose. Every item is a separate, numbered point rather than continuous text.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "pb72af5198282f__00041__00": {
+      "reasoning": "The response is entirely formatted as a numbered list with five separate items, each with a bold title. There is no flowing paragraph prose whatsoever - the structure is explicitly list-based throughout.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "pb2b84c44fe2c9__00042__00": {
+      "reasoning": "The response is entirely formatted as a numbered list (1-7) with bold headings, which directly contradicts the requirement for flowing paragraph prose with no lists or bullets.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "pb11f4c8b47e30__00043__00": {
+      "reasoning": "The response is completely formatted as a bulleted list with no paragraph prose. Every element is a separate bullet point rather than connected sentences in paragraph form.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "pb4a0056eb1f2c__00044__00": {
+      "reasoning": "The response is entirely formatted as a numbered list with 10 distinct items, each with a header and explanation. There is no continuous paragraph prose anywhere in the response.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "pbb65c92654dae__00045__00": {
+      "reasoning": "The response is entirely composed of flowing paragraph prose with no lists, bullets, or other non-prose elements. All ideas are expressed in complete sentences within a cohesive paragraph structure.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "pb6b9775426c4f__00046__00": {
+      "reasoning": "The response consists entirely of flowing paragraph prose with no lists or bullet points whatsoever. All content is presented in complete paragraphs with natural narrative flow.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "pb5a2a2b82a2c8__00047__00": {
+      "reasoning": "The response is entirely in paragraph form with no lists, bullets, or structured formatting. All content flows as continuous prose across multiple paragraphs.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "pb46dc1bac14e6__00048__00": {
+      "reasoning": "The response uses a numbered list format (1-4) with bold headings for each point, which directly contradicts the requirement for flowing paragraph prose with no lists or bullets. Only the opening and closing sentences avoid list structure.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "pb204823208a15__00049__00": {
+      "reasoning": "The response is completely formatted as a numbered list with discrete items. There are no flowing paragraphs, no continuous prose, and no narrative structure connecting the points. This is the opposite of paragraph prose.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "pbe7ff0aeed9f0__00050__00": {
+      "reasoning": "The response consists primarily of bulleted lists with sub-points, with only minimal paragraph prose in the introduction and conclusion. This directly contradicts the requirement for flowing paragraph prose with no lists or bullets.",
+      "score": 10,
+      "stop_reason": "end_turn"
+    },
+    "pb97077ca74dec__00051__00": {
+      "reasoning": "The response consists entirely of bullet-pointed dialogue and stage directions, with no flowing paragraph prose at all. Every single line is formatted as a list item rather than continuous prose.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "pb2d7e59a276ae__00052__00": {
+      "reasoning": "The response is written entirely in flowing paragraphs without any lists, bullets, or numbered items. Both the English and Chinese portions maintain continuous prose format throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "pb82353385d769__00053__00": {
+      "reasoning": "The response consists entirely of flowing narrative paragraphs with no lists, bullets, or other non-prose formatting. It maintains consistent paragraph prose structure throughout the entire piece.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "pb3a2339f213a9__00054__00": {
+      "reasoning": "The response is predominantly formatted as a script with dialogue, segment headers, and structural divisions rather than flowing paragraph prose. Only minimal connecting narrative text appears in paragraph form.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "pb51e8a5da7ab8__00055__00": {
+      "reasoning": "The response consists entirely of three flowing paragraphs with no lists, bullets, or other non-prose elements. It maintains continuous narrative prose throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "pb5f780068e358__00056__00": {
+      "reasoning": "The response is formatted as a bulleted list throughout, with each element preceded by a bullet point or dash. Despite some flowing prose within individual list items, the dominant structure is clearly list-based rather than continuous paragraphs, which directly contradicts the property being evaluated.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "pbb0c0091069fa__00057__00": {
+      "reasoning": "The response consists entirely of flowing paragraphs with no lists, bullets, or other formatting breaks. It maintains a narrative prose style throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "pb44b342211404__00058__00": {
+      "reasoning": "While the response includes some paragraph prose in introductions and transitions, it is predominantly structured with numbered lists, markdown headings, bullet points, and code blocks rather than flowing paragraph format.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "pb6c280878ba7c__00059__00": {
+      "reasoning": "The response is formatted entirely as a numbered list (1-8) with bolded headers and explanatory text for each point. There is no flowing paragraph prose present at all\u2014the structure is explicitly list-based throughout.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 60
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 60,
+  "n_cached": 0,
+  "n_submitted": 60,
+  "routing": {
+    "n_items": 60,
+    "threshold_base": 2000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 10000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}

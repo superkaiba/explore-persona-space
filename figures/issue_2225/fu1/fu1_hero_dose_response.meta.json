@@ -1,0 +1,1583 @@
+{
+  "commit": "ab81efe1",
+  "render_id": "3e85c1389bc64998",
+  "git_commit": "ab81efe1",
+  "git_dirty": false,
+  "created": "2026-08-14T12:55:41Z",
+  "figsize": [
+    16.8,
+    6.4
+  ],
+  "points": [
+    {
+      "x": 0.25,
+      "Trait score (0-100)": 85.76000000000002,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.75,
+      "Trait score (0-100)": 85.78833333333333,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.5,
+      "Trait score (0-100)": 85.13083333333333,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "Trait score (0-100)": 86.03833333333334,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.25,
+      "Trait score (0-100)": 85.74083333333331,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.75,
+      "Trait score (0-100)": 84.9725,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.5,
+      "Trait score (0-100)": 84.22416666666669,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "Trait score (0-100)": 85.32416666666667,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.25,
+      "Trait score (0-100)": 85.33500000000001,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.75,
+      "Trait score (0-100)": 84.37916666666666,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.5,
+      "Trait score (0-100)": 85.64916666666667,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "Trait score (0-100)": 86.71000000000001,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.25,
+      "Trait score (0-100)": 83.88916666666667,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.75,
+      "Trait score (0-100)": 84.40750000000001,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.5,
+      "Trait score (0-100)": 86.13083333333333,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "Trait score (0-100)": 85.67,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.25,
+      "Trait score (0-100)": 85.70166666666668,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.75,
+      "Trait score (0-100)": 83.9,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.5,
+      "Trait score (0-100)": 83.07833333333333,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "Trait score (0-100)": 85.50500000000002,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.25,
+      "Trait score (0-100)": 85.44749999999998,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.75,
+      "Trait score (0-100)": 85.39,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.5,
+      "Trait score (0-100)": 85.55166666666665,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "Trait score (0-100)": 84.32916666666668,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.25,
+      "Trait score (0-100)": 86.29916666666665,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.75,
+      "Trait score (0-100)": 86.01416666666667,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.5,
+      "Trait score (0-100)": 86.45083333333334,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "Trait score (0-100)": 86.33166666666668,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.25,
+      "Trait score (0-100)": 85.79833333333335,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.75,
+      "Trait score (0-100)": 85.06083333333333,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.5,
+      "Trait score (0-100)": 86.04166666666666,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "Trait score (0-100)": 85.55833333333332,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.5,
+      "Trait score (0-100)": 83.075,
+      "series": "Parent context extract+steer",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.5,
+      "Trait score (0-100)": 83.20166666666668,
+      "series": "Parent context extract+steer",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "Trait score (0-100)": 82.92666666666668,
+      "series": "Parent context extract+steer",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.0,
+      "Trait score (0-100)": 84.32666666666668,
+      "series": "Parent context extract+steer",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.5,
+      "Trait score (0-100)": 74.1375,
+      "series": "Parent paper method",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.5,
+      "Trait score (0-100)": 51.07666666666666,
+      "series": "Parent paper method",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "Trait score (0-100)": 31.067499999999995,
+      "series": "Parent paper method",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 5.0,
+      "Trait score (0-100)": 16.37916666666667,
+      "series": "Parent paper method",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.25,
+      "y": 93.29249999999999,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.75,
+      "y": 86.57333333333334,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.5,
+      "y": 81.5175,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "y": 86.81333333333335,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.25,
+      "y": 93.7175,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.75,
+      "y": 94.39000000000001,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.5,
+      "y": 93.75416666666668,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "y": 90.6175,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.25,
+      "y": 94.315,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.75,
+      "y": 92.33416666666668,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.5,
+      "y": 93.80666666666664,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.0,
+      "y": 93.76333333333335,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.25,
+      "y": 93.82083333333333,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.75,
+      "y": 94.24166666666667,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.5,
+      "y": 93.81333333333332,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "y": 93.37333333333333,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.5,
+      "y": 93.615,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.5,
+      "y": 91.35583333333332,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "y": 92.58500000000001,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 5.0,
+      "y": 89.93416666666667,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.5,
+      "y": 93.44583333333334,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.5,
+      "y": 85.3875,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.0,
+      "y": 74.25250000000001,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 5.0,
+      "y": 53.94250000000001,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 0.25,
+      "y": 99.3,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 0.75,
+      "y": 98.85,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.5,
+      "y": 98.51249999999999,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 3.0,
+      "y": 98.65416666666667,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 0.25,
+      "y": 99.41499999999999,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.75,
+      "y": 99.27083333333333,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.5,
+      "y": 98.75416666666668,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.0,
+      "y": 99.25000000000001,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.25,
+      "y": 99.07083333333335,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 0.75,
+      "y": 99.39583333333334,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.5,
+      "y": 99.27083333333334,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 3.0,
+      "y": 99.35333333333332,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 0.25,
+      "y": 99.29166666666667,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 0.75,
+      "y": 99.29583333333332,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 1.5,
+      "y": 99.40833333333333,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 3.0,
+      "y": 99.48333333333332,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 0.5,
+      "y": 99.07166666666667,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 1.5,
+      "y": 97.06750000000001,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 3.0,
+      "y": 92.41250000000001,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 5.0,
+      "y": 96.06166666666665,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 0.5,
+      "y": 98.7775,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 1.5,
+      "y": 96.94583333333333,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 3.0,
+      "y": 86.92666666666666,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 5.0,
+      "y": 73.13666666666666,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 0.25,
+      "y": 55.44583333333331,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 0.75,
+      "y": 52.74499999999999,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 1.5,
+      "y": 53.67583333333333,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 3.0,
+      "y": 50.06666666666666,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 0.25,
+      "y": 52.0475,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 0.75,
+      "y": 52.50916666666667,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 1.5,
+      "y": 50.872499999999995,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 3.0,
+      "y": 53.185,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 0.25,
+      "y": 52.89,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 0.75,
+      "y": 52.589166666666664,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 1.5,
+      "y": 54.290000000000006,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 3.0,
+      "y": 51.286666666666676,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 0.25,
+      "y": 51.956666666666685,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 0.75,
+      "y": 50.82666666666667,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 1.5,
+      "y": 52.8275,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 3.0,
+      "y": 52.495000000000005,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 0.5,
+      "y": 49.80083333333334,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 1.5,
+      "y": 50.74499999999999,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 3.0,
+      "y": 51.57333333333334,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 5.0,
+      "y": 49.03833333333334,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 0.5,
+      "y": 31.045000000000005,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 1.5,
+      "y": 9.386666666666667,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 3.0,
+      "y": 4.004166666666667,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 5.0,
+      "y": 1.0441666666666667,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Steering coefficient": 0.25,
+      "Coherence (0-100)": 85.0,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Steering coefficient": 0.75,
+      "Coherence (0-100)": 89.675,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Steering coefficient": 1.5,
+      "Coherence (0-100)": 90.285,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Steering coefficient": 3.0,
+      "Coherence (0-100)": 89.45,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Steering coefficient": 0.25,
+      "Coherence (0-100)": 89.65,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Steering coefficient": 0.75,
+      "Coherence (0-100)": 89.025,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Steering coefficient": 1.5,
+      "Coherence (0-100)": 88.7,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Steering coefficient": 3.0,
+      "Coherence (0-100)": 89.85,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Steering coefficient": 0.25,
+      "Coherence (0-100)": 87.56,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Steering coefficient": 0.75,
+      "Coherence (0-100)": 87.75,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Steering coefficient": 1.5,
+      "Coherence (0-100)": 86.6,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Steering coefficient": 3.0,
+      "Coherence (0-100)": 86.8,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Steering coefficient": 0.25,
+      "Coherence (0-100)": 89.3,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Steering coefficient": 0.75,
+      "Coherence (0-100)": 87.725,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Steering coefficient": 1.5,
+      "Coherence (0-100)": 87.725,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Steering coefficient": 3.0,
+      "Coherence (0-100)": 86.25,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Steering coefficient": 0.25,
+      "Coherence (0-100)": 86.01,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Steering coefficient": 0.75,
+      "Coherence (0-100)": 89.8,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Steering coefficient": 1.5,
+      "Coherence (0-100)": 91.05,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Steering coefficient": 3.0,
+      "Coherence (0-100)": 88.85,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Steering coefficient": 0.25,
+      "Coherence (0-100)": 88.875,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Steering coefficient": 0.75,
+      "Coherence (0-100)": 86.535,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Steering coefficient": 1.5,
+      "Coherence (0-100)": 89.4,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Steering coefficient": 3.0,
+      "Coherence (0-100)": 89.475,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Steering coefficient": 0.25,
+      "Coherence (0-100)": 85.725,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Steering coefficient": 0.75,
+      "Coherence (0-100)": 87.25,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Steering coefficient": 1.5,
+      "Coherence (0-100)": 87.55,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Steering coefficient": 3.0,
+      "Coherence (0-100)": 87.85,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Steering coefficient": 0.25,
+      "Coherence (0-100)": 86.55,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Steering coefficient": 0.75,
+      "Coherence (0-100)": 85.275,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Steering coefficient": 1.5,
+      "Coherence (0-100)": 87.05,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Steering coefficient": 3.0,
+      "Coherence (0-100)": 87.8,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Steering coefficient": 0.5,
+      "Coherence (0-100)": 89.075,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Steering coefficient": 1.5,
+      "Coherence (0-100)": 89.2,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Steering coefficient": 3.0,
+      "Coherence (0-100)": 88.875,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Steering coefficient": 5.0,
+      "Coherence (0-100)": 88.11,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Steering coefficient": 0.5,
+      "Coherence (0-100)": 89.1,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Steering coefficient": 1.5,
+      "Coherence (0-100)": 82.31,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Steering coefficient": 3.0,
+      "Coherence (0-100)": 78.96,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Steering coefficient": 5.0,
+      "Coherence (0-100)": 73.545,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Steering coefficient": 0.25,
+      "y": 82.225,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Steering coefficient": 0.75,
+      "y": 87.335,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Steering coefficient": 1.5,
+      "y": 87.57,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Steering coefficient": 3.0,
+      "y": 85.535,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Steering coefficient": 0.25,
+      "y": 80.735,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Steering coefficient": 0.75,
+      "y": 84.525,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Steering coefficient": 1.5,
+      "y": 83.875,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Steering coefficient": 3.0,
+      "y": 82.435,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Steering coefficient": 0.25,
+      "y": 82.15,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Steering coefficient": 0.75,
+      "y": 82.885,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Steering coefficient": 1.5,
+      "y": 84.475,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Steering coefficient": 3.0,
+      "y": 83.95,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Steering coefficient": 0.25,
+      "y": 80.41,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Steering coefficient": 0.75,
+      "y": 80.975,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Steering coefficient": 1.5,
+      "y": 82.65,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Steering coefficient": 3.0,
+      "y": 83.05,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Steering coefficient": 0.5,
+      "y": 79.85,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Steering coefficient": 1.5,
+      "y": 82.535,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Steering coefficient": 3.0,
+      "y": 84.355,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Steering coefficient": 5.0,
+      "y": 82.975,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Steering coefficient": 0.5,
+      "y": 81.21,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Steering coefficient": 1.5,
+      "y": 75.645,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Steering coefficient": 3.0,
+      "y": 75.785,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Steering coefficient": 5.0,
+      "y": 71.49,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Steering coefficient": 0.25,
+      "y": 89.91,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Steering coefficient": 0.75,
+      "y": 91.775,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Steering coefficient": 1.5,
+      "y": 92.275,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Steering coefficient": 3.0,
+      "y": 93.175,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Steering coefficient": 0.25,
+      "y": 89.35,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Steering coefficient": 0.75,
+      "y": 90.875,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Steering coefficient": 1.5,
+      "y": 89.36,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Steering coefficient": 3.0,
+      "y": 88.0,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Steering coefficient": 0.25,
+      "y": 88.825,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Steering coefficient": 0.75,
+      "y": 88.2,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Steering coefficient": 1.5,
+      "y": 88.115,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Steering coefficient": 3.0,
+      "y": 90.45,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Steering coefficient": 0.25,
+      "y": 87.025,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Steering coefficient": 0.75,
+      "y": 86.8,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Steering coefficient": 1.5,
+      "y": 89.3,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Steering coefficient": 3.0,
+      "y": 85.75,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Steering coefficient": 0.5,
+      "y": 88.225,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Steering coefficient": 1.5,
+      "y": 86.565,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Steering coefficient": 3.0,
+      "y": 90.125,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Steering coefficient": 5.0,
+      "y": 90.6,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Steering coefficient": 0.5,
+      "y": 90.225,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Steering coefficient": 1.5,
+      "y": 89.825,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Steering coefficient": 3.0,
+      "y": 89.31,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Steering coefficient": 5.0,
+      "y": 86.41,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Steering coefficient": 0.25,
+      "y": 75.385,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Steering coefficient": 0.75,
+      "y": 80.875,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Steering coefficient": 1.5,
+      "y": 79.5,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Steering coefficient": 3.0,
+      "y": 79.76,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Steering coefficient": 0.25,
+      "y": 72.935,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Steering coefficient": 0.75,
+      "y": 77.425,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Steering coefficient": 1.5,
+      "y": 76.825,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Steering coefficient": 3.0,
+      "y": 80.075,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Steering coefficient": 0.25,
+      "y": 74.55,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Steering coefficient": 0.75,
+      "y": 75.85,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Steering coefficient": 1.5,
+      "y": 79.125,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Steering coefficient": 3.0,
+      "y": 75.975,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Steering coefficient": 0.25,
+      "y": 73.6,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Steering coefficient": 0.75,
+      "y": 75.485,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Steering coefficient": 1.5,
+      "y": 76.525,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Steering coefficient": 3.0,
+      "y": 77.9,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Steering coefficient": 0.5,
+      "y": 61.8,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Steering coefficient": 1.5,
+      "y": 64.65,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Steering coefficient": 3.0,
+      "y": 63.225,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Steering coefficient": 5.0,
+      "y": 68.07333333333334,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Steering coefficient": 0.5,
+      "y": 65.725,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Steering coefficient": 1.5,
+      "y": 71.35833333333333,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Steering coefficient": 3.0,
+      "y": 71.06,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Steering coefficient": 5.0,
+      "y": 65.055,
+      "_kind": "line",
+      "_group": 55
+    }
+  ],
+  "n_series": 56,
+  "total_points": 224,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "Evil II",
+        "ylabel": "Trait score (0-100)",
+        "yticklabels": [
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80",
+          "90",
+          "100"
+        ]
+      },
+      {
+        "title": "Sycophancy II",
+        "yticklabels": [
+          "50",
+          "55",
+          "60",
+          "65",
+          "70",
+          "75",
+          "80",
+          "85",
+          "90",
+          "95",
+          "100"
+        ]
+      },
+      {
+        "title": "Hallucination II",
+        "yticklabels": [
+          "70",
+          "75",
+          "80",
+          "85",
+          "90",
+          "95",
+          "100",
+          "105"
+        ]
+      },
+      {
+        "title": "Mistake opinions",
+        "yticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60"
+        ]
+      },
+      {
+        "xlabel": "Steering coefficient",
+        "ylabel": "Coherence (0-100)",
+        "xticklabels": [
+          "$\\mathdefault{2^{-4}}$",
+          "$\\mathdefault{2^{-3}}$",
+          "$\\mathdefault{2^{-2}}$",
+          "$\\mathdefault{2^{-1}}$",
+          "$\\mathdefault{2^{0}}$",
+          "$\\mathdefault{2^{1}}$",
+          "$\\mathdefault{2^{2}}$",
+          "$\\mathdefault{2^{3}}$",
+          "$\\mathdefault{2^{4}}$"
+        ],
+        "yticklabels": [
+          "72.5",
+          "75.0",
+          "77.5",
+          "80.0",
+          "82.5",
+          "85.0",
+          "87.5",
+          "90.0",
+          "92.5"
+        ]
+      },
+      {
+        "xlabel": "Steering coefficient",
+        "xticklabels": [
+          "$\\mathdefault{2^{-4}}$",
+          "$\\mathdefault{2^{-3}}$",
+          "$\\mathdefault{2^{-2}}$",
+          "$\\mathdefault{2^{-1}}$",
+          "$\\mathdefault{2^{0}}$",
+          "$\\mathdefault{2^{1}}$",
+          "$\\mathdefault{2^{2}}$",
+          "$\\mathdefault{2^{3}}$",
+          "$\\mathdefault{2^{4}}$"
+        ],
+        "yticklabels": [
+          "70",
+          "72",
+          "74",
+          "76",
+          "78",
+          "80",
+          "82",
+          "84",
+          "86",
+          "88",
+          "90"
+        ]
+      },
+      {
+        "xlabel": "Steering coefficient",
+        "xticklabels": [
+          "$\\mathdefault{2^{-4}}$",
+          "$\\mathdefault{2^{-3}}$",
+          "$\\mathdefault{2^{-2}}$",
+          "$\\mathdefault{2^{-1}}$",
+          "$\\mathdefault{2^{0}}$",
+          "$\\mathdefault{2^{1}}$",
+          "$\\mathdefault{2^{2}}$",
+          "$\\mathdefault{2^{3}}$",
+          "$\\mathdefault{2^{4}}$"
+        ],
+        "yticklabels": [
+          "78",
+          "80",
+          "82",
+          "84",
+          "86",
+          "88",
+          "90",
+          "92",
+          "94"
+        ]
+      },
+      {
+        "xlabel": "Steering coefficient",
+        "xticklabels": [
+          "$\\mathdefault{2^{-4}}$",
+          "$\\mathdefault{2^{-3}}$",
+          "$\\mathdefault{2^{-2}}$",
+          "$\\mathdefault{2^{-1}}$",
+          "$\\mathdefault{2^{0}}$",
+          "$\\mathdefault{2^{1}}$",
+          "$\\mathdefault{2^{2}}$",
+          "$\\mathdefault{2^{3}}$",
+          "$\\mathdefault{2^{4}}$"
+        ],
+        "yticklabels": [
+          "60.0",
+          "62.5",
+          "65.0",
+          "67.5",
+          "70.0",
+          "72.5",
+          "75.0",
+          "77.5",
+          "80.0",
+          "82.5"
+        ]
+      }
+    ],
+    "series": [
+      "Pre-image L14, context tokens",
+      "Pre-image L19, context tokens",
+      "Pre-image L14, context-end",
+      "Pre-image L19, context-end",
+      "Random L14, context tokens",
+      "Random L19, context tokens",
+      "Random L14, context-end",
+      "Random L19, context-end",
+      "Parent context extract+steer",
+      "Parent paper method"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

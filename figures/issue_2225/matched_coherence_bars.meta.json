@@ -1,9 +1,15 @@
 {
-  "commit": "849c79c4",
-  "render_id": "d13278c8414e4809",
-  "git_commit": "849c79c4",
-  "git_dirty": false,
-  "created": "2026-08-11T20:39:54Z",
+  "commit": "515b3860+dirty",
+  "render_id": "ae5c4c9a67f84eed",
+  "git_commit": "515b3860",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2225/hero_coef_response_multilayer.meta.json",
+    "figures/issue_2225/hero_coef_response_multilayer.pdf",
+    "figures/issue_2225/hero_coef_response_multilayer.png",
+    "scripts/issue2225_figures.py"
+  ],
+  "created": "2026-08-14T14:10:32Z",
   "figsize": [
     12.0,
     12.8
@@ -16,7 +22,7 @@
       "_group": 0
     },
     {
-      "category": "Paper 3-layer",
+      "category": "Paper all-layer (28)",
       "Evil\ntrait score (0\u2013100)": 11.676666666666666,
       "_kind": "bar",
       "_group": 1
@@ -28,13 +34,13 @@
       "_group": 2
     },
     {
-      "category": "Context 2-layer",
+      "category": "Context middle-band (9)",
       "Evil\ntrait score (0\u2013100)": 78.45833333333334,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "category": "Context 3-layer",
+      "category": "Context all-layer (28)",
       "Evil\ntrait score (0\u2013100)": 26.48222222222222,
       "_kind": "bar",
       "_group": 4
@@ -1482,13 +1488,13 @@
       "_group": 211
     },
     {
-      "category": "Context 2-layer",
+      "category": "Context middle-band (9)",
       "Sycophancy\ntrait score (0\u2013100)": 78.6475,
       "_kind": "bar",
       "_group": 212
     },
     {
-      "category": "Context 3-layer",
+      "category": "Context all-layer (28)",
       "Sycophancy\ntrait score (0\u2013100)": 62.285833333333336,
       "_kind": "bar",
       "_group": 213
@@ -2060,7 +2066,7 @@
       "_group": 294
     },
     {
-      "category": "Paper 3-layer",
+      "category": "Paper all-layer (28)",
       "Hallucination\ntrait score (0\u2013100)": 72.78333333333333,
       "_kind": "bar",
       "_group": 295
@@ -2072,13 +2078,13 @@
       "_group": 296
     },
     {
-      "category": "Context 2-layer",
+      "category": "Context middle-band (9)",
       "Hallucination\ntrait score (0\u2013100)": 73.35166666666667,
       "_kind": "bar",
       "_group": 297
     },
     {
-      "category": "Context 3-layer",
+      "category": "Context all-layer (28)",
       "Hallucination\ntrait score (0\u2013100)": 67.57166666666666,
       "_kind": "bar",
       "_group": 298
@@ -2784,13 +2790,13 @@
       "_group": 398
     },
     {
-      "category": "Paper 3-layer",
+      "category": "Paper all-layer (28)",
       "Mistaken opinions\ntrait score (0\u2013100)": 0.008333333333333335,
       "_kind": "bar",
       "_group": 399
     },
     {
-      "category": "Context 3-layer",
+      "category": "Context all-layer (28)",
       "Mistaken opinions\ntrait score (0\u2013100)": 3.6199999999999997,
       "_kind": "bar",
       "_group": 400
@@ -3188,10 +3194,10 @@
         ],
         "xticklabels": [
           "Paper 1-layer",
-          "Paper 3-layer",
+          "Paper all-layer (28)",
           "Context 1-layer",
-          "Context 2-layer",
-          "Context 3-layer",
+          "Context middle-band (9)",
+          "Context all-layer (28)",
           "Paper dir, ctx tokens",
           "Context dir, all tokens",
           "Paper dir, resp tokens",
@@ -3294,10 +3300,10 @@
         ],
         "xticklabels": [
           "Paper 1-layer",
-          "Paper 3-layer",
+          "Paper all-layer (28)",
           "Context 1-layer",
-          "Context 2-layer",
-          "Context 3-layer"
+          "Context middle-band (9)",
+          "Context all-layer (28)"
         ],
         "yticklabels": [
           "0",
@@ -3414,10 +3420,10 @@
         ],
         "xticklabels": [
           "Paper 1-layer",
-          "Paper 3-layer",
+          "Paper all-layer (28)",
           "Context 1-layer",
-          "Context 2-layer",
-          "Context 3-layer"
+          "Context middle-band (9)",
+          "Context all-layer (28)"
         ],
         "yticklabels": [
           "0",
@@ -3475,10 +3481,10 @@
         ],
         "xticklabels": [
           "Paper 1-layer",
-          "Paper 3-layer",
+          "Paper all-layer (28)",
           "Context 1-layer",
-          "Context 2-layer",
-          "Context 3-layer"
+          "Context middle-band (9)",
+          "Context all-layer (28)"
         ],
         "yticklabels": [
           "0",

@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2303,
+  "highest_id": 2310,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9466,8 +9466,8 @@
       "goal": "Test whether persona directions extracted at the context position and applied ONLY to context tokens during finetuning prevent trait acquisition as well as or better than Persona Vectors' response-avg all-token preventative steering (arXiv 2507.21509 \u00a75.2), across single-layer / middle-band / all-layer conditions, at matched coherence and capability, with attribution cells separating extraction position from steering position and a probe-based off-direction acquisition check.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/2225",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/2225",
+      "status": "awaiting_promotion",
       "title": "Single-layer steering of context tokens does not prevent trait acquisition \u2014 it shows almost no dose-response, while steering response tokens does (MODERATE confidence)"
     },
     "2226": {
@@ -10007,8 +10007,8 @@
     "2295": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2295",
-      "status": "running",
+      "path": "tasks/completed/2295",
+      "status": "completed",
       "title": "workflow-fix: sync_repo_root deadlocks on the abandoned-rebase husk it exists to clear (task.py holds the flock while waiting on the husk)"
     },
     "2296": {
@@ -10074,12 +10074,61 @@
       "status": "running",
       "title": "/issue Step 5a spec-freshness sync: sync synced-spec data dependencies + fail loud on a failed sync commit"
     },
+    "2304": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2304",
+      "status": "proposed",
+      "title": "HF file-count overflow fallback never fires for dataset repos or bulk uploads \u2014 data repo hit its 1,000,000-file hard cap"
+    },
+    "2305": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2305",
+      "status": "proposed",
+      "title": "Non-atomic fresh claim-file write in run_claim_queue kills a concurrent worker with 'unparseable claim file'"
+    },
+    "2306": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2306",
+      "status": "proposed",
+      "title": "/issue Step 10d merge fence never binds $WT \u2014 git -C '' retargets every worktree op at the SHARED repo root (destroys a valid gate verdict; reaches a shared-root working-tree revert)"
+    },
+    "2307": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/approved/2307",
+      "status": "approved",
+      "title": "workflow-fix: Determine which side regressed before touching either. EITHE"
+    },
+    "2308": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2308",
+      "status": "proposed",
+      "title": "Step 9c 1b launcher: --files-only list spliced into the bash -c string runs one command per path (rc=126); gate-set cross-check is blind to newlines"
+    },
+    "2309": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2309",
+      "status": "proposed",
+      "title": "workflow-fix: implementer marker four-H3 completion-report contract is judgment-caught, not mechanically checked"
+    },
     "231": {
       "has_clean_result": false,
       "kind": "infra",
       "path": "tasks/archived/231",
       "status": "archived",
       "title": "Refactor parallel dispatch to use Claude Code agent teams (Wave 4 of #202)"
+    },
+    "2310": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2310",
+      "status": "proposed",
+      "title": "workflow-fix: Step 9c script-file gate launcher \u2014 newline-separated test list collapses to rc=126 with zero tests collected and evades both anti-silent-pass guards"
     },
     "232": {
       "has_clean_result": true,

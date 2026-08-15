@@ -1,0 +1,1295 @@
+{
+  "commit": "48842a29+dirty",
+  "render_id": "bb9d11fb67aa4936",
+  "git_commit": "48842a29",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2162_tbmp_figures.py"
+  ],
+  "created": "2026-08-15T01:18:28Z",
+  "figsize": [
+    5.6,
+    5.4
+  ],
+  "points": [
+    {
+      "parent single-ce F (netted)": 1.0,
+      "tbmp joint-tb@d1 F (netted)": 1.0,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 0.81,
+      "tbmp joint-tb@d1 F (netted)": 0.925,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 0.975,
+      "tbmp joint-tb@d1 F (netted)": 1.0,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 1.0253229974160207,
+      "tbmp joint-tb@d1 F (netted)": 0.9043927648578811,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 1.0,
+      "tbmp joint-tb@d1 F (netted)": 1.0,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 1.0,
+      "tbmp joint-tb@d1 F (netted)": 1.0,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 0.305,
+      "tbmp joint-tb@d1 F (netted)": 0.425,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 0.165078869280025,
+      "tbmp joint-tb@d1 F (netted)": 0.3323442136498516,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 0.3898666666666667,
+      "tbmp joint-tb@d1 F (netted)": 0.5733333333333334,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 0.09550561797752811,
+      "tbmp joint-tb@d1 F (netted)": 0.0,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 0.975,
+      "tbmp joint-tb@d1 F (netted)": 0.9099999999999999,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 1.0044642857142858,
+      "tbmp joint-tb@d1 F (netted)": 0.8186383928571429,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 1.0025575447570334,
+      "tbmp joint-tb@d1 F (netted)": 1.0025575447570334,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 0.9828571428571428,
+      "tbmp joint-tb@d1 F (netted)": 1.0,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 0.9949874686716792,
+      "tbmp joint-tb@d1 F (netted)": 1.0,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 0.9464285714285714,
+      "tbmp joint-tb@d1 F (netted)": 0.9642857142857144,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 0.15999999999999998,
+      "tbmp joint-tb@d1 F (netted)": 0.18000000000000005,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 0.665,
+      "tbmp joint-tb@d1 F (netted)": 0.7125,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 1.0,
+      "tbmp joint-tb@d1 F (netted)": 0.4183844011142062,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 0.5389145982330669,
+      "tbmp joint-tb@d1 F (netted)": 0.6499789650820362,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 0.5050761421319797,
+      "tbmp joint-tb@d1 F (netted)": 0.7411167512690355,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 0.1554959785522789,
+      "tbmp joint-tb@d1 F (netted)": 0.17694369973190352,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 1.0025706940874037,
+      "tbmp joint-tb@d1 F (netted)": 0.9974293059125965,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 0.06082589285714289,
+      "tbmp joint-tb@d1 F (netted)": 0.010602678571428556,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 0.9375,
+      "tbmp joint-tb@d1 F (netted)": 0.915,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 0.9882352941176472,
+      "tbmp joint-tb@d1 F (netted)": 1.0441176470588236,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 0.9583333333333333,
+      "tbmp joint-tb@d1 F (netted)": 1.0416666666666667,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 0.0,
+      "tbmp joint-tb@d1 F (netted)": 0.0,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 0.852791878172589,
+      "tbmp joint-tb@d1 F (netted)": 0.9847715736040609,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 0.3,
+      "tbmp joint-tb@d1 F (netted)": 0.9199999999999999,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 0.0,
+      "tbmp joint-tb@d1 F (netted)": 0.1497326203208556,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 0.9553440702781844,
+      "tbmp joint-tb@d1 F (netted)": 0.3426061493411419,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 1.281456953642384,
+      "tbmp joint-tb@d1 F (netted)": 0.6821192052980133,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 0.4214285714285715,
+      "tbmp joint-tb@d1 F (netted)": 0.5785714285714286,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 1.1153846153846152,
+      "tbmp joint-tb@d1 F (netted)": 1.1794871794871793,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 0.89,
+      "tbmp joint-tb@d1 F (netted)": 0.97,
+      "series": "steered / instr_format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent single-ce F (netted)": 0.0263157894736843,
+      "tbmp joint-tb@d1 F (netted)": 0.031100478468899614,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": 0.1384248210023865,
+      "tbmp joint-tb@d1 F (netted)": -0.007159904534606345,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": 0.02229654403567449,
+      "tbmp joint-tb@d1 F (netted)": 0.10702341137123736,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": 0.14983351831298564,
+      "tbmp joint-tb@d1 F (netted)": 0.11931187569367374,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": 0.3295454545454546,
+      "tbmp joint-tb@d1 F (netted)": 0.16477272727272732,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": -0.04944178628389149,
+      "tbmp joint-tb@d1 F (netted)": 0.007974481658692157,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": 0.1400124455507156,
+      "tbmp joint-tb@d1 F (netted)": 0.027380211574362254,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": 0.5610189573459716,
+      "tbmp joint-tb@d1 F (netted)": 0.27665876777251186,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": 0.08370288248337025,
+      "tbmp joint-tb@d1 F (netted)": 0.1613082039911308,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": 0.2982097989949749,
+      "tbmp joint-tb@d1 F (netted)": 0.31375628140703515,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": 0.39285714285714285,
+      "tbmp joint-tb@d1 F (netted)": 0.4261083743842365,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": 0.04132231404958677,
+      "tbmp joint-tb@d1 F (netted)": -0.06198347107438015,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": 0.30094043887147337,
+      "tbmp joint-tb@d1 F (netted)": 0.32852664576802504,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": 0.3568958063121488,
+      "tbmp joint-tb@d1 F (netted)": 0.5622568093385214,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": 0.003212851405622404,
+      "tbmp joint-tb@d1 F (netted)": 0.0,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": -0.14709517923362175,
+      "tbmp joint-tb@d1 F (netted)": 0.10506798516687268,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": 0.03375796178343952,
+      "tbmp joint-tb@d1 F (netted)": 0.07197452229299368,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": 0.14662273476112023,
+      "tbmp joint-tb@d1 F (netted)": 0.2773201537616694,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": 0.3510882016036655,
+      "tbmp joint-tb@d1 F (netted)": 0.3121420389461626,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": 0.3606986899563319,
+      "tbmp joint-tb@d1 F (netted)": 0.40393013100436687,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": 0.0307562076749435,
+      "tbmp joint-tb@d1 F (netted)": 0.1422121896162527,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": 0.04097452934662241,
+      "tbmp joint-tb@d1 F (netted)": 0.027962347729789706,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": -0.09004092769440665,
+      "tbmp joint-tb@d1 F (netted)": 0.08049113233287851,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": 0.17238999137187233,
+      "tbmp joint-tb@d1 F (netted)": 0.20828300258843832,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": -0.03418803418803417,
+      "tbmp joint-tb@d1 F (netted)": -0.10256410256410256,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": 0.22781126584909583,
+      "tbmp joint-tb@d1 F (netted)": 0.2111827062980669,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": 0.1773680864589956,
+      "tbmp joint-tb@d1 F (netted)": 0.3452002542911634,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": 0.3343769567939887,
+      "tbmp joint-tb@d1 F (netted)": 0.20288040075140887,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": 0.0981976382846488,
+      "tbmp joint-tb@d1 F (netted)": 0.10689869484151657,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": 0.029832935560859183,
+      "tbmp joint-tb@d1 F (netted)": 0.08174224343675417,
+      "series": "steered / persona_prompted",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent single-ce F (netted)": 0.0,
+      "tbmp joint-tb@d1 F (netted)": 0.0,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": 0.0,
+      "tbmp joint-tb@d1 F (netted)": 0.0,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": 0.0,
+      "tbmp joint-tb@d1 F (netted)": 0.0,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": 0.0,
+      "tbmp joint-tb@d1 F (netted)": 0.0,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": 0.0,
+      "tbmp joint-tb@d1 F (netted)": 0.0,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": 0.0,
+      "tbmp joint-tb@d1 F (netted)": 0.0,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": 0.0,
+      "tbmp joint-tb@d1 F (netted)": 0.0,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": -0.027487115414649436,
+      "tbmp joint-tb@d1 F (netted)": -0.11603935655161647,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": -0.05066666666666665,
+      "tbmp joint-tb@d1 F (netted)": -0.05066666666666665,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": -0.12359550561797751,
+      "tbmp joint-tb@d1 F (netted)": -0.12359550561797751,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": 0.0050000000000000044,
+      "tbmp joint-tb@d1 F (netted)": 0.0,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": 0.0,
+      "tbmp joint-tb@d1 F (netted)": 0.0,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": 0.6035805626598466,
+      "tbmp joint-tb@d1 F (netted)": 0.557544757033248,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": 0.5028571428571428,
+      "tbmp joint-tb@d1 F (netted)": 0.5542857142857143,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": 0.1779448621553884,
+      "tbmp joint-tb@d1 F (netted)": 0.14285714285714277,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": 0.7023809523809522,
+      "tbmp joint-tb@d1 F (netted)": 0.6071428571428572,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": 0.435,
+      "tbmp joint-tb@d1 F (netted)": 0.34,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": 0.64,
+      "tbmp joint-tb@d1 F (netted)": 0.525,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": 0.5487465181058496,
+      "tbmp joint-tb@d1 F (netted)": 0.5543175487465182,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": 0.28649558266722763,
+      "tbmp joint-tb@d1 F (netted)": 0.2461085401766933,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": 0.3685279187817259,
+      "tbmp joint-tb@d1 F (netted)": 0.19593908629441628,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": 0.6005361930294907,
+      "tbmp joint-tb@d1 F (netted)": 0.7184986595174263,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": 0.5501285347043703,
+      "tbmp joint-tb@d1 F (netted)": 0.4730077120822622,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": 0.5660714285714287,
+      "tbmp joint-tb@d1 F (netted)": 0.5379464285714286,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": -0.31499999999999995,
+      "tbmp joint-tb@d1 F (netted)": -0.24500000000000002,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": -0.35294117647058826,
+      "tbmp joint-tb@d1 F (netted)": -0.5764705882352941,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": -0.13541666666666669,
+      "tbmp joint-tb@d1 F (netted)": -0.052083333333333336,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": -0.2717391304347826,
+      "tbmp joint-tb@d1 F (netted)": -0.4057971014492753,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": -0.5482233502538071,
+      "tbmp joint-tb@d1 F (netted)": -0.3350253807106599,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": -0.4,
+      "tbmp joint-tb@d1 F (netted)": 0.0,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": -0.03208556149732621,
+      "tbmp joint-tb@d1 F (netted)": -0.2887700534759359,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": -0.14494875549048317,
+      "tbmp joint-tb@d1 F (netted)": -0.41727672035139085,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": -0.076158940397351,
+      "tbmp joint-tb@d1 F (netted)": -0.29801324503311255,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": 0.3214285714285715,
+      "tbmp joint-tb@d1 F (netted)": -0.04999999999999997,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": -0.49999999999999994,
+      "tbmp joint-tb@d1 F (netted)": -0.6794871794871795,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": 0.0,
+      "tbmp joint-tb@d1 F (netted)": -0.03,
+      "series": "shuffled / instr_format",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent single-ce F (netted)": 0.01555023923444984,
+      "tbmp joint-tb@d1 F (netted)": 0.07027511961722498,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": -0.054892601431981096,
+      "tbmp joint-tb@d1 F (netted)": 0.1437947494033411,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": -0.014492753623188418,
+      "tbmp joint-tb@d1 F (netted)": -0.03678929765886291,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": 0.0016648168701443472,
+      "tbmp joint-tb@d1 F (netted)": -0.02219755826859035,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": -0.09375000000000001,
+      "tbmp joint-tb@d1 F (netted)": -0.0636363636363637,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": -0.27910685805422647,
+      "tbmp joint-tb@d1 F (netted)": -0.24146730462519927,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": 0.014934660858743011,
+      "tbmp joint-tb@d1 F (netted)": -0.020224019912881124,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": -0.01510663507109003,
+      "tbmp joint-tb@d1 F (netted)": 0.000592417061611375,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": -0.05709534368070959,
+      "tbmp joint-tb@d1 F (netted)": -0.023835920177383677,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": 0.10882537688442204,
+      "tbmp joint-tb@d1 F (netted)": 0.06218592964824126,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": 0.3830049261083744,
+      "tbmp joint-tb@d1 F (netted)": 0.4137931034482759,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": -0.025826446280991733,
+      "tbmp joint-tb@d1 F (netted)": 0.030991735537190077,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": 0.5040752351097179,
+      "tbmp joint-tb@d1 F (netted)": 0.42257053291536045,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": 0.6206225680933852,
+      "tbmp joint-tb@d1 F (netted)": 0.5752269779507133,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": 0.6265060240963857,
+      "tbmp joint-tb@d1 F (netted)": 0.6345381526104419,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": 0.2101359703337454,
+      "tbmp joint-tb@d1 F (netted)": 0.1915945611866502,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": 0.46942675159235664,
+      "tbmp joint-tb@d1 F (netted)": 0.5140127388535031,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": 0.527732015376167,
+      "tbmp joint-tb@d1 F (netted)": 0.5024711696869851,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": 0.5701603665521191,
+      "tbmp joint-tb@d1 F (netted)": 0.5458190148911798,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": 0.6495633187772926,
+      "tbmp joint-tb@d1 F (netted)": 0.33515283842794774,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": -0.012415349887133257,
+      "tbmp joint-tb@d1 F (netted)": -0.030474040632054264,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": 0.10188261351052058,
+      "tbmp joint-tb@d1 F (netted)": 0.09856035437430795,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": -0.13915416098226474,
+      "tbmp joint-tb@d1 F (netted)": 0.0013642564802182826,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": 0.3339085418464193,
+      "tbmp joint-tb@d1 F (netted)": 0.24417601380500437,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": 0.16068376068376075,
+      "tbmp joint-tb@d1 F (netted)": 0.07350427350427352,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": 0.435668260236957,
+      "tbmp joint-tb@d1 F (netted)": 0.3674911660777385,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": -0.019707565162110564,
+      "tbmp joint-tb@d1 F (netted)": 0.2714558169103624,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": 0.2103944896681277,
+      "tbmp joint-tb@d1 F (netted)": 0.1815904821540387,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": 0.023617153511497846,
+      "tbmp joint-tb@d1 F (netted)": 0.018645121193287772,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": 0.19809069212410502,
+      "tbmp joint-tb@d1 F (netted)": 0.26968973747016706,
+      "series": "shuffled / persona_prompted",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent single-ce F (netted)": -0.7775343861936577,
+      "tbmp joint-tb@d1 F (netted)": -0.7775343861936577,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": -0.7335131913662594,
+      "tbmp joint-tb@d1 F (netted)": -0.7335131913662594,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": -0.689491996538861,
+      "tbmp joint-tb@d1 F (netted)": -0.689491996538861,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": -0.6454708017114625,
+      "tbmp joint-tb@d1 F (netted)": -0.6454708017114625,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": -0.6014496068840642,
+      "tbmp joint-tb@d1 F (netted)": -0.6014496068840642,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": -0.5574284120566659,
+      "tbmp joint-tb@d1 F (netted)": -0.5574284120566659,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": -0.5134072172292675,
+      "tbmp joint-tb@d1 F (netted)": -0.5134072172292675,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": -0.46938602240186916,
+      "tbmp joint-tb@d1 F (netted)": -0.46938602240186916,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": -0.4253648275744708,
+      "tbmp joint-tb@d1 F (netted)": -0.4253648275744708,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": -0.38134363274707245,
+      "tbmp joint-tb@d1 F (netted)": -0.38134363274707245,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": -0.3373224379196741,
+      "tbmp joint-tb@d1 F (netted)": -0.3373224379196741,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": -0.29330124309227573,
+      "tbmp joint-tb@d1 F (netted)": -0.29330124309227573,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": -0.24928004826487737,
+      "tbmp joint-tb@d1 F (netted)": -0.24928004826487737,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": -0.20525885343747907,
+      "tbmp joint-tb@d1 F (netted)": -0.20525885343747907,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": -0.16123765861008066,
+      "tbmp joint-tb@d1 F (netted)": -0.16123765861008066,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": -0.11721646378268225,
+      "tbmp joint-tb@d1 F (netted)": -0.11721646378268225,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": -0.07319526895528394,
+      "tbmp joint-tb@d1 F (netted)": -0.07319526895528394,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": -0.02917407412788564,
+      "tbmp joint-tb@d1 F (netted)": -0.02917407412788564,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 0.014847120699512772,
+      "tbmp joint-tb@d1 F (netted)": 0.014847120699512772,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 0.058868315526911186,
+      "tbmp joint-tb@d1 F (netted)": 0.058868315526911186,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 0.10288951035430949,
+      "tbmp joint-tb@d1 F (netted)": 0.10288951035430949,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 0.1469107051817078,
+      "tbmp joint-tb@d1 F (netted)": 0.1469107051817078,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 0.1909319000091062,
+      "tbmp joint-tb@d1 F (netted)": 0.1909319000091062,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 0.23495309483650462,
+      "tbmp joint-tb@d1 F (netted)": 0.23495309483650462,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 0.2789742896639029,
+      "tbmp joint-tb@d1 F (netted)": 0.2789742896639029,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 0.3229954844913012,
+      "tbmp joint-tb@d1 F (netted)": 0.3229954844913012,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 0.3670166793186995,
+      "tbmp joint-tb@d1 F (netted)": 0.3670166793186995,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 0.41103787414609805,
+      "tbmp joint-tb@d1 F (netted)": 0.41103787414609805,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 0.45505906897349635,
+      "tbmp joint-tb@d1 F (netted)": 0.45505906897349635,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 0.49908026380089465,
+      "tbmp joint-tb@d1 F (netted)": 0.49908026380089465,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 0.5431014586282932,
+      "tbmp joint-tb@d1 F (netted)": 0.5431014586282932,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 0.5871226534556915,
+      "tbmp joint-tb@d1 F (netted)": 0.5871226534556915,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 0.6311438482830898,
+      "tbmp joint-tb@d1 F (netted)": 0.6311438482830898,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 0.6751650431104881,
+      "tbmp joint-tb@d1 F (netted)": 0.6751650431104881,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 0.7191862379378864,
+      "tbmp joint-tb@d1 F (netted)": 0.7191862379378864,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 0.7632074327652849,
+      "tbmp joint-tb@d1 F (netted)": 0.7632074327652849,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 0.8072286275926832,
+      "tbmp joint-tb@d1 F (netted)": 0.8072286275926832,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 0.8512498224200815,
+      "tbmp joint-tb@d1 F (netted)": 0.8512498224200815,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 0.89527101724748,
+      "tbmp joint-tb@d1 F (netted)": 0.89527101724748,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 0.9392922120748783,
+      "tbmp joint-tb@d1 F (netted)": 0.9392922120748783,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 0.9833134069022766,
+      "tbmp joint-tb@d1 F (netted)": 0.9833134069022766,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 1.027334601729675,
+      "tbmp joint-tb@d1 F (netted)": 1.027334601729675,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 1.0713557965570732,
+      "tbmp joint-tb@d1 F (netted)": 1.0713557965570732,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 1.1153769913844718,
+      "tbmp joint-tb@d1 F (netted)": 1.1153769913844718,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 1.15939818621187,
+      "tbmp joint-tb@d1 F (netted)": 1.15939818621187,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 1.2034193810392684,
+      "tbmp joint-tb@d1 F (netted)": 1.2034193810392684,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 1.247440575866667,
+      "tbmp joint-tb@d1 F (netted)": 1.247440575866667,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 1.291461770694065,
+      "tbmp joint-tb@d1 F (netted)": 1.291461770694065,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 1.3354829655214635,
+      "tbmp joint-tb@d1 F (netted)": 1.3354829655214635,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "parent single-ce F (netted)": 1.3795041603488623,
+      "tbmp joint-tb@d1 F (netted)": 1.3795041603488623,
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 182,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "tb@d1 vs parent ce (netted)",
+        "xlabel": "parent single-ce F (netted)",
+        "ylabel": "tbmp joint-tb@d1 F (netted)",
+        "legend_labels": [
+          "steered / instr_format",
+          "steered / persona_prompted",
+          "shuffled / instr_format",
+          "shuffled / persona_prompted"
+        ],
+        "xticklabels": [
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ],
+        "yticklabels": [
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0"
+        ]
+      }
+    ],
+    "series": [
+      "steered / instr_format",
+      "steered / persona_prompted",
+      "shuffled / instr_format",
+      "shuffled / persona_prompted"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "figure": "tb_identity_d1",
+  "inputs": [
+    "eval_results/issue_2162/turn_boundary/f_cells_tb.jsonl",
+    "eval_results/issue_2162/turn_boundary/null_shuffled_cells_tb.jsonl",
+    "eval_results/issue_2162/turn_boundary/null_crosstype_cells_tb.jsonl",
+    "eval_results/issue_2162/turn_boundary/parent_ref_cells_tb.jsonl",
+    "eval_results/issue_2162/turn_boundary/stats_tb.json",
+    "eval_results/issue_2162/turn_boundary/identity_gate.json"
+  ]
+}

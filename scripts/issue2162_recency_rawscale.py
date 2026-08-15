@@ -41,11 +41,13 @@ SEPARATION_BAR = 0.5
 BOOT_B = 10_000
 BOOT_SEED = 21620
 
-ARM_FILES = {
-    "steered": "f_cells.jsonl",
-    "shuffled": "null_shuffled_cells.jsonl",
-    "crosstype": "null_crosstype_cells.jsonl",
+ARM_STEMS = {
+    "steered": "f_cells",
+    "shuffled": "null_shuffled_cells",
+    "crosstype": "null_crosstype_cells",
 }
+# Back-compat alias (default-suffix filenames).
+ARM_FILES = {arm: f"{stem}.jsonl" for arm, stem in ARM_STEMS.items()}
 
 DEFAULT_CELLS = (
     "instr_format",
@@ -62,13 +64,26 @@ def _read_jsonl(path: Path) -> list[dict]:
         return [json.loads(line) for line in fh if line.strip()]
 
 
-def load_tables(metrics_dir: Path) -> tuple[dict[str, dict], dict[tuple[str, str], dict]]:
-    """Return (anchors by pair_id, per-(pair, arm) patched delta at SLOT)."""
-    anchors = {r["pair_id"]: r for r in _read_jsonl(metrics_dir / "anchors.jsonl")}
+def load_tables(
+    metrics_dir: Path,
+    slot: str = SLOT,
+    file_suffix: str = "",
+    anchors_file: Path | None = None,
+) -> tuple[dict[str, dict], dict[tuple[str, str], dict]]:
+    """Return (anchors by pair_id, per-(pair, arm) patched delta at ``slot``).
+
+    ``file_suffix`` selects a sibling table set (the tbmp round passes
+    ``"_tb"`` -> ``f_cells_tb.jsonl`` etc.); ``anchors_file`` overrides the
+    default ``<metrics_dir>/anchors.jsonl`` (the tbmp round keeps the parent's
+    committed anchors as its denominators, plan §4.4). Defaults reproduce the
+    parent behavior byte-for-byte.
+    """
+    anchors_path = anchors_file if anchors_file is not None else metrics_dir / "anchors.jsonl"
+    anchors = {r["pair_id"]: r for r in _read_jsonl(anchors_path)}
     patched: dict[tuple[str, str], dict] = defaultdict(dict)
-    for arm, filename in ARM_FILES.items():
-        for row in _read_jsonl(metrics_dir / filename):
-            if row["slot"] != SLOT or row["delta_patched_mean"] is None:
+    for arm, stem in ARM_STEMS.items():
+        for row in _read_jsonl(metrics_dir / f"{stem}{file_suffix}.jsonl"):
+            if row["slot"] != slot or row["delta_patched_mean"] is None:
                 continue
             patched[(row["pair_id"], arm)] = row
     return anchors, patched
@@ -96,10 +111,25 @@ def bootstrap_ci(values: list[float], rng) -> tuple[float, float]:
     return float(draws[int(0.025 * BOOT_B)]), float(draws[int(0.975 * BOOT_B)])
 
 
-def summarize(cells: tuple[str, ...], metrics_dir: Path) -> list[dict]:
+def summarize(
+    cells: tuple[str, ...],
+    metrics_dir: Path,
+    slot: str = SLOT,
+    file_suffix: str = "",
+    anchors_file: Path | None = None,
+    null_cis: bool = False,
+) -> list[dict]:
+    """Per-(cell, subset) raw-scale summary rows.
+
+    ``null_cis=True`` ADDITIVELY appends ``shuffled_ci95``/``crosstype_ci95``
+    (same B=10000 pair-clustered bootstrap) using per-row rngs seeded off
+    (BOOT_SEED, row index, arm index) — deliberately ISOLATED from the shared
+    steered-CI stream so a defaults run stays byte-identical to the parent's
+    committed recency_rawscale.json (the panel-verified reproduction).
+    """
     import numpy as np
 
-    anchors, patched = load_tables(metrics_dir)
+    anchors, patched = load_tables(metrics_dir, slot, file_suffix, anchors_file)
     rng = np.random.default_rng(BOOT_SEED)
     out: list[dict] = []
     for cell in cells:
@@ -129,23 +159,26 @@ def summarize(cells: tuple[str, ...], metrics_dir: Path) -> list[dict]:
             steered_lo, steered_hi = bootstrap_ci(per_arm["steered"], rng)
             null_means = {arm: float(np.mean(per_arm[arm])) for arm in ("shuffled", "crosstype")}
             steered_mean = float(np.mean(per_arm["steered"]))
-            out.append(
-                {
-                    "cell": cell,
-                    "subset": subset_name,
-                    "n_pairs": len(per_arm["steered"]),
-                    "mean_anchor_gap": float(np.mean(gaps)),
-                    "steered_mean": steered_mean,
-                    "steered_ci95": [steered_lo, steered_hi],
-                    "shuffled_mean": null_means["shuffled"],
-                    "crosstype_mean": null_means["crosstype"],
-                    "margin_over_max_null": steered_mean - max(null_means.values()),
-                }
-            )
+            row = {
+                "cell": cell,
+                "subset": subset_name,
+                "n_pairs": len(per_arm["steered"]),
+                "mean_anchor_gap": float(np.mean(gaps)),
+                "steered_mean": steered_mean,
+                "steered_ci95": [steered_lo, steered_hi],
+                "shuffled_mean": null_means["shuffled"],
+                "crosstype_mean": null_means["crosstype"],
+                "margin_over_max_null": steered_mean - max(null_means.values()),
+            }
+            if null_cis:
+                for k, arm in enumerate(("shuffled", "crosstype")):
+                    arm_rng = np.random.default_rng([BOOT_SEED, len(out), k])
+                    row[f"{arm}_ci95"] = list(bootstrap_ci(per_arm[arm], arm_rng))
+            out.append(row)
     return out
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     from explore_persona_space.orchestrate.env import load_dotenv
     from explore_persona_space.task_workflow import repo_root
 
@@ -158,10 +191,29 @@ def main() -> None:
         default=repo_root() / "eval_results" / "issue_2162" / "f_metrics",
     )
     parser.add_argument("--cells", nargs="*", default=list(DEFAULT_CELLS))
+    parser.add_argument("--slot", default=SLOT)
+    parser.add_argument(
+        "--file-suffix", default="", help="table-set suffix, e.g. _tb for the tbmp round"
+    )
+    parser.add_argument(
+        "--anchors-file", type=Path, default=None, help="override <metrics-dir>/anchors.jsonl"
+    )
+    parser.add_argument(
+        "--null-cis",
+        action="store_true",
+        help="additively emit shuffled_ci95/crosstype_ci95 (rng-isolated; defaults unchanged)",
+    )
     parser.add_argument("--out-json", type=Path, default=None)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
-    rows = summarize(tuple(args.cells), args.metrics_dir)
+    rows = summarize(
+        tuple(args.cells),
+        args.metrics_dir,
+        args.slot,
+        args.file_suffix,
+        args.anchors_file,
+        null_cis=args.null_cis,
+    )
 
     header = (
         f"{'cell':32s} {'subset':9s} {'n':>3s} {'gap':>5s} | "
@@ -188,7 +240,7 @@ def main() -> None:
         args.out_json.write_text(
             json.dumps(
                 {
-                    "slot": SLOT,
+                    "slot": args.slot,
                     "separation_bar": SEPARATION_BAR,
                     "boot": {"B": BOOT_B, "seed": BOOT_SEED},
                     "units": "judge-contrast delta (dual-rubric, range [-2, +2])",
