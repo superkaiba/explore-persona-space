@@ -8284,6 +8284,15 @@ explicit eval-data path):
      them in the round's `epm:progress` completion note (visible, not
      re-buried). Every payload path is certified; push.
 
+   Phase A ledger demotion (#2235) decides at VIOLATION grain for
+   whole-repo scan nodes (#2318): a sha-fresh baseline-ledger red that
+   is a `step9c_baseline.VIOLATION_SET_SCAN_NODES` member demotes its
+   FAILURES block to reported ONLY when `extract_violation_paths(<block>)`
+   contains no payload path — a payload path in the extracted set means
+   the round ADDED a violation to the already-red node and the block
+   stands; non-registry ledger nodes keep the node-grain `FAILED`-line
+   demotion.
+
    The gate is mechanically enforced for CODE payload:
    `guard_root_code_commit.sh` (PreToolUse) refuses a repo-root commit
    of uncertified `scripts/`/`src/`/`tests/` payload until
