@@ -10189,8 +10189,8 @@
     "2319": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2319",
-      "status": "approved",
+      "path": "tasks/running/2319",
+      "status": "running",
       "title": "workflow-fix: step9c violation-path extraction takes every path token per line (snippet false-block residual)"
     },
     "232": {
