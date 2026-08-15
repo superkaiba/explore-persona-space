@@ -14962,7 +14962,14 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # would have landed 946,657 B against a 945_400 cap — main red by 1,257 B
     # between the two merges. The Step 10d re-measure duty (#2303 plan §4.2 /
     # risk R8) is what fired here; keep it on any SKILL.md-bearing branch.
-    "issue/SKILL.md": 947_700,
+    # 950_300 — #2317 measured 949,103 B for THIS landing (the Step 9c 1b
+    # splice-shape guard: the --files-only tr-to-spaces sourcing note, the
+    # wc -l embedded-newline assertion + shell self-test, and the site-scope
+    # note; +2,446 B over the 946,657 B base at bbc5d75807). Prior: 947_700
+    # (#2303). Cap = landing bytes + ~1.2 KB (#1753/#1727 landing-bytes rule;
+    # headroom 1,197 B). Re-measure at Step 10d if main moved (the
+    # #2284/#2285 moving-main class above).
+    "issue/SKILL.md": 950_300,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,

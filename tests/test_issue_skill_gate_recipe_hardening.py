@@ -32,6 +32,15 @@ prose). One test per fix:
   restore-with-worktree-flag form anywhere in the SKILL, so the plan's
   named fallback verb is the shipped form: the per-disposition split,
   not the verb, is the load-bearing part).
+- #2317 (#2314): the 1b block additionally guards splice SHAPE — the D1
+  count check validates cardinality only, and a newline-separated
+  `--files-only` list PASSES it while the launcher's inner `bash -c`
+  parses paths 2..N as their own commands (pytest ran 1 of 120 files,
+  no junit XML, rc=126). Pins: the `tr`-to-spaces source normalization,
+  the `wc -l` embedded-newline assertion at the splice (with a shell
+  self-test), a file-wide ban on the broken match-everything case/glob
+  form, plus a BEHAVIORAL extract-and-execute test proving the shipped
+  assertion actually discriminates.
 
 Regions are anchor-to-anchor spans (never fixed-length windows), so
 additive neighboring edits cannot silently push a pinned token out of
@@ -41,6 +50,7 @@ scope (the fixed-window fragility named in #2126's plan deferral 5).
 from __future__ import annotations
 
 import re
+import subprocess
 from pathlib import Path
 
 SKILL = Path(__file__).resolve().parents[1] / ".claude/skills/issue/SKILL.md"
@@ -236,3 +246,99 @@ def test_guard1_retry_restore_is_per_disposition():
     assert 'for p in "${R_GONE[@]}"; do rm -f -- "$WT/$p"; done' in region
     # NEGATIVE: the batched abort-prone form is gone from the whole file:
     assert 'checkout HEAD -- "${FOREIGN[@]}"' not in text
+
+
+# --- #2317: 1b splice-shape guard (source-normalize + wc -l at the splice) ------
+
+
+def _extract_splice_shape_assertion(sec: str) -> str:
+    """Pull the LIVE splice-shape assertion out of the 9c section — the
+    physical line probing $S9C_FILES for embedded newlines, plus its
+    backslash-continuation lines. Extract-and-execute is load-bearing, not a
+    style choice: a hardcoded copy of the assertion shape would pass against
+    a PRE-fix SKILL.md, making the fails-before/passes-after criterion
+    (#2317 §6.2) vacuous — extracting ties the test to the SHIPPED guard."""
+    lines = sec.splitlines()
+    for i, ln in enumerate(lines):
+        if '"$S9C_FILES" | wc -l' in ln:
+            snippet = [ln]
+            j = i
+            while lines[j].rstrip().endswith("\\") and j + 1 < len(lines):
+                j += 1
+                snippet.append(lines[j])
+            return "\n".join(snippet)
+    raise AssertionError(
+        "splice-shape assertion not found in the 9c section — the 1b block "
+        "does not probe the substituted $S9C_FILES for embedded newlines"
+    )
+
+
+def _run_bash(script: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(["bash", "-c", script], capture_output=True, text=True, timeout=30)
+
+
+def test_step9c_launch_asserts_splice_shape():
+    """The 1b block normalizes the --files-only sourcing route to spaces at
+    the SOURCE and asserts the substituted <files> carries no embedded
+    newline at the SPLICE (#2314: a newline-separated 120-path list PASSED
+    the D1 cardinality cross-check — IFS includes newline — while the
+    launcher's inner bash -c parsed paths 2..120 as their own COMMANDS;
+    pytest ran 1 of 120 files, the trailing flags incl. --junitxml attached
+    to the last bogus line, rc=126 landed in the sentinel)."""
+    text = _text()
+    sec = _section_9c(text)
+    norm = _norm(sec)
+    # (a) the source normalization on the --files-only route:
+    assert "--files-only | tr '\\n' ' '" in sec
+    # (b) the splice-shape assertion — embedded-newline count must be 0:
+    shape_probe = '[ "$(printf \'%s\' "$S9C_FILES" | wc -l)" -eq 0 ]'
+    assert shape_probe in sec
+    # Its FATAL names the multiple-commands consequence:
+    assert "contains NEWLINES" in norm
+    assert "its own COMMAND" in norm
+    # (c) the shell self-test's two conjuncts (a broken newline test that
+    # never fires is worse than no test — #2314's second launch attempt):
+    assert "[ \"$(printf 'a b' | wc -l)\" -eq 0 ]" in sec
+    assert "[ \"$(printf 'a\\nb' | wc -l)\" -eq 1 ]" in sec
+    assert "splice-shape assertion is itself broken" in norm
+    # Ordering: the shape check PRECEDES the launcher:
+    assert sec.index(shape_probe) < sec.index("--junitxml=/tmp/step9c-junit-issue-<N>.xml")
+    # The count check is RETAINED beside it (D4 — shape and cardinality are
+    # independent failures):
+    assert '[ "${S9C_GOT:-0}" -eq "${S9C_N:-0}" ]' in sec
+    # NEGATIVE, FILE-WIDE: the broken case/glob form — a pattern wrapping a
+    # command substitution that emits a bare newline — appears NOWHERE in the
+    # SKILL (command substitution strips trailing newlines, so that pattern
+    # degenerates to a match-everything glob; the trap comment PARAPHRASES it):
+    assert "$(printf '\\n')" not in text
+
+
+def test_splice_shape_assertion_actually_discriminates():
+    """BEHAVIORAL, not a text pin: extract the assertion from the recipe and
+    EXECUTE it under bash — it must fail loud (nonzero exit, FATAL on
+    stderr) on a newline-joined list and stay silent on a space-joined
+    list; the silently-swallowed newline is exactly the #2314 failure.
+    Third leg: the broken case/glob form (constructed locally — it must not
+    exist in SKILL.md) matches BOTH shapes, the regression that makes the
+    readable-looking form unusable. This test is the committed fail-loud
+    backing for #2317 §1."""
+    assertion = _extract_splice_shape_assertion(_section_9c(_text()))
+    # Negative control — a space-joined list passes silently:
+    ok = _run_bash(f'S9C_FILES="tests/test_a.py tests/test_b.py"\n{assertion}\n')
+    assert ok.returncode == 0, (ok.returncode, ok.stderr)
+    assert "FATAL" not in ok.stderr
+    # The #2314 shape — a newline-joined list FAILS LOUD:
+    bad = _run_bash(f'S9C_FILES="tests/test_a.py\ntests/test_b.py"\n{assertion}\n')
+    assert bad.returncode != 0, "newline-bearing <files> must refuse the launch"
+    assert "FATAL" in bad.stderr
+    assert "NEWLINES" in bad.stderr
+    # The broken glob form fires on BOTH shapes (command substitution strips
+    # the trailing newline -> empty string -> match-everything pattern), so
+    # it cannot discriminate — constructed here because SKILL.md must not
+    # carry it:
+    broken_pat = '*"$(printf ' + "'\\n'" + ')"*'
+    for value in ("tests/test_a.py tests/test_b.py", "tests/test_a.py\ntests/test_b.py"):
+        r = _run_bash(
+            f'S9C_FILES="{value}"\ncase "$S9C_FILES" in {broken_pat}) exit 7;; *) exit 0;; esac\n'
+        )
+        assert r.returncode == 7, (value, r.returncode, "broken glob must match everything")
