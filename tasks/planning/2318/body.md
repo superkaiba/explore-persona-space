@@ -192,3 +192,78 @@ and `extract_violation_paths` (`:323`) exist only on `origin/issue-2316`, not on
 (#2316 was at `running`, implementer round 1 posted 2026-08-15T09:56:01Z). Criterion 2
 mandates importing them rather than copying, so **#2318 must merge after #2316** —
 a Step 10d Guard 5 sibling merge-sequencing hold.
+
+## Attribution addendum — the filed defect does not reproduce; two different defects do
+
+Added after the reproduction probe (2026-08-15). This SUPERSEDES the `## Scope decision`
+section's fact (a) and its "unexcluded as a live latent defect" reading.
+
+### Reproduction
+
+`evaluate()` was driven directly (zero side effects — no cert write, no ledger mutation)
+with the payload `scripts/issue2225_fu2_dod_points_fig.py`, a mapped-pytest output
+reproducing the real failure rendering of
+`tests/test_shared_vm_thread_caps.py::test_no_new_torch_before_dotenv_vm_entrypoints`
+(captured from a standalone `pytest -q -rA` run of the same
+`assert not violations, (header + "\n  ".join(violations))` shape the test uses at
+`tests/test_shared_vm_thread_caps.py:1000-1005`), under all three ledger states:
+
+| ledger state | verdict |
+|---|---|
+| `None` (sha-stale — the actual 2026-08-15 state) | **BLOCKED** |
+| the LIVE ledger rows, as shipped | **BLOCKED** |
+| nodeid STRINGS (what the code assumes) | **BLOCKED** |
+
+All three block, with the same two reasons: `payload-naming hit without a parseable
+lineno (conservative block)` on the two traceback lines
+(`E   scripts/issue2225_fu2_dod_points_fig.py (module-top heavy import at line 12, …)`
+and the rewritten `E   assert not ['scripts/…']`).
+
+**The node-grain ledger demotion cannot pass a new violation through.** The demotion
+label is computed only on a line matching `FAILED_NODE_RE` (`^FAILED\s+(\S+)`), and with
+the gate's `pytest … -q -rA` flags the short-summary line is the BARE nodeid — it never
+contains a payload path, so the `if p not in line: continue` filter skips it and the
+label is never consumed. Offender attribution lives in the traceback lines, which the
+demotion never labels. Criterion 2's precondition ("confirms the demotion leg, or leaves
+it unexcluded") is therefore **NOT met** as filed.
+
+### D1 — the demotion is DEAD CODE (type mismatch), HIGH
+
+`evaluate` builds `ledger_failing = {str(n) for n in (ledger.get("failing_tests") or [])}`
+(`scripts/inline_lint_gate.py:877-879`) and tests `node in ledger_failing` against a
+nodeid string. The live ledger's `failing_tests` rows are **dicts**
+(`{'classname': 'tests.test_shared_vm_thread_caps', 'file': …, 'name': …}`), so the set
+holds dict reprs and the membership test is **always False**. The #2235 Phase A
+subtraction layer in this gate has never demoted anything, for any node. (Probe output:
+`node in ledger_failing -> False` against the live ledger.)
+
+### D2 — the demotion's grain is the LINE, not the NODE, MODERATE
+
+Even with D1 corrected, the label attaches to the `^FAILED <nodeid>` line only, while
+every offender-naming line is a traceback line. So Phase A's own intent also fails in
+the opposite direction: a payload blocked by main's PRE-EXISTING scan red still blocks
+whenever the node's traceback happens to name a payload path — the #1388-class
+false-block that criterion 3 guards, in the direction the filing did not anticipate.
+
+### Revised scope (supersedes the criterion-2 conditional)
+
+D1 and D2 must land TOGETHER, and the violation-grain classification is what makes that
+safe: fixing D1 alone would ACTIVATE a dormant demotion at node grain, which is exactly
+the over-demotion criterion 4 forbids. The deliverable becomes:
+
+1. **D1:** read the ledger's dict rows into nodeids (`f"{row['file']}::{row['name']}"`),
+   tolerating a string row for forward-compat; a row of neither shape is skipped with a
+   loud warn (never a silent no-op).
+2. **D2 + criterion 2:** move the classification from the line to the NODE — bucket the
+   pytest output into per-node failure blocks, and for a
+   `step9c_baseline.VIOLATION_SET_SCAN_NODES` member, demote the node's lines only when
+   `extract_violation_paths(<node block>)` contains **no payload path**; a payload path
+   in the extracted set means the payload ADDED the violation ⇒ block. This is
+   single-sided (no pristine-main re-run needed) and uses the #2316 registry by import.
+3. Criteria 3-6 are unchanged and all still bind: same-set reds still demote (3);
+   unparseable / empty extraction degrades to today's behavior — i.e. NO demotion, the
+   conservative block — plus a loud warn (4); tests pin 2-4 plus a live-tree
+   registry-import pin (5); SKILL.md Step 9a-ter prose plus a prose pin (6).
+
+The sha-pin residual and the `dirty_code_paths` design call from `## Scope decision`
+stand as recorded (document, do not add a refusal).
