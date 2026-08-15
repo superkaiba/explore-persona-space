@@ -9466,8 +9466,8 @@
       "goal": "Test whether persona directions extracted at the context position and applied ONLY to context tokens during finetuning prevent trait acquisition as well as or better than Persona Vectors' response-avg all-token preventative steering (arXiv 2507.21509 \u00a75.2), across single-layer / middle-band / all-layer conditions, at matched coherence and capability, with attribution cells separating extraction position from steering position and a probe-based off-direction acquisition check.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/2225",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/2225",
+      "status": "awaiting_promotion",
       "title": "Single-layer steering of context tokens does not prevent trait acquisition \u2014 it shows almost no dose-response, while steering response tokens does (MODERATE confidence)"
     },
     "2226": {
