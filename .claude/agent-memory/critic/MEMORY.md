@@ -105,6 +105,7 @@
 
 ## Infra-plan reviews
 - [Infra-plan checklist](feedback_infra_plan_review_checklist.md) — protection-illusion holes, choke-point greps, TOCTOU (#564-#884)
+- [Conftest hermeticity-guard review](feedback_conftest_hermeticity_guard_review.md) — resolver single-funnel grep; autouse-before-explicit equality discriminator; recorder-stub callers bypass (#2141)
 - [Lock-ordering deadlock plans](feedback_lock_ordering_deadlock_plan_checks.md) — hoist-site completeness, recovery-tool self-wait, knob-exists reads (#2295)
 - [Merged-status-class pause](feedback_fence_defer_merged_status_class_pause.md) — auto-stop-done = DONE ∪ on_hold; new shields countermand user pause (#2283)
 - [Token-guard recipe-copy hole](feedback_attribution_token_guard_recipe_copy_hole.md) — copyable token = illusion under adopted emitter recipes (#2277)
