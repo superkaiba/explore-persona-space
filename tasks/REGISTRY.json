@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2314,
+  "highest_id": 2315,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10157,6 +10157,13 @@
       "path": "tasks/running/2314",
       "status": "running",
       "title": "issue2225_fu2_dod_points_fig.py imports numpy before load_dotenv \u2014 reds test_no_new_torch_before_dotenv_vm_entrypoints on main"
+    },
+    "2315": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2315",
+      "status": "proposed",
+      "title": "workflow-fix: Step 9c 1b --files-only output needs newline-flattening before launcher interpolation; the count cross-check cannot see the un-flattened shape"
     },
     "232": {
       "has_clean_result": true,
