@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2308,
+  "highest_id": 2309,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10108,6 +10108,13 @@
       "path": "tasks/proposed/2308",
       "status": "proposed",
       "title": "Step 9c 1b launcher: --files-only list spliced into the bash -c string runs one command per path (rc=126); gate-set cross-check is blind to newlines"
+    },
+    "2309": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2309",
+      "status": "proposed",
+      "title": "workflow-fix: implementer marker four-H3 completion-report contract is judgment-caught, not mechanically checked"
     },
     "231": {
       "has_clean_result": false,
