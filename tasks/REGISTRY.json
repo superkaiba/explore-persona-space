@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2309,
+  "highest_id": 2310,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10122,6 +10122,13 @@
       "path": "tasks/archived/231",
       "status": "archived",
       "title": "Refactor parallel dispatch to use Claude Code agent teams (Wave 4 of #202)"
+    },
+    "2310": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2310",
+      "status": "proposed",
+      "title": "workflow-fix: Step 9c script-file gate launcher \u2014 newline-separated test list collapses to rc=126 with zero tests collected and evades both anti-silent-pass guards"
     },
     "232": {
       "has_clean_result": true,
