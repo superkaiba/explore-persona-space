@@ -166,6 +166,23 @@ def test_step1d_compare_completion_read_pins():
     assert "NEVER record PASS" in region, "1d's missing-rc branch must forbid recording PASS"
 
 
+def test_scan_violation_setdiff_prose_pin():
+    """#2316: the 1d COMPARE_RC=1 semantics prose documents the violation-set
+    diff for registered whole-repo scan nodes — the registry name, the NEW
+    routing token, the additive JSON field, and the loud parse-failure warn.
+    Window 14000: the COMPARE_RC bullets sit ~10.9-11.4k chars after the 1d
+    anchor (past the 7500/10000 launcher windows above)."""
+    text = SKILL.read_text(encoding="utf-8")
+    region = _region(text, "Run compare as a DETACHED background", 14000)
+    for token in (
+        "VIOLATION_SET_SCAN_NODES",
+        "SCAN-NEW-VIOLATION",
+        "scan_violation_diffs",
+        "SCAN-SETDIFF-UNPARSEABLE",
+    ):
+        assert token in region, f"1d COMPARE_RC=1 prose missing #2316 token {token!r}"
+
+
 def test_basetemp_reap_inside_rc_exists_branch():
     """The 1b completion-read's BASETEMP reap sits INSIDE the rc-exists `else`
     branch (#2005 r1 M1 part 2): a premature completion-read against a LIVE

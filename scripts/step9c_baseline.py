@@ -43,7 +43,9 @@ Exit codes (pinned by ``tests/test_step9c_baseline.py``):
   3          stale (reasons on stdout)
 ``compare``
   0          no NEW failures AND no lint regression (``--pytest-rc`` in {0, 1})
-  1          NEW failure(s) and/or lint regression (JSON names each)
+  1          NEW failure(s) and/or lint regression (JSON names each) — incl. a
+             ``VIOLATION_SET_SCAN_NODES`` member red on BOTH sides whose
+             branch-side violation set exceeds pristine's (#2316)
   2          indeterminate: ``--pytest-rc`` not in {0, 1}; missing/empty junitxml; zero
              testcases; unusable ledger with unresolved buckets (no ``--run-pristine``);
              pristine run timeout/crash (incl. a missing root-venv interpreter); dirty
@@ -276,6 +278,77 @@ FILE_ANCHORED_SCAN_TESTS: frozenset[str] = frozenset(
     }
 )
 
+# Whole-repo SCAN-style invariant nodes whose failure message is SOURCE-VERIFIED
+# to name every offender by repo-root-relative path (accumulate-then-assert shape).
+# For a member red on BOTH the gate run and pristine main, compare diffs the
+# extracted violation-path SETS instead of stripping on the node verdict (#2316).
+# Entry format: "<test file>::<test function name>" — the junit `name` is matched
+# with any parametrization suffix ("[...]") stripped. (A collect-error <error>
+# row can NEVER match: its junit `name` is the dotted module path, e.g.
+# "tests.test_no_dollar_budget_caps" — deliberate non-match, do not "fix".)
+# Hand-curated pinned literal, same curation rule as FILE_ANCHORED_SCAN_TESTS /
+# select_step9c_tests.py's GLOB_SCAN_TESTS; drift pin:
+# tests/test_step9c_baseline.py::test_violation_set_scan_nodes_live_tree_pin.
+# FAIL-CLOSED: a node absent here keeps today's node-grain verdict. Before adding
+# an entry, verify BY READING THE SOURCE that (a) the failure message lists each
+# offender as a repo-root-relative path token; (b) the scan population lives
+# entirely under top-level tracked dirs the scratch floor profile materializes
+# (scripts/, src/, tests/ — _scratch_cones floor = ls-tree minus SCRATCH_EXCLUDES),
+# so branch-vs-pristine extraction is population-symmetric; (c) if the node uses a
+# bare `assert` (not `raise AssertionError`), its rewritten introspection segment
+# is covered by the extraction sanitizers in extract_violation_paths (#2316 v2).
+VIOLATION_SET_SCAN_NODES: frozenset[str] = frozenset(
+    {
+        "tests/test_shared_vm_thread_caps.py::test_no_new_torch_before_dotenv_vm_entrypoints",
+        "tests/test_no_direct_task_path_construction.py::test_no_direct_task_path_construction_line_regex",
+        "tests/test_no_direct_task_path_construction.py::test_no_bare_name_imports_from_task_workflow",
+        "tests/test_no_pod_side_task_py_shellout.py::test_no_pod_side_task_py_shellout",
+        "tests/test_no_dollar_budget_caps.py::test_no_dollar_budget_cap_symbols_in_scripts",
+    }
+)
+
+# Violation-path token: a repo-root-relative path under a top-level tracked dir,
+# ending in an extension — the shape every VIOLATION_SET_SCAN_NODES member's
+# offender rows embed (#2316). Grain is the FILE: a `path:line` token extracts
+# the path only (line numbers drift under unrelated same-file edits and would
+# manufacture false NEW reds).
+_VIOLATION_PATH_RE = re.compile(r"\b(?:scripts|src|tests|configs|docs)/[\w./-]+\.[A-Za-z0-9_]+")
+
+# Display-only cap per scan_violation_diffs row list (#2316): bucketing always
+# operates on the full uncapped sets, so a pathological message can truncate a
+# row's lists but never change a verdict.
+_SCAN_DIFF_ROW_CAP = 50
+
+
+def extract_violation_paths(text: str) -> frozenset[str]:
+    """Extract the offender-path SET from a scan node's failure text (#2316).
+
+    Two sanitizers close the one measured asymmetric non-offender surface —
+    pytest's rewritten-assert introspection segment (bare-``assert`` members
+    only), whose saferepr elides content-DEPENDENTLY: an elided token like
+    ``scripts/fakemod_01.py...nv`` matches the naive path regex and differs
+    between sides exactly when the lists differ, which would false-NEW the
+    very branch FIXING part of a pre-existing red (the #2289 session shape):
+
+    1. **Introspection-segment strip (removes the CHANNEL):** drop every line
+       whose ``lstrip()``-ed content starts with ``"assert "`` — the rewritten
+       segment always does, in BOTH the junit ``message`` attribute and the
+       element text (#2316 plan A1 probe); offender rows never do
+       (source-verified for all five members, plan A4).
+    2. **Elision-token post-filter (defense in depth):** drop any matched
+       token containing the literal ``...`` — the saferepr elision marker;
+       zero tracked paths contain it (plan A12), and a FUTURE such path would
+       be invisible on BOTH sides (fail-toward-strip, never a false block).
+
+    Symmetric prose (headers, remediation text naming e.g. ``scripts/task.py``)
+    extracts identically on both sides and cancels in the set difference. An
+    EMPTY result routes to the caller's loud parse-fail arm — never a silent
+    strip.
+    """
+    kept = "\n".join(ln for ln in text.splitlines() if not ln.lstrip().startswith("assert "))
+    return frozenset(t for t in _VIOLATION_PATH_RE.findall(kept) if "..." not in t)
+
+
 REQUIRED_LEDGER_KEYS: frozenset[str] = frozenset(
     {
         "schema_version",
@@ -318,6 +391,17 @@ class Node(NamedTuple):
     file: str
     classname: str
     name: str
+
+
+def _violation_setdiff_member(node: Node) -> bool:
+    """True when *node* is a ``VIOLATION_SET_SCAN_NODES`` member (#2316).
+
+    The junit ``name`` is matched with any parametrization suffix ("[...]")
+    stripped. A collect-error ``<error>`` row can never match: its junit
+    ``name`` is the dotted module path (deliberate non-match — see the
+    registry's curation comment).
+    """
+    return f"{node.file}::{node.name.split('[', 1)[0]}" in VIOLATION_SET_SCAN_NODES
 
 
 class ToolMissingError(RuntimeError):
@@ -1116,6 +1200,46 @@ def parse_junit_ran_files(path: Path) -> set[str]:
     return ran
 
 
+def parse_junit_failure_texts(path: Path) -> dict[Node, str]:
+    """Per-failing-node concatenated ``failure``/``error`` message + text (#2316).
+
+    Mirrors ``parse_junit``'s per-case ``file``/Node derivation (incl. the
+    #1746 collect-error name fallback) WITHOUT modifying ``parse_junit`` —
+    its ``summary`` is persisted verbatim into the ledger. Value = the
+    concatenation of each ``failure``/``error`` child's ``message`` attribute
+    + element text (both carry the full accumulated violation list under the
+    gate's ``--tb=no`` xunit1 flags — #2316 plan A1 probe). A failing case
+    with neither message nor text maps to ``""`` (the consumer's loud
+    parse-fail arm handles it); a failing case whose Node is underivable is
+    simply not a member (``parse_junit`` on the same file already raises for
+    that shape — both call sites gate on it first, so no new exit class in
+    practice). A missing / unparseable FILE raises JunitParseError like its
+    siblings.
+    """
+    if not path.exists():
+        raise JunitParseError(f"junitxml missing at {path} (failure-texts read, MF-1a)")
+    try:
+        tree = ET.parse(path)
+    except ET.ParseError as exc:
+        raise JunitParseError(f"junitxml unparseable at {path}: {exc}") from exc
+    texts: dict[Node, str] = {}
+    for tc in tree.getroot().iter("testcase"):
+        children = [c for c in (tc.find("failure"), tc.find("error")) if c is not None]
+        if not children:
+            continue
+        file_attr = tc.get("file")
+        name_attr = tc.get("name") or ""
+        if file_attr:
+            node = Node(file=file_attr, classname=tc.get("classname") or "", name=name_attr)
+        elif tc.find("error") is not None and name_attr.endswith(".py"):
+            node = Node(file=name_attr, classname="", name=name_attr)  # #1746 fallback
+        else:
+            continue  # underivable Node — parse_junit raises for this shape upstream
+        parts = [p for c in children for p in ((c.get("message") or ""), (c.text or "")) if p]
+        texts[node] = "\n".join(parts)
+    return texts
+
+
 # --- Ledger IO -------------------------------------------------------------------
 
 
@@ -1372,6 +1496,19 @@ def _pristine_files_label(files: list[str]) -> str:
     return f"{len(files)} files [{head}{suffix}]"
 
 
+class PristineRun(NamedTuple):
+    """A pristine-oracle pytest run's outcome (#2316).
+
+    ``failing`` keeps the pre-#2316 set-of-Nodes semantics; ``failure_texts``
+    carries each failing node's concatenated junit failure/error message +
+    text (extracted BEFORE the tmp junit is deleted), feeding the
+    violation-set diff for ``VIOLATION_SET_SCAN_NODES`` members.
+    """
+
+    failing: set[Node]
+    failure_texts: dict[Node, str]
+
+
 def run_pristine_selection(
     files: list[str],
     cwd: Path,
@@ -1379,8 +1516,8 @@ def run_pristine_selection(
     *,
     venv_root: Path | None = None,
     pythonpath: str | None = None,
-) -> set[Node]:
-    """Run *files* in ONE pytest process at the pristine oracle *cwd*; return failing nodes.
+) -> PristineRun:
+    """Run *files* in ONE pytest process at the pristine oracle *cwd* -> PristineRun.
 
     Generalization of the single-file oracle (#2024): the paired-selection
     ordering re-check passes the candidate PLUS its co-selected predecessors
@@ -1432,11 +1569,12 @@ def run_pristine_selection(
             raise PristineRunError(f"pristine run of {label} aborted with rc={rc}")
         try:
             failing, summary = parse_junit(tmp_path)
+            failure_texts = parse_junit_failure_texts(tmp_path)  # #2316: before deletion
         except JunitParseError as exc:
             raise PristineRunError(f"pristine junit unusable for {label}: {exc}") from exc
         if summary["tests"] == 0:
             raise PristineRunError(f"pristine run of {label} collected 0 tests")
-        return set(failing)
+        return PristineRun(failing=set(failing), failure_texts=failure_texts)
     finally:
         tmp_path.unlink(missing_ok=True)
 
@@ -1448,8 +1586,8 @@ def run_single_file_pristine(
     *,
     venv_root: Path | None = None,
     pythonpath: str | None = None,
-) -> set[Node]:
-    """Run ONE test file at the pristine oracle *cwd*; return its failing nodes.
+) -> PristineRun:
+    """Run ONE test file at the pristine oracle *cwd* -> PristineRun (#2316).
 
     Thin wrapper over :func:`run_pristine_selection` with ``[test_file]``
     (#2024) — name, signature and error semantics preserved (rc not in
@@ -1642,6 +1780,9 @@ class _CompareCtx:
     # blob == base-TIP blob (Step 5a sibling-sync class); derived INDEPENDENTLY of
     # the worktree selector's version (§3.3 skew — an in-flight branch carries the
     # pre-#2302 compute_touched), subtracted from #2024 precondition 1 only
+    # --- #2316 violation-set diff for registered whole-repo scan nodes -------------
+    run_failure_texts: dict[Node, str] = field(default_factory=dict)  # gate-run side
+    scan_violation_diffs: list[dict] = field(default_factory=list)  # per-node audit rows
 
 
 def _resolve_roots(args: argparse.Namespace) -> tuple[Path, Path]:
@@ -1855,7 +1996,21 @@ def _bucket_run_failures(
         if not lv.strippable:
             ctx.pristine_bucket.append(node)
         elif node in lv.known_red:
-            if node.file in ctx.diff_linked or node.file in lv.changed_tests:  # MF-3 conjunct
+            if (
+                node.file in ctx.diff_linked
+                or node.file in lv.changed_tests  # MF-3 conjunct
+                # #2316: a registered scan node's violation-set diff needs the
+                # PRISTINE violation list, which only a pristine run can produce
+                # (the ledger stores node ids, never violation lists) — without
+                # this disjunct the trio class blind-strips under a fresh clean
+                # ledger and the gap survives. Fail-closed direction (more
+                # pristine verification, never less); fires only while a
+                # registered node is red in the gate run. Compares invoked
+                # WITHOUT --run-pristine now exit 2 (needs-pristine) for that
+                # shape instead of blind-strip rc 0 — fail-closed by design;
+                # both SKILL gate invocations always pass --run-pristine.
+                or _violation_setdiff_member(node)
+            ):
                 ctx.pristine_bucket.append(node)  # R5 — never blind-strip
             else:
                 _strip_node(ctx, node, via="ledger")
@@ -2350,7 +2505,7 @@ def _resolve_paired_candidates(
         # #2293 D6: root-tree paired venue — record base-skew provenance (WARN-only).
         _note_root_oracle_skew(ctx, root)
     try:
-        paired_failing = run_pristine_selection(
+        paired = run_pristine_selection(
             prefix,
             cwd=scratch.path if paired_use_scratch else root,
             timeout_s=timeout_s,
@@ -2364,8 +2519,106 @@ def _resolve_paired_candidates(
         raise _Indeterminate(f"{exc} — indeterminate", warns=ctx.warns) from exc
     ctx.paired_files_run = list(prefix)
     _classify_paired_verdicts(
-        ctx, kept, paired_failing, paired_use_scratch, contaminating, residual
+        ctx, kept, paired.failing, paired_use_scratch, contaminating, residual
     )
+
+
+def _scan_diff_row(
+    node_id: str,
+    verdict: str,
+    *,
+    new_violations: Iterable[str] = (),
+    base_identical_suppressed: Iterable[str] = (),
+    pre_existing: Iterable[str] = (),
+    pristine_only: Iterable[str] = (),
+) -> dict:
+    """One ``scan_violation_diffs`` audit row (#2316): sorted, display-capped lists.
+
+    The ``_SCAN_DIFF_ROW_CAP`` cap is DISPLAY-ONLY (an ``<field>_overflow``
+    count rides any capped list) — bucketing always operates on the full
+    uncapped sets, so a pathological message can truncate a row's lists but
+    never change a verdict.
+    """
+    row: dict = {"node_id": node_id, "verdict": verdict}
+    for key, vals in (
+        ("new_violations", new_violations),
+        ("base_identical_suppressed", base_identical_suppressed),
+        ("pre_existing", pre_existing),
+        ("pristine_only", pristine_only),
+    ):
+        full = sorted(vals)
+        row[key] = full[:_SCAN_DIFF_ROW_CAP]
+        if len(full) > _SCAN_DIFF_ROW_CAP:
+            row[f"{key}_overflow"] = len(full) - _SCAN_DIFF_ROW_CAP
+    return row
+
+
+def _resolve_scan_violation_setdiff(
+    ctx: _CompareCtx, node: Node, pristine_text: str, use_scratch: bool
+) -> None:
+    """Violation-grain verdict for a registered scan node red on BOTH sides (#2316).
+
+    Replaces ONLY the strip decision in ``_resolve_pristine_bucket`` — every
+    refusal (the R-G' floored-scratch strip refusal, the MF-4c dirty-root
+    refusal) has already run and short-circuited before this call. Extract
+    the offender-path set from each side's failure text and diff:
+
+    * either side EMPTY (unparseable) -> strip exactly as today (same ``via``
+      values, so ``stripped``-row consumers and the urgent-park coupling are
+      undisturbed) PLUS a loud ``SCAN-SETDIFF-UNPARSEABLE`` warn and a
+      ``parse-failed`` audit row — degrade = today's behavior + escalation,
+      never silent (criterion 3);
+    * branch-only paths, minus ``ctx.base_identical`` (a Step 5a sibling-sync
+      copy of main's OWN offender is main's content — blocking the branch for
+      it would be a false red, #2302/#2296), non-empty -> the node joins
+      ``ctx.new`` (rc 1 via the existing exit arithmetic) with a
+      ``new-violations`` row naming them;
+    * otherwise -> strip as today + a ``pre-existing`` row carrying the
+      side-by-side lists (the one-glance read; ``pristine_only`` = offenders
+      fixed or absent on the branch side, informational).
+    """
+    node_id = f"{node.file}::{node.name}"
+    strip_via = "pristine-scratch" if use_scratch else "pristine"
+    v_branch = extract_violation_paths(ctx.run_failure_texts.get(node, ""))
+    v_pristine = extract_violation_paths(pristine_text)
+    if not v_branch or not v_pristine:
+        side = "branch" if not v_branch else "pristine"
+        warn = (
+            f"SCAN-SETDIFF-UNPARSEABLE: {node_id} — violation list could not be "
+            f"extracted from the {side} failure output; node-grain verdict retained; "
+            "hand-verify the branch adds no violation to this scan"
+        )
+        ctx.warns.append(warn)
+        _log(warn)
+        ctx.scan_violation_diffs.append(_scan_diff_row(node_id, "parse-failed"))
+        _strip_node(ctx, node, via=strip_via)
+        return
+    new_paths = set(v_branch - v_pristine)
+    suppressed = new_paths & ctx.base_identical
+    new_paths -= suppressed
+    if suppressed:
+        ctx.warns.append(
+            f"SCAN-SETDIFF WARN: {node_id} — branch-side violation path(s) "
+            f"{sorted(suppressed)} are base-identical (main's own content carried by a "
+            "Step 5a sibling-sync copy, #2302); suppressed from the NEW set"
+        )
+    row = _scan_diff_row(
+        node_id,
+        "new-violations" if new_paths else "pre-existing",
+        new_violations=new_paths,
+        base_identical_suppressed=suppressed,
+        pre_existing=v_branch & v_pristine,
+        pristine_only=v_pristine - v_branch,
+    )
+    ctx.scan_violation_diffs.append(row)
+    if new_paths:
+        ctx.new.append(node)
+        _log(
+            f"SCAN-NEW-VIOLATION: {node_id} — branch adds violation path(s) absent on "
+            f"pristine main: {sorted(new_paths)}"
+        )
+    else:
+        _strip_node(ctx, node, via=strip_via)
 
 
 def _resolve_pristine_bucket(  # noqa: C901 — #2024 paired stage grew the oracle ladder 14->16
@@ -2528,7 +2781,7 @@ def _resolve_pristine_bucket(  # noqa: C901 — #2024 paired stage grew the orac
                 # #2293 D6: root-tree venue — record base-skew provenance (WARN-only).
                 _note_root_oracle_skew(ctx, root)
             try:
-                main_failing = run_single_file_pristine(
+                pres = run_single_file_pristine(
                     test_file,
                     cwd=scratch.path if use_scratch else root,
                     timeout_s=timeout_s,
@@ -2541,6 +2794,7 @@ def _resolve_pristine_bucket(  # noqa: C901 — #2024 paired stage grew the orac
                 )
             except PristineRunError as exc:
                 raise _Indeterminate(f"{exc} — indeterminate", warns=ctx.warns) from exc
+            main_failing = pres.failing
             ctx.pristine_files_run.append(test_file)
             for node in [n for n in ctx.pristine_bucket if n.file == test_file]:
                 if node in main_failing:
@@ -2584,7 +2838,26 @@ def _resolve_pristine_bucket(  # noqa: C901 — #2024 paired stage grew the orac
                             },
                             warns=ctx.warns,
                         )
-                    _strip_node(ctx, node, via="pristine-scratch" if use_scratch else "pristine")
+                    if _violation_setdiff_member(node):
+                        # #2316: violation-grain classification for registered
+                        # whole-repo scan nodes — replaces ONLY the strip
+                        # decision (both refusal arms above ran first; on a
+                        # floored oracle the pristine tree is not
+                        # population-complete, so its violation list can never
+                        # be trusted small-side). The #2024 paired-ordering
+                        # strip entrance (via="pristine-paired-ordering")
+                        # deliberately BYPASSES the set-diff: it is reachable
+                        # only for a node GREEN on its single-file pristine run
+                        # that reproduces under the co-selection prefix — a
+                        # shape essentially unreachable for a deterministic
+                        # whole-repo file scan.
+                        _resolve_scan_violation_setdiff(
+                            ctx, node, pres.failure_texts.get(node, ""), use_scratch
+                        )
+                    else:
+                        _strip_node(
+                            ctx, node, via="pristine-scratch" if use_scratch else "pristine"
+                        )
                 else:
                     # A PASS classifies NEW (fail-closed) unless EVERY #2024
                     # paired-collection precondition holds — then the node is
@@ -2617,6 +2890,13 @@ def _compare_impl(args: argparse.Namespace) -> dict:
     wt, root = _resolve_roots(args)
     run_failing, ran_files = _load_run_junit(Path(args.junitxml))
     ctx = _selector_context(args, wt)
+    # #2316: the gate-run side of the violation-set diff — same junit file
+    # _load_run_junit just parsed, so a raise here is unreachable in practice;
+    # kept on the same _Indeterminate mapping for symmetry.
+    try:
+        ctx.run_failure_texts = parse_junit_failure_texts(Path(args.junitxml))
+    except JunitParseError as exc:  # pragma: no cover — gated by _load_run_junit
+        raise _Indeterminate(str(exc)) from exc
     lv = _ledger_view(root, args)
     _bucket_run_failures(ctx, run_failing, lv, root)
     _resolve_pristine_bucket(ctx, root, args, ran_files)
@@ -2640,6 +2920,7 @@ def _compare_impl(args: argparse.Namespace) -> dict:
         "base": ctx.base,  # #2302: the RESOLVED diff base the compare derived against
         "base_identical_files": sorted(ctx.base_identical),  # #2302 content-test audit key
         "pristine_oracle": ctx.pristine_oracle,
+        "scan_violation_diffs": ctx.scan_violation_diffs,  # #2316 violation-grain rows
         "ordering_suspect": ctx.ordering_suspect,  # #2024 non-blocking strips
         "paired_files_run": ctx.paired_files_run,
         "paired_dropped_files": ctx.paired_dropped_files,
@@ -2677,6 +2958,7 @@ def _indeterminate_payload(
         "new": [],
         "stripped": [],
         "urgent_park_required": [],  # #1742 stable shape on the exit-2 payload
+        "scan_violation_diffs": [],  # #2316 stable shape on the exit-2 payload
         "warns": list(warns or []),
         **(extra or {}),
     }
@@ -2693,6 +2975,11 @@ def cmd_compare(args: argparse.Namespace) -> int:
     node is STRIPPED (it reproduced on pristine main under the gate's own
     co-selection order), so it never contributes to exit 1 — it is loud in
     ``warns`` + its own JSON list + the ``ORDERING-SUSPECT:`` stdout lines.
+    #2316: exit 1 also covers a ``VIOLATION_SET_SCAN_NODES`` member red on
+    BOTH sides whose branch-side violation set exceeds pristine's (it enters
+    ``new`` via ``_resolve_scan_violation_setdiff``; side-by-side lists in the
+    JSON ``scan_violation_diffs`` field + ``SCAN-NEW-VIOLATION:`` stdout
+    lines).
     """
     if args.pytest_rc not in (0, 1):
         reason = (
@@ -2730,16 +3017,23 @@ def cmd_compare(args: argparse.Namespace) -> int:
             )
         return 2
     result["indeterminate"] = False
+    scan_new_rows = [r for r in result["scan_violation_diffs"] if r["verdict"] == "new-violations"]
     if args.json:
         print(json.dumps(result, indent=2, sort_keys=True))
     else:
         print(
             f"compare: {len(result['new'])} NEW, {len(result['stripped'])} stripped "
             f"({len(result['ordering_suspect'])} ordering-suspect), "
+            f"{len(scan_new_rows)} scan-new-violation(s), "
             f"{len(result['warns'])} warn(s), lint_ok={result['lint']['ok']}"
         )
         for n in result["new"]:
             print(f"  NEW: {n['file']}::{n['name']}")
+        for r in scan_new_rows:  # #2316 violation-grain blockers (already in `new`)
+            print(
+                f"  SCAN-NEW-VIOLATION: {r['node_id']} — branch adds violation path(s) "
+                f"absent on pristine main: {r['new_violations']}"
+            )
         for o in result["ordering_suspect"]:
             print(f"  ORDERING-SUSPECT: {o['file']}::{o['name']}")  # #2024 non-blocking
         for uid in result["urgent_park_required"]:

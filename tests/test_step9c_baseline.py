@@ -52,6 +52,7 @@ import time
 import types
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from xml.sax.saxutils import escape as xml_escape
 
 import pytest
 
@@ -84,26 +85,37 @@ NODE_SCAN = sb.Node(
 # --- Fixture builders ---------------------------------------------------------
 
 
-def _junit_xml(cases: list[tuple[str, str, str, str]]) -> str:
-    """Build an xunit1 junitxml string from (file, classname, name, status) rows."""
-    n_fail = sum(1 for *_r, s in cases if s == "failed")
-    n_err = sum(1 for *_r, s in cases if s == "error")
-    n_skip = sum(1 for *_r, s in cases if s == "skipped")
-    child = {
-        "passed": "",
-        "failed": '<failure message="boom">x</failure>',
-        "error": '<error message="boom">x</error>',
-        "skipped": "<skipped/>",
-    }
-    rows = "".join(
-        f'<testcase classname="{cls}" name="{name}" file="{file}" time="0.01">'
-        f"{child[status]}</testcase>"
-        for file, cls, name, status in cases
-    )
+def _junit_xml(cases: list[tuple]) -> str:
+    """Build an xunit1 junitxml string from (file, classname, name, status[, text]) rows.
+
+    The optional 5th element (#2316) carries a custom failure/error TEXT used
+    as BOTH the ``message`` attribute and the element text — the shape the
+    violation-set-diff cases need (the gate-run side of the diff reads the
+    real junit file this builder writes).
+    """
+    n_fail = sum(1 for row in cases if row[3] == "failed")
+    n_err = sum(1 for row in cases if row[3] == "error")
+    n_skip = sum(1 for row in cases if row[3] == "skipped")
+    rows = []
+    for row in cases:
+        file, cls, name, status = row[:4]
+        text = row[4] if len(row) > 4 else None
+        attr = xml_escape(text if text is not None else "boom", {'"': "&quot;"})
+        body = xml_escape(text if text is not None else "x")
+        child = {
+            "passed": "",
+            "failed": f'<failure message="{attr}">{body}</failure>',
+            "error": f'<error message="{attr}">{body}</error>',
+            "skipped": "<skipped/>",
+        }
+        rows.append(
+            f'<testcase classname="{cls}" name="{name}" file="{file}" time="0.01">'
+            f"{child[status]}</testcase>"
+        )
     return (
         '<?xml version="1.0" encoding="utf-8"?><testsuites>'
         f'<testsuite name="pytest" tests="{len(cases)}" failures="{n_fail}" errors="{n_err}" '
-        f'skipped="{n_skip}" time="0.5">{rows}</testsuite></testsuites>'
+        f'skipped="{n_skip}" time="0.5">{"".join(rows)}</testsuite></testsuites>'
     )
 
 
@@ -263,6 +275,8 @@ def _install_compare_fakes(
     merge_base: str | None = "f" * 40,
     oracle_sha_known: bool = True,
     root_head: str = "f" * 40,
+    pristine_failure_texts: dict | None = None,
+    paired_failure_texts: dict | None = None,
 ) -> dict[str, list]:
     """Monkeypatch signature-conformant fakes onto the module; return the call recorder.
 
@@ -284,7 +298,10 @@ def _install_compare_fakes(
     (compare-env only — ``_refresh_env`` keeps its own fake). Defaults keep
     every pre-#2293 test green: root_head == merge_base == the fake scratch
     sha ``"f" * 40`` ⇒ the D5 degradation gate passes and the D6 skew note
-    reads False.
+    reads False. #2316 knobs: ``pristine_failure_texts`` /
+    ``paired_failure_texts`` (Node -> failure text) feed the fakes'
+    ``PristineRun.failure_texts`` — the fakes stay signature-conformant with
+    the #2316 return-type change (no duck-typed set tolerance).
     """
     calls: dict[str, list] = {
         "pristine": [],
@@ -340,14 +357,16 @@ def _install_compare_fakes(
         *,
         venv_root: Path | None = None,
         pythonpath: str | None = None,
-    ) -> set:
+    ) -> sb.PristineRun:
         calls["pristine"].append(test_file)
         calls["pristine_detail"].append((test_file, cwd, venv_root))
         calls["pristine_timeout"].append(timeout_s)
         calls["pristine_pythonpath"].append(pythonpath)
         if pristine_exc is not None:
             raise pristine_exc
-        return {n for n in pristine_failing if n.file == test_file}
+        failing = {n for n in pristine_failing if n.file == test_file}
+        texts = {n: t for n, t in (pristine_failure_texts or {}).items() if n.file == test_file}
+        return sb.PristineRun(failing=failing, failure_texts=texts)
 
     def fake_ruff_error_count(target: Path, paths: list[str] | None = None) -> int:
         if paths is not None:
@@ -366,7 +385,7 @@ def _install_compare_fakes(
         *,
         venv_root: Path | None = None,
         pythonpath: str | None = None,
-    ) -> set:
+    ) -> sb.PristineRun:
         calls["paired"].append(list(files))
         calls["paired_detail"].append((list(files), cwd, venv_root))
         calls["paired_timeout"].append(timeout_s)
@@ -374,7 +393,9 @@ def _install_compare_fakes(
         if paired_exc is not None:
             raise paired_exc
         file_set = set(files)
-        return {n for n in paired_failing if n.file in file_set}
+        failing = {n for n in paired_failing if n.file in file_set}
+        texts = {n: t for n, t in (paired_failure_texts or {}).items() if n.file in file_set}
+        return sb.PristineRun(failing=failing, failure_texts=texts)
 
     monkeypatch.setattr(sb, "load_selector_module", fake_load_selector_module)
     monkeypatch.setattr(sb, "changed_test_files_since", fake_changed_test_files_since)
@@ -467,6 +488,8 @@ def _compare_env(
     merge_base: str | None = "f" * 40,
     oracle_sha_known: bool = True,
     root_head: str = "f" * 40,
+    pristine_failure_texts: dict | None = None,
+    paired_failure_texts: dict | None = None,
     sel_attrs: dict | None = None,
     extra_args=(),
 ):
@@ -512,6 +535,8 @@ def _compare_env(
         merge_base=merge_base,
         oracle_sha_known=oracle_sha_known,
         root_head=root_head,
+        pristine_failure_texts=pristine_failure_texts,
+        paired_failure_texts=paired_failure_texts,
     )
     argv = [
         "compare",
@@ -1193,10 +1218,14 @@ def test_real_pytest_single_file_pristine_extracts_failing_node(tmp_path: Path):
     (tree / "tests" / "test_probe.py").write_text(
         "def test_ok():\n    assert True\n\n\ndef test_bad():\n    assert False\n"
     )
-    failing = sb.run_single_file_pristine("tests/test_probe.py", cwd=tree, timeout_s=180.0)
-    assert failing == {
-        sb.Node(file="tests/test_probe.py", classname="tests.test_probe", name="test_bad")
-    }
+    pres = sb.run_single_file_pristine("tests/test_probe.py", cwd=tree, timeout_s=180.0)
+    node = sb.Node(file="tests/test_probe.py", classname="tests.test_probe", name="test_bad")
+    assert pres.failing == {node}
+    # #2316 (T11): the real subprocess path populates PristineRun.failure_texts
+    # for the failing node — production-body coverage for the seam the compare
+    # fixtures stub (code-style.md #906).
+    assert node in pres.failure_texts
+    assert "assert False" in pres.failure_texts[node]
 
 
 # --- Round-2 Critical regression: pristine/refresh resolve the ROOT's interpreter -
@@ -1245,10 +1274,10 @@ def test_pristine_argv_interpreter_derives_from_root_not_sys_executable(tmp_path
         return 1
 
     monkeypatch.setattr(sb, "run_pytest", fake_run_pytest)
-    failing = sb.run_single_file_pristine("tests/test_probe.py", cwd=root, timeout_s=30.0)
+    pres = sb.run_single_file_pristine("tests/test_probe.py", cwd=root, timeout_s=30.0)
     assert seen["python_exe"] == str(venv_py)
     assert seen["python_exe"] != sys.executable
-    assert failing == {
+    assert pres.failing == {
         sb.Node(file="tests/test_probe.py", classname="tests.test_probe", name="test_x")
     }
 
@@ -1273,8 +1302,8 @@ def test_pristine_real_subprocess_executes_root_venv_interpreter(tmp_path: Path)
     (root / "tests" / "test_probe.py").write_text("def test_bad():\n    assert False\n")
     marker = tmp_path / "shim-invocations.txt"
     shim = _write_python_shim(root, marker)
-    failing = sb.run_single_file_pristine("tests/test_probe.py", cwd=root, timeout_s=180.0)
-    assert failing == {
+    pres = sb.run_single_file_pristine("tests/test_probe.py", cwd=root, timeout_s=180.0)
+    assert pres.failing == {
         sb.Node(file="tests/test_probe.py", classname="tests.test_probe", name="test_bad")
     }
     assert marker.exists(), "the root-venv shim was never invoked — sys.executable leak"
@@ -2967,12 +2996,12 @@ def test_real_pristine_in_scratch_worktree_nodes_match_root_relative(tmp_path: P
     scratch = sb.create_scratch_worktree(root, ["tests"], 120.0, base_sha=sb.git_head(root))
     try:
         assert not (scratch.path / ".venv").exists()  # the scratch has no venv of its own
-        failing = sb.run_single_file_pristine(
+        pres = sb.run_single_file_pristine(
             "tests/test_probe.py", cwd=scratch.path, timeout_s=180.0, venv_root=root
         )
     finally:
         sb.remove_scratch_worktree(root, scratch)
-    assert failing == {
+    assert pres.failing == {
         sb.Node(file="tests/test_probe.py", classname="tests.test_probe", name="test_bad")
     }
     assert marker.exists(), "the MAIN root's venv shim was never invoked (venv_root split)"
@@ -3032,12 +3061,12 @@ def test_real_scratch_oracle_cut_at_merge_base_classifies_preexisting(tmp_path: 
     try:
         assert scratch.sha == b1
         assert (scratch.path / "scripts" / "offender.py").exists()
-        failing = sb.run_single_file_pristine(
+        pres = sb.run_single_file_pristine(
             "tests/test_scan.py", cwd=scratch.path, timeout_s=180.0, venv_root=root
         )
     finally:
         sb.remove_scratch_worktree(root, scratch)
-    assert node in failing  # RED at the merge-base oracle -> classifies pre-existing
+    assert node in pres.failing  # RED at the merge-base oracle -> classifies pre-existing
     # Negative control — the OLD cut (root HEAD == B0), i.e. pre-#2293 behavior:
     # the offender is ABSENT, the pristine run PASSES, and the node would
     # misclassify NEW (#2288 verbatim).
@@ -3045,12 +3074,12 @@ def test_real_scratch_oracle_cut_at_merge_base_classifies_preexisting(tmp_path: 
     try:
         assert scratch_old.sha == b0 == sb.git_head(root)
         assert not (scratch_old.path / "scripts" / "offender.py").exists()
-        failing_old = sb.run_single_file_pristine(
+        pres_old = sb.run_single_file_pristine(
             "tests/test_scan.py", cwd=scratch_old.path, timeout_s=180.0, venv_root=root
         )
     finally:
         sb.remove_scratch_worktree(root, scratch_old)
-    assert failing_old == set()
+    assert pres_old.failing == set()
 
 
 def test_scratch_contamination_probe_real_git(tmp_path: Path):
@@ -4295,13 +4324,13 @@ def test_run_single_file_pristine_is_thin_wrapper(tmp_path: Path, monkeypatch):
 
     def fake_selection(files, cwd, timeout_s, *, venv_root=None, pythonpath=None):
         seen["args"] = (list(files), cwd, timeout_s, venv_root, pythonpath)
-        return set()
+        return sb.PristineRun(failing=set(), failure_texts={})
 
     monkeypatch.setattr(sb, "run_pristine_selection", fake_selection)
     out = sb.run_single_file_pristine(
         "tests/test_x.py", cwd=tmp_path, timeout_s=30.0, venv_root=tmp_path, pythonpath="p"
     )
-    assert out == set()
+    assert out == sb.PristineRun(failing=set(), failure_texts={})
     assert seen["args"] == (["tests/test_x.py"], tmp_path, 30.0, tmp_path, "p")
 
 
@@ -4334,14 +4363,404 @@ def test_real_pytest_paired_selection_reproduces_ordering_failure(tmp_path: Path
         "import os\n\n\ndef test_no_canary():\n"
         "    assert 'EPS_2024_ORDER_CANARY' not in os.environ\n"
     )
-    assert (
-        sb.run_single_file_pristine("tests/test_zz_victim.py", cwd=tree, timeout_s=180.0) == set()
-    )
-    failing = sb.run_pristine_selection(
+    single = sb.run_single_file_pristine("tests/test_zz_victim.py", cwd=tree, timeout_s=180.0)
+    assert single.failing == set()
+    assert single.failure_texts == {}  # no failing node -> no texts (#2316)
+    paired = sb.run_pristine_selection(
         ["tests/test_aa_contaminator.py", "tests/test_zz_victim.py"], cwd=tree, timeout_s=180.0
     )
-    assert failing == {
-        sb.Node(
-            file="tests/test_zz_victim.py", classname="tests.test_zz_victim", name="test_no_canary"
+    victim = sb.Node(
+        file="tests/test_zz_victim.py", classname="tests.test_zz_victim", name="test_no_canary"
+    )
+    assert paired.failing == {victim}
+    # #2316 (T11): the real multi-file subprocess path populates failure_texts too.
+    assert paired.failure_texts.get(victim)
+
+
+# --- #2316: violation-set diff for registered whole-repo scan nodes ---------------
+# A registered VIOLATION_SET_SCAN_NODES member red on BOTH the gate run and
+# pristine main is classified at VIOLATION grain: the offender-path sets are
+# extracted from each side's failure text and diffed — branch-added offenders
+# block (NEW, rc 1), same-set reds keep stripping (the #1388 non-regression),
+# and unparseable output degrades to today's strip + a loud warn (never silent).
+
+NODE_TC = sb.Node(
+    file="tests/test_shared_vm_thread_caps.py",
+    classname="tests.test_shared_vm_thread_caps",
+    name="test_no_new_torch_before_dotenv_vm_entrypoints",
+)
+
+# The verbatim junit `message` attribute of the live-red thread-caps node,
+# captured 2026-08-15 under the gate's exact PYTEST_BASE_FLAGS (#2316 plan A1
+# probe; 464 chars) — offender row + the rewritten-assert introspection tail.
+_A1_PROBE_MESSAGE = (
+    "AssertionError: NEW heavy-import-before-load_dotenv VM entrypoint(s) — call "
+    "explore_persona_space.orchestrate.env.load_dotenv() BEFORE importing any "
+    "HEAVY_IMPORT_ROOTS root so the shared-VM thread caps (#847) bind in-process:\n"
+    "    scripts/issue2225_fu2_dod_points_fig.py (module-top heavy import at line 23, "
+    "first load_dotenv( at line None)\n"
+    "assert not ['scripts/issue2225_fu2_dod_points_fig.py (module-top heavy import at "
+    "line 23, first load_dotenv( at line None)']"
+)
+
+# The same probe's ELEMENT TEXT form (476 chars): "E "-prefixed first line +
+# deeper indentation; the introspection tail still lstrip-starts with "assert ".
+_A1_PROBE_TEXT = (
+    "E   AssertionError: NEW heavy-import-before-load_dotenv VM entrypoint(s) — call "
+    "explore_persona_space.orchestrate.env.load_dotenv() BEFORE importing any "
+    "HEAVY_IMPORT_ROOTS root so the shared-VM thread caps (#847) bind in-process:\n"
+    "        scripts/issue2225_fu2_dod_points_fig.py (module-top heavy import at line 23, "
+    "first load_dotenv( at line None)\n"
+    "    assert not ['scripts/issue2225_fu2_dod_points_fig.py (module-top heavy import at "
+    "line 23, first load_dotenv( at line None)']"
+)
+
+
+def _tc_failure_text(paths: list[str], *, tail_items: list[str] | None = None) -> str:
+    """A thread-caps-shaped failure text: header + one offender row per path + the
+    rewritten-assert introspection tail (the measured plan-A1 shape). *tail_items*
+    overrides the tail's saferepr contents — the T2b/T10 elision fixtures pass
+    content-dependently CUT fragments (e.g. ``scripts/fakemod_01.py...nv``) there."""
+    header = (
+        "AssertionError: NEW heavy-import-before-load_dotenv VM entrypoint(s) — call "
+        "explore_persona_space.orchestrate.env.load_dotenv() BEFORE importing any "
+        "HEAVY_IMPORT_ROOTS root so the shared-VM thread caps (#847) bind in-process:"
+    )
+    row = "    {p} (module-top heavy import at line 23, first load_dotenv( at line None)"
+    rows = [row.format(p=p) for p in paths]
+    tail_src = (
+        tail_items
+        if tail_items is not None
+        else [
+            f"{p} (module-top heavy import at line 23, first load_dotenv( at line None)"
+            for p in paths
+        ]
+    )
+    tail = "assert not [" + ", ".join(repr(t) for t in tail_src) + "]"
+    return "\n".join([header, *rows, tail])
+
+
+def _setdiff_env(
+    tmp_path: Path,
+    monkeypatch,
+    *,
+    branch_paths,
+    pristine_paths=(),
+    branch_tail=None,
+    pristine_tail=None,
+    pristine_text=None,
+    ledger_kw=None,
+    reasons=None,
+    **kw,
+):
+    """Compare fixture with the REGISTERED thread-caps node red on both sides."""
+    branch_text = _tc_failure_text(list(branch_paths), tail_items=branch_tail)
+    if pristine_text is None:
+        pristine_text = _tc_failure_text(list(pristine_paths), tail_items=pristine_tail)
+    return _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(NODE_TC.file, NODE_TC.classname, NODE_TC.name, "failed", branch_text)],
+        ledger_kw=ledger_kw if ledger_kw is not None else {"failing": (NODE_TC,)},
+        reasons=reasons if reasons is not None else {NODE_TC.file: ["glob-scan"]},
+        pristine_failing=(NODE_TC,),
+        pristine_failure_texts={NODE_TC: pristine_text},
+        extra_args=("--run-pristine",),
+        **kw,
+    )
+
+
+def test_scan_setdiff_new_violation_blocks(tmp_path: Path, monkeypatch, capsys):
+    """T1 (criterion 1 — FAILS pre-fix): a registered scan node red on pristine for
+    offender A and red on the branch for A+B (B branch-added) classifies NEW (rc 1),
+    with a new-violations row naming B — never a node-grain pre-existing strip."""
+    argv, _calls, _r, _w = _setdiff_env(
+        tmp_path,
+        monkeypatch,
+        branch_paths=["scripts/offender_a.py", "scripts/offender_b.py"],
+        pristine_paths=["scripts/offender_a.py"],
+    )
+    rc, out, err = _run_json(argv, capsys)
+    assert rc == 1
+    assert out["new"] == [NODE_TC._asdict()]
+    assert out["stripped"] == []
+    (row,) = out["scan_violation_diffs"]
+    assert row["verdict"] == "new-violations"
+    assert row["new_violations"] == ["scripts/offender_b.py"]
+    assert row["pre_existing"] == ["scripts/offender_a.py"]
+    assert row["pristine_only"] == []
+    assert f"SCAN-NEW-VIOLATION: {NODE_TC.file}::{NODE_TC.name}" in err
+
+
+def test_scan_setdiff_same_violations_strip(tmp_path: Path, monkeypatch, capsys):
+    """T2 (criterion 2 — the #1388 fleet-wedge non-regression): the same node red
+    for exactly A on both sides still strips as pre-existing (rc 0, no new blocker)."""
+    argv, _calls, _r, _w = _setdiff_env(
+        tmp_path,
+        monkeypatch,
+        branch_paths=["scripts/offender_a.py"],
+        pristine_paths=["scripts/offender_a.py"],
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert out["new"] == []
+    assert {s["via"] for s in out["stripped"]} == {"pristine-scratch"}
+    (row,) = out["scan_violation_diffs"]
+    assert row["verdict"] == "pre-existing"
+    assert row["new_violations"] == []
+    assert row["pre_existing"] == ["scripts/offender_a.py"]
+
+
+def test_scan_setdiff_branch_fixes_subset_strips(tmp_path: Path, monkeypatch, capsys):
+    """T2b (criterion 2, the saferepr channel — FAILS without the D3 sanitizers):
+    pristine lists {A,B}, the branch lists {B} only (the branch FIXED A — the #2289
+    session shape), BOTH texts carrying a rewritten-introspection tail whose saferepr
+    is elided content-DEPENDENTLY (the fragments differ between sides and match the
+    naive path regex) -> still pre-existing (rc 0), never a false NEW."""
+    argv, _calls, _r, _w = _setdiff_env(
+        tmp_path,
+        monkeypatch,
+        branch_paths=["scripts/offender_b.py"],
+        branch_tail=["scripts/fakemod_01.py...nv"],
+        pristine_paths=["scripts/offender_a.py", "scripts/offender_b.py"],
+        pristine_tail=["scripts/fakemod_01.py...od_25.py"],
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert out["new"] == []
+    assert {s["via"] for s in out["stripped"]} == {"pristine-scratch"}
+    (row,) = out["scan_violation_diffs"]
+    assert row["verdict"] == "pre-existing"
+    assert row["new_violations"] == []
+    assert row["pre_existing"] == ["scripts/offender_b.py"]
+    assert row["pristine_only"] == ["scripts/offender_a.py"]  # the offender A the branch fixed
+
+
+def test_scan_setdiff_unparseable_degrades_loud(tmp_path: Path, monkeypatch, capsys):
+    """T3 (criterion 3): an unparseable pristine violation list degrades to today's
+    node-grain strip PLUS a loud SCAN-SETDIFF-UNPARSEABLE warn + a parse-failed audit
+    row — never a silent strip, never a new exit class."""
+    argv, _calls, _r, _w = _setdiff_env(
+        tmp_path,
+        monkeypatch,
+        branch_paths=["scripts/offender_a.py", "scripts/offender_b.py"],
+        pristine_text="",
+    )
+    rc, out, err = _run_json(argv, capsys)
+    assert rc == 0
+    assert out["new"] == []
+    assert {s["via"] for s in out["stripped"]} == {"pristine-scratch"}
+    (row,) = out["scan_violation_diffs"]
+    assert row["verdict"] == "parse-failed"
+    assert row["new_violations"] == []
+    unparseable = [w for w in out["warns"] if "SCAN-SETDIFF-UNPARSEABLE" in w]
+    assert unparseable and "pristine failure output" in unparseable[0]
+    assert "SCAN-SETDIFF-UNPARSEABLE" in err  # loud on stderr too, json mode included
+
+
+def test_violation_set_scan_nodes_live_tree_pin():
+    """T4 (criterion 4; the D1 drift pin, mirroring the FILE_ANCHORED pin): every
+    registry entry parses as file::name, the file exists at the live root, the test
+    function is present in its source, and the file is a live WORKFLOW_INVARIANT or
+    GLOB_SCAN_TESTS member; plus the criterion-4 membership assertions (thread-caps
+    node + the repo-wide invariant trio's files)."""
+    root = Path(sb.__file__).resolve().parents[1]
+    sel = sb.load_selector_module(root)
+    assert sb.VIOLATION_SET_SCAN_NODES, "registry unexpectedly empty"
+    for entry in sorted(sb.VIOLATION_SET_SCAN_NODES):
+        file, _, name = entry.partition("::")
+        assert file and name and "::" not in name, f"{entry}: not a file::name id"
+        src = (root / file).read_text()
+        assert f"def {name}(" in src, f"{entry}: test function gone from {file}"
+        assert file in sel.WORKFLOW_INVARIANT or file in sel.GLOB_SCAN_TESTS, (
+            f"{entry}: file is neither a WORKFLOW_INVARIANT member nor a GLOB_SCAN_TESTS key"
         )
-    }
+    assert (
+        "tests/test_shared_vm_thread_caps.py::test_no_new_torch_before_dotenv_vm_entrypoints"
+        in sb.VIOLATION_SET_SCAN_NODES
+    )
+    for trio_file in (
+        "tests/test_no_direct_task_path_construction.py",
+        "tests/test_no_pod_side_task_py_shellout.py",
+        "tests/test_no_dollar_budget_caps.py",
+    ):
+        assert any(e.startswith(trio_file + "::") for e in sb.VIOLATION_SET_SCAN_NODES), (
+            f"{trio_file}: repo-wide invariant trio file not covered by the registry"
+        )
+
+
+def test_scan_setdiff_applies_on_dirty_ledger(tmp_path: Path, monkeypatch, capsys):
+    """T5 (criterion 6): a dirty-rooted ledger (`not lv.strippable` — the live #2314
+    regime) routes everything to the pristine bucket, and the violation-set diff
+    applies there BY CONSTRUCTION — the branch-added offender still blocks."""
+    argv, _calls, _r, _w = _setdiff_env(
+        tmp_path,
+        monkeypatch,
+        branch_paths=["scripts/offender_a.py", "scripts/offender_b.py"],
+        pristine_paths=["scripts/offender_a.py"],
+        ledger_kw={"failing": (NODE_TC,), "dirty": True, "dirty_paths": ("scripts/x.py",)},
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 1
+    assert out["ledger_dirty"] is True
+    assert out["new"] == [NODE_TC._asdict()]
+    (row,) = out["scan_violation_diffs"]
+    assert row["verdict"] == "new-violations"
+    assert row["new_violations"] == ["scripts/offender_b.py"]
+
+
+def test_scan_setdiff_known_red_not_diff_linked_routes_pristine(tmp_path, monkeypatch, capsys):
+    """T6 (the D2 disjunct): a registered scan node in known_red that is NEITHER
+    diff-linked NOR in changed_tests no longer blind-strips under a fresh clean
+    ledger — a pristine run happens and the set-diff applies (the trio-class gap's
+    second entrance, #2316 plan §2)."""
+    argv, calls, _r, _w = _setdiff_env(
+        tmp_path,
+        monkeypatch,
+        branch_paths=["scripts/offender_a.py", "scripts/offender_b.py"],
+        pristine_paths=["scripts/offender_a.py"],
+        reasons={NODE_TC.file: ["invariant"]},  # invariant-only -> NOT diff-linked
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert calls["pristine"] == [NODE_TC.file]  # pre-fix: [] (blind-strip via ledger)
+    assert rc == 1
+    assert out["new"] == [NODE_TC._asdict()]
+    assert not any(s["via"] == "ledger" for s in out["stripped"])
+
+
+def test_scan_setdiff_base_identical_suppressed(tmp_path: Path, monkeypatch, capsys):
+    """T7: a branch-side extra offender that is base-identical (a Step 5a sibling-sync
+    copy of main's OWN content, #2302/#2296) is suppressed from the NEW set — the node
+    strips, with the suppression named in a warn + the audit row."""
+    argv, _calls, _r, _w = _setdiff_env(
+        tmp_path,
+        monkeypatch,
+        branch_paths=["scripts/offender_a.py", "scripts/offender_b.py"],
+        pristine_paths=["scripts/offender_a.py"],
+    )
+    monkeypatch.setattr(
+        sb, "_base_identical_files", lambda base, touched, wt_: ["scripts/offender_b.py"]
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert out["new"] == []
+    assert {s["via"] for s in out["stripped"]} == {"pristine-scratch"}
+    (row,) = out["scan_violation_diffs"]
+    assert row["verdict"] == "pre-existing"
+    assert row["base_identical_suppressed"] == ["scripts/offender_b.py"]
+    assert any("SCAN-SETDIFF WARN" in w and "base-identical" in w for w in out["warns"])
+
+
+def test_scan_setdiff_param_node_matches_base_name():
+    """T8: a parametrized junit name matches its registry base id (suffix stripped);
+    a collect-error row's dotted-module name and an unregistered node never match."""
+    param = sb.Node(
+        file="tests/test_no_direct_task_path_construction.py",
+        classname="tests.test_no_direct_task_path_construction",
+        name="test_no_direct_task_path_construction_line_regex[p0]",
+    )
+    assert sb._violation_setdiff_member(param) is True
+    collect_err = sb.Node(
+        file="tests/test_no_dollar_budget_caps.py",
+        classname="",
+        name="tests.test_no_dollar_budget_caps",
+    )
+    assert sb._violation_setdiff_member(collect_err) is False
+    assert sb._violation_setdiff_member(NODE_A) is False
+
+
+def test_scan_setdiff_refusals_precede(tmp_path: Path, monkeypatch, capsys):
+    """T9: the R-G' floored-scratch strip refusal still precedes the set-diff — a
+    registered node red on both sides under a DIRTY non-sparse work root exits 2
+    (unchanged), and no scan_violation_diffs row is ever produced."""
+    argv, _calls, _r, _w = _setdiff_env(
+        tmp_path,
+        monkeypatch,
+        branch_paths=["scripts/offender_a.py", "scripts/offender_b.py"],
+        pristine_paths=["scripts/offender_a.py"],
+        wt_cones=None,  # non-sparse work root -> R-G' floor profile
+        live_dirty=("scripts/dirt.py",),  # dirty -> the floor scratch arms
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 2
+    assert out["indeterminate"] is True
+    assert "FLOOR-profile" in out["reason"]
+    assert out["scan_violation_diffs"] == []  # set-diff never reached
+
+
+def test_extract_violation_paths_shapes():
+    """T10: extraction against (i) the three real message shapes verbatim, (ii) the
+    measured saferepr-elision fragments, (iii) a differing-lists pair (the extraction-
+    level twin of T2b), and (iv) symmetric-prose cancellation + path:line grain."""
+    # (i) the A1 probe shapes — message attr AND "E "-prefixed element text: the
+    # offender path extracts; the introspection tail's copy adds nothing (set
+    # semantics) and no elision fragment survives.
+    expected = frozenset({"scripts/issue2225_fu2_dod_points_fig.py"})
+    assert sb.extract_violation_paths(_A1_PROBE_MESSAGE) == expected
+    assert sb.extract_violation_paths(_A1_PROBE_TEXT) == expected
+    # (i) trio shape: `  - {path}:{line}: {snippet}` rows (the snippet's own
+    # scripts/task.py token is symmetric prose — extracted on both sides, cancels).
+    trio_text = (
+        "AssertionError: pod-side task.py shellout(s):\n"
+        "  - scripts/foo_pod.py:12: subprocess.run(['python', 'scripts/task.py', 'view'])\n"
+        "  - scripts/bar_pod.py:9: os.system('scripts/task.py view 5')"
+    )
+    assert sb.extract_violation_paths(trio_text) == frozenset(
+        {"scripts/foo_pod.py", "scripts/bar_pod.py", "scripts/task.py"}
+    )
+    # (i) dollar-caps shape: `  {path}:{lineno}  /{pat}/  {snippet}` rows.
+    caps_text = (
+        "AssertionError: dollar-budget cap symbol(s) in experiment scripts:\n"
+        "  scripts/run_thing.py:9  /max_budget_usd/  max_budget_usd = 5.0"
+    )
+    assert sb.extract_violation_paths(caps_text) == frozenset({"scripts/run_thing.py"})
+    # (ii) measured elision fragments: never extracted — the segment strip catches
+    # the assert-line channel; the `...` post-filter catches any other surface.
+    assert sb.extract_violation_paths("assert not ['scripts/fakemod_01.py...nv']") == frozenset()
+    assert (
+        sb.extract_violation_paths("assert not ['scripts/fake...mod_29.py']") == frozenset()
+    )  # mid-cut fragment ending .py
+    assert (
+        sb.extract_violation_paths("repr echo outside assert: scripts/fakemod_01.py...nv")
+        == frozenset()
+    )  # post-filter alone (defense in depth)
+    # (iii) differing-lists pair: pristine {A,B} vs branch {B}, each with its own
+    # content-dependently-cut tail -> the NEW-direction diff is EMPTY.
+    pristine = _tc_failure_text(
+        ["scripts/offender_a.py", "scripts/offender_b.py"],
+        tail_items=["scripts/fakemod_01.py...od_25.py"],
+    )
+    branch = _tc_failure_text(["scripts/offender_b.py"], tail_items=["scripts/fakemod_01.py...nv"])
+    assert sb.extract_violation_paths(branch) - sb.extract_violation_paths(pristine) == frozenset()
+    # (iv) identical texts diff to the empty set; a path:line token extracts the
+    # path only (line numbers drift under unrelated same-file edits).
+    same = _tc_failure_text(["scripts/offender_a.py"])
+    assert sb.extract_violation_paths(same) - sb.extract_violation_paths(same) == frozenset()
+    assert sb.extract_violation_paths("  - scripts/x.py:123: hit") == frozenset({"scripts/x.py"})
+
+
+def test_scan_violation_diffs_in_indeterminate_payload(tmp_path: Path, monkeypatch, capsys):
+    """T12: every exit-2 payload carries the stable additive `scan_violation_diffs: []`
+    (the #1742 urgent_park_required precedent) — consumer jq never breaks on exit 2."""
+    argv, _calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(NODE_A.file, NODE_A.classname, NODE_A.name, "failed")],
+        pytest_rc=3,
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 2
+    assert out["indeterminate"] is True
+    assert out["scan_violation_diffs"] == []
+
+
+def test_scan_diff_row_display_cap_is_display_only():
+    """The _SCAN_DIFF_ROW_CAP list cap truncates row LISTS (with an `_overflow`
+    count) but never enters bucketing — a pathological message cannot flip a
+    verdict via the cap."""
+    many = [f"scripts/mod_{i:03d}.py" for i in range(sb._SCAN_DIFF_ROW_CAP + 7)]
+    row = sb._scan_diff_row("f::n", "new-violations", new_violations=many)
+    assert len(row["new_violations"]) == sb._SCAN_DIFF_ROW_CAP
+    assert row["new_violations_overflow"] == 7
+    assert row["new_violations"] == sorted(many)[: sb._SCAN_DIFF_ROW_CAP]
+    assert row["pre_existing"] == [] and "pre_existing_overflow" not in row
