@@ -2735,9 +2735,10 @@ def test_skill_tg_blocks_pin_tmpdir_routing():
         )
         assert block.count("${TG_TMPROOT:+TMPDIR=$TG_TMPROOT}") == 1  # gated leg only (#2296)
         assert block.count("${TG_BASETEMP:+--basetemp=$TG_BASETEMP/") == 1
-        assert 'step9c_baseline.py" mapped-baseline' in block, (
+        assert '"$TG_S9B" mapped-baseline' in block, (
             "the baseline leg must be the #2296 helper (its temp writes route "
-            "via gate_tmp_root() inside the helper)"
+            "via gate_tmp_root() inside the helper), resolved via $TG_S9B — "
+            "a hardcoded copy cannot bootstrap the round that adds it"
         )
         assert 'rm -rf "$TG_BASETEMP"' in block  # cleanup
 

@@ -271,8 +271,22 @@ def test_mapped_baseline_leg_runs_off_shared_root():
         "xargs -r -a /tmp/issue-<N>-additive-files.txt",
     )
     for name, span in (("shared", shared_base), ("surgical", surgical_base)):
-        assert 'step9c_baseline.py" mapped-baseline' in span, (
+        assert '"$TG_S9B" mapped-baseline' in span, (
             f"[{name}] baseline leg must invoke the mapped-baseline helper"
+        )
+        # Bootstrap resolution (#2296): the helper must NOT be pinned to a
+        # hardcoded copy. The round that ADDS `mapped-baseline` has it only on
+        # the branch, so a hardcoded "$REPO_ROOT/..." invocation dies argparse
+        # exit 2 -> empty rc -> TG_CRASH, and the change can never pass through
+        # the gate it introduces (measured on #2296's own first Step 10d run:
+        # a 0-byte tg-baseline.txt that reads as a green baseline unless you
+        # check the helper's stderr).
+        assert 'uv run python "$TG_S9B" mapped-baseline --help' in span, (
+            f"[{name}] the bootstrap helper-resolution probe must survive"
+        )
+        assert 'scripts/step9c_baseline.py" mapped-baseline' not in span, (
+            f"[{name}] baseline leg must not hardcode a helper copy — resolve "
+            "via $TG_S9B (root preferred, worktree fallback)"
         )
         assert "uv run pytest" not in span, (
             f"[{name}] baseline leg must not run pytest directly (A1): the "

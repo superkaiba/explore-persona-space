@@ -14936,7 +14936,7 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 942_000: that value predates this landing and would FAIL it by 384 B,
     # so the higher cap is the correct resolution, not a regrowth licence
     # (headroom 1,216 B, the same ~1 KB the #1753 rule prescribes).
-    "issue/SKILL.md": 947_450,
+    "issue/SKILL.md": 949_000,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,

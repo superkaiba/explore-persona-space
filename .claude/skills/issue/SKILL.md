@@ -12339,8 +12339,22 @@ tests BEFORE anything lands:
       # unparseable rc= line fails CLOSED into TG_CRASH.
       : > /tmp/issue-<N>-tg-baseline.txt
       TG_SCRATCH=""
+      # Helper resolution (#2296 bootstrap). Instrument from the ROOT copy by
+      # default — a branch must not be able to subvert its own gate — falling
+      # back to the worktree copy when the root lacks the subcommand, which is
+      # exactly the round that ADDS it (measured on #2296's own first Step 10d
+      # run: argparse exit 2 -> empty rc -> TG_CRASH, i.e. the change could
+      # never pass through the gate it introduces). Baseline payload-freeness
+      # is unaffected: it is a property of the TREE under test (a scratch at
+      # origin/main), not of the script driving it — the same
+      # instrument-vs-subject split #1456 already makes for a payload-touched
+      # workflow_lint.py. Both copies lacking it still fails CLOSED below.
+      TG_S9B="$REPO_ROOT/scripts/step9c_baseline.py"
+      uv run python "$TG_S9B" mapped-baseline --help >/dev/null 2>&1 \
+        || TG_S9B="$WT/scripts/step9c_baseline.py"
+      echo "[step10d] mapped-baseline helper: $TG_S9B"
       TG_BASE_OUT=$(timeout --kill-after=30s $((TG_T + 420))s uv run python \
-        "$REPO_ROOT/scripts/step9c_baseline.py" mapped-baseline \
+        "$TG_S9B" mapped-baseline \
         --map-files /tmp/issue-<N>-own-diff.txt --root "$REPO_ROOT" \
         --cones-from "$WT" --base origin/main --timeout-s "$TG_T" \
         --out /tmp/issue-<N>-tg-baseline.txt \
@@ -14378,8 +14392,17 @@ Decision tree:
     timeout --kill-after=30s 120s git -C "$REPO_ROOT" fetch origin main --quiet || true
     : > /tmp/issue-<N>-tg-baseline.txt
     TG_SCRATCH=""
+    # Helper resolution (#2296 bootstrap) — see the shared gate block's fuller
+    # note. ROOT copy by default; worktree fallback when the root lacks the
+    # subcommand. ${WT:-$REPO_ROOT} here too: the surgical path may run with no
+    # worktree in scope, in which case the root copy is the only candidate and
+    # a still-missing subcommand fails CLOSED below.
+    TG_S9B="$REPO_ROOT/scripts/step9c_baseline.py"
+    uv run python "$TG_S9B" mapped-baseline --help >/dev/null 2>&1 \
+      || TG_S9B="${WT:-$REPO_ROOT}/scripts/step9c_baseline.py"
+    echo "[step10d] mapped-baseline helper: $TG_S9B"
     TG_BASE_OUT=$(timeout --kill-after=30s $((TG_T + 420))s uv run python \
-      "$REPO_ROOT/scripts/step9c_baseline.py" mapped-baseline \
+      "$TG_S9B" mapped-baseline \
       --map-files /tmp/issue-<N>-additive-files.txt --root "$REPO_ROOT" \
       --cones-from "${WT:-$REPO_ROOT}" --base origin/main --timeout-s "$TG_T" \
       --out /tmp/issue-<N>-tg-baseline.txt \
