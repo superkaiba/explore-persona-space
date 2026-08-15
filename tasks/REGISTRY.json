@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2320,
+  "highest_id": 2321,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10206,6 +10206,13 @@
       "path": "tasks/completed/2320",
       "status": "completed",
       "title": "workflow-fix: Step 10d Guard 3 ON_MAINLINE uses first-parent reachability, so a sibling's merge-form landing false-flags later branches UNSAFE"
+    },
+    "2321": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2321",
+      "status": "proposed",
+      "title": "Repack the 10 largest prefixes in the HF data repo to recover ~610k of the 1,000,000-file cap"
     },
     "233": {
       "has_clean_result": false,
