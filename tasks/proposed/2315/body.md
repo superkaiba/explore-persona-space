@@ -1,6 +1,6 @@
 ---
-title: 'workflow-fix: Step 9c 1b --files-only output needs newline-flattening before
-  launcher interpolation; the count cross-check cannot see the un-flattened shape'
+title: 'Step 9c 1b: a self-composed gate launcher can silently drop --files-only newline
+  flattening OR -o junit_family=xunit1; neither omission fails where the recipe checks'
 kind: infra
 tags:
 - wf-fix
