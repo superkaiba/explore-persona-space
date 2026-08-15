@@ -1,0 +1,64 @@
+{
+  "margin_deferred": false,
+  "margin_blocks_done": 45,
+  "margin_blocks_expected": 45,
+  "deferred_leg": false,
+  "eval_numbers": {
+    "grid_shards": 45,
+    "margin_shards": 45,
+    "grid_rollouts_persisted": 8100,
+    "cap_hit_rows": 12,
+    "cap_hit_frac": 0.0014814814814814814,
+    "g1_passed": true,
+    "g1_violations": 0,
+    "injection_gate_passed": true,
+    "injection_gate_spots_failed": 0
+  },
+  "eval_paths": [
+    "/workspace/issue2162_out/tbmp/gates/g1_resolver_report.json",
+    "/workspace/issue2162_out/tbmp/gates/tb_injection_gate_report.json",
+    "/workspace/issue2162_out/tbmp/margin",
+    "/workspace/issue2162_out/tbmp/rollouts",
+    "/workspace/issue2162_out/tbmp/tb_bank/tb_bank.pt",
+    "/workspace/issue2162_out/tbmp/tb_bank/tb_config.json"
+  ],
+  "reproducibility_card": {
+    "git_commit": "5797bcb9155776667b125a3e50c53cdcee88fe23",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "tiny": false,
+    "smoke": false,
+    "n_layers": 28,
+    "timestamp": "2026-08-15T00:02:05.035310+00:00",
+    "round": "tbmp",
+    "seed_base": 42,
+    "bank_seed": 2162,
+    "max_new_tokens": 2048,
+    "grid_temperature": 1.0,
+    "grid_draws": 5,
+    "gen_batch": 16,
+    "num_workers": 1,
+    "realized_mode": "replace_multi"
+  },
+  "wandb_url": null,
+  "hf_hub_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-overflow/tree/main/issue2162_ctxinfo/analysis_tensors/tbmp",
+  "worktree_path": "/workspace/explore-persona-space",
+  "final_commit_sha": "5797bcb9155776667b125a3e50c53cdcee88fe23",
+  "gpu_hours_used": null,
+  "gpu_hours_budgeted": 7.0,
+  "plan_deviations": [
+    "cap-hit telemetry is derived from the re-tokenized completion length (generate_batch returns decoded text only)",
+    "no per-rollout answer-state capture this round (plan §4.4 has no V_a-based tb metric; the judge DVs + TF margin are the registered reads)",
+    "margin artifacts persist as JSONL under margin/ (plan §6.5 says .pt) — text-first upload policy; content is per-pair scalar margins, no tensors",
+    "plan §12 assumption 9 verification recipe superseded: the staged parent bank.json records NO ctx_len/prefix_end (fresh-HF probe 2026-08-14, 2,383,040 bytes: 0 occurrences of either key; per-context keys are exactly {carrier, cell, history, id, system, user, value_id}), so the literal recipe cannot execute; realized triple = (i) producer-domain frozen_gen_sha256 recompute == banked pin, (ii) exact per-context payload equality on {cell, value_id, carrier, system, history, user} for all 432 capture contexts, (iii) G1(b) re-rendered per-pair ctx_len delta == parent committed f_cells.jsonl len_delta, 432/432 required (gates/g1_resolver_report.json). Strictly stronger at the TEXT level; incomparable at absolute token geometry — the residual drift class (a uniform render shift identical across both pair members preserving per-cell boundary counts) is not load-bearing: this round re-captures injection payloads at re-rendered positions and consumes nothing absolute-position-indexed from the parent."
+  ],
+  "uploaded_prefixes": {
+    "tb_bank": 2,
+    "gates": 2,
+    "grid_text": 45,
+    "margin": 45,
+    "manifests": 99,
+    "outroot_json": 3
+  }
+}
