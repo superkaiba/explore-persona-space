@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2318,
+  "highest_id": 2319,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10185,6 +10185,13 @@
       "path": "tasks/approved/2318",
       "status": "approved",
       "title": "workflow-fix: 9a-ter inline payload lint gate \u2014 violation-grain classification for whole-repo scan nodes red on pristine main"
+    },
+    "2319": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2319",
+      "status": "proposed",
+      "title": "workflow-fix: step9c violation-path extraction takes every path token per line (snippet false-block residual)"
     },
     "232": {
       "has_clean_result": true,
