@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2313,
+  "highest_id": 2314,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10150,6 +10150,13 @@
       "path": "tasks/proposed/2313",
       "status": "proposed",
       "title": "Policy: rebase-rewritten own issue branch \u2014 sanctioned --force-with-lease arm, or explicit ban + force-free route only?"
+    },
+    "2314": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2314",
+      "status": "proposed",
+      "title": "issue2225_fu2_dod_points_fig.py imports numpy before load_dotenv \u2014 reds test_no_new_torch_before_dotenv_vm_entrypoints on main"
     },
     "232": {
       "has_clean_result": true,
