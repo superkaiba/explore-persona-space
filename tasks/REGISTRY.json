@@ -10203,8 +10203,8 @@
     "2320": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2320",
-      "status": "approved",
+      "path": "tasks/running/2320",
+      "status": "running",
       "title": "workflow-fix: Step 10d Guard 3 ON_MAINLINE uses first-parent reachability, so a sibling's merge-form landing false-flags later branches UNSAFE"
     },
     "233": {
