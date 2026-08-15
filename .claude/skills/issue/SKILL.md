@@ -9821,7 +9821,11 @@ orchestrators driving one round is the #778 root cause.
    `outcome:` fields field-led — line-initial one-per-line, or
    `; `-joined on one line (both parse); a PROSE-LED note parses no
    label, closes nothing, and undercounts both round caps (the #1090
-   fu1 regression).
+   fu1 regression). BANNED shapes (#2307 — all observed, none parses):
+   the bare field name `label=` for the label (#2203/#1739); `·`- or
+   space-joined fields (#2054/#2224); a bare-space `v<k> ` stamp
+   heading the note (#2224/#2254). `task.py post-marker` now warns
+   whenever a run/scope marker's note parses no `followup_label`.
    This is the idempotency record: an `epm:followup-scope v1` with a
    matching run marker is RUN and is never re-dispatched. When this
    marker is cheap-band (`source: proposer-9b-cheap`, `outcome` not

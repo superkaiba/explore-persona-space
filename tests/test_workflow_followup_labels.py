@@ -1287,6 +1287,42 @@ def _run_labels(events: list[dict]) -> set[str]:
 # (#1111) and is called generically for `source`/`round`/`outcome` too, so an
 # alias would change run/unrun classification corpus-wide. As with #1090, the
 # ROUND is closed by a corrective re-post on #1739 (#2154), not by parsing.)
+# (#2203's two run markers — (2203, "2026-08-10T15:46:57Z") and (2203,
+# "2026-08-10T21:57:35Z") — are a RECURRENCE of the #1739 bare-`label=` class
+# above: field-led notes whose label field uses the bare key `label=` instead
+# of `followup_label=` (`round=1 source=proposer-9b-cheap label=...`;
+# `label=ctx-native-axis-cap source=user-chat SUPERSEDED ...`). #2154's
+# survey conclusion ("NOT systematic ... this is the only bare-`label=`
+# note") is SUPERSEDED: the count is now 3 occurrences across 2 tasks — a
+# recurring hand-composition error, hence the #2307 mechanical guard
+# (`task.py post-marker` warns whenever a run/scope marker's note parses no
+# followup_label — the gate's own predicate). The parser is still NOT widened
+# to alias bare `label`: the same #1111 field-only + generic-caller grounds
+# as the #1739 paragraph above; `label=` remains the correct token for the
+# dispatch-breadcrumb grammar only.)
+# (#2054's (2054, "2026-08-12T19:00:39Z") run marker is a DISTINCT class:
+# its fields are `·`-joined on one physical line (U+00B7 middle dot —
+# `source: ... · followup_label: ... · satisfies ...`), and the parser splits
+# segments on `;\s+` only, so `followup_label:` sits mid-segment and parses
+# None (#1111 forbids mid-segment anchoring). Adding `·` as a segment
+# delimiter COULD parse this row without touching the field-only anchor —
+# the widening is rejected on RISK, not impossibility:
+# `parse_followup_note_field` is generic over `source`/`round`/`outcome`/
+# `est_gpu_hours`/`followup_ref`, so a new delimiter reclassifies run/unrun
+# state corpus-wide (the #545 lesson) to rescue ONE row this allowlist
+# handles at zero risk — and classes A/C above/below need the allowlist
+# anyway, so the widening cannot make main green on its own.)
+# (#2224's two run markers — (2224, "2026-08-13T03:47:32Z") and (2224,
+# "2026-08-13T03:47:37Z") — and #2254's (2254, "2026-08-14T18:14:08Z") are a
+# THIRD class: a bare-space `v1 ` stamp (no dot, no dash) heads the note and
+# the fields are SPACE-joined (`v1 source: ... followup_label: ... — ...`;
+# 2254 is additionally colon-no-space, `followup_label:ctxext-...`). The
+# stamp stripper accepts `v<k>.`+ws or `v<k>`+dash+ws only, so the bare-space
+# stamp survives — and even under a widened stripper the residue stays
+# space-joined, so `followup_label:` is never at segment start; only the
+# mid-segment anchoring #1111 forbids could parse it. The parser is NOT
+# widened; the rounds are accounted by this allowlist, and the #2307
+# poster-side advisory is the recurrence guard.)
 # Vintage guard (#2010): the corpus-replay tests below enforce this fleet-data
 # invariant on MAIN-VINTAGE trees only (`_corpus_tree_is_main_vintage` — the
 # `main` checkout + trees detached at main's tip, i.e. the Step 9c
@@ -1295,6 +1331,13 @@ def _run_labels(events: list[dict]) -> set[str]:
 KNOWN_MALFORMED_RUN_MARKERS = {
     (1090, "2026-07-07T09:54:27Z"),
     (1739, "2026-08-05T22:28:00Z"),
+    # #2307 rows — classes A/B/C per the comment block above.
+    (2203, "2026-08-10T15:46:57Z"),  # A: bare `label=` (#1739 recurrence)
+    (2203, "2026-08-10T21:57:35Z"),  # A: bare `label=` (#1739 recurrence)
+    (2054, "2026-08-12T19:00:39Z"),  # B: `·`-joined fields
+    (2224, "2026-08-13T03:47:32Z"),  # C: bare-space `v1 ` stamp + space-joined
+    (2224, "2026-08-13T03:47:37Z"),  # C: bare-space `v1 ` stamp + space-joined
+    (2254, "2026-08-14T18:14:08Z"),  # C: + colon-no-space
 }
 
 
