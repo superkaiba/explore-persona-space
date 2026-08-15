@@ -10168,8 +10168,8 @@
     "2316": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2316",
-      "status": "running",
+      "path": "tasks/completed/2316",
+      "status": "completed",
       "title": "workflow-fix: step9c compare classifies whole-repo SCAN-test nodes per-NODE, so a branch ADDING a violation to an already-red scan node reads as pre-existing"
     },
     "2317": {
