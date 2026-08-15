@@ -10154,8 +10154,8 @@
     "2314": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2314",
-      "status": "planning",
+      "path": "tasks/approved/2314",
+      "status": "approved",
       "title": "issue2225_fu2_dod_points_fig.py imports numpy before load_dotenv \u2014 reds test_no_new_torch_before_dotenv_vm_entrypoints on main"
     },
     "232": {
