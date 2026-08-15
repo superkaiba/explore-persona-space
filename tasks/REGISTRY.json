@@ -10219,7 +10219,7 @@
       "kind": "infra",
       "path": "tasks/proposed/2322",
       "status": "proposed",
-      "title": "Codex twin: CLI 0.147.0 + gpt-5.6-sol at high effort"
+      "title": "Codex twin: CLI 0.147.0 + gpt-5.6-sol, daily auto-upgrade cron"
     },
     "233": {
       "has_clean_result": false,

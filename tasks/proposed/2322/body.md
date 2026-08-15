@@ -1,5 +1,5 @@
 ---
-title: 'Codex twin: CLI 0.147.0 + gpt-5.6-sol at high effort'
+title: 'Codex twin: CLI 0.147.0 + gpt-5.6-sol, daily auto-upgrade cron'
 kind: infra
 tags: []
 created_at: '2026-08-15T23:38:01Z'
