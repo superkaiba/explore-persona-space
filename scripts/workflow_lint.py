@@ -14802,6 +14802,19 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 # (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
 # change). Each entry names its trim direction; none is licensed to grow.
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
+    # measured 963,447 B after #2312 added the Step 10d rewritten-branch
+    # arm (+18,660 B on #2302's 944,787 B main: the five mutual-non-ancestry
+    # descendancy guards at the push/pull copy sites — canonical snippet
+    # (1), the safe-case push, the zero-PR stale-ref arm, the post-gate
+    # re-sync push, the shape-2 retry — plus the fail-closed PR-head
+    # parity gate and the "Rewritten-branch landing route" subsection);
+    # cap = measured + ~1.2 KB (#1753/#1727 landing-bytes rule; headroom
+    # 1,203 B <= the 3,000 B loose-cap hygiene bar). MEASURED POST-MERGE:
+    # the branch absorbed #2302's landed +1,754 B before this cap was set,
+    # so the value is the real landing size, not a projection off a stale
+    # merge-base (a cap computed against the pre-#2302 base would have
+    # FAILED by 547 B the moment this branch landed).
+    # Prior: 945_400 —
     # measured 944,138 B after #2302 round 2 de-duplicated the stale-sync
     # residual prose (the Step 9c 1d parenthetical now cross-references
     # "Step 5a § Base-identity invariant (#2302)" instead of restating it,
@@ -14962,7 +14975,20 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # would have landed 946,657 B against a 945_400 cap — main red by 1,257 B
     # between the two merges. The Step 10d re-measure duty (#2303 plan §4.2 /
     # risk R8) is what fired here; keep it on any SKILL.md-bearing branch.
-    "issue/SKILL.md": 947_700,
+    #
+    # 966_520 — MEASURED 965,317 B after #2312 added the Step 10d rewritten-branch
+    # arm (+18,660 B: the mutual-non-ancestry guard at all four push sites, the
+    # zero-PR stale-ref arm, the PR-head parity gate, and the § Rewritten-branch
+    # landing route) ON TOP of #2303's landed 946,657 B main. Cap = measured
+    # + ~1.2 KB (#1753/#1727 landing-bytes rule; headroom 1,203 B <= the 3,000 B
+    # loose-cap hygiene bar). Prior on this branch: 964_650 — computed against a
+    # pre-#2303 base (944,787 B) and STALE by 667 B the moment #2303 landed
+    # bbc5d75807 mid-gate; the re-measure duty #2303's own comment prescribes is
+    # what caught it, for the SECOND time on this branch (the first was #2302's
+    # +1,754 B, absorbed before the earlier cap was set). Two consecutive
+    # SKILL.md-bearing siblings landing inside one branch's gate window is now
+    # the norm, not the exception: re-measure at Step 10d, never at Step 4.
+    "issue/SKILL.md": 966_520,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
