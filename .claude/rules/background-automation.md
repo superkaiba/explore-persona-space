@@ -1225,6 +1225,57 @@ every spawn arm.
   respawn generation (~60-75 min in); (g) the
   `EPM_AUTH_OUTAGE_FRESH_DEATH_MIN` band is clamped ≥45 min.
 
+**Daemon-liveness pass (#2140, `daemon_liveness_pass`; ESCALATE-ONLY).**
+Makes a Happy-daemon OUTAGE loud on the tick the spawn lanes start
+skipping (origin: 2026-08-04T21:13Z → 04:30Z, a 3h17m outage in which
+every spawn lane no-oped with only stdout lines and detection was a human
+opening a PM session; the only pre-existing daemon-outage escalation,
+`decide_daemon_blocked_escalation` #845c, needs a respawn-worthy stalled
+session to exist first, so a stall-free outage escalated nothing). Runs on
+EVERY tick in BOTH daemon states, immediately after the tick's single
+retry-probe and BEFORE the auth-outage guard, consuming the
+already-computed `daemon_reachable` as a kwarg — never a second probe.
+**Predicate** (`decide_daemon_liveness_escalation`, pure, singleton state
+`~/.eps-autonomous/daemon-liveness.json`, every field re-validated with
+`isinstance` failing toward "no escalation" — worst case ONE delayed
+escalation, never a spurious one): the 2nd consecutive unreachable tick
+(`DAEMON_LIVENESS_THRESHOLD`, ~20 min at the 10-min cron) OPENS the
+episode; a persisting outage re-alerts every
+`EPM_DAEMON_LIVENESS_REALERT_MIN` (60 min — the #2140 3h17m window yields
+~4 alerts, not 20); the first reachable tick after an escalated episode
+fires ONE recovery event naming the measured outage duration (stamped at
+the FIRST unreachable tick), then state resets. **Channels, split by event
+class:** `open` + `recovered` ride the IMMEDIATE `telegram_push.sh`
+direct-send carve-out (`_telegram_push_urgent`; test override
+`EPM_TELEGRAM_PUSH_URGENT_SCRIPT`) — the 3x/day digest's worst-case
+latency (~8h) exceeds the very outage this pass exists to catch, and the
+digest's usual "tick-side PushNotification is the second channel" premise
+fails here because tick sessions spawn through the down daemon; `realert`
+stays on the digest queue (`_telegram_push`). Every event also appends one
+sidecar row (`.claude/cache/daemon-liveness-events.jsonl`); the alert is
+ACTIONABLE — it names the suppressed-work counts (autonomous `issue-*.json`
+registrations + the infra-drain queue's `ripe_oldest_first` depth, each
+read fail-soft to `?`) and the exact LOGIN-SHELL recovery command
+(`bash -lc 'happy daemon status; happy daemon start'`). **Storm guard:**
+state is saved BEFORE any emit and a failed save suppresses the push
+(stderr + sidecar only) — a save-after-emit order would recompute the
+threshold crossing and re-fire the open push every tick of a persistent
+save failure. **ESCALATE-ONLY is a hard invariant** (pinned by
+`tests/test_autonomous_session_watch_daemon_liveness.py::test_daemon_liveness_pass_never_restarts_or_mutates`):
+the pass never restarts the daemon, never stops/spawns a session, never
+posts a task marker, never mutates task status. A RESTART arm is
+deliberately OUT of v1 (recorded in the #2140 plan): the daemon is a
+manually-started orphaned node process with NO systemd unit, its
+durability hinges on a LOGIN-shell start (the § tmux socket-dir contract
+item 6 — a cron-started daemon risks the #1466 second-tmux-server
+split-brain), and `_daemon_reachable()`'s conservative contract means
+probe-false ≠ process-dead, so an unguarded start would double-daemon a
+hung-but-alive one; a future restart arm is a separate opt-in task
+(login-shell-invoked, gated on positive proof the recorded
+`daemon.state.json` pid is gone, per-day-capped). Kill switch
+`EPM_DISABLE_DAEMON_LIVENESS_PASS=1`; `--daemon-liveness-only` runs just
+this pass (pair with `--dry-run` for a zero-write live smoke).
+
 ## Dedicated data disk for `.claude/worktrees/` (#681)
 
 The heavy active-task footprint (every `issue-<N>` worktree + its

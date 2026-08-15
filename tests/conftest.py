@@ -367,6 +367,13 @@ _FLEET_MUTATING_PASS_NAMES = (
     # `_partial_bundle_scoped_listing` / `_committed_eval_paths` seams
     # instead.
     "partial_bundle_pass",
+    # #2140: escalate-only too, but it writes real singleton state to
+    # ~/.eps-autonomous/daemon-liveness.json, appends real sidecar rows under
+    # .claude/cache/, and on a simulated 2-tick outage would fire a REAL
+    # IMMEDIATE telegram_push.sh send from a full-main() unit test; its own
+    # tests monkeypatch AUTONOMOUS_REGISTRY_DIR / PROJECT_ROOT + recorder
+    # push seams instead.
+    "daemon_liveness_pass",
     # #1681: the urgent-park router sweeps the LIVE tasks tree for parked
     # workflow-fix candidates and can run a real pytest subprocess, FILE +
     # dispatch a real task via file_infra_task.py, and post REAL
