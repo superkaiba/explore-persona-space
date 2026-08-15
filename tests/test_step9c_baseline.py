@@ -2604,7 +2604,7 @@ def test_scratch_mkdtemp_and_pristine_junit_use_tmp_root(tmp_path: Path, monkeyp
     monkeypatch.setattr(sb, "gate_tmp_root", lambda **_kw: route)
     # (a) scratch parent: fake the git lifecycle; the mkdtemp is real.
     monkeypatch.setattr(sb, "_git_bounded", lambda argv, cwd, timeout_s: None)
-    monkeypatch.setattr(sb, "_scratch_cones", lambda root, wt_cones: ["tests"])
+    monkeypatch.setattr(sb, "_scratch_cones", lambda *_a, **_k: ["tests"])
     scratch = sb.create_scratch_worktree(
         tmp_path / "root", ["tests"], timeout_s=30.0, base_sha="e" * 40
     )
@@ -2745,8 +2745,11 @@ def test_skill_step9c_blocks_pin_tmpdir_routing():
 def test_skill_tg_blocks_pin_tmpdir_routing():
     """Durability pin (#1442, extending the #1408 pin above): BOTH SKILL.md
     Step 10d TG_TESTS targeted-green blocks (shared-gate + surgical form
-    (iii)) carry the tmproot resolution, per-leg TMPDIR + --basetemp
-    threading (2 pytest legs each), and the post-run basetemp cleanup."""
+    (iii)) carry the tmproot resolution, GATED-leg TMPDIR + --basetemp
+    threading, and the post-run basetemp cleanup. Since #2296 the BASELINE
+    leg is the `mapped-baseline` helper call, which routes its own temp
+    writes via gate_tmp_root() internally — so exactly ONE direct
+    TMPDIR/basetemp thread remains per block (the gated leg)."""
     skill = (
         Path(__file__).resolve().parents[1] / ".claude" / "skills" / "issue" / "SKILL.md"
     ).read_text()
@@ -2759,8 +2762,13 @@ def test_skill_tg_blocks_pin_tmpdir_routing():
         assert block.index('step9c_baseline.py" tmproot') < block.index(
             "${TG_TMPROOT:+TMPDIR=$TG_TMPROOT}"
         )
-        assert block.count("${TG_TMPROOT:+TMPDIR=$TG_TMPROOT}") == 2  # both legs
-        assert block.count("${TG_BASETEMP:+--basetemp=$TG_BASETEMP/") == 2
+        assert block.count("${TG_TMPROOT:+TMPDIR=$TG_TMPROOT}") == 1  # gated leg only (#2296)
+        assert block.count("${TG_BASETEMP:+--basetemp=$TG_BASETEMP/") == 1
+        assert '"$TG_S9B" mapped-baseline' in block, (
+            "the baseline leg must be the #2296 helper (its temp writes route "
+            "via gate_tmp_root() inside the helper), resolved via $TG_S9B — "
+            "a hardcoded copy cannot bootstrap the round that adds it"
+        )
         assert 'rm -rf "$TG_BASETEMP"' in block  # cleanup
 
 
@@ -4764,3 +4772,290 @@ def test_scan_diff_row_display_cap_is_display_only():
     assert row["new_violations_overflow"] == 7
     assert row["new_violations"] == sorted(many)[: sb._SCAN_DIFF_ROW_CAP]
     assert row["pre_existing"] == [] and "pre_existing_overflow" not in row
+
+
+# --- mapped-baseline (#2296) --------------------------------------------------------
+#
+# Real-body E2E coverage (code-style.md #906): these run the ACTUAL
+# cmd_mapped_baseline chain — create_scratch_worktree at a caller-pinned sha,
+# _scratch_cones at that sha, assert_scratch_src_shadow, the scratch-copy
+# selector subprocess, and the TEXT-capturing pytest — against a committed
+# fake root with a real (shim) root-venv interpreter. No seams stubbed.
+
+
+def _restore_sigterm():
+    """cmd_mapped_baseline installs a SIGTERM->SystemExit handler; restore the
+    pytest process's default after each in-process invocation."""
+    import signal as _signal
+
+    _signal.signal(_signal.SIGTERM, _signal.SIG_DFL)
+
+
+def _mapped_repo(tmp_path: Path, *, probe_body: str) -> tuple[Path, Path, Path]:
+    """A committed fake root for mapped-baseline: stub selector (echoes one
+    fixed mapping iff the map file is non-empty; records its argv + __file__),
+    a src/ package (the #1251 shadow target), pyproject (rootdir anchor), and
+    one committed test file. Returns (root, selector_log, shim_marker)."""
+    root = tmp_path / "root"
+    _scratch_repo(root)
+    sel_log = tmp_path / "selector-argv.txt"
+    (root / "scripts").mkdir()
+    (root / "scripts" / "select_step9c_tests.py").write_text(
+        "import sys\n"
+        "from pathlib import Path\n\n"
+        f"Path({str(sel_log)!r}).write_text('\\n'.join([__file__, *sys.argv[1:]]))\n"
+        "i = sys.argv.index('--map-files')\n"
+        "rows = [ln for ln in Path(sys.argv[i + 1]).read_text().splitlines() if ln.strip()]\n"
+        "if rows:\n"
+        "    print('tests/test_probe.py\\tscripts/payload.py')\n"
+    )
+    (root / "src" / "explore_persona_space").mkdir(parents=True)
+    (root / "src" / "explore_persona_space" / "__init__.py").write_text("")
+    (root / "tests").mkdir()
+    (root / "tests" / "test_probe.py").write_text(probe_body)
+    (root / "pyproject.toml").write_text('[tool.pytest.ini_options]\naddopts = ""\n')
+    _git(root, "add", "-A")
+    _git(root, "commit", "-m", "baseline")
+    marker = tmp_path / "shim-invocations.txt"
+    _write_python_shim(root, marker)  # untracked: the ROOT venv, not the scratch's
+    return root, sel_log, marker
+
+
+def _worktree_count(root: Path) -> int:
+    out = subprocess.run(
+        ["git", "worktree", "list"], cwd=str(root), capture_output=True, text=True, check=True
+    ).stdout
+    return len([ln for ln in out.splitlines() if ln.strip()])
+
+
+def test_mapped_baseline_end_to_end_red_on_base(tmp_path: Path, capsys):
+    """Happy path (#2296 A2-adjacent): a red-on-base mapped test runs on the
+    SCRATCH (repo-relative node id, cwd=scratch), rc=1 rides stdout as DATA
+    (exit stays 0), scratch_path= is printed for the <TREE> sed, the selector
+    runs the SCRATCH's own copy against the scratch, and teardown leaves no
+    worktree behind."""
+    root, sel_log, marker = _mapped_repo(tmp_path, probe_body="def test_bad():\n    assert False\n")
+    map_files = tmp_path / "own-diff.txt"
+    map_files.write_text("scripts/payload.py\n")
+    out_path = tmp_path / "tg-baseline.txt"
+    try:
+        rc = sb.main(
+            [
+                "mapped-baseline",
+                "--map-files",
+                str(map_files),
+                "--root",
+                str(root),
+                "--cones-from",
+                str(root),
+                "--base",
+                "HEAD",
+                "--timeout-s",
+                "180",
+                "--out",
+                str(out_path),
+            ]
+        )
+    finally:
+        _restore_sigterm()
+    captured = capsys.readouterr()
+    assert rc == 0, captured.err
+    lines = dict(ln.split("=", 1) for ln in captured.out.splitlines() if "=" in ln)
+    assert lines["rc"] == "1"  # pytest failures are DATA, not the exit code
+    scratch_path = lines["scratch_path"]
+    assert scratch_path.startswith("/")
+    assert not Path(scratch_path).exists(), "scratch must be torn down in finally"
+    assert _worktree_count(root) == 1  # only the root itself remains
+    out_text = out_path.read_text()
+    # Repo-RELATIVE node id — the NODE-grain subtraction has no prefix
+    # normalization, so an absolutized id would subtract nothing (#2296 §4.1):
+    assert "FAILED tests/test_probe.py::test_bad" in out_text
+    # Selection ran the SCRATCH's own selector copy, against the scratch:
+    sel_lines = sel_log.read_text().splitlines()
+    assert sel_lines[0].startswith(scratch_path), "selector must be the scratch copy"
+    assert str(root) not in sel_lines[0]
+    assert "--repo-root" in sel_lines
+    assert sel_lines[sel_lines.index("--repo-root") + 1] == scratch_path
+    # The ROOT venv interpreter ran (the shim marker), not sys.executable:
+    assert marker.exists()
+
+
+def test_mapped_baseline_base_sha_pinned_not_head(tmp_path: Path, capsys):
+    """--base pins BOTH the checked-out tree and the cone profile: a test red
+    at the base commit but green at HEAD still fails on the baseline tree
+    (the #2293-adjacent sha threading through create_scratch_worktree +
+    _scratch_cones)."""
+    root, _sel_log, _marker = _mapped_repo(
+        tmp_path, probe_body="def test_bad():\n    assert False\n"
+    )
+    base_sha = sb.git_head(root)
+    (root / "tests" / "test_probe.py").write_text("def test_bad():\n    assert True\n")
+    _git(root, "add", "-A")
+    _git(root, "commit", "-m", "green at HEAD")
+    assert sb.git_head(root) != base_sha
+    map_files = tmp_path / "own-diff.txt"
+    map_files.write_text("scripts/payload.py\n")
+    out_path = tmp_path / "tg-baseline.txt"
+    try:
+        rc = sb.main(
+            [
+                "mapped-baseline",
+                "--map-files",
+                str(map_files),
+                "--root",
+                str(root),
+                "--cones-from",
+                str(root),
+                "--base",
+                base_sha,
+                "--timeout-s",
+                "180",
+                "--out",
+                str(out_path),
+            ]
+        )
+    finally:
+        _restore_sigterm()
+    captured = capsys.readouterr()
+    assert rc == 0, captured.err
+    assert "rc=1" in captured.out.splitlines()[-1]
+    assert "FAILED tests/test_probe.py::test_bad" in out_path.read_text()
+
+
+def test_mapped_baseline_empty_selection_empty_out_rc0(tmp_path: Path, capsys):
+    """An EMPTY selection (nothing mapped on the payload-free tree) writes an
+    empty --out and reports rc=0 — the caller's [ -s ] hits-grep then finds
+    nothing to subtract, and a branch-NEW mapped test stays NEW."""
+    root, _sel_log, _marker = _mapped_repo(tmp_path, probe_body="def test_ok():\n    assert True\n")
+    map_files = tmp_path / "own-diff.txt"
+    map_files.write_text("")  # stub selector prints nothing on an empty map
+    out_path = tmp_path / "tg-baseline.txt"
+    try:
+        rc = sb.main(
+            [
+                "mapped-baseline",
+                "--map-files",
+                str(map_files),
+                "--root",
+                str(root),
+                "--cones-from",
+                str(root),
+                "--base",
+                "HEAD",
+                "--timeout-s",
+                "180",
+                "--out",
+                str(out_path),
+            ]
+        )
+    finally:
+        _restore_sigterm()
+    captured = capsys.readouterr()
+    assert rc == 0, captured.err
+    assert "rc=0" in captured.out.splitlines()[-1]
+    assert out_path.exists() and out_path.read_text() == ""
+    assert _worktree_count(root) == 1
+
+
+def test_mapped_baseline_unresolvable_base_exit2(tmp_path: Path, capsys):
+    """An unresolvable --base is crash-class: exit 2 BEFORE any scratch is
+    created (fail CLOSED — the SKILL maps it to TG_CRASH)."""
+    root, _sel_log, _marker = _mapped_repo(tmp_path, probe_body="def test_ok():\n    assert True\n")
+    map_files = tmp_path / "own-diff.txt"
+    map_files.write_text("scripts/payload.py\n")
+    try:
+        rc = sb.main(
+            [
+                "mapped-baseline",
+                "--map-files",
+                str(map_files),
+                "--root",
+                str(root),
+                "--cones-from",
+                str(root),
+                "--base",
+                "refs/heads/does-not-exist",
+                "--timeout-s",
+                "180",
+                "--out",
+                str(tmp_path / "tg-baseline.txt"),
+            ]
+        )
+    finally:
+        _restore_sigterm()
+    captured = capsys.readouterr()
+    assert rc == 2
+    assert "does not resolve" in captured.err
+    assert _worktree_count(root) == 1
+
+
+def test_mapped_baseline_selector_failure_exit2_and_teardown(tmp_path: Path, capsys):
+    """A failing baseline selector is crash-class (exit 2), and the scratch is
+    still torn down (the finally teardown; no leaked worktree admin entry)."""
+    root, _sel_log, _marker = _mapped_repo(tmp_path, probe_body="def test_ok():\n    assert True\n")
+    (root / "scripts" / "select_step9c_tests.py").write_text("import sys\nsys.exit(3)\n")
+    _git(root, "add", "-A")
+    _git(root, "commit", "-m", "broken selector")
+    map_files = tmp_path / "own-diff.txt"
+    map_files.write_text("scripts/payload.py\n")
+    try:
+        rc = sb.main(
+            [
+                "mapped-baseline",
+                "--map-files",
+                str(map_files),
+                "--root",
+                str(root),
+                "--cones-from",
+                str(root),
+                "--base",
+                "HEAD",
+                "--timeout-s",
+                "180",
+                "--out",
+                str(tmp_path / "tg-baseline.txt"),
+            ]
+        )
+    finally:
+        _restore_sigterm()
+    captured = capsys.readouterr()
+    assert rc == 2
+    assert "baseline selector" in captured.err
+    assert _worktree_count(root) == 1
+
+
+def test_mapped_baseline_pytest_timeout_reports_rc_124(tmp_path: Path, capsys):
+    """A pytest timeout is DATA (rc=124 on stdout, exit 0): the SKILL's
+    `rc>1 => crash` arm classifies it — the same code the pre-#2296 shell
+    `timeout` produced — and stragglers are group-killed."""
+    root, _sel_log, _marker = _mapped_repo(
+        tmp_path,
+        probe_body="import time\n\n\ndef test_hang():\n    time.sleep(120)\n",
+    )
+    map_files = tmp_path / "own-diff.txt"
+    map_files.write_text("scripts/payload.py\n")
+    out_path = tmp_path / "tg-baseline.txt"
+    try:
+        rc = sb.main(
+            [
+                "mapped-baseline",
+                "--map-files",
+                str(map_files),
+                "--root",
+                str(root),
+                "--cones-from",
+                str(root),
+                "--base",
+                "HEAD",
+                "--timeout-s",
+                "3",
+                "--out",
+                str(out_path),
+            ]
+        )
+    finally:
+        _restore_sigterm()
+    captured = capsys.readouterr()
+    assert rc == 0, captured.err
+    assert "rc=124" in captured.out.splitlines()[-1]
+    assert _worktree_count(root) == 1
