@@ -293,7 +293,8 @@ FILE_ANCHORED_SCAN_TESTS: frozenset[str] = frozenset(
 # Whole-repo SCAN-style invariant nodes whose failure message is SOURCE-VERIFIED
 # to name every offender by repo-root-relative path (accumulate-then-assert shape).
 # For a member red on BOTH the gate run and pristine main, compare diffs the
-# extracted violation-path SETS instead of stripping on the node verdict (#2316).
+# extracted violation-path SETS instead of stripping on the node verdict (#2316;
+# extraction is row-ANCHORED as of #2319 — see extract_violation_paths).
 # Entry format: "<test file>::<test function name>" — the junit `name` is matched
 # with any parametrization suffix ("[...]") stripped. (A collect-error <error>
 # row can NEVER match: its junit `name` is the dotted module path, e.g.
@@ -308,7 +309,15 @@ FILE_ANCHORED_SCAN_TESTS: frozenset[str] = frozenset(
 # (scripts/, src/, tests/ — _scratch_cones floor = ls-tree minus SCRATCH_EXCLUDES),
 # so branch-vs-pristine extraction is population-symmetric; (c) if the node uses a
 # bare `assert` (not `raise AssertionError`), its rewritten introspection segment
-# is covered by the extraction sanitizers in extract_violation_paths (#2316 v2).
+# is covered by the extraction sanitizers in extract_violation_paths (#2316 v2);
+# (d) EVERY offender row LEADS with the offender path — the path is the first
+# token on its row, after only leading whitespace, pytest's optional "E "
+# gutter, and an optional "- "/"* " bullet (extract_violation_paths matches
+# ANCHORED, #2319). A member whose rows put the path later (e.g.
+# "line 12 of scripts/foo.py: ...") yields ZERO matches and degrades loudly to
+# the node-grain verdict; a member with MIXED row grammar (some rows leading,
+# some not) would SILENTLY drop the non-leading rows and MUST NOT be
+# registered until extract_violation_paths grows a per-member row pattern.
 VIOLATION_SET_SCAN_NODES: frozenset[str] = frozenset(
     {
         "tests/test_shared_vm_thread_caps.py::test_no_new_torch_before_dotenv_vm_entrypoints",
@@ -319,12 +328,23 @@ VIOLATION_SET_SCAN_NODES: frozenset[str] = frozenset(
     }
 )
 
-# Violation-path token: a repo-root-relative path under a top-level tracked dir,
-# ending in an extension — the shape every VIOLATION_SET_SCAN_NODES member's
-# offender rows embed (#2316). Grain is the FILE: a `path:line` token extracts
-# the path only (line numbers drift under unrelated same-file edits and would
-# manufacture false NEW reds).
-_VIOLATION_PATH_RE = re.compile(r"\b(?:scripts|src|tests|configs|docs)/[\w./-]+\.[A-Za-z0-9_]+")
+# Violation-path token, ANCHORED at the row start (#2319): a repo-root-relative
+# path under a top-level tracked dir, ending in an extension, appearing at the
+# START of a violation row — after leading whitespace, pytest's optional "E "
+# element-text gutter, and an optional "- "/"* " bullet. Every
+# VIOLATION_SET_SCAN_NODES member's offender rows LEAD with the offender path
+# (registry curation criterion (d)); a path token appearing LATER on a row is
+# snippet or prose, never an offender. #2316 extracted every token per line,
+# so a branch-side snippet embedding a tracked-path token absent on pristine
+# manufactured a NEW-violation verdict naming a NON-offender (false BLOCK on
+# the gate that adjudicates every session's Step 9c — #1388 blast radius).
+# Grain is still the FILE: a `path:line` token extracts the path only (line
+# numbers drift under unrelated same-file edits and would manufacture false
+# NEW reds).
+_VIOLATION_ROW_RE = re.compile(
+    r"^[ \t]*(?:E[ \t]+)?(?:[-*][ \t]+)?"
+    r"((?:scripts|src|tests|configs|docs)/[\w./-]+\.[A-Za-z0-9_]+)"
+)
 
 # Display-only cap per scan_violation_diffs row list (#2316): bucketing always
 # operates on the full uncapped sets, so a pathological message can truncate a
@@ -333,32 +353,56 @@ _SCAN_DIFF_ROW_CAP = 50
 
 
 def extract_violation_paths(text: str) -> frozenset[str]:
-    """Extract the offender-path SET from a scan node's failure text (#2316).
+    """Extract the offender-path SET from a scan node's failure text (#2316, #2319).
 
-    Two sanitizers close the one measured asymmetric non-offender surface —
-    pytest's rewritten-assert introspection segment (bare-``assert`` members
-    only), whose saferepr elides content-DEPENDENTLY: an elided token like
-    ``scripts/fakemod_01.py...nv`` matches the naive path regex and differs
-    between sides exactly when the lists differ, which would false-NEW the
-    very branch FIXING part of a pre-existing red (the #2289 session shape):
+    Rows are matched ANCHORED at the line start (#2319): the offender path is
+    the FIRST thing on its row for every registered member (registry curation
+    criterion (d)), so a later token on the same row — a quoted source
+    SNIPPET, remediation prose — is never mistaken for an offender. #2316
+    scanned every token per line, which false-BLOCKED a branch that edited an
+    offending line in an ALREADY-red file such that the new snippet embedded a
+    tracked-path token absent on pristine.
 
-    1. **Introspection-segment strip (removes the CHANNEL):** drop every line
-       whose ``lstrip()``-ed content starts with ``"assert "`` — the rewritten
-       segment always does, in BOTH the junit ``message`` attribute and the
-       element text (#2316 plan A1 probe); offender rows never do
-       (source-verified for all five members, plan A4).
-    2. **Elision-token post-filter (defense in depth):** drop any matched
-       token containing the literal ``...`` — the saferepr elision marker;
-       zero tracked paths contain it (plan A12), and a FUTURE such path would
-       be invisible on BOTH sides (fail-toward-strip, never a false block).
+    Two sanitizers from #2316 are retained, both still load-bearing:
 
-    Symmetric prose (headers, remediation text naming e.g. ``scripts/task.py``)
-    extracts identically on both sides and cancels in the set difference. An
+    1. **Introspection-segment strip:** drop every line whose ``lstrip()``-ed
+       content starts with ``"assert "`` — pytest's rewritten-assert segment
+       (bare-``assert`` members only) always does, in BOTH the junit
+       ``message`` attribute and the element text; offender rows never do
+       (source-verified for all five members, #2319 §4 audit). Anchoring alone
+       already excludes that segment (it starts with ``assert``, not a path),
+       so the strip is now defense in depth for the introspection LINE itself
+       — in the ``message`` attribute and the element text alike. It does NOT
+       cover a WRAPPED saferepr's CONTINUATION line: this predicate only ever
+       matches an ``assert ``-leading line, and a continuation line begins
+       with a quote character or a bare fragment. That case is covered by two
+       OTHER mechanisms — the anchor (a quote-leading line matches no row
+       pattern) and the ``...`` filter below.
+    2. **Elision-token post-filter:** drop any matched token containing the
+       literal ``...`` — saferepr's elision marker; zero tracked paths contain
+       it, and a FUTURE such path would be invisible on BOTH sides
+       (fail-toward-strip, never a false block).
+
+    Symmetric prose (headers, remediation text) is no longer extracted at all,
+    which shrinks the ``pre_existing`` audit rows to genuine offenders. An
     EMPTY result routes to the caller's loud parse-fail arm — never a silent
-    strip.
+    strip — and that arm is exactly where a FUTURE member whose rows do not
+    lead with the path lands (zero anchored matches ⇒ degrade to today's
+    node-grain verdict + escalation, not a silent offender drop). The one
+    residual: a member with MIXED row grammar would silently drop its
+    non-leading rows — curation criterion (d) forbids registering one.
     """
-    kept = "\n".join(ln for ln in text.splitlines() if not ln.lstrip().startswith("assert "))
-    return frozenset(t for t in _VIOLATION_PATH_RE.findall(kept) if "..." not in t)
+    out: set[str] = set()
+    for line in text.splitlines():
+        if line.lstrip().startswith("assert "):
+            continue
+        m = _VIOLATION_ROW_RE.match(line)
+        if m is None:
+            continue
+        token = m.group(1)
+        if "..." not in token:
+            out.add(token)
+    return frozenset(out)
 
 
 REQUIRED_LEDGER_KEYS: frozenset[str] = frozenset(
@@ -2588,12 +2632,14 @@ def _scan_diff_row(
 def _resolve_scan_violation_setdiff(
     ctx: _CompareCtx, node: Node, pristine_text: str, use_scratch: bool
 ) -> None:
-    """Violation-grain verdict for a registered scan node red on BOTH sides (#2316).
+    """Violation-grain verdict for a registered scan node red on BOTH sides (#2316, #2319).
 
     Replaces ONLY the strip decision in ``_resolve_pristine_bucket`` — every
     refusal (the R-G' floored-scratch strip refusal, the MF-4c dirty-root
     refusal) has already run and short-circuited before this call. Extract
-    the offender-path set from each side's failure text and diff:
+    the offender-path set from each side's failure text (row-ANCHORED, #2319 —
+    ``extract_violation_paths``; symmetric header/remediation prose is no
+    longer extracted, so the audit rows carry genuine offenders only) and diff:
 
     * either side EMPTY (unparseable) -> strip exactly as today (same ``via``
       values, so ``stripped``-row consumers and the urgent-park coupling are
