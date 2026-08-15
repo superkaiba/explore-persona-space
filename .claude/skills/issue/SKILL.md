@@ -10632,7 +10632,14 @@ suite directly and posts an `epm:test-verdict` event with the result.
         run, so that shape still classifies NEW (fail-closed) and the manual
         provenance-override path remains the escape for it.
       * `COMPARE_RC=1` → NEW failure(s) the branch introduced and/or a lint
-        regression (the JSON names each). FAIL.
+        regression (the JSON names each). FAIL. This includes a
+        `VIOLATION_SET_SCAN_NODES` member (a registered whole-repo scan
+        node) red on BOTH sides whose branch-side violation set EXCEEDS
+        pristine's — compare diffs the extracted violation-path sets and
+        routes branch-added paths to `new` as `SCAN-NEW-VIOLATION`, with the
+        per-node audit rows in the JSON's `scan_violation_diffs` field; an
+        unparseable side degrades to today's node-grain strip plus a loud
+        `SCAN-SETDIFF-UNPARSEABLE` warn (#2316).
       * `COMPARE_RC=2` → indeterminate (PYTEST_RC ∉ {0,1} — aborted/interrupted
         run; missing/empty junitxml; suite crash; unusable ledger;
         systemic main breakage; or a scratch-INELIGIBLE dirty oracle. The
