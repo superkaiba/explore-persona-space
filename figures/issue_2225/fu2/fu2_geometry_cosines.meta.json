@@ -1,0 +1,114 @@
+{
+  "commit": "513a4930+dirty",
+  "render_id": "6a4a416531d44251",
+  "git_commit": "513a4930",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2225/fu2_preimage_alltoken/analysis/contrasts.json",
+    "eval_results/issue_2225/fu2_preimage_alltoken/analysis/judge_accounting.json",
+    "eval_results/issue_2225/fu2_preimage_alltoken/analysis/selection.json",
+    "figures/issue_2225/fu2/fu2_geometry_cosines.meta.json",
+    "figures/issue_2225/fu2/fu2_geometry_cosines.pdf",
+    "figures/issue_2225/fu2/fu2_geometry_cosines.png",
+    "figures/issue_2225/fu2/fu2_hero_dose_response.meta.json",
+    "figures/issue_2225/fu2/fu2_hero_dose_response.pdf",
+    "figures/issue_2225/fu2/fu2_hero_dose_response.png",
+    "figures/issue_2225/fu2/fu2_judge_diagnostics.meta.json",
+    "figures/issue_2225/fu2/fu2_judge_diagnostics.pdf",
+    "figures/issue_2225/fu2/fu2_judge_diagnostics.png",
+    "figures/issue_2225/fu2/fu2_mmlu_extremes.meta.json",
+    "figures/issue_2225/fu2/fu2_mmlu_extremes.pdf",
+    "figures/issue_2225/fu2/fu2_mmlu_extremes.png",
+    "figures/issue_2225/fu2/fu2_operating_point_bars.meta.json",
+    "figures/issue_2225/fu2/fu2_operating_point_bars.pdf",
+    "figures/issue_2225/fu2/fu2_operating_point_bars.png",
+    "figures/issue_2225/fu2/fu2_probe_shift_profiles.meta.json",
+    "figures/issue_2225/fu2/fu2_probe_shift_profiles.pdf",
+    "figures/issue_2225/fu2/fu2_probe_shift_profiles.png",
+    "figures/issue_2225/fu2/fu2_projection_shift_bars.meta.json",
+    "figures/issue_2225/fu2/fu2_projection_shift_bars.pdf",
+    "figures/issue_2225/fu2/fu2_projection_shift_bars.png",
+    "figures/issue_2225/fu2/fu2_rank_sweep.meta.json",
+    "figures/issue_2225/fu2/fu2_rank_sweep.pdf",
+    "figures/issue_2225/fu2/fu2_rank_sweep.png",
+    "scripts/issue2225_fu1_analysis.py"
+  ],
+  "created": "2026-08-14T23:49:00Z",
+  "figsize": [
+    7.4,
+    4.2
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "annotations": [
+          "-0.005",
+          "0.020",
+          "-0.031",
+          "-0.002",
+          "0.981",
+          "0.049",
+          "0.094",
+          "-0.032",
+          "0.010",
+          "0.982",
+          "-0.034",
+          "0.043",
+          "-0.015",
+          "-0.021",
+          "0.662",
+          "0.103",
+          "0.140",
+          "0.020",
+          "-0.013",
+          "0.720",
+          "0.023",
+          "0.038",
+          "0.036",
+          "0.022",
+          "0.844",
+          "0.063",
+          "0.171",
+          "-0.032",
+          "-0.011",
+          "0.849"
+        ],
+        "xticklabels": [
+          "cos(d_pre, r_B)",
+          "cos(d_pre, parent E2)",
+          "cos(d_pre, parent E3)",
+          "cos(d_pre, random)",
+          "bridge cos(rb_v2, #779 r_B)"
+        ],
+        "yticklabels": [
+          "evil L14",
+          "evil L19",
+          "sycophancy L14",
+          "sycophancy L19",
+          "hallucination L14",
+          "hallucination L19"
+        ]
+      },
+      {
+        "ylabel": "Cosine",
+        "yticklabels": [
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

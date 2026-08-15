@@ -1,0 +1,789 @@
+{
+  "commit": "513a4930+dirty",
+  "render_id": "5a74d46a96db42dd",
+  "git_commit": "513a4930",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2225/fu2_preimage_alltoken/analysis/contrasts.json",
+    "eval_results/issue_2225/fu2_preimage_alltoken/analysis/judge_accounting.json",
+    "eval_results/issue_2225/fu2_preimage_alltoken/analysis/selection.json",
+    "figures/issue_2225/fu2/fu2_geometry_cosines.meta.json",
+    "figures/issue_2225/fu2/fu2_geometry_cosines.pdf",
+    "figures/issue_2225/fu2/fu2_geometry_cosines.png",
+    "figures/issue_2225/fu2/fu2_hero_dose_response.meta.json",
+    "figures/issue_2225/fu2/fu2_hero_dose_response.pdf",
+    "figures/issue_2225/fu2/fu2_hero_dose_response.png",
+    "figures/issue_2225/fu2/fu2_judge_diagnostics.meta.json",
+    "figures/issue_2225/fu2/fu2_judge_diagnostics.pdf",
+    "figures/issue_2225/fu2/fu2_judge_diagnostics.png",
+    "figures/issue_2225/fu2/fu2_mmlu_extremes.meta.json",
+    "figures/issue_2225/fu2/fu2_mmlu_extremes.pdf",
+    "figures/issue_2225/fu2/fu2_mmlu_extremes.png",
+    "figures/issue_2225/fu2/fu2_operating_point_bars.meta.json",
+    "figures/issue_2225/fu2/fu2_operating_point_bars.pdf",
+    "figures/issue_2225/fu2/fu2_operating_point_bars.png",
+    "figures/issue_2225/fu2/fu2_probe_shift_profiles.meta.json",
+    "figures/issue_2225/fu2/fu2_probe_shift_profiles.pdf",
+    "figures/issue_2225/fu2/fu2_probe_shift_profiles.png",
+    "figures/issue_2225/fu2/fu2_projection_shift_bars.meta.json",
+    "figures/issue_2225/fu2/fu2_projection_shift_bars.pdf",
+    "figures/issue_2225/fu2/fu2_projection_shift_bars.png",
+    "figures/issue_2225/fu2/fu2_rank_sweep.meta.json",
+    "figures/issue_2225/fu2/fu2_rank_sweep.pdf",
+    "figures/issue_2225/fu2/fu2_rank_sweep.png",
+    "scripts/issue2225_fu1_analysis.py"
+  ],
+  "created": "2026-08-14T23:48:51Z",
+  "figsize": [
+    12.600000000000001,
+    6.4
+  ],
+  "points": [
+    {
+      "x": 0.25,
+      "Trait score (0-100)": 89.09,
+      "series": "Pre-image L14, all tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.75,
+      "Trait score (0-100)": 87.99000000000001,
+      "series": "Pre-image L14, all tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.5,
+      "Trait score (0-100)": 83.3475,
+      "series": "Pre-image L14, all tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "Trait score (0-100)": 82.40083333333334,
+      "series": "Pre-image L14, all tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.25,
+      "Trait score (0-100)": 82.54166666666664,
+      "series": "Pre-image L19, all tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.75,
+      "Trait score (0-100)": 81.00833333333335,
+      "series": "Pre-image L19, all tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.5,
+      "Trait score (0-100)": 81.55944444444444,
+      "series": "Pre-image L19, all tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "Trait score (0-100)": 80.72749999999999,
+      "series": "Pre-image L19, all tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.25,
+      "Trait score (0-100)": 84.4275,
+      "series": "Random L19, all tokens",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.75,
+      "Trait score (0-100)": 82.27833333333334,
+      "series": "Random L19, all tokens",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.5,
+      "Trait score (0-100)": 82.24166666666666,
+      "series": "Random L19, all tokens",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "Trait score (0-100)": 81.2525,
+      "series": "Random L19, all tokens",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.5,
+      "Trait score (0-100)": 71.53833333333333,
+      "series": "Parent context extract, all tokens",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.5,
+      "Trait score (0-100)": 54.43333333333334,
+      "series": "Parent context extract, all tokens",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "Trait score (0-100)": 39.06333333333333,
+      "series": "Parent context extract, all tokens",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.5,
+      "Trait score (0-100)": 74.1375,
+      "series": "Parent paper method",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.5,
+      "Trait score (0-100)": 51.07666666666666,
+      "series": "Parent paper method",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "Trait score (0-100)": 31.067499999999995,
+      "series": "Parent paper method",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "Trait score (0-100)": 16.37916666666667,
+      "series": "Parent paper method",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.25,
+      "y": 91.75916666666667,
+      "series": "Pre-image L14, all tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.75,
+      "y": 73.25500000000001,
+      "series": "Pre-image L14, all tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.5,
+      "y": 72.98833333333334,
+      "series": "Pre-image L14, all tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "y": 73.27,
+      "series": "Pre-image L14, all tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.25,
+      "y": 92.82833333333335,
+      "series": "Pre-image L19, all tokens",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.75,
+      "y": 89.53583333333333,
+      "series": "Pre-image L19, all tokens",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.5,
+      "y": 90.24249999999998,
+      "series": "Pre-image L19, all tokens",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "y": 88.995,
+      "series": "Pre-image L19, all tokens",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.5,
+      "y": 73.90166666666666,
+      "series": "Random L14, all tokens",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "y": 79.39666666666668,
+      "series": "Random L14, all tokens",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.5,
+      "y": 93.44583333333334,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.5,
+      "y": 85.3875,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "y": 74.25250000000001,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.0,
+      "y": 53.94250000000001,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.25,
+      "y": 98.75416666666666,
+      "series": "Pre-image L14, all tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.75,
+      "y": 98.07833333333335,
+      "series": "Pre-image L14, all tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.5,
+      "y": 97.46833333333333,
+      "series": "Pre-image L14, all tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "y": 95.92333333333333,
+      "series": "Pre-image L14, all tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.25,
+      "y": 99.42916666666666,
+      "series": "Pre-image L19, all tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.75,
+      "y": 98.66666666666667,
+      "series": "Pre-image L19, all tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.5,
+      "y": 99.25416666666668,
+      "series": "Pre-image L19, all tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "y": 99.24749999999999,
+      "series": "Pre-image L19, all tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.5,
+      "y": 98.7775,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.5,
+      "y": 96.94583333333333,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "y": 86.92666666666666,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 5.0,
+      "y": 73.13666666666666,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Steering coefficient": 0.25,
+      "Coherence (0-100)": 86.3,
+      "series": "Pre-image L14, all tokens",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Steering coefficient": 0.75,
+      "Coherence (0-100)": 86.175,
+      "series": "Pre-image L14, all tokens",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Steering coefficient": 1.5,
+      "Coherence (0-100)": 87.8,
+      "series": "Pre-image L14, all tokens",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Steering coefficient": 3.0,
+      "Coherence (0-100)": 87.0,
+      "series": "Pre-image L14, all tokens",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Steering coefficient": 0.25,
+      "Coherence (0-100)": 88.15,
+      "series": "Pre-image L19, all tokens",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Steering coefficient": 0.75,
+      "Coherence (0-100)": 91.0,
+      "series": "Pre-image L19, all tokens",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Steering coefficient": 1.5,
+      "Coherence (0-100)": 90.485,
+      "series": "Pre-image L19, all tokens",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Steering coefficient": 3.0,
+      "Coherence (0-100)": 89.55,
+      "series": "Pre-image L19, all tokens",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Steering coefficient": 0.25,
+      "Coherence (0-100)": 86.65,
+      "series": "Random L19, all tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Steering coefficient": 0.75,
+      "Coherence (0-100)": 90.05,
+      "series": "Random L19, all tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Steering coefficient": 1.5,
+      "Coherence (0-100)": 89.3,
+      "series": "Random L19, all tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Steering coefficient": 3.0,
+      "Coherence (0-100)": 88.25,
+      "series": "Random L19, all tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Steering coefficient": 0.5,
+      "Coherence (0-100)": 88.175,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Steering coefficient": 1.5,
+      "Coherence (0-100)": 86.685,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Steering coefficient": 3.0,
+      "Coherence (0-100)": 82.855,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Steering coefficient": 0.5,
+      "Coherence (0-100)": 89.1,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Steering coefficient": 1.5,
+      "Coherence (0-100)": 82.31,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Steering coefficient": 3.0,
+      "Coherence (0-100)": 78.96,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Steering coefficient": 5.0,
+      "Coherence (0-100)": 73.545,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Steering coefficient": 0.25,
+      "y": 86.495,
+      "series": "Pre-image L14, all tokens",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Steering coefficient": 0.75,
+      "y": 94.75,
+      "series": "Pre-image L14, all tokens",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Steering coefficient": 1.5,
+      "y": 93.24,
+      "series": "Pre-image L14, all tokens",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Steering coefficient": 3.0,
+      "y": 91.13,
+      "series": "Pre-image L14, all tokens",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Steering coefficient": 0.25,
+      "y": 84.4,
+      "series": "Pre-image L19, all tokens",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Steering coefficient": 0.75,
+      "y": 88.65,
+      "series": "Pre-image L19, all tokens",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Steering coefficient": 1.5,
+      "y": 89.035,
+      "series": "Pre-image L19, all tokens",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Steering coefficient": 3.0,
+      "y": 88.325,
+      "series": "Pre-image L19, all tokens",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Steering coefficient": 1.5,
+      "y": 92.065,
+      "series": "Random L14, all tokens",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Steering coefficient": 3.0,
+      "y": 91.785,
+      "series": "Random L14, all tokens",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Steering coefficient": 0.5,
+      "y": 81.21,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Steering coefficient": 1.5,
+      "y": 75.645,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Steering coefficient": 3.0,
+      "y": 75.785,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Steering coefficient": 5.0,
+      "y": 71.49,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Steering coefficient": 0.25,
+      "y": 86.775,
+      "series": "Pre-image L14, all tokens",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Steering coefficient": 0.75,
+      "y": 90.525,
+      "series": "Pre-image L14, all tokens",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Steering coefficient": 1.5,
+      "y": 93.275,
+      "series": "Pre-image L14, all tokens",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Steering coefficient": 3.0,
+      "y": 90.815,
+      "series": "Pre-image L14, all tokens",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Steering coefficient": 0.25,
+      "y": 88.075,
+      "series": "Pre-image L19, all tokens",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Steering coefficient": 0.75,
+      "y": 89.425,
+      "series": "Pre-image L19, all tokens",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Steering coefficient": 1.5,
+      "y": 89.95,
+      "series": "Pre-image L19, all tokens",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Steering coefficient": 3.0,
+      "y": 86.925,
+      "series": "Pre-image L19, all tokens",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Steering coefficient": 0.5,
+      "y": 90.225,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Steering coefficient": 1.5,
+      "y": 89.825,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Steering coefficient": 3.0,
+      "y": 89.31,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Steering coefficient": 5.0,
+      "y": 86.41,
+      "_kind": "line",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 90,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "Evil II",
+        "ylabel": "Trait score (0-100)",
+        "yticklabels": [
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80",
+          "90",
+          "100"
+        ]
+      },
+      {
+        "title": "Sycophancy II",
+        "yticklabels": [
+          "50",
+          "55",
+          "60",
+          "65",
+          "70",
+          "75",
+          "80",
+          "85",
+          "90",
+          "95",
+          "100"
+        ]
+      },
+      {
+        "title": "Hallucination II",
+        "yticklabels": [
+          "70",
+          "75",
+          "80",
+          "85",
+          "90",
+          "95",
+          "100",
+          "105"
+        ]
+      },
+      {
+        "xlabel": "Steering coefficient",
+        "ylabel": "Coherence (0-100)",
+        "xticklabels": [
+          "$\\mathdefault{2^{-4}}$",
+          "$\\mathdefault{2^{-3}}$",
+          "$\\mathdefault{2^{-2}}$",
+          "$\\mathdefault{2^{-1}}$",
+          "$\\mathdefault{2^{0}}$",
+          "$\\mathdefault{2^{1}}$",
+          "$\\mathdefault{2^{2}}$",
+          "$\\mathdefault{2^{3}}$",
+          "$\\mathdefault{2^{4}}$"
+        ],
+        "yticklabels": [
+          "72.5",
+          "75.0",
+          "77.5",
+          "80.0",
+          "82.5",
+          "85.0",
+          "87.5",
+          "90.0",
+          "92.5"
+        ]
+      },
+      {
+        "xlabel": "Steering coefficient",
+        "xticklabels": [
+          "$\\mathdefault{2^{-4}}$",
+          "$\\mathdefault{2^{-3}}$",
+          "$\\mathdefault{2^{-2}}$",
+          "$\\mathdefault{2^{-1}}$",
+          "$\\mathdefault{2^{0}}$",
+          "$\\mathdefault{2^{1}}$",
+          "$\\mathdefault{2^{2}}$",
+          "$\\mathdefault{2^{3}}$",
+          "$\\mathdefault{2^{4}}$"
+        ],
+        "yticklabels": [
+          "70",
+          "75",
+          "80",
+          "85",
+          "90",
+          "95",
+          "100"
+        ]
+      },
+      {
+        "xlabel": "Steering coefficient",
+        "xticklabels": [
+          "$\\mathdefault{2^{-4}}$",
+          "$\\mathdefault{2^{-3}}$",
+          "$\\mathdefault{2^{-2}}$",
+          "$\\mathdefault{2^{-1}}$",
+          "$\\mathdefault{2^{0}}$",
+          "$\\mathdefault{2^{1}}$",
+          "$\\mathdefault{2^{2}}$",
+          "$\\mathdefault{2^{3}}$",
+          "$\\mathdefault{2^{4}}$"
+        ],
+        "yticklabels": [
+          "78",
+          "80",
+          "82",
+          "84",
+          "86",
+          "88",
+          "90",
+          "92",
+          "94"
+        ]
+      }
+    ],
+    "series": [
+      "Pre-image L14, all tokens",
+      "Pre-image L19, all tokens",
+      "Random L19, all tokens",
+      "Parent context extract, all tokens",
+      "Parent paper method",
+      "Random L14, all tokens"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

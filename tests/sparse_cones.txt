@@ -89,6 +89,12 @@
 #                             external/jacobian-lens/VENDOR_INFO.txt (fail-loud);
 #                             10 nodes FileNotFoundError in any sparse worktree
 #                             (#2059 Step 10d TG-leg false-block; 2.6M cone; #2218)
+#   eval_results/issue_2162/f_metrics — test_issue2162_tbmp_analysis.py::
+#                             test_defaults_path_byte_identical_to_committed_rawscale
+#                             re-runs the recency_rawscale defaults path over the
+#                             committed parent tables and byte-compares against the
+#                             committed recency_rawscale.json (narrow 8.3M cone —
+#                             the full issue_2162 dir is 37M)
 eval_results/issue_545
 eval_results/issue_521
 eval_results/issue_257
@@ -109,4 +115,5 @@ eval_results/issue_1776
 eval_results/issue_1481
 eval_results/issue_2054
 eval_results/issue_778
+eval_results/issue_2162/f_metrics
 external/jacobian-lens

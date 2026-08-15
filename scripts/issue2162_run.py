@@ -95,6 +95,13 @@ MODEL_ID = "Qwen/Qwen2.5-7B-Instruct"
 HIDDEN_FULL = 3584
 N_MODEL_LAYERS_FULL = 28
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
+# WRITE-side destination override. The canonical data repo above sits at HF's
+# hard 1,000,000-file-per-repo cap and refuses EVERY push (see #2304), so a run
+# needs somewhere else to persist while that is resolved. READS are deliberately
+# left on HF_DATA_REPO — parent artifacts (banks, parent grids, judge pools) live
+# there and are still fetchable — so only the upload destination reroutes.
+# Unset => byte-identical legacy behavior.
+HF_DATA_WRITE_REPO = os.environ.get("EPM_2162_DATA_WRITE_REPO", HF_DATA_REPO)
 HF_PREFIX = "issue2162_ctxinfo"
 DEFAULT_OUT_ROOT = Path("/workspace/issue2162_out")
 DEFAULT_LOG_DIR = Path("/workspace/logs")
@@ -2472,7 +2479,7 @@ def upload_dir_hf(
     for attempt in range(UPLOAD_TRANSPORT_RETRIES + 1):
         base_url = _upload_folder_filtered(
             local_dir=local_dir,
-            repo_id=HF_DATA_REPO,
+            repo_id=HF_DATA_WRITE_REPO,
             repo_type="dataset",
             path_in_repo=remote_prefix,
             allow_patterns=allow_patterns,
@@ -2665,7 +2672,9 @@ def _sentinel_payload(cfg: RunConfig, uploaded: dict[str, list[str]]) -> dict:
             "num_workers": cfg.num_workers,
         },
         "wandb_url": None,
-        "hf_hub_url": f"https://huggingface.co/datasets/{HF_DATA_REPO}/tree/main/{HF_PREFIX}",
+        "hf_hub_url": (
+            f"https://huggingface.co/datasets/{HF_DATA_WRITE_REPO}/tree/main/{HF_PREFIX}"
+        ),
         "worktree_path": str(REPO_ROOT),
         "final_commit_sha": _git_sha(),
         "gpu_hours_used": None,

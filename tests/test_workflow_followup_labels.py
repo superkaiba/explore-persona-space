@@ -1155,9 +1155,10 @@ def _corpus_tree_is_main_vintage() -> bool:
     the tree-resident parser — a fleet-data invariant that is only coherent
     where corpus and parser share the fleet's current vintage: the `main`
     checkout, or a tree detached at main's tip (the Step 9c compare
-    pristine-oracle scratch worktree detaches at the ROOT'S LOCAL MAIN HEAD —
-    step9c_baseline.py create_scratch_worktree; the fetched origin/main tip
-    is accepted too). On an issue-branch worktree the pair is frozen at fork
+    pristine-oracle scratch worktree detaches at the resolved oracle base —
+    merge-base(diff base, work-root HEAD), #2293 — so it reads main-vintage
+    only when that base IS main's tip; the fetched origin/main tip is
+    accepted too). On an issue-branch worktree the pair is frozen at fork
     time and any branch forked between a new-form marker landing and its
     parser fix landing is red with no code defect on the branch
     (#1917/#1895). Caveat: on a git-LESS snapshot tree nested inside an

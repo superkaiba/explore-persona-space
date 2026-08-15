@@ -569,3 +569,150 @@ All of the parent's shared machinery is inherited unchanged - model (`Qwen/Qwen2
 
 ![conjunct_diag](https://raw.githubusercontent.com/superkaiba/explore-persona-space/2900cb7d3b0c1676940752fb1eef869bf0113f36/figures/issue_2162/persona_specificity_ladder/conjunct_diag.png)
 
+---
+
+# Follow-up round: turn-boundary-multipatch
+
+## Motivation (round)
+
+The parent grid's recency Takeaway — an instruction (or persona) introduced turns back stops transferring under a single context-end patch — rests on single-position evidence, which is equally consistent with two mechanisms: the information's trace weakening at every position as turns accumulate (decay), or the trace remaining intact but spreading across the per-turn end-points so any single position carries only a fraction (dispersion). The parent's prefix-end slot lands on ONE intermediate boundary out of d−1, so it cannot separate the two either.
+
+This round adds the multi-position read that distinguishes them, on the SAME frozen conversations: copy the hidden states at EVERY assistant-turn end plus context-end at once (the joint `tb` slot), and at each single turn-end alone (the `tb_k` sweep). Two rig checks are pre-registered: a depth-1 identity contrast (at d1 the boundary set is exactly the parent's context-end position, so the new multi-position code path must reproduce the parent's single-position read on the same pairs), and the parent's pre-registered near-zero control (the user-name fact at depth 5), whose job is to indict the multi-position edit itself if it produces a positive under the joint patch.
+
+## Methodology (round, unabridged)
+
+This round is a sibling follow-up on the PARENT grid's recency cells (it inherits from the original #2162 run, not from the ladder round's bank). The single changed variable vs the parent grid is the patch POSITION SET: the parent measured single final-turn-anchored positions only (`ce`, `pe`); this round adds (a) the joint multi-position turn-boundary slot `tb` and (b) the per-boundary single-position sweep `tb_k`, on 7 already-banked parent cells. All of the parent's shared machinery is inherited unchanged — frozen bank/carriers/values/donor assignment (`bank.json`, seed 2162), the all-28-layer full-state replace intervention, temp-1.0 K=5 grid draws, REUSED parent anchors (K=10; no anchor generation and no anchor judging this round), `max_new_tokens = 2048`, the judge instrument, the anchor-separation exclusion, the survival floor 12, the Wilcoxon+Holm+IUT protocol, and the pair-clustered bootstrap. New code: `scripts/issue2162_tbmp.py` (pod driver: boundary resolver, multi-position payload assembly, multi-position injection gate), `scripts/issue2162_tbmp_dispatch.sh` (4-worker fan-out), `scripts/issue2162_tbmp_analysis.py` (judge waves, gates, F tables, stats), `scripts/issue2162_tbmp_figures.py` (figures + caption sidecar); parent helpers are imported, never re-implemented. One parent module edited: `src/explore_persona_space/experiments/issue2094/hooks.py` — the `arm_batch` replace-mode single-position guard is relaxed to accept per-row multi-position payload rows `(n_pos, H)`; single-position behavior is pinned bit-exact by unit tests, a joint-patch-equals-composition-of-single-patches test runs on a tiny model, and `realized_mode` is recorded per cell (expected constant `replace_multi`).
+
+- **Cells (7, from the parent frozen bank; 36 pairs × 36 contexts each; no new contexts, pairs, or values):** `instr_format` and `persona_prompted` (the depth-1 bases) + their recency cells at depths 3 and 5, plus `recency_fact_user_name_d5` (the pre-registered near-zero control, joint-only — no sweep, since localization on a ≈0 designed read is uninformative). Data-realism tier inherited (hybrid: tier-1 WildChat carriers/padding + tier-4 constructed minimal-pair spans); all rollouts on-policy from the frozen base model (`Qwen/Qwen2.5-7B-Instruct`, bf16, 28 layers).
+
+- **Boundary definition + capture.** For a rendered context, boundary t (t = 1..n_a) is the token index of the `<|im_end|>` special token closing the t-th assistant turn; boundary n_a+1 is `ctx_len − 1` (the parent `ce` position — last context token, generation prompt included). `<|im_end|>` is a special token, so it never BPE-merges and is identically defined on both pair sides. Boundary lists are resolved INDEPENDENTLY per pair side from each side's own token ids and paired by TURN NUMBER; per pair, a constant-offset assert (`pos_B(t) − pos_A(t) == ctx_len_B − ctx_len_A` for every t) and a d1 assert (the resolved set equals exactly the `ce` position) run before any generation. Boundary states are captured for a 12-cell set — the 7 grid cells plus 5 donor-pool cells (`prior_topic` base, `fact_user_name` base, `recency_prior_topic_d3`, `recency_prior_topic_d5`, `recency_fact_user_name_d3`) — 432 contexts, one right-padded forward each, positions read off token ids. Designed boundary counts (asserted per cell):
+
+  | Capture cell | Boundaries | Role |
+  |---|---|---|
+  | `instr_format` / `persona_prompted` base | 1 | grid (d1) |
+  | `recency_instr_format_d3` / `recency_persona_prompted_d3` | 3 | grid |
+  | `recency_instr_format_d5` / `recency_persona_prompted_d5` | 5 | grid |
+  | `recency_fact_user_name_d5` (control) | 6 | grid |
+  | `prior_topic` base / `fact_user_name` base | 2 | donor pool |
+  | `recency_prior_topic_d3` / `recency_fact_user_name_d3` | 4 | donor pool |
+  | `recency_prior_topic_d5` | 6 | donor pool |
+
+- **Slots.** `tb` (joint): donor boundary states replace the recipient's hidden states at ALL boundaries jointly, all 28 layers, `mode="replace"` — at d1 this reduces to exactly the parent's single-ce patch executed through the new code path. `tb_k` (sweep): boundary k alone, k = 1..n_a, on the four d3/d5 cells (12 single-boundary variants: 2+4+2+4); the k = final point in figures is supplied by the parent grid's committed ce rows (parent-run provenance labeled in every figure).
+
+- **Arms (nulls norm-matched PER POSITION per layer).** (1) **Steered** — the pair's own B-side boundary states, paired by turn number. (2) **Shuffled-donor null** — the parent's frozen within-cell value-constrained donor assignment reused verbatim (same cell ⇒ identical turn structure; boundary counts asserted equal); payload = the donor's own resolved boundary states, norm-matched row-wise to the recipient's B-state at the same (turn, layer). (3) **Cross-type-donor null** (joint blocks only) — a donor pair from a DIFFERENT information type with the same-depth recency shape: instruction-format / prompted-persona cells at depth K draw from {`recency_prior_topic_dK`, `recency_fact_user_name_dK`}; the d1 bases draw from the `prior_topic` / `fact_user_name` base cells; the control draws solely from `recency_prior_topic_d5` (an exact 6-boundary structural match). Both pool members carry K+1 boundaries against the recipient's K at every depth, so a pre-registered alignment rule applies: donor LONGER ⇒ right-align (pair by turn number from the end, drop the donor's earliest boundaries; recorded per row); donor SHORTER ⇒ forbidden (no pool admits one at plan time; a runtime assert HALTs if one is ever drawn). The shuffled-donor null (structure-EXACT by construction) is the primary null everywhere; the cross-type leg's K+1→K right-alignment is a declared limitation of the IUT's cross-type leg. Sweep arms are steered + shuffled only (per-position content specificity is priced by the shuffled null; cross-type is carried by the joint blocks). Because all recency cells share the same frozen padding turns, both nulls hold the padding TEXT fixed and differ from the recipient's B-states only through upstream attention from the varied content.
+
+- **Block grid (realized = planned):** joint `tb` = 7 cells × 3 arms = 21 blocks; sweep = 12 single-boundary variants × 2 arms = 24 blocks; total **45 blocks, 8,100 rollouts** (36 pairs × K=5 per block). Pre-registered mechanical gates before any grid spend: the **G1 boundary-resolution gate** (per-cell boundary count vs the designed table, per-pair constant offset, d1 == ce identity, cross-type alignment legality — over ALL 432 capture contexts) and the **multi-position injection-exactness gate** (12 spot pairs spanning all 3 arms × depths d1/d3/d5; installed state == intended donor at EVERY intended (position, layer) and nowhere else; cosine ≥ 0.999, norm ratio ∈ [0.995, 1.005]).
+
+- **Generation recipe + realized generation integrity.** Temperature 1.0, K=5 draws per pair × arm, `max_new_tokens = 2048`, per-draw seed `42 + draw`, batched hooked generation at `gen_batch = 16` on one shared 45-block claim queue, 4 CVD-pinned workers (one per GPU) on `pod-2162-tbmp` (4× H100), d1 blocks queue-ordered first. Realized cap-hit: max 0.56% per cell; run-level 12/8,100 = 0.148% — below the pre-registered >2%-per-cell re-generation trigger (no re-generation round ran). Realized coherence: coherent fraction ≥ 94.4% in every cell (per-cell values in `captions.json` `tables`); zero low-coherence cells. 19 cells (7 joint + 12 sweep variants), all 19 testable — zero `untestable-causal` cells.
+
+- **Judge instrument + realized routing/integrity.** Judge `claude-sonnet-4-5-20250929`, graded 0–100 reason-then-score, `max_tokens = 1024`, N = 1 judge draw per rubric per rollout (uncertainty carried at pair/cell level by the pair-clustered bootstrap, inherited from the parent); rubrics are the parent's content-hashed instruments verbatim (the pair's two value descriptors + the form-only coherence rubric; one behavior per call); drop-never-coerce with per-arm content-drop / transport-loss / api-refusal splits; rubric-keyed JudgeCache. Volume: **24,840 calls** (pilot 540 + wave-1 3,240 + wave-2 21,060). Realized routing: wave-2's 7,020-call coherence wave dispatched via the Anthropic Batch API; its nine behavior-rubric waves (six × 2,160 + three × 360) routed SYNC because `judge_dispatch` probed 2,000,000 output-tokens/min, raising the effective sync threshold to 10,000 — above each wave's size. Projected call counts matched exactly; only the route split differed from the plan's all-Batch wave-2 phrasing. Realized integrity over the **24,300 scored production rows**: zero truncation drops, 7 content drops (0.029%), zero transport loss, every wave complete.
+
+- **Pre-registered gates on the judge path (each named for what it tests; realized statistics live in the gate artifacts, not restated here).** **G3 judge pilot gate** — 540 sync draws (180 d1 rollouts, 60 per arm × 3 arms, each judged under all 3 production rubrics ⇒ 60 effective draws per (arm × rubric), clearing the 51-draw resolution floor for a 2% threshold) at the exact production instrument, gating all production judging on zero `stop_reason == "max_tokens"` and per-arm parse-fail < 2% per rubric (report: `judge/gates/pilot_gate_tbmp.json`). **G2 d1-identity gate** — after wave-1, before any wave-2 spend: per-arm (steered AND shuffled) paired per-pair ΔF in the parent's NETTED space between this round's joint tb@d1 and the parent's committed single-ce rows, pooled over the 66 surviving d1 pairs per arm (instr_format 36/36 + persona_prompted 30/36 under the |separation| ≥ 0.5 rule); gate bar |mean ΔF| ≤ 0.10 per arm (≈3.2 SE at the parent's measured per-pair dispersion σ_d ≈ 0.25), testing whether the extended multi-position replace path reproduces the parent's single-position read where the two are definitionally the same patch; a FAIL freezes wave-2 and every d3/d5 read. Realized gate statistics: `identity_gate.json`, quoted in the `captions.json` sidecar.
+
+- **Registered metric spaces + statistics.** Netted dual-rubric F (Δ = (judge_B − judge_A)/100, floor/ceiling-normalized on the reused parent anchors) is the registered space for the instruction-format cells + the control; target-descriptor-only F (the judge_B channel alone) is the registered space for the two persona cells — the ladder round's instrument fix — with the netted form computed everywhere as the bridge diagnostic (both spaces from the same judge calls). Anchor-separation exclusion |ceiling − floor| ≥ 0.5 and survival floor n ≥ 12 inherited. Registered tests: family **TB-joint (m = 7)** — per cell, IUT p = max(p_shuffled, p_crosstype) from exact two-sided Wilcoxon signed-rank over per-pair paired differences (registered space per cell), Holm-corrected within family at α = 0.05, "separates" additionally requiring fully disjoint pair-clustered bootstrap 95% CIs vs BOTH nulls with steered above; family **TB-sweep (m = 12)** — steered vs shuffled per single-boundary variant, same machinery. Bootstrap: pair-clustered, B = 10,000, seed 21620 (the registered battery in `stats_tb.json`; figure-locally rendered error bars in `issue2162_tbmp_figures.py` use B = 10,000 at seed 21621). Raw-scale companion (denominator-free signed movement) reported over `all` AND `surviving` pair sets (the exclusion selects on the F denominator — inherited rationale). TF margin secondary computed against the parent's frozen judge-filtered pools (`judge/pools.json`); pairs with unfillable pools inherit the parent behavior (margin N/A, reported).
+
+- **Registered verdict quantities + narration rules (pre-registered decision rules; outcomes live in `stats_tb.json`).** Per base, in the base's registered space: J1 / J5 := the min-over-the-two-nulls pair-clustered bootstrap mean paired difference (steered − null) for the joint tb patch at depths 1 / 5; D := F_tb(d5) − 0.5·F_tb(d1) (steered surviving-pair cell means, CI reported alongside); δ_disp := 0.5·Ĵ1 (the pre-registered dispersion effect — 50% of the realized d1 joint paired-difference point estimate). The verdict lattice (Dispersion / Partial-trace / Decay / No-verdict) is disjoint and exhaustive; d3 is a trend point, not a verdict input. The Decay power guard: Decay additionally requires J5's CI to EXCLUDE δ_disp — a J5 straddle whose upper bound ≥ δ_disp routes to No-verdict and is narrated as failure-to-reject (underpowered), never as decay. Two honesty overlays sit outside the lattice: the **edit-artifact overlay** (a control-cell joint tb clearing BOTH nulls on Holm-IUT + disjoint CIs downgrades every label to "edit-artifact — no verdict") and the **denominator overlay** (a Dispersion/Partial-trace label additionally reports the raw-scale steered movement at d5 vs d1 and carries a "denominator-limited" caveat when the raw-scale read contradicts the F-space direction).
+
+- **Realized deviations (recorded from artifacts):**
+  1. The `judge_completeness` rollup inside `stats_tb.json` reports `n_items: null` / `frac_items_complete: null` for every wave — the rollup reads a top-level `n_items` field while the per-wave meta nests it under `regime.n_items`; `n_scored_items` is correct and the true per-wave fractions are recoverable from the per-wave `.meta.json` files under `judge/scores/`.
+  2. The out-root residue upload glob was over-broad (`fnmatch` `*` crosses `/`), landing 102 duplicate files under the `manifests/outroot/` HF prefix — duplication only; no consumer reads that prefix.
+  3. Realized VM staging was 198.4 MB against the plan §9 estimate of ~35 MB.
+
+- **Scope caveats (methodology facts, carried into the round's results sections):**
+  1. A joint-null verdict rules out dispersion across the PATCHED BOUNDARY SET only — a trace living at non-boundary positions yields the same label, so any decay-side reading is scoped as "no usable trace at the turn-boundary position set", never unqualified decay prose.
+  2. The No-verdict narration rule above is pre-registered, not post-hoc: wherever a J5 CI straddles zero with an upper bound ≥ δ_disp, the registered narration is failure-to-reject (underpowered), never decay.
+  3. Figure namespace: this round's figures land flat under `figures/issue_2162/` with the `tb_` prefix (not a subdirectory namespace); round tables land under `eval_results/issue_2162/turn_boundary/`.
+
+- **Artifacts (this round).** Round tables + gate/caption artifacts at `eval_results/issue_2162/turn_boundary/`: `f_cells_tb.jsonl`, `null_shuffled_cells_tb.jsonl`, `null_crosstype_cells_tb.jsonl`, `parent_ref_cells_tb.jsonl` (the parent single-ce reference re-aggregated into BOTH spaces from the parent's own per-rubric judge scores, with a per-row parity assert that the recomputed netted F reproduces the committed parent `f_beh`), `margin_cells_tb.jsonl`, `rawscale_tb.json`, `stats_tb.json`, `identity_gate.json`, `captions.json`, plus `judge/scores/*.{scores.jsonl,meta.json}` (24,300 scored rows) and `judge/gates/pilot_gate_tbmp.json`. Parent reference tables: `eval_results/issue_2162/f_metrics/`. Pod-side stores on the HF data repo under `issue2162_ctxinfo/raw_completions/tbmp/grid/` (rollout text incl. per-row slot/arm/boundary metadata) and `issue2162_ctxinfo/analysis_tensors/tbmp/{tb_bank, margin, gates, manifests}/`. Code SHA for this round's results: `3f4a9c429e7b2b309ff753fcdde5a50c96c0ed60` (branch `issue-2162-tbmp`). Compute: `pod-2162-tbmp`, 4× H100, single provision; judging + analysis + figures off-pod on the VM.
+
+## Round figures (every view)
+
+## TB: joint turn-boundary patch vs single context-end across depth (aggregate)
+
+**Methodology**
+
+- Input: joint-tb rows of `f_cells_tb.jsonl` (steered) + `null_shuffled_cells_tb.jsonl` + `null_crosstype_cells_tb.jsonl`; parent single-ce steered reference from `parent_ref_cells_tb.jsonl` (persona-cell reference points re-aggregated into the target-descriptor-only space from the parent's per-rubric judge scores — never lifted netted into a target-only panel).
+- Per (cell × arm): pair value = mean F over K=5 coherent draws in the cell's registered space (netted dual-rubric for instruction-format cells, target-descriptor-only for persona cells); surviving pairs only (|separation| ≥ 0.5 on the reused parent anchors; 36 pairs per cell before exclusion).
+- Aggregation: cell mean with pair-clustered bootstrap 95% CI (B=10,000); per-pair points rendered behind each errorbar.
+- Panels: one per base; x = depth (d1/d3/d5); three colored arms per depth (steered / shuffled-donor null / cross-type-donor null) plus the parent single-ce steered read in black at each depth.
+- Sources: `eval_results/issue_2162/turn_boundary/{f_cells_tb,null_shuffled_cells_tb,null_crosstype_cells_tb,parent_ref_cells_tb}.jsonl`; caption sidecar `eval_results/issue_2162/turn_boundary/captions.json`.
+
+![tb_hero](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f4a9c429e7b2b309ff753fcdde5a50c96c0ed60/figures/issue_2162/tb_hero.png)
+
+## TB: per-boundary localization sweep (aggregate, paired per-pair basis)
+
+**Methodology**
+
+- Input: sweep rows (slots `tbk1..tbk{n−1}`) of `f_cells_tb.jsonl` + `null_shuffled_cells_tb.jsonl`; parent single-ce reference rows (both arms) from `parent_ref_cells_tb.jsonl`.
+- Quantity: per single-boundary variant k, the per-pair PAIRED difference steered F − shuffled-null F (registered space per base) over surviving pairs; mean + pair-clustered bootstrap 95% CI; per-pair points behind each errorbar.
+- Panels: 2×2, one per sweep cell (instruction-format d3/d5, prompted-persona d3/d5); x = boundary index k (1 = earliest assistant-turn end); the diamond at the final boundary k = n_d is the parent's single-ce paired difference (parent-run provenance labeled; persona points re-aggregated into the target-only space).
+- n basis: 12 single-boundary variants (2+4+2+4); 36 pairs per cell before exclusion.
+- Sources: `eval_results/issue_2162/turn_boundary/{f_cells_tb,null_shuffled_cells_tb,parent_ref_cells_tb}.jsonl`.
+
+![tb_sweep](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f4a9c429e7b2b309ff753fcdde5a50c96c0ed60/figures/issue_2162/tb_sweep.png)
+
+## TB: raw-scale movement, all vs surviving pairs (aggregate)
+
+**Methodology**
+
+- Input: `rawscale_tb.json` (this round) + the parent's committed `eval_results/issue_2162/f_metrics/recency_rawscale.json`; bars sourced from the declared artifacts, never recomputed from the F tables.
+- Quantity: mean signed raw movement (Δ_patched − Δ_floor)·sign(Δ_ceiling − Δ_floor) in judge-contrast units (range [−2, +2]) per arm × depth; solid bars = joint tb (this round), hatched bars = parent single-ce; errorbars = pair-clustered bootstrap 95% CIs (B=10,000, seed 21620) where the artifact provides them (the parent file carries steered CIs only).
+- Panels: 2×2 — rows = `all` scored pairs vs `surviving` pairs only; columns = base. The dual `all`/`surviving` reporting is inherited: the anchor-separation exclusion selects on the F denominator, so the raw companion is reported on both pair sets.
+- Role: the denominator-free companion — F normalizes by the per-pair anchor gap; this view removes that normalization.
+- Sources: `eval_results/issue_2162/turn_boundary/rawscale_tb.json`, `eval_results/issue_2162/f_metrics/recency_rawscale.json`.
+
+![tb_rawscale](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f4a9c429e7b2b309ff753fcdde5a50c96c0ed60/figures/issue_2162/tb_rawscale.png)
+
+## TB: depth-1 identity read vs parent context-end (per-unit)
+
+**Methodology**
+
+- Input: joint-tb d1 rows of `f_cells_tb.jsonl` + `null_shuffled_cells_tb.jsonl` joined per pair to the parent's committed `f_metrics/f_cells.jsonl` + `f_metrics/null_shuffled_cells.jsonl` ce rows; gate statistics from `identity_gate.json`.
+- What is plotted: per-pair scatter — x = the parent's single-ce pair F, y = this round's joint-tb@d1 pair F, both in the NETTED space (the deliberate exception to the registered-space convention: G2 runs in the parent's netted space) — steered + shuffled arms as colors, bases as marker shapes; identity diagonal + the ±0.10 gate band.
+- Gate pool: surviving d1 pairs only, 66 per arm (instruction-format 36/36 + prompted-persona 30/36 under |separation| ≥ 0.5). The G2 statistic (per-arm mean ΔF with pair-clustered bootstrap CI) is recorded in `identity_gate.json` and quoted in the `captions.json` sidecar — deliberately not rendered on the canvas.
+- Role: the pre-registered G2 rig gate — at depth 1 the resolved boundary set equals exactly the parent ce position, so this contrast tests whether the extended multi-position replace path reproduces the parent's single-position read on the same pairs.
+- Sources: `eval_results/issue_2162/turn_boundary/{f_cells_tb,null_shuffled_cells_tb}.jsonl`, `eval_results/issue_2162/f_metrics/{f_cells,null_shuffled_cells}.jsonl`, `eval_results/issue_2162/turn_boundary/identity_gate.json`.
+
+![tb_identity_d1](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f4a9c429e7b2b309ff753fcdde5a50c96c0ed60/figures/issue_2162/tb_identity_d1.png)
+
+## TB: near-zero control under the joint patch (aggregate)
+
+**Methodology**
+
+- Input: control-cell (`recency_fact_user_name_d5` — the user-name fact introduced at depth 5; 6 boundaries patched jointly) joint-tb rows of all three cell tables.
+- Quantity: per-arm (steered / shuffled-donor null / cross-type-donor null) per-pair F (netted space, the control's registered space) over surviving pairs, with mean + pair-clustered bootstrap 95% CI per arm.
+- Role: the pre-registered edit-artifact overlay input — the parent grid's committed read for this cell is ≈0 at every single position, so a control read clearing BOTH nulls (Holm-IUT + disjoint CIs, computed in `stats_tb.json`) indicts the multi-position edit rather than the content and downgrades every lattice label. The panel title carries the overlay verdict string computed from `stats_tb.json`.
+- Sources: `eval_results/issue_2162/turn_boundary/{f_cells_tb,null_shuffled_cells_tb,null_crosstype_cells_tb}.jsonl`, `eval_results/issue_2162/turn_boundary/stats_tb.json`.
+
+![tb_control](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f4a9c429e7b2b309ff753fcdde5a50c96c0ed60/figures/issue_2162/tb_control.png)
+
+## TB: persona cells in both metric spaces (aggregate)
+
+**Methodology**
+
+- Input: persona-cell joint-tb rows of all three cell tables; both F spaces computed from the SAME judge calls (`f_netted` and `f_target_only` per row).
+- Quantity: per arm (3 panels: steered / shuffled / cross-type) × depth (d1/d3/d5), cell means under the two aggregation spaces side by side — netted dual-rubric (brown) vs target-descriptor-only (green; the persona cells' registered space) — over surviving pairs (survival evaluated per space key), pair-clustered bootstrap 95% CIs, per-pair points.
+- Role: the instrument bridge — relates the parent's netted convention to the target-only registered primary per arm on this round's data, extending the ladder round's rubric-bridge read to the recency cells.
+- Sources: `eval_results/issue_2162/turn_boundary/{f_cells_tb,null_shuffled_cells_tb,null_crosstype_cells_tb}.jsonl`.
+
+![tb_target_only](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f4a9c429e7b2b309ff753fcdde5a50c96c0ed60/figures/issue_2162/tb_target_only.png)
+
+## TB: exploratory per-(cell × slot) strips (per-unit)
+
+**Methodology**
+
+- Exploratory dump (no registered test consumes it): one small panel per (cell × slot) unit across all 19 units (7 joint + 12 sweep variants), three arm columns per panel (steered / shuffled / cross-type where run), per-pair F points (registered space, surviving pairs) with mean + pair-clustered bootstrap 95% CI per arm.
+- Serves as the low-level per-unit companion behind every aggregate view in this round.
+- Sources: `eval_results/issue_2162/turn_boundary/{f_cells_tb,null_shuffled_cells_tb,null_crosstype_cells_tb}.jsonl`.
+
+![tb_explore_strips](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f4a9c429e7b2b309ff753fcdde5a50c96c0ed60/figures/issue_2162/tb_explore_strips.png)
+
+## TB: exploratory margin vs judged F scatter (per-unit)
+
+**Methodology**
+
+- Exploratory dump: teacher-forced fixed-pool margin (x; the margin SHIFT vs the parent floor, `margin_patched` where a floor is absent — the axis label states the mixed basis) vs judged F in the registered space (y), one point per (pair × slot × arm), colored by arm; surviving pairs only.
+- Margin rows from `margin_cells_tb.jsonl` (the pod margin leg aggregated against the parent's frozen judge-filtered pools); pairs with unfillable pools are absent by construction.
+- Sources: `eval_results/issue_2162/turn_boundary/{margin_cells_tb,f_cells_tb,null_shuffled_cells_tb,null_crosstype_cells_tb}.jsonl`.
+
+![tb_margin_scatter](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f4a9c429e7b2b309ff753fcdde5a50c96c0ed60/figures/issue_2162/tb_margin_scatter.png)

@@ -497,10 +497,17 @@ def _resolve_repo_root_cached(_key: tuple[int, str]) -> Path:
         # `refs/heads/main` the finishing rebase is about to force-move to its
         # replayed tip (the orphaned-commit family sync_repo_root.py's
         # docstring warns about); the rebase replays the pre-existing commits
-        # onto main anyway. No deadlock while a caller waits here holding the
-        # task-workflow flock: sync_repo_root.py acquires that flock BEFORE
-        # its pull_rebase, and that acquisition is itself LOCK_NB-bounded —
-        # the observed rebase never needs the flock to finish.
+        # onto main anyway. Deadlock note (#2295): a caller waiting here must
+        # NOT hold the task-workflow flock — mutation writers prime this
+        # resolution BEFORE acquiring it (`_locked()` calls repo_root() first),
+        # because the ONLY sanctioned clearer of an ABANDONED rebase husk
+        # (sync_repo_root.py preflight -> `git rebase --abort`) needs that
+        # flock. The pre-#2295 comment claimed "no deadlock while holding the
+        # flock"; that reasoning covered only a LIVE helper-driven rebase (the
+        # helper takes the flock before its pull_rebase) and was FALSE for an
+        # abandoned husk: nobody finishes that rebase, and the clearer blocks
+        # on the flock the waiters held. Re-adding an in-lock resolution
+        # re-introduces the deadlock.
         if wait_bound <= 0:
             # Knob=0 → EXACT pre-#996 behavior: no marker probe, no grace,
             # immediate refusal with the byte-identical message.
@@ -520,8 +527,12 @@ def _resolve_repo_root_cached(_key: tuple[int, str]) -> Path:
                 f"({common_dir / 'rebase-merge'} or rebase-apply) was still present after "
                 f"waiting {wait_bound:.0f}s ({_REBASE_WAIT_ENV}). A live `git pull --rebase` "
                 f"should finish in seconds; a state dir this old is likely a CRASHED rebase. "
-                f"Inspect with `git -C {parent} status`; `git -C {parent} rebase --abort` "
-                f"clears a stale rebase, then re-attach to 'main'."
+                f"Run the sanctioned recovery FIRST: "
+                f"`uv run python scripts/sync_repo_root.py` (single-flight; its preflight "
+                f"aborts the stale rebase and rescues any autostash). Manual fallback if the "
+                f"helper itself refuses: inspect with `git -C {parent} status`; "
+                f"`git -C {parent} rebase --abort` clears a stale rebase, then re-attach "
+                f"to 'main'."
             )
         if not rebasing:
             grace_probes_left -= 1
@@ -681,9 +692,13 @@ def _ensure_managed_main_worktree(primary: Path, branch: str, env: dict[str, str
     else:
         # Re-sync an existing managed worktree to the current `main` tip so
         # reads through the routed root are fresh. `reset --hard main` is a
-        # fast-forward (the worktree only ever holds main-derived commits) and
-        # is safe under the flock: every mutation commits before releasing, so
-        # there is never uncommitted task work to clobber here.
+        # fast-forward (the worktree only ever holds main-derived commits).
+        # Safety does NOT come from lock exclusion (#2295): READ paths reach
+        # this helper lock-free, and mutation writers resolve the root BEFORE
+        # taking the flock (`_locked()` primes repo_root() first). It comes
+        # from the worktree holding only main-derived COMMITTED state —
+        # task.py commits every mutation before returning, so there is never
+        # uncommitted task work in the MANAGED worktree to clobber here.
         _git_quiet(["-C", str(managed), "reset", "--hard", "main"], env)
 
     if not (managed / "tasks").is_dir():
@@ -800,6 +815,17 @@ def _locked() -> Iterator[None]:
     a mutation. Multiple processes calling task.py concurrently serialise
     here.
     """
+    # #2295: resolve (and lru-cache) the repo root BEFORE taking the flock.
+    # The resolver's branch guard bounded-waits up to
+    # EPM_TASKPY_REBASE_WAIT_SECONDS on a primary-checkout rebase state dir,
+    # and the ONLY sanctioned clearer of an ABANDONED husk
+    # (sync_repo_root.py preflight -> `git rebase --abort`) needs THIS flock:
+    # waiting inside the lock deadlocks the two (every fleet writer holds the
+    # lock for its whole 120s wait; the helper's bounded acquire times out at
+    # exit 5 and the husk is never cleared). Every mutation below resolves the
+    # root anyway (find_task_path -> tasks_dir -> repo_root), so this only
+    # moves the resolution EARLIER; the lru_cache makes the in-lock call free.
+    repo_root()
     LOCK_DIR.mkdir(parents=True, exist_ok=True)
     fd = os.open(LOCK_PATH, os.O_WRONLY | os.O_CREAT, 0o600)
     try:
