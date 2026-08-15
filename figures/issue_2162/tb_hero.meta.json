@@ -1,0 +1,6110 @@
+{
+  "commit": "48842a29+dirty",
+  "render_id": "594679ccb6f64a84",
+  "git_commit": "48842a29",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2162_tbmp_figures.py"
+  ],
+  "created": "2026-08-15T01:18:18Z",
+  "figsize": [
+    11.0,
+    4.4
+  ],
+  "points": [
+    {
+      "depth": -0.22,
+      "F (registered space)": 0.7097383398825092,
+      "error": 0.11533459492468406,
+      "series": "steered",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth": -0.07,
+      "F (registered space)": 0.04956731432764626,
+      "error": 0.11158681881126661,
+      "series": "shuffled",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth": 0.08,
+      "F (registered space)": 0.027130382114005543,
+      "error": 0.025519675208366524,
+      "series": "crosstype",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth": 0.23,
+      "F (registered space)": 0.7072340885274486,
+      "error": 0.12537797038659904,
+      "series": "parent single-ce (steered)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "depth": 0.78,
+      "F (registered space)": 0.10555224344768585,
+      "error": 0.05437718875059537,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "depth": 0.9299999999999999,
+      "F (registered space)": 0.050455965513527413,
+      "error": 0.04680991966787271,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "depth": 1.08,
+      "F (registered space)": 0.019020088981392447,
+      "error": 0.1479325665361222,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "depth": 1.23,
+      "F (registered space)": 0.17123892503062998,
+      "error": 0.12815244106722648,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "depth": 1.78,
+      "F (registered space)": 0.10973677642311454,
+      "error": 0.049293978911906,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "depth": 1.93,
+      "F (registered space)": 0.07447810647354021,
+      "error": 0.04995934739088787,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "depth": 2.08,
+      "F (registered space)": 0.08070695152247695,
+      "error": 0.11851567380251427,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "depth": 2.23,
+      "F (registered space)": 0.24364332529060212,
+      "error": 0.14380804091693175,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "depth": -0.22542026859642672,
+      "F (registered space)": 1.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.18655499736186287,
+      "F (registered space)": 0.925,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.1915216024021625,
+      "F (registered space)": 1.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.2341126910374063,
+      "F (registered space)": 0.9043927648578811,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.22100058662615635,
+      "F (registered space)": 1.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.19526827654473733,
+      "F (registered space)": 1.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.2149044156363562,
+      "F (registered space)": 0.425,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.20510949389210142,
+      "F (registered space)": 0.3323442136498516,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.2589085088467602,
+      "F (registered space)": 0.5733333333333334,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.19668029673342008,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.1806713006840959,
+      "F (registered space)": 0.9099999999999999,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.2209191959826504,
+      "F (registered space)": 0.8186383928571429,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.22588110780999263,
+      "F (registered space)": 1.0025575447570334,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.18786057088448563,
+      "F (registered space)": 1.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.24958646643717403,
+      "F (registered space)": 1.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.19057534564853598,
+      "F (registered space)": 0.9642857142857144,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.20585619872404187,
+      "F (registered space)": 0.18000000000000005,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.2412422486342177,
+      "F (registered space)": 0.7125,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.2535042151005939,
+      "F (registered space)": 0.4183844011142062,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.2115984613554527,
+      "F (registered space)": 0.6499789650820362,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.24100135984116963,
+      "F (registered space)": 0.7411167512690355,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.20570328522390835,
+      "F (registered space)": 0.17694369973190352,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.2167298518684374,
+      "F (registered space)": 0.9974293059125965,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.20012005200924315,
+      "F (registered space)": 0.010602678571428556,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.1997254881470446,
+      "F (registered space)": 0.915,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.22297673531348824,
+      "F (registered space)": 1.0441176470588236,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.18670109320333475,
+      "F (registered space)": 1.0416666666666667,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.2545819473403712,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.19047426519581434,
+      "F (registered space)": 0.9847715736040609,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.23077203276790786,
+      "F (registered space)": 0.9199999999999999,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.2031142141762746,
+      "F (registered space)": 0.1497326203208556,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.24752876387088082,
+      "F (registered space)": 0.3426061493411419,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.18596610587868628,
+      "F (registered space)": 0.6821192052980133,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.2009729689828731,
+      "F (registered space)": 0.5785714285714286,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.19457240343364085,
+      "F (registered space)": 1.1794871794871793,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.22711880688938513,
+      "F (registered space)": 0.97,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "depth": -0.07542026859642673,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.036554997361862886,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.04152160240216251,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.08411269103740633,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.07100058662615635,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.04526827654473734,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.06490441563635621,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.05510949389210144,
+      "F (registered space)": -0.11603935655161647,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.1089085088467602,
+      "F (registered space)": -0.05066666666666665,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.04668029673342009,
+      "F (registered space)": -0.12359550561797751,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.03067130068409591,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.0709191959826504,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.07588110780999263,
+      "F (registered space)": 0.557544757033248,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.03786057088448563,
+      "F (registered space)": 0.5542857142857143,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.09958646643717402,
+      "F (registered space)": 0.14285714285714277,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.040575345648535995,
+      "F (registered space)": 0.6071428571428572,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.05585619872404187,
+      "F (registered space)": 0.34,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.09124224863421769,
+      "F (registered space)": 0.525,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.10350421510059389,
+      "F (registered space)": 0.5543175487465182,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.06159846135545271,
+      "F (registered space)": 0.2461085401766933,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.09100135984116962,
+      "F (registered space)": 0.19593908629441628,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.05570328522390837,
+      "F (registered space)": 0.7184986595174263,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.0667298518684374,
+      "F (registered space)": 0.4730077120822622,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.050120052009243174,
+      "F (registered space)": 0.5379464285714286,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.0497254881470446,
+      "F (registered space)": -0.24500000000000002,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.07297673531348825,
+      "F (registered space)": -0.5764705882352941,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.03670109320333476,
+      "F (registered space)": -0.052083333333333336,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.10458194734037121,
+      "F (registered space)": -0.4057971014492753,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.04047426519581435,
+      "F (registered space)": -0.3350253807106599,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.08077203276790786,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.053114214176274606,
+      "F (registered space)": -0.2887700534759359,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.09752876387088083,
+      "F (registered space)": -0.41727672035139085,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.03596610587868628,
+      "F (registered space)": -0.29801324503311255,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.0509729689828731,
+      "F (registered space)": -0.04999999999999997,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.04457240343364085,
+      "F (registered space)": -0.6794871794871795,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": -0.07711880688938515,
+      "F (registered space)": -0.03,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "depth": 0.07457973140357328,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.11344500263813712,
+      "F (registered space)": 0.009999999999999953,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.1084783975978375,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.06588730896259368,
+      "F (registered space)": 0.006459948320413414,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.07899941337384367,
+      "F (registered space)": 0.11499999999999999,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.10473172345526266,
+      "F (registered space)": 0.015000000000000013,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.08509558436364381,
+      "F (registered space)": 0.015000000000000013,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.09489050610789856,
+      "F (registered space)": 0.10182726846790567,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.04109149115323981,
+      "F (registered space)": 0.1701333333333333,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.10331970326657991,
+      "F (registered space)": 0.22471910112359553,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.11932869931590409,
+      "F (registered space)": 0.02300000000000002,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.07908080401734961,
+      "F (registered space)": 0.0025111607142857166,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.07411889219000736,
+      "F (registered space)": 0.0511508951406649,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.11213942911551439,
+      "F (registered space)": 0.011428571428571375,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.05041353356282599,
+      "F (registered space)": 0.022556390977443573,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.109424654351464,
+      "F (registered space)": 0.1889880952380952,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.09414380127595814,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.05875775136578232,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.04649578489940612,
+      "F (registered space)": -0.05292479108635096,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.0884015386445473,
+      "F (registered space)": 0.07446360959192262,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.058998640158830384,
+      "F (registered space)": -0.015228426395939042,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.09429671477609164,
+      "F (registered space)": 0.225201072386059,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.08327014813156261,
+      "F (registered space)": 0.02056555269922881,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.09987994799075683,
+      "F (registered space)": -0.0044642857142857435,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.10027451185295541,
+      "F (registered space)": -0.17500000000000002,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.07702326468651174,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.11329890679666524,
+      "F (registered space)": -0.04166666666666667,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.0454180526596288,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.10952573480418565,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.06922796723209215,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.0968857858237254,
+      "F (registered space)": -0.010695187165775402,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.05247123612911917,
+      "F (registered space)": -0.09224011713030746,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.11403389412131373,
+      "F (registered space)": 0.006622516556291391,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.0990270310171269,
+      "F (registered space)": 0.08428571428571428,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.10542759656635917,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.07288119311061486,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "depth": 0.7811968251960456,
+      "F (registered space)": 0.0015600624024961589,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7557950377326503,
+      "F (registered space)": -0.02756110244409773,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7504716227911964,
+      "F (registered space)": -0.024440977639105528,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8175618269301496,
+      "F (registered space)": 0.2264900662251656,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7922834448437519,
+      "F (registered space)": 0.009271523178807925,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7716450989601442,
+      "F (registered space)": 0.003973509933774808,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8086478370366609,
+      "F (registered space)": 0.01808785529715764,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7408115302456569,
+      "F (registered space)": -0.01808785529715764,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8020513340512728,
+      "F (registered space)": -0.002583979328165434,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7936377561629862,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8182457943366827,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7806296025006841,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7470125942327297,
+      "F (registered space)": 1.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8038957071911413,
+      "F (registered space)": 0.05817174515235456,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8056169457776865,
+      "F (registered space)": 0.05817174515235456,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7814213186687139,
+      "F (registered space)": 1.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7709922518499673,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7583315624850423,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7508893870274248,
+      "F (registered space)": 0.12267657992565054,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7616948647796887,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7531574742687622,
+      "F (registered space)": -0.011152416356877208,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8125446430862895,
+      "F (registered space)": 0.5951219512195123,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8024013434711021,
+      "F (registered space)": 0.5658536585365854,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8051488049682088,
+      "F (registered space)": 0.3902439024390244,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7847513748618373,
+      "F (registered space)": -0.007712082262210805,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8143821919922263,
+      "F (registered space)": -0.017994858611825267,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7582805908854311,
+      "F (registered space)": -0.017994858611825267,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7671780157957959,
+      "F (registered space)": 0.02732321362458337,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8126499284374413,
+      "F (registered space)": -0.000666419844502185,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7674559405111028,
+      "F (registered space)": 0.03665309144761189,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8170264010101673,
+      "F (registered space)": 0.3517587939698492,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7936356932388339,
+      "F (registered space)": 0.07035175879396986,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.806943614276353,
+      "F (registered space)": 0.02512562814070354,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7973314537578908,
+      "F (registered space)": 0.06269592476489033,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7492247005873441,
+      "F (registered space)": -0.031347962382445096,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7420716044175397,
+      "F (registered space)": -0.03761755485893413,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7609725087869424,
+      "F (registered space)": 0.3045550847457627,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7474594050143254,
+      "F (registered space)": -0.013241525423728886,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7698788648149691,
+      "F (registered space)": -0.03972457627118654,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.746551492534253,
+      "F (registered space)": 0.6903225806451613,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8123229959672398,
+      "F (registered space)": 0.010752688172042937,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8169741494594597,
+      "F (registered space)": -0.4967741935483871,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7716987044893597,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7785662989618719,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8184890315390959,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7833238423085039,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7466781079228385,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8119378266779941,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7934091180473973,
+      "F (registered space)": 0.4710144927536232,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.786879510778589,
+      "F (registered space)": 0.5507246376811595,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8083207450768397,
+      "F (registered space)": 0.8840579710144927,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7694953639201535,
+      "F (registered space)": 0.5793650793650794,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7726639949927407,
+      "F (registered space)": -0.25396825396825407,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7718135116270443,
+      "F (registered space)": 0.10317460317460302,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8036813727920034,
+      "F (registered space)": -0.35551663747810874,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8150412573186161,
+      "F (registered space)": 0.022767075306479753,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7990093416082309,
+      "F (registered space)": 0.5113835376532401,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7556927829711078,
+      "F (registered space)": 0.776,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8089996480598739,
+      "F (registered space)": -0.05066666666666665,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8156363779769663,
+      "F (registered space)": -0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7465038334690959,
+      "F (registered space)": 0.15601659751037342,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7683018875307728,
+      "F (registered space)": -0.13526970954356857,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7518513097898193,
+      "F (registered space)": -0.15767634854771787,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8077547653818206,
+      "F (registered space)": 0.010309278350515464,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7407131624449164,
+      "F (registered space)": -0.04123711340206185,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7525275281419624,
+      "F (registered space)": -0.04123711340206185,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7714754516695546,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7486865685700574,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7516052491533292,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7943154476858219,
+      "F (registered space)": -0.010152284263959392,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8003544763890611,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7731962902928978,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7453161239682464,
+      "F (registered space)": 0.25,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7426097931864117,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8172396998026623,
+      "F (registered space)": -0.012499999999999999,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7760533793177041,
+      "F (registered space)": 0.13846153846153847,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7571965627267367,
+      "F (registered space)": 0.02564102564102564,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8148787530512457,
+      "F (registered space)": 0.02564102564102564,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.781356011655403,
+      "F (registered space)": 0.7340425531914893,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7734594496945416,
+      "F (registered space)": -0.18085106382978722,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8066544123040383,
+      "F (registered space)": 0.0319148936170213,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7661653731449376,
+      "F (registered space)": 0.019475655430711614,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8138936299699544,
+      "F (registered space)": 0.17677902621722846,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7686771276554654,
+      "F (registered space)": 0.1558052434456929,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8146798144705508,
+      "F (registered space)": 0.5,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8142970311205124,
+      "F (registered space)": 0.24390243902439024,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7953931308200894,
+      "F (registered space)": 0.25609756097560976,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7536789803076683,
+      "F (registered space)": -0.10852713178294573,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.7483288060760516,
+      "F (registered space)": -0.10852713178294573,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8098447230861983,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.767357427857152,
+      "F (registered space)": -0.16568047337278105,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8028466439062109,
+      "F (registered space)": -0.011834319526627196,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.8155486532467381,
+      "F (registered space)": 0.011834319526627229,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "depth": 0.9311968251960455,
+      "F (registered space)": 0.0015600624024961589,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9057950377326502,
+      "F (registered space)": -0.024440977639105528,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9004716227911963,
+      "F (registered space)": -0.008840353614144574,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9675618269301495,
+      "F (registered space)": 0.03708609271523182,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9422834448437518,
+      "F (registered space)": 0.003973509933774808,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9216450989601441,
+      "F (registered space)": 0.003973509933774808,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9586478370366608,
+      "F (registered space)": -0.023255813953488448,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.8908115302456568,
+      "F (registered space)": -0.007751937984496131,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9520513340512727,
+      "F (registered space)": 0.002583979328165377,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9436377561629861,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9682457943366826,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.930629602500684,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.8970125942327296,
+      "F (registered space)": -0.041551246537396225,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9538957071911413,
+      "F (registered space)": 0.06371191135734065,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9556169457776864,
+      "F (registered space)": 0.05817174515235456,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9314213186687138,
+      "F (registered space)": 0.3,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9209922518499672,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9083315624850422,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9008893870274247,
+      "F (registered space)": 0.019516728624535518,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9116948647796886,
+      "F (registered space)": -0.02230483271375454,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9031574742687621,
+      "F (registered space)": -0.014869888475836278,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9625446430862894,
+      "F (registered space)": 0.6048780487804879,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9524013434711021,
+      "F (registered space)": 0.5463414634146342,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9551488049682088,
+      "F (registered space)": 0.5788617886178862,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9347513748618372,
+      "F (registered space)": -0.017994858611825267,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9643821919922262,
+      "F (registered space)": -0.017994858611825267,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.908280590885431,
+      "F (registered space)": -0.017994858611825267,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9171780157957958,
+      "F (registered space)": -7.398746554332773e-17,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9626499284374412,
+      "F (registered space)": -0.003332099222510259,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9174559405111027,
+      "F (registered space)": 0.0033320992225101113,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9670264010101672,
+      "F (registered space)": 0.4748743718592965,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9436356932388338,
+      "F (registered space)": 0.015075376884422124,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9569436142763529,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9473314537578907,
+      "F (registered space)": -0.03134796238244503,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.899224700587344,
+      "F (registered space)": -0.025078369905956063,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.8920716044175396,
+      "F (registered space)": -0.0062695924764888935,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9109725087869424,
+      "F (registered space)": 0.20921610169491517,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.8974594050143253,
+      "F (registered space)": -0.007944915254237414,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.919878864814969,
+      "F (registered space)": -0.002648305084745883,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.8965514925342529,
+      "F (registered space)": 0.6451612903225806,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9623229959672397,
+      "F (registered space)": -0.3419354838709677,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9669741494594596,
+      "F (registered space)": -0.8967741935483872,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9216987044893596,
+      "F (registered space)": 0.32891246684350134,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9285662989618718,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9684890315390958,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9333238423085038,
+      "F (registered space)": 0.20491803278688525,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.8966781079228384,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.961937826677994,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9434091180473972,
+      "F (registered space)": 0.3855072463768117,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9368795107785889,
+      "F (registered space)": 0.27536231884057966,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9583207450768396,
+      "F (registered space)": 0.4927536231884057,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9194953639201534,
+      "F (registered space)": 0.5476190476190476,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9226639949927407,
+      "F (registered space)": 0.18253968253968247,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9218135116270442,
+      "F (registered space)": 0.18253968253968247,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9536813727920033,
+      "F (registered space)": -0.4343257443082314,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.965041257318616,
+      "F (registered space)": 0.37583187390542905,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9490093416082308,
+      "F (registered space)": 0.2591943957968477,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9056927829711077,
+      "F (registered space)": 0.584,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9589996480598738,
+      "F (registered space)": 0.002666666666666728,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9656363779769662,
+      "F (registered space)": -0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.8965038334690958,
+      "F (registered space)": 0.04771784232365141,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9183018875307727,
+      "F (registered space)": -0.17261410788381748,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9018513097898192,
+      "F (registered space)": -0.24170124481327807,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9577547653818205,
+      "F (registered space)": -0.04742268041237113,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.8907131624449163,
+      "F (registered space)": -0.1134020618556701,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9025275281419624,
+      "F (registered space)": -0.04123711340206185,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9214754516695545,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.8986865685700574,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9016052491533291,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9443154476858218,
+      "F (registered space)": -0.03045685279187817,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.950354476389061,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9231962902928977,
+      "F (registered space)": -0.010152284263959392,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.8953161239682463,
+      "F (registered space)": -0.012499999999999999,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.8926097931864116,
+      "F (registered space)": -0.012499999999999999,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9672396998026622,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.926053379317704,
+      "F (registered space)": -0.005128205128205126,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9071965627267367,
+      "F (registered space)": 0.046153846153846156,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9648787530512456,
+      "F (registered space)": 0.11794871794871793,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9313560116554029,
+      "F (registered space)": -0.2340425531914893,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9234594496945415,
+      "F (registered space)": 0.0319148936170213,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9566544123040382,
+      "F (registered space)": -0.31914893617021267,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9161653731449375,
+      "F (registered space)": 0.050936329588014986,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9638936299699543,
+      "F (registered space)": 0.1558052434456929,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9186771276554653,
+      "F (registered space)": 0.1453183520599251,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9646798144705507,
+      "F (registered space)": 0.25609756097560976,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9642970311205123,
+      "F (registered space)": 0.22682926829268293,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9453931308200894,
+      "F (registered space)": 0.24390243902439024,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9036789803076682,
+      "F (registered space)": -0.04651162790697675,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.8983288060760515,
+      "F (registered space)": -0.04651162790697675,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9598447230861982,
+      "F (registered space)": -0.04651162790697675,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9173574278571519,
+      "F (registered space)": -0.5562130177514792,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.9528466439062108,
+      "F (registered space)": -0.023668639053254427,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 0.965548653246738,
+      "F (registered space)": -0.047337278106508854,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "depth": 1.0561397614473131,
+      "F (registered space)": -0.02756110244409773,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.1132881791038853,
+      "F (registered space)": -0.0066225165562913664,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.1178525263810175,
+      "F (registered space)": -0.007751937984496131,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.0956272627207726,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.0640742571706536,
+      "F (registered space)": 0.008310249307479171,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.055559263764679,
+      "F (registered space)": 0.907,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.0950138331589288,
+      "F (registered space)": -0.017843866171003732,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.109810141346652,
+      "F (registered space)": 0.6146341463414635,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.0807666428488938,
+      "F (registered space)": -0.012853470437018007,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.1149631105669733,
+      "F (registered space)": 0.0033320992225101113,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.1104460547579422,
+      "F (registered space)": 0.4824120603015075,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.0943114236806142,
+      "F (registered space)": 0.1316614420062696,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.0639521632518785,
+      "F (registered space)": 0.31514830508474573,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.0558274157031395,
+      "F (registered space)": 0.9483870967741935,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.078892964024756,
+      "F (registered space)": 0.07957559681697614,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.10009849112635,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.0852275498977282,
+      "F (registered space)": -1.1231884057971013,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.1076217497032668,
+      "F (registered space)": -0.6111111111111114,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.0794346305184024,
+      "F (registered space)": -0.6707530647985992,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.0814206785311222,
+      "F (registered space)": 0.4346666666666667,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.0448000119891714,
+      "F (registered space)": 0.14854771784232362,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.1075508924998438,
+      "F (registered space)": -0.014432989690721645,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.0601359024282075,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.092420678837073,
+      "F (registered space)": -0.020304568527918784,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.0840354979320095,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.0576551214514367,
+      "F (registered space)": 0.035897435897435895,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.1039635723640342,
+      "F (registered space)": -0.4680851063829786,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.041887174424448,
+      "F (registered space)": -0.40262172284644193,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.1155311897231865,
+      "F (registered space)": 0.25609756097560976,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.110239139256129,
+      "F (registered space)": -0.310077519379845,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.0599647935702474,
+      "F (registered space)": -0.08284023668639053,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "depth": 1.81785826504387,
+      "F (registered space)": 0.037190082644628045,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.8026660006232993,
+      "F (registered space)": -0.004132231404958773,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7673543103201443,
+      "F (registered space)": 0.004132231404958681,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7994830633524848,
+      "F (registered space)": -0.004132231404958773,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7476743766304754,
+      "F (registered space)": 0.012396694214876044,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.758995713268907,
+      "F (registered space)": 0.005050505050505055,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.747075151666857,
+      "F (registered space)": 0.030303030303030387,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.816414008347376,
+      "F (registered space)": 0.005050505050505111,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7802765006752252,
+      "F (registered space)": 0.007070707070707133,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.818208881546105,
+      "F (registered space)": -0.005050505050504999,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.771873574782254,
+      "F (registered space)": 0.03964757709251115,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7715990825941657,
+      "F (registered space)": 0.013215859030837114,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7720069892879242,
+      "F (registered space)": 0.013215859030837114,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7951687825522327,
+      "F (registered space)": 0.00792951541850221,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7759523719330694,
+      "F (registered space)": 0.03436123348017615,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7561586226367196,
+      "F (registered space)": 0.41917808219178093,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7763900818091019,
+      "F (registered space)": 0.13906849315068495,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7821143030524453,
+      "F (registered space)": 0.12328767123287672,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.8007669593137805,
+      "F (registered space)": 0.1824657534246576,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7763276760581743,
+      "F (registered space)": 0.10750684931506849,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7960157903643443,
+      "F (registered space)": 1.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.74733417484986,
+      "F (registered space)": 0.5654320987654321,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7694154242606939,
+      "F (registered space)": 0.38271604938271603,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7552611454312983,
+      "F (registered space)": 0.004444444444444394,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7856610403772555,
+      "F (registered space)": -0.2839506172839507,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.8198857074931636,
+      "F (registered space)": 0.02528560548362534,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.773041516814909,
+      "F (registered space)": 0.15689261233815677,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7594624793270075,
+      "F (registered space)": 0.03351104341203357,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7828991686313258,
+      "F (registered space)": 0.20487433358720494,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7607571668489368,
+      "F (registered space)": 0.060929169840060866,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7482108929531013,
+      "F (registered space)": 0.200952380952381,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.8199210481552444,
+      "F (registered space)": 0.3190476190476191,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.8046033736455178,
+      "F (registered space)": -0.033333333333333326,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.8157226083183666,
+      "F (registered space)": 0.1438095238095238,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.8172203172077839,
+      "F (registered space)": 0.36666666666666675,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7923942773208617,
+      "F (registered space)": 0.344041117892708,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.758586889957932,
+      "F (registered space)": 0.014455509155155812,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.792248112698174,
+      "F (registered space)": 0.0028911018310311624,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7896895678506815,
+      "F (registered space)": 0.02023771281721814,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7787205549063207,
+      "F (registered space)": 0.09540636042402822,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.801129278906355,
+      "F (registered space)": 0.5193370165745854,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7558420013501317,
+      "F (registered space)": 0.11049723756906074,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.8196309003278437,
+      "F (registered space)": 0.36464088397790057,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7813964093779038,
+      "F (registered space)": 0.18784530386740328,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.8166097525312384,
+      "F (registered space)": 0.09944751381215466,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7624188822129716,
+      "F (registered space)": 0.3782459578637922,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.75462503622077,
+      "F (registered space)": -0.336109750122489,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.790708800513357,
+      "F (registered space)": -0.44194022537971583,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.8165391270826865,
+      "F (registered space)": -0.3890249877511025,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7585353926841494,
+      "F (registered space)": -0.4243018128368447,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7559032636453407,
+      "F (registered space)": 0.24338624338624337,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.794170153798476,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7816029264125635,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.770505105158148,
+      "F (registered space)": 0.005291005291005296,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7519829809070113,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7995891982504273,
+      "F (registered space)": 0.5701149425287356,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7643721223465314,
+      "F (registered space)": 0.8275862068965517,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7863719040474164,
+      "F (registered space)": 0.974712643678161,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7732228875494747,
+      "F (registered space)": 0.33103448275862063,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.747255161348122,
+      "F (registered space)": 0.42298850574712643,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.8025253104754162,
+      "F (registered space)": 0.5006622516556293,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7600020360989164,
+      "F (registered space)": 0.05483443708609272,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.755932855959521,
+      "F (registered space)": 0.07450331125827815,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7640567771624076,
+      "F (registered space)": 0.2980132450331126,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7952009805554752,
+      "F (registered space)": -0.21456953642384105,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.755122077998189,
+      "F (registered space)": 0.07605633802816901,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.748610552157573,
+      "F (registered space)": 0.07981220657276995,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7538422620904444,
+      "F (registered space)": 0.07981220657276995,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7879045341207789,
+      "F (registered space)": 0.07981220657276995,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7575030255332846,
+      "F (registered space)": 0.07981220657276995,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7476052738295924,
+      "F (registered space)": -0.004020100502512563,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7497628637178944,
+      "F (registered space)": -0.010050251256281409,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7436251935629137,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.8003132263646295,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.803358843965451,
+      "F (registered space)": -0.040201005025125636,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7576800190759199,
+      "F (registered space)": 0.018046709129511677,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7633494453291407,
+      "F (registered space)": 0.018046709129511677,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7663779646575375,
+      "F (registered space)": 0.018046709129511677,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7562422381531781,
+      "F (registered space)": 0.018046709129511677,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7545775285011067,
+      "F (registered space)": 0.018046709129511677,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.8077473349354705,
+      "F (registered space)": 0.05154639175257733,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7557645680786145,
+      "F (registered space)": -0.02061855670103093,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.746924731933342,
+      "F (registered space)": 0.010309278350515465,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7988439490030106,
+      "F (registered space)": 3.576749435003726e-18,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.809040078308326,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7773405496030021,
+      "F (registered space)": 0.29545454545454547,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7782243265400255,
+      "F (registered space)": 0.09090909090909098,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.8046141043545543,
+      "F (registered space)": 0.007575757575757582,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.790507599524857,
+      "F (registered space)": -0.01515151515151508,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.7561728457366907,
+      "F (registered space)": 0.07575757575757582,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "depth": 1.9678582650438698,
+      "F (registered space)": -0.012396694214876044,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9526660006232992,
+      "F (registered space)": 0.004132231404958589,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9173543103201443,
+      "F (registered space)": 0.004132231404958681,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9494830633524847,
+      "F (registered space)": 0.015702479338842897,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.8976743766304753,
+      "F (registered space)": -0.0008264462809917363,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9089957132689068,
+      "F (registered space)": -0.005050505050504999,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.897075151666857,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.966414008347376,
+      "F (registered space)": 0.005050505050505055,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9302765006752252,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.968208881546105,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.921873574782254,
+      "F (registered space)": -0.008810572687224677,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9215990825941656,
+      "F (registered space)": 0.004405286343612437,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9220069892879241,
+      "F (registered space)": -0.004405286343612241,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9451687825522326,
+      "F (registered space)": -0.013215859030837015,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9259523719330693,
+      "F (registered space)": 0.022026431718061693,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9061586226367195,
+      "F (registered space)": -0.07002739726027404,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9263900818091018,
+      "F (registered space)": 0.0739726027397261,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9321143030524452,
+      "F (registered space)": 0.12328767123287672,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9507669593137804,
+      "F (registered space)": 0.20219178082191788,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9263276760581742,
+      "F (registered space)": 0.11342465753424658,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9460157903643442,
+      "F (registered space)": -0.1654320987654322,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.89733417484986,
+      "F (registered space)": 0.5259259259259259,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9194154242606938,
+      "F (registered space)": -0.0617283950617284,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9052611454312982,
+      "F (registered space)": -0.36296296296296315,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9356610403772554,
+      "F (registered space)": -0.08641975308641978,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9698857074931635,
+      "F (registered space)": -0.062452399086062475,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9230415168149089,
+      "F (registered space)": -0.062452399086062475,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9094624793270074,
+      "F (registered space)": -0.024752475247524663,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9328991686313257,
+      "F (registered space)": 0.1294744859101293,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9107571668489367,
+      "F (registered space)": 0.047220106626047295,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.8982108929531012,
+      "F (registered space)": 0.5952380952380953,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9699210481552443,
+      "F (registered space)": 0.3952380952380953,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9546033736455177,
+      "F (registered space)": 0.3666666666666667,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9657226083183665,
+      "F (registered space)": 0.30000000000000004,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9672203172077838,
+      "F (registered space)": 0.49047619047619057,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9423942773208616,
+      "F (registered space)": 0.07574686797301645,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.908586889957932,
+      "F (registered space)": -0.02023771281721814,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9422481126981739,
+      "F (registered space)": 0.07805974943784132,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9396895678506814,
+      "F (registered space)": 0.19948602634115,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9287205549063207,
+      "F (registered space)": 0.07805974943784126,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.951129278906355,
+      "F (registered space)": 0.3867403314917127,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9058420013501316,
+      "F (registered space)": 0.1546961325966851,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9696309003278436,
+      "F (registered space)": 0.05524861878453037,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9313964093779037,
+      "F (registered space)": 0.2265193370165746,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9666097525312383,
+      "F (registered space)": -0.287292817679558,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9124188822129715,
+      "F (registered space)": 0.3870651641352278,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.90462503622077,
+      "F (registered space)": -0.6006859382655559,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9407088005133568,
+      "F (registered space)": -0.3537481626653602,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9665391270826864,
+      "F (registered space)": -0.5213130818226359,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9085353926841493,
+      "F (registered space)": -0.336109750122489,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9059032636453406,
+      "F (registered space)": 0.04232804232804237,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.944170153798476,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9316029264125634,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9205051051581479,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9019829809070112,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9495891982504272,
+      "F (registered space)": 0.5333333333333334,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9143721223465313,
+      "F (registered space)": 0.9195402298850576,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9363719040474163,
+      "F (registered space)": 0.5701149425287357,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9232228875494746,
+      "F (registered space)": 1.011494252873563,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.8972551613481219,
+      "F (registered space)": 0.349425287356322,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.952525310475416,
+      "F (registered space)": 0.07450331125827815,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9100020360989163,
+      "F (registered space)": -0.011920529801324515,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.905932855959521,
+      "F (registered space)": 0.023841059602649015,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9140567771624075,
+      "F (registered space)": -0.07867549668874173,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.945200980555475,
+      "F (registered space)": -0.035761589403973476,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.905122077998189,
+      "F (registered space)": 0.07042253521126761,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.898610552157573,
+      "F (registered space)": 0.07042253521126761,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9038422620904443,
+      "F (registered space)": 0.0892018779342723,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9379045341207788,
+      "F (registered space)": 0.09859154929577464,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9075030255332845,
+      "F (registered space)": 0.07605633802816901,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.8976052738295923,
+      "F (registered space)": -0.010050251256281409,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.8997628637178943,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.8936251935629136,
+      "F (registered space)": -0.010050251256281409,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9503132263646294,
+      "F (registered space)": -0.004020100502512563,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.953358843965451,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9076800190759198,
+      "F (registered space)": 0.018046709129511677,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9133494453291406,
+      "F (registered space)": 0.018046709129511677,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9163779646575374,
+      "F (registered space)": 0.00743099787685775,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.906242238153178,
+      "F (registered space)": 0.018046709129511677,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9045775285011066,
+      "F (registered space)": -0.003184713375796177,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9577473349354704,
+      "F (registered space)": -0.16494845360824745,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9057645680786144,
+      "F (registered space)": -0.010309278350515464,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.896924731933342,
+      "F (registered space)": 0.030927835051546396,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9488439490030105,
+      "F (registered space)": -0.0309278350515464,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.959040078308326,
+      "F (registered space)": 0.041237113402061855,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.927340549603002,
+      "F (registered space)": 0.14393939393939398,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9282243265400254,
+      "F (registered space)": 0.30303030303030304,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9546141043545542,
+      "F (registered space)": -0.007575757575757498,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9405075995248569,
+      "F (registered space)": 0.24242424242424246,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 1.9061728457366907,
+      "F (registered space)": 0.3181818181818182,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "depth": 2.0405971960793425,
+      "F (registered space)": 0.012396694214876044,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "depth": 2.0577283777640765,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "depth": 2.0649793597621424,
+      "F (registered space)": -0.022026431718061595,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "depth": 2.088312784105225,
+      "F (registered space)": 0.034520547945205406,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "depth": 2.062290653776802,
+      "F (registered space)": -0.5802469135802469,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "depth": 2.042319760819179,
+      "F (registered space)": 0.14318354912414336,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "depth": 2.0467379197069877,
+      "F (registered space)": 0.4714285714285715,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "depth": 2.116889589129601,
+      "F (registered space)": 0.054930934789592024,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "depth": 2.0721239781499103,
+      "F (registered space)": 0.5966850828729282,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "depth": 2.107854951360675,
+      "F (registered space)": -0.15972562469377755,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "depth": 2.078745181519203,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "depth": 2.056129578543897,
+      "F (registered space)": 0.3751724137931034,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "depth": 2.085104721318806,
+      "F (registered space)": 0.042913907284768224,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "depth": 2.114457124501252,
+      "F (registered space)": 0.07042253521126761,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "depth": 2.058992975591003,
+      "F (registered space)": 0.0,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "depth": 2.083123822878067,
+      "F (registered space)": 0.00743099787685775,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "depth": 2.11485016791309,
+      "F (registered space)": 0.0041237113402061865,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "depth": 2.077809575169442,
+      "F (registered space)": 0.4015151515151515,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "depth": -0.22,
+      "y": 0.02639878490075889,
+      "error": 0.013567257814385286,
+      "series": "steered",
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "depth": -0.07,
+      "y": 0.001395705575433893,
+      "error": 0.001858448645282501,
+      "series": "shuffled",
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "depth": 0.08,
+      "y": 0.02163992354743289,
+      "error": 0.026768597884780237,
+      "series": "crosstype",
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "depth": 0.23,
+      "y": 0.0336542429582612,
+      "error": 0.027631018363084937,
+      "series": "parent single-ce (steered)",
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "depth": 0.78,
+      "y": 0.06164580772163229,
+      "error": 0.04691486869168665,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "depth": 0.9299999999999999,
+      "y": 0.004070752021220371,
+      "error": 0.01731499636738328,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "depth": 1.08,
+      "y": 0.022558796427887176,
+      "error": 0.043032217364359186,
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "depth": 1.23,
+      "y": 0.21359408800799654,
+      "error": 0.12312791783098559,
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "depth": 1.78,
+      "y": 0.05655189335350351,
+      "error": 0.03821732870706545,
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "depth": 1.93,
+      "y": 0.015166030742823874,
+      "error": 0.029438824809005438,
+      "_kind": "errorbar",
+      "_group": 30
+    },
+    {
+      "depth": 2.08,
+      "y": 0.2497198085864006,
+      "error": 0.1740584439934235,
+      "_kind": "errorbar",
+      "_group": 31
+    },
+    {
+      "depth": 2.23,
+      "y": 0.37176317281034127,
+      "error": 0.2063337605210877,
+      "_kind": "errorbar",
+      "_group": 32
+    },
+    {
+      "depth": -0.24081354589035156,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.1827333859571647,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.24960464074067262,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.21774840957068942,
+      "y": 0.06,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.18862800818693498,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.20778137979221473,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.22110126021779,
+      "y": 0.12358393408856849,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.192926404374997,
+      "y": 0.02034587995930824,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.22863317290157187,
+      "y": 0.014469453376205785,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.2525455075140308,
+      "y": 0.10440835266821347,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.22898953856453144,
+      "y": 0.010330578512396693,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.1970299276278709,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.24109643434192837,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.23712953480075508,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.20275370822736705,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.18685720477444043,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.18014563086606503,
+      "y": 0.07954545454545454,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.20202648089279426,
+      "y": 0.08375634517766498,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.23478903594381256,
+      "y": 0.025423728813559324,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.25609308300873773,
+      "y": 0.04395604395604395,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.18983902432818348,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.2522904607367784,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.21574602578400912,
+      "y": 0.009467455621301774,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.25121797598318285,
+      "y": 0.049342105263157895,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.19090996080225228,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.23546283497891923,
+      "y": 0.10749999999999998,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.2321625576586082,
+      "y": 0.013947001394700141,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.22673076019036598,
+      "y": 0.019488428745432402,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.25924323725437814,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "depth": -0.09081354589035157,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": -0.03273338595716472,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": -0.09960464074067261,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": -0.06774840957068942,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": -0.038628008186934994,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": -0.057781379792214746,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": -0.07110126021779001,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": -0.042926404374997,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": -0.07863317290157187,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": -0.10254550751403083,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": -0.07898953856453145,
+      "y": 0.030991735537190077,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": -0.047029927627870886,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": -0.09109643434192838,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": -0.08712953480075508,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": -0.052753708227367066,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": -0.036857204774440426,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": -0.030145630866065025,
+      "y": 0.004545454545454546,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": -0.05202648089279426,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": -0.08478903594381257,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": -0.10609308300873775,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": -0.03983902432818349,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": -0.1022904607367784,
+      "y": 0.004938271604938272,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": -0.06574602578400912,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": -0.10121797598318283,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": -0.040909960802252295,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": -0.08546283497891924,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": -0.08216255765860819,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": -0.07673076019036598,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": -0.10924323725437816,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "depth": 0.05918645410964845,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.11726661404283528,
+      "y": 0.2987804878048781,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.050395359259327394,
+      "y": 0.010449320794148382,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.08225159042931057,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.11137199181306501,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.09221862020778526,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.07889873978221001,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.10707359562500302,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.07136682709842812,
+      "y": 0.3183279742765273,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.04745449248596918,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.07101046143546856,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.10297007237212913,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.05890356565807164,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.06287046519924493,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.09724629177263294,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.11314279522555959,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.11985436913393499,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.09797351910720575,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.06521096405618743,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.04390691699126226,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.11016097567181651,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.047709539263221606,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.08425397421599089,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.04878202401681718,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.1090900391977477,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.06453716502108077,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.06783744234139183,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.07326923980963401,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.040756762745621844,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "depth": 0.7568003841964579,
+      "y": 0.08171603677221653,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7582688502433854,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7571373693984561,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7532391225646703,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7567489297134569,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.8194111663242424,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7588675246269634,
+      "y": 0.4595959595959596,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7996962573416031,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7722270167791024,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.8017827630167723,
+      "y": 0.7017045454545454,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7812101334426579,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7883485798368836,
+      "y": 0.014204545454545456,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7472512523980845,
+      "y": 0.03856041131105395,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.8174989121522134,
+      "y": -0.16709511568123397,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7744124622824067,
+      "y": -0.089974293059126,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.8048356171240928,
+      "y": 0.4064516129032258,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7914651592043144,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7822420493980667,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7992355442542576,
+      "y": 0.5269461077844311,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.8093898475937913,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.763445749863361,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.778178351038068,
+      "y": 1.0746268656716416,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.8113572331995622,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7725972000648514,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7996666074458754,
+      "y": 0.8324873096446699,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.8174941360421112,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7462694431071728,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.788345336144256,
+      "y": 0.3999999999999999,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7522358178850279,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.8105235110129536,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.8142252168849247,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7877572886203869,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7592221179147439,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.797696397620531,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7967245375237487,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7938425077187131,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7912457070640558,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.8139823356810965,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7833597733302501,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7740580469514566,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7483837911440092,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.8110367064289676,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7583827625747802,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7533055886506276,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7794589614859118,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7871201160172201,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7865961686477697,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.794403660447318,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7813911539940517,
+      "y": 0.05590062111801243,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7879064621702776,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7557881646335723,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.8065729078150928,
+      "y": 0.004938271604938272,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.8016801048184509,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7908956519281845,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7873911677202732,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7506945458858759,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7494610634346941,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7517669373970719,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7855450215172971,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7826535361170008,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7773698995932099,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7446979498939532,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7417240772715268,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7414734412130878,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7752087574772308,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7414831517242592,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.8055861765654667,
+      "y": 0.08421052631578947,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.8180353779311955,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7675597098003164,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7808731432013232,
+      "y": 0.014224751066856332,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7939292314541945,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.7794332475615335,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "depth": 0.9068003841964578,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9082688502433853,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.907137369398456,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9032391225646702,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9067489297134568,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9694111663242423,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9088675246269633,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.949696257341603,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9222270167791023,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9517827630167722,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9312101334426578,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9383485798368835,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.8972512523980845,
+      "y": -0.2827763496143959,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9674989121522133,
+      "y": -0.12853470437018,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9244124622824066,
+      "y": -0.012853470437018077,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9548356171240927,
+      "y": 0.10887096774193548,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9414651592043143,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9322420493980667,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9492355442542575,
+      "y": 0.05988023952095809,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9593898475937912,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9134457498633609,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9281783510380679,
+      "y": 0.5485074626865671,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9613572331995621,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9225972000648514,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9496666074458753,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9674941360421111,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.8962694431071727,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9383453361442559,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9022358178850278,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9605235110129535,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9642252168849246,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9377572886203868,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9092221179147438,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9476963976205309,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9467245375237486,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.943842507718713,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9412457070640557,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9639823356810964,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.93335977333025,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9240580469514565,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.8983837911440091,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9610367064289675,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9083827625747801,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9033055886506275,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9294589614859117,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.93712011601722,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9365961686477696,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9444036604473179,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9313911539940516,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9379064621702775,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9057881646335723,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9565729078150927,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9516801048184508,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9408956519281844,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9373911677202731,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9006945458858758,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.899461063434694,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9017669373970718,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.935545021517297,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9326535361170007,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9273698995932098,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.8946979498939531,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.8917240772715267,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.8914734412130877,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9252087574772307,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.8914831517242591,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9555861765654666,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9680353779311954,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9175597098003163,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9308731432013231,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9439292314541944,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 0.9294332475615334,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "depth": 1.0714779140991126,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "depth": 1.0607781012222237,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "depth": 1.0707420555472273,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "depth": 1.0455738321277344,
+      "y": 0.3909090909090909,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "depth": 1.0496485465831638,
+      "y": -0.2667095115681234,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "depth": 1.053294381985691,
+      "y": 0.07258064516129033,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "depth": 1.045598079270405,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "depth": 1.050443717114502,
+      "y": 0.011194029850746268,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "depth": 1.0833595655458357,
+      "y": 0.050761421319796954,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "depth": 1.1037112535246745,
+      "y": 0.21249999999999997,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "depth": 1.0538958089354742,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "depth": 1.0688820855850278,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "depth": 1.0636472391709542,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "depth": 1.0576862381160195,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "depth": 1.117856470364468,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "depth": 1.1020475314941582,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "depth": 1.1042236246217474,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "depth": 1.0974702151217741,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "depth": 1.1101018236227116,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "depth": 1.044808501240714,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "depth": 1.105196236391304,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "depth": 1.040326149070309,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "depth": 1.0666570190314173,
+      "y": 0.07017543859649122,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "depth": 1.0937435287913315,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "depth": 1.81785826504387,
+      "y": 0.10172939979654119,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.8026660006232993,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7673543103201443,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7994830633524848,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7476743766304754,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.758995713268907,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.747075151666857,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.816414008347376,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7802765006752252,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.818208881546105,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.771873574782254,
+      "y": 0.7316561844863732,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7715990825941657,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7720069892879242,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7951687825522327,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7759523719330694,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7561586226367196,
+      "y": 0.5617685305591678,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7763900818091019,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7821143030524453,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.8007669593137805,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7763276760581743,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7960157903643443,
+      "y": 0.6135986733001658,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.74733417484986,
+      "y": 0.18242122719734669,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7694154242606939,
+      "y": -0.3316749585406302,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7552611454312983,
+      "y": -0.2653399668325041,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7856610403772555,
+      "y": 0.17247097844112766,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.8198857074931636,
+      "y": 0.5673758865248228,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.773041516814909,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7594624793270075,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7828991686313258,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7607571668489368,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7482108929531013,
+      "y": 0.5736782902137232,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.8199210481552444,
+      "y": -0.022497187851518552,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.8046033736455178,
+      "y": -0.022497187851518552,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.8157226083183666,
+      "y": 0.008436445444319459,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.8172203172077839,
+      "y": -0.033745781777277835,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7923942773208617,
+      "y": 0.8956916099773242,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.758586889957932,
+      "y": 0.11337868480725626,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.792248112698174,
+      "y": -0.011337868480725623,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7896895678506815,
+      "y": -0.011337868480725623,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7787205549063207,
+      "y": -0.011337868480725623,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.801129278906355,
+      "y": 0.6518668012108982,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7558420013501317,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.8196309003278437,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7813964093779038,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.8166097525312384,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7624188822129716,
+      "y": 0.1293759512937595,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.75462503622077,
+      "y": 0.03805175038051751,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.790708800513357,
+      "y": 0.1293759512937595,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.8165391270826865,
+      "y": 0.0684931506849315,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7585353926841494,
+      "y": 0.13952308472856417,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7559032636453407,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.794170153798476,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7816029264125635,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.770505105158148,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7519829809070113,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7995891982504273,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7643721223465314,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7863719040474164,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7732228875494747,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.747255161348122,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.8025253104754162,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7600020360989164,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.755932855959521,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7640567771624076,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7952009805554752,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.755122077998189,
+      "y": 0.11203585147247118,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.748610552157573,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7538422620904444,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7879045341207789,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7575030255332846,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7476052738295924,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7497628637178944,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7436251935629137,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.8003132263646295,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.803358843965451,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7576800190759199,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7633494453291407,
+      "y": 0.00851063829787234,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7663779646575375,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7562422381531781,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7545775285011067,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.8077473349354705,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7557645680786145,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.746924731933342,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7988439490030106,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.809040078308326,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7773405496030021,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7782243265400255,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.8046141043545543,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.790507599524857,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.7561728457366907,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "depth": 1.9678582650438698,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9526660006232992,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9173543103201443,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9494830633524847,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.8976743766304753,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9089957132689068,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.897075151666857,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.966414008347376,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9302765006752252,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.968208881546105,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.921873574782254,
+      "y": 0.28301886792452835,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9215990825941656,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9220069892879241,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9451687825522326,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9259523719330693,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9061586226367195,
+      "y": 0.011703511053315995,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9263900818091018,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9321143030524452,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9507669593137804,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9263276760581742,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9460157903643442,
+      "y": -0.6301824212271974,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.89733417484986,
+      "y": -0.00663349917081261,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9194154242606938,
+      "y": -0.22553897180762855,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9052611454312982,
+      "y": 0.31509121061359857,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9356610403772554,
+      "y": -0.3482587064676617,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9698857074931635,
+      "y": 0.3102836879432625,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9230415168149089,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9094624793270074,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9328991686313257,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9107571668489367,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.8982108929531012,
+      "y": 0.17997750281214847,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9699210481552443,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9546033736455177,
+      "y": 0.011248593925759281,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9657226083183665,
+      "y": -0.022497187851518552,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9672203172077838,
+      "y": -0.033745781777277835,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9423942773208616,
+      "y": 0.8684807256235828,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.908586889957932,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9422481126981739,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9396895678506814,
+      "y": -0.011337868480725623,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9287205549063207,
+      "y": -0.011337868480725623,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.951129278906355,
+      "y": 0.18163471241170534,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9058420013501316,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9696309003278436,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9313964093779037,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9666097525312383,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9124188822129715,
+      "y": -0.11415525114155249,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.90462503622077,
+      "y": 0.04819888381532218,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9407088005133568,
+      "y": 0.007610350076103507,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9665391270826864,
+      "y": 0.1293759512937595,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9085353926841493,
+      "y": 0.41349568746829013,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9059032636453406,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.944170153798476,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9316029264125634,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9205051051581479,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9019829809070112,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9495891982504272,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9143721223465313,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9363719040474163,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9232228875494746,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.8972551613481219,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.952525310475416,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9100020360989163,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.905932855959521,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9140567771624075,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.945200980555475,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.905122077998189,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.898610552157573,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9038422620904443,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9379045341207788,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9075030255332845,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.8976052738295923,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.8997628637178943,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.8936251935629136,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9503132263646294,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.953358843965451,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9076800190759198,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9133494453291406,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9163779646575374,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.906242238153178,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9045775285011066,
+      "y": 0.00851063829787234,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9577473349354704,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9057645680786144,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.896924731933342,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9488439490030105,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.959040078308326,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.927340549603002,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9282243265400254,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9546141043545542,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9405075995248569,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 1.9061728457366907,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "depth": 2.0405971960793425,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "depth": 2.0577283777640765,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "depth": 2.0649793597621424,
+      "y": 0.29350104821802936,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "depth": 2.088312784105225,
+      "y": 0.6671001300390118,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "depth": 2.062290653776802,
+      "y": 0.04975124378109448,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "depth": 2.042319760819179,
+      "y": 1.4539007092198586,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "depth": 2.0467379197069877,
+      "y": 0.4319460067491563,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "depth": 2.116889589129601,
+      "y": 0.7709750566893424,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "depth": 2.0721239781499103,
+      "y": 0.3128153380423814,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "depth": 2.107854951360675,
+      "y": 0.5149670218163367,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "depth": 2.078745181519203,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "depth": 2.056129578543897,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "depth": 2.085104721318806,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "depth": 2.114457124501252,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "depth": 2.058992975591003,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "depth": 2.083123822878067,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "depth": 2.11485016791309,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "depth": 2.077809575169442,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 41
+    }
+  ],
+  "n_series": 42,
+  "total_points": 1000,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "instr_format (registered: netted)",
+        "xlabel": "depth",
+        "ylabel": "F (registered space)",
+        "legend_labels": [
+          "steered",
+          "shuffled",
+          "crosstype",
+          "parent single-ce (steered)"
+        ],
+        "xticklabels": [
+          "d1",
+          "d3",
+          "d5"
+        ],
+        "yticklabels": [
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0"
+        ]
+      },
+      {
+        "title": "persona_prompted (registered: target-only)",
+        "xlabel": "depth",
+        "xticklabels": [
+          "d1",
+          "d3",
+          "d5"
+        ]
+      }
+    ],
+    "series": [
+      "steered",
+      "shuffled",
+      "crosstype",
+      "parent single-ce (steered)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "figure": "tb_hero",
+  "inputs": [
+    "eval_results/issue_2162/turn_boundary/f_cells_tb.jsonl",
+    "eval_results/issue_2162/turn_boundary/null_shuffled_cells_tb.jsonl",
+    "eval_results/issue_2162/turn_boundary/null_crosstype_cells_tb.jsonl",
+    "eval_results/issue_2162/turn_boundary/parent_ref_cells_tb.jsonl",
+    "eval_results/issue_2162/turn_boundary/stats_tb.json",
+    "eval_results/issue_2162/turn_boundary/identity_gate.json"
+  ]
+}

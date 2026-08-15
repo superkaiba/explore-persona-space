@@ -1,0 +1,39 @@
+{
+  "criterion": "G2 d1-identity gate (plan §7 G4): |mean ΔF| <= 0.10 per arm, netted space, tb@d1 vs parent ce, surviving d1 pool",
+  "bar": 0.1,
+  "n_surviving_pool": 66,
+  "per_arm": {
+    "steered": {
+      "n_pool": 66,
+      "n_used": 66,
+      "mean_delta_f": 0.0074880849254797014,
+      "sd_delta_f": 0.18237543324606065,
+      "ci95": [
+        -0.03721704154252476,
+        0.048662273285201244
+      ],
+      "passed": true
+    },
+    "shuffled": {
+      "n_pool": 66,
+      "n_used": 66,
+      "mean_delta_f": -0.022273339267192372,
+      "sd_delta_f": 0.12448335220912445,
+      "ci95": [
+        -0.05254521199058943,
+        0.007103718832741409
+      ],
+      "passed": true
+    }
+  },
+  "passed": true,
+  "boot": {
+    "B": 10000,
+    "seed": 21620
+  },
+  "repro": {
+    "git_commit": "48842a29",
+    "git_dirty": false,
+    "script": "scripts/issue2094_judge.py"
+  }
+}

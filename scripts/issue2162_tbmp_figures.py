@@ -192,7 +192,10 @@ def fig_tb_hero(tb: dict[str, dict], ref: dict[str, dict], fig_dir: Path, inputs
 
 
 def fig_tb_sweep(tb: dict[str, dict], ref: dict[str, dict], fig_dir: Path, inputs: list[Path]):
-    fig, axes = plt.subplots(2, 2, figsize=(11, 7.5), sharey=True)
+    # constrained_layout: without it the top row's "boundary index k" xlabel
+    # overlaps the bottom row's panel titles and both render garbled (2x2 grid,
+    # per-panel titles + xlabels). Layout only — no data or scale change.
+    fig, axes = plt.subplots(2, 2, figsize=(11, 7.5), sharey=True, constrained_layout=True)
     cells = sorted(FINAL_K)
     empty_panels: list[str] = []
     for ax, cell in zip(axes.ravel(), cells, strict=True):
@@ -360,15 +363,13 @@ def fig_tb_identity_d1(
     xs = np.linspace(lo - pad, hi + pad, 50)
     ax.plot(xs, xs, color="#888888", lw=0.9)
     ax.fill_between(xs, xs - 0.10, xs + 0.10, color="#888888", alpha=0.15)
-    per_arm = gate.get("per_arm", {})
-    bits = ", ".join(
-        f"{a} ΔF={per_arm[a]['mean_delta_f']:+.3f}" for a in ("steered", "shuffled") if a in per_arm
-    )
-    ax.set_title(
-        f"tb@d1 vs parent ce (netted) — G2 {'PASS' if gate.get('passed') else 'FAIL'}, "
-        f"pool n={gate.get('n_surviving_pool')}; {bits}",
-        fontsize=9,
-    )
+    # Canvas carries the plain descriptor ONLY. The G2 verdict, pool n and
+    # per-arm ΔF used to live in this title: it clipped at both figure edges,
+    # and per-arm statistics + a gate verdict rendered onto the canvas are the
+    # class the standing figure directive keeps OFF it (axes + ticks + legend +
+    # titles only). Those facts move to the caption sidecar, which is what the
+    # report reads — nothing is lost.
+    ax.set_title("tb@d1 vs parent ce (netted)", fontsize=10)
     ax.set_xlabel("parent single-ce F (netted)")
     ax.set_ylabel("tbmp joint-tb@d1 F (netted)")
     ax.legend(fontsize=8)
@@ -433,8 +434,15 @@ def fig_tb_explore_strips(tb: dict[str, dict], fig_dir: Path, inputs: list[Path]
     units = sorted({(r["cell"], r["slot"]) for rows in tb.values() for r in rows})
     n_cols = 5
     n_rows = int(np.ceil(len(units) / n_cols))
+    # constrained_layout: on a multi-row grid each row's panel titles otherwise
+    # land on top of the row above's x-tick labels. Layout only.
     fig, axes = plt.subplots(
-        n_rows, n_cols, figsize=(3.0 * n_cols, 2.6 * n_rows), sharey=True, squeeze=False
+        n_rows,
+        n_cols,
+        figsize=(3.0 * n_cols, 2.6 * n_rows),
+        sharey=True,
+        squeeze=False,
+        constrained_layout=True,
     )
     for ax in axes.ravel()[len(units) :]:
         ax.axis("off")
@@ -586,6 +594,32 @@ def main(argv: list[str] | None = None) -> int:
     captions = dict(CAPTIONS)
     if not margin_done:
         captions["tb_margin_scatter"] += " [NOT RENDERED — margin leg deferred]"
+
+    # G2 verdict / pool n / per-arm ΔF live HERE rather than on the canvas
+    # (see fig_tb_identity_d1) — the report reads captions, so the facts stay
+    # reportable while the plot stays axes+legend+title only.
+    # Every field is OPTIONAL by construction: this caption is descriptive, so a
+    # gate payload missing a CI or the bar must degrade the sentence, never crash
+    # the render (the figures smoke drives a minimal synthetic gate dict).
+    def _g2_arm_bit(arm: str, rec: dict) -> str:
+        bit = f"{arm} mean ΔF={rec['mean_delta_f']:+.3f}"
+        ci = rec.get("ci95")
+        if isinstance(ci, (list, tuple)) and len(ci) == 2:
+            bit += f" (95% CI [{ci[0]:+.3f}, {ci[1]:+.3f}])"
+        return bit
+
+    g2_arms = ", ".join(
+        _g2_arm_bit(a, rec)
+        for a, rec in sorted(gate.get("per_arm", {}).items())
+        if isinstance(rec, dict) and rec.get("mean_delta_f") is not None
+    )
+    bar = gate.get("bar")
+    bar_clause = f" against the |mean ΔF| ≤ {bar} bar" if bar is not None else ""
+    captions["tb_identity_d1"] += (
+        f" Gate outcome: G2 {'PASS' if gate.get('passed') else 'FAIL'} on a surviving pool of "
+        f"n={gate.get('n_surviving_pool')} pairs{bar_clause}"
+        + (f"; {g2_arms}." if g2_arms else ".")
+    )
     per_cell = stats.get("per_cell", {})
     payload = {
         "captions": captions,
