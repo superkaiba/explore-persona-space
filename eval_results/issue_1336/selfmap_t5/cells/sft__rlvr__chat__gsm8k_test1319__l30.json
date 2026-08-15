@@ -1,0 +1,550 @@
+{
+  "elapsed_s": 25.118985272943974,
+  "metadata": {
+    "device": "cpu",
+    "git_commit": "e9c52a163bea68822963536e09d13ea0a5da7c32",
+    "numpy": "2.2.6",
+    "script": "scripts/issue1336_selfmap_missing_pairs.py",
+    "timestamp": "2026-08-12T21:18:49Z",
+    "torch": "2.8.0+cu128"
+  },
+  "records": [
+    {
+      "A_ans_identity_bias_r2": 0.2362957867188883,
+      "A_ctx_rev_identity_bias_r2": 0.8401326346866801,
+      "aans_own_r2": 0.5040958463730539,
+      "aans_own_r2_globalmu": 0.5055025814575959,
+      "corpus": "gsm8k_test1319",
+      "cross_r2": 0.3813690691965276,
+      "cross_r2_globalmu": 0.38312394426337115,
+      "d": 4096,
+      "degenerate_n_lt_d": true,
+      "fit_seed": 0,
+      "format": "chat",
+      "layer": 30,
+      "n": 1319,
+      "n_folds": 5,
+      "n_train_max": 1056,
+      "n_train_min": 1055,
+      "pair": "sft__rlvr",
+      "procrustes_aligned_cos": 0.7628733277320862,
+      "procrustes_trace_R_over_d": 0.1590641649349623,
+      "r2": -0.2349297248489004,
+      "r2_basis": "fold-local pooled OOF (plotted pair-file basis)",
+      "r2_globalmu": -0.23142659030529344,
+      "selected_lambda": {
+        "A_ans": [
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0
+        ],
+        "A_ctx_rev": [
+          316.2277660168379,
+          316.2277660168379,
+          316.2277660168379,
+          316.2277660168379,
+          316.2277660168379
+        ],
+        "W_s": [
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795
+        ],
+        "cross": [
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795
+        ],
+        "within": [
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795
+        ]
+      },
+      "selectors": {
+        "A_ans": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ],
+        "A_ctx_rev": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ],
+        "W_s": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ],
+        "cross": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ],
+        "within": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ]
+      },
+      "source": "sft",
+      "t5s_r2": 0.3216233362623754,
+      "t5s_r2_globalmu": 0.3235476925042715,
+      "target": "rlvr",
+      "tier": 0,
+      "within_r2": 0.3684552707536515,
+      "within_r2_globalmu": 0.37024677849076293
+    },
+    {
+      "A_ans_identity_bias_r2": 0.2362957867188883,
+      "A_ctx_rev_identity_bias_r2": 0.8401326346866801,
+      "aans_own_r2": 0.5040958463730539,
+      "aans_own_r2_globalmu": 0.5055025814575959,
+      "corpus": "gsm8k_test1319",
+      "cross_r2": 0.3813690691965276,
+      "cross_r2_globalmu": 0.38312394426337115,
+      "d": 4096,
+      "degenerate_n_lt_d": true,
+      "fit_seed": 0,
+      "format": "chat",
+      "layer": 30,
+      "n": 1319,
+      "n_folds": 5,
+      "n_train_max": 1056,
+      "n_train_min": 1055,
+      "pair": "sft__rlvr",
+      "procrustes_aligned_cos": 0.7628733277320862,
+      "procrustes_trace_R_over_d": 0.1590641649349623,
+      "r2": 0.3329998489347332,
+      "r2_basis": "fold-local pooled OOF (plotted pair-file basis)",
+      "r2_globalmu": 0.3348919333365996,
+      "selected_lambda": {
+        "A_ans": [
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0
+        ],
+        "A_ctx_rev": [
+          316.2277660168379,
+          316.2277660168379,
+          316.2277660168379,
+          316.2277660168379,
+          316.2277660168379
+        ],
+        "W_s": [
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795
+        ],
+        "cross": [
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795
+        ],
+        "within": [
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795
+        ]
+      },
+      "selectors": {
+        "A_ans": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ],
+        "A_ctx_rev": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ],
+        "W_s": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ],
+        "cross": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ],
+        "within": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ]
+      },
+      "source": "sft",
+      "t5s_r2": 0.3216233362623754,
+      "t5s_r2_globalmu": 0.3235476925042715,
+      "target": "rlvr",
+      "tier": 5,
+      "within_r2": 0.3684552707536515,
+      "within_r2_globalmu": 0.37024677849076293
+    },
+    {
+      "A_ans_identity_bias_r2": 0.2362957867188883,
+      "A_ctx_rev_identity_bias_r2": 0.8401326346866801,
+      "aans_own_r2": 0.5040958463730539,
+      "aans_own_r2_globalmu": 0.5055025814575959,
+      "corpus": "gsm8k_test1319",
+      "cross_r2": 0.3813690691965276,
+      "cross_r2_globalmu": 0.38312394426337115,
+      "d": 4096,
+      "degenerate_n_lt_d": true,
+      "fit_seed": 0,
+      "format": "chat",
+      "layer": 30,
+      "n": 1319,
+      "n_folds": 5,
+      "n_train_max": 1056,
+      "n_train_min": 1055,
+      "pair": "sft__rlvr",
+      "procrustes_aligned_cos": 0.7628733277320862,
+      "procrustes_trace_R_over_d": 0.1590641649349623,
+      "r2": 0.2553190165346422,
+      "r2_basis": "fold-local pooled OOF (plotted pair-file basis)",
+      "r2_globalmu": 0.25743145874463413,
+      "selected_lambda": {
+        "A_ans": [
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0
+        ],
+        "A_ctx_rev": [
+          316.2277660168379,
+          316.2277660168379,
+          316.2277660168379,
+          316.2277660168379,
+          316.2277660168379
+        ],
+        "W_s": [
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795
+        ],
+        "cross": [
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795
+        ],
+        "within": [
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795
+        ]
+      },
+      "selectors": {
+        "A_ans": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ],
+        "A_ctx_rev": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ],
+        "W_s": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ],
+        "cross": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ],
+        "within": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ]
+      },
+      "source": "sft",
+      "t5s_r2": 0.3216233362623754,
+      "t5s_r2_globalmu": 0.3235476925042715,
+      "target": "rlvr",
+      "tier": 6,
+      "within_r2": 0.3684552707536515,
+      "within_r2_globalmu": 0.37024677849076293
+    },
+    {
+      "A_ans_identity_bias_r2": 0.2362957867188883,
+      "A_ctx_rev_identity_bias_r2": 0.8401326346866801,
+      "aans_own_r2": 0.5040958463730539,
+      "aans_own_r2_globalmu": 0.5055025814575959,
+      "corpus": "gsm8k_test1319",
+      "cross_r2": 0.3813690691965276,
+      "cross_r2_globalmu": 0.38312394426337115,
+      "d": 4096,
+      "degenerate_n_lt_d": true,
+      "fit_seed": 0,
+      "format": "chat",
+      "layer": 30,
+      "n": 1319,
+      "n_folds": 5,
+      "n_train_max": 1056,
+      "n_train_min": 1055,
+      "pair": "sft__rlvr",
+      "procrustes_aligned_cos": 0.7628733277320862,
+      "procrustes_trace_R_over_d": 0.1590641649349623,
+      "r2": 0.32780370902876155,
+      "r2_basis": "fold-local pooled OOF (plotted pair-file basis)",
+      "r2_globalmu": 0.32971053336022205,
+      "selected_lambda": {
+        "A_ans": [
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0
+        ],
+        "A_ctx_rev": [
+          316.2277660168379,
+          316.2277660168379,
+          316.2277660168379,
+          316.2277660168379,
+          316.2277660168379
+        ],
+        "W_s": [
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795
+        ],
+        "cross": [
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795
+        ],
+        "within": [
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795
+        ]
+      },
+      "selectors": {
+        "A_ans": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ],
+        "A_ctx_rev": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ],
+        "W_s": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ],
+        "cross": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ],
+        "within": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ]
+      },
+      "source": "sft",
+      "t5s_r2": 0.3216233362623754,
+      "t5s_r2_globalmu": 0.3235476925042715,
+      "target": "rlvr",
+      "tier": 7,
+      "within_r2": 0.3684552707536515,
+      "within_r2_globalmu": 0.37024677849076293
+    },
+    {
+      "A_ans_identity_bias_r2": 0.2362957867188883,
+      "A_ctx_rev_identity_bias_r2": 0.8401326346866801,
+      "aans_own_r2": 0.5040958463730539,
+      "aans_own_r2_globalmu": 0.5055025814575959,
+      "corpus": "gsm8k_test1319",
+      "cross_r2": 0.3813690691965276,
+      "cross_r2_globalmu": 0.38312394426337115,
+      "d": 4096,
+      "degenerate_n_lt_d": true,
+      "fit_seed": 0,
+      "format": "chat",
+      "layer": 30,
+      "n": 1319,
+      "n_folds": 5,
+      "n_train_max": 1056,
+      "n_train_min": 1055,
+      "pair": "sft__rlvr",
+      "procrustes_aligned_cos": 0.7628733277320862,
+      "procrustes_trace_R_over_d": 0.1590641649349623,
+      "r2": 0.36758867546071594,
+      "r2_basis": "fold-local pooled OOF (plotted pair-file basis)",
+      "r2_globalmu": 0.3693826414752863,
+      "selected_lambda": {
+        "A_ans": [
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0
+        ],
+        "A_ctx_rev": [
+          316.2277660168379,
+          316.2277660168379,
+          316.2277660168379,
+          316.2277660168379,
+          316.2277660168379
+        ],
+        "W_s": [
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795
+        ],
+        "cross": [
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795
+        ],
+        "within": [
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795
+        ]
+      },
+      "selectors": {
+        "A_ans": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ],
+        "A_ctx_rev": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ],
+        "W_s": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ],
+        "cross": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ],
+        "within": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ]
+      },
+      "source": "sft",
+      "t5s_r2": 0.3216233362623754,
+      "t5s_r2_globalmu": 0.3235476925042715,
+      "target": "rlvr",
+      "tier": 8,
+      "within_r2": 0.3684552707536515,
+      "within_r2_globalmu": 0.37024677849076293
+    }
+  ],
+  "resume_key": {
+    "algebra_version": "v5-foldlocal-2-cross-t7t8-alignbaselines-t5rotbias",
+    "corpus": "gsm8k_test1319",
+    "fit_seed": 0,
+    "format": "chat",
+    "grid_sha": "90c25fa4156d2530",
+    "layer": 30,
+    "n_folds": 5,
+    "n_inner": 2,
+    "source": "sft",
+    "target": "rlvr"
+  }
+}

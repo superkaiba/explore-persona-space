@@ -1,0 +1,521 @@
+{
+  "issue": 1336,
+  "round": "rigid-decomposition",
+  "harvested_utc": "2026-08-15T23:29:36Z",
+  "source": "4 RunPod cpu-bigmem pods (pod-1336-rigid/rigid5/rigid7/rigid8), provisioned 2026-08-12, finished 2026-08-13",
+  "shards": [
+    {
+      "pod": "pod-1336-rigid",
+      "surfaces": "2..4",
+      "rc": 0,
+      "finished_utc": "2026-08-13T03:24:34Z",
+      "pairs_leg_a": 28,
+      "cells_leg_b": 16,
+      "leg_a_files": [
+        {
+          "name": "pair_base__dpo_chat_gsm8k_test1319.json",
+          "md5": "f88e8c5b42bb68f4e4940a5e740c060e",
+          "bytes": 41855
+        },
+        {
+          "name": "pair_base__dpo_chat_gsm8k_train_full.json",
+          "md5": "1076ada98a67323ddb06312022570e86",
+          "bytes": 41119
+        },
+        {
+          "name": "pair_base__dpo_chat_math7500.json",
+          "md5": "d50c3f7e962ccf15244d6a6ba8eca80b",
+          "bytes": 41075
+        },
+        {
+          "name": "pair_base__dpo_chat_sft11k.json",
+          "md5": "d22c997c4d56a6d3e5232e7f329f02e0",
+          "bytes": 41187
+        },
+        {
+          "name": "pair_base__rlvr_chat_gsm8k_test1319.json",
+          "md5": "64a06c94dbac3aabd87aadd4993cad84",
+          "bytes": 41900
+        },
+        {
+          "name": "pair_base__rlvr_chat_gsm8k_train_full.json",
+          "md5": "e603960c46784528ec6979647bf2ef24",
+          "bytes": 41135
+        },
+        {
+          "name": "pair_base__rlvr_chat_math7500.json",
+          "md5": "06e3004ffb2e81c8a18202aa5c6739f4",
+          "bytes": 41075
+        },
+        {
+          "name": "pair_base__rlvr_chat_sft11k.json",
+          "md5": "67e7f10325fcab747b7b7c2e5d1fbeaa",
+          "bytes": 41184
+        },
+        {
+          "name": "pair_base__rlvr_long_chat_gsm8k_test1319.json",
+          "md5": "b87f8b452b744f4f61fad5b680bee688",
+          "bytes": 41881
+        },
+        {
+          "name": "pair_base__rlvr_long_chat_gsm8k_train_full.json",
+          "md5": "eb4febb6750f4237f6ea2a270cdb5464",
+          "bytes": 41130
+        },
+        {
+          "name": "pair_base__rlvr_long_chat_math7500.json",
+          "md5": "7a2558c774e6a5e57f2d4eb1a7cc28c0",
+          "bytes": 41121
+        },
+        {
+          "name": "pair_base__rlvr_long_chat_sft11k.json",
+          "md5": "200b4c1550378ff21760b71857f7a99b",
+          "bytes": 41229
+        },
+        {
+          "name": "pair_base__sft_chat_gsm8k_test1319.json",
+          "md5": "6b162a4e8ca1237d30073f8e43e0c365",
+          "bytes": 41820
+        },
+        {
+          "name": "pair_base__sft_chat_gsm8k_train_full.json",
+          "md5": "dfd1a1ca76639bf8d6069df82c612130",
+          "bytes": 41150
+        },
+        {
+          "name": "pair_base__sft_chat_math7500.json",
+          "md5": "48426a163e30aa8907f268f35ccd21ea",
+          "bytes": 41158
+        },
+        {
+          "name": "pair_base__sft_chat_sft11k.json",
+          "md5": "9e6f26c195b2dba9f6b2042720836e2a",
+          "bytes": 41229
+        },
+        {
+          "name": "pair_dpo__rlvr_chat_gsm8k_test1319.json",
+          "md5": "33c31791921aa0e6f3ca3da51fd19f35",
+          "bytes": 42352
+        },
+        {
+          "name": "pair_dpo__rlvr_chat_gsm8k_train_full.json",
+          "md5": "2e97553823d0c60c2573b4191891b643",
+          "bytes": 41738
+        },
+        {
+          "name": "pair_dpo__rlvr_chat_math7500.json",
+          "md5": "ba1a3d617f7395c6f50c97c1f5ca55ff",
+          "bytes": 41569
+        },
+        {
+          "name": "pair_dpo__rlvr_chat_sft11k.json",
+          "md5": "7dc3e97d146489b1f20531a80eac4ba8",
+          "bytes": 41698
+        },
+        {
+          "name": "pair_dpo__rlvr_long_chat_gsm8k_test1319.json",
+          "md5": "275c805ba926b1cfc5c30cb02a440a51",
+          "bytes": 42243
+        },
+        {
+          "name": "pair_dpo__rlvr_long_chat_gsm8k_train_full.json",
+          "md5": "66a8e88122591c5b1020cd4f96bc282f",
+          "bytes": 41643
+        },
+        {
+          "name": "pair_dpo__rlvr_long_chat_math7500.json",
+          "md5": "cacee2592953a18614cb4826d406f1e9",
+          "bytes": 41642
+        },
+        {
+          "name": "pair_dpo__rlvr_long_chat_sft11k.json",
+          "md5": "3d544e295ffa6a85d782dc1e4e8622fa",
+          "bytes": 41616
+        },
+        {
+          "name": "pair_sft__dpo_chat_gsm8k_test1319.json",
+          "md5": "7d7d2bf0c5f59d36bb9f3c064a4f0961",
+          "bytes": 42338
+        },
+        {
+          "name": "pair_sft__dpo_chat_gsm8k_train_full.json",
+          "md5": "46dd4a361d8c1559f608e5ccd705e4a0",
+          "bytes": 41587
+        },
+        {
+          "name": "pair_sft__dpo_chat_math7500.json",
+          "md5": "10bd335359487683263e6ba7dbd07068",
+          "bytes": 41406
+        },
+        {
+          "name": "pair_sft__dpo_chat_sft11k.json",
+          "md5": "28bd3fa3e426a6c1878f4be21e761cc5",
+          "bytes": 41607
+        }
+      ],
+      "leg_b_cell_files": [
+        {
+          "name": "base__base__chat__gsm8k_test1319__l30.json",
+          "md5": "64b8459ac59c330de754d13da0df6e84",
+          "bytes": 1555
+        },
+        {
+          "name": "base__base__chat__gsm8k_train_full__l30.json",
+          "md5": "55546373fd2761851c94ab0f67b06b6f",
+          "bytes": 1559
+        },
+        {
+          "name": "base__base__chat__math7500__l30.json",
+          "md5": "b329241e78611ae693196f0e1719df5d",
+          "bytes": 1540
+        },
+        {
+          "name": "base__base__chat__sft11k__l30.json",
+          "md5": "6fd6f6a7a503ab19a59852ac693d3960",
+          "bytes": 1538
+        },
+        {
+          "name": "rlvr__rlvr_long__chat__gsm8k_test1319__l30.json",
+          "md5": "956068cc9db25ea230d2c29778ce6544",
+          "bytes": 14640
+        },
+        {
+          "name": "rlvr__rlvr_long__chat__gsm8k_train_full__l30.json",
+          "md5": "647ff0d8aca1bd27b571aab6e86a3864",
+          "bytes": 14644
+        },
+        {
+          "name": "rlvr__rlvr_long__chat__math7500__l30.json",
+          "md5": "c6f18f86040e12959672b9897791f272",
+          "bytes": 14885
+        },
+        {
+          "name": "rlvr__rlvr_long__chat__sft11k__l30.json",
+          "md5": "b60913f5ecf33b42be105937bce6d311",
+          "bytes": 14564
+        },
+        {
+          "name": "sft__rlvr__chat__gsm8k_test1319__l30.json",
+          "md5": "4e610af13c3f35432ec602b312a97b64",
+          "bytes": 14572
+        },
+        {
+          "name": "sft__rlvr__chat__gsm8k_train_full__l30.json",
+          "md5": "ad6a5543fae03fbcde99967c75c95185",
+          "bytes": 14894
+        },
+        {
+          "name": "sft__rlvr__chat__math7500__l30.json",
+          "md5": "72afd340fd8f07cbaabd1c6ce7ff1e71",
+          "bytes": 14839
+        },
+        {
+          "name": "sft__rlvr__chat__sft11k__l30.json",
+          "md5": "b5503ce577b0a1602baa8c0b2cdbbac0",
+          "bytes": 14514
+        },
+        {
+          "name": "sft__rlvr_long__chat__gsm8k_test1319__l30.json",
+          "md5": "9b7d4535d92187918ad6552847196657",
+          "bytes": 14633
+        },
+        {
+          "name": "sft__rlvr_long__chat__gsm8k_train_full__l30.json",
+          "md5": "7e38ce263910b9a143707585078759c6",
+          "bytes": 14633
+        },
+        {
+          "name": "sft__rlvr_long__chat__math7500__l30.json",
+          "md5": "ad20fc180eb9030a376394e746d0a3d1",
+          "bytes": 14889
+        },
+        {
+          "name": "sft__rlvr_long__chat__sft11k__l30.json",
+          "md5": "4a708f463f588b63977d4e84a6a964ef",
+          "bytes": 14564
+        }
+      ],
+      "records_file": {
+        "name": "records_l30__surfaces2-4.json",
+        "md5": "25e1690384bace2bed7f9f785c2955ba",
+        "bytes": 14292
+      }
+    },
+    {
+      "pod": "pod-1336-rigid5",
+      "surfaces": "5..6",
+      "rc": 0,
+      "finished_utc": "2026-08-13T02:11:18Z",
+      "pairs_leg_a": 14,
+      "cells_leg_b": 8,
+      "leg_a_files": [
+        {
+          "name": "pair_base__dpo_chat_if11k.json",
+          "md5": "9732e38757b016167ccd3e083c8926ec",
+          "bytes": 41020
+        },
+        {
+          "name": "pair_base__dpo_chat_uf11k.json",
+          "md5": "a5104524704b40719c6bbe295ec4293d",
+          "bytes": 41200
+        },
+        {
+          "name": "pair_base__rlvr_chat_if11k.json",
+          "md5": "7fed2dbac1611d5fc07342ab55d540ce",
+          "bytes": 41092
+        },
+        {
+          "name": "pair_base__rlvr_chat_uf11k.json",
+          "md5": "c325ab1afe18f8eacf8b6fa86a0dbc10",
+          "bytes": 41194
+        },
+        {
+          "name": "pair_base__rlvr_long_chat_if11k.json",
+          "md5": "d8dd2a8942bc97de3ba7ad6b2ed0bcc4",
+          "bytes": 41174
+        },
+        {
+          "name": "pair_base__rlvr_long_chat_uf11k.json",
+          "md5": "a6210a6402d731a65fe063dc7b439c91",
+          "bytes": 41199
+        },
+        {
+          "name": "pair_base__sft_chat_if11k.json",
+          "md5": "6c40b1a72608aceb1981cc9a045041b9",
+          "bytes": 41109
+        },
+        {
+          "name": "pair_base__sft_chat_uf11k.json",
+          "md5": "c98eb46c8ea1c200eb2446ae65498a04",
+          "bytes": 41254
+        },
+        {
+          "name": "pair_dpo__rlvr_chat_if11k.json",
+          "md5": "0a7f94ea7466ca9f12023cb922d05d45",
+          "bytes": 41370
+        },
+        {
+          "name": "pair_dpo__rlvr_chat_uf11k.json",
+          "md5": "67a32787bb5db848f1982f307cd021db",
+          "bytes": 41694
+        },
+        {
+          "name": "pair_dpo__rlvr_long_chat_if11k.json",
+          "md5": "d3192b564596d745a6d6bd56af7df6a0",
+          "bytes": 41108
+        },
+        {
+          "name": "pair_dpo__rlvr_long_chat_uf11k.json",
+          "md5": "3590f3aaddd138452a14bf71b3c4e61b",
+          "bytes": 41161
+        },
+        {
+          "name": "pair_sft__dpo_chat_if11k.json",
+          "md5": "c35fbf6f76bd7bf39594b6a4ad403074",
+          "bytes": 41128
+        },
+        {
+          "name": "pair_sft__dpo_chat_uf11k.json",
+          "md5": "54eb674e4e0496581d8d4d24285e51ea",
+          "bytes": 41600
+        }
+      ],
+      "leg_b_cell_files": [
+        {
+          "name": "base__base__chat__if11k__l30.json",
+          "md5": "b870af19aac6b3440e410ccb4a24699d",
+          "bytes": 1568
+        },
+        {
+          "name": "base__base__chat__uf11k__l30.json",
+          "md5": "9bc1082f521daef05c8a589e4efba85a",
+          "bytes": 1535
+        },
+        {
+          "name": "rlvr__rlvr_long__chat__if11k__l30.json",
+          "md5": "7df1f6d1375a61f1e644a1d5b09ea4b2",
+          "bytes": 14621
+        },
+        {
+          "name": "rlvr__rlvr_long__chat__uf11k__l30.json",
+          "md5": "a83c8ab2e0c992533552ea3f52a62aaa",
+          "bytes": 14296
+        },
+        {
+          "name": "sft__rlvr__chat__if11k__l30.json",
+          "md5": "1bf7272693871638b484ee60375f6275",
+          "bytes": 14501
+        },
+        {
+          "name": "sft__rlvr__chat__uf11k__l30.json",
+          "md5": "e8e75dc07eb86343376f9448c22642ff",
+          "bytes": 14536
+        },
+        {
+          "name": "sft__rlvr_long__chat__if11k__l30.json",
+          "md5": "1239ae161c3a37514a1db5a0fef22264",
+          "bytes": 14606
+        },
+        {
+          "name": "sft__rlvr_long__chat__uf11k__l30.json",
+          "md5": "87f7f86a06c4b2c744562da35ab77e21",
+          "bytes": 14583
+        }
+      ],
+      "records_file": {
+        "name": "records_l30__surfaces5-6.json",
+        "md5": "8ab5135102b542dfed08f9ebd6f6ea3e",
+        "bytes": 14022
+      }
+    },
+    {
+      "pod": "pod-1336-rigid7",
+      "surfaces": "7..7",
+      "rc": 0,
+      "finished_utc": "2026-08-13T00:57:01Z",
+      "pairs_leg_a": 7,
+      "cells_leg_b": 4,
+      "leg_a_files": [
+        {
+          "name": "pair_base__dpo_chat_lmsys23k.json",
+          "md5": "6595045e6040675930dfd2bdec37b191",
+          "bytes": 41186
+        },
+        {
+          "name": "pair_base__rlvr_chat_lmsys23k.json",
+          "md5": "9a76ee21280bbe6f90808c33b45e4aef",
+          "bytes": 41207
+        },
+        {
+          "name": "pair_base__rlvr_long_chat_lmsys23k.json",
+          "md5": "a4779c689423a7e7d7431999c64f148a",
+          "bytes": 41227
+        },
+        {
+          "name": "pair_base__sft_chat_lmsys23k.json",
+          "md5": "c27c850d7e21667563914d3eea0fb872",
+          "bytes": 41229
+        },
+        {
+          "name": "pair_dpo__rlvr_chat_lmsys23k.json",
+          "md5": "a2e95e3ca1da73954ae2eadc2c975b7a",
+          "bytes": 41781
+        },
+        {
+          "name": "pair_dpo__rlvr_long_chat_lmsys23k.json",
+          "md5": "a48e9ee8e27399ebd740b0a6967b26f5",
+          "bytes": 41677
+        },
+        {
+          "name": "pair_sft__dpo_chat_lmsys23k.json",
+          "md5": "c405a42129ad62f2914ad765185bf970",
+          "bytes": 41679
+        }
+      ],
+      "leg_b_cell_files": [
+        {
+          "name": "base__base__chat__lmsys23k__l30.json",
+          "md5": "c894b3e90740d025c1531223aaafd201",
+          "bytes": 1542
+        },
+        {
+          "name": "rlvr__rlvr_long__chat__lmsys23k__l30.json",
+          "md5": "383a8285661eaded7dca22515c2a3aa7",
+          "bytes": 14599
+        },
+        {
+          "name": "sft__rlvr__chat__lmsys23k__l30.json",
+          "md5": "fb87aed3d6e330da243a23e4ad1c07f5",
+          "bytes": 14828
+        },
+        {
+          "name": "sft__rlvr_long__chat__lmsys23k__l30.json",
+          "md5": "f73df0b1479f375354f4e105b95f2bd5",
+          "bytes": 14889
+        }
+      ],
+      "records_file": {
+        "name": "records_l30__surfaces7-7.json",
+        "md5": "5596b6299b6d5556f856e56d54437bea",
+        "bytes": 14327
+      }
+    },
+    {
+      "pod": "pod-1336-rigid8",
+      "surfaces": "8..8",
+      "rc": 0,
+      "finished_utc": "2026-08-13T01:03:42Z",
+      "pairs_leg_a": 7,
+      "cells_leg_b": 4,
+      "leg_a_files": [
+        {
+          "name": "pair_base__dpo_naturalistic_lmsys23k.json",
+          "md5": "9fb8c9b1c7965336b85acdae23bde3cd",
+          "bytes": 41236
+        },
+        {
+          "name": "pair_base__rlvr_long_naturalistic_lmsys23k.json",
+          "md5": "af91fd50923a8e6a3b0688d0cadc1d5f",
+          "bytes": 41230
+        },
+        {
+          "name": "pair_base__rlvr_naturalistic_lmsys23k.json",
+          "md5": "23424b69ef8f4e88fd5b4f993c21b826",
+          "bytes": 41241
+        },
+        {
+          "name": "pair_base__sft_naturalistic_lmsys23k.json",
+          "md5": "45764d292e74622ad50aee7a22a284da",
+          "bytes": 41258
+        },
+        {
+          "name": "pair_dpo__rlvr_long_naturalistic_lmsys23k.json",
+          "md5": "b96557aff15528ad8618284f11bf6c43",
+          "bytes": 41769
+        },
+        {
+          "name": "pair_dpo__rlvr_naturalistic_lmsys23k.json",
+          "md5": "1a70843becda763c95eae243674e97b9",
+          "bytes": 41745
+        },
+        {
+          "name": "pair_sft__dpo_naturalistic_lmsys23k.json",
+          "md5": "6c6cc27b19483e817e39b94fc7722e48",
+          "bytes": 41757
+        }
+      ],
+      "leg_b_cell_files": [
+        {
+          "name": "base__base__naturalistic__lmsys23k__l30.json",
+          "md5": "83d1736821c84935ff7ed2108fff9ab4",
+          "bytes": 1562
+        },
+        {
+          "name": "rlvr__rlvr_long__naturalistic__lmsys23k__l30.json",
+          "md5": "5a12e46c96b199d63cc0383b9a54bafa",
+          "bytes": 14651
+        },
+        {
+          "name": "sft__rlvr__naturalistic__lmsys23k__l30.json",
+          "md5": "9b19916469bf63cdb58244da875b500c",
+          "bytes": 14608
+        },
+        {
+          "name": "sft__rlvr_long__naturalistic__lmsys23k__l30.json",
+          "md5": "4781aa05236776564b5f997cbbe33370",
+          "bytes": 14652
+        }
+      ],
+      "records_file": {
+        "name": "records_l30__surfaces8-8.json",
+        "md5": "660884ff6d97cec375a942f19f94dcb3",
+        "bytes": 14368
+      }
+    }
+  ],
+  "totals": {
+    "leg_a_pair_files": 56,
+    "leg_b_cell_files": 32,
+    "records_files": 4
+  }
+}
