@@ -14432,6 +14432,9 @@ AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES = 3_000
 # when trimmed. planner.md and critic.md are deliberately NOT grandfathered
 # (#838): both were structurally trimmed to <=20 KB, so regrowth on the two
 # incident files is a commit-time FAIL.
+# Step 5a lint-family member (SKILL.md § Step 5a SPECS/FAMILY_OF; #2303): any
+# NEW import-time data file added to this module must be declared there too,
+# or worktree syncs strand it (#2293).
 _AGENT_SPEC_CAPS_PATH = _REPO_ROOT / ".claude" / "config" / "agent_spec_size_caps.txt"
 
 
@@ -14956,7 +14959,36 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 942_000: that value predates this landing and would FAIL it by 384 B,
     # so the higher cap is the correct resolution, not a regrowth licence
     # (headroom 1,216 B, the same ~1 KB the #1753 rule prescribes).
-    "issue/SKILL.md": 964_650,
+    # 947_700 — #2303 measured 946,657 B for THIS landing, and that figure is
+    # the SUM of two workflow-fix landings, not one: #2303's own Step 5a family
+    # work (+1,870 B over the 942,384 B base at 3ac07d46fd —
+    # .claude/config/agent_spec_size_caps.txt joins the lint family in BOTH
+    # copies, since the linter reads it at module import, #2293; and both sync
+    # commits gain rc-checked FATAL/exit-1 arms) PLUS #2302's sibling-arm
+    # landing (5bfb7eb6f0, +2,403 B), which reached main at 944,787 B / cap
+    # 945_400 while #2303 sat in its Step 9c + pre-push gates. Cap = landing
+    # bytes + ~1 KB (#1753 landing-bytes rule; headroom 1,043 B).
+    #
+    # This IS the #2284/#2285 moving-main class recorded above, caught rather
+    # than repeated: each branch fit the headroom it measured against ALONE
+    # (#2302 at 945_400, #2303 at 945_400 off a pre-#2302 base), and their SUM
+    # would have landed 946,657 B against a 945_400 cap — main red by 1,257 B
+    # between the two merges. The Step 10d re-measure duty (#2303 plan §4.2 /
+    # risk R8) is what fired here; keep it on any SKILL.md-bearing branch.
+    #
+    # 966_520 — MEASURED 965,317 B after #2312 added the Step 10d rewritten-branch
+    # arm (+18,660 B: the mutual-non-ancestry guard at all four push sites, the
+    # zero-PR stale-ref arm, the PR-head parity gate, and the § Rewritten-branch
+    # landing route) ON TOP of #2303's landed 946,657 B main. Cap = measured
+    # + ~1.2 KB (#1753/#1727 landing-bytes rule; headroom 1,203 B <= the 3,000 B
+    # loose-cap hygiene bar). Prior on this branch: 964_650 — computed against a
+    # pre-#2303 base (944,787 B) and STALE by 667 B the moment #2303 landed
+    # bbc5d75807 mid-gate; the re-measure duty #2303's own comment prescribes is
+    # what caught it, for the SECOND time on this branch (the first was #2302's
+    # +1,754 B, absorbed before the earlier cap was set). Two consecutive
+    # SKILL.md-bearing siblings landing inside one branch's gate window is now
+    # the norm, not the exception: re-measure at Step 10d, never at Step 4.
+    "issue/SKILL.md": 966_520,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
