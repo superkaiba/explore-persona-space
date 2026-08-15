@@ -371,8 +371,13 @@ def extract_violation_paths(text: str) -> frozenset[str]:
        ``message`` attribute and the element text; offender rows never do
        (source-verified for all five members, #2319 §4 audit). Anchoring alone
        already excludes that segment (it starts with ``assert``, not a path),
-       so this is now defense in depth against a WRAPPED saferepr whose
-       continuation line could begin with a path-shaped fragment.
+       so the strip is now defense in depth for the introspection LINE itself
+       — in the ``message`` attribute and the element text alike. It does NOT
+       cover a WRAPPED saferepr's CONTINUATION line: this predicate only ever
+       matches an ``assert ``-leading line, and a continuation line begins
+       with a quote character or a bare fragment. That case is covered by two
+       OTHER mechanisms — the anchor (a quote-leading line matches no row
+       pattern) and the ``...`` filter below.
     2. **Elision-token post-filter:** drop any matched token containing the
        literal ``...`` — saferepr's elision marker; zero tracked paths contain
        it, and a FUTURE such path would be invisible on BOTH sides
