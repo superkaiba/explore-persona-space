@@ -13,6 +13,10 @@ origin_prompt: 'surfaced by #2314''s orchestrator while fixing a fresh thread-ca
   mechanically'
 workflow: v1
 ---
+---
+kind: infra
+---
+
 # workflow-fix: `step9c_baseline.py compare` classifies whole-repo SCAN-test nodes per-NODE, so a branch that ADDS a violation to an already-red scan node is indistinguishable from one that adds none
 
 ## Goal
@@ -76,45 +80,35 @@ written as single-node whole-repo scans — the gate degrades from a mechanical
 verdict to an unassisted human judgement precisely when a pre-existing red is
 present. That is fail-OPEN, and it is silent.
 
-## Motivating context (gate identity resolved; leg-level attribution handed to the sibling task)
+## Motivating context (stated as context, NOT as a proven cause)
 
 Filed from task **#2314**, which fixed a fresh violation of the thread-caps
 invariant in `scripts/issue2225_fu2_dod_points_fig.py` (module-top
 `import numpy as np` with no prior `load_dotenv()`).
 
-**Resolved (2026-08-15, this task's first deliverable — gate IDENTITY only):**
-the offender landed on main in `faeb45f5e3` at **2026-08-15T00:11:30Z**, committed
-by #2225's `fu2_preimage_alltoken` Step 9a-ter INLINE round — the gate that
-applied to that landing was the **Step 9a-ter inline payload lint gate**
-(`scripts/inline_lint_gate.py`), not the Step 9c compare. The prior version of
-this section speculated the Step 9c node-grain strip was the escape path; that
-causal claim is RETRACTED — no Step 9c compare adjudicated this landing.
-
-Supporting timeline (established from the git record + ledger sidecar):
+The reconstructed timeline is genuinely ambiguous, and this task should NOT start
+from an assumed cause:
 
 - Task #2289 fixed the SAME invariant on four `scripts/issue2223_*.py` files;
-  its fix `cefb2ddfe1` landed on main **2026-08-14T17:07:12Z** — ~7h before the
-  offender.
+  its fix `cefb2ddfe1` landed on main **2026-08-14T17:07Z**.
 - The Step 9c ledger (`.claude/cache/step9c-baseline.json`) was refreshed
-  **2026-08-14T15:22:42Z**, i.e. BEFORE that fix — sha-STALE from 17:07Z onward,
-  still recording the node as red (`dirty_code_paths: true`, hence not
-  strippable). Any consumer trusting that ledger after 17:07Z was reading a
-  stale known-red.
+  **2026-08-14T15:22:42Z**, i.e. BEFORE that fix, so it recorded the node as red
+  (with `dirty_code_paths: true`, hence not strippable).
+- The new offender first landed on main at **2026-08-15T00:11Z**
+  (`faeb45f5e3`, "#2225 fu2: per-question dose-change view ..."), i.e. AFTER
+  #2289's fix.
 
-Why the inline gate's mechanics make this landing possible: the #2235 Phase A
-node-grain ledger demotion in `scripts/inline_lint_gate.py`
-(`load_baseline_ledger`, ~:348; the `pre-existing-on-main (ledger)` labeling,
-~:893) demotes a mapped-test failure to non-blocking when the NODE is in the
-known-red ledger — the same node-grain blindness this task fixes in
-`step9c_baseline.py compare`, sitting in front of a ledger that was itself
-sha-stale at the time. **Which specific 9a-ter leg let the offender through is
-NOT established here** — that leg-level attribution is the FIRST deliverable of
-the sibling `kind: infra` task this task files (D8), which owns the
-`inline_lint_gate.py` node-grain demotion fix.
-
-The STRUCTURAL gap above stands on its own regardless: it is read directly off
-the `step9c_baseline.py` bucketing code, and the same violation-grain fix is
-warranted there even though this particular landing never crossed it.
+So whether pristine main was green or red at the moment #2225's fu2 gate ran is
+not established here, and #2225's own rounds were visibly diligent about this
+invariant (its `epm:experiment-implementation` v1 and v4 markers each record
+FINDING and FIXING a thread-caps violation). A stale worktree vintage is one
+documented adjacent hazard — commit `4721aec47d` on `issue-2290` records exactly
+that shape: *"stale worktree vintage false-blocked the Step 10d mapped-test
+leg"*. **First deliverable of this task is to establish, from #2225's actual
+Step 9c / Step 10d gate records, which path let the file through** — and to
+correct or delete this section accordingly. The STRUCTURAL gap above stands on
+its own regardless of that answer, because it is read directly off the
+bucketing code.
 
 ## Proposed direction (the implementer's call — validate before building)
 
@@ -166,4 +160,3 @@ reds the gate for **every** concurrent session until someone files a task like
 was a real session's full lifecycle spent re-fixing one import ordering. Closing
 the attribution gap moves the catch from "after it reaches main, N sessions
 later" to "the authoring session's own gate".
-
