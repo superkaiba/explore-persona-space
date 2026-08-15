@@ -8811,8 +8811,8 @@
     "2139": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2139",
-      "status": "approved",
+      "path": "tasks/running/2139",
+      "status": "running",
       "title": "daily-fix: tick_triage counts compact rows as human"
     },
     "2140": {
