@@ -10014,8 +10014,8 @@
     "2296": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2296",
-      "status": "reviewing",
+      "path": "tasks/completed/2296",
+      "status": "completed",
       "title": "Step 10d lint gate's mapped-invariant baseline leg runs pytest in the shared repo root \u2014 #2015 stash cycle kills it and false-NEWs pre-existing reds"
     },
     "2297": {
