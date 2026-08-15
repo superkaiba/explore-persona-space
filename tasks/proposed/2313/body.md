@@ -2,7 +2,8 @@
 title: 'Policy: rebase-rewritten own issue branch — sanctioned --force-with-lease
   arm, or explicit ban + force-free route only?'
 kind: infra
-tags: []
+tags:
+- wf-fix
 created_at: '2026-08-15T04:18:52Z'
 has_clean_result: false
 origin_prompt: 'Surfaced by #2312 plan v1 section 5: workflow surface has zero force-with-lease
