@@ -275,7 +275,11 @@ def test_json_output_shape(tmp_path: Path, monkeypatch, capsys):
         "n_tests",
         "recommended_timeout_s",
         "slow_tests_selected",
+        "base_identical_excluded",
     }
+    # #2302 audit key: the fixture tree is not a git checkout, so the audit
+    # derivation degrades to zero exclusions (fail-closed) — key present, empty.
+    assert out["base_identical_excluded"] == []
     assert "tests/test_widget.py" in out["tests"]
     assert out["base"] == "main"  # the RESOLVED base (via the #1289 fallback), not the default
     assert out["missing_invariants"] == []  # all invariants present in the fixture tree
@@ -1380,6 +1384,7 @@ def test_cli_json_carries_import_map_reason(tmp_path: Path, monkeypatch, capsys)
         "n_tests",
         "recommended_timeout_s",
         "slow_tests_selected",
+        "base_identical_excluded",  # #2302 audit key
     }
     assert "tests/test_uh_pack.py" in payload["tests"]
     assert payload["selection_reasons"]["tests/test_uh_pack.py"] == [
@@ -2225,12 +2230,13 @@ def test_transitive_consumer_missing_on_disk_dropped(tmp_path: Path):
 
 # --- Case 86: CLI --map-files end-to-end on the LIVE tree — the 7 pairs verbatim --
 def test_cli_map_files_transitive_pairs_live_tree(tmp_path: Path, capsys):
-    """CLI end-to-end on the LIVE tree: the selector payload prints all 5
-    dependency-arm pairs PLUS the 2 transitive pairs (7 pairs, 7 tests) and
-    the sizing line clears the 600 s MAP_TIMEOUT_FLOOR_S at 660
-    ((120 + 7*30) * 2.0). Exact-set assert — a new arm/pin
+    """CLI end-to-end on the LIVE tree: the selector payload prints all 6
+    dependency-arm pairs PLUS the 2 transitive pairs (8 pairs, 8 tests) and
+    the sizing line clears the 600 s MAP_TIMEOUT_FLOOR_S at 720
+    ((120 + 8*30) * 2.0). Exact-set assert — a new arm/pin
     joining later legitimately forces a deliberate 1-line update here (that
-    loudness is the point; cf. the case-60 drift-pin posture)."""
+    loudness is the point; cf. the case-60 drift-pin posture). #2302 added
+    tests/test_step9c_base_identity.py (loads the live selector by path)."""
     repo_root = _HELPER_PATH.parents[1]
     payload = tmp_path / "payload.txt"
     payload.write_text(f"{_SELECTOR_KEY}\n")
@@ -2244,9 +2250,10 @@ def test_cli_map_files_transitive_pairs_live_tree(tmp_path: Path, capsys):
         f"tests/test_ruff_policy.py\t{_SELECTOR_KEY}",
         f"tests/test_select_step9c_tests.py\t{_SELECTOR_KEY}",
         f"tests/test_shared_vm_thread_caps.py\t{_SELECTOR_KEY}",
+        f"tests/test_step9c_base_identity.py\t{_SELECTOR_KEY}",
         f"tests/test_step9c_baseline.py\t{_SELECTOR_KEY}",
     ]
-    assert "map-files — 7 pairs, 7 tests; recommended-timeout-s=660" in captured.err
+    assert "map-files — 8 pairs, 8 tests; recommended-timeout-s=720" in captured.err
 
 
 # --- Case 87: map-leg asymmetry — an invariant registration is excluded -----------

@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2310,
+  "highest_id": 2313,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8987,8 +8987,8 @@
       "goal": "On Qwen-2.5-7B-Instruct, determine which kinds of context information are both CARRIED at and CAUSALLY USABLE from a single context position by patching ONLY that position between minimal-pair contexts that differ in exactly one information type \u2014 21 types spanning stated response policy, conditional policy, demonstrated/implied/role-header route variants, retrievable stated items, ICL task definition, inferred user model, discourse state, and two pre-registered near-zero controls \u2014 crossed with three secondary axes (instruction-vs-demonstration route conflict, introduction recency at conversation depths 1/3/5, and information load 1/3/5) on designated subsets, measured per type by the #2094 fraction-of-swap F between the unpatched floor and the generate-under-donor ceiling under a PRE-REGISTERED anchor-separation exclusion (|ceiling - floor| >= 0.5), against BOTH a norm-matched shuffled-donor null and a cross-type-donor null, at BOTH the context-end vector v_C and the prefix-end state, under a maximal all-layer full-state Stage-1 patch with a post-selection Stage-2 layer x dose profile, with a LINEAR read-probe companion per type/state/layer (group-held-out folds) so a null separates 'not encoded' from 'encoded but not causally usable', reported in three separately Holm-corrected pre-registered families.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/2162",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/2162",
+      "status": "awaiting_promotion",
       "title": "Which kinds of context information are carried at the context vector: a patch-only sweep over 21 minimal-pair information types, crossed with route conflict, recency, and load"
     },
     "2163": {
@@ -9993,8 +9993,8 @@
     "2293": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2293",
-      "status": "running",
+      "path": "tasks/completed/2293",
+      "status": "completed",
       "title": "Step 9c pristine oracle cut from repo-root HEAD instead of the resolved diff base \u2014 root-divergence window yields false NEW classifications"
     },
     "2294": {
@@ -10063,8 +10063,8 @@
     "2302": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2302",
-      "status": "running",
+      "path": "tasks/completed/2302",
+      "status": "completed",
       "title": "workflow-fix: Step 5a sibling sync puts main's own files in the branch diff, disabling the #2024 ordering carve-out and false-BLOCKing Step 9c"
     },
     "2303": {
@@ -10098,8 +10098,8 @@
     "2307": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2307",
-      "status": "approved",
+      "path": "tasks/completed/2307",
+      "status": "completed",
       "title": "workflow-fix: Determine which side regressed before touching either. EITHE"
     },
     "2308": {
@@ -10129,6 +10129,27 @@
       "path": "tasks/proposed/2310",
       "status": "proposed",
       "title": "workflow-fix: Step 9c script-file gate launcher \u2014 newline-separated test list collapses to rc=126 with zero tests collected and evades both anti-silent-pass guards"
+    },
+    "2311": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2311",
+      "status": "proposed",
+      "title": "Step 5a sibling arm: synced sibling tests run against branch-era src/; #2208 collection probe cannot see the runtime skew"
+    },
+    "2312": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2312",
+      "status": "running",
+      "title": "Step 10d safe-case push has no arm for a REBASED issue branch \u2014 rejection fallback rebases onto the stale remote branch (#1128 replay shape); stale PR head can land pre-rebase payload"
+    },
+    "2313": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2313",
+      "status": "proposed",
+      "title": "Policy: rebase-rewritten own issue branch \u2014 sanctioned --force-with-lease arm, or explicit ban + force-free route only?"
     },
     "232": {
       "has_clean_result": true,

@@ -691,6 +691,25 @@ def git_sha_known(root: Path, sha: str) -> bool:
     return proc.returncode == 0
 
 
+def git_merge_base(base: str, wt: Path) -> str | None:
+    """Merge base of *base* and HEAD in *wt* (the three-dot diff base, #2293).
+
+    rc 0 -> the 40-hex sha; rc 1 -> None (no merge base: unrelated histories);
+    any other rc raises CalledProcessError (bad ref / not a git tree).
+    """
+    proc = subprocess.run(
+        ["git", "merge-base", base, "HEAD"],
+        cwd=str(wt),
+        capture_output=True,
+        text=True,
+    )
+    if proc.returncode == 0:
+        return proc.stdout.strip()
+    if proc.returncode == 1:
+        return None
+    raise subprocess.CalledProcessError(proc.returncode, proc.args, proc.stdout, proc.stderr)
+
+
 def code_commits_since(root: Path, sha: str) -> int:
     """Count CODE-path commits (CODE_COMMIT_PATHSPEC) between *sha* and HEAD."""
     out = _git_out(["rev-list", "--count", f"{sha}..HEAD", "--", *CODE_COMMIT_PATHSPEC], root)
@@ -773,7 +792,7 @@ class _ScratchTree:
 
     parent: Path  # the mkdtemp dir (rmtree target)
     path: Path  # the worktree itself: parent / f"tree-{os.getpid()}"
-    sha: str  # the detached HEAD sha (== root HEAD at creation)
+    sha: str  # the detached HEAD sha (== the resolved oracle base, #2293)
 
 
 def _git_bounded(argv: list[str], cwd: Path, timeout_s: float) -> None:
@@ -841,8 +860,12 @@ def _scratch_cones(root: Path, wt_cones: list[str]) -> list[str]:
     return sorted(set(dirs) | set(registry_lines) | set(wt_cones))
 
 
-def create_scratch_worktree(root: Path, wt_cones: list[str], timeout_s: float) -> _ScratchTree:
-    """Materialize a detached SPARSE scratch tree at *root*'s HEAD under a fresh tmp dir.
+def create_scratch_worktree(
+    root: Path, wt_cones: list[str], timeout_s: float, *, base_sha: str
+) -> _ScratchTree:
+    """Materialize a detached SPARSE scratch tree at *base_sha* — the resolved
+    pristine-oracle base (merge-base of the diff base and the work root's HEAD,
+    #2293) — under a fresh tmp dir.
 
     Sequence mirrors ``new_worktree.sh`` ``_sparse_setup`` (``init --cone``
     FIRST, then ``set``, then populate from ``--no-checkout`` limbo). Profile =
@@ -852,12 +875,11 @@ def create_scratch_worktree(root: Path, wt_cones: list[str], timeout_s: float) -
     #1408). Bounded per git command by *timeout_s*. The ~1 GB tree lands under
     ``gate_tmp_root()`` when routing resolves (#1408; default ``/tmp`` else).
     """
-    sha = git_head(root)
     parent = Path(tempfile.mkdtemp(prefix="step9c-scratch-", dir=_gate_tmp_dir_arg()))
     tree = parent / f"tree-{os.getpid()}"
     try:
         _git_bounded(
-            ["worktree", "add", "--detach", "--no-checkout", str(tree), sha],
+            ["worktree", "add", "--detach", "--no-checkout", str(tree), base_sha],
             cwd=root,
             timeout_s=timeout_s,
         )
@@ -867,11 +889,11 @@ def create_scratch_worktree(root: Path, wt_cones: list[str], timeout_s: float) -
             cwd=tree,
             timeout_s=timeout_s,
         )
-        _git_bounded(["checkout", sha], cwd=tree, timeout_s=timeout_s)
+        _git_bounded(["checkout", base_sha], cwd=tree, timeout_s=timeout_s)
     except BaseException:
-        remove_scratch_worktree(root, _ScratchTree(parent=parent, path=tree, sha=sha))
+        remove_scratch_worktree(root, _ScratchTree(parent=parent, path=tree, sha=base_sha))
         raise
-    return _ScratchTree(parent=parent, path=tree, sha=sha)
+    return _ScratchTree(parent=parent, path=tree, sha=base_sha)
 
 
 def remove_scratch_worktree(root: Path, scratch: _ScratchTree) -> None:
@@ -1592,6 +1614,13 @@ class _CompareCtx:
     # (#1077; the DEFAULT whenever eligible since #1408); "scratch-worktree-floor"
     # when a DIRTY non-sparse work root armed the floor-profile scratch (R-G', #2019)
     scratch_sha: str | None = None
+    # --- #2293 oracle-base resolution (merge-base of the diff base and wt HEAD) ----
+    base_ref: str = ""  # the REF the selection used (explicit --base verbatim, or the
+    # selector-resolved ref, or the pre-#1289 "main" fallback)
+    oracle_base_sha: str | None = None  # resolved ONCE by _resolve_oracle_base; the
+    # per-file loop never re-shells
+    root_oracle_base_skew: bool | None = None  # criterion-5 residual provenance (#2293):
+    # None = no root-tree oracle execution this compare; set at the FIRST root-venue run
     scratch_src_shadow: bool = False  # True once the #1251 PYTHONPATH shadow is armed + probed
     scratch_degraded: bool = False  # True on the #1408 clean-root scratch-failure fallback
     # --- #2024 paired-selection ordering re-check ---------------------------------
@@ -1605,6 +1634,14 @@ class _CompareCtx:
     paired_oracle: str = "none"  # "scratch-worktree" | "scratch-worktree-floor" | "root" | "none"
     # (the floor value is ARMED-only provenance: every floor-oracle candidate is
     # refused to NEW pre-spend, so no paired run ever executes on it — R-G', #2019)
+    # --- #2302 base-identity (content test) --------------------------------------
+    base: str = ""  # the RESOLVED diff base ctx.touched was derived from (#2302 —
+    # _selector_context previously discarded it; the base-identity derivation must
+    # use the SAME base, never a re-resolution that could drift)
+    base_identical: set[str] = field(default_factory=set)  # touched paths whose HEAD
+    # blob == base-TIP blob (Step 5a sibling-sync class); derived INDEPENDENTLY of
+    # the worktree selector's version (§3.3 skew — an in-flight branch carries the
+    # pre-#2302 compute_touched), subtracted from #2024 precondition 1 only
 
 
 def _resolve_roots(args: argparse.Namespace) -> tuple[Path, Path]:
@@ -1636,6 +1673,63 @@ def _load_run_junit(junitxml: Path) -> tuple[list[Node], set[str]]:
     return run_failing, ran_files
 
 
+def _base_identical_files(base: str, touched: list[str], wt: Path) -> list[str]:
+    """*touched* paths whose content at HEAD equals the *base* TIP content (#2302).
+
+    Derived INDEPENDENTLY of the worktree selector's version: the compare loads
+    the WORKTREE's selector (deliberate version skew, #1022 §3.3), so a branch
+    cut before #2302 carries the OLD ``compute_touched`` and its ``touched``
+    list still contains Step 5a sibling-sync copies of main's own files. Same
+    recipe as the selector's filter: candidates = ``touched`` minus the two-dot
+    ``git diff --name-only <base> HEAD``; each candidate excluded ONLY on
+    verified blob-OID equality of ``HEAD:<p>`` vs ``<base>:<p>`` (one batched
+    ``git cat-file --batch-check``; response rows are positional). Any per-path
+    resolution failure keeps that path branch-touched; raises
+    ``CalledProcessError`` on a git command failure — the caller degrades to
+    the EMPTY set plus a ``warns`` row, NEVER ``_Indeterminate`` (an empty set
+    degrades exactly to pre-#2302 behavior: everything stays branch-touched,
+    blocking — and the existing tmp-repo compare fixtures carry no usable git
+    base, so an exit-2 here would break every working compare).
+    """
+    if not touched:
+        return []
+    two = subprocess.run(
+        ["git", "diff", "--name-only", base, "HEAD"],
+        cwd=str(wt),
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    two_dot = {line.strip() for line in two.splitlines() if line.strip()}
+    candidates = [p for p in touched if p not in two_dot]
+    if not candidates:
+        return []
+    specs = [f"HEAD:{p}" for p in candidates] + [f"{base}:{p}" for p in candidates]
+    proc = subprocess.run(
+        ["git", "cat-file", "--batch-check"],
+        cwd=str(wt),
+        input="".join(s + "\n" for s in specs),
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    lines = proc.stdout.splitlines()
+    if len(lines) != len(specs):
+        return []  # rows unattributable -> nothing verifiable -> nothing excluded
+    oids: dict[str, str] = {}
+    for spec, line in zip(specs, lines, strict=True):
+        parts = line.split()
+        if len(parts) == 3 and re.fullmatch(r"[0-9a-f]{40}(?:[0-9a-f]{24})?", parts[0]):
+            oids[spec] = parts[0]
+    identical: list[str] = []
+    for p in candidates:
+        head_oid = oids.get(f"HEAD:{p}")
+        base_oid = oids.get(f"{base}:{p}")
+        if head_oid is not None and base_oid is not None and head_oid == base_oid:
+            identical.append(p)
+    return identical
+
+
 def _selector_context(args: argparse.Namespace, wt: Path) -> _CompareCtx:
     """Load the WORKTREE's selector and derive touched + diff-linked-ness (§3.3 skew note)."""
     try:
@@ -1661,17 +1755,36 @@ def _selector_context(args: argparse.Namespace, wt: Path) -> _CompareCtx:
     diff_linked = {t for t, rs in reasons.items() if any(r != "invariant" for r in rs)} | {
         f for f in touched if f.startswith("tests/")
     }
+    # #2302: derive the base-identical set in the COMPARE, from the SAME
+    # resolved base ``touched`` was derived from. Own try block — a git error
+    # here degrades to the empty set + a warns row (fail-closed: everything
+    # stays branch-touched, blocking), NEVER the surrounding _Indeterminate.
+    base_identical: list[str] = []
+    base_identity_warn: str | None = None
+    try:
+        base_identical = _base_identical_files(base, touched, wt)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
+        base_identity_warn = (
+            f"BASE-IDENTITY WARN: derivation failed at {wt} ({exc}); treating every "
+            "touched path as branch-authored (fail-closed, #2302)"
+        )
     # ``selected`` is the selector's sorted, deterministic selection — the list
     # the gate passed as pytest argv. It is the ONLY order source for the #2024
     # paired prefix (junit document order is NOT execution order under
     # ``--continue-on-collection-errors``; B3).
-    return _CompareCtx(
+    ctx = _CompareCtx(
         sel=sel,
         touched=touched,
         diff_linked=diff_linked,
         work_root=wt,
         selected_order=list(selected),
+        base=base,
+        base_identical=set(base_identical),
+        base_ref=base,
     )
+    if base_identity_warn is not None:
+        ctx.warns.append(base_identity_warn)
+    return ctx
 
 
 def _ledger_view(root: Path, args: argparse.Namespace) -> _LedgerView:
@@ -1828,6 +1941,63 @@ def _arm_src_shadow(
         )
 
 
+def _resolve_oracle_base(ctx: _CompareCtx, root: Path) -> None:
+    """Resolve + cache the pristine-oracle cut: merge-base(base_ref, work-root HEAD) (#2293)."""
+    try:
+        sha = git_merge_base(ctx.base_ref, ctx.work_root)
+    except subprocess.CalledProcessError as exc:
+        raise _Indeterminate(
+            f"oracle base resolution failed (git merge-base {ctx.base_ref} HEAD "
+            f"in {ctx.work_root}): {exc}",
+            warns=ctx.warns,
+        ) from exc
+    if sha is None:
+        raise _Indeterminate(
+            f"no merge base between {ctx.base_ref} and HEAD in {ctx.work_root} "
+            "(unrelated histories) — cannot cut a pristine oracle",
+            warns=ctx.warns,
+        )
+    if not git_sha_known(root, sha):
+        raise _Indeterminate(
+            f"oracle base {sha[:12]} (merge-base of {ctx.base_ref} and the work root's "
+            f"HEAD) is not in {root}'s object store — the scratch is materialized from "
+            "root and cannot detach there",
+            warns=ctx.warns,
+        )
+    ctx.oracle_base_sha = sha
+
+
+def _note_root_oracle_skew(ctx: _CompareCtx, root: Path) -> None:
+    """Record (WARN-only) whether a root-tree pristine venue is base-skewed (#2293, D6).
+
+    Memoized via ``ctx.root_oracle_base_skew is not None`` — the read happens
+    ONCE, at the FIRST root-venue pristine execution of the compare. Verdicts
+    are UNCHANGED this round (criterion 5): the WARN + JSON field are pure
+    observability for the three residual root-tree oracle venues
+    (``--no-scratch-fallback`` / non-anchored scan nodes / clean non-sparse
+    root, plus a root-venue paired run).
+    """
+    if ctx.root_oracle_base_skew is not None:
+        return
+    try:
+        root_head = git_head(root)
+    except subprocess.CalledProcessError as exc:
+        raise _Indeterminate(
+            f"cannot read root HEAD for the root-oracle base-skew note: {exc}",
+            warns=ctx.warns,
+        ) from exc
+    ctx.root_oracle_base_skew = root_head != ctx.oracle_base_sha
+    if ctx.root_oracle_base_skew:
+        ctx.warns.append(
+            f"ROOT-ORACLE BASE-SKEW WARN: root HEAD {root_head[:12]} != resolved oracle "
+            f"base {(ctx.oracle_base_sha or '')[:12]} (base {ctx.base_ref}); root-tree "
+            "pristine verdicts in this compare are cut from the root's lineage, not the "
+            "diff base — verdicts UNCHANGED this round (#2293 residual: "
+            "--no-scratch-fallback / non-anchored scan nodes / clean non-sparse root); "
+            "follow-up tracked in the #2293 clean-result residual note"
+        )
+
+
 def _create_scratch_or_degrade(
     ctx: _CompareCtx,
     root: Path,
@@ -1856,7 +2026,10 @@ def _create_scratch_or_degrade(
     """
     scratch: _ScratchTree | None = None
     try:
-        scratch = create_scratch_worktree(root, wt_cones, timeout_s=args.scratch_timeout_s)
+        assert ctx.oracle_base_sha, "oracle base must be resolved before scratch creation"
+        scratch = create_scratch_worktree(
+            root, wt_cones, timeout_s=args.scratch_timeout_s, base_sha=ctx.oracle_base_sha
+        )
         # scratch is assigned BEFORE the probe, so a probe raise still has a
         # handle to tear down (no leak on either branch below).
         _arm_src_shadow(ctx, root, scratch, contaminating, args, floored=floored)
@@ -1876,6 +2049,25 @@ def _create_scratch_or_degrade(
             raise _Indeterminate(
                 f"scratch-worktree fallback failed ({exc}) — dirty oracle unresolvable",
                 extra={"live_dirty_paths": ctx.live_dirty_paths},
+                warns=ctx.warns,
+            ) from exc
+        # #2293 (criterion 3): the #1408 clean-root degradation may only use the
+        # root WORKING TREE as oracle when the root actually SITS at the resolved
+        # oracle base — "clean" alone is not "correct".
+        try:
+            root_head = git_head(root)
+        except subprocess.CalledProcessError as head_exc:
+            raise _Indeterminate(
+                f"cannot read root HEAD for the clean-root degradation gate: {head_exc}",
+                warns=ctx.warns,
+            ) from head_exc
+        if root_head != ctx.oracle_base_sha:
+            raise _Indeterminate(
+                f"scratch creation/probe failed on a CLEAN root ({exc}) AND root HEAD "
+                f"{root_head[:12]} != resolved oracle base "
+                f"{(ctx.oracle_base_sha or '')[:12]} (base {ctx.base_ref}) — the root "
+                "working tree is not a valid oracle at the diff base; refusing the "
+                "#1408 degradation (#2293)",
                 warns=ctx.warns,
             ) from exc
         ctx.scratch_degraded = True
@@ -1929,9 +2121,12 @@ def _paired_collection_reason(
     """First missed paired-collection precondition for a single-file-PASS node, or None.
 
     Plan #2024 §4.1(d): a node whose single-file pristine run PASSed becomes a
-    paired candidate ONLY when every precondition holds — (1) the branch diff
-    for its file is empty (a branch-touched file keeps today's NEW semantics:
-    main's copy of it is not the thing that failed); (2) the per-file oracle
+    paired candidate ONLY when every precondition holds — (1) the file's
+    CONTENT at HEAD does not differ from its content at the base tip (#2302:
+    a genuinely branch-authored file keeps today's NEW semantics — main's copy
+    of it is not the thing that failed; a base-identical path, e.g. a Step 5a
+    sibling-sync copy of main's own file, IS main's copy and is subtracted
+    from *touched_set* by the caller); (2) the per-file oracle
     that produced the PASS was the SCRATCH oracle, or the root was clean at
     that file's probe; (3) the R-F' live-tree-scanner constraint stands
     unchanged (non-anchored scan nodes never trust a scratch/paired read);
@@ -2151,6 +2346,9 @@ def _resolve_paired_candidates(
         if args.pristine_timeout_s is not None
         else derive_paired_timeout_s(ctx.sel, prefix)
     )
+    if not paired_use_scratch:
+        # #2293 D6: root-tree paired venue — record base-skew provenance (WARN-only).
+        _note_root_oracle_skew(ctx, root)
     try:
         paired_failing = run_pristine_selection(
             prefix,
@@ -2177,7 +2375,8 @@ def _resolve_pristine_bucket(  # noqa: C901 — #2024 paired stage grew the orac
 
     Scratch-by-default (#1408; #1077's dirty-only trigger removed): the
     pristine oracle is BY DEFAULT a detached sparse scratch worktree at the
-    root's HEAD whenever the node is physically eligible — clean or dirty
+    resolved oracle base — merge-base(diff base, work-root HEAD), #2293 —
+    whenever the node is physically eligible — clean or dirty
     root alike — created lazily once per compare (the shadow probe runs ONCE
     at creation), reused for every eligible bucketed file, ALWAYS removed in
     the ``finally``. Per-file eligibility: no RESIDUAL contaminating dirt
@@ -2256,11 +2455,20 @@ def _resolve_pristine_bucket(  # noqa: C901 — #2024 paired stage grew the orac
             f"Per-file pristine commands:\n{commands}",
             warns=ctx.warns,
         )
+    # #2293: resolve the oracle cut ONCE, only for oracle-SPENDING runs (all the
+    # guards above return/raise first, so no new shellout / failure mode for
+    # compares that never run a pristine check).
+    _resolve_oracle_base(ctx, root)
     scratch: _ScratchTree | None = None
     scratch_unavailable = False  # #1408 memo: clean-root scratch failure -> root oracle
     wt_cones = _work_root_sparse_cones(ctx.work_root)  # None => non-sparse (R-G' floor mode)
     floored = wt_cones is None  # R-G' (#2019): floor-profile scratch, asymmetric verdicts
-    touched_set = set(ctx.touched)  # #2024 precondition 1: branch diff for the file is empty
+    # #2024 precondition 1 is a CONTENT test (#2302): "branch-touched" means the
+    # file's content at HEAD differs from its content at the base tip. A
+    # base-identical path (a Step 5a sibling-sync copy of main's OWN file) is
+    # main's content, not the branch's change — subtracting it re-arms the
+    # ordering carve-out the sync otherwise disables (#2296).
+    touched_set = set(ctx.touched) - ctx.base_identical
     paired_oracles: dict[Node, str] = {}  # #2024: the per-file oracle behind each candidate PASS
     try:
         for test_file in files:
@@ -2316,6 +2524,9 @@ def _resolve_pristine_bucket(  # noqa: C901 — #2024 paired stage grew the orac
                 if args.pristine_timeout_s is not None
                 else derive_pristine_timeout_s(ctx.sel, test_file)
             )
+            if not use_scratch:
+                # #2293 D6: root-tree venue — record base-skew provenance (WARN-only).
+                _note_root_oracle_skew(ctx, root)
             try:
                 main_failing = run_single_file_pristine(
                     test_file,
@@ -2426,6 +2637,8 @@ def _compare_impl(args: argparse.Namespace) -> dict:
         "ledger_dirty_paths": list(ledger.get("dirty_paths", [])) if ledger else [],
         "live_dirty_paths": ctx.live_dirty_paths,
         "pristine_files_run": ctx.pristine_files_run,
+        "base": ctx.base,  # #2302: the RESOLVED diff base the compare derived against
+        "base_identical_files": sorted(ctx.base_identical),  # #2302 content-test audit key
         "pristine_oracle": ctx.pristine_oracle,
         "ordering_suspect": ctx.ordering_suspect,  # #2024 non-blocking strips
         "paired_files_run": ctx.paired_files_run,
@@ -2434,6 +2647,9 @@ def _compare_impl(args: argparse.Namespace) -> dict:
         "paired_skipped": ctx.paired_skipped,
         "paired_oracle": ctx.paired_oracle,  # floor value = armed-only (candidates refused)
         "scratch_sha": ctx.scratch_sha,
+        "oracle_base_ref": ctx.base_ref,  # #2293: the REF the oracle cut resolved from
+        "oracle_base_sha": ctx.oracle_base_sha,  # #2293: merge-base(base_ref, wt HEAD)
+        "root_oracle_base_skew": ctx.root_oracle_base_skew,  # #2293 D6 (null = no root venue)
         "scratch_src_shadow": ctx.scratch_src_shadow,
         "scratch_degraded": ctx.scratch_degraded,  # #1408 clean-root degradation audit flag
         "gate_tmp_root": _gate_tmp_root_str(),  # #1408 temp-write routing provenance
@@ -2790,7 +3006,8 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "diff base (default: resolve via the worktree selector — fetched-"
             "origin/main semantics WITHOUT a second fetch, #1289; an explicit "
-            "REF is used verbatim)"
+            "REF is used verbatim); also sets the pristine-oracle cut — the "
+            "scratch detaches at merge-base(base, HEAD) (#2293)"
         ),
     )
     p_compare.add_argument(

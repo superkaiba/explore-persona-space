@@ -14802,6 +14802,22 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 # (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
 # change). Each entry names its trim direction; none is licensed to grow.
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
+    # measured 944,138 B after #2302 round 2 de-duplicated the stale-sync
+    # residual prose (the Step 9c 1d parenthetical now cross-references
+    # "Step 5a § Base-identity invariant (#2302)" instead of restating it,
+    # -184 B on round 1's 944,322 B) and the cap was LOWERED back to the new
+    # minimum + ~1.2 KB (#1753/#1727 landing-bytes rule; headroom 1,262 B
+    # <= the 3,000 B loose-cap hygiene bar — a ratchet is a real cost;
+    # give budget back when prose shrinks).
+    # Prior: 945_600 — measured 944,322 B after #2302 round 1 documented the
+    # base-identity invariant at BOTH consumers of the Step 5a sibling-sync
+    # output (+1,938 B on the #2136 942,384 B base): the Step 5a
+    # "Base-identity invariant" paragraph (synced paths are base-identical BY
+    # CONSTRUCTION; selector `base_identical_excluded` + compare
+    # `base_identical_files` reporting; the stale-sync residual + its re-sync
+    # remedy) and the Step 9c 1d COMPARE_RC=0 bullet's content-test
+    # parenthetical (#2024 precondition 1 is a CONTENT test as of #2302).
+    # Prior: 943_600 —
     # measured 942,384 B after #2136 anchored the Step 5b durable-verdict
     # snippet (+1,370 B: the since_ts=review_round_anchor_ts call form,
     # the fallback-only anchor-semantics paragraph, and the per-site
@@ -14930,16 +14946,23 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 942_000: that value predates this landing and would FAIL it by 384 B,
     # so the higher cap is the correct resolution, not a regrowth licence
     # (headroom 1,216 B, the same ~1 KB the #1753 rule prescribes).
-    # 945_400 — #2303 measured 944,254 B for THIS landing (Step 5a family
-    # sync: .claude/config/agent_spec_size_caps.txt joins the lint family
-    # in BOTH copies — the linter reads it at module import, #2293 — and
-    # the sync commits gain rc-checked FATAL/exit-1 arms in both copies;
-    # +1,870 B over the 942,384 B base at 3ac07d46fd). Cap = landing bytes
-    # + ~1 KB (#1753 landing-bytes rule; headroom 1,146 B). Re-measure
-    # against then-current origin/main at Step 10d before the merge — the
-    # #2284/#2285 moving-main class above; two live siblings (#2296,
-    # #2302) spend from this same budget.
-    "issue/SKILL.md": 945_400,
+    # 947_700 — #2303 measured 946,657 B for THIS landing, and that figure is
+    # the SUM of two workflow-fix landings, not one: #2303's own Step 5a family
+    # work (+1,870 B over the 942,384 B base at 3ac07d46fd —
+    # .claude/config/agent_spec_size_caps.txt joins the lint family in BOTH
+    # copies, since the linter reads it at module import, #2293; and both sync
+    # commits gain rc-checked FATAL/exit-1 arms) PLUS #2302's sibling-arm
+    # landing (5bfb7eb6f0, +2,403 B), which reached main at 944,787 B / cap
+    # 945_400 while #2303 sat in its Step 9c + pre-push gates. Cap = landing
+    # bytes + ~1 KB (#1753 landing-bytes rule; headroom 1,043 B).
+    #
+    # This IS the #2284/#2285 moving-main class recorded above, caught rather
+    # than repeated: each branch fit the headroom it measured against ALONE
+    # (#2302 at 945_400, #2303 at 945_400 off a pre-#2302 base), and their SUM
+    # would have landed 946,657 B against a 945_400 cap — main red by 1,257 B
+    # between the two merges. The Step 10d re-measure duty (#2303 plan §4.2 /
+    # risk R8) is what fired here; keep it on any SKILL.md-bearing branch.
+    "issue/SKILL.md": 947_700,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
