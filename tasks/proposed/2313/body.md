@@ -10,11 +10,6 @@ origin_prompt: 'Surfaced by #2312 plan v1 section 5: workflow surface has zero f
   and #2181 reading it as a violation.'
 workflow: v1
 ---
----
-kind: infra
-tags: ["wf-fix"]
----
-
 # Policy: a rebase-rewritten OWN issue branch — sanctioned `--force-with-lease` arm, or explicit ban + force-free route only?
 
 ## Decision needed (user)
