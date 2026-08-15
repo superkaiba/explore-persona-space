@@ -292,6 +292,39 @@ def _forbid_real_guard_apply_launches(request, monkeypatch):
         monkeypatch.setattr(asw, "_launch_guard_apply", _make_guarded(asw._launch_guard_apply))
 
 
+@pytest.fixture(autouse=True)
+def _sidecar_hermeticity_guard(request, monkeypatch, tmp_path):
+    """#2141 hermeticity guard (redirect), shared across watcher test modules
+    — same #1392 family as the guards above. No watcher-module test may
+    append to the REAL ``.claude/cache/disk-guard-events.jsonl``: all watcher
+    sidecar writes route through ``_disk_guard_sidecar_path()`` (single call
+    site: ``_append_disk_guard_sidecar``), so this guard redirects that
+    resolver to pytest tmp UNLESS the test has pinned ``PROJECT_ROOT`` itself
+    (the ``watcher_roots`` convention in tests/test_vm_disk_subfloor_sentinel
+    .py), in which case it DELEGATES to the real resolver — which reads the
+    patched ``PROJECT_ROOT`` at call time — so root-pinned sidecar-content
+    assertions keep working. One redirect covers every writer (sentinel,
+    reclaim, data-disk, #2141 skip rows), present and future. Measured
+    incident (#2141 Finding 1): 6,369 pytest-planted sentinel rows at
+    ``free_gib: 17.0`` in the real sidecar, written by the real-body
+    ``vm_disk_pass(dry_run=False)`` tests whose ``isolated_registry`` fixture
+    pins only ``AUTONOMOUS_REGISTRY_DIR``. A later test-level monkeypatch of
+    ``_disk_guard_sidecar_path`` wins, as with the sibling guards."""
+    watchers = _watcher_modules(request)
+    if not watchers:
+        return
+    for asw in watchers:
+        real_root = asw.PROJECT_ROOT
+        real_fn = asw._disk_guard_sidecar_path
+
+        def _guarded(asw=asw, real_root=real_root, real_fn=real_fn):
+            if real_root == asw.PROJECT_ROOT:  # test did NOT pin the root
+                return tmp_path / "disk-guard-events.jsonl"
+            return real_fn()  # root pinned to tmp -> delegate (reads patched PROJECT_ROOT)
+
+        monkeypatch.setattr(asw, "_disk_guard_sidecar_path", _guarded)
+
+
 # ─── #1247 fleet-mutating pass stub for FULL-main() watcher tests (#1278) ────
 #
 # Shared home for the call-explicit stub helper formerly duplicated in

@@ -1271,7 +1271,12 @@ rate-limited `vm_disk_guard.py --apply --ignore-threshold --no-push
 `EPM_VM_DISK_SUBFLOOR_GIB` (interval
 `EPM_VM_DISK_SUBFLOOR_RECLAIM_INTERVAL_S`, 1800s; kill switch
 `EPM_DISABLE_SUBFLOOR_RECLAIM=1`) — VM-root only; the data disk stays
-escalate-only.
+escalate-only. Since #2141 below-floor DECLINES are loud too — a stderr
+skip line naming the blocking predicate every declined tick (all subfloor
+log lines carry the lowercase greppable `subfloor` token), a throttled
+`action: "skipped"` sidecar row for kill-switched episodes — and the
+watcher's daily log gains a UTC-date symlink alias whenever the local and
+UTC dates differ.
 
 **Non-canonical caches + the /workspace hub-cache arm (#911).** The
 guard's tier (b) ALSO sweeps NON-CANONICAL issue-keyed caches — top-level
