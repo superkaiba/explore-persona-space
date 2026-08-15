@@ -114,18 +114,42 @@ Known residual: 1-min-load endpoint sampling can miss a mid-leg spike on an
 8-9 min pytest leg — the miss direction is today's behavior (BLOCK), i.e.
 safe; do not over-trust ``load_hot=False``.
 
-Baseline-ledger layer (#2235 Phase A): ``load_baseline_ledger`` reads the
-Step 9c ledger (``.claude/cache/step9c-baseline.json``, read-only) and, when
-it parses + schema-matches + sha-matches origin/main, ``evaluate`` reclassifies
-pytest-leg ``FAILED <nodeid>`` hits whose node id the ledger lists as ALREADY
-failing on main into ``reported`` (``pre-existing-on-main (ledger)``) — unless
-the payload IS the failing test's own file. Subtractive only (block ->
-reported, never the reverse); any bad/stale ledger degrades to None = exactly
-the pre-#2235 semantics. The gate prints ``inline_lint_gate:
+Baseline-ledger layer (#2235 Phase A; violation grain #2318):
+``load_baseline_ledger`` reads the Step 9c ledger
+(``.claude/cache/step9c-baseline.json``, read-only) and, when it parses +
+schema-matches + sha-matches origin/main, ``evaluate`` reclassifies pytest-leg
+red the ledger lists as ALREADY failing on main into ``reported``, at two
+grains: (a) the short-summary ``FAILED <nodeid>`` row of any ledger-listed
+node (``pre-existing-on-main (ledger)``, node grain); (b) for a ledger-listed
+``step9c_baseline.VIOLATION_SET_SCAN_NODES`` member (whole-repo scan tests —
+registry + ``extract_violation_paths`` imported LAZILY from the sibling
+module, single source, never a drift copy), the node's whole FAILURES block
+(``pre-existing-on-main (ledger, violation-set)``) — but ONLY when the
+extracted violation-path set of that block contains NO payload path: a
+payload path in the extracted set means the round ADDED a violation to the
+already-red node, and the block keeps today's classification (#2318, the
+#2316 compare-side mirror). The ledger's live ``failing_tests`` rows are
+DICTS ({classname, file, name}) mapped to ``file::name`` nodeids by
+``_ledger_nodeids`` (the pre-#2318 ``str()`` coercion made the membership
+test always False — the layer was dead code, #2318 D1). Both grains skip a
+node whose test FILE is itself a payload path (own-file condition).
+Subtractive only (block -> reported, never the reverse); any bad/stale ledger
+degrades to None = exactly the pre-#2235 semantics; a registry-import
+failure, an unparseable / summary-mismatched FAILURES block, or an empty
+extraction degrades LOUDLY (one stderr warn) to node-grain behavior — never a
+crash, never a new blocking class. The gate prints ``inline_lint_gate:
 ledger=<fresh sha12|stale|absent>`` so the audit trail shows the layer's
-armed/disarmed state. With the live ledger's ``failing_tests: []`` this layer
-is a NO-OP on the current fleet — it engages exactly when main reddens, which
-is when every gate run would otherwise start false-blocking on unrelated red.
+armed/disarmed state.
+
+Documented residuals (#2318 — recorded, not redesigned): (a) the ledger is
+consumed sha-pinned but WITHOUT a ``dirty_code_paths`` refusal — refusing a
+``dirty_code_paths: true`` ledger would disable the subtraction whenever the
+fleet has dirty paths (nearly always) and thereby newly BLOCK payloads on
+main's own pre-existing reds, the #1388 fleet-wedge class; (b) pytest's
+saferepr elision / explanation truncation can in principle hide a payload's
+offender row while leaving only an elision-dropped token, yielding a demote —
+reachability ~nil (a list long enough to elide is long enough to truncate the
+``assert not`` line entirely, and truncation blinds today's gate identically).
 
 Run as ONE background Bash (the SCOPED lint leg is fast, but the
 workflow-surface / refusal-fallback bare no-flags run measured ~9-10 min on
@@ -156,6 +180,7 @@ from __future__ import annotations
 import argparse
 import fcntl
 import hashlib
+import importlib.util
 import json
 import os
 import re
@@ -165,6 +190,7 @@ import tempfile
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
+from types import ModuleType
 
 DEFAULT_CERT_PATH = "/tmp/eps-inline-lint-cert-v1.txt"
 # Step 9c baseline ledger (#2235 Phase A): read-only consumption of the SAME
@@ -263,6 +289,23 @@ PASSES_TITLE_RE = re.compile(r"^=+ PASSES\b[^=]*=+$")
 # ledger subtraction keys on. Applied to STRIPPED pytest-leg lines only; a hit
 # line not of this shape keeps today's classification (never a blanket waiver).
 FAILED_NODE_RE = re.compile(r"^FAILED\s+(\S+)")
+# #2318: pytest FAILURES-section parsing for the violation-grain ledger
+# demotion. The FAILURES title is matched case-SENSITIVELY (fail-closed
+# narrowing, the #2023 PASSES precedent); per-failure headers are
+# underscore-fenced and carry only the test NAME; the block's trailing
+# `<file>.py:<line>: <Exc>` locus carries the failing test's FILE.
+FAILURES_TITLE_RE = re.compile(r"^=+ FAILURES\b[^=]*=+$")
+FAILURE_HEADER_RE = re.compile(r"^_+ (.+?) _+$")
+FAILURE_LOCUS_RE = re.compile(r"^(\S+?\.py):\d+: \S+")
+# #2318: the sibling registry module (VIOLATION_SET_SCAN_NODES +
+# extract_violation_paths, both #2316), imported LAZILY inside the demotion
+# path — a module-top import failure would crash the gate for every inline
+# round fleet-wide. The LEDGER read stays deliberately import-free
+# (load_baseline_ledger docstring); this import carries only the
+# violation-grain registry + extractor (single source — a drift copy is
+# forbidden, #2318 criterion 2). Result (module or None) cached per process.
+_STEP9C_BASELINE_PATH = Path(__file__).resolve().parent / "step9c_baseline.py"
+_STEP9C_CACHE: dict[str, object] = {}
 
 
 class Inconclusive(Exception):
@@ -816,6 +859,199 @@ def passes_section_idxs(pytest_lines: list[str]) -> set[int]:
     return idxs
 
 
+def _ledger_nodeids(ledger: dict) -> set[str]:
+    """Ledger ``failing_tests`` rows -> nodeid strings (#2318 D1).
+
+    The live Step 9c ledger stores DICT rows ({classname, file, name}); the
+    pre-#2318 ``{str(n) for n in ...}`` coercion put dict REPRS in the set,
+    so the ``node in ledger_failing`` membership test was always False and
+    the #2235 Phase A layer never demoted anything. Dict rows map to
+    ``f"{file}::{name}"``; plain str rows pass through (forward-compat); a
+    row of any other shape is SKIPPED with one aggregate stderr warn naming
+    the row types (never a silent no-op, never a raise)."""
+    nodeids: set[str] = set()
+    skipped: list[str] = []
+    for row in ledger.get("failing_tests") or []:
+        if isinstance(row, str):
+            nodeids.add(row)
+        elif (
+            isinstance(row, dict)
+            and isinstance(row.get("file"), str)
+            and isinstance(row.get("name"), str)
+        ):
+            nodeids.add(f"{row['file']}::{row['name']}")
+        else:
+            skipped.append(type(row).__name__)
+    if skipped:
+        print(
+            f"inline_lint_gate: warn: skipped {len(skipped)} ledger failing_tests "
+            f"row(s) of unexpected shape: {sorted(set(skipped))}",
+            file=sys.stderr,
+        )
+    return nodeids
+
+
+def _step9c_baseline_module() -> ModuleType | None:
+    """Lazy sibling import of ``scripts/step9c_baseline.py`` (#2318).
+
+    Reuses an already-registered ``sys.modules['step9c_baseline']`` (test
+    harnesses and the Step 9c gate register the same name — reuse is also
+    what makes the registry a SINGLE object across consumers); otherwise
+    loads via importlib with the module REGISTERED in sys.modules BEFORE
+    ``exec_module`` — without the registration step9c_baseline crashes on
+    its own ``@dataclass`` (field-type resolution looks the module up in
+    sys.modules at class-creation time; measured). ANY failure returns None
+    with ONE loud stderr warn (plan row C8): the violation-grain layer
+    disengages and evaluate() keeps today's node-grain behavior — never a
+    crash (a raise inside evaluate() would make every inline round
+    INCONCLUSIVE, the #1388 wedge class via crash), never a new blocking
+    class. The result (module or None) is cached per process."""
+    if "mod" in _STEP9C_CACHE:
+        cached = _STEP9C_CACHE["mod"]
+        return cached if isinstance(cached, ModuleType) else None
+    mod = sys.modules.get("step9c_baseline")
+    if mod is None:
+        try:
+            spec = importlib.util.spec_from_file_location("step9c_baseline", _STEP9C_BASELINE_PATH)
+            if spec is None or spec.loader is None:
+                raise ImportError(f"no loadable spec for {_STEP9C_BASELINE_PATH}")
+            mod = importlib.util.module_from_spec(spec)
+            sys.modules["step9c_baseline"] = mod
+            spec.loader.exec_module(mod)
+        except Exception as exc:  # C8: degrade LOUD to node grain, never crash the gate
+            sys.modules.pop("step9c_baseline", None)  # no half-exec'd module residue
+            print(
+                f"inline_lint_gate: warn: step9c_baseline registry import failed "
+                f"({exc!r}) — violation-grain demotion disabled; node-grain "
+                "behavior retained",
+                file=sys.stderr,
+            )
+            mod = None
+    _STEP9C_CACHE["mod"] = mod
+    return mod
+
+
+def failure_block_idxs(pytest_lines: list[str]) -> dict[str, set[int]]:
+    """Bucket the pytest ``FAILURES`` section into per-node line-index blocks
+    (#2318 D2 — offender attribution lives in the traceback lines, not the
+    ``FAILED <nodeid>`` short-summary row, so a line-scoped label cannot
+    classify a whole-repo scan failure).
+
+    The nodeid is DERIVED per block — ``<locus file>::<header name>`` (dots
+    in the pre-``[`` header portion map to ``::`` for class-based tests),
+    the locus being the block's LAST ``<file>.py:<line>: <Exc>`` row — then
+    CROSS-VALIDATED against the ``-rA`` short-summary ``FAILED <nodeid>``
+    set: a block whose derived nodeid is not in that set is DROPPED with one
+    stderr warn (fail-closed, plan row C9 — brittleness across pytest
+    versions degrades to today's behavior, never to a waiver). Never raises:
+    any unexpected shape yields FEWER blocks, i.e. today's classification."""
+    failed_nodes = {
+        m.group(1) for ln in pytest_lines if (m := FAILED_NODE_RE.match(ln.strip())) is not None
+    }
+    blocks: dict[str, set[int]] = {}
+    in_failures = False
+    header: str | None = None
+    idxs: list[int] = []
+
+    def _close() -> None:
+        nonlocal header, idxs
+        if header is not None and idxs:
+            locus_file: str | None = None
+            for i in reversed(idxs):
+                lm = FAILURE_LOCUS_RE.match(pytest_lines[i].rstrip())
+                if lm is not None:
+                    locus_file = lm.group(1)
+                    break
+            base, sep, param = header.partition("[")
+            derived = f"{locus_file}::{base.replace('.', '::')}{sep}{param}" if locus_file else None
+            if derived is not None and derived in failed_nodes:
+                blocks.setdefault(derived, set()).update(idxs)
+            else:
+                print(
+                    f"inline_lint_gate: warn: dropped FAILURES block {header!r} — "
+                    f"derived nodeid {derived or '<no locus>'} not in the FAILED "
+                    "summary set (fail-closed: today's classification retained)",
+                    file=sys.stderr,
+                )
+        header = None
+        idxs = []
+
+    for i, line in enumerate(pytest_lines):
+        row = line.rstrip()
+        if SECTION_FENCE_RE.match(row):
+            _close()
+            in_failures = bool(FAILURES_TITLE_RE.match(row))
+            continue
+        if not in_failures:
+            continue
+        hm = FAILURE_HEADER_RE.match(row)
+        if hm is not None:
+            _close()
+            header = hm.group(1).strip()
+            continue
+        if header is not None:
+            idxs.append(i)
+    _close()
+    return blocks
+
+
+def _violation_grain_labels(
+    pytest_lines: list[str], ledger_nodeids: set[str], payload: list[str]
+) -> dict[int, str]:
+    """Per-line demotion labels for ledger-listed whole-repo scan nodes
+    (#2318; the single-sided mirror of step9c_baseline compare's #2316 fix).
+
+    For each cross-validated FAILURES block whose nodeid is BOTH in the
+    sha-fresh ledger AND in the imported registry (parametrization suffix
+    stripped — the ``_violation_setdiff_member`` rule) — and whose test file
+    is not itself a payload path (own-file condition, #2235) — demote the
+    block's lines iff ``extract_violation_paths(<block text>)`` contains NO
+    payload path. A payload path in the extracted set means the round ADDED
+    a violation to the already-red node: the block keeps today's
+    classification (the Goal's fail-closed invariant, plan row C1). Empty
+    extraction = conservative block + one loud warn (C5); a registry-import
+    or post-import failure degrades LOUDLY to node grain (C8). Never raises
+    inside evaluate()."""
+    blocks = failure_block_idxs(pytest_lines)
+    if not blocks:
+        return {}
+    mod = _step9c_baseline_module()
+    if mod is None:
+        return {}  # C8: the loader already printed the warn
+    labels: dict[int, str] = {}
+    try:
+        for node, idxs in sorted(blocks.items()):
+            if node not in ledger_nodeids:
+                continue  # red on the gate run only — not pre-existing (C3)
+            file, _, name = node.partition("::")
+            if file in payload:
+                continue  # own-file condition (#2235, C7)
+            if f"{file}::{name.split('[', 1)[0]}" not in mod.VIOLATION_SET_SCAN_NODES:
+                continue  # non-registry: the ^FAILED-line node-grain path only (C4)
+            extracted = mod.extract_violation_paths(
+                "\n".join(pytest_lines[i] for i in sorted(idxs))
+            )
+            if not extracted:
+                print(
+                    f"inline_lint_gate: warn: empty violation-path extraction for "
+                    f"{node} — conservative block retained (no demotion)",
+                    file=sys.stderr,
+                )
+                continue  # C5
+            if any(p in extracted for p in payload):
+                continue  # the payload ADDED a violation — the block stands (C1)
+            for i in idxs:
+                labels[i] = "pre-existing-on-main (ledger, violation-set)"
+    except Exception as exc:  # C8 twin: attribute drift / extractor raise degrades loud
+        print(
+            f"inline_lint_gate: warn: violation-grain demotion failed ({exc!r}) — "
+            "node-grain behavior retained",
+            file=sys.stderr,
+        )
+        return {}
+    return labels
+
+
 def evaluate(
     payload: list[str], legs: LegResults, repo: Path, ledger: dict | None = None
 ) -> Verdict:
@@ -831,14 +1067,18 @@ def evaluate(
     Ledger subtraction (#2235 Phase A; ``ledger`` is ADDITIVE with default
     None so every existing call site binds unchanged): a pytest-leg hit whose
     line is a short-summary ``FAILED <nodeid>`` row with the node id in
-    ``ledger["failing_tests"]`` — AND whose test FILE is not itself a payload
+    ``_ledger_nodeids(ledger)`` — AND whose test FILE is not itself a payload
     path (own-file condition: a round editing the failing test must still
     block) — is reclassified ``verdict.reported`` labeled
-    ``pre-existing-on-main (ledger)``. SUBTRACTIVE ONLY by construction
-    (block -> reported, never the reverse); a hit not attributable to a
-    ledger-listed node keeps today's classification; ``ledger=None`` (absent
-    / stale / corrupt per load_baseline_ledger) is bit-identical to the
-    pre-#2235 gate.
+    ``pre-existing-on-main (ledger)``. For a ledger-listed
+    ``VIOLATION_SET_SCAN_NODES`` member the demotion additionally decides at
+    VIOLATION grain over the node's FAILURES block (#2318 —
+    ``_violation_grain_labels``: demote the block's lines ONLY when the
+    extracted violation-path set contains no payload path). SUBTRACTIVE ONLY
+    by construction (block -> reported, never the reverse); a hit not
+    attributable to a ledger-listed node keeps today's classification;
+    ``ledger=None`` (absent / stale / corrupt per load_baseline_ledger) is
+    bit-identical to the pre-#2235 gate.
 
     Load downgrade (#2039, module docstring § Load awareness): a path that
     WOULD OTHERWISE land in ``blocked``, whose block reasons rest on hits
@@ -857,6 +1097,17 @@ def evaluate(
     pytest_lines = legs.pytest_output.splitlines()
     ws_idxs = warnings_attribution_idxs(pytest_lines)  # pytest leg ONLY
     pass_idxs = passes_section_idxs(pytest_lines)  # pytest leg ONLY (#2023)
+    # #2235 Phase A: node ids the sha-matched ledger records as ALREADY
+    # failing on origin/main (empty set when ledger is None/absent — the
+    # subtraction layer is then fully disengaged). The live rows are DICTS —
+    # mapped to file::name nodeids by _ledger_nodeids (#2318 D1).
+    ledger_failing: set[str] = _ledger_nodeids(ledger) if ledger is not None else set()
+    # #2318: violation-grain demotion labels for ledger-listed whole-repo
+    # scan nodes (per-line, over cross-validated FAILURES blocks) — computed
+    # once, before the per-line loop; empty when nothing demotes.
+    vg_labels: dict[int, str] = (
+        _violation_grain_labels(pytest_lines, ledger_failing, payload) if ledger_failing else {}
+    )
     # (line, report-class label | None, leg origin) — the leg origin drives
     # the #2039 load downgrade (lint-leg hits are never load-downgraded).
     combined: list[tuple[str, str | None, str]] = [(ln, None, "lint") for ln in lint_lines] + [
@@ -866,17 +1117,11 @@ def evaluate(
             if i in ws_idxs
             else "passing-capture"
             if i in pass_idxs
-            else None,
+            else vg_labels.get(i),
             "pytest",
         )
         for i, ln in enumerate(pytest_lines)
     ]
-    # #2235 Phase A: node ids the sha-matched ledger records as ALREADY
-    # failing on origin/main (empty set when ledger is None/absent — the
-    # subtraction layer is then fully disengaged).
-    ledger_failing: set[str] = (
-        {str(n) for n in (ledger.get("failing_tests") or [])} if ledger is not None else set()
-    )
     hits: dict[str, list[tuple[str, str]]] = {p: [] for p in payload}
     verdict = Verdict()
     for line, label, leg in combined:
