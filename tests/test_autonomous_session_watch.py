@@ -9130,6 +9130,29 @@ def _t2117_human_row(ts=None, text="wait, let me look at this first"):
     return row
 
 
+def _t2117_compact_row(ts=None):
+    """An auto-compaction continuation row (#2139), MEASURED shape verbatim:
+    top-level ``isCompactSummary: True`` + ``isVisibleInTranscriptOnly:
+    True`` on a plain-string user row opening with the continuation sentence
+    (sanitized structural row per the #1104 contract; timestamped when
+    ``ts``). Pre-#2139 the shared predicate read this row as HUMAN."""
+    row = {
+        "type": "user",
+        "isCompactSummary": True,
+        "isVisibleInTranscriptOnly": True,
+        "message": {
+            "role": "user",
+            "content": (
+                "This session is being continued from a previous conversation "
+                "that ran out of context. The conversation is summarized below: sanitized"
+            ),
+        },
+    }
+    if ts is not None:
+        row["timestamp"] = _iso_845(ts)
+    return row
+
+
 def test_transcript_work_probe_churn_only_tail(monkeypatch):
     # Arm (iii): >=1 completed turn, ALL failed, no human row ->
     # (None, "churn-only"); the mtime fallback must NOT be consulted (a
@@ -9200,6 +9223,45 @@ def test_transcript_work_probe_human_row_protects(monkeypatch):
     age, reason = asw._transcript_work_idle_age_s(4242, now)
     assert reason is None
     assert age == pytest.approx(600.0)
+
+
+def test_transcript_work_probe_compact_row_does_not_rescue_churn_only(monkeypatch):
+    # #2139 class (alpha): a churn-only tail (all completed turns failed) whose
+    # only "user" row is an auto-compaction continuation summary stays arm
+    # (iii) — the harness-injected compact row is never human evidence, so an
+    # error-storming session on a DONE task cannot rescue itself from the
+    # reaper by auto-compacting (the #2004 shape leaking back in through the
+    # shared predicate). The mtime fallback must not run either.
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    tail = [
+        *(r for _ in range(3) for r in _t2117_failed_turn(now - 600)),
+        _t2117_compact_row(ts=now - 60),
+    ]
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, max_bytes=0: list(tail))
+
+    def _boom(pid, now):
+        raise AssertionError("mtime fallback must not run on a compact-only churn tail")
+
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", _boom)
+    age, reason = asw._transcript_work_idle_age_s(4242, now)
+    assert age is None and reason == "churn-only"
+
+
+def test_transcript_work_probe_stale_ok_turn_fresh_compact_row_age(monkeypatch):
+    # #2139 class (beta): arm (ii) takes max(newest_ok_ts, human_ts), so
+    # pre-fix a FRESH compact row's timestamp won and protected the tail.
+    # Post-fix the compact row contributes nothing: the age derives from the
+    # STALE (>2 h) ok turn's own timestamp and the tail is stop-eligible.
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    tail = [*_t2117_ok_turn(now - 10_800), _t2117_compact_row(ts=now - 60)]
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, max_bytes=0: list(tail))
+    age, reason = asw._transcript_work_idle_age_s(4242, now)
+    assert reason is None
+    assert age == pytest.approx(10_800.0)
 
 
 def test_transcript_work_probe_interior_human_row_protects_against_last_row_only_regression(
