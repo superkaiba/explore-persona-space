@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2312,
+  "highest_id": 2313,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10143,6 +10143,13 @@
       "path": "tasks/planning/2312",
       "status": "planning",
       "title": "Step 10d safe-case push has no arm for a REBASED issue branch \u2014 rejection fallback rebases onto the stale remote branch (#1128 replay shape); stale PR head can land pre-rebase payload"
+    },
+    "2313": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2313",
+      "status": "proposed",
+      "title": "Policy: rebase-rewritten own issue branch \u2014 sanctioned --force-with-lease arm, or explicit ban + force-free route only?"
     },
     "232": {
       "has_clean_result": true,
