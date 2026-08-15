@@ -866,3 +866,5 @@ fix `a41fcad04f`, 72 round-trip tests) + task #1943 (the rule);
 judge-filter drop rule); `.claude/rules/marker-leakage-measurement.md` (the
 non-judged marker DV); the enforcing agent files (`planner.md`, `critic.md`,
 `analyzer.md`, `interpretation-critic.md`, `clean-result-critic.md`).
+A blinded / unprimed qualitative read is NOT a judged-behavior DV (no score,
+no rubric); its recipe is `.claude/rules/blinded-reads.md` (#2143).

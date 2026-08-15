@@ -13928,7 +13928,12 @@ _LESSONS_ROW_RE = re.compile(
 # EXACTLY this row extension plus <=40 B headroom (9873 + 40 = 9913) — not
 # general slack (the #992 argued-raise form; the per-row and non-row caps
 # still bind).
-_LESSONS_MAX_BYTES = 9913
+# 9913->10081 (#2143): the index sat at 9873/9913 (40 B headroom), so the
+# new blinded-reads.md index row (+168 B incl. newline; measured post-edit
+# file 10041 B) could not land under the old cap. The raise buys EXACTLY
+# this row plus <=40 B headroom (10041 + 40 = 10081) — not general slack
+# (the #992 argued-raise form; the per-row and non-row caps still bind).
+_LESSONS_MAX_BYTES = 10081
 # Early-warning band (#992): a stderr-only advisory WARN once the index
 # crosses this, so a near-cap landing is visible a few rows before the
 # _LESSONS_MAX_BYTES FAIL (early warning only — advisory, never a FAIL).
