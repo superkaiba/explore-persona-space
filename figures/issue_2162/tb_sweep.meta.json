@@ -1,0 +1,1755 @@
+{
+  "commit": "48842a29+dirty",
+  "render_id": "40a227e273174da7",
+  "git_commit": "48842a29",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2162_tbmp_figures.py"
+  ],
+  "created": "2026-08-15T01:18:23Z",
+  "figsize": [
+    11.0,
+    7.5
+  ],
+  "points": [
+    {
+      "boundary index k": 1.0,
+      "\u0394F steered \u2212 shuffled (registered)": -0.008508533811897579,
+      "error": 0.04862937005434517,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "boundary index k": 2.0,
+      "\u0394F steered \u2212 shuffled (registered)": 0.03926710829868666,
+      "error": 0.04490825714748997,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "boundary index k": 3.0,
+      "\u0394F steered \u2212 shuffled (registered)": 0.033170678137286025,
+      "error": 0.11838501158424591,
+      "series": "parent ce (k=3)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "boundary index k": 0.9761397614473132,
+      "\u0394F steered \u2212 shuffled (registered)": -0.0031201248049922033,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 1.0332881791038853,
+      "\u0394F steered \u2212 shuffled (registered)": 0.005298013245033117,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 1.0378525263810174,
+      "\u0394F steered \u2212 shuffled (registered)": -0.010335917312661508,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 1.0156272627207725,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 0.9840742571706536,
+      "\u0394F steered \u2212 shuffled (registered)": -0.00554016620498609,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 0.9755592637646787,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 1.0150138331589287,
+      "\u0394F steered \u2212 shuffled (registered)": 0.02230483271375454,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 1.0298101413466518,
+      "\u0394F steered \u2212 shuffled (registered)": 0.019512195121951237,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 1.0007666428488937,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 1.0349631105669732,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0026656793780080743,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 1.0304460547579422,
+      "\u0394F steered \u2212 shuffled (registered)": 0.05527638190954774,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 1.014311423680614,
+      "\u0394F steered \u2212 shuffled (registered)": -0.006269592476489033,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 0.9839521632518784,
+      "\u0394F steered \u2212 shuffled (registered)": -0.005296610169491471,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 0.9758274157031395,
+      "\u0394F steered \u2212 shuffled (registered)": 0.3526881720430107,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 0.9988929640247559,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 1.02009849112635,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 1.0052275498977281,
+      "\u0394F steered \u2212 shuffled (registered)": 0.2753623188405799,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 1.0276217497032667,
+      "\u0394F steered \u2212 shuffled (registered)": -0.4365079365079365,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 0.9994346305184023,
+      "\u0394F steered \u2212 shuffled (registered)": -0.3530647985989493,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 1.0014206785311222,
+      "\u0394F steered \u2212 shuffled (registered)": -0.05333333333333338,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 0.9648000119891714,
+      "\u0394F steered \u2212 shuffled (registered)": 0.03734439834024891,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 1.0275508924998438,
+      "\u0394F steered \u2212 shuffled (registered)": 0.07216494845360825,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 0.9801359024282076,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 1.0124206788370729,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 1.0040354979320094,
+      "\u0394F steered \u2212 shuffled (registered)": 0.012499999999999999,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 0.9776551214514366,
+      "\u0394F steered \u2212 shuffled (registered)": -0.020512820512820516,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 1.0239635723640341,
+      "\u0394F steered \u2212 shuffled (registered)": -0.2127659574468085,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 0.9618871744244479,
+      "\u0394F steered \u2212 shuffled (registered)": 0.020973782771535554,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 1.0355311897231865,
+      "\u0394F steered \u2212 shuffled (registered)": 0.017073170731707304,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 1.030239139256129,
+      "\u0394F steered \u2212 shuffled (registered)": -0.062015503875968984,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 0.9799647935702474,
+      "\u0394F steered \u2212 shuffled (registered)": 0.01183431952662723,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "boundary index k": 1.976139761447313,
+      "\u0394F steered \u2212 shuffled (registered)": -0.015600624024960954,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 2.0332881791038853,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 2.0378525263810174,
+      "\u0394F steered \u2212 shuffled (registered)": -0.005167958656330811,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 2.0156272627207725,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 1.9840742571706536,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 1.9755592637646788,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 2.0150138331589287,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0037174721189590695,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 2.0298101413466516,
+      "\u0394F steered \u2212 shuffled (registered)": -0.18861788617886177,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 2.0007666428488937,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 2.034963110566973,
+      "\u0394F steered \u2212 shuffled (registered)": 0.03332099222510178,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 2.030446054757942,
+      "\u0394F steered \u2212 shuffled (registered)": 0.02512562814070354,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 2.014311423680614,
+      "\u0394F steered \u2212 shuffled (registered)": -0.031347962382445235,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 1.9839521632518784,
+      "\u0394F steered \u2212 shuffled (registered)": -0.03707627118644066,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 1.9758274157031395,
+      "\u0394F steered \u2212 shuffled (registered)": 0.4000000000000001,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 1.998892964024756,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 2.02009849112635,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 2.0052275498977283,
+      "\u0394F steered \u2212 shuffled (registered)": 0.391304347826087,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 2.0276217497032665,
+      "\u0394F steered \u2212 shuffled (registered)": -0.07936507936507946,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 1.9994346305184023,
+      "\u0394F steered \u2212 shuffled (registered)": 0.25218914185639235,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 2.001420678531122,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 1.9648000119891713,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0840248962655602,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 2.0275508924998435,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 1.9801359024282075,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 2.012420678837073,
+      "\u0394F steered \u2212 shuffled (registered)": 0.010152284263959392,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 2.0040354979320094,
+      "\u0394F steered \u2212 shuffled (registered)": -0.012499999999999999,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 1.9776551214514366,
+      "\u0394F steered \u2212 shuffled (registered)": -0.09230769230769229,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 2.023963572364034,
+      "\u0394F steered \u2212 shuffled (registered)": 0.351063829787234,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 1.961887174424448,
+      "\u0394F steered \u2212 shuffled (registered)": 0.010486891385767805,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 2.0355311897231867,
+      "\u0394F steered \u2212 shuffled (registered)": 0.012195121951219523,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 2.030239139256129,
+      "\u0394F steered \u2212 shuffled (registered)": 0.04651162790697675,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 1.9799647935702474,
+      "\u0394F steered \u2212 shuffled (registered)": 0.059171597633136085,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "boundary index k": 1.0,
+      "y": 0.01585478484915373,
+      "error": 0.04680703839159097,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "boundary index k": 2.0,
+      "y": 0.040412770319646,
+      "error": 0.08663317440830437,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "boundary index k": 3.0,
+      "y": -0.01945829545418691,
+      "error": 0.10353126116826213,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "boundary index k": 4.0,
+      "y": -0.021181478581765684,
+      "error": 0.059851648437894,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "boundary index k": 5.0,
+      "y": 0.13030475059588603,
+      "error": 0.24112362391870884,
+      "series": "parent ce (k=5)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "boundary index k": 0.9605971960793425,
+      "y": -0.008264462809917363,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "boundary index k": 0.9777283777640766,
+      "y": 0.030303030303030387,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "boundary index k": 0.9849793597621423,
+      "y": 0.008810572687224677,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "boundary index k": 1.0083127841052248,
+      "y": 0.06509589041095885,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "boundary index k": 0.982290653776802,
+      "y": 0.03950617283950619,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "boundary index k": 0.9623197608191791,
+      "y": 0.21934501142421925,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "boundary index k": 0.9667379197069874,
+      "y": -0.0761904761904762,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "boundary index k": 1.0368895891296008,
+      "y": 0.03469322197237395,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "boundary index k": 0.9921239781499102,
+      "y": -0.04419889502762436,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "boundary index k": 1.027854951360675,
+      "y": 0.26457618814306694,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "boundary index k": 0.9987451815192029,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "boundary index k": 0.9761295785438971,
+      "y": -0.09195402298850586,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "boundary index k": 1.0051047213188058,
+      "y": 0.06675496688741724,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "boundary index k": 1.0344571245012517,
+      "y": 0.009389671361502344,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "boundary index k": 0.9789929755910027,
+      "y": -0.010050251256281409,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "boundary index k": 1.003123822878067,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "boundary index k": 1.03485016791309,
+      "y": -0.010309278350515467,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "boundary index k": 0.9978095751694418,
+      "y": -0.21212121212121204,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "boundary index k": 1.9605971960793425,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "boundary index k": 1.9777283777640766,
+      "y": 5.551115123125783e-17,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "boundary index k": 1.9849793597621423,
+      "y": 0.017621145374449355,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "boundary index k": 2.008312784105225,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "boundary index k": 1.982290653776802,
+      "y": 0.4444444444444444,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "boundary index k": 1.9623197608191791,
+      "y": 0.058263518659558235,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "boundary index k": 1.9667379197069874,
+      "y": -0.4,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "boundary index k": 2.036889589129601,
+      "y": -0.07516864760681015,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "boundary index k": 1.99212397814991,
+      "y": 0.3093922651933702,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "boundary index k": 2.0278549513606747,
+      "y": -0.08819206271435565,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "boundary index k": 1.9987451815192028,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "boundary index k": 1.976129578543897,
+      "y": 0.4045977011494253,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "boundary index k": 2.005104721318806,
+      "y": 0.05066225165562914,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "boundary index k": 2.0344571245012517,
+      "y": -0.009389671361502344,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "boundary index k": 1.9789929755910027,
+      "y": 0.010050251256281409,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "boundary index k": 2.003123822878067,
+      "y": 0.010615711252653925,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "boundary index k": 2.03485016791309,
+      "y": -0.02061855670103093,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "boundary index k": 1.9978095751694418,
+      "y": 0.015151515151515079,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "boundary index k": 2.9605971960793425,
+      "y": -0.01983471074380167,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "boundary index k": 2.9777283777640764,
+      "y": 0.007070707070707133,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "boundary index k": 2.9849793597621423,
+      "y": 0.021145374449339227,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "boundary index k": 3.008312784105225,
+      "y": -0.019726027397260287,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "boundary index k": 2.982290653776802,
+      "y": 0.36740740740740757,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "boundary index k": 2.962319760819179,
+      "y": 0.07539984767707564,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "boundary index k": 2.9667379197069876,
+      "y": -0.15619047619047624,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "boundary index k": 3.036889589129601,
+      "y": -0.17924831352393186,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "boundary index k": 2.9921239781499103,
+      "y": -0.03867403314917131,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "boundary index k": 3.0278549513606747,
+      "y": 0.1322880940715334,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "boundary index k": 2.9987451815192028,
+      "y": 0.005291005291005296,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "boundary index k": 2.976129578543897,
+      "y": -0.6804597701149424,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "boundary index k": 3.005104721318806,
+      "y": 0.37668874172185435,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "boundary index k": 3.0344571245012517,
+      "y": -0.01877934272300469,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "boundary index k": 2.978992975591003,
+      "y": 0.004020100502512563,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "boundary index k": 3.003123822878067,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "boundary index k": 3.03485016791309,
+      "y": 0.030927835051546403,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "boundary index k": 2.997809575169442,
+      "y": -0.2575757575757575,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "boundary index k": 3.9605971960793425,
+      "y": 0.01322314049586778,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "boundary index k": 3.9777283777640764,
+      "y": -0.005050505050504999,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "boundary index k": 3.9849793597621423,
+      "y": 0.012334801762114454,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "boundary index k": 4.008312784105225,
+      "y": -0.005917808219178089,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "boundary index k": 3.982290653776802,
+      "y": -0.19753086419753094,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "boundary index k": 3.962319760819179,
+      "y": 0.013709063214013571,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "boundary index k": 3.9667379197069876,
+      "y": -0.12380952380952381,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "boundary index k": 4.036889589129601,
+      "y": 0.017346610986186964,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "boundary index k": 3.9921239781499103,
+      "y": 0.38674033149171266,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "boundary index k": 4.027854951360675,
+      "y": -0.0881920627143557,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "boundary index k": 3.9987451815192028,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "boundary index k": 3.976129578543897,
+      "y": 0.07356321839080443,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "boundary index k": 4.005104721318806,
+      "y": -0.17880794701986757,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "boundary index k": 4.034457124501252,
+      "y": 0.003755868544600943,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "boundary index k": 3.978992975591003,
+      "y": -0.040201005025125636,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "boundary index k": 4.003123822878067,
+      "y": 0.021231422505307854,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "boundary index k": 4.03485016791309,
+      "y": -0.041237113402061855,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "boundary index k": 3.997809575169442,
+      "y": -0.24242424242424238,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "boundary index k": 1.0,
+      "\u0394F steered \u2212 shuffled (registered)": -0.001606683804627249,
+      "error": 0.0024100257069408736,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "boundary index k": 2.0,
+      "\u0394F steered \u2212 shuffled (registered)": -0.002621511548648436,
+      "error": 0.005707835504790836,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "boundary index k": 3.0,
+      "\u0394F steered \u2212 shuffled (registered)": 0.17856071507924973,
+      "error": 0.11374233097325438,
+      "series": "parent ce (k=3)",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "boundary index k": 0.9914779140991126,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "boundary index k": 0.9807781012222236,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "boundary index k": 0.9907420555472273,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "boundary index k": 0.9655738321277343,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "boundary index k": 0.9696485465831638,
+      "\u0394F steered \u2212 shuffled (registered)": -0.03856041131105398,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "boundary index k": 0.973294381985691,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "boundary index k": 0.9655980792704049,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "boundary index k": 0.970443717114502,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "boundary index k": 1.0033595655458356,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "boundary index k": 1.0237112535246744,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "boundary index k": 0.9738958089354742,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "boundary index k": 0.9888820855850278,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "boundary index k": 0.9836472391709542,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "boundary index k": 0.9776862381160193,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "boundary index k": 1.037856470364468,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "boundary index k": 1.0220475314941582,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "boundary index k": 1.0242236246217473,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "boundary index k": 1.017470215121774,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "boundary index k": 1.0301018236227115,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "boundary index k": 0.9648085012407139,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "boundary index k": 1.0251962363913039,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "boundary index k": 0.960326149070309,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "boundary index k": 0.9866570190314172,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "boundary index k": 1.0137435287913314,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "boundary index k": 1.9914779140991126,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "boundary index k": 1.9807781012222236,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "boundary index k": 1.9907420555472273,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "boundary index k": 1.9655738321277343,
+      "\u0394F steered \u2212 shuffled (registered)": 0.014204545454545456,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "boundary index k": 1.9696485465831637,
+      "\u0394F steered \u2212 shuffled (registered)": -0.07712082262210793,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "boundary index k": 1.973294381985691,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "boundary index k": 1.9655980792704049,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "boundary index k": 1.970443717114502,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "boundary index k": 2.0033595655458356,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "boundary index k": 2.0237112535246746,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "boundary index k": 1.9738958089354741,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "boundary index k": 1.9888820855850278,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "boundary index k": 1.983647239170954,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "boundary index k": 1.9776862381160194,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "boundary index k": 2.037856470364468,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "boundary index k": 2.022047531494158,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "boundary index k": 2.0242236246217473,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "boundary index k": 2.017470215121774,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "boundary index k": 2.0301018236227115,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "boundary index k": 1.964808501240714,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "boundary index k": 2.0251962363913036,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "boundary index k": 1.960326149070309,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "boundary index k": 1.9866570190314172,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "boundary index k": 2.0137435287913314,
+      "\u0394F steered \u2212 shuffled (registered)": 0.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "boundary index k": 1.0,
+      "y": 0.015461096010386928,
+      "error": 0.022302229137739882,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "boundary index k": 2.0,
+      "y": -0.001636335320741618,
+      "error": 0.018493279278601237,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "boundary index k": 3.0,
+      "y": -0.03391001915328293,
+      "error": 0.05261091019032783,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "boundary index k": 4.0,
+      "y": 0.013235913548399501,
+      "error": 0.06598878401799094,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "boundary index k": 5.0,
+      "y": 0.28825258748639226,
+      "error": 0.19048104918625489,
+      "series": "parent ce (k=5)",
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "boundary index k": 0.9605971960793425,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "boundary index k": 0.9777283777640766,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "boundary index k": 0.9849793597621423,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "boundary index k": 1.0083127841052248,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "boundary index k": 0.982290653776802,
+      "y": 0.1890547263681593,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "boundary index k": 0.9623197608191791,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "boundary index k": 0.9667379197069874,
+      "y": -0.022497187851518552,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "boundary index k": 1.0368895891296008,
+      "y": 0.11337868480725626,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "boundary index k": 0.9921239781499102,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "boundary index k": 1.027854951360675,
+      "y": -0.010147133434804674,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "boundary index k": 0.9987451815192029,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "boundary index k": 0.9761295785438971,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "boundary index k": 1.0051047213188058,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "boundary index k": 1.0344571245012517,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "boundary index k": 0.9789929755910027,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "boundary index k": 1.003123822878067,
+      "y": 0.00851063829787234,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "boundary index k": 1.03485016791309,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "boundary index k": 0.9978095751694418,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "boundary index k": 1.9605971960793425,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "boundary index k": 1.9777283777640766,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "boundary index k": 1.9849793597621423,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "boundary index k": 2.008312784105225,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "boundary index k": 1.982290653776802,
+      "y": -0.10613598673300167,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "boundary index k": 1.9623197608191791,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "boundary index k": 1.9667379197069874,
+      "y": -0.033745781777277835,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "boundary index k": 2.036889589129601,
+      "y": -0.011337868480725623,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "boundary index k": 1.99212397814991,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "boundary index k": 2.0278549513606747,
+      "y": 0.121765601217656,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "boundary index k": 1.9987451815192028,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "boundary index k": 1.976129578543897,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "boundary index k": 2.005104721318806,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "boundary index k": 2.0344571245012517,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "boundary index k": 1.9789929755910027,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "boundary index k": 2.003123822878067,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "boundary index k": 2.03485016791309,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "boundary index k": 1.9978095751694418,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "boundary index k": 2.9605971960793425,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "boundary index k": 2.9777283777640764,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "boundary index k": 2.9849793597621423,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "boundary index k": 3.008312784105225,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "boundary index k": 2.982290653776802,
+      "y": -0.5804311774461026,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "boundary index k": 2.962319760819179,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "boundary index k": 2.9667379197069876,
+      "y": 0.03093363329583801,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "boundary index k": 3.036889589129601,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "boundary index k": 2.9921239781499103,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "boundary index k": 3.0278549513606747,
+      "y": -0.060882800608828,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "boundary index k": 2.9987451815192028,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "boundary index k": 2.976129578543897,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "boundary index k": 3.005104721318806,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "boundary index k": 3.0344571245012517,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "boundary index k": 2.978992975591003,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "boundary index k": 3.003123822878067,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "boundary index k": 3.03485016791309,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "boundary index k": 2.997809575169442,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "boundary index k": 3.9605971960793425,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "boundary index k": 3.9777283777640764,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "boundary index k": 3.9849793597621423,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "boundary index k": 4.008312784105225,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "boundary index k": 3.982290653776802,
+      "y": 0.5207296849087893,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "boundary index k": 3.962319760819179,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "boundary index k": 3.9667379197069876,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "boundary index k": 4.036889589129601,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "boundary index k": 3.9921239781499103,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "boundary index k": 4.027854951360675,
+      "y": -0.27397260273972596,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "boundary index k": 3.9987451815192028,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "boundary index k": 3.976129578543897,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "boundary index k": 4.005104721318806,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "boundary index k": 4.034457124501252,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "boundary index k": 3.978992975591003,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "boundary index k": 4.003123822878067,
+      "y": -0.00851063829787234,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "boundary index k": 4.03485016791309,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "boundary index k": 3.997809575169442,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 27
+    }
+  ],
+  "n_series": 28,
+  "total_points": 270,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "recency_instr_format_d3",
+        "xlabel": "boundary index k",
+        "ylabel": "\u0394F steered \u2212 shuffled (registered)",
+        "legend_labels": [
+          "parent ce (k=3)"
+        ],
+        "xticklabels": [
+          "1",
+          "2",
+          "3"
+        ],
+        "yticklabels": [
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ]
+      },
+      {
+        "title": "recency_instr_format_d5",
+        "xlabel": "boundary index k",
+        "legend_labels": [
+          "parent ce (k=5)"
+        ],
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ]
+      },
+      {
+        "title": "recency_persona_prompted_d3",
+        "xlabel": "boundary index k",
+        "ylabel": "\u0394F steered \u2212 shuffled (registered)",
+        "legend_labels": [
+          "parent ce (k=3)"
+        ],
+        "xticklabels": [
+          "1",
+          "2",
+          "3"
+        ],
+        "yticklabels": [
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ]
+      },
+      {
+        "title": "recency_persona_prompted_d5",
+        "xlabel": "boundary index k",
+        "legend_labels": [
+          "parent ce (k=5)"
+        ],
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ]
+      }
+    ],
+    "series": [
+      "parent ce (k=3)",
+      "parent ce (k=5)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "figure": "tb_sweep",
+  "inputs": [
+    "eval_results/issue_2162/turn_boundary/f_cells_tb.jsonl",
+    "eval_results/issue_2162/turn_boundary/null_shuffled_cells_tb.jsonl",
+    "eval_results/issue_2162/turn_boundary/null_crosstype_cells_tb.jsonl",
+    "eval_results/issue_2162/turn_boundary/parent_ref_cells_tb.jsonl",
+    "eval_results/issue_2162/turn_boundary/stats_tb.json",
+    "eval_results/issue_2162/turn_boundary/identity_gate.json"
+  ]
+}
