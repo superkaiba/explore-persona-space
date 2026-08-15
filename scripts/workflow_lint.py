@@ -14432,6 +14432,9 @@ AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES = 3_000
 # when trimmed. planner.md and critic.md are deliberately NOT grandfathered
 # (#838): both were structurally trimmed to <=20 KB, so regrowth on the two
 # incident files is a commit-time FAIL.
+# Step 5a lint-family member (SKILL.md § Step 5a SPECS/FAMILY_OF; #2303): any
+# NEW import-time data file added to this module must be declared there too,
+# or worktree syncs strand it (#2293).
 _AGENT_SPEC_CAPS_PATH = _REPO_ROOT / ".claude" / "config" / "agent_spec_size_caps.txt"
 
 
@@ -14937,7 +14940,7 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # invisible to it. Cap = landing bytes + ~1 KB (#1753 landing-bytes
     # rule); NOT a licence for regrowth — SKILL.md is the fleet's largest
     # always-loaded surface and the compaction tranche below still stands.
-    # 952_000 — MERGE-RESOLVED FORWARD at #2296's Step 10d recovery merge.
+    # Prior: 952_000 — #2296's FIRST Step 10d recovery merge (superseded above).
     # Measured 950,705 B on the POST-MERGE tree, and the three deltas are
     # exactly additive: merge base 108ce58854 held 942,384 B, main
     # 10e9c165a3 added +2,403 B (#2302's base-identity-invariant prose at
@@ -14972,7 +14975,37 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 942_000: that value predates this landing and would FAIL it by 384 B,
     # so the higher cap is the correct resolution, not a regrowth licence
     # (headroom 1,216 B, the same ~1 KB the #1753 rule prescribes).
-    "issue/SKILL.md": 952_000,
+    # 953_900 — SECOND merge-resolve forward inside #2296's landing window.
+    # Measured 952,575 B on the post-merge tree, additive again: the first
+    # recovery merge's 950,705 B + #2303's +1,870 B = 952,575 B. BOTH candidate
+    # caps FAIL it — #2296's own 952_000 by 575 B, main's 947_700 by 4,875 B.
+    # Cap = measured + ~1.3 KB (#1753/#1727 landing-bytes rule; headroom
+    # 1,325 B <= the 3,000 B loose-cap hygiene bar).
+    #
+    # THIRD consecutive forward-resolution of this ONE constant inside a single
+    # landing window (#2302 -> #2303 -> here), which sharpens the class main's
+    # comment below names: the conflict is on the LINE, so no amount of headroom
+    # can prevent it — headroom only decides whether the merged tree is RED. And
+    # each ~1h Step 10d gate round hands a sibling wf-fix branch time to land
+    # ~2 KB of SKILL.md prose and bump this line again, so a SKILL.md-bearing
+    # branch should expect to re-measure PER MERGE ATTEMPT, not once per round.
+    # 947_700 — #2303 measured 946,657 B for THIS landing, and that figure is
+    # the SUM of two workflow-fix landings, not one: #2303's own Step 5a family
+    # work (+1,870 B over the 942,384 B base at 3ac07d46fd —
+    # .claude/config/agent_spec_size_caps.txt joins the lint family in BOTH
+    # copies, since the linter reads it at module import, #2293; and both sync
+    # commits gain rc-checked FATAL/exit-1 arms) PLUS #2302's sibling-arm
+    # landing (5bfb7eb6f0, +2,403 B), which reached main at 944,787 B / cap
+    # 945_400 while #2303 sat in its Step 9c + pre-push gates. Cap = landing
+    # bytes + ~1 KB (#1753 landing-bytes rule; headroom 1,043 B).
+    #
+    # This IS the #2284/#2285 moving-main class recorded above, caught rather
+    # than repeated: each branch fit the headroom it measured against ALONE
+    # (#2302 at 945_400, #2303 at 945_400 off a pre-#2302 base), and their SUM
+    # would have landed 946,657 B against a 945_400 cap — main red by 1,257 B
+    # between the two merges. The Step 10d re-measure duty (#2303 plan §4.2 /
+    # risk R8) is what fired here; keep it on any SKILL.md-bearing branch.
+    "issue/SKILL.md": 953_900,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,

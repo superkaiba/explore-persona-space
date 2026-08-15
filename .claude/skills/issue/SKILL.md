@@ -2498,6 +2498,10 @@ else
 #     case 6b pins WORKFLOW_INVARIANT set-equal to the manifest file; the
 #     dominant selector edit updates all THREE together on main, so syncing
 #     any strict subset manufactures the #1824/#1860 half-sync skew)
+#     plus .claude/config/agent_spec_size_caps.txt (#2303: workflow_lint.py
+#     reads it at MODULE IMPORT time — _load_agent_spec_caps() raises
+#     FileNotFoundError loud; syncing the linter without its data file
+#     leaves every hook that shells it crashing, the #2293 shape)
 #   FAMILY_guard: .claude/hooks <-> :(glob)scripts/guard_*.sh
 #                                <-> :(glob)tests/test_guard_*.py
 #                                <-> tests/test_guard_lessons_edit.py
@@ -2522,6 +2526,7 @@ FAMILY_OF["tests/test_autonomous_session_watch.py"]="lint"    # test_codex_outag
 FAMILY_OF["scripts/select_step9c_tests.py"]="lint"
 FAMILY_OF["tests/test_select_step9c_tests.py"]="lint"
 FAMILY_OF["tests/step9c_workflow_invariant_manifest.txt"]="lint"
+FAMILY_OF[".claude/config/agent_spec_size_caps.txt"]="lint"
 FAMILY_OF[".claude/hooks"]="guard"
 FAMILY_OF[":(glob)scripts/guard_*.sh"]="guard"
 FAMILY_OF[":(glob)tests/test_guard_*.py"]="guard"
@@ -2530,7 +2535,7 @@ FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"
 # — each is its own family key (set below in the pass-1 loop by defaulting
 # to its own path).
 
-SPECS=".claude/agents .claude/agent-memory .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py scripts/select_step9c_tests.py .claude/hooks :(glob)scripts/guard_*.sh tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py tests/test_select_step9c_tests.py tests/step9c_workflow_invariant_manifest.txt :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py :(glob)tests/test_issue_skill_*.py"
+SPECS=".claude/agents .claude/agent-memory .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/config/agent_spec_size_caps.txt scripts/select_step9c_tests.py .claude/hooks :(glob)scripts/guard_*.sh tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py tests/test_select_step9c_tests.py tests/step9c_workflow_invariant_manifest.txt :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py :(glob)tests/test_issue_skill_*.py"
 # Bounded freshness fetch (#1747 — the #1289/#1714 shape): local main can lag
 # origin on the shared root; a failed fetch degrades to last-fetched
 # origin/main — never a wedge, never a fallback to local main.
@@ -2612,18 +2617,27 @@ for f in $SPECS; do
   # membership declared above)
 done
 
+SYNC_COMMITTED=""
 if [ -n "$SAFE_SPECS" ] && ! git -C "$WT" diff --quiet origin/main -- $SAFE_SPECS; then
   git -C "$WT" checkout origin/main -- $SAFE_SPECS    # surgical refresh: workflow surface only
-  git -C "$WT" diff --quiet HEAD -- $SAFE_SPECS || \
-    git -C "$WT" commit -m "issue-<N>: sync workflow-surface specs from origin/main (spec-freshness)" -- $SAFE_SPECS
+  if ! git -C "$WT" diff --quiet HEAD -- $SAFE_SPECS; then
+    if ! git -C "$WT" commit -m "issue-<N>: sync workflow-surface specs from origin/main (spec-freshness)" -- $SAFE_SPECS; then
+      # exit reaches the END of the ONE Bash invocation running this fenced
+      # block (fenced blocks are separate shells) — fail-closed, never sourced.
+      echo "[step5a] FATAL: family sync commit FAILED (rc != 0) — synced set left STAGED for inspection. Fix the failing hook, then commit or reset the staged set BEFORE re-running Step 5a (a staged file reads as dirty to the #1972 dirt arm, so a naive re-run silently syncs nothing). Failed paths:" >&2
+      git -C "$WT" diff --cached --name-only -- $SAFE_SPECS | sed 's/^/  /' >&2
+      exit 1
+    fi
+    SYNC_COMMITTED=yes
+  fi
 fi
-# Observability echo (Decision 4, #1714): show the operator what changed at a
-# glance. This is NOT a gate — family-atomic skip + git checkout's own semantics
-# handle the 139-line-revert prevention (see plan §4.1 Decision 4 for the full
-# rationale).
-if [ -n "$SAFE_SPECS" ]; then
-  echo "[step5a] synced from origin/main:"
-  git -C "$WT" diff --stat HEAD^ HEAD -- $SAFE_SPECS 2>/dev/null || echo "  (no commit — no drift)"
+# Observability echo (Decision 4, #1714): success line only AFTER a verified
+# commit, reporting the committed sha (#2303 — never a staged diffstat).
+if [ "$SYNC_COMMITTED" = yes ]; then
+  echo "[step5a] synced from origin/main: commit $(git -C "$WT" rev-parse --short=12 HEAD)"
+  git -C "$WT" diff --stat HEAD^ HEAD -- $SAFE_SPECS
+elif [ -n "$SAFE_SPECS" ]; then
+  echo "[step5a] no sync commit landed (no family drift, or the checkout errored above)"
 fi
 
 # Sibling-issue file freshness (#1972): per-FILE grain, scripts AND their
@@ -2781,7 +2795,10 @@ any strict subset is the same half-sync class (named residual: a
 main-NEW invariant test file outside the synced globs — same β-class) —
 plus `.claude/agent-memory` as a singleton: always-appended memory
 indexes the lint budget checks scan, protected by the uncommitted-dirt
-arm + the branch-side-edit guard, never a clobber)
+arm + the branch-side-edit guard, never a clobber;
+#2303 adds `.claude/config/agent_spec_size_caps.txt` — the linter's
+import-time data file (a main-NEW file post-fork syncs in
+pair-atomically with `scripts/workflow_lint.py`; #2293))
 exists because those files execute FROM the worktree tree on four
 surfaces — the Step 10d TG legs, worktree pytest / Step 9c, the hooks'
 own-tree `workflow_lint` import, and the inline gate invoked in a
@@ -13261,11 +13278,12 @@ else
     FAMILY_OF["scripts/select_step9c_tests.py"]="lint"
     FAMILY_OF["tests/test_select_step9c_tests.py"]="lint"
     FAMILY_OF["tests/step9c_workflow_invariant_manifest.txt"]="lint"
+    FAMILY_OF[".claude/config/agent_spec_size_caps.txt"]="lint"
     FAMILY_OF[".claude/hooks"]="guard"
     FAMILY_OF[":(glob)scripts/guard_*.sh"]="guard"
     FAMILY_OF[":(glob)tests/test_guard_*.py"]="guard"
     FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"
-    SPECS_10D=".claude/agents .claude/agent-memory .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py scripts/select_step9c_tests.py .claude/hooks :(glob)scripts/guard_*.sh tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py tests/test_select_step9c_tests.py tests/step9c_workflow_invariant_manifest.txt :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py :(glob)tests/test_issue_skill_*.py"
+    SPECS_10D=".claude/agents .claude/agent-memory .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/config/agent_spec_size_caps.txt scripts/select_step9c_tests.py .claude/hooks :(glob)scripts/guard_*.sh tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py tests/test_select_step9c_tests.py tests/step9c_workflow_invariant_manifest.txt :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py :(glob)tests/test_issue_skill_*.py"
     MB_10D=$(git -C "$WT" merge-base HEAD origin/main)
     declare -A DIRTY_FAMILIES_10D
     for f in $SPECS_10D; do
@@ -13308,7 +13326,14 @@ else
     if [ -n "$SAFE_SPECS_10D" ] && ! git -C "$WT" diff --quiet origin/main -- $SAFE_SPECS_10D; then
       git -C "$WT" checkout origin/main -- $SAFE_SPECS_10D
       if ! git -C "$WT" diff --quiet HEAD -- $SAFE_SPECS_10D; then
-        git -C "$WT" commit -m "issue-<N>: sync workflow-surface specs from origin/main (spec-freshness)" -- $SAFE_SPECS_10D
+        if ! git -C "$WT" commit -m "issue-<N>: sync workflow-surface specs from origin/main (spec-freshness)" -- $SAFE_SPECS_10D; then
+          # Aborts the WHOLE Step 10d merge invocation (this stanza runs inside
+          # the merge sequence's Bash call) BEFORE gh pr ready/merge — fail-closed.
+          # The lint verdict file is left intact for the same-tip retry after remediation.
+          echo "[step10d] FATAL: post-gate re-sync commit FAILED (rc != 0) — synced set left STAGED for inspection; merge attempt ABORTED. Failed paths:" >&2
+          git -C "$WT" diff --cached --name-only -- $SAFE_SPECS_10D | sed 's/^/  /' >&2
+          exit 1
+        fi
         SYNC_SHA=$(git -C "$WT" rev-parse HEAD | head -c 12)
         # Push the new sync commit so gh pr merge sees it on the PR head ref
         git -C "$WT" push origin issue-<N> \
