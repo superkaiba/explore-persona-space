@@ -10175,8 +10175,8 @@
     "2317": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2317",
-      "status": "planning",
+      "path": "tasks/approved/2317",
+      "status": "approved",
       "title": "workflow-fix: Step 9c gate-set cross-check validates cardinality but not splice shape \u2014 a newline-separated --files-only list runs 1 of N files behind a green guard"
     },
     "232": {
