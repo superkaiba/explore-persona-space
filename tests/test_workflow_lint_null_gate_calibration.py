@@ -61,6 +61,11 @@ from workflow_lint import check_null_gate_calibration_lens  # noqa: E402
 
 _H2 = "## Gate thresholds on a NULL statistic need a MEASURED calibration basis"
 _PSR_TOKEN = "Measured calibration basis for NULL-statistic gates"
+# BODY-unique companion to _PSR_TOKEN (#2144 code-review round 1): the heading
+# token occurs twice in-region (sub-section heading + the §4.3 cross-ref), so
+# pinning it alone is satisfiable by the cross-ref while the whole sub-section
+# body is stripped. This token lives only inside the sub-section's own prose.
+_PSR_BODY_TOKEN = "re-calibrate at first null draw"
 _PLANNER_TOKEN = "MEASURED 1-cell calibration pilot"
 _GATE_TOKEN = "null-statistic gate"
 _ADVISORY_TOKEN = "defaults to ADVISORY"
@@ -92,8 +97,20 @@ def _write_corpus(root: Path, *, drop: str | None = None) -> Path:
         )
 
     # (2) planner-section-reference.md: the ## 7. Decision Gates region.
-    psr_bullet = f"**{_PSR_TOKEN} (#1491).** Full bullet text.\n"
-    in_region = "" if drop in ("psr-token", "psr-escape") else psr_bullet
+    # TWO pinned tokens: the sub-section HEADING and a BODY-unique phrase.
+    # The heading alone is insufficient (it also appears in the §4.3 cross-ref),
+    # so the drop cases exercise each half independently.
+    psr_heading = f"**{_PSR_TOKEN} (#1491).** Full bullet text.\n"
+    psr_body = f"Not yet materialized ⇒ mark the band `inferred — {_PSR_BODY_TOKEN}`.\n"
+    psr_bullet = psr_heading + psr_body
+    if drop in ("psr-token", "psr-escape"):
+        in_region = ""
+    elif drop == "psr-heading-only":
+        in_region = psr_body
+    elif drop == "psr-body-only":
+        in_region = psr_heading
+    else:
+        in_region = psr_bullet
     out_of_region = psr_bullet if drop == "psr-escape" else ""
     (rules / "planner-section-reference.md").write_text(
         "## 7. Decision Gates\n\nGate grounding content.\n\n"
@@ -178,24 +195,41 @@ def test_passes_on_complete_corpus(tmp_path: Path) -> None:
     assert errors == [], f"complete corpus should pass; got: {errors}"
 
 
-_DROP_CASES: list[tuple[str, str, str]] = [
-    ("rule-file", "missing", "rules/selection-symmetric-nulls.md"),
-    ("rule-heading", "Gate thresholds on a NULL statistic", "rules/selection-symmetric-nulls.md"),
-    ("psr-token", "## 7. Decision Gates", "rules/planner-section-reference.md"),
-    ("planner-capsule", "### 7. Decision Gates", "agents/planner.md"),
-    ("clr-gate-token", _GATE_TOKEN, "rules/critic-lens-reference.md"),
-    ("clr-advisory-token", _ADVISORY_TOKEN, "rules/critic-lens-reference.md"),
-    ("critic-capsule", _CRITIC_TOKEN, "agents/critic.md"),
-    ("stats-item11", "item-11 region", "agents/statistics-critic.md"),
+# (drop-case, substring the error must carry, path fragment, EXACT error count).
+# The exact count pins plan §6 criterion 8's "exactly one FAIL per stripped
+# surface" form (#2144 code-review round 1, Minor 2) — a looser >=1 assertion
+# would not notice a check that starts emitting spurious extra errors. The
+# psr-token case expects 2 because dropping the whole bullet strips BOTH of
+# that surface's pinned tokens.
+_DROP_CASES: list[tuple[str, str, str, int]] = [
+    ("rule-file", "missing", "rules/selection-symmetric-nulls.md", 1),
+    (
+        "rule-heading",
+        "Gate thresholds on a NULL statistic",
+        "rules/selection-symmetric-nulls.md",
+        1,
+    ),
+    ("psr-token", "## 7. Decision Gates", "rules/planner-section-reference.md", 2),
+    ("psr-heading-only", _PSR_TOKEN, "rules/planner-section-reference.md", 1),
+    ("psr-body-only", _PSR_BODY_TOKEN, "rules/planner-section-reference.md", 1),
+    ("planner-capsule", "### 7. Decision Gates", "agents/planner.md", 1),
+    ("clr-gate-token", _GATE_TOKEN, "rules/critic-lens-reference.md", 1),
+    ("clr-advisory-token", _ADVISORY_TOKEN, "rules/critic-lens-reference.md", 1),
+    ("critic-capsule", _CRITIC_TOKEN, "agents/critic.md", 1),
+    ("stats-item11", "item-11 region", "agents/statistics-critic.md", 1),
 ]
 
 
-@pytest.mark.parametrize(("drop", "token", "path_frag"), _DROP_CASES)
-def test_fails_per_missing_surface(tmp_path: Path, drop: str, token: str, path_frag: str) -> None:
+@pytest.mark.parametrize(("drop", "token", "path_frag", "n_expected"), _DROP_CASES)
+def test_fails_per_missing_surface(
+    tmp_path: Path, drop: str, token: str, path_frag: str, n_expected: int
+) -> None:
     """Each pinned surface FAILs individually when its token is stripped."""
     _write_corpus(tmp_path, drop=drop)
     errors = check_null_gate_calibration_lens(repo_root=tmp_path)
-    assert errors, f"drop={drop}: expected >=1 error"
+    assert len(errors) == n_expected, (
+        f"drop={drop}: expected exactly {n_expected} error(s); got {len(errors)}: {errors}"
+    )
     assert any(token in e and path_frag in e for e in errors), (
         f"drop={drop}: no error carries both {token!r} and {path_frag!r}; got: {errors}"
     )

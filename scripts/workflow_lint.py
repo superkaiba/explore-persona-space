@@ -12431,8 +12431,19 @@ def check_null_gate_calibration_lens(  # noqa: C901 -- flat per-surface token la
         )
 
     # (2) planner-section-reference.md: the ## 7. Decision Gates region.
+    #
+    # TWO tokens, deliberately (#2144 code-review round 1). The heading token
+    # occurs TWICE in-region — the sub-section heading AND the §4.3
+    # cross-referencing sentence that points at it — so pinning it alone is
+    # satisfiable by the one-line cross-ref: a refactor stripping the whole
+    # ~30-line sub-section while keeping the cross-ref would stay GREEN. The
+    # second token is BODY-UNIQUE (one in-region occurrence, inside the
+    # sub-section's own prose), so stripping the body FAILs.
     psr = root / ".claude" / "rules" / "planner-section-reference.md"
-    psr_token = "Measured calibration basis for NULL-statistic gates"
+    psr_tokens = (
+        "Measured calibration basis for NULL-statistic gates",
+        "re-calibrate at first null draw",
+    )
     if not psr.is_file():
         errors.append(
             f"{psr}: missing — the #2144 null-gate calibration planner bullet "
@@ -12445,13 +12456,14 @@ def check_null_gate_calibration_lens(  # noqa: C901 -- flat per-surface token la
         if idx != -1:
             nxt = text.find("\n## ", idx + 1)
             region = text[idx:nxt] if nxt != -1 else text[idx:]
-        if psr_token not in region:
-            errors.append(
-                f"{psr}: the '## 7. Decision Gates' region no longer names "
-                f"{psr_token!r} (#2144) — the plan-side measured-pilot duty "
-                f"for null-statistic gates would be silently stripped "
-                f"(#1491's gate passed plan approval without it)."
-            )
+        for psr_token in psr_tokens:
+            if psr_token not in region:
+                errors.append(
+                    f"{psr}: the '## 7. Decision Gates' region no longer names "
+                    f"{psr_token!r} (#2144) — the plan-side measured-pilot duty "
+                    f"for null-statistic gates would be silently stripped "
+                    f"(#1491's gate passed plan approval without it)."
+                )
 
     # (3) planner.md: the always-loaded §7 capsule token.
     planner = root / ".claude" / "agents" / "planner.md"
