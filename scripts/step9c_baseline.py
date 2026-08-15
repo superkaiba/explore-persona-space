@@ -1634,6 +1634,14 @@ class _CompareCtx:
     paired_oracle: str = "none"  # "scratch-worktree" | "scratch-worktree-floor" | "root" | "none"
     # (the floor value is ARMED-only provenance: every floor-oracle candidate is
     # refused to NEW pre-spend, so no paired run ever executes on it — R-G', #2019)
+    # --- #2302 base-identity (content test) --------------------------------------
+    base: str = ""  # the RESOLVED diff base ctx.touched was derived from (#2302 —
+    # _selector_context previously discarded it; the base-identity derivation must
+    # use the SAME base, never a re-resolution that could drift)
+    base_identical: set[str] = field(default_factory=set)  # touched paths whose HEAD
+    # blob == base-TIP blob (Step 5a sibling-sync class); derived INDEPENDENTLY of
+    # the worktree selector's version (§3.3 skew — an in-flight branch carries the
+    # pre-#2302 compute_touched), subtracted from #2024 precondition 1 only
 
 
 def _resolve_roots(args: argparse.Namespace) -> tuple[Path, Path]:
@@ -1665,6 +1673,63 @@ def _load_run_junit(junitxml: Path) -> tuple[list[Node], set[str]]:
     return run_failing, ran_files
 
 
+def _base_identical_files(base: str, touched: list[str], wt: Path) -> list[str]:
+    """*touched* paths whose content at HEAD equals the *base* TIP content (#2302).
+
+    Derived INDEPENDENTLY of the worktree selector's version: the compare loads
+    the WORKTREE's selector (deliberate version skew, #1022 §3.3), so a branch
+    cut before #2302 carries the OLD ``compute_touched`` and its ``touched``
+    list still contains Step 5a sibling-sync copies of main's own files. Same
+    recipe as the selector's filter: candidates = ``touched`` minus the two-dot
+    ``git diff --name-only <base> HEAD``; each candidate excluded ONLY on
+    verified blob-OID equality of ``HEAD:<p>`` vs ``<base>:<p>`` (one batched
+    ``git cat-file --batch-check``; response rows are positional). Any per-path
+    resolution failure keeps that path branch-touched; raises
+    ``CalledProcessError`` on a git command failure — the caller degrades to
+    the EMPTY set plus a ``warns`` row, NEVER ``_Indeterminate`` (an empty set
+    degrades exactly to pre-#2302 behavior: everything stays branch-touched,
+    blocking — and the existing tmp-repo compare fixtures carry no usable git
+    base, so an exit-2 here would break every working compare).
+    """
+    if not touched:
+        return []
+    two = subprocess.run(
+        ["git", "diff", "--name-only", base, "HEAD"],
+        cwd=str(wt),
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    two_dot = {line.strip() for line in two.splitlines() if line.strip()}
+    candidates = [p for p in touched if p not in two_dot]
+    if not candidates:
+        return []
+    specs = [f"HEAD:{p}" for p in candidates] + [f"{base}:{p}" for p in candidates]
+    proc = subprocess.run(
+        ["git", "cat-file", "--batch-check"],
+        cwd=str(wt),
+        input="".join(s + "\n" for s in specs),
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    lines = proc.stdout.splitlines()
+    if len(lines) != len(specs):
+        return []  # rows unattributable -> nothing verifiable -> nothing excluded
+    oids: dict[str, str] = {}
+    for spec, line in zip(specs, lines, strict=True):
+        parts = line.split()
+        if len(parts) == 3 and re.fullmatch(r"[0-9a-f]{40}(?:[0-9a-f]{24})?", parts[0]):
+            oids[spec] = parts[0]
+    identical: list[str] = []
+    for p in candidates:
+        head_oid = oids.get(f"HEAD:{p}")
+        base_oid = oids.get(f"{base}:{p}")
+        if head_oid is not None and base_oid is not None and head_oid == base_oid:
+            identical.append(p)
+    return identical
+
+
 def _selector_context(args: argparse.Namespace, wt: Path) -> _CompareCtx:
     """Load the WORKTREE's selector and derive touched + diff-linked-ness (§3.3 skew note)."""
     try:
@@ -1690,18 +1755,36 @@ def _selector_context(args: argparse.Namespace, wt: Path) -> _CompareCtx:
     diff_linked = {t for t, rs in reasons.items() if any(r != "invariant" for r in rs)} | {
         f for f in touched if f.startswith("tests/")
     }
+    # #2302: derive the base-identical set in the COMPARE, from the SAME
+    # resolved base ``touched`` was derived from. Own try block — a git error
+    # here degrades to the empty set + a warns row (fail-closed: everything
+    # stays branch-touched, blocking), NEVER the surrounding _Indeterminate.
+    base_identical: list[str] = []
+    base_identity_warn: str | None = None
+    try:
+        base_identical = _base_identical_files(base, touched, wt)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
+        base_identity_warn = (
+            f"BASE-IDENTITY WARN: derivation failed at {wt} ({exc}); treating every "
+            "touched path as branch-authored (fail-closed, #2302)"
+        )
     # ``selected`` is the selector's sorted, deterministic selection — the list
     # the gate passed as pytest argv. It is the ONLY order source for the #2024
     # paired prefix (junit document order is NOT execution order under
     # ``--continue-on-collection-errors``; B3).
-    return _CompareCtx(
+    ctx = _CompareCtx(
         sel=sel,
         touched=touched,
         diff_linked=diff_linked,
         work_root=wt,
         selected_order=list(selected),
+        base=base,
+        base_identical=set(base_identical),
         base_ref=base,
     )
+    if base_identity_warn is not None:
+        ctx.warns.append(base_identity_warn)
+    return ctx
 
 
 def _ledger_view(root: Path, args: argparse.Namespace) -> _LedgerView:
@@ -2038,9 +2121,12 @@ def _paired_collection_reason(
     """First missed paired-collection precondition for a single-file-PASS node, or None.
 
     Plan #2024 §4.1(d): a node whose single-file pristine run PASSed becomes a
-    paired candidate ONLY when every precondition holds — (1) the branch diff
-    for its file is empty (a branch-touched file keeps today's NEW semantics:
-    main's copy of it is not the thing that failed); (2) the per-file oracle
+    paired candidate ONLY when every precondition holds — (1) the file's
+    CONTENT at HEAD does not differ from its content at the base tip (#2302:
+    a genuinely branch-authored file keeps today's NEW semantics — main's copy
+    of it is not the thing that failed; a base-identical path, e.g. a Step 5a
+    sibling-sync copy of main's own file, IS main's copy and is subtracted
+    from *touched_set* by the caller); (2) the per-file oracle
     that produced the PASS was the SCRATCH oracle, or the root was clean at
     that file's probe; (3) the R-F' live-tree-scanner constraint stands
     unchanged (non-anchored scan nodes never trust a scratch/paired read);
@@ -2377,7 +2463,12 @@ def _resolve_pristine_bucket(  # noqa: C901 — #2024 paired stage grew the orac
     scratch_unavailable = False  # #1408 memo: clean-root scratch failure -> root oracle
     wt_cones = _work_root_sparse_cones(ctx.work_root)  # None => non-sparse (R-G' floor mode)
     floored = wt_cones is None  # R-G' (#2019): floor-profile scratch, asymmetric verdicts
-    touched_set = set(ctx.touched)  # #2024 precondition 1: branch diff for the file is empty
+    # #2024 precondition 1 is a CONTENT test (#2302): "branch-touched" means the
+    # file's content at HEAD differs from its content at the base tip. A
+    # base-identical path (a Step 5a sibling-sync copy of main's OWN file) is
+    # main's content, not the branch's change — subtracting it re-arms the
+    # ordering carve-out the sync otherwise disables (#2296).
+    touched_set = set(ctx.touched) - ctx.base_identical
     paired_oracles: dict[Node, str] = {}  # #2024: the per-file oracle behind each candidate PASS
     try:
         for test_file in files:
@@ -2546,6 +2637,8 @@ def _compare_impl(args: argparse.Namespace) -> dict:
         "ledger_dirty_paths": list(ledger.get("dirty_paths", [])) if ledger else [],
         "live_dirty_paths": ctx.live_dirty_paths,
         "pristine_files_run": ctx.pristine_files_run,
+        "base": ctx.base,  # #2302: the RESOLVED diff base the compare derived against
+        "base_identical_files": sorted(ctx.base_identical),  # #2302 content-test audit key
         "pristine_oracle": ctx.pristine_oracle,
         "ordering_suspect": ctx.ordering_suspect,  # #2024 non-blocking strips
         "paired_files_run": ctx.paired_files_run,
