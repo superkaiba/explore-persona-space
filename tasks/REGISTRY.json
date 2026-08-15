@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2319,
+  "highest_id": 2320,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10199,6 +10199,13 @@
       "path": "tasks/archived/232",
       "status": "archived",
       "title": "Marker coupling strength tracks representational distance from assistant, not behavioral distance (MODERATE confidence)"
+    },
+    "2320": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2320",
+      "status": "proposed",
+      "title": "workflow-fix: Step 10d Guard 3 ON_MAINLINE uses first-parent reachability, so a sibling's merge-form landing false-flags later branches UNSAFE"
     },
     "233": {
       "has_clean_result": false,
