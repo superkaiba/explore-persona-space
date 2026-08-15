@@ -82,3 +82,113 @@ the fix adds a staleness guard or documents the residual is this task's design c
 5. Tests pinning 2-4, plus a live-tree pin that the registry import stays wired.
 6. SKILL.md Step 9a-ter prose updated alongside (the #2235 Phase A demotion sentence
    gains the violation-grain clause), with a prose-pin test.
+
+## Attribution (acceptance criterion 1 — FIRST deliverable, completed 2026-08-15)
+
+**Verdict: NONE of the four candidate 9a-ter legs fired. The Step 9a-ter inline
+payload lint gate never ran on `scripts/issue2225_fu2_dod_points_fig.py` at all** —
+the file was committed on a WORKTREE BRANCH and merged at Step 10d, a path the inline
+gate is structurally out of scope for. The motivating incident therefore does NOT
+attribute to this gate, and the `## Motivating incident timeline` clause "committed by
+#2225's `fu2_preimage_alltoken` Step 9a-ter INLINE round" is **incorrect** (inherited
+from #2316 plan v3 D8 — see the correction below).
+
+### Evidence
+
+1. **Commit topology — worktree branch, not a repo-root inline commit.**
+   `faeb45f5e303318d1c3fe9ca09ed110a94d0638e` has a SINGLE parent
+   (`93ae52da6ed5eca00f0e66a8a0ea77b0d2e96baa`), is contained in `issue-2225-fu2`, and
+   is **absent from `git rev-list --first-parent origin/main`**. It reached main via
+   the merge `dba212f616` — *"Merge remote-tracking branch 'origin/issue-2225-fu2'
+   into HEAD"*, 2026-08-14T17:49:42-07:00 = **2026-08-15T00:49:42Z**, i.e. 38 min
+   after the branch commit, immediately before the round's
+   `epm:same-issue-followup-run` marker at 00:50:56Z. The commit added 4 files
+   (the script + a PNG/PDF/meta figure triple).
+2. **Certification history shows no gate run.** `inline_lint_gate.py` appends one
+   `v1 <epoch> <blobsha> <path>` line per certified path to
+   `/tmp/eps-inline-lint-cert-v1.txt` (500-line rolling window). The live window spans
+   **2026-08-01T02:29:20Z → 2026-08-14T21:58:15Z** and contains **zero** lines naming
+   the offender path — and no line at all after 21:58:15Z, i.e. **2 h 13 min before**
+   the 00:11:30Z commit. The gate did not run; nothing was certified.
+3. **The round was a Step 9b cheap-band LOOP round, not a 9a-ter inline round.**
+   #2225's `events.jsonl` (175 rows) never names `issue2225_fu2_dod_points_fig`
+   (grep count 0). The round closes with
+   `epm:same-issue-followup-run … source: proposer-9b-cheap followup_label:
+   fu2_preimage_alltoken` — the Step 9b cheap-band same-issue follow-up loop
+   (worktree + `pod-2225-fu2b`). Its only implementer round
+   (`epm:experiment-implementation`, 2026-08-14T17:40:19Z) closed at HEAD
+   `11d87b0096` having run the no-flags `workflow_lint.py` leg alone; the figure
+   commit landed 6 h 31 min later, during the FOLD phase (between the 23:42:08Z
+   pod-phase-CLOSED note and the 00:24:59Z final-critique note) — after the
+   implementer round and Step 5 code-review had both closed.
+4. **Even had the gate run, the demotion leg could not have fired.**
+   `load_baseline_ledger` (`scripts/inline_lint_gate.py:373-377`) returns `None`
+   whenever `ledger["main_sha"] != git rev-parse origin/main`. The live ledger pins
+   `main_sha = 4df656cb05c3bcc1fb457dbc6e8047bba76da842`
+   (`refreshed_at 2026-08-14T15:22:42Z`); that sha is today contained in **no branch**
+   (`git branch -a --contains 4df656cb05` → empty — orphaned by a fleet rebase), and
+   main's first-parent tip moved continuously across the window (commits at
+   17:08:29-07:00 and 17:21:01-07:00 bracket the 17:11:30-07:00 offender commit). The
+   ledger would have loaded `None` and the #2235 Phase A subtraction layer would have
+   been fully disengaged.
+5. **Mapped-test selection was NOT the miss.** On current main,
+   `select_step9c_tests.py --map-files` maps
+   `scripts/issue2225_fu2_dod_points_fig.py` → `tests/test_shared_vm_thread_caps.py`
+   (1 pair, 1 test, recommended-timeout-s=600). The same selector had already mapped
+   the sibling `scripts/issue2225_figures.py` to that test on 2026-08-11, where
+   #2225's first implementer round caught and fixed the identical violation
+   ("Union run 1: 1 failed, 1063 passed — sole failure
+   `test_no_new_torch_before_dotenv_vm_entrypoints`").
+
+### Correction to #2316 plan v3 D8
+
+D8 retracted its causal claim against Step 9c compare on the grounds that *"the
+motivating offender never crossed that gate. THIS gate is the one that applied."*
+The first clause is right; the second is **wrong**. The offender crossed **neither**
+gate — it was never subject to a mechanical lint/test gate at all.
+
+### The real gap this incident exposes (surfaced, NOT filed — recursion guard)
+
+On a `kind: experiment` task, a worktree round's **FOLD-phase code commit** (figure /
+analysis scripts committed by the orchestrator or analyzer after the implementer
+marker and after Step 5 code-review has closed) passes through **no mechanical
+lint/test gate**: Step 9c test-verdict does not run for `kind: experiment`, the
+Step 9a-ter inline payload lint gate is scoped to repo-root inline-round commits, and
+Step 10d merges without a lint or test gate. This session carries
+`workflow_fix_target:` and so may not auto-file further workflow-fix tasks
+(`.claude/rules/workflow-fix-on-bug.md` recursion guard); recorded here for user / PM
+triage.
+
+## Scope decision (autonomous, recorded 2026-08-15)
+
+Criterion 2 is conditional on the attribution "confirm[ing] the demotion leg (or
+leav[ing] it unexcluded)". The demotion leg is **excluded as the cause of the
+motivating incident** but **unexcluded as a live latent defect**, on two mechanical
+facts read from the live file:
+
+- (a) `evaluate` (`scripts/inline_lint_gate.py:885-893`) keys the demotion on node
+  identity alone (`node in ledger_failing and node_file not in payload`), so a payload
+  ADDING a new violation to a ledger-listed whole-repo scan node is reclassified
+  `verdict.reported` — precisely the shape #2316 fixed on the step9c-compare side.
+- (b) `load_baseline_ledger` does not read `dirty_code_paths`, so the inline gate
+  demotes off a ledger whose reds the Step 9c side treats as not-strippable
+  (the live ledger carries `dirty_code_paths: true` with 20 dirty paths).
+
+Exposure is bounded by the sha-pin in (4) above: on this fleet main moves within
+minutes, so the ledger loads `None` and the subtraction layer is inert most of the
+time — which is why no incident is attributable to it.
+
+**Decision: proceed with criteria 2-6 as a LATENT-DEFECT HARDENING, not an incident
+fix**, and state that framing in the plan and the round's marker. The staleness
+design call the `## The gap` section flags resolves as **document the residual, do NOT
+add a `dirty_code_paths` refusal**: refusing to load a `dirty_code_paths: true` ledger
+would disable the subtraction layer whenever the fleet has dirty paths (nearly always)
+and thereby newly BLOCK payloads on main's own pre-existing reds — the #1388
+fleet-wedge class criterion 3 exists to prevent. The residual is recorded in the
+module docstring and pinned by a test asserting today's behavior.
+
+**Merge sequencing:** `VIOLATION_SET_SCAN_NODES` (`scripts/step9c_baseline.py:300`)
+and `extract_violation_paths` (`:323`) exist only on `origin/issue-2316`, not on main
+(#2316 was at `running`, implementer round 1 posted 2026-08-15T09:56:01Z). Criterion 2
+mandates importing them rather than copying, so **#2318 must merge after #2316** —
+a Step 10d Guard 5 sibling merge-sequencing hold.
