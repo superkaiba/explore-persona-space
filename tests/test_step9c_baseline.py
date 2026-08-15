@@ -4706,15 +4706,17 @@ def test_extract_violation_paths_shapes():
     expected = frozenset({"scripts/issue2225_fu2_dod_points_fig.py"})
     assert sb.extract_violation_paths(_A1_PROBE_MESSAGE) == expected
     assert sb.extract_violation_paths(_A1_PROBE_TEXT) == expected
-    # (i) trio shape: `  - {path}:{line}: {snippet}` rows (the snippet's own
-    # scripts/task.py token is symmetric prose — extracted on both sides, cancels).
+    # (i) trio shape: `  - {path}:{line}: {snippet}` rows. Anchoring (#2319) extracts
+    # ONLY the row-leading offender path — the snippet's mid-line scripts/task.py
+    # token is never extracted (pre-#2319 it was, and a branch-side snippet
+    # embedding a token absent on pristine manufactured a false NEW block).
     trio_text = (
         "AssertionError: pod-side task.py shellout(s):\n"
         "  - scripts/foo_pod.py:12: subprocess.run(['python', 'scripts/task.py', 'view'])\n"
         "  - scripts/bar_pod.py:9: os.system('scripts/task.py view 5')"
     )
     assert sb.extract_violation_paths(trio_text) == frozenset(
-        {"scripts/foo_pod.py", "scripts/bar_pod.py", "scripts/task.py"}
+        {"scripts/foo_pod.py", "scripts/bar_pod.py"}
     )
     # (i) dollar-caps shape: `  {path}:{lineno}  /{pat}/  {snippet}` rows.
     caps_text = (
@@ -4731,7 +4733,10 @@ def test_extract_violation_paths_shapes():
     assert (
         sb.extract_violation_paths("repr echo outside assert: scripts/fakemod_01.py...nv")
         == frozenset()
-    )  # post-filter alone (defense in depth)
+    )  # mid-line fragment: excluded by anchoring alone as of #2319 (same verdict as before)
+    # An elided token that LEADS its line is anchored — it reaches (and must be
+    # dropped by) the `...` post-filter, keeping that branch live under #2319.
+    assert sb.extract_violation_paths("scripts/fakemod_01.py...nv rest") == frozenset()
     # (iii) differing-lists pair: pristine {A,B} vs branch {B}, each with its own
     # content-dependently-cut tail -> the NEW-direction diff is EMPTY.
     pristine = _tc_failure_text(
@@ -4745,6 +4750,184 @@ def test_extract_violation_paths_shapes():
     same = _tc_failure_text(["scripts/offender_a.py"])
     assert sb.extract_violation_paths(same) - sb.extract_violation_paths(same) == frozenset()
     assert sb.extract_violation_paths("  - scripts/x.py:123: hit") == frozenset({"scripts/x.py"})
+
+
+NODE_LINEREGEX = sb.Node(
+    file="tests/test_no_direct_task_path_construction.py",
+    classname="tests.test_no_direct_task_path_construction",
+    name="test_no_direct_task_path_construction_line_regex",
+)
+
+# The M2 member's verbatim header/footer prose (test_no_direct_task_path_construction.py:245)
+# — identical on both sides of the D5 fixture, so only the SNIPPET differs.
+_M2_HEADER = "AssertionError: \n1 file(s) violate the canonical-resolver rule.\n\nMatches:\n"
+_M2_REMEDIATION = (
+    "\nRemediation: replace direct path construction with "
+    "`from explore_persona_space.task_workflow import tasks_dir, "
+    "registry_path, repo_root` and the function form.\n"
+)
+
+
+def test_scan_setdiff_branch_snippet_token_is_not_new_violation(tmp_path, monkeypatch, capsys):
+    """D5 (#2319, acceptance criterion 1 — FAILS pre-fix): a registered member red on
+    BOTH sides with IDENTICAL offender sets, where the branch side EDITED the already-
+    offending line so its quoted source SNIPPET embeds a tracked-path token
+    (scripts/task.py) absent from the pristine text, classifies pre-existing (rc 0) —
+    never a NEW verdict naming a path that never offended (the #2316 M1 residual:
+    every-token-per-line extraction lifted snippet tokens into the branch set)."""
+    # The quoted snippets deliberately avoid the M2 member's own live line-regex
+    # shapes (this test FILE is inside its scan population) — the load-bearing
+    # property is the row template + the branch-only embedded scripts/task.py.
+    branch_text = (
+        _M2_HEADER
+        + '  - scripts/offender_a.py:12: p = base / "tasks" / n  # cf. scripts/task.py\n'
+        + _M2_REMEDIATION
+    )
+    pristine_text = (
+        _M2_HEADER + '  - scripts/offender_a.py:12: p = base / "tasks" / n\n' + _M2_REMEDIATION
+    )
+    argv, _calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[
+            (
+                NODE_LINEREGEX.file,
+                NODE_LINEREGEX.classname,
+                NODE_LINEREGEX.name,
+                "failed",
+                branch_text,
+            )
+        ],
+        ledger_kw={"failing": (NODE_LINEREGEX,)},
+        reasons={NODE_LINEREGEX.file: ["glob-scan"]},
+        pristine_failing=(NODE_LINEREGEX,),
+        pristine_failure_texts={NODE_LINEREGEX: pristine_text},
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert out["new"] == []
+    assert {s["via"] for s in out["stripped"]} == {"pristine-scratch"}
+    (row,) = out["scan_violation_diffs"]
+    assert row["verdict"] == "pre-existing"
+    assert row["new_violations"] == []  # pre-fix: ["scripts/task.py"] — a non-offender
+    assert row["pre_existing"] == ["scripts/offender_a.py"]
+
+
+def test_violation_row_grammar_per_registered_member():
+    """D3 (#2319, criterion 2 — no fail-open, pinned per registered member): one row
+    per registry member in that member's EXACT verbatim row template (the #2319 §4
+    audit), two offender paths each, snippet-carrying members (M2/M4/M5) embedding a
+    DIFFERENT tracked path in the quoted snippet. Asserts per member that BOTH
+    offenders extract (anchoring never drops a real offender) and the snippet token
+    does not; the key-set equality makes registering a member without adding its
+    grammar row FAIL loud — the mechanical arm of curation criterion (d)."""
+    a, b = "scripts/offender_a.py", "scripts/offender_b.py"
+    m1_row = "{p} (module-top heavy import at line {ln}, first load_dotenv( at line None)"
+    grammar: dict[str, str] = {
+        # M1 — bare `rel` rows joined "\n  " after the header; bare-assert member,
+        # so the pytest rewritten-introspection tail rides along (the A1 shape).
+        ("tests/test_shared_vm_thread_caps.py::test_no_new_torch_before_dotenv_vm_entrypoints"): (
+            "AssertionError: NEW heavy-import-before-load_dotenv VM entrypoint(s) — call "
+            "explore_persona_space.orchestrate.env.load_dotenv() BEFORE importing any "
+            "HEAVY_IMPORT_ROOTS root so the shared-VM thread caps (#847) bind in-process:\n  "
+            + m1_row.format(p=a, ln=23)
+            + "\n  "
+            + m1_row.format(p=b, ln=7)
+            + "\nassert not ["
+            + repr(m1_row.format(p=a, ln=23))
+            + ", "
+            + repr(m1_row.format(p=b, ln=7))
+            + "]"
+        ),
+        # M2 — `  - {p}:{ln}: {txt.strip()}` rows; the snippet is the offending
+        # SOURCE LINE and here embeds a different tracked path (scripts/task.py).
+        (
+            "tests/test_no_direct_task_path_construction.py"
+            "::test_no_direct_task_path_construction_line_regex"
+        ): (
+            "AssertionError: \n2 file(s) violate the canonical-resolver rule.\n"
+            "\nDirect construction breaks when the task moves status folders.\n"
+            "\nMatches:\n"
+            f'  - {a}:12: p = base / "tasks" / n  # cf. scripts/task.py\n'
+            f'  - {b}:40: q = base / "tasks" / n\n'
+            "\nRemediation: replace direct path construction with "
+            "`from explore_persona_space.task_workflow import tasks_dir, "
+            "registry_path, repo_root` and the function form.\n"
+        ),
+        # M3 — `  - {p}:{ln}: imports \\`{name}\\`` rows; no snippet channel.
+        (
+            "tests/test_no_direct_task_path_construction.py"
+            "::test_no_bare_name_imports_from_task_workflow"
+        ): (
+            "AssertionError: \n2 bare-name import(s) violate the canonical-resolver rule.\n"
+            "\nBare-name import of TASKS_DIR / REGISTRY_PATH / REPO binds at "
+            "import time; PEP-562 cannot rescue it. Use the function form:\n"
+            f"  - {a}:3: imports `TASKS_DIR`\n"
+            f"  - {b}:7: imports `REGISTRY_PATH`\n"
+        ),
+        # M4 — `  - {p}:{ln}: {snip}` rows; the header ALSO names scripts/task.py
+        # MID-line (the real :607 header) and must contribute nothing.
+        ("tests/test_no_pod_side_task_py_shellout.py::test_no_pod_side_task_py_shellout"): (
+            "AssertionError: \n2 file(s) shell out to scripts/task.py "
+            "from pod-reachable code.\n"
+            "\nPod-side code MUST NOT call `task.py` for ANY subcommand.\n"
+            "\nOffences:\n"
+            f"  - {a}:12: subprocess.run(['python', 'scripts/task.py', 'view'])\n"
+            f"  - {b}:9: os.system('scripts/task.py view 5')\n"
+            "\nRemediation: write a JSON sentinel file at "
+            "/workspace/logs/issue-<N>-*.json from the pod.\n"
+        ),
+        # M5 — `  {path}:{lineno}  /{pat}/  {snippet}` rows (2-space indent, no
+        # bullet); the snippet embeds a different tracked path.
+        ("tests/test_no_dollar_budget_caps.py::test_no_dollar_budget_cap_symbols_in_scripts"): (
+            "AssertionError: Dollar-budget cap symbols found under scripts/ "
+            "(see CLAUDE.md):\n"
+            f"  {a}:9  /max_[b]udget_usd/  usd = read('scripts/task.py')\n"
+            f"  {b}:21  /[b]udget_cap/  cap = 5.0\n"
+            "\nIf you need cost telemetry, log it; never abort experiments on "
+            "cumulative spend."
+        ),
+    }
+    assert frozenset(grammar) == sb.VIOLATION_SET_SCAN_NODES
+    for member, text in grammar.items():
+        got = sb.extract_violation_paths(text)
+        assert got == frozenset({a, b}), (member, got)
+
+
+def test_paired_ordering_entrance_bypasses_violation_setdiff(tmp_path, monkeypatch, capsys):
+    """D6 (#2319, M2 knob — exercises `paired_failure_texts` as the counterfactual
+    instrument): a REGISTERED member GREEN on its single-file pristine run that
+    reproduces under the gate's co-selection prefix strips via
+    pristine-paired-ordering with NO set-diff row — the #2024 entrance deliberately
+    BYPASSES the violation set-diff (the design comment above
+    `_resolve_scan_violation_setdiff`'s call site), even though the paired run's
+    failure texts carry a set that WOULD read as a branch-added offender if the
+    set-diff ran."""
+    order = ["tests/test_pred.py", NODE_TC.file]
+    branch_text = _tc_failure_text(["scripts/offender_a.py", "scripts/offender_b.py"])
+    # If the set-diff consumed the paired text, {offender_b} would classify NEW.
+    paired_text = _tc_failure_text(["scripts/offender_a.py"])
+    argv, calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[
+            _passed_row("tests/test_pred.py"),
+            (NODE_TC.file, NODE_TC.classname, NODE_TC.name, "failed", branch_text),
+        ],
+        ledger_kw={"failing": ()},
+        paired_failing=(NODE_TC,),
+        paired_failure_texts={NODE_TC: paired_text},
+        sel_attrs=_order_sel_attrs(order),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert calls["paired"] == [order]  # the paired discriminator actually ran
+    assert rc == 0
+    assert out["new"] == []
+    assert [o["file"] for o in out["ordering_suspect"]] == [NODE_TC.file]
+    assert {s["via"] for s in out["stripped"]} == {"pristine-paired-ordering"}
+    assert out["scan_violation_diffs"] == []  # the #2024 entrance bypasses the set-diff
 
 
 def test_scan_violation_diffs_in_indeterminate_payload(tmp_path: Path, monkeypatch, capsys):
