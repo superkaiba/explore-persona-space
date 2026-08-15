@@ -44,6 +44,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import random
 import sys
 from collections import defaultdict
@@ -91,6 +92,26 @@ HOLM_ALPHA = A.HOLM_ALPHA
 
 HF_JUDGE_RAW_SCORES = f"{J.HF_PREFIX}/raw_completions/judge_raw/scores"
 HF_PARENT_GRID = f"{J.HF_PREFIX}/raw_completions/grid"
+
+# READ-side companion to issue2162_run.HF_DATA_WRITE_REPO (#2304). When THIS
+# round's uploads were rerouted off the file-capped canonical repo, its own
+# artifacts stopped living beside the PARENT's, so staging has to resolve
+# per-prefix: round-owned prefixes follow the write destination, parent-owned
+# ones (judge raw scores, parent grid) stay canonical. Unset => every prefix
+# resolves to J.DATASET_REPO, i.e. byte-identical legacy behavior.
+ROUND_OWNED_HF_PREFIXES = (
+    f"{J.HF_PREFIX}/raw_completions/tbmp/grid",
+    f"{J.HF_PREFIX}/analysis_tensors/tbmp/margin",
+)
+
+
+def _repo_for_prefix(prefix: str) -> str:
+    """Repo a staged prefix lives in (round-owned vs parent-owned)."""
+    if prefix in ROUND_OWNED_HF_PREFIXES:
+        return os.environ.get("EPM_2162_DATA_WRITE_REPO", J.DATASET_REPO)
+    return J.DATASET_REPO
+
+
 PARENT_F_PARITY_TOL = 1e-6
 
 
@@ -1010,12 +1031,15 @@ def _stage_inputs(args: argparse.Namespace) -> None:
         prefixes.append(f"{J.HF_PREFIX}/analysis_tensors/tbmp/margin")
     total_bytes = 0
     for prefix in prefixes:
-        staged = hub.stage_hub_prefix(J.DATASET_REPO, prefix, args.in_root, revision=None)
+        repo = _repo_for_prefix(prefix)
+        staged = hub.stage_hub_prefix(repo, prefix, args.in_root, revision=None)
         # M3 (r1): record the REALIZED VM staging footprint per prefix — §9
         # stated ~35 MB; the realized parent grid + judge raw scores are ~210 MB.
         nbytes = sum(Path(p).stat().st_size for p in staged if Path(p).is_file())
         total_bytes += nbytes
-        logger.info("[stage] %s: %d files, %.1f MB", prefix, len(staged), nbytes / 1e6)
+        logger.info(
+            "[stage] %s from %s: %d files, %.1f MB", prefix, repo, len(staged), nbytes / 1e6
+        )
     logger.info("[stage] realized staging footprint: %.1f MB total", total_bytes / 1e6)
 
 
