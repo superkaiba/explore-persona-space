@@ -1377,7 +1377,7 @@ def main() -> int:  # noqa: C901 — argparse wiring + the reattach/prompt mode 
     parser.add_argument("--issue", type=int, default=None)
     parser.add_argument(
         "--effort",
-        default="xhigh",
+        default="high",
         choices=["none", "minimal", "low", "medium", "high", "xhigh"],
     )
     write_group = parser.add_mutually_exclusive_group()
