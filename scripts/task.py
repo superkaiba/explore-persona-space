@@ -59,6 +59,8 @@ if str(_SRC) not in sys.path:
 
 from explore_persona_space.task_workflow import (  # noqa: E402
     CONCERN_SEVERITIES,
+    FOLLOWUP_RUN_KIND,
+    FOLLOWUP_SCOPE_KIND,
     KINDS,
     SMOKE_ARCH_MARKER_KIND,
     STATUSES,
@@ -83,6 +85,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     list_concerns,
     list_events,
     new_plan_version,
+    parse_followup_note_field,
     post_event,
     promote,
     raise_concern,
@@ -684,6 +687,41 @@ def cmd_post_event(args: argparse.Namespace) -> None:
                 "parses). Do NOT re-post this marker — it was posted "
                 "successfully; drop the stamp from your NEXT marker's note "
                 "instead.",
+                file=sys.stderr,
+            )
+    if args.marker in (FOLLOWUP_RUN_KIND, FOLLOWUP_SCOPE_KIND) and (
+        parse_followup_note_field(note or "", "followup_label") is None
+    ):
+        # Poster-side twin of the GATE's own predicate (#2307): the corpus
+        # replay (tests/test_workflow_followup_labels.py) reds main whenever
+        # a run marker's note parses no followup_label, and the Step 0
+        # dispatcher keys run/unrun attribution on the same parse for scope
+        # markers. Unlike the two advisories above (cosmetic shapes on notes
+        # that PARSE fine), this one fires exactly when the gate would fail —
+        # it calls the REAL parser, never a re-implemented heuristic, so it
+        # cannot drift. Deliberately keyed on the RESOLVED note (not
+        # args.note) so a --file body is checked too (the #2054 class-B note
+        # is a long --file-shaped body), and an EMPTY / entirely absent note
+        # fires as well (the gate parses `ev.get("note") or ""`, so a
+        # note-less run marker reds main identically). Advisory only — the
+        # marker already posted; guarded like its two siblings (the #537
+        # rc-contract class: a torn stderr must never flip the exit code
+        # post-commit).
+        with contextlib.suppress(OSError, ValueError):
+            print(
+                f"WARNING: task.py post-marker {args.marker}: no "
+                "followup_label parses from this note, so the follow-up "
+                "gate/dispatcher cannot attribute the round (an unparseable "
+                "run marker reds main via the corpus-replay test). Required "
+                "field-led forms: line-initial one-per-line "
+                "('followup_label: <slug>'), or '; '-joined on one line; the "
+                "'followup_label=' form parses too. Observed malformations "
+                "to avoid: the bare field name 'label=' (#2203/#1739); "
+                "'\u00b7'- or space-joined fields (#2054/#2224); a "
+                "bare-space 'v<k> ' stamp before space-joined fields "
+                "(#2224/#2254). Do NOT re-post this marker — it was posted "
+                "successfully; post a CORRECTIVE marker carrying a "
+                "parseable followup_label instead.",
                 file=sys.stderr,
             )
     _safe_echo(

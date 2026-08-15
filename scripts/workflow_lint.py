@@ -14799,6 +14799,22 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 # (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
 # change). Each entry names its trim direction; none is licensed to grow.
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
+    # measured 944,138 B after #2302 round 2 de-duplicated the stale-sync
+    # residual prose (the Step 9c 1d parenthetical now cross-references
+    # "Step 5a § Base-identity invariant (#2302)" instead of restating it,
+    # -184 B on round 1's 944,322 B) and the cap was LOWERED back to the new
+    # minimum + ~1.2 KB (#1753/#1727 landing-bytes rule; headroom 1,262 B
+    # <= the 3,000 B loose-cap hygiene bar — a ratchet is a real cost;
+    # give budget back when prose shrinks).
+    # Prior: 945_600 — measured 944,322 B after #2302 round 1 documented the
+    # base-identity invariant at BOTH consumers of the Step 5a sibling-sync
+    # output (+1,938 B on the #2136 942,384 B base): the Step 5a
+    # "Base-identity invariant" paragraph (synced paths are base-identical BY
+    # CONSTRUCTION; selector `base_identical_excluded` + compare
+    # `base_identical_files` reporting; the stale-sync residual + its re-sync
+    # remedy) and the Step 9c 1d COMPARE_RC=0 bullet's content-test
+    # parenthetical (#2024 precondition 1 is a CONTENT test as of #2302).
+    # Prior: 943_600 —
     # measured 942,384 B after #2136 anchored the Step 5b durable-verdict
     # snippet (+1,370 B: the since_ts=review_round_anchor_ts call form,
     # the fallback-only anchor-semantics paragraph, and the per-site
@@ -14921,7 +14937,21 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # invisible to it. Cap = landing bytes + ~1 KB (#1753 landing-bytes
     # rule); NOT a licence for regrowth — SKILL.md is the fleet's largest
     # always-loaded surface and the compaction tranche below still stands.
-    # 949_600 — #2296 measured 948,302 B for THIS landing (the Step 10d
+    # 952_000 — MERGE-RESOLVED FORWARD at #2296's Step 10d recovery merge.
+    # Measured 950,705 B on the POST-MERGE tree, and the three deltas are
+    # exactly additive: merge base 108ce58854 held 942,384 B, main
+    # 10e9c165a3 added +2,403 B (#2302's base-identity-invariant prose at
+    # the two Step 5a/9c consumers), #2296 added +5,918 B (below). BOTH
+    # pre-merge caps predate the merged tree and would FAIL it — main's
+    # 945_400 by 5,305 B and #2296's own 949_600 by 1,105 B — so the higher
+    # cap is the correct resolution, not a regrowth licence (the same
+    # forward-resolution shape as #2136's, recorded below). This is the
+    # #1721 moving-main class in its two-surface form: each side measured
+    # its own landing against a pre-sibling main and fit its own headroom
+    # alone, and only the merge sees the sum. Cap = measured + ~1.3 KB
+    # (#1753/#1727 landing-bytes rule; headroom 1,295 B <= the 3,000 B
+    # loose-cap hygiene bar).
+    # Prior: 949_600 — #2296 measured 948,302 B PRE-merge (the Step 10d
     # mapped-invariant BASELINE leg moved off the shared root onto a
     # base-pinned detached sparse scratch via `step9c_baseline.py
     # mapped-baseline`: the shared-form + surgical-form baseline blocks,
@@ -14942,7 +14972,7 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 942_000: that value predates this landing and would FAIL it by 384 B,
     # so the higher cap is the correct resolution, not a regrowth licence
     # (headroom 1,216 B, the same ~1 KB the #1753 rule prescribes).
-    "issue/SKILL.md": 949_600,
+    "issue/SKILL.md": 952_000,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
