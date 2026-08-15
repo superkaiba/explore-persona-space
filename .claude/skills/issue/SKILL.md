@@ -12344,15 +12344,21 @@ tests BEFORE anything lands:
       # back to the worktree copy when the root lacks the subcommand, which is
       # exactly the round that ADDS it (measured on #2296's own first Step 10d
       # run: argparse exit 2 -> empty rc -> TG_CRASH, i.e. the change could
-      # never pass through the gate it introduces). Baseline payload-freeness
-      # is unaffected: it is a property of the TREE under test (a scratch at
-      # origin/main), not of the script driving it — the same
-      # instrument-vs-subject split #1456 already makes for a payload-touched
-      # workflow_lint.py. Both copies lacking it still fails CLOSED below.
+      # never pass through the gate it introduces). What the baseline EXECUTES
+      # stays payload-free either way — selector, tests and src all come from
+      # the origin/main scratch (cwd=scratch, PYTHONPATH=<scratch>/src)
+      # regardless of which copy drives — the instrument-vs-subject split
+      # #1456 already makes for a payload-touched workflow_lint.py. What it
+      # REPORTS (`rc=`, the --out FAILED set) is driver-produced, so a
+      # fallback-driven baseline is auditable-not-guaranteed: the FALLBACK
+      # token below is the audit trail, and the fallback engages only when the
+      # ROOT probe fails under the root-side uv env (a branch cannot force it
+      # via its own pyproject/uv.lock). Both copies lacking it fails CLOSED.
       TG_S9B="$REPO_ROOT/scripts/step9c_baseline.py"
+      TG_S9B_SRC=root
       uv run python "$TG_S9B" mapped-baseline --help >/dev/null 2>&1 \
-        || TG_S9B="$WT/scripts/step9c_baseline.py"
-      echo "[step10d] mapped-baseline helper: $TG_S9B"
+        || { TG_S9B="$WT/scripts/step9c_baseline.py"; TG_S9B_SRC=FALLBACK-worktree; }
+      echo "[step10d] mapped-baseline helper: $TG_S9B_SRC ($TG_S9B)"
       TG_BASE_OUT=$(timeout --kill-after=30s $((TG_T + 420))s uv run python \
         "$TG_S9B" mapped-baseline \
         --map-files /tmp/issue-<N>-own-diff.txt --root "$REPO_ROOT" \
@@ -14398,9 +14404,10 @@ Decision tree:
     # worktree in scope, in which case the root copy is the only candidate and
     # a still-missing subcommand fails CLOSED below.
     TG_S9B="$REPO_ROOT/scripts/step9c_baseline.py"
+    TG_S9B_SRC=root
     uv run python "$TG_S9B" mapped-baseline --help >/dev/null 2>&1 \
-      || TG_S9B="${WT:-$REPO_ROOT}/scripts/step9c_baseline.py"
-    echo "[step10d] mapped-baseline helper: $TG_S9B"
+      || { TG_S9B="${WT:-$REPO_ROOT}/scripts/step9c_baseline.py"; TG_S9B_SRC=FALLBACK-worktree; }
+    echo "[step10d] mapped-baseline helper: $TG_S9B_SRC ($TG_S9B)"
     TG_BASE_OUT=$(timeout --kill-after=30s $((TG_T + 420))s uv run python \
       "$TG_S9B" mapped-baseline \
       --map-files /tmp/issue-<N>-additive-files.txt --root "$REPO_ROOT" \

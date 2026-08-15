@@ -284,9 +284,18 @@ def test_mapped_baseline_leg_runs_off_shared_root():
         assert 'uv run python "$TG_S9B" mapped-baseline --help' in span, (
             f"[{name}] the bootstrap helper-resolution probe must survive"
         )
-        assert 'scripts/step9c_baseline.py" mapped-baseline' not in span, (
+        # Quote-form-agnostic (reviewer Minor, round 2): the earlier literal
+        # was keyed to the double-quoted spelling, so an UNQUOTED-path
+        # hardcode would have evaded the pin.
+        assert not re.search(r'step9c_baseline\.py"?\s+mapped-baseline', span), (
             f"[{name}] baseline leg must not hardcode a helper copy — resolve "
             "via $TG_S9B (root preferred, worktree fallback)"
+        )
+        # The resolution must stay AUDITABLE: a fallback-driven baseline is
+        # auditable-not-guaranteed (rc= and the FAILED set are driver-produced),
+        # so the distinguishable source token is load-bearing, not cosmetic.
+        assert "TG_S9B_SRC=FALLBACK-worktree" in span, (
+            f"[{name}] the fallback must announce itself with a distinguishable token"
         )
         assert "uv run pytest" not in span, (
             f"[{name}] baseline leg must not run pytest directly (A1): the "
