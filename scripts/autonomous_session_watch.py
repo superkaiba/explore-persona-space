@@ -5150,7 +5150,7 @@ def decide_vm_disk(
     return (level, do_alert, do_reclaim, do_audit)
 
 
-# ─── VM disk SUB-FLOOR sentinel (task #679) ──────────────────────────────────
+# ─── VM disk sub-floor sentinel (task #679) ──────────────────────────────────
 #
 # The existing alert/reclaim bands above fire LATE (20 / 15 GiB free) — by then
 # foreground Bash spawns are already at risk. The sub-floor sentinel is an
@@ -5590,6 +5590,64 @@ def _append_disk_guard_sidecar(event: dict, dry_run: bool) -> None:
         print(f"  vm-disk subfloor: sidecar append failed: {exc}", file=sys.stderr)
 
 
+def _emit_subfloor_skip(reason: str, free: int, now: float, dry_run: bool, *, detail: str) -> None:
+    """Loud per-skip diagnostics for the sub-floor RECLAIM arm (#2141).
+
+    Called from :func:`subfloor_reclaim_pass` ONLY in the band where a fire is
+    EXPECTED but declined (``free < VM_DISK_SUBFLOOR_FREE_BYTES``): a genuine
+    non-fire used to be indistinguishable from a fire whose log line the
+    reader failed to match (#2141 was filed against a WORKING arm on a
+    grep-token mismatch). Always prints ONE stderr line carrying the lowercase
+    ``subfloor`` token. For ``reason == "kill-switch"`` — the one decline
+    state where the arm is disabled while needed and NO existing record shows
+    it — additionally appends an ``action: "skipped"`` sidecar row, throttled
+    to <=1 per :data:`VM_DISK_SUBFLOOR_RECLAIM_INTERVAL_S` via a
+    ``last_skip_row_ts`` key MERGED into the reclaim state (never a
+    whole-payload overwrite — clobbering ``last_run_ts`` would break rate
+    limiting). Rate-limited declines get stderr only: the <=1800 s-old fire
+    row in the same sidecar is the positive evidence, and a NEGATIVE ``age=``
+    in the stderr detail is the corrupt/future-``last_run_ts`` wedge
+    signature. Fail-soft; dry-run performs ZERO writes (the sidecar append
+    prints ``[dry-run] would append`` via :func:`_append_disk_guard_sidecar`
+    and the state save is skipped)."""
+    free_gib = free / 2**30
+    floor_gib = VM_DISK_SUBFLOOR_FREE_BYTES / 2**30
+    print(
+        f"vm-disk subfloor-reclaim: skipped ({reason}) — {free_gib:.1f} GiB free "
+        f"(< {floor_gib:.0f} GiB); {detail}",
+        file=sys.stderr,
+    )
+    if reason != "kill-switch":
+        return
+    state = _load_subfloor_reclaim_state()
+    last_skip_row_ts = state.get("last_skip_row_ts")
+    last_skip_row_ts = last_skip_row_ts if isinstance(last_skip_row_ts, int | float) else None
+    interval = VM_DISK_SUBFLOOR_RECLAIM_INTERVAL_S
+    if last_skip_row_ts is not None and now - last_skip_row_ts < interval:
+        return  # throttled: one durable row per interval is enough
+    _append_disk_guard_sidecar(
+        {
+            "kind": "vm-disk-subfloor-reclaim",
+            "band": "sub-floor",
+            "action": "skipped",
+            "reason": "kill-switch",
+            "free_bytes": free,
+            "free_gib": round(free_gib, 1),
+            "interval_s": VM_DISK_SUBFLOOR_RECLAIM_INTERVAL_S,
+        },
+        dry_run,
+    )
+    if dry_run:
+        return
+    try:
+        _save_subfloor_reclaim_state({**state, "last_skip_row_ts": now})
+    except OSError as exc:
+        print(
+            f"  vm-disk subfloor-reclaim: skip-state save failed (fail-soft): {exc}",
+            file=sys.stderr,
+        )
+
+
 def subfloor_sentinel_pass(dry_run: bool, free_bytes: int | None = None) -> bool:
     """Warn-only sub-floor attribution pass (task #679).
 
@@ -5620,7 +5678,7 @@ def subfloor_sentinel_pass(dry_run: bool, free_bytes: int | None = None) -> bool
         top = []
     free_gib = free / 2**30
     print(
-        f"vm-disk SUB-FLOOR: {free_gib:.1f} GiB free on {VM_DISK_PATH} "
+        f"vm-disk subfloor-sentinel: {free_gib:.1f} GiB free on {VM_DISK_PATH} "
         f"(< {VM_DISK_SUBFLOOR_FREE_BYTES / 2**30:.0f} GiB) — re-check sooner; "
         f"top caches: {', '.join(f'{p} [{b / 1e9:.1f}G]' for p, b in top) or 'none'}",
         file=sys.stderr,
@@ -5707,27 +5765,60 @@ def subfloor_reclaim_pass(
     calls and ZERO writes (the #681 r3 smoke contract). Fail-soft: a launch
     OR state-save failure (e.g. ENOSPC on a full ``/``) returns False and
     never crashes :func:`vm_disk_pass`. Returns True when a launch happened
-    (or would have, under dry-run) this tick."""
-    if os.environ.get("EPM_DISABLE_SUBFLOOR_RECLAIM", "").strip() == "1":
-        return False
+    (or would have, under dry-run) this tick.
+
+    Skip diagnostics (#2141): every BELOW-FLOOR declined tick is loud — a
+    stderr line naming the blocking predicate (kill-switch / rate-limited /
+    free-unreadable) via :func:`_emit_subfloor_skip`, plus a throttled
+    ``action: "skipped"`` sidecar row for the kill-switched case only.
+    Above-floor declines (the healthy no-op, ~144 ticks/day) stay
+    byte-identical. The firing decision is UNCHANGED — diagnostics only.
+    Behavioral delta disclosed: ``free`` is now read BEFORE the kill-switch
+    check (so the check can band-scope), meaning a kill-switched standalone
+    call with ``free_bytes=None`` runs one read-only statvfs; the production
+    call site always passes ``free_bytes``."""
     now = now if now is not None else time.time()
     free = free_bytes if free_bytes is not None else _root_disk_headroom()
     if free is None:
+        print(
+            "  vm-disk subfloor-reclaim: skipped (free-unreadable) — statvfs "
+            f"on {VM_DISK_PATH} failed upstream",
+            file=sys.stderr,
+        )
+        return False
+    if os.environ.get("EPM_DISABLE_SUBFLOOR_RECLAIM", "").strip() == "1":
+        if free < VM_DISK_SUBFLOOR_FREE_BYTES:
+            _emit_subfloor_skip(
+                "kill-switch", free, now, dry_run, detail="EPM_DISABLE_SUBFLOOR_RECLAIM=1"
+            )
         return False
     state = _load_subfloor_reclaim_state()
     last_run_ts = state.get("last_run_ts")
     last_run_ts = last_run_ts if isinstance(last_run_ts, int | float) else None
     if not decide_subfloor_reclaim(free, last_run_ts, now):
+        if free < VM_DISK_SUBFLOOR_FREE_BYTES:  # rate-limited (above-floor stays silent)
+            _emit_subfloor_skip(
+                "rate-limited",
+                free,
+                now,
+                dry_run,
+                detail=(
+                    f"age={now - last_run_ts:.0f}s of "
+                    f"{VM_DISK_SUBFLOOR_RECLAIM_INTERVAL_S:.0f}s min interval"
+                ),
+            )
         return False
     log_path = PROJECT_ROOT / "logs" / "vm_disk_guard" / f"{datetime.now(tz=UTC):%Y-%m-%d}.log"
     if dry_run:
-        print(f"  [dry-run] would launch: {' '.join(_guard_apply_argv())}")
+        print(f"  [dry-run] subfloor-reclaim would launch: {' '.join(_guard_apply_argv())}")
         return True
     try:
         pid = _launch_guard_apply(log_path)
         # The state save rides the SAME fail-soft guard as the launch (#1392
         # concern 1): on a 100%-full / an ENOSPC here returns False cleanly.
-        _save_subfloor_reclaim_state({"last_run_ts": now, "pid": pid})
+        # MERGE-write (#2141): a whole-payload overwrite would clobber the
+        # skip-diagnostics key ``last_skip_row_ts`` alongside any future key.
+        _save_subfloor_reclaim_state({**state, "last_run_ts": now, "pid": pid})
     except (OSError, subprocess.SubprocessError) as exc:
         print(
             f"  vm-disk subfloor-reclaim: guard --apply launch failed (fail-soft): {exc}",
@@ -5749,7 +5840,8 @@ def subfloor_reclaim_pass(
         dry_run,
     )
     print(
-        f"vm-disk SUB-FLOOR: launched vm_disk_guard --apply (pid {pid}, ~6-10 min, log {log_path})",
+        f"vm-disk subfloor-reclaim: launched vm_disk_guard --apply "
+        f"(pid {pid}, ~6-10 min, log {log_path})",
         file=sys.stderr,
     )
     return True
@@ -5981,7 +6073,7 @@ def data_disk_pass(dry_run: bool, used_pct: float | None = None) -> bool:
 
     top = _data_disk_top_caches(dd_path, dry_run=dry_run)
     print(
-        f"vm-disk-data SUB-FLOOR: {pct:.1f}% used on {dd_path} "
+        f"vm-disk-data subfloor: {pct:.1f}% used on {dd_path} "
         f"(>= {floor:.0f}%) — re-check sooner; "
         f"top caches: {', '.join(f'{p} [{b / 1e9:.1f}G]' for p, b in top) or 'none'}",
         file=sys.stderr,
@@ -34266,7 +34358,16 @@ def vm_disk_pass(dry_run: bool, now: float | None = None) -> None:
 
     if level == "ok":
         if not state:
-            print(f"vm-disk: ok ({free_gib:.1f} GiB free)")
+            # #2141: the bare ok line reads as "disk healthy" while the 60 GiB
+            # sub-floor band is active (the ALERT band is 20 GiB — `ok` and a
+            # live sub-floor episode co-exist by design); name the band.
+            subfloor_note = (
+                f"; sub-floor band (< {VM_DISK_SUBFLOOR_FREE_BYTES / 2**30:.0f} GiB) — "
+                "subfloor arms engaged"
+                if free < VM_DISK_SUBFLOOR_FREE_BYTES
+                else ""
+            )
+            print(f"vm-disk: ok ({free_gib:.1f} GiB free){subfloor_note}")
         elif free >= VM_DISK_ALERT_FREE_BYTES + VM_DISK_CLEAR_HYSTERESIS_BYTES:
             print(f"vm-disk: recovered ({free_gib:.1f} GiB free); episode over")
             if not dry_run:
