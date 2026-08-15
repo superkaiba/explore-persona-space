@@ -8832,8 +8832,8 @@
     "2142": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2142",
-      "status": "planning",
+      "path": "tasks/approved/2142",
+      "status": "approved",
       "title": "daily-fix: dispatch lease races (4 dup spawns + cap 6>5)"
     },
     "2143": {
