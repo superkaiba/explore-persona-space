@@ -15058,7 +15058,18 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # the gate this time. Cap = landing bytes + ~1.2 KB (#1753/#1727
     # landing-bytes rule; headroom 1,219 B <= the 3,000 B loose-cap hygiene
     # bar). Re-measure at Step 10d if main moves again.
-    "issue/SKILL.md": 974_900,
+    #
+    # 980_400 — #2320 MEASURED 979,368 B on the branch's own origin/main
+    # (db6eb28cac) merge: main's 974,701 B + this branch's +4,667 B (the
+    # Guard-3 first-parent fix: the MB_VALID hard-stop block with the
+    # MB_FIRST_PARENT diagnostic, the unconditional content-check prose,
+    # the corrected #479 note, the retired-condition template rewrites +
+    # mb_first_parent note fields, and the #1144 stranded-MODIFIED
+    # surfacing scan), partly offset by the deleted BEHIND-threshold
+    # prose. Prior: 974_900 (#2317, above). Cap = landing bytes + ~1 KB
+    # (#1753/#1727 landing-bytes rule; headroom 1,032 B <= the 3,000 B
+    # loose-cap hygiene bar). Re-measure at Step 10d if main moves again.
+    "issue/SKILL.md": 980_400,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
