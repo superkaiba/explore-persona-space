@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2311,
+  "highest_id": 2312,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10136,6 +10136,13 @@
       "path": "tasks/proposed/2311",
       "status": "proposed",
       "title": "Step 5a sibling arm: synced sibling tests run against branch-era src/; #2208 collection probe cannot see the runtime skew"
+    },
+    "2312": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2312",
+      "status": "proposed",
+      "title": "Step 10d safe-case push has no arm for a REBASED issue branch \u2014 rejection fallback rebases onto the stale remote branch (#1128 replay shape); stale PR head can land pre-rebase payload"
     },
     "232": {
       "has_clean_result": true,
