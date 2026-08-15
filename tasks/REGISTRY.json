@@ -10140,8 +10140,8 @@
     "2312": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2312",
-      "status": "planning",
+      "path": "tasks/approved/2312",
+      "status": "approved",
       "title": "Step 10d safe-case push has no arm for a REBASED issue branch \u2014 rejection fallback rebases onto the stale remote branch (#1128 replay shape); stale PR head can land pre-rebase payload"
     },
     "2313": {
