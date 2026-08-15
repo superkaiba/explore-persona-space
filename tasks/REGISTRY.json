@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2316,
+  "highest_id": 2318,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10014,8 +10014,8 @@
     "2296": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2296",
-      "status": "reviewing",
+      "path": "tasks/completed/2296",
+      "status": "completed",
       "title": "Step 10d lint gate's mapped-invariant baseline leg runs pytest in the shared repo root \u2014 #2015 stash cycle kills it and false-NEWs pre-existing reds"
     },
     "2297": {
@@ -10070,8 +10070,8 @@
     "2303": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2303",
-      "status": "running",
+      "path": "tasks/completed/2303",
+      "status": "completed",
       "title": "/issue Step 5a spec-freshness sync: sync synced-spec data dependencies + fail loud on a failed sync commit"
     },
     "2304": {
@@ -10140,8 +10140,8 @@
     "2312": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2312",
-      "status": "running",
+      "path": "tasks/completed/2312",
+      "status": "completed",
       "title": "Step 10d safe-case push has no arm for a REBASED issue branch \u2014 rejection fallback rebases onto the stale remote branch (#1128 replay shape); stale PR head can land pre-rebase payload"
     },
     "2313": {
@@ -10154,8 +10154,8 @@
     "2314": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2314",
-      "status": "reviewing",
+      "path": "tasks/completed/2314",
+      "status": "completed",
       "title": "issue2225_fu2_dod_points_fig.py imports numpy before load_dotenv \u2014 reds test_no_new_torch_before_dotenv_vm_entrypoints on main"
     },
     "2315": {
@@ -10163,14 +10163,28 @@
       "kind": "infra",
       "path": "tasks/proposed/2315",
       "status": "proposed",
-      "title": "workflow-fix: Step 9c 1b --files-only output needs newline-flattening before launcher interpolation; the count cross-check cannot see the un-flattened shape"
+      "title": "Step 9c 1b: a self-composed gate launcher can silently drop --files-only newline flattening OR -o junit_family=xunit1; neither omission fails where the recipe checks"
     },
     "2316": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2316",
-      "status": "proposed",
+      "path": "tasks/running/2316",
+      "status": "running",
       "title": "workflow-fix: step9c compare classifies whole-repo SCAN-test nodes per-NODE, so a branch ADDING a violation to an already-red scan node reads as pre-existing"
+    },
+    "2317": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2317",
+      "status": "running",
+      "title": "workflow-fix: Step 9c gate-set cross-check validates cardinality but not splice shape \u2014 a newline-separated --files-only list runs 1 of N files behind a green guard"
+    },
+    "2318": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/approved/2318",
+      "status": "approved",
+      "title": "workflow-fix: 9a-ter inline payload lint gate \u2014 violation-grain classification for whole-repo scan nodes red on pristine main"
     },
     "232": {
       "has_clean_result": true,
