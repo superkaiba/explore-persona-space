@@ -221,6 +221,31 @@ def test_selector_json_emits_base_identical_excluded(scratch_dir: Path, capsys):
     assert "base-identical paths excluded" in captured.err
 
 
+def test_sync_only_branch_exclusion_is_loud(scratch_dir: Path, capsys):
+    """M1 (#2302 round 2): a branch whose ENTIRE three-dot diff is base-identical
+    (a sync-commit-only branch) filters ``touched`` to ``[]`` — the exclusion
+    must STILL be loud: ``base_identical_excluded`` names both synced paths and
+    the exclusion NOTE fires alongside the empty-diff fallback NOTE. Pre-fix,
+    the ``if not touched`` guard short-circuited the audit and the exclusion
+    was the one silent case."""
+    repo = _build_synced_repo(scratch_dir)  # NO branch edit: sync commit only
+    # Seed one invariant member so the invariant-only fallback selection is
+    # non-empty (an empty selection is main()'s own fail-loud exit 1, which
+    # would swallow the JSON under test). Untracked -> invisible to the diff.
+    inv0 = Path(repo) / sel.WORKFLOW_INVARIANT[0]
+    inv0.parent.mkdir(parents=True, exist_ok=True)
+    inv0.write_text("# invariant stub\n")
+    rc = sel.main(["--json", "--repo-root", str(repo), "--base", "main"])
+    captured = capsys.readouterr()
+    assert rc == 0
+    data = json.loads(captured.out)
+    assert data["base_identical_excluded"] == sorted([_SIB_SCRIPT, _SIB_TEST])
+    assert "base-identical paths excluded" in captured.err  # never silent
+    assert "empty diff" in captured.err  # the invariant-only fallback co-fires
+    assert _SIB_TEST not in data["tests"]  # synced test is main's copy, not selected
+    assert sel.WORKFLOW_INVARIANT[0] in data["tests"]
+
+
 # --- Compare arms (real classifier path; real git wt; fakes only at the external
 # --- pytest/ruff/scratch boundaries via test_step9c_baseline's harness) ---------
 
@@ -368,3 +393,6 @@ def test_base_identity_derivation_failure_warns_not_indeterminate(
     assert not out.get("indeterminate")
     assert out["base_identical_files"] == []
     assert any(w.startswith("BASE-IDENTITY WARN:") for w in out["warns"])
+    # M3 (#2302 round 2): the compare JSON surfaces the RESOLVED base it
+    # derived against (the fake selector has no resolve_base -> "main").
+    assert out["base"] == "main"

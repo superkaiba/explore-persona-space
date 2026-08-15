@@ -1287,16 +1287,20 @@ def compute_base_identical(
 def _base_identical_audit(base: str, work_root: Path, touched: list[str]) -> list[str]:
     """Verified base-identical exclusions for the ``--json`` audit key (#2302).
 
-    Empty when *touched* is empty (nothing was diffed, nothing was excluded).
-    Derived through the PUBLIC :func:`compute_base_identical` seam; a
-    derivation failure degrades to ZERO exclusions with a stderr NOTE
-    (fail-closed — nothing is claimed excluded), never a crash: the caller's
-    touched list carries its own fail-loud three-dot contract.
+    Runs even when *touched* is empty: a branch whose ENTIRE three-dot diff is
+    base-identical (a sync-commit-only branch) filters ``touched`` to ``[]``,
+    and "the exclusion is never silent" must still hold — the audit key names
+    the excluded paths and the caller's NOTE fires. Derived through the PUBLIC
+    :func:`compute_base_identical` seam; a derivation failure degrades to ZERO
+    exclusions with a stderr NOTE (fail-closed — nothing is claimed excluded),
+    never a crash: the caller's touched list carries its own fail-loud
+    three-dot contract. Any entry still present in *touched* is DROPPED from
+    the audit (an asymmetric transient git failure between the two seam calls
+    could otherwise report an exclusion the realized filtering did not apply —
+    the audit key never contradicts the selection).
     """
-    if not touched:
-        return []
     try:
-        return compute_base_identical(base, work_root)
+        audit = compute_base_identical(base, work_root)
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
         print(
             "select_step9c_tests: NOTE — base-identical audit derivation failed "
@@ -1304,6 +1308,8 @@ def _base_identical_audit(base: str, work_root: Path, touched: list[str]) -> lis
             file=sys.stderr,
         )
         return []
+    still_touched = set(touched)
+    return [p for p in audit if p not in still_touched]
 
 
 def _touched_and_base_identical(

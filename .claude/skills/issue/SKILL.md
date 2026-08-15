@@ -10556,11 +10556,9 @@ suite directly and posts an `epm:test-verdict` event with the result.
         of main's OWN file, base-identical by construction, never disables
         this carve-out and never inflates the selector's gate set; the
         exclusions are always visible, as `base_identical_excluded` in the
-        selector JSON and `base_identical_files` in the compare JSON. The
-        stale-sync residual: a path synced on an earlier round that
-        origin/main has since ADVANCED legitimately differs from the base
-        tip and stays branch-touched/blocking — correct, not a #2302
-        regression; the remedy is a re-sync via the Step 5a arm), PASSes the
+        selector JSON and `base_identical_files` in the compare JSON;
+        stale-sync residual + re-sync remedy: Step 5a § Base-identity
+        invariant (#2302)), PASSes the
         single-file pristine oracle, and REPRODUCES on pristine main when
         re-run together with the co-selected predecessors that preceded it in
         the gate run (ONE paired invocation in the selector's deterministic

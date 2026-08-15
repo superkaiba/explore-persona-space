@@ -2517,6 +2517,7 @@ def _compare_impl(args: argparse.Namespace) -> dict:
         "ledger_dirty_paths": list(ledger.get("dirty_paths", [])) if ledger else [],
         "live_dirty_paths": ctx.live_dirty_paths,
         "pristine_files_run": ctx.pristine_files_run,
+        "base": ctx.base,  # #2302: the RESOLVED diff base the compare derived against
         "base_identical_files": sorted(ctx.base_identical),  # #2302 content-test audit key
         "pristine_oracle": ctx.pristine_oracle,
         "ordering_suspect": ctx.ordering_suspect,  # #2024 non-blocking strips
