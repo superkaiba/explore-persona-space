@@ -811,11 +811,13 @@ def upload_raw_completions(
     *,
     final_prefix: str = RAW_FINAL_HF_PREFIX,
     narrow_prefix: str = RAW_NARROW_HF_PREFIX,
+    hf_repo: str = DATA_REPO,
 ) -> list[str]:
     """Upload each present raw_completions subtree as ONE ``upload_folder``
     commit (hub._upload folder branch; #664 — never per-file loops). Follow-up
     rounds thread their OWN prefixes (fu1: ``.../fu1_final`` — never the
-    parent-clobbering default, #1452)."""
+    parent-clobbering default, #1452) and, when routed off the canonical data
+    repo (fu2's #2287 overflow routing), their OWN ``hf_repo``."""
     from explore_persona_space.orchestrate.hub import _upload
 
     urls: list[str] = []
@@ -824,7 +826,7 @@ def upload_raw_completions(
         if not local.exists():
             logger.info("[upload] %s absent — skipping", local)
             continue
-        url = _upload(local, DATA_REPO, "dataset", prefix, raise_on_error=True)
+        url = _upload(local, hf_repo, "dataset", prefix, raise_on_error=True)
         print(f"[eval-gen] uploaded {local} -> {url}", flush=True)
         urls.append(url)
     if not urls:
@@ -864,6 +866,13 @@ def build_argparser() -> argparse.ArgumentParser:
         "--hf-prefix-narrow",
         default=RAW_NARROW_HF_PREFIX,
         help="HF prefix for the narrow-domain rollouts upload (fu rounds thread fu1_*)",
+    )
+    # UPLOAD_PREFIX_EXEMPT: parent-default-identical seam — fu2 threads the
+    # overflow repo (#2287); parent/fu1 keep the canonical data repo.
+    ap.add_argument(
+        "--hf-repo",
+        default=DATA_REPO,
+        help="HF dataset repo for the raw-completions upload (fu2 threads the overflow repo)",
     )
     ap.add_argument("--list-targets", action="store_true", help="print the 86-target enumeration")
     ap.add_argument("--import-check", action="store_true")
@@ -916,6 +925,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             Path(args.out_root),
             final_prefix=args.hf_prefix_final,
             narrow_prefix=args.hf_prefix_narrow,
+            hf_repo=args.hf_repo,
         )
         sys.stdout.flush()
         sys.exit(0)

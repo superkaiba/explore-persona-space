@@ -1,0 +1,196 @@
+{
+  "commit": "513a4930+dirty",
+  "render_id": "00317acc557e401d",
+  "git_commit": "513a4930",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2225/fu2_preimage_alltoken/analysis/contrasts.json",
+    "eval_results/issue_2225/fu2_preimage_alltoken/analysis/judge_accounting.json",
+    "eval_results/issue_2225/fu2_preimage_alltoken/analysis/selection.json",
+    "figures/issue_2225/fu2/fu2_geometry_cosines.meta.json",
+    "figures/issue_2225/fu2/fu2_geometry_cosines.pdf",
+    "figures/issue_2225/fu2/fu2_geometry_cosines.png",
+    "figures/issue_2225/fu2/fu2_hero_dose_response.meta.json",
+    "figures/issue_2225/fu2/fu2_hero_dose_response.pdf",
+    "figures/issue_2225/fu2/fu2_hero_dose_response.png",
+    "figures/issue_2225/fu2/fu2_judge_diagnostics.meta.json",
+    "figures/issue_2225/fu2/fu2_judge_diagnostics.pdf",
+    "figures/issue_2225/fu2/fu2_judge_diagnostics.png",
+    "figures/issue_2225/fu2/fu2_mmlu_extremes.meta.json",
+    "figures/issue_2225/fu2/fu2_mmlu_extremes.pdf",
+    "figures/issue_2225/fu2/fu2_mmlu_extremes.png",
+    "figures/issue_2225/fu2/fu2_operating_point_bars.meta.json",
+    "figures/issue_2225/fu2/fu2_operating_point_bars.pdf",
+    "figures/issue_2225/fu2/fu2_operating_point_bars.png",
+    "figures/issue_2225/fu2/fu2_probe_shift_profiles.meta.json",
+    "figures/issue_2225/fu2/fu2_probe_shift_profiles.pdf",
+    "figures/issue_2225/fu2/fu2_probe_shift_profiles.png",
+    "figures/issue_2225/fu2/fu2_projection_shift_bars.meta.json",
+    "figures/issue_2225/fu2/fu2_projection_shift_bars.pdf",
+    "figures/issue_2225/fu2/fu2_projection_shift_bars.png",
+    "figures/issue_2225/fu2/fu2_rank_sweep.meta.json",
+    "figures/issue_2225/fu2/fu2_rank_sweep.pdf",
+    "figures/issue_2225/fu2/fu2_rank_sweep.png",
+    "scripts/issue2225_fu1_analysis.py"
+  ],
+  "created": "2026-08-14T23:49:09Z",
+  "figsize": [
+    9.2,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.325,
+      "\u0394 mean projection at the arm's own layer": 20.088059902191162,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.675,
+      "\u0394 mean projection at the arm's own layer": 34.895012855529785,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.675,
+      "\u0394 mean projection at the arm's own layer": 41.986663818359375,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.195,
+      "\u0394 mean projection at the arm's own layer": 36.66605186462402,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.805,
+      "\u0394 mean projection at the arm's own layer": 44.16531467437744,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.805,
+      "\u0394 mean projection at the arm's own layer": 52.16631317138672,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.065,
+      "\u0394 mean projection at the arm's own layer": 18.5882431268692,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.935,
+      "\u0394 mean projection at the arm's own layer": 9.078404426574707,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.935,
+      "\u0394 mean projection at the arm's own layer": 12.74649727344513,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.065,
+      "\u0394 mean projection at the arm's own layer": -29.807735301554203,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.065,
+      "\u0394 mean projection at the arm's own layer": -51.02320408821106,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.065,
+      "\u0394 mean projection at the arm's own layer": 0.9303948879241943,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.195,
+      "\u0394 mean projection at the arm's own layer": -37.841253101825714,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.195,
+      "\u0394 mean projection at the arm's own layer": -48.31804609298706,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.195,
+      "\u0394 mean projection at the arm's own layer": 2.5510361194610596,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.325,
+      "\u0394 mean projection at the arm's own layer": -17.499034360051155,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.325,
+      "\u0394 mean projection at the arm's own layer": -7.744598150253296,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.325,
+      "\u0394 mean projection at the arm's own layer": 0.1295926570892334,
+      "_kind": "bar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 18,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "\u0394 mean projection at the arm's own layer",
+        "legend_labels": [
+          "resp-avg \u00b7 r_B",
+          "ctx-end \u00b7 E2",
+          "prefix-end \u00b7 E2",
+          "resp-avg \u00b7 d_pre",
+          "ctx-end \u00b7 d_pre",
+          "prefix-end \u00b7 d_pre"
+        ],
+        "xticklabels": [
+          "Pre-image L14, all tokens",
+          "Pre-image L19, all tokens",
+          "Random L19, all tokens"
+        ],
+        "yticklabels": [
+          "\u221260",
+          "\u221240",
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60"
+        ]
+      }
+    ],
+    "series": [
+      "resp-avg \u00b7 r_B",
+      "ctx-end \u00b7 E2",
+      "prefix-end \u00b7 E2",
+      "resp-avg \u00b7 d_pre",
+      "ctx-end \u00b7 d_pre",
+      "prefix-end \u00b7 d_pre"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

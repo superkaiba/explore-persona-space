@@ -1144,10 +1144,11 @@ def run_upload(args) -> None:
         n += 1
     if not n:
         raise RuntimeError(f"no judge raw files under {raw_root}")
+    # (fu2 additionally threads --hf-repo, the #2287 overflow routing.)
     # UPLOAD_PREFIX_EXEMPT: parent-default-identical seam; fu1 passes --raw-judge-hf-prefix
     url = _upload(
         staging,
-        DATA_REPO,
+        args.hf_repo,
         "dataset",
         f"{args.raw_judge_hf_prefix}/{args.stage}",
         raise_on_error=True,
@@ -1191,6 +1192,13 @@ def build_argparser() -> argparse.ArgumentParser:
         "--raw-judge-hf-prefix",
         default=RAW_JUDGE_HF_PREFIX,
         help="HF prefix for the judge-raw upload (fu rounds thread raw_completions/fu1_judge)",
+    )
+    # UPLOAD_PREFIX_EXEMPT: parent-default-identical seam — fu2 threads the
+    # overflow repo (#2287); parent/fu1 keep the canonical data repo.
+    ap.add_argument(
+        "--hf-repo",
+        default=DATA_REPO,
+        help="HF dataset repo for the judge-raw upload (fu2 threads the overflow repo)",
     )
     ap.add_argument("--sync", action="store_true", help="force the SYNC path (P0 pilot)")
     ap.add_argument("--force-batch", action="store_true", help="force the Batch path")

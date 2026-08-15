@@ -1,0 +1,809 @@
+{
+  "commit": "93ae52da",
+  "render_id": "0125598f5fd1426a",
+  "git_commit": "93ae52da",
+  "git_dirty": false,
+  "created": "2026-08-15T00:10:59Z",
+  "figsize": [
+    11.0,
+    4.4
+  ],
+  "points": [
+    {
+      "category": "Pre-image L14",
+      "Per-question trait-score change (points)": -6.6891666666666625,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Pre-image L19",
+      "Per-question trait-score change (points)": -1.8141666666666683,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Random L19",
+      "Per-question trait-score change (points)": -3.175,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.08766593553790827,
+      "Per-question trait-score change (points)": -11.666666666666671,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.01955889927934326,
+      "Per-question trait-score change (points)": -7.88333333333334,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.1147513343716424,
+      "Per-question trait-score change (points)": -1.0833333333333286,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.06315776929899644,
+      "Per-question trait-score change (points)": -16.883333333333326,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.12986324867595214,
+      "Per-question trait-score change (points)": -0.6833333333333229,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.1521991525237619,
+      "Per-question trait-score change (points)": -10.333333333333329,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.08356470463691296,
+      "Per-question trait-score change (points)": -6.98333333333332,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0915405776886252,
+      "Per-question trait-score change (points)": 0.4000000000000057,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.11900363754382531,
+      "Per-question trait-score change (points)": -6.3999999999999915,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.01587649987341852,
+      "Per-question trait-score change (points)": -24.04999999999999,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.04134463224557401,
+      "Per-question trait-score change (points)": -7.5166666666666515,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.1365647964315526,
+      "Per-question trait-score change (points)": -2.9166666666666714,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.04603683842581266,
+      "Per-question trait-score change (points)": -4.6000000000000085,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.10328371624666557,
+      "Per-question trait-score change (points)": -6.716666666666669,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.018107456375254044,
+      "Per-question trait-score change (points)": 4.75,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.0872836090288714,
+      "Per-question trait-score change (points)": -3.5333333333333456,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.017467131845067124,
+      "Per-question trait-score change (points)": -1.36666666666666,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.1395784780466639,
+      "Per-question trait-score change (points)": -5.933333333333323,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.10484197503762624,
+      "Per-question trait-score change (points)": -14.399999999999977,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.042132607719060744,
+      "Per-question trait-score change (points)": -5.98333333333332,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0825880768273197,
+      "Per-question trait-score change (points)": -3.6500000000000057,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.9534483098015578,
+      "Per-question trait-score change (points)": 4.366666666666674,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.150623367806369,
+      "Per-question trait-score change (points)": 0.15000000000000568,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.1257987588231033,
+      "Per-question trait-score change (points)": -16.133333333333333,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0890827190636039,
+      "Per-question trait-score change (points)": 0.13333333333333997,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.9022843865126297,
+      "Per-question trait-score change (points)": -4.333333333333329,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.9893507211926509,
+      "Per-question trait-score change (points)": -13.033333333333346,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.8540172050519133,
+      "Per-question trait-score change (points)": -2.500000000000014,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.8893726374616153,
+      "Per-question trait-score change (points)": 5.783333333333331,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0585756650375855,
+      "Per-question trait-score change (points)": 7.700000000000003,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0783238898905014,
+      "Per-question trait-score change (points)": -0.6833333333333371,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.1496031143789471,
+      "Per-question trait-score change (points)": -0.5000000000000142,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.9442641146042086,
+      "Per-question trait-score change (points)": 1.8333333333333428,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.958547105931158,
+      "Per-question trait-score change (points)": 4.933333333333323,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.9902578596082585,
+      "Per-question trait-score change (points)": 0.8166666666666629,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.9006308349069714,
+      "Per-question trait-score change (points)": -4.25,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.881574881707351,
+      "Per-question trait-score change (points)": -4.950000000000031,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.9922255763922988,
+      "Per-question trait-score change (points)": -2.7833333333333172,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.9126109916962829,
+      "Per-question trait-score change (points)": -3.999999999999986,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0543404782984034,
+      "Per-question trait-score change (points)": -5.183333333333337,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9798886140391458,
+      "Per-question trait-score change (points)": -9.46666666666664,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1064570227385078,
+      "Per-question trait-score change (points)": 1.4166666666666572,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.0640848326407197,
+      "Per-question trait-score change (points)": -1.7666666666666515,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.939957325242253,
+      "Per-question trait-score change (points)": -3.7166666666666686,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1063231364464645,
+      "Per-question trait-score change (points)": -13.383333333333326,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.0975245943989766,
+      "Per-question trait-score change (points)": -5.116666666666674,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.9639930812896558,
+      "Per-question trait-score change (points)": 3.7666666666666515,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.932264993257678,
+      "Per-question trait-score change (points)": -1.4666666666666686,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.058398561271992,
+      "Per-question trait-score change (points)": 1.666666666666643,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.8847207947549791,
+      "Per-question trait-score change (points)": -26.96666666666667,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.9039706247920347,
+      "Per-question trait-score change (points)": -3.48333333333332,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.8423559263203217,
+      "Per-question trait-score change (points)": 2.6666666666666714,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.0918158008006844,
+      "Per-question trait-score change (points)": 2.9166666666666856,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.05275227410945,
+      "Per-question trait-score change (points)": 0.11666666666667425,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.065652921160427,
+      "Per-question trait-score change (points)": 3.049999999999997,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.0898332899270295,
+      "Per-question trait-score change (points)": -5.86666666666666,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.9868530481722688,
+      "Per-question trait-score change (points)": -2.2666666666666515,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.021997182704926,
+      "Per-question trait-score change (points)": 1.2499999999999858,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.8847350394008504,
+      "Per-question trait-score change (points)": -0.950000000000017,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.8766496235315115,
+      "Per-question trait-score change (points)": -5.900000000000013,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "category": "Pre-image L14",
+      "y": 0.28166666666666273,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Random L14",
+      "y": 5.494999999999999,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "Pre-image \u2212 random\n(level @ 3.0)",
+      "y": -6.126666666666668,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.05388894777295092,
+      "y": 25.700000000000003,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": -0.009249214034197595,
+      "y": -0.4333333333333371,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.020875554073980424,
+      "y": 1.1333333333333258,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.08479963437312818,
+      "y": -11.049999999999997,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.04310986240018905,
+      "y": -1.8499999999999943,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.017145408210558655,
+      "y": -0.7666666666666657,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.018946291438532326,
+      "y": -1.2333333333333343,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": -0.0627359686199641,
+      "y": 0.8333333333333144,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": -0.1501382929382594,
+      "y": -3.25,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": -0.020250435445644033,
+      "y": -0.2333333333333485,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": -0.09133290469775066,
+      "y": -2.4000000000000057,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": -0.02927083400811642,
+      "y": -16.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.11308898344581317,
+      "y": 14.266666666666666,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": -0.08513936452309097,
+      "y": -0.38333333333333997,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": -0.1413431226594989,
+      "y": -0.7166666666666686,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": -0.06995715455296111,
+      "y": -4.3500000000000085,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": -0.06604999751466124,
+      "y": -0.15000000000000568,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.051813284712606406,
+      "y": 11.783333333333331,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.01825028874920906,
+      "y": -2.0166666666666657,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.09084742691405231,
+      "y": -3.250000000000014,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.052580332904764,
+      "y": -2.5333333333333385,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.9700437956608225,
+      "y": 10.116666666666674,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.100486523093131,
+      "y": 1.75,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8934313343704653,
+      "y": 8.833333333333329,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8472678634028353,
+      "y": 1.0666666666666629,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8688153154482053,
+      "y": 2.46666666666664,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.071154992190864,
+      "y": 22.299999999999997,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.987800713680444,
+      "y": 11.01666666666668,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8916069692907526,
+      "y": -0.23333333333333428,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.0003343280330763,
+      "y": -3.066666666666663,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8887398728682139,
+      "y": -0.4333333333333371,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.0628225200248755,
+      "y": -4.316666666666677,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.9827700081836899,
+      "y": 1.4833333333333343,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.9619267923508744,
+      "y": -4.266666666666666,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.9364838685273205,
+      "y": -0.5999999999999801,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.0416904297980443,
+      "y": 17.416666666666657,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.9557800353770849,
+      "y": -0.3999999999999915,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8680479741811523,
+      "y": 34.283333333333346,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8777618886785649,
+      "y": 5.583333333333329,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.1478072526558447,
+      "y": 9.433333333333323,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.130745821026434,
+      "y": 18.400000000000006,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.0639062828194397,
+      "y": -2.450000000000017,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.9250783876670463,
+      "y": -3.5833333333333286,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.1501364407512717,
+      "y": 6.166666666666671,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.0892002892690544,
+      "y": -5.166666666666671,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.0694048605308786,
+      "y": -4.449999999999989,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.9837956806860124,
+      "y": -4.166666666666671,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.9271172997904509,
+      "y": -4.300000000000011,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.8708451078891197,
+      "y": -5.866666666666674,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.1288327668940292,
+      "y": 0.61666666666666,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.9858484127467555,
+      "y": -5.633333333333326,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.9047562767344737,
+      "y": -13.34999999999998,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.9379061197282088,
+      "y": -6.399999999999999,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.025350262061407,
+      "y": 0.04999999999999716,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.8965672905405542,
+      "y": -4.8500000000000085,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.11411657090956,
+      "y": -28.766666666666666,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.0827262495472674,
+      "y": -6.416666666666671,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.0702281459043,
+      "y": -31.500000000000014,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.9782697727280332,
+      "y": -6.73333333333332,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.040738829024782,
+      "y": -14.13333333333334,
+      "_kind": "scatter",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 126,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Evil: dose change, coef 0.25 \u2192 3.0",
+        "ylabel": "Per-question trait-score change (points)",
+        "xticklabels": [
+          "Pre-image L14",
+          "Pre-image L19",
+          "Random L19"
+        ],
+        "yticklabels": [
+          "\u221240",
+          "\u221230",
+          "\u221220",
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40"
+        ]
+      },
+      {
+        "title_left": "Sycophancy: window 1.5 \u2192 3.0",
+        "xticklabels": [
+          "Pre-image L14",
+          "Random L14",
+          "Pre-image \u2212 random\n(level @ 3.0)"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

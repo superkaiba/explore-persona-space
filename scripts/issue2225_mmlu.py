@@ -423,10 +423,11 @@ def run_fan_out(args) -> None:
 
 # Parent-default-identical seam: parent #2225 call sites pass no prefix and must keep it.
 # UPLOAD_PREFIX_EXEMPT: parent-default-identical seam; fu1 threads its own via --hf-prefix
-def upload_mmlu(out_root: Path, hf_prefix: str = MMLU_HF_PREFIX) -> str:
+def upload_mmlu(out_root: Path, hf_prefix: str = MMLU_HF_PREFIX, hf_repo: str = DATA_REPO) -> str:
     """Upload the canonical + raw MMLU JSONs as ONE folder commit (P3).
     Follow-up rounds thread their OWN prefix (fu1: issue2225_ctxsteer/fu1_mmlu
-    — never the parent-clobbering default, #1452)."""
+    — never the parent-clobbering default, #1452) and, when routed off the
+    canonical data repo (fu2's #2287 overflow routing), their OWN ``hf_repo``."""
     from explore_persona_space.orchestrate.hub import _upload
 
     local = out_root / "mmlu"
@@ -437,7 +438,7 @@ def upload_mmlu(out_root: Path, hf_prefix: str = MMLU_HF_PREFIX) -> str:
         residue = local / transient
         if residue.exists():
             shutil.rmtree(residue)
-    url = _upload(local, DATA_REPO, "dataset", hf_prefix, raise_on_error=True)
+    url = _upload(local, hf_repo, "dataset", hf_prefix, raise_on_error=True)
     print(f"[mmlu] uploaded {local} -> {url}", flush=True)
     return url
 
@@ -473,6 +474,13 @@ def build_argparser() -> argparse.ArgumentParser:
         default=MMLU_HF_PREFIX,
         help="HF prefix for the MMLU upload (fu rounds thread issue2225_ctxsteer/fu1_mmlu)",
     )
+    # UPLOAD_PREFIX_EXEMPT: parent-default-identical seam — fu2 threads the
+    # overflow repo (#2287); parent/fu1 keep the canonical data repo.
+    ap.add_argument(
+        "--hf-repo",
+        default=DATA_REPO,
+        help="HF dataset repo for the MMLU upload (fu2 threads the overflow repo)",
+    )
     ap.add_argument("--import-check", action="store_true")
     return ap
 
@@ -501,7 +509,7 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     if args.upload:
         # UPLOAD_PREFIX_EXEMPT: parent-default-identical seam; fu1 passes an explicit --hf-prefix
-        upload_mmlu(Path(args.out_root), hf_prefix=args.hf_prefix)
+        upload_mmlu(Path(args.out_root), hf_prefix=args.hf_prefix, hf_repo=args.hf_repo)
         sys.stdout.flush()
         sys.exit(0)
 

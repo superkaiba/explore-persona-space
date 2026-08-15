@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
-"""Issue #2225 fu1_preimage_prevention — F5 analysis + figures driver.
+"""Issue #2225 fu rounds — F5 analysis + figures driver (fu1 default; ``--round fu2``).
+
+Round-parametrized at SOURCE (fu2 plan v13 §4.2 artifact-reuse (i) remedy
+shape): ``--round fu1`` (the default) is byte-identical to the committed fu1
+behavior; ``--round fu2`` runs the SAME instruments against the fu2 roots
+(eval root ``fu2_preimage_alltoken``, OVERFLOW-repo ``fu2_capture`` +
+``fu2_mmlu`` prefixes — #2287 routing), the fu2 registry (N/Q/RQ + the
+conditional RN), and the fu2 §3 contrast set (H1 dose / H2 vs parent G + A /
+H3 vs the fu1 banked context-position arms / H4 direction-specificity DoD),
+with parent-G rows read from the BANKED parent eval JSONs. The fu2 phase
+order drops ``narrow`` (no opinions cells — fu2 plan §2 divergence 1).
 
 Reuses the parent instrument (``scripts/issue2225_analysis.py``) BY IMPORT —
 ``paired_bootstrap_ci`` / ``matched_coherence_select`` / ``lattice_verdict`` /
@@ -84,11 +94,45 @@ import issue2225_analysis as pa  # noqa: E402  (parent instrument; light module 
 OVERFLOW_REPO = "superkaiba1/explore-persona-space-overflow"
 FU1_CAPTURE_HF_PREFIX = "issue2225_ctxsteer/analysis_tensors/fu1_capture"  # OVERFLOW repo
 FU1_MMLU_HF_PREFIX = "issue2225_ctxsteer/fu1_mmlu"  # canonical data repo
+FU2_CAPTURE_HF_PREFIX = "issue2225_ctxsteer/analysis_tensors/fu2_capture"  # OVERFLOW repo
+FU2_MMLU_HF_PREFIX = "issue2225_ctxsteer/fu2_mmlu"  # OVERFLOW repo (#2287 routing)
 PARENT_ANCHOR_TARGETS = ("base", "baseft_evil", "baseft_sycophancy", "baseft_hallucination")
 PROBE_TRAITS = ("evil", "sycophancy", "hallucination")
 FU_CONFIG_ORDER = ("J", "K", "L", "M", "RJ", "RK", "RL", "RM")
+FU2_CONFIG_ORDER = ("N", "Q", "RQ", "RN")
 H3_PAIRS = (("J", "RJ"), ("K", "RK"), ("L", "RL"), ("M", "RM"))
 KIND_OFFSET = {"h1_dose": 0, "h2_vs_C": 1, "h2_vs_A": 2, "h3_dose_dod": 3}
+# fu2 §3 contrast wiring: H3 = fu2 arm vs the SAME direction at fu1's
+# positions (question-paired per (layer, corpus)); H4 = direction-specificity
+# DoD (primary Q-RQ; cross-layer N-RQ disclosed).
+FU2_H3_FU1_PAIRS = (("N", "J"), ("N", "L"), ("Q", "K"), ("Q", "M"))
+FU2_H4_DOD_PAIRS = (("Q", "RQ"), ("N", "RQ"))
+# Conditional W2b read (plan v13 §4.3, TRIGGERED 2026-08-14): the matched random
+# control RN@L14 all-token materializes on sycophancy ONLY at the W2b window —
+# the N arm's selected coef (3.0) plus one lower neighbor (1.5). Files for the
+# other registry-grid coefs (0.25/0.75) will NEVER exist, so every W2b consumer
+# is file-presence-gated, and the dose window is FIXED at (1.5, 3.0) for BOTH
+# arms: matching N's window to RN's makes the two dose windows IDENTICAL —
+# unlike H4(a), whose window is [grid-min, selected coef] per arm.
+FU2_W2B_PRE, FU2_W2B_RND = "N", "RN"
+FU2_W2B_DATASET = "sycophancy"
+FU2_W2B_WINDOW = (1.5, 3.0)
+FU2_KIND_OFFSET = {
+    "h1_dose": 0,
+    "h2_vs_G": 1,
+    "h2_vs_A": 2,
+    "h3_vs_J": 3,
+    "h3_vs_K": 4,
+    "h3_vs_L": 5,
+    "h3_vs_M": 6,
+    "h4_dod": 7,
+    "h4_dod_xlayer": 8,
+    "h4_dod_w2b": 9,  # W2b matched-window DoD (conditional; sycophancy)
+    "h4_level_w2b": 10,  # W2b matched-dose LEVEL read (conditional; sycophancy)
+}
+# G's banked all-token dose curve vs RQ's near-exact effective-dose matches
+# (plan §3 H4(b), descriptive): fu2 coef -> parent G coef at matched α_eff.
+FU2_H4B_DOSE_MATCHES = ((0.25, 0.5), (0.75, 1.5), (1.5, 3.0))
 # Parent lattice labels -> fu labels (plan §3). Partition logic (incl. the
 # exhaustive three-way assert) is REUSED from pa.lattice_verdict.
 FU_LATTICE_LABEL = {
@@ -97,12 +141,94 @@ FU_LATTICE_LABEL = {
     "Statistical tie": "Statistical tie",
 }
 
+ROUND_EVAL_ROOTS = {
+    "fu1": "eval_results/issue_2225/fu1_preimage_prevention",
+    "fu2": "eval_results/issue_2225/fu2_preimage_alltoken",
+}
+ROUND_STAGING_MIRRORS = {
+    "fu1": "/mnt/eps-data/thomasjiralerspong/issue2225_fu1/hf_dl",
+    "fu2": "/mnt/eps-data/thomasjiralerspong/issue2225_fu2/hf_dl",
+}
+ROUND_FIG_DIRS = {"fu1": "figures/issue_2225/fu1", "fu2": "figures/issue_2225/fu2"}
+
+# Module-level round context (ONE round per process — a CLI driver; set by
+# main() from --round BEFORE any phase runs; default keeps fu1 byte-identical).
+_ROUND = "fu1"
+
+
+def _set_round(name: str) -> None:
+    global _ROUND
+    if name not in ROUND_EVAL_ROOTS:
+        raise ValueError(f"unknown round {name!r} (have {sorted(ROUND_EVAL_ROOTS)})")
+    _ROUND = name
+
+
+def _is_fu2() -> bool:
+    return _ROUND == "fu2"
+
 
 def _fu_train():
-    """Deferred sibling import: the fu1 cell/config registry (heavy-free)."""
+    """Deferred sibling import: the ROUND's cell/config registry (heavy-free)."""
+    if _is_fu2():
+        import issue2225_fu2_train as fu2
+
+        return fu2
     import issue2225_fu1_train as fu1
 
     return fu1
+
+
+def _round_specs():
+    """The round's wave-1 config specs."""
+    mod = _fu_train()
+    return mod.FU2_CONFIGS if _is_fu2() else mod.FU1_CONFIGS
+
+
+def _round_effective_grids(repilot_state_path):
+    mod = _fu_train()
+    fn = mod.effective_fu2_grids if _is_fu2() else mod.effective_fu1_grids
+    return fn(repilot_state_path)
+
+
+def _round_effective_cells(repilot_state_path):
+    mod = _fu_train()
+    fn = mod.effective_fu2_cells if _is_fu2() else mod.effective_fu1_cells
+    return fn(repilot_state_path)
+
+
+def _round_resolve(slug: str):
+    mod = _fu_train()
+    fn = mod.resolve_fu2_cell if _is_fu2() else mod.resolve_fu1_cell
+    return fn(slug)
+
+
+def _round_config_order() -> tuple[str, ...]:
+    return FU2_CONFIG_ORDER if _is_fu2() else FU_CONFIG_ORDER
+
+
+def _round_kind_offsets() -> dict[str, int]:
+    return FU2_KIND_OFFSET if _is_fu2() else KIND_OFFSET
+
+
+def _round_parent_comparators() -> tuple[str, ...]:
+    """Parent comparator configs in figures (fu1: C+A; fu2: G+A — plan §3 H2)."""
+    return ("G", "A") if _is_fu2() else ("C", "A")
+
+
+def _round_capture_prefix() -> str:
+    return FU2_CAPTURE_HF_PREFIX if _is_fu2() else FU1_CAPTURE_HF_PREFIX
+
+
+def _round_mmlu_leg() -> tuple[str, str]:
+    """(repo, prefix) for the round's staged MMLU JSONs (fu2: OVERFLOW, #2287)."""
+    if _is_fu2():
+        return (OVERFLOW_REPO, FU2_MMLU_HF_PREFIX)
+    return (pa.DATA_REPO, FU1_MMLU_HF_PREFIX)
+
+
+def _stem(name: str) -> str:
+    """Round-prefixed figure stem (fu1 stems byte-identical to the committed run)."""
+    return f"{_ROUND}_{name}"
 
 
 def _fud():
@@ -123,28 +249,38 @@ def _contrast_seed(kind: str, config: str, dataset: str) -> int:
     Base seed 2225 (plan §10) + the parent's 1000*dataset_index convention,
     extended with 100*config_index + a kind offset so distinct registered
     contrasts draw independent (but reproducible) streams. No collisions:
-    kind offsets < 100 <= 100*Δci < 1000 <= 1000*Δdi.
+    kind offsets < 100 <= 100*Δci < 1000 <= 1000*Δdi. Round-keyed: fu1 seeds
+    are byte-identical to the committed run; fu2 uses its own config order +
+    kind-offset table.
     """
     train = pa._train()
     di = train.DATASETS.index(dataset)
-    ci = FU_CONFIG_ORDER.index(config)
-    return pa.BOOTSTRAP_SEED + 1000 * di + 100 * ci + KIND_OFFSET[kind]
+    ci = _round_config_order().index(config)
+    return pa.BOOTSTRAP_SEED + 1000 * di + 100 * ci + _round_kind_offsets()[kind]
 
 
 # ── derived paths + arm filters ───────────────────────────────────────────────
 
 
 def _apply_derived_defaults(args) -> None:
-    """Resolve None-defaulted paths off --staging-mirror (one root knob)."""
+    """Resolve None-defaulted paths off --round + --staging-mirror (fu1
+    resolutions byte-identical to the committed argparse defaults)."""
+    if args.eval_root is None:
+        args.eval_root = ROUND_EVAL_ROOTS[_ROUND]
+    if args.staging_mirror is None:
+        args.staging_mirror = ROUND_STAGING_MIRRORS[_ROUND]
+    if args.fig_dir is None:
+        args.fig_dir = ROUND_FIG_DIRS[_ROUND]
     mirror = Path(args.staging_mirror)
     if args.capture_root is None:
-        args.capture_root = str(mirror / "fu1_capture_combined")
+        args.capture_root = str(mirror / f"{_ROUND}_capture_combined")
     if args.directions_dir is None:
         args.directions_dir = str(mirror / pa.DIRECTIONS_HF_PREFIX)
     if args.fu_directions_dir is None:
+        # BOTH rounds consume the fu1 d_pre bank (fu2 plan §4.1: reused, no build).
         args.fu_directions_dir = str(mirror / _fud().FU1_DIRECTIONS_HF_PREFIX)
     if args.mmlu_dir is None:
-        args.mmlu_dir = str(mirror / FU1_MMLU_HF_PREFIX)
+        args.mmlu_dir = str(mirror / _round_mmlu_leg()[1])
     if args.i778_staging is None:
         args.i778_staging = str(mirror / "issue778_v2")
     if args.work_root is None:
@@ -152,14 +288,14 @@ def _apply_derived_defaults(args) -> None:
 
 
 def _selected_specs(args):
-    fu1 = _fu_train()
+    specs = _round_specs()
     if not args.configs:
-        return list(fu1.FU1_CONFIGS)
-    known = {s.config for s in fu1.FU1_CONFIGS}
+        return list(specs)
+    known = {s.config for s in specs}
     unknown = sorted(set(args.configs) - known)
     if unknown:
-        raise ValueError(f"unknown fu1 config(s) {unknown} (have {sorted(known)})")
-    return [s for s in fu1.FU1_CONFIGS if s.config in args.configs]
+        raise ValueError(f"unknown {_ROUND} config(s) {unknown} (have {sorted(known)})")
+    return [s for s in specs if s.config in args.configs]
 
 
 def _selected_datasets(args, spec) -> list[str]:
@@ -178,7 +314,7 @@ def _subset_note(args) -> dict:
             f"SUBSET run (configs={args.configs or 'all'}, datasets={args.datasets or 'all'}) "
             "— output covers only the subset (smoke dispatch shape; production runs unfiltered)"
         )
-        print(f"[fu1-analysis] {note}", flush=True)
+        print(f"[{_ROUND}-analysis] {note}", flush=True)
         return {"subset_note": note}
     return {}
 
@@ -199,9 +335,9 @@ def stage_fu_inputs(args) -> None:
 
     mirror = Path(args.staging_mirror)
     legs = [
-        (OVERFLOW_REPO, FU1_CAPTURE_HF_PREFIX),
+        (OVERFLOW_REPO, _round_capture_prefix()),
         (pa.DATA_REPO, _fud().FU1_DIRECTIONS_HF_PREFIX),
-        (pa.DATA_REPO, FU1_MMLU_HF_PREFIX),
+        _round_mmlu_leg(),
         (pa.DATA_REPO, pa.DIRECTIONS_HF_PREFIX),
     ]
     legs += [(pa.DATA_REPO, f"{pa.CAPTURE_HF_PREFIX}/{t}") for t in PARENT_ANCHOR_TARGETS]
@@ -214,7 +350,7 @@ def stage_fu_inputs(args) -> None:
                 f"staging arithmetic violated: {resolved} absent after stage_hub_prefix "
                 "(dest_dir is a mirror root — hub.stage_hub_prefix contract)"
             )
-    print("[stage] fu1 inputs staged (fu capture source = OVERFLOW repo)", flush=True)
+    print(f"[stage] {_ROUND} inputs staged (fu capture source = OVERFLOW repo)", flush=True)
 
 
 def _symlink_into(root: Path, name: str, src: Path) -> None:
@@ -235,7 +371,7 @@ def ensure_combined_capture_root(args) -> Path:
     """
     root = Path(args.capture_root)
     mirror = Path(args.staging_mirror)
-    fu_src = mirror / FU1_CAPTURE_HF_PREFIX
+    fu_src = mirror / _round_capture_prefix()
     parent_src = mirror / pa.CAPTURE_HF_PREFIX
     if fu_src.is_dir():
         root.mkdir(parents=True, exist_ok=True)
@@ -261,18 +397,17 @@ def ensure_combined_capture_root(args) -> Path:
     missing_anchors = [t for t in PARENT_ANCHOR_TARGETS if t not in entries]
     if missing_anchors:
         raise FileNotFoundError(f"combined capture root missing parent anchors: {missing_anchors}")
-    fu1 = _fu_train()
-    expected = {c.slug for c in fu1.effective_fu1_cells(args.repilot_state)}
+    expected = {c.slug for c in _round_effective_cells(args.repilot_state)}
     missing = sorted(expected - entries)
     if missing:
         if not args.allow_partial_capture:
             raise FileNotFoundError(
-                f"combined capture root missing {len(missing)}/{len(expected)} fu1 cell "
-                f"captures (first: {missing[:4]}) — stage the full fu1_capture prefix or "
+                f"combined capture root missing {len(missing)}/{len(expected)} {_ROUND} cell "
+                f"captures (first: {missing[:4]}) — stage the full {_ROUND}_capture prefix or "
                 "pass --allow-partial-capture (smoke only)"
             )
         print(
-            f"[capture-root] PARTIAL: {len(missing)}/{len(expected)} fu1 captures absent "
+            f"[capture-root] PARTIAL: {len(missing)}/{len(expected)} {_ROUND} captures absent "
             "(--allow-partial-capture)",
             flush=True,
         )
@@ -302,41 +437,113 @@ def run_fu_mmlu(args) -> Path:
         for tag, row in data["per_target"].items()
     }
     pa._atomic_write_json(Path(out), data)
-    print(f"[fu1-mmlu] parent reference (base={base_acc:.4f}) folded -> {out}", flush=True)
+    print(f"[{_ROUND}-mmlu] parent reference (base={base_acc:.4f}) folded -> {out}", flush=True)
     return out
 
 
 # ── phase: selection ──────────────────────────────────────────────────────────
 
 
+def _selection_curve(eval_root: Path, mmlu: dict, config: str, dataset: str, trait, coefs) -> dict:
+    """Per-coefficient selection-curve rows for one (config, dataset) arm
+    (extracted from the main loop verbatim — value-identical outputs)."""
+    curve = {}
+    for coef in coefs:
+        tag = f"{config}__{dataset}__c{coef}"
+        trait_arm = pa._load_json(pa._arm_path(eval_root, "trait_scores", config, dataset, coef))
+        coh_arm = pa._load_json(pa._arm_path(eval_root, "coherence", config, dataset, coef))
+        tb = trait_arm["traits"][trait]
+        curve[str(coef)] = {
+            "trait_mean": tb["model_mean"],
+            "rate_gt50": tb["rate_gt50"],
+            "coherence_mean": pa._arm_coherence_mean(coh_arm),
+            "mmlu_acc": mmlu.get(tag, {}).get("mmlu_acc"),
+            "n_api_refusal": tb["accounting"]["n_api_refusal"],
+        }
+    return curve
+
+
+def _fu2_conditional_selection(args, grids, mmlu, selection) -> None:
+    """Fold the conditional fu2 arm(s) (RN — plan §4.3) into selection,
+    tolerating their PARTIAL grids.
+
+    Conditional cells materialize per (dataset, coef) only when their trigger
+    fires: RN_sycophancy (W2b) exists ONLY at the FU2_W2B_WINDOW coefs — the
+    other registry-grid coefs' files will NEVER land — so missing coef files
+    are SKIPPED here for the conditional specs alone (wave-1 configs keep the
+    main loop's fail-loud full-grid contract). A (config, dataset) with zero
+    landed coefs is skipped with a log line, so pre-harvest re-runs leave
+    selection.json byte-identical.
+    """
+    train = pa._train()
+    eval_root = Path(args.eval_root)
+    for spec in _fu_train().FU2_CONDITIONAL_CONFIGS:
+        for dataset in _selected_datasets(args, spec):
+            trait = train.STEERED_TRAIT[dataset]
+            landed = []
+            for coef in grids[spec.config]:
+                has_trait = pa._arm_path(
+                    eval_root, "trait_scores", spec.config, dataset, coef
+                ).exists()
+                has_coh = pa._arm_path(eval_root, "coherence", spec.config, dataset, coef).exists()
+                if has_trait and has_coh:
+                    landed.append(coef)
+                elif has_trait or has_coh:
+                    # Half-landed pair: one of the two eval files exists. Not
+                    # binding here (nothing downstream consumes the conditional
+                    # selected_coef), but never a silent drop — the binding
+                    # contrast's all-4-file gate raises on the same state
+                    # (code-review minor 2a, cefce522 round).
+                    print(
+                        f"[{_ROUND}-selection] conditional {spec.config}_{dataset} "
+                        f"c={coef}: HALF-landed pair (trait_scores={has_trait}, "
+                        f"coherence={has_coh}) — coef excluded from curve",
+                        flush=True,
+                    )
+            if not landed:
+                print(
+                    f"[{_ROUND}-selection] conditional {spec.config}_{dataset}: "
+                    "no landed cells — skipped",
+                    flush=True,
+                )
+                continue
+            curve = _selection_curve(eval_root, mmlu, spec.config, dataset, trait, landed)
+            selected = pa.matched_coherence_select(
+                {float(c): v["coherence_mean"] for c, v in curve.items()}
+            )
+            note = None if selected is not None else "NO coefficient reaches coherence >= 80"
+            selection[f"{spec.config}_{dataset}"] = {
+                "config": spec.config,
+                "dataset": dataset,
+                "steered_trait": trait,
+                "grid": [float(c) for c in landed],
+                "selected_coef": selected,
+                "curve": curve,
+                "conditional_partial_grid": (
+                    f"conditional arm (plan §4.3): curve covers ONLY the landed coefs "
+                    f"{[float(c) for c in landed]} of the registry grid "
+                    f"{[float(c) for c in grids[spec.config]]} — non-window coefs are "
+                    "never dispatched (no eval files by design); a half-landed "
+                    "window coef is logged and excluded, and the binding contrast's "
+                    "all-4-file gate raises on it"
+                ),
+                **({"note": note} if note else {}),
+            }
+
+
 def run_fu_selection(args) -> Path:
-    fu1 = _fu_train()
     train = pa._train()
     eval_root = Path(args.eval_root)
     mmlu_path = eval_root / "analysis" / "mmlu.json"
     mmlu = json.load(open(mmlu_path))["per_target"] if mmlu_path.exists() else {}
-    grids = fu1.effective_fu1_grids(args.repilot_state)
+    grids = _round_effective_grids(args.repilot_state)
     selection: dict[str, dict] = {}
     for spec in _selected_specs(args):
         for dataset in _selected_datasets(args, spec):
             trait = train.STEERED_TRAIT[dataset]
-            curve = {}
-            for coef in grids[spec.config]:
-                tag = f"{spec.config}__{dataset}__c{coef}"
-                trait_arm = pa._load_json(
-                    pa._arm_path(eval_root, "trait_scores", spec.config, dataset, coef)
-                )
-                coh_arm = pa._load_json(
-                    pa._arm_path(eval_root, "coherence", spec.config, dataset, coef)
-                )
-                tb = trait_arm["traits"][trait]
-                curve[str(coef)] = {
-                    "trait_mean": tb["model_mean"],
-                    "rate_gt50": tb["rate_gt50"],
-                    "coherence_mean": pa._arm_coherence_mean(coh_arm),
-                    "mmlu_acc": mmlu.get(tag, {}).get("mmlu_acc"),
-                    "n_api_refusal": tb["accounting"]["n_api_refusal"],
-                }
+            curve = _selection_curve(
+                eval_root, mmlu, spec.config, dataset, trait, grids[spec.config]
+            )
             selected = pa.matched_coherence_select(
                 {float(c): v["coherence_mean"] for c, v in curve.items()}
             )
@@ -350,20 +557,27 @@ def run_fu_selection(args) -> Path:
                 "curve": curve,
                 **({"note": note} if note else {}),
             }
+    if _is_fu2() and not args.configs:
+        # Conditional RN (plan §4.3): fold in LANDED conditional cells only —
+        # subset (--configs) smoke runs skip the conditional arm entirely.
+        _fu2_conditional_selection(args, grids, mmlu, selection)
     out = eval_root / "analysis" / "selection.json"
     pa._atomic_write_json(
         out,
         {
             "rule": "largest grid coefficient with mean coherence >= 80 "
             "(paper App. J.2, parent matched_coherence_select), applied identically "
-            "to every fu1 arm",
+            f"to every {_ROUND} arm",
             "coherence_threshold": pa.COHERENCE_THRESHOLD,
             "selection": selection,
             **_subset_note(args),
         },
     )
     n_null = sum(1 for v in selection.values() if v["selected_coef"] is None)
-    print(f"[fu1-selection] {len(selection)} arms; {n_null} without selection -> {out}", flush=True)
+    print(
+        f"[{_ROUND}-selection] {len(selection)} arms; {n_null} without selection -> {out}",
+        flush=True,
+    )
     return out
 
 
@@ -422,16 +636,22 @@ def _paired_contrast(qx: dict, qy: dict, *, seed: int, n_boot: int, inherited_fn
     return out
 
 
+def run_contrasts(args) -> Path:
+    """Round dispatch: the fu1 registered battery, or the fu2 §3 battery."""
+    if _is_fu2():
+        return run_fu2_contrasts(args)
+    return run_fu_contrasts(args)
+
+
 def run_fu_contrasts(args) -> Path:
     import numpy as np
 
-    fu1 = _fu_train()
     train = pa._train()
     fu_root = Path(args.eval_root)
     parent_root = Path(args.parent_eval_root)
     sel_fu = json.load(open(fu_root / "analysis" / "selection.json"))["selection"]
     sel_parent = json.load(open(parent_root / "analysis" / "selection.json"))["selection"]
-    grids = fu1.effective_fu1_grids(args.repilot_state)
+    grids = _round_effective_grids(args.repilot_state)
     n_boot = args.n_boot
     not_computable: list[str] = []
 
@@ -616,6 +836,419 @@ def run_fu_contrasts(args) -> Path:
     return out
 
 
+def fu2_w2b_contrasts(fu_root: Path, n_boot: int, not_computable: list[str]) -> dict[str, dict]:
+    """The conditional H4(c) W2b direction-specificity reads (plan v13 §4.3).
+
+    Both reads are gated on the RN sycophancy W2b-window eval files existing
+    (the cells materialize only after the W2b trigger fires): when any is
+    absent, one log line + both keys recorded in ``not_computable`` and an
+    empty dict returned — an F5 re-run BEFORE the W2b harvest exits 0.
+
+    (1) key ``N_vs_RN_sycophancy`` (kind ``h4_dod_w2b``): MATCHED-WINDOW dose
+        DoD — dose_arm = score(@3.0) − score(@1.5) per question;
+        Δ = dose(N) − dose(RN), question-paired via the same
+        ``_paired_contrast`` + inherited-fn machinery as H4(a). The window is
+        [1.5, 3.0] for BOTH arms because RN exists ONLY at the W2b "selected
+        coef ± one neighbor" cells; matching N's window to it makes the two
+        dose windows IDENTICAL — unlike H4(a)'s per-arm [grid-min, selected]
+        window (see FU2_W2B_WINDOW).
+    (2) key ``N_vs_RN_sycophancy_level`` (kind ``h4_level_w2b``): secondary
+        matched-dose LEVEL read — trait mean N@3.0 vs RN@3.0, same paired
+        machinery, no dose subtraction (the direct "does random do the same
+        at the same dose" read; no selection-inherited flavour — the dose is
+        fixed by the window, not selected).
+    """
+    import numpy as np
+
+    train = pa._train()
+    pre_cfg, rnd_cfg, dataset = FU2_W2B_PRE, FU2_W2B_RND, FU2_W2B_DATASET
+    trait = train.STEERED_TRAIT[dataset]
+    c_lo, c_hi = (float(c) for c in FU2_W2B_WINDOW)
+    key = f"{pre_cfg}_vs_{rnd_cfg}_{dataset}"
+    missing = [
+        p
+        for c in (c_lo, c_hi)
+        for p in (
+            pa._arm_path(fu_root, "trait_scores", rnd_cfg, dataset, c),
+            pa._arm_path(fu_root, "coherence", rnd_cfg, dataset, c),
+        )
+        if not p.exists()
+    ]
+    if missing:
+        if len(missing) < 4:
+            # Pre-harvest is exactly 0-of-4 present; 1-3 missing means the W2b
+            # harvest HALF-landed (e.g. one cell's coherence upload failed) —
+            # fail loud rather than mislabel it "not yet landed" (code-review
+            # minor 1, cefce522 round).
+            raise RuntimeError(
+                f"[fu2-contrasts] W2b RN window PARTIALLY landed — {len(missing)}/4 "
+                f"window files missing: {', '.join(p.name for p in missing)}; "
+                "a half-landed harvest is an upload/harvest defect, not a "
+                "pre-harvest state"
+            )
+        print(
+            f"[fu2-contrasts] W2b cells not yet landed ({len(missing)} files, "
+            f"first: {missing[0].name}) — h4(c) skipped",
+            flush=True,
+        )
+        not_computable.append(f"h4_dod_w2b:{key} (W2b cells not yet landed)")
+        not_computable.append(f"h4_level_w2b:{key}_level (W2b cells not yet landed)")
+        return {}
+
+    def _qq(config, coef):
+        arm = pa._load_json(pa._arm_path(fu_root, "trait_scores", config, dataset, coef))
+        return pa._per_question_means(arm["traits"][trait])
+
+    q_pre_hi, q_pre_lo = _qq(pre_cfg, c_hi), _qq(pre_cfg, c_lo)
+    q_rnd_hi, q_rnd_lo = _qq(rnd_cfg, c_hi), _qq(rnd_cfg, c_lo)
+    dose_pre = {q: q_pre_hi[q] - q_pre_lo[q] for q in q_pre_hi}
+    dose_rnd = {q: q_rnd_hi[q] - q_rnd_lo[q] for q in q_rnd_hi}
+    n_q = len(dose_pre)
+    window = [c_lo, c_hi]
+
+    def _window_dose_fn(config):
+        # H4(a)'s `_dose_inherited_fn` shape, restricted to the SHARED window
+        # (a full-grid curve would demand RN files that never exist).
+        arm = pa._arm_curve(fu_root, config, dataset, window, trait, n_q)
+        arm_lo = pa._arm_curve(fu_root, config, dataset, [c_lo], trait, n_q)
+
+        def fn(idx):
+            return pa.selection_inherited_delta_draws(arm, arm_lo, idx)
+
+        return fn
+
+    fn_pre = _window_dose_fn(pre_cfg)
+    fn_rnd = _window_dose_fn(rnd_cfg)
+
+    def _w2b_dod_fn(idx):
+        d_pre, _ = fn_pre(idx)
+        d_rnd, _ = fn_rnd(idx)
+        dd = d_pre - d_rnd  # NaN propagates: either side without a coherent coef
+        return dd, int(np.isnan(dd).sum())
+
+    return {
+        key: _paired_contrast(
+            dose_pre,
+            dose_rnd,
+            seed=_contrast_seed("h4_dod_w2b", pre_cfg, dataset),
+            n_boot=n_boot,
+            inherited_fn=_w2b_dod_fn,
+        )
+        | {"window": window},
+        f"{key}_level": _paired_contrast(
+            q_pre_hi,
+            q_rnd_hi,
+            seed=_contrast_seed("h4_level_w2b", pre_cfg, dataset),
+            n_boot=n_boot,
+        )
+        | {"matched_coef": c_hi},
+    }
+
+
+def run_fu2_contrasts(args) -> Path:
+    """The fu2 §3 registered battery (plan v13; runs under ``--round fu2``).
+
+    H1  Δdose per fu2 arm (N/Q x 3 corpora + RQ evil), fu1 definition verbatim.
+    H2  primary: Δ_G = score(Q_evil @ its op) - score(parent G_evil @ parent
+        op) — the round's headline contrast; cross-layer secondary N_evil vs
+        G_evil (disclosed); parent side from BANKED parent per-question rows.
+        Secondary vs parent A: fu1's ``h2_secondary_vs_parent_A`` machinery
+        verbatim (PRE configs x 3 corpora).
+    H3  position effect at matched direction: fu2 arm vs the SAME d_pre at
+        fu1's positions — (N,J), (N,L) at L14; (Q,K), (Q,M) at L19 — per
+        corpus, question-paired; fu1 side from BANKED fu1 rows @ fu1 op points.
+    H4  direction-specificity: (a) DoD Δdose(Q)-Δdose(RQ) on evil (primary;
+        N-RQ cross-layer disclosed); (b) descriptive matched-effective-dose
+        table RQ vs G's banked curve (no CI — plan §3 H4(b)); (c) conditional
+        W2b matched-window reads on sycophancy, N vs RN (plan §4.3 —
+        file-presence gated, see ``fu2_w2b_contrasts``).
+    One frozen CI convention (n-boot resamples, seed scheme in the output);
+    the selection-inherited flavour rides H1/H2/H4(a) as sensitivity.
+    """
+    import numpy as np
+
+    train = pa._train()
+    fu_root = Path(args.eval_root)
+    parent_root = Path(args.parent_eval_root)
+    fu1_root = Path(args.fu1_eval_root)
+    sel_fu = json.load(open(fu_root / "analysis" / "selection.json"))["selection"]
+    sel_parent = json.load(open(parent_root / "analysis" / "selection.json"))["selection"]
+    sel_fu1 = json.load(open(fu1_root / "analysis" / "selection.json"))["selection"]
+    grids = _round_effective_grids(args.repilot_state)
+    n_boot = args.n_boot
+    not_computable: list[str] = []
+
+    def _q(root, config, dataset, coef, trait):
+        arm = pa._load_json(pa._arm_path(root, "trait_scores", config, dataset, coef))
+        return pa._per_question_means(arm["traits"][trait])
+
+    def _dose_inherited_fn(config, dataset, trait, n_q):
+        grid = [float(c) for c in grids[config]]
+        c_min = min(grid)
+        arm = pa._arm_curve(fu_root, config, dataset, grid, trait, n_q)
+        arm_min = pa._arm_curve(fu_root, config, dataset, [c_min], trait, n_q)
+
+        def fn(idx):
+            return pa.selection_inherited_delta_draws(arm, arm_min, idx)
+
+        return fn
+
+    h1: dict[str, dict] = {}
+    h2g: dict[str, dict] = {}
+    h2a: dict[str, dict] = {}
+    h3: dict[str, dict] = {}
+    h4: dict[str, dict] = {}
+    specs = _selected_specs(args)
+    for spec in specs:
+        for dataset in _selected_datasets(args, spec):
+            trait = train.STEERED_TRAIT[dataset]
+            key = f"{spec.config}_{dataset}"
+            entry = sel_fu.get(key)
+            if entry is None:
+                raise KeyError(f"{key} absent from fu2 selection.json — re-run --phase selection")
+            sel_c = entry["selected_coef"]
+            grid = [float(c) for c in grids[spec.config]]
+            c_min = min(grid)
+            # H1 Δdose (every config, incl. the random arm)
+            if sel_c is None:
+                h1[key] = {
+                    "verdict": "not-computable (no coherent coefficient)",
+                    "selected_coef": None,
+                }
+                not_computable.append(f"h1_dose:{key}")
+            else:
+                qx = _q(fu_root, spec.config, dataset, sel_c, trait)
+                qy = _q(fu_root, spec.config, dataset, c_min, trait)
+                h1[key] = _paired_contrast(
+                    qx,
+                    qy,
+                    seed=_contrast_seed("h1_dose", spec.config, dataset),
+                    n_boot=n_boot,
+                    inherited_fn=_dose_inherited_fn(spec.config, dataset, trait, len(qx)),
+                ) | {
+                    "selected_coef": sel_c,
+                    "smallest_coef": c_min,
+                    "degenerate_zero_dose": bool(sel_c == c_min),
+                }
+            if spec.variant != "PRE":
+                continue
+            # H2 vs parent G (evil only: Q primary, N cross-layer secondary) +
+            # secondary vs parent A (all corpora) — fu1's H2 machinery shape.
+            h2_targets = [("A", "h2_vs_A", h2a)]
+            if dataset == "evil":
+                h2_targets.insert(0, ("G", "h2_vs_G", h2g))
+            for ycfg, kind, bucket in h2_targets:
+                p_entry = sel_parent.get(f"{ycfg}_{dataset}")
+                if p_entry is None:
+                    raise KeyError(f"parent selection missing {ycfg}_{dataset}")
+                sel_y = p_entry["selected_coef"]
+                if sel_c is None or sel_y is None:
+                    bucket[key] = {
+                        "verdict": "not-computable (an arm has no coherent coefficient)",
+                        "selected": {spec.config: sel_c, ycfg: sel_y},
+                    }
+                    not_computable.append(f"{kind}:{key}")
+                    continue
+                qx = _q(fu_root, spec.config, dataset, sel_c, trait)
+                qy = _q(parent_root, ycfg, dataset, sel_y, trait)
+                n_q = len(qx)
+                arm_x = pa._arm_curve(fu_root, spec.config, dataset, grid, trait, n_q)
+                arm_y = pa._arm_curve(parent_root, ycfg, dataset, p_entry["grid"], trait, n_q)
+
+                def _h2_fn(idx, _ax=arm_x, _ay=arm_y):
+                    return pa.selection_inherited_delta_draws(_ax, _ay, idx)
+
+                bucket[key] = _paired_contrast(
+                    qx,
+                    qy,
+                    seed=_contrast_seed(kind, spec.config, dataset),
+                    n_boot=n_boot,
+                    inherited_fn=_h2_fn,
+                ) | {"selected": {spec.config: sel_c, ycfg: sel_y}}
+            # H3 position effect vs the fu1 banked arms (matched direction/layer)
+            for fu2_cfg, fu1_cfg in FU2_H3_FU1_PAIRS:
+                if fu2_cfg != spec.config:
+                    continue
+                kind = f"h3_vs_{fu1_cfg}"
+                key3 = f"{spec.config}_vs_{fu1_cfg}_{dataset}"
+                fu1_entry = sel_fu1.get(f"{fu1_cfg}_{dataset}")
+                if fu1_entry is None:
+                    raise KeyError(f"fu1 selection missing {fu1_cfg}_{dataset} ({fu1_root})")
+                sel_y = fu1_entry["selected_coef"]
+                if sel_c is None or sel_y is None:
+                    h3[key3] = {
+                        "verdict": "not-computable (an arm has no coherent coefficient)",
+                        "selected": {spec.config: sel_c, fu1_cfg: sel_y},
+                    }
+                    not_computable.append(f"{kind}:{key3}")
+                    continue
+                qx = _q(fu_root, spec.config, dataset, sel_c, trait)
+                qy = _q(fu1_root, fu1_cfg, dataset, sel_y, trait)
+                h3[key3] = _paired_contrast(
+                    qx,
+                    qy,
+                    seed=_contrast_seed(kind, spec.config, dataset),
+                    n_boot=n_boot,
+                ) | {"selected": {spec.config: sel_c, fu1_cfg: sel_y}}
+    # H4(a) direction-specificity DoD (evil; Q-RQ primary, N-RQ cross-layer)
+    selected_cfgs = {s.config for s in specs}
+    for pre_cfg, rnd_cfg in FU2_H4_DOD_PAIRS:
+        if pre_cfg not in selected_cfgs or rnd_cfg not in selected_cfgs:
+            continue
+        if args.datasets and "evil" not in args.datasets:
+            continue
+        dataset, trait = "evil", "evil"
+        kind = "h4_dod" if pre_cfg == "Q" else "h4_dod_xlayer"
+        key = f"{pre_cfg}_vs_{rnd_cfg}_{dataset}"
+        sel_pre = sel_fu[f"{pre_cfg}_{dataset}"]["selected_coef"]
+        sel_rnd = sel_fu[f"{rnd_cfg}_{dataset}"]["selected_coef"]
+        if sel_pre is None or sel_rnd is None:
+            h4[key] = {
+                "verdict": "not-computable (an arm has no coherent coefficient)",
+                "selected": {pre_cfg: sel_pre, rnd_cfg: sel_rnd},
+            }
+            not_computable.append(f"{kind}:{key}")
+            continue
+        c_min_pre = min(float(c) for c in grids[pre_cfg])
+        c_min_rnd = min(float(c) for c in grids[rnd_cfg])
+        q_pre_x = _q(fu_root, pre_cfg, dataset, sel_pre, trait)
+        q_pre_y = _q(fu_root, pre_cfg, dataset, c_min_pre, trait)
+        q_rnd_x = _q(fu_root, rnd_cfg, dataset, sel_rnd, trait)
+        q_rnd_y = _q(fu_root, rnd_cfg, dataset, c_min_rnd, trait)
+        dose_pre = {q: q_pre_x[q] - q_pre_y[q] for q in q_pre_x}
+        dose_rnd = {q: q_rnd_x[q] - q_rnd_y[q] for q in q_rnd_x}
+        n_q = len(dose_pre)
+        fn_pre = _dose_inherited_fn(pre_cfg, dataset, trait, n_q)
+        fn_rnd = _dose_inherited_fn(rnd_cfg, dataset, trait, n_q)
+
+        def _h4_fn(idx, _fp=fn_pre, _fr=fn_rnd):
+            d_pre, _ = _fp(idx)
+            d_rnd, _ = _fr(idx)
+            dd = d_pre - d_rnd  # NaN propagates: either side without a coherent coef
+            return dd, int(np.isnan(dd).sum())
+
+        h4[key] = _paired_contrast(
+            dose_pre,
+            dose_rnd,
+            seed=_contrast_seed(kind, pre_cfg, dataset),
+            n_boot=n_boot,
+            inherited_fn=_h4_fn,
+        ) | {"selected": {pre_cfg: sel_pre, rnd_cfg: sel_rnd}}
+    # H4(c) conditional W2b matched-window reads (plan §4.3, TRIGGERED):
+    # sycophancy N vs RN — file-presence gated inside fu2_w2b_contrasts (RN is
+    # a CONDITIONAL config, never in the wave-1 specs, so gate on the PRE side
+    # + the dataset subset only).
+    h4c: dict[str, dict] = {}
+    if FU2_W2B_PRE in selected_cfgs and (not args.datasets or FU2_W2B_DATASET in args.datasets):
+        h4c = fu2_w2b_contrasts(fu_root, n_boot, not_computable)
+    # H4(b) descriptive matched-effective-dose read: RQ vs G's banked curve
+    # (plan §3 H4(b): α_RQ = c·ρ_19 vs α_G = coef·‖E2[19]‖ — no CI, no verdict).
+    h4b: dict = {}
+    rq_entry = sel_fu.get("RQ_evil")
+    g_entry = sel_parent.get("G_evil")
+    if rq_entry is not None and g_entry is not None:
+        rho_19 = 96.727321  # fu1 rho.json, plan-pinned (S0-verified)
+        e2_norm_19 = 49.57  # parent ‖E2[19]‖ (plan §4.3 grounding)
+        rows = []
+        for rq_c, g_c in FU2_H4B_DOSE_MATCHES:
+            rq_row = rq_entry["curve"].get(str(rq_c))
+            g_row = g_entry["curve"].get(str(g_c))
+            if rq_row is None or g_row is None:
+                continue
+            rows.append(
+                {
+                    "rq_coef": rq_c,
+                    "g_coef": g_c,
+                    "alpha_eff_rq": round(rq_c * rho_19, 2),
+                    "alpha_eff_g": round(g_c * e2_norm_19, 2),
+                    "rq_trait_mean": rq_row["trait_mean"],
+                    "g_trait_mean": g_row["trait_mean"],
+                    "rq_coherence_mean": rq_row["coherence_mean"],
+                    "g_coherence_mean": g_row["coherence_mean"],
+                }
+            )
+        h4b = {
+            "note": "DESCRIPTIVE matched-effective-dose comparison (plan §3 H4(b)): "
+            "RQ (random all-token @L19, α = c·ρ_19, ρ_19 = 96.727321) vs parent G's "
+            "banked curve (α = coef·‖E2[19]‖, ‖E2[19]‖ = 49.57); no CI, no verdict",
+            "rows": rows,
+        }
+    out = fu_root / "analysis" / "contrasts.json"
+    pa._atomic_write_json(
+        out,
+        {
+            "round": "fu2",
+            "n_boot": n_boot,
+            "seed_base": pa.BOOTSTRAP_SEED,
+            "seed_scheme": "2225 + 1000*dataset_index + 100*config_index (fu2 order "
+            f"{FU2_CONFIG_ORDER}) + kind offset {FU2_KIND_OFFSET} (frozen + "
+            "selection-inherited share one idx stream per contrast)",
+            "lattice": "Effect-negative <=> Δ<0 AND 95% CI wholly below 0; "
+            "Effect-positive <=> Δ>0 AND CI wholly above 0; Statistical tie <=> "
+            "otherwise (fu relabeling of the parent's asserted three-way partition)",
+            "h1_dose": {
+                "delta_definition": "score(matched-coherence selected coef) - score(smallest "
+                "grid coef), question-paired within arm; degenerate_zero_dose marks arms "
+                "whose selected coef IS the smallest (Δ identically 0)",
+                "inherited_caveat": "the smallest-coef side is ALSO coherence-gated inside "
+                "each resample under the reused parent machinery (sensitivity-only deviation "
+                "from the frozen H1 definition)",
+                "per_arm": h1,
+            },
+            "h2_vs_parent_G": {
+                "delta_definition": "score(fu2 arm @ its op point) - score(parent G_evil @ "
+                "parent op point), question-paired; parent side from BANKED parent "
+                "per-question rows. Q_evil = the round's HEADLINE contrast; N_evil = "
+                "cross-layer secondary (G is block-19; disclosed). Effect-negative = the "
+                "map's pre-image beats the parent's extracted context direction at the "
+                "all-token position",
+                "per_arm": h2g,
+            },
+            "h2_secondary_vs_parent_A": {
+                "delta_definition": "same machinery with parent A (paper method) as the "
+                "reference side (secondary; all 3 corpora)",
+                "per_arm": h2a,
+            },
+            "h3_vs_fu1_positions": {
+                "delta_definition": "score(fu2 arm @ its op) - score(the SAME d_pre at "
+                "fu1's positions @ fu1 op), question-paired per (layer, corpus): N-J/N-L "
+                "(L14), Q-K/Q-M (L19). fu1 side from BANKED fu1 per-question rows. "
+                "Effect-negative = all-token position prevents where context positions "
+                "did not",
+                "per_pair": h3,
+            },
+            "h4_direction_specificity": {
+                "delta_definition": "(a) DoD Δdose(pre-image) - Δdose(RQ), evil, "
+                "question-paired (Q-RQ primary; N-RQ cross-layer, EXPLORATORY/disclosed)",
+                "per_pair": h4,
+                "matched_effective_dose_descriptive": h4b,
+                "w2b_conditional": {
+                    "delta_definition": "(c) W2b MATCHED-WINDOW direction-specificity on "
+                    "sycophancy (plan §4.3, TRIGGERED): DoD Δdose(N) - Δdose(RN) with "
+                    "dose = score(@3.0) - score(@1.5) per arm, question-paired — the "
+                    "window is [1.5, 3.0] for BOTH arms (RN exists only at the W2b "
+                    "selected-coef ± one-neighbor cells, so matching N's window makes "
+                    "the dose windows identical; unlike H4(a)'s [grid-min, selected] "
+                    "window) — plus the secondary matched-dose LEVEL read N@3.0 vs "
+                    "RN@3.0 (no dose subtraction). File-presence gated: cells not yet "
+                    "landed -> both keys in not_computable",
+                    "per_pair": h4c,
+                },
+            },
+            "not_computable": not_computable,
+            "single_seed_caveat": "per-arm verdicts are SINGLE-TRAINING-SEED claims (seed 0; "
+            "the CI carries zero training-draw variance)",
+            **_subset_note(args),
+        },
+    )
+    print(
+        f"[fu2-contrasts] h1={len(h1)} h2G={len(h2g)} h2A={len(h2a)} h3={len(h3)} "
+        f"h4={len(h4)} h4c={len(h4c)} not_computable={len(not_computable)} -> {out}",
+        flush=True,
+    )
+    return out
+
+
 # ── phase: judge accounting fold ──────────────────────────────────────────────
 
 
@@ -691,7 +1324,7 @@ def run_fu_judge(args) -> Path:
         },
     )
     print(
-        f"[fu1-judge] {len(per_arm)} arms; {len(below)} below parent floor "
+        f"[{_ROUND}-judge] {len(per_arm)} arms; {len(below)} below parent floor "
         f"({parent_floor:.4f}) -> {out}",
         flush=True,
     )
@@ -705,11 +1338,10 @@ def run_fu_probe(args) -> Path:
     combined = ensure_combined_capture_root(args)
     args.capture_root = str(combined)
     out = pa.run_probe(args)
-    fu1 = _fu_train()
     data = json.load(open(out))
     n_annot = 0
     for r in data["shifts"].values():
-        cell = fu1.resolve_fu1_cell(r["tag"])
+        cell = _round_resolve(r["tag"])
         if cell is None:
             continue
         r["fu_l1_idx"] = cell.l1_idx
@@ -718,10 +1350,10 @@ def run_fu_probe(args) -> Path:
         n_annot += 1
     data["fu_annotation"] = (
         "fu_l1_idx / fu_shift_l1 = the fu config's OWN steered layer (14 or 19, per the "
-        "fu1 registry); the parent l1_layer_idx field remains the parent trait L1"
+        f"{_ROUND} registry); the parent l1_layer_idx field remains the parent trait L1"
     )
     pa._atomic_write_json(Path(out), data)
-    print(f"[fu1-probe] {n_annot} fu tags layer-annotated -> {out}", flush=True)
+    print(f"[{_ROUND}-probe] {n_annot} fu tags layer-annotated -> {out}", flush=True)
     return out
 
 
@@ -825,7 +1457,7 @@ def run_dpre_projection(args, capture_root: Path) -> Path:
             "shifts": shifts,
         },
     )
-    print(f"[fu1-dpre] {len(shifts)} unit shifts -> {out}", flush=True)
+    print(f"[{_ROUND}-dpre] {len(shifts)} unit shifts -> {out}", flush=True)
     return out
 
 
@@ -840,6 +1472,11 @@ def run_fu_projection(args) -> Path:
 
 
 def run_fu_narrow(args) -> Path:
+    if _is_fu2():
+        raise SystemExit(
+            "[fu2] --phase narrow is fu1-only: the fu2 round has NO opinions cells "
+            "(plan v13 §2 divergence 1)"
+        )
     out = pa.run_narrow(args)  # fu opinions cells -> analysis/narrow_retention.json
     data = json.load(open(out))
     parent = pa._load_json(Path(args.parent_eval_root) / "analysis" / "narrow_retention.json")
@@ -863,7 +1500,13 @@ FU_CONFIG_LABEL = {
     "RK": "Random L19, context tokens",
     "RL": "Random L14, context-end",
     "RM": "Random L19, context-end",
+    # fu2 configs (all-token position; plan v13 §5 plain-English names)
+    "N": "Pre-image L14, all tokens",
+    "Q": "Pre-image L19, all tokens",
+    "RQ": "Random L19, all tokens",
+    "RN": "Random L14, all tokens",
     "C": "Parent context extract+steer",
+    "G": "Parent context extract, all tokens",
     "A": "Parent paper method",
     "baseline": "Unsteered finetune",
     "base": "Base model",
@@ -879,8 +1522,15 @@ DATASET_LABEL = {
 def _fig_colors():
     from explore_persona_space.analysis.paper_plots import paper_palette
 
-    pal = paper_palette(12)
-    keys = list(FU_CONFIG_ORDER) + ["C", "A", "baseline", "base"]
+    keys = (
+        list(_round_config_order())
+        + list(_round_parent_comparators())
+        + [
+            "baseline",
+            "base",
+        ]
+    )
+    pal = paper_palette(max(12, len(keys)))
     return dict(zip(keys, pal))
 
 
@@ -913,7 +1563,7 @@ def fig_hero(args) -> dict:
             (1, "coherence_mean", "Coherence (0-100)"),
         ):
             ax = axes[row, j]
-            for cfg in FU_CONFIG_ORDER:
+            for cfg in _round_config_order():
                 entry = sel_fu.get(f"{cfg}_{ds}")
                 if entry is None:
                     continue
@@ -926,9 +1576,11 @@ def fig_hero(args) -> dict:
                     marker="o",
                     ms=3,
                     color=colors[cfg],
-                    label=FU_CONFIG_LABEL[cfg]
-                    if (row == 0 and j == 0) or (cfg.startswith("R") and row == 0 and ds == "evil")
-                    else None,
+                    # Label every artist: the cross-axes dedupe pass below keeps
+                    # one handle per label, and a conditional keyed on ds=="evil"
+                    # drops any config absent there (RN, sycophancy-only — the
+                    # W2b conditional arm rendered legend-less).
+                    label=FU_CONFIG_LABEL[cfg],
                 )
                 if entry["selected_coef"] is not None:
                     ci = (
@@ -938,7 +1590,7 @@ def fig_hero(args) -> dict:
                     )
                     if ci is not None:
                         ax.plot(xs[ci], ys[ci], "o", ms=9, mfc="none", color=colors[cfg])
-            for pcfg in ("C", "A"):
+            for pcfg in _round_parent_comparators():
                 entry = sel_parent.get(f"{pcfg}_{ds}")
                 if entry is None:
                     continue
@@ -979,7 +1631,7 @@ def fig_hero(args) -> dict:
         fontsize=8,
     )
     fig.tight_layout(rect=(0, 0.06, 1, 1))
-    return {"fu1_hero_dose_response": fig}
+    return {_stem("hero_dose_response"): fig}
 
 
 def fig_op_bars(args) -> dict:
@@ -999,7 +1651,7 @@ def fig_op_bars(args) -> dict:
         ax = axes[j]
         trait = train.STEERED_TRAIT[ds]
         bars = []  # (label key, per-question means)
-        for cfg in FU_CONFIG_ORDER:
+        for cfg in _round_config_order():
             entry = sel_fu.get(f"{cfg}_{ds}")
             if entry is None or entry["selected_coef"] is None:
                 continue
@@ -1009,7 +1661,7 @@ def fig_op_bars(args) -> dict:
                 )["traits"][trait]
             )
             bars.append((cfg, [v for v in qm.values() if v is not None]))
-        for pcfg in ("C", "A"):
+        for pcfg in _round_parent_comparators():
             p_entry = sel_parent.get(f"{pcfg}_{ds}")
             if p_entry is None or p_entry["selected_coef"] is None:
                 continue
@@ -1042,7 +1694,7 @@ def fig_op_bars(args) -> dict:
         if j == 0:
             ax.set_ylabel("Trait score at operating point (0-100)")
     fig.tight_layout()
-    return {"fu1_operating_point_bars": fig}
+    return {_stem("operating_point_bars"): fig}
 
 
 def fig_geometry(args) -> dict:
@@ -1076,7 +1728,7 @@ def fig_geometry(args) -> dict:
             ax.text(j, i, f"{mat[i, j]:.3f}", ha="center", va="center", fontsize=7)
     fig.colorbar(im, ax=ax, label="Cosine")
     fig.tight_layout()
-    return {"fu1_geometry_cosines": fig}
+    return {_stem("geometry_cosines"): fig}
 
 
 def fig_rank_sweep(args) -> dict:
@@ -1084,7 +1736,8 @@ def fig_rank_sweep(args) -> dict:
 
     fu_dir = Path(args.fu_directions_dir)
     colors = _fig_colors()
-    trait_color = {"evil": colors["J"], "sycophancy": colors["K"], "hallucination": colors["L"]}
+    # First three round configs' palette slots (fu1: J/K/L — byte-identical).
+    trait_color = dict(zip(PROBE_TRAITS, [colors[c] for c in _round_config_order()[:3]]))
     fig, ax = plt.subplots(figsize=(5.4, 3.8))
     for trait in PROBE_TRAITS:
         meta = pa._load_json(fu_dir / f"{trait}_PRE_meta.json")
@@ -1105,7 +1758,7 @@ def fig_rank_sweep(args) -> dict:
     ax.set_ylabel("cos(d_pre(k), primary d_pre)")
     ax.legend(fontsize=8, frameon=False)
     fig.tight_layout()
-    return {"fu1_rank_sweep": fig}
+    return {_stem("rank_sweep"): fig}
 
 
 def fig_probe_profiles(args) -> dict:
@@ -1119,7 +1772,7 @@ def fig_probe_profiles(args) -> dict:
     )
     for j, trait in enumerate(PROBE_TRAITS):
         ax = axes[j]
-        for cfg in FU_CONFIG_ORDER:
+        for cfg in _round_config_order():
             entry = sel_fu.get(f"{cfg}_{trait}")
             if entry is None or entry["selected_coef"] is None:
                 continue
@@ -1154,7 +1807,7 @@ def fig_probe_profiles(args) -> dict:
             ax.set_ylabel("Probe-score shift (finetuned - base)")
     axes[0].legend(fontsize=7, frameon=False)
     fig.tight_layout()
-    return {"fu1_probe_shift_profiles": fig}
+    return {_stem("probe_shift_profiles"): fig}
 
 
 def fig_projection_bars(args) -> dict:
@@ -1164,7 +1817,6 @@ def fig_projection_bars(args) -> dict:
     proj = _load_analysis(args, "projection_shifts.json")["shifts"]
     dpre = _load_analysis(args, "projection_dpre.json")["shifts"]
     sel_fu = _load_analysis(args, "selection.json")["selection"]
-    fu1 = _fu_train()
     ds, trait = "evil", "evil"
     bar_keys = [
         ("response_avg", "parent", "resp-avg · r_B"),
@@ -1178,7 +1830,7 @@ def fig_projection_bars(args) -> dict:
 
     bar_colors = paper_palette(len(bar_keys))
     cfgs, series = [], {i: [] for i in range(len(bar_keys))}
-    for cfg in FU_CONFIG_ORDER:
+    for cfg in _round_config_order():
         entry = sel_fu.get(f"{cfg}_{ds}")
         if entry is None or entry["selected_coef"] is None:
             continue
@@ -1187,7 +1839,7 @@ def fig_projection_bars(args) -> dict:
         dr = dpre.get(f"{tag}__{trait}")
         if pr is None or dr is None:
             continue
-        cell = fu1.resolve_fu1_cell(tag)
+        cell = _round_resolve(tag)
         la = cell.l1_idx
         cfgs.append(cfg)
         for i, (pos, kind, _) in enumerate(bar_keys):
@@ -1208,7 +1860,7 @@ def fig_projection_bars(args) -> dict:
     ax.set_ylabel("Δ mean projection at the arm's own layer")
     ax.legend(fontsize=7, frameon=False, ncol=2)
     fig.tight_layout()
-    return {"fu1_projection_shift_bars": fig}
+    return {_stem("projection_shift_bars"): fig}
 
 
 def fig_mmlu(args) -> dict:
@@ -1231,7 +1883,7 @@ def fig_mmlu(args) -> dict:
     ax.set_ylabel("MMLU accuracy")
     ax.legend(fontsize=8, frameon=False)
     fig.tight_layout()
-    return {"fu1_mmlu_extremes": fig}
+    return {_stem("mmlu_extremes"): fig}
 
 
 def fig_judge_diag(args) -> dict:
@@ -1270,7 +1922,7 @@ def fig_judge_diag(args) -> dict:
     ax.set_xlabel("Cap-hit fraction per generation unit")
     ax.set_ylabel("Units")
     fig.tight_layout()
-    return {"fu1_judge_diagnostics": fig}
+    return {_stem("judge_diagnostics"): fig}
 
 
 FIGURE_BUILDERS = {
@@ -1305,7 +1957,7 @@ def run_fu_figures(args) -> None:
         for stem, fig in figs.items():
             paths = savefig_paper(fig, stem, dir=fig_dir)
             plt.close(fig)
-            print(f"[fu1-figures] {name} -> {paths.get('png', fig_dir / stem)}", flush=True)
+            print(f"[{_ROUND}-figures] {name} -> {paths.get('png', fig_dir / stem)}", flush=True)
 
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
@@ -1313,11 +1965,11 @@ def run_fu_figures(args) -> None:
 PHASES = {
     "mmlu": run_fu_mmlu,
     "selection": run_fu_selection,
-    "contrasts": run_fu_contrasts,
+    "contrasts": run_contrasts,  # round dispatch: fu1 battery / fu2 §3 battery
     "judge": run_fu_judge,
     "probe": run_fu_probe,
     "projection": run_fu_projection,
-    "narrow": run_fu_narrow,
+    "narrow": run_fu_narrow,  # fu1-only (fu2 refuses: no opinions cells)
     "figures": run_fu_figures,
 }
 PHASE_ORDER = [
@@ -1330,6 +1982,8 @@ PHASE_ORDER = [
     "narrow",
     "figures",
 ]
+# fu2 "all" order drops narrow (plan v13 §2 divergence 1: opinions corpus dropped).
+FU2_PHASE_ORDER = [p for p in PHASE_ORDER if p != "narrow"]
 
 # argparse dests the REUSED parent functions dereference on args (kept complete
 # so the two-file argcheck union cannot mask a dest missing from THIS parser).
@@ -1349,19 +2003,33 @@ PARENT_CONSUMED_DESTS = (
 
 def build_argparser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(
-        description="Issue #2225 fu1_preimage_prevention F5 analysis + figures."
+        description="Issue #2225 fu-round F5 analysis + figures (--round fu1|fu2)."
+    )
+    ap.add_argument(
+        "--round",
+        default="fu1",
+        choices=sorted(ROUND_EVAL_ROOTS),
+        help="which fu round's registry/roots/contrast set to run (default: fu1 — "
+        "committed fu1 behavior unchanged)",
     )
     ap.add_argument("--phase", default="all", choices=[*PHASE_ORDER, "all"])
     ap.add_argument(
         "--eval-root",
-        default="eval_results/issue_2225/fu1_preimage_prevention",
-        help="fu1 F4 outputs + analysis/ destination (parent functions read args.eval_root)",
+        default=None,
+        help=f"fu F4 outputs + analysis/ destination (default: the round's root "
+        f"{ROUND_EVAL_ROOTS}; parent functions read args.eval_root)",
     )
     ap.add_argument("--parent-eval-root", default="eval_results/issue_2225")
     ap.add_argument(
+        "--fu1-eval-root",
+        default=ROUND_EVAL_ROOTS["fu1"],
+        help="the fu1 round's eval root (fu2 H3 comparator rows + fu1 op points)",
+    )
+    ap.add_argument(
         "--staging-mirror",
-        default="/mnt/eps-data/thomasjiralerspong/issue2225_fu1/hf_dl",
-        help="HF mirror root (data disk — never / or /tmp); None-defaulted paths derive from it",
+        default=None,
+        help="HF mirror root (data disk — never / or /tmp; default: the round's mirror "
+        f"{ROUND_STAGING_MIRRORS}); None-defaulted paths derive from it",
     )
     ap.add_argument("--capture-root", default=None, help="combined capture root (derived)")
     ap.add_argument("--directions-dir", default=None, help="PARENT directions tensors (derived)")
@@ -1369,7 +2037,11 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--mmlu-dir", default=None, help="staged fu1 MMLU JSONs (derived)")
     ap.add_argument("--i778-staging", default=None, help="#778 probe-pool staging (derived)")
     ap.add_argument("--work-root", default=None, help="probe bundle work dir (derived)")
-    ap.add_argument("--fig-dir", default="figures/issue_2225/fu1")
+    ap.add_argument(
+        "--fig-dir",
+        default=None,
+        help=f"figure destination (default: the round's dir {ROUND_FIG_DIRS})",
+    )
     ap.add_argument("--repilot-state", default=None, help="f1_repilot_state.json (grid override)")
     ap.add_argument("--stage-inputs", action="store_true", help="stage HF inputs first")
     ap.add_argument(
@@ -1403,6 +2075,7 @@ def build_argparser() -> argparse.ArgumentParser:
 
 def main(argv=None) -> int:
     args = build_argparser().parse_args(argv)
+    _set_round(args.round)
     if args.import_check:
         from explore_persona_space.orchestrate.argcheck import assert_args_attributes_defined
 
@@ -1426,6 +2099,8 @@ def main(argv=None) -> int:
         from explore_persona_space.orchestrate.hub import stage_hub_prefix  # noqa: F401
 
         _fu_train()
+        import issue2225_fu2_train  # noqa: F401  (fu2 round module resolvable)
+
         _fud()
         pa._train()
         pa._judge()
@@ -1435,7 +2110,10 @@ def main(argv=None) -> int:
     _apply_derived_defaults(args)
     if args.stage_inputs:
         stage_fu_inputs(args)
-    order = PHASE_ORDER if args.phase == "all" else [args.phase]
+    round_order = FU2_PHASE_ORDER if _is_fu2() else PHASE_ORDER
+    if args.phase != "all" and args.phase not in round_order:
+        raise SystemExit(f"[{_ROUND}] --phase {args.phase} is not in this round's phase set")
+    order = round_order if args.phase == "all" else [args.phase]
     for name in order:
         PHASES[name](args)
     return 0
