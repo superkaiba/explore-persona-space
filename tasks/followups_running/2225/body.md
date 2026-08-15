@@ -5,7 +5,6 @@ title: Single-layer steering of context tokens does not prevent trait acquisitio
 kind: experiment
 tags:
 - trigger-dense
-- followup-manual
 created_at: '2026-08-10T21:34:40Z'
 has_clean_result: true
 parent_id: 2221
