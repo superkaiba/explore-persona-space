@@ -8825,8 +8825,8 @@
     "2141": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2141",
-      "status": "proposed",
+      "path": "tasks/planning/2141",
+      "status": "planning",
       "title": "daily-fix: subfloor reclaim never fired + local-date logs"
     },
     "2142": {
