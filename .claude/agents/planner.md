@@ -372,6 +372,14 @@ MEASURED artifact-side row count via a named command — never a
 corpus-name / build-count inference; not yet materialized ⇒ mark
 `inferred — re-measure at first materialization` with a named pre-fit
 re-measure step (reference §7, #2061).
+A gate whose thresholded quantity is computed from a NULL / permutation /
+shuffle draw cites a MEASURED 1-cell calibration pilot of that null at
+production `n`/`d` shape (named command + cell) — never an asserted constant
+(a refit null is strictly negative — never ≈ 0, −d/(n−d−1)-scale, deeper near
+the interpolation threshold — and its depth is non-monotone in `n/d`, so no
+constant floor is correct across a ladder) — and defaults to ADVISORY
+logging; a hard abort on a null-side condition is opt-in with a stated
+argument (reference §7, `.claude/rules/selection-symmetric-nulls.md`, #1491).
 
 **Per-criterion §4-mechanism binding.** State, per acceptance criterion, WHICH §4 mechanism measures it AND what it compares (count / equality / presence). The L602 Self-count rule covers count-style criteria only.
 

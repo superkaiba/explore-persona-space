@@ -105,6 +105,7 @@
 
 ## Infra-plan reviews
 - [Infra-plan checklist](feedback_infra_plan_review_checklist.md) — protection-illusion holes, choke-point greps, TOCTOU (#564-#884)
+- [Hub repack-plan review](feedback_hub_repack_plan_review.md) — pack-time server-anchor TOCTOU; recompute units/tier costings from inventory (#2321)
 - [Conftest hermeticity-guard review](feedback_conftest_hermeticity_guard_review.md) — resolver single-funnel grep; autouse-before-explicit equality discriminator; recorder-stub callers bypass (#2141)
 - [Lock-ordering deadlock plans](feedback_lock_ordering_deadlock_plan_checks.md) — hoist-site completeness, recovery-tool self-wait, knob-exists reads (#2295)
 - [Merged-status-class pause](feedback_fence_defer_merged_status_class_pause.md) — auto-stop-done = DONE ∪ on_hold; new shields countermand user pause (#2283)
@@ -139,3 +140,4 @@
 - [Capping/steering stats traps](feedback_capping_steering_plan_stats_traps.md) — footprint-matched null; listwise drop = post-treatment selection (#2203)
 - [Infra dispatch-plan failure modes](feedback_infra_dispatch_plan_failure_modes.md) — asyncio.run in async sites; stale fingerprints (#626)
 - [Husk-reap comparator reviews](feedback_husk_reap_comparator_review.md) — trace vs REAL artifact (materialized pointer); empty-unique backstop; occupancy channel orthogonal (#2138)
+- [Hub repack/deletion plans](feedback_hub_repack_deletion_plan_review.md) — 6-link probe-first commit chain; drift-race = Concern (history-recoverable, pin has contention downside) (#2321)
