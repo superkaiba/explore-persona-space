@@ -11,6 +11,7 @@ origin_prompt: 'Can you also run this on both models: patching at context vector
   vector) vs prefilling first 1/2/3 tokens, on the most successful causal patching
   experiments; donor schemes: BOTH mediation form and B''s-answer-start form'
 workflow: v1
+backend: runpod
 goal: 'Test the snowball explanation of context-vector patch causality on Qwen2.5-7B-Instruct
   and Qwen3.5-9B (thinking disabled): compare the all-layer context-end patch against
   patching only the first 1/2/3 generated answer-token positions (ce excluded) and
