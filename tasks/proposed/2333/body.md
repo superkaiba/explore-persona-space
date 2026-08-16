@@ -11,10 +11,18 @@ origin_prompt: 'Can you also run this on both models: patching at context vector
   vector) vs prefilling first 1/2/3 tokens, on the most successful causal patching
   experiments; donor schemes: BOTH mediation form and B''s-answer-start form'
 workflow: v1
+goal: 'Test the snowball explanation of context-vector patch causality on Qwen2.5-7B-Instruct
+  and Qwen3.5-9B (thinking disabled): compare the all-layer context-end patch against
+  patching only the first 1/2/3 generated answer-token positions (ce excluded) and
+  against prefilling the first 1/2/3 tokens, under two donor schemes (mediation form:
+  content produced under the ce patch with the patch then removed; B''s-answer-start
+  form: the target context''s own reference answer opening), measured by F_beh/F_act
+  vs scheme-matched shuffled-donor nulls on the pre-registered most-successful cells
+  (#2162''s 5 stored-and-used + #2094''s pirate matched-query pairs).'
 ---
 ## Goal
 
-Test the snowball explanation of context-vector patch causality: does the context-end patch's effect on behavior run through the first few answer tokens (early tokens set the course, self-consistency maintains it)? On the most successful causal cells, compare patching the context vector at all layers vs patching ONLY the first 1/2/3 generated-token positions at all layers (context vector excluded) vs prefilling the first 1/2/3 answer tokens — each first-k arm under TWO donor schemes: (a) MEDIATION form — the tokens/states the model produces under the ce patch, with the patch then removed (if snowball is the mechanism, this approaches the full ce-patch effect at small k); (b) B's-ANSWER-START form — the target context B's own reference answer opening (tests whether any B-like start suffices). Both models: Qwen2.5-7B-Instruct and Qwen3.5-9B (thinking disabled).
+Test the snowball explanation of context-vector patch causality on Qwen2.5-7B-Instruct and Qwen3.5-9B (thinking disabled): compare the all-layer context-end patch against patching only the first 1/2/3 generated answer-token positions (ce excluded) and against prefilling the first 1/2/3 tokens, under two donor schemes (mediation form: content produced under the ce patch with the patch then removed; B's-answer-start form: the target context's own reference answer opening), measured by F_beh/F_act vs scheme-matched shuffled-donor nulls on the pre-registered most-successful cells (#2162's 5 stored-and-used + #2094's pirate matched-query pairs).
 
 ## Design essentials (user-specified; planner elaborates, deviations named)
 
