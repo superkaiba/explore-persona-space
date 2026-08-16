@@ -1002,6 +1002,9 @@ for lens, codex_agent_out in (("methodology", m_codex),
         continue
     cfg = parse_codex_dispatch_config(codex_agent_out)  # extract Prompt file / Expected output file
     # Bg-dispatch in a SINGLE message so all 3 Codex runs proceed concurrently.
+    # Safe against the shared codex-companion jobs index: codex_task.py itself
+    # serializes spawn+confirm on a repo-keyed lock (#2323) — do NOT re-sequence
+    # this dispatch to sequential.
     # The orchestrator continues with other turn-local work; the harness
     # delivers a notification on each bg-Bash exit. End the current turn
     # if no other work is in flight rather than blocking on TaskOutput
@@ -1096,7 +1099,10 @@ dispatch configs, the orchestrator bg-dispatches `scripts/codex_task.py` for
 each in a single message (3 parallel bg-Bash calls). Per-lens reconciler runs
 only on Claude-vs-Codex disagreement and is also in-context (no GitHub
 markers). Worst case per round: 6 critics + 3 Codex bg-dispatches + 3
-reconcilers = 12 invocations.
+reconcilers = 12 invocations. The single-message parallel dispatch stays the
+required shape: `codex_task.py` itself serializes each spawn+confirm window on
+the repo-keyed dispatch lock (#2323), so concurrent dispatches no longer race
+the shared codex-companion jobs index — never re-sequence them to sequential.
 
 **Dispatch ordering guards (both bit on 2026-06-09, #545):** (a) bg-dispatch
 `codex_task.py` ONLY after the wrapper's completion notification — and gate

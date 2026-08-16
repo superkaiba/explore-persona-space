@@ -8523,7 +8523,10 @@ dispatching this round's critics.
    inlines their output (the twin is dispatched read-only, #1050); omit
    when the methodology-writer has not yet returned — check 21 NO-OP
    PASSes); and dispatch `codex_task.py` for this twin from the repo
-   root, never an issue-worktree cwd. Posts
+   root, never an issue-worktree cwd. (Concurrent twin dispatches are
+   safe by construction: `codex_task.py` serializes each spawn+confirm
+   window on the repo-keyed dispatch lock, #2323 — do not re-sequence
+   parallel dispatches to sequential.) Posts
    `epm:clean-result-critique-codex v1`. Apply the
    ensemble decision rule (same shape as Step 5c — PASS+PASS, REVISE
    union, reconciler on disagreement; on any Agent-tool error, the Step
@@ -9155,7 +9158,9 @@ autonomous block step 2-bis, and Step 10b):
 >    `prior_value_critique_summaries`. Dispatch the Codex twin's composed
 >    prompt as bg Bash via `scripts/codex_task.py` exactly like the other
 >    four twin sites (CLAUDE.md § "Codex ensemble review"); the twin agent
->    NEVER dispatches Codex itself (orphan-job anti-pattern, #533). Post
+>    NEVER dispatches Codex itself (orphan-job anti-pattern, #533).
+>    Concurrent `codex_task.py` dispatches are serialized helper-side on
+>    the repo-keyed dispatch lock (#2323) — keep the parallel spawn shape. Post
 >    `epm:followup-value-critique v1` (Claude) + `epm:followup-value-critique-codex`
 >    (Codex) on this task's `events.jsonl`. Quota-sentinel pre-check
 >    first (#1204, CLAUDE.md § Codex ensemble review): when LIVE, spawn
