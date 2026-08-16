@@ -35,6 +35,34 @@ context vector. Four questions:
 - **Held-out split:** leave-one-carrier-out over the 12 carriers — used for the probes AND for
   every freshly fitted map.
 
+## Bank dashboard [NEW — 0 GPU-h]
+
+Minimal reference dashboard (`docs/issue2162_bank_dashboard.html`, self-contained HTML), **no
+interpretation anywhere**:
+
+- All 12 carrier contexts (full text, collapsed/expandable), with the note that each carrier is
+  the held-out fold exactly once under leave-one-carrier-out.
+- All 39 parameter cells with their 3 actual value strings (the varied spans).
+- Per parameter, ONE worked example: context with value A (varied span highlighted) → its
+  unpatched anchor answer; same carrier with value B → its anchor answer (= the answer change the
+  parameter induces). Raw text only; truncation, where used, disclosed inline.
+
+## Result 0 — Qualitative examples [NEW — 0 GPU-h]
+
+Very minimal gallery (`docs/issue2162_result0_gallery.html`), organized by parameter change, built
+from banked rollout text + banked per-pair transfer scores (`f_cells.jsonl` carries per-pair
+F_beh AND F_act at context-end):
+
+- Per directed pair: context A → answer; context B (parameter changed) → answer; A patched with
+  B's context-end state → patched answer + transfer scores (F_beh behavior, F_act answer-vector);
+  the reverse direction wherever the bank banked it (pair directions as realized in `bank.json`;
+  absent directions marked factually, never imputed).
+- Sections sortable by best/worst transfer; pairs within a section sortable the same way.
+- One collapsible section at the top: **Fable 5 analysis of what can and can't transfer** —
+  explicitly labeled as interpretation; everything below it is raw data.
+
+**Takeaways (Thomas):** _
+
 ## Result 1 — What is stored at the context vector? [BANKED — replot]
 
 *Can a held-out linear probe classify which value of the varied attribute a context contains,
@@ -110,6 +138,8 @@ true context's real answer than to the sibling's (paired 2-alternative retrieval
 3. Result 2.5 cosine/magnitude battery + Result 4 extension (CPU, vectorized, pair-clustered
    bootstrap B=10,000).
 4. Replots of Results 1/2/3 + report assembly.
+5. The two dashboards (bank reference + Result 0 gallery): banked rollout text (grid + anchors
+   jsonl) joined to banked per-pair F scores; pure text processing, no model calls.
 
 **Total: 0 GPU-h.** Estimated wall ~2–4 h (fits dominate; pilot-sized before the full battery).
 Outputs: `eval_results/issue_2162/mapshift/`, `figures/issue_2162/mapshift/`.
