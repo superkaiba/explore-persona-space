@@ -304,3 +304,174 @@ def test_teardown_case_insensitive_match_on_nothing_to_terminate(monkeypatch):
     monkeypatch.setattr(RP, "_run_pod_lifecycle_relay", _relay)
     # No exception — case-insensitive match still hits.
     RP.RunPodBackend().teardown(_make_handle())
+
+
+# ---------------------------------------------------------------------------
+# #2145 — lane-suffix + gpu-type threading on the RunPod lane
+# (launch argv / pod_name / handle extra, teardown surgical argv,
+# _issue_from_handle recovery). All omit-when-absent (#934): the
+# unsuffixed / no-override path composes the pre-#2145 argv + key set
+# byte-identically.
+# ---------------------------------------------------------------------------
+
+
+class _RelayCmdCapture:
+    """Fake ``_run_pod_lifecycle_relay``: records the full cmd argv per call."""
+
+    def __init__(self) -> None:
+        self.cmds: list[list[str]] = []
+
+    def __call__(self, cmd, *, env=None, relay=None):
+        self.cmds.append([str(c) for c in cmd])
+        return None
+
+
+def test_launch_suffixed_spec_threads_name_suffix_argv_and_pod_name(monkeypatch):
+    """#2145: spec.extra['lane_suffix'] threads to the provision subprocess
+    as ``--name-suffix <slug>`` and the handle carries the SUFFIXED pod name
+    ``pod-<N>-<slug>`` + the ``lane_suffix`` extra key (round-tripped so the
+    wedge/CUDA-IMA fresh-pod re-provision keeps the suffix)."""
+    relay = _RelayCmdCapture()
+    monkeypatch.setattr(RP, "_run_pod_lifecycle_relay", relay)
+    monkeypatch.setattr(RP, "_assert_pod_on_branch", lambda pod_name, expected_branch: None)
+
+    handle = RP.RunPodBackend().launch(_spec(extra={"lane_suffix": "b"}))
+
+    assert len(relay.cmds) == 1, relay.cmds
+    cmd = relay.cmds[0]
+    i = cmd.index("--name-suffix")
+    assert cmd[i + 1] == "b"
+    assert "--gpu-type" not in cmd
+    assert handle.pod_name == "pod-1698-b"
+    assert handle.extra["lane_suffix"] == "b"
+    assert "gpu_type" not in handle.extra  # omit-when-absent (#934)
+
+
+def test_launch_unsuffixed_spec_argv_and_extra_have_no_2145_keys(monkeypatch):
+    """#2145 omit-when-absent: a spec with neither lane_suffix nor gpu_type
+    composes the pre-#2145 provision argv byte-identically (no --name-suffix,
+    no --gpu-type) and the handle extra carries NEITHER key — the
+    _PRE_954_SUCCESS_EXTRA_KEYS exact-set pins stay green by construction."""
+    relay = _RelayCmdCapture()
+    monkeypatch.setattr(RP, "_run_pod_lifecycle_relay", relay)
+    monkeypatch.setattr(RP, "_assert_pod_on_branch", lambda pod_name, expected_branch: None)
+
+    handle = RP.RunPodBackend().launch(_spec())
+
+    assert len(relay.cmds) == 1, relay.cmds
+    cmd = relay.cmds[0]
+    assert "--name-suffix" not in cmd
+    assert "--gpu-type" not in cmd
+    assert handle.pod_name == "pod-1698"
+    assert "lane_suffix" not in handle.extra
+    assert "gpu_type" not in handle.extra
+
+
+def test_launch_gpu_type_spec_threads_gpu_type_argv_and_extra(monkeypatch):
+    """#2145: spec.extra['gpu_type'] threads to the provision subprocess as
+    ``--gpu-type <name>`` and rides the handle extra (so a failover pod
+    keeps the override instead of regressing to the intent default)."""
+    relay = _RelayCmdCapture()
+    monkeypatch.setattr(RP, "_run_pod_lifecycle_relay", relay)
+    monkeypatch.setattr(RP, "_assert_pod_on_branch", lambda pod_name, expected_branch: None)
+
+    handle = RP.RunPodBackend().launch(_spec(extra={"gpu_type": "H200"}))
+
+    assert len(relay.cmds) == 1, relay.cmds
+    cmd = relay.cmds[0]
+    i = cmd.index("--gpu-type")
+    assert cmd[i + 1] == "H200"
+    assert "--name-suffix" not in cmd
+    assert handle.pod_name == "pod-1698"
+    assert handle.extra["gpu_type"] == "H200"
+    assert "lane_suffix" not in handle.extra
+
+
+def test_launch_pod_grammar_violating_suffix_fails_loud_pre_provision(monkeypatch):
+    """#2145 defense in depth behind the dispatch_issue pre-route guard: a
+    #934-legal suffix that fails the tighter pod grammar
+    ([a-z][a-z0-9-]{0,19}) raises ValueError BEFORE the provision
+    subprocess — never a provision-side SystemExit the router would wrap
+    as a re-drivable capacity miss."""
+    relay = _RelayCmdCapture()
+    monkeypatch.setattr(RP, "_run_pod_lifecycle_relay", relay)
+    monkeypatch.setattr(RP, "_assert_pod_on_branch", lambda pod_name, expected_branch: None)
+
+    with pytest.raises(ValueError, match="RunPod pod-name suffix"):
+        RP.RunPodBackend().launch(_spec(extra={"lane_suffix": "a" * 21}))
+    assert relay.cmds == []  # refused before any subprocess
+
+
+def test_teardown_suffixed_handle_composes_surgical_name_suffix_argv(monkeypatch):
+    """#2145: teardown of a SUFFIXED handle recovers the slug from the pod
+    name and passes ``--name-suffix <slug>`` so ``pod_lifecycle terminate``
+    targets pod-<N>-<slug> exactly (the surgical form — the bare --issue
+    form resolves issue-wide and refuses under the #1485 keep-running tag
+    while sibling pods live)."""
+    from explore_persona_space.backends.base import RunHandle
+
+    relay = _RelayCmdCapture()
+    monkeypatch.setattr(RP, "_run_pod_lifecycle_relay", relay)
+
+    handle = RunHandle(
+        backend="runpod",
+        cluster=None,
+        job_id="",
+        pod_name="pod-1698-b",
+        scratch_dir="/workspace",
+        log_path="/workspace/logs/issue-1698.log",
+        extra={"issue": 1698},
+    )
+    RP.RunPodBackend().teardown(handle)
+
+    assert len(relay.cmds) == 1, relay.cmds
+    cmd = relay.cmds[0]
+    assert cmd[cmd.index("--issue") + 1] == "1698"
+    assert cmd[cmd.index("--name-suffix") + 1] == "b"
+
+
+def test_teardown_unsuffixed_handle_argv_has_no_name_suffix(monkeypatch):
+    """#2145 omit-when-absent: teardown of a bare pod-<N> handle composes
+    the pre-#2145 terminate argv byte-identically (no --name-suffix)."""
+    relay = _RelayCmdCapture()
+    monkeypatch.setattr(RP, "_run_pod_lifecycle_relay", relay)
+
+    RP.RunPodBackend().teardown(_make_handle())
+
+    assert len(relay.cmds) == 1, relay.cmds
+    cmd = relay.cmds[0]
+    assert "--name-suffix" not in cmd
+    assert cmd[cmd.index("--issue") + 1] == "1698"
+
+
+def test_issue_from_handle_prefers_extra_then_parses_legacy_names():
+    """#2145: _issue_from_handle reads extra['issue'] FIRST (always set by
+    _build_handle — the suffixed-name-safe path), falls back to parsing
+    bare pod-<N> / epm-issue-<N> legacy names, and fails loud on a handle
+    it cannot index. A suffixed name with NO extra['issue'] is a
+    structurally impossible legacy shape and raises (documented)."""
+    from explore_persona_space.backends.base import RunHandle
+
+    be = RP.RunPodBackend()
+
+    def _h(pod_name: str, extra: dict) -> RunHandle:
+        return RunHandle(
+            backend="runpod",
+            cluster=None,
+            job_id="",
+            pod_name=pod_name,
+            scratch_dir="/workspace",
+            log_path="",
+            extra=extra,
+        )
+
+    # extra-first: suffixed names resolve via extra['issue'].
+    assert be._issue_from_handle(_h("pod-909-b", {"issue": 909})) == 909
+    # Legacy fallbacks: bare canonical + legacy prefix parse from the name.
+    assert be._issue_from_handle(_h("pod-909", {})) == 909
+    assert be._issue_from_handle(_h("epm-issue-909", {})) == 909
+    # Unindexable handles fail loud.
+    with pytest.raises(ValueError, match="cannot recover issue"):
+        be._issue_from_handle(_h("pod-909-b", {}))
+    with pytest.raises(ValueError, match="cannot recover issue"):
+        be._issue_from_handle(_h("not-a-managed-pod", {}))

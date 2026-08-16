@@ -93,7 +93,7 @@ def gcp_sidecar(tmp_path, monkeypatch):
     write_handle_sidecar(_gcp_handle(), sidecar)
     monkeypatch.setattr(
         "explore_persona_space.backends.issue_dispatch.resolve_handle_sidecar_path",
-        lambda issue: (sidecar, False),
+        lambda issue, lane_suffix=None: (sidecar, False),
     )
     return sidecar
 
@@ -288,7 +288,7 @@ def test_orphan_arm_negative_control_runpod_sidecar(
     )
     monkeypatch.setattr(
         "explore_persona_space.backends.issue_dispatch.resolve_handle_sidecar_path",
-        lambda issue: (sidecar, False),
+        lambda issue, lane_suffix=None: (sidecar, False),
     )
     now = time.time()
     assert not _run_helper(
@@ -303,7 +303,7 @@ def test_orphan_arm_negative_control_sidecar_absent(
     """No resolvable sidecar -> quiet (bias quiet; nothing to attribute)."""
     monkeypatch.setattr(
         "explore_persona_space.backends.issue_dispatch.resolve_handle_sidecar_path",
-        lambda issue: (tmp_path / "no-such-handle.json", False),
+        lambda issue, lane_suffix=None: (tmp_path / "no-such-handle.json", False),
     )
     now = time.time()
     assert not _run_helper(
@@ -321,7 +321,7 @@ def test_orphan_arm_negative_control_sidecar_unreadable(
     sidecar.write_text("{not json")
     monkeypatch.setattr(
         "explore_persona_space.backends.issue_dispatch.resolve_handle_sidecar_path",
-        lambda issue: (sidecar, False),
+        lambda issue, lane_suffix=None: (sidecar, False),
     )
     now = time.time()
     assert not _run_helper(
@@ -430,3 +430,58 @@ def test_orphan_arm_never_blocks_existing_decisions(
     asw._process_pod(1417, "p1417", _healthy_info(), now, dry_run=False, threshold=2)
     assert len(_orphan_posts(marker_recorder)) == 1  # the arm fired...
     assert stop_recorder == [1417]  # ...and the canonical auto-stop still ran
+
+
+# ---------------------------------------------------------------------------
+# 10. #2145 round-2 derivation pin (BLOCKER 3): the arm's sidecar probe
+#     derives its lane suffix FROM PodInfo.name — and the bare-name guard
+#     means a SUFFIXED pod never reaches the probe at all.
+# ---------------------------------------------------------------------------
+
+
+def test_orphan_arm_derives_lane_suffix_from_pod_name(monkeypatch):
+    """asw:17968 glue: `_orphan_gcp_sidecar_is_gcp(issue,
+    lane_suffix=_slug_from_pod_name(info.name))`. The arm is bare-pod-scoped
+    BY DESIGN (predicate leg 1: `info.name != f"pod-{issue}"` returns False
+    first), so the truthful pin is two-sided: a suffixed pod-1417-b returns
+    False WITHOUT any resolver call, and a bare pod-1417 reaches the REAL
+    resolver with the derived `lane_suffix=None`. Deleting the derivation
+    (or the kwarg thread) at the call site fails the recorder assert."""
+    import explore_persona_space.backends.issue_dispatch as idp
+
+    now = time.time()
+    seen: list[object] = []
+
+    def _recording_resolver(issue, lane_suffix=None):
+        seen.append(lane_suffix)
+        return (Path("/nonexistent/issue-1417-handle.json"), False)
+
+    monkeypatch.setattr(idp, "resolve_handle_sidecar_path", _recording_resolver)
+    prev = {"pod_id": "pB", "first_seen": now - GRACE - 600, "orphan_gcp_noted": False}
+
+    # Suffixed pod: bare-name guard short-circuits BEFORE the sidecar probe.
+    fired = asw._maybe_flag_orphan_gcp_handle_pod(
+        1417,
+        _healthy_info(pod_id="pB", name="pod-1417-b"),
+        now,
+        keep_running=False,
+        followup_active=False,
+        prev_state=prev,
+        dry_run=False,
+    )
+    assert fired is False
+    assert seen == []  # never probed — the arm only ever handles bare pod-<N>
+
+    # Bare pod: the probe runs and receives the DERIVED suffix (None).
+    prev = {"pod_id": "p1417", "first_seen": now - GRACE - 600, "orphan_gcp_noted": False}
+    fired = asw._maybe_flag_orphan_gcp_handle_pod(
+        1417,
+        _healthy_info(),
+        now,
+        keep_running=False,
+        followup_active=False,
+        prev_state=prev,
+        dry_run=False,
+    )
+    assert fired is False  # missing sidecar -> no evidence -> keep (fail-quiet)
+    assert seen == [None]

@@ -3079,9 +3079,14 @@ def _override_runpod(
         cluster=None,
         attempts=attempts,
         elapsed_seconds=now_fn() - started_at,
-        # #940: the GCP-only -> RunPod intent translation record, when one
-        # applied, so the override marker records the intent swap too.
-        extra=({"runpod_intent_translation": intent_translation} if intent_translation else {}),
+        extra={
+            # #940: the GCP-only -> RunPod intent translation record, when one
+            # applied, so the override marker records the intent swap too.
+            **({"runpod_intent_translation": intent_translation} if intent_translation else {}),
+            # #2145: realized pod identity + omit-when-absent suffix/GPU-type
+            # override records (see _runpod_marker_extras).
+            **_runpod_marker_extras(spec, handle),
+        },
     )
     _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
     return result
@@ -4410,6 +4415,9 @@ def _runpod_terminal_rung(
             # The GcpWorkloadError evidence (task #658) so the failover
             # marker carries the original crash signal for diagnosis.
             **({"gcp_workload_evidence": failover_evidence} if failover_evidence else {}),
+            # #2145: realized pod identity + omit-when-absent suffix/GPU-type
+            # override records (see _runpod_marker_extras).
+            **_runpod_marker_extras(spec, handle),
         },
     )
     _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
@@ -7778,6 +7786,30 @@ def _gcp_marker_extras(spec: RunSpec) -> dict[str, Any]:
             else:
                 extras["requested_ram_gb"] = int(min_ram_gb)
                 extras["resolved_machine_ram_gb"] = int(resolved_ram_gib)
+    return extras
+
+
+def _runpod_marker_extras(spec: RunSpec, handle: RunHandle) -> dict[str, Any]:
+    """Build the RunPod launched-result marker ``extra`` keys (#2145).
+
+    Merged into every LAUNCHED runpod ``RouteResult``'s ``extra`` — the
+    explicit-override path (:func:`_override_runpod`) AND the terminal
+    rung — so the ``epm:backend-selected`` marker records the pod identity
+    the launch actually minted (the ``_gcp_marker_extras`` precedent; pure
+    function, no IO):
+
+    * ``pod_name`` — always: the REALIZED name (``pod-<N>`` or the
+      suffixed ``pod-<N>-<slug>``), read off the handle, never recomposed;
+    * ``lane_suffix`` / ``gpu_type_override`` — omit-when-absent (the #934
+      discipline), so flag-less launches add no override keys.
+    """
+    extras: dict[str, Any] = {"pod_name": handle.pod_name}
+    suffix = (spec.extra or {}).get("lane_suffix")
+    if suffix:
+        extras["lane_suffix"] = str(suffix)
+    gpu_type = (spec.extra or {}).get("gpu_type")
+    if gpu_type:
+        extras["gpu_type_override"] = str(gpu_type)
     return extras
 
 

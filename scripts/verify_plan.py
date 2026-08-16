@@ -11096,7 +11096,22 @@ def check_fanout_prefix_staging(plan: str, kind: str) -> CheckResult:
 #   amendment (which names `pod.py provision --name-suffix` per shard)
 #   is quiet via the no-launch-argv SKIP (it provisions directly, not
 #   through dispatch_issue.py), the intended silence.
-_C58_REMEDY_RE = re.compile(r"pod\.py\s+provision\b[^\n]*--name-suffix")
+# #2145 remedy extension: `dispatch_issue.py launch --lane-suffix <slug>`
+# (alias `--name-suffix`) now mints `pod-<N>-<slug>` on the RunPod lane, so a
+# plan naming per-shard suffixed launch commands has named a T3 mechanism.
+# Gated per the plan's pre-registered condition: the extension ships only
+# with a re-run of scripts/issue2237_c58_corpus_sweep.py showing the #2054
+# plans/v16.md positive control still WARNs. Re-sweep 2026-08-15 (#2145,
+# shipped explicit-only posture, live corpus n=4214): warns=8 (#2054
+# v10-v16 + #2203 v6), pass (remedy named) = 0 — the extended alternate
+# flipped NOTHING to PASS on the corpus; positive control (#2054 v16
+# WARNs) = True; corpus ceiling (warns <= 20) = True; n_skip=4206
+# (no-fanout=38, no-launch-argv=2967, no-runpod-argv=199,
+# no-section-9=755, none-parses=247).
+_C58_REMEDY_RE = re.compile(
+    r"pod\.py\s+provision\b[^\n]*--name-suffix"
+    r"|dispatch_issue\.py\s+launch\b[^\n]*--(?:lane|name)-suffix"
+)
 _C58_T2_INCLUDE_AUTO = False  # shipped posture — see the calibration block
 
 
@@ -11209,17 +11224,21 @@ def _c58_check(plan: str, include_auto: bool) -> CheckResult:
     return _warn(
         cid,
         name,
-        f"{evidence} while every RunPod-lane launch mints the SAME pod name — "
-        "`backends/runpod.py` `_runpod_pod_name(issue)` returns `pod-<N>` with no "
-        "suffix parameter, and `--lane-suffix` is honored on GCP + SLURM only — so "
-        "N concurrent same-issue launches collide; the dangerous branch is silent "
+        f"{evidence} while every SUFFIX-LESS RunPod-lane launch mints the SAME pod "
+        "name — `backends/runpod.py` `_runpod_pod_name(issue, name_suffix=None)` "
+        "defaults to the bare `pod-<N>`; since #2145 `dispatch_issue.py launch "
+        "--lane-suffix <slug>` (alias `--name-suffix`) IS honored on the RunPod "
+        "lane and mints `pod-<N>-<slug>` — so N concurrent same-issue launches "
+        "WITHOUT distinct suffixes collide; the dangerous branch is silent "
         "co-location of all N shards on ONE pod, invalidating every per-shard "
         "wall/RSS projection the plan booked (#2054 v16, caught only at dispatch). "
-        "Name ONE of: per-pod `pod.py provision --issue <N> --name-suffix <slug>` "
-        "calls; one pod with N in-pod workers; a name-isolating lane (GCP/SLURM "
-        "`--lane-suffix`); or mark the fan-out explicitly serialized (the "
-        "Methodology lens item 16 FAN-OUT POD-NAME EXTENSION is the binding gate; "
-        "c58's silence is not evidence of safety — residual (i))",
+        "Name ONE of: per-launch `dispatch_issue.py launch --lane-suffix <slug>` "
+        "(distinct slug per shard); per-pod `pod.py provision --issue <N> "
+        "--name-suffix <slug>` calls; one pod with N in-pod workers; a "
+        "name-isolating GCP/SLURM `--lane-suffix` lane; or mark the fan-out "
+        "explicitly serialized (the Methodology lens item 16 FAN-OUT POD-NAME "
+        "EXTENSION is the binding gate; c58's silence is not evidence of safety "
+        "— residual (i))",
     )
 
 
@@ -11230,20 +11249,23 @@ def check_fanout_pod_name_collision(plan: str, kind: str) -> CheckResult:
     plan whose plan-embedded ``dispatch_issue.py`` launch commands resolve
     to the RunPod lane (T2), must name a mechanism that mints N DISTINCT
     pod names (T3 — the literal ``pod.py provision ... --name-suffix``
-    command construct). RunPod structurally cannot mint them itself:
-    ``backends/runpod.py`` ``_runpod_pod_name(issue)`` returns
-    ``f"pod-{issue}"`` with no suffix parameter, and ``--lane-suffix`` is
-    honored on GCP + SLURM only
-    (``dispatch_issue._lane_suffix_honored_kinds``), so N concurrent
-    same-issue launches collide — best case an error, worst case silent
-    co-location of all N shards on ONE pod, invalidating every per-shard
-    wall/RSS projection the plan booked (#2054 plan v16: a 10-way
-    ``cpu-bigmem`` RunPod fan-out whose own pod-safety paragraph required
-    ``pod-2054-rb789-<shard>`` names; it PASSed verify_plan 0 FAIL /
-    0 WARN twice plus two critic-round APPROVEs and was caught only at
-    dispatch). NEVER FAILs (the c39/c43/c46/c50/c52/c54/c57 fail-open
-    posture); every ambiguity SKIPs with a stated reason, and a SKIP is
-    never coverage.
+    command construct, or — since #2145 — a
+    ``dispatch_issue.py launch ... --lane-suffix``/``--name-suffix``
+    command). A SUFFIX-LESS RunPod launch mints the SAME name for every
+    shard: ``backends/runpod.py`` ``_runpod_pod_name(issue,
+    name_suffix=None)`` defaults to the bare ``f"pod-{issue}"``; since
+    #2145 ``--lane-suffix`` (alias ``--name-suffix``) IS honored on the
+    RunPod lane (``dispatch_issue._lane_suffix_honored_kinds`` includes
+    ``runpod``) and mints ``pod-<N>-<slug>`` — so N concurrent same-issue
+    launches WITHOUT distinct suffixes collide — best case an error,
+    worst case silent co-location of all N shards on ONE pod,
+    invalidating every per-shard wall/RSS projection the plan booked
+    (#2054 plan v16: a 10-way ``cpu-bigmem`` RunPod fan-out whose own
+    pod-safety paragraph required ``pod-2054-rb789-<shard>`` names; it
+    PASSed verify_plan 0 FAIL / 0 WARN twice plus two critic-round
+    APPROVEs and was caught only at dispatch). NEVER FAILs (the
+    c39/c43/c46/c50/c52/c54/c57 fail-open posture); every ambiguity SKIPs
+    with a stated reason, and a SKIP is never coverage.
 
     Named residuals, disclosed in the c52/c57 honesty convention — none
     is ever to be read as coverage:

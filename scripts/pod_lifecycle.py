@@ -406,6 +406,18 @@ _is_epm_pod = _is_managed_pod
 _POD_NAME_RE = re.compile(r"^(?:pod|epm-issue)-(?P<issue>\d+)(?:-(?P<slug>[a-z][a-z0-9-]*))?$")
 
 
+def _slug_from_pod_name(name: str) -> str | None:
+    """Suffix slug from a managed pod name via ``_POD_NAME_RE`` (#2145).
+
+    Returns the ``<slug>`` of ``pod-<N>-<slug>`` / ``epm-issue-<N>-<slug>``,
+    or None for a bare ``pod-<N>`` / an unmanaged name — the read-side twin
+    of ``_issue_from_pod_name`` (same single grammar source, so a name that
+    yields an issue but no slug is a BARE pod by construction).
+    """
+    m = _POD_NAME_RE.match(name)
+    return m.group("slug") if m else None
+
+
 def _issue_from_pod_name(name: str) -> int | None:
     """Extract the owning issue from a managed pod name.
 
@@ -2749,11 +2761,19 @@ def cmd_provision(args: argparse.Namespace) -> None:  # noqa: C901 — sequentia
     # getattr: hand-built Namespaces (tests, embedders) predate the flag;
     # the real CLI always sets it (argparse default=None).
     name_suffix = getattr(args, "name_suffix", None)
-    if name_suffix is not None and not re.fullmatch(r"[a-z][a-z0-9-]{0,19}", name_suffix):
-        raise SystemExit(
-            "--name-suffix must match [a-z][a-z0-9-]{0,19} (lowercase, letter-initial, "
-            "e.g. 'b', 'followup2') so pod-<N>-<slug> parses back to issue <N>."
-        )
+    if name_suffix is not None:
+        # Single grammar source (#2145): backends.base.RUNPOD_NAME_SUFFIX_RE
+        # is the shared write-side pattern (lazy import inside the suffixed
+        # branch — the unsuffixed path never touches the src package;
+        # precedent: gpu_heuristics lazy imports). Same pattern string +
+        # SystemExit message as the pre-#2145 inline check, byte-identical.
+        from explore_persona_space.backends.base import RUNPOD_NAME_SUFFIX_RE
+
+        if not RUNPOD_NAME_SUFFIX_RE.fullmatch(name_suffix):
+            raise SystemExit(
+                "--name-suffix must match [a-z][a-z0-9-]{0,19} (lowercase, letter-initial, "
+                "e.g. 'b', 'followup2') so pod-<N>-<slug> parses back to issue <N>."
+            )
 
     # Warn-only pod-safety check (#1177) — BEFORE any RunPod API call
     # (list_team_pods below), so it prints even when the provision later
