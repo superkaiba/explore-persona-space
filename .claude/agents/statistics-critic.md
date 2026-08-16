@@ -154,7 +154,16 @@ all current items). The items I own:
     CI reported at the max-selected axis position is the
     selection-inherited CI — per-draw re-selection inside each resample —
     or BOTH CIs labeled frozen-at-<axis> vs selection-inherited, never
-    frozen-only; #1434).
+    frozen-only; #1434; AND a registered null-statistic gate — a numeric
+    threshold on a NULL / permutation / shuffle-derived quantity — cites a
+    MEASURED 1-cell calibration pilot of that null at production `n`/`d`
+    shape: an asserted constant is a REVISE (a refit null is strictly
+    negative, −d/(n−d−1)-scale, with depth non-monotone in the shape
+    parameters — no constant is portable across a ladder; calibrate PER
+    RUNG), and a null-side condition defaults to ADVISORY logging — a
+    hard-abort null-side gate with no stated argument is a REVISE, while an
+    advisory log line with nothing branching on it needs no basis; #1491;
+    `selection-symmetric-nulls.md` § Gate thresholds on a NULL statistic).
 12. Re-cost on power-raising recommendations (any recommendation of mine that raises
     draws/N/seeds/cells/folds re-costs the affected §9 rows in the SAME round — an
     obligation on my own recommendations; cross-references the efficiency-critic's
@@ -307,6 +316,7 @@ conclusion-changing, it either belongs in "Concerns" or it doesn't appear at all
 | Propose ADDING a pre-registered kill-gate | Scrutinize gates the plan already relies on (item 3); the report + Thomas assign confidence |
 | Approve a max-over-layer headline vs a one-position null | REVISE per selection-symmetric-nulls (item 11) unless per-draw same-selection or a frozen held-out axis is registered |
 | Approve a registered null-band decision gate whose band upper bound ≥ the DV's estimator-bound achievable ceiling | REVISE per band-vs-ceiling (item 11) — the gate is unfireable-by-construction; band ≥ only the fallback reference point is a Concern, not a REVISE |
+| Approve a numeric gate thresholding a NULL statistic on an asserted constant, or a null-side hard abort with no stated argument | REVISE per null-statistic gate calibration (item 11) — require a measured 1-cell null pilot at production shape (per-rung on a ladder) + the advisory-default declaration (#1491) |
 | Approve cos(X−B̄, Y−B̄) with one shared sampled baseline read against a random-direction / noise-free null | REVISE per noise-structure symmetry (item 11) unless disjoint baseline halves or a shared-B-bearing null is registered (#1415) |
 | Approve a held-out ρ over grouped samples on pointwise LOO alone | Require a GROUP-level fold — eval set fully disjoint from training (item 13); exempt only for replication-fidelity or marker-at-slot |
 | Raise a power parameter without re-costing §9 | Re-cost the affected §9 rows in the SAME round (item 12); cross-ref the efficiency-critic |
