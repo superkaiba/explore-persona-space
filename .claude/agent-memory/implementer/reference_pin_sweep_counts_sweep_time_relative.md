@@ -1,6 +1,6 @@
 ---
 name: pin-sweep-counts-sweep-time-relative
-description: Branch-scope pin-sweep hit sets/counts are sweep-time-relative — re-derive fresh at the current tip AND recount the disputed block; both prior numbers can be right for different objects
+description: Recount a disputed pin-sweep fence against its OWN contemporaneous map TSV first — fence≠TSV means a stale/miscopied paste, not a second legitimate object; re-derive fresh and publish the internally consistent set
 metadata:
   type: reference
 ---
@@ -13,13 +13,19 @@ block), there are TWO distinct quantities and both may be "right":
    `sort -u | wc -l`); and
 2. a FRESH `select_step9c_tests.py --map-files` sweep at the current tip.
 
-They can disagree in MEMBERSHIP even when the difflist is near-identical:
-the diff base is FETCHED `origin/main`, so main moving between sweeps
-shifts which regions of the branch's `.claude/**` prose surfaces differ
-(whole prose-pin test families flip in/out), and the worktree's selector
-copy can sit commits behind main's. #2321 r4 measured: 41-vs-43-path
-difflists differing only by 2 agent-memory `.md` files produced 158- and
-157-file hit sets with 26/25 asymmetric membership.
+When the two derivations disagree, suspect the PASTED FENCE before the
+sweep. #2321 r4 measured: the 41- and 43-path difflists (differing only
+by 2 agent-memory `.md` files) produced BYTE-IDENTICAL 191-pair
+`--map-files` TSVs — the same 157-test set — while the disputed v3 fence
+held 158 rows with 26/25 asymmetric membership against its OWN
+contemporaneous TSV. The divergent object was the hand-pasted fence
+(stale/miscopied), not a second sweep result. Mechanism bound:
+`--map-files` consumes the given path list and never runs git (no
+fetch — the `select_step9c_tests.py` mapping-mode contract), so
+`origin/main` moving between sweeps can change only the DIFFLIST INPUT,
+never a mapping run's output for a fixed difflist; here the measured
+input delta produced zero output change. Always recount a disputed fence
+against `cut -f1 <its own map.tsv> | sort -u` before attributing drift.
 
 **How to apply:** in the re-roll marker report BOTH derivations with
 methods — the disputed block's recount (confirming/refuting the reviewer)
