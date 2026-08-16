@@ -33,10 +33,14 @@ probe is: `git show <fix-sha>~1:scripts/<mod>.py > scripts/<mod>.py` in the
 issue worktree, run HEAD's new tests against it (the parent commit lacks the
 tests, so run HEAD's test file, not a parent checkout), read the failure
 MODES (each must match the r2/r1 trace, not just "failed"), then restore via
-`git -C <worktree> checkout -- <file>` in its OWN Bash call — the repo-root
-guard blocks any compound whose TEXT contains `git checkout --`, killing the
-swap clause too (#1143 text-match). Confirm restore with an empty
-`git diff --stat HEAD -- <file>` before re-running the suite.
+`git -C <worktree> checkout -- <file>` — the repo-root guard blocks any
+compound whose TEXT contains a bare `git checkout` pathspec (#1143
+text-match), but the per-clause `git -C <worktree path> checkout ...` form
+IS compound-safe (verified #2321 R2 g3: swap → pytest → restore → porcelain
+check all in ONE `&&`-chain, so the restore cannot be orphaned by a turn
+boundary). Confirm restore with an empty
+`git diff --stat HEAD -- <file>` (or `status --porcelain | wc -l` == 0)
+before re-running the suite.
 
 **Zero-mutation dual-load variant (#2321 R2 g4):** when the target is a
 standalone script whose deps resolve from the current venv, skip the
