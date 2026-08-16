@@ -32,7 +32,9 @@ def _write_tree(root, files: dict[str, bytes]) -> None:
 SAMPLE = {
     "a/one.json": b'{"k": 1, "text": "line\\nbreak"}',
     "a/two.json": b'{"weird formatting":     3}\n\n',  # producer formatting preserved
-    "a/unicode.txt": "café   line-sep ‽\n".encode(),  # raw U+2028 (#950)
+    # raw U+2028 LINE SEPARATOR inside text content (#950; built via an
+    # escape so the source file itself stays RUF001-clean).
+    "a/unicode.txt": ("caf\u00e9 \u2028 line-sep \u203d\n").encode(),
     "b/binary.npz": b"\x93NUMPY\x01\x00\x80\xff\x00binary\n\nbytes",  # non-UTF8 -> b64
     "b/empty.done": b"",  # empty file legal
     "root_file.log": b"plain log line\n",

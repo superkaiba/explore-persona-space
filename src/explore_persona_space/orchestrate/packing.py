@@ -219,10 +219,7 @@ def estimate_encoded_line_bytes(size_bytes: int, filename: str) -> int:
     :class:`OversizeMemberError` past the cap regardless.
     """
     ext = Path(filename).suffix.lower()
-    if ext in _TEXT_EXTS:
-        est = int(size_bytes * 1.05)
-    else:
-        est = (size_bytes * 4 + 2) // 3
+    est = int(size_bytes * 1.05) if ext in _TEXT_EXTS else (size_bytes * 4 + 2) // 3
     return est + _LINE_OVERHEAD_BYTES
 
 
@@ -464,55 +461,17 @@ def pack_tree_v2(
     n_members_total = 0
     for rel_dir in sorted(by_rel_dir):
         key = key_by_rel_dir["" if rel_dir == "." else rel_dir]
-        group = PackGroup(key=key, rel_dir=rel_dir)
-        entries: dict[str, MemberIndexEntry] = {}
-        shard_idx = 0
-        buf: list[bytes] = []
-        buf_bytes = 0
-        buf_members = 0
-
-        def _flush() -> None:
-            nonlocal shard_idx, buf, buf_bytes, buf_members
-            if not buf:
-                return
-            name = shard_name(key, shard_idx)
-            blob = b"".join(buf)
-            _atomic_write(pack_dir / name, blob)
-            shard_meta[name] = {
-                "sha256": hashlib.sha256(blob).hexdigest(),
-                "n_lines": buf_members,
-                "bytes": len(blob),
-            }
-            group.shard_files.append(name)
-            shard_idx += 1
-            buf, buf_bytes, buf_members = [], 0, 0
-
-        for rel in sorted(by_rel_dir[rel_dir]):
-            data = (raw_root / rel).read_bytes()
-            _check_anchor(rel, data, anchors)
-            line = encode_member_line(rel, data)
-            if len(line) > shard_max_bytes:
-                raise OversizeMemberError(
-                    f"member {rel!r}: encoded line {len(line)} B > shard cap "
-                    f"{shard_max_bytes} B — must stay unpacked (§3.3(b))"
-                )
-            if buf and (
-                buf_bytes + len(line) > shard_max_bytes or buf_members >= shard_max_members
-            ):
-                _flush()
-            entries[rel] = MemberIndexEntry(
-                shard=shard_name(key, shard_idx),
-                offset=buf_bytes,
-                length=len(line),
-                sha256=hashlib.sha256(data).hexdigest(),
-                enc=member_enc(data),
-                size=len(data),
-            )
-            buf.append(line)
-            buf_bytes += len(line)
-            buf_members += 1
-        _flush()
-        group.n_members = len(entries)
+        group, entries, group_shard_meta = _pack_group(
+            raw_root,
+            pack_dir,
+            key,
+            rel_dir,
+            sorted(by_rel_dir[rel_dir]),
+            anchors=anchors,
+            shard_max_bytes=shard_max_bytes,
+            shard_max_members=shard_max_members,
+        )
+        shard_meta.update(group_shard_meta)
         n_members_total += len(entries)
         group.index_files = _write_index_parts(pack_dir, key, rel_dir, entries, shard_max_bytes)
         groups[key] = group
@@ -546,6 +505,69 @@ def pack_tree_v2(
     return PackResult(
         pack_dir=pack_dir, groups=groups, census_key=census_key, n_members=n_members_total
     )
+
+
+def _pack_group(
+    raw_root: Path,
+    pack_dir: Path,
+    key: str,
+    rel_dir: str,
+    rel_files: list[str],
+    *,
+    anchors: Mapping[str, tuple[str, str]] | None,
+    shard_max_bytes: int,
+    shard_max_members: int,
+) -> tuple[PackGroup, dict[str, MemberIndexEntry], dict[str, dict]]:
+    """Stream one directory group into shards; return (group, entries, shard_meta)."""
+    group = PackGroup(key=key, rel_dir=rel_dir)
+    entries: dict[str, MemberIndexEntry] = {}
+    shard_meta: dict[str, dict] = {}
+    shard_idx = 0
+    buf: list[bytes] = []
+    buf_bytes = 0
+    buf_members = 0
+
+    def _flush() -> None:
+        nonlocal shard_idx, buf, buf_bytes, buf_members
+        if not buf:
+            return
+        name = shard_name(key, shard_idx)
+        blob = b"".join(buf)
+        _atomic_write(pack_dir / name, blob)
+        shard_meta[name] = {
+            "sha256": hashlib.sha256(blob).hexdigest(),
+            "n_lines": buf_members,
+            "bytes": len(blob),
+        }
+        group.shard_files.append(name)
+        shard_idx += 1
+        buf, buf_bytes, buf_members = [], 0, 0
+
+    for rel in rel_files:
+        data = (raw_root / rel).read_bytes()
+        _check_anchor(rel, data, anchors)
+        line = encode_member_line(rel, data)
+        if len(line) > shard_max_bytes:
+            raise OversizeMemberError(
+                f"member {rel!r}: encoded line {len(line)} B > shard cap "
+                f"{shard_max_bytes} B — must stay unpacked (§3.3(b))"
+            )
+        if buf and (buf_bytes + len(line) > shard_max_bytes or buf_members >= shard_max_members):
+            _flush()
+        entries[rel] = MemberIndexEntry(
+            shard=shard_name(key, shard_idx),
+            offset=buf_bytes,
+            length=len(line),
+            sha256=hashlib.sha256(data).hexdigest(),
+            enc=member_enc(data),
+            size=len(data),
+        )
+        buf.append(line)
+        buf_bytes += len(line)
+        buf_members += 1
+    _flush()
+    group.n_members = len(entries)
+    return group, entries, shard_meta
 
 
 def _write_index_parts(
