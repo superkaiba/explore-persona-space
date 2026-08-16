@@ -17,6 +17,7 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - arxiv-mcp.md — you search / read an arXiv paper to ground a hyperparameter or replicate a recipe.
 - auto-continuation.md — you are about to pause, block, ask "should I continue", or present a choice (gate enumeration, halt criteria, two-path escalation).
 - background-automation.md — you touch/reason about the cron audits/session watcher/pod-GCP janitors.
+- blinded-reads.md — you dispatch a blinded / unprimed qualitative read (bare-API packets, no reader tools, frozen key, scope-aware wrapper-vs-payload leakage scan).
 - clean-result-critic-lens-reference.md — a clean-result critic twin reviews a markdown body (pointer-loaded spec-text rubrics).
 - clean-result-paper-review.md — a clean-result critic twin reviews a `paper: true` task (P1-P7 lenses, verify_paper.py pre-pass).
 - code-reviewer-section-reference.md — the code-reviewer runs a Step 0.x gate (pointer-loaded span).

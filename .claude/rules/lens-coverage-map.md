@@ -137,6 +137,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | arxiv-mcp | LESSONS.md | v2-owner: methodology-baselines-critic + planner |
 | auto-continuation | LESSONS.md | v2-owner: orchestrator (/issue-v2 gate set + workflow.yaml; workflow-version-independent) |
 | background-automation | LESSONS.md | v2-owner: autonomous_session_watch.py + crons (runtime unchanged, Assumption 1) |
+| blinded-reads | LESSONS.md | v2-owner: orchestrator (blinded-read dispatch discipline; workflow-version-independent) |
 | clean-result-critic-lens-reference | LESSONS.md | v1-only — expires at drain |
 | clean-result-paper-review | LESSONS.md | v1-only — expires at drain |
 | code-reviewer-section-reference | LESSONS.md | v1-only — expires at drain |

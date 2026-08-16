@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2320,
+  "highest_id": 2322,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8832,29 +8832,29 @@
     "2142": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2142",
-      "status": "running",
+      "path": "tasks/completed/2142",
+      "status": "completed",
       "title": "daily-fix: dispatch lease races (4 dup spawns + cap 6>5)"
     },
     "2143": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2143",
-      "status": "running",
+      "path": "tasks/completed/2143",
+      "status": "completed",
       "title": "daily-fix: bare-API blinded-read recipe as a rule"
     },
     "2144": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2144",
-      "status": "proposed",
+      "path": "tasks/running/2144",
+      "status": "running",
       "title": "daily-fix: null-statistic gates need measured calibration"
     },
     "2145": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2145",
-      "status": "proposed",
+      "path": "tasks/planning/2145",
+      "status": "planning",
       "title": "daily-fix: dispatch_issue launch lacks name-suffix/gpu-type"
     },
     "2146": {
@@ -10077,8 +10077,8 @@
     "2304": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2304",
-      "status": "proposed",
+      "path": "tasks/running/2304",
+      "status": "running",
       "title": "HF file-count overflow fallback never fires for dataset repos or bulk uploads \u2014 data repo hit its 1,000,000-file hard cap"
     },
     "2305": {
@@ -10203,9 +10203,23 @@
     "2320": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2320",
-      "status": "running",
+      "path": "tasks/completed/2320",
+      "status": "completed",
       "title": "workflow-fix: Step 10d Guard 3 ON_MAINLINE uses first-parent reachability, so a sibling's merge-form landing false-flags later branches UNSAFE"
+    },
+    "2321": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2321",
+      "status": "proposed",
+      "title": "Repack the 10 largest prefixes in the HF data repo to recover ~610k of the 1,000,000-file cap"
+    },
+    "2322": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2322",
+      "status": "proposed",
+      "title": "Codex twin: CLI 0.147.0 + gpt-5.6-sol, daily auto-upgrade cron"
     },
     "233": {
       "has_clean_result": false,

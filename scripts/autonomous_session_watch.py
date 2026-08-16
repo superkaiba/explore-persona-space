@@ -25442,6 +25442,19 @@ _DISPATCH_NOTE_SENTINELS = (
     _INFRA_DRAIN_NOTE_SENTINEL,
 )
 
+# #2142: registration/owner-activity freshness window for BOTH dispatch loops
+# (the PM-queue drain + the proposed-infra sweep). A candidate whose newest
+# session registration OR newest non-watcher marker is younger than this is
+# presumed OWNED by a just-spawned / live session — skipped with NO attempt
+# recorded. 600 s is an order of magnitude above the 26-59 s owner-signal
+# ages of the four duplicate-spawn incidents (#1771/#1997/#1988/#1992) and
+# deliberately BELOW the 1800 s dead-at-boot stale grace, so a genuinely
+# dead-at-boot registration still re-dispatches after ~3 ticks. This is a
+# POSITIVE "younger than the window => skip" guard that overrides the
+# `- stale` subtraction's blind spot without touching the staleness rule
+# itself. `0` disables the guard (kill switch). env EPM_DISPATCH_REG_FRESH_S.
+DISPATCH_REG_FRESH_S_DEFAULT = 600.0
+
 
 def _proposed_infra_sweep_marker_fresh_s() -> float:
     """Marker-freshness window in seconds (env
@@ -25474,6 +25487,137 @@ def _recent_dispatch_marker_age_s(events: list[dict], now: float) -> float | Non
         if ts is not None and (best is None or ts > best):
             best = ts
     return None if best is None else now - best
+
+
+def _dispatch_reg_fresh_s() -> float:
+    """Registration/owner-activity freshness window in seconds (#2142; env
+    ``EPM_DISPATCH_REG_FRESH_S``; missing or malformed value falls back to
+    :data:`DISPATCH_REG_FRESH_S_DEFAULT` — a typo must not distort the guard,
+    mirroring :func:`_proposed_infra_sweep_marker_fresh_s`). ``0`` disables
+    the guard (an age can never be ``< 0``)."""
+    raw = os.environ.get("EPM_DISPATCH_REG_FRESH_S")
+    if not raw:
+        return DISPATCH_REG_FRESH_S_DEFAULT
+    try:
+        return float(raw)
+    except ValueError:
+        return DISPATCH_REG_FRESH_S_DEFAULT
+
+
+def _registration_age_s(issue: int, now: float) -> float | None:
+    """Age in seconds of the NEWEST session registration for ``issue``
+    (``issue-<N>.json`` / ``manual-issue-<N>.json``), or ``None`` when none
+    exists (#2142). Prefers the JSON ``spawned_at``; a well-formed entry
+    missing a numeric ``spawned_at`` falls back to file mtime. A
+    present-but-garbled registration (unreadable / unparseable / non-dict,
+    with no usable mtime path) returns 0.0 (treated MAXIMALLY FRESH) — the
+    fail-CLOSED direction, matching :func:`_infra_drain_stale`'s
+    fail-toward-keep-blocking posture. NOT
+    :func:`spawn_session.dispatch_lease_fresh`'s garbled-mtime convention
+    (that one is mtime-with-TTL over a self-expiring lease) — do not "align"
+    this to mtime-with-TTL; that would unbound the wedge the wrong way (a
+    garbled registration aging PAST the window would unblock a dispatch onto
+    a possibly-live owner)."""
+    ages: list[float] = []
+    for basename in (f"issue-{issue}.json", f"manual-issue-{issue}.json"):
+        path = AUTONOMOUS_REGISTRY_DIR / basename
+        try:
+            raw = path.read_bytes()
+        except FileNotFoundError:
+            continue
+        except OSError:
+            return 0.0  # present but unreadable — maximally fresh (fail-closed)
+        try:
+            entry = json.loads(raw)
+        except ValueError:  # JSONDecodeError + UnicodeDecodeError on raw bytes
+            return 0.0  # present-but-garbled — maximally fresh (fail-closed)
+        if not isinstance(entry, dict):
+            return 0.0
+        spawned_at = entry.get("spawned_at")
+        if isinstance(spawned_at, int | float) and not isinstance(spawned_at, bool):
+            ts = float(spawned_at)
+        else:
+            try:
+                ts = path.stat().st_mtime
+            except OSError:
+                return 0.0
+        ages.append(max(0.0, now - ts))
+    return min(ages) if ages else None
+
+
+def _owner_activity_marker_age_s(events: list[dict], now: float) -> float | None:
+    """Age (s) of the newest NON-watcher marker on the task, or ``None`` when
+    no such marker / no parseable ts (fail-soft — the M1 lease still
+    protects). #2142: the #1997 duplicate's owner signal was a 26 s-old
+    progress note — invisible to the lease + registration guards. Delegates
+    to :func:`_latest_nonwatcher_event_ts`, which excludes every
+    :data:`_WATCHER_NOTE_SENTINELS` member — the watcher's own dispatch
+    sentinels (:data:`_INFRA_DRAIN_NOTE_SENTINEL` /
+    :data:`_PROPOSED_INFRA_SWEEP_NOTE_SENTINEL`) included, so the watcher's
+    own dispatch markers can never suppress its own retries."""
+    ts = _latest_nonwatcher_event_ts(events)
+    return None if ts is None else now - ts
+
+
+def _dispatch_freshness_skip(issue: int, events: list[dict], now: float) -> str | None:
+    """#2142: the three per-candidate freshness guards BOTH dispatch loops run
+    AFTER the caller-loop lease check — returns the log suffix for a skip (the
+    callers book NO attempt: none of these is a spawn failure) or ``None``
+    (eligible). ``events`` is the single ``_task_events`` read the caller
+    already made (no new I/O). Guard order (cheapest file read first):
+
+    1. registration younger than :func:`_dispatch_reg_fresh_s` — a
+       JUST-SPAWNED owner (the four duplicate incidents' owner signals were
+       26-59s old); a POSITIVE override of the ``- stale`` subtraction,
+       whatever the staleness rule classified.
+    2. #843 M3 dispatch-sentinel marker younger than one watcher cadence —
+       SOME dispatcher fired within the current/previous tick (the drain loop
+       gains this guard here; it previously lacked it).
+    3. non-watcher marker younger than the freshness window (the #1997
+       progress-note channel) — a live session is working the task even with
+       no registration/lease."""
+    fresh_window = _dispatch_reg_fresh_s()
+    reg_age = _registration_age_s(issue, now)
+    if reg_age is not None and reg_age < fresh_window:
+        return f"registration {reg_age:.0f}s < {fresh_window:.0f}s fresh"
+    marker_fresh_s = _proposed_infra_sweep_marker_fresh_s()
+    marker_age = _recent_dispatch_marker_age_s(events, now)
+    if marker_age is not None and marker_age < marker_fresh_s:
+        return f"recent-dispatch-marker {marker_age:.0f}s < {marker_fresh_s:.0f}s"
+    act_age = _owner_activity_marker_age_s(events, now)
+    if act_age is not None and act_age < fresh_window:
+        return f"owner-activity marker {act_age:.0f}s < {fresh_window:.0f}s fresh"
+    return None
+
+
+def _cap_recheck_skip(
+    attempted_any: bool, pending: int, dispatched: int, limit: int
+) -> tuple[str | None, int | None]:
+    """#2142 per-spawn cap re-check shared by both dispatch loops. Once ANY
+    prior ``_dispatch_infra_drain`` call happened this pass (``attempted_any``
+    — NOT ``dispatched > 0``: a "failed"/"suppressed" first attempt leaves
+    ``dispatched`` at 0 with the stagger already elapsed), the pass-start
+    occupancy is up to a stagger window (~60s each) stale — re-read before
+    every further spawn. ``+ dispatched`` mirrors the decide-time walk's
+    ``len(dispatch)`` term: a just-dispatched task stays ``proposed`` for
+    minutes (absent from the occupancy statuses) and pass-start ``pending``
+    predates its registration. A fast-flipping own dispatch then
+    double-counts — the safe skip direction. NARROWS the cap race (the
+    verdict is still up to one stagger stale at the POST); does not close it.
+
+    Returns ``(verdict, live_count)``: verdict ``None`` = proceed;
+    ``"read-failed"`` = occupancy read failed mid-batch (callers BREAK —
+    fail-closed, mirroring the pass-level guard); ``"cap-full"`` = skip this
+    candidate (NO attempt — occupancy filling is not the candidate's
+    failure). ``live_count`` is ``len(live)`` when read (for the log line)."""
+    if not attempted_any:
+        return None, None
+    live = _infra_drain_occupancy()
+    if live is None:
+        return "read-failed", None
+    if len(live) + pending + dispatched >= limit:
+        return "cap-full", len(live)
+    return None, len(live)
 
 
 def _parse_predicate_hold(reason: str) -> int | None:
@@ -26165,10 +26309,15 @@ def _dispatch_infra_drain(
     — a loud no-op the callers must NOT book: no dispatch marker, no attempt,
     no backoff (a crashed lease-winner then recovers in <= TTL + one tick,
     not the 1 h backoff). ``"failed"`` also covers dry-run (logs, never
-    spawns, nothing to book) and the pre-spawn re-check aborts (both record
-    a spawn-failed attempt in the callers, exactly as before). ``"suppressed"``
-    ALSO covers the #1027 auth-outage gate (same no-booking contract); this
-    single hook covers BOTH callers (``infra_drain_pass`` +
+    spawns, nothing to book) and the pre-spawn REGISTRATION re-check aborts
+    (which record a spawn-failed attempt in the callers — a changed
+    registration is a genuinely ambiguous lost race). A dispatch LEASE read
+    fresh at the post-stagger re-check returns ``"suppressed"`` instead
+    (#2142): a lease at POST time is the "a session IS driving" no-op, and
+    booking it as ``"failed"`` would consume the 1 h backoff, stretching a
+    crashed lease-winner's recovery from TTL + one tick to ~70 min.
+    ``"suppressed"`` ALSO covers the #1027 auth-outage gate (same no-booking
+    contract); this single hook covers BOTH callers (``infra_drain_pass`` +
     ``proposed_infra_sweep_pass``). Before a real spawn it additionally
     sleeps out the remainder of the #1059 session-dispatch stagger window
     (:func:`spawn_session.stagger_delay_s`; dry-run returns first and never
@@ -26198,6 +26347,21 @@ def _dispatch_infra_drain(
             f"{delay:.0f}s (429 token-pacing, #1059)"
         )
         _stagger_sleep(delay)
+    # #2142: the caller-loop lease check ran BEFORE the stagger sleep (up to
+    # 60s), so its verdict is stale at the POST. The load-bearing element is
+    # the fresh FILE READ (a lease acquired during the sleep reads fresh under
+    # any earlier `now`); the fresh clock only avoids over-suppressing a lease
+    # that expired mid-sleep. Saves one self-suppressing spawn_session
+    # subprocess — the boot itself is already prevented by the chokepoint
+    # lease acquisition in `spawn_session.cmd_spawn_issue`.
+    post_stagger_now = time.time()
+    held = dispatch_lease_fresh(issue, post_stagger_now)
+    if held is not None:
+        print(
+            f"  INFRA-DRAIN SUPPRESSED issue #{issue} (lease acquired during "
+            f"the pre-spawn window, {dispatch_lease_desc(held, post_stagger_now)})"
+        )
+        return "suppressed"
     snapshot = reg_snapshot or {}
     for basename in (f"issue-{issue}.json", f"manual-issue-{issue}.json"):
         path = AUTONOMOUS_REGISTRY_DIR / basename
@@ -26479,6 +26643,126 @@ def _promote_satisfied_predicate_holds(
     return new_ids, remaining
 
 
+def _infra_drain_prefilter_all_skipped(
+    ids: list[int],
+    holds: dict[int, str],
+    raw_registered: set[int],
+    attempts: dict[int, dict],
+    now: float,
+    queue_updated_ts: float | None,
+    regs: dict[int, list[dict]],
+    *,
+    backoff_s: float,
+    max_attempts: int,
+) -> list[tuple[int, str]] | None:
+    """Zero-subprocess pre-filter for :func:`infra_drain_pass` (#633; extracted
+    verbatim for the C901 cap, #2142). Returns the full ``[(id, reason)]``
+    skip list when EVERY queue id pre-filters to a skip AND no
+    "already-registered" skip needs the stale-registration rescue — the
+    caller then logs + returns with zero ``task.py`` reads. ``None`` =
+    proceed to the full path. An "already-registered" pre-filter skip may be
+    rescued by the stale-registration handling (dead-at-boot session) — that
+    needs a status read, so such IDs defer the early exit to the full path
+    when their registration looks suspicious (older than grace + session not
+    live); everything else (held / backoff / exhausted / live-or-fresh
+    registration) early-exits."""
+    prefilter = {
+        i: _cheap_skip_reason(
+            i,
+            holds,
+            raw_registered,
+            attempts,
+            now,
+            queue_updated_ts,
+            backoff_s=backoff_s,
+            max_attempts=max_attempts,
+        )
+        for i in ids
+    }
+    if not all(reason is not None for reason in prefilter.values()):
+        return None
+    registered_skips = {i for i in ids if prefilter[i] == "already-registered"}
+    if _infra_drain_possibly_stale_ids(registered_skips, regs, now):
+        return None
+    return [(i, prefilter[i]) for i in ids]
+
+
+def _run_infra_drain_dispatch_loop(
+    dispatch: list[int],
+    cap: int,
+    dry_run: bool,
+    now: float,
+    queue_updated_ts: float | None,
+    attempts: dict[int, dict],
+    reg_snapshot: dict[str, bytes],
+    occupied_active: int,
+    pending: int,
+) -> int:
+    """The drain lane's per-candidate dispatch loop (extracted verbatim from
+    :func:`infra_drain_pass` for the C901 cap, #2142); returns the number of
+    real spawns. Per candidate, in order: the #843 M1 lease pre-check (skip,
+    NO attempt — a lease-held skip must not consume the 1h backoff, or a
+    crashed winner's recovery would stretch to ~70 min instead of TTL + one
+    tick); the #2142 freshness guards (:func:`_dispatch_freshness_skip` —
+    skip, NO attempt); the #2142 per-spawn cap re-check
+    (:func:`_cap_recheck_skip` — a failed occupancy read BREAKS the batch
+    fail-closed); then the spawn, booking the attempt on "spawned"/"failed"
+    (never on "suppressed", the #843 M1b no-op) and posting the dispatch
+    marker on "spawned"."""
+    dispatched = 0
+    attempted_any = False
+    for issue in dispatch:
+        held_lease = dispatch_lease_fresh(issue, now)
+        if held_lease is not None:
+            print(
+                f"  INFRA-DRAIN SKIP issue #{issue} (dispatch-lease held, "
+                f"{dispatch_lease_desc(held_lease, now)})"
+            )
+            continue
+        events = _task_events(issue)
+        fresh_skip = _dispatch_freshness_skip(issue, events, now)
+        if fresh_skip is not None:
+            print(f"  INFRA-DRAIN SKIP issue #{issue} ({fresh_skip})")
+            continue
+        verdict, live_n = _cap_recheck_skip(attempted_any, pending, dispatched, cap)
+        if verdict == "read-failed":
+            print(
+                "  INFRA-DRAIN STOP: live occupancy read FAILED mid-batch; "
+                "not dispatching further this tick (fail-closed, mirrors "
+                "the pass-level guard)"
+            )
+            break
+        if verdict == "cap-full":
+            print(
+                f"  INFRA-DRAIN SKIP issue #{issue} (cap-full-recheck: "
+                f"live {live_n}+{pending}+{dispatched} >= cap {cap})"
+            )
+            continue  # NO attempt — occupancy filling is not this candidate's failure
+        slot_desc = f"slot {min(occupied_active + pending + dispatched + 1, cap)}/{cap}"
+        result = _dispatch_infra_drain(issue, slot_desc, dry_run, reg_snapshot=reg_snapshot)
+        attempted_any = True
+        if result == "suppressed":
+            # #843 M1b: rc-0 duplicate-suppression no-op — a session is
+            # driving; book nothing (no attempt, no backoff, no marker).
+            continue
+        if not dry_run:
+            # Count the ATTEMPT whether the spawn succeeded or failed, so a
+            # failing spawn can't tight-loop (the backoff window binds next
+            # tick either way).
+            _infra_drain_record_attempt(attempts, issue, now, queue_updated_ts, result == "spawned")
+        if result == "spawned":
+            dispatched += 1
+            _post_progress_marker(
+                issue,
+                f"{_INFRA_DRAIN_NOTE_SENTINEL} watcher dispatched autonomous "
+                f"session from the PM infra-drain queue (occupied "
+                f"{occupied_active}+{pending} pending of cap {cap})",
+                dry_run,
+                label="infra-drain",
+            )
+    return dispatched
+
+
 def infra_drain_pass(
     dry_run: bool,
     now: float | None = None,
@@ -26536,35 +26820,25 @@ def infra_drain_pass(
     # toward the next tick). When every ID pre-filters to a skip, the tick
     # costs ZERO task.py subprocesses.
     raw_registered = set(regs) & set(ids)
-    prefilter = {
-        i: _cheap_skip_reason(
-            i,
-            holds,
-            raw_registered,
-            attempts,
-            now,
-            queue_updated_ts,
-            backoff_s=backoff_s,
-            max_attempts=max_attempts,
+    pre_skips = _infra_drain_prefilter_all_skipped(
+        ids,
+        holds,
+        raw_registered,
+        attempts,
+        now,
+        queue_updated_ts,
+        regs,
+        backoff_s=backoff_s,
+        max_attempts=max_attempts,
+    )
+    if pre_skips is not None:
+        print(
+            f"infra-drain: queue={len(ids)} dispatched=0 skipped={len(ids)} "
+            f"(pre-filtered; zero task.py reads this tick)"
         )
-        for i in ids
-    }
-    if all(reason is not None for reason in prefilter.values()):
-        # An "already-registered" pre-filter skip may be rescued by the
-        # stale-registration handling (dead-at-boot session) — that needs a
-        # status read, so such IDs defer the early exit to the full path
-        # when their registration looks suspicious (older than grace +
-        # session not live). Everything else (held / backoff / exhausted /
-        # live-or-fresh registration) early-exits with zero task.py reads.
-        registered_skips = {i for i in ids if prefilter[i] == "already-registered"}
-        if not _infra_drain_possibly_stale_ids(registered_skips, regs, now):
-            print(
-                f"infra-drain: queue={len(ids)} dispatched=0 skipped={len(ids)} "
-                f"(pre-filtered; zero task.py reads this tick)"
-            )
-            _infra_drain_log_skips([(i, prefilter[i]) for i in ids], holds, attempts)
-            _infra_drain_prune_save(state, ids, dry_run)
-            return
+        _infra_drain_log_skips(pre_skips, holds, attempts)
+        _infra_drain_prune_save(state, ids, dry_run)
+        return
 
     status_kind, stale, pending = _infra_drain_signals(ids, holds, regs, now)
     registered_nonstale = raw_registered - stale
@@ -26595,41 +26869,17 @@ def infra_drain_pass(
         backoff_s=backoff_s,
         max_attempts=max_attempts,
     )
-    dispatched = 0
-    for issue in dispatch:
-        # #843 M1 advisory pre-check at the CALLER loop: a fresh per-issue
-        # dispatch lease means a spawn is already in flight — skip loudly and
-        # record NO attempt (a lease-held skip must not consume the 1 h
-        # backoff, or a crashed winner's recovery would stretch to ~70 min
-        # instead of TTL + one tick).
-        held_lease = dispatch_lease_fresh(issue, now)
-        if held_lease is not None:
-            print(
-                f"  INFRA-DRAIN SKIP issue #{issue} (dispatch-lease held, "
-                f"{dispatch_lease_desc(held_lease, now)})"
-            )
-            continue
-        slot_desc = f"slot {min(occupied_active + pending + dispatched + 1, cap)}/{cap}"
-        result = _dispatch_infra_drain(issue, slot_desc, dry_run, reg_snapshot=reg_snapshot)
-        if result == "suppressed":
-            # #843 M1b: rc-0 duplicate-suppression no-op — a session is
-            # driving; book nothing (no attempt, no backoff, no marker).
-            continue
-        if not dry_run:
-            # Count the ATTEMPT whether the spawn succeeded or failed, so a
-            # failing spawn can't tight-loop (the backoff window binds next
-            # tick either way).
-            _infra_drain_record_attempt(attempts, issue, now, queue_updated_ts, result == "spawned")
-        if result == "spawned":
-            dispatched += 1
-            _post_progress_marker(
-                issue,
-                f"{_INFRA_DRAIN_NOTE_SENTINEL} watcher dispatched autonomous "
-                f"session from the PM infra-drain queue (occupied "
-                f"{occupied_active}+{pending} pending of cap {cap})",
-                dry_run,
-                label="infra-drain",
-            )
+    dispatched = _run_infra_drain_dispatch_loop(
+        dispatch,
+        cap,
+        dry_run,
+        now,
+        queue_updated_ts,
+        attempts,
+        reg_snapshot,
+        occupied_active,
+        pending,
+    )
     _infra_drain_log_skips(skipped, holds, attempts)
     summary = (
         f"infra-drain: queue={len(ids)} occupied={occupied_active}(+{pending} pending) "
@@ -26998,6 +27248,98 @@ def _proposed_infra_sweep_prune_save(state: dict, candidates: list[int], dry_run
     _save_proposed_infra_sweep_state(state)
 
 
+def _sweep_predicate_statuses(
+    candidates: list[int], holds: dict[int, str]
+) -> dict[int, str | None]:
+    """Resolve the blocking issue's status for each predicate hold among the
+    CANDIDATE set (#690; extracted verbatim for the C901 cap, #2142). Only
+    predicate holds cost a blocking-status read (one ``task.py`` view per
+    distinct blocker); non-predicate holds and non-held candidates
+    short-circuit with zero extra subprocesses."""
+    predicate_blockers = {
+        b
+        for i in candidates
+        if (r := holds.get(i)) is not None and (b := _parse_predicate_hold(r)) is not None
+    }
+    return {b: _task_status_kind(b)[0] for b in sorted(predicate_blockers)}
+
+
+def _run_proposed_infra_sweep_dispatch_loop(
+    dispatch: list[int],
+    cap: int,
+    dry_run: bool,
+    now: float,
+    attempts: dict[int, dict],
+    reg_snapshot: dict[str, bytes],
+    occupied_active: int,
+    pending: int,
+    *,
+    urgent: frozenset[int],
+    urgent_bonus: int,
+) -> int:
+    """The sweep lane's per-candidate dispatch loop (extracted verbatim from
+    :func:`proposed_infra_sweep_pass` for the C901 cap, #2142); returns the
+    number of real spawns. Same guard chain as
+    :func:`_run_infra_drain_dispatch_loop` — #843 M1 lease pre-check, #2142
+    freshness guards, #2142 per-spawn cap re-check — with ONE difference: the
+    re-check limit honors the #1853 sanctioned urgent bonus
+    (``cap + urgent_bonus`` for urgent candidates; a bare-``cap`` re-check
+    would revoke an urgent candidate's bonus slot mid-batch)."""
+    dispatched = 0
+    attempted_any = False
+    for issue in dispatch:
+        # #843 M1 advisory pre-check at the CALLER loop (same contract as the
+        # drain loop's): a fresh lease -> loud skip, NO attempt recorded.
+        held_lease = dispatch_lease_fresh(issue, now)
+        if held_lease is not None:
+            print(
+                f"  PROPOSED-INFRA-SWEEP SKIP issue #{issue} (dispatch-lease held, "
+                f"{dispatch_lease_desc(held_lease, now)})"
+            )
+            continue
+        # #2142 freshness guards (same contract as the drain loop's) — skip
+        # loudly, NO attempt booked.
+        events = _task_events(issue)
+        fresh_skip = _dispatch_freshness_skip(issue, events, now)
+        if fresh_skip is not None:
+            print(f"  PROPOSED-INFRA-SWEEP SKIP issue #{issue} ({fresh_skip})")
+            continue
+        # #2142 per-spawn cap/limit re-check (see _cap_recheck_skip).
+        limit = cap + (urgent_bonus if issue in urgent else 0)
+        verdict, live_n = _cap_recheck_skip(attempted_any, pending, dispatched, limit)
+        if verdict == "read-failed":
+            print(
+                "  PROPOSED-INFRA-SWEEP STOP: live occupancy read FAILED "
+                "mid-batch; not dispatching further this tick (fail-closed, "
+                "mirrors the pass-level guard)"
+            )
+            break
+        if verdict == "cap-full":
+            print(
+                f"  PROPOSED-INFRA-SWEEP SKIP issue #{issue} (cap-full-recheck: "
+                f"live {live_n}+{pending}+{dispatched} >= limit {limit})"
+            )
+            continue  # NO attempt — occupancy filling is not this candidate's failure
+        slot_desc = f"slot {min(occupied_active + pending + dispatched + 1, cap)}/{cap}"
+        result = _dispatch_infra_drain(issue, slot_desc, dry_run, reg_snapshot=reg_snapshot)
+        attempted_any = True
+        if result == "suppressed":
+            # #843 M1b: duplicate-suppression no-op — book nothing.
+            continue
+        if not dry_run:
+            _proposed_infra_sweep_record_attempt(attempts, issue, now, result == "spawned")
+        if result == "spawned":
+            dispatched += 1
+            _post_progress_marker(
+                issue,
+                f"{_PROPOSED_INFRA_SWEEP_NOTE_SENTINEL} watcher auto-dispatched ripe "
+                f"proposed infra task (no PM queue entry)",
+                dry_run,
+                label="proposed-infra-sweep",
+            )
+    return dispatched
+
+
 def proposed_infra_sweep_pass(
     dry_run: bool,
     now: float | None = None,
@@ -27056,12 +27398,7 @@ def proposed_infra_sweep_pass(
     # Only predicate holds among the CANDIDATE set cost a blocking-status read;
     # non-predicate holds and non-held candidates short-circuit with zero extra
     # subprocesses.
-    predicate_blockers = {
-        b
-        for i in candidates
-        if (r := holds.get(i)) is not None and (b := _parse_predicate_hold(r)) is not None
-    }
-    predicate_statuses = {b: _task_status_kind(b)[0] for b in sorted(predicate_blockers)}
+    predicate_statuses = _sweep_predicate_statuses(candidates, holds)
 
     state = _load_proposed_infra_sweep_state()
     attempts: dict[int, dict] = state["attempts"]
@@ -27106,6 +27443,7 @@ def proposed_infra_sweep_pass(
     statuses = {i: status_kind.get(i, (None, None))[0] for i in candidates}
     kinds = {i: status_kind.get(i, (None, None))[1] for i in candidates}
 
+    urgent_bonus = _infra_sweep_urgent_bonus()
     dispatch, skipped = decide_proposed_infra_sweep(
         candidates,
         holds,
@@ -27121,49 +27459,21 @@ def proposed_infra_sweep_pass(
         backoff_s=backoff_s,
         max_attempts=max_attempts,
         urgent=urgent,
-        urgent_bonus=_infra_sweep_urgent_bonus(),
+        urgent_bonus=urgent_bonus,
     )
 
-    marker_fresh_s = _proposed_infra_sweep_marker_fresh_s()
-    dispatched = 0
-    for issue in dispatch:
-        # #843 M1 advisory pre-check at the CALLER loop (same contract as the
-        # drain loop's): a fresh lease -> loud skip, NO attempt recorded.
-        held_lease = dispatch_lease_fresh(issue, now)
-        if held_lease is not None:
-            print(
-                f"  PROPOSED-INFRA-SWEEP SKIP issue #{issue} (dispatch-lease held, "
-                f"{dispatch_lease_desc(held_lease, now)})"
-            )
-            continue
-        # #843 M3: a dispatch-sentinel marker younger than one watcher cadence
-        # means SOME dispatcher fired within the current/previous tick — skip
-        # this candidate this tick (no attempt recorded — a marker skip is not
-        # a spawn attempt; the safe direction, corrected next tick). Post-M1
-        # this is the lease-file-loss backstop + observability.
-        marker_age = _recent_dispatch_marker_age_s(_task_events(issue), now)
-        if marker_age is not None and marker_age < marker_fresh_s:
-            print(
-                f"  PROPOSED-INFRA-SWEEP SKIP issue #{issue} "
-                f"(recent-dispatch-marker {marker_age:.0f}s < {marker_fresh_s:.0f}s)"
-            )
-            continue
-        slot_desc = f"slot {min(occupied_active + pending + dispatched + 1, cap)}/{cap}"
-        result = _dispatch_infra_drain(issue, slot_desc, dry_run, reg_snapshot=reg_snapshot)
-        if result == "suppressed":
-            # #843 M1b: duplicate-suppression no-op — book nothing.
-            continue
-        if not dry_run:
-            _proposed_infra_sweep_record_attempt(attempts, issue, now, result == "spawned")
-        if result == "spawned":
-            dispatched += 1
-            _post_progress_marker(
-                issue,
-                f"{_PROPOSED_INFRA_SWEEP_NOTE_SENTINEL} watcher auto-dispatched ripe "
-                f"proposed infra task (no PM queue entry)",
-                dry_run,
-                label="proposed-infra-sweep",
-            )
+    dispatched = _run_proposed_infra_sweep_dispatch_loop(
+        dispatch,
+        cap,
+        dry_run,
+        now,
+        attempts,
+        reg_snapshot,
+        occupied_active,
+        pending,
+        urgent=urgent,
+        urgent_bonus=urgent_bonus,
+    )
     for issue, reason in skipped:
         print(f"  PROPOSED-INFRA-SWEEP SKIP issue #{issue} ({reason})")
     summary = (
