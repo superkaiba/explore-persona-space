@@ -23,6 +23,7 @@ tests/test_experimenter_md.py
 tests/test_failure_classifier.py
 tests/test_fit_loop_batching_review_pin.py
 tests/test_gotchas_finalization_entry.py
+tests/test_guard_skill_doc_headroom.py
 tests/test_guard_trigger_dense_read.py
 tests/test_implementer_spec_mechanical_pin_sweep.py
 tests/test_implementer_spec_names_invariant_local_union.py
