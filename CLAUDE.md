@@ -313,9 +313,9 @@ authority split, and the four background crons.
 | Artifact | Destination | When |
 |---|---|---|
 | Eval results (aggregated JSON) | Git on issue branch (`eval_results/`) | Manual commit; upload-verifier syncs Step 8 |
-| Raw completions — ALL stages (extraction / intermediate / monitoring / final), whether or not the current task consumes them | HF data repo `superkaiba1/explore-persona-space-data/issueN_<slug>/raw_completions/<stage>/{condition}_seed{S}.json` (`<stage>` = `extraction` / `monitoring` / `final` / …; omit `<stage>/` for a single-stage run) | Auto via `upload_raw_completions_to_data_repo()`; a generation-and-reduce stage persists its rollout TEXT before reducing (#779) |
-| LoRA adapters (canonical; merged dirs opt-in via `EPM_UPLOAD_MERGED=1` / `upload_merged: true` — distributed full fine-tunes exempt, the full checkpoint stays canonical) | HF model repo `superkaiba1/explore-persona-space` (file-count-limit fallback → private overflow repo, #1108) | Auto after training |
-| Datasets (JSONL training mixes) | HF data repo | Auto after generation |
+| Raw completions — ALL stages (extraction / intermediate / monitoring / final), whether or not the current task consumes them | HF data repo `superkaiba1/explore-persona-space-data/issueN_<slug>/raw_completions/<stage>/{condition}_seed{S}.json` (`<stage>` = `extraction` / `monitoring` / `final` / …; omit `<stage>/` for a single-stage run; file-count-limit fallback → private overflow repo, #1108/#2304) | Auto via `upload_raw_completions_to_data_repo()`; a generation-and-reduce stage persists its rollout TEXT before reducing (#779) |
+| LoRA adapters (canonical; merged dirs opt-in via `EPM_UPLOAD_MERGED=1` / `upload_merged: true` — distributed full fine-tunes exempt, the full checkpoint stays canonical) | HF model repo `superkaiba1/explore-persona-space` (file-count-limit fallback → private overflow repo — all repo types + bulk paths, #1108/#2304) | Auto after training |
+| Datasets (JSONL training mixes) | HF data repo (file-count-limit fallback → private overflow repo, #1108/#2304) | Auto after generation |
 | Figures/plots (PNG, PDF, meta.json) | Git (`figures/issue_N/`) | Manual commit; verifier syncs Step 8 |
 | Training metrics | WandB live run (project=`<experiment_name>`) | Auto during training |
 | Intermediate analysis tensors plan-referenced as downstream inputs (per-cell shift tensors, cached activations) | HF data repo `issueN_<slug>/analysis_tensors/` | Before pod termination (#521) |

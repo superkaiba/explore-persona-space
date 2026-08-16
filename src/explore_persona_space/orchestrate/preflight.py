@@ -1453,6 +1453,65 @@ def check_hf_storage(report: PreflightReport, planned_upload_gb: float | None = 
         # live re-probe fits never blocks and adds no warning).
 
 
+def check_hf_filecount_sentinel(report: PreflightReport):
+    """WARN-only early warning for the HF repo-wide git file-count cap (#2304).
+
+    Reads the local observed-count sentinel JSONL
+    (``hub._filecount_sentinel_path()`` — written fail-soft by the reactive
+    file-count fallback on every enabled refusal) and adds ONE warning per
+    (repo_id, repo_type) whose LAST row is ``status: "blocked"`` — i.e. the
+    most recent file-count refusal for that repo has no later
+    verified-success ``"accepting"`` row. Structurally incapable of failing
+    the launch: it only ever calls ``report.add_warning`` (never
+    ``add_error``, the sole path that flips ``report.ok``), and any read
+    failure degrades to a single warning. Cheap by construction — one stat in
+    the steady state (no sentinel file) and never a Hub API call: the #2304
+    diagnosis measured a naive ``len(list_repo_files(...))`` probe timing out
+    at 120 s on the ~1M-file data repo, so a live-count probe must never sit
+    on a launch-blocking path.
+    """
+    import time
+
+    try:
+        from explore_persona_space.orchestrate.hub import _filecount_sentinel_path
+
+        path = _filecount_sentinel_path()
+        if not path.exists():
+            return
+        last: dict[tuple[str, str], dict] = {}
+        with path.open(encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                key = (str(row.get("repo_id")), str(row.get("repo_type")))
+                last[key] = row
+        now = time.time()
+        for (repo_id, repo_type), row in sorted(last.items()):
+            if row.get("status") != "blocked":
+                continue
+            observed = row.get("observed_files")
+            limit = row.get("limit")
+            counts = (
+                f"observed at {observed:,}/{limit:,} files"
+                if isinstance(observed, int) and isinstance(limit, int)
+                else "observed at unknown/unknown files"
+            )
+            age_s = max(0.0, now - float(row.get("ts") or now))
+            age = f"{age_s / 3600:.1f}h" if age_s >= 3600 else f"{age_s / 60:.0f}m"
+            report.add_warning(
+                f"HF file-count: {repo_id} ({repo_type}) {counts}, refusal seen "
+                f"{age} ago — canonical pushes reroute to the private overflow "
+                f"repo (#2304)"
+            )
+    except Exception as e:
+        report.add_warning(f"HF file-count sentinel check failed ({e}) — sentinel unread")
+
+
 def check_hf_lfs_write_gate(report: PreflightReport, planned_upload_gb: float | None = None):
     """Billing/quota write-gate probe at declared production scale (#1654).
 
@@ -1604,6 +1663,9 @@ def preflight_check(
     check_hf_large_blob_get(report)
     check_hf_storage(report, planned_upload_gb)
     check_hf_lfs_write_gate(report, planned_upload_gb)
+    # WARN-only (#2304): reads the local file-count sentinel; add_warning-only
+    # by construction, so it can never flip report.ok.
+    check_hf_filecount_sentinel(report)
 
     return report
 
