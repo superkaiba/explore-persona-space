@@ -758,10 +758,9 @@ def step_pack(
             ti.mode = 0o644
             with local.open("rb") as f:
                 tar.addfile(ti, f)
-            written = tar.members[-1]
             index[p] = {
                 "shard": shard_files[-1].name,
-                "offset": written.offset_data,
+                "offset": -1,  # placeholder — re-derived from the READ path below
                 "size": ti.size,
                 "sha256": staged_hashes[p],
             }
@@ -772,6 +771,21 @@ def step_pack(
     finally:
         if tar is not None:
             tar.close()
+    # TarInfo.offset_data is populated only on the READ path — write-side
+    # addfile() leaves it 0 (verified on CPython 3.11.15) — so re-derive every
+    # member's data offset by re-opening each closed shard for read: the
+    # recorded offsets then carry exactly the semantics the accessor
+    # (orchestrate/packed_prefix.py) cross-checks at extraction time.
+    for sp in shard_files:
+        with tarfile.open(sp, "r:") as rt:
+            for m in rt.getmembers():
+                index[m.name]["offset"] = m.offset_data
+    no_offset = [p for p, e in index.items() if e["offset"] < 0]
+    if no_offset:
+        raise VerifyFailure(
+            f"{prefix}: {len(no_offset)} packed members missing read-side offsets "
+            f"(e.g. {no_offset[:3]})"
+        )
     index_name = "index.json" if chunk_idx is None else f"index-c{chunk_idx}.json"
     (packed_dir / index_name).write_text(json.dumps(index, sort_keys=True, separators=(",", ":")))
     shard_sha: dict[str, str] = {}
