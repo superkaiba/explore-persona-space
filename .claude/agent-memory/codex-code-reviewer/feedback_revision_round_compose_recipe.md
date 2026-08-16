@@ -349,3 +349,36 @@ closure duty from re-grep to REPLACEMENT-TRUTH verification (is the new text
 TRUE, does the clause stop mis-firing, does the pin assert the new wording
 substantively) — say "do NOT re-run that grep; it is settled" explicitly, or
 Codex burns its round re-deriving the settled half.
+
+**Prior twin verdict never POSTED (orchestrator accepted a Codex FAIL without
+arbitration; #2147 cr3, 2026-08-16):** when Claude PASSed and Codex FAILed but
+the orchestrator confirmed the Codex findings against source and accepted them
+directly (no reconciler), the `epm:code-review-codex v<n-1>` marker may exist
+ONLY as the /tmp output file — events.jsonl carries no row. Fetch the
+acceptance contract from `/tmp/codex-output-issue-<N>-cr<n-1>.md`: verify the
+head sentinel, strip the `Codex session ID` footer after the FIRST closing
+tag, assert the concern-id strings, and FLAG the unposted marker in the return
+(posting is orchestrator business, never yours). Frame in the prompt: "NO
+reconciler was spawned — orchestrator accepted ALL findings; the Claude PASS
+does not soften closure duties, and the acceptance does not pre-judge closure."
+Also reuse the prior-round concern IDS from the verdict's own `## Concerns to
+persist` lines as the closure-item ids (the #1092-r4 pseudo-ID pattern, ids
+pre-minted by Codex itself).
+
+**Acceptance-impossible round shape (external mid-task population change;
+#2147 cr3, 2026-08-16):** when the plan's live acceptance became IMPOSSIBLE
+(an external actor destroyed the population it was keyed on) and the task
+carries recorded `[population-change]` + `[acceptance-readjudication]`
+progress notes: inline BOTH notes verbatim in their own envelopes, instruct
+"the unrun live acceptance is NEVER by itself a blocker", score plan-§
+acceptance rows against the RE-ADJUDICATED criterion (declared, not silent
+drift), and CONVERT the lost coverage into a REQUIRED
+`## Acceptance-substitution adequacy` verdict section (does the test suite
+alone certify the production-scale behaviors the live run would have
+exercised — name the scale axes, e.g. ref-fanout wall vs the `_git` timeout,
+huge-tree blob-proof cost). Grade a material gap by CONSEQUENCE under the
+fail-toward-KEEP design (inertness ≠ data loss ⇒ usually Major/Minor +
+Concerns-to-persist, not auto-Critical), and weigh any recorded mitigation
+(report-only default, first-apply review) before severity. Give the related
+open concern an adjudication-form status line (SATISFIED-BY-SUBSTITUTE /
+STILL-BINDING) — the orchestrator owns the ledger action.
