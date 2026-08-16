@@ -16,6 +16,7 @@ the env moot, but the pin is asserted below so the module registration in
 from __future__ import annotations
 
 import os
+import threading
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -354,3 +355,112 @@ def test_repofile_entry_lfs_fields(remote):
     assert entries[0].is_lfs is True
     assert entries[0].lfs_sha256 == "c" * 64
     assert entries[0].blob_id == "1" * 40
+
+
+# ---------------------------------------------------------------------------
+# r2 Codex-M6: only the DISCOVERED pack's own storage tree is excluded
+# ---------------------------------------------------------------------------
+
+
+def test_packed_component_elsewhere_is_ordinary_dirname(tmp_path, monkeypatch):
+    """r2 Codex-M6: an original path merely CONTAINING a 'packed' segment
+    resolves, stages, and enumerates — the old blanket component check made
+    every such member permanently unreachable after its original's deletion.
+    Paths inside the discovered pack's own storage stay excluded."""
+    root = tmp_path / "remote"
+    src = tmp_path / "src"
+    files = {"sub/packed/inner.json": b'{"deep": true}', "sub/other.json": b'{"o": 1}'}
+    for rel, data in files.items():
+        p = src / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_bytes(data)
+    packing.pack_tree_v2(src, root / "pfx" / packing.PACKED_DIRNAME)
+    api = FakeHfApi(root)
+    monkeypatch.setattr("huggingface_hub.hf_hub_download", _fake_hf_hub_download(root))
+    monkeypatch.setattr("huggingface_hub.HfApi", lambda token=None: api)
+
+    m = hub.resolve_packed_member(api, REPO, "pfx/sub/packed/inner.json", repo_type="dataset")
+    assert m is not None and m.path == "pfx/sub/packed/inner.json"
+    out = hub.stage_packed_file(
+        REPO, "pfx/sub/packed/inner.json", tmp_path / "o.json", repo_type="dataset"
+    )
+    assert out.read_bytes() == files["sub/packed/inner.json"]
+    members = hub.packed_members_under_path(api, REPO, "pfx/sub/packed", repo_type="dataset")
+    assert {x.path for x in members} == {"pfx/sub/packed/inner.json"}
+    # The DISCOVERED root's own storage tree remains excluded (recursion guard):
+    assert (
+        hub.resolve_packed_member(
+            api,
+            REPO,
+            f"pfx/{packing.PACKED_DIRNAME}/{packing.INDEX_NAME}",
+            repo_type="dataset",
+        )
+        is None
+    )
+    assert (
+        hub.packed_members_under_path(
+            api, REPO, f"pfx/{packing.PACKED_DIRNAME}", repo_type="dataset"
+        )
+        == []
+    )
+
+
+# ---------------------------------------------------------------------------
+# r2 g2-c2: index-present / shard-missing is PACK CORRUPTION, not absence
+# ---------------------------------------------------------------------------
+
+
+def test_missing_shard_for_resolved_member_is_pack_error(remote, tmp_path):
+    """r2 g2-c2: a resolved member whose shard 404s raises PackError — an
+    exists-probing caller (`except EntryNotFoundError: treat-as-absent`) must
+    never read archive corruption as clean absence."""
+    member = hub.resolve_packed_member(remote.api, REPO, f"{PREFIX}/top.txt", repo_type="dataset")
+    assert member is not None
+    (remote.root / member.shard_repo_path).unlink()
+    with pytest.raises(packing.PackError, match="MISSING on the Hub"):
+        hub.stage_packed_file(REPO, f"{PREFIX}/top.txt", tmp_path / "t", repo_type="dataset")
+    with pytest.raises(packing.PackError, match="MISSING on the Hub"):
+        hub.stage_packed_prefix(REPO, PREFIX, tmp_path / "m", repo_type="dataset")
+    # stage_hub_file's fallback does NOT map it back to a plain raw miss.
+    with pytest.raises(packing.PackError):
+        hub.stage_hub_file(REPO, f"{PREFIX}/top.txt", tmp_path / "t2", repo_type="dataset")
+
+
+# ---------------------------------------------------------------------------
+# r2 g2-c1: the EPM_HF_STAGE_TIMEOUT_S wall bounds the PACKED leg too
+# ---------------------------------------------------------------------------
+
+
+class _ExitCalled(BaseException):
+    """Raised by the os._exit stub — BaseException so no handler eats it."""
+
+    def __init__(self, rc):
+        self.rc = rc
+
+
+def test_stage_hub_prefix_wall_bounds_packed_leg(remote, tmp_path, capsys, monkeypatch):
+    """r2 g2-c1: a packed-leg hang after the raw pool completes no longer
+    escapes the #2153 whole-transfer wall — same diagnostic + hard-exit
+    rc=87 contract as the raw pool."""
+    release = threading.Event()
+    exits: list[int] = []
+
+    def fake_exit(rc):
+        exits.append(rc)
+        release.set()  # unblock the parked leg so pool shutdown joins
+        raise _ExitCalled(rc)
+
+    def parked_stage(*a, **k):
+        release.wait(10)
+        return []
+
+    monkeypatch.setattr(hub, "_stage_packed_members", parked_stage)
+    monkeypatch.setattr(hub.os, "_exit", fake_exit)
+    monkeypatch.setenv("EPM_HF_STAGE_TIMEOUT_S", "0.5")
+    with pytest.raises(_ExitCalled) as exc:
+        hub.stage_hub_prefix(REPO, PREFIX, tmp_path / "dest", repo_type="dataset")
+    assert exits == [hub.STAGE_HUB_PREFIX_TIMEOUT_RC]
+    assert exc.value.rc == hub.STAGE_HUB_PREFIX_TIMEOUT_RC
+    out = capsys.readouterr().out
+    assert "PACKED leg" in out
+    assert f"rc={hub.STAGE_HUB_PREFIX_TIMEOUT_RC}" in out

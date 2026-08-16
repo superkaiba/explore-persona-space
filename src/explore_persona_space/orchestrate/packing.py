@@ -73,6 +73,10 @@ CANONICAL_HUB_REPOS = frozenset(
     {
         "superkaiba1/explore-persona-space-data",
         "superkaiba1/explore-persona-space",
+        # r2 minor (m5): the private overflow repo holds canonical-quality
+        # artifacts (the #1108/#2304 file-count + quota reroutes land there) —
+        # a test mutating IT is the same data-loss class.
+        "superkaiba1/explore-persona-space-overflow",
     }
 )
 
@@ -438,6 +442,15 @@ def pack_tree_v2(
         ]
     else:
         rel_files = sorted(candidates)
+        # r2 minor (m4): a duplicated candidate would encode the same member
+        # into TWO shard lines and corrupt the n_members/census arithmetic.
+        dupes = (
+            sorted({r for r in rel_files if rel_files.count(r) > 1})
+            if len(set(rel_files)) != len(rel_files)
+            else []
+        )
+        if dupes:
+            raise PackError(f"duplicate pack candidates: {dupes[:5]} — refusing to pack twice")
     if not rel_files:
         raise PackError(f"no pack candidates under {raw_root} — refusing an empty pack")
     census_key = _stat_census(raw_root, rel_files)
@@ -488,10 +501,14 @@ def pack_tree_v2(
             for k, g in sorted(groups.items())
         },
     }
-    _atomic_write(
-        pack_dir / INDEX_NAME,
-        json.dumps(top_index, indent=1, sort_keys=True).encode("utf-8"),
-    )
+    top_bytes = json.dumps(top_index, indent=1, sort_keys=True).encode("utf-8")
+    if len(top_bytes) > shard_max_bytes:
+        # r2 minor (m1): INDEX.json rides the same non-LFS commit path as the
+        # shards — an over-cap top index would silently LFS-route.
+        raise PackError(
+            f"{INDEX_NAME} would be {len(top_bytes)} B > cap {shard_max_bytes} B (r2 m1)"
+        )
+    _atomic_write(pack_dir / INDEX_NAME, top_bytes)
     manifest = {
         "version": PACK_FORMAT_VERSION,
         "census_key": census_key,
@@ -501,7 +518,12 @@ def pack_tree_v2(
         "shards": dict(sorted(shard_meta.items())),
         "groups": top_index["groups"],
     }
-    _atomic_write(manifest_path, json.dumps(manifest, indent=1, sort_keys=True).encode("utf-8"))
+    man_bytes = json.dumps(manifest, indent=1, sort_keys=True).encode("utf-8")
+    if len(man_bytes) > shard_max_bytes:
+        raise PackError(
+            f"{MANIFEST_NAME} would be {len(man_bytes)} B > cap {shard_max_bytes} B (r2 m1)"
+        )
+    _atomic_write(manifest_path, man_bytes)
     return PackResult(
         pack_dir=pack_dir, groups=groups, census_key=census_key, n_members=n_members_total
     )
@@ -598,7 +620,18 @@ def _write_index_parts(
             "rel_dir": rel_dir,
             "members": {src: e for src, e in sorted(part.items())},
         }
-        _atomic_write(pack_dir / name, json.dumps(doc, indent=1, sort_keys=True).encode("utf-8"))
+        # r2 g1-B1: serialize COMPACT — the per-entry cost accounting above is
+        # measured on compact-ish json.dumps output, and an indent=1 write ran
+        # ~1.129x larger, landing multi-part indexes at 9.75-10.16 MB (over the
+        # <=9 MB non-LFS contract). The written bytes must never exceed what
+        # the accounting sized.
+        blob = json.dumps(doc, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        if len(blob) > shard_max_bytes:
+            raise PackError(
+                f"index part {name} would be {len(blob)} B > cap {shard_max_bytes} B — "
+                f"cost accounting broken (r2 g1-B1)"
+            )
+        _atomic_write(pack_dir / name, blob)
         part_names.append(name)
         part_idx += 1
         part, part_bytes = {}, 0
