@@ -8867,8 +8867,8 @@
     "2147": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2147",
-      "status": "proposed",
+      "path": "tasks/planning/2147",
+      "status": "planning",
       "title": "workflow-fix: reclaim tier for ~/.eps-slurm-src terminal-issue staging (112 GB unreaped)"
     },
     "2148": {
