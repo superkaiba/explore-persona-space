@@ -146,6 +146,7 @@ import contextlib
 import datetime
 import fcntl
 import hashlib
+import importlib.util
 import json
 import os
 import random
@@ -164,6 +165,16 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 # `tests/test_no_direct_task_path_construction.py`.
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 from explore_persona_space.task_workflow import list_events, tasks_dir  # noqa: E402
+
+# Shared symlink/FIFO-safe lock-file opener (#2324). Explicit sibling-path
+# load, NOT a bare `import lock_utils`: the tests spec-load this script by
+# path, so `scripts/` is never on sys.path — see the lock_utils module
+# docstring.
+_LOCK_UTILS = Path(__file__).resolve().parent / "lock_utils.py"
+_spec = importlib.util.spec_from_file_location("eps_scripts_lock_utils", _LOCK_UTILS)
+assert _spec and _spec.loader  # house pattern (tests/test_step9c_baseline.py:61)
+lock_utils = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(lock_utils)
 
 
 def _resolve_dispatch_root() -> Path:
@@ -383,37 +394,62 @@ QUOTA_SHORT_RESULT_MAX_CHARS = 1500
 # Signal handling — never leave Codex orphaned on SIGTERM/SIGINT.
 # ──────────────────────────────────────────────────────────────────────
 
-_active_job_id: str | None = None
+# ONE tuple global holds the per-attempt state: (job_id, lock_mode);
+# lock_mode None = no dispatch-lock window (reattach); None = no attempt
+# armed yet. The tuple RHS is fully constructed BEFORE the single
+# STORE_GLOBAL, so a signal handler running between bytecodes sees either
+# the complete OLD pair or the complete NEW pair — never a cross-attempt
+# (id, mode) mix (#2324 Gap 2). Do NOT "simplify" back to two scalar
+# globals or `a, b = x, y` — CPython emits two stores for both, reopening
+# the incoherent-pairing window (pinned by the dis-based single-store
+# tests). _active_companion / _active_issue stay separate globals: each is
+# assigned once per run, before the retry loop — no pairing to protect.
+_active_attempt: tuple[str, str | None] | None = None
 _active_companion: Path | None = None
 _active_issue: int | None = None
+
+
+def _lock_note_suffix(mode: str | None) -> str:
+    """``' dispatch_lock=<mode>'`` for non-held realized modes; ``''`` for
+    held/None (byte-identical to the #2323 spawned-marker token: leading
+    space, omitted when the lock was normally held; None = no dispatch-lock
+    window existed, e.g. reattach — likewise no token)."""
+    return f" dispatch_lock={mode}" if mode and mode != "held" else ""
 
 
 def _install_signal_handlers() -> None:
     def _handler(signum: int, _frame) -> None:
         sig_name = signal.Signals(signum).name
+        # ONE snapshot read of the attempt tuple (#2324 Gap 2): both fields
+        # derive from the same local, so the (job_id, lock_mode) pairing is
+        # coherent even when an attempt's store lands mid-handler.
+        attempt = _active_attempt
+        job_id = attempt[0] if attempt else None
+        lock_mode = attempt[1] if attempt else None
         msg = (
             f"codex_task helper killed by {sig_name}; "
-            f"job_id={_active_job_id or '<not-yet-assigned>'}"
+            f"job_id={job_id or '<not-yet-assigned>'}{_lock_note_suffix(lock_mode)}"
         )
         print(f"ERROR: {msg}", file=sys.stderr)
-        if _active_job_id and _active_companion is not None:
+        if job_id and _active_companion is not None:
             try:
                 subprocess.run(
-                    ["node", str(_active_companion), "cancel", _active_job_id],
+                    ["node", str(_active_companion), "cancel", job_id],
                     cwd=str(DISPATCH_ROOT),
                     capture_output=True,
                     timeout=CANCEL_TIMEOUT_SECS,
                 )
             except Exception as exc:
                 print(f"WARN: cancel-on-signal failed: {exc}", file=sys.stderr)
-        if _active_issue is not None and _active_job_id:
+        if _active_issue is not None and job_id:
             _post_marker(
                 _active_issue,
                 "epm:codex-task-failed",
                 (
-                    f"Codex job_id={_active_job_id} killed by {sig_name}. "
+                    f"Codex job_id={job_id} killed by {sig_name}. "
                     "Helper attempted cancel; verify manually with "
-                    f"`node {_active_companion} status {_active_job_id}`."
+                    f"`node {_active_companion} status {job_id}`."
+                    f"{_lock_note_suffix(lock_mode)}"
                 ),
             )
         sys.exit(128 + signum)
@@ -543,7 +579,8 @@ def _post_marker(issue: int, kind: str, note: str, version: int = 1) -> bool:
     ts = int(time.time())
     artifact_dir = tasks_dir() / "_orphaned_markers"
     artifact_dir.mkdir(parents=True, exist_ok=True)
-    job_tag = (_active_job_id or "no-job")[-12:]
+    attempt = _active_attempt  # ONE snapshot read (#2324 Gap 2)
+    job_tag = ((attempt[0] if attempt else None) or "no-job")[-12:]
     artifact = artifact_dir / f"issue-{issue}-{kind.replace(':', '_')}-{job_tag}-{ts}.json"
     try:
         artifact.write_text(
@@ -1234,7 +1271,11 @@ def _dispatch_lock(timeout_s: float, enabled: bool = True):
                              exception between the two sites).
         "disabled"         — ``enabled=False`` (--no-dispatch-lock) or the
                              EPM_CODEX_DISPATCH_LOCK=0 kill switch.
-        "unavailable"      — the lock file could not be created/flocked.
+        "unavailable"      — the lock file could not be created/flocked, or
+                             the lock PATH was rejected (symlink/FIFO/
+                             non-regular — ``lock_utils.safe_open_lockfile``,
+                             #2324; ``LockPathError`` subclasses ``OSError``,
+                             so the same arm catches it unchanged).
         "timeout-failopen" — the acquire timed out after ``timeout_s``.
 
     Every non-"held" mode FAILS OPEN deliberately (proceed unlocked) with
@@ -1258,9 +1299,16 @@ def _dispatch_lock(timeout_s: float, enabled: bool = True):
         yield "disabled"
         return
     lock_path = Path(DISPATCH_ROOT) / DISPATCH_LOCK_RELPATH
+    # Deadline BEFORE the open (#2324 D4): the open's cost counts against
+    # the advertised bound instead of extending it.
+    deadline = time.monotonic() + max(0.0, timeout_s)
     try:
         lock_path.parent.mkdir(parents=True, exist_ok=True)
-        fd = os.open(lock_path, os.O_WRONLY | os.O_CREAT, 0o600)
+        # Symlink/FIFO-safe bounded open (#2324): a planted symlink/FIFO
+        # raises LockPathError, an OSError subclass, landing in THIS
+        # unchanged arm → mode "unavailable" — the fail-OPEN posture is
+        # preserved by construction (the one fail-open caller of the four).
+        fd = lock_utils.safe_open_lockfile(lock_path)
     except OSError as exc:
         print(
             f"WARN: codex dispatch lock UNAVAILABLE ({lock_path}: {exc}); "
@@ -1273,7 +1321,6 @@ def _dispatch_lock(timeout_s: float, enabled: bool = True):
     acquired = False
     flock_error: str | None = None
     try:
-        deadline = time.monotonic() + max(0.0, timeout_s)
         while True:
             try:
                 fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -1330,7 +1377,7 @@ def _run_one_attempt(companion: Path, prompt: str, args, write: bool) -> Attempt
     ``--stall-detect-secs`` window. The absolute ``--max-wait-secs`` hard
     cap still bounds total wall time regardless of progress.
     """
-    global _active_job_id
+    global _active_attempt
 
     # Snapshot the output-file state BEFORE Codex spawns: the final-message
     # write uses it to distinguish "Codex wrote --output-file during THIS
@@ -1351,8 +1398,14 @@ def _run_one_attempt(companion: Path, prompt: str, args, write: bool) -> Attempt
         try:
             job_id = _spawn_codex(companion, prompt, args.effort, write)
         except Exception as exc:
-            return AttemptResult("fail", 3, f"spawn: {exc}", None)
-        _active_job_id = job_id
+            # Note threading uses the LOCAL lock_mode (the with-target) —
+            # always attempt-accurate; the global is deliberately not yet
+            # updated on this path (#2324 Gap 2).
+            return AttemptResult("fail", 3, f"spawn: {exc}{_lock_note_suffix(lock_mode)}", None)
+        # Single-store tuple arm (#2324 Gap 2): the RHS is built before ONE
+        # STORE_GLOBAL, so the signal handler can never read this attempt's
+        # mode paired with a prior attempt's job id.
+        _active_attempt = (job_id, lock_mode)
         print(f"codex-task-spawned: {job_id}", file=sys.stderr)
 
         # Confirm the job-id is queryable — bounded jittered re-probe
@@ -1379,12 +1432,12 @@ def _run_one_attempt(companion: Path, prompt: str, args, write: bool) -> Attempt
                 f"Do NOT blind re-dispatch — recover with: "
                 f"uv run python scripts/codex_task.py {reattach_flags} "
                 f"--reattach {job_id} --output-file <same path>"
+                f"{_lock_note_suffix(lock_mode)}"
             ),
             job_id,
         )
 
     if args.issue is not None:
-        lock_token = f" dispatch_lock={lock_mode}" if lock_mode != "held" else ""
         _post_marker(
             args.issue,
             "epm:codex-task-spawned",
@@ -1394,7 +1447,7 @@ def _run_one_attempt(companion: Path, prompt: str, args, write: bool) -> Attempt
                 f"max_wait={args.max_wait_secs}s "
                 f"probe_error_cap={args.probe_error_cap} "
                 f"stall_detect={args.stall_detect_secs}s "
-                f"probe_retries={probe_retries}{lock_token}"
+                f"probe_retries={probe_retries}{_lock_note_suffix(lock_mode)}"
             ),
         )
 
@@ -1550,7 +1603,7 @@ def _run_reattach(companion: Path, args) -> int:
     """Attach to an EXISTING codex-companion job (wrapper-kill recovery,
     #1020). Guard -> arm -> confirm-probe -> spawned marker -> poll ->
     finalize. No re-dispatch on ANY failure - there is no prompt."""
-    global _active_job_id
+    global _active_attempt
     job_id = args.reattach
 
     # (1) Binding guard (MF1) - BEFORE arming and before any subprocess call,
@@ -1571,8 +1624,10 @@ def _run_reattach(companion: Path, args) -> int:
             )
 
     # (2) Arm ONLY after the guard (MF3): a SIGTERM during validation must
-    # never cross-cancel a job we have not confirmed as ours.
-    _active_job_id = job_id
+    # never cross-cancel a job we have not confirmed as ours. lock_mode is
+    # None — reattach never takes the dispatch lock, so no token appears
+    # (#2324; pinned by test_reattach_never_takes_dispatch_lock).
+    _active_attempt = (job_id, None)
 
     # (3) Confirm probe with bounded retry, via the SAFE wrapper (MF2): a
     # status-CLI raise (TimeoutExpired/OSError) converts to probe-error and
@@ -1852,7 +1907,7 @@ def main() -> int:  # noqa: C901 — argparse wiring + the reattach/prompt mode 
     # Default for --write is True (grant write) unless --no-write was passed.
     write = True if args.write is None else args.write
 
-    global _active_companion, _active_issue, _active_job_id
+    global _active_companion, _active_issue
 
     _install_signal_handlers()
     _active_issue = args.issue

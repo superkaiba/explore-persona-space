@@ -34,6 +34,7 @@ temp-write routing (``gate_tmp_root`` / the ``tmproot`` subcommand / the
 
 from __future__ import annotations
 
+import errno
 import fcntl
 import fnmatch
 import getpass
@@ -5242,3 +5243,113 @@ def test_mapped_baseline_pytest_timeout_reports_rc_124(tmp_path: Path, capsys):
     assert rc == 0, captured.err
     assert "rc=124" in captured.out.splitlines()[-1]
     assert _worktree_count(root) == 1
+
+
+# --- #2324: refresh-lock path rejection (symlink/FIFO-safe bounded open) --------
+#
+# Child-process bounded matrix (plan §6 / Acceptance bullet 3), site 3:
+# {symlink→FIFO, FIFO} at the refresh lock path, each run in a CHILD process
+# with a hard timeout — the PRE-fix open(lock, "wb") blocks forever on the
+# FIFO and trips the subprocess timeout. Post-fix: LockPathError, immediately.
+
+_REFRESH_LOCK_DRIVER = """
+import importlib.util, sys, time
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("step9c_baseline_child", sys.argv[1])
+m = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = m
+spec.loader.exec_module(m)
+t0 = time.monotonic()
+try:
+    m.acquire_refresh_lock(Path(sys.argv[2]))
+    print("OUTCOME=no-raise")
+except m.lock_utils.LockPathError as e:
+    print(f"OUTCOME=lockpatherror reason={e.reason} elapsed={time.monotonic() - t0:.2f}")
+"""
+
+
+@pytest.mark.skipif(not hasattr(os, "mkfifo"), reason="requires POSIX mkfifo")
+@pytest.mark.parametrize("kind", ["symlink", "fifo"])
+def test_refresh_lock_path_rejection_bounded_in_child(kind: str, tmp_path: Path):
+    lock_path = tmp_path / "cache" / "step9c-baseline.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    if kind == "symlink":
+        # Symlink arm pinned symlink→FIFO (plan §6): only a blocking target
+        # makes the child BOUND assert discriminate against the pre-fix code.
+        target = tmp_path / "target.fifo"
+        os.mkfifo(target)
+        os.symlink(target, lock_path)
+    else:
+        os.mkfifo(lock_path)
+    proc = subprocess.run(
+        [sys.executable, "-c", _REFRESH_LOCK_DRIVER, str(_HELPER_PATH), str(lock_path)],
+        capture_output=True,
+        text=True,
+        timeout=30,  # bounded: the pre-fix shape hangs here and fails legibly
+        check=False,
+    )
+    assert proc.returncode == 0, proc.stderr
+    expected_reason = "symlink" if kind == "symlink" else "would-block-special"
+    assert f"OUTCOME=lockpatherror reason={expected_reason}" in proc.stdout
+    elapsed = float(proc.stdout.split("elapsed=")[1].split()[0])
+    assert elapsed < 5.0
+
+
+def test_refresh_lock_path_rejected_exits_2_no_ledger(tmp_path: Path, monkeypatch, capsys):
+    """cmd_refresh-level posture pin (site 3): rejected lock path → rc 2 (the
+    documented no-ledger-write class), log names the rejection, NO ledger
+    written — and NOT the rc-0 "held elsewhere" no-op (None is reserved for
+    healthy contention; a planted symlink must not masquerade as it)."""
+    argv, root, _seen = _refresh_env(tmp_path, monkeypatch)
+    lock_file = root / ".claude" / "cache" / "step9c-baseline.lock"
+    lock_file.parent.mkdir(parents=True, exist_ok=True)
+    target = lock_file.parent / "target-regular"
+    target.write_bytes(b"")
+    os.symlink(target, lock_file)  # posture-only arm; bounded arms are the child matrix
+    rc = sb.main(argv)
+    assert rc == 2
+    assert "refresh lock path rejected (symlink)" in capsys.readouterr().err
+    assert not sb.ledger_path(root).exists()
+
+
+def test_acquire_refresh_lock_held_elsewhere_returns_none(tmp_path: Path):
+    """Held-elsewhere posture control at the FUNCTION level (plan §6): healthy
+    flock contention still returns None — unchanged by the #2324 rejection
+    path (the cmd_refresh-level rc-0 twin is test_refresh_lock_busy_single_flight)."""
+    lock_file = tmp_path / "cache" / "step9c-baseline.lock"
+    lock_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(lock_file, "wb") as held:
+        fcntl.flock(held.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        assert sb.acquire_refresh_lock(lock_file) is None
+
+
+def test_acquire_refresh_lock_fdopen_raise_closes_raw_fd(tmp_path: Path, monkeypatch):
+    """#2324 carried item (site-3 fd-leak seam, concern ``site3-fdopen-fd-leak``):
+    when ``os.fdopen`` itself raises (EMFILE-class), the raw fd from
+    ``safe_open_lockfile`` is CLOSED before the raise propagates — proven by
+    ``os.fstat(fd)`` failing EBADF afterwards. Against the leaky one-expression
+    composition (``fh = os.fdopen(safe_open_lockfile(...), "wb")`` with no
+    close arm) the fstat SUCCEEDS and this test goes red."""
+    lock_file = tmp_path / "cache" / "step9c-baseline.lock"
+    seen: list[int] = []
+    real_open = sb.lock_utils.safe_open_lockfile
+
+    def recording_open(path, mode=0o600):
+        fd = real_open(path, mode)
+        seen.append(fd)
+        return fd
+
+    monkeypatch.setattr(sb.lock_utils, "safe_open_lockfile", recording_open)
+
+    def raising_fdopen(fd, *a, **k):
+        raise OSError(errno.EMFILE, "too many open files")
+
+    monkeypatch.setattr(os, "fdopen", raising_fdopen)
+    with pytest.raises(OSError) as ei:
+        sb.acquire_refresh_lock(lock_file)
+    assert ei.value.errno == errno.EMFILE
+    assert len(seen) == 1, seen
+    with pytest.raises(OSError) as ei2:
+        os.fstat(seen[0])  # EBADF = the fd was closed, not leaked
+    assert ei2.value.errno == errno.EBADF

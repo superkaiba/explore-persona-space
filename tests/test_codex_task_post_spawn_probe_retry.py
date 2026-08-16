@@ -22,6 +22,15 @@ Behaviors under test (plan #2323 §4.3):
    --no-dispatch-lock) proceeds UNLOCKED with a loud WARN + a
    ``dispatch_lock=<mode>`` marker token; reattach never takes the lock;
    the lock is released on the spawn-exception path.
+6. #2324 Leg B: the site-4 lock open is symlink/FIFO-safe and bounded
+   (child-process matrix; the fail-OPEN ``unavailable`` posture is
+   preserved by construction — ``lock_utils.LockPathError`` subclasses
+   ``OSError``), and every post-lock failure path (spawn-exception,
+   exit-10 confirm exhaustion, the signal handler) carries
+   ``dispatch_lock=<mode>`` for non-held modes, with the
+   (job_id, lock_mode) attempt state held in ONE atomically-stored tuple
+   (real-timing retry pairing test + dis-based single-store /
+   single-snapshot invariants).
 
 The autouse fixture roots ``DISPATCH_ROOT`` at tmp_path so no test can
 ever touch the REAL repo-root lock file (a live fleet dispatch can hold
@@ -31,6 +40,7 @@ it for minutes) or the real codex-companion state.
 from __future__ import annotations
 
 import contextlib
+import dis
 import fcntl
 import importlib.util
 import json
@@ -40,7 +50,7 @@ import sys
 import threading
 import time
 from pathlib import Path
-from types import SimpleNamespace
+from types import CodeType, SimpleNamespace
 from unittest.mock import patch
 
 import pytest
@@ -534,3 +544,328 @@ def test_lock_released_on_spawn_exception(monkeypatch):
     assert result.exit_code == 3
     fd = _hold_lock_externally()  # raises BlockingIOError if the hold leaked
     os.close(fd)
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 4. #2324 Leg B: symlink/FIFO-safe bounded lock open (site 4) + the
+#    dispatch_lock=<mode> token on every post-lock failure path, with
+#    atomically-coherent (job_id, lock_mode) attempt pairing.
+# ──────────────────────────────────────────────────────────────────────
+
+_NON_HELD_MODES = ["disabled", "timeout-failopen", "unavailable"]
+
+
+def _plant_lock_fixture(kind: str, lock_path: Path, tmp_path: Path) -> None:
+    """Symlink arms are pinned symlink→FIFO (plan §6): the child BOUND assert
+    only discriminates when the pre-fix code path would follow the link into a
+    blocking FIFO open — a symlink→regular-file fixture would make it vacuous."""
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    if kind == "symlink":
+        target = tmp_path / "target.fifo"
+        os.mkfifo(target)
+        os.symlink(target, lock_path)  # symlink -> FIFO, NOT -> regular file
+    else:
+        os.mkfifo(lock_path)
+
+
+def _force_mode(mode: str, monkeypatch, tmp_path: Path) -> tuple[dict, list[int]]:
+    """Force a realized dispatch-lock mode via its REAL trigger (plan §6).
+
+    Returns (args overrides, fds the caller must os.close())."""
+    if mode == "disabled":
+        monkeypatch.setenv("EPM_CODEX_DISPATCH_LOCK", "0")
+        return {}, []
+    if mode == "timeout-failopen":
+        return {"dispatch_lock_timeout_secs": 0.05}, [_hold_lock_externally()]
+    assert mode == "unavailable"
+    # Real trigger, in-process fast companion to the child-matrix arm: a
+    # planted symlink→FIFO rejects immediately (ELOOP under O_NOFOLLOW).
+    _plant_lock_fixture("symlink", _lock_path(), tmp_path)
+    return {}, []
+
+
+# Child-process bounded matrix (Acceptance bullet 3), site 4:
+# {symlink→FIFO, FIFO} x codex-dispatch. The pre-fix raw os.open blocks
+# forever in open(2) on the FIFO and trips the subprocess timeout; post-fix
+# the open goes through lock_utils.safe_open_lockfile and the LockPathError
+# (an OSError subclass) lands in the UNCHANGED except-OSError arm → mode
+# "unavailable" with the loud WARN: fail-OPEN preserved by construction.
+
+_DISPATCH_LOCK_REJECT_DRIVER = """
+import importlib.util, sys, time
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("codex_task_child", sys.argv[1])
+m = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = m
+spec.loader.exec_module(m)
+m.DISPATCH_ROOT = Path(sys.argv[2])
+t0 = time.monotonic()
+with m._dispatch_lock(5.0) as mode:
+    print(f"OUTCOME=mode={mode} elapsed={time.monotonic() - t0:.2f}")
+"""
+
+
+@pytest.mark.skipif(not hasattr(os, "mkfifo"), reason="requires POSIX mkfifo")
+@pytest.mark.parametrize("kind", ["symlink", "fifo"])
+def test_dispatch_lock_path_rejection_bounded_in_child(kind: str, tmp_path: Path):
+    lock_path = tmp_path / codex_task.DISPATCH_LOCK_RELPATH
+    _plant_lock_fixture(kind, lock_path, tmp_path)
+    proc = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            _DISPATCH_LOCK_REJECT_DRIVER,
+            str(REPO_ROOT / "scripts" / "codex_task.py"),
+            str(tmp_path),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=30,  # bounded: the pre-fix shape hangs here and fails legibly
+        check=False,
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "OUTCOME=mode=unavailable" in proc.stdout, proc.stdout
+    assert "codex dispatch lock UNAVAILABLE" in proc.stderr  # the loud WARN
+    assert "lock path rejected" in proc.stderr  # exc message names the rejection
+    elapsed = float(proc.stdout.split("elapsed=")[1].split()[0])
+    assert elapsed < 5.0  # rejection is immediate — never the flock-poll bound
+
+
+@pytest.mark.parametrize("mode", _NON_HELD_MODES)
+def test_spawn_exception_note_carries_lock_mode(mode: str, monkeypatch, tmp_path):
+    """Path 1/3 (D6 item 2): a raising _spawn_codex returns exit 3 with the
+    realized mode token appended to the note on every non-held mode."""
+    overrides, fds = _force_mode(mode, monkeypatch, tmp_path)
+    monkeypatch.setattr(
+        codex_task,
+        "_spawn_codex",
+        lambda *a, **k: (_ for _ in ()).throw(RuntimeError("app-server exited 1")),
+    )
+    try:
+        result = codex_task._run_one_attempt(Path("/fake/c.mjs"), "p", _args(**overrides), False)
+    finally:
+        for fd in fds:
+            os.close(fd)
+    assert result.kind == "fail" and result.exit_code == 3
+    assert result.note.startswith("spawn: ")
+    assert result.note.endswith(f" dispatch_lock={mode}")
+
+
+@pytest.mark.parametrize("mode", _NON_HELD_MODES)
+def test_exit10_note_carries_lock_mode_and_keeps_reattach_recipe(mode: str, monkeypatch, tmp_path):
+    """Path 2/3 (D6 item 3): the exit-10 confirm-exhaustion note carries the
+    token AND keeps the #2323-required content (job id, shared index,
+    --reattach recipe) FIRST — the token is appended after the recipe."""
+    overrides, fds = _force_mode(mode, monkeypatch, tmp_path)
+    monkeypatch.setattr(codex_task, "_spawn_codex", lambda *a, **k: "task-x")
+    monkeypatch.setattr(
+        codex_task,
+        "_confirm_job_queryable",
+        lambda *a, **k: ("probe-error", "synthetic index miss", None, 4),
+    )
+    monkeypatch.setattr(codex_task, "_best_effort_cancel", lambda *a, **k: None)
+    try:
+        result = codex_task._run_one_attempt(Path("/fake/c.mjs"), "p", _args(**overrides), False)
+    finally:
+        for fd in fds:
+            os.close(fd)
+    assert result.exit_code == codex_task.EXIT_POST_SPAWN_PROBE_EXHAUSTED
+    assert "task-x" in result.note
+    assert "--reattach task-x" in result.note
+    assert codex_task._shared_state_index_hint() in result.note
+    assert result.note.endswith(f" dispatch_lock={mode}")
+    assert result.note.index("--reattach") < result.note.index("dispatch_lock=")
+
+
+def _captured_handler(monkeypatch):
+    """Install + capture the REAL signal handler without touching process
+    signal state (signal.signal is recorded, never invoked for real)."""
+    captured: dict = {}
+    monkeypatch.setattr(codex_task.signal, "signal", lambda sig, h: captured.setdefault(sig, h))
+    codex_task._install_signal_handlers()
+    return captured[codex_task.signal.SIGTERM]
+
+
+@pytest.mark.parametrize("mode", _NON_HELD_MODES)
+def test_signal_handler_carries_seeded_mode_token(mode: str, monkeypatch, capsys):
+    """Path 3/3 (D6 item 4), token-format pin: an armed (job, mode) tuple
+    surfaces the token on BOTH the stderr line and the failure marker.
+    (Formatting pin ONLY — the pairing blocker is discharged by the
+    real-timing retry test + the single-store invariants below.)"""
+    posted: list[tuple[int, str, str]] = []
+    monkeypatch.setattr(codex_task, "_post_marker", lambda i, k, n: posted.append((i, k, n)))
+    handler = _captured_handler(monkeypatch)
+    monkeypatch.setattr(codex_task, "_active_attempt", ("job-x", mode))
+    monkeypatch.setattr(codex_task, "_active_issue", 77)
+    monkeypatch.setattr(codex_task, "_active_companion", None)
+    with pytest.raises(SystemExit) as ei:
+        handler(int(codex_task.signal.SIGTERM), None)
+    assert ei.value.code == 128 + int(codex_task.signal.SIGTERM)
+    err = capsys.readouterr().err
+    assert "job-x" in err and f" dispatch_lock={mode}" in err
+    notes = [n for _, k, n in posted if k == "epm:codex-task-failed"]
+    assert len(notes) == 1, posted
+    assert "job-x" in notes[0]
+    assert f" dispatch_lock={mode}" in notes[0]
+
+
+@pytest.mark.parametrize("lock_mode", ["held", None])
+def test_signal_handler_no_token_for_held_and_reattach(lock_mode, monkeypatch, capsys):
+    """Negative arms (D6): mode "held" and a reattach-armed attempt
+    (lock_mode None — no dispatch-lock window) produce NO token on the
+    handler path (stderr AND marker)."""
+    posted: list[tuple[int, str, str]] = []
+    monkeypatch.setattr(codex_task, "_post_marker", lambda i, k, n: posted.append((i, k, n)))
+    handler = _captured_handler(monkeypatch)
+    monkeypatch.setattr(codex_task, "_active_attempt", ("job-x", lock_mode))
+    monkeypatch.setattr(codex_task, "_active_issue", 77)
+    monkeypatch.setattr(codex_task, "_active_companion", None)
+    with pytest.raises(SystemExit):
+        handler(int(codex_task.signal.SIGTERM), None)
+    err = capsys.readouterr().err
+    notes = [n for _, k, n in posted if k == "epm:codex-task-failed"]
+    assert len(notes) == 1
+    assert "dispatch_lock=" not in err
+    assert "dispatch_lock=" not in notes[0]
+    assert "job-x" in notes[0]
+
+
+def test_spawn_exception_and_exit10_no_token_when_held(monkeypatch):
+    """Negative arm (D6): the normally-acquired lock ("held") appends NO
+    token on the spawn-exception and exit-10 paths (byte-compatible with the
+    #2323 note shapes)."""
+    monkeypatch.setattr(
+        codex_task,
+        "_spawn_codex",
+        lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom")),
+    )
+    r1 = codex_task._run_one_attempt(Path("/fake/c.mjs"), "p", _args(), False)
+    assert r1.exit_code == 3
+    assert "dispatch_lock=" not in r1.note
+
+    monkeypatch.setattr(codex_task, "_spawn_codex", lambda *a, **k: "task-h")
+    monkeypatch.setattr(
+        codex_task,
+        "_confirm_job_queryable",
+        lambda *a, **k: ("probe-error", "synthetic", None, 4),
+    )
+    r2 = codex_task._run_one_attempt(Path("/fake/c.mjs"), "p", _args(), False)
+    assert r2.exit_code == codex_task.EXIT_POST_SPAWN_PROBE_EXHAUSTED
+    assert "dispatch_lock=" not in r2.note
+
+
+def test_retry_pairing_signal_in_spawn_window_sees_prior_attempt(monkeypatch, capsys):
+    """Real-timing retry-pairing test (the round-2/round-3 BLOCKER): a signal
+    landing inside attempt 2's spawn window — after with-entry (mode resolved
+    = timeout-failopen), BEFORE the post-spawn store — must publish attempt
+    1's COMPLETE pair (job-1 + dispatch_lock=disabled) on both the marker and
+    stderr, never an attempt-1-job / attempt-2-mode mix. The between-stores
+    seam is closed BY CONSTRUCTION (single tuple store) and pinned by the dis
+    invariants below; this covers the broad spawn window."""
+    posted: list[tuple[int, str, str]] = []
+    monkeypatch.setattr(codex_task, "_post_marker", lambda i, k, n: posted.append((i, k, n)))
+    handler = _captured_handler(monkeypatch)
+    monkeypatch.setattr(codex_task, "_active_issue", 77)
+    monkeypatch.setattr(codex_task, "_active_companion", None)
+    monkeypatch.setattr(codex_task, "_active_attempt", None)
+    monkeypatch.setattr(codex_task, "_probe_phase", lambda *a, **k: ("done", "", None))
+    monkeypatch.setattr(codex_task, "_fetch_result", lambda *a, **k: (0, "R", ""))
+    monkeypatch.setattr(codex_task, "_best_effort_cancel", lambda *a, **k: None)
+
+    # Attempt 1: mode "disabled" (real trigger — env kill switch), completes.
+    monkeypatch.setenv("EPM_CODEX_DISPATCH_LOCK", "0")
+    monkeypatch.setattr(codex_task, "_spawn_codex", lambda *a, **k: "job-1")
+    r1 = codex_task._run_one_attempt(Path("/fake/c.mjs"), "p1", _args(issue=77), False)
+    assert r1.kind == "done", r1.note
+    assert codex_task._active_attempt == ("job-1", "disabled")
+
+    # Attempt 2: kill switch cleared; timeout-failopen forced by a pre-held
+    # lock. The spawn stub INVOKES the captured handler inside the spawn
+    # window; its sys.exit raises SystemExit (not an Exception), which
+    # propagates out of _run_one_attempt.
+    monkeypatch.delenv("EPM_CODEX_DISPATCH_LOCK")
+    fd = _hold_lock_externally()
+    posted.clear()
+    capsys.readouterr()  # drain attempt 1's stderr
+
+    def spawn_fires_signal(companion, prompt, effort, write):
+        handler(int(codex_task.signal.SIGTERM), None)
+        return "job-2"  # unreachable — the handler sys.exit()s
+
+    monkeypatch.setattr(codex_task, "_spawn_codex", spawn_fires_signal)
+    try:
+        with pytest.raises(SystemExit):
+            codex_task._run_one_attempt(
+                Path("/fake/c.mjs"),
+                "p2",
+                _args(issue=77, dispatch_lock_timeout_secs=0.05),
+                False,
+            )
+    finally:
+        os.close(fd)
+
+    err = capsys.readouterr().err
+    notes = [n for _, k, n in posted if k == "epm:codex-task-failed"]
+    assert len(notes) == 1, posted
+    # Attempt 1's COMPLETE pair — never job-1 paired with attempt 2's mode.
+    assert "job-1" in notes[0] and "dispatch_lock=disabled" in notes[0], notes[0]
+    assert "timeout-failopen" not in notes[0], notes[0]
+    assert "job-2" not in notes[0], notes[0]
+    assert "job-1" in err and "dispatch_lock=disabled" in err
+    assert "timeout-failopen" not in err.split("ERROR:")[-1]  # the handler line itself
+
+
+# Single-store invariants (D6 item 1): the attempt state is ONE tuple global
+# assigned by ONE STORE_GLOBAL — a "simplification" back to any two-store
+# form (two scalar globals, or `a, b = x, y`, which ALSO emits two stores)
+# reopens the between-bytecodes signal window and goes red here.
+
+RETIRED_ATTEMPT_STATE_NAMES = ("_active_job_id", "_active_lock_mode")
+
+
+def _store_global_counts(code) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for ins in dis.get_instructions(code):
+        if ins.opname == "STORE_GLOBAL":
+            counts[ins.argval] = counts.get(ins.argval, 0) + 1
+    return counts
+
+
+def test_attempt_state_updates_are_single_store():
+    """Each attempt-state update path holds EXACTLY ONE STORE_GLOBAL of
+    _active_attempt and ZERO stores of any other attempt-state name."""
+    for fn in (codex_task._run_one_attempt, codex_task._run_reattach):
+        counts = _store_global_counts(fn.__code__)
+        assert counts.get("_active_attempt") == 1, (fn.__name__, counts)
+        others = {n for n in counts if n.startswith("_active")} - {"_active_attempt"}
+        assert not others, (fn.__name__, counts)
+
+
+def test_retired_scalar_names_absent_from_module():
+    """The two retired per-attempt scalar globals no longer exist — not as
+    module attributes, not even as source text (the #2324 completeness grep,
+    pinned): a stale `global` list would silently make the tuple store a
+    function LOCAL and break the handler with no error."""
+    for name in RETIRED_ATTEMPT_STATE_NAMES:
+        assert not hasattr(codex_task, name), name
+    src = (REPO_ROOT / "scripts" / "codex_task.py").read_text()
+    for name in RETIRED_ATTEMPT_STATE_NAMES:
+        assert name not in src, name
+
+
+def test_signal_handler_single_snapshot_read():
+    """The handler LOADs _active_attempt exactly ONCE (both fields derive
+    from the local snapshot) — a second read reopens the pairing window."""
+    inner = [
+        c
+        for c in codex_task._install_signal_handlers.__code__.co_consts
+        if isinstance(c, CodeType) and c.co_name == "_handler"
+    ]
+    assert len(inner) == 1
+    loads = [
+        ins
+        for ins in dis.get_instructions(inner[0])
+        if ins.opname == "LOAD_GLOBAL" and ins.argval == "_active_attempt"
+    ]
+    assert len(loads) == 1, loads

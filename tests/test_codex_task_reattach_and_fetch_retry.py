@@ -19,7 +19,7 @@ Two recovery affordances under test:
    running job. Guarded (MF1): with ``--issue N`` the job id must be bound
    to issue N's own ``epm:codex-task-spawned`` history and not already
    terminally paired (fail-closed; ``--reattach-unbound`` overrides, and is
-   REQUIRED without ``--issue``). ``_active_job_id`` arms only AFTER the
+   REQUIRED without ``--issue``). ``_active_attempt`` arms only AFTER the
    guard (MF3); the attach-time confirm probe uses ``_probe_phase_safe``
    (MF2) so a status-CLI raise exits 4 with a failure marker, never a crash.
 """
