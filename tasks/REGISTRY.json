@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2332,
+  "highest_id": 2333,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10299,6 +10299,13 @@
       "path": "tasks/proposed/2332",
       "status": "proposed",
       "title": "Repack small-file HF prefixes to reclaim ~610k file-count slots without breaking readers"
+    },
+    "2333": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2333",
+      "status": "proposed",
+      "title": "Snowball test: do context-vector patch effects run through the first few answer tokens? First-k token patches + prefills vs ce patch, both models"
     },
     "234": {
       "has_clean_result": true,
