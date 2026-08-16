@@ -11,10 +11,15 @@ origin_prompt: can you make an issue to just compare the performance for the mod
   and compare the R^2 of both. start issue in background. 5k generations and 10k generations
   as 2 data points for each model is enough
 workflow: v1
+goal: 'Compare context-to-answer map quality between Qwen2.5-7B-Instruct and Qwen3.5-9B
+  (thinking disabled) on matched LMSYS prompts with each model''s own on-policy generations:
+  per-layer ridge maps fit at 5k and 10k training generations per model, compared
+  on held-out R2 (plus ceiling-normalized secondary, identity+bias/kNN companions,
+  shuffled-pairing null).'
 ---
 ## Goal
 
-Compare context-to-answer map quality between Qwen2.5-7B-Instruct (the project model) and Qwen3.5-9B (thinking disabled) on MATCHED data: the same LMSYS single-turn prompts, each model generating its OWN on-policy completions, per-layer ridge maps v_C -> v_A fit at two training sizes (5,000 and 10,000 generations), compared on held-out R². Primary read: held-out R² per model x {5k, 10k} (peak layer + full depth curve as fraction-of-stack); secondary: reliability-ceiling-normalized R² (#1491 convention), identity+bias and kNN-retrieval companions, shuffled-pairing null.
+Compare context-to-answer map quality between Qwen2.5-7B-Instruct and Qwen3.5-9B (thinking disabled) on matched LMSYS prompts with each model's own on-policy generations: per-layer ridge maps fit at 5k and 10k training generations per model, compared on held-out R2 (plus ceiling-normalized secondary, identity+bias/kNN companions, shuffled-pairing null).
 
 ## Design (binding essentials — planner elaborates)
 
