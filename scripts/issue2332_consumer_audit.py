@@ -43,6 +43,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -274,13 +275,27 @@ def _boundary(n_worktrees: int) -> str:
     )
 
 
-def run_audit(out_dir: Path) -> dict:
+def run_audit(out_dir: Path, cache_path: Path | None = None) -> dict:
     root = primary_checkout_root()
     reg = json.loads(registry_path().read_text())["tasks"]
     worktrees = _worktree_paths(root)
     base_flags = _grep_base_flags()
     boundary = _boundary(len(worktrees))
     log(f"audited boundary: {boundary}")
+
+    # Per-surface resume cache (checkpoint-per-phase): each completed grep
+    # unit's candidate list persists the moment it completes, so a killed run
+    # never re-pays a completed full-tree read.
+    cache: dict = {}
+    if cache_path is not None and cache_path.is_file():
+        cache = json.loads(cache_path.read_text())
+        log(f"resume cache loaded from {cache_path} (units: {sorted(cache)})")
+
+    def _ckpt() -> None:
+        if cache_path is not None:
+            tmp = cache_path.with_suffix(".tmp")
+            tmp.write_text(json.dumps(cache))
+            os.replace(tmp, cache_path)
 
     # Per-prefix hit accumulator: prefix -> surface -> [ {path, classes, ...} ]
     hits: dict[str, dict[str, list[dict]]] = {
@@ -301,19 +316,34 @@ def run_audit(out_dir: Path) -> dict:
             )
 
     t0 = time.time()
-    log("surface 1: repo root full tree (single combined fixed-string pass)")
-    for rel in _run_grep(root, ROOT_EXCLUDE_DIRS, base_flags):
+    if "repo_root" in cache:
+        root_hits = cache["repo_root"]
+        log(f"surface 1: {len(root_hits)} candidate files from resume cache")
+    else:
+        log("surface 1: repo root full tree (single combined fixed-string pass)")
+        root_hits = _run_grep(root, ROOT_EXCLUDE_DIRS, base_flags)
+        cache["repo_root"] = root_hits
+        _ckpt()
+    for rel in root_hits:
         rel_clean = rel.removeprefix("./")
         _record("repo_root", rel_clean, rel_clean, root / rel_clean)
     log(f"surface 1 done in {time.time() - t0:.0f}s")
 
     t0 = time.time()
     log(f"surface 2: {len(worktrees)} worktrees full-tree (bounded excludes)")
+    wt_cache = cache.setdefault("worktrees", {})
     for wt in worktrees:
-        for rel in _run_grep(wt, WT_EXCLUDE_DIRS, base_flags):
+        if wt.name in wt_cache:
+            wt_hits = wt_cache[wt.name]
+        else:
+            wt_hits = _run_grep(wt, WT_EXCLUDE_DIRS, base_flags)
+            wt_cache[wt.name] = wt_hits
+            _ckpt()
+        for rel in wt_hits:
             rel_clean = rel.removeprefix("./")
             disp = f"{wt.name}/{rel_clean}"
             _record("worktrees", disp, rel_clean, wt / rel_clean)
+        log(f"  [surface 2] {wt.name}: {len(wt_hits)} candidate files")
     log(f"surface 2 done in {time.time() - t0:.0f}s")
 
     t0 = time.time()
@@ -322,8 +352,14 @@ def run_audit(out_dir: Path) -> dict:
     if p.returncode != 0:
         raise SystemExit(f"FATAL: git fetch origin failed rc={p.returncode}: {p.stderr[:300]}")
     branch_meta: dict[str, dict] = {}
+    br_cache = cache.setdefault("branches", {})
     for prefix, issue in PREFIXES.items():
-        meta = _branch_hits(root, issue)
+        if str(issue) in br_cache:
+            meta = br_cache[str(issue)]
+        else:
+            meta = _branch_hits(root, issue)
+            br_cache[str(issue)] = meta
+            _ckpt()
         branch_meta[prefix] = {"ref": meta["ref"], "present": meta["present"]}
         for path in meta["hits"]:
             prefixes_found, reads, writes = _branch_file_scan(root, meta["ref"], path)
@@ -480,8 +516,13 @@ def main(argv: list[str] | None = None) -> int:
         default="eval_results/issue_2332",
         help="output dir for consumer_audit.{json,md} (default: eval_results/issue_2332)",
     )
+    ap.add_argument(
+        "--cache",
+        default="/tmp/i2332_audit_cache.json",
+        help="per-surface resume cache (candidate lists checkpoint per completed grep unit)",
+    )
     args = ap.parse_args(argv)
-    run_audit(Path(args.out))
+    run_audit(Path(args.out), cache_path=Path(args.cache) if args.cache else None)
     return 0
 
 
