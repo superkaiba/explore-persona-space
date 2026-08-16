@@ -89,6 +89,38 @@ def _isolate_codex_quota_sentinel(monkeypatch):
     )
 
 
+# --- #2321 (I18/C5): test-mutation interlock env for the repack test modules.
+# The plan's hard boundary — "Do NOT test it by deleting real artifacts" — is
+# enforced in code by packing.assert_test_mutation_interlock() (refuses a
+# canonical-repo mutation from a pytest process without the explicit
+# EPM_I2321_TEST_APPLY_PERMIT=1, which is NEVER set in CI). This fixture is
+# the env half: HF_HUB_OFFLINE=1 by default for the four #2321 test modules
+# (defense in depth — huggingface_hub freezes constants at import, so this
+# reliably covers only subprocesses + late imports; the in-code interlock +
+# autospec'd HfApi fakes are the binding arms) and the permit actively
+# CLEARED so an ambient developer-shell export can never open the interlock
+# for a whole test run.
+_I2321_TEST_MODULES = frozenset(
+    {
+        "test_packing_v2",
+        "test_hub_packed_fallback",
+        "test_issue2321_repack",
+        "test_issue2321_consumer_gate",
+    }
+)
+
+
+@pytest.fixture(autouse=True)
+def _i2321_test_mutation_interlock_env(request, monkeypatch):
+    mod = getattr(request, "module", None)
+    # tests/ is a package (tests/__init__.py), so __name__ is dotted
+    # ("tests.test_packing_v2") — match on the final component.
+    name = getattr(mod, "__name__", "").rpartition(".")[2]
+    if mod is not None and name in _I2321_TEST_MODULES:
+        monkeypatch.setenv("HF_HUB_OFFLINE", "1")
+        monkeypatch.delenv("EPM_I2321_TEST_APPLY_PERMIT", raising=False)
+
+
 @pytest.fixture(autouse=True)
 def _rewarm_task_workflow_repo_root_cache():
     """#1556 cross-test cache hygiene (the #703 leak family). Several test
