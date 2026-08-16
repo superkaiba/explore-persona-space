@@ -36,10 +36,12 @@ Reuses the existing overflow mechanism from
   504-retried) post-upload verify probe (#920/#988: never a full-repo listing
   per shard).
 
-The one thing hub's mechanism cannot do for a dataset shard is the canonical
-``OVERFLOW_POINTER.json`` breadcrumb: ``hub._write_overflow_pointer`` hardcodes
-``repo_type="model"``, so a dataset canonical repo needs the analogous pattern
-here (:func:`_write_overflow_pointer`), keyed on the canonical repo's own type.
+Note on the canonical ``OVERFLOW_POINTER.json`` breadcrumb: as of #2304 hub's
+own writer (``hub._write_overflow_pointer``) takes a keyword-only ``repo_type``
+(default ``"model"``), so it can serve dataset canonical repos too; this
+module keeps its local :func:`_write_overflow_pointer` (keyed on the canonical
+repo's own type) for its api-threading + call-shape reasons, not because hub's
+writer is model-only anymore.
 """
 
 from __future__ import annotations
@@ -106,8 +108,10 @@ def _write_overflow_pointer(
     location instead of an empty path. Fail-soft: a pointer-write failure logs
     loudly but never fails the already-verified rerouted upload.
 
-    Sibling of ``hub._write_overflow_pointer``, generalised to the canonical
-    repo's own ``repo_type`` (hub's writer is model-repo-only).
+    Sibling of ``hub._write_overflow_pointer``, keyed on the canonical repo's
+    own ``repo_type`` (as of #2304 hub's writer takes a keyword-only
+    ``repo_type`` too — this local copy survives for its explicit-``api``
+    threading, not because hub's is model-only anymore).
     """
     dest = (
         f"{path_in_repo.rstrip('/')}/OVERFLOW_POINTER.json"

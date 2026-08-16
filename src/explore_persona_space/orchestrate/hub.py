@@ -19,7 +19,7 @@ import sys
 import tempfile
 import time
 import uuid
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
@@ -682,6 +682,107 @@ def _overflow_event_path() -> Path:
     return Path.home() / ".cache" / "explore_persona_space" / "hf-overflow-routing.jsonl"
 
 
+def _filecount_sentinel_path() -> Path:
+    """Observed-count sentinel resolution: env override → /workspace/logs → ~/.cache.
+
+    Mirrors :func:`_overflow_event_path` — the local observability sink for the
+    repo-wide file-count cap (#2304): one JSONL row per enabled file-count
+    refusal (``status: "blocked"``, with the server-observed count/limit when
+    parseable) and one per first verified success after a blocked row
+    (``status: "accepting"``). Pod-side code never shells ``task.py``; the
+    WARN-only preflight check ``check_hf_filecount_sentinel``
+    (:mod:`explore_persona_space.orchestrate.preflight`) reads this file.
+    """
+    env = os.environ.get("EPM_HF_FILECOUNT_SENTINEL_PATH")
+    if env:
+        return Path(env)
+    workspace_logs = Path("/workspace/logs")
+    if workspace_logs.is_dir():
+        return workspace_logs / "hf-filecount-observed.jsonl"
+    return Path.home() / ".cache" / "explore_persona_space" / "hf-filecount-observed.jsonl"
+
+
+# The server's refusal message shape (#2304 verbatim: "Your git repo would
+# contain 1000009 files after this push, over the limit of 1000000 files.").
+# Comma-tolerant: a future server-side thousands-separator keeps parsing.
+_FILECOUNT_OBSERVED_RE = re.compile(
+    r"would contain ([\d,]+) files after this push, over the limit of ([\d,]+) files"
+)
+
+
+def _record_filecount_observation(repo_id: str, repo_type: str, err: Exception) -> None:
+    """Append one ``status: "blocked"`` sentinel row for a file-count refusal.
+
+    Fail-soft (mirrors :func:`_emit_overflow_routing_event`): telemetry must
+    never break the fallback that follows it. ``observed_files`` / ``limit``
+    are parsed from the refusal message when it matches the known shape and
+    are ``None`` on any other shape — the row still records the refusal.
+    """
+    try:
+        m = _FILECOUNT_OBSERVED_RE.search(str(err))
+        row = {
+            "ts": time.time(),
+            "repo_id": repo_id,
+            "repo_type": repo_type,
+            "observed_files": int(m.group(1).replace(",", "")) if m else None,
+            "limit": int(m.group(2).replace(",", "")) if m else None,
+            "status": "blocked",
+            "message_excerpt": str(err)[:200],
+        }
+        path = _filecount_sentinel_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(row) + "\n")
+    except Exception as e:
+        logger.warning("filecount-observation record failed (%s) — fallback proceeds", e)
+
+
+def _maybe_record_filecount_recovery(repo_id: str, repo_type: str) -> None:
+    """Append one ``status: "accepting"`` row when a VERIFIED success follows a
+    blocked observation for the same (repo_id, repo_type).
+
+    Guarded by ``Path.exists()`` so the steady state (no sentinel file) costs
+    one stat and writes nothing. Reads the JSONL by text-mode file iteration
+    (never ``splitlines()`` — the U+2028 shred class), keeps the LAST row per
+    (repo_id, repo_type), and appends only on a blocked→accepting transition —
+    repeated successes stay silent. Fail-soft: a telemetry failure never
+    perturbs the (already-verified) upload result.
+    """
+    try:
+        path = _filecount_sentinel_path()
+        if not path.exists():
+            return
+        last: dict | None = None
+        with path.open(encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if row.get("repo_id") == repo_id and row.get("repo_type") == repo_type:
+                    last = row
+        if last is None or last.get("status") != "blocked":
+            return
+        rec = {
+            "ts": time.time(),
+            "repo_id": repo_id,
+            "repo_type": repo_type,
+            "status": "accepting",
+        }
+        with path.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(rec) + "\n")
+        logger.info(
+            "HF file-count sentinel: %s (%s) accepting again after a blocked observation",
+            repo_id,
+            repo_type,
+        )
+    except Exception as e:
+        logger.warning("filecount-recovery record failed (%s) — upload result unaffected", e)
+
+
 def _emit_overflow_routing_event(
     *,
     original_repo: str,
@@ -721,7 +822,13 @@ def _emit_overflow_routing_event(
         logger.warning("overflow-routing event emit failed (%s) — reroute proceeds", e)
 
 
-def _write_overflow_pointer(*, canonical_repo: str, path_in_repo: str, overflow_repo: str) -> None:
+def _write_overflow_pointer(
+    *,
+    canonical_repo: str,
+    path_in_repo: str,
+    overflow_repo: str,
+    repo_type: str = "model",
+) -> str:
     """Upload a small JSON breadcrumb to the CANONICAL repo after a reroute.
 
     Small ``*.json`` commits ride the non-LFS path, which SUCCEEDS while over
@@ -729,9 +836,34 @@ def _write_overflow_pointer(*, canonical_repo: str, path_in_repo: str, overflow_
     the canonical subfolder always finds a machine-readable pointer to the
     real location instead of an empty path. Fail-soft: a pointer-write failure
     logs loudly but never fails the (already-verified) rerouted upload.
+
+    ``repo_type`` (#2304; keyword-only, default ``"model"`` byte-preserves the
+    #564 ``upload_model`` call site) is the CANONICAL repo's type — the
+    dataset-repo fallback passes ``"dataset"`` so the breadcrumb targets the
+    right repo class.
+
+    Returns a status string (#2304) so callers/tests can distinguish the
+    degradation classes:
+
+    - ``"ok"`` — pointer committed to the canonical repo.
+    - ``"unwritable-filecount-cap"`` — the canonical repo refused the pointer
+      commit with the SAME file-count rejection that triggered the reroute
+      (the pointer is itself a new file, so it is unwritable at the cap BY
+      CONSTRUCTION); a distinct #564 event row
+      (``reason="overflow-pointer-unwritable-filecount-cap"``) records the
+      consumer-visible consequence: while the canonical repo is at its cap,
+      NO pointer exists at the canonical path — consumers miss LOUDLY.
+    - ``"failed"`` — any other (transport-class) pointer-write failure.
     """
     import io
 
+    # Hoisted above the try (#2304 plan §4 trap 4) so BOTH except branches can
+    # name the destination the canonical repo refused.
+    dest = (
+        f"{path_in_repo.rstrip('/')}/OVERFLOW_POINTER.json"
+        if path_in_repo
+        else "OVERFLOW_POINTER.json"
+    )
     try:
         h = check_hf_storage_headroom()
         payload = {
@@ -744,28 +876,42 @@ def _write_overflow_pointer(*, canonical_repo: str, path_in_repo: str, overflow_
         from huggingface_hub import HfApi
 
         api = HfApi(token=os.environ.get("HF_TOKEN"))
-        dest = (
-            f"{path_in_repo.rstrip('/')}/OVERFLOW_POINTER.json"
-            if path_in_repo
-            else "OVERFLOW_POINTER.json"
-        )
         _retry_upload(
             lambda: api.upload_file(
                 path_or_fileobj=io.BytesIO(json.dumps(payload, indent=2).encode("utf-8")),
                 repo_id=canonical_repo,
                 path_in_repo=dest,
-                repo_type="model",
+                repo_type=repo_type,
             ),
             what="overflow-pointer upload_file",
         )
         logger.info("Wrote overflow pointer %s/%s -> %s", canonical_repo, dest, overflow_repo)
+        return "ok"
     except Exception as e:
+        if _is_file_count_limit_error(e):
+            logger.warning(
+                "overflow-pointer-unwritable reason=filecount-cap: canonical repo %s "
+                "refused the pointer commit at %s (%s) — rerouted upload remains at %s; "
+                "NO pointer exists at the canonical path while the repo is at its cap",
+                canonical_repo,
+                dest,
+                e,
+                overflow_repo,
+            )
+            _emit_overflow_routing_event(
+                original_repo=canonical_repo,
+                effective_repo=overflow_repo,
+                path_in_repo=path_in_repo,
+                reason="overflow-pointer-unwritable-filecount-cap",
+            )
+            return "unwritable-filecount-cap"
         logger.warning(
             "overflow pointer write to %s failed (%s) — rerouted upload remains at %s",
             canonical_repo,
             e,
             overflow_repo,
         )
+        return "failed"
 
 
 def list_repo_entries_complete(
@@ -970,18 +1116,23 @@ def _is_storage_quota_403(err: Exception) -> bool:
 
 
 def _filecount_fallback_enabled() -> bool:
-    """Default-ON kill switch for the reactive file-count overflow fallback (#1108).
+    """Default-ON kill switch for the reactive file-count overflow fallback
+    (#1108, extended to dataset repos + bulk uploads by #2304).
 
-    The canonical model repo hard-rejects pushes that would cross the HF
-    100,000-files-per-repo limit (#1090: "Your git repo would contain 100050
-    files after this push, over the limit of 100000 files"). When enabled,
-    ``_upload`` retries such a REJECTED model-repo upload against the private
-    :data:`DEFAULT_OVERFLOW_REPO`. Unlike the #564 byte-quota routing
-    (default-OFF because a pre-emptive reroute can divert a push that would
-    have succeeded), this fallback fires only AFTER the canonical push was
-    refused — it can never reroute a would-succeed push — so it is strictly
-    dominant and defaults ON. Kill switch: ``EPM_HF_FILECOUNT_FALLBACK=0``
-    (restores the legacy log-and-return-"" behavior).
+    HF hard-rejects pushes that would cross a repo-wide git file-count limit
+    (#1090: "Your git repo would contain 100050 files after this push, over
+    the limit of 100000 files" on the model repo; #2304: the same rejection at
+    1,000,000 files on the DATA repo). When enabled, a REJECTED model- or
+    dataset-repo upload — single-file/dir via ``_upload`` AND bulk via
+    ``_upload_folder_filtered`` — retries against the private
+    :data:`DEFAULT_OVERFLOW_REPO` (:func:`_filecount_overflow_retry`). Unlike
+    the #564 byte-quota routing (default-OFF because a pre-emptive reroute can
+    divert a push that would have succeeded), this fallback fires only AFTER
+    the canonical push was refused — it can never reroute a would-succeed
+    push — so it is strictly dominant and defaults ON. Kill switch:
+    ``EPM_HF_FILECOUNT_FALLBACK=0`` (restores the legacy log-and-return-""
+    behavior on every covered path, with ZERO new side effects — no sentinel
+    writes).
     """
     return os.environ.get("EPM_HF_FILECOUNT_FALLBACK", "1") == "1"
 
@@ -1156,9 +1307,9 @@ def assert_hub_dir_filecounts(
         )
         if _dir_filecount_guard_enabled():
             raise HubDirFileCountError(msg)
-        # NOTE: the #1108 overflow fallback re-enters _upload, so a
-        # kill-switched over-limit upload logs this WARNING twice (once per
-        # entry). Idempotent + harmless — not a bug.
+        # NOTE: the #1108/#2304 overflow fallback re-enters _upload /
+        # _upload_folder_filtered, so a kill-switched over-limit upload logs
+        # this WARNING twice (once per entry). Idempotent + harmless — not a bug.
         logger.warning("EPM_SKIP_HF_DIR_FILECOUNT_GUARD=1 set — proceeding despite: %s", msg)
     elif any(n > warn_at for n in counts.values()):
         big = {d: n for d, n in counts.items() if n > warn_at}
@@ -1188,6 +1339,67 @@ def _is_file_count_limit_error(err: Exception) -> bool:
     """
     msg = str(err).lower()
     return "over the limit of" in msg and "files" in msg and "push" in msg
+
+
+def _filecount_overflow_retry(
+    err: Exception,
+    *,
+    canonical_repo: str,
+    repo_type: str,
+    path_in_repo: str,
+    retry_against_overflow: Callable[[], str],
+) -> str | None:
+    """Shared reactive file-count fallback for ``_upload`` AND
+    ``_upload_folder_filtered`` (#1108 → #2304).
+
+    Returns ``None`` when the caller should keep its legacy failure path (the
+    error is not a file-count refusal, the kill switch is off, or the refusal
+    is not reroutable), else the overflow retry's own result (``""`` = the
+    retry itself failed; truthy = the verified overflow URL).
+
+    Gate ORDER is load-bearing (#2304 plan §4 trap 1): the kill switch +
+    message match come FIRST — ``EPM_HF_FILECOUNT_FALLBACK=0`` produces ZERO
+    new side effects, sentinel writes included — the observation is recorded
+    SECOND (every enabled file-count refusal is observed, reroutable or not),
+    and the routing conjuncts come LAST, so a refusal on the overflow repo
+    itself (both-repos-at-cap) still lands a sentinel row before the caller's
+    legacy failure path runs.
+
+    Recursion is bounded by construction: the closure retries against
+    :data:`DEFAULT_OVERFLOW_REPO`, on which the ``canonical_repo !=
+    DEFAULT_OVERFLOW_REPO`` conjunct short-circuits (depth <= 2).
+    """
+    if not (_filecount_fallback_enabled() and _is_file_count_limit_error(err)):
+        return None
+    _record_filecount_observation(canonical_repo, repo_type, err)  # fail-soft
+    if not (repo_type in ("model", "dataset") and canonical_repo != DEFAULT_OVERFLOW_REPO):
+        # Observed + recorded, but not a reroutable refusal.
+        return None
+    logger.warning(
+        "File-count limit rejection on %s (%s) — falling back to overflow repo %s",
+        canonical_repo,
+        err,
+        DEFAULT_OVERFLOW_REPO,
+    )
+    result = retry_against_overflow()
+    if result:
+        _emit_overflow_routing_event(
+            original_repo=canonical_repo,
+            effective_repo=DEFAULT_OVERFLOW_REPO,
+            path_in_repo=path_in_repo,
+            reason="file-count-limit-reactive",
+        )
+        # Fail-soft breadcrumb on the CANONICAL repo (non-LFS, small). It ADDS
+        # one file per reroute — fine near the limit; at EXACTLY the cap it
+        # degrades EXPLICITLY (reason=overflow-pointer-unwritable-filecount-cap,
+        # #2304) instead of silently skipping.
+        _write_overflow_pointer(
+            canonical_repo=canonical_repo,
+            path_in_repo=path_in_repo,
+            overflow_repo=DEFAULT_OVERFLOW_REPO,
+            repo_type=repo_type,
+        )
+    return result
 
 
 def _is_transient_upload_error(err: Exception) -> bool:
@@ -1508,17 +1720,24 @@ def _upload(
     is never a useful Hub artifact and historically accounted for hundreds of
     GB of accidental residue.
 
-    Reactive file-count fallback (#1108): a MODEL-repo upload rejected with
-    HF's repo-wide 100k file-count message (:func:`_is_file_count_limit_error`)
-    is retried once against the private :data:`DEFAULT_OVERFLOW_REPO` (same
-    ``path_in_repo``), emitting the #564 routing event
-    (``reason="file-count-limit-reactive"``) + the ``OVERFLOW_POINTER.json``
-    breadcrumb on the canonical repo after a VERIFIED overflow landing.
-    Default ON; kill switch ``EPM_HF_FILECOUNT_FALLBACK=0``
-    (:func:`_filecount_fallback_enabled`). Recursion is bounded by
-    construction — the recursive call targets the overflow repo, on which the
-    guard short-circuits. Every other failure keeps the legacy
-    log-and-return-"" behavior; the success path is byte-unchanged.
+    Reactive file-count fallback (#1108; extended to dataset repos + bulk
+    uploads by #2304): a model- OR dataset-repo upload rejected with HF's
+    repo-wide file-count message (:func:`_is_file_count_limit_error`) is
+    retried once against the private :data:`DEFAULT_OVERFLOW_REPO` (same
+    ``path_in_repo``) via the shared :func:`_filecount_overflow_retry` helper,
+    which emits the #564 routing event (``reason="file-count-limit-reactive"``)
+    + the ``OVERFLOW_POINTER.json`` breadcrumb on the canonical repo after a
+    VERIFIED overflow landing, and records an observed-count sentinel row
+    (:func:`_record_filecount_observation`) for EVERY enabled file-count
+    refusal, reroutable or not. Default ON; kill switch
+    ``EPM_HF_FILECOUNT_FALLBACK=0`` (:func:`_filecount_fallback_enabled` —
+    zero new side effects when off). Recursion is bounded by construction —
+    the retry closure targets the overflow repo, on which the helper's
+    identity conjunct short-circuits. Every other failure keeps the legacy
+    log-and-return-"" behavior; the verified-success path additionally appends
+    a fail-soft sentinel RECOVERY row when a prior blocked observation exists
+    for this (repo, type) (#2304 — the one new, fail-soft side effect on the
+    model path; ROUTING behavior there is unchanged).
 
     Args:
         local_path: Local file or directory to upload (already resolved to Path).
@@ -1680,25 +1899,24 @@ def _upload(
             shutil.rmtree(str(local_path), ignore_errors=True)
             logger.info("Deleted local path: %s", local_path)
 
+        # #2304: fail-soft blocked→accepting sentinel transition (writes only
+        # when a prior blocked observation exists for this (repo, type)).
+        _maybe_record_filecount_recovery(repo_id, repo_type)
         return f"{repo_id}/{path_in_repo}"
     except Exception as e:
-        if (
-            _filecount_fallback_enabled()
-            and _is_file_count_limit_error(e)
-            and repo_type == "model"
-            and repo_id != DEFAULT_OVERFLOW_REPO
-        ):
-            logger.warning(
-                "File-count limit rejection on %s (%s) — falling back to overflow repo %s",
-                repo_id,
-                e,
-                DEFAULT_OVERFLOW_REPO,
-            )
-            # Bounded by construction: the recursive call carries
-            # repo_id=DEFAULT_OVERFLOW_REPO, on which the guard above
-            # short-circuits. delete_after rides along, so the local copy is
-            # reaped only after the recursive call's OWN verified landing.
-            result = _upload(
+        # #1108/#2304 reactive file-count fallback (shared helper; the
+        # recursive closure carries repo_id=DEFAULT_OVERFLOW_REPO, on which
+        # the helper's identity conjunct short-circuits — bounded recursion.
+        # delete_after rides along, so the local copy is reaped only after the
+        # recursive call's OWN verified landing; raise_on_error rides along,
+        # so a failed fallback under raise_on_error=True raises from the
+        # recursive call).
+        fallback = _filecount_overflow_retry(
+            e,
+            canonical_repo=repo_id,
+            repo_type=repo_type,
+            path_in_repo=path_in_repo,
+            retry_against_overflow=lambda: _upload(
                 local_path,
                 DEFAULT_OVERFLOW_REPO,
                 repo_type,
@@ -1708,23 +1926,10 @@ def _upload(
                 ignore_patterns=ignore_patterns,
                 private=True,
                 raise_on_error=raise_on_error,
-            )
-            if result:
-                _emit_overflow_routing_event(
-                    original_repo=repo_id,
-                    effective_repo=DEFAULT_OVERFLOW_REPO,
-                    path_in_repo=path_in_repo,
-                    reason="file-count-limit-reactive",
-                )
-                # Fail-soft breadcrumb on the CANONICAL repo (non-LFS, small).
-                # It ADDS one file per reroute — fine near the limit, fails
-                # soft (logged) at exactly 100,000.
-                _write_overflow_pointer(
-                    canonical_repo=repo_id,
-                    path_in_repo=path_in_repo,
-                    overflow_repo=DEFAULT_OVERFLOW_REPO,
-                )
-            return result
+            ),
+        )
+        if fallback is not None:
+            return fallback
         if raise_on_error:
             logger.error("Upload failed: %s. Raising (raise_on_error=True).", e)
             raise
@@ -1741,6 +1946,8 @@ def _upload_folder_filtered(
     expected_repo_paths: list[str],
     ignore_patterns: list[str] | None = None,
     delete_after: bool = False,
+    *,
+    private: bool = False,
 ) -> str:
     """Bulk-upload a SUBSET of a local folder in ONE ``upload_folder`` commit.
 
@@ -1779,11 +1986,27 @@ def _upload_folder_filtered(
             after this returns a non-empty (verified) URL — this helper never
             deletes (so it cannot remove a file whose committed prefix was not
             verified; the set-verify happens BEFORE the caller's unlink).
+        private: create a MISSING repo as private (threaded into create_repo).
+            Keyword-only with a byte-preserving default (#2304) — every
+            existing call site keeps its shape; the overflow fallback passes
+            True so a not-yet-existing overflow repo is never created PUBLIC
+            (same rationale as :func:`_upload`'s ``private`` arg, #564).
+
+    Reactive file-count fallback (#2304): a canonical-repo bulk commit
+    rejected with HF's repo-wide file-count message is retried once against
+    the private :data:`DEFAULT_OVERFLOW_REPO` via the shared
+    :func:`_filecount_overflow_retry` helper (same ``path_in_repo`` +
+    ``expected_repo_paths`` — the expected paths are repo-relative, so the
+    recursive call re-runs the exact-set verify against the OVERFLOW repo for
+    real). Only the terminal ``except`` reroutes; the verify-miss ``return
+    ""`` inside the try (an INCOMPLETE canonical commit — the server accepted
+    the push) is deliberately NOT a fallback trigger (#2304 plan §4 trap 3).
 
     Returns:
-        ``"{repo_id}/{path_in_repo}"`` on verified success, ``""`` on any
-        failure or incomplete commit. ``delete_after`` is accepted for signature
-        symmetry but intentionally not acted on here; see the arg note above.
+        ``"{repo_id}/{path_in_repo}"`` on verified success (the OVERFLOW-repo
+        URL when the #2304 fallback rerouted), ``""`` on any failure or
+        incomplete commit. ``delete_after`` is accepted for signature symmetry
+        but intentionally not acted on here; see the arg note above.
     """
     # delete_after is verified-before-acted-on by the CALLER (set-verify happens
     # below, before any unlink) — this helper never deletes, so a partial commit
@@ -1815,7 +2038,7 @@ def _upload_folder_filtered(
     api = HfApi(token=token)
 
     try:
-        api.create_repo(repo_id, repo_type=repo_type, private=False, exist_ok=True)
+        api.create_repo(repo_id, repo_type=repo_type, private=private, exist_ok=True)
     except Exception as e:
         logger.warning("Could not create/verify repo %s: %s", repo_id, e)
 
@@ -1871,8 +2094,37 @@ def _upload_folder_filtered(
             repo_id,
             path_in_repo,
         )
+        # #2304: fail-soft blocked→accepting sentinel transition (writes only
+        # when a prior blocked observation exists for this (repo, type)).
+        _maybe_record_filecount_recovery(repo_id, repo_type)
         return f"{repo_id}/{path_in_repo}"
     except Exception as e:
+        # #2304 reactive file-count fallback — terminal except ONLY (the
+        # verify-miss `return ""` inside the try is an incomplete canonical
+        # commit, deliberately not rerouted). Bounded recursion: the closure
+        # carries repo_id=DEFAULT_OVERFLOW_REPO, on which the helper's
+        # identity conjunct short-circuits. expected_repo_paths are
+        # repo-relative, so the recursive call's exact-set verify runs for
+        # real against the overflow repo.
+        fallback = _filecount_overflow_retry(
+            e,
+            canonical_repo=repo_id,
+            repo_type=repo_type,
+            path_in_repo=path_in_repo,
+            retry_against_overflow=lambda: _upload_folder_filtered(
+                local_dir,
+                DEFAULT_OVERFLOW_REPO,
+                repo_type,
+                path_in_repo,
+                allow_patterns,
+                expected_repo_paths,
+                ignore_patterns=ignore_patterns,
+                delete_after=delete_after,
+                private=True,
+            ),
+        )
+        if fallback is not None:
+            return fallback
         logger.error("Bulk upload failed: %s. Keeping local files.", e)
         return ""
 
@@ -1956,7 +2208,10 @@ def upload_model(
     )
     if rerouted and result:
         _write_overflow_pointer(
-            canonical_repo=repo_id, path_in_repo=path_in_repo, overflow_repo=effective_repo
+            canonical_repo=repo_id,
+            path_in_repo=path_in_repo,
+            overflow_repo=effective_repo,
+            repo_type="model",
         )
     return result
 
@@ -2177,11 +2432,18 @@ def upload_raw_completions_to_data_repo(
 
     Returns:
         dict mapping local relative path → HF Hub URL on success (one entry per
-        matched file, identical to the prior per-file return contract). Empty
-        dict (with a logged warning) if no files were found.
+        matched file, identical to the prior per-file return contract). URLs
+        are derived from the bulk upload's OWN returned base URL (#2304), so
+        when the canonical data repo refused the push at its file-count cap
+        and the reactive fallback landed the tree on the private
+        :data:`DEFAULT_OVERFLOW_REPO`, the returned URLs name the overflow
+        repo — never a canonical path that holds nothing. Empty dict (with a
+        logged warning) if no files were found.
 
     Raises:
-        RuntimeError: on any bulk-upload failure or incomplete commit.
+        RuntimeError: on any bulk-upload failure or incomplete commit
+        (including the both-repos-at-cap case, where the fallback itself was
+        refused).
 
     Example:
         >>> upload_raw_completions_to_data_repo(
@@ -2228,7 +2490,10 @@ def upload_raw_completions_to_data_repo(
             f"{eval_results_dir} → {DEFAULT_DATASET_REPO}/{path_in_repo}"
         )
 
-    uploaded = {rel: f"{DEFAULT_DATASET_REPO}/{path_in_repo}/{rel}" for rel in rels}
+    # #2304: derive URLs from the bulk upload's OWN base URL — under a
+    # file-count fallback the tree landed on the OVERFLOW repo, and hardcoding
+    # DEFAULT_DATASET_REPO here would return canonical paths holding nothing.
+    uploaded = {rel: f"{base_url}/{rel}" for rel in rels}
 
     if delete_after:
         # Verified above (the EXACT-set check inside _upload_folder_filtered),

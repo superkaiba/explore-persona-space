@@ -726,30 +726,59 @@ of helper, and the 403 stays fail-loud, but do not mistake the guard for
 fleet-wide coverage. Overflow-repo artifacts are PRIVATE — reached
 auth-required and pointer-mediated, never as canonical-path equivalents.
 
-**File-count limit (100k) — reactive overflow fallback (#1108).** HF
-hard-rejects any push that would put a repo over 100,000 git files (the
-canonical model repo sits at the limit; #1090's rejected c5 push).
-`hub._upload` catches that rejection on a MODEL-repo upload and retries the
-identical upload against the private overflow repo (`DEFAULT_OVERFLOW_REPO`),
-then emits the #564 routing event (`reason: "file-count-limit-reactive"`) and
-writes the `OVERFLOW_POINTER.json` breadcrumb at the canonical path. **Default
-ON** (kill switch `EPM_HF_FILECOUNT_FALLBACK=0`): unlike the #564 byte-quota
-routing (default-OFF because a pre-emptive reroute can divert a would-succeed
-push), this fires only AFTER the server refused the canonical push. Detection
-is message-substring based; a changed rejection shape degrades to the
-fail-soft `""` — never a wrong reroute. A TEMPORARY DURABILITY fallback
-pending the user's file-count triage, NOT a transparent successor to
-canonical storage — overflow artifacts are PRIVATE and pointer-mediated.
-**i528-family caveat:** a persist-gated flow (`EPM_PERSIST_ADAPTER_HF_REPO`)
-that previously failed LOUD at the gate now proceeds on a VERIFIED private
-overflow landing — an EXTERNAL launcher that verifies CANONICAL paths fails
-LATER (at its own verify); such launchers should set
-`EPM_HF_FILECOUNT_FALLBACK=0`. A concurrent user-side freeing between
-rejection and retry is harmless (lands on overflow with a pointer; the next
-upload takes the canonical path again). **Scope:** `repo_type="model"` via
-`upload_model` → `_upload` only — the ~1M-file DATA repo empirically still
-accepts pushes, and direct-`HfApi` per-issue scripts, `upload_dir_sharded`,
-and `_upload_folder_filtered` are named residuals outside this fallback.
+**Repo-wide git file-count cap — reactive overflow fallback (#1108, extended
+by #2304).** HF hard-rejects any push that would put a repo over its
+repo-wide git file cap — 100k observed on the model repo (#1090's rejected
+c5 push), 1,000,000 on the DATA repo (#2162:
+`superkaiba1/explore-persona-space-data` hit the cap live; a 1-file push is
+refused exactly like a 1,000-file push). The shared helper
+`hub._filecount_overflow_retry` catches that rejection on a model- OR
+dataset-repo upload — single-file/dir via `hub._upload` AND bulk via
+`hub._upload_folder_filtered` — and retries the identical upload against the
+private overflow repo (`DEFAULT_OVERFLOW_REPO`), then emits the #564 routing
+event (`reason: "file-count-limit-reactive"`) and writes the
+`OVERFLOW_POINTER.json` breadcrumb at the canonical path (typed to the
+canonical repo's own `repo_type` as of #2304). **Default ON** (kill switch
+`EPM_HF_FILECOUNT_FALLBACK=0` — zero new side effects when off, sentinel
+writes included): unlike the #564 byte-quota routing (default-OFF because a
+pre-emptive reroute can divert a would-succeed push), this fires only AFTER
+the server refused the canonical push. Detection is message-substring based;
+a changed rejection shape degrades to the fail-soft `""` — never a wrong
+reroute. Every enabled refusal ALSO appends an observed-count sentinel row
+(`hf-filecount-observed.jsonl`: env `EPM_HF_FILECOUNT_SENTINEL_PATH` →
+`/workspace/logs/` → `~/.cache/explore_persona_space/`), which preflight
+surfaces as a WARN-only `HF file-count:` line — the cheap early-warning
+signal (#2304 diagnosis: a naive `list_repo_files` count on the 1M-file repo
+timed out at 120 s, so no live count probe may sit on a launch-blocking
+path). **Pointer-unwritable degradation — consumer-side consequence
+(#2304):** while the canonical repo is AT its cap the pointer breadcrumb
+CANNOT be written (it is itself a new file), so on the actual triggering
+condition there is NO pointer to follow: a consumer resolving artifacts by
+path convention (e.g. `stage_hub_prefix(DEFAULT_DATASET_REPO,
+"issueN_<slug>/raw_completions/")`) finds NOTHING at the canonical prefix
+and misses LOUDLY (prefix 404 / fail-loud staging), never stale data. Do NOT
+assume the pointer is always available: the discoverable record is the
+truthful returned URL (`upload_raw_completions_to_data_repo` returns the
+bulk upload's OWN base URL — the overflow repo when rerouted, #2304's
+return-mapping fix) persisted in run digests/markers, plus the DISTINCT
+event row (`reason: "overflow-pointer-unwritable-filecount-cap"`) in the
+routing-event JSONL the orchestrator drains into an `epm:` marker. A
+TEMPORARY DURABILITY fallback pending the user's file-count triage, NOT a
+transparent successor to canonical storage — overflow artifacts are PRIVATE
+and pointer-mediated (when the pointer is writable). **i528-family caveat:**
+a persist-gated flow (`EPM_PERSIST_ADAPTER_HF_REPO`) that previously failed
+LOUD at the gate now proceeds on a VERIFIED private overflow landing — an
+EXTERNAL launcher that verifies CANONICAL paths fails LATER (at its own
+verify); such launchers should set `EPM_HF_FILECOUNT_FALLBACK=0`. A
+concurrent user-side freeing between rejection and retry is harmless (lands
+on overflow with a pointer; the next upload takes the canonical path again).
+**Scope:** `repo_type in ("model", "dataset")` via `_upload` AND
+`_upload_folder_filtered` — hence `upload_model`, `upload_dataset`,
+`upload_raw_completions_to_data_repo`, and every per-issue
+`hub._upload_folder_filtered` caller. Named residuals OUTSIDE this fallback:
+direct-`HfApi` per-issue scripts, and `upload_dir_sharded` (which has its
+own #1034 proactive overflow routing + generalized pointer writer; reactive
+filecount coverage there is a possible follow-up, not built).
 
 **Per-DIRECTORY file-count cap (10k/dir) — PACK many-small-file trees before
 upload (#1190/#1739).** The Hub ALSO rejects any single COMMIT staging
