@@ -7978,6 +7978,38 @@ unchanged.
 (1) BEFORE dispatching any stage that spends on a measurement instrument (an LLM-judge rubric, a labeling scheme, a scorer) — and AGAIN the moment such knowledge lands mid-round — the round checks (a bounded check: session knowledge plus a quick task-title scan, never an unbounded fleet-wide search) whether a SUPERSEDING instrument for the same measurement is in flight (a filed / in-progress task building a stronger replacement — the #1773 shape) or the current instrument is known-weak with a named replacement being designed; if so the DEFAULT is to HOLD the spend-bearing stages (Batch-API judge calls, GPU evals) until the superseding instrument lands — recorded as an `epm:progress` hold note naming the superseding task — and proceeding anyway requires the dispatch note to state why the known-weak instrument still serves (needed now / results not superseded / trivially cheap), never leaving the freeze to user vigilance (2026-07-28: three live SAE rounds kept burning Batch-API judge spend on labels #1773 was designed to supersede; frozen only after the user asked twice).
 (2) A mid-round SCOPE-EXTENSION ADDENDUM — a user ask or self-initiated extension adding cells / draws / rows / behaviors / stages to a live inline round — is a DISPATCH for duty purposes (the scope-extension sibling of the compute-character block's "realized implementation later adds a fit/battery" drift sentence): it carries its own compute-character pre-launch statement (ops arithmetic, named batched helper, parallelization width) plus whichever other duty blocks its content triggers (figure-sanity, estimator-validity), posted BEFORE the addendum launches (2026-07-28: "parallel + vectorized" had to be re-stated twice before a throughput addendum landed — the statement bound only the original dispatch).
 
+**Inline-round session-survival backstop (REQUIRED — same rationale: this
+carve-out is PLANNERLESS and skips the Step 0 / Step 6d.2 arm sites where
+the `/issue-tick <N>` backstop cron is normally armed):** an inline round
+dispatching pod/VM-side work that outlives the turn arms the 45-min
+`/issue-tick <N>` cron at dispatch IFF the parent task's status is in
+`tick_triage.ISSUE_ACTIVE` (`approved` / `running` / `verifying` /
+`interpreting` / `reviewing`) — arm via the Step 0 ARM-GUARD by reference
+(`CronList` whole-string equality → `CronCreate` → re-`CronList`, exactly
+one match) and run CRON-TEARDOWN at the round's completion step
+(§ CRON-TEARDOWN procedure — both legs, ids from a fresh `CronList`). On
+EVERY other status do NOT arm — the cron is inoperative or actively wrong
+there (the `scripts/tick_triage.py` status sets; `compute_issue_verdict`
+raises on anything outside them): a parent in `ISSUE_TERMINAL`
+(`completed` / `archived` / `awaiting_promotion` / `blocked` / `on_hold`)
+— the dominant inline-override case — gets ONE fire then self-teardown
+(TERMINAL verdict), preceded by a misleading gate push on the two
+`ISSUE_GATE` (`awaiting_promotion` / `blocked`) members; a parent in
+`ISSUE_PARK` (`proposed` / `planning` / `plan_pending` /
+`followups_running`) does NOT self-clear — a stale tick STALE-REDRIVEs
+the FULL `/issue <N>` skill, the re-spawn the override clause forbids,
+driving the PARENT's lifecycle rather than the inline round; any status
+outside the three sets raises `ValueError` (a crash, not a backstop). On
+every non-ACTIVE parent the binding backstop is (1) the
+`[long-phase-heartbeat]` `epm:progress` cadence (≤ ~60 min), (2) the
+`keep-running` tag + pod-naming `epm:run-launched` shield of the
+pod-safety block below (tag removed at completion), and (3) the dispatch
+note's re-attach handles (pod name / pid / absolute log path / harvest
+path) — never an unconditional cron that reads as coverage and provides
+none (#1491, 2026-08-05: an inline-override round on an
+`awaiting_promotion` parent armed no backstop while an ~$44/h pod ran a
+crash-fix; surfaced only by user challenge. #2146).
+
 **Pod-safety pre-launch signals (deviation case — a pod on a
 parked/terminal parent).** This step and its user-chat sibling (the
 CLAUDE.md § Routing "User-chat inline free analysis" carve-out) are

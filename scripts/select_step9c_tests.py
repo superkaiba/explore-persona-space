@@ -424,6 +424,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_implementer_spec_names_invariant_local_union.py",
     # NEW (#1699) — implementer spec pin: ruff-policy pin invocation in lint step (#1672)
     "tests/test_implementer_spec_names_ruff_policy_pin.py",
+    # NEW (#2146) — SKILL.md 9a-ter + CLAUDE.md inline-round session-survival
+    # backstop pin (arm /issue-tick IFF parent in tick_triage.ISSUE_ACTIVE;
+    # partition pinned against the live tick_triage module; incident #1491)
+    "tests/test_issue2146_inline_tick_backstop_pin.py",
     # NEW (#2101) — agent-memory MEMORY.md no-lost-row discipline pin (SKILL.md
     # Step 5a clause + echo, gotchas.md entry, LESSONS.md trigger)
     "tests/test_issue_skill_agent_memory_no_lost_row.py",

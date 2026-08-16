@@ -15074,7 +15074,17 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # prose. Prior: 974_900 (#2317, above). Cap = landing bytes + ~1 KB
     # (#1753/#1727 landing-bytes rule; headroom 1,032 B <= the 3,000 B
     # loose-cap hygiene bar). Re-measure at Step 10d if main moves again.
-    "issue/SKILL.md": 980_400,
+    #
+    # 982_700 — #2146 MEASURED 981,524 B on the branch's origin/main merge
+    # (d1c3534a10): main's 979,368 B + this branch's +2,156 B (the Step
+    # 9a-ter "Inline-round session-survival backstop" block — the
+    # arm-iff-tick_triage.ISSUE_ACTIVE rule, the per-class no-arm verdicts
+    # with the four status enumerations the #2146 partition pin compares
+    # against the live tick_triage module, and the non-ACTIVE backstop
+    # chain). Prior: 980_400 (#2320, above). Cap = measured + ~1.2 KB
+    # (#1753/#1727 landing-bytes rule; headroom 1,176 B <= the 3,000 B
+    # loose-cap hygiene bar). Re-measure at Step 10d if main moves again.
+    "issue/SKILL.md": 982_700,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
