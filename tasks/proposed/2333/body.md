@@ -19,6 +19,9 @@ goal: 'Test the snowball explanation of context-vector patch causality on Qwen2.
   form: the target context''s own reference answer opening), measured by F_beh/F_act
   vs scheme-matched shuffled-donor nulls on the pre-registered most-successful cells
   (#2162''s 5 stored-and-used + #2094''s pirate matched-query pairs).'
+relates_to:
+- spec-context-as-vector
+- spec-steering
 ---
 ## Goal
 
