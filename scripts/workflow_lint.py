@@ -862,6 +862,17 @@ Behaviours:
   line directly above the fence opener. Untagged fences, prose
   inline-code recipes, heredoc bodies, and compound-line quoted-text
   false-exemptions are NAMED residuals (see the check docstring).
+* ``--check-codex-concerns-persistence`` (also bundled into the no-flags
+  default run): pin the #2326 Codex concerns-persistence contract across
+  its four prose surfaces — the issue/SKILL.md "Codex concerns persistence
+  at verdict collection" subsection (region-anchored; must name the
+  forwarder ``persist_verdict_concerns.py`` and keep the resume-recovery
+  clause), the ``CONCERN:: `` row grammar inside both emitting Codex
+  composers' verdict templates (codex-code-reviewer.md,
+  codex-clean-result-critic.md), and the ``**Prior-concerns ledger:**``
+  visibility line in code-reviewer.md Step 0.8 (incident #2321: a Codex
+  verdict carried 8 "Concerns to persist" items, zero were persisted, and
+  the round-2 prior-concerns gate walked an empty ledger).
 
 Exit codes:
 
@@ -12965,6 +12976,151 @@ def check_cvd_scoped_gpu_verdict_lens(  # noqa: C901 -- flat per-surface token l
     return errors
 
 
+def check_codex_concerns_persistence_lens(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the #2326 Codex concerns-persistence contract is absent from
+    ANY of its four surfaces.
+
+    Incident #2321 (2026-08-16): a round-1 Codex code-review verdict carried
+    a "Concerns to persist" section with 8 items; NONE was persisted via
+    ``raise-concern``, so the round-2 prior-concerns gate (code-reviewer.md
+    Step 0.8) and Step 5c-ter walked an EMPTY ledger. The fix (#2326) makes
+    the Codex composers emit machine-readable ``CONCERN:: `` rows inside the
+    verdict marker envelope and makes the ORCHESTRATOR blind-forward them
+    via ``scripts/persist_verdict_concerns.py`` at every marker-mode Codex
+    verdict collection AND at every resume-table row whose predicate
+    includes an existing current-round codex marker. This check pins the
+    contract across its surfaces, region-anchored, so a future refactor
+    cannot silently strip one (the #606 copy-list-omission class):
+
+    (1) issue/SKILL.md — the "Codex concerns persistence at verdict
+        collection" subsection (region: its bold heading up to the
+        ``**5c. Apply ensemble decision rule.**`` heading) names the
+        forwarder ``persist_verdict_concerns.py`` AND keeps the
+        ``**Resume recovery`` clause inside the region;
+    (2) codex-code-reviewer.md — the literal row token ``CONCERN:: ``
+        inside the verdict-template region (line-start marker tags);
+    (3) codex-clean-result-critic.md — same, its template region;
+    (4) code-reviewer.md — the literal ``**Prior-concerns ledger:**``
+        visibility line inside the ``### Step 0.8`` section body.
+
+    ``repo_root`` is a unit-test override hook; production callers pass None
+    (canonical repo root; behavioral subprocess tests may point the check at
+    a tmp corpus via ``EPS_WORKFLOW_LINT_REPO_ROOT``). Bundled into the
+    no-flags default run.
+    """
+    if repo_root is not None:
+        root = repo_root
+    else:
+        env_root = os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    forwarder = "persist_verdict_concerns.py"
+    row_token = "CONCERN:: "
+    errors: list[str] = []
+
+    # (1) issue/SKILL.md: the poster-duty subsection region.
+    skill = root / ".claude" / "skills" / "issue" / "SKILL.md"
+    heading = "**Codex concerns persistence at verdict collection"
+    recovery = "**Resume recovery (crash between marker post and persist"
+    if not skill.is_file():
+        errors.append(
+            f"{skill}: missing — the #2326 codex-concerns-persistence poster "
+            f"duty must live in issue/SKILL.md."
+        )
+    else:
+        text = skill.read_text(encoding="utf-8")
+        idx = text.find(heading)
+        if idx == -1:
+            errors.append(
+                f"{skill}: missing the '{heading}' subsection (#2326) — "
+                f"without it the orchestrator never forwards Codex "
+                f"'Concerns to persist' rows to the ledger (incident #2321: "
+                f"8 emitted, 0 persisted, the round-2 gate walked an empty "
+                f"ledger)."
+            )
+        else:
+            end = text.find("**5c. Apply ensemble decision rule.**", idx)
+            region = text[idx:end] if end != -1 else text[idx:]
+            if forwarder not in region:
+                errors.append(
+                    f"{skill}: the codex-concerns-persistence subsection no "
+                    f"longer names the forwarder {forwarder!r} (#2326) — the "
+                    f"blind-forward invocations must stay in the region."
+                )
+            if recovery not in region:
+                errors.append(
+                    f"{skill}: the codex-concerns-persistence subsection no "
+                    f"longer carries the '{recovery}' clause (#2326) — a "
+                    f"crash between marker post and persist would reproduce "
+                    f"the #2321 empty-ledger defect through the resume table."
+                )
+
+    # (2)/(3) the two emitting Codex composers: row grammar in the template.
+    for rel, start_tag, end_tag in (
+        (
+            "codex-code-reviewer.md",
+            "<!-- epm:code-review-codex",
+            "<!-- /epm:code-review-codex -->",
+        ),
+        (
+            "codex-clean-result-critic.md",
+            "<!-- epm:clean-result-critique-codex",
+            "<!-- /epm:clean-result-critique-codex -->",
+        ),
+    ):
+        composer = root / ".claude" / "agents" / rel
+        if not composer.is_file():
+            errors.append(
+                f"{composer}: missing — the #2326 CONCERN:: row grammar must "
+                f"live in the composer's verdict template."
+            )
+            continue
+        text = composer.read_text(encoding="utf-8")
+        start_match = re.search(rf"(?m)^{re.escape(start_tag)}", text)
+        if start_match is None:
+            errors.append(
+                f"{composer}: no line-start verdict-template start tag "
+                f"{start_tag!r} (#2326) — cannot anchor the template region."
+            )
+            continue
+        end = text.find(end_tag, start_match.start())
+        region = text[start_match.start() : end] if end != -1 else text[start_match.start() :]
+        if row_token not in region:
+            errors.append(
+                f"{composer}: the verdict-template region no longer carries "
+                f"the {row_token!r} row grammar (#2326) — Codex would emit "
+                f"prose-only concerns the blind forwarder cannot persist "
+                f"(the #2321 shape)."
+            )
+
+    # (4) code-reviewer.md: the Step 0.8 ledger-visibility line.
+    reviewer = root / ".claude" / "agents" / "code-reviewer.md"
+    ledger_line = "**Prior-concerns ledger:**"
+    if not reviewer.is_file():
+        errors.append(
+            f"{reviewer}: missing — the #2326 prior-concerns ledger "
+            f"visibility line must live in code-reviewer.md Step 0.8."
+        )
+    else:
+        text = reviewer.read_text(encoding="utf-8")
+        idx = text.find("### Step 0.8")
+        if idx == -1:
+            errors.append(
+                f"{reviewer}: missing the '### Step 0.8' section (#2326) — "
+                f"the prior-concerns walk (and its ledger-visibility line) "
+                f"must stay in the Claude reviewer."
+            )
+        else:
+            nxt = text.find("\n### ", idx + 1)
+            body = text[idx:nxt] if nxt != -1 else text[idx:]
+            if ledger_line not in body:
+                errors.append(
+                    f"{reviewer}: the '### Step 0.8' section body no longer "
+                    f"names {ledger_line!r} (#2326) — an empty concerns "
+                    f"ledger would pass vacuously with no visible record."
+                )
+    return errors
+
+
 def check_verdict_round_anchor(*, repo_root: Path | None = None) -> list[str]:
     """FAIL if the #2136 verdict-round freshness anchor is absent from the
     /issue SKILL.md durable-verdict-first surface.
@@ -15287,7 +15443,21 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # ladder's own history calls normal for concurrent sibling landings).
     # Prior: 980_400 (#2320, above). Re-measure at Step 10d if main moves
     # again.
-    "issue/SKILL.md": 983_400,
+    #
+    # 989_650 — #2326 MEASURED 988,436 B after the Codex concerns-persistence
+    # edits on this branch, against origin/main SKILL.md at 982,587 B (the
+    # f726c6befe merge; +364 B of concurrent sibling landings over #2146's
+    # r3 982,223 B measurement): this branch's +5,849 B = the "Codex
+    # concerns persistence at verdict collection" subsection (the two
+    # collection invocations, the predicate-anchored resume-recovery clause
+    # incl. the exit-2 carve-out + part=K/N concatenation note, the
+    # generalized non-zero-exit disposition), the File-only recipe's step-5
+    # pointer comment, the 5c-ter empty-ledger log line + rationale, and the
+    # resume-table preamble recovery-first pointer sentence. Cap = measured
+    # + ~1.2 KB (#1753/#1727 landing-bytes rule; headroom 1,214 B <= the
+    # 3,000 B loose-cap hygiene bar). Prior: 983_400 (#2146, above).
+    # Re-measure at Step 10d if main moves again.
+    "issue/SKILL.md": 989_650,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
@@ -17125,6 +17295,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_null_gate_calibration_lens": lambda wf: check_null_gate_calibration_lens(),
     "check_two_tier_yield_floor": lambda wf: check_two_tier_yield_floor(),
     "check_cvd_scoped_gpu_verdict_lens": lambda wf: check_cvd_scoped_gpu_verdict_lens(),
+    "check_codex_concerns_persistence": lambda wf: check_codex_concerns_persistence_lens(),
     "check_verdict_round_anchor": lambda wf: check_verdict_round_anchor(),
     "check_stale_label_disposition": lambda wf: check_stale_label_disposition_clause(),
     "check_smoke_output_hygiene": lambda wf: check_smoke_output_hygiene(),
@@ -17236,6 +17407,7 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_null_gate_calibration_lens": CheckScope("global", (".claude/",)),
     "check_two_tier_yield_floor": CheckScope("global", (".claude/",)),
     "check_cvd_scoped_gpu_verdict_lens": CheckScope("global", (".claude/",)),
+    "check_codex_concerns_persistence": CheckScope("global", (".claude/",)),
     "check_verdict_round_anchor": CheckScope("global", (".claude/skills/",)),
     "check_stale_label_disposition": CheckScope("global", (".claude/skills/",)),
     "check_smoke_output_hygiene": CheckScope("global", (".claude/",)),
@@ -18004,6 +18176,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "implementation round). Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-codex-concerns-persistence",
+        action="store_true",
+        help="FAIL if the #2326 Codex concerns-persistence contract is "
+        "absent from any of its four surfaces: the issue/SKILL.md 'Codex "
+        "concerns persistence at verdict collection' subsection (forwarder "
+        "invocation + resume-recovery clause), the CONCERN:: row grammar in "
+        "the codex-code-reviewer.md and codex-clean-result-critic.md "
+        "verdict templates, and the Prior-concerns-ledger visibility line "
+        "in code-reviewer.md Step 0.8 (incident #2321: 8 emitted concerns, "
+        "0 persisted, an empty ledger walked vacuously at round 2). "
+        "Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-verdict-round-anchor",
         action="store_true",
         help="FAIL if the #2136 verdict-round freshness anchor is absent "
@@ -18606,6 +18791,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_null_gate_calibration_lens
         or args.check_two_tier_yield_floor
         or args.check_cvd_scoped_gpu_verdict_lens
+        or args.check_codex_concerns_persistence
         or args.check_verdict_round_anchor
         or args.check_smoke_blind_spots
         or args.check_stale_label_disposition
@@ -18771,6 +18957,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_two_tier_yield_floor())
     if args.check_cvd_scoped_gpu_verdict_lens or no_flags:
         errors.extend(check_cvd_scoped_gpu_verdict_lens())
+    if args.check_codex_concerns_persistence or no_flags:
+        errors.extend(check_codex_concerns_persistence_lens())
     if args.check_verdict_round_anchor or no_flags:
         errors.extend(check_verdict_round_anchor())
     if args.check_smoke_blind_spots:

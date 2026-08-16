@@ -237,7 +237,10 @@ address-concern <N> --concern-id <id> --by code-reviewer --round <n>`). A new
 substantive concern you want the orchestrator to BIND must be persisted via
 `task.py raise-concern <N> --concern-id <kebab-id> --severity
 CONCERN|BLOCKER --summary '<≤200c one-liner>' --by code-reviewer --round <n>`
-— verdict-body bullets that are NOT persisted remain opportunistic. **A
+— verdict-body bullets that are NOT persisted remain opportunistic. Record
+the ledger state as one verdict-body line — `**Prior-concerns ledger:** <K
+open: id1, id2, …>` or `**Prior-concerns ledger:** empty` — so a vacuous
+walk is visible in the verdict itself (#2326). **A
 deferred feature the plan's PRODUCTION path requires is ALWAYS a persisted
 concern — never prose-only** (CONCERN minimum; BLOCKER when the production
 path provably crashes without it), even on a PASS verdict: the Step 5c-ter
