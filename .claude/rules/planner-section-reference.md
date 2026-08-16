@@ -449,7 +449,10 @@ gate the plan retains:
   in prior-issue evidence of the construct. A gate whose sign predicts the
   opposite of what every prior run of this construct produced, or whose
   threshold no past result of this construct would itself have passed, is
-  a defect — it guarantees a false FAIL by construction.
+  a defect — it guarantees a false FAIL by construction. This clause is
+  vacuous when NO prior null values exist for the construct — exactly the
+  #1491 shape; the `**Measured calibration basis for NULL-statistic gates
+  (#1491).**` sub-section below is its measure-when-no-prior completion.
 - Self-check the whole gate set is **jointly satisfiable** before
   shipping: no two gates may demand contradictory outcomes (e.g. one
   requires `Δ ≥ +x` and another `Δ ≤ −y`) on the SAME measurement at the
@@ -503,6 +506,36 @@ construction (#2061: corpus `n_built` was quoted where realized turnstore
 rows was the fit's denominator; likely 5 of 7 combos degenerate under the
 #1887 refusal; caught only post-smoke at the cost of an
 `epm:strategy-pivot` + plans v11→v13, ~2.6 h).
+
+**Measured calibration basis for NULL-statistic gates (#1491).** Any
+pre-registered numeric gate whose thresholded quantity is computed from a
+NULL / permutation / shuffle / scrambled-label draw MUST cite a MEASURED
+calibration basis: a 1-cell pilot computing THAT null statistic through the
+PRODUCTION entrypoint at production `n`/`d`/`h` shape — named command +
+cell + the realized null value(s), with the gate band set relative to
+them. Prefer ≥3 draws, or state the dispersion allowance when the band is
+set off fewer (a measured value plus an asserted margin is the within-rung
+form of the same trap — #1491's first fix carried a ~3× margin and still
+fired). Two mechanisms make any asserted constant wrong: (1) a refit null
+is strictly negative under the `1 − SS_res/SS_tot` held-out convention —
+state WHICH R² convention the gate reads; the squared-correlation form
+does sit near 0 — with −d/(n−d−1)-scale magnitude, and (2) null depth is
+non-monotone in the shape parameters (deepest near the interpolation
+threshold `n ≈ d` / `n ≈ h`), so a ladder sweeping `n` or width calibrates
+PER RUNG or the gate is advisory. Not yet materialized at plan time ⇒ mark
+the band `inferred — re-calibrate at first null draw` and name the
+pre-gate re-calibration step (the measured-`n_train` escape's shape).
+Declare each null-side gate `advisory` (DEFAULT: log the realized value +
+expected band, continue, surface in the run digest) or `hard-abort` —
+hard-abort is opt-in and the plan must ARGUE it (name the downstream claim
+that would be invalid and why analysis-time rejection is worse; a
+null-side abort discards the OBSERVED arm too, the expensive half). Full
+recipe + carve-outs (purely observed-side predicates, analytic
+distributions, advisory log lines with nothing branching):
+`.claude/rules/selection-symmetric-nulls.md` § Gate thresholds on a NULL
+statistic. (#1491: `abs(r2_null) < 0.05` on a shuffle-refit null —
+realized −1 to −4 — hard-aborted all 8 shards on an 8×H200 pod; the
+asserted `-3.0` floor died the same way at the next rung.)
 
 ## 9. Resources & Parallelism
 
