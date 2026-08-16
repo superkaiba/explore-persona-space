@@ -244,3 +244,131 @@ def test_issue1481_cjk_audit_zero_scannable_pools_fails_before_write(tmp_path, m
     with pytest.raises(AssertionError, match="0 scannable pools"):
         cjk.main(["--analysis-dir", str(analysis), "--cache-dir", str(tmp_path / "cache")])
     assert not (analysis / "cjk_intrusion_scan.json").exists()
+
+
+# ---------------------------------------------------------------------------
+# Inventory scanner + gate tooling (scripts/issue2321_consumer_gate.py, §3.8)
+# ---------------------------------------------------------------------------
+
+gate_mod = _load_script("issue2321_consumer_gate.py", "issue2321_consumer_gate_mod")
+TARGETS = frozenset({"issue1090_partial", "issue1481_conpos_grid"})
+
+
+def test_conftest_pins_offline_env():
+    """The conftest module registration (I18 defense-in-depth) must hold."""
+    import os
+
+    assert os.environ.get("HF_HUB_OFFLINE") == "1"
+
+
+def _fixture_scan_tree(tmp_path: Path) -> Path:
+    root = tmp_path / "fixrepo"
+    sd = root / "scripts"
+    sd.mkdir(parents=True)
+    (sd / "fake_consumer.py").write_text(
+        'PREFIX = "issue1090_partial"\n'
+        "def go(api, hub):\n"
+        '    files = api.list_repo_tree("repo", path_in_repo=PREFIX, repo_type="dataset")\n'
+        '    root = f"{PREFIX}/att-1"\n'
+        '    more = hub.list_hf_files_under_path(api, "repo", root)\n'
+        "    return files, more\n"
+    )
+    (sd / "other_prefix.py").write_text(
+        'def go(api):\n    return api.list_repo_tree("repo", path_in_repo="issue9999_x")\n'
+    )
+    # The shim family is excluded even when it spells a target prefix.
+    (sd / "issue2321_repack.py").write_text(
+        'def go(api):\n    return api.list_repo_tree("repo", path_in_repo="issue1090_partial")\n'
+    )
+    return root
+
+
+def test_scanner_finds_listing_hits_including_local_assign_shape(tmp_path):
+    """Module-constant AND local-f-string-assign indirection both resolve; a
+    non-target prefix and the excluded shim family produce no hits."""
+    hits = gate_mod.scan_tree(_fixture_scan_tree(tmp_path), TARGETS)
+    got = {(h["script"], h["call"], h["prefix"]) for h in hits}
+    assert got == {
+        ("scripts/fake_consumer.py", "list_repo_tree", "issue1090_partial"),
+        ("scripts/fake_consumer.py", "list_hf_files_under_path", "issue1090_partial"),
+    }
+
+
+def test_check_flags_uncovered_then_passes_when_covered(tmp_path):
+    """--check semantics: an uncovered hit errors; a covering row clears it."""
+    driver = gate_mod._load_driver()
+    hits = gate_mod.scan_tree(_fixture_scan_tree(tmp_path), TARGETS)
+    empty = {"version": 1, "consumers": []}
+    errors = gate_mod.check_inventory(hits, empty, driver._consumer_scoped)
+    assert len(errors) == 2 and all("UNCOVERED" in e for e in errors)
+    covered = {
+        "version": 1,
+        "consumers": [
+            {
+                "script": "scripts/fake_consumer.py",
+                "prefixes": ["issue1090_partial"],
+                "silent_empty": False,
+                "migrated": False,
+            }
+        ],
+    }
+    assert gate_mod.check_inventory(hits, covered, driver._consumer_scoped) == []
+
+
+def test_gate_cli_blocks_rc22_then_passes_when_migrated(tmp_path):
+    """§12: the gate blocks a prefix with an unmigrated silent-empty consumer
+    (rc=22) and passes once the inventory marks it migrated — evaluated
+    through the DRIVER's own consumer_gate (single-source semantics)."""
+    inv = tmp_path / "inv.json"
+    row = {
+        "script": "scripts/fake_consumer.py",
+        "prefixes": ["issue1090_partial"],
+        "silent_empty": True,
+        "migrated": False,
+    }
+    inv.write_text(json.dumps({"version": 1, "consumers": [row]}))
+    rc = gate_mod.main(["--gate", "--prefix", "issue1090_partial", "--inventory", str(inv)])
+    assert rc == 22
+    row["migrated"] = True
+    inv.write_text(json.dumps({"version": 1, "consumers": [row]}))
+    rc = gate_mod.main(["--gate", "--prefix", "issue1090_partial", "--inventory", str(inv)])
+    assert rc == 0
+
+
+def test_gate_cli_missing_inventory_fails_closed(tmp_path):
+    """I17 fail-closed: a missing inventory file blocks (rc=22), never passes."""
+    rc = gate_mod.main(
+        ["--gate", "--prefix", "issue1090_partial", "--inventory", str(tmp_path / "absent.json")]
+    )
+    assert rc == 22
+
+
+def test_committed_inventory_covers_live_scan():
+    """The committed inventory covers EVERY live-tree scan hit (the --check
+    contract), and the two plan-§3.8 migrated consumers are recorded
+    silent_empty + migrated with a real migrating SHA."""
+    driver = gate_mod._load_driver()
+    hits = gate_mod.scan_tree(REPO_ROOT, frozenset(driver.PREFIX_ORDER))
+    inventory = json.loads(
+        (REPO_ROOT / "scripts" / "issue2321_consumer_inventory.json").read_text()
+    )
+    errors = gate_mod.check_inventory(hits, inventory, driver._consumer_scoped)
+    assert errors == [], errors
+    rows = {r["script"]: r for r in inventory["consumers"]}
+    for script in ("scripts/issue1090_fu3_yield_replay.py", "scripts/issue1481_cjk_audit.py"):
+        row = rows[script]
+        assert row["silent_empty"] is True and row["migrated"] is True
+        sha = row["migrated_sha"]
+        assert len(sha) == 40 and all(c in "0123456789abcdef" for c in sha)
+
+
+def test_committed_inventory_gates_all_ten_prefixes_clean():
+    """With the two migrations recorded, NO target prefix is blocked — the
+    driver's consumer-gate phase passes on every prefix in the walk order."""
+    driver = gate_mod._load_driver()
+    inventory = driver.load_consumer_inventory(
+        REPO_ROOT / "scripts" / "issue2321_consumer_inventory.json"
+    )
+    for prefix in driver.PREFIX_ORDER:
+        verdict = driver.consumer_gate(inventory, prefix)
+        assert verdict["blockers"] == 0, (prefix, verdict)

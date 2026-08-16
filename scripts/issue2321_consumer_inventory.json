@@ -1,0 +1,178 @@
+{
+ "version": 1,
+ "task": 2321,
+ "curated": "2026-08-16",
+ "notes": [
+  "Curated inventory for the I17 per-prefix PRE-repack consumer gate (plan section 3.8).",
+  "Rows are script-granular. silent_empty=true means an EMPTY listing over a repacked",
+  "prefix would have produced a persisted false zero-result / exit 0 with no diagnostic;",
+  "such rows BLOCK their scoped prefixes' commit phase until migrated=true.",
+  "Coverage is re-checked mechanically: scripts/issue2321_consumer_gate.py --check",
+  "re-scans scripts/ + src/ and fails on any hit not covered by a row here."
+ ],
+ "target_prefixes": [
+  "issue1090_partial",
+  "issue1434_writingstyle",
+  "issue1090_pvdatagen",
+  "issue1481_conpos_grid",
+  "issue1586_methodgen",
+  "issue2224_screening",
+  "issue1739_partial",
+  "issue1739_ctxmap",
+  "issue1489_ctx_aug",
+  "issue667_alllayer"
+ ],
+ "consumers": [
+  {
+   "script": "scripts/issue1090_fu3_yield_replay.py",
+   "prefixes": ["issue1090_pvdatagen", "issue1090_fu3"],
+   "silent_empty": true,
+   "migrated": true,
+   "migrated_sha": "0538dc1293ba7edad78dc16174c313fd8514aeae",
+   "evidence": "pre-migration: recursive list_repo_tree -> cells derivation -> rows==[] -> return 0 with no diagnostic (plan section 3.8)",
+   "note": "Plan section 3.8 attributes this consumer to issue1090_pvdatagen; the script's own PREFIX constant reads the top-level prefix issue1090_fu3 (outside the 10-prefix repack scope). Scoped to BOTH conservatively: the gate blocks issue1090_pvdatagen exactly as the plan's I17 row states, and the row stays factually tied to the prefix the code lists. Migration (packed-aware listing + hard asserts) landed regardless."
+  },
+  {
+   "script": "scripts/issue1481_cjk_audit.py",
+   "prefixes": ["issue1481_conpos_grid"],
+   "silent_empty": true,
+   "migrated": true,
+   "migrated_sha": "0538dc1293ba7edad78dc16174c313fd8514aeae",
+   "evidence": "pre-migration: _download_pools listed raw_completions/{panel,base_arms} keeping .json; a repacked prefix yielded [] and main() WROTE cjk_intrusion_scan.json with n_pools=0/n_completions=0/n_intruded=0 (persisted false zero-intrusion artifact; plan section 3.8)"
+  },
+  {
+   "script": "scripts/issue1481_free_analysis.py",
+   "prefixes": ["issue1481_conpos_grid"],
+   "silent_empty": false,
+   "migrated": false,
+   "evidence": "stage_hub_prefix (packed-aware union since #2321; raises on an absent/empty prefix) + filename-parse ValueError at the call site (L560-566)"
+  },
+  {
+   "script": "scripts/issue1739_core_tail_stage.py",
+   "prefixes": ["issue1739_partial"],
+   "silent_empty": false,
+   "migrated": false,
+   "evidence": "raises FileNotFoundError on empty fits-output listing (L91-108)"
+  },
+  {
+   "script": "scripts/issue1739_pvsynth_arms_run.py",
+   "prefixes": ["issue1739_ctxmap"],
+   "silent_empty": false,
+   "migrated": false,
+   "evidence": "stage_hub_prefix (packed-aware, raises on absent prefix) + RuntimeError on incomplete staging (L87-100)"
+  },
+  {
+   "script": "scripts/issue1739_r35c_degeneration.py",
+   "prefixes": ["issue1739_ctxmap"],
+   "silent_empty": false,
+   "migrated": false,
+   "evidence": "raises FileNotFoundError on zero labeling shards (L105-123)"
+  },
+  {
+   "script": "scripts/issue1739_rescore_ood.py",
+   "prefixes": ["issue1739_ctxmap"],
+   "silent_empty": false,
+   "migrated": false,
+   "evidence": "empty listing only demotes the revision-pin probe to a HEAD fallback (L213-227); the store staging downstream fails loud on absent files"
+  },
+  {
+   "script": "scripts/issue1739_rescore_ood_armfill.py",
+   "prefixes": ["issue1739_ctxmap"],
+   "silent_empty": false,
+   "migrated": false,
+   "evidence": "same revision-pin probe shape as issue1739_rescore_ood.py (L221-235); downstream staging fails loud"
+  },
+  {
+   "script": "scripts/issue1739_sycoood_regen.py",
+   "prefixes": ["issue1739_ctxmap"],
+   "silent_empty": false,
+   "migrated": false,
+   "evidence": "SystemExit on missing pack manifest right after stage_hub_prefix (L140-147); later phases fail on absent store sidecars / staged JSONLs"
+  },
+  {
+   "script": "scripts/issue1739_sycoood_rescore.py",
+   "prefixes": ["issue1739_ctxmap"],
+   "silent_empty": false,
+   "migrated": false,
+   "evidence": "revision-pin probe shape (L242-256): empty listing demotes to HEAD; store staging fails loud downstream"
+  },
+  {
+   "script": "scripts/issue1739_sycoood_rescore_stage.py",
+   "prefixes": ["issue1739_ctxmap"],
+   "silent_empty": false,
+   "migrated": false,
+   "evidence": "raises SystemExit on zero shard files under the store prefix (L130-142)"
+  },
+  {
+   "script": "scripts/issue1739_stage_percell_preds.py",
+   "prefixes": ["issue1739_ctxmap"],
+   "silent_empty": false,
+   "migrated": false,
+   "evidence": "stage_hub_prefix (packed-aware) + RuntimeError on a missing staged dir (L178-194); the remote-names listing (L120-125) feeds a reconcile that stages loud"
+  },
+  {
+   "script": "scripts/issue1739_wcrung_arms_run.py",
+   "prefixes": ["issue1739_ctxmap"],
+   "silent_empty": false,
+   "migrated": false,
+   "evidence": "stage_hub_prefix (packed-aware) + RuntimeError on incomplete store staging (L107-119)"
+  },
+  {
+   "script": "scripts/issue1739_sycoood_stage.py",
+   "prefixes": ["issue1739_ctxmap"],
+   "silent_empty": false,
+   "migrated": false,
+   "evidence": "explicit empty-pool guard: RuntimeError on zero train shards (L439-448)"
+  },
+  {
+   "script": "scripts/issue2091_stage_contexts.py",
+   "prefixes": ["issue1739_ctxmap"],
+   "silent_empty": false,
+   "migrated": false,
+   "evidence": "raises SystemExit on zero packed labeling shards (L498-511)"
+  },
+  {
+   "script": "scripts/issue2224_followup_r1.py",
+   "prefixes": ["issue2224_screening"],
+   "silent_empty": false,
+   "migrated": false,
+   "evidence": "manifest staging 404s loud + RuntimeError on incomplete manifest (L251-264); the rejudge probe raises when the trait save_raw is not found (L936-950)"
+  },
+  {
+   "script": "scripts/issue2224_followup_r2_stage.py",
+   "prefixes": ["issue2224_screening"],
+   "silent_empty": false,
+   "migrated": false,
+   "evidence": "raises RuntimeError on an empty remote listing (L73-79)"
+  },
+  {
+   "script": "scripts/issue667_alllayer_analysis.py",
+   "prefixes": ["issue667_alllayer"],
+   "silent_empty": false,
+   "migrated": false,
+   "evidence": "FileNotFoundError on zero *_L{layer}.npz after snapshot (L198-204); path assembled dynamically (below the static scan) — retained per plan section 3.8's verified fail-loud examples"
+  },
+  {
+   "script": "scripts/issue1739_natpv.py",
+   "prefixes": ["issue1739_ctxmap"],
+   "silent_empty": false,
+   "migrated": false,
+   "evidence": "FileNotFoundError when neither the stem nor its .part* shards are listed (L382-387); dynamic prefix (below the static scan) — retained per plan section 3.8's verified fail-loud examples"
+  },
+  {
+   "script": "scripts/issue1090_fu4.py",
+   "prefixes": ["issue1090_pvdatagen"],
+   "silent_empty": false,
+   "migrated": false,
+   "evidence": "FileNotFoundError on an empty adapter listing (L1571-1577); pvdatagen reads route through single-path stage/hf_hub_download calls (loud 404 class) — retained per plan section 3.8's verified fail-loud examples"
+  },
+  {
+   "script": "scripts/issue722_fit_M.py",
+   "prefixes": ["issue722_partial"],
+   "silent_empty": true,
+   "migrated": false,
+   "evidence": "missing prefix / empty backup -> 0-cell no-op resume BY DESIGN (L589-604): the silent-tolerant listing shape, on a prefix NOT in the #2321 repack scope",
+   "note": "Shape exemplar retained per plan section 3.8; never blocks (its prefix is outside the 10 target prefixes)."
+  }
+ ]
+}
