@@ -22,6 +22,8 @@
 
 ## Claude code-review misses (FAIL-leaning calibration)
 
+- [Claude proves a dry_run/smoke gate-skip is SAFE but skips Step 0.71 enumeration](feedback_claude_verifies_downgrade_safety_skips_071_enumeration.md) — round-added downgrade unnamed in the blind-spot enumeration = rule-pinned BLOCKING (#2165); safety + enumeration findings are compatible (#2321 r2)
+
 - [Persist-before-reduce: ordering not existence; derived expected-set ≠ hollow gate](feedback_persist_before_reduce_ordering_vs_existence.md) — Claude counts a site persisted because the file exists (write AFTER remote judge) (#906)
 - [Claude misses when the plan's HEADLINE decision statistic isn't produced](feedback_claude_misses_headline_decision_statistic_not_produced.md) — Claude PASSes verifying OTHER plan items while never checking the pre-registered headline estimator is actually computed + persisted (#841, #922)
 - [Claude under-classes silent failures](feedback_claude_underclasses_silent_failures.md) — real silent-failure bug + CONCERNS/Minor verdict → FAIL; classify by what the bug DOES, not fix size; 11-incident ledger + defenses (incl #1098)
@@ -44,6 +46,8 @@
 - [Claude misses comment-tail waiver spoofs on raw-scan guard hooks](feedback_claude_misses_comment_tail_spoof_on_rawscan_guards.md) — replay `<destructive> # <waiver-token>` shapes yourself (Write-tool probe script) (#897)
 
 ## Codex code-review overreach (PASS-leaning calibration)
+
+- [Codex flags same-privilege local-artifact forgery as a data-loss blocker](feedback_codex_local_artifact_forgery_as_blocker.md) — replay the forgery in escalating offline stages; forger privilege == destructive authority ⇒ reject blocker, salvage the tamper-test residue as CONCERN (#2321 r2)
 
 - [Codex demands hardening beyond minimal-port contract](feedback_codex_hardening_beyond_minimal_port_contract.md) — registered change set + writer-reachability + execution-test the proposed fix; persist residue via raise+defer-concern (#556, #958)
 - [Codex Step 0.6 literal vs purpose](feedback_codex_step_06_literal_vs_purpose.md) — decisive variable = gate topology: PASS when a demonstrated pre-launch gate runs the changed code for real (#551, #560)
