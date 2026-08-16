@@ -10,10 +10,16 @@ origin_prompt: 'okay. Rerun with qwen3.5-9B. make the qualitative dashboards aft
   all the generation finishes and then run judging in parallel (following: how long
   would it take to rerun all this on qwen 3.5 9b? with thinking DISABLED)'
 workflow: v1
+goal: 'Test whether the #2162 findings transfer to Qwen3.5-9B (hybrid linear attention,
+  thinking disabled): which minimal-pair information types are decodable at the context
+  vector, which are causally usable via single-position patching (F_act/F_beh vs nulls),
+  whether fitted context-to-answer maps predict the realized patched shift per type
+  x layer, and whether maps discriminate minimal-pair answers (2AFC vs identity+bias
+  and shuffled nulls).'
 ---
 ## Goal
 
-Test whether the #2162 findings transfer to Qwen3.5-9B with thinking disabled: (1) which of the 21 minimal-pair information types are decodable at the context vector (held-out linear probes); (2) which are causally usable via single-position full-state patching at context-end / prefix-end (fraction-of-swap F_act and F_beh vs norm-matched shuffled-donor + cross-type nulls); (3) whether fitted context-to-answer maps predict the realized patched answer-state shift (per type x layer, banked + fresh-fit maps — the #2162 `mapshift` battery); (4) whether maps discriminate minimal-pair answers (paired 2AFC vs identity+bias, identity-only, shuffled nulls).
+Test whether the #2162 findings transfer to Qwen3.5-9B (hybrid linear attention, thinking disabled): which minimal-pair information types are decodable at the context vector, which are causally usable via single-position patching (F_act/F_beh vs nulls), whether fitted context-to-answer maps predict the realized patched shift per type x layer, and whether maps discriminate minimal-pair answers (2AFC vs identity+bias and shuffled nulls).
 
 Architecture note (pre-registered scope caveat): Qwen3.5-9B is 32 layers with only 8 full-attention layers (hybrid linear attention, hidden 4096, vocab 248k). Per-layer reads are NOT layer-for-layer comparable to the Qwen2.5-7B parent; report depth as fraction-of-stack and mark full-attention layers on every per-layer figure. The single-position-patch question changes meaning under linear attention (position information flows through a compressed recurrent state, not a KV cache) — this is a replication-with-architecture-change, not a clean replication.
 
