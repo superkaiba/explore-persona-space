@@ -1473,6 +1473,122 @@ def _worktree_admin_of_main(admin: Path, main_repo: Path) -> bool:
     return wt_root in admin_real.parents
 
 
+def _candidate_worktree_registration(cand: Path, main_repo: Path) -> tuple[str, Path | None]:
+    """PARSE-FREE per-candidate registration probe (#2147 round 6): reads
+    the CANDIDATE's own ``.git`` entry — never the newline-delimited
+    porcelain listing — so a worktree at ANY byte-exact path (embedded
+    newline included) is classified from its gitfile alone. The candidate
+    path is already known as a real path; nothing is ever recovered from a
+    listing. Classes:
+
+    - ``("ours", admin)`` — ``.git`` is a regular file whose ``gitdir:``
+      pointer (relative pointers resolved against the candidate dir;
+      realpath — never string-prefix matching on unresolved paths) names an
+      existing dir whose parent is THIS repo's
+      ``<git-common-dir>/worktrees`` (:func:`_worktree_admin_of_main`);
+    - ``("foreign", None)`` — a ``…/worktrees/<id>`` admin dir of some
+      OTHER repo (registered elsewhere — never ours to delete);
+    - ``("submodule", None)`` — resolves under a ``…/modules/…`` component:
+      a submodule gitfile is NOT a worktree registration;
+    - ``("clone", None)`` — ``.git`` is a real directory;
+    - ``("none", None)`` — no ``.git`` entry at all (candidate-side
+      evidence structurally absent — the R3-C1 pointer-deleted downgrade;
+      registration must then be proven ADMIN-side,
+      :func:`_admin_registered_worktree_paths`);
+    - ``("unreadable", None)`` — everything else (I/O error, symlink
+      ``.git``, unparseable pointer, dangling admin path, a gitdir target
+      that is neither a worktree admin nor a module). Callers KEEP
+      (fail-closed)."""
+    dotgit = cand / ".git"
+    try:
+        st = dotgit.lstat()
+    except FileNotFoundError:
+        return "none", None
+    except OSError:
+        return "unreadable", None
+    if stat.S_ISDIR(st.st_mode):
+        return "clone", None
+    if not stat.S_ISREG(st.st_mode):
+        return "unreadable", None
+    try:
+        text = dotgit.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return "unreadable", None
+    if not text.startswith("gitdir:"):
+        return "unreadable", None
+    value = text[len("gitdir:") :].strip()
+    if not value:
+        return "unreadable", None
+    admin = Path(value)
+    if not admin.is_absolute():
+        admin = cand / admin
+    try:
+        admin = Path(os.path.realpath(admin))
+        if not admin.is_dir():
+            return "unreadable", None
+    except OSError:
+        return "unreadable", None
+    parts = admin.parts
+    if len(parts) >= 2 and parts[-2] == "worktrees":
+        if _worktree_admin_of_main(admin, main_repo):
+            return "ours", admin
+        return "foreign", None
+    if "modules" in parts:
+        return "submodule", None
+    return "unreadable", None
+
+
+def _admin_registered_worktree_paths(main_repo: Path) -> frozenset[str] | None:
+    """PARSE-FREE admin-side registration enumeration (#2147 round 6): the
+    byte-exact registered-path set the porcelain listing structurally
+    cannot deliver. git stores ONE ``gitdir`` FILE per linked worktree at
+    ``<git-common-dir>/worktrees/<id>/gitdir`` whose content is
+    ``<worktree>/.git`` plus exactly one trailing newline — a per-record
+    FILE, not a newline-delimited list — so a worktree path containing ANY
+    byte (embedded newline included) is recovered exactly: read the file,
+    strip ONE trailing newline, take the dirname. The main working tree
+    (``rev-parse --show-toplevel``) is included. Returns realpaths, or
+    ``None`` on ANY probe failure (fail-toward-keep): failed rev-parse,
+    unreadable ``worktrees/`` dir, unreadable/empty ``gitdir`` file.
+
+    This is the AUTHORITATIVE registration source for a candidate with NO
+    usable ``.git`` entry (deleted/replaced pointer — the R3-C1 downgrade
+    class), where :func:`_candidate_worktree_registration` is structurally
+    blind and the porcelain listing is poisoned by any newline-bearing
+    registered path (round-5 residual, coordinator-reproduced: a decoy dir
+    at the TRUNCATION of a newline path makes the hardened listing parse
+    "successfully" while the real registered path is absent)."""
+    common_proc = _git(["rev-parse", "--path-format=absolute", "--git-common-dir"], cwd=main_repo)
+    if common_proc is None or common_proc.returncode != 0:
+        return None
+    top_proc = _git(["rev-parse", "--path-format=absolute", "--show-toplevel"], cwd=main_repo)
+    if top_proc is None or top_proc.returncode != 0:
+        return None
+    paths: set[str] = set()
+    try:
+        paths.add(os.path.realpath(top_proc.stdout.strip()))
+        wt_root = Path(common_proc.stdout.strip()) / "worktrees"
+        try:
+            entries = list(os.scandir(wt_root))
+        except FileNotFoundError:
+            entries = []  # no linked worktrees registered — main tree only
+        for entry in entries:
+            if not entry.is_dir(follow_symlinks=False):
+                continue  # stray non-dir in worktrees/ — not a registration
+            content = (Path(entry.path) / "gitdir").read_text(encoding="utf-8")
+            if content.endswith("\n"):
+                content = content[:-1]  # exactly ONE trailing LF; embedded LFs are path bytes
+            if not content:
+                return None  # malformed registration — ambiguity keeps
+            pointer = Path(content)
+            if not pointer.is_absolute():
+                pointer = Path(entry.path) / pointer
+            paths.add(os.path.realpath(pointer.parent))
+    except (OSError, UnicodeDecodeError):
+        return None  # any unreadable registration poisons the proof — KEEP
+    return frozenset(paths)
+
+
 # `git worktree list --porcelain` record keys (#2147 round 4). Value keys
 # carry ` <payload>`; flag keys are bare, with `locked`/`prunable` optionally
 # carrying a ` <reason>` suffix. `branch` and `detached` are mutually
@@ -1529,7 +1645,13 @@ def _registered_worktree_paths(main_repo: Path) -> frozenset[str] | None:
     newline-bearing registered path whose TRUNCATION names a directory that
     ALSO exists on disk, with the continuation spelling an absent flag —
     that truncated record passes both the slot rules and the existence
-    check.
+    check. Round 6 (coordinator-reproduced as exploitable): that residual
+    no longer licenses anything — this function is DEFENCE-IN-DEPTH ONLY
+    (its output can only ADD keeps) behind the authoritative parse-free
+    per-candidate probe (:func:`_candidate_worktree_registration`) and the
+    byte-exact admin-side enumeration
+    (:func:`_admin_registered_worktree_paths`), both consulted FIRST at
+    every deletion-licensing site.
 
     Returns ``None`` on probe failure OR parse ambiguity: a successful
     listing always contains at least the main working tree, so an empty
@@ -2136,19 +2258,35 @@ def _tmp_git_evidence_branch_c(cache_dir: Path, *, main_repo: Path) -> tuple[str
     which would strand the registration — worktree-aware removal belongs to
     :func:`sweep_tmp_scratch`'s reap step, never here.
 
-    Round 3 C1 sibling fix: the ``.git``-pointer classification alone is
-    class-downgradeable (a registered worktree whose pointer file was
-    deleted/replaced reads as ``none``/``clone``), so registration is ALSO
-    proven POSITIVELY against the admin-side listing
-    (:func:`_registered_worktree_paths`); probe failure or ambiguity refuses
-    (``registration-probe-failed`` — fail-toward-keep)."""
+    Round 3 C1 sibling fix, restructured in round 6: registration is proven
+    per-candidate and parse-free. Layer 1 — the AUTHORITATIVE gitfile probe
+    (:func:`_candidate_worktree_registration`): ``ours`` and ``foreign``
+    worktrees refuse outright, ``unreadable`` refuses fail-closed. Layer
+    2 — for candidates with no usable pointer (``none``/``clone``/
+    ``submodule``: the pointer-deleted/replaced downgrade class), the
+    ADMIN-side per-record ``gitdir``-file enumeration
+    (:func:`_admin_registered_worktree_paths`) proves non-registration
+    byte-exactly (newline-bearing paths included). Layer 3 — the hardened
+    porcelain listing (:func:`_registered_worktree_paths`, rounds 4/5) is
+    KEPT as defence-in-depth: an independent second implementation whose
+    failure or membership can only add KEEPs, never license. Probe failure
+    or ambiguity anywhere refuses (fail-toward-keep)."""
     stats = _scratch_walk_stats(cache_dir)
     if stats is None:
         return None, {"reason": "walk-error", "first_unverified": None}
     if stats["nonregular"] is not None:
         return None, {"reason": "nonregular", "first_unverified": stats["nonregular"]}
-    kind, admin = _git_dir_kind(cache_dir)
-    if kind == "worktree" and admin is not None and _worktree_admin_of_main(admin, main_repo):
+    reg, _admin = _candidate_worktree_registration(cache_dir, main_repo)
+    if reg == "ours":
+        return None, {"reason": "registered-worktree", "first_unverified": None}
+    if reg == "foreign":
+        return None, {"reason": "foreign-worktree", "first_unverified": None}
+    if reg == "unreadable":
+        return None, {"reason": "registration-probe-failed", "first_unverified": None}
+    admin_set = _admin_registered_worktree_paths(main_repo)
+    if admin_set is None:
+        return None, {"reason": "registration-probe-failed", "first_unverified": None}
+    if os.path.realpath(cache_dir) in admin_set:
         return None, {"reason": "registered-worktree", "first_unverified": None}
     registered = _registered_worktree_paths(main_repo)
     if registered is None:
@@ -2284,12 +2422,22 @@ def _reap_scratch_tree(
             tag = "locked" if locked else "remove-failed"
             return False, f"worktree-remove-failed ({tag}: {err.splitlines()[-1] if err else ''})"
         return True, "worktree-removed"
-    # #2147 review round 3 C1: POSITIVE non-registration proof before ANY
-    # rmtree. The class probes above read only the candidate's own ``.git``
-    # entry, so a REGISTERED worktree with a deleted/replaced pointer
-    # classifies as ``none``/``clone`` and would otherwise be rmtree'd
-    # without unregistering. The proof consults the ADMIN-side registration
-    # list; failure or ambiguity KEEPS (fail-toward-keep).
+    # #2147 review round 3 C1, restructured round 6: POSITIVE
+    # non-registration proof before ANY rmtree. The class probes above read
+    # only the candidate's own ``.git`` entry (the per-candidate gitfile
+    # authority — an intact-pointer worktree never reaches this branch), so
+    # a REGISTERED worktree with a deleted/replaced pointer classifies as
+    # ``none``/``clone`` and would otherwise be rmtree'd without
+    # unregistering. Non-registration is proven ADMIN-side from the
+    # per-record ``gitdir`` files (byte-exact, newline-safe —
+    # :func:`_admin_registered_worktree_paths`), with the hardened porcelain
+    # listing (rounds 4/5) KEPT as defence-in-depth; failure, ambiguity, or
+    # membership in EITHER source KEEPS (fail-toward-keep).
+    admin_set = _admin_registered_worktree_paths(main_repo)
+    if admin_set is None:
+        return False, "reap-reprobe-registration-probe-failed"
+    if os.path.realpath(cand) in admin_set:
+        return False, "reap-reprobe-registered-path"
     registered = _registered_worktree_paths(main_repo)
     if registered is None:
         return False, "reap-reprobe-registration-probe-failed"
