@@ -1511,7 +1511,12 @@ def _candidate_worktree_registration(cand: Path, main_repo: Path) -> tuple[str, 
     if not stat.S_ISREG(st.st_mode):
         return "unreadable", None
     try:
-        text = dotgit.read_text(encoding="utf-8")
+        # BINARY read + explicit decode (#2147 round 7 discipline): never let
+        # universal newlines rewrite path bytes inside the pointer value. A
+        # CR-corrupted value here fails toward "unreadable" (KEEP) rather
+        # than open, but the read discipline is uniform across every
+        # registration-feeding file read this task added.
+        text = dotgit.read_bytes().decode("utf-8")
     except (OSError, UnicodeDecodeError):
         return "unreadable", None
     if not text.startswith("gitdir:"):
@@ -1575,9 +1580,14 @@ def _admin_registered_worktree_paths(main_repo: Path) -> frozenset[str] | None:
         for entry in entries:
             if not entry.is_dir(follow_symlinks=False):
                 continue  # stray non-dir in worktrees/ — not a registration
-            content = (Path(entry.path) / "gitdir").read_text(encoding="utf-8")
+            # BINARY read + explicit decode (#2147 round 7, Codex R4-1):
+            # ``read_text`` uses universal newlines, silently translating a
+            # CR / CRLF inside the registered PATH into LF — a GHOST path
+            # enters the set and the REAL registration goes missing, failing
+            # this AUTHORITATIVE layer open. Decode failure ⇒ ``None``.
+            content = (Path(entry.path) / "gitdir").read_bytes().decode("utf-8")
             if content.endswith("\n"):
-                content = content[:-1]  # exactly ONE trailing LF; embedded LFs are path bytes
+                content = content[:-1]  # exactly ONE trailing LF; embedded CR/LF are path bytes
             if not content:
                 return None  # malformed registration — ambiguity keeps
             pointer = Path(content)
@@ -1660,6 +1670,16 @@ def _registered_worktree_paths(main_repo: Path) -> frozenset[str] | None:
     the candidate's ``.git`` pointer is gone — there is no back-pointer left
     to follow; this proof covers ``main_repo``'s registrations, the set this
     janitor can strand."""
+    # KNOWN CR/CRLF BLINDNESS, deliberately unfixed (#2147 round 7): ``_git``
+    # runs with ``text=True`` (universal newlines), so a CR inside a
+    # registered path is translated to LF before this parse — typically
+    # splitting the record (=> None) or, in the CR-flag-spoof shape, yielding
+    # a truncated-path record. Acceptable ONLY because this layer is
+    # KEEP-ONLY: both consumers consult it AFTER the authoritative parse-free
+    # sources (candidate gitfile probe + binary-read admin enumeration), and
+    # its two live outcomes are KEEP (None / membership) or defer — a ghost
+    # path here can fail to ADD a keep but can never LICENSE a reap.
+    # ``_git`` itself is shared with tier (f) and stays untouched (K3).
     proc = _git(["worktree", "list", "--porcelain"], cwd=main_repo)
     if proc is None or proc.returncode != 0:
         return None
