@@ -68,17 +68,27 @@ runs six TIERS of strictly-safe cleanup, reporting bytes freed per tier:
       unresolvable — kept + escalated) / g4b (status-probe failure — kept
       + escalated), then the SAME #2127 verified-scratch per-candidate
       core as tier (f) (per-file git-blob proof, class-discriminated git
-      probes, reader-atime pin, live-process probe, reap-time re-probe),
-      keep reasons re-tagged ``slurm-src-*``. D9: files under nested
-      working-tree overlays (``backends.slurm.WORKING_TREE_OVERLAY_PATHS``,
-      e.g. ``external/open-instruct``) are proven against the NESTED
-      repo's own odb + clean-tree + reachable-HEAD probes
-      (overlay-not-a-repo => KEEP). Deliberately NO durable-path presence
+      probes, reader-atime pin, live-process probe, reap-time re-probe —
+      round 3: plus a fresh overlay-state re-probe and a POSITIVE
+      worktree-registration proof before any rmtree), keep reasons
+      re-tagged ``slurm-src-*``. D9 (round 2 C2/C3, round 3 C2/C3): files
+      under nested working-tree overlays
+      (``backends.slurm.WORKING_TREE_OVERLAY_PATHS``, e.g.
+      ``external/open-instruct``) are proven against the SURVIVING overlay
+      repo — the main working tree's own ``<main_repo>/<overlay>`` copy,
+      the one that outlives the reap (the nested copy's odb dies with the
+      tree) — under the full clone-class standard (clean tree + empty own
+      stash + every ref tip and HEAD reachable in the surviving repo); an
+      overlay that is not a positively-established nested repo, a SYMLINKED
+      declared-overlay path included, KEEPs the whole tree, and the overlay
+      probe is non-cacheable — re-run before a cached PASS is honored and
+      again on the destructive path. Deliberately NO durable-path presence
       gate: these trees are full checkouts, so ``store/`` /
       ``eval_results/`` content is EXPECTED — the core's ``under_durable``
       rule proof-gates those files per-file instead (#2147 plan §0).
-      Escalations dedup per (path, disposition, size band) with a weekly
-      re-alert (D6; ``EPS_SLURM_SRC_ESCALATION_REALERT_DAYS``). Same
+      Escalations dedup per (path, disposition, reason slug, size band)
+      with a weekly re-alert (D6/M2;
+      ``EPS_SLURM_SRC_ESCALATION_REALERT_DAYS``). Same
       strict ``main()``-only opt-in as tier (f) (``slurm_src_root`` /
       ``scratch_verdict_cache_path`` / ``slurm_src_escalation_state_path``
       called only in ``main()``). Structured rows ride ``--json`` as
