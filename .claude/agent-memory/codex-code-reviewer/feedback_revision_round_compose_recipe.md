@@ -358,6 +358,30 @@ against the round's OWN touched files vs `LIVE_WORKFLOW_HELPERS` — r1's
 trigger file (workflow_lint.py) was untouched in r2, so the pin was NOT owed
 and the prompt must say so or Codex re-demands it.
 
+**Reconciler-directed round + excluded-commits-inside-range (#2321 r3,
+2026-08-16):** two composable deltas. (a) PARTIAL overturn shape: the
+reconciler REJECTED the twin's own r2 Critical 1 (empirical 3-stage probe)
+while UPHOLDING C2/C3 as the round's only blockers — the no-relitigate block
+quotes the probe's stage-by-stage catch sites + the one-production-call-site
+fact, states the proof burden for reopening the class ("demonstrate a path
+not requiring all three deliberate stages"), AND gives a cheap settling
+check for THIS round (grep: no new caller/writer added). When the ledger is
+POPULATED (reconciler ran raise-concern), the ledger walk REPLACES
+pseudo-IDs entirely: per-row vocabulary VERIFIED-CLOSED/NOT-CLOSED for
+BLOCKERs, OPEN-AS-EXPECTED (not a blocker)/RIDDEN-CLOSED for CONCERNs —
+and say explicitly that open CONCERNs alone do not force a CONCERNS verdict.
+(b) RANGE TRAP: round-2's excluded imported-from-main sync commits sat
+INSIDE `round_parent..HEAD` (they landed between the r2 reviewed tip and
+the first r3 commit), so the naive range was 99 KB vs the true 27 KB round —
+verify with byte arithmetic (naive − excluded ≈ brief's claimed bytes) and
+make the primary read `<first-reviewable-sha>^..<tip>`, banning
+`round_parent..HEAD` as the body with the arithmetic stated in the prompt.
+Also: a self-surfaced incidental commit restoring origin/main content (the
+stale lint-cap sync-lag fix) gets a 4-point legitimacy checklist
+(byte-exact vs main / no cap beyond main's / merge-neutral residual /
+precondition doc byte-identity) + a named already-filed task (#2327) so
+Codex neither flags the process gap nor demands an in-round fix.
+
 **Inlined-prior-verdict tag echo hazard (#2145 r2, 2026-08-15):** when the
 prior Codex verdict is inlined IN FULL, add a hard-constraints line telling
 Codex to NEVER reproduce the prior marker's tags in its own output (the
