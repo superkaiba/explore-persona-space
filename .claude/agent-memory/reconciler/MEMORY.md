@@ -24,6 +24,9 @@
 
 ## Claude code-review misses (FAIL-leaning calibration)
 
+- [Split-review composites miss cross-commit plan contracts](feedback_split_review_misses_cross_commit_plan_contracts.md) — grep §9 phase_outputs writers + §8/§11 registered controls + marker ported/asserted claims yourself; Codex facts all verified, 5/8 blockers over-classed (#2330 r1)
+- [Mode-dependent durability doc claims — enumerate routed vs primary](feedback_mode_dependent_durability_doc_claims.md) — Claude verifies doc clauses locally, missing cross-clause falsification; dictate mode-split wording on a 3rd-round sentence loop (#2326 r3)
+
 - [Persist-before-reduce: ordering not existence; derived expected-set ≠ hollow gate](feedback_persist_before_reduce_ordering_vs_existence.md) — Claude counts a site persisted because the file exists (write AFTER remote judge) (#906)
 - [Claude misses when the plan's HEADLINE decision statistic isn't produced](feedback_claude_misses_headline_decision_statistic_not_produced.md) — Claude PASSes verifying OTHER plan items while never checking the pre-registered headline estimator is actually computed + persisted (#841, #922)
 - [Claude under-classes silent failures](feedback_claude_underclasses_silent_failures.md) — real silent-failure bug + CONCERNS/Minor verdict → FAIL; classify by what the bug DOES, not fix size; 11-incident ledger + defenses (incl #1098)

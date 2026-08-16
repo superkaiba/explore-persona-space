@@ -365,6 +365,42 @@ Also reuse the prior-round concern IDS from the verdict's own `## Concerns to
 persist` lines as the closure-item ids (the #1092-r4 pseudo-ID pattern, ids
 pre-minted by Codex itself).
 
+**Mechanism-corrected acceptance round (#2147 cr4, 2026-08-16):** when the
+prior Codex FAIL was accepted with its SEVERITY credited but its MECHANISM
+DISPROVEN by orchestrator reproduction (r3 blamed C-quoted porcelain; git
+2.34.1 emits raw, only newline splits), compose three extra blocks: (a) a
+"severity RIGHT, mechanism WRONG" section crediting the call and naming the
+disproven mechanism explicitly, with a ban on re-raising it; (b) an
+ESTABLISHED FACTS block (orchestrator-verified-by-reproduction, do NOT
+re-derive/contradict without a reproduction) sourced from the inlined
+progress notes; (c) an instruction to read the prior verdict's Evidence+Fix
+CONTRACT "through the correction" — the binding content is the consequence
+(registered worktree reaches rmtree), never the literal prescribed fix (dead
+code on this git version). Pair with a both-directions residual-claim
+discipline when the task burned both ways (new Critical needs a reproduction
+construction; "unreachable" dismissal needs the blocking line named). Also
+(#2147 cr4): a POSTED epm:code-review-codex marker body can carry the
+"Codex session ID" footer — strip after the FIRST closing tag even when
+fetching from events.jsonl, not only from /tmp output files. FOLD ROUNDS
+(multiple impl markers, one review round): Step 0.5 subject = the HIGHEST
+marker; inline the intermediate markers in their own "FOLD-ROUND r<k> MARKER
+BODY (context)" envelopes (do-not-score-shape, intermediate residuals are not
+open findings), and adjudicate Step 4.6 across the fold — a terse "same N
+selector hit files" by-reference line in the head marker is PRESENT-BUT-TERSE
+when an earlier fold marker carries the verbatim list.
+
+**Mid-compose ledger drift from the PARALLEL twin (#2326 r3, 2026-08-16):**
+the count assert on the inlined concerns-ledger snapshot caught a row the
+PARALLEL Claude reviewer raised (`raised_at_round == <this round>`, by
+`code-reviewer`) landing in `concerns.jsonl` between the compose's first
+read and the build run. Pin the inlined snapshot to rows with
+`ts <= implementation-marker ts`: post-dispatch rows are round-N review
+OUTPUTS, not inputs — inlining them leaks the sibling twin's findings into
+Codex's context and breaks ensemble independence (merging is the
+reconciler/orchestrator's job). Say "snapshot as of the round-N
+implementation marker ts" in the ledger preface (no mention that a parallel
+row exists), and REPORT the excluded row to the orchestrator in the return.
+
 **Acceptance-impossible round shape (external mid-task population change;
 #2147 cr3, 2026-08-16):** when the plan's live acceptance became IMPOSSIBLE
 (an external actor destroyed the population it was keyed on) and the task
@@ -382,3 +418,38 @@ Concerns-to-persist, not auto-Critical), and weigh any recorded mitigation
 (report-only default, first-apply review) before severity. Give the related
 open concern an adjudication-form status line (SATISFIED-BY-SUBSTITUTE /
 STILL-BINDING) — the orchestrator owns the ledger action.
+
+## Cap-round (5-of-5) compose recipe — #2147 cr5
+
+Re-derived by the orchestrator after the original append was destroyed by the
+#2015 pre-commit stash race (staged at the shared root, swept by a concurrent
+session's commit; confirmed absent from HEAD, origin/main AND the worktree, and
+absent from the pre-commit patch cache for the staging window — destroyed on
+restore, not stashed). Lesson: an agent-memory append is a tracked write —
+commit it by explicit path in the SAME turn it is produced, never leave it
+staged across a turn boundary.
+
+**Cap-round framing.** State 5-of-5 and advance-or-surface semantics
+explicitly, and demand calibration in BOTH directions: do not manufacture a
+blocker because it is last call, do not wave through a real defect for the same
+reason. Honest PASS is available on the cap round exactly as on round 1.
+
+**Three-way closure vocabulary** (beats plain ADDRESSED/NOT-ADDRESSED when the
+orchestrator has exercised judgment):
+- `VERIFIED-ADDRESSED` / `NOT-ADDRESSED` — for a fix.
+- `ACCEPTED-NON-CHANGE` / `OVERTURNED` — for a deliberate non-change; require
+  the overturn to carry a positive construction (here: porcelain membership
+  LICENSES a reap), not merely a missed KEEP.
+- `SCOPE-RULING-CORRECT` / `SCOPE-RULING-WRONG` — for an out-of-scope ruling;
+  ask the twin to adjudicate the diff-scope citation (AST/hunk scan) rather
+  than re-raise the defect as a blocker on this branch. A correct ruling routes
+  the re-raise to the pre-existing-on-trunk path.
+
+**Read-mode completeness sweep.** When a round fixes one text-mode read,
+enumerate EVERY remaining text-mode read whose bytes are used as a path or as
+licensing evidence, with enclosing function names, and hand them to the twin
+flagged NEUTRALLY (severity not pre-resolved). Partial-fix is the specific risk
+after a defect class has produced a fresh manifestation in consecutive rounds.
+
+Rerunnable compose script for this shape: `/tmp/codex-2147-r5cr-compose.py`
+(ephemeral; the recipe above is the durable part).
