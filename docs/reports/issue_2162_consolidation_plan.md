@@ -71,8 +71,9 @@ from v_C alone?*
 - **Plot:** per-type held-out probe AUC (max over 28 layers), context-end vs prefix-end, with the
   permutation null band. Train vs held-out carriers both shown.
 - **Data:** `eval_results/issue_2162/f_metrics/probe.json` (+ permutation matrix on HF).
-- **Known read:** 60/62 type×slot cells decode above the band; all 5 causal positives at AUC 1.0;
-  only `query_content` (context-end 0.60) and `persona_role_header` (prefix-end) fail.
+- **Known read (artifact-verified 2026-08-16):** 75/78 type×slot cells decode above the band; all
+  5 causal positives at AUC 1.0; failures = `query_content` at BOTH slots (0.600 context-end /
+  0.521 prefix-end) and `persona_role_header` at prefix-end (0.456).
 
 **Takeaways (Thomas):** _
 
@@ -119,9 +120,9 @@ answer vector actually moved?*
 true context's real answer than to the sibling's (paired 2-alternative retrieval)?*
 
 - **Banked (#2215):** per-type, per-layer 2AFC accuracy; arms = single-turn context-end map,
-  multi-turn prefix-end, multi-turn context-end, identity+bias; 0.59–0.77 vs shuffled null
-  0.48–0.52; **identity+bias captures most of it** (fitted map +0.9 pts, CI incl. 0, at
-  context-end).
+  multi-turn prefix-end, multi-turn context-end, identity+bias; 0.52–0.77 over its 30 configs vs
+  shuffled null 0.48–0.52 (artifact-verified 2026-08-16); **identity+bias captures most of it**
+  (fitted map +0.9 pts, CI incl. 0, at context-end).
 - **Extension [NEW, same run as 2.5]:** add the fresh bank-fit map arm (every layer) and an
   identity-only arm (v̂_A = v_C, no bias).
 - **Data:** `eval_results/issue_2215/dv3_map_discrimination.json` + new `mapshift` outputs.
