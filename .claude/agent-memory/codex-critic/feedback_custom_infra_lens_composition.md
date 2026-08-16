@@ -66,6 +66,15 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   when the orchestrator's output path is version-less
   (`/tmp/codex-output-issue-<N>.md` → `*.v<k>-stale.md`) — the
   stale-tmp-files rule's fallback arm.
+- **Same-task round-2 recompose: the prior round's /tmp artifacts are the
+  raw material.** When no concerns.jsonl exists, the persisted round record
+  = the `epm:plan-critique` note in events.jsonl (Claude side) + the prior
+  round's version-less `/tmp/codex-output-issue-<N>.md` (Codex side — inline
+  it verbatim as "YOUR round-one verdict"; the self-recognition framing plus
+  quoting its own no-finding premise answers is the do-not-relitigate
+  mechanism). The prior compose's numcheck script needs only path edits;
+  suffix all new paths `-r2` so the stale round-1 files never collide and
+  need no mv (used on #2147 r2 — numcheck PASS first try at ~220 KB).
 
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
