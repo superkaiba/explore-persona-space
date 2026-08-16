@@ -26,9 +26,16 @@ recognized in-record lines are `HEAD `, `branch `/`detached` (one slot),
 `bare`, `locked[ reason]`, `prunable[ reason]`, each at most once. ANY other
 non-blank line, attribute-outside-record, or duplicated slot ⇒ return `None`
 (whole listing ambiguous), with every caller treating `None` as
-refuse-to-act. Canonical impl + 5-test battery:
+refuse-to-act. Slot rules alone are NOT enough (#2147 r5, coordinator repro):
+a path embedding `\nbare` yields a continuation line that IS a valid absent
+flag — `bare`+`detached` coexist because a genuine detached record simply
+lacks `bare`. Close it with a positive EXISTENCE cross-check at record
+close: every parsed path must exist on disk as a directory, missing-dir
+tolerated ONLY when the record carries `prunable` (git 2.34.1 verified: a
+deleted worktree dir lists `prunable gitdir file points to non-existent
+location`). Canonical impl + 9-test battery:
 `scripts/clean_experiment_downloads.py::_registered_worktree_paths` +
-`tests/test_vm_disk_guard_slurm_src.py::test_r4_*`. Known latent siblings
+`tests/test_vm_disk_guard_slurm_src.py::test_r4_* / test_r5_*`. Known latent siblings
 (read-only parsers, no deletion licensing, left as-is in #2147):
 `scripts/verify_task_body.py::_parse_worktree_list`,
 `scripts/audit_stranded_task_commits.py::list_worktrees` — harden them the

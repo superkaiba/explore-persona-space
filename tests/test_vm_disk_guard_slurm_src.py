@@ -1674,3 +1674,81 @@ def test_r4_raw_special_char_paths_parse_and_reap_still_licensed(
     assert row["disposition"] == "slurm-src-reaped"
     assert not cand.exists()
     assert res.bytes_freed > 0
+
+
+# ─── round 5: flag-spoof continuation closed by the existence cross-check ─────
+
+
+def test_r5_flag_spoof_continuation_returns_none(tmp_path, main_repo):
+    """R5 (coordinator repro, real git, no adversary): a path embedding
+    ``\\nbare`` splits into a record whose continuation line exactly spells
+    the ``bare`` flag — the round-4 slot rules pass it (a genuine detached
+    record simply lacks ``bare``) and the TRUNCATED path is recorded while
+    the REAL registered path is absent. The existence cross-check must
+    refuse: the truncated path does not exist on disk and the record is not
+    ``prunable`` => the whole listing is AMBIGUOUS => None."""
+    wt = tmp_path / "sp\nbare"
+    _git(main_repo, "worktree", "add", "--detach", str(wt))
+    assert wt.is_dir()
+    assert not (tmp_path / "sp").exists()  # the spoof-truncated path
+    assert ced._registered_worktree_paths(main_repo) is None
+
+
+def test_r5_spoof_listing_keeps_reapable_candidate(
+    slurm_root, main_repo, repo, tmp_path, monkeypatch
+):
+    """R5 end-to-end (apply=True): a fully reap-eligible staged copy is KEPT
+    when the admin listing carries the flag-spoof record — same fail-open
+    class as R3-C1, so the same KEEP reason must surface and the rmtree
+    boobytrap must NOT fire."""
+    cand = _staged_copy(slurm_root, "issue-9932")
+    poison = tmp_path / "sp2\nbare"
+    _git(main_repo, "worktree", "add", "--detach", str(poison))
+    monkeypatch.setattr(ced.shutil, "rmtree", _rmtree_boom)
+    res = _sweep(slurm_root, main_repo, apply=True)
+    row = _row(res, cand.name)
+    assert row["disposition"] == "slurm-src-reap-reprobe-kept"
+    assert "registration-probe-failed" in row["reason"]
+    assert cand.exists() and (cand / "tracked.py").is_file()
+
+
+def test_r5_prunable_missing_dir_parses_normally(tmp_path, main_repo):
+    """R5 tolerance arm: a registered worktree whose DIRECTORY was deleted
+    lists as ``prunable gitdir file points to non-existent location`` (git
+    2.34.1 verified) — the one legitimate missing-dir shape. It must NOT
+    force None, or a routine pruned worktree would wedge the whole tier
+    into KEEP-everything."""
+    gone = tmp_path / "gone-wt"
+    keepd = tmp_path / "kept-wt"
+    _git(main_repo, "worktree", "add", "--detach", str(gone))
+    _git(main_repo, "worktree", "add", "--detach", str(keepd))
+    shutil.rmtree(gone)
+    paths = ced._registered_worktree_paths(main_repo)
+    assert paths is not None
+    assert os.path.realpath(str(main_repo)) in paths
+    assert os.path.realpath(str(keepd)) in paths
+    assert os.path.realpath(str(gone)) in paths  # pruned path still listed => KEEP-side
+
+
+def test_r5_negative_control_locked_and_plain_listing_reap_still_licensed(
+    slurm_root, main_repo, repo, tmp_path
+):
+    """R5 negative control: a normal listing — main + a plain detached
+    worktree + a LOCKED worktree (bare ``locked`` flag line) — parses to the
+    exact full set under the existence cross-check, and a genuinely
+    unregistered candidate's reap remains licensed."""
+    plain = tmp_path / "plain-wt"
+    locked = tmp_path / "locked-wt"
+    _git(main_repo, "worktree", "add", "--detach", str(plain))
+    _git(main_repo, "worktree", "add", "--detach", str(locked))
+    _git(main_repo, "worktree", "lock", str(locked))
+    paths = ced._registered_worktree_paths(main_repo)
+    assert paths is not None
+    expected = {os.path.realpath(str(p)) for p in (main_repo, plain, locked)}
+    assert paths == expected
+    cand = _staged_copy(slurm_root, "issue-9931")
+    res = _sweep(slurm_root, main_repo, apply=True)
+    row = _row(res, cand.name)
+    assert row["disposition"] == "slurm-src-reaped"
+    assert not cand.exists()
+    assert res.bytes_freed > 0
