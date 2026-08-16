@@ -523,7 +523,15 @@ class _TmpRootRefVisitor(ast.NodeVisitor):
 
 @pytest.mark.parametrize(
     "symbol",
-    ["production_tmp_root", "production_staging_roots", "scratch_verdict_cache_path"],
+    [
+        "production_tmp_root",
+        "production_staging_roots",
+        "scratch_verdict_cache_path",
+        # #2147 tier (g): the slurm-src production resolvers ride the same
+        # main()-only hermeticity contract.
+        "slurm_src_root",
+        "slurm_src_escalation_state_path",
+    ],
 )
 def test_production_tmp_root_only_in_mains(symbol):
     for script in ("clean_experiment_downloads.py", "vm_disk_guard.py"):
