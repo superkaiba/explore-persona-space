@@ -20,6 +20,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -38,6 +40,17 @@ def _load_codex_task():
 codex_task = _load_codex_task()
 
 
+@pytest.fixture(autouse=True)
+def _disable_dispatch_lock(monkeypatch):
+    """Kill-switch the #2323 repo-keyed dispatch lock for every test here:
+    the REAL lock file lives under the main checkout's .claude/cache/ and a
+    concurrent live fleet dispatch can hold it for minutes — engaging it
+    would make these unit tests flaky/blocking. The lock's own behavior is
+    covered by tests/test_codex_task_post_spawn_probe_retry.py against a
+    tmp_path-rooted lock."""
+    monkeypatch.setenv("EPM_CODEX_DISPATCH_LOCK", "0")
+
+
 def _args(**overrides):
     """Build an argparse-like namespace with sane defaults for one attempt."""
     base = dict(
@@ -53,6 +66,9 @@ def _args(**overrides):
         stall_detect_secs=600,
         cancelled_retry_cap=2,
         result_fetch_retry_cap=0,
+        post_spawn_probe_retry_cap=4,
+        dispatch_lock_timeout_secs=5.0,
+        no_dispatch_lock=False,
     )
     base.update(overrides)
     return SimpleNamespace(**base)
