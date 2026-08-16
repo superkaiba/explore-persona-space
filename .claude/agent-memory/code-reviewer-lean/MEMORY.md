@@ -41,3 +41,4 @@
 - [Revision-round disposition walk](revision_round_disposition_walk.md) — enumerate the r1 union from SOURCE verdict files, diff vs (a)/(b); undispositioned minors surface even with all blockers fixed (#2321 R2 g4)
 - [Boundary probe stale-artifact admission](boundary_probe_stale_artifact_admission.md) — an at-cap probe gated by count arithmetic is vacuously confirmed when its own probe file pre-exists; require committed-this-round, not landed (#2321 R2 g2)
 - [Lint constant lags synced doc](lint_constant_lags_synced_doc_restore.md) — cap-restore unblock review: byte-exact vs main + cap==main + one-residual-hunk + fails-pre/passes-post pins (#2321 R3 g2)
+- [Enumeration summary quantifier directions](enumeration_summary_quantifier_directions.md) — 0.71 universals: skipped-but-unnamed = blocker; over-claimed skipping of still-running gates = Minor; verify the carve-out runs+blocks (rc trace) (#2321 R4 g1)
