@@ -179,6 +179,38 @@ on the Hub (feed `resolve_sharded_text_paths` output to
 name alone is NOT a PASS when a manifest exists (the "v7 PASS had a hole"
 half of #2119).
 
+**Consumers of REPACKED prefixes resolve deleted originals through the
+`packed/` shim (#2321 — the #2119 contract's sibling for whole-prefix packs).**
+A file-count-recovery repack byte-preserves a prefix's small files into
+`<prefix>/packed/` v2 shards (`orchestrate/packing.py`: raw text/b64 records +
+per-member sha256 + byte offsets; `packed/INDEX.json` top index + per-group
+index parts + `pack_manifest.json` + the cumulative `units.jsonl` journal) and
+DELETES the originals from HEAD; every deletion-bearing commit carries the
+index entries resolving its members (I15/I16), so an already-deleted member is
+resolvable at every intermediate commit. Consumer contract, two classes:
+(1) **single-path reads** — `orchestrate.hub.stage_hub_file` falls back to the
+pack on a raw-path `EntryNotFoundError` (a non-member re-raises the ORIGINAL
+miss), so helper-routed staging needs no change; a bare `hf_hub_download` of a
+repacked original 404s LOUD (the #2304-documented degradation) — route staging
+through `stage_hub_file` / `stage_packed_file`. (2) **listing/glob discovery is
+the SILENT-EMPTY class** — `list_repo_tree` over a repacked dir returns only
+retained survivors and `snapshot_download(allow_patterns=...)` succeeds on zero
+matches, so a work list derived from a raw listing reads a repacked prefix as a
+real empty/zero result with no error anywhere. Such consumers MUST union the
+raw listing with `orchestrate.hub.packed_members_under_path` (original-path
+member enumeration) — or use `orchestrate.hub.stage_hub_prefix`, which performs
+the union itself (raw-preferred dedupe; the pack's internals drop from the
+mirror so the staged layout stays the ORIGINAL per-file tree) — AND assert the
+resulting work list nonempty. Pre-repack, the I17 gate BLOCKS a prefix's commit
+phase (rc=22) while any silent-empty consumer in
+`scripts/issue2321_consumer_inventory.json` is unmigrated; re-scan with
+`scripts/issue2321_consumer_gate.py --check` before repacking a NEW prefix
+(dynamically-constructed paths are the scan's documented residual). Contract
+pinned by `tests/test_hub_packed_fallback.py`; live resolution smoke:
+`scripts/issue2321_verify_shim.py --samples 3`. Kill switch
+`EPM_HF_PACKED_FALLBACK=0` (raw-only reads). Never hand-write artifacts under
+`<prefix>/packed/`.
+
 **Uploader eligibility filters must cover every plan-declared artifact class
 (#825).** An upload helper that enumerates files through an eligibility
 filter — `upload_folder(allow_patterns=[...])` / `ignore_patterns=[...]`, a

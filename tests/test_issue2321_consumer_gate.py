@@ -3,7 +3,8 @@
 Covers the two migrated silent-empty consumers on REPACKED fixture trees
 (`scripts/issue1090_fu3_yield_replay.py`, `scripts/issue1481_cjk_audit.py`)
 plus the consumer-inventory scanner/gate tooling
-(`scripts/issue2321_consumer_gate.py` + the committed inventory JSON).
+(`scripts/issue2321_consumer_gate.py` + the committed inventory JSON) and the
+live shim-check driver (`scripts/issue2321_verify_shim.py`, fixture-backed).
 
 Zero network: the Hub boundary is faked signature-conformantly (real
 ``RepoFile`` objects; ``hf_hub_download`` / ``HfApi`` monkeypatched at the
@@ -372,3 +373,67 @@ def test_committed_inventory_gates_all_ten_prefixes_clean():
     for prefix in driver.PREFIX_ORDER:
         verdict = driver.consumer_gate(inventory, prefix)
         assert verdict["blockers"] == 0, (prefix, verdict)
+
+
+# ---------------------------------------------------------------------------
+# Live shim-check driver (scripts/issue2321_verify_shim.py), fixture-backed
+# ---------------------------------------------------------------------------
+
+vshim = _load_script("issue2321_verify_shim.py", "issue2321_verify_shim_mod")
+
+
+def test_verify_shim_samples_resolve_byte_exact(tmp_path, monkeypatch):
+    """Every sampled member of a fully-repacked prefix stages through the
+    production stage_hub_file fallback and sha256-matches its record."""
+    root = _packed_remote(tmp_path, "issue1090_partial", FU3_FILES)
+    api = _patch_remote(monkeypatch, root)
+    ok, n, problems = vshim.verify_prefix_samples(
+        api,
+        repo_id="fake-org/fake-data-repo",
+        prefix="issue1090_partial",
+        n_samples=3,
+        stage_root=tmp_path / "stage",
+    )
+    assert problems == []
+    assert ok == n == 3
+
+
+def test_verify_shim_flags_digest_mismatch(tmp_path, monkeypatch):
+    """A tampered recorded digest is flagged, never silently passed."""
+    import dataclasses
+
+    root = _packed_remote(tmp_path, "issue1090_partial", FU3_FILES)
+    api = _patch_remote(monkeypatch, root)
+    real = hub.packed_members_under_path
+
+    def tampered(*a, **k):
+        ms = list(real(*a, **k))
+        return [dataclasses.replace(ms[0], sha256="0" * 64), *ms[1:]]
+
+    monkeypatch.setattr(hub, "packed_members_under_path", tampered)
+    ok, n, problems = vshim.verify_prefix_samples(
+        api,
+        repo_id="fake-org/fake-data-repo",
+        prefix="issue1090_partial",
+        n_samples=len(FU3_FILES),
+        stage_root=tmp_path / "stage",
+    )
+    assert any("sha256 mismatch" in p for p in problems)
+    assert ok == n - 1
+
+
+def test_verify_shim_main_pass_and_no_pack_arms(tmp_path, monkeypatch):
+    """main(): rc=0 on a resolvable repacked prefix; a pack-less prefix FAILS
+    (rc=1) by default, and 0/0 under --allow-unpacked is NEVER a PASS."""
+    root = _packed_remote(tmp_path, "issue1090_partial", FU3_FILES)
+    _patch_remote(monkeypatch, root)
+    rc = vshim.main(["--prefixes", "issue1090_partial", "--samples", "2"])
+    assert rc == 0
+    empty = tmp_path / "remote_empty"
+    empty.mkdir()
+    _patch_remote(monkeypatch, empty)
+    hub.clear_packed_caches()
+    assert vshim.main(["--prefixes", "issue1090_partial", "--samples", "2"]) == 1
+    assert (
+        vshim.main(["--prefixes", "issue1090_partial", "--samples", "2", "--allow-unpacked"]) == 1
+    )
