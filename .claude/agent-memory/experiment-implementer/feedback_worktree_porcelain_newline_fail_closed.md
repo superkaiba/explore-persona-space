@@ -19,23 +19,30 @@ severity right, mechanism wrong — Codex attributed it to C-quoting).
 **Why:** one truncated record in the listing poisons the WHOLE set; any
 consumer that treats non-membership as license must refuse the entire parse.
 
-**How to apply:** parse in RECORD form — records open with `worktree <path>`
-(path VERBATIM after the prefix; never `.strip()`, which corrupts
-trailing-space paths into a ghost entry) and close at a blank line; the only
-recognized in-record lines are `HEAD `, `branch `/`detached` (one slot),
-`bare`, `locked[ reason]`, `prunable[ reason]`, each at most once. ANY other
-non-blank line, attribute-outside-record, or duplicated slot ⇒ return `None`
-(whole listing ambiguous), with every caller treating `None` as
-refuse-to-act. Slot rules alone are NOT enough (#2147 r5, coordinator repro):
-a path embedding `\nbare` yields a continuation line that IS a valid absent
-flag — `bare`+`detached` coexist because a genuine detached record simply
-lacks `bare`. Close it with a positive EXISTENCE cross-check at record
-close: every parsed path must exist on disk as a directory, missing-dir
-tolerated ONLY when the record carries `prunable` (git 2.34.1 verified: a
-deleted worktree dir lists `prunable gitdir file points to non-existent
-location`). Canonical impl + 9-test battery:
-`scripts/clean_experiment_downloads.py::_registered_worktree_paths` +
-`tests/test_vm_disk_guard_slurm_src.py::test_r4_* / test_r5_*`. Known latent siblings
+**How to apply (final #2147 r6 architecture):** a deletion gate NEVER
+answers "is THIS candidate registered?" from the porcelain listing — the
+format is newline-delimited, git 2.34.1 has no `-z`, and THREE consecutive
+rounds of parser hardening each left a reproducible fail-open (r4 orphan
+lines; r5 `\nbare` flag-spoof — `bare`+`detached` coexist because a genuine
+detached record simply lacks `bare`; r6 truncation-collision — a decoy dir
+at the truncation defeats the r5 existence check). Use parse-free
+per-record sources instead: (1) the candidate's OWN `.git` gitfile
+(`_candidate_worktree_registration` — ours/foreign/submodule via the
+resolved `/worktrees/` vs `/modules/` component, relative gitdir resolved
+against the candidate, realpath comparisons only); (2) for
+deleted/replaced pointers, the ADMIN-side per-record files
+`<git-common-dir>/worktrees/<id>/gitdir` (content = `<wt>/.git` + exactly
+ONE trailing LF — strip one, dirname ⇒ byte-exact even for embedded/
+trailing newlines; `_admin_registered_worktree_paths`). Keep the hardened
+record-form listing parse (fail closed: orphan line / duplicate slot /
+existence cross-check with `prunable` exemption; never `.strip()` the
+path) as DEFENCE-IN-DEPTH ONLY — membership may add KEEPs, never license.
+Canonical impl + 16-test battery:
+`scripts/clean_experiment_downloads.py` +
+`tests/test_vm_disk_guard_slurm_src.py::test_r4_* / test_r5_* / test_r6_*`.
+Open residual (reproduced, information-theoretically unclosable): a
+FOREIGN-repo worktree with pointer deleted is byte-indistinguishable from
+a plain staged copy — no back-pointer exists to follow. Known latent siblings
 (read-only parsers, no deletion licensing, left as-is in #2147):
 `scripts/verify_task_body.py::_parse_worktree_list`,
 `scripts/audit_stranded_task_commits.py::list_worktrees` — harden them the

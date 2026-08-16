@@ -1752,3 +1752,154 @@ def test_r5_negative_control_locked_and_plain_listing_reap_still_licensed(
     assert row["disposition"] == "slurm-src-reaped"
     assert not cand.exists()
     assert res.bytes_freed > 0
+
+
+# ─── round 6: parse-free per-candidate probe + admin-side enumeration ─────────
+
+
+def test_r6_intact_pointer_collision_reaps_via_worktree_remove(
+    scratch_tmp_root, main_repo, repo, monkeypatch
+):
+    """R6 (coordinator repro, intact pointer): a registered worktree at a
+    newline path whose TRUNCATION also exists as a real dir is treated as
+    REGISTERED and reaps via ``git worktree remove`` — never rmtree. Pins
+    the per-candidate kind dispatch (this arm was already safe pre-fix,
+    stated plainly: the pre-fix failure lives in the deleted-pointer arm
+    below)."""
+    wt = scratch_tmp_root / "scratch-foo\nbare"
+    _git(main_repo, "worktree", "add", "--detach", str(wt))
+    decoy = scratch_tmp_root / "scratch-foo"
+    decoy.mkdir()
+    (decoy / "tracked.py").write_text(COMMITTED_PY)
+    _backdate(scratch_tmp_root)
+    monkeypatch.setattr(ced.shutil, "rmtree", _rmtree_boom)
+    res = _tmp_sweep(scratch_tmp_root, main_repo, apply=True)
+    row = _tmp_row(res, wt.name)
+    assert row["disposition"] == "tmp-scratch-reaped"
+    assert "worktree-removed" in row["reason"]
+    assert not wt.exists()
+
+
+def test_r6_deleted_pointer_collision_kept_never_rmtree(
+    scratch_tmp_root, main_repo, repo, monkeypatch
+):
+    """R6 exploit arm (coordinator's truncation-collision, pointer DELETED —
+    the R3-C1 downgrade): pre-fix the poisoned porcelain listing parsed
+    "successfully" via the decoy, the registered newline worktree compared
+    unequal, and rmtree DESTROYED it with the registration stranded. The
+    admin-side per-record ``gitdir``-file enumeration must prove
+    registration byte-exactly and KEEP (``git worktree remove`` refuses a
+    pointer-deleted tree — verified rc=128 — so KEEP is the only safe
+    disposition)."""
+    wt = scratch_tmp_root / "scratch-foo\nbare"
+    _git(main_repo, "worktree", "add", "--detach", str(wt))
+    (wt / ".git").unlink()
+    decoy = scratch_tmp_root / "scratch-foo"
+    decoy.mkdir()
+    (decoy / "tracked.py").write_text(COMMITTED_PY)
+    _backdate(scratch_tmp_root)
+    monkeypatch.setattr(ced.shutil, "rmtree", _rmtree_boom)
+    res = _tmp_sweep(scratch_tmp_root, main_repo, apply=True)
+    row = _tmp_row(res, wt.name)
+    assert row["disposition"] == "tmp-scratch-reap-reprobe-kept"
+    assert "registered-path" in row["reason"]
+    assert wt.exists() and (wt / "tracked.py").is_file()
+    admin_set = ced._admin_registered_worktree_paths(main_repo)
+    assert admin_set is not None and os.path.realpath(str(wt)) in admin_set  # registration survives
+
+
+def test_r6_gate17_branch_c_deleted_pointer_collision_refuses(tmp_path, main_repo):
+    """R6 exploit arm, branch (c): the deleted-pointer collision candidate
+    was granted blob evidence pre-fix (licensing the generic rmtree); the
+    admin-side enumeration must refuse it as registered."""
+    cand = tmp_path / "i9929_x\nbare"
+    _git(main_repo, "worktree", "add", "--detach", str(cand))
+    (cand / ".git").unlink()
+    (tmp_path / "i9929_x").mkdir()  # the decoy at the truncation
+    _backdate(cand)
+    ev, det = ced._tmp_git_evidence_branch_c(cand, main_repo=main_repo)
+    assert ev is None
+    assert det["reason"] == "registered-worktree"
+
+
+def test_r6_foreign_worktree_kept_sweep_and_branch_c(scratch_tmp_root, tmp_path, main_repo, repo):
+    """R6: a worktree registered to a DIFFERENT repo — with content that IS
+    committed in OUR main repo, so a naive blob proof would license it —
+    keeps on the sweep (foreign-worktree) and refuses at branch (c)."""
+    other = tmp_path / "otherrepo"
+    other.mkdir()
+    _git(other, "init", "-b", "main")
+    (other / "tracked.py").write_text(COMMITTED_PY)  # same bytes as main_repo's
+    _git(other, "add", "-A")
+    _git(other, "commit", "-m", "init")
+    fwt = scratch_tmp_root / "scratch-foreign"
+    _git(other, "worktree", "add", "--detach", str(fwt))
+    _backdate(scratch_tmp_root)
+    res = _tmp_sweep(scratch_tmp_root, main_repo, apply=True)
+    row = _tmp_row(res, fwt.name)
+    assert "foreign-worktree" in row["reason"]
+    assert fwt.exists()
+    bwt = tmp_path / "i9928_f"
+    _git(other, "worktree", "add", "--detach", str(bwt))
+    _backdate(bwt)
+    ev, det = ced._tmp_git_evidence_branch_c(bwt, main_repo=main_repo)
+    assert ev is None
+    assert det["reason"] == "foreign-worktree"
+
+
+def test_r6_submodule_gitfile_not_treated_as_worktree(tmp_path, main_repo):
+    """R6: a submodule-style gitfile (``gitdir: …/modules/x``) is NOT a
+    worktree registration — the probe classifies it ``submodule`` and
+    branch (c) does not refuse it as OUR registered worktree (it falls to
+    the evidence layer, whose internal class probes keep it fail-closed)."""
+    mod = main_repo / ".git" / "modules" / "x"
+    mod.mkdir(parents=True)
+    d = tmp_path / "i9927_sub"
+    d.mkdir()
+    (d / "copy.py").write_text(COMMITTED_PY)
+    (d / ".git").write_text(f"gitdir: {mod}\n")
+    _backdate(d)
+    assert ced._candidate_worktree_registration(d, main_repo) == ("submodule", None)
+    ev, det = ced._tmp_git_evidence_branch_c(d, main_repo=main_repo)
+    assert ev is None
+    assert det["reason"] == "foreign-worktree"  # evidence-internal class probe, fail-closed
+    assert det["reason"] != "registered-worktree"
+
+
+def test_r6_relative_gitdir_resolves(scratch_tmp_root, main_repo, repo):
+    """R6: a RELATIVE ``gitdir:`` pointer (git accepts these) resolves
+    against the candidate dir — the probe classifies it ``ours`` and the
+    reap still routes through ``git worktree remove``."""
+    wt = scratch_tmp_root / "scratch-rel"
+    _git(main_repo, "worktree", "add", "--detach", str(wt))
+    admin_abs = Path((wt / ".git").read_text(encoding="utf-8")[len("gitdir:") :].strip())
+    rel = os.path.relpath(admin_abs, wt)
+    (wt / ".git").write_text(f"gitdir: {rel}\n")
+    _backdate(scratch_tmp_root)
+    reg, admin = ced._candidate_worktree_registration(wt, main_repo)
+    assert reg == "ours"
+    assert admin is not None and admin.is_dir()
+    res = _tmp_sweep(scratch_tmp_root, main_repo, apply=True)
+    row = _tmp_row(res, wt.name)
+    assert row["disposition"] == "tmp-scratch-reaped"
+    assert "worktree-removed" in row["reason"]
+    assert not wt.exists()
+
+
+def test_r6_admin_enumeration_byte_exact_and_fail_closed(tmp_path, main_repo, monkeypatch):
+    """R6 unit: the admin-side enumeration recovers a newline-bearing
+    registered path BYTE-EXACTLY from the per-record ``gitdir`` file — even
+    with the pointer deleted — never the truncation; includes the main
+    toplevel; and fails closed (None) when the rev-parse probe fails."""
+    wt = tmp_path / "adm\nwt"
+    _git(main_repo, "worktree", "add", "--detach", str(wt))
+    (wt / ".git").unlink()
+    decoy = tmp_path / "adm"
+    decoy.mkdir()
+    s = ced._admin_registered_worktree_paths(main_repo)
+    assert s is not None
+    assert os.path.realpath(str(wt)) in s
+    assert os.path.realpath(str(decoy)) not in s
+    assert os.path.realpath(str(main_repo)) in s
+    monkeypatch.setattr(ced, "_git", lambda *a, **k: None)
+    assert ced._admin_registered_worktree_paths(main_repo) is None
