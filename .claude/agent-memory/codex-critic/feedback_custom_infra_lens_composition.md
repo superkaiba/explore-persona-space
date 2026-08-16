@@ -102,6 +102,20 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   Fix). Numcheck passed first try at ~136 KB with the collect-all +
   task-ref-extraction-first script shape.
 
+- **Paths-only composition (#2325): when the brief orders artifacts pointed
+  at BY PATH (never inline the plan body), the numcheck spans are just the
+  brief-derived text blocks** (artifact list, facts-given, review questions,
+  gag sentence) — the prompt shrinks to ~8 KB and the gate passes first try.
+  When the brief prescribes verdict sections (APPROVE|REVISE + Must-Fix/
+  Should-Fix/Notes) but no custom envelope, keep the STANDARD epm marker
+  tags and nest the brief's sections inside; an added `### Answers to the
+  review questions` section (one block per brief question + one line per
+  prior-round finding: resolution correct/complete?) gives the brief's
+  judge-the-fix duty a home. A brief "Facts already established" block,
+  inlined verbatim with a "given — re-filing is a regression" lead-in, IS
+  the do-not-relitigate mechanism when the prior round was Claude-only and
+  no prior Codex /tmp output exists.
+
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
 re-review) passed on the second numcheck run, the only failures being the
