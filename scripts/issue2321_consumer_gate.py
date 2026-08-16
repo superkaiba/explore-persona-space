@@ -36,8 +36,12 @@ paths and out-of-repo consumers — the loud-404 degradation + the completed
 #2304 overflow-routing interim cover single-path misses, and
 ``hf_hub_download``-in-a-listing-loop / glob-over-listing shapes are covered
 transitively only when the loop's work list derives from a detected listing
-call. The scan is re-runnable (``--check``) so late-added consumers are
-caught at the last cheap moment before a prefix's commit phase.
+call. Two further named residuals (r2): a discovery call ALIASED at import
+time (``from huggingface_hub import list_repo_tree as lrt``) escapes the
+call-name match, and ``get_paths_info`` is matched only by its canonical
+name. The scan is re-runnable (``--check``) — the driver's commit phase now
+re-runs it at commit admission (``fresh_consumer_scan_gate``), so late-added
+consumers are caught at the last cheap moment before any delete composes.
 """
 
 from __future__ import annotations
@@ -67,6 +71,10 @@ DISCOVERY_CALLS = frozenset(
         "list_repo_repofiles_under_path",
         "snapshot_download",
         "stage_hub_prefix",
+        # r2 Codex minor: get_paths_info silently OMITS missing paths from its
+        # return — a work list derived from it over a repacked dir is the same
+        # silent-empty shape as a listing.
+        "get_paths_info",
     }
 )
 
@@ -231,20 +239,31 @@ def scan_tree(root: Path, target_prefixes: frozenset[str]) -> list[dict]:
     return hits
 
 
-def check_inventory(hits: list[dict], inventory: dict, scoped_fn) -> list[str]:
+def check_inventory(hits: list[dict], inventory: dict, scoped_fn, row_errors_fn=None) -> list[str]:
     """Every scan hit must be covered by an inventory row (same script AND the
-    hit prefix inside the row's scoping); malformed rows are errors too."""
+    hit prefix inside the row's scoping); malformed rows are errors too.
+
+    Row validation is TYPE-EXACT (r2 g5-M1 / Codex-M1): rows are checked with
+    the driver's ``_consumer_row_type_errors`` (single source of truth —
+    pass it as ``row_errors_fn``; omitted, the driver is loaded to fetch it),
+    so a hand-authored ``"migrated": "false"`` string-boolean is an error
+    here exactly as it fails CLOSED in ``load_consumer_inventory``.
+    """
     errors: list[str] = []
     consumers = inventory.get("consumers")
     if not isinstance(consumers, list):
         return [f"malformed inventory: no consumers[] (version={inventory.get('version')})"]
+    if row_errors_fn is None:
+        row_errors_fn = _load_driver()._consumer_row_type_errors
     for i, row in enumerate(consumers):
-        for key in ("script", "prefixes", "silent_empty", "migrated"):
-            if key not in row:
-                errors.append(f"inventory row {i} missing key {key!r}: {row.get('script', '?')}")
+        for err in row_errors_fn(row):
+            label = row.get("script", "?") if isinstance(row, dict) else repr(row)
+            errors.append(f"inventory row {i} ({label}) malformed: {err}")
     for hit in hits:
         covered = any(
-            row.get("script") == hit["script"] and scoped_fn(row, hit["prefix"])
+            isinstance(row, dict)
+            and row.get("script") == hit["script"]
+            and scoped_fn(row, hit["prefix"])
             for row in consumers
         )
         if not covered:
@@ -302,7 +321,9 @@ def main(argv: list[str] | None = None) -> int:
 
     # --check
     inventory = json.loads(Path(args.inventory).read_text(encoding="utf-8"))
-    errors = check_inventory(hits, inventory, driver._consumer_scoped)
+    errors = check_inventory(
+        hits, inventory, driver._consumer_scoped, driver._consumer_row_type_errors
+    )
     if errors:
         for e in errors:
             print(f"[consumer-check] {e}")

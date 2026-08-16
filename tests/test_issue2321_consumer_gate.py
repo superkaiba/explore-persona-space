@@ -320,6 +320,7 @@ def test_gate_cli_blocks_rc22_then_passes_when_migrated(tmp_path):
     """§12: the gate blocks a prefix with an unmigrated silent-empty consumer
     (rc=22) and passes once the inventory marks it migrated — evaluated
     through the DRIVER's own consumer_gate (single-source semantics)."""
+    driver = gate_mod._load_driver()
     inv = tmp_path / "inv.json"
     row = {
         "script": "scripts/fake_consumer.py",
@@ -327,13 +328,35 @@ def test_gate_cli_blocks_rc22_then_passes_when_migrated(tmp_path):
         "silent_empty": True,
         "migrated": False,
     }
-    inv.write_text(json.dumps({"version": 1, "consumers": [row]}))
+    tp = sorted(driver.PREFIX_ORDER)  # r2 M1: load-time schema requires it
+    inv.write_text(json.dumps({"version": 1, "target_prefixes": tp, "consumers": [row]}))
     rc = gate_mod.main(["--gate", "--prefix", "issue1090_partial", "--inventory", str(inv)])
     assert rc == 22
     row["migrated"] = True
-    inv.write_text(json.dumps({"version": 1, "consumers": [row]}))
+    inv.write_text(json.dumps({"version": 1, "target_prefixes": tp, "consumers": [row]}))
     rc = gate_mod.main(["--gate", "--prefix", "issue1090_partial", "--inventory", str(inv)])
     assert rc == 0
+
+
+def test_gate_cli_string_boolean_migrated_blocks_rc22(tmp_path):
+    """r2 g5-M1 / Codex-M1: a hand-authored '"migrated": "false"' STRING is a
+    schema error that fails CLOSED (rc=22) — pre-fix, truthiness read it as
+    migrated and the gate PASSED, silently authorizing deletion."""
+    driver = gate_mod._load_driver()
+    inv = tmp_path / "inv.json"
+    row = {
+        "script": "scripts/fake_consumer.py",
+        "prefixes": ["issue1090_partial"],
+        "silent_empty": True,
+        "migrated": "false",  # truthy STRING — the exact hazard shape
+    }
+    inv.write_text(
+        json.dumps(
+            {"version": 1, "target_prefixes": sorted(driver.PREFIX_ORDER), "consumers": [row]}
+        )
+    )
+    rc = gate_mod.main(["--gate", "--prefix", "issue1090_partial", "--inventory", str(inv)])
+    assert rc == 22
 
 
 def test_gate_cli_missing_inventory_fails_closed(tmp_path):

@@ -3,8 +3,8 @@
 
 Repacks many-small-file prefixes of ``superkaiba1/explore-persona-space-data``
 into v2 line-shards (``orchestrate/packing.py``) and deletes the originals in
-net-negative, parent-pinned commit units, recovering ~610k of the repo's
-1,000,000-file cap (plan v4 §3).
+net-negative, parent-pinned commit units, recovering ~541.5k of the repo's
+1,000,000-file cap (plan v4 §3, approved A+B scope).
 
 Phases (``--phase``; per-prefix unless noted):
   walk           census the prefix at a pinned revision R (rich scoped listing:
@@ -19,14 +19,26 @@ Phases (``--phase``; per-prefix unless noted):
   verify         unpack EVERY shard via the PRODUCTION decoder (C19) into
                  ``<work-root>/scratch/<prefix>/``, sha256-compare 100% of
                  members vs the staged originals, assert the census<->member
-                 bijection (C3/I12) with a named delta report.
+                 bijection (C3/I12) with a named delta report; on PASS write
+                 the content-addressed verify RECEIPT the commit phase
+                 requires (I5 phase gate — r2 C1).
   consumer-gate  refuse (rc=22) while any silent-empty consumer scoped to the
-                 prefix is unmigrated (I17; reads the committed inventory).
-  commit         compose net-negative units (ops<=4,500 incl. deletes; shard
-                 bytes<=225MB; C7 sparse-tail rebalance), then land each via
-                 the probe-first loop (I11/I13/I14) with the I15 journal +
-                 I16 cumulative INDEX riding EVERY data commit; >=20s between
-                 commits; finalize with pack_manifest.json (+INDEX refresh).
+                 prefix is unmigrated (I17; reads the committed inventory,
+                 schema-validated fail-closed) + a FRESH live-tree consumer
+                 scan diffed against the inventory (r2 M1).
+  commit         REQUIRES a verify receipt matching THIS pack's content
+                 digests (I5 — rc=23 without one); compose net-negative units
+                 (ops<=4,500 incl. deletes; shard bytes<=225MB; C7 sparse-tail
+                 rebalance), then land each via the probe-first loop
+                 (I11/I13/I14) with the I15 journal + I16 cumulative INDEX
+                 riding EVERY data commit; >=20s between commits; finalize
+                 with pack_manifest.json (+INDEX refresh + journal rewrite).
+  resume-bootstrap  MF3 total-local-wipe recovery (r2 M2): stage + validate
+                 the remote cumulative journal, re-run the walk at the pinned
+                 revision R it records, cross-check the Hub reconstruction
+                 (packed members UNION survivors) against the walk, restore
+                 the local journal to the exact remote bytes — then the
+                 normal download/pack/verify/commit chain resumes.
   postverify     exact-set + content-equality verify of every landed artifact
                  (I13(c), C20 tolerance for pre-existing non-v2 entries),
                  sources-gone + non-LFS shard sweep (C16), THEN reap local
@@ -38,7 +50,9 @@ Phases (``--phase``; per-prefix unless noted):
 Exit codes: 21 StopRepack (I2 file-count rejection => global stop) · 22
 consumer gate blocked (I17) · 23 AbortPrefix (drift/bijection/content
 mismatch; prefix left byte-consistent, state "packed-unindexed-final", C12) ·
-24 RateLimitedStop (C18).
+24 RateLimitedStop (C18) · 25 cap-probe UNSETTLED (every non-confirmed route:
+C4 recompute, off-cap refusal, A/B rejection pending the real-unit probe,
+A->B window drift — explicit operator continuation required, r2 M5).
 
 Safety: every canonical-repo mutation funnels through
 ``commit_unit_probe_first`` which (a) asserts the I18 test-mutation interlock
@@ -135,6 +149,12 @@ RC_STOP_REPACK = 21
 RC_CONSUMER_GATE = 22
 RC_ABORT_PREFIX = 23
 RC_RATE_LIMITED = 24
+RC_CAP_PROBE_UNSETTLED = 25  # r2 M5: any non-confirmed cap-probe route
+
+#: poll_pipeline.py::SENTINEL_SCHEMA_VERSION_SUPPORTED lockstep (r2 g3-M4).
+SENTINEL_SCHEMA_VERSION = 1
+
+VERIFY_RECEIPT_VERSION = 1  # I5 phase-gate receipt schema (r2 C1)
 
 _PROBE_A_BYTES = b"#2321 cap probe A\n"
 _PROBE_B_BYTES = b"#2321 cap probe B\n"
@@ -167,6 +187,13 @@ class RateLimitedStop(RuntimeError):
     """C18: the 429 budget exhausted — a rate condition, never 'attempts-exhausted'."""
 
     rc = RC_RATE_LIMITED
+
+
+class CapProbeWindowDrift(RuntimeError):
+    """§3.6 C4 (r2 g3-M3): a pinned-window commit found the head moved off the
+    required parent — a foreign commit landed between A and B, so the at-cap
+    evidentiary read would be vacuous. Caught inside :func:`run_cap_probe`
+    (recompute route), never an exit code of its own."""
 
 
 # ---------------------------------------------------------------------------
@@ -265,6 +292,11 @@ def is_ambiguous_outcome(err: BaseException) -> bool:
     status = _status_code(err)
     if status is not None and 500 <= status < 600:
         return True
+    if status is not None:
+        # r2 g3-minor-5: a DEFINITIVE non-5xx status (e.g. a 400 whose message
+        # happens to contain "timeout") is never ambiguous — re-raise, never
+        # burn the I11 attempt budget on it.
+        return False
     if isinstance(err, TimeoutError | ConnectionError):
         return True
     msg = str(err).lower()
@@ -586,7 +618,80 @@ def verify_prefix(
             f"C19 round-trip sha256 mismatch on {prefix}: {len(mismatched)} members; "
             f"first: {mismatched[:5]}"
         )
-    return {"n_members": n_unpacked, "n_shards": len(shards), "bijection": "exact"}
+    report = {"n_members": n_unpacked, "n_shards": len(shards), "bijection": "exact"}
+    # r2 C1: a PASS mints the content-addressed receipt the commit phase
+    # REQUIRES (I5 phase gate) — reached only after every assert above.
+    write_verify_receipt(pack_dir, report)
+    return report
+
+
+# ---------------------------------------------------------------------------
+# I5 verify receipt (r2 C1): commit refuses without proof verify PASSed on
+# THIS exact pack. The receipt is content-addressed — manifest sha256 (which
+# itself pins every shard's sha256) + every index part's sha256 + the
+# census_key — so a re-pack, index tamper, or manifest edit invalidates it.
+# It lives BESIDE the pack dir (never inside: the census-matched reuse path
+# refuses stray files in pack_dir).
+# ---------------------------------------------------------------------------
+
+
+def verify_receipt_path(pack_dir: Path) -> Path:
+    """``<work>/pack/<prefix>.verify_receipt.json`` — beside, never inside."""
+    pack_dir = Path(pack_dir)
+    return pack_dir.parent / f"{pack_dir.name}.verify_receipt.json"
+
+
+def _pack_content_digests(pack_dir: Path) -> dict:
+    """The digests that content-address one pack (receipt write + check)."""
+    man_bytes = (pack_dir / packing.MANIFEST_NAME).read_bytes()
+    man = json.loads(man_bytes.decode("utf-8"))
+    parts = {}
+    for key in sorted(man["groups"]):
+        for part_name in man["groups"][key]["index_files"]:
+            parts[part_name] = hashlib.sha256((pack_dir / part_name).read_bytes()).hexdigest()
+    return {
+        "census_key": man["census_key"],
+        "manifest_sha256": hashlib.sha256(man_bytes).hexdigest(),
+        "index_parts_sha256": parts,
+    }
+
+
+def write_verify_receipt(pack_dir: Path, report: Mapping) -> Path:
+    """Persist the I5 receipt (atomic) — called ONLY by a PASSing verify."""
+    doc = {
+        "version": VERIFY_RECEIPT_VERSION,
+        **_pack_content_digests(pack_dir),
+        "n_members_verified": report.get("n_members"),
+        "ts": _now_iso(),
+    }
+    path = verify_receipt_path(pack_dir)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps(doc, indent=1, sort_keys=True), encoding="utf-8")
+    os.replace(tmp, path)
+    return path
+
+
+def check_verify_receipt(pack_dir: Path) -> dict:
+    """I5 phase gate (r2 C1): refuse the commit phase without a receipt whose
+    content digests match THIS pack exactly (rc=23 via AbortPrefix)."""
+    path = verify_receipt_path(pack_dir)
+    if not path.exists():
+        raise AbortPrefix(
+            f"I5: no verify receipt at {path} — run --phase verify (and let it PASS) "
+            f"before ANY commit phase; refusing to compose deletes"
+        )
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    if doc.get("version") != VERIFY_RECEIPT_VERSION:
+        raise AbortPrefix(f"I5: unrecognized verify-receipt version {doc.get('version')!r}")
+    want = _pack_content_digests(pack_dir)
+    for k, v in want.items():
+        if doc.get(k) != v:
+            raise AbortPrefix(
+                f"I5: verify receipt at {path} is STALE for this pack ({k} mismatch) — "
+                f"the pack changed after verify PASSed; re-run --phase verify"
+            )
+    return doc
 
 
 # ---------------------------------------------------------------------------
@@ -609,32 +714,77 @@ class ShardInfo:
 def load_shard_infos(pack_dir: Path) -> tuple[list[ShardInfo], dict, dict]:
     """Shard identities (with git-blob sha1s) + groups + manifest from a pack dir.
 
-    Verifies each shard's bytes against the manifest sha256 and that the
-    index parts' member->shard mapping covers every shard.
+    I1 source of truth (r2 C3 fix): shard MEMBERS are decoded from the shard
+    BYTES themselves (``packing.iter_shard_lines`` + per-line record parse) —
+    NEVER from index-part metadata — so a corrupt or stale index can never
+    authorize deleting a census path whose bytes are not in that same
+    commit's shard. Each shard's bytes verify against the manifest sha256
+    FIRST; every index entry is then cross-checked against its shard-decoded
+    record (same shard, byte offset, byte length, sha256), and the index and
+    shard-decoded membership sets must be EXACTLY equal. Any drift is a
+    fail-loud :class:`AbortPrefix` before any delete can be composed.
     """
     man = json.loads((pack_dir / packing.MANIFEST_NAME).read_text(encoding="utf-8"))
     if man.get("version") != packing.PACK_FORMAT_VERSION:
         raise AbortPrefix(f"not a v2 pack manifest: version={man.get('version')!r}")
     groups = man["groups"]
-    members_by_shard: dict[str, list[str]] = {}
+    index_entries: dict[str, packing.MemberIndexEntry] = {}
     for key in sorted(groups):
         for part_name in groups[key]["index_files"]:
             part = packing.load_index_part(
                 (pack_dir / part_name).read_text(encoding="utf-8"), what=part_name
             )
             for src, entry in part.items():
-                members_by_shard.setdefault(entry.shard, []).append(src)
+                if src in index_entries:
+                    raise AbortPrefix(f"index parts list member {src!r} TWICE (index drift; I1)")
+                index_entries[src] = entry
     shards: list[ShardInfo] = []
+    decoded_srcs: set[str] = set()
     for key in sorted(groups):
         for name in groups[key]["shard_files"]:
             meta = man["shards"][name]
-            blob = (pack_dir / name).read_bytes()
+            shard_path = pack_dir / name
+            blob = shard_path.read_bytes()
             got = hashlib.sha256(blob).hexdigest()
             if got != meta["sha256"]:
                 raise AbortPrefix(f"shard {name}: sha256 {got[:12]} != manifest")
-            members = tuple(sorted(members_by_shard.get(name, ())))
+            # r2 C3: decode membership FROM the sha-verified shard bytes — the
+            # only source of truth for what this commit's shard carries.
+            members: list[str] = []
+            for offset, length, line in packing.iter_shard_lines(shard_path):
+                rec = json.loads(line.decode("utf-8"))
+                src = rec["src"]
+                if src in decoded_srcs:
+                    raise AbortPrefix(
+                        f"shard {name}: member {src!r} appears in more than one shard (I1)"
+                    )
+                decoded_srcs.add(src)
+                entry = index_entries.get(src)
+                if entry is None:
+                    raise AbortPrefix(
+                        f"shard {name}: record {src!r} has NO index entry (stale/corrupt "
+                        f"index) — refusing to trust this pack (I1)"
+                    )
+                if (
+                    entry.shard != name
+                    or entry.offset != offset
+                    or entry.length != length
+                    or entry.sha256 != rec.get("sha256")
+                ):
+                    raise AbortPrefix(
+                        f"shard {name}: index entry for {src!r} does not resolve to its "
+                        f"shard record (index: shard={entry.shard!r} offset={entry.offset} "
+                        f"length={entry.length} sha256={entry.sha256[:12]}...) — "
+                        f"refusing to trust the index (I1)"
+                    )
+                members.append(src)
             if not members:
-                raise AbortPrefix(f"shard {name}: no index-part members (index/manifest drift)")
+                raise AbortPrefix(f"shard {name}: no member records decoded (empty shard?)")
+            if meta.get("n_lines") != len(members):
+                raise AbortPrefix(
+                    f"shard {name}: {len(members)} decoded records != manifest n_lines "
+                    f"{meta.get('n_lines')!r}"
+                )
             shards.append(
                 ShardInfo(
                     name=name,
@@ -642,12 +792,18 @@ def load_shard_infos(pack_dir: Path) -> tuple[list[ShardInfo], dict, dict]:
                     size=meta["bytes"],
                     sha256=meta["sha256"],
                     blob_sha1=packing.git_blob_sha1(blob),
-                    members=members,
+                    members=tuple(sorted(members)),
                 )
             )
+    extra_index = set(index_entries) - decoded_srcs
+    if extra_index:
+        raise AbortPrefix(
+            f"index parts list {len(extra_index)} member(s) absent from every shard "
+            f"(stale index): {sorted(extra_index)[:5]} (I1)"
+        )
     n_members = sum(len(s.members) for s in shards)
     if n_members != man["n_members"]:
-        raise AbortPrefix(f"index parts cover {n_members} members != manifest {man['n_members']}")
+        raise AbortPrefix(f"shards carry {n_members} members != manifest {man['n_members']}")
     return shards, groups, man
 
 
@@ -967,11 +1123,20 @@ def _payload_bytes(payload: bytes | Path) -> bytes:
     return payload if isinstance(payload, bytes) else Path(payload).read_bytes()
 
 
-def landed_overwrite_guard(api, *, repo_id: str, prefix: str, units: Iterable[CommitUnit]) -> None:
+def landed_overwrite_guard(
+    api,
+    *,
+    repo_id: str,
+    prefix: str,
+    units: Iterable[CommitUnit],
+    pack_dir: Path | None = None,
+) -> None:
     """I13(a): a fresh ``packed/`` listing must not hold DIFFERENT content at any
     path this plan would add (a re-derived census on resume must abort, never
     overwrite). REPLACED_BY_DESIGN (cumulative INDEX/journal) is exempt; a
     SAME-content path is a landed/partial unit the probe will classify.
+    With ``pack_dir`` the strict set covers INDEX PARTS too (r2 g3-minor-8 —
+    aligns the guard with plan I13(a)'s "set(non-replaced add paths)").
     """
     from explore_persona_space.orchestrate import hub
 
@@ -981,7 +1146,7 @@ def landed_overwrite_guard(api, *, repo_id: str, prefix: str, units: Iterable[Co
         return
     conflicts: list[str] = []
     for unit in units:
-        for path, expected_sha1 in unit_expected_strict(unit).items():
+        for path, expected_sha1 in unit_expected_strict(unit, pack_dir).items():
             entry = fresh.get(path)
             if entry is not None and entry.blob_id != expected_sha1:
                 conflicts.append(path)
@@ -1048,6 +1213,10 @@ def probe_unit_state(api, expected: UnitExpected, *, repo_id: str) -> tuple[str,
         lambda: api.repo_info(repo_id, repo_type="dataset"), what="repo_info (probe head)"
     )
     head = info.sha
+    if not head:
+        # r2 g3-minor-7: a null head would become an UNPINNED deletion-bearing
+        # commit (parent_commit=None) — the exact shape I14 exists to prevent.
+        raise AbortPrefix(f"repo_info({repo_id}) returned no sha — I14 pin unavailable")
     packed = {
         e.path: e
         for e in hub.list_repo_repofiles_under_path(
@@ -1095,8 +1264,16 @@ def commit_unit_probe_first(
     max_pin_cycles: int = 8,
     max_429_cycles: int = 6,
     sleep_fn: Callable[[float], None] = time.sleep,
+    pinned_parent: str | None = None,
 ) -> dict:
     """Probe-first, parent-pinned commit (the ONLY ``create_commit`` site).
+
+    ``pinned_parent`` (r2 g3-M3, cap-probe commit B only): when set, the
+    probe head must EQUAL it before any issue — a moved head raises
+    :class:`CapProbeWindowDrift` instead of silently re-pinning on the fresh
+    head (which would make the §3.6 at-cap evidentiary read vacuous). The
+    generic 412 cycle composes correctly with it: a 412 re-probes, the moved
+    head then fails the equality, and the drift surfaces loudly.
 
     Loop: probe (content-anchored, I13b) -> landed => done / mismatch =>
     AbortPrefix / drift => AbortPrefix (I7) / clean => issue pinned on the
@@ -1137,9 +1314,16 @@ def commit_unit_probe_first(
                 f"probe found a MIXED unit state on {expected.prefix} at head {head[:12]} "
                 f"(partial landing / foreign writer) — aborting prefix"
             )
+        if pinned_parent is not None and head != pinned_parent:
+            raise CapProbeWindowDrift(
+                f"probe head {head[:12]} != required parent {pinned_parent[:12]} on "
+                f"{expected.prefix} — a foreign commit landed inside the pinned window"
+            )
+        # is_folder=False pins the per-file-deletes-only property explicitly
+        # (census paths never end in "/"; r2 g3 style note).
         operations = [
             CommitOperationAdd(path_in_repo=path, path_or_fileobj=payload) for path, payload in adds
-        ] + [CommitOperationDelete(path_in_repo=p) for p in dels]
+        ] + [CommitOperationDelete(path_in_repo=p, is_folder=False) for p in dels]
         try:
             # NO_RETRY: I11 probe-first — blind transient retry unsafe on deletion-bearing commits
             info = api.create_commit(
@@ -1196,25 +1380,125 @@ def commit_unit_probe_first(
 # ---------------------------------------------------------------------------
 
 
+def _consumer_row_type_errors(row) -> list[str]:
+    """Type errors for one inventory row ([] when clean).
+
+    r2 g5-M1 / Codex-M1 fix: presence-only + truthiness validation let a
+    hand-authored ``"migrated": "false"`` (a truthy STRING) read as migrated
+    and silently authorize deletion. Rows must carry ``script: non-empty
+    str``, ``prefixes: non-empty list[str]``, ``silent_empty: bool``,
+    ``migrated: bool`` — REAL booleans. Shared with the gate CLI's
+    ``check_inventory`` mirror (single source of truth).
+    """
+    if not isinstance(row, Mapping):
+        return [f"row is {type(row).__name__}, not an object"]
+    errs: list[str] = []
+    if not isinstance(row.get("script"), str) or not row.get("script"):
+        errs.append("script must be a non-empty str")
+    prefixes = row.get("prefixes")
+    if (
+        not isinstance(prefixes, list)
+        or not prefixes
+        or not all(isinstance(p, str) and p for p in prefixes)
+    ):
+        errs.append("prefixes must be a non-empty list[str]")
+    for key in ("silent_empty", "migrated"):
+        if not isinstance(row.get(key), bool):
+            errs.append(f"{key} must be a bool (got {type(row.get(key)).__name__})")
+    return errs
+
+
 def load_consumer_inventory(path: Path) -> dict:
-    """Read the committed consumer inventory; a missing/invalid file FAILS CLOSED."""
+    """Read + SCHEMA-VALIDATE the committed consumer inventory (I17).
+
+    FAILS CLOSED (:class:`ConsumerGateBlocked`, rc=22) on EVERY malformed
+    shape (r2 g5-M1 / Codex-M1): missing/unreadable file, invalid JSON,
+    missing or EMPTY ``consumers[]``, ``target_prefixes`` not exactly the
+    driver's ``PREFIX_ORDER`` set, or any row failing
+    :func:`_consumer_row_type_errors`.
+    """
     try:
-        doc = json.loads(Path(path).read_text(encoding="utf-8"))
-    except FileNotFoundError as err:
+        text = Path(path).read_text(encoding="utf-8")
+    except OSError as err:  # missing / unreadable / permission — ALL fail CLOSED
         raise ConsumerGateBlocked(
-            f"I17: consumer inventory missing at {path} — failing CLOSED (rc=22)"
+            f"I17: consumer inventory unreadable at {path} ({err}) — failing CLOSED (rc=22)"
         ) from err
-    if not isinstance(doc.get("consumers"), list):
+    try:
+        doc = json.loads(text)
+    except json.JSONDecodeError as err:
+        raise ConsumerGateBlocked(
+            f"I17: consumer inventory at {path} is not valid JSON ({err}) — failing CLOSED (rc=22)"
+        ) from err
+    if not isinstance(doc, dict) or not isinstance(doc.get("consumers"), list):
         raise ConsumerGateBlocked(f"I17: malformed consumer inventory at {path} (no consumers[])")
+    if not doc["consumers"]:
+        raise ConsumerGateBlocked(
+            f"I17: consumer inventory at {path} lists ZERO consumers — the live tree has "
+            f"known consumers, so an empty inventory is stale/truncated; failing CLOSED"
+        )
+    tp = doc.get("target_prefixes")
+    if not isinstance(tp, list) or set(tp) != set(PREFIX_ORDER):
+        raise ConsumerGateBlocked(
+            f"I17: inventory target_prefixes != the driver's PREFIX_ORDER (got {tp!r}) — "
+            f"the inventory was curated for a DIFFERENT prefix set; failing CLOSED"
+        )
+    for i, row in enumerate(doc["consumers"]):
+        errs = _consumer_row_type_errors(row)
+        if errs:
+            raise ConsumerGateBlocked(
+                f"I17: inventory row {i} ({row.get('script', '?') if isinstance(row, Mapping) else row!r}) "
+                f"malformed: {'; '.join(errs)} — failing CLOSED (rc=22)"
+            )
     return doc
 
 
 def _consumer_scoped(consumer: Mapping, prefix: str) -> bool:
     for pat in consumer.get("prefixes", []):
         norm = str(pat).rstrip("/")
-        if prefix == norm or prefix.startswith(norm + "/") or fnmatch.fnmatch(prefix, norm):
+        if (
+            prefix == norm
+            or prefix.startswith(norm + "/")
+            # r2 g5-minor-9: a consumer inventoried at P/sub also blocks
+            # prefix P (the repack of P deletes P/sub's files too).
+            or norm.startswith(prefix + "/")
+            or fnmatch.fnmatch(prefix, norm)
+        ):
             return True
     return False
+
+
+def fresh_consumer_scan_gate(inventory: Mapping, *, repo_root: Path | None = None) -> dict:
+    """Commit-admission freshness check (r2 Codex-M1).
+
+    The committed inventory is a curation-time SNAPSHOT; a consumer added
+    after curation would otherwise slip the I17 gate. Re-runs the LIVE
+    AST scan (``scripts/issue2321_consumer_gate.py``) over the checkout the
+    driver runs from and BLOCKS (:class:`ConsumerGateBlocked`, rc=22) on any
+    hit the inventory does not cover. A missing scanner tool or scan error
+    FAILS CLOSED.
+    """
+    import importlib.util
+
+    gate_path = Path(__file__).resolve().with_name("issue2321_consumer_gate.py")
+    if not gate_path.is_file():
+        raise ConsumerGateBlocked(
+            f"I17: consumer-scan tool missing at {gate_path} — cannot re-verify inventory "
+            f"freshness at commit admission; failing CLOSED (rc=22)"
+        )
+    spec = importlib.util.spec_from_file_location("issue2321_consumer_gate_scan", gate_path)
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod
+    spec.loader.exec_module(mod)
+    root = Path(repo_root) if repo_root is not None else Path(__file__).resolve().parents[1]
+    hits = mod.scan_tree(root, frozenset(PREFIX_ORDER))
+    errors = mod.check_inventory(hits, dict(inventory), _consumer_scoped, _consumer_row_type_errors)
+    if errors:
+        raise ConsumerGateBlocked(
+            f"I17: commit-admission FRESH scan found {len(errors)} problem(s) the "
+            f"committed inventory does not cover: {errors[:3]} — failing CLOSED (rc=22)"
+        )
+    return {"fresh_scan_hits": len(hits), "errors": 0}
 
 
 def consumer_gate(inventory: Mapping, prefix: str) -> dict:
@@ -1282,12 +1566,26 @@ def run_commit_phase(
 ) -> dict:
     """Compose + land every commit unit of one prefix, probe-first, resumable.
 
-    Resume grain: a unit with a local journal record is skipped outright
-    (its delete-set digest re-asserted against the re-derived plan); a unit
-    without one is classified by the Hub-state probe (landed => recorded and
-    skipped). On AbortPrefix the prefix is left in the byte-consistent
-    "packed-unindexed-final" state (C12) recorded in the state file.
+    Resume grain (r2 C4): a local journal record is a HINT, never completion
+    evidence — a locally-journaled unit still gets the content-anchored Hub
+    probe and is skipped ONLY when it reads ``landed`` there (its delete-set
+    digest is also re-asserted against the re-derived plan). A unit without
+    a local record is classified by the same probe. On AbortPrefix the
+    prefix is left in the byte-consistent "packed-unindexed-final" state
+    (C12) recorded in the state file. Landed-resume note: a regenerated
+    record can differ from the original in ``ts``/``driver_git_sha`` only;
+    the finalize commit rewrites the remote journal to the local bytes, so
+    postverify always compares like with like (r2 M3).
     """
+    if repo_id == DEFAULT_REPO_ID and prefix not in PREFIX_ORDER:
+        # r2 C2 defense-in-depth: nothing outside the 10 approved prefixes may
+        # ever reach delete composition against the CANONICAL repo (main()
+        # also refuses up front; fixture/staging repos stay testable).
+        raise AbortPrefix(
+            f"scope: prefix {prefix!r} is not a #2321 target prefix — refusing to "
+            f"compose any delete against the canonical repo"
+        )
+    check_verify_receipt(pack_dir)  # I5 phase gate (r2 C1) — before ANY composition
     shards, groups, man = load_shard_infos(pack_dir)
     units, skip_reason = compose_units(
         shards, groups, prefix=prefix, ops_cap=ops_cap, bytes_cap=bytes_cap
@@ -1302,7 +1600,7 @@ def run_commit_phase(
     n_units = len(units)
     driver_git_sha = driver_git_sha or _git_sha()
     if not dry_run:
-        landed_overwrite_guard(api, repo_id=repo_id, prefix=prefix, units=units)
+        landed_overwrite_guard(api, repo_id=repo_id, prefix=prefix, units=units, pack_dir=pack_dir)
     records = load_local_journal(pack_dir)
     started_groups: list[str] = []
     committed = 0
@@ -1324,7 +1622,22 @@ def run_commit_phase(
                         f"the re-derived plan (re-derived census on resume?) — aborting, "
                         f"never overwriting (I13a/I15)"
                     )
-                continue  # landed in a prior run (local record)
+                if not dry_run:
+                    # r2 C4 (I9/I13): the local record is a HINT — re-probe the
+                    # Hub content-anchored; missing shards, restored sources,
+                    # or a rolled-back remote must never be trusted as done.
+                    state, head = probe_unit_state(
+                        api,
+                        unit_expected(unit, pack_dir=pack_dir, census=census),
+                        repo_id=repo_id,
+                    )
+                    if state != "landed":
+                        raise AbortPrefix(
+                            f"unit {unit.unit_id}: local journal claims landed but the Hub "
+                            f"probe reads {state!r} at head {head[:12]} — remote regressed "
+                            f"or the journal is stale; refusing to skip (I9/I13)"
+                        )
+                continue  # landed in a prior run (local record + fresh Hub probe)
             index_bytes = top_index_bytes(groups, started_groups)
             jbytes = journal_bytes([*records, record])
             adds = build_unit_ops(
@@ -1372,7 +1685,9 @@ def run_commit_phase(
                 f"commit={result.get('sha')} elapsed={elapsed:.0f}s",
                 flush=True,
             )
-            if not dry_run and result["state"] == "committed" and unit.unit_id < n_units:
+            if not dry_run and result["state"] == "committed":
+                # r2 g3-minor-10: pace after EVERY data commit — the finalize
+                # commit follows the last unit, so the last sleep paces it too.
                 sleep_fn(COMMIT_SLEEP_S)
     except (AbortPrefix, RateLimitedStop, StopRepack) as err:
         append_state(
@@ -1389,8 +1704,12 @@ def run_commit_phase(
         )
         raise
 
-    # Finalize: pack_manifest.json + final INDEX refresh — metadata only,
-    # net +<=2, whitelisted by realized freed count (I3 whitelist).
+    # Finalize: pack_manifest.json + final INDEX refresh + a units.jsonl
+    # rewrite to the LOCAL journal bytes (r2 M3: a landed-resume regenerated
+    # record differs in ts/driver_git_sha from the remote copy; without this
+    # rewrite postverify permanently fails after a crash between the last
+    # unit's server landing and its local append) — metadata only, net +<=3,
+    # whitelisted by realized freed count (I3 whitelist).
     total_dels = sum(len(u.planned_deletes) for u in units)
     total_adds = sum(u.n_adds for u in units)
     freed_so_far = total_dels - total_adds
@@ -1400,6 +1719,7 @@ def run_commit_phase(
     final_adds: list[tuple[str, bytes | Path]] = [
         (f"{packed}/{packing.MANIFEST_NAME}", manifest_bytes),
         (f"{packed}/{packing.INDEX_NAME}", final_index),
+        (f"{packed}/{packing.UNITS_JOURNAL_NAME}", journal_bytes(records)),
     ]
     if freed_so_far <= len(final_adds):
         raise AbortPrefix(
@@ -1476,10 +1796,19 @@ def run_cap_probe(
     delete ``probe_a.txt`` in ONE pinned commit (net zero AT the cap) —
     accepted => hypothesis confirmed. C: delete ``probe_b.txt`` (net -1).
     C4: the live count is re-read immediately before A; ANY drift aborts the
-    round for recomputation (never report-and-proceed). C17: a rejected B
-    routes to the net-NEGATIVE real-unit probe (issue1090_partial unit 1)
-    BEFORE any invalidation verdict; a rejected A makes that real unit the
-    probe outright.
+    round for recomputation (never report-and-proceed). r2 Codex-M4: the
+    probe additionally REFUSES to run unless ``fresh + 1 == HF_FILE_CAP`` —
+    below the cap every commit is accepted regardless of at-cap semantics,
+    so a "confirmed" verdict there would certify NOTHING about net-delete
+    behavior at the cap. r2 g3-M3: commit B is dispatched with
+    ``pinned_parent=res_a["sha"]`` — a foreign commit landing in the A->B
+    window would change the count the hypothesis test assumes, so drift
+    there routes to ``recompute-aborted-a-b-window`` (probe_a cleaned up
+    first). C17: a rejected B routes to the net-NEGATIVE real-unit probe
+    (issue1090_partial unit 1) BEFORE any invalidation verdict; a rejected A
+    makes that real unit the probe outright. NON-success routes exit the
+    driver with ``RC_CAP_PROBE_UNSETTLED`` (25) via :func:`cap_probe_rc` —
+    never rc=0 (r2 Codex-M5).
     """
     verdict: dict = {"commits": [], "route": None, "hypothesis_confirmed": None}
     fresh = count_fn()
@@ -1490,6 +1819,16 @@ def run_cap_probe(
         print(
             f"[cap-probe] C4 drift: live count {fresh} != expected {expected_live_count} — "
             f"aborting round; recompute the at-cap arithmetic from the fresh count",
+            flush=True,
+        )
+        return verdict
+    if fresh + 1 != HF_FILE_CAP:
+        # r2 Codex-M4: off-cap the probe is vacuous — refuse before ANY commit.
+        verdict["route"] = "refused-off-cap"
+        print(
+            f"[cap-probe] refused: live count {fresh} + probe_a != HF_FILE_CAP "
+            f"({HF_FILE_CAP}) — the at-cap hypothesis is only testable when commit A "
+            f"lands the repo at EXACTLY the cap; nothing committed",
             flush=True,
         )
         return verdict
@@ -1540,7 +1879,32 @@ def run_cap_probe(
             commit_message="[#2321] cap probe B: net-zero at cap (+probe_b -probe_a, pinned)",
             dry_run=dry_run,
             sleep_fn=sleep_fn,
+            pinned_parent=res_a["sha"],  # r2 g3-M3: B must sit DIRECTLY on A
         )
+    except CapProbeWindowDrift as drift:
+        # r2 g3-M3: a foreign commit landed between A and B — the repo is no
+        # longer at exactly the cap, so B would test nothing. Clean up
+        # probe_a (net -1, unpinned: the window already moved) and abort for
+        # recomputation from a fresh count.
+        verdict["route"] = "recompute-aborted-a-b-window"
+        verdict["window_drift"] = str(drift)
+        cleanup = commit_unit_probe_first(
+            api,
+            repo_id=repo_id,
+            expected=UnitExpected(
+                prefix=PROBE_PREFIX,
+                packed_scope=PROBE_PREFIX,
+                strict={},
+                sources={a_path: a_anchor},
+            ),
+            adds=[],
+            dels=[a_path],
+            commit_message="[#2321] cap probe cleanup: -probe_a (A->B window drift)",
+            dry_run=dry_run,
+            sleep_fn=sleep_fn,
+        )
+        verdict["commits"].append({"probe": "cleanup-a", **cleanup})
+        return verdict
     except StopRepack:
         # C17: net-ZERO rejected. FIRST run the net-NEGATIVE real-unit probe
         # before ANY invalidation verdict; clean up probe_a (net -1) now.
@@ -1581,6 +1945,19 @@ def run_cap_probe(
     verdict["commits"].append({"probe": "C", **res_c})
     verdict["route"] = "confirmed"
     return verdict
+
+
+def cap_probe_rc(verdict: Mapping) -> int:
+    """Driver exit code for a cap-probe verdict (r2 Codex-M5).
+
+    Only ``confirmed`` and ``dry-run`` are SUCCESS (rc=0). Every other route
+    — C4 drift, off-cap refusal, A->B window drift, and BOTH rejected-commit
+    routes (which merely NAME the real-unit follow-up probe, they do not
+    dispatch it) — leaves the at-cap hypothesis UNSETTLED and exits
+    ``RC_CAP_PROBE_UNSETTLED`` (25) so automation cannot read "probe ran,
+    rc=0" as "hypothesis confirmed".
+    """
+    return 0 if verdict.get("route") in ("confirmed", "dry-run") else RC_CAP_PROBE_UNSETTLED
 
 
 # ---------------------------------------------------------------------------
@@ -1773,11 +2150,12 @@ def load_census(path: Path) -> dict:
 
 
 def upload_state_file(api, *, repo_id: str, state_path: Path, prefix: str) -> str:
-    """Best-effort additive telemetry upload (retried; cap-rejection tolerated LOUD).
+    """Additive telemetry upload (retried); a cap rejection is a GLOBAL STOP.
 
-    The local JSONL + pod sentinel are the primary records; a file-count-cap
-    rejection here must not kill the run (the repo being AT the cap is the
-    very condition this driver exists to fix).
+    The local JSONL + pod sentinel are the primary records and are written
+    BEFORE this upload; a file-count-cap rejection here means the repo is AT
+    the cap, so it propagates as :class:`StopRepack` (r2 Codex-M7) — the run
+    must never keep composing deletion-bearing commits past that signal.
     """
     from explore_persona_space.orchestrate import hub
 
@@ -1797,37 +2175,70 @@ def upload_state_file(api, *, repo_id: str, state_path: Path, prefix: str) -> st
         return "uploaded"
     except Exception as err:
         if _is_file_count_limit(err):
+            # r2 Codex-M7: a file-count-cap rejection here means the repo is
+            # AT the cap — the very regime whose semantics this driver treats
+            # as a global stop everywhere else (I2). Swallowing it as a
+            # WARNING let the run keep committing deletion-bearing units on
+            # an at-cap repo. The caller writes the local sentinel BEFORE
+            # this upload, so the durable record exists; propagate the stop.
             print(
-                f"[state] WARNING: state upload rejected on the file-count cap ({dest}); "
-                f"local JSONL + sentinel remain the record",
+                f"[state] state upload rejected on the file-count cap ({dest}); "
+                f"local JSONL + sentinel remain the record — raising StopRepack (I2)",
                 flush=True,
             )
-            return "cap-rejected"
+            raise StopRepack(
+                f"I2: file-count rejection on state upload {dest} — global stop"
+            ) from err
         raise
 
 
-def sentinel_path() -> Path | None:
-    """Pod-side results sentinel (N4); None when no sentinel surface exists."""
+def sentinel_dir() -> Path | None:
+    """Pod-side sentinel drop DIR (N4); None when no sentinel surface exists."""
     env_dir = os.environ.get("EPM_I2321_SENTINEL_DIR")
     if env_dir:
-        return Path(env_dir) / "issue-2321-results.json"
+        return Path(env_dir)
     if Path("/workspace").is_dir():
-        return Path("/workspace/logs/issue-2321-results.json")
+        return Path("/workspace/logs")
     return None
 
 
-def write_sentinel(payload: Mapping) -> None:
-    """Write the pod-side sentinel the VM poller drains (mkdir -p, atomic)."""
-    path = sentinel_path()
-    if path is None:
+def write_sentinel(payload: Mapping, *, kind: str = "epm:progress") -> Path | None:
+    """Write a POLLER-CONFORMANT sentinel envelope (mkdir -p, atomic).
+
+    r2 g3-M4: the VM poller (``scripts/poll_pipeline.py``) DROPS any sentinel
+    file missing one of ``_SENTINEL_REQUIRED_KEYS`` (``sentinel_schema_version``,
+    ``kind``, ``version``); the prior writer emitted a bare payload dict at a
+    fixed filename, which the poller would never drain. The driver payload
+    rides JSON-encoded in ``note``; filename follows the documented
+    ``issue-<N>-<kind_slug>-<epoch_seconds>.json`` shape (colliding versions
+    are the poller's #1095 max+1 rewrite concern, not ours). Returns the
+    written path (None when no sentinel surface exists).
+    """
+    d = sentinel_dir()
+    if d is None:
         print(
             "[sentinel] no sentinel surface (not a pod; EPM_I2321_SENTINEL_DIR unset)", flush=True
         )
-        return
+        return None
+    ts = int(time.time())
+    kind_slug = kind.split(":", 1)[-1].replace(":", "-")
+    path = d / f"issue-2321-{kind_slug}-{ts}.json"
+    envelope = {
+        "sentinel_schema_version": SENTINEL_SCHEMA_VERSION,
+        "kind": kind,
+        "version": 1,
+        "task_id": 2321,
+        "gate": None,
+        "blocks_pipeline": False,
+        "note": json.dumps(payload, sort_keys=True),
+        "by": "issue2321_repack",
+        "ts": ts,
+    }
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(payload, sort_keys=True), encoding="utf-8")
+    tmp.write_text(json.dumps(envelope, sort_keys=True), encoding="utf-8")
     os.replace(tmp, path)
+    return path
 
 
 # ---------------------------------------------------------------------------
@@ -1920,6 +2331,7 @@ PHASES = (
     "postverify",
     "remeasure",
     "cap-probe",
+    "resume-bootstrap",
 )
 
 
@@ -1968,6 +2380,169 @@ def _resolve_revision(api, repo_id: str) -> str:
     return info.sha
 
 
+def run_walk_phase(
+    api,
+    *,
+    repo_id: str,
+    prefix: str,
+    revision: str | None,
+    work: Path,
+    census_path: Path,
+) -> dict:
+    """Walk + census-persist body, shared by ``--phase walk`` and resume-bootstrap.
+
+    Extracted from main() so the resume path (r2 Codex-M2) re-runs the
+    EXACT production walk at the remote journal's pinned revision R instead
+    of a bespoke reconstruction. Returns the walk summary including the full
+    path set (the resume-bootstrap cross-check consumes it).
+    """
+    revision = revision or _resolve_revision(api, repo_id)
+    entries = walk_prefix(api, repo_id=repo_id, prefix=prefix, revision=revision)
+    fetch_dir = work / "manifests" / prefix
+
+    def _fetch_text(path: str) -> str:
+        from explore_persona_space.orchestrate import hub
+
+        target = fetch_dir / path
+        hub.stage_hub_file(repo_id, path, target, repo_type="dataset", revision=revision)
+        return target.read_text(encoding="utf-8")
+
+    retained = build_retained_set(entries, prefix=prefix, fetch_text=_fetch_text)
+    candidates, exclusions = select_pack_candidates(entries, retained, prefix=prefix)
+    save_census(
+        census_path,
+        prefix=prefix,
+        revision=revision,
+        entries=entries,
+        retained=retained,
+        candidates=candidates,
+        exclusions=exclusions,
+    )
+    print(
+        f"[walk] {prefix} rev={revision[:12]} files={len(entries)} "
+        f"candidates={len(candidates)} retained={len(retained)} "
+        f"exclusions={json.dumps(exclusions)}",
+        flush=True,
+    )
+    return {
+        "revision": revision,
+        "n_files": len(entries),
+        "n_candidates": len(candidates),
+        "paths": {e.path for e in entries},
+    }
+
+
+def run_resume_bootstrap(
+    api,
+    *,
+    repo_id: str,
+    prefix: str,
+    work: Path,
+    census_path: Path,
+) -> dict:
+    """Rebuild local resume state from the REMOTE record (r2 Codex-M2 + M3).
+
+    A wiped/lost work root mid-prefix leaves the local journal + census gone
+    while the Hub already carries landed deletion units. This phase:
+
+    1. stages the remote ``<prefix>/packed/units.jsonl`` — absent means
+       nothing landed: :class:`AbortPrefix` telling the operator to run the
+       ordinary phases fresh;
+    2. validates the remote journal (non-empty, unit_ids contiguous from 1,
+       a SINGLE revision R + census_key across records);
+    3. re-runs the production walk at revision R (deleted originals still
+       resolve at the pinned revision) — the deterministic pack then
+       reproduces byte-identical shards, so run_commit_phase's digest gate
+       compares like with like;
+    4. cross-checks :func:`reconstruct_prefix_census` (packed members ∪
+       survivors at HEAD) against the walk's path set at R (MF3/I15 —
+       any divergence means post-R drift: abort, never resume over it);
+    5. writes the remote journal bytes VERBATIM to ``pack_dir/units.jsonl``
+       so the local hint matches the remote record exactly (the commit
+       phase still content-anchors every hinted unit before skipping — the
+       journal remains a hint, never completion evidence).
+    """
+    from huggingface_hub.utils import EntryNotFoundError
+
+    from explore_persona_space.orchestrate import hub
+
+    packed = f"{prefix}/{packing.PACKED_DIRNAME}"
+    journal_repo_path = f"{packed}/{packing.UNITS_JOURNAL_NAME}"
+    scratch = work / "scratch" / prefix / "resume_bootstrap"
+    journal_target = scratch / packing.UNITS_JOURNAL_NAME
+    try:
+        hub.stage_hub_file(repo_id, journal_repo_path, journal_target, repo_type="dataset")
+    except EntryNotFoundError as err:
+        raise AbortPrefix(
+            f"resume-bootstrap {prefix}: no remote units journal at {journal_repo_path} — "
+            f"nothing landed; run the ordinary walk/download/pack phases fresh"
+        ) from err
+    journal_raw = journal_target.read_bytes()
+    records = [
+        json.loads(line) for line in journal_raw.decode("utf-8").splitlines() if line.strip()
+    ]
+    if not records:
+        raise AbortPrefix(f"resume-bootstrap {prefix}: remote units journal is EMPTY")
+    ids = [r.get("unit_id") for r in records]
+    if ids != list(range(1, len(ids) + 1)):
+        raise AbortPrefix(
+            f"resume-bootstrap {prefix}: remote journal unit_ids not contiguous from 1: {ids[:10]}"
+        )
+    revisions = {r.get("revision") for r in records}
+    census_keys = {r.get("census_key") for r in records}
+    if len(revisions) != 1 or None in revisions:
+        raise AbortPrefix(
+            f"resume-bootstrap {prefix}: remote journal spans {len(revisions)} revisions "
+            f"({sorted(str(r)[:12] for r in revisions)}) — expected exactly one pinned R"
+        )
+    if len(census_keys) != 1 or None in census_keys:
+        raise AbortPrefix(
+            f"resume-bootstrap {prefix}: remote journal spans {len(census_keys)} census keys "
+            f"— expected exactly one"
+        )
+    revision = revisions.pop()
+
+    walk = run_walk_phase(
+        api,
+        repo_id=repo_id,
+        prefix=prefix,
+        revision=revision,
+        work=work,
+        census_path=census_path,
+    )
+    walk_paths = {p for p in walk["paths"] if not p.startswith(f"{packed}/")}
+    reconstructed = {
+        p
+        for p in reconstruct_prefix_census(api, repo_id=repo_id, prefix=prefix)
+        if not p.startswith(f"{packed}/")
+    }
+    if reconstructed != walk_paths:
+        only_remote = sorted(reconstructed - walk_paths)[:5]
+        only_walk = sorted(walk_paths - reconstructed)[:5]
+        raise AbortPrefix(
+            f"resume-bootstrap {prefix}: MF3 census cross-check FAILED — reconstructed "
+            f"(packed members ∪ survivors) != walk at R "
+            f"(+remote-only {only_remote}, +walk-only {only_walk}); post-R drift, never "
+            f"resume over it (I7)"
+        )
+
+    pack_dir = work / "pack" / prefix
+    pack_dir.mkdir(parents=True, exist_ok=True)
+    (pack_dir / packing.UNITS_JOURNAL_NAME).write_bytes(journal_raw)
+    print(
+        f"[resume-bootstrap] {prefix} rev={str(revision)[:12]} landed_units={len(records)} "
+        f"census_files={walk['n_files']} journal -> {pack_dir / packing.UNITS_JOURNAL_NAME}",
+        flush=True,
+    )
+    return {
+        "prefix": prefix,
+        "revision": revision,
+        "census_key": census_keys.pop(),
+        "n_landed_units": len(records),
+        "n_census_files": walk["n_files"],
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_argparser().parse_args(argv)
     if args.import_check:
@@ -1980,6 +2555,14 @@ def main(argv: list[str] | None = None) -> int:
         return run_smoke()
     if not args.phase:
         raise SystemExit("--phase is required (or --smoke / --import-check)")
+    if args.prefix and args.prefix not in PREFIX_ORDER:
+        # r2 Codex-C2: the driver's scope is EXACTLY the 10 approved prefixes.
+        # Refuse any other --prefix BEFORE any env/Hub client is constructed —
+        # an arbitrary prefix must never reach walk/commit machinery at all.
+        raise SystemExit(
+            f"--prefix {args.prefix!r} is not a #2321 target prefix; approved scope: "
+            f"{', '.join(PREFIX_ORDER)}"
+        )
 
     from explore_persona_space.orchestrate.env import load_dotenv
 
@@ -1995,36 +2578,26 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.phase == "walk":
             _require(args, "prefix")
-            revision = args.revision or _resolve_revision(api, args.repo_id)
-            entries = walk_prefix(api, repo_id=args.repo_id, prefix=args.prefix, revision=revision)
-            fetch_dir = work / "manifests" / args.prefix
-
-            def _fetch_text(path: str) -> str:
-                from explore_persona_space.orchestrate import hub
-
-                target = fetch_dir / path
-                hub.stage_hub_file(
-                    args.repo_id, path, target, repo_type="dataset", revision=revision
-                )
-                return target.read_text(encoding="utf-8")
-
-            retained = build_retained_set(entries, prefix=args.prefix, fetch_text=_fetch_text)
-            candidates, exclusions = select_pack_candidates(entries, retained, prefix=args.prefix)
-            save_census(
-                census_path,
+            run_walk_phase(
+                api,
+                repo_id=args.repo_id,
                 prefix=args.prefix,
-                revision=revision,
-                entries=entries,
-                retained=retained,
-                candidates=candidates,
-                exclusions=exclusions,
+                revision=args.revision,
+                work=work,
+                census_path=census_path,
             )
-            print(
-                f"[walk] {args.prefix} rev={revision[:12]} files={len(entries)} "
-                f"candidates={len(candidates)} retained={len(retained)} "
-                f"exclusions={json.dumps(exclusions)}",
-                flush=True,
+            return 0
+
+        if args.phase == "resume-bootstrap":
+            _require(args, "prefix")
+            report = run_resume_bootstrap(
+                api,
+                repo_id=args.repo_id,
+                prefix=args.prefix,
+                work=work,
+                census_path=census_path,
             )
+            print(f"[resume-bootstrap] {json.dumps(report)}", flush=True)
             return 0
 
         if args.phase in ("download", "pack", "verify", "commit", "postverify"):
@@ -2073,9 +2646,16 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"[verify] {args.prefix} {json.dumps(report)}", flush=True)
                 return 0
             if args.phase == "commit":
-                # I17: the gate runs BEFORE any delete is composed.
-                gate = consumer_gate(load_consumer_inventory(args.inventory), args.prefix)
+                # I17: the gate runs BEFORE any delete is composed — schema-
+                # validated inventory PLUS a fresh live scan at commit
+                # admission (r2 Codex-M1: the committed inventory is a
+                # curation-time snapshot; a consumer added since would
+                # otherwise slip the gate).
+                inventory = load_consumer_inventory(args.inventory)
+                gate = consumer_gate(inventory, args.prefix)
                 print(f"[consumer-gate] {json.dumps(gate)}", flush=True)
+                fresh_scan = fresh_consumer_scan_gate(inventory)
+                print(f"[consumer-gate] fresh scan: {json.dumps(fresh_scan)}", flush=True)
                 if args.prefix.startswith("issue1739_") and not args.dry_run:
                     if not args.i1739_liveness:
                         raise SystemExit(
@@ -2107,11 +2687,16 @@ def main(argv: list[str] | None = None) -> int:
                     dry_run=args.dry_run,
                 )
                 if not args.dry_run and state_path.exists():
-                    upload_state_file(
-                        api, repo_id=args.repo_id, state_path=state_path, prefix=args.prefix
-                    )
+                    # r2 Codex-M7 ordering: the DURABLE local sentinel is
+                    # written BEFORE the state upload, so a StopRepack raised
+                    # by an at-cap state-upload rejection never loses the
+                    # round record.
                     write_sentinel(
                         {"issue": 2321, "phase": "commit", "prefix": args.prefix, **summary}
+                    )
+                    time.sleep(COMMIT_SLEEP_S)  # rate-space after the finalize commit
+                    upload_state_file(
+                        api, repo_id=args.repo_id, state_path=state_path, prefix=args.prefix
                     )
                     n_after = count_prefix_files(api, repo_id=args.repo_id, prefix=args.prefix)
                     print(f"[remeasure] {args.prefix} files-after={n_after}", flush=True)
@@ -2160,7 +2745,7 @@ def main(argv: list[str] | None = None) -> int:
             )
             print(f"[cap-probe] {json.dumps(verdict)}", flush=True)
             write_sentinel({"issue": 2321, "phase": "cap-probe", **verdict})
-            return 0
+            return cap_probe_rc(verdict)  # r2 Codex-M5: non-success routes exit 25
 
         raise SystemExit(f"unhandled phase: {args.phase}")
     except ConsumerGateBlocked as err:

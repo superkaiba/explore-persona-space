@@ -173,8 +173,19 @@ def _fixture_files(prefix: str = PREFIX, n_a: int = 9, n_b: int = 5) -> dict[str
     return files
 
 
-def _build_fixture(tmp_path: Path, *, prefix: str = PREFIX, files: dict[str, bytes] | None = None):
-    """Stage a fixture tree, pack it for real, return the working set."""
+def _build_fixture(
+    tmp_path: Path,
+    *,
+    prefix: str = PREFIX,
+    files: dict[str, bytes] | None = None,
+    verify: bool = True,
+):
+    """Stage a fixture tree, pack it for real, return the working set.
+
+    ``verify=True`` (default) runs the REAL verify phase, minting the I5
+    verify receipt the commit phase now requires (r2 C1); pass ``False`` to
+    exercise the no-receipt refusal.
+    """
     files = files if files is not None else _fixture_files(prefix)
     stage_root = tmp_path / "stage"
     for path, data in files.items():
@@ -197,6 +208,14 @@ def _build_fixture(tmp_path: Path, *, prefix: str = PREFIX, files: dict[str, byt
         source_revision="fixture-rev",
         git_commit="fixture-sha",
     )
+    if verify:
+        repack.verify_prefix(
+            prefix=prefix,
+            pack_dir=pack_dir,
+            stage_root=stage_root,
+            scratch_dir=tmp_path / "verify_scratch" / prefix,
+            candidate_paths=sorted(files),
+        )
     return SimpleNamespace(
         prefix=prefix,
         files=files,
@@ -312,9 +331,14 @@ def test_all_sparse_prefix_skipped_not_abort():
 
 
 def test_delete_set_equals_shard_member_set(tmp_path):
-    """I1: unit deletes are EXACTLY the same-commit shard members."""
+    """I1: unit deletes are EXACTLY the same-commit shard members — and since
+    r2 C3 the member set is DECODED FROM THE SHARD BYTES, not read off the
+    index parts (the index is cross-checked against the shard records)."""
     fx = _build_fixture(tmp_path)
     shards, groups, _man = repack.load_shard_infos(fx.pack_dir)
+    # C3 ground truth: members come from the shards themselves.
+    for s in shards:
+        assert list(s.members) == packing.read_shard_member_srcs(fx.pack_dir / s.name)
     units, skip = repack.compose_units(shards, groups, prefix=fx.prefix)
     assert skip is None
     unit = units[0]
@@ -332,6 +356,66 @@ def test_delete_set_equals_shard_member_set(tmp_path):
         repack.assert_unit_invariants(
             unit, adds, dels, retained={dels[0]: "pack-part:x"}, census=fx.census
         )
+
+
+def _tamper_index_part(pack_dir: Path, mutate) -> str:
+    """Load the first index part, apply ``mutate(members_dict)``, rewrite it."""
+    man = json.loads((pack_dir / packing.MANIFEST_NAME).read_text())
+    part_name = next(iter(man["groups"].values()))["index_files"][0]
+    doc = json.loads((pack_dir / part_name).read_text())
+    mutate(doc["members"])
+    (pack_dir / part_name).write_text(json.dumps(doc, sort_keys=True, separators=(",", ":")))
+    return part_name
+
+
+@pytest.mark.parametrize(
+    "case,match",
+    [
+        ("extra", "absent from every shard"),
+        ("missing", "has NO index entry"),
+        ("wrong-offset", "does not resolve to its shard record"),
+    ],
+)
+def test_load_shard_infos_index_tamper_aborts(tmp_path, case, match):
+    """r2 Codex-C3: the delete set derives from SHARD RECORDS; a tampered
+    index part (extra / missing / mis-resolving entry) ABORTS the prefix —
+    the pre-fix code would have derived deletes from the tampered index."""
+    fx = _build_fixture(tmp_path)
+
+    def mutate(members: dict) -> None:
+        first = next(iter(members))
+        if case == "extra":
+            ghost = dict(members[first])
+            members["GHOST_NOT_IN_ANY_SHARD.json"] = ghost
+        elif case == "missing":
+            del members[first]
+        else:  # wrong-offset
+            members[first] = {**members[first], "offset": members[first]["offset"] + 1}
+
+    _tamper_index_part(fx.pack_dir, mutate)
+    with pytest.raises(repack.AbortPrefix, match=match):
+        repack.load_shard_infos(fx.pack_dir)
+
+
+def test_commit_phase_index_tamper_composes_no_deletes(tmp_path):
+    """r2 Codex-C3 (mechanized recipe): an index part pointing at a WRONG
+    byte range aborts the commit phase BEFORE any Hub call — even with a
+    freshly regenerated receipt, so the C3 cross-check (not the receipt
+    staleness gate) is what blocks it."""
+    fx = _build_fixture(tmp_path)
+    _tamper_index_part(
+        fx.pack_dir,
+        lambda members: members.update(
+            {next(iter(members)): {**members[next(iter(members))], "length": 1}}
+        ),
+    )
+    # Regenerate the receipt over the TAMPERED pack: the receipt gate now
+    # PASSES, so only the C3 shard-record cross-check can refuse.
+    repack.write_verify_receipt(fx.pack_dir, {"n_members": len(fx.candidates)})
+    fake = FakeHubRepo(dict(fx.files))
+    with pytest.raises(repack.AbortPrefix, match="does not resolve to its shard record"):
+        _run_full(fx, fake, tmp_path)
+    assert fake.calls == []  # zero create_commit — no delete was ever composed
 
 
 # ---------------------------------------------------------------------------
@@ -727,7 +811,9 @@ def test_dry_run_thread_issues_zero_mutations(tmp_path):
     from huggingface_hub import HfApi
 
     api = mock.create_autospec(HfApi, instance=True)
-    for i, prefix in enumerate(("issue9998_fxa", "issue9997_fxb")):
+    # r2 Codex-C2: the canonical-repo path now admits ONLY PREFIX_ORDER
+    # prefixes, so the fixtures use two REAL target prefixes.
+    for i, prefix in enumerate(("issue1090_partial", "issue1434_writingstyle")):
         fx = _build_fixture(tmp_path / f"p{i}", prefix=prefix)
         summary = repack.run_commit_phase(
             api,
@@ -970,14 +1056,17 @@ def test_resume_from_hub_journal_reconstructs_census(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 
 
+AT_CAP = repack.HF_FILE_CAP - 1  # r2 Codex-M4: the probe only runs when fresh+1 == cap
+
+
 def test_probe_a_b_c_composition():
     """Happy path: A adds, B is pinned on the post-A HEAD (net zero), C nets -1."""
     fake = FakeHubRepo({"seed/x.json": b"{}"})
     verdict = repack.run_cap_probe(
         fake,
         repo_id=FAKE_REPO,
-        expected_live_count=1,
-        count_fn=lambda: 1,
+        expected_live_count=AT_CAP,
+        count_fn=lambda: AT_CAP,
         sleep_fn=lambda s: None,
     )
     assert verdict["route"] == "confirmed"
@@ -989,6 +1078,7 @@ def test_probe_a_b_c_composition():
     assert fake.calls[1]["dels"] == [f"{repack.PROBE_PREFIX}/probe_a.txt"]
     # net zero across A+B+C minus the final -1: no probe file survives.
     assert not any(p.startswith(repack.PROBE_PREFIX) for p in fake.files)
+    assert repack.cap_probe_rc(verdict) == 0
 
 
 def test_probe_c4_count_drift_aborts_with_zero_commits():
@@ -997,30 +1087,52 @@ def test_probe_c4_count_drift_aborts_with_zero_commits():
     verdict = repack.run_cap_probe(
         fake,
         repo_id=FAKE_REPO,
-        expected_live_count=999_999,
-        count_fn=lambda: 999_998,
+        expected_live_count=AT_CAP,
+        count_fn=lambda: AT_CAP - 1,
         sleep_fn=lambda s: None,
     )
     assert verdict["route"] == "recompute-aborted"
     assert fake.calls == []
+    assert repack.cap_probe_rc(verdict) == repack.RC_CAP_PROBE_UNSETTLED
+
+
+def test_probe_refuses_off_cap_with_zero_commits():
+    """r2 Codex-M4: below the cap every commit is accepted regardless of at-cap
+    semantics, so the probe REFUSES (zero commits, rc=25) instead of minting a
+    vacuous 'confirmed' verdict."""
+    fake = FakeHubRepo({"seed/x.json": b"{}"})
+    verdict = repack.run_cap_probe(
+        fake,
+        repo_id=FAKE_REPO,
+        expected_live_count=1,  # matches the fresh count, but nowhere near the cap
+        count_fn=lambda: 1,
+        sleep_fn=lambda s: None,
+    )
+    assert verdict["route"] == "refused-off-cap"
+    assert verdict["hypothesis_confirmed"] is None
+    assert fake.calls == []
+    assert repack.cap_probe_rc(verdict) == repack.RC_CAP_PROBE_UNSETTLED == 25
 
 
 def test_probe_b_rejection_routes_net_negative_before_invalidation():
     """C17: a rejected net-zero B routes to the net-NEGATIVE real-unit probe
-    (and cleans up probe_a) BEFORE any invalidation verdict."""
+    (and cleans up probe_a) BEFORE any invalidation verdict — and the route is
+    NON-SUCCESS (rc=25): it NAMES the real-unit follow-up, it does not
+    dispatch it (r2 Codex-M5)."""
     fake = FakeHubRepo({"seed/x.json": b"{}"})
     fake.script = ["ok", "filecount", "ok"]  # A ok, B rejected, cleanup ok
     verdict = repack.run_cap_probe(
         fake,
         repo_id=FAKE_REPO,
-        expected_live_count=1,
-        count_fn=lambda: 1,
+        expected_live_count=AT_CAP,
+        count_fn=lambda: AT_CAP,
         sleep_fn=lambda s: None,
     )
     assert verdict["route"] == "commit-b-rejected-net-negative-real-unit-probe"
     assert verdict["hypothesis_confirmed"] is None  # NOT invalidated yet (C17)
     assert [c["probe"] for c in verdict["commits"]] == ["A", "cleanup-a"]
     assert not any(p.startswith(repack.PROBE_PREFIX) for p in fake.files)
+    assert repack.cap_probe_rc(verdict) == repack.RC_CAP_PROBE_UNSETTLED
 
 
 def test_probe_a_rejection_makes_real_unit_the_probe():
@@ -1029,13 +1141,41 @@ def test_probe_a_rejection_makes_real_unit_the_probe():
     verdict = repack.run_cap_probe(
         fake,
         repo_id=FAKE_REPO,
-        expected_live_count=1,
-        count_fn=lambda: 1,
+        expected_live_count=AT_CAP,
+        count_fn=lambda: AT_CAP,
         sleep_fn=lambda s: None,
     )
     assert verdict["route"] == "commit-a-rejected-real-unit-probe"
     assert len(fake.calls) == 1
     assert not any(p.startswith(repack.PROBE_PREFIX) for p in fake.files)
+    assert repack.cap_probe_rc(verdict) == repack.RC_CAP_PROBE_UNSETTLED
+
+
+def test_probe_a_b_window_drift_cleans_up_and_aborts():
+    """r2 g3-M3: a foreign commit landing between A and B changes the count the
+    hypothesis assumes — B is pinned on A's sha, the drift is detected BEFORE
+    B composes, probe_a is cleaned up, and the route is non-success (rc=25)."""
+    fake = FakeHubRepo({"seed/x.json": b"{}"})
+
+    def foreign_commit_during_sleep(_s: float) -> None:
+        # First sleep = the A->B pacing window; land a foreign commit there.
+        if "foreign/new.txt" not in fake.files:
+            fake.files["foreign/new.txt"] = b"landed between A and B"
+            fake.commits += 1  # advances the head sha past A's
+
+    verdict = repack.run_cap_probe(
+        fake,
+        repo_id=FAKE_REPO,
+        expected_live_count=AT_CAP,
+        count_fn=lambda: AT_CAP,
+        sleep_fn=foreign_commit_during_sleep,
+    )
+    assert verdict["route"] == "recompute-aborted-a-b-window"
+    assert "window_drift" in verdict
+    assert [c["probe"] for c in verdict["commits"]] == ["A", "cleanup-a"]
+    assert not any(p.startswith(repack.PROBE_PREFIX) for p in fake.files)
+    assert fake.files["foreign/new.txt"]  # the foreign commit is untouched
+    assert repack.cap_probe_rc(verdict) == repack.RC_CAP_PROBE_UNSETTLED
 
 
 # ---------------------------------------------------------------------------
@@ -1191,3 +1331,569 @@ def test_journal_and_delete_digest_deterministic():
     assert repack.journal_bytes([rec]) == repack.journal_bytes([json.loads(json.dumps(rec))])
     assert hashlib.sha256(repack.journal_bytes([rec])).hexdigest()  # bytes, newline-terminated
     assert repack.journal_bytes([rec]).endswith(b"\n")
+
+
+# ---------------------------------------------------------------------------
+# r2 C1: I5 verify receipt gates the commit phase
+# ---------------------------------------------------------------------------
+
+
+def test_verify_receipt_gate_function_level(tmp_path):
+    """No receipt => refuse; minted => pass; pack mutated after => STALE;
+    foreign version => refuse."""
+    fx = _build_fixture(tmp_path, verify=False)
+    with pytest.raises(repack.AbortPrefix, match="no verify receipt"):
+        repack.check_verify_receipt(fx.pack_dir)
+    repack.verify_prefix(
+        prefix=fx.prefix,
+        pack_dir=fx.pack_dir,
+        stage_root=fx.stage_root,
+        scratch_dir=tmp_path / "scratch",
+        candidate_paths=fx.candidates,
+    )
+    doc = repack.check_verify_receipt(fx.pack_dir)
+    assert doc["census_key"] and doc["index_parts_sha256"]
+    # Mutate an index part AFTER verify: the receipt is now stale.
+    _tamper_index_part(
+        fx.pack_dir,
+        lambda members: members.update(
+            {next(iter(members)): {**members[next(iter(members))], "offset": 999}}
+        ),
+    )
+    with pytest.raises(repack.AbortPrefix, match="STALE"):
+        repack.check_verify_receipt(fx.pack_dir)
+    # Foreign receipt version refuses too.
+    path = repack.verify_receipt_path(fx.pack_dir)
+    bad = json.loads(path.read_text())
+    bad["version"] = 99
+    path.write_text(json.dumps(bad))
+    with pytest.raises(repack.AbortPrefix, match="unrecognized verify-receipt version"):
+        repack.check_verify_receipt(fx.pack_dir)
+
+
+def test_commit_phase_requires_receipt_before_any_hub_call(tmp_path):
+    """r2 Codex-C1 (function level): no receipt => AbortPrefix, ZERO Hub calls."""
+    fx = _build_fixture(tmp_path, verify=False)
+    fake = FakeHubRepo(dict(fx.files))
+    with pytest.raises(repack.AbortPrefix, match="no verify receipt"):
+        _run_full(fx, fake, tmp_path)
+    assert fake.calls == []
+    assert fake.files == fx.files  # zero deletes
+
+
+def test_main_commit_without_receipt_rc23_zero_hub_methods(tmp_path, monkeypatch):
+    """r2 Codex-C1 (mechanized recipe): ``main(--phase commit)`` with no
+    receipt exits rc=23 with ZERO create_commit / Hub calls of any kind."""
+    from huggingface_hub import HfApi
+
+    prefix = "issue1090_partial"  # must be a real target prefix (r2 C2)
+    fx = _build_fixture(tmp_path, prefix=prefix, verify=False)
+    census_path = tmp_path / "state" / f"{prefix}.census.json"
+    entries = [
+        SimpleNamespace(
+            path=p, size=len(d), is_lfs=False, lfs_sha256=None, blob_id=packing.git_blob_sha1(d)
+        )
+        for p, d in sorted(fx.files.items())
+    ]
+    repack.save_census(
+        census_path,
+        prefix=prefix,
+        revision="fixture-rev",
+        entries=entries,
+        retained={},
+        candidates=entries,
+        exclusions={},
+    )
+    api = mock.create_autospec(HfApi, instance=True)
+    monkeypatch.setattr("huggingface_hub.HfApi", lambda *a, **k: api)
+    # The fresh live scan has its own tests; stub it so this test isolates
+    # the receipt gate (and stays off the multi-second full-tree walk).
+    monkeypatch.setattr(
+        repack, "fresh_consumer_scan_gate", lambda inv, **k: {"fresh_scan_hits": 0, "errors": 0}
+    )
+    rc = repack.main(
+        [
+            "--phase",
+            "commit",
+            "--prefix",
+            prefix,
+            "--repo-id",
+            FAKE_REPO,
+            "--work-root",
+            str(tmp_path),
+        ]
+    )
+    assert rc == 23  # AbortPrefix: I5 no verify receipt
+    assert api.create_commit.call_count == 0
+    assert api.method_calls == []
+
+
+# ---------------------------------------------------------------------------
+# r2 C2: prefix scope allowlist (main + run_commit_phase defense-in-depth)
+# ---------------------------------------------------------------------------
+
+
+def test_main_refuses_non_target_prefix_before_any_hub_client(monkeypatch):
+    """r2 Codex-C2 (mechanized recipe): an unapproved --prefix refuses BEFORE
+    load_dotenv / HfApi construction — for EVERY phase that takes a prefix."""
+    import huggingface_hub
+
+    def boom(*a, **k):  # pragma: no cover - would only fire on regression
+        raise AssertionError("HfApi constructed for an unapproved prefix")
+
+    monkeypatch.setattr(huggingface_hub, "HfApi", boom)
+    for phase in ("walk", "commit", "verify"):
+        with pytest.raises(SystemExit, match="not a #2321 target prefix"):
+            repack.main(["--phase", phase, "--prefix", "issue9999_unapproved"])
+
+
+def test_run_commit_phase_defensive_scope_refusal(tmp_path):
+    """r2 Codex-C2 defense-in-depth: even called DIRECTLY (bypassing main),
+    a non-target prefix must never reach delete composition against the
+    canonical repo — api=None proves nothing was touched."""
+    fx = _build_fixture(tmp_path)  # PREFIX is not a #2321 target
+    with pytest.raises(repack.AbortPrefix, match="not a #2321 target prefix"):
+        repack.run_commit_phase(
+            None,
+            repo_id=repack.DEFAULT_REPO_ID,
+            prefix=fx.prefix,
+            pack_dir=fx.pack_dir,
+            census=fx.census,
+            retained={},
+            revision="fixture-rev",
+            dry_run=True,
+        )
+    # Fixture/staging repos stay testable: same call against a fake repo id
+    # proceeds (dry-run) — the defense is scoped to the CANONICAL repo.
+    summary = repack.run_commit_phase(
+        None,
+        repo_id=FAKE_REPO,
+        prefix=fx.prefix,
+        pack_dir=fx.pack_dir,
+        census=fx.census,
+        retained={},
+        revision="fixture-rev",
+        dry_run=True,
+    )
+    assert summary["status"] == "committed"
+
+
+# ---------------------------------------------------------------------------
+# r2 C4: the local journal is a HINT — content-anchored re-probe before skip
+# ---------------------------------------------------------------------------
+
+
+def test_resume_landed_hint_reprobes_remote_regression(tmp_path):
+    """r2 Codex-C4 (mechanized recipe): a locally-journaled 'landed' unit whose
+    shard has VANISHED from the Hub aborts on resume — never skipped, zero new
+    commits over the hole."""
+    fx = _build_fixture(tmp_path)
+    fake = FakeHubRepo(dict(fx.files))
+    _run_full(fx, fake, tmp_path)
+    n_calls = len(fake.calls)
+    shards, _g, _m = repack.load_shard_infos(fx.pack_dir)
+    packed = f"{fx.prefix}/{packing.PACKED_DIRNAME}"
+    del fake.files[f"{packed}/{shards[0].name}"]  # remote regressed
+    with pytest.raises(repack.AbortPrefix, match="journal claims landed but the Hub"):
+        _run_full(fx, fake, tmp_path)
+    assert len(fake.calls) == n_calls  # zero new create_commit calls
+
+
+# ---------------------------------------------------------------------------
+# r2 M3: finalize rewrites the remote journal to the LOCAL bytes
+# ---------------------------------------------------------------------------
+
+
+def test_finalize_rewrites_journal_after_crash_before_append(tmp_path, monkeypatch):
+    """r2 Codex-M3: crash between a unit's server landing and its local append
+    => the resumed run REGENERATES the record under a different clock; the
+    finalize journal-rewrite makes remote == local so postverify PASSes."""
+    files = _fixture_files(PREFIX, n_a=14, n_b=8)
+    fx = _build_fixture(tmp_path, files=files)
+    fake = FakeHubRepo(dict(fx.files))
+    _run_full(fx, fake, tmp_path, ops_cap=18)  # >=2 units + finalize
+    packed = f"{fx.prefix}/{packing.PACKED_DIRNAME}"
+    journal_path = fx.pack_dir / packing.UNITS_JOURNAL_NAME
+    lines = [ln for ln in journal_path.read_text(encoding="utf-8").split("\n") if ln.strip()]
+    assert len(lines) >= 2
+    # Crash simulation: the LAST unit's local append never happened, and the
+    # finalize commit never ran (its manifest is absent remotely).
+    journal_path.write_text("\n".join(lines[:-1]) + "\n", encoding="utf-8")
+    del fake.files[f"{packed}/{packing.MANIFEST_NAME}"]
+    # The resumed process runs under a DIFFERENT clock => regenerated record
+    # ts differs from the remote journal's copy of that record.
+    monkeypatch.setattr(repack, "_now_iso", lambda: "2099-01-01T00:00:00+00:00")
+    summary = _run_full(fx, fake, tmp_path, ops_cap=18)
+    assert summary["status"] == "committed"
+    local_bytes = repack.journal_bytes(repack.load_local_journal(fx.pack_dir))
+    assert fake.files[f"{packed}/{packing.UNITS_JOURNAL_NAME}"] == local_bytes
+    assert b"2099-01-01" in local_bytes  # the regenerated record really differs
+    # postverify compares like with like — the r1 shape failed here forever.
+    report = repack.postverify_prefix(
+        fake, repo_id=FAKE_REPO, prefix=fx.prefix, pack_dir=fx.pack_dir
+    )
+    assert report["n_verified"] > 0
+
+
+# ---------------------------------------------------------------------------
+# r2 M2: resume-bootstrap — rebuild local resume state from the REMOTE record
+# ---------------------------------------------------------------------------
+
+
+class _RevDirApi(_DirApi):
+    """_DirApi with per-revision roots (deleted originals resolve at R)."""
+
+    def __init__(self, root: Path, rev_roots: dict | None = None):
+        super().__init__(root)
+        self.rev_roots = {k: Path(v) for k, v in (rev_roots or {}).items()}
+
+    def _root_for(self, revision):
+        return self.rev_roots.get(revision, self.root)
+
+    def file_exists(self, repo_id, filename, *, repo_type="dataset", revision=None):
+        return (self._root_for(revision) / filename).is_file()
+
+    def list_repo_tree(
+        self,
+        repo_id=None,
+        path_in_repo=None,
+        *,
+        repo_type="dataset",
+        revision=None,
+        recursive=False,
+        expand=None,
+    ):
+        root = self._root_for(revision)
+        base = root / (path_in_repo or "")
+        if not base.exists():
+            raise EntryNotFoundError(f"Entry Not Found: {path_in_repo}")
+        for p in sorted(base.rglob("*")):
+            if p.is_file():
+                rel = p.relative_to(root).as_posix()
+                yield RepoFile(
+                    path=rel, size=p.stat().st_size, oid=packing.git_blob_sha1(p.read_bytes())
+                )
+
+
+def test_resume_bootstrap_end_to_end(tmp_path, monkeypatch):
+    """r2 Codex-M2: after a TOTAL local wipe, resume-bootstrap stages the
+    remote journal, re-walks at the pinned revision R, cross-checks the MF3
+    reconstruction, and restores the journal bytes VERBATIM."""
+    files = _fixture_files(PREFIX, n_a=14, n_b=8)
+    fx = _build_fixture(tmp_path, files=files)
+    fake = FakeHubRepo(dict(fx.files))
+    _run_full(fx, fake, tmp_path, ops_cap=18)
+    packed = f"{fx.prefix}/{packing.PACKED_DIRNAME}"
+    remote_journal = fake.files[f"{packed}/{packing.UNITS_JOURNAL_NAME}"]
+    head_root = _dump_fake_to_dir(fake, tmp_path / "remote_head")
+    r_root = tmp_path / "remote_at_R"
+    for path, data in fx.files.items():  # the tree as it stood at revision R
+        p = r_root / path
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_bytes(data)
+    _shim_remote(monkeypatch, head_root)
+    api = _RevDirApi(head_root, {"fixture-rev": r_root})
+    work2 = tmp_path / "resume_work"
+    census_path = work2 / "state" / f"{fx.prefix}.census.json"
+    report = repack.run_resume_bootstrap(
+        api, repo_id=FAKE_REPO, prefix=fx.prefix, work=work2, census_path=census_path
+    )
+    assert report["revision"] == "fixture-rev"
+    assert report["n_landed_units"] == len(repack.load_local_journal(fx.pack_dir))
+    # journal restored byte-verbatim into the fresh work root
+    assert (work2 / "pack" / fx.prefix / packing.UNITS_JOURNAL_NAME).read_bytes() == remote_journal
+    # census reproduced at R
+    doc = repack.load_census(census_path)
+    assert doc["revision"] == "fixture-rev"
+    assert set(doc["anchors"]) == set(fx.files)
+
+
+def test_resume_bootstrap_post_r_drift_aborts(tmp_path, monkeypatch):
+    """MF3/I7: a file added under the prefix AFTER revision R fails the
+    reconstruction cross-check — never resumed over."""
+    files = _fixture_files(PREFIX, n_a=14, n_b=8)
+    fx = _build_fixture(tmp_path, files=files)
+    fake = FakeHubRepo(dict(fx.files))
+    _run_full(fx, fake, tmp_path, ops_cap=18)
+    head_root = _dump_fake_to_dir(fake, tmp_path / "remote_head")
+    drift = head_root / fx.prefix / "added_after_R.json"
+    drift.write_bytes(b"{}")
+    r_root = tmp_path / "remote_at_R"
+    for path, data in fx.files.items():
+        p = r_root / path
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_bytes(data)
+    _shim_remote(monkeypatch, head_root)
+    api = _RevDirApi(head_root, {"fixture-rev": r_root})
+    with pytest.raises(repack.AbortPrefix, match="cross-check FAILED"):
+        repack.run_resume_bootstrap(
+            api,
+            repo_id=FAKE_REPO,
+            prefix=fx.prefix,
+            work=tmp_path / "w2",
+            census_path=tmp_path / "w2" / "state" / "c.json",
+        )
+
+
+def test_resume_bootstrap_without_remote_journal_aborts(tmp_path, monkeypatch):
+    """No remote journal => nothing landed => run the ordinary phases fresh."""
+    root = tmp_path / "remote"
+    for path, data in _fixture_files(PREFIX).items():
+        p = root / path
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_bytes(data)
+    _shim_remote(monkeypatch, root)
+    with pytest.raises(repack.AbortPrefix, match="nothing landed"):
+        repack.run_resume_bootstrap(
+            None,  # never reached: the journal staging aborts first
+            repo_id=FAKE_REPO,
+            prefix=PREFIX,
+            work=tmp_path / "w",
+            census_path=tmp_path / "w" / "c.json",
+        )
+
+
+def test_resume_bootstrap_validates_remote_journal(tmp_path, monkeypatch):
+    """Non-contiguous unit ids / mixed revisions in the remote journal abort."""
+    root = tmp_path / "remote"
+    packed_dir = root / PREFIX / packing.PACKED_DIRNAME
+    packed_dir.mkdir(parents=True)
+    base = {"census_key": "ck", "revision": "r1"}
+    rows = [{"unit_id": 1, **base}, {"unit_id": 3, **base}]
+    (packed_dir / packing.UNITS_JOURNAL_NAME).write_bytes(repack.journal_bytes(rows))
+    _shim_remote(monkeypatch, root)
+    with pytest.raises(repack.AbortPrefix, match="not contiguous"):
+        repack.run_resume_bootstrap(
+            None,
+            repo_id=FAKE_REPO,
+            prefix=PREFIX,
+            work=tmp_path / "w1",
+            census_path=tmp_path / "c1",
+        )
+    rows = [{"unit_id": 1, **base}, {"unit_id": 2, "census_key": "ck", "revision": "r2"}]
+    (packed_dir / packing.UNITS_JOURNAL_NAME).write_bytes(repack.journal_bytes(rows))
+    from explore_persona_space.orchestrate import hub
+
+    hub.clear_packed_caches()
+    with pytest.raises(repack.AbortPrefix, match="spans 2 revisions"):
+        repack.run_resume_bootstrap(
+            None,
+            repo_id=FAKE_REPO,
+            prefix=PREFIX,
+            work=tmp_path / "w2",
+            census_path=tmp_path / "c2",
+        )
+
+
+# ---------------------------------------------------------------------------
+# r2 M7: state-upload cap rejection is a GLOBAL STOP
+# ---------------------------------------------------------------------------
+
+
+def test_state_upload_cap_rejection_raises_stop_repack(tmp_path):
+    """r2 Codex-M7: a file-count rejection on the STATE upload propagates as
+    StopRepack — the run must not keep going on an at-cap repo."""
+
+    class _CapApi:
+        def upload_file(self, **kw):
+            raise FakeHTTPError(
+                400, "would contain too many files after this push, over the limit of 1000000"
+            )
+
+    state = tmp_path / "s.jsonl"
+    state.write_text("{}\n", encoding="utf-8")
+    with pytest.raises(repack.StopRepack, match="state upload"):
+        repack.upload_state_file(
+            _CapApi(), repo_id=FAKE_REPO, state_path=state, prefix="issue1090_partial"
+        )
+
+
+# ---------------------------------------------------------------------------
+# r2 g3-M4: poller-conformant sentinel envelope
+# ---------------------------------------------------------------------------
+
+
+def _load_poll_pipeline():
+    spec = importlib.util.spec_from_file_location(
+        "poll_pipeline_for_i2321", REPO_ROOT / "scripts" / "poll_pipeline.py"
+    )
+    assert spec and spec.loader
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_write_sentinel_poller_conformant_envelope(tmp_path, monkeypatch):
+    """r2 g3-M4: the sentinel carries EVERY key poll_pipeline requires (the
+    prior bare-payload writer produced files the poller silently dropped),
+    at the documented issue-<N>-<kind_slug>-<epoch>.json filename."""
+    import re as _re
+
+    monkeypatch.setenv("EPM_I2321_SENTINEL_DIR", str(tmp_path))
+    payload = {"issue": 2321, "phase": "commit", "prefix": "issue1090_partial"}
+    path = repack.write_sentinel(payload, kind="epm:progress")
+    assert path is not None and path.parent == tmp_path
+    assert _re.fullmatch(r"issue-2321-progress-\d+\.json", path.name)
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    pp = _load_poll_pipeline()
+    for key in pp._SENTINEL_REQUIRED_KEYS:
+        assert key in doc, f"poller-required key {key!r} missing from the envelope"
+    assert doc["sentinel_schema_version"] == repack.SENTINEL_SCHEMA_VERSION
+    assert doc["kind"] == "epm:progress" and doc["version"] == 1 and doc["task_id"] == 2321
+    assert json.loads(doc["note"]) == payload
+    # No sentinel surface => explicit None, never a crash.
+    monkeypatch.delenv("EPM_I2321_SENTINEL_DIR")
+    if not Path("/workspace").is_dir():
+        assert repack.write_sentinel(payload) is None
+
+
+# ---------------------------------------------------------------------------
+# r2 M1: inventory schema validation + commit-admission fresh scan
+# ---------------------------------------------------------------------------
+
+
+def _inv_path(tmp_path: Path, text: str, name: str = "inv.json") -> Path:
+    p = tmp_path / name
+    p.write_text(text, encoding="utf-8")
+    return p
+
+
+def test_load_consumer_inventory_schema_battery(tmp_path):
+    """r2 Codex-M1 / g5-M1: EVERY malformed inventory shape fails CLOSED —
+    including the hand-authored '"migrated": "false"' string-boolean that the
+    old truthiness check silently read as migrated."""
+    good_row = {
+        "script": "scripts/x.py",
+        "prefixes": ["issue1090_partial"],
+        "silent_empty": True,
+        "migrated": True,
+    }
+    tp = sorted(repack.PREFIX_ORDER)
+    ok = {"version": 1, "target_prefixes": tp, "consumers": [good_row]}
+    assert repack.load_consumer_inventory(_inv_path(tmp_path, json.dumps(ok)))["consumers"]
+    cases = [
+        ("this is not json {", "not valid JSON"),
+        (json.dumps({"version": 1, "target_prefixes": tp, "consumers": []}), "ZERO consumers"),
+        (json.dumps({"version": 1, "consumers": [good_row]}), "target_prefixes"),
+        (
+            json.dumps(
+                {
+                    "version": 1,
+                    "target_prefixes": ["issue1090_partial"],
+                    "consumers": [good_row],
+                }
+            ),
+            "target_prefixes",
+        ),
+        (
+            json.dumps(
+                {
+                    "version": 1,
+                    "target_prefixes": tp,
+                    "consumers": [{**good_row, "migrated": "false"}],
+                }
+            ),
+            "migrated must be a bool",
+        ),
+        (
+            json.dumps(
+                {
+                    "version": 1,
+                    "target_prefixes": tp,
+                    "consumers": [{**good_row, "prefixes": []}],
+                }
+            ),
+            "prefixes must be a non-empty",
+        ),
+        (
+            json.dumps({"version": 1, "target_prefixes": tp, "consumers": ["not-an-object"]}),
+            "not an object",
+        ),
+    ]
+    for i, (text, match) in enumerate(cases):
+        with pytest.raises(repack.ConsumerGateBlocked, match=match):
+            repack.load_consumer_inventory(_inv_path(tmp_path, text, f"bad{i}.json"))
+    # The hazard the validation closes: gate SEMANTICS read a truthy string
+    # as migrated, so without load-time refusal the row authorizes deletion.
+    hazard = {"consumers": [{**good_row, "migrated": "false", "silent_empty": True}]}
+    assert repack.consumer_gate(hazard, "issue1090_partial")["blockers"] == 0
+
+
+def test_committed_inventory_passes_new_schema():
+    """The COMMITTED inventory satisfies the strict schema (calibration on the
+    real artifact, not only fixtures)."""
+    doc = repack.load_consumer_inventory(
+        REPO_ROOT / "scripts" / "issue2321_consumer_inventory.json"
+    )
+    assert set(doc["target_prefixes"]) == set(repack.PREFIX_ORDER)
+    assert len(doc["consumers"]) >= 20
+
+
+def test_fresh_consumer_scan_gate_blocks_uncovered_consumer(tmp_path):
+    """r2 Codex-M1: a consumer added AFTER curation is caught by the fresh
+    scan at commit admission; a clean tree passes."""
+    inv = json.loads(
+        (REPO_ROOT / "scripts" / "issue2321_consumer_inventory.json").read_text(encoding="utf-8")
+    )
+    root = tmp_path / "fixrepo"
+    sd = root / "scripts"
+    sd.mkdir(parents=True)
+    (sd / "late_consumer.py").write_text(
+        'def go(api):\n    return api.list_repo_tree("r", path_in_repo="issue1090_partial")\n',
+        encoding="utf-8",
+    )
+    with pytest.raises(repack.ConsumerGateBlocked, match="FRESH scan"):
+        repack.fresh_consumer_scan_gate(inv, repo_root=root)
+    clean = tmp_path / "clean"
+    clean.mkdir()
+    ok = repack.fresh_consumer_scan_gate(inv, repo_root=clean)
+    assert ok["errors"] == 0
+
+
+# ---------------------------------------------------------------------------
+# r2 packing minors: B1 compact index parts, m4 duplicates, m5 interlock scope
+# ---------------------------------------------------------------------------
+
+
+def test_index_parts_written_compact_and_under_cap(tmp_path):
+    """r2 g1-B1: the WRITTEN part bytes respect the cap the cost accounting
+    sized (the indent=1 write ran ~1.13x over and shipped 9.75-10.16 MB parts
+    against the <=9 MB non-LFS contract)."""
+    entries = {
+        f"dir/member_{i:04d}_{'x' * 80}.json": packing.MemberIndexEntry(
+            shard="g.shard00.jsonl",
+            offset=i * 100,
+            length=100,
+            sha256="a" * 64,
+            enc="text",
+            size=90,
+        )
+        for i in range(200)
+    }
+    cap = 8000
+    names = packing._write_index_parts(tmp_path, "g", "dir", entries, cap)
+    assert len(names) >= 2  # multi-part split actually exercised
+    merged: dict = {}
+    for n in names:
+        blob = (tmp_path / n).read_bytes()
+        assert len(blob) <= cap, (n, len(blob), "written part exceeds the sized cap")
+        merged.update(packing.load_index_part(blob.decode("utf-8"), what=n))
+    assert set(merged) == set(entries)  # lossless across the split
+
+
+def test_pack_tree_v2_duplicate_candidates_raise(tmp_path):
+    """r2 m4: a duplicated candidate would pack one member twice."""
+    raw = tmp_path / "raw"
+    (raw / "d").mkdir(parents=True)
+    (raw / "d" / "f.json").write_bytes(b"{}")
+    with pytest.raises(packing.PackError, match="duplicate pack candidates"):
+        packing.pack_tree_v2(raw, tmp_path / "pack", candidates=["d/f.json", "d/f.json"])
+
+
+def test_interlock_covers_overflow_repo():
+    """r2 m5: the private overflow repo holds canonical-quality artifacts —
+    the I18 interlock refuses test-process mutations of it too."""
+    assert "superkaiba1/explore-persona-space-overflow" in packing.CANONICAL_HUB_REPOS
+    with pytest.raises(packing.TestMutationInterlockError):
+        packing.assert_test_mutation_interlock("superkaiba1/explore-persona-space-overflow")
