@@ -490,7 +490,8 @@ def _stage_lu_artifacts(ext_dir: Path) -> tuple[Path, Path]:
         target = ext_dir / name
         if not target.exists():
             got = hub.retry_transient(
-                lambda rel=rel: hf_hub_download(LU_REPO, rel, repo_type="dataset")
+                lambda rel=rel: hf_hub_download(LU_REPO, rel, repo_type="dataset"),
+                what=f"hf_hub_download({name})",
             )
             import shutil
 
