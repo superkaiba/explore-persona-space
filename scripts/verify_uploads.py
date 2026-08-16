@@ -1643,17 +1643,28 @@ def _row_index_hf_entries(
     the caller): unlike the residue check there is no fail-toward-FAIL
     direction here - a silently-empty prefix would read as `row-index-missing`
     with a store-defect remediation when the actual defect is the invocation.
+    A prefix that canonicalizes to EMPTY (``""`` / ``"/"``) raises for the
+    same reason (#2148 round 3): silently skipping it would blame the store
+    (`row-index-missing`) for an operator's malformed flag. The check
+    validates this at entry too (`row-index-prefix-empty`, zero Hub reads);
+    this raise is defense in depth for direct callers.
     """
     from huggingface_hub import HfApi
 
     from explore_persona_space.orchestrate.hub import list_repo_entries_complete
 
+    empty = [repr(p) for p in hf_prefixes if not str(p).rstrip("/")]
+    if empty:
+        raise ValueError(
+            f"--row-index-hf-prefix canonicalizes to an empty prefix: {', '.join(empty)} "
+            "- a malformed flag is an invocation defect, never a store defect"
+        )
     api = HfApi(token=os.environ.get("HF_TOKEN"))
     entries: list[tuple[str, int | None]] = []
     seen_prefixes: set[str] = set()
     for prefix in hf_prefixes:
         normalized = str(prefix).rstrip("/")
-        if not normalized or normalized in seen_prefixes:
+        if normalized in seen_prefixes:
             continue
         seen_prefixes.add(normalized)
         entries.extend(
@@ -1718,8 +1729,15 @@ def _row_index_entries(
     paths, and a doubled entry would double every line count (flipping a
     keyless `realized-rows-short` FAIL into the nonblocking
     `realized-rows-no-distinct-key` WARN) and corrupt the file/byte budget
-    sums. Agreeing duplicates count ONCE; a same-path duplicate with
-    CONFLICTING sizes is a real listing inconsistency and ERRORs
+    sums. (The caller additionally REFUSES mixed local+HF sources at check
+    entry - #2148 round 3 - so in practice every entry shares one mode.)
+    Agreeing duplicates count ONCE, and an UNKNOWN size coalesces with a
+    known one (the tree walk legitimately returns ``size=None`` -
+    ``list_repo_entries_complete`` is ``int | None`` - and this check's own
+    budget path treats None as "unknown, probe it", so a (None, int) pair is
+    not a conflict: a known size fills a prior None, a later None never
+    displaces a known value). Only a same-path duplicate with CONFLICTING
+    KNOWN sizes is a real listing inconsistency and ERRORs
     (`row-index-duplicate-conflict`) - never silently deduplicated.
     """
     entries: list[dict] = []
@@ -1769,7 +1787,17 @@ def _row_index_entries(
         if prior is None:
             first_seen[key] = entry
             deduped.append(entry)
-        elif prior["size"] != entry["size"]:
+        elif prior["size"] is None and entry["size"] is not None:
+            # Coalesce (#2148 round 3): a known size fills a prior unknown -
+            # None means "the listing left the size unknown" (hub.py
+            # list_repo_entries_complete is int | None), never a measurement
+            # that can disagree.
+            prior["size"] = entry["size"]
+        elif (
+            prior["size"] is not None
+            and entry["size"] is not None
+            and prior["size"] != entry["size"]
+        ):
             return {
                 "status": "ERROR",
                 "url": "",
@@ -1781,6 +1809,8 @@ def _row_index_entries(
                     "deduplicated (fail-loud, zero downloads performed)"
                 ),
             }
+        # Remaining arms (equal known sizes, or a later None against a known
+        # value) are agreeing duplicates: count once, keep the known size.
     return deduped
 
 
@@ -1954,9 +1984,14 @@ def _count_label_entries(
 
     Returns ``(counts, errors)``: counts[label] = {lines, distinct, shards};
     errors collects fetch failures + key-absent violations (both fail-loud).
-    Emits one flushed ``[realized-rows] unit k/N`` line per processed file
-    (the code-style per-unit progress convention), so a stalled fetch is
-    attributable to its file instead of reading as a hung process.
+    Emits flushed ``[realized-rows] unit k/N`` progress lines to STDERR -
+    unconditionally, never stdout: the canonical Step 2.11 invocation
+    carries ``--json`` ("Output raw JSON"), so stdout must stay a single
+    parseable document (#2148 round 3; detached runs redirect ``2>&1`` into
+    one log, satisfying the code-style per-unit progress convention
+    identically). One ``fetch-start`` line lands BEFORE each fetch so a
+    hanging fetch names the file it is stuck on, plus one completion line
+    after.
     """
     counts: dict[str, dict] = {}
     errors: list[str] = []
@@ -1969,6 +2004,12 @@ def _count_label_entries(
         shards: list[str] = []
         for entry in sorted(label_entries, key=lambda e: str(e["rel"])):
             done += 1
+            print(
+                f"[realized-rows] unit {done}/{total} {entry['rel']} "
+                f"fetch-start elapsed={time.monotonic() - t0:.1f}s",
+                file=sys.stderr,
+                flush=True,
+            )
             try:
                 text = _read_row_index_entry(entry, revision=revision)
             except Exception as e:
@@ -1978,6 +2019,7 @@ def _count_label_entries(
                 print(
                     f"[realized-rows] unit {done}/{total} {entry['rel']} "
                     f"elapsed={time.monotonic() - t0:.1f}s (fetch/read FAILED)",
+                    file=sys.stderr,
                     flush=True,
                 )
                 continue
@@ -1990,6 +2032,7 @@ def _count_label_entries(
             print(
                 f"[realized-rows] unit {done}/{total} {entry['rel']} "
                 f"elapsed={time.monotonic() - t0:.1f}s",
+                file=sys.stderr,
                 flush=True,
             )
         counts[label] = {
@@ -2096,27 +2139,35 @@ def check_realized_row_counts(
     producer's self-reported ``capture_rows`` - literally
     ``manifest.get("n_rows")``, the expectation echoed back.
 
-    Mechanics, in order: (0) validate exemptions - mandatory non-empty
-    reason AND membership in the declared label set - BEFORE even the
-    no-expectation SKIP, so a reasonless or exemption-only direct call
-    ERRORs exactly as the CLI parser rejects it (#2148 round 2); (1) resolve
-    ONE pinned Hub revision when any HF prefix is declared (retried
+    Mechanics, in order: (0) validate the INVOCATION - exemption reasons
+    non-empty AND labels member of the declared set (#2148 round 2), the
+    two row-index sources MUTUALLY EXCLUSIVE (`row-index-dual-source`,
+    #2148 round 3: no mode-independent row identity exists across the two
+    entry namespaces, and a local-only row would satisfy an expectation on
+    a gate whose PASS licenses deleting that local copy), and no
+    empty-after-strip prefix (`row-index-prefix-empty`) - all BEFORE even
+    the no-expectation SKIP and before ANY Hub read, so a malformed direct
+    call ERRORs exactly as the CLI parser rejects it; (1) resolve ONE
+    pinned Hub revision when any HF prefix is declared (retried
     ``repo_info(...).sha``, the ``stage_hub_prefix`` pattern) - the listing
     walks, the size probe, and every staged fetch read that SAME SHA,
-    reported in the check detail; (2) enumerate each declared source (one
+    reported in the check detail; (2) enumerate the declared source (one
     scoped tree walk per DISTINCT prefix / one local walk), deduplicating
     matched entries by (mode, path) - overlapping prefixes count a file
-    ONCE, and a same-path duplicate with CONFLICTING sizes ERRORs; (3)
-    attribute every matched file to EXACTLY ONE declared label - the three
+    ONCE, an unknown (None) size coalesces with a known one, and a
+    same-path duplicate with CONFLICTING KNOWN sizes ERRORs; (3) attribute
+    every matched file to EXACTLY ONE declared label - the three
     attribution ERROR arms fire BEFORE any counting; (4) enforce the
     per-file AND aggregate fetch budgets off the deduplicated listing (ONE
     batched retried ``get_paths_info`` probe for unknown sizes; every
     failing arm returns with ZERO downloads); (5) fetch + count non-empty
-    lines and distinct declared-key tuples; (6) apply the LABEL-grained
-    exemptions (always a visible WARN row that still reports realized
-    counts); (7) per-label verdict lattice + ERROR > FAIL > WARN > OK
-    reduction. SKIP fires only when no expectation is declared, so legacy
-    invocations gain exactly one inert SKIP row.
+    lines and distinct declared-key tuples (per-file progress rides STDERR
+    - stdout stays a single parseable document under ``--json``); (6)
+    apply the LABEL-grained exemptions (always a visible WARN row that
+    still reports realized counts); (7) per-label verdict lattice +
+    ERROR > FAIL > WARN > OK reduction. SKIP fires only when no
+    expectation is declared, so legacy invocations gain exactly one inert
+    SKIP row.
     """
     expected_rows = dict(expected_rows or {})
     self_reported_rows = dict(self_reported_rows or {})
@@ -2150,6 +2201,44 @@ def check_realized_row_counts(
                 f"{', '.join(exempt_unmatched)} (rejects stale and typo'd "
                 "exemptions; an exemption-only invocation ERRORs rather than "
                 "SKIPping)"
+            ),
+        }
+
+    # (0b) Source-shape validation (#2148 round 3) - still BEFORE the
+    # no-expectation SKIP (a malformed invocation ERRORs rather than
+    # SKIPping) and before ANY Hub read. REFUSE, not union: (i) the entry
+    # schema carries no mode-independent logical identity (a local entry's
+    # `rel` is root-relative, an HF entry's `rel` is the full repo path),
+    # so an honest cross-source union would need an identity mapping the
+    # invocation does not carry; (ii) more fundamentally, a row present
+    # only in the LOCAL source would satisfy --expected-rows on a gate
+    # whose PASS licenses deleting that local copy - a local-only row is
+    # precisely what is NOT durable.
+    if hf_prefixes and local_root:
+        return {
+            "status": "ERROR",
+            "url": "",
+            "detail": (
+                "row-index-dual-source: --row-index-local-root and "
+                "--row-index-hf-prefix are mutually exclusive - pick ONE "
+                "row-index source per invocation. No mode-independent row "
+                "identity exists across the two sources, and a local-only "
+                "row cannot prove Hub durability on a gate whose PASS "
+                "licenses deleting the local copy (#2148 round 3; zero Hub "
+                "reads performed)"
+            ),
+        }
+    empty_prefixes = [repr(p) for p in hf_prefixes if not str(p).rstrip("/")]
+    if empty_prefixes:
+        return {
+            "status": "ERROR",
+            "url": "",
+            "detail": (
+                "row-index-prefix-empty: --row-index-hf-prefix canonicalizes "
+                f"to an empty prefix ({', '.join(empty_prefixes)}) - a "
+                "malformed flag is an invocation defect; silently skipping "
+                "it would blame the store (row-index-missing) for the "
+                "operator's flag (#2148 round 3; zero Hub reads performed)"
             ),
         }
 
@@ -2191,7 +2280,8 @@ def check_realized_row_counts(
                     f"row-index revision resolve failed: {type(e).__name__}: {e} "
                     "- every Hub read (listing / size probe / fetch) pins ONE "
                     "revision; an unpinnable snapshot is never read (fail-loud, "
-                    "zero Hub reads performed)"
+                    "zero listing/probe/fetch reads performed - the failed "
+                    "repo_info was itself the only Hub read)"
                 ),
             }
 
@@ -2779,9 +2869,10 @@ def main():
     parser.add_argument(
         "--row-index-local-root",
         help=(
-            "Local directory to walk for row-index files instead of (or in "
-            "addition to) --row-index-hf-prefix (e.g. staged pre-teardown "
-            "copies)"
+            "Local directory to walk for row-index files INSTEAD OF "
+            "--row-index-hf-prefix (mutually exclusive; e.g. staged "
+            "pre-teardown copies). A local-only row cannot prove Hub "
+            "durability, so a mixed-source invocation is refused (#2148)."
         ),
     )
     parser.add_argument(
@@ -2845,6 +2936,14 @@ def main():
     parser.add_argument("--no-fail", action="store_true", help="Don't exit with error on FAIL")
 
     args = parser.parse_args()
+
+    if args.row_index_hf_prefixes and args.row_index_local_root:
+        parser.error(
+            "--row-index-local-root and --row-index-hf-prefix are mutually "
+            "exclusive: pick ONE row-index source per invocation (#2148 - no "
+            "cross-source row identity exists, and a local-only row cannot "
+            "prove Hub durability)"
+        )
 
     report = run_verification(
         issue_num=args.issue,

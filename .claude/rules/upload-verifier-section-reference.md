@@ -315,15 +315,24 @@ counts what is REALLY in the store's own row-index files and gates on
 it.
 
 Mechanics (`verify_uploads.py::check_realized_row_counts`), in order:
-enumerate each declared prefix with ONE scoped tree walk (#833; never a
-bare full-repo listing — the #920 wedge); attribute every glob-matched
+validate the INVOCATION at check entry — exemption reasons non-empty and
+labels member of the declared set, exactly ONE row-index source
+(`--row-index-hf-prefix` and `--row-index-local-root` are mutually
+exclusive), no empty-after-strip prefix — BEFORE even the no-expectation
+SKIP and before ANY Hub read; resolve ONE pinned Hub revision (retried
+`repo_info(...).sha`) that the listing walks, the size probe, and every
+staged fetch read; enumerate the declared source — one scoped tree walk
+per DISTINCT prefix (#833; never a bare full-repo listing — the #920
+wedge) — deduplicating entries by (mode, path), an unknown (None) size
+coalescing with a known one; attribute every glob-matched
 `row_index*.jsonl` to EXACTLY ONE declared label by path-component
 boundary match; enforce the per-file AND aggregate byte/count budgets
 off the LISTING before the first fetch (unknown sizes resolved by ONE
 batched `get_paths_info` probe; still-unknown → ERROR, never assumed
 under cap; every failing budget arm returns with ZERO downloads); then
 fetch only the KB-scale index files and count non-empty lines + distinct
-tuples of the declared key fields.
+tuples of the declared key fields (per-file progress lines ride STDERR —
+stdout stays a single parseable document under `--json`).
 
 Canonical invocation (repeat `--row-index-hf-prefix` per label):
 
@@ -350,11 +359,17 @@ ERROR arms, all fail-loud. Exemption validation
 (`realized-rows-exempt-unmatched`; a blank reason
 `realized-rows-exempt-invalid`) runs at CHECK ENTRY — before even the
 no-expectation SKIP, so an exemption-only invocation ERRORs rather than
-SKIPping. `row-index-missing` (a non-exempt declared label matched
+SKIPping — as do the two source-shape arms: `row-index-dual-source`
+(both sources supplied; refused with zero Hub reads — no cross-source
+row identity exists, and a local-only row cannot prove Hub durability)
+and `row-index-prefix-empty` (an `""`/`"/"` prefix names the operator's
+flag rather than letting `row-index-missing` blame the store).
+`row-index-missing` (a non-exempt declared label matched
 zero index files), `row-index-unattributed` / `row-index-label-ambiguous`
 (a file matching no / more than one label), `row-index-duplicate-conflict`
-(one path listed twice with CONFLICTING sizes — overlapping prefixes
-otherwise dedupe by (mode, path) and count a file ONCE),
+(one path listed twice with CONFLICTING KNOWN sizes — an unknown (None)
+size coalesces with a known one, and overlapping prefixes otherwise
+dedupe by (mode, path) and count a file ONCE),
 `row-index-size-unknown`, `row-index-file-over-cap`, and
 `row-index-budget-exceeded` all fire BEFORE any counting can shrink a
 denominator; `row-index-key-absent` (a row missing a declared key field —
@@ -414,8 +429,12 @@ per-label prefixes (the flag is repeatable), never a weaker arm. Same
 remedy for a NESTED label vocabulary (`arm` / `arm-repair`):
 `row-index-label-ambiguous` there names a defect of the invocation, not
 of the store. Local-mode source (`--row-index-local-root`) covers
-staged pre-teardown copies; on a GCP `eps-issue-*` instance remember
-Step 1's `sudo` note (a root-owned tree reads empty).
+staged pre-teardown copies and is MUTUALLY EXCLUSIVE with
+`--row-index-hf-prefix` (#2148: no cross-source row identity exists,
+and a local-only row cannot prove durability on a gate whose PASS
+licenses deleting that local copy — mixed-source invocations are
+refused at the CLI and at check entry alike); on a GCP `eps-issue-*`
+instance remember Step 1's `sudo` note (a root-owned tree reads empty).
 
 On PASS, the Step-5 verdict note carries the attestation token
 `rows=<reconciled|no-declared-count|n/a>` beside `outroot=`

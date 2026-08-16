@@ -35,14 +35,28 @@ FULL row key. These tests pin:
   counts with duplicates reported as context;
 - the round-2 blockers (#2148 r2): repeated/overlapping prefixes dedupe by
   (mode, path) — one fetch, honest keyless FAIL, honest budgets — with a
-  conflicting-size duplicate ERRORing fail-loud; the batched size probe
-  rides ``retry_transient`` (one transient 429 retries instead of failing a
-  healthy store); ONE pinned revision (retried ``repo_info(...).sha``)
-  threads through the listing walk, the size probe, and every staged fetch,
-  and the verdict reports the SHA;
+  conflicting-KNOWN-size duplicate ERRORing fail-loud; the batched size
+  probe rides ``retry_transient``, driven end-to-end through
+  ``check_realized_row_counts`` (one transient 429 costs exactly one extra
+  probe call and the final verdict still counts normally, instead of
+  failing a healthy store); ONE pinned revision (retried
+  ``repo_info(...).sha``) threads through the listing walk, the size
+  probe, and every staged fetch, and the verdict reports the SHA;
 - the round-2 concerns: exemption validation (membership + non-empty
   reason) runs at check entry BEFORE the no-expectation SKIP, in the
-  callable and the CLI alike.
+  callable and the CLI alike;
+- the round-3 blockers (#2148 r3): the two row-index sources are MUTUALLY
+  EXCLUSIVE — a dual-source invocation ERRORs at check entry with zero
+  Hub reads (no cross-source row identity exists; a local-only row cannot
+  prove durability) and the CLI rejects the flag pair at parse time; a
+  same-path (None, int) size pair COALESCES (a known size fills a prior
+  unknown, a later None never displaces a known value) and only a
+  KNOWN-size disagreement ERRORs ``row-index-duplicate-conflict``; the
+  per-unit progress lines ride STDERR unconditionally, with a
+  ``fetch-start`` line before each fetch, so ``--json`` stdout stays one
+  parseable document; an empty-after-strip prefix (``""``/``"/"``) ERRORs
+  naming the invocation instead of letting ``row-index-missing`` blame
+  the store.
 
 Per the one-production-body-test rule (#906), the local-root fixtures
 execute the REAL check body end to end (enumeration, attribution, budget,
@@ -533,17 +547,26 @@ def test_hf_entries_walks_each_distinct_prefix_once(monkeypatch):
 # ---------------------------------------------------------------------------
 
 
-def test_size_probe_rides_retry_transient(monkeypatch):
-    """Blocker `row-index-size-probe-unretried`: the REAL
-    `_row_index_resolve_sizes` body wraps its get_paths_info POST in
-    hub.retry_transient (mirroring scripts/issue2215_run.py:588), so one
-    transient 429 retries — two probe calls, normal counting — instead of
-    converting a healthy store into ERROR row-index-size-unknown →
-    verifier FAIL → teardown refusal."""
+def test_size_probe_rides_retry_transient_end_to_end(monkeypatch):
+    """Blocker `row-index-size-probe-unretried` (r1) + the r2 half-scope
+    finding: the REAL `_row_index_resolve_sizes` body wraps its
+    get_paths_info POST in hub.retry_transient (mirroring
+    scripts/issue2215_run.py:588), AND the retry composes with normal
+    counting — driven end-to-end through `check_realized_row_counts` with
+    the listing size None, one transient 429 costs exactly one extra probe
+    call (two calls total) and the FINAL VERDICT counts normally (OK at
+    realized_distinct == expected), instead of converting a healthy store
+    into ERROR row-index-size-unknown → verifier FAIL → teardown refusal.
+    Only the external Hub boundary (HfApi, the tree walk, the staging
+    fetch) is faked; the revision resolver, the probe body, the budget
+    path, and the counting all execute for real."""
     import huggingface_hub
+
+    import explore_persona_space.orchestrate.hub as hub
 
     calls: list[list[str]] = []
     path = "issueX/jobA/row_index_shard00.jsonl"
+    sha = "fe98dc76" * 5
 
     class _Transient429(Exception):
         def __init__(self):
@@ -554,17 +577,48 @@ def test_size_probe_rides_retry_transient(monkeypatch):
         def __init__(self, token=None):
             pass
 
+        def repo_info(self, repo_id, *, repo_type=None):
+            return SimpleNamespace(sha=sha)
+
         def get_paths_info(self, repo_id, paths, *, expand=False, revision=None, repo_type=None):
             calls.append(list(paths))
             if len(calls) == 1:
                 raise _Transient429()
+            assert revision == sha, "the retried probe must keep the pinned revision"
             return [SimpleNamespace(path=p, size=100) for p in paths]
 
+    def fake_walk(api, repo_id, *, repo_type="model", revision=None, path_in_repo=None):
+        return [(path, None)]  # size None forces the batched probe
+
+    def fake_stage(
+        repo_id,
+        path_in_repo,
+        target,
+        *,
+        repo_type="dataset",
+        revision=None,
+        token=None,
+        overwrite=False,
+        size_bytes=None,
+    ):
+        target = Path(target)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(_row("c0", 0) + "\n", encoding="utf-8")
+        return target
+
     monkeypatch.setattr(huggingface_hub, "HfApi", _FakeApi)
+    monkeypatch.setattr(hub, "list_repo_entries_complete", fake_walk)
+    monkeypatch.setattr(hub, "stage_hub_file", fake_stage)
     monkeypatch.setattr("time.sleep", lambda s: None)  # retry backoff, not a real wait
-    sizes = verify_uploads._row_index_resolve_sizes([path], revision="ab12")
-    assert sizes == {path: 100}
+
+    res = verify_uploads.check_realized_row_counts(
+        expected_rows={"jobA": 1},
+        hf_prefixes=("issueX/jobA",),
+        distinct_key_fields=KEY,
+    )
     assert len(calls) == 2, "one transient 429 must retry, never ERROR a healthy store"
+    assert res["status"] == "OK"
+    assert res["labels"]["jobA"]["realized_distinct"] == 1
 
 
 # ---------------------------------------------------------------------------
@@ -637,6 +691,213 @@ def test_one_pinned_revision_threads_every_hub_call(monkeypatch, tmp_path):
     assert all(rev == sha for _, rev in seen), seen
     assert res["revision"] == sha
     assert f"hub revision: {sha}" in res["detail"]
+
+
+# ---------------------------------------------------------------------------
+# Round-3 blocker 1: the two row-index sources are mutually exclusive
+# ---------------------------------------------------------------------------
+
+
+def _no_hub_seams(monkeypatch):
+    """Every Hub seam raises: 'zero Hub reads performed' is assertable."""
+
+    def _no_hub(*a, **k):
+        raise AssertionError("this refusal must perform ZERO Hub reads")
+
+    monkeypatch.setattr(verify_uploads, "_row_index_resolve_revision", _no_hub)
+    monkeypatch.setattr(verify_uploads, "_row_index_hf_entries", _no_hub)
+    monkeypatch.setattr(verify_uploads, "_row_index_resolve_sizes", _no_hub)
+    monkeypatch.setattr(verify_uploads, "_row_index_fetch", _no_hub)
+
+
+def test_dual_source_invocation_errors_never_warns(tmp_path, monkeypatch):
+    """Blocker `mixed-row-index-source-double-count`: BOTH sources staging
+    the same 3-row index used to survive the (mode, path) dedup — a local
+    entry and an HF entry never collide — sum to 6 lines, and flip the
+    keyless expected=6 shortfall FAIL into the nonblocking
+    realized-rows-no-distinct-key WARN. The invocation is now REFUSED at
+    check entry (ERROR naming both flags, zero Hub reads): no cross-source
+    row identity exists, and a local-only row cannot prove durability on a
+    gate whose PASS licenses deleting the local copy."""
+    _write_index(tmp_path, "jobA", "row_index_shard00.jsonl", [_row(f"c{i}", 0) for i in range(3)])
+    _no_hub_seams(monkeypatch)
+    res = verify_uploads.check_realized_row_counts(
+        expected_rows={"jobA": 6},
+        hf_prefixes=("issueX/jobA",),
+        local_root=str(tmp_path),
+    )
+    assert res["status"] == "ERROR"
+    assert "row-index-dual-source" in res["detail"]
+    assert "mutually exclusive" in res["detail"]
+    assert "realized-rows-no-distinct-key" not in res["detail"], (
+        "the pre-fix shape: a doubled keyless count degraded the FAIL to a "
+        "nonblocking WARN — the refusal must never reach the verdict lattice"
+    )
+
+
+def test_dual_source_refusal_precedes_no_expectation_skip(tmp_path, monkeypatch):
+    """A malformed invocation ERRORs rather than SKIPping (the round-2
+    exemption-validation precedent): dual sources with NO expectation still
+    ERROR at entry, never the inert SKIP."""
+    _no_hub_seams(monkeypatch)
+    res = verify_uploads.check_realized_row_counts(
+        hf_prefixes=("issueX/jobA",), local_root=str(tmp_path)
+    )
+    assert res["status"] == "ERROR"
+    assert "row-index-dual-source" in res["detail"]
+
+
+def test_cli_rejects_dual_source_flags(monkeypatch, capsys):
+    """CLI shape: the flag pair is rejected at parse time with exit code 2,
+    before any network call (the argparse-level twin of the check-entry
+    refusal)."""
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "verify_uploads.py",
+            "--issue",
+            "2091",
+            "--expected-rows",
+            "jobA=1",
+            "--row-index-hf-prefix",
+            "issueX/jobA",
+            "--row-index-local-root",
+            "/tmp/somewhere",
+        ],
+    )
+    with pytest.raises(SystemExit) as excinfo:
+        verify_uploads.main()
+    assert excinfo.value.code == 2
+    assert "mutually exclusive" in capsys.readouterr().err
+
+
+def test_empty_prefix_errors_at_check_entry(monkeypatch):
+    """Finding 9: an empty-after-strip prefix ("" / "/") used to be silently
+    skipped inside `_row_index_hf_entries`, so the downstream
+    row-index-missing ERROR blamed the STORE for the operator's malformed
+    flag. It now ERRORs at check entry naming the invocation, with zero
+    Hub reads."""
+    _no_hub_seams(monkeypatch)
+    res = verify_uploads.check_realized_row_counts(
+        expected_rows={"jobA": 1},
+        hf_prefixes=("/",),
+        distinct_key_fields=KEY,
+    )
+    assert res["status"] == "ERROR"
+    assert res["detail"].startswith("row-index-prefix-empty"), (
+        "the verdict arm must be the invocation-naming refusal, never the "
+        "store-blaming row-index-missing arm"
+    )
+    assert "--row-index-hf-prefix" in res["detail"]
+
+
+def test_hf_entries_raises_on_empty_prefix():
+    """Helper defense in depth: the REAL `_row_index_hf_entries` body raises
+    on an empty-after-strip prefix instead of silently skipping it (a
+    direct caller bypassing the check-entry validation still fails loud,
+    before any walk)."""
+    with pytest.raises(ValueError, match="empty prefix"):
+        verify_uploads._row_index_hf_entries(("/",), revision=None)
+
+
+# ---------------------------------------------------------------------------
+# Round-3 blocker 2: (None, int) size pairs coalesce — unknown is not conflict
+# ---------------------------------------------------------------------------
+
+
+def test_duplicate_unknown_known_sizes_coalesce_both_orders(monkeypatch):
+    """Blocker `row-index-unknown-known-false-conflict`: the tree walk
+    legitimately returns size None (`list_repo_entries_complete` is
+    int | None, hub.py) and this same check's budget path treats None as
+    "unknown, probe it" — so a same-path (None, int) pair is NOT a listing
+    conflict. Through the REAL `_row_index_entries` dedup loop, in BOTH
+    orders: one entry survives with the KNOWN size 100 (a known size fills
+    a prior None; a later None never displaces a known value), no
+    row-index-duplicate-conflict. A true known-size disagreement
+    (100 vs 101) still ERRORs."""
+    path = "issueX/jobA/row_index_shard00.jsonl"
+    for pair in ([(path, None), (path, 100)], [(path, 100), (path, None)]):
+        monkeypatch.setattr(
+            verify_uploads,
+            "_row_index_hf_entries",
+            lambda prefixes, *, revision, _pair=pair: list(_pair),
+        )
+        entries = verify_uploads._row_index_entries(
+            ("issueX/jobA",), None, verify_uploads.ROW_INDEX_DEFAULT_GLOB, revision="ab12"
+        )
+        assert isinstance(entries, list), (pair, entries)
+        assert len(entries) == 1, (pair, entries)
+        assert entries[0]["size"] == 100, (pair, entries)
+
+    monkeypatch.setattr(
+        verify_uploads,
+        "_row_index_hf_entries",
+        lambda prefixes, *, revision: [(path, 100), (path, 101)],
+    )
+    res = verify_uploads._row_index_entries(
+        ("issueX/jobA",), None, verify_uploads.ROW_INDEX_DEFAULT_GLOB, revision="ab12"
+    )
+    assert isinstance(res, dict)
+    assert "row-index-duplicate-conflict" in res["detail"]
+
+
+def test_unknown_known_pair_counts_normally_end_to_end(monkeypatch):
+    """Composition pin: a healthy store whose listing yields a (None, int)
+    duplicate pair still reaches a normal OK verdict — the coalesced known
+    size feeds the budget path (no probe needed) and exactly one fetch
+    runs."""
+    path = "issueX/jobA/row_index_shard00.jsonl"
+    fetch_calls, probe_calls = _fetch_counting_fakes(monkeypatch, [(path, None), (path, 100)])
+    res = verify_uploads.check_realized_row_counts(
+        expected_rows={"jobA": 1},
+        hf_prefixes=("issueX", "issueX/jobA"),
+        distinct_key_fields=KEY,
+    )
+    assert res["status"] == "OK"
+    assert fetch_calls == [path]
+    assert probe_calls == [], "the coalesced known size leaves nothing to probe"
+
+
+# ---------------------------------------------------------------------------
+# Round-3 blocker 3: --json stdout is a single parseable document
+# ---------------------------------------------------------------------------
+
+
+def test_json_stdout_stays_machine_parseable(tmp_path, monkeypatch, capsys):
+    """Blocker `realized-rows-json-stdout-pollution`: the canonical Step
+    2.11 invocation carries --json ("Output raw JSON"), so the per-unit
+    progress lines ride STDERR unconditionally — one fetch-start line
+    BEFORE each read (a hanging fetch names its file) and one completion
+    line after — and stdout stays exactly one parseable JSON document.
+    Also pins the [realized-rows] literal (r2 finding 6)."""
+    _write_index(tmp_path, "jobA", "row_index_shard00.jsonl", [_row("c0", 0)])
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "verify_uploads.py",
+            "--issue",
+            "2091",
+            "--type",
+            "analysis",
+            "--expected-rows",
+            "jobA=1",
+            "--row-index-local-root",
+            str(tmp_path),
+            "--row-index-distinct-key",
+            "context_id,rollout_k",
+            "--json",
+            "--no-fail",
+        ],
+    )
+    verify_uploads.main()
+    captured = capsys.readouterr()
+    report = json.loads(captured.out)  # stdout must parse as ONE JSON document
+    assert report["checks"]["realized_row_counts"]["status"] == "OK"
+    assert "[realized-rows]" not in captured.out
+    assert "[realized-rows]" in captured.err
+    assert "fetch-start" in captured.err
 
 
 # ---------------------------------------------------------------------------
