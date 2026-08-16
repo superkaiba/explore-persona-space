@@ -15269,7 +15269,25 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # prose. Prior: 974_900 (#2317, above). Cap = landing bytes + ~1 KB
     # (#1753/#1727 landing-bytes rule; headroom 1,032 B <= the 3,000 B
     # loose-cap hygiene bar). Re-measure at Step 10d if main moves again.
-    "issue/SKILL.md": 980_400,
+    #
+    # 983_400 — #2146 MEASURED 982,223 B after rounds 1-3 on this branch,
+    # against an UNMOVED origin/main SKILL.md (979,368 B at both the
+    # d1c3534a10 merge-base and the r3-time origin/main tip): main's
+    # 979,368 B + this branch's +2,855 B (r1: the Step 9a-ter "Inline-round
+    # session-survival backstop" block — the arm-iff-tick_triage.ISSUE_ACTIVE
+    # rule, the per-class no-arm verdicts with the four status enumerations
+    # the #2146 partition pin compares against the live tick_triage module,
+    # and the non-ACTIVE backstop chain; r2: the C1-C3 qualifier corrections;
+    # r3: the exact `plan_pending_over_cap` predicate wording —
+    # at-least-as-new, or no status-changed marker at all). Cap = measured
+    # + ~1.2 KB (#1753/#1727 landing-bytes rule; headroom 1,177 B <= the
+    # 3,000 B loose-cap hygiene bar). Prior: 982_700 — r1's measurement
+    # (981,524 B; headroom 1,176 B), left stale by the r2 qualifier splice
+    # (+561 B -> 982,085 B live / 615 B headroom, below the margin this
+    # ladder's own history calls normal for concurrent sibling landings).
+    # Prior: 980_400 (#2320, above). Re-measure at Step 10d if main moves
+    # again.
+    "issue/SKILL.md": 983_400,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
