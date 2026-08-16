@@ -10224,8 +10224,8 @@
     "2323": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2323",
-      "status": "running",
+      "path": "tasks/completed/2323",
+      "status": "completed",
       "title": "workflow-fix: serialize Codex twin dispatch against the repo-shared non-atomic job index + post-spawn probe retry"
     },
     "2324": {
