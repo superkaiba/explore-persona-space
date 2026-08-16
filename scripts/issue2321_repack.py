@@ -63,13 +63,23 @@ and pins ``parent_commit`` to the probe head (I14), and (d) never wraps
 instead of blind-retry). ``--dry-run`` gates every mutation; ``--smoke`` runs
 the fixture-tree pack/verify/compose chain with ZERO network.
 
-Smoke blind-spot enumeration (plan §5): the ``--smoke`` fixture chain +
-``--dry-run`` composition do NOT certify (a) live ``create_commit``
-acceptance, (b) live resolver throughput, (c) the cap semantics (that is the
-cap-probe's job), (d) live timeout disposition, (e) live 412 semantics,
-(f) the consumer-gate dynamic-path blind spot. No smoke-conditional branch
-substitutes an implementation or downgrades an assertion — smoke reduces
-SCALE (fixture tree) only.
+Smoke blind-spot enumeration (plan §5; amended r3 per #2165 / reconciler r2):
+the ``--smoke`` fixture chain + ``--dry-run`` composition do NOT certify
+(a) live ``create_commit`` acceptance, (b) live resolver throughput, (c) the
+cap semantics (that is the cap-probe's job), (d) live timeout disposition,
+(e) live 412 semantics, (f) the consumer-gate dynamic-path blind spot,
+(g) the r2-C4 (I9/I13) resume content-anchor re-probe of locally-journaled
+units — ``run_commit_phase`` re-probes a "landed" local-journal hint via
+``probe_unit_state`` only when ``not dry_run`` (the dry-run zero-network
+contract), so a dry-run resume trusts the local journal WITHOUT the Hub
+probe (the mutating path is pinned by
+``test_resume_landed_hint_reprobes_remote_regression``), (h) the I13b
+``landed_overwrite_guard`` pre-composition Hub probe — likewise skipped
+under ``--dry-run``. ``--smoke`` reduces SCALE (fixture tree) only and
+substitutes no implementation; ``--dry-run`` DOES downgrade assertions — it
+skips the two Hub-probe gates named in (g)/(h), so a dry-run green
+certifies composition/journaling only, never the resume/overwrite Hub-probe
+gates.
 
 MF3 resume after total local wipe: landed members live inside the landed
 shards, so ``hub.stage_hub_file``'s packed fallback re-materializes deleted
