@@ -40,7 +40,8 @@ Exit codes (pinned by ``tests/test_step9c_baseline.py``):
 ``refresh``
   0          ledger written, or lock-busy single-flight no-op (stderr note)
   2          pytest rc not in {0, 1} / timeout / junit parse failure / zero collected /
-             git or ruff failure / missing root-venv interpreter -> **no ledger write**
+             git or ruff failure / missing root-venv interpreter / rejected lock path
+             (symlink/FIFO/non-regular at the refresh lock, #2324) -> **no ledger write**
 ``status``
   0          fresh
   2          ledger missing / schema-invalid
@@ -231,6 +232,16 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import IO, NamedTuple
+
+# Sibling-path load of the shared lock opener (#2324 D1): this file imports
+# zero explore_persona_space package code by design (#1022 pristine-run
+# discipline), so the helper lives in scripts/ and is loaded by explicit path
+# — see scripts/lock_utils.py module docstring.
+_LOCK_UTILS = Path(__file__).resolve().parent / "lock_utils.py"
+_spec = importlib.util.spec_from_file_location("eps_scripts_lock_utils", _LOCK_UTILS)
+assert _spec and _spec.loader  # house pattern (tests/test_step9c_baseline.py:61)
+lock_utils = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(lock_utils)
 
 GENERATOR = "step9c_baseline.py v1"
 SCHEMA_VERSION = 1
@@ -1425,9 +1436,23 @@ def acquire_refresh_lock(lock_file: Path) -> IO[bytes] | None:
 
     The returned file object must stay referenced for the lock's lifetime
     (process exit releases it).
+
+    Fail posture (#2324): fail-CLOSED preserved. A rejected lock PATH
+    (symlink/FIFO/non-regular) raises ``lock_utils.LockPathError`` out of this
+    function — ``None`` stays reserved for healthy held-elsewhere contention
+    (a planted FIFO must not masquerade as "another refresh holds the lock");
+    ``cmd_refresh`` converts the raise to the documented rc-2 no-ledger-write
+    class.
     """
     lock_file.parent.mkdir(parents=True, exist_ok=True)
-    fh = open(lock_file, "wb")  # noqa: SIM115 — the flock must outlive this function
+    # fd assigned FIRST so it is closed if os.fdopen itself raises
+    # (EMFILE-class) — a one-expression composition would leak it (#2324 D2).
+    fd = lock_utils.safe_open_lockfile(lock_file)
+    try:
+        fh = os.fdopen(fd, "wb")  # the flock must outlive this function
+    except BaseException:
+        os.close(fd)
+        raise
     try:
         fcntl.flock(fh.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
     except BlockingIOError:
@@ -1444,7 +1469,13 @@ def present_on_disk(files: Iterable[str], root: Path) -> list[str]:
 def cmd_refresh(args: argparse.Namespace) -> int:
     """Run the Step 9c workflow-invariant universe on main; write the ledger atomically."""
     root = Path(args.repo_root).resolve() if args.repo_root else main_repo_root()
-    lock = acquire_refresh_lock(root / ".claude" / "cache" / "step9c-baseline.lock")
+    try:
+        lock = acquire_refresh_lock(root / ".claude" / "cache" / "step9c-baseline.lock")
+    except lock_utils.LockPathError as exc:
+        # #2324: rc 2 is the documented no-ledger-write error class; rc 0 is
+        # reserved for written-or-held (fail-CLOSED: no unlocked refresh).
+        _log(f"refresh lock path rejected ({exc.reason}): {exc.lock_path} — NO ledger write")
+        return 2
     if lock is None:
         _log("another refresh holds the lock — single-flight no-op")
         return 0
