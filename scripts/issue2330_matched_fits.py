@@ -729,14 +729,19 @@ def _upload_preds_mirror(preds_dir: Path) -> None:
 
     assert os.environ.get("HF_TOKEN"), "HF_TOKEN missing — cannot mirror preds to HF"
     _phase("upload_preds_mirror")
-    hub._upload(
+    base_url = hub._upload(
         local_path=preds_dir,
         repo_id="superkaiba1/explore-persona-space-data",
         repo_type="dataset",
         path_in_repo=PREDS_HF_PREFIX,
         raise_on_error=True,
     )
-    logger.info("[matched-fits] mirrored %s -> %s", preds_dir, PREDS_HF_PREFIX)
+    if not base_url:
+        raise RuntimeError(
+            f"preds mirror upload returned no path ({preds_dir} -> {PREDS_HF_PREFIX}) — "
+            "silent durability loss; refusing to exit 0 (upload-policy tracked gap)"
+        )
+    logger.info("[matched-fits] mirrored %s -> %s (%s)", preds_dir, PREDS_HF_PREFIX, base_url)
 
 
 # ---------------------------------------------------------------------------
