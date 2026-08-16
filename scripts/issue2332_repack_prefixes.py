@@ -1117,21 +1117,20 @@ def run_prefix(prefix: str, st: dict) -> str:
     if rec.get("done"):
         log(f"{prefix}: already done — skip")
         return "done"
+    gate_mover()  # global condition: a trip here propagates and stops the whole run
     try:
-        gate_mover()
         gate_writer(prefix)
         if PREFIXES[prefix][0] == 1739:
             gate_1739()
     except GateRefusal as e:
-        if PREFIXES[prefix][0] == 1739:
-            rec["deferred"] = (
-                f"deferred: {prefix}, {PREFIXES[prefix][1]:,} slots, re-runnable via "
-                f"`run --prefix {prefix}` — {e}"
-            )
-            _save_state(st)
-            log(f"{prefix}: DEFERRED — {e}")
-            return "deferred"
-        raise
+        # Per-prefix trip (plan SS4.6 step 1): skip/defer + record, continue.
+        rec["deferred" if PREFIXES[prefix][0] == 1739 else "skipped"] = (
+            f"{prefix}, {PREFIXES[prefix][1]:,} slots, re-runnable via "
+            f"`run --prefix {prefix}` — {e}"
+        )
+        _save_state(st)
+        log(f"{prefix}: {'DEFERRED' if PREFIXES[prefix][0] == 1739 else 'SKIPPED'} — {e}")
+        return "deferred" if PREFIXES[prefix][0] == 1739 else "skipped"
     src_revision, src_map = step_snapshot(prefix, st)
     del src_revision
     chunks = plan_chunks(src_map, prefix)
@@ -1347,6 +1346,14 @@ def main(argv: list[str] | None = None) -> int:
                 st["prefixes"].setdefault(prefix, {})["incomplete"] = str(e)
                 _save_state(st)
                 results[prefix] = "incomplete"
+            except GateRefusal as e:
+                if str(e).startswith("G-mover"):
+                    log(f"ABORT run: {e} (mover is a global condition — no Hub work proceeds)")
+                    raise
+                log(f"{prefix}: gate trip mid-chain — {e} (staging preserved; skip prefix)")
+                st["prefixes"].setdefault(prefix, {})["skipped"] = str(e)
+                _save_state(st)
+                results[prefix] = "skipped"
         log(f"run complete: {results}")
         return 0 if all(v == "done" for v in results.values()) else 1
     raise SystemExit(f"unknown cmd {args.cmd!r}")
