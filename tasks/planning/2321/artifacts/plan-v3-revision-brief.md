@@ -44,11 +44,24 @@ Required:
     empirically confirmed). Presence must never imply landing.
 (c) **Phase 6 postverify** exhaustively compares every landed shard's remote
     `blob_id` against the local git-blob sha1 — not merely the exact path set that
-    `verify_repo_paths_uploaded` proves. Extend the same anchor to `INDEX.json`,
-    the per-group index parts, and `pack_manifest.json` before any cleanup or
-    success report (Codex Statistics; a metadata file whose landed bytes differ is
-    unrecoverable in the same way once originals are deleted, and it is the file
-    every future reader resolves THROUGH).
+    `verify_repo_paths_uploaded` proves. Phase 6 is the LAST point this is cheap:
+    the same phase then reaps local staging (I10), after which repair means
+    re-downloading and rescanning every shard.
+    **Extend the same anchor to `INDEX.json`, the per-group index parts, and
+    `pack_manifest.json`** — the Statistics reconciler adjudicated this extension
+    as WARRANTED, with a mechanism worth stating in v4 because it is NOT the
+    obvious one: corrupt landed metadata can never SERVE wrong bytes (each shard
+    line carries its member sha256 and `stage_packed_file` sha256-verifies after
+    decode, so a wrong offset fails loud). The damage is different — with the
+    originals deleted, an unparseable or truncated landed `INDEX.json` makes the
+    shim "re-raise the ORIGINAL error", so every archived original under that
+    prefix reads as a 404 **indistinguishable from "never existed"**: the
+    false-absence class that invites wasteful regeneration. A wrong group index
+    bricks the canonical read path for an entire group while phase 6 reports
+    success, and the live shim check samples only 3 originals per prefix, so an
+    unsampled group's corruption survives acceptance. Marginal cost is ~zero: the
+    metadata files land under `<prefix>/packed/`, are non-LFS JSON, still have
+    local copies on disk, and the phase-6 scoped walk already returns `blob_id`.
 (d) **§12 fixtures:** resume-after-partial-commit with a re-derived census must
     ABORT, not overwrite; same-paths-with-changed-bytes (simulate a codec-version
     change) must ABORT; an injected mismatched remote `blob_id` must FAIL before
@@ -89,8 +102,17 @@ Required:
 (c) A parent-conflict rejection routes re-probe → re-pin → retry under **its own
     backoff budget, distinct from the 3-attempt ambiguous-outcome budget.** This
     clause is load-bearing: without it, sustained fleet traffic converts a safety
-    mechanism into spurious prefix aborts. That is the one legitimate residue of
-    the Claude Methodology objection and it belongs in the fix.
+    mechanism into spurious prefix aborts.
+    **The abort criterion must be narrow, and the Codex remedy as written is too
+    aggressive here.** Codex proposed treating a stale-parent rejection as "a clean
+    drift abort"; the Statistics reconciler flagged that this would spuriously abort
+    HEALTHY prefixes across the entire back half of the run, because unrelated
+    fleet commits between drift-check and commit are the run's own expected steady
+    state once it starts freeing slots. Correct behavior: on a stale-parent
+    rejection, re-run `drift_check` at the NEW HEAD and re-issue with the new pin
+    (bounded attempts), and abort the prefix **only when the re-check finds actual
+    census drift in the unit's own source dirs.** An unrelated commit costs one
+    cheap re-probe + re-pin cycle, never a data-bearing failure.
 (d) **Error taxonomy:** `parent_commit` mismatch surfaces as HTTP **412**; §3.4's
     `is_ambiguous_outcome` / `is_rate_limit` branches must classify 412 as
     DEFINITIVE-retriable, never ambiguous — otherwise the fix mis-routes into the
@@ -107,6 +129,13 @@ Required:
     #1739 session that owns two target prefixes, precisely during the ~150-unit
     commit phase. Exposure is highest exactly where v3 assumed it was lowest. State
     it that way.
+    **And the "at cap ⇒ no concurrent writes" intuition is wrong even before any
+    slots free** (Statistics reconciler): the file-count cap blocks ADDS, not
+    MODIFICATIONS — a content-replacing commit leaves the file count unchanged and
+    is accepted at cap. So concurrent modification of a named source is possible
+    from the first unit onward, and becomes the expected steady state of a
+    *succeeding* run rather than a tail event. This is the single strongest reason
+    the pin cannot stay optional.
 (g) **§12:** test modification-after-drift and timeout-lands-after-clean races;
     AST-check that every deletion-bearing `create_commit` supplies a non-null
     `parent_commit` derived from that attempt's own probe.
@@ -249,8 +278,16 @@ Codex Statistics). Fix these in the table AND in the renegotiation paragraph:
   Label it "tier-A adds" so it is not re-litigated. The headline reproduces
   exactly: 488,500 + 53,002 = **541,502**. It is NOT conservative by ~800 slots —
   that claim double-counted tier B.
-- §11's slots-per-GB figures mix download-only and upload denominators (Codex
-  Statistics); the A>B>C ordering survives, but normalize the denominator.
+- **§11's slots-per-GB figures mix denominators — confirmed, presentational only.**
+  Reconciler-verified reproduction: A's "≈55k slots/GB-moved" reproduces ONLY on the
+  download denominator (488.5k/8.8 = 55.5k; upload basis gives 53.1k), B's "≈8k"
+  ONLY on upload (53.03k/6.56 = 8.1k; download basis gives 10.8k), C's "0.4-0.5k" on
+  download. On ANY single consistent basis — download (55.5k / 10.8k / 0.44-0.56k),
+  upload (53.1k / 8.1k / 0.33-0.56k), or down+up (27.1k / 4.6k / 0.19-0.28k) — the
+  A>B>C ordering holds with ≥5× gaps at every boundary. No ranking, tier decision,
+  or recommendation changes. Fix by RELABELING each figure with its basis (it feeds
+  the user-facing tier-C option at the approval gate, so it should be legible
+  alongside the tier-E and ≈6× corrections).
 
 ## C2 — The approval-gate option is MIS-SPECIFIED (orchestrator-derived; no lens caught it)
 
@@ -408,6 +445,18 @@ rate-limit outcome, not an atomicity anomaly.
 Codex Alternatives A: parsing every written line and SHA-comparing every decoded
 member closes the escaping class only if verification runs the PRODUCTION decoder,
 not a test-local reimplementation.
+
+## C20 — Phase 6's exact-set assert must tolerate PRE-EXISTING files under `packed/`
+
+Statistics reconciler, new: §3.3(d) assumes `<prefix>/packed/` is exclusively v2
+output, but this repo already carries #1739-v1 packs, so a target prefix may
+already populate `packed/` with non-v2 files. Write the phase-6 exact-set assert on
+`<prefix>/packed/` to tolerate pre-existing non-v2 entries rather than treating
+them as a set mismatch — otherwise a prefix that #1739 already touched fails
+postverify for a benign reason, after its originals are deleted. Cross-check
+against §3.3(c)'s v1/#2119 resolution-contract protection and C14's
+transitive-closure retained set, which cover the same collision surface from the
+retention side.
 
 ---
 
