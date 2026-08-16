@@ -51,4 +51,6 @@ Do not redesign the concerns schema or the `raise-concern` CLI. Do not weaken th
 
 ## Provenance
 
+workflow_fix_target: .claude/skills/issue/SKILL.md
+
 Surfaced by the #2321 orchestrator during code-review round 2 (2026-08-16). Not a #2321 experiment/data defect — a gap in the workflow surface itself (`.claude/skills/issue/SKILL.md` Step 5c verdict posting, `.claude/agents/codex-code-reviewer.md`, `.claude/agents/code-reviewer.md` Step 0.8).

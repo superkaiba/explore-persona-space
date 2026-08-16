@@ -8867,8 +8867,8 @@
     "2147": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2147",
-      "status": "approved",
+      "path": "tasks/running/2147",
+      "status": "running",
       "title": "workflow-fix: reclaim tier for ~/.eps-slurm-src terminal-issue staging (112 GB unreaped)"
     },
     "2148": {
@@ -10245,8 +10245,8 @@
     "2326": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2326",
-      "status": "proposed",
+      "path": "tasks/planning/2326",
+      "status": "planning",
       "title": "Codex reviewers' \"Concerns to persist\" never reach raise-concern, so the next round's prior-concerns gate walks an empty ledger"
     },
     "233": {
