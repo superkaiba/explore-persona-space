@@ -569,6 +569,14 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # CLAUDE.md diffs are WORKFLOW_SURFACE-only, so this registration is the
     # ONLY gate that fires the pin on those changes.
     "tests/test_outroot_residue_prose_pins.py",
+    # NEW (#2148) — realized row-count reconciliation prose pins
+    # (upload-verifier.md Step 2.11 + verdict row + note-template rows=
+    # token, upload-policy.md § Realized row counts, section-reference
+    # § Step 2.11, pods.md teardown clause, CLAUDE.md recipe clause). Same
+    # rationale as the #2187 sibling above: `.claude/agents/*.md` +
+    # CLAUDE.md diffs are WORKFLOW_SURFACE-only, so this registration is
+    # the ONLY gate that fires the pin on those changes.
+    "tests/test_realized_rows_prose_pins.py",
     # NEW (#1645) — CLAUDE.md + issue SKILL.md bracketed ownership-probe exemplar pin (#1495)
     "tests/test_ownership_probe_exemplar_bracketed.py",
     # NEW (#1631) — plan-patch helper + SKILL.md pointer pin
