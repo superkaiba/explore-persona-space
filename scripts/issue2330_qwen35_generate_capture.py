@@ -2238,8 +2238,8 @@ def _build_parser() -> argparse.ArgumentParser:
     ap.add_argument(
         "--fits-smoke",
         action="store_true",
-        help="plan §4 P1 step 4 — NOT IMPLEMENTED in unit 1 (the P3 fits script is unit 2); "
-        "fail-loud stub exit until scripts/issue2330_matched_fits.py lands",
+        help="plan §4 P1 step 4 — invoke the P3 fits port (scripts/issue2330_matched_fits.py, "
+        "repo venv) on the local 500-row smoke chunk (count pins opted out, labeled smoke, CUDA)",
     )
     ap.add_argument(
         "--import-check",
@@ -2292,6 +2292,50 @@ def _run_import_check() -> int:
     return 0
 
 
+def _run_fits_smoke(args) -> int:
+    """Plan §4 P1 step 4 — run the REAL P3 fits port on the local 500-row smoke chunk.
+
+    Subprocess into the REPO venv (`uv run` from the repo root — the fits port
+    imports `explore_persona_space`, which this driver's fresh qwen35 venv
+    deliberately lacks). expected_split_n=None semantics (count pins opted out
+    — the documented smoke downgrade, plan §4 smoke-enumeration item (d)),
+    labeled smoke, CUDA (artifact-reuse check (m): the 9B d=4096 shape + the
+    subset/matched-ID code exercised on the production device class)."""
+    chunk_dir = args.out_dir / "shards" / (args.split or "train_10k")
+    if not chunk_dir.is_dir() or not sorted(chunk_dir.glob("*.pt")):
+        print(
+            f"[fits-smoke] no local capture chunks under {chunk_dir} — run the P1 step-3 "
+            "smoke shard first (--split train_10k --shard-size 500 --no-upload)",
+            file=sys.stderr,
+        )
+        return 2
+    fits_script = _SCRIPTS / "issue2330_matched_fits.py"
+    assert fits_script.is_file(), f"P3 fits port missing: {fits_script}"
+    out_json = args.out_dir / "fits_smoke.json"
+    cmd = [
+        "uv",
+        "run",
+        "python",
+        str(fits_script),
+        "--smoke-chunk-dir",
+        str(chunk_dir),
+        "--device",
+        "cuda",
+        "--h-dim",
+        "4096",
+        "--out-json",
+        str(out_json),
+    ]
+    print(f"[fits-smoke] invoking P3 fits port (repo venv): {' '.join(cmd)}", flush=True)
+    proc = subprocess.run(cmd, cwd=str(_SCRIPTS.parent), env={**os.environ}, check=False)
+    if proc.returncode != 0:
+        print(f"[fits-smoke] FAIL: fits port exited rc={proc.returncode}", file=sys.stderr)
+        return proc.returncode
+    assert out_json.is_file(), f"fits smoke exited 0 but wrote no {out_json}"
+    print(f"[fits-smoke] OK — {out_json}", flush=True)
+    return 0
+
+
 def main() -> int:
     args = _build_parser().parse_args()
     logging.basicConfig(
@@ -2300,19 +2344,15 @@ def main() -> int:
     )
     if args.import_check:
         return _run_import_check()
-    if args.fits_smoke:
-        print(
-            "[fits-smoke] NOT IMPLEMENTED in unit 1/3: the P3 fits port "
-            "(scripts/issue2330_matched_fits.py) is unit 2's deliverable; re-run this flag "
-            "once it lands (plan §4 P1 step 4).",
-            file=sys.stderr,
-        )
-        return 3
 
     args.out_dir = Path(os.path.expanduser(str(args.out_dir)))
     args.out_dir.mkdir(parents=True, exist_ok=True)
     if args.run_meta_out is None:
         args.run_meta_out = args.out_dir / "run_meta.json"
+
+    if args.fits_smoke:
+        # Local-only (no HF token needed): runs BEFORE the token assert below.
+        return _run_fits_smoke(args)
 
     # Every mode touches the private data repo (manifest / banked-store /
     # upload paths) — fail fast on a missing token rather than mid-phase.
