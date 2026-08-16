@@ -3,6 +3,7 @@
 <!-- This file is the MEMORY.md index for the codex-code-reviewer agent. -->
 
 - [revision-round compose recipe](feedback_revision_round_compose_recipe.md) — round 2+: reuse prior /tmp template with assert-guarded deltas; round-scope diff body; addressed-concern rows get an explicit verification-duty block
+- [worktree status-folder both directions](feedback_worktree_status_folder_both_directions.md) — brief plan path may cite wrong status dir in EITHER direction; `ls <wt>/tasks/*/<N>` before inlining fallback
 - [latest-marker prefix collision](feedback_latest_marker_prefix_collision.md) — --prefix epm:code-review also matches epm:code-review-codex; fetch Claude verdict by exact kind from events.jsonl
 - [gh_graphql fallback to REST](feedback_gh_graphql_fallback.md) — gh_graphql MCP not in project context; use `gh api -X POST ...` REST fallback when GraphQL rate-limited (separate 5000/hr quota)
 - [scripts import chain pattern](feedback_scripts_import_chain.md) — scripts/*.py that use _bootstrap cannot be imported as namespace packages; use sys.path insertion
