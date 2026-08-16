@@ -10238,8 +10238,8 @@
     "2325": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2325",
-      "status": "proposed",
+      "path": "tasks/planning/2325",
+      "status": "planning",
       "title": "workflow-fix: .claude/skills/issue/SKILL.md is 813 bytes from its hard FAIL cap \u2014 next edit wedges the Step 9c gate fleet-wide"
     },
     "233": {
