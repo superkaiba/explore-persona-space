@@ -89,19 +89,6 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   Fix). Numcheck passed first try at ~136 KB with the collect-all +
   task-ref-extraction-first script shape.
 
-- **Folded standard lenses (#2148 r2): when the brief names STANDARD lenses
-  with one folded in ("Methodology (with Alternatives folded in)") plus press
-  points — not a custom lens list — extract BOTH lens sections verbatim from
-  critic-lens-reference.md into ONE lens span (marker lens attr stays the
-  primary lens), quote the brief's press points + round-record verbatim as
-  the prior-critiques span (works when no prior Codex /tmp output exists —
-  Claude-only round one), add a digit-free verify-N/A scaffold naming the
-  experiment-only items BY NAME with reuse-fitness called the central live
-  item, and add a `### Round-one fix sufficiency` output section (one
-  SOUND/INSUFFICIENT line per brief-named fix; INSUFFICIENT ⇒ matching Must
-  Fix). Numcheck passed first try at ~136 KB with the collect-all +
-  task-ref-extraction-first script shape.
-
 - **Paths-only composition (#2325): when the brief orders artifacts pointed
   at BY PATH (never inline the plan body), the numcheck spans are just the
   brief-derived text blocks** (artifact list, facts-given, review questions,
@@ -115,6 +102,20 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   inlined verbatim with a "given — re-filing is a regression" lead-in, IS
   the do-not-relitigate mechanism when the prior round was Claude-only and
   no prior Codex /tmp output exists.
+
+- **Paths-only + full two-lens verbatim inline compose fine together
+  (#2326 round one): brief ordered artifacts BY PATH (plan symlink, body.md
+  Non-goals, named events.jsonl markers), a facts-given verify_plan PASS
+  line, seven numbered review questions, AND full Methodology+Alternatives
+  inline with Statistics declared N/A.** Assembly: header (infra bar +
+  Statistics-N/A gag + grounding) → inputs span (paths + facts-given) →
+  digit-free mid intro → lensitems span (both sections sed-extracted
+  verbatim) → questions span (brief's questions verbatim, incl. file:line
+  cites like `task_workflow.py:8294+`) → tail (standard epm marker tags
+  nesting the brief's `**Verdict:** PASS|REVISE` contract + `### Answers to
+  the review questions` + separate NITs). Numcheck spans = inputs +
+  lensitems + questions + empty prior file; passed first try at ~80 KB.
+  Lens attr stays `methodology` (primary) when Alternatives rides along.
 
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
