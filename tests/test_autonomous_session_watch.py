@@ -12696,6 +12696,10 @@ def _stub_drain_executor(
     monkeypatch.setattr(
         asw, "_live_session_ids_or_none", lambda: live if live is not None else set()
     )
+    # #2142: the dispatch loops read each candidate's events (M3 marker +
+    # owner-activity guards) via a `task.py list-markers` subprocess — stub it
+    # hermetic-empty here; a test feeding events re-patches after this call.
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     dispatched: list[int] = []
     if real_dispatch:
         from types import SimpleNamespace
@@ -13089,6 +13093,7 @@ def test_infra_drain_dry_run_no_mutation(isolated_registry, monkeypatch, capsys)
     monkeypatch.setattr(asw, "_task_status_kind", lambda i: sk.get(i, (None, None)))
     monkeypatch.setattr(asw, "_infra_drain_occupancy", lambda: [])
     monkeypatch.setattr(asw, "_live_session_ids_or_none", lambda: set())
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [])  # #2142 guard-chain read
     markers: list[tuple] = []
     monkeypatch.setattr(asw, "_post_progress_marker", lambda *a, **k: markers.append((a, k)))
     monkeypatch.setattr(
@@ -14031,6 +14036,7 @@ def test_predicate_promote_dry_run_no_rewrite(isolated_registry, monkeypatch, ca
     monkeypatch.setattr(asw, "_task_status_kind", lambda i: sk.get(i, (None, None)))
     monkeypatch.setattr(asw, "_infra_drain_occupancy", lambda: [])
     monkeypatch.setattr(asw, "_live_session_ids_or_none", lambda: set())
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [])  # #2142 guard-chain read
     monkeypatch.setattr(
         asw.subprocess, "run", lambda *a, **k: pytest.fail("subprocess.run in dry-run")
     )
