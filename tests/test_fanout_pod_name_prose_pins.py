@@ -41,12 +41,15 @@ def test_critic_lens_item_16_fanout_pod_name_extension():
     # on the lane the plan actually routes to.
     assert "fans `N > 1` CONCURRENT pods for ONE issue" in section
     assert "mints N DISTINCT pod names on the lane it actually routes to" in section
-    # REVISE-when list — incl. that `--lane-suffix` does NOT satisfy a
-    # RunPod fan-out (honored on GCP + SLURM only; RunPod excluded).
+    # REVISE-when list — incl. that per-launch `--lane-suffix` DOES satisfy
+    # a RunPod fan-out since #2145 (honored on GCP + SLURM + RunPod), while
+    # a SUFFIX-LESS RunPod launch still mints the colliding per-issue name.
     assert "REVISE when the plan names NONE of" in section
+    assert "`dispatch_issue.py launch --lane-suffix <slug>`" in section
+    assert "honored on GCP + SLURM + RunPod since #2145" in section
     assert "`pod.py provision --name-suffix <slug>`" in section
-    assert "a name-isolating lane (`--lane-suffix`, honored on GCP + SLURM only)" in section
-    assert "`--lane-suffix` excludes the RunPod lane" in section
+    assert "SUFFIX-LESS RunPod launch mints the per-issue name" in section
+    assert "WITHOUT distinct suffixes collide" in section
     # Prior-escapes disjointness: the earlier item-16 escape lists (the
     # accumulation/staging extensions') must not swallow this clause.
     assert "The prior extensions' escapes do NOT cover this one" in section
