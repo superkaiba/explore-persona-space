@@ -16,6 +16,10 @@ goal: 'Test whether the #2162 findings transfer to Qwen3.5-9B (hybrid linear att
   whether fitted context-to-answer maps predict the realized patched shift per type
   x layer, and whether maps discriminate minimal-pair answers (2AFC vs identity+bias
   and shuffled nulls).'
+relates_to:
+- spec-context-as-vector
+- spec-prompt-vs-icl
+- spec-role-header
 ---
 ## Goal
 
