@@ -1581,3 +1581,96 @@ def test_r3c4_root_swap_after_validation_is_inert(tmp_path, main_repo, monkeypat
     assert probes == []
     assert res.rows == []  # enumeration used the validated canonical (safe, empty) root
     assert (danger / "issue-9936" / "precious.py").is_file()
+
+
+# ─── round 4 (R3-C1/SIB-1): record-form porcelain parse fails CLOSED ──────────
+
+
+def test_r4_newline_worktree_path_returns_none(tmp_path, main_repo):
+    """R4: a registered worktree whose PATH embeds a literal newline SPLITS
+    its porcelain record (git 2.34.1 emits paths raw and cannot represent LF
+    in a line-oriented format): the ``worktree`` line carries a TRUNCATED
+    path and the remainder is an orphan continuation line. The parser must
+    return None (whole listing AMBIGUOUS), never a partial set holding the
+    truncated path while the REAL registered path is absent. Doubles as a
+    git-upgrade probe: a future git that quotes/escapes such paths would
+    parse to a non-None set and fail this test loudly."""
+    wt = tmp_path / "nl\nline"
+    _git(main_repo, "worktree", "add", "--detach", str(wt))
+    assert wt.is_dir()
+    assert ced._registered_worktree_paths(main_repo) is None
+
+
+def test_r4_ambiguous_listing_keeps_reapable_candidate(
+    slurm_root, main_repo, repo, tmp_path, monkeypatch
+):
+    """R4 end-to-end (apply=True): a fully reap-eligible staged copy is KEPT
+    when the admin listing is ambiguous because SOME registered worktree's
+    path embeds a newline — the positive non-registration proof cannot be
+    established, so rmtree is never reached and the KEEP reason is surfaced.
+    Real ambiguous listing (no monkeypatched probe); rmtree is boobytrapped
+    to hard-fail the test if the fail-open path is ever reinstated."""
+    cand = _staged_copy(slurm_root, "issue-9935")
+    poison = tmp_path / "poison\nwt"
+    _git(main_repo, "worktree", "add", "--detach", str(poison))
+    monkeypatch.setattr(ced.shutil, "rmtree", _rmtree_boom)
+    res = _sweep(slurm_root, main_repo, apply=True)
+    row = _row(res, cand.name)
+    assert row["disposition"] == "slurm-src-reap-reprobe-kept"
+    assert "registration-probe-failed" in row["reason"]
+    assert cand.exists() and (cand / "tracked.py").is_file()
+
+
+def test_r4_gate17_branch_c_refuses_on_ambiguous_listing(tmp_path, main_repo):
+    """R4 SIB-1: gate-1.7 evidence branch (c) consumes the same parser; under
+    a REAL ambiguous listing (newline-bearing registered path) it must refuse
+    the evidence branch (fail-toward-keep) instead of proceeding to the blob
+    proof and licensing the generic rmtree."""
+    d = tmp_path / "i9934_dl"
+    d.mkdir()
+    (d / "copy.py").write_text(COMMITTED_PY)
+    _backdate(d)
+    poison = tmp_path / "poison2\nwt"
+    _git(main_repo, "worktree", "add", "--detach", str(poison))
+    ev, det = ced._tmp_git_evidence_branch_c(d, main_repo=main_repo)
+    assert ev is None
+    assert det["reason"] == "registration-probe-failed"
+
+
+def test_r4_trailing_space_path_roundtrips_exactly(tmp_path, main_repo):
+    """R4: a registered path ending in a SPACE must round-trip byte-for-byte
+    — the pre-fix ``.strip()`` recorded the stripped variant, so the REAL
+    registered path compared unequal downstream (same fail-open consequence
+    as the newline split, without any listing ambiguity)."""
+    wt = tmp_path / "trail "
+    _git(main_repo, "worktree", "add", "--detach", str(wt))
+    paths = ced._registered_worktree_paths(main_repo)
+    assert paths is not None
+    assert os.path.realpath(str(wt)) in paths
+    assert os.path.realpath(str(tmp_path / "trail")) not in paths  # the stripped ghost
+
+
+def test_r4_raw_special_char_paths_parse_and_reap_still_licensed(
+    slurm_root, main_repo, repo, tmp_path
+):
+    """R4 negative control: git 2.34.1 emits space/tab/backslash/double-quote
+    paths RAW on a single line (verified by live reproduction — NO C-quoting
+    on this version), so a listing containing them still parses to the exact
+    full set and a genuinely unregistered candidate's reap remains licensed —
+    the fail-closed fix must not make every listing ambiguous (tier inert)."""
+    specials = ["we ird", "ta\tb", "back\\slash", 'qu"ote']
+    wts = []
+    for name in specials:
+        wt = tmp_path / name
+        _git(main_repo, "worktree", "add", "--detach", str(wt))
+        wts.append(wt)
+    paths = ced._registered_worktree_paths(main_repo)
+    assert paths is not None
+    expected = {os.path.realpath(str(main_repo))} | {os.path.realpath(str(w)) for w in wts}
+    assert paths == expected
+    cand = _staged_copy(slurm_root, "issue-9933")
+    res = _sweep(slurm_root, main_repo, apply=True)
+    row = _row(res, cand.name)
+    assert row["disposition"] == "slurm-src-reaped"
+    assert not cand.exists()
+    assert res.bytes_freed > 0
