@@ -128,6 +128,25 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   prior-round v-one marker block inside the prompt is harmless: the
   dispatch config names the v-two start tag + lens attr explicitly, and
   extraction runs on the OUTPUT file.
+  Round three (#2326, alternating-sides history — each twin overruled
+  once): same workspace recipe, fresh dir + round-tagged paths. New
+  patterns that worked: (1) a brief-ordered CALIBRATION block — the twin's
+  own prior-round inventory omission, quoted with the exact line numbers
+  it covered vs omitted — goes in the round-record SPAN (digits balance),
+  framed per the brief "as calibration rather than reproach" and ending
+  "do not carry forward any prior inventory, including your own"; (2)
+  mandate a fresh-evidence output section (`### Row inventory (built fresh
+  from the live file)`) placed BEFORE the blocker-closure verdict, so the
+  enumeration structurally precedes the coverage judgment the twin
+  previously got wrong; (3) the brief's manufacture/withhold symmetry
+  ("after two REVISE rounds, do not manufacture a third blocker to appear
+  thorough, and do not withhold a real one because the plan has been
+  revised twice") goes in a digit-free VERDICT CALIBRATION scaffold
+  paragraph just before the output format; (4) a compact two-round history
+  span (verdict pairs + reconciler sidings) REPLACES inlining full prior
+  verdict outputs — inlining the round-two output would carry forward the
+  exact flawed inventory the calibration bans. Numcheck PASS first try at
+  ~84 KB.
 
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
