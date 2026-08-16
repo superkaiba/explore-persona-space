@@ -389,6 +389,18 @@ open findings), and adjudicate Step 4.6 across the fold — a terse "same N
 selector hit files" by-reference line in the head marker is PRESENT-BUT-TERSE
 when an earlier fold marker carries the verbatim list.
 
+**Mid-compose ledger drift from the PARALLEL twin (#2326 r3, 2026-08-16):**
+the count assert on the inlined concerns-ledger snapshot caught a row the
+PARALLEL Claude reviewer raised (`raised_at_round == <this round>`, by
+`code-reviewer`) landing in `concerns.jsonl` between the compose's first
+read and the build run. Pin the inlined snapshot to rows with
+`ts <= implementation-marker ts`: post-dispatch rows are round-N review
+OUTPUTS, not inputs — inlining them leaks the sibling twin's findings into
+Codex's context and breaks ensemble independence (merging is the
+reconciler/orchestrator's job). Say "snapshot as of the round-N
+implementation marker ts" in the ledger preface (no mention that a parallel
+row exists), and REPORT the excluded row to the orchestrator in the return.
+
 **Acceptance-impossible round shape (external mid-task population change;
 #2147 cr3, 2026-08-16):** when the plan's live acceptance became IMPOSSIBLE
 (an external actor destroyed the population it was keyed on) and the task
