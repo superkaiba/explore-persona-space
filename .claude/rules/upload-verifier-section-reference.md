@@ -346,14 +346,24 @@ Verdict lattice (per non-exempt label; "distinct" mode = key declared):
 | no key | `lines < expected` | **FAIL** `realized-rows-short` |
 | no key | `lines >= expected` | **WARN** `realized-rows-no-distinct-key` |
 
-ERROR arms, all fail-loud and all BEFORE any counting can shrink a
-denominator: `row-index-missing` (a non-exempt declared label matched
+ERROR arms, all fail-loud. Exemption validation
+(`realized-rows-exempt-unmatched`; a blank reason
+`realized-rows-exempt-invalid`) runs at CHECK ENTRY — before even the
+no-expectation SKIP, so an exemption-only invocation ERRORs rather than
+SKIPping. `row-index-missing` (a non-exempt declared label matched
 zero index files), `row-index-unattributed` / `row-index-label-ambiguous`
-(a file matching no / more than one label), `row-index-size-unknown`,
-`row-index-file-over-cap`, `row-index-budget-exceeded`,
-`row-index-key-absent` (a row missing a declared key field — or an
-unparseable row — is never silently skipped),
-`realized-rows-exempt-unmatched`. SKIP fires only when no
+(a file matching no / more than one label), `row-index-duplicate-conflict`
+(one path listed twice with CONFLICTING sizes — overlapping prefixes
+otherwise dedupe by (mode, path) and count a file ONCE),
+`row-index-size-unknown`, `row-index-file-over-cap`, and
+`row-index-budget-exceeded` all fire BEFORE any counting can shrink a
+denominator; `row-index-key-absent` (a row missing a declared key field —
+or an unparseable row — is never silently skipped) is detected DURING
+counting and still ERRORs the whole check. Every Hub read (listing walk,
+batched size probe, staged fetch) is pinned to ONE revision resolved at
+check entry (retried `repo_info(...).sha`) and reported in the check
+detail (`hub revision: <sha>`), so a verdict is traceable to one Hub
+snapshot. SKIP fires only when no
 `--expected-rows` is declared, so legacy invocations gain exactly one
 inert SKIP row. Every label's report names expected / realized distinct
 / realized lines / duplicates / the per-shard line breakdown.

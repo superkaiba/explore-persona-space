@@ -97,6 +97,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 # Make the repo's src/ importable so we can reuse the canonical HF/WandB
@@ -1605,13 +1606,40 @@ def _labels_for_path(labels: tuple[str, ...], rel_path: str) -> list[str]:
     return [lb for lb in labels if any(_label_matches_component(lb, c) for c in comps)]
 
 
-def _row_index_hf_entries(hf_prefixes: tuple[str, ...]) -> list[tuple[str, int | None]]:
-    """One scoped tree walk per prefix over the data repo, sizes riding along.
+def _row_index_resolve_revision() -> str:
+    """Resolve ONE data-repo revision at check entry (#2148 round 2).
+
+    The ``stage_hub_prefix`` pattern (hub.py: retried ``repo_info(...).sha``):
+    the listing walks, the batched size probe, and every staged fetch read
+    that SAME SHA, so a verdict is traceable to one Hub snapshot - a commit
+    landing between listing and fetch can neither fuse files from different
+    commits into one verdict nor grow past the byte caps checked off the
+    listing. Seam for tests.
+    """
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate.hub import retry_transient
+
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+    info = retry_transient(
+        lambda: api.repo_info(HF_DATA_REPO, repo_type="dataset"),
+        what=f"repo_info({HF_DATA_REPO})",
+    )
+    return str(info.sha)
+
+
+def _row_index_hf_entries(
+    hf_prefixes: tuple[str, ...], *, revision: str | None
+) -> list[tuple[str, int | None]]:
+    """One scoped tree walk per DISTINCT prefix, pinned to ``revision``.
 
     Seam for tests (monkeypatched); the live body reuses the canonical
     sizes-preserving walker (`list_repo_entries_complete`, #833 pagination) -
     never a bare full-repo `list_repo_files` (wedges on the ~1M-file repo,
-    #920). A prefix that does not resolve raises (fail-loud -> ERROR row at
+    #920). Prefixes are canonicalized (trailing-slash strip) and exact
+    duplicates walk ONCE; OVERLAPPING (parent/child) prefixes still re-list
+    shared paths - the caller dedupes entries by (mode, path) (#2148 round
+    2). A prefix that does not resolve raises (fail-loud -> ERROR row at
     the caller): unlike the residue check there is no fail-toward-FAIL
     direction here - a silently-empty prefix would read as `row-index-missing`
     with a store-defect remediation when the actual defect is the invocation.
@@ -1622,41 +1650,61 @@ def _row_index_hf_entries(hf_prefixes: tuple[str, ...]) -> list[tuple[str, int |
 
     api = HfApi(token=os.environ.get("HF_TOKEN"))
     entries: list[tuple[str, int | None]] = []
+    seen_prefixes: set[str] = set()
     for prefix in hf_prefixes:
         normalized = str(prefix).rstrip("/")
-        if not normalized:
+        if not normalized or normalized in seen_prefixes:
             continue
+        seen_prefixes.add(normalized)
         entries.extend(
             list_repo_entries_complete(
                 api,
                 HF_DATA_REPO,
                 repo_type="dataset",
+                revision=revision,
                 path_in_repo=normalized,
             )
         )
     return entries
 
 
-def _row_index_resolve_sizes(paths: list[str]) -> dict[str, int | None]:
+def _row_index_resolve_sizes(paths: list[str], *, revision: str | None) -> dict[str, int | None]:
     """ONE batched ``get_paths_info`` POST for listing entries whose size the
-    tree walk left unknown (#2148 budget step). Seam for tests."""
+    tree walk left unknown (#2148 budget step), pinned to ``revision`` and
+    riding ``retry_transient`` - a verify-path Hub call is retried, never a
+    one-transient-429-fails-a-healthy-store probe (upload-policy #1335 r5;
+    #2148 round 2). Seam for tests."""
     from huggingface_hub import HfApi
 
+    from explore_persona_space.orchestrate.hub import retry_transient
+
     api = HfApi(token=os.environ.get("HF_TOKEN"))
-    infos = api.get_paths_info(HF_DATA_REPO, paths, expand=True, repo_type="dataset")
+    infos = retry_transient(
+        lambda: api.get_paths_info(
+            HF_DATA_REPO, paths, expand=True, repo_type="dataset", revision=revision
+        ),
+        what=f"get_paths_info(realized row counts, {len(paths)} path(s))",
+    )
     return {getattr(i, "path", ""): getattr(i, "size", None) for i in infos}
 
 
-def _row_index_fetch(path_in_repo: str, target: Path) -> Path:
-    """Fetch ONE budget-passed index file via the retried atomic staging
-    helper (`stage_hub_file` - transport-retried, fail-loud). Seam for tests."""
+def _row_index_fetch(path_in_repo: str, target: Path, *, revision: str | None) -> Path:
+    """Fetch ONE budget-passed index file at the pinned ``revision`` via the
+    retried atomic staging helper (`stage_hub_file` - transport-retried,
+    fail-loud). Seam for tests."""
     from explore_persona_space.orchestrate.hub import stage_hub_file
 
-    return stage_hub_file(HF_DATA_REPO, path_in_repo, target, repo_type="dataset")
+    return stage_hub_file(
+        HF_DATA_REPO, path_in_repo, target, repo_type="dataset", revision=revision
+    )
 
 
 def _row_index_entries(
-    hf_prefixes: tuple[str, ...], local_root: str | None, glob_pattern: str
+    hf_prefixes: tuple[str, ...],
+    local_root: str | None,
+    glob_pattern: str,
+    *,
+    revision: str | None,
 ) -> list[dict] | dict:
     """Enumerate candidate row-index files, or return an ERROR row dict.
 
@@ -1664,6 +1712,15 @@ def _row_index_entries(
     int | None, "mode": "hf" | "local"}``. Missing-input handling is
     fail-loud (a nonexistent local root / failed Hub listing is never a
     clean zero - the silent-default false-PASS is the #2091 class).
+
+    The returned set is DEDUPLICATED by ``(mode, path)`` (#2148 round 2):
+    repeated / overlapping ``--row-index-hf-prefix`` values re-list shared
+    paths, and a doubled entry would double every line count (flipping a
+    keyless `realized-rows-short` FAIL into the nonblocking
+    `realized-rows-no-distinct-key` WARN) and corrupt the file/byte budget
+    sums. Agreeing duplicates count ONCE; a same-path duplicate with
+    CONFLICTING sizes is a real listing inconsistency and ERRORs
+    (`row-index-duplicate-conflict`) - never silently deduplicated.
     """
     entries: list[dict] = []
     if local_root:
@@ -1693,7 +1750,7 @@ def _row_index_entries(
             )
     if hf_prefixes:
         try:
-            listed = _row_index_hf_entries(tuple(hf_prefixes))
+            listed = _row_index_hf_entries(tuple(hf_prefixes), revision=revision)
         except Exception as e:
             return {
                 "status": "ERROR",
@@ -1703,7 +1760,28 @@ def _row_index_entries(
         for path, size in listed:
             if fnmatch.fnmatch(path.rsplit("/", 1)[-1], glob_pattern):
                 entries.append({"path": path, "rel": path, "size": size, "mode": "hf"})
-    return entries
+
+    deduped: list[dict] = []
+    first_seen: dict[tuple[str, str], dict] = {}
+    for entry in entries:
+        key = (entry["mode"], entry["path"])
+        prior = first_seen.get(key)
+        if prior is None:
+            first_seen[key] = entry
+            deduped.append(entry)
+        elif prior["size"] != entry["size"]:
+            return {
+                "status": "ERROR",
+                "url": "",
+                "detail": (
+                    f"row-index-duplicate-conflict: {entry['path']} listed more than "
+                    f"once with CONFLICTING sizes ({prior['size']} vs {entry['size']}) "
+                    "- overlapping --row-index-hf-prefix values re-listed the path "
+                    "and the listings disagree; a real conflict is never silently "
+                    "deduplicated (fail-loud, zero downloads performed)"
+                ),
+            }
+    return deduped
 
 
 def _attribute_row_index_entries(
@@ -1756,19 +1834,25 @@ def _attribute_row_index_entries(
 
 
 def _row_index_budget_error(
-    entries: list[dict], *, max_bytes: int, max_total_bytes: int, max_files: int
+    entries: list[dict],
+    *,
+    max_bytes: int,
+    max_total_bytes: int,
+    max_files: int,
+    revision: str | None,
 ) -> dict | None:
     """Enforce the fetch budgets off the LISTING, before the first fetch.
 
-    Unknown sizes are resolved with ONE batched ``get_paths_info`` probe;
-    a size that stays unknown is never assumed under cap (#2148). Every
-    failing arm returns with ZERO downloads performed.
+    Unknown sizes are resolved with ONE batched retried ``get_paths_info``
+    probe at the pinned ``revision``; a size that stays unknown is never
+    assumed under cap (#2148). Every failing arm returns with ZERO downloads
+    performed.
     """
     unknown = [e for e in entries if e["size"] is None]
     if unknown:
         paths = [e["path"] for e in unknown]
         try:
-            resolved = _row_index_resolve_sizes(paths)
+            resolved = _row_index_resolve_sizes(paths, revision=revision)
         except Exception as e:
             return {
                 "status": "ERROR",
@@ -1851,37 +1935,50 @@ def _count_row_index_file(
     return len(lines), distinct, violations
 
 
-def _read_row_index_entry(entry: dict) -> str:
+def _read_row_index_entry(entry: dict, *, revision: str | None) -> str:
     """Read one budget-passed index file's text (local stat'd file, or a
-    KB-scale Hub fetch via the retried staging seam into a temp dir)."""
+    KB-scale Hub fetch at the pinned ``revision`` via the retried staging
+    seam into a temp dir)."""
     if entry["mode"] == "local":
         return Path(entry["path"]).read_text(encoding="utf-8")
     with tempfile.TemporaryDirectory(prefix="rowindex-") as td:
         target = Path(td) / entry["path"].rsplit("/", 1)[-1]
-        fetched = _row_index_fetch(entry["path"], target)
+        fetched = _row_index_fetch(entry["path"], target, revision=revision)
         return Path(fetched).read_text(encoding="utf-8")
 
 
 def _count_label_entries(
-    by_label: dict[str, list[dict]], key_fields: tuple[str, ...]
+    by_label: dict[str, list[dict]], key_fields: tuple[str, ...], *, revision: str | None
 ) -> tuple[dict[str, dict], list[str]]:
-    """Fetch + count every attributed index file, per label.
+    """Fetch + count every attributed index file, per label, at ``revision``.
 
     Returns ``(counts, errors)``: counts[label] = {lines, distinct, shards};
     errors collects fetch failures + key-absent violations (both fail-loud).
+    Emits one flushed ``[realized-rows] unit k/N`` line per processed file
+    (the code-style per-unit progress convention), so a stalled fetch is
+    attributable to its file instead of reading as a hung process.
     """
     counts: dict[str, dict] = {}
     errors: list[str] = []
+    total = sum(len(v) for v in by_label.values())
+    done = 0
+    t0 = time.monotonic()
     for label, label_entries in by_label.items():
         lines_total = 0
         distinct: set[tuple[str, ...]] = set()
         shards: list[str] = []
         for entry in sorted(label_entries, key=lambda e: str(e["rel"])):
+            done += 1
             try:
-                text = _read_row_index_entry(entry)
+                text = _read_row_index_entry(entry, revision=revision)
             except Exception as e:
                 errors.append(
                     f"row-index fetch/read failed for {entry['rel']}: {type(e).__name__}: {e}"
+                )
+                print(
+                    f"[realized-rows] unit {done}/{total} {entry['rel']} "
+                    f"elapsed={time.monotonic() - t0:.1f}s (fetch/read FAILED)",
+                    flush=True,
                 )
                 continue
             n_lines, file_distinct, violations = _count_row_index_file(text, key_fields)
@@ -1890,6 +1987,11 @@ def _count_label_entries(
             if file_distinct is not None:
                 distinct |= file_distinct
             shards.append(f"{str(entry['rel']).rsplit('/', 1)[-1]}:{n_lines}")
+            print(
+                f"[realized-rows] unit {done}/{total} {entry['rel']} "
+                f"elapsed={time.monotonic() - t0:.1f}s",
+                flush=True,
+            )
         counts[label] = {
             "lines": lines_total,
             "distinct": len(distinct) if key_fields else None,
@@ -1994,22 +2096,62 @@ def check_realized_row_counts(
     producer's self-reported ``capture_rows`` - literally
     ``manifest.get("n_rows")``, the expectation echoed back.
 
-    Mechanics, in order: (1) enumerate each declared source (one scoped tree
-    walk per HF prefix / one local walk); (2) attribute every matched file
-    to EXACTLY ONE declared label - the three attribution ERROR arms fire
-    BEFORE any counting; (3) enforce the per-file AND aggregate fetch
-    budgets off the listing (ONE batched ``get_paths_info`` probe for
-    unknown sizes; every failing arm returns with ZERO downloads); (4) fetch
-    + count non-empty lines and distinct declared-key tuples; (5) apply the
-    LABEL-grained exemptions (mandatory reason; always a visible WARN row
-    that still reports realized counts; an exemption naming an undeclared
-    label ERRORs); (6) per-label verdict lattice + ERROR > FAIL > WARN > OK
+    Mechanics, in order: (0) validate exemptions - mandatory non-empty
+    reason AND membership in the declared label set - BEFORE even the
+    no-expectation SKIP, so a reasonless or exemption-only direct call
+    ERRORs exactly as the CLI parser rejects it (#2148 round 2); (1) resolve
+    ONE pinned Hub revision when any HF prefix is declared (retried
+    ``repo_info(...).sha``, the ``stage_hub_prefix`` pattern) - the listing
+    walks, the size probe, and every staged fetch read that SAME SHA,
+    reported in the check detail; (2) enumerate each declared source (one
+    scoped tree walk per DISTINCT prefix / one local walk), deduplicating
+    matched entries by (mode, path) - overlapping prefixes count a file
+    ONCE, and a same-path duplicate with CONFLICTING sizes ERRORs; (3)
+    attribute every matched file to EXACTLY ONE declared label - the three
+    attribution ERROR arms fire BEFORE any counting; (4) enforce the
+    per-file AND aggregate fetch budgets off the deduplicated listing (ONE
+    batched retried ``get_paths_info`` probe for unknown sizes; every
+    failing arm returns with ZERO downloads); (5) fetch + count non-empty
+    lines and distinct declared-key tuples; (6) apply the LABEL-grained
+    exemptions (always a visible WARN row that still reports realized
+    counts); (7) per-label verdict lattice + ERROR > FAIL > WARN > OK
     reduction. SKIP fires only when no expectation is declared, so legacy
     invocations gain exactly one inert SKIP row.
     """
     expected_rows = dict(expected_rows or {})
     self_reported_rows = dict(self_reported_rows or {})
     exempt_labels = dict(exempt_labels or {})
+
+    # (0) Exemption validation FIRST - before even the no-expectation SKIP
+    # (#2148 round 2, concern `exemption-validation-after-skip`): the
+    # callable owes the same contract the CLI parser enforces, so a direct
+    # caller cannot slip a reasonless or unmatched exemption past an early
+    # SKIP return. Flag-free legacy invocations still SKIP below.
+    blank_reasons = sorted(lb for lb, reason in exempt_labels.items() if not str(reason).strip())
+    if blank_reasons:
+        return {
+            "status": "ERROR",
+            "url": "",
+            "detail": (
+                "realized-rows-exempt-invalid: an exemption reason is MANDATORY "
+                f"and non-empty; label(s) with a blank reason: "
+                f"{', '.join(blank_reasons)} (an exemption with no recorded "
+                "reason is indistinguishable from a silenced shortfall)"
+            ),
+        }
+    exempt_unmatched = sorted(set(exempt_labels) - set(expected_rows))
+    if exempt_unmatched:
+        return {
+            "status": "ERROR",
+            "url": "",
+            "detail": (
+                "realized-rows-exempt-unmatched: --realized-rows-exempt names "
+                f"label(s) not in the declared --expected-rows set: "
+                f"{', '.join(exempt_unmatched)} (rejects stale and typo'd "
+                "exemptions; an exemption-only invocation ERRORs rather than "
+                "SKIPping)"
+            ),
+        }
 
     if not expected_rows:
         extra = (
@@ -2034,7 +2176,26 @@ def check_realized_row_counts(
             ),
         }
 
-    entries = _row_index_entries(tuple(hf_prefixes), local_root, glob_pattern)
+    # (1) ONE pinned revision for every Hub read this verdict performs
+    # (#2148 round 2, blocker `row-index-moving-head-snapshot` + plan §4(A)
+    # step 3). Local-only invocations perform no Hub read and pin nothing.
+    revision: str | None = None
+    if hf_prefixes:
+        try:
+            revision = _row_index_resolve_revision()
+        except Exception as e:
+            return {
+                "status": "ERROR",
+                "url": "",
+                "detail": (
+                    f"row-index revision resolve failed: {type(e).__name__}: {e} "
+                    "- every Hub read (listing / size probe / fetch) pins ONE "
+                    "revision; an unpinnable snapshot is never read (fail-loud, "
+                    "zero Hub reads performed)"
+                ),
+            }
+
+    entries = _row_index_entries(tuple(hf_prefixes), local_root, glob_pattern, revision=revision)
     if isinstance(entries, dict):
         return entries
 
@@ -2045,13 +2206,17 @@ def check_realized_row_counts(
         return attribution_error
 
     budget_error = _row_index_budget_error(
-        entries, max_bytes=max_bytes, max_total_bytes=max_total_bytes, max_files=max_files
+        entries,
+        max_bytes=max_bytes,
+        max_total_bytes=max_total_bytes,
+        max_files=max_files,
+        revision=revision,
     )
     if budget_error is not None:
         return budget_error
 
     key_fields = tuple(distinct_key_fields or ())
-    label_counts, count_errors = _count_label_entries(by_label, key_fields)
+    label_counts, count_errors = _count_label_entries(by_label, key_fields, revision=revision)
     if count_errors:
         return {
             "status": "ERROR",
@@ -2060,18 +2225,6 @@ def check_realized_row_counts(
                 "; ".join(count_errors) + ". A row missing its declared key - or an "
                 "unreadable index file - is never silently skipped: skipping would "
                 "shrink the very denominator this check gates on (#2148)."
-            ),
-        }
-
-    exempt_unmatched = sorted(set(exempt_labels) - set(expected_rows))
-    if exempt_unmatched:
-        return {
-            "status": "ERROR",
-            "url": "",
-            "detail": (
-                "realized-rows-exempt-unmatched: --realized-rows-exempt names "
-                f"label(s) not in the declared --expected-rows set: "
-                f"{', '.join(exempt_unmatched)} (rejects stale and typo'd exemptions)"
             ),
         }
 
@@ -2097,7 +2250,7 @@ def check_realized_row_counts(
         status = "WARN"
     else:
         status = "OK"
-    return {
+    result = {
         "status": status,
         "url": "",
         "detail": (
@@ -2106,6 +2259,12 @@ def check_realized_row_counts(
         ),
         "labels": labels_report,
     }
+    if revision is not None:
+        # Traceability (#2148 round 2): the verdict names the ONE Hub
+        # snapshot every listing / probe / fetch read.
+        result["revision"] = revision
+        result["detail"] += f" | hub revision: {revision}"
+    return result
 
 
 def check_git_figures(issue_num: int) -> dict:

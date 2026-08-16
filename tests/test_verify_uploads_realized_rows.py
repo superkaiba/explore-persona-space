@@ -32,7 +32,17 @@ FULL row key. These tests pin:
 - the live-HF motivating incident, both directions (§6.2, network-gated):
   the pre-repair shard set FAILs at 1504/820/208 distinct vs 2000/1304/671
   declared; today's repaired live store PASSes at exactly the declared
-  counts with duplicates reported as context.
+  counts with duplicates reported as context;
+- the round-2 blockers (#2148 r2): repeated/overlapping prefixes dedupe by
+  (mode, path) — one fetch, honest keyless FAIL, honest budgets — with a
+  conflicting-size duplicate ERRORing fail-loud; the batched size probe
+  rides ``retry_transient`` (one transient 429 retries instead of failing a
+  healthy store); ONE pinned revision (retried ``repo_info(...).sha``)
+  threads through the listing walk, the size probe, and every staged fetch,
+  and the verdict reports the SHA;
+- the round-2 concerns: exemption validation (membership + non-empty
+  reason) runs at check entry BEFORE the no-expectation SKIP, in the
+  callable and the CLI alike.
 
 Per the one-production-body-test rule (#906), the local-root fixtures
 execute the REAL check body end to end (enumeration, attribution, budget,
@@ -50,6 +60,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -227,7 +238,7 @@ def _counting_fake(monkeypatch):
     'zero counting/fetch happened' is assertable."""
     calls: list[dict] = []
 
-    def fake_read(entry: dict) -> str:
+    def fake_read(entry: dict, *, revision: str | None) -> str:
         calls.append(entry)
         return ""
 
@@ -253,10 +264,12 @@ def test_overlapping_labels_error_before_counting(tmp_path, monkeypatch):
     assert calls == [], "attribution ERRORs must fire BEFORE any counting"
 
 
-def test_label_boundary_does_not_swallow_word_char_suffix(tmp_path):
+def test_label_boundary_does_not_swallow_word_char_suffix(tmp_path, monkeypatch):
     """`syc_aita` must NOT match the `syc_aita_v2` component (underscore is a
     word char): the v2 file is unattributed, an ERROR — never silently
-    counted into the shorter label."""
+    counted into the shorter label, and (like its two sibling attribution
+    arms) it fires BEFORE any counting."""
+    calls = _counting_fake(monkeypatch)
     _write_index(tmp_path, "syc_aita", "row_index_shard00.jsonl", [_row("c0", 0)])
     _write_index(tmp_path, "syc_aita_v2", "row_index_shard00.jsonl", [_row("c9", 0)])
     res = verify_uploads.check_realized_row_counts(
@@ -267,6 +280,7 @@ def test_label_boundary_does_not_swallow_word_char_suffix(tmp_path):
     assert res["status"] == "ERROR"
     assert "row-index-unattributed" in res["detail"]
     assert "syc_aita_v2" in res["detail"]
+    assert calls == [], "attribution ERRORs must fire BEFORE any counting"
 
 
 def test_missing_label_errors_before_counting(tmp_path, monkeypatch):
@@ -288,24 +302,39 @@ def test_missing_label_errors_before_counting(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 
 
-def _fetch_counting_fakes(monkeypatch, entries, resolved_sizes=None):
-    """Install signature-mirroring fakes for the three HF seams; return the
-    (fetch_calls, probe_calls) counters."""
+_FAKE_SHA = "0123abcd" * 5  # the pinned revision the fake resolver hands out
+
+
+def _fetch_counting_fakes(monkeypatch, entries, resolved_sizes=None, fetch_rows=1):
+    """Install signature-mirroring fakes for the four HF seams; return the
+    (fetch_calls, probe_calls) counters. Every seam fake asserts it received
+    the pinned revision (#2148 round 2), so all HF-mode tests double as
+    revision-threading coverage at the seam boundary."""
     fetch_calls: list[str] = []
     probe_calls: list[list[str]] = []
 
-    def fake_hf_entries(hf_prefixes: tuple[str, ...]) -> list[tuple[str, int | None]]:
+    def fake_resolve_revision() -> str:
+        return _FAKE_SHA
+
+    def fake_hf_entries(
+        hf_prefixes: tuple[str, ...], *, revision: str | None
+    ) -> list[tuple[str, int | None]]:
+        assert revision == _FAKE_SHA, "the listing must read the pinned revision"
         return list(entries)
 
-    def fake_resolve_sizes(paths: list[str]) -> dict[str, int | None]:
+    def fake_resolve_sizes(paths: list[str], *, revision: str | None) -> dict[str, int | None]:
+        assert revision == _FAKE_SHA, "the size probe must read the pinned revision"
         probe_calls.append(list(paths))
         return dict(resolved_sizes or {})
 
-    def fake_fetch(path_in_repo: str, target: Path) -> Path:
+    def fake_fetch(path_in_repo: str, target: Path, *, revision: str | None) -> Path:
+        assert revision == _FAKE_SHA, "the staged fetch must read the pinned revision"
         fetch_calls.append(path_in_repo)
-        target.write_text(_row("c0", 0) + "\n", encoding="utf-8")
+        rows = [_row("c0", k) for k in range(fetch_rows)]
+        target.write_text("\n".join(rows) + "\n", encoding="utf-8")
         return target
 
+    monkeypatch.setattr(verify_uploads, "_row_index_resolve_revision", fake_resolve_revision)
     monkeypatch.setattr(verify_uploads, "_row_index_hf_entries", fake_hf_entries)
     monkeypatch.setattr(verify_uploads, "_row_index_resolve_sizes", fake_resolve_sizes)
     monkeypatch.setattr(verify_uploads, "_row_index_fetch", fake_fetch)
@@ -418,6 +447,239 @@ def test_hf_mode_counts_via_fetch_seam(monkeypatch):
     assert res["status"] == "OK"
     assert fetch_calls == [path]
     assert res["labels"]["jobA"]["realized_distinct"] == 1
+
+
+# ---------------------------------------------------------------------------
+# Round-2 blocker 1: repeated/overlapping-prefix dedup (#2148 r2)
+# ---------------------------------------------------------------------------
+
+
+def test_duplicated_prefix_listing_dedupes_and_keyless_shortfall_still_fails(monkeypatch):
+    """Blocker `repeated-prefix-multiset-false-negative`: one three-row path
+    listed under two overlapping/duplicated prefixes counts ONCE — exactly
+    one fetch, realized_lines == 3, and the keyless expected=6 shortfall
+    stays a FAIL realized-rows-short. Pre-fix, the doubled listing read 6
+    lines >= 6 and degraded the FAIL to the nonblocking
+    realized-rows-no-distinct-key WARN — suppressing keyless mode's one
+    strong signal."""
+    path = "issueX/jobA/row_index_shard00.jsonl"
+    fetch_calls, _ = _fetch_counting_fakes(monkeypatch, [(path, 100), (path, 100)], fetch_rows=3)
+    res = verify_uploads.check_realized_row_counts(
+        expected_rows={"jobA": 6},
+        hf_prefixes=("issueX", "issueX/jobA"),
+    )
+    assert res["status"] == "FAIL"
+    assert res["labels"]["jobA"]["tag"] == "realized-rows-short"
+    assert res["labels"]["jobA"]["realized_lines"] == 3
+    assert fetch_calls == [path], "a path listed under two prefixes is fetched ONCE"
+
+
+def test_duplicated_prefix_budget_counts_file_once(monkeypatch):
+    """Distinct-mode sibling: the budget sums read the DEDUPLICATED set — a
+    100-byte file listed twice fits a 150-byte aggregate cap (doubled, it
+    would false-ERROR row-index-budget-exceeded), and counting proceeds
+    with ONE fetch."""
+    path = "issueX/jobA/row_index_shard00.jsonl"
+    fetch_calls, _ = _fetch_counting_fakes(monkeypatch, [(path, 100), (path, 100)])
+    res = verify_uploads.check_realized_row_counts(
+        expected_rows={"jobA": 1},
+        hf_prefixes=("issueX", "issueX/jobA"),
+        distinct_key_fields=KEY,
+        max_total_bytes=150,
+    )
+    assert res["status"] == "OK"
+    assert fetch_calls == [path]
+    assert res["labels"]["jobA"]["realized_distinct"] == 1
+
+
+def test_duplicate_path_conflicting_sizes_errors_zero_fetches(monkeypatch):
+    """A same-path duplicate with CONFLICTING sizes is a real listing
+    inconsistency — fail-loud ERROR, never a silent dedupe, zero fetches."""
+    path = "issueX/jobA/row_index_shard00.jsonl"
+    fetch_calls, _ = _fetch_counting_fakes(monkeypatch, [(path, 100), (path, 200)])
+    res = verify_uploads.check_realized_row_counts(
+        expected_rows={"jobA": 1},
+        hf_prefixes=("issueX", "issueX/jobA"),
+        distinct_key_fields=KEY,
+    )
+    assert res["status"] == "ERROR"
+    assert "row-index-duplicate-conflict" in res["detail"]
+    assert fetch_calls == []
+
+
+def test_hf_entries_walks_each_distinct_prefix_once(monkeypatch):
+    """The REAL `_row_index_hf_entries` body canonicalizes prefixes
+    (trailing-slash strip) and walks each DISTINCT prefix once, threading
+    the pinned revision into every walk; overlapping parent/child prefixes
+    are the caller-side dedup's job."""
+    import explore_persona_space.orchestrate.hub as hub
+
+    walks: list[tuple[str | None, str | None]] = []
+
+    def fake_walk(api, repo_id, *, repo_type="model", revision=None, path_in_repo=None):
+        walks.append((path_in_repo, revision))
+        return [(f"{path_in_repo}/row_index_shard00.jsonl", 100)]
+
+    monkeypatch.setattr(hub, "list_repo_entries_complete", fake_walk)
+    listed = verify_uploads._row_index_hf_entries(
+        ("issueX/jobA", "issueX/jobA/", "issueX/jobA"), revision="ab12"
+    )
+    assert walks == [("issueX/jobA", "ab12")], "one walk per DISTINCT canonicalized prefix"
+    assert listed == [("issueX/jobA/row_index_shard00.jsonl", 100)]
+
+
+# ---------------------------------------------------------------------------
+# Round-2 blocker 2: the batched size probe rides retry_transient (#2148 r2)
+# ---------------------------------------------------------------------------
+
+
+def test_size_probe_rides_retry_transient(monkeypatch):
+    """Blocker `row-index-size-probe-unretried`: the REAL
+    `_row_index_resolve_sizes` body wraps its get_paths_info POST in
+    hub.retry_transient (mirroring scripts/issue2215_run.py:588), so one
+    transient 429 retries — two probe calls, normal counting — instead of
+    converting a healthy store into ERROR row-index-size-unknown →
+    verifier FAIL → teardown refusal."""
+    import huggingface_hub
+
+    calls: list[list[str]] = []
+    path = "issueX/jobA/row_index_shard00.jsonl"
+
+    class _Transient429(Exception):
+        def __init__(self):
+            super().__init__("429 Too Many Requests")
+            self.response = SimpleNamespace(status_code=429, headers={})
+
+    class _FakeApi:
+        def __init__(self, token=None):
+            pass
+
+        def get_paths_info(self, repo_id, paths, *, expand=False, revision=None, repo_type=None):
+            calls.append(list(paths))
+            if len(calls) == 1:
+                raise _Transient429()
+            return [SimpleNamespace(path=p, size=100) for p in paths]
+
+    monkeypatch.setattr(huggingface_hub, "HfApi", _FakeApi)
+    monkeypatch.setattr("time.sleep", lambda s: None)  # retry backoff, not a real wait
+    sizes = verify_uploads._row_index_resolve_sizes([path], revision="ab12")
+    assert sizes == {path: 100}
+    assert len(calls) == 2, "one transient 429 must retry, never ERROR a healthy store"
+
+
+# ---------------------------------------------------------------------------
+# Round-2 blocker 3: ONE pinned revision across every Hub call (#2148 r2)
+# ---------------------------------------------------------------------------
+
+
+def test_one_pinned_revision_threads_every_hub_call(monkeypatch, tmp_path):
+    """Blocker `row-index-moving-head-snapshot` / plan §4(A) step 3: the REAL
+    check + seam bodies resolve ONE revision at entry (retried
+    repo_info(...).sha, the stage_hub_prefix pattern) and thread it into the
+    listing walk, the batched size probe, and the staged fetch — and the
+    verdict reports the SHA (`revision` key + detail), so it is traceable
+    to one Hub snapshot."""
+    import huggingface_hub
+
+    import explore_persona_space.orchestrate.hub as hub
+
+    sha = "ab12cd34" * 5
+    seen: list[tuple[str, str | None]] = []
+    path = "issueX/jobA/row_index_shard00.jsonl"
+
+    class _FakeApi:
+        def __init__(self, token=None):
+            pass
+
+        def repo_info(self, repo_id, *, repo_type=None):
+            return SimpleNamespace(sha=sha)
+
+        def get_paths_info(self, repo_id, paths, *, expand=False, revision=None, repo_type=None):
+            seen.append(("get_paths_info", revision))
+            return [SimpleNamespace(path=p, size=100) for p in paths]
+
+    def fake_walk(api, repo_id, *, repo_type="model", revision=None, path_in_repo=None):
+        seen.append(("list_repo_entries_complete", revision))
+        return [(path, None)]  # size None forces the batched probe
+
+    def fake_stage(
+        repo_id,
+        path_in_repo,
+        target,
+        *,
+        repo_type="dataset",
+        revision=None,
+        token=None,
+        overwrite=False,
+        size_bytes=None,
+    ):
+        seen.append(("stage_hub_file", revision))
+        target = Path(target)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(_row("c0", 0) + "\n", encoding="utf-8")
+        return target
+
+    monkeypatch.setattr(huggingface_hub, "HfApi", _FakeApi)
+    monkeypatch.setattr(hub, "list_repo_entries_complete", fake_walk)
+    monkeypatch.setattr(hub, "stage_hub_file", fake_stage)
+
+    res = verify_uploads.check_realized_row_counts(
+        expected_rows={"jobA": 1},
+        hf_prefixes=("issueX/jobA",),
+        distinct_key_fields=KEY,
+    )
+    assert res["status"] == "OK"
+    assert {name for name, _ in seen} == {
+        "list_repo_entries_complete",
+        "get_paths_info",
+        "stage_hub_file",
+    }
+    assert all(rev == sha for _, rev in seen), seen
+    assert res["revision"] == sha
+    assert f"hub revision: {sha}" in res["detail"]
+
+
+# ---------------------------------------------------------------------------
+# Round-2 concern (a): exemption validation precedes the no-expectation SKIP
+# ---------------------------------------------------------------------------
+
+
+def test_exemption_only_invocation_errors_not_skips():
+    """Concern `exemption-validation-after-skip`, direct-call shape: an
+    exemption-only invocation ERRORs realized-rows-exempt-unmatched per the
+    documented contract — validation runs BEFORE the no-expectation SKIP."""
+    res = verify_uploads.check_realized_row_counts(exempt_labels={"jobA": "some reason"})
+    assert res["status"] == "ERROR"
+    assert "realized-rows-exempt-unmatched" in res["detail"]
+
+
+def test_blank_exemption_reason_errors_direct_call(tmp_path):
+    """The callable enforces the mandatory non-empty reason itself — the
+    contract is no longer CLI-parser-only (a direct caller could previously
+    pass a blank reason)."""
+    _write_index(tmp_path, "jobA", "row_index_shard00.jsonl", [_row("c0", 0)])
+    res = verify_uploads.check_realized_row_counts(
+        expected_rows={"jobA": 1},
+        local_root=str(tmp_path),
+        distinct_key_fields=KEY,
+        exempt_labels={"jobA": "   "},
+    )
+    assert res["status"] == "ERROR"
+    assert "realized-rows-exempt-invalid" in res["detail"]
+
+
+def test_cli_rejects_blank_exempt_reason(monkeypatch, capsys):
+    """CLI shape: argparse rejects LABEL= (blank reason) at parse time with
+    exit code 2, before any network call."""
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["verify_uploads.py", "--issue", "2091", "--realized-rows-exempt", "jobA="],
+    )
+    with pytest.raises(SystemExit) as excinfo:
+        verify_uploads.main()
+    assert excinfo.value.code == 2
+    assert "non-empty reason" in capsys.readouterr().err
 
 
 # ---------------------------------------------------------------------------
@@ -563,11 +825,14 @@ def test_pre_repair_shards_fail_and_live_store_passes(tmp_path):
     makes the line-count-vs-distinct-count decision permanent: a regression
     to a line-count gate fails the PASS direction. Executes the REAL Hub
     seam bodies (scoped tree walks + retried staging fetches)."""
-    # --- FAIL direction: stage pre-repair shards via the REAL fetch seam.
+    # --- FAIL direction: stage pre-repair shards via the REAL fetch seam
+    # (revision=None: the live tests deliberately read the repo's live main).
     for job, n_shards in _PRE_REPAIR_SHARDS.items():
         for i in range(n_shards):
             name = f"row_index_shard{i:02d}.jsonl"
-            verify_uploads._row_index_fetch(f"{_STORE}/{job}/{name}", tmp_path / job / name)
+            verify_uploads._row_index_fetch(
+                f"{_STORE}/{job}/{name}", tmp_path / job / name, revision=None
+            )
     fail_res = verify_uploads.check_realized_row_counts(
         expected_rows=dict(_EXPECTED),
         local_root=str(tmp_path),
@@ -608,7 +873,7 @@ def test_resolve_sizes_live_body():
     body (ONE batched `get_paths_info` POST) against a known live index file
     and pins the size the scoped tree walk reports for it."""
     path = f"{_STORE}/greedy_evil_toxicchat/row_index_shard00.jsonl"
-    sizes = verify_uploads._row_index_resolve_sizes([path])
+    sizes = verify_uploads._row_index_resolve_sizes([path], revision=None)
     assert sizes.get(path) == 21756
 
 
@@ -620,7 +885,7 @@ def test_attribution_replay_per_prefix():
     v3's unsatisfiable PASS direction went unnoticed for two rounds)."""
     labels = tuple(_EXPECTED)
     for job in _EXPECTED:
-        listed = verify_uploads._row_index_hf_entries((f"{_STORE}/{job}",))
+        listed = verify_uploads._row_index_hf_entries((f"{_STORE}/{job}",), revision=None)
         matched = [
             p
             for p, _size in listed
