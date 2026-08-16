@@ -382,6 +382,32 @@ stale lint-cap sync-lag fix) gets a 4-point legitimacy checklist
 precondition doc byte-identity) + a named already-filed task (#2327) so
 Codex neither flags the process gap nor demands an in-round fix.
 
+**Upheld-own-finding fix round + universal-claim testing (#2321 r4,
+2026-08-16):** three composable deltas. (a) When the reconciler UPHELD the
+twin's OWN prior FAIL, the history block inverts: frame the primary task as
+"verify the fix, NOT re-argue the ruling (it went your way; relitigating
+wastes the round)", and carry the reconciler's recorded CALIBRATION notes
+(e.g. ":2669 standalone under a truthful summary = CONCERN") into Step 7 as
+the severity rule for residuals. (b) When the fix's closing summary is a
+UNIVERSAL plus one EXCEPTION ("short-circuits every X — except local Y"),
+compose a bidirectional counterexample hunt with DIRECTIONAL severity: a
+hit falsifying the universal = the blocker class recurring (FAIL); an
+overstated exception (more still runs than claimed) = the safe direction
+(Minor/CONCERN). Also name any SECOND universal riding along (the smoke
+scale-only sentence) as a claim-class sibling. Require enumerate-from-code-
+then-map ("a sweep that merely agrees with the docstring is not evidence" —
+each prior round's sweep missed what the other family caught), and have
+Codex audit the implementer's OWN residual-site classification note. (c)
+LINE-SHIFT NOTE: when the only code change sits at the TOP of a large file
+(docstring +21/−7 ⇒ net +14), every reconciler/ledger anchor is old-tip —
+give grep-verified CURRENT anchors for each cited site, tell Codex old
+numbers apply in `git show <round-parent>:<path>`, and forbid arithmetic
+re-derivation. Also: a three-number count dispute (label vs recount vs
+fresh sweep) composes as re-derive-yourself + plausibility-adjudicate the
+"two different objects" account (capability of the claimed mechanism,
+asymmetry coherence, internal contradictions) + an honest stakes note
+(merge-time gate re-runs the live selector regardless).
+
 **Inlined-prior-verdict tag echo hazard (#2145 r2, 2026-08-15):** when the
 prior Codex verdict is inlined IN FULL, add a hard-constraints line telling
 Codex to NEVER reproduce the prior marker's tags in its own output (the
