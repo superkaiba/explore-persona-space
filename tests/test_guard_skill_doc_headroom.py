@@ -97,6 +97,11 @@ def test_registered_in_settings_posttooluse() -> None:
     assert matching, "guard_skill_doc_headroom.sh not registered under hooks.PostToolUse"
     entry, hook = matching[0]
     matcher = entry.get("matcher", "")
+    # Hollow-gate fix (#2325 r2 blocker 3): fullmatch("Edit") + fullmatch("Write")
+    # alone accepts ".*" and "Edit|Write|Bash" — an over-broad matcher would fire
+    # this hook on every Bash call fleet-wide and stay green. Pin the alternative
+    # SET exactly; keep the fullmatch pair as the regex-semantics belt.
+    assert set(matcher.split("|")) == {"Edit", "Write"}, matcher
     assert re.fullmatch(matcher, "Edit"), matcher
     assert re.fullmatch(matcher, "Write"), matcher
     token_match = re.search(r"\S*guard_skill_doc_headroom\.sh", hook["command"])
@@ -143,6 +148,94 @@ def test_trips_on_low_headroom() -> None:
     assert proc.returncode == 2, (proc.returncode, proc.stdout, proc.stderr)
     assert "issue/SKILL.md" in proc.stderr
     assert "cap" in proc.stderr
+
+
+def _stub_bin(tmp_path: Path, name: str, body: str) -> Path:
+    """Write an executable PATH-stub named ``name`` and return the stub dir."""
+    stub = tmp_path / "bin"
+    stub.mkdir(exist_ok=True)
+    p = stub / name
+    p.write_text("#!/bin/sh\n" + body, encoding="utf-8")
+    os.chmod(p, 0o755)
+    return stub
+
+
+def test_fallback_root_when_git_probe_fails(tmp_path) -> None:
+    """Blocker 1 (#2325 r2): when the git main-root probe fails, the hook must
+    run the lint from the SCRIPT-OWNED tree — never from "." (the caller's
+    cwd; the #634 wrong-venv shape). Pre-fix, ``dirname ""`` yields ".", which
+    is neither empty nor a non-existent dir, so the fallback never fired.
+
+    Stub ``git`` to fail and ``uv`` to record its cwd + print a complete PASS
+    run; invoke from an unrelated cwd and assert the recorded root is the
+    script's own tree.
+    """
+    stub = _stub_bin(tmp_path, "git", "exit 1\n")
+    cwd_file = tmp_path / "uv_cwd.txt"
+    _stub_bin(tmp_path, "uv", 'pwd > "$UV_CWD_FILE"\necho "workflow_lint: PASS"\nexit 0\n')
+    unrelated = tmp_path / "unrelated"
+    unrelated.mkdir()
+    env = os.environ.copy()
+    env.pop("EPM_SKIP_SKILL_DOC_HEADROOM_HOOK", None)
+    env["EPM_SKILL_DOC_HEADROOM_WARN_BYTES"] = "0"
+    env["PATH"] = f"{stub}:{env['PATH']}"
+    env["UV_CWD_FILE"] = str(cwd_file)
+    proc = subprocess.run(
+        ["bash", str(SCRIPT)],
+        input=_hook_json(str(_REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md")),
+        capture_output=True,
+        text=True,
+        env=env,
+        cwd=str(unrelated),
+        timeout=60,
+    )
+    assert proc.returncode == 0, (proc.returncode, proc.stdout, proc.stderr)
+    assert cwd_file.is_file(), "uv stub never ran — hook exited before the lint invocation"
+    recorded = Path(cwd_file.read_text(encoding="utf-8").strip()).resolve()
+    assert recorded == _REPO_ROOT.resolve(), recorded
+    assert recorded != unrelated.resolve(), "lint ran from the caller's cwd (the '.' bug)"
+
+
+def test_fail_open_on_lint_timeout_with_partial_output(tmp_path) -> None:
+    """Blocker 2 (#2325 r2): a timeout-killed lint run (rc 124) that already
+    emitted a parseable low-headroom WARN line must NOT trip the hook — the
+    exit status AND a complete terminal summary are both required before any
+    parse (the lint streams WARN lines incrementally)."""
+    stub = _stub_bin(
+        tmp_path,
+        "uv",
+        'echo "WARN: .claude/skills/issue/SKILL.md: 982587 bytes'
+        ' - grandfathered; 1 bytes under its cap (985300)."\n'
+        "exit 124\n",
+    )
+    proc = _run(
+        _hook_json(str(_REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md")),
+        env_extra={"PATH": f"{stub}:{os.environ['PATH']}"},
+    )
+    assert proc.returncode == 0, (proc.returncode, proc.stdout, proc.stderr)
+    assert proc.stdout == ""
+    assert proc.stderr == ""
+
+
+def test_fail_line_relayed_on_complete_fail_run(tmp_path) -> None:
+    """Guard against over-correcting blocker 2: rc 1 WITH a complete FAIL
+    summary is a COMPLETED lint run — the rel-scoped FAIL line must still be
+    relayed (exit 2), not swallowed by the new status gating."""
+    stub = _stub_bin(
+        tmp_path,
+        "uv",
+        'echo "workflow_lint: .claude/skills/issue/SKILL.md: 999999 bytes exceeds'
+        ' its grandfather ratchet cap (985300 bytes)"\n'
+        'echo "workflow_lint: FAIL (1 error(s))"\n'
+        "exit 1\n",
+    )
+    proc = _run(
+        _hook_json(str(_REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md")),
+        env_extra={"PATH": f"{stub}:{os.environ['PATH']}"},
+    )
+    assert proc.returncode == 2, (proc.returncode, proc.stdout, proc.stderr)
+    assert "issue/SKILL.md" in proc.stderr
+    assert "OVER its grandfather cap" in proc.stderr
 
 
 def test_quiet_on_eligible_path_with_ample_headroom() -> None:

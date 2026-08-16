@@ -67,15 +67,38 @@ lint="$tree_root/scripts/workflow_lint.py"
 rel="${file_path#*/.claude/skills/}"
 
 # Main checkout root (worktree-safe): venv host for `uv run`. Fall back to
-# this script's own tree when git is unavailable.
+# this script's own tree when git is unavailable. Capture the probe output
+# FIRST and form `dirname` only on success: on a failed probe git prints
+# nothing and `dirname ""` is "." — neither empty nor a non-existent dir —
+# which made the fallback unreachable and ran uv from the caller's cwd
+# (#2325 r2 blocker 1; the #634 wrong-venv shape).
 SELF_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)" || exit 0
-main_root="$(dirname "$(git -C "$SELF_DIR" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" 2>/dev/null)"
-if [ -z "$main_root" ] || [ ! -d "$main_root" ]; then
+common_dir="$(git -C "$SELF_DIR" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
+if [ -n "$common_dir" ]; then
+  main_root="$(dirname "$common_dir")"
+else
   main_root="${SELF_DIR%/scripts}"
 fi
+# Validate the selected root before invoking uv (fail-open): it must be an
+# absolute project checkout — retry the script-owned tree, else exit 0.
+case "$main_root" in /*) ;; *) main_root="${SELF_DIR%/scripts}" ;; esac
+if [ ! -d "$main_root" ] || [ ! -f "$main_root/pyproject.toml" ]; then
+  main_root="${SELF_DIR%/scripts}"
+fi
+{ [ -d "$main_root" ] && [ -f "$main_root/pyproject.toml" ]; } || exit 0
 
 out=$(cd "$main_root" && timeout 30s uv run python "$lint" --check-skill-doc-size 2>&1)
-[ -n "$out" ] || exit 0
+lint_rc=$?
+# Fail-open unless the lint run COMPLETED (#2325 r2 blocker 2): the size
+# check streams WARN lines incrementally, so a timeout-killed (124/137) or
+# tool-missing (126/127) run can leave a parseable partial line in $out.
+# rc 0 must carry the PASS summary; rc 1 must carry a complete FAIL summary
+# (`workflow_lint: FAIL (N error(s))`); every other status exits 0.
+case "$lint_rc" in
+  0) printf '%s\n' "$out" | grep -qF "workflow_lint: PASS" || exit 0 ;;
+  1) printf '%s\n' "$out" | grep -qE 'workflow_lint: FAIL \([0-9]+ error' || exit 0 ;;
+  *) exit 0 ;;
+esac
 
 thr="${EPM_SKILL_DOC_HEADROOM_WARN_BYTES:-2000}"
 case "$thr" in '' | *[!0-9]*) thr=2000 ;; esac
