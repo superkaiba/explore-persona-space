@@ -43,6 +43,16 @@ Round-2 additions (#2326 open concerns):
     ``partial-persist-residual-undocumented``).
 10. Non-UTF-8 ``--file`` -> argparse usage exit 2 (the invocation is the
     bug; the marker was never examined).
+
+Round-3 addition (#2326 ``partial-persist-residual-undocumented``,
+verified-open r2):
+
+11. Intra-call mirror split: fail the SECOND ``_append_jsonl_line`` inside
+    ``raise_concern`` (the events.jsonl mirror) -> exit 4 whose count is
+    COMPLETED calls while the failing call's OWN row IS in concerns.jsonl
+    (ledger-first append), the row sits appended-but-uncommitted, and the
+    healthy replay converges the LEDGER but never restores the missing
+    mirror (the idempotency early-return keys on concerns.jsonl).
 """
 
 from __future__ import annotations
@@ -103,6 +113,14 @@ def _ledger_rows(tw, tid: int) -> list[dict]:
     if not path.exists():
         return []
     return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+
+
+def _concern_mirror_ids(tw, tid: int) -> list[str]:
+    """concern_ids of the ``epm:concern-*`` mirror events on events.jsonl,
+    in append order (the audit breadcrumbs ``raise_concern`` mirrors)."""
+    path = tw.find_task_path(tid) / "events.jsonl"
+    events = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    return [e["concern_id"] for e in events if str(e.get("kind", "")).startswith("epm:concern-")]
 
 
 _THREE_ROWS = (
@@ -419,9 +437,12 @@ def test_max_rows_boundary_passes(concerns_task, tmp_path, capsys):
 def test_operational_failure_exit4_partial_ledger_then_converges(concerns_task, tmp_path, capsys):
     """Regression test for the #2326 exit-taxonomy fix: an operational
     persistence failure mid-loop exits 4 (never the exit-1 MALFORMED class),
-    prints only the exception CLASS + counts + kebab ids, leaves rows
-    1..k-1 durably persisted (the documented partial-ledger residual), and
-    the idempotent re-run converges to the complete row set.
+    prints only the exception CLASS + counts + kebab ids, leaves the rows
+    COMPLETED before the failing call durably persisted (the documented
+    partial-ledger floor — this fake fails the WHOLE library call, so the
+    failing row lands nothing here; the mirror-split sibling test below
+    covers the intra-call case where it DOES land), and the idempotent
+    re-run converges the ledger to the complete row set.
 
     Fails pre-fix: the pre-exit-4 forwarder let the OSError propagate as an
     uncaught traceback (process exit 1, colliding with MALFORMED)."""
@@ -460,6 +481,82 @@ def test_operational_failure_exit4_partial_ledger_then_converges(concerns_task, 
     assert rc2 == 0
     assert "persisted 3/3 concern(s):" in out2
     assert len(_ledger_rows(tw, tid)) == 3, "idempotent re-run converges (not 4 rows)"
+
+
+# ─── 11. Intra-call mirror split (#2326 round 3) ───────────────────────────
+
+
+def test_mirror_append_failure_row_lands_uncounted_replay_never_repairs_mirror(
+    concerns_task, tmp_path, capsys
+):
+    """Fault-injection for the intra-call mirror split (#2326 round 3,
+    ``partial-persist-residual-undocumented``): fail the SECOND
+    ``_append_jsonl_line`` inside ``raise_concern`` — the events.jsonl
+    mirror (``task_workflow.py:8480``) — while the FIRST (the
+    concerns.jsonl append, ``:8458``) succeeds. Asserts the documented
+    split:
+
+    * exit 4 reports ``0/3 persisted`` (COMPLETED calls) while the failing
+      call's own row IS durably in concerns.jsonl — the count is a floor;
+    * the covering commit never ran: the ledger row sits
+      appended-but-uncommitted (untracked in git) until a later concern
+      append commits the file by path;
+    * the healthy replay converges the CONCERNS LEDGER (3 rows, no
+      duplicate of row 1) but NEVER restores the missing events.jsonl
+      mirror — the idempotency early-return (``:8542-8556``) keys on
+      concerns.jsonl and returns before ``_append_concern_event``.
+
+    The round-2 fake (the test above) patches ``raise_concern`` wholesale
+    and structurally cannot expose this — the split lives INSIDE the
+    library call."""
+    repo, tw, tid = concerns_task
+    mb = tmp_path / "mb.md"
+    mb.write_text(_THREE_ROWS)
+    argv = [str(tid), "--file", str(mb), "--by", "codex-code-reviewer", "--round", "2"]
+
+    real_append = tw._append_jsonl_line
+
+    def mirror_failing_append(path, payload):
+        """Signature-conformant by delegation; raises ONLY on the
+        events.jsonl mirror append (the second append inside
+        ``_append_concern_event``)."""
+        if path.name == "events.jsonl":
+            raise OSError("simulated mirror-append failure")
+        return real_append(path, payload)
+
+    import unittest.mock as mock
+
+    with mock.patch.object(tw, "_append_jsonl_line", mirror_failing_append):
+        rc, out = _run(argv, capsys)
+    assert rc == 4
+    assert "OPERATIONAL: persist-failed row 1 (hf-delete-scope-unbounded)" in out
+    assert "0/3 persisted" in out, "the exit-4 count is COMPLETED calls only"
+    assert "simulated mirror-append failure" not in out, "exception MESSAGE must not print"
+    rows = _ledger_rows(tw, tid)
+    assert len(rows) == 1, "the FAILING call's own row landed (ledger-first append)"
+    assert rows[0]["concern_id"] == "hf-delete-scope-unbounded"
+    assert _concern_mirror_ids(tw, tid) == [], "the events.jsonl mirror must be absent"
+    # The covering commit never ran: row 1 is appended-but-uncommitted.
+    status = subprocess.run(
+        ["git", "status", "--porcelain"], cwd=repo, check=True, capture_output=True, text=True
+    ).stdout
+    assert "concerns.jsonl" in status, "ledger row must be uncommitted after the mirror failure"
+
+    # Healthy replay: the LEDGER converges (3 rows, row 1 not duplicated)...
+    rc2, out2 = _run(argv, capsys)
+    assert rc2 == 0
+    assert "persisted 3/3 concern(s):" in out2
+    rows2 = _ledger_rows(tw, tid)
+    assert [r["concern_id"] for r in rows2] == [
+        "hf-delete-scope-unbounded",
+        "pack-dir-sweep-residual",
+        "stray-log-line",
+    ], "replay converges the ledger: no duplicate of the split row"
+    # ...but the missing mirror is NEVER restored: only rows 2 and 3 mirror.
+    assert _concern_mirror_ids(tw, tid) == [
+        "pack-dir-sweep-residual",
+        "stray-log-line",
+    ], "replay early-returns off concerns.jsonl and cannot repair the mirror"
 
 
 # ─── 10. Non-UTF-8 --file -> usage exit 2 ──────────────────────────────────

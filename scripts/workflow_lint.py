@@ -870,7 +870,9 @@ Behaviours:
   invocations, and keep the resume-recovery clause with its recovery
   invocation + predicate-leading sentence; the file also carries the
   resume-table preamble pointer and the 5c-ter empty-ledger literal), a
-  LINE-START ``CONCERN:: `` grammar row + the ``CONCERN:: none`` sentinel
+  LINE-START non-sentinel ``CONCERN:: `` grammar row (a standalone
+  ``CONCERN:: none`` line alone does not satisfy it) + the
+  ``CONCERN:: none`` sentinel
   inside both emitting Codex composers' verdict templates
   (codex-code-reviewer.md, codex-clean-result-critic.md), and the
   ``**Prior-concerns ledger:**`` visibility line in code-reviewer.md
@@ -13072,7 +13074,9 @@ def _codex_concerns_skill_errors(skill: Path) -> list[str]:
 def _codex_concerns_composer_errors(composer: Path, start_tag: str, end_tag: str) -> list[str]:
     """Surfaces (2)/(3) of ``check_codex_concerns_persistence_lens`` (#2326):
     the emitting composer's verdict-template pins — a LINE-START
-    ``CONCERN:: `` grammar row + the ``CONCERN:: none`` empty-set sentinel."""
+    NON-SENTINEL ``CONCERN:: `` grammar row (a standalone ``CONCERN:: none``
+    line does not satisfy it — the round-2 sentinel-only alias) + the
+    ``CONCERN:: none`` empty-set sentinel."""
     row_token = "CONCERN:: "
     none_sentinel = "CONCERN:: none"
     errors: list[str] = []
@@ -13092,13 +13096,16 @@ def _codex_concerns_composer_errors(composer: Path, start_tag: str, end_tag: str
         return errors
     end = text.find(end_tag, start_match.start())
     region = text[start_match.start() : end] if end != -1 else text[start_match.start() :]
-    if re.search(rf"(?m)^{re.escape(row_token)}", region) is None:
+    if re.search(rf"(?m)^{re.escape(row_token)}(?!none\b)", region) is None:
         errors.append(
             f"{composer}: the verdict-template region no longer carries "
             f"a LINE-START {row_token!r} row grammar (#2326) — a "
             f"mid-prose token mention (the containment clause) is not a "
-            f"template row, so Codex would emit prose-only concerns the "
-            f"blind forwarder cannot persist (the #2321 shape)."
+            f"template row, and a sentinel-only region (a standalone "
+            f"{none_sentinel!r} line as the sole line-start token, the "
+            f"#2326 round-2 alias) is not a grammar row either — Codex "
+            f"would emit prose-only concerns the blind forwarder cannot "
+            f"persist (the #2321 shape)."
         )
     if none_sentinel not in region:
         errors.append(
@@ -13142,11 +13149,14 @@ def check_codex_concerns_persistence_lens(*, repo_root: Path | None = None) -> l
         (``concerns ledger: empty — nothing to walk``) — the
         token-presence strengthening persisted as
         ``durability-pin-token-presence-gaps`` (#2326 round 1);
-    (2) codex-code-reviewer.md — a LINE-START ``CONCERN:: `` grammar row
-        AND the ``CONCERN:: none`` empty-set sentinel inside the
-        verdict-template region (line-start marker tags; a mid-prose
+    (2) codex-code-reviewer.md — a LINE-START NON-SENTINEL ``CONCERN:: ``
+        grammar row AND the ``CONCERN:: none`` empty-set sentinel inside
+        the verdict-template region (line-start marker tags; a mid-prose
         token mention — the containment clause — does not satisfy the
-        row pin);
+        row pin, and neither does a standalone line-start
+        ``CONCERN:: none`` as the region's only token — the round-2
+        sentinel-only alias, EXECUTED by the #2326 reconciler:
+        sentinel-only corpus → 0 errors pre-fix);
     (3) codex-clean-result-critic.md — same, its template region;
     (4) code-reviewer.md — the literal ``**Prior-concerns ledger:**``
         visibility line inside the ``### Step 0.8`` section body.
@@ -18275,7 +18285,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "collection invocations + resume-recovery clause with its recovery "
         "invocation and predicate-leading sentence, plus the resume-table "
         "preamble pointer and 5c-ter empty-ledger literal), a line-start "
-        "CONCERN:: grammar row + the CONCERN:: none sentinel in the "
+        "non-sentinel CONCERN:: grammar row + the CONCERN:: none sentinel in the "
         "codex-code-reviewer.md and codex-clean-result-critic.md "
         "verdict templates, and the Prior-concerns-ledger visibility line "
         "in code-reviewer.md Step 0.8 (incident #2321: 8 emitted concerns, "

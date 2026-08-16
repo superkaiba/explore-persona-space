@@ -23,7 +23,11 @@ were persisted, and the round-2 prior-concerns gate walked an empty ledger.
     token, a deleted ``CONCERN:: none`` sentinel, a single collection
     invocation, a heading-only recovery clause, a dropped predicate
     sentence / resume-table preamble / 5c-ter empty-ledger literal)
-    produces EXACTLY ONE deterministic lint error.
+    produces EXACTLY ONE deterministic lint error. Round-3 addition
+    (same concern, sentinel-only alias): a composer region whose ONLY
+    line-start token is a standalone ``CONCERN:: none`` — it passed the
+    round-2 pins with the grammar row stripped (reconciler-executed:
+    0 errors pre-fix) and now yields exactly one error per composer.
 """
 
 from __future__ import annotations
@@ -142,6 +146,25 @@ to persist emit the sole row `CONCERN:: none`.
 <!-- /epm:code-review-codex -->
 """
 
+# Broken-but-previously-PASSING (#2326 round 3, `durability-pin-token-
+# presence-gaps` sentinel-only alias): the grammar row is DELETED and the
+# region's only line-start token is a standalone `CONCERN:: none` — it
+# satisfied BOTH round-2 pins (line-start `CONCERN:: ` present; sentinel
+# substring present), so the template passed with the grammar row stripped
+# (the reconciler EXECUTED this corpus: 0 errors pre-fix).
+_CODEX_CR_SENTINEL_ONLY = """\
+composer prose.
+
+<!-- epm:code-review-codex v{{revision_round}} -->
+**Verdict:** [PASS | FAIL]
+
+## Concerns to persist
+
+CONCERN:: none
+
+<!-- /epm:code-review-codex -->
+"""
+
 # Broken-but-previously-PASSING: grammar row present, `CONCERN:: none`
 # empty-set sentinel deleted.
 _CODEX_CR_NO_NONE = """\
@@ -191,6 +214,19 @@ composer prose.
 
 Emit rows using the token CONCERN:: at line start; when there is nothing
 to persist emit the sole row `CONCERN:: none`.
+
+<!-- /epm:clean-result-critique-codex -->
+"""
+
+_CODEX_CRC_SENTINEL_ONLY = """\
+composer prose.
+
+<!-- epm:clean-result-critique-codex v{{revision_round}} -->
+**Verdict:** [PASS | REVISE]
+
+### Concerns to persist
+
+CONCERN:: none
 
 <!-- /epm:clean-result-critique-codex -->
 """
@@ -252,12 +288,14 @@ _CR_VARIANTS: dict[str, str] = {
     "codex-cr-start-tag": ("prose Marker start tag: <!-- epm:code-review-codex v1 --> only.\n"),
     "codex-cr-token": _CODEX_CR_NO_TOKEN,
     "codex-cr-token-midline": _CODEX_CR_TOKEN_MIDLINE_ONLY,
+    "codex-cr-sentinel-only": _CODEX_CR_SENTINEL_ONLY,
     "codex-cr-no-none": _CODEX_CR_NO_NONE,
 }
 _CRC_VARIANTS: dict[str, str] = {
     "codex-crc-start-tag": ("prose <!-- epm:clean-result-critique-codex v1 --> mid-line only.\n"),
     "codex-crc-token": _CODEX_CRC_NO_TOKEN,
     "codex-crc-token-midline": _CODEX_CRC_TOKEN_MIDLINE_ONLY,
+    "codex-crc-sentinel-only": _CODEX_CRC_SENTINEL_ONLY,
     "codex-crc-no-none": _CODEX_CRC_NO_NONE,
 }
 _REVIEWER_VARIANTS: dict[str, str] = {
@@ -342,8 +380,10 @@ def test_lens_fails_per_missing_surface(
         ("skill-preamble", "SKILL.md", "resume-table preamble"),
         ("skill-empty-ledger", "SKILL.md", "empty-ledger"),
         ("codex-cr-token-midline", "codex-code-reviewer.md", "LINE-START"),
+        ("codex-cr-sentinel-only", "codex-code-reviewer.md", "sentinel-only"),
         ("codex-cr-no-none", "codex-code-reviewer.md", "CONCERN:: none"),
         ("codex-crc-token-midline", "codex-clean-result-critic.md", "LINE-START"),
+        ("codex-crc-sentinel-only", "codex-clean-result-critic.md", "sentinel-only"),
         ("codex-crc-no-none", "codex-clean-result-critic.md", "CONCERN:: none"),
     ],
 )

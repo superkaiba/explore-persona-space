@@ -3301,12 +3301,14 @@ one-liner) even on non-trigger-dense rounds:
 `CONCERN:: ` grammar (5b/5c `codex-code-reviewer`, 9a-bis
 `codex-clean-result-critic`); at 9a / 9b VC run BOTH invocations WITHOUT
 it (zero rows -> no-op; a spontaneous prose concerns-heading WARNs, never
-retries). A persist-step failure AFTER the marker posted (exit 4) is
-re-run alone (idempotent) — never a re-dispatch of Codex. VALIDATION is
-all-or-nothing; PERSISTENCE is per-row — a mid-loop operational failure
-(exit 4) can leave a PARTIAL ledger (rows 1..k-1 durably raised), a named
-accepted residual (#2326): the idempotent re-run here and the resume
-recovery below converge it to the complete row set.
+retries). VALIDATION is all-or-nothing; PERSISTENCE is per-row — a
+mid-loop operational failure (exit 4) leaves a PARTIAL ledger whose
+printed count is COMPLETED calls only: the library appends the
+ledger row BEFORE the events.jsonl mirror + commit, so the failing row
+may itself be in `concerns.jsonl`, uncommitted until a later concern
+append commits the file by path. The idempotent re-run here and the
+resume recovery below converge the LEDGER — a missing events.jsonl
+mirror (a decision-inert breadcrumb) is never restored.
 
 **Resume recovery (crash between marker post and persist — #2326).**
 At ANY resume/decision point where a current-round `epm:<kind>-codex v<n>`
@@ -3353,8 +3355,8 @@ STRUCTURAL shapes; exit 3 keeps its named line —
 `WARN: legacy-marker-no-concern-rows`. Exit 4 (operational persistence
 failure) says NOTHING about the round's age — it fires on fully post-fix
 markers too (the pre-post gate validates structure, not the ledger
-write), may leave a PARTIAL ledger, and converges via the idempotent
-re-run at every later recovery row. EXCEPTION — argparse/usage exit 2:
+write), may leave a PARTIAL ledger, and converges the LEDGER via the
+idempotent re-run at every later recovery row. EXCEPTION — argparse/usage exit 2:
 the forwarder never examined the marker (the invocation itself is
 malformed), so the rows are fully recoverable — fix the invocation and
 re-run the recovery, never WARN-and-proceed past it.

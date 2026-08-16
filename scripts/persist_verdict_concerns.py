@@ -32,11 +32,21 @@ Contract:
   ``evidence`` field (mirrors the CLI's non-lossy shift, #2121).
 * Validation is all-or-nothing; PERSISTENCE is per-row: each valid row is
   durably raised in turn, so a mid-loop OPERATIONAL failure (exit 4) can
-  leave a PARTIAL ledger (rows 1..k-1 persisted). Named accepted residual
-  (#2326 reconciler): the idempotent same-(id, round, severity) replay
-  makes the re-run — at collection or at any resume-recovery row —
-  converge to the complete row set; never a batch transaction in the
-  frozen library layer (Non-goals).
+  leave a PARTIAL ledger. The exit-4 count reports COMPLETED calls — a
+  FLOOR on the ledger, not its row count: ``raise_concern`` appends the
+  ``concerns.jsonl`` row BEFORE the ``events.jsonl`` mirror and the
+  covering commit (``task_workflow._append_concern_event``), so when the
+  MIRROR append (or the commit) is what failed, the failing call's own
+  row has nonetheless landed in the ledger — uncounted, and UNCOMMITTED
+  until any later concern append commits the file by path. Named
+  accepted residual (#2326 reconciler): the idempotent same-(id, round,
+  severity) replay — at collection or at any resume-recovery row —
+  converges the CONCERNS LEDGER to the complete row set, but it CANNOT
+  restore a missing ``events.jsonl`` mirror: the replay early-return
+  keys on ``concerns.jsonl`` alone, and the mirror is a decision-inert
+  audit breadcrumb (``markers.md:80``; ``list_concerns`` reads the
+  ledger exclusively). Never a batch transaction in the frozen library
+  layer (Non-goals).
 * Output discipline: stdout carries ONLY counts, concern ids (kebab
   tokens), and content-free reason codes (``bad-severity | bad-id |
   empty-summary | too-few-fields | duplicate-id | none-with-rows |
@@ -46,10 +56,11 @@ Contract:
 * Exit codes: 0 ok (persisted, idempotent no-op, or clean ``none``) - 1
   malformed rows - 3 missing/contradictory concerns block under
   ``--require-block`` - 4 operational persistence failure mid-loop
-  (partial ledger possible; re-run the persist invocation alone —
-  idempotent) - 2 argparse/usage (incl. an unreadable or non-UTF-8
-  ``--file``: the marker was never examined, so the invocation is the
-  bug).
+  (partial ledger possible — the failing row itself may have landed;
+  re-run the persist invocation alone: idempotent, converges the ledger
+  but not a missing mirror) - 2 argparse/usage (incl. an unreadable or
+  non-UTF-8 ``--file``: the marker was never examined, so the invocation
+  is the bug).
 """
 
 from __future__ import annotations
@@ -227,8 +238,12 @@ def main(argv: list[str] | None = None) -> int:
             # guards). Distinct exit 4 so callers never bin it with the
             # exit-1 MALFORMED class (#2326 exit-taxonomy-operational-
             # collision). Content-free by design: the exception CLASS only —
-            # a message could embed summary text. Rows 1..idx-1 are durably
-            # persisted (partial ledger); the idempotent re-run converges.
+            # a message could embed summary text. The printed count is
+            # COMPLETED calls, a floor: row idx's OWN ledger row may ALSO
+            # have landed when the failure hit the events.jsonl mirror or
+            # the covering commit inside raise_concern (ledger-first
+            # append). The idempotent re-run converges the concerns LEDGER
+            # only — not a missing mirror (see the module docstring).
             print(
                 f"OPERATIONAL: persist-failed row {idx} ({cid}): "
                 f"{type(exc).__name__} - {len(persisted)}/{len(parsed)} persisted"
