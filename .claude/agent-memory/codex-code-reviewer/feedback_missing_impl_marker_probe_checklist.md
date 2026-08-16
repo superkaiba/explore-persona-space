@@ -11,7 +11,11 @@ yet evidence of genuine absence (hit live on #2147 r1, 2026-08-16):
 
 1. **Both prefixes** — `epm:results` (infra/batch/analysis/survey) AND
    `epm:experiment-implementation` (implementers occasionally post the wrong
-   kind for the task's path).
+   kind for the task's path; confirmed live a second time on #2148 r1,
+   2026-08-16 — a `kind: infra` wf-fix task posted
+   `epm:experiment-implementation v1`; probe 1 resolved it, and the compose
+   proceeded with a neutral marker-kind attestation in the prompt so the
+   twin judges shape on the inlined body, never the kind naming).
 2. **Full events.jsonl kind listing on main** — an implementer may have put
    report CONTENT in an `epm:progress` note. READ the candidate note body: a
    `[surfaced-followups]` / heartbeat / dispatch note is NOT a report (on
