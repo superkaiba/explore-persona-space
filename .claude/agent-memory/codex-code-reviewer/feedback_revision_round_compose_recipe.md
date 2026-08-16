@@ -336,6 +336,28 @@ implemented prior finding is restated with the orchestrator's reasoning and
 a proof burden ("re-raising requires proving the later-fire case reachable"),
 else Codex predictably re-FAILs on its own prior item.
 
+**Path-referenced prior verdicts + Gate-scope pre-observation (#2321 r2,
+2026-08-16):** when the prior round's verdict FILES survive in /tmp (own r1
+output + the Claude split-review g-files), reference them BY PATH instead of
+inlining — the union closure checklist is then a Codex duty ("build it
+yourself from both verdict sets"), pseudo-IDs from the r1 `Concerns to
+persist` kebab ids, per-item VERIFIED-CLOSED/NOT-CLOSED/DECLINED-ADJUDICATED
+lines + a fails-before determination per closure test (pre-fix source
+readable at `git show <round-parent>:<path>` — name that form explicitly).
+Tag arithmetic simplifies: v<n-1> count == 0 in the prompt; the echo-hazard
+constraint says "never reproduce any epm:code-review-codex comment-tag line
+from the files you read" without writing the literal v<n-1> tag. ALSO: apply
+the item-4 (e)-observation pattern to the **Gate-scope line** — grep the
+fetched marker body at compose time (`Gate-scope|#1288|sweep_scope|pin-sweep`
+loose variants before concluding); observed-ABSENT with ts ≥ 2026-07-15 ⇒
+pre-declare the observation in Step 4.6 with the marker-shape rubric AND the
+mechanical-contract-only strip-class note (tag precisely so the
+orchestrator's 5c-bis parse works), keeping the diff-consistency half as
+Codex's own literal sweep. And re-check the ruff-policy-pin duty EVERY round
+against the round's OWN touched files vs `LIVE_WORKFLOW_HELPERS` — r1's
+trigger file (workflow_lint.py) was untouched in r2, so the pin was NOT owed
+and the prompt must say so or Codex re-demands it.
+
 **Inlined-prior-verdict tag echo hazard (#2145 r2, 2026-08-15):** when the
 prior Codex verdict is inlined IN FULL, add a hard-constraints line telling
 Codex to NEVER reproduce the prior marker's tags in its own output (the
