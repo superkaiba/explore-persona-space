@@ -649,6 +649,62 @@ def test_provision_parser_exposes_allow_stopped_duplicate():
     assert ns0.allow_stopped_duplicate is False
 
 
+def test_provision_name_suffix_grammar_single_source(
+    isolated_state, stub_list_team_pods, monkeypatch, capsys
+):
+    """#2145: cmd_provision's write-side suffix grammar is the shared
+    backends.base.RUNPOD_NAME_SUFFIX_RE (single source) — digit-initial
+    refuses with the byte-identical pre-#2145 SystemExit message; a
+    conformant slug proceeds to the dry-run plan naming pod-<N>-<slug>."""
+    from explore_persona_space.backends.base import RUNPOD_NAME_SUFFIX_RE
+
+    # The shared pattern IS the pod grammar (letter-initial, <=20 chars).
+    assert RUNPOD_NAME_SUFFIX_RE.pattern == "[a-z][a-z0-9-]{0,19}"
+
+    monkeypatch.setattr(pod_lifecycle, "_warn_on_terminal_parent_provision", lambda *a, **k: False)
+    _write_metadata_file({})
+    stub_list_team_pods.return_value = []
+
+    # Digit-initial ("8xh200") violates the pod grammar → SystemExit with
+    # the byte-identical message (the refusal fires BEFORE any API access).
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_provision(_gpu_provision_ns(55, name_suffix="8xh200"))
+    assert "--name-suffix must match [a-z][a-z0-9-]{0,19}" in str(exc.value)
+
+    # Over-length (21 chars) refuses through the same shared pattern.
+    with pytest.raises(SystemExit):
+        pod_lifecycle.cmd_provision(_gpu_provision_ns(55, name_suffix="a" * 21))
+
+    # A conformant slug proceeds (dry-run plan names the suffixed pod).
+    pod_lifecycle.cmd_provision(_gpu_provision_ns(55, name_suffix="q32b"))
+    out = capsys.readouterr().out
+    assert "[dry-run]" in out
+    assert "pod-55-q32b" in out
+
+
+def test_slug_from_pod_name_read_side_parity():
+    """#2145: _slug_from_pod_name is the read-side twin of
+    _issue_from_pod_name (one grammar source, _POD_NAME_RE) — suffixed
+    managed names yield their slug, bare/unmanaged names yield None, and
+    every write-side-legal slug round-trips through the read side (the
+    write grammar is a strict subset of the read grammar BY DESIGN — the
+    read side also accepts legacy/foreign slugs; do not unify)."""
+    from explore_persona_space.backends.base import RUNPOD_NAME_SUFFIX_RE
+
+    assert pod_lifecycle._slug_from_pod_name("pod-909") is None
+    assert pod_lifecycle._slug_from_pod_name("pod-909-b") == "b"
+    assert pod_lifecycle._slug_from_pod_name("pod-909-followup2") == "followup2"
+    assert pod_lifecycle._slug_from_pod_name("epm-issue-909-b") == "b"
+    assert pod_lifecycle._slug_from_pod_name("not-a-managed-pod") is None
+    # pod-47 never reads as issue 475's slugless sibling (digit boundary).
+    assert pod_lifecycle._slug_from_pod_name("pod-475") is None
+    # Write ⊂ read: every write-side-legal slug parses back identically.
+    for slug in ("b", "q32b", "a" * 20, "r5-ladder"):
+        assert RUNPOD_NAME_SUFFIX_RE.fullmatch(slug), slug
+        assert pod_lifecycle._slug_from_pod_name(f"pod-909-{slug}") == slug
+        assert pod_lifecycle._issue_from_pod_name(f"pod-909-{slug}") == 909
+
+
 # ---------------------------------------------------------------------------
 # cmd_provision — CPU-only intent bridge (#747)
 #

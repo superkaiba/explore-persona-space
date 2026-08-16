@@ -274,7 +274,9 @@ def test_wedge_inputs_safe_no_handle_fails_closed(monkeypatch, tmp_path):
     import explore_persona_space.backends.issue_dispatch as idp
 
     missing = tmp_path / "issue-692-handle.json"
-    monkeypatch.setattr(idp, "resolve_handle_sidecar_path", lambda issue: (missing, [missing]))
+    monkeypatch.setattr(
+        idp, "resolve_handle_sidecar_path", lambda issue, lane_suffix=None: (missing, [missing])
+    )
     assert asw._wedge_inputs_safe(692) is False
 
 
@@ -282,11 +284,51 @@ def test_wedge_inputs_safe_exception_fails_closed(monkeypatch):
     # Any exception inside the gate (transport / parse / import) -> False.
     import explore_persona_space.backends.issue_dispatch as idp
 
-    def _boom(issue):
+    def _boom(issue, lane_suffix=None):
         raise RuntimeError("transport down")
 
     monkeypatch.setattr(idp, "resolve_handle_sidecar_path", _boom)
     assert asw._wedge_inputs_safe(692) is False
+
+
+def test_wedge_inputs_safe_suffixed_lane_reads_suffixed_sidecar(monkeypatch, tmp_path):
+    """AC-9 (#2145): a suffixed pod's wedge gate resolves the SUFFIXED sidecar
+    (``issue-<N>-<slug>-handle.json``) through the REAL
+    ``resolve_handle_sidecar_path`` — never the bare sibling decoy — and the
+    bare lane keeps reading the unsuffixed path byte-identically."""
+    import explore_persona_space.backends.issue_dispatch as idp
+
+    # Real resolver against a tmp main-checkout root holding BOTH sidecars:
+    # the suffixed lane's file plus a bare-decoy sibling.
+    monkeypatch.setattr(idp, "_main_checkout_root", lambda: tmp_path)
+    cache = tmp_path / ".claude" / "cache"
+    cache.mkdir(parents=True)
+    (cache / "issue-692-handle.json").write_text("{}")  # bare sibling (decoy)
+    (cache / "issue-692-b-handle.json").write_text("{}")  # suffixed lane's own
+
+    read_names: list[str] = []
+
+    class _Handle:
+        pod_name = "pod-692-b"
+        job_id = "j692b"
+
+    def _read(path):
+        read_names.append(Path(path).name)
+        return _Handle()
+
+    monkeypatch.setattr(idp, "read_handle_sidecar", _read)
+
+    class _Gate:
+        ok = True
+
+    monkeypatch.setattr(bp, "_wedged_run_inputs_on_hf", lambda issue, handle: _Gate())
+
+    assert asw._wedge_inputs_safe(692, lane_suffix="b") is True
+    assert read_names == ["issue-692-b-handle.json"]
+
+    read_names.clear()
+    assert asw._wedge_inputs_safe(692) is True  # bare lane unchanged (#934)
+    assert read_names == ["issue-692-handle.json"]
 
 
 # ===========================================================================
@@ -404,7 +446,7 @@ def _patch_wedge_io(
     failovers: list[int] = []
     monkeypatch.setattr(asw, "_task_status", lambda issue: status)
     monkeypatch.setattr(asw, "_wedge_keep_running", lambda issue: keep_running)
-    monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue: inputs_ok)
+    monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue, lane_suffix=None: inputs_ok)
     # #1667 owner-liveness probe: default False (no live owner) so the
     # pre-#1667 tests keep their terminate behavior byte-equivalent.
     monkeypatch.setattr(asw, "_wedge_owner_live", lambda issue, now: owner_live)
@@ -791,7 +833,9 @@ def _stub_handle_sidecar(monkeypatch, tmp_path, *, exists=True, read_raises=None
     if exists:
         sidecar.write_text("{}")  # presence-only; read_handle_sidecar is stubbed
 
-    monkeypatch.setattr(idp, "resolve_handle_sidecar_path", lambda issue: (sidecar, [sidecar]))
+    monkeypatch.setattr(
+        idp, "resolve_handle_sidecar_path", lambda issue, lane_suffix=None: (sidecar, [sidecar])
+    )
 
     class _Handle:
         pod_name = "pod-692"
@@ -1129,7 +1173,7 @@ def _patch_real_marker_recorders(monkeypatch, *, outcome, terminal):
     progress_labels: list[str] = []
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_wedge_keep_running", lambda issue: False)
-    monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue: True)
+    monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue, lane_suffix=None: True)
     monkeypatch.setattr(asw, "_wedge_owner_live", lambda issue, now: False)  # #1667: no owner
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(
@@ -1263,7 +1307,7 @@ def test_wedge_failover_raise_after_terminate_routes_to_blocked_redrivable(
     progress_labels: list[str] = []
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_wedge_keep_running", lambda issue: False)
-    monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue: True)
+    monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue, lane_suffix=None: True)
     monkeypatch.setattr(asw, "_wedge_owner_live", lambda issue, now: False)  # #1667: no owner
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(
@@ -1344,7 +1388,7 @@ def test_wedge_failover_preterminate_raise_does_not_falsely_block_live_pod(
     progress_labels: list[str] = []
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_wedge_keep_running", lambda issue: False)
-    monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue: True)
+    monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue, lane_suffix=None: True)
     monkeypatch.setattr(asw, "_wedge_owner_live", lambda issue, now: False)  # #1667: no owner
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(
@@ -1431,7 +1475,9 @@ def test_wedge_failover_sidecar_pod_name_mismatch_is_already_handled(monkeypatch
 
     sidecar = tmp_path / "issue-692-handle.json"
     sidecar.write_text("{}")
-    monkeypatch.setattr(idp, "resolve_handle_sidecar_path", lambda issue: (sidecar, [sidecar]))
+    monkeypatch.setattr(
+        idp, "resolve_handle_sidecar_path", lambda issue, lane_suffix=None: (sidecar, [sidecar])
+    )
 
     class _FreshHandle:
         # The sidecar now names a DIFFERENT (fresh) pod than the wedged one.
@@ -1507,7 +1553,7 @@ def test_wedge_terminal_recording_partial_does_not_clear_clock(
     monkeypatch.setattr(asw.time, "sleep", lambda s: sleeps.append(s))
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_wedge_keep_running", lambda issue: False)
-    monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue: True)
+    monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue, lane_suffix=None: True)
     monkeypatch.setattr(asw, "_wedge_owner_live", lambda issue, now: False)  # #1667: no owner
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(
@@ -1586,7 +1632,7 @@ def test_wedge_terminal_recording_both_succeed_clears_clock(isolated_registry, m
     monkeypatch.setattr(asw.time, "sleep", lambda s: sleeps.append(s))
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_wedge_keep_running", lambda issue: False)
-    monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue: True)
+    monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue, lane_suffix=None: True)
     monkeypatch.setattr(asw, "_wedge_owner_live", lambda issue, now: False)  # #1667: no owner
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(
@@ -1644,7 +1690,7 @@ def test_wedge_terminal_record_retries_then_succeeds(isolated_registry, monkeypa
     monkeypatch.setattr(asw.time, "sleep", lambda s: sleeps.append(s))
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_wedge_keep_running", lambda issue: False)
-    monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue: True)
+    monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue, lane_suffix=None: True)
     monkeypatch.setattr(asw, "_wedge_owner_live", lambda issue, now: False)  # #1667: no owner
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(
@@ -1719,7 +1765,7 @@ def test_wedge_terminal_record_exhausts_retries_keeps_clock(isolated_registry, m
     monkeypatch.setattr(asw.time, "sleep", lambda s: sleeps.append(s))
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_wedge_keep_running", lambda issue: False)
-    monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue: True)
+    monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue, lane_suffix=None: True)
     monkeypatch.setattr(asw, "_wedge_owner_live", lambda issue, now: False)  # #1667: no owner
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(
@@ -2319,7 +2365,7 @@ def test_wedge_probe_alive_outcome_posts_truthful_note_and_failover_note_unchang
     posts: list[tuple[int, str, str]] = []
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_wedge_keep_running", lambda issue: False)
-    monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue: True)
+    monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue, lane_suffix=None: True)
     monkeypatch.setattr(asw, "_wedge_owner_live", lambda issue, now: False)  # #1667: no owner
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(

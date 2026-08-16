@@ -1575,6 +1575,49 @@ def test_gcp_marker_extras_unmapped_intent_returns_none_quota_pool():
     assert extras["provisioning_model"]  # non-empty / non-None
 
 
+def test_runpod_marker_extras_pod_name_and_omit_when_absent():
+    """#2145: ``_runpod_marker_extras`` body — real RunSpec/RunHandle dataclasses.
+
+    * ``pod_name`` always present, read off the HANDLE (the realized name);
+    * ``lane_suffix`` / ``gpu_type_override`` present ONLY when the spec extra
+      carries them (#934 omit-when-absent: a flag-less launch adds no keys).
+    """
+    from explore_persona_space.backends.router import _runpod_marker_extras
+
+    bare_spec = RunSpec(issue=1698, intent="lora-7b", backend="runpod")
+    bare_handle = RunHandle(
+        backend="runpod",
+        cluster=None,
+        job_id="pod-abc123",
+        pod_name="pod-1698",
+        scratch_dir="/workspace",
+        log_path="/workspace/logs/issue-1698.log",
+        extra={"issue": 1698},
+    )
+    assert _runpod_marker_extras(bare_spec, bare_handle) == {"pod_name": "pod-1698"}
+
+    suffixed_spec = RunSpec(
+        issue=1698,
+        intent="lora-7b",
+        backend="runpod",
+        extra={"lane_suffix": "b", "gpu_type": "H200"},
+    )
+    suffixed_handle = RunHandle(
+        backend="runpod",
+        cluster=None,
+        job_id="pod-def456",
+        pod_name="pod-1698-b",
+        scratch_dir="/workspace",
+        log_path="/workspace/logs/issue-1698.log",
+        extra={"issue": 1698},
+    )
+    assert _runpod_marker_extras(suffixed_spec, suffixed_handle) == {
+        "pod_name": "pod-1698-b",
+        "lane_suffix": "b",
+        "gpu_type_override": "H200",
+    }
+
+
 def test_gcp_reconnect_marker_unmapped_intent_does_not_crash(
     lease_store, marker_poster, captured_markers
 ):

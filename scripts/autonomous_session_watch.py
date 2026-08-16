@@ -1325,7 +1325,11 @@ if _SCRIPTS_DIR not in sys.path:
 # re-deriving a per-issue regex — the old `epm-issue-<N>`-only regex never
 # matched the canonical `pod-<N>` names, so the whole pass was dead code).
 import session_resolver  # noqa: E402  (sibling import; follows the sys.path bootstrap above)
-from pod_lifecycle import _is_managed_pod, _issue_from_pod_name  # noqa: E402
+from pod_lifecycle import (  # noqa: E402
+    _is_managed_pod,
+    _issue_from_pod_name,
+    _slug_from_pod_name,
+)
 from runpod_api import (  # noqa: E402
     PodInfo,
     estimate_pod_hourly_rate,
@@ -14514,13 +14518,16 @@ def _wedge_keep_running(issue: int) -> bool | str:
     return isinstance(tags, list) and "keep-running" in tags
 
 
-def _wedge_inputs_safe(issue: int) -> bool:
+def _wedge_inputs_safe(issue: int, lane_suffix: str | None = None) -> bool:
     """True iff the wedged run's recoverable inputs are verified on HF (#692).
 
     Gates the watcher's reversible AUTO-STOP exactly as #689 fix (b) gates the
     poller's IRREVERSIBLE terminate, reusing the SAME per-cell three-state gate
     ``backend_poll._wedged_run_inputs_on_hf``. The run handle is read from the
-    persisted sidecar (``.claude/cache/issue-<N>-handle.json``).
+    persisted sidecar (``.claude/cache/issue-<N>-handle.json``; a suffixed pod
+    ``pod-<N>-<slug>`` reads its own ``issue-<N>-<slug>-handle.json`` via
+    ``lane_suffix`` — #2145, threading the #934 sidecar-suffix seam so a
+    suffixed lane's wedge gate never reads a SIBLING lane's handle).
 
     Fail-CLOSED: a missing / unreadable handle, an HF-listing transport error,
     an import failure, or ANY exception -> ``False`` (ALERT-only, never an unsafe
@@ -14537,7 +14544,7 @@ def _wedge_inputs_safe(issue: int) -> bool:
             resolve_handle_sidecar_path,
         )
 
-        path, _probed = resolve_handle_sidecar_path(issue)
+        path, _probed = resolve_handle_sidecar_path(issue, lane_suffix=lane_suffix)
         if not path.exists():
             return False  # no handle -> cannot gate -> ALERT-only
         handle = read_handle_sidecar(path)
@@ -16331,7 +16338,13 @@ def _wedge_failover(
             resolve_handle_sidecar_path,
         )
 
-        path, _probed = resolve_handle_sidecar_path(issue)
+        # #2145: resolve the WEDGED pod's own sidecar — a suffixed pod-<N>-<slug>
+        # persists to issue-<N>-<slug>-handle.json (#934), so the bare-issue path
+        # would read a SIBLING lane's handle and the pod-name binding defense
+        # below would spuriously read "already-handled" for every suffixed wedge.
+        path, _probed = resolve_handle_sidecar_path(
+            issue, lane_suffix=_slug_from_pod_name(info.name)
+        )
         if not path.exists():
             print(
                 f"  wedge-failover: no handle sidecar for #{issue}; cannot reconstruct "
@@ -17409,7 +17422,13 @@ def _process_wedged_pod(
     # before it would consult the real gate.
     confirmed = wedged_for > RUNPOD_WEDGE_K_SEC and (prev_wedge_missed + 1) >= threshold
     keep_running: bool | str = _wedge_keep_running(issue) if confirmed else True
-    inputs_ok = _wedge_inputs_safe(issue) if (confirmed and keep_running is False) else False
+    inputs_ok = (
+        # #2145: gate against the WEDGED pod's own handle sidecar (suffixed pods
+        # persist to issue-<N>-<slug>-handle.json; bare pods resolve unchanged).
+        _wedge_inputs_safe(issue, lane_suffix=_slug_from_pod_name(info.name))
+        if (confirmed and keep_running is False)
+        else False
+    )
     # #1667 owner-liveness gate — probed LAZILY, only when every OTHER
     # terminate precondition already holds (the MF2 lazy pattern), so the
     # events read + daemon /list are paid only for a matured, otherwise
@@ -17859,13 +17878,15 @@ def _wedge_owner_guard_enabled() -> bool:
     return raw not in {"1", "true", "yes", "on"}
 
 
-def _orphan_gcp_sidecar_is_gcp(issue: int) -> bool:
+def _orphan_gcp_sidecar_is_gcp(issue: int, lane_suffix: str | None = None) -> bool:
     """True iff issue ``issue``'s run-handle sidecar resolves AND reads backend=gcp.
 
     The #1490 orphan-arm predicate leg: a RUNNING bare ``pod-<N>`` coexisting
     with a gcp-pointing handle is anomalous (the failover either re-points the
     sidecar at runpod or tears the pod down). Uses the SAME sidecar resolver
-    the wedge arm uses (``resolve_handle_sidecar_path``). ANY read / parse /
+    the wedge arm uses (``resolve_handle_sidecar_path``; ``lane_suffix`` threads
+    the #934 sidecar-suffix seam — #2145 — though the sole caller's bare-name
+    guard means it is always ``None`` today). ANY read / parse /
     import failure returns False — bias QUIET (alert-only arm, a miss is
     cheap) — with ONE stderr diagnostic line so the quiet miss is diagnosable
     (plan v2 fold-in).
@@ -17876,7 +17897,7 @@ def _orphan_gcp_sidecar_is_gcp(issue: int) -> bool:
             resolve_handle_sidecar_path,
         )
 
-        path, _probed = resolve_handle_sidecar_path(issue)
+        path, _probed = resolve_handle_sidecar_path(issue, lane_suffix=lane_suffix)
         if not path.exists():
             return False
         return read_handle_sidecar(path).backend == "gcp"
@@ -17944,7 +17965,7 @@ def _maybe_flag_orphan_gcp_handle_pod(
     age = now - float(first_seen)
     if age < _orphan_gcp_handle_grace_sec():
         return False
-    if not _orphan_gcp_sidecar_is_gcp(issue):
+    if not _orphan_gcp_sidecar_is_gcp(issue, lane_suffix=_slug_from_pod_name(info.name)):
         return False
     if keep_running or followup_active:
         return False
@@ -18136,7 +18157,7 @@ def _maybe_flag_unlaunched_orphan_pod(
     return True
 
 
-def _diagnosis_sidecar_evidence(issue: int) -> dict | None:
+def _diagnosis_sidecar_evidence(issue: int, lane_suffix: str | None = None) -> dict | None:
     """Read the #1997 evidence fields off issue ``issue``'s run-handle sidecar.
 
     Returns ``{"backend", "workload_executed", "workload_start_error",
@@ -18146,7 +18167,9 @@ def _diagnosis_sidecar_evidence(issue: int) -> dict | None:
     ``None`` on ANY read / parse / import failure — fail toward keep, with
     ONE stderr diagnostic line so the quiet miss is diagnosable. Uses the
     SAME sidecar resolver the wedge arm uses (``resolve_handle_sidecar_path``
-    / ``read_handle_sidecar``, the #692 shape).
+    / ``read_handle_sidecar``, the #692 shape; ``lane_suffix`` threads the
+    #934 sidecar-suffix seam — #2145 — so a suffixed ``pod-<N>-<slug>`` reads
+    its own ``issue-<N>-<slug>-handle.json``, never a sibling lane's).
     """
     try:
         from explore_persona_space.backends.issue_dispatch import (
@@ -18154,7 +18177,7 @@ def _diagnosis_sidecar_evidence(issue: int) -> dict | None:
             resolve_handle_sidecar_path,
         )
 
-        path, _probed = resolve_handle_sidecar_path(issue)
+        path, _probed = resolve_handle_sidecar_path(issue, lane_suffix=lane_suffix)
         if not path.exists():
             return None
         handle = read_handle_sidecar(path)
@@ -18231,7 +18254,7 @@ def _maybe_stop_diagnosis_window_pod(
     ttl_sec = _diagnosis_window_ttl_sec()
     if now - float(first_seen) < ttl_sec:
         return False  # the diagnosis window is live — skip the sidecar IO entirely
-    evidence = _diagnosis_sidecar_evidence(issue)
+    evidence = _diagnosis_sidecar_evidence(issue, lane_suffix=_slug_from_pod_name(info.name))
     if evidence is None:
         return False  # no / unreadable sidecar — no positive evidence, keep
     decide_kwargs = {

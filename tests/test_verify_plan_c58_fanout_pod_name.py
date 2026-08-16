@@ -217,13 +217,17 @@ def test_c58_provision_name_suffix_fanout_passes():
     assert "pod.py provision" in r.detail
 
 
-# ─── Test 4 — `--lane-suffix` present does NOT satisfy the check ───────────
+# ─── Test 4 — `--lane-suffix` on the launch argv satisfies T3 (#2145) ──────
 
 
-def test_c58_lane_suffix_on_runpod_argv_still_warns():
-    """Acceptance 4: `--lane-suffix` is honored on GCP + SLURM only
-    (`dispatch_issue._lane_suffix_honored_kinds`) — its presence on the
-    RunPod launches must NOT suppress the WARN."""
+def test_c58_lane_suffix_on_runpod_argv_passes_remedy():
+    """Acceptance 4 (FLIPPED by #2145): `--lane-suffix` is now honored on the
+    RunPod lane (`dispatch_issue._lane_suffix_honored_kinds` includes
+    `runpod`), so a plan whose RunPod launches carry per-shard
+    `dispatch_issue.py launch ... --lane-suffix <slug>` names a T3 remedy —
+    the `_C58_REMEDY_RE` extended alternate — and PASSes instead of WARNing.
+    (Pre-#2145 this exact fixture pinned WARN: the suffix was GCP/SLURM-only
+    and its presence on a RunPod argv was naming-inert.)"""
     launches = C58_TWO_RUNPOD_LAUNCHES.replace(
         "--backend runpod", "--backend runpod --lane-suffix shard1", 1
     ).replace(
@@ -232,7 +236,22 @@ def test_c58_lane_suffix_on_runpod_argv_still_warns():
     assert "--lane-suffix" in launches
     plan = _plan(s9_prose=C58_FANOUT_S9_LINE, launches=launches)
     r = _run(plan)
-    assert r.status == "WARN", r.detail
+    assert r.status == "PASS", r.detail
+    # detail quotes the first 70 chars of the matched remedy construct — the
+    # match anchors on `dispatch_issue.py launch` reaching `--lane-suffix`.
+    assert "dispatch_issue.py launch" in r.detail
+
+
+def test_c58_name_suffix_alias_on_runpod_argv_passes_remedy():
+    """#2145: the `--name-suffix` argparse ALIAS on a `dispatch_issue.py
+    launch` command satisfies the same extended remedy alternate."""
+    launches = C58_TWO_RUNPOD_LAUNCHES.replace(
+        "--backend runpod", "--backend runpod --name-suffix shard1", 1
+    )
+    assert "--name-suffix" in launches
+    plan = _plan(s9_prose=C58_FANOUT_S9_LINE, launches=launches)
+    r = _run(plan)
+    assert r.status == "PASS", r.detail
 
 
 # ─── Test 5 — explicit serialization (negation arm) ────────────────────────
