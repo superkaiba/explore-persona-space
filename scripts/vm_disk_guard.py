@@ -56,6 +56,35 @@ runs six TIERS of strictly-safe cleanup, reporting bytes freed per tier:
       ``scratch_candidates``. Kill switch ``EPM_SKIP_TMP_SCRATCH_SWEEP=1``
       (the family switch ``EPM_SKIP_NONCANONICAL_CACHE_SWEEP=1`` kills it
       transitively).
+  (g) TERMINAL-status issues' ``~/.eps-slurm-src/issue-<N>`` SLURM staging
+      trees (#2147) — full repo checkouts materialized by
+      ``backends/slurm.py::materialize_branch_src`` for the SLURM lanes
+      (~8.6 GB mean; 13 dirs / 112 GB measured 2026-08-16). Boot-disk pass
+      only, right after tier (f): ``clean_slurm_src`` ->
+      ``clean_experiment_downloads.sweep_slurm_src`` — pre-gates g1 (name
+      not ``issue-<N>`` shaped) / g2 (not uid-owned) / g3 (containment;
+      symlinked or non-directory entries never followed) / g4 (owning
+      issue's status not in ``TERMINAL_CACHE_REAP_STATUSES``, incl.
+      unresolvable — kept + escalated) / g4b (status-probe failure — kept
+      + escalated), then the SAME #2127 verified-scratch per-candidate
+      core as tier (f) (per-file git-blob proof, class-discriminated git
+      probes, reader-atime pin, live-process probe, reap-time re-probe),
+      keep reasons re-tagged ``slurm-src-*``. D9: files under nested
+      working-tree overlays (``backends.slurm.WORKING_TREE_OVERLAY_PATHS``,
+      e.g. ``external/open-instruct``) are proven against the NESTED
+      repo's own odb + clean-tree + reachable-HEAD probes
+      (overlay-not-a-repo => KEEP). Deliberately NO durable-path presence
+      gate: these trees are full checkouts, so ``store/`` /
+      ``eval_results/`` content is EXPECTED — the core's ``under_durable``
+      rule proof-gates those files per-file instead (#2147 plan §0).
+      Escalations dedup per (path, disposition, size band) with a weekly
+      re-alert (D6; ``EPS_SLURM_SRC_ESCALATION_REALERT_DAYS``). Same
+      strict ``main()``-only opt-in as tier (f) (``slurm_src_root`` /
+      ``scratch_verdict_cache_path`` / ``slurm_src_escalation_state_path``
+      called only in ``main()``). Structured rows ride ``--json`` as
+      ``scratch_candidates`` on the ``slurm-src`` tier. Kill switch
+      ``EPM_SKIP_SLURM_SRC_SWEEP=1`` (the family switch kills it
+      transitively).
   (d) The VM's pod-style ``/workspace/.cache/huggingface`` hub cache (#911):
       age-gated ``delete_revisions`` of repos unused >= 14 days (env
       ``EPS_VM_WORKSPACE_HF_CACHE_MAX_AGE_DAYS``), pod-guarded twice
@@ -154,6 +183,7 @@ from explore_persona_space.task_workflow import find_task_path, repo_root
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from clean_experiment_downloads import (
     SCRATCH_SWEEP_KILL_ENV,
+    SLURM_SRC_SWEEP_KILL_ENV,
     _resolution_root,
     _running_pod_side,
     _tmp_entry_owned,
@@ -164,6 +194,9 @@ from clean_experiment_downloads import (
     production_staging_roots,
     production_tmp_root,
     scratch_verdict_cache_path,
+    slurm_src_escalation_state_path,
+    slurm_src_sweep_enabled,
+    sweep_slurm_src,
     sweep_tmp_scratch,
     tmp_scratch_sweep_enabled,
 )
@@ -1051,6 +1084,78 @@ def clean_tmp_scratch(
         apply=apply,
         main_repo=main_repo,
         verdict_cache_path=verdict_cache_path,
+    )
+    res.bytes_freed = sweep.bytes_freed
+    res.total_discovered_bytes = sweep.total_discovered_bytes
+    res.scratch_candidates = list(sweep.rows)
+    for row in sweep.rows:
+        res.detail.append(
+            f"{row.get('disposition', '?')}: {row.get('path', '?')} "
+            f"[{_fmt_gb(int(row.get('bytes', 0)))}] — {row.get('reason', '')}"
+        )
+    return res
+
+
+# ─── tier (g): ~/.eps-slurm-src SLURM staging trees (#2147) ──────────────────
+
+# The SLURM lanes materialize a full repo checkout per issue at
+# ~/.eps-slurm-src/issue-<N> (backends/slurm.py::materialize_branch_src);
+# nothing reaped TERMINAL issues' copies before tier (g) (13 dirs / 112 GB,
+# ~8.6 GB mean, measured 2026-08-16 on a 98%-full boot disk).
+DEFAULT_SLURM_SRC_ROOT = Path.home() / ".eps-slurm-src"  # env EPS_SLURM_SRC_ROOT
+
+
+def slurm_src_root() -> Path:
+    """The SLURM-lane staging root (#2147 tier (g)) — env
+    ``EPS_SLURM_SRC_ROOT``, blank/unset -> ``~/.eps-slurm-src``: the SAME
+    name + precedence as the writer
+    (``backends.slurm.materialize_branch_src``), so the janitor always
+    watches the tree the SLURM lanes populate. main()-ONLY opt-in (the
+    ``production_tmp_root()`` hermeticity pattern; the source-scan test
+    pins this symbol) — ``run_guard`` never calls it."""
+    raw = os.environ.get("EPS_SLURM_SRC_ROOT", "").strip()
+    return Path(raw) if raw else DEFAULT_SLURM_SRC_ROOT
+
+
+def clean_slurm_src(
+    apply: bool,
+    *,
+    staging_root: Path | None,
+    main_repo: Path | None,
+    verdict_cache_path: Path | None = None,
+    escalation_state_path: Path | None = None,
+) -> TierResult:
+    """Tier (g) (#2147): evidence-gated sweep of TERMINAL-status issues'
+    ``~/.eps-slurm-src/issue-<N>`` SLURM staging trees. Thin wrapper over
+    ``clean_experiment_downloads.sweep_slurm_src`` (which owns the D4
+    pre-gates g1-g4b and re-uses the tier-(f) #2127 verified-scratch
+    per-candidate core — blob proof, class-discriminated git probes,
+    reader-atime pin, live-process probe, worktree-aware reap, D9 nested
+    overlay evidence); this tier adapts its rows onto a ``TierResult`` for
+    the report + ``--json`` surfaces and passes the guard's own read-only
+    ``_resolve_issue_status`` + ``TERMINAL_CACHE_REAP_STATUSES`` as the g4
+    terminal-status gate (plan D3). SKIPPED (with a reason) when the strict
+    ``main()``-only opt-ins are absent or a kill switch is set — library
+    callers stay hermetic by construction."""
+    res = TierResult(name="slurm-src")
+    if staging_root is None or main_repo is None:
+        res.skipped = True
+        res.skip_reason = "no staging_root/main_repo opt-in (library callers stay hermetic)"
+        return res
+    if not slurm_src_sweep_enabled():
+        res.skipped = True
+        res.skip_reason = (
+            f"kill switch set ({SLURM_SRC_SWEEP_KILL_ENV} or the non-canonical family switch)"
+        )
+        return res
+    sweep = sweep_slurm_src(
+        staging_root,
+        apply=apply,
+        main_repo=main_repo,
+        status_resolver=_resolve_issue_status,
+        terminal_statuses=TERMINAL_CACHE_REAP_STATUSES,
+        verdict_cache_path=verdict_cache_path,
+        escalation_state_path=escalation_state_path,
     )
     res.bytes_freed = sweep.bytes_freed
     res.total_discovered_bytes = sweep.total_discovered_bytes
@@ -2142,6 +2247,10 @@ def run_guard(
     scratch_main_repo: Path | None = None,
     scratch_verdict_cache: Path | None = None,
     git_evidence_repo: Path | None = None,
+    slurm_src_staging_root: Path | None = None,
+    slurm_src_main_repo: Path | None = None,
+    slurm_src_verdict_cache: Path | None = None,
+    slurm_src_escalation_state: Path | None = None,
 ) -> GuardResult:
     """Read disk usage, and if over threshold run the cleanup tiers.
 
@@ -2200,6 +2309,20 @@ def run_guard(
     licensing of fixture trees. When tier (f) is ARMED, tier (b) runs with
     ``exclude_scratch_shapes=True`` so a scratch-shaped issue-keyed /tmp
     dir is exactly one leg's row (never double-attributed).
+
+    ``slurm_src_staging_root`` / ``slurm_src_main_repo`` /
+    ``slurm_src_verdict_cache`` / ``slurm_src_escalation_state`` (#2147) arm
+    tier (g) — the SAME hermeticity pattern as tier (f): ``run_guard``
+    itself NEVER calls the production resolvers (``slurm_src_root()`` +
+    the escalation-state path resolver live ONLY in ``main()``'s boot-disk
+    branch; the source-scan test pins both symbols), so every library
+    caller stays hermetic — no real ``~/.eps-slurm-src`` scan, no real
+    verdict cache, no real dedup-state writes. The tier itself threads the
+    guard's read-only ``_resolve_issue_status`` +
+    ``TERMINAL_CACHE_REAP_STATUSES`` into ``sweep_slurm_src`` (plan D3).
+    No exclude handshake with tier (b): the staging root lives under
+    ``$HOME`` (never /tmp, never ``data/``), so no other tier can discover
+    the same dir — one dir is one leg's row by construction.
 
     ``hf_cache_roots`` + ``hf_cache_cap_gb`` (#2096) are the EXTRA tier-(e)
     roots opt-in for the DATA-DISK pass — one tier-(e) ``TierResult`` per
@@ -2260,6 +2383,24 @@ def run_guard(
                 tmp_root=scratch_tmp_root,
                 main_repo=scratch_main_repo,
                 verdict_cache_path=scratch_verdict_cache,
+            )
+        )
+    if (
+        reclaim_tiers
+        and slurm_src_staging_root is not None
+        and slurm_src_main_repo is not None
+        and slurm_src_sweep_enabled()
+    ):
+        # Tier (g) (#2147): right after tier (f), boot-disk pass only.
+        # Deliberately NO exclude handshake with tier (b): the staging root
+        # lives under $HOME, so no other tier can discover the same dir.
+        res.tiers.append(
+            clean_slurm_src(
+                apply,
+                staging_root=slurm_src_staging_root,
+                main_repo=slurm_src_main_repo,
+                verdict_cache_path=slurm_src_verdict_cache,
+                escalation_state_path=slurm_src_escalation_state,
             )
         )
     if hf_cache_roots:
@@ -2649,6 +2790,14 @@ def main(argv: list[str] | None = None) -> int:
         scratch_main_repo=main_repo,
         scratch_verdict_cache=scratch_verdict_cache_path(),
         git_evidence_repo=main_repo,
+        # #2147: tier (g) opt-ins live HERE only — boot-disk pass (the
+        # ~/.eps-slurm-src tree lives on /); the data-disk pass below stays
+        # slurm-src-off. slurm_src_root() + slurm_src_escalation_state_path()
+        # are main()-only by the same source-scan pin as production_tmp_root().
+        slurm_src_staging_root=slurm_src_root(),
+        slurm_src_main_repo=main_repo,
+        slurm_src_verdict_cache=scratch_verdict_cache_path(),
+        slurm_src_escalation_state=slurm_src_escalation_state_path(),
     )
 
     # Data disk (/mnt/eps-data) — a SECOND, ESCALATE-ONLY pass: reclaim_tiers=False
