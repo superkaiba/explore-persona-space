@@ -2116,6 +2116,87 @@ def _realized_rows_label_verdict(
     return row, part
 
 
+def _realized_rows_invocation_error(
+    expected_rows: dict[str, int],
+    hf_prefixes: tuple[str, ...],
+    local_root: str | None,
+    exempt_labels: dict[str, str],
+) -> dict | None:
+    """Entry-time INVOCATION validation for the realized row-count check
+    (#2148 rounds 2-3): returns the ERROR row for a malformed invocation,
+    or None when it is well-formed. Every arm runs BEFORE the
+    no-expectation SKIP and before ANY Hub read (zero Hub reads performed),
+    so the callable owes the same contract the CLI parser enforces - a
+    direct caller cannot slip a reasonless/unmatched exemption, a
+    dual-source invocation, or an empty prefix past an early SKIP return.
+    """
+    # (0) Exemption validation (#2148 round 2, concern
+    # `exemption-validation-after-skip`). Flag-free legacy invocations
+    # still SKIP at the caller.
+    blank_reasons = sorted(lb for lb, reason in exempt_labels.items() if not str(reason).strip())
+    if blank_reasons:
+        return {
+            "status": "ERROR",
+            "url": "",
+            "detail": (
+                "realized-rows-exempt-invalid: an exemption reason is MANDATORY "
+                f"and non-empty; label(s) with a blank reason: "
+                f"{', '.join(blank_reasons)} (an exemption with no recorded "
+                "reason is indistinguishable from a silenced shortfall)"
+            ),
+        }
+    exempt_unmatched = sorted(set(exempt_labels) - set(expected_rows))
+    if exempt_unmatched:
+        return {
+            "status": "ERROR",
+            "url": "",
+            "detail": (
+                "realized-rows-exempt-unmatched: --realized-rows-exempt names "
+                f"label(s) not in the declared --expected-rows set: "
+                f"{', '.join(exempt_unmatched)} (rejects stale and typo'd "
+                "exemptions; an exemption-only invocation ERRORs rather than "
+                "SKIPping)"
+            ),
+        }
+
+    # (0b) Source-shape validation (#2148 round 3). REFUSE, not union:
+    # (i) the entry schema carries no mode-independent logical identity (a
+    # local entry's `rel` is root-relative, an HF entry's `rel` is the full
+    # repo path), so an honest cross-source union would need an identity
+    # mapping the invocation does not carry; (ii) more fundamentally, a row
+    # present only in the LOCAL source would satisfy --expected-rows on a
+    # gate whose PASS licenses deleting that local copy - a local-only row
+    # is precisely what is NOT durable.
+    if hf_prefixes and local_root:
+        return {
+            "status": "ERROR",
+            "url": "",
+            "detail": (
+                "row-index-dual-source: --row-index-local-root and "
+                "--row-index-hf-prefix are mutually exclusive - pick ONE "
+                "row-index source per invocation. No mode-independent row "
+                "identity exists across the two sources, and a local-only "
+                "row cannot prove Hub durability on a gate whose PASS "
+                "licenses deleting the local copy (#2148 round 3; zero Hub "
+                "reads performed)"
+            ),
+        }
+    empty_prefixes = [repr(p) for p in hf_prefixes if not str(p).rstrip("/")]
+    if empty_prefixes:
+        return {
+            "status": "ERROR",
+            "url": "",
+            "detail": (
+                "row-index-prefix-empty: --row-index-hf-prefix canonicalizes "
+                f"to an empty prefix ({', '.join(empty_prefixes)}) - a "
+                "malformed flag is an invocation defect; silently skipping "
+                "it would blame the store (row-index-missing) for the "
+                "operator's flag (#2148 round 3; zero Hub reads performed)"
+            ),
+        }
+    return None
+
+
 def check_realized_row_counts(
     *,
     expected_rows: dict[str, int] | None = None,
@@ -2173,74 +2254,14 @@ def check_realized_row_counts(
     self_reported_rows = dict(self_reported_rows or {})
     exempt_labels = dict(exempt_labels or {})
 
-    # (0) Exemption validation FIRST - before even the no-expectation SKIP
-    # (#2148 round 2, concern `exemption-validation-after-skip`): the
-    # callable owes the same contract the CLI parser enforces, so a direct
-    # caller cannot slip a reasonless or unmatched exemption past an early
-    # SKIP return. Flag-free legacy invocations still SKIP below.
-    blank_reasons = sorted(lb for lb, reason in exempt_labels.items() if not str(reason).strip())
-    if blank_reasons:
-        return {
-            "status": "ERROR",
-            "url": "",
-            "detail": (
-                "realized-rows-exempt-invalid: an exemption reason is MANDATORY "
-                f"and non-empty; label(s) with a blank reason: "
-                f"{', '.join(blank_reasons)} (an exemption with no recorded "
-                "reason is indistinguishable from a silenced shortfall)"
-            ),
-        }
-    exempt_unmatched = sorted(set(exempt_labels) - set(expected_rows))
-    if exempt_unmatched:
-        return {
-            "status": "ERROR",
-            "url": "",
-            "detail": (
-                "realized-rows-exempt-unmatched: --realized-rows-exempt names "
-                f"label(s) not in the declared --expected-rows set: "
-                f"{', '.join(exempt_unmatched)} (rejects stale and typo'd "
-                "exemptions; an exemption-only invocation ERRORs rather than "
-                "SKIPping)"
-            ),
-        }
-
-    # (0b) Source-shape validation (#2148 round 3) - still BEFORE the
-    # no-expectation SKIP (a malformed invocation ERRORs rather than
-    # SKIPping) and before ANY Hub read. REFUSE, not union: (i) the entry
-    # schema carries no mode-independent logical identity (a local entry's
-    # `rel` is root-relative, an HF entry's `rel` is the full repo path),
-    # so an honest cross-source union would need an identity mapping the
-    # invocation does not carry; (ii) more fundamentally, a row present
-    # only in the LOCAL source would satisfy --expected-rows on a gate
-    # whose PASS licenses deleting that local copy - a local-only row is
-    # precisely what is NOT durable.
-    if hf_prefixes and local_root:
-        return {
-            "status": "ERROR",
-            "url": "",
-            "detail": (
-                "row-index-dual-source: --row-index-local-root and "
-                "--row-index-hf-prefix are mutually exclusive - pick ONE "
-                "row-index source per invocation. No mode-independent row "
-                "identity exists across the two sources, and a local-only "
-                "row cannot prove Hub durability on a gate whose PASS "
-                "licenses deleting the local copy (#2148 round 3; zero Hub "
-                "reads performed)"
-            ),
-        }
-    empty_prefixes = [repr(p) for p in hf_prefixes if not str(p).rstrip("/")]
-    if empty_prefixes:
-        return {
-            "status": "ERROR",
-            "url": "",
-            "detail": (
-                "row-index-prefix-empty: --row-index-hf-prefix canonicalizes "
-                f"to an empty prefix ({', '.join(empty_prefixes)}) - a "
-                "malformed flag is an invocation defect; silently skipping "
-                "it would blame the store (row-index-missing) for the "
-                "operator's flag (#2148 round 3; zero Hub reads performed)"
-            ),
-        }
+    # (0)+(0b) Invocation validation FIRST - before even the no-expectation
+    # SKIP and before ANY Hub read (#2148 rounds 2-3): exemption reasons +
+    # membership, source mutual exclusion, no empty-after-strip prefix.
+    invocation_error = _realized_rows_invocation_error(
+        expected_rows, tuple(hf_prefixes), local_root, exempt_labels
+    )
+    if invocation_error is not None:
+        return invocation_error
 
     if not expected_rows:
         extra = (
