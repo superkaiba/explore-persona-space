@@ -961,14 +961,18 @@ def _lane_suffix_runpod_grammar_conflict(spec: Any) -> dict[str, Any] | None:
     pre-route: a grammar ``SystemExit`` inside the provision subprocess
     would be wrapped by ``router._runpod_terminal_rung`` into
     ``NoComputeAvailableError`` and MISREAD as a re-drivable capacity
-    miss (the #940 wrapping class). Runs AFTER ``build_run_spec`` so the
-    frontmatter-resolved backend is checked, not only the CLI flag.
+    miss (the #940 wrapping class). The NORMALIZED CLI backend is what's
+    checked (``spec.backend`` = ``normalize_backend_value(args.backend)``,
+    absent -> ``"auto"`` = RunPod-reachable); frontmatter ``backend:``
+    never enters ``spec.backend`` in this CLI, so an omitted flag always
+    routes through the guard.
 
     Returns the exit-2 failure body (same shape as
     :func:`_gpus_gcp_lane_conflict`) when the launch must be refused;
     ``None`` when it may proceed: no suffix; an explicit non-RunPod
-    backend pin (GCP / SLURM lanes keep the looser #934 grammar); or a
-    pod-grammar-conformant suffix.
+    backend pin (GCP / SLURM lanes keep the looser #934 grammar); an
+    ``auto`` route carrying ``no_runpod_fallback`` (structurally
+    RunPod-unreachable — see below); or a pod-grammar-conformant suffix.
     """
     suffix = str((spec.extra or {}).get("lane_suffix") or "")
     if not suffix:
@@ -976,7 +980,19 @@ def _lane_suffix_runpod_grammar_conflict(spec: Any) -> dict[str, Any] | None:
     if spec.backend not in {"runpod", "auto"}:
         # Explicit non-RunPod pin: the lane's own (looser) grammar governs.
         # `auto` counts as RunPod-reachable regardless of EPM_AUTO_LANE_ORDER
-        # — the end-of-chain RunPod terminal rung fires unconditionally.
+        # — the end-of-chain RunPod terminal rung retries RunPod after full
+        # exhaustion (and #2054's leading lane may hit it first).
+        return None
+    if spec.backend == "auto" and (spec.extra or {}).get("no_runpod_fallback"):
+        # #1997 opt-out: EVERY auto-chain RunPod path (the #2054 leading lane
+        # AND the end-of-chain retry both funnel through
+        # router._runpod_terminal_rung) declines at the TOP of the rung when
+        # no_runpod_fallback is set, so this launch structurally cannot reach
+        # RunPod — the looser #934 grammar governs (round-2 regression fix:
+        # `auto --no-runpod-fallback --lane-suffix <21-43 chars>` was a valid
+        # combination before #2145 and must stay one). Scoped to `auto` ONLY:
+        # an explicit runpod pin ignores the flag by design, and the CLI
+        # already refuses that contradictory combination at parse time.
         return None
     from explore_persona_space.backends.base import RUNPOD_NAME_SUFFIX_RE
 
@@ -992,8 +1008,10 @@ def _lane_suffix_runpod_grammar_conflict(spec: Any) -> dict[str, Any] | None:
         "can land on the RunPod lane, where the suffix mints pod-<N>-<slug> "
         "(#2145). Refusing pre-route: the provision-time SystemExit would "
         "otherwise be wrapped as a re-drivable no_compute_available terminal. "
-        "Fix: use a letter-initial suffix of <=20 chars, or pin a non-RunPod "
-        "backend (--backend fellows/gcp/...) where the #934 grammar applies."
+        "Fix: use a letter-initial suffix of <=20 chars; pin a non-RunPod "
+        "backend (--backend fellows/nibi/...) where the #934 grammar applies; "
+        "or, on an auto route, pass --no-runpod-fallback (declines every "
+        "RunPod rung, so the looser grammar governs)."
     )
     return {
         "ok": False,
@@ -2247,7 +2265,9 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
     # Pre-route exit-2 refusals (#2145 lane-suffix/pod-name grammar, then the
     # #2161 CLI-drift guards) — one combined helper so each new guard doesn't
     # push _cmd_launch over the C901 cap (the _spec_extra_from_args precedent);
-    # runs after build_run_spec so the frontmatter-resolved backend is checked.
+    # runs after build_run_spec so the NORMALIZED CLI backend (absent -> auto
+    # = RunPod-reachable) is what's checked — frontmatter never enters
+    # spec.backend in this CLI.
     refusal = _pre_route_refusals(spec, args, extra)
     if refusal is not None:
         print(json.dumps(refusal, sort_keys=True))
@@ -3460,7 +3480,9 @@ def _build_argparser() -> argparse.ArgumentParser:
             "and the handle sidecar becomes issue-<N>-<suffix>-handle.json, "
             "so N concurrent lanes for one issue coexist. Lowercase "
             "[a-z0-9-], <=43 chars; on a RunPod-reachable route (--backend "
-            "runpod/auto) the TIGHTER pod grammar additionally binds "
+            "runpod, or auto WITHOUT --no-runpod-fallback — with that flag "
+            "every auto-chain RunPod rung declines, so the looser grammar "
+            "governs) the TIGHTER pod grammar additionally binds "
             "([a-z][a-z0-9-]{0,19}, letter-initial, <=20 chars — refused "
             "pre-route otherwise, reason lane_suffix_not_runpod_pod_grammar). "
             "Suffixed-pod residuals (#2145): the watcher's wedge clocks and "
@@ -3494,7 +3516,11 @@ def _build_argparser() -> argparse.ArgumentParser:
             "no-capacity miss (#537: 'H100 SXM' waited 88 min). Honored on "
             "the RunPod lane ONLY; a launch won by another lane records "
             "gpu_type_unhonored_by_lane in the launch JSON + a warning. "
-            "GPU COUNT stays --gpus (the existing lane-generic flag)."
+            "GPU COUNT stays --gpus (the existing lane-generic flag). "
+            "Teardown duty (as with --lane-suffix): a suffixed pod is "
+            "destroyed SURGICALLY — pod.py terminate --issue <N> "
+            "--name-suffix <slug> — never the bare --issue form while "
+            "sibling pods live (#1485)."
         ),
     )
 
@@ -3513,11 +3539,14 @@ def _build_argparser() -> argparse.ArgumentParser:
     )
     finalize.add_argument(
         "--lane-suffix",
+        "--name-suffix",
+        dest="lane_suffix",
         type=_lane_suffix_arg,
         default=None,
         help=(
             "Resolve the per-lane handle sidecar issue-<N>-<suffix>-handle.json "
-            "(#934). Ignored when --handle-file is given. Pass the SAME suffix "
+            "(#934; --name-suffix is an alias for launch/pod.py symmetry, "
+            "#2145). Ignored when --handle-file is given. Pass the SAME suffix "
             "the launch used — a forgotten suffix silently finalizes the "
             "unsuffixed lane's handle instead."
         ),
