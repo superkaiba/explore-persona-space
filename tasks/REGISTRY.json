@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2323,
+  "highest_id": 2324,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10227,6 +10227,13 @@
       "path": "tasks/running/2323",
       "status": "running",
       "title": "workflow-fix: serialize Codex twin dispatch against the repo-shared non-atomic job index + post-spawn probe retry"
+    },
+    "2324": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2324",
+      "status": "proposed",
+      "title": "workflow-fix: symlink/FIFO-safe bounded opens for the three advisory-flock lock sites + thread realized lock mode into codex_task failure notes"
     },
     "233": {
       "has_clean_result": false,
