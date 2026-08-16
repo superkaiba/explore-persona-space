@@ -188,6 +188,9 @@ def test_stage_hub_prefix_scoped_listing_and_revision_pin(tmp_path, monkeypatch)
             seen["repo_info_calls"] += 1
             return SimpleNamespace(sha="abc123")
 
+        def file_exists(self, repo_id, filename, *, repo_type="model", revision=None, token=None):
+            return False  # packed probe (#2321): no pack on this fake remote
+
     monkeypatch.setattr("huggingface_hub.HfApi", FakeApi)
 
     def fake_list(api, repo_id, path, *, repo_type="model", revision=None):
@@ -245,6 +248,9 @@ def test_stage_hub_prefix_per_file_failure_propagates(tmp_path, monkeypatch):
 
         def repo_info(self, repo_id, repo_type=None):
             return SimpleNamespace(sha="abc123")
+
+        def file_exists(self, repo_id, filename, *, repo_type="model", revision=None, token=None):
+            return False  # packed probe (#2321): no pack on this fake remote
 
     monkeypatch.setattr("huggingface_hub.HfApi", FakeApi)
     monkeypatch.setattr(

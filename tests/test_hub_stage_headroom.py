@@ -40,13 +40,17 @@ def fast_retries(monkeypatch):
 
 
 class _FakeApi:
-    """HfApi stand-in for the stage_hub_prefix seam (repo_info only)."""
+    """HfApi stand-in for the stage_hub_prefix seam (repo_info + the
+    packed-probe file_exists, #2321: no pack on this fake remote)."""
 
     def __init__(self, token=None):
         self.token = token
 
     def repo_info(self, repo_id, repo_type=None):
         return SimpleNamespace(sha="abc123")
+
+    def file_exists(self, repo_id, filename, *, repo_type="model", revision=None, token=None):
+        return False
 
 
 def _fake_stage_recorder(calls: list):
