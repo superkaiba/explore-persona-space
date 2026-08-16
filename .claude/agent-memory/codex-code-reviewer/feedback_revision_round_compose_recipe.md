@@ -319,6 +319,23 @@ ride-along leniency-DECREASING tightening gets its own disclosed+consistent
 adjudication (calibration digests are reported claims — Codex adjudicates
 the mechanism by reading).
 
+**Orchestrator-authorized mutation probes on a read-only twin (#2146 r3,
+2026-08-16):** when the brief DIRECTS independent mutation probes ("temp
+copies only, each must turn a pin red, report exactly what was mutated"),
+do not silently downgrade to the #1092-r4 static translation — compose a
+SCOPED scratch-copy carve-out inside the read-only constraints block (copy
+targets under /tmp, mutate SCRATCH copies only, import-by-path / re-run the
+pin's assert logic against the scratch file; fleet-mutating CLIs stay
+banned; pure-function imports the pin tests themselves perform are fine)
+PLUS a never-fabricate fallback: env unavailable ⇒ run the static trace and
+label it `STATIC (env unavailable)` in Checks run. Flag at return time that
+the dispatch write-mode choice (--no-write vs scratch-writable) decides
+which arm executes. Also: a two-FAIL history round gets the honest-PASS
+block in BOTH directions plus a DROPPED-item fence — a deliberately-not-
+implemented prior finding is restated with the orchestrator's reasoning and
+a proof burden ("re-raising requires proving the later-fire case reachable"),
+else Codex predictably re-FAILs on its own prior item.
+
 **Inlined-prior-verdict tag echo hazard (#2145 r2, 2026-08-15):** when the
 prior Codex verdict is inlined IN FULL, add a hard-constraints line telling
 Codex to NEVER reproduce the prior marker's tags in its own output (the
