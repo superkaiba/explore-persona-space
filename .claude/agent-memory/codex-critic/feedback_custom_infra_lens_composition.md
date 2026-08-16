@@ -116,6 +116,18 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   the review questions` + separate NITs). Numcheck spans = inputs +
   lensitems + questions + empty prior file; passed first try at ~80 KB.
   Lens attr stays `methodology` (primary) when Alternatives rides along.
+  Round two (#2326): reuse the surviving round-one span workspace — header
+  verbatim + a ROUND SCOPE block (duties a-d: closure / regression / new
+  surface / arithmetic); round-record span = sed-strip the session-id
+  trailer off the prior `/tmp/...-output.md`, bracketed by Write-composed
+  lead-in + binding-adjudication lines (near-verbatim brief text, digits
+  balanced); fresh lens re-extract; the brief's LETTERED review groups
+  verbatim as the questions span; tail adds `### Blocker-closure verdict`
+  before the per-group answers; numcheck needs only path edits (suffix all
+  new paths with the round tag) — PASS first try at ~87 KB. The quoted
+  prior-round v-one marker block inside the prompt is harmless: the
+  dispatch config names the v-two start tag + lens attr explicitly, and
+  extraction runs on the OUTPUT file.
 
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
