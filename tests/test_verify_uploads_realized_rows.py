@@ -602,6 +602,17 @@ def test_pre_repair_shards_fail_and_live_store_passes(tmp_path):
 
 
 @_LIVE
+def test_resolve_sizes_live_body():
+    """Production-body coverage (#906) for the batched size-probe seam: the
+    budget tests stub `_row_index_resolve_sizes`, so this executes the REAL
+    body (ONE batched `get_paths_info` POST) against a known live index file
+    and pins the size the scoped tree walk reports for it."""
+    path = f"{_STORE}/greedy_evil_toxicchat/row_index_shard00.jsonl"
+    sizes = verify_uploads._row_index_resolve_sizes([path])
+    assert sizes.get(path) == 21756
+
+
+@_LIVE
 def test_attribution_replay_per_prefix():
     """§6.6b: replay the attribution step over each per-job prefix's own
     scoped listing and assert every glob-matched file resolves to exactly
