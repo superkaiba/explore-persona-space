@@ -8874,8 +8874,8 @@
     "2148": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2148",
-      "status": "planning",
+      "path": "tasks/approved/2148",
+      "status": "approved",
       "title": "workflow-fix: upload-verifier reconciles self-reported row counts, not realized store contents (passed a 25% shortfall)"
     },
     "2149": {
