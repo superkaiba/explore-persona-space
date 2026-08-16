@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2325,
+  "highest_id": 2326,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10241,6 +10241,13 @@
       "path": "tasks/running/2325",
       "status": "running",
       "title": "workflow-fix: .claude/skills/issue/SKILL.md is 813 bytes from its hard FAIL cap \u2014 next edit wedges the Step 9c gate fleet-wide"
+    },
+    "2326": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2326",
+      "status": "proposed",
+      "title": "Codex reviewers' \"Concerns to persist\" never reach raise-concern, so the next round's prior-concerns gate walks an empty ledger"
     },
     "233": {
       "has_clean_result": false,
