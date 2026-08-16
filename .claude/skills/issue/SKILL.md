@@ -3281,14 +3281,19 @@ one-liner) even on non-trigger-dense rounds:
     MB=/tmp/issue-<N>-<kind>-r<n>-marker.md
     sed -n '/^<!-- epm:<kind> v<n>/,/^<!-- \/epm:<kind> -->/p' "$OUT" > "$MB"
     # (a) PRE-POST gate — runs BETWEEN the recipe's step 2 (end-tag/char-cap
-    #     gate) and step 4 (post-marker). Non-zero exit = MALFORMED output
+    #     gate) and step 4 (post-marker). Exit 1/3 = MALFORMED output
     #     -> the site's existing stricter-retry re-dispatch (cap 2); the
-    #     verdict marker is NOT posted on this attempt:
+    #     verdict marker is NOT posted on this attempt. Exit 2 (argparse/
+    #     usage — the forwarder never examined the marker) = the INVOCATION
+    #     is the bug: fix the invocation and re-run this gate, NEVER a
+    #     Codex re-dispatch (mirrors the resume exit-2 exception below):
     uv run python scripts/persist_verdict_concerns.py <N> --file "$MB" \
       --by <codex-role> --round <n> --require-block --validate-only
     # (b) POST-POST persist — same command minus --validate-only, run right
     #     after the step-4 post-marker succeeds. Exit 0 prints
-    #     `persisted K/K concern(s): <ids>`; idempotent on replay:
+    #     `persisted K/K concern(s): <ids>`; idempotent on replay. Exit 4 =
+    #     OPERATIONAL persistence failure -> re-run this persist invocation
+    #     alone, never a Codex re-dispatch:
     uv run python scripts/persist_verdict_concerns.py <N> --file "$MB" \
       --by <codex-role> --round <n> --require-block
 
@@ -3296,8 +3301,12 @@ one-liner) even on non-trigger-dense rounds:
 `CONCERN:: ` grammar (5b/5c `codex-code-reviewer`, 9a-bis
 `codex-clean-result-critic`); at 9a / 9b VC run BOTH invocations WITHOUT
 it (zero rows -> no-op; a spontaneous prose concerns-heading WARNs, never
-retries). A persist-step failure AFTER the marker posted is re-run alone
-(idempotent) — never a re-dispatch of Codex.
+retries). A persist-step failure AFTER the marker posted (exit 4) is
+re-run alone (idempotent) — never a re-dispatch of Codex. VALIDATION is
+all-or-nothing; PERSISTENCE is per-row — a mid-loop operational failure
+(exit 4) can leave a PARTIAL ledger (rows 1..k-1 durably raised), a named
+accepted residual (#2326): the idempotent re-run here and the resume
+recovery below converge it to the complete row set.
 
 **Resume recovery (crash between marker post and persist — #2326).**
 At ANY resume/decision point where a current-round `epm:<kind>-codex v<n>`
@@ -3333,16 +3342,22 @@ single authoritative `note`: concatenate ALL parts of the `(kind, version)`
 in `part` order into `"$MB"` before the forwarder run, never `last` alone.
 The recipe's step-2 50k gate keeps these sites single-part in practice.)
 
-**Resume-specific non-zero-exit disposition (generalized):** any non-zero
-forwarder exit on a POSTED marker at resume follows the same
+**Resume-specific non-zero-exit disposition (bound per exit code):** any
+non-zero forwarder exit on a POSTED marker at resume follows the same
 WARN-and-proceed — log a WARN line, proceed with the row's action, NEVER
-retro-dispatch Codex against a settled round. Exit 3 at a contract site
-keeps its named line — `WARN: legacy-marker-no-concern-rows` — and can
-only be a legacy/pre-fix round, because the pre-post gate guards every
-post-fix posting. EXCEPTION — argparse/usage exit 2: the forwarder never
-examined the marker (the invocation itself is malformed), so the rows are
-fully recoverable — fix the invocation and re-run the recovery, never
-WARN-and-proceed past it.
+retro-dispatch Codex against a settled round — with exit 2 the sole
+exception. Exit 1 (malformed rows) or exit 3 (heading/block absent at a
+contract site) on a POSTED marker indicates a legacy/pre-fix round: the
+pre-post gate guards every post-fix posting against exactly those
+STRUCTURAL shapes; exit 3 keeps its named line —
+`WARN: legacy-marker-no-concern-rows`. Exit 4 (operational persistence
+failure) says NOTHING about the round's age — it fires on fully post-fix
+markers too (the pre-post gate validates structure, not the ledger
+write), may leave a PARTIAL ledger, and converges via the idempotent
+re-run at every later recovery row. EXCEPTION — argparse/usage exit 2:
+the forwarder never examined the marker (the invocation itself is
+malformed), so the rows are fully recoverable — fix the invocation and
+re-run the recovery, never WARN-and-proceed past it.
 
 **5c. Apply ensemble decision rule.**
 

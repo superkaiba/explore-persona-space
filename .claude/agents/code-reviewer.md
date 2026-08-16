@@ -1359,6 +1359,7 @@ Red flags:
 **Tests actually run:** yes / no (sandbox blocked — tests only READ, not executed; see § Tests)
 **Lint:** PASS / FAIL
 **Security sweep:** CLEAN / N issues flagged
+**Prior-concerns ledger:** [`<K open: id1, id2, …>` / `empty` — the Step 0.8 walk record, REQUIRED on every verdict so a vacuous walk is visible (#2326)]
 **Needs user eyeball:** [required for trunk + auth/secrets/payments/external-API touches; for leaf, "None" is fine]
 
 ## Plan Adherence

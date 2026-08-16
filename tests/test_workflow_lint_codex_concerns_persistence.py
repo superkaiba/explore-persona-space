@@ -11,12 +11,19 @@ Incident #2321: a Codex verdict carried 8 "Concerns to persist" items, zero
 were persisted, and the round-2 prior-concerns gate walked an empty ledger.
 
 1.  ``test_lens_passes_on_complete_corpus`` — all four surfaces present.
-2.  ``test_lens_fails_per_missing_surface`` — 12 parametrized drops, each
+2.  ``test_lens_fails_per_missing_surface`` — parametrized drops, each
     naming the file + missing token.
 3.  ``test_lens_passes_on_live_tree`` — binds the landed #2326 edits.
 4.  ``test_check_codex_concerns_persistence_bundled_in_no_flags`` — the
     two-part behavioral bundling pin (the #1701 test's precedent shape,
     mirroring tests/test_workflow_lint_smoke_blind_spots.py).
+5.  ``test_strengthened_pins_single_deterministic_error`` — round-2
+    strengthening (``durability-pin-token-presence-gaps``): each
+    broken-but-previously-PASSING mutation (a mid-prose-only ``CONCERN:: ``
+    token, a deleted ``CONCERN:: none`` sentinel, a single collection
+    invocation, a heading-only recovery clause, a dropped predicate
+    sentence / resume-table preamble / 5c-ter empty-ledger literal)
+    produces EXACTLY ONE deterministic lint error.
 """
 
 from __future__ import annotations
@@ -36,46 +43,57 @@ if str(_SCRIPTS) not in sys.path:
 
 from workflow_lint import check_codex_concerns_persistence_lens  # noqa: E402
 
-_SKILL_OK = """\
-prose above the recipe.
 
-**Codex concerns persistence at verdict collection (fires at EVERY
-marker-mode Codex verdict collection; #2326).** The Codex twins never mutate
-`concerns.jsonl`; the orchestrator forwards their machine-readable rows.
+def _skill_text(
+    *,
+    forwarder_name: str = "persist_verdict_concerns.py",
+    validate_invocation: bool = True,
+    persist_invocation: bool = True,
+    recovery_clause: bool = True,
+    recovery_invocation: bool = True,
+    predicate_sentence: bool = True,
+    preamble: bool = True,
+    empty_ledger: bool = True,
+) -> str:
+    """Compose a minimal SKILL.md corpus; each kwarg drops ONE pinned token."""
+    inv = (
+        f'    uv run python scripts/{forwarder_name} <N> --file "$MB" \\\n'
+        "      --by <codex-role> --round <n> --require-block"
+    )
+    parts = [
+        "prose above the recipe.\n\n",
+        "**Codex concerns persistence at verdict collection (fires at EVERY\n"
+        "marker-mode Codex verdict collection; #2326).** The Codex twins never\n"
+        "mutate `concerns.jsonl`; the orchestrator forwards machine rows.\n\n",
+    ]
+    if validate_invocation:
+        parts.append(inv + " --validate-only\n")
+    if persist_invocation:
+        parts.append(inv + "\n")
+    parts.append("\n")
+    if recovery_clause:
+        parts.append("**Resume recovery (crash between marker post and persist — #2326).**\n")
+        if predicate_sentence:
+            parts.append(
+                "Recovery binds at every resume-table row whose PREDICATE includes\n"
+                "an existing current-round codex marker; run recovery FIRST.\n"
+            )
+        parts.append("\n")
+        if recovery_invocation:
+            parts.append(inv + "\n")
+        parts.append("\n")
+    parts.append("**5c. Apply ensemble decision rule.**\n\ndecision table here.\n\n")
+    if empty_ledger:
+        parts.append("If empty: log `concerns ledger: empty — nothing to walk`.\n\n")
+    if preamble:
+        parts.append(
+            "Every row below whose PREDICATE includes an EXISTING current-round\n"
+            "`epm:*-codex` marker FIRST runs the resume-recovery step (#2326).\n"
+        )
+    return "".join(parts)
 
-    uv run python scripts/persist_verdict_concerns.py <N> --file "$MB" \\
-      --by <codex-role> --round <n> --require-block
 
-**Resume recovery (crash between marker post and persist — #2326).**
-At ANY resume/decision point where a current-round marker ALREADY EXISTS,
-run recovery FIRST, then the row's action.
-
-    uv run python scripts/persist_verdict_concerns.py <N> --file "$MB" \\
-      --by <codex-role> --round <n> --require-block
-
-**5c. Apply ensemble decision rule.**
-
-decision table here.
-"""
-
-# Heading present, forwarder literal present, recovery clause ABSENT.
-_SKILL_NO_RECOVERY = """\
-**Codex concerns persistence at verdict collection (#2326).** prose.
-
-    uv run python scripts/persist_verdict_concerns.py <N> --file "$MB"
-
-**5c. Apply ensemble decision rule.**
-"""
-
-# Heading present, forwarder literal ABSENT (recovery clause present).
-_SKILL_NO_FORWARDER = """\
-**Codex concerns persistence at verdict collection (#2326).** prose that
-names no script at all.
-
-**Resume recovery (crash between marker post and persist — #2326).** prose.
-
-**5c. Apply ensemble decision rule.**
-"""
+_SKILL_OK = _skill_text()
 
 _CODEX_CR_OK = """\
 composer prose.
@@ -86,6 +104,8 @@ composer prose.
 ## Concerns to persist
 
 CONCERN:: <BLOCKER|CONCERN|NIT> <kebab-case-id> <one-line summary>
+
+Empty set: the sole row `CONCERN:: none`.
 
 <!-- /epm:code-review-codex -->
 
@@ -105,6 +125,38 @@ composer prose.
 <!-- /epm:code-review-codex -->
 """
 
+# Broken-but-previously-PASSING (#2326 round 2): the CONCERN:: token appears
+# only MID-PROSE (the containment clause) — the pre-strengthening substring
+# check accepted this shape with the grammar row deleted.
+_CODEX_CR_TOKEN_MIDLINE_ONLY = """\
+composer prose.
+
+<!-- epm:code-review-codex v{{revision_round}} -->
+**Verdict:** [PASS | FAIL]
+
+## Concerns to persist
+
+Emit rows using the token CONCERN:: at line start; when there is nothing
+to persist emit the sole row `CONCERN:: none`.
+
+<!-- /epm:code-review-codex -->
+"""
+
+# Broken-but-previously-PASSING: grammar row present, `CONCERN:: none`
+# empty-set sentinel deleted.
+_CODEX_CR_NO_NONE = """\
+composer prose.
+
+<!-- epm:code-review-codex v{{revision_round}} -->
+**Verdict:** [PASS | FAIL]
+
+## Concerns to persist
+
+CONCERN:: <BLOCKER|CONCERN|NIT> <kebab-case-id> <one-line summary>
+
+<!-- /epm:code-review-codex -->
+"""
+
 _CODEX_CRC_OK = """\
 composer prose.
 
@@ -115,6 +167,8 @@ composer prose.
 
 CONCERN:: <BLOCKER|CONCERN|NIT> <kebab-case-id> <one-line summary>
 
+Empty set: the sole row `CONCERN:: none`.
+
 <!-- /epm:clean-result-critique-codex -->
 """
 
@@ -123,6 +177,33 @@ composer prose.
 
 <!-- epm:clean-result-critique-codex v{{revision_round}} -->
 **Verdict:** [PASS | REVISE]
+
+<!-- /epm:clean-result-critique-codex -->
+"""
+
+_CODEX_CRC_TOKEN_MIDLINE_ONLY = """\
+composer prose.
+
+<!-- epm:clean-result-critique-codex v{{revision_round}} -->
+**Verdict:** [PASS | REVISE]
+
+### Concerns to persist
+
+Emit rows using the token CONCERN:: at line start; when there is nothing
+to persist emit the sole row `CONCERN:: none`.
+
+<!-- /epm:clean-result-critique-codex -->
+"""
+
+_CODEX_CRC_NO_NONE = """\
+composer prose.
+
+<!-- epm:clean-result-critique-codex v{{revision_round}} -->
+**Verdict:** [PASS | REVISE]
+
+### Concerns to persist
+
+CONCERN:: <BLOCKER|CONCERN|NIT> <kebab-case-id> <one-line summary>
 
 <!-- /epm:clean-result-critique-codex -->
 """
@@ -154,49 +235,69 @@ prose.
 """
 
 
+# Per-surface drop -> corpus-text variants (each entry mutates ONE pin;
+# ``None`` / any other drop leaves the surface at its OK text).
+_SKILL_VARIANTS: dict[str, str] = {
+    "skill-heading": "no subsection here.\n\n**5c. Apply ensemble decision rule.**\n",
+    "skill-forwarder": _skill_text(forwarder_name="some_other_script.py"),
+    "skill-recovery": _skill_text(recovery_clause=False),
+    "skill-collection-count": _skill_text(validate_invocation=False),
+    "skill-recovery-invocation": _skill_text(recovery_invocation=False),
+    "skill-predicate": _skill_text(predicate_sentence=False),
+    "skill-preamble": _skill_text(preamble=False),
+    "skill-empty-ledger": _skill_text(empty_ledger=False),
+}
+_CR_VARIANTS: dict[str, str] = {
+    # Tag only mid-line (prose mention), never at line start.
+    "codex-cr-start-tag": ("prose Marker start tag: <!-- epm:code-review-codex v1 --> only.\n"),
+    "codex-cr-token": _CODEX_CR_NO_TOKEN,
+    "codex-cr-token-midline": _CODEX_CR_TOKEN_MIDLINE_ONLY,
+    "codex-cr-no-none": _CODEX_CR_NO_NONE,
+}
+_CRC_VARIANTS: dict[str, str] = {
+    "codex-crc-start-tag": ("prose <!-- epm:clean-result-critique-codex v1 --> mid-line only.\n"),
+    "codex-crc-token": _CODEX_CRC_NO_TOKEN,
+    "codex-crc-token-midline": _CODEX_CRC_TOKEN_MIDLINE_ONLY,
+    "codex-crc-no-none": _CODEX_CRC_NO_NONE,
+}
+_REVIEWER_VARIANTS: dict[str, str] = {
+    "reviewer-step08": "### Step 0.9: Git-provenance self-check\n\nprose.\n",
+    "reviewer-ledger-line": _REVIEWER_NO_LEDGER_LINE,
+}
+
+
 def _write_lens_corpus(root: Path, drop: str | None = None) -> None:
     """Write a minimal four-surface corpus; ``drop`` names one defect."""
-    skill = root / ".claude" / "skills" / "issue" / "SKILL.md"
-    codex_cr = root / ".claude" / "agents" / "codex-code-reviewer.md"
-    codex_crc = root / ".claude" / "agents" / "codex-clean-result-critic.md"
-    reviewer = root / ".claude" / "agents" / "code-reviewer.md"
-    for path in (skill, codex_cr, codex_crc, reviewer):
+    surfaces = (
+        (
+            root / ".claude" / "skills" / "issue" / "SKILL.md",
+            "skill-file",
+            _SKILL_VARIANTS,
+            _SKILL_OK,
+        ),
+        (
+            root / ".claude" / "agents" / "codex-code-reviewer.md",
+            "codex-cr-file",
+            _CR_VARIANTS,
+            _CODEX_CR_OK,
+        ),
+        (
+            root / ".claude" / "agents" / "codex-clean-result-critic.md",
+            "codex-crc-file",
+            _CRC_VARIANTS,
+            _CODEX_CRC_OK,
+        ),
+        (
+            root / ".claude" / "agents" / "code-reviewer.md",
+            "reviewer-file",
+            _REVIEWER_VARIANTS,
+            _REVIEWER_OK,
+        ),
+    )
+    for path, file_drop, variants, ok_text in surfaces:
         path.parent.mkdir(parents=True, exist_ok=True)
-
-    skill_text = _SKILL_OK
-    if drop == "skill-heading":
-        skill_text = "no subsection here.\n\n**5c. Apply ensemble decision rule.**\n"
-    elif drop == "skill-forwarder":
-        skill_text = _SKILL_NO_FORWARDER
-    elif drop == "skill-recovery":
-        skill_text = _SKILL_NO_RECOVERY
-    if drop != "skill-file":
-        skill.write_text(skill_text)
-
-    cr_text = _CODEX_CR_OK
-    if drop == "codex-cr-start-tag":
-        # Tag only mid-line (prose mention), never at line start.
-        cr_text = "prose Marker start tag: <!-- epm:code-review-codex v1 --> only.\n"
-    elif drop == "codex-cr-token":
-        cr_text = _CODEX_CR_NO_TOKEN
-    if drop != "codex-cr-file":
-        codex_cr.write_text(cr_text)
-
-    crc_text = _CODEX_CRC_OK
-    if drop == "codex-crc-start-tag":
-        crc_text = "prose <!-- epm:clean-result-critique-codex v1 --> mid-line only.\n"
-    elif drop == "codex-crc-token":
-        crc_text = _CODEX_CRC_NO_TOKEN
-    if drop != "codex-crc-file":
-        codex_crc.write_text(crc_text)
-
-    reviewer_text = _REVIEWER_OK
-    if drop == "reviewer-step08":
-        reviewer_text = "### Step 0.9: Git-provenance self-check\n\nprose.\n"
-    elif drop == "reviewer-ledger-line":
-        reviewer_text = _REVIEWER_NO_LEDGER_LINE
-    if drop != "reviewer-file":
-        reviewer.write_text(reviewer_text)
+        if drop != file_drop:
+            path.write_text(variants.get(drop or "", ok_text))
 
 
 def test_lens_passes_on_complete_corpus(tmp_path: Path) -> None:
@@ -230,6 +331,34 @@ def test_lens_fails_per_missing_surface(
     joined = "\n".join(errors)
     assert path_fragment in joined
     assert token_fragment in joined
+
+
+@pytest.mark.parametrize(
+    ("drop", "path_fragment", "token_fragment"),
+    [
+        ("skill-collection-count", "SKILL.md", "COLLECTION"),
+        ("skill-recovery-invocation", "SKILL.md", "carries no"),
+        ("skill-predicate", "SKILL.md", "predicate-leading sentence"),
+        ("skill-preamble", "SKILL.md", "resume-table preamble"),
+        ("skill-empty-ledger", "SKILL.md", "empty-ledger"),
+        ("codex-cr-token-midline", "codex-code-reviewer.md", "LINE-START"),
+        ("codex-cr-no-none", "codex-code-reviewer.md", "CONCERN:: none"),
+        ("codex-crc-token-midline", "codex-clean-result-critic.md", "LINE-START"),
+        ("codex-crc-no-none", "codex-clean-result-critic.md", "CONCERN:: none"),
+    ],
+)
+def test_strengthened_pins_single_deterministic_error(
+    tmp_path: Path, drop: str, path_fragment: str, token_fragment: str
+) -> None:
+    """Round-2 strengthening (#2326 `durability-pin-token-presence-gaps`):
+    each of these mutations PASSED the pre-strengthening check (token /
+    heading still present somewhere) and must now produce EXACTLY ONE
+    deterministic error naming the file + the missing pin."""
+    _write_lens_corpus(tmp_path, drop=drop)
+    errors = check_codex_concerns_persistence_lens(repo_root=tmp_path)
+    assert len(errors) == 1, f"drop={drop!r} must yield exactly one error; got: {errors}"
+    assert path_fragment in errors[0]
+    assert token_fragment in errors[0]
 
 
 def test_lens_fails_on_missing_ledger_line(tmp_path: Path) -> None:

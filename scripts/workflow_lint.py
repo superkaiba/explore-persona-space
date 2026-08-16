@@ -866,13 +866,18 @@ Behaviours:
   default run): pin the #2326 Codex concerns-persistence contract across
   its four prose surfaces — the issue/SKILL.md "Codex concerns persistence
   at verdict collection" subsection (region-anchored; must name the
-  forwarder ``persist_verdict_concerns.py`` and keep the resume-recovery
-  clause), the ``CONCERN:: `` row grammar inside both emitting Codex
-  composers' verdict templates (codex-code-reviewer.md,
-  codex-clean-result-critic.md), and the ``**Prior-concerns ledger:**``
-  visibility line in code-reviewer.md Step 0.8 (incident #2321: a Codex
-  verdict carried 8 "Concerns to persist" items, zero were persisted, and
-  the round-2 prior-concerns gate walked an empty ledger).
+  forwarder ``persist_verdict_concerns.py``, carry BOTH collection
+  invocations, and keep the resume-recovery clause with its recovery
+  invocation + predicate-leading sentence; the file also carries the
+  resume-table preamble pointer and the 5c-ter empty-ledger literal), a
+  LINE-START ``CONCERN:: `` grammar row + the ``CONCERN:: none`` sentinel
+  inside both emitting Codex composers' verdict templates
+  (codex-code-reviewer.md, codex-clean-result-critic.md), and the
+  ``**Prior-concerns ledger:**`` visibility line in code-reviewer.md
+  Step 0.8 (incident #2321: a Codex verdict carried 8 "Concerns to
+  persist" items, zero were persisted, and the round-2 prior-concerns
+  gate walked an empty ledger; token-presence pins strengthened per the
+  round-1 ``durability-pin-token-presence-gaps`` concern).
 
 Exit codes:
 
@@ -12976,6 +12981,136 @@ def check_cvd_scoped_gpu_verdict_lens(  # noqa: C901 -- flat per-surface token l
     return errors
 
 
+def _codex_concerns_skill_errors(skill: Path) -> list[str]:
+    """Surface (1) of ``check_codex_concerns_persistence_lens`` (#2326): the
+    issue/SKILL.md poster-duty subsection pins (split out to keep the parent
+    check under the C901 cap; the parent docstring carries the contract)."""
+    forwarder = "persist_verdict_concerns.py"
+    invocation = "persist_verdict_concerns.py <N> --file"
+    predicate_sentence = "every resume-table row whose PREDICATE includes"
+    preamble_literal = "Every row below whose PREDICATE includes an EXISTING current-round"
+    empty_ledger_literal = "concerns ledger: empty — nothing to walk"
+    heading = "**Codex concerns persistence at verdict collection"
+    recovery = "**Resume recovery (crash between marker post and persist"
+    errors: list[str] = []
+    if not skill.is_file():
+        errors.append(
+            f"{skill}: missing — the #2326 codex-concerns-persistence poster "
+            f"duty must live in issue/SKILL.md."
+        )
+        return errors
+    text = skill.read_text(encoding="utf-8")
+    idx = text.find(heading)
+    if idx == -1:
+        errors.append(
+            f"{skill}: missing the '{heading}' subsection (#2326) — "
+            f"without it the orchestrator never forwards Codex "
+            f"'Concerns to persist' rows to the ledger (incident #2321: "
+            f"8 emitted, 0 persisted, the round-2 gate walked an empty "
+            f"ledger)."
+        )
+        return errors
+    end = text.find("**5c. Apply ensemble decision rule.**", idx)
+    region = text[idx:end] if end != -1 else text[idx:]
+    if forwarder not in region:
+        errors.append(
+            f"{skill}: the codex-concerns-persistence subsection no "
+            f"longer names the forwarder {forwarder!r} (#2326) — the "
+            f"blind-forward invocations must stay in the region."
+        )
+    rec_idx = region.find(recovery)
+    if rec_idx == -1:
+        errors.append(
+            f"{skill}: the codex-concerns-persistence subsection no "
+            f"longer carries the '{recovery}' clause (#2326) — a "
+            f"crash between marker post and persist would reproduce "
+            f"the #2321 empty-ledger defect through the resume table."
+        )
+        collection = region
+    else:
+        collection = region[:rec_idx]
+        recovery_region = region[rec_idx:]
+        if invocation not in recovery_region:
+            errors.append(
+                f"{skill}: the resume-recovery clause carries no "
+                f"forwarder invocation ({invocation!r}) (#2326) — a "
+                f"heading-only recovery clause cannot re-run the "
+                f"persist at resume."
+            )
+        if predicate_sentence not in recovery_region:
+            errors.append(
+                f"{skill}: the resume-recovery clause no longer "
+                f"carries its predicate-leading sentence "
+                f"({predicate_sentence!r}) (#2326) — the recovery "
+                f"duty must stay anchored to the row PREDICATE (the "
+                f"one-twin-missing re-spawn rows included)."
+            )
+    if collection.count(invocation) < 2:
+        errors.append(
+            f"{skill}: the codex-concerns-persistence COLLECTION "
+            f"sub-region carries {collection.count(invocation)} "
+            f"forwarder invocation(s) ({invocation!r}); the contract "
+            f"requires BOTH the pre-post validate gate and the "
+            f"post-post persist (#2326)."
+        )
+    if preamble_literal not in text:
+        errors.append(
+            f"{skill}: missing the resume-table preamble pointer "
+            f"({preamble_literal!r}) (#2326) — resume rows would "
+            f"advance past the recovery step (the crash-seam replay "
+            f"of the #2321 empty-ledger defect)."
+        )
+    if empty_ledger_literal not in text:
+        errors.append(
+            f"{skill}: missing the Step 5c-ter empty-ledger record "
+            f"literal ({empty_ledger_literal!r}) (#2326) — an empty "
+            f"ledger walk would leave no visible round record."
+        )
+    return errors
+
+
+def _codex_concerns_composer_errors(composer: Path, start_tag: str, end_tag: str) -> list[str]:
+    """Surfaces (2)/(3) of ``check_codex_concerns_persistence_lens`` (#2326):
+    the emitting composer's verdict-template pins — a LINE-START
+    ``CONCERN:: `` grammar row + the ``CONCERN:: none`` empty-set sentinel."""
+    row_token = "CONCERN:: "
+    none_sentinel = "CONCERN:: none"
+    errors: list[str] = []
+    if not composer.is_file():
+        errors.append(
+            f"{composer}: missing — the #2326 CONCERN:: row grammar must "
+            f"live in the composer's verdict template."
+        )
+        return errors
+    text = composer.read_text(encoding="utf-8")
+    start_match = re.search(rf"(?m)^{re.escape(start_tag)}", text)
+    if start_match is None:
+        errors.append(
+            f"{composer}: no line-start verdict-template start tag "
+            f"{start_tag!r} (#2326) — cannot anchor the template region."
+        )
+        return errors
+    end = text.find(end_tag, start_match.start())
+    region = text[start_match.start() : end] if end != -1 else text[start_match.start() :]
+    if re.search(rf"(?m)^{re.escape(row_token)}", region) is None:
+        errors.append(
+            f"{composer}: the verdict-template region no longer carries "
+            f"a LINE-START {row_token!r} row grammar (#2326) — a "
+            f"mid-prose token mention (the containment clause) is not a "
+            f"template row, so Codex would emit prose-only concerns the "
+            f"blind forwarder cannot persist (the #2321 shape)."
+        )
+    if none_sentinel not in region:
+        errors.append(
+            f"{composer}: the verdict-template region no longer names "
+            f"the empty-set sentinel row {none_sentinel!r} (#2326) — "
+            f"Codex would have no machine shape for 'nothing to "
+            f"persist', and contract sites would exit 3 on every clean "
+            f"round."
+        )
+    return errors
+
+
 def check_codex_concerns_persistence_lens(*, repo_root: Path | None = None) -> list[str]:
     """FAIL if the #2326 Codex concerns-persistence contract is absent from
     ANY of its four surfaces.
@@ -12995,10 +13130,23 @@ def check_codex_concerns_persistence_lens(*, repo_root: Path | None = None) -> l
     (1) issue/SKILL.md — the "Codex concerns persistence at verdict
         collection" subsection (region: its bold heading up to the
         ``**5c. Apply ensemble decision rule.**`` heading) names the
-        forwarder ``persist_verdict_concerns.py`` AND keeps the
-        ``**Resume recovery`` clause inside the region;
-    (2) codex-code-reviewer.md — the literal row token ``CONCERN:: ``
-        inside the verdict-template region (line-start marker tags);
+        forwarder ``persist_verdict_concerns.py``, keeps the
+        ``**Resume recovery`` clause inside the region, carries BOTH
+        collection invocations (pre-post validate + post-post persist)
+        in the COLLECTION sub-region and one invocation plus the
+        predicate-leading sentence ("every resume-table row whose
+        PREDICATE includes ...") in the RECOVERY sub-region; the file
+        additionally carries the resume-table preamble pointer ("Every
+        row below whose PREDICATE includes an EXISTING current-round
+        ...") and the Step 5c-ter empty-ledger record literal
+        (``concerns ledger: empty — nothing to walk``) — the
+        token-presence strengthening persisted as
+        ``durability-pin-token-presence-gaps`` (#2326 round 1);
+    (2) codex-code-reviewer.md — a LINE-START ``CONCERN:: `` grammar row
+        AND the ``CONCERN:: none`` empty-set sentinel inside the
+        verdict-template region (line-start marker tags; a mid-prose
+        token mention — the containment clause — does not satisfy the
+        row pin);
     (3) codex-clean-result-critic.md — same, its template region;
     (4) code-reviewer.md — the literal ``**Prior-concerns ledger:**``
         visibility line inside the ``### Step 0.8`` section body.
@@ -13013,46 +13161,10 @@ def check_codex_concerns_persistence_lens(*, repo_root: Path | None = None) -> l
     else:
         env_root = os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
         root = Path(env_root) if env_root else _REPO_ROOT
-    forwarder = "persist_verdict_concerns.py"
-    row_token = "CONCERN:: "
     errors: list[str] = []
 
     # (1) issue/SKILL.md: the poster-duty subsection region.
-    skill = root / ".claude" / "skills" / "issue" / "SKILL.md"
-    heading = "**Codex concerns persistence at verdict collection"
-    recovery = "**Resume recovery (crash between marker post and persist"
-    if not skill.is_file():
-        errors.append(
-            f"{skill}: missing — the #2326 codex-concerns-persistence poster "
-            f"duty must live in issue/SKILL.md."
-        )
-    else:
-        text = skill.read_text(encoding="utf-8")
-        idx = text.find(heading)
-        if idx == -1:
-            errors.append(
-                f"{skill}: missing the '{heading}' subsection (#2326) — "
-                f"without it the orchestrator never forwards Codex "
-                f"'Concerns to persist' rows to the ledger (incident #2321: "
-                f"8 emitted, 0 persisted, the round-2 gate walked an empty "
-                f"ledger)."
-            )
-        else:
-            end = text.find("**5c. Apply ensemble decision rule.**", idx)
-            region = text[idx:end] if end != -1 else text[idx:]
-            if forwarder not in region:
-                errors.append(
-                    f"{skill}: the codex-concerns-persistence subsection no "
-                    f"longer names the forwarder {forwarder!r} (#2326) — the "
-                    f"blind-forward invocations must stay in the region."
-                )
-            if recovery not in region:
-                errors.append(
-                    f"{skill}: the codex-concerns-persistence subsection no "
-                    f"longer carries the '{recovery}' clause (#2326) — a "
-                    f"crash between marker post and persist would reproduce "
-                    f"the #2321 empty-ledger defect through the resume table."
-                )
+    errors.extend(_codex_concerns_skill_errors(root / ".claude" / "skills" / "issue" / "SKILL.md"))
 
     # (2)/(3) the two emitting Codex composers: row grammar in the template.
     for rel, start_tag, end_tag in (
@@ -13067,30 +13179,9 @@ def check_codex_concerns_persistence_lens(*, repo_root: Path | None = None) -> l
             "<!-- /epm:clean-result-critique-codex -->",
         ),
     ):
-        composer = root / ".claude" / "agents" / rel
-        if not composer.is_file():
-            errors.append(
-                f"{composer}: missing — the #2326 CONCERN:: row grammar must "
-                f"live in the composer's verdict template."
-            )
-            continue
-        text = composer.read_text(encoding="utf-8")
-        start_match = re.search(rf"(?m)^{re.escape(start_tag)}", text)
-        if start_match is None:
-            errors.append(
-                f"{composer}: no line-start verdict-template start tag "
-                f"{start_tag!r} (#2326) — cannot anchor the template region."
-            )
-            continue
-        end = text.find(end_tag, start_match.start())
-        region = text[start_match.start() : end] if end != -1 else text[start_match.start() :]
-        if row_token not in region:
-            errors.append(
-                f"{composer}: the verdict-template region no longer carries "
-                f"the {row_token!r} row grammar (#2326) — Codex would emit "
-                f"prose-only concerns the blind forwarder cannot persist "
-                f"(the #2321 shape)."
-            )
+        errors.extend(
+            _codex_concerns_composer_errors(root / ".claude" / "agents" / rel, start_tag, end_tag)
+        )
 
     # (4) code-reviewer.md: the Step 0.8 ledger-visibility line.
     reviewer = root / ".claude" / "agents" / "code-reviewer.md"
@@ -18180,9 +18271,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         action="store_true",
         help="FAIL if the #2326 Codex concerns-persistence contract is "
         "absent from any of its four surfaces: the issue/SKILL.md 'Codex "
-        "concerns persistence at verdict collection' subsection (forwarder "
-        "invocation + resume-recovery clause), the CONCERN:: row grammar in "
-        "the codex-code-reviewer.md and codex-clean-result-critic.md "
+        "concerns persistence at verdict collection' subsection (both "
+        "collection invocations + resume-recovery clause with its recovery "
+        "invocation and predicate-leading sentence, plus the resume-table "
+        "preamble pointer and 5c-ter empty-ledger literal), a line-start "
+        "CONCERN:: grammar row + the CONCERN:: none sentinel in the "
+        "codex-code-reviewer.md and codex-clean-result-critic.md "
         "verdict templates, and the Prior-concerns-ledger visibility line "
         "in code-reviewer.md Step 0.8 (incident #2321: 8 emitted concerns, "
         "0 persisted, an empty ledger walked vacuously at round 2). "

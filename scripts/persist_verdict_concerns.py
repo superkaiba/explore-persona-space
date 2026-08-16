@@ -22,20 +22,34 @@ Contract:
 * Validates ALL rows structurally before persisting ANY (all-or-nothing):
   severity in ``task_workflow.CONCERN_SEVERITIES``, id matching
   ``task_workflow._CONCERN_ID_RE``, non-empty summary, no duplicate ids,
-  ``CONCERN:: none`` only as the sole row.
+  ``CONCERN:: none`` only as the sole row, and at most ``_MAX_ROWS`` (50)
+  rows per block (availability cap: a sub-50k marker admits ~2,000
+  minimal rows, i.e. thousands of durable flock+append+commit cycles).
 * Persists via ``task_workflow.raise_concern`` (the library layer: flock +
   events.jsonl mirror — NEVER a ``task.py`` shellout; idempotent no-op on a
   same (id, round, severity) replay). A summary over the 200-char library
   cap is stored as its word-boundary lead with the FULL text in the
   ``evidence`` field (mirrors the CLI's non-lossy shift, #2121).
+* Validation is all-or-nothing; PERSISTENCE is per-row: each valid row is
+  durably raised in turn, so a mid-loop OPERATIONAL failure (exit 4) can
+  leave a PARTIAL ledger (rows 1..k-1 persisted). Named accepted residual
+  (#2326 reconciler): the idempotent same-(id, round, severity) replay
+  makes the re-run — at collection or at any resume-recovery row —
+  converge to the complete row set; never a batch transaction in the
+  frozen library layer (Non-goals).
 * Output discipline: stdout carries ONLY counts, concern ids (kebab
   tokens), and content-free reason codes (``bad-severity | bad-id |
   empty-summary | too-few-fields | duplicate-id | none-with-rows |
-  heading-without-rows | missing-concerns-block``). Summaries NEVER print.
+  too-many-rows | heading-without-rows | missing-concerns-block``).
+  Summaries NEVER print; an operational failure prints only the exception
+  CLASS name (a message could embed summary text).
 * Exit codes: 0 ok (persisted, idempotent no-op, or clean ``none``) - 1
   malformed rows - 3 missing/contradictory concerns block under
-  ``--require-block`` - 2 argparse/usage (incl. an unreadable ``--file``:
-  the marker was never examined, so the invocation is the bug).
+  ``--require-block`` - 4 operational persistence failure mid-loop
+  (partial ledger possible; re-run the persist invocation alone —
+  idempotent) - 2 argparse/usage (incl. an unreadable or non-UTF-8
+  ``--file``: the marker was never examined, so the invocation is the
+  bug).
 """
 
 from __future__ import annotations
@@ -54,6 +68,11 @@ from explore_persona_space import task_workflow  # noqa: E402
 _ROW_RE = re.compile(r"^CONCERN:: (.*)$", re.MULTILINE)
 _HEADING_RE = re.compile(r"(?mi)^(?:#{1,6}\s*|\*\*)?concerns to persist\b")
 _SUMMARY_CAP = 200
+# Availability cap (#2326 `unbounded-concern-row-fanout`): realistic twin
+# verdicts carry <= ~10 rows; a repetition-degenerate verdict could otherwise
+# drive thousands of durable flock+append+commit cycles. Checked BEFORE any
+# per-row validation or write.
+_MAX_ROWS = 50
 
 
 def _truncate_summary(summary: str, cap: int = _SUMMARY_CAP) -> tuple[str, str | None]:
@@ -83,6 +102,11 @@ def _validate_rows(
     ``problems`` entries are content-free reason codes keyed by row ordinal;
     summaries and malformed tokens never enter them.
     """
+    if len(raw_rows) > _MAX_ROWS:
+        # Reject before ANY per-row work: exit 1 via the problems path, so
+        # nothing is ever persisted from an over-cap block (content-free:
+        # counts only).
+        return [], [f"too-many-rows ({len(raw_rows)} > {_MAX_ROWS})"]
     problems: list[str] = []
     parsed: list[tuple[str, str, str]] = []
     none_rows = [r for r in raw_rows if r.strip() == "none"]
@@ -102,6 +126,10 @@ def _validate_rows(
         if not task_workflow._CONCERN_ID_RE.match(cid):
             problems.append(f"row {idx}: bad-id")
         if not summary.strip():
+            # Defensive dead code: ``split(None, 2)`` sheds a whitespace-only
+            # third field, so that shape lands in ``too-few-fields`` above and
+            # this branch is unreachable today. Kept as a guard against a
+            # future tokenizer change (both #2326 round-1 reviewers agree).
             problems.append(f"row {idx}: empty-summary")
         if cid in seen:
             problems.append(f"row {idx}: duplicate-id")
@@ -145,7 +173,10 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--round must be a positive integer")
     try:
         text = Path(args.file).read_text(encoding="utf-8")
-    except OSError as exc:
+    except (OSError, ValueError) as exc:
+        # ValueError covers UnicodeDecodeError (its subclass): a non-UTF-8
+        # --file, like an unreadable one, means the marker was never
+        # examined — the invocation is the bug, so take the usage exit (2).
         parser.error(f"--file unreadable: {exc}")
 
     raw_rows = _ROW_RE.findall(text)
@@ -178,17 +209,31 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     persisted: list[str] = []
-    for severity, cid, summary in parsed:
+    for idx, (severity, cid, summary) in enumerate(parsed, start=1):
         kept, full = _truncate_summary(summary)
-        task_workflow.raise_concern(
-            args.task_id,
-            cid,
-            severity=severity,
-            summary=kept,
-            raised_by=args.by,
-            raised_at_round=args.round,
-            evidence=full,
-        )
+        try:
+            task_workflow.raise_concern(
+                args.task_id,
+                cid,
+                severity=severity,
+                summary=kept,
+                raised_by=args.by,
+                raised_at_round=args.round,
+                evidence=full,
+            )
+        except Exception as exc:
+            # Operational persistence failure (disk-full / flock OSError is
+            # the realistic residual; validation pre-satisfies the library
+            # guards). Distinct exit 4 so callers never bin it with the
+            # exit-1 MALFORMED class (#2326 exit-taxonomy-operational-
+            # collision). Content-free by design: the exception CLASS only —
+            # a message could embed summary text. Rows 1..idx-1 are durably
+            # persisted (partial ledger); the idempotent re-run converges.
+            print(
+                f"OPERATIONAL: persist-failed row {idx} ({cid}): "
+                f"{type(exc).__name__} - {len(persisted)}/{len(parsed)} persisted"
+            )
+            return 4
         persisted.append(cid)
     print(f"persisted {len(persisted)}/{len(parsed)} concern(s): {' '.join(persisted)}")
     return 0

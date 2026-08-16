@@ -29,6 +29,20 @@ Covers (plan #2326 §6 item 1):
     the full text in ``evidence``.
 7.  ``--validate-only`` writes nothing on both the passing and failing
     shape.
+
+Round-2 additions (#2326 open concerns):
+
+8.  ``_MAX_ROWS``+1 valid rows -> exit 1 (``too-many-rows``), ZERO ledger
+    mutations, on the persist AND ``--validate-only`` paths
+    (``unbounded-concern-row-fanout``).
+9.  Mid-loop operational failure -> exit 4 with a content-free reason
+    line (exception CLASS + counts, never summary text), a PARTIAL ledger
+    (rows before the failure durably raised), and CONVERGENCE: the re-run
+    with a healthy library persists exactly the remaining rows
+    (``exit-taxonomy-operational-collision`` +
+    ``partial-persist-residual-undocumented``).
+10. Non-UTF-8 ``--file`` -> argparse usage exit 2 (the invocation is the
+    bug; the marker was never examined).
 """
 
 from __future__ import annotations
@@ -356,6 +370,111 @@ def test_long_summary_word_boundary_lead_full_text_in_evidence(concerns_task, tm
     assert len(row["summary"]) <= 200
     assert row["summary"].endswith("...")
     assert row["evidence"] == long_summary
+
+
+# ─── 8. MAX_ROWS availability cap (#2326 unbounded-concern-row-fanout) ─────
+
+
+def test_too_many_rows_exit1_zero_ledger_mutations(concerns_task, tmp_path, capsys):
+    """_MAX_ROWS+1 VALID rows are rejected BEFORE any write, with a
+    content-free reason code — regression test for the round-2 cap: the
+    pre-cap forwarder would have run 51 durable flock+append+commit cycles."""
+    _, tw, tid = concerns_task
+    rows = "\n".join(
+        f"CONCERN:: CONCERN cap-row-{i:03d} synthetic row number {i}"
+        for i in range(pvc._MAX_ROWS + 1)
+    )
+    mb = tmp_path / "mb.md"
+    mb.write_text(f"## Concerns to persist\n{rows}\n")
+    rc, out = _run([str(tid), "--file", str(mb), "--by", "x", "--round", "1"], capsys)
+    assert rc == 1
+    assert "too-many-rows" in out
+    assert f"{pvc._MAX_ROWS + 1} > {pvc._MAX_ROWS}" in out
+    assert _ledger_rows(tw, tid) == [], "over-cap block must mutate NOTHING"
+    assert "synthetic row" not in out
+    # --validate-only takes the same rejection.
+    rc2, out2 = _run(
+        [str(tid), "--file", str(mb), "--by", "x", "--round", "1", "--validate-only"], capsys
+    )
+    assert rc2 == 1
+    assert "too-many-rows" in out2
+    assert _ledger_rows(tw, tid) == []
+
+
+def test_max_rows_boundary_passes(concerns_task, tmp_path, capsys):
+    """Exactly _MAX_ROWS rows stay legal (the cap is strictly-greater)."""
+    _, tw, tid = concerns_task
+    rows = "\n".join(f"CONCERN:: NIT boundary-row-{i:03d} synthetic" for i in range(pvc._MAX_ROWS))
+    mb = tmp_path / "mb.md"
+    mb.write_text(f"## Concerns to persist\n{rows}\n")
+    rc, out = _run([str(tid), "--file", str(mb), "--by", "x", "--round", "1"], capsys)
+    assert rc == 0
+    assert f"persisted {pvc._MAX_ROWS}/{pvc._MAX_ROWS} concern(s):" in out
+    assert len(_ledger_rows(tw, tid)) == pvc._MAX_ROWS
+
+
+# ─── 9. Exit 4: operational failure -> partial ledger -> convergence ───────
+
+
+def test_operational_failure_exit4_partial_ledger_then_converges(concerns_task, tmp_path, capsys):
+    """Regression test for the #2326 exit-taxonomy fix: an operational
+    persistence failure mid-loop exits 4 (never the exit-1 MALFORMED class),
+    prints only the exception CLASS + counts + kebab ids, leaves rows
+    1..k-1 durably persisted (the documented partial-ledger residual), and
+    the idempotent re-run converges to the complete row set.
+
+    Fails pre-fix: the pre-exit-4 forwarder let the OSError propagate as an
+    uncaught traceback (process exit 1, colliding with MALFORMED)."""
+    _, tw, tid = concerns_task
+    mb = tmp_path / "mb.md"
+    mb.write_text(_THREE_ROWS)
+    argv = [str(tid), "--file", str(mb), "--by", "codex-code-reviewer", "--round", "2"]
+
+    real_raise_concern = tw.raise_concern
+    calls = {"n": 0}
+
+    def flaky_raise_concern(*args, **kwargs):
+        """Delegates to the real library (signature-conformant by
+        delegation); raises OSError on the SECOND row only."""
+        calls["n"] += 1
+        if calls["n"] == 2:
+            raise OSError("simulated flock/disk failure")
+        return real_raise_concern(*args, **kwargs)
+
+    import unittest.mock as mock
+
+    with mock.patch.object(tw, "raise_concern", flaky_raise_concern):
+        rc, out = _run(argv, capsys)
+    assert rc == 4
+    assert "OPERATIONAL: persist-failed row 2" in out
+    assert "OSError" in out
+    assert "1/3 persisted" in out
+    assert "synthetic one-liner" not in out, "stdout must stay content-free"
+    assert "simulated flock/disk failure" not in out, "exception MESSAGE must not print"
+    rows = _ledger_rows(tw, tid)
+    assert len(rows) == 1, "rows before the failure stay durably persisted (partial ledger)"
+    assert rows[0]["concern_id"] == "hf-delete-scope-unbounded"
+
+    # Convergence: the healthy re-run persists the full set exactly once.
+    rc2, out2 = _run(argv, capsys)
+    assert rc2 == 0
+    assert "persisted 3/3 concern(s):" in out2
+    assert len(_ledger_rows(tw, tid)) == 3, "idempotent re-run converges (not 4 rows)"
+
+
+# ─── 10. Non-UTF-8 --file -> usage exit 2 ──────────────────────────────────
+
+
+def test_non_utf8_file_usage_exit2(concerns_task, tmp_path, capsys):
+    """An invalid-UTF-8 --file is an INVOCATION bug (the marker was never
+    examined): argparse usage exit 2, never the exit-1 MALFORMED class."""
+    _, tw, tid = concerns_task
+    mb = tmp_path / "mb.md"
+    mb.write_bytes(b"\xff\xfe\x00 not utf-8 \xff")
+    with pytest.raises(SystemExit) as excinfo:
+        pvc.main([str(tid), "--file", str(mb), "--by", "x", "--round", "1"])
+    assert excinfo.value.code == 2
+    assert _ledger_rows(tw, tid) == []
 
 
 # ─── 7. --validate-only writes nothing ─────────────────────────────────────
