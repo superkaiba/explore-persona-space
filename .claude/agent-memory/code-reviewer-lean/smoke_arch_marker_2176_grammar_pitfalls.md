@@ -21,6 +21,13 @@ Rule: at Step 0.55, run `uv run python scripts/task.py check-smoke-arch-registry
    `CONFIGS: tuple[ConfigSpec, ...]`) makes it abstain → checker OK line reads
    `marker-only` and the REVIEWER owns members↔registry set-equality (the fallback
    arm) — enumerate the symbol's names yourself, never a presence grep.
+4. `arm-registry:` itself is LINE-ANCHORED single-line: a bare `arm-registry:`
+   heading with the derivation in a FOLLOWING bullet (however correct the prose)
+   is REFUSE "no line-anchored arm-registry: line found" (#2330 R1 g7 — a
+   mechanically-AST-derived 10-arm set in a bullet still failed). A NO-registry
+   driver (main() calls every arm unconditionally, no phase arg) uses the
+   `arm-registry: N/A — <reason>` form, or a single-line `source=... file=...
+   n=... members=...` naming the derived set.
 
 **Why:** the #2225 R1 marker had all substance right (10 arms, verdict-consistent
 rows) but failed the checker on form alone; without the checker + regex read the
