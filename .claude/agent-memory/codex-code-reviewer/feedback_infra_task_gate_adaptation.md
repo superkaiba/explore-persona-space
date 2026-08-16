@@ -138,6 +138,13 @@ contract on code-change paths).
   is durable, not prose-only. Compose-time: pre-verify the cited paths
   resolve in the worktree and pre-declare any mid-phrase line wrap in the
   pinned prose (the #1103 fragment-grep discipline). (Applied #2145 r1.)
+- MARKER-KIND PROBE on infra tasks (#2146 r3): the spec says code-change
+  paths post `epm:results`, but a real infra pipeline can post
+  `epm:experiment-implementation` throughout — when the expected `--prefix`
+  fetch returns EMPTY, probe `jq -r '.kind' events.jsonl | sort | uniq -c`
+  and fetch by the kind actually present; then PRE-DECLARE in the prompt
+  that `epm:results`-specific fields (Gate-scope check line) are not owed
+  on this marker kind, so Codex cannot false-FAIL on their absence.
 - DOC diff whose text CITES src-code facts (a rules-file edit asserting
   function signatures / cache-key behavior / hardcoded values): when the
   branch base == main's tip at edit time (fast-forwarded, single edit
