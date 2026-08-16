@@ -332,6 +332,9 @@ class _FakeApi:
     def repo_info(self, repo_id, repo_type=None):
         return SimpleNamespace(sha="abc123")
 
+    def file_exists(self, repo_id, filename, *, repo_type="model", revision=None, token=None):
+        return False  # packed probe (#2321): no pack on this fake remote
+
 
 def _fake_stage_factory(record=None, block_names=(), release=None, fail_names=()):
     """Signature-conformant stage_hub_file fake (mirrors the real def)."""
