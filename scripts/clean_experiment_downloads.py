@@ -1513,11 +1513,23 @@ def _registered_worktree_paths(main_repo: Path) -> frozenset[str] | None:
     path, an attribute outside a record, a duplicated slot (a truncated
     record absorbing the real record's attributes) — makes the WHOLE listing
     AMBIGUOUS: return ``None`` (every caller treats ``None`` as
-    refuse-to-reap). Named residual: a continuation line that exactly spoofs
-    a recognized flag the record does not otherwise carry (e.g. a path
-    embedding ``\\nbare``) parses clean with a truncated path — the
-    truncated set stays fail-open for that adversarial shape only; every
-    shape observed from real git output fails closed.
+    refuse-to-reap).
+
+    Round 5 (coordinator repro — REAL git, no adversary): a continuation
+    line that exactly spells a recognized flag the record does not otherwise
+    carry (a path embedding ``\\nbare``) passes the slot rules with a
+    TRUNCATED path — ``bare`` + ``detached`` coexist because a genuine
+    detached record simply lacks ``bare``. Closed by a positive EXISTENCE
+    cross-check at record close: every parsed ``worktree`` path must exist
+    on disk as a directory; a missing directory is tolerated ONLY when its
+    own record carries ``prunable`` (git 2.34.1 verified: a deleted worktree
+    dir lists with ``prunable gitdir file points to non-existent
+    location``) — any other missing path makes the listing AMBIGUOUS:
+    return ``None``. Remaining named residual (three-way collision only): a
+    newline-bearing registered path whose TRUNCATION names a directory that
+    ALSO exists on disk, with the continuation spelling an absent flag —
+    that truncated record passes both the slot rules and the existence
+    check.
 
     Returns ``None`` on probe failure OR parse ambiguity: a successful
     listing always contains at least the main working tree, so an empty
@@ -1530,27 +1542,44 @@ def _registered_worktree_paths(main_repo: Path) -> frozenset[str] | None:
     if proc is None or proc.returncode != 0:
         return None
     paths: set[str] = set()
-    in_record = False
+    pending: str | None = None  # raw path of the OPEN record, pre-validation
     seen_slots: set[str] = set()
+
+    def _close_record() -> bool:
+        """Validate + commit the open record; ``False`` = ambiguous listing.
+
+        Round 5 existence cross-check: the raw path must exist on disk as a
+        directory (a spoof-truncated path does not), tolerating a missing
+        directory ONLY for a ``prunable`` record (a genuinely pruned/deleted
+        worktree — the one legitimate missing-dir shape)."""
+        nonlocal pending
+        if pending is None:
+            return True  # nothing open (leading/consecutive blank lines)
+        if not os.path.isdir(pending) and "prunable" not in seen_slots:
+            return False
+        try:
+            paths.add(os.path.realpath(pending))
+        except OSError:
+            return False
+        pending = None
+        return True
+
     # split("\n"), never splitlines(): splitlines() also splits on \x0b/\x0c/
     # U+2028/... which git emits RAW inside a path — splitting there would
     # only widen the fail-closed surface, but split("\n") parses them exactly.
     for line in proc.stdout.split("\n"):
         if not line:  # blank separator closes the current record
-            in_record = False
+            if not _close_record():
+                return None
             seen_slots = set()
             continue
         if line.startswith("worktree "):
-            if in_record:
+            if pending is not None:
                 return None  # record re-opened without a separator — ambiguous
             raw = line[len("worktree ") :]
             if not raw:
                 return None  # malformed entry — ambiguity keeps
-            try:
-                paths.add(os.path.realpath(raw))
-            except OSError:
-                return None
-            in_record = True
+            pending = raw
             seen_slots = set()
             continue
         slot = next(
@@ -1566,12 +1595,14 @@ def _registered_worktree_paths(main_repo: Path) -> frozenset[str] | None:
                 ),
                 None,
             )
-        if slot is None or not in_record or slot in seen_slots:
+        if slot is None or pending is None or slot in seen_slots:
             # Unrecognized continuation (a newline-split path), an attribute
             # outside any record, or a duplicated slot: AMBIGUOUS — refuse
             # rather than trust a possibly-truncated set.
             return None
         seen_slots.add(slot)
+    if not _close_record():
+        return None  # final record failed the existence cross-check
     if not paths:
         return None  # no worktree lines at all — ambiguity, not proof
     return frozenset(paths)
