@@ -450,6 +450,44 @@ outcome records the stamp. Residuals: check→spawn→record is a TOCTOU
 crash-recovery, capacity-retry, campaign, and manual spawns are accepted
 UNPACED sources.
 
+*Dispatch-loop freshness + cap re-check guards (#2142).* Four guards in
+BOTH dispatch loops (drain + proposed-infra sweep) close the demonstrated
+duplicate-spawn races (#1771/#1997/#1988/#1992: owner signals 26-59s old
+at re-dispatch; plus one 6-spawns > cap-5 over-dispatch). (1) *Post-stagger
+lease re-check* inside `_dispatch_infra_drain`: the caller-loop lease check
+runs BEFORE the up-to-60s stagger sleep, so immediately before the spawn
+subprocess the lease FILE is re-read — a fresh lease returns
+`"suppressed"` (the M1b no-booking no-op: no attempt, no backoff, no
+marker), never `"failed"`, which would consume the 1h backoff and stretch
+a crashed lease-winner's recovery from TTL + one tick to ~70 min.
+(2) *Registration-freshness skip*: a candidate whose `issue-<N>.json` /
+`manual-issue-<N>.json` is younger than `EPM_DISPATCH_REG_FRESH_S`
+(default 600s; `0` disables the guard) is presumed OWNED by a just-spawned
+session and skipped with NO attempt — a POSITIVE override of the staleness
+rule's `- stale` subtraction; a present-but-garbled registration reads
+maximally fresh (age 0.0, fail-closed — deliberately NOT
+`dispatch_lease_fresh`'s mtime-with-TTL convention). (3) *Owner-activity
+skip* (same window): a NON-watcher marker younger than the window is
+evidence a live session is working the task even with no registration or
+lease (the #1997 progress-note channel); the watcher's OWN dispatch
+sentinels are excluded, so its dispatch notes can never suppress its own
+retries — and the drain loop additionally gains the sweep's #843 M3
+dispatch-sentinel guard it previously lacked. (4) *Per-spawn cap
+re-check*: once ANY dispatch attempt has happened this pass (keyed on
+attempted-any, NOT spawned-count — a failed/suppressed first attempt still
+elapsed its stagger window), live occupancy is RE-READ before every
+further spawn and the candidate skips when `len(live) + pending +
+dispatched >= limit`. The `+ dispatched` term deliberately counts this
+pass's own in-batch spawns (a just-dispatched task stays `proposed` for
+minutes — invisible to both live occupancy and pass-start pending), and
+`limit` deliberately honors the #1853 urgent bonus in the sweep
+(`cap + urgent_bonus` for urgent candidates — a bare-`cap` re-check would
+revoke the sanctioned overflow mid-batch; the drain uses plain `cap`). A
+`None` mid-batch occupancy read fail-closes the REMAINDER of the batch (no
+further dispatches this tick, mirroring the pass-level guard). The
+re-check NARROWS the cap race (the verdict is still up to one stagger
+window stale at the spawn); it does not close it.
+
 *Predicate-hold auto-promotion (#633 follow-on).* Before dispatch, the
 pass promotes any `holds` entry matching the PM's
 `predicate-<#N>-<short-desc>` convention once task #N reaches

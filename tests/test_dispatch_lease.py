@@ -36,6 +36,7 @@ import multiprocessing
 import os
 import sys
 import time
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -44,6 +45,7 @@ SCRIPTS = Path(__file__).resolve().parent.parent / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
+import autonomous_session_watch as asw  # noqa: E402
 import spawn_session  # noqa: E402
 
 # A high issue number with no worktree so cmd_spawn_issue resolves cwd to the
@@ -468,3 +470,447 @@ def test_lease_free_lane_park_state_round_trip_and_tolerant_parse():
     legacy = lease.to_json()
     del legacy["free_lane_park_state"]
     assert Lease.from_json(legacy).free_lane_park_state is None
+
+
+# ─── #2142 dispatch-loop freshness + cap re-check guards ─────────────────────
+#
+# Loop-driving tests below exercise the REAL infra_drain_pass /
+# proposed_infra_sweep_pass guard loops with every task.py / daemon /
+# occupancy seam stubbed. The watcher binds its OWN copy of
+# AUTONOMOUS_REGISTRY_DIR (`from spawn_session import ...`), so these tests
+# patch BOTH modules' globals (`watcher_registry`) — patching only
+# spawn_session's would leave the watcher reading the real ~/.eps-autonomous.
+
+W_ISSUE = 515151
+W_ISSUE_B = 515152
+W_ISSUE_C = 515153
+
+
+def _iso(ts: float) -> str:
+    """Epoch -> the canonical task-event ts format (%Y-%m-%dT%H:%M:%SZ)."""
+    return datetime.fromtimestamp(ts, tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+@pytest.fixture
+def watcher_registry(tmp_path, monkeypatch):
+    """tmp registry for BOTH modules (#2142 plan §4 fixture note): the lease
+    helpers read spawn_session's module global at call time; the watcher's
+    registration / queue / state helpers read autonomous_session_watch's own
+    imported binding. Also clears the dispatch-loop env knobs so a live
+    operator override can't leak into the assertions."""
+    monkeypatch.setattr(spawn_session, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
+    monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
+    for var in (
+        "EPM_DISABLE_INFRA_DRAIN",
+        "EPM_DISABLE_PROPOSED_INFRA_SWEEP",
+        "EPM_DISPATCH_REG_FRESH_S",
+        "EPM_PROPOSED_INFRA_SWEEP_MARKER_FRESH_S",
+        "EPM_INFRA_SWEEP_URGENT_BONUS",
+        "EPM_INFRA_DRAIN_BACKOFF_S",
+        "EPM_INFRA_DRAIN_MAX_ATTEMPTS",
+        "EPM_PROPOSED_INFRA_SWEEP_BACKOFF_S",
+        "EPM_PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS",
+    ):
+        monkeypatch.delenv(var, raising=False)
+    return tmp_path
+
+
+def _write_queue(reg_dir: Path, ids: list[int], *, cap: int = 3) -> None:
+    (reg_dir / "infra-drain-queue.json").write_text(
+        json.dumps(
+            {
+                "ripe_oldest_first": ids,
+                "cap": cap,
+                "holds": {},
+                "updated_ts": "2026-06-12T22:40:00Z",
+                "updated_by": "pm-session-drain-tick",
+                "comment": "#2142 test fixture",
+            }
+        )
+    )
+
+
+def _write_registration(reg_dir: Path, issue: int, *, spawned_at: float) -> None:
+    (reg_dir / f"issue-{issue}.json").write_text(
+        json.dumps({"happy_session_id": "owner-sid", "spawned_at": spawned_at, "cwd": "/tmp"})
+    )
+
+
+def _marker_recorder(monkeypatch) -> list[tuple[int, str]]:
+    """Recorder for the _post_progress_marker seam (satisfies the #1247
+    conftest hermeticity guard: a later test-level monkeypatch wins)."""
+    markers: list[tuple[int, str]] = []
+
+    def _record(issue, note, dry_run, *, label, by="autonomous_session_watch"):
+        markers.append((issue, label))
+
+    monkeypatch.setattr(asw, "_post_progress_marker", _record)
+    return markers
+
+
+def _stub_loop_seams(
+    monkeypatch,
+    ids: list[int],
+    *,
+    stale: frozenset[int] | set[int] = frozenset(),
+    events: list[dict] | None = None,
+    occupancy_seq: list | None = None,
+    dispatch_result="spawned",
+) -> tuple[list[int], list[tuple[int, str]]]:
+    """Stub the task.py-backed seams BOTH dispatch loops consume; returns the
+    (dispatched, markers) recorders. ``occupancy_seq`` is consumed one element
+    per ``_infra_drain_occupancy`` call (the pass-level read first, then one
+    per #2142 mid-batch re-check); the LAST element repeats once exhausted.
+    ``dispatch_result`` is a tri-state string or a per-issue dict of them."""
+    sk = {i: ("proposed", "infra") for i in ids}
+    monkeypatch.setattr(
+        asw, "_infra_drain_signals", lambda cand, holds, regs, now: (sk, set(stale), 0)
+    )
+    monkeypatch.setattr(asw, "_task_events", lambda issue: list(events or []))
+    seq = list(occupancy_seq) if occupancy_seq is not None else [[]]
+    calls = {"n": 0}
+
+    def _occupancy():
+        idx = min(calls["n"], len(seq) - 1)
+        calls["n"] += 1
+        return seq[idx]
+
+    monkeypatch.setattr(asw, "_infra_drain_occupancy", _occupancy)
+    dispatched: list[int] = []
+
+    def _fake_dispatch(issue, slot_desc, dry_run, **kwargs):
+        dispatched.append(issue)
+        if isinstance(dispatch_result, dict):
+            return dispatch_result.get(issue, "spawned")
+        return dispatch_result
+
+    monkeypatch.setattr(asw, "_dispatch_infra_drain", _fake_dispatch)
+    markers = _marker_recorder(monkeypatch)
+    return dispatched, markers
+
+
+def _run_drain(reg_dir: Path, ids: list[int], *, cap: int = 3, now: float, dry_run: bool = False):
+    _write_queue(reg_dir, ids, cap=cap)
+    asw.infra_drain_pass(dry_run, now=now, daemon_reachable=True)
+
+
+def _run_sweep(
+    monkeypatch,
+    candidates: list[int],
+    *,
+    urgent: set[int] | frozenset[int] = frozenset(),
+    cap: int = 3,
+    now: float,
+    dry_run: bool = False,
+):
+    monkeypatch.setattr(
+        asw, "_proposed_infra_candidates", lambda: (list(candidates), frozenset(urgent))
+    )
+    monkeypatch.setattr(
+        asw,
+        "_infra_drain_read_queue",
+        lambda: {"ids": [], "cap": cap, "holds": {}, "updated_ts": None},
+    )
+    asw.proposed_infra_sweep_pass(dry_run, now=now, daemon_reachable=True)
+
+
+def _drain_attempt_ids(reg_dir: Path) -> list[str]:
+    path = reg_dir / "infra-drain-state.json"
+    return sorted(json.loads(path.read_text())["attempts"]) if path.exists() else []
+
+
+def _sweep_attempt_ids(reg_dir: Path) -> list[str]:
+    path = reg_dir / "proposed-infra-sweep-state.json"
+    return sorted(json.loads(path.read_text())["attempts"]) if path.exists() else []
+
+
+# ─── §1: post-stagger lease re-check ──────────────────────────────────────────
+
+
+def test_pre_spawn_lease_recheck_suppresses_after_stagger(watcher_registry, monkeypatch, capsys):
+    """§1: a lease acquired DURING the stagger sleep is caught by the
+    post-stagger re-check — result "suppressed" (NOT "failed"): no spawn
+    subprocess, no dispatch marker, no attempt/backoff booked."""
+    now = time.time()
+    markers = _marker_recorder(monkeypatch)
+    sk = {W_ISSUE: ("proposed", "infra")}
+    monkeypatch.setattr(asw, "_infra_drain_signals", lambda *a: (sk, set(), 0))
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [])
+    monkeypatch.setattr(asw, "_infra_drain_occupancy", lambda: [])
+    monkeypatch.setattr(asw, "_auth_outage_spawn_gate", lambda *a, **k: None)
+    # Force a full stagger window; the rival acquires the lease DURING it.
+    monkeypatch.setattr(asw, "session_dispatch_stagger_s", lambda: 60.0)
+    monkeypatch.setattr(asw, "last_session_dispatch_age_s", lambda: 0.0)
+    monkeypatch.setattr(
+        asw,
+        "_stagger_sleep",
+        lambda seconds: spawn_session.acquire_dispatch_lease(W_ISSUE, holder="rival"),
+    )
+    run_calls: list = []
+    monkeypatch.setattr(asw.subprocess, "run", lambda *a, **k: run_calls.append(a))
+    _run_drain(watcher_registry, [W_ISSUE], now=now)
+    out = capsys.readouterr().out
+    assert f"INFRA-DRAIN SUPPRESSED issue #{W_ISSUE} (lease acquired during" in out
+    assert "DISPATCHED" not in out
+    assert run_calls == []  # the spawn subprocess never ran
+    assert markers == []  # M1b no-booking: a suppressed no-op posts no marker
+    assert _drain_attempt_ids(watcher_registry) == []  # no attempt, no backoff
+
+
+def test_pre_spawn_lease_recheck_reads_lease_file_fresh(watcher_registry, monkeypatch, capsys):
+    """§1: the load-bearing element is the fresh FILE READ — with a ZERO
+    stagger delay (no sleep at all) a lease already on disk still suppresses
+    at the post-stagger re-check inside _dispatch_infra_drain (the caller
+    loop's earlier verdict is not what protects)."""
+    monkeypatch.setattr(asw, "_auth_outage_spawn_gate", lambda *a, **k: None)
+    monkeypatch.setattr(asw, "last_session_dispatch_age_s", lambda: None)  # delay 0
+    slept: list = []
+    monkeypatch.setattr(asw, "_stagger_sleep", lambda seconds: slept.append(seconds))
+    run_calls: list = []
+    monkeypatch.setattr(asw.subprocess, "run", lambda *a, **k: run_calls.append(a))
+    assert spawn_session.acquire_dispatch_lease(W_ISSUE, holder="rival") is not None
+    result = asw._dispatch_infra_drain(W_ISSUE, "slot 1/3", False)
+    assert result == "suppressed"
+    assert slept == []  # no stagger elapsed — the fresh read did the work
+    assert run_calls == []
+    assert "lease acquired during" in capsys.readouterr().out
+
+
+# ─── §2: registration-freshness guard ─────────────────────────────────────────
+
+
+@pytest.mark.parametrize("age_s", [30.0, 59.0])
+def test_fresh_registration_skipped_drain_loop(watcher_registry, monkeypatch, capsys, age_s):
+    """§2: a registration at the incident ages (26-59s owner signals;
+    #1771/#1997/#1988/#1992) skips the drain candidate with NO attempt, even
+    when the staleness rule classified it stale (positive override of the
+    `- stale` subtraction)."""
+    now = time.time()
+    _write_registration(watcher_registry, W_ISSUE, spawned_at=now - age_s)
+    # Prefilter escape: a registered candidate early-exits the pass unless
+    # classified possibly-stale — the incident channel this guard overrides.
+    monkeypatch.setattr(asw, "_infra_drain_possibly_stale_ids", lambda *a: {W_ISSUE})
+    dispatched, _markers = _stub_loop_seams(monkeypatch, [W_ISSUE], stale={W_ISSUE})
+    _run_drain(watcher_registry, [W_ISSUE], now=now)
+    out = capsys.readouterr().out
+    assert dispatched == []
+    assert f"INFRA-DRAIN SKIP issue #{W_ISSUE} (registration {age_s:.0f}s < 600s fresh)" in out
+    assert _drain_attempt_ids(watcher_registry) == []
+
+
+@pytest.mark.parametrize("age_s", [30.0, 59.0])
+def test_fresh_registration_skipped_sweep_loop(watcher_registry, monkeypatch, capsys, age_s):
+    """§2: same guard in the proposed-infra sweep loop."""
+    now = time.time()
+    _write_registration(watcher_registry, W_ISSUE, spawned_at=now - age_s)
+    dispatched, _markers = _stub_loop_seams(monkeypatch, [W_ISSUE], stale={W_ISSUE})
+    _run_sweep(monkeypatch, [W_ISSUE], now=now)
+    out = capsys.readouterr().out
+    assert dispatched == []
+    assert (
+        f"PROPOSED-INFRA-SWEEP SKIP issue #{W_ISSUE} (registration {age_s:.0f}s < 600s fresh)"
+        in out
+    )
+    assert _sweep_attempt_ids(watcher_registry) == []
+
+
+def test_registration_freshness_garbled_treated_fresh(watcher_registry):
+    """§2: a present-but-garbled registration reads MAXIMALLY FRESH (0.0 —
+    fail-closed toward not dispatching; deliberately NOT dispatch_lease_fresh's
+    mtime-with-TTL convention), a missing one reads None (guard inert), and a
+    well-formed spawned_at reads the exact age."""
+    now = time.time()
+    (watcher_registry / f"issue-{W_ISSUE}.json").write_bytes(b"{not json")
+    assert asw._registration_age_s(W_ISSUE, now) == 0.0
+    (watcher_registry / f"manual-issue-{W_ISSUE_B}.json").write_text("[]")  # non-dict JSON
+    assert asw._registration_age_s(W_ISSUE_B, now) == 0.0
+    assert asw._registration_age_s(W_ISSUE_C, now) is None
+    _write_registration(watcher_registry, W_ISSUE_C, spawned_at=now - 42.0)
+    assert asw._registration_age_s(W_ISSUE_C, now) == pytest.approx(42.0)
+
+
+def test_registration_freshness_zero_window_disables_guard(watcher_registry, monkeypatch):
+    """§2: EPM_DISPATCH_REG_FRESH_S=0 disables the guard (kill switch) — the
+    30s-fresh registration dispatches again."""
+    now = time.time()
+    monkeypatch.setenv("EPM_DISPATCH_REG_FRESH_S", "0")
+    assert asw._dispatch_reg_fresh_s() == 0.0
+    _write_registration(watcher_registry, W_ISSUE, spawned_at=now - 30.0)
+    monkeypatch.setattr(asw, "_infra_drain_possibly_stale_ids", lambda *a: {W_ISSUE})
+    dispatched, markers = _stub_loop_seams(monkeypatch, [W_ISSUE], stale={W_ISSUE})
+    _run_drain(watcher_registry, [W_ISSUE], now=now)
+    assert dispatched == [W_ISSUE]
+    assert markers == [(W_ISSUE, "infra-drain")]
+
+
+# ─── §2b: owner-activity marker guard + drain M3 adoption ─────────────────────
+
+
+def test_owner_activity_marker_skips_candidate(watcher_registry, monkeypatch, capsys):
+    """§2b: a 26s-old NON-watcher progress note (the #1997 shape — owner alive
+    with NO registration and NO lease) skips the sweep candidate, NO attempt."""
+    now = float(int(time.time()))  # whole seconds: the event ts round-trips exactly
+    events = [{"kind": "epm:progress", "note": "round 3 running", "ts": _iso(now - 26)}]
+    dispatched, _markers = _stub_loop_seams(monkeypatch, [W_ISSUE], events=events)
+    _run_sweep(monkeypatch, [W_ISSUE], now=now)
+    out = capsys.readouterr().out
+    assert dispatched == []
+    assert (
+        f"PROPOSED-INFRA-SWEEP SKIP issue #{W_ISSUE} (owner-activity marker 26s < 600s fresh)"
+        in out
+    )
+    assert _sweep_attempt_ids(watcher_registry) == []
+
+
+def test_owner_activity_guard_ignores_watcher_own_sentinel():
+    """§2b: the watcher's OWN dispatch sentinels must NOT suppress its retries
+    — only genuinely non-watcher markers count as owner activity."""
+    now = 1_800_000_000.0
+    for sentinel in (asw._INFRA_DRAIN_NOTE_SENTINEL, asw._PROPOSED_INFRA_SWEEP_NOTE_SENTINEL):
+        events = [
+            {
+                "kind": "epm:progress",
+                "note": f"{sentinel} watcher dispatched",
+                "ts": _iso(now - 26),
+            }
+        ]
+        assert asw._owner_activity_marker_age_s(events, now) is None
+    events = [{"kind": "epm:progress", "note": "owner progress", "ts": _iso(now - 26)}]
+    assert asw._owner_activity_marker_age_s(events, now) == pytest.approx(26.0)
+
+
+def test_drain_loop_honors_recent_dispatch_marker(watcher_registry, monkeypatch, capsys):
+    """§2b: the drain loop gains the sweep's #843 M3 dispatch-sentinel guard
+    (it previously lacked it) — a 30s-old dispatch marker skips the candidate."""
+    now = float(int(time.time()))
+    events = [
+        {
+            "kind": "epm:progress",
+            "note": f"{asw._INFRA_DRAIN_NOTE_SENTINEL} watcher dispatched autonomous session",
+            "ts": _iso(now - 30),
+        }
+    ]
+    dispatched, _markers = _stub_loop_seams(monkeypatch, [W_ISSUE], events=events)
+    _run_drain(watcher_registry, [W_ISSUE], now=now)
+    out = capsys.readouterr().out
+    assert dispatched == []
+    assert f"INFRA-DRAIN SKIP issue #{W_ISSUE} (recent-dispatch-marker 30s < 600s)" in out
+    assert _drain_attempt_ids(watcher_registry) == []
+
+
+# ─── §3: per-spawn cap re-check ───────────────────────────────────────────────
+
+
+def test_per_spawn_cap_recheck_stops_batch_at_limit(watcher_registry, monkeypatch, capsys):
+    """§3: occupancy that grew EXTERNALLY (rival dispatchers) after the first
+    in-batch spawn is seen by the mid-batch re-read — the second candidate
+    skips with NO attempt booked."""
+    now = time.time()
+    ids = [W_ISSUE, W_ISSUE_B]
+    dispatched, _markers = _stub_loop_seams(monkeypatch, ids, occupancy_seq=[[], [101, 102, 103]])
+    _run_drain(watcher_registry, ids, cap=3, now=now)
+    out = capsys.readouterr().out
+    assert dispatched == [W_ISSUE]
+    assert f"INFRA-DRAIN SKIP issue #{W_ISSUE_B} (cap-full-recheck: live 3+0+1 >= cap 3)" in out
+    assert _drain_attempt_ids(watcher_registry) == [str(W_ISSUE)]
+
+
+def test_per_spawn_cap_recheck_counts_in_batch_dispatches(watcher_registry, monkeypatch, capsys):
+    """§3 Must-Fix regression (success criterion 2): the `+ dispatched` term.
+
+    live+pending < cap <= live+pending+dispatched: external growth of ONE
+    (live=[101]) plus in-batch spawns. The corrected formula stops the third
+    candidate (1 live + 0 pending + 2 in-batch = 3 >= cap 3 — total spawned
+    this tick = cap); the pre-#2142 formula (len(live) + pending >= cap)
+    reads 1 < 3 for BOTH later candidates and over-dispatches to 4 total."""
+    now = time.time()
+    ids = [W_ISSUE, W_ISSUE_B, W_ISSUE_C]
+    dispatched, _markers = _stub_loop_seams(monkeypatch, ids, occupancy_seq=[[], [101]])
+    _run_drain(watcher_registry, ids, cap=3, now=now)
+    out = capsys.readouterr().out
+    assert dispatched == [W_ISSUE, W_ISSUE_B]
+    assert f"INFRA-DRAIN SKIP issue #{W_ISSUE_C} (cap-full-recheck: live 1+0+2 >= cap 3)" in out
+
+
+def test_per_spawn_cap_recheck_preserves_urgent_bonus(watcher_registry, monkeypatch, capsys):
+    """§3 hard non-goal 1: the re-check honors the #1853 urgent bonus — a
+    bare-`cap` re-check would revoke the urgent candidate's sanctioned bonus
+    slot mid-batch (0 live + 0 pending + 1 dispatched >= cap 1, but < limit
+    2 = cap + bonus)."""
+    now = time.time()
+    monkeypatch.setenv("EPM_INFRA_SWEEP_URGENT_BONUS", "1")
+    dispatched, _markers = _stub_loop_seams(monkeypatch, [W_ISSUE, W_ISSUE_B])
+    _run_sweep(monkeypatch, [W_ISSUE, W_ISSUE_B], urgent={W_ISSUE_B}, cap=1, now=now)
+    out = capsys.readouterr().out
+    assert dispatched == [W_ISSUE, W_ISSUE_B]
+    assert "cap-full-recheck" not in out
+
+
+def test_per_spawn_cap_recheck_rechecks_after_failed_first_attempt(
+    watcher_registry, monkeypatch, capsys
+):
+    """§3: the re-check keys on `attempted_any`, NOT `dispatched > 0` — a
+    FAILED first attempt leaves dispatched at 0 with the stagger already
+    elapsed, and the second candidate must still re-read occupancy."""
+    now = time.time()
+    ids = [W_ISSUE, W_ISSUE_B]
+    dispatched, markers = _stub_loop_seams(
+        monkeypatch,
+        ids,
+        occupancy_seq=[[], [101, 102, 103]],
+        dispatch_result={W_ISSUE: "failed", W_ISSUE_B: "spawned"},
+    )
+    _run_drain(watcher_registry, ids, cap=3, now=now)
+    out = capsys.readouterr().out
+    assert dispatched == [W_ISSUE]  # attempt 1 failed; candidate 2 never attempted
+    assert f"INFRA-DRAIN SKIP issue #{W_ISSUE_B} (cap-full-recheck: live 3+0+0 >= cap 3)" in out
+    assert markers == []
+
+
+def test_per_spawn_cap_recheck_fails_closed_on_occupancy_read_failure(
+    watcher_registry, monkeypatch, capsys
+):
+    """§3 fail-loud pin: a None mid-batch occupancy read BREAKS the batch (no
+    further dispatches this tick; nothing booked for the un-attempted
+    remainder) — never coerced to an empty set and dispatched past the cap."""
+    now = time.time()
+    ids = [W_ISSUE, W_ISSUE_B, W_ISSUE_C]
+    dispatched, _markers = _stub_loop_seams(monkeypatch, ids, occupancy_seq=[[], None])
+    _run_drain(watcher_registry, ids, cap=3, now=now)
+    out = capsys.readouterr().out
+    assert dispatched == [W_ISSUE]
+    assert "live occupancy read FAILED mid-batch" in out
+    assert _drain_attempt_ids(watcher_registry) == [str(W_ISSUE)]
+
+
+# ─── dry-run threading ────────────────────────────────────────────────────────
+
+
+def test_dry_run_threads_through_new_guards(watcher_registry, monkeypatch, capsys):
+    """Success criterion 5's zero-write property: dry_run=True through BOTH
+    loops (guards + cap re-check exercised, REAL _dispatch_infra_drain) spawns
+    nothing, acquires no lease, writes no attempt state, posts no marker."""
+    now = time.time()
+    ids = [W_ISSUE, W_ISSUE_B]
+    sk = {i: ("proposed", "infra") for i in ids}
+    monkeypatch.setattr(asw, "_infra_drain_signals", lambda *a: (sk, set(), 0))
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [])
+    monkeypatch.setattr(asw, "_infra_drain_occupancy", lambda: [])
+    monkeypatch.setattr(asw, "_auth_outage_spawn_gate", lambda *a, **k: None)
+    markers = _marker_recorder(monkeypatch)
+    run_calls: list = []
+    monkeypatch.setattr(asw.subprocess, "run", lambda *a, **k: run_calls.append(a))
+    _run_drain(watcher_registry, ids, cap=3, now=now, dry_run=True)
+    _run_sweep(monkeypatch, ids, cap=3, now=now, dry_run=True)
+    out = capsys.readouterr().out
+    # The REAL _dispatch_infra_drain dry-run branch ran for every candidate in
+    # both loops; the cap re-check ran for each second candidate
+    # (attempted_any after the first "failed" dry-run) and let it through.
+    assert out.count("[dry-run] would dispatch infra-drain") == 4
+    assert "cap-full-recheck" not in out
+    assert run_calls == []  # no spawn subprocess
+    assert markers == []  # no marker posted
+    assert not spawn_session.dispatch_lease_path(W_ISSUE).exists()
+    assert not spawn_session.dispatch_lease_path(W_ISSUE_B).exists()
+    assert not (watcher_registry / "infra-drain-state.json").exists()
+    assert not (watcher_registry / "proposed-infra-sweep-state.json").exists()
