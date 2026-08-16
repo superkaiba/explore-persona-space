@@ -1473,6 +1473,19 @@ def _worktree_admin_of_main(admin: Path, main_repo: Path) -> bool:
     return wt_root in admin_real.parents
 
 
+# `git worktree list --porcelain` record keys (#2147 round 4). Value keys
+# carry ` <payload>`; flag keys are bare, with `locked`/`prunable` optionally
+# carrying a ` <reason>` suffix. `branch` and `detached` are mutually
+# exclusive within a record, tracked under one slot ("headstate").
+_WORKTREE_PORCELAIN_VALUE_KEYS: dict[str, str] = {"HEAD ": "HEAD", "branch ": "headstate"}
+_WORKTREE_PORCELAIN_FLAG_KEYS: dict[str, str] = {
+    "detached": "headstate",
+    "bare": "bare",
+    "locked": "locked",
+    "prunable": "prunable",
+}
+
+
 def _registered_worktree_paths(main_repo: Path) -> frozenset[str] | None:
     """Realpaths of EVERY working tree registered to ``main_repo`` — the main
     working tree included — from ONE ``git worktree list --porcelain`` query
@@ -1481,6 +1494,30 @@ def _registered_worktree_paths(main_repo: Path) -> frozenset[str] | None:
     metadata, so a registered worktree whose in-tree ``.git`` pointer was
     deleted or replaced STILL appears (it merely shows as prunable) — exactly
     the state the candidate-side class probes cannot see.
+
+    Round 4 (R3-C1/SIB-1): the porcelain is parsed in RECORD form and FAILS
+    CLOSED on ambiguity. git 2.34.1 (verified by live reproduction) emits
+    worktree paths RAW — space, tab, backslash, and double-quote all survive
+    unescaped on one line, and there is NO C-quoting — but a path containing
+    a NEWLINE necessarily SPLITS its record: the ``worktree`` line carries a
+    TRUNCATED path and the remainder lands as an orphan continuation line.
+    The previous line-wise parse recorded the truncated path, so the REAL
+    registered path compared unequal downstream and a REGISTERED worktree
+    could reach ``shutil.rmtree``. Record-form contract: a record OPENS with
+    ``worktree <path>`` (path taken VERBATIM after the prefix — no strip;
+    leading/trailing whitespace is part of the path) and CLOSES at a blank
+    line; inside a record the only recognized lines are the porcelain keys
+    ``HEAD <oid>``, ``branch <ref>`` XOR ``detached``, ``bare``,
+    ``locked[ <reason>]``, ``prunable[ <reason>]`` — each slot at most once.
+    ANY other non-blank line — an orphan continuation from a newline-bearing
+    path, an attribute outside a record, a duplicated slot (a truncated
+    record absorbing the real record's attributes) — makes the WHOLE listing
+    AMBIGUOUS: return ``None`` (every caller treats ``None`` as
+    refuse-to-reap). Named residual: a continuation line that exactly spoofs
+    a recognized flag the record does not otherwise carry (e.g. a path
+    embedding ``\\nbare``) parses clean with a truncated path — the
+    truncated set stays fail-open for that adversarial shape only; every
+    shape observed from real git output fails closed.
 
     Returns ``None`` on probe failure OR parse ambiguity: a successful
     listing always contains at least the main working tree, so an empty
@@ -1493,15 +1530,48 @@ def _registered_worktree_paths(main_repo: Path) -> frozenset[str] | None:
     if proc is None or proc.returncode != 0:
         return None
     paths: set[str] = set()
-    for line in proc.stdout.splitlines():
+    in_record = False
+    seen_slots: set[str] = set()
+    # split("\n"), never splitlines(): splitlines() also splits on \x0b/\x0c/
+    # U+2028/... which git emits RAW inside a path — splitting there would
+    # only widen the fail-closed surface, but split("\n") parses them exactly.
+    for line in proc.stdout.split("\n"):
+        if not line:  # blank separator closes the current record
+            in_record = False
+            seen_slots = set()
+            continue
         if line.startswith("worktree "):
-            raw = line[len("worktree ") :].strip()
+            if in_record:
+                return None  # record re-opened without a separator — ambiguous
+            raw = line[len("worktree ") :]
             if not raw:
                 return None  # malformed entry — ambiguity keeps
             try:
                 paths.add(os.path.realpath(raw))
             except OSError:
                 return None
+            in_record = True
+            seen_slots = set()
+            continue
+        slot = next(
+            (s for k, s in _WORKTREE_PORCELAIN_VALUE_KEYS.items() if line.startswith(k)),
+            None,
+        )
+        if slot is None:
+            slot = next(
+                (
+                    s
+                    for k, s in _WORKTREE_PORCELAIN_FLAG_KEYS.items()
+                    if line == k or line.startswith(k + " ")
+                ),
+                None,
+            )
+        if slot is None or not in_record or slot in seen_slots:
+            # Unrecognized continuation (a newline-split path), an attribute
+            # outside any record, or a duplicated slot: AMBIGUOUS — refuse
+            # rather than trust a possibly-truncated set.
+            return None
+        seen_slots.add(slot)
     if not paths:
         return None  # no worktree lines at all — ambiguity, not proof
     return frozenset(paths)
