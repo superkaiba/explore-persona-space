@@ -352,6 +352,7 @@ def _remote_index(prefix: str, revision: str | None = None) -> dict[str, dict]:
     def _list():
         # Materialize INSIDE the retry: list_repo_tree is a LAZY generator.
         return list(
+            # HUB_VERIFY_RETRY_EXEMPT: wrapped in the module's own _retry_transient port
             api.list_repo_tree(
                 repo_id=HF_DATA_REPO,
                 path_in_repo=prefix,
@@ -388,6 +389,7 @@ def _hub_download(filename: str, cache_dir: Path, revision: str | None = None) -
 
     return Path(
         _retry_transient(
+            # NO_RETRY: wrapped in the module's own _retry_transient port (standalone file)
             lambda: hf_hub_download(
                 repo_id=HF_DATA_REPO,
                 filename=filename,
@@ -1034,6 +1036,8 @@ def _upload_names_once(scratch: Path, path_in_repo: str, names: list[str], verif
     api = _hf_api()
     local_shas = {n: _sha256_file(scratch / n) for n in names} if verify_sha else {}
     _retry_transient(
+        # NO_RETRY: wrapped in the module's own _retry_transient port (standalone file)
+        # HUB_DIR_FILECOUNT_EXEMPT: shard dirs hold <= ~40 files, far below the 10k cap
         lambda: api.upload_folder(
             folder_path=str(scratch),
             repo_id=HF_DATA_REPO,
