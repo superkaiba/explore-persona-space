@@ -38,3 +38,5 @@
 - [Phase gate without durable verdict](phase_gate_no_durable_verdict.md) — separate-CLI-phase drivers: the gate phase must WRITE a verdict the destructive phase CHECKS, else "no commit phase entered" is convention (#2321 R1 g3)
 - [Plan-literal pin lost in generic wrapper](plan_literal_pin_lost_in_generic_wrapper.md) — an evidence pin routed through a probe-first wrapper re-derives at fresh head; quiescent-fixture test passes anyway; demand head-equality + interleave fixture (#2321 R1 g3)
 - [NFC-invisible char-class diff](nfc_invisible_charclass_diff.md) — visually-identical -/+ line pair: byte-diff it; Edit-tool NFC flip U+F900→U+8C48 rewrote a frozen audit regex by 11,600 codepoints (#2321 R1 g4)
+- [Revision-round disposition walk](revision_round_disposition_walk.md) — enumerate the r1 union from SOURCE verdict files, diff vs (a)/(b); undispositioned minors surface even with all blockers fixed (#2321 R2 g4)
+- [Boundary probe stale-artifact admission](boundary_probe_stale_artifact_admission.md) — an at-cap probe gated by count arithmetic is vacuously confirmed when its own probe file pre-exists; require committed-this-round, not landed (#2321 R2 g2)

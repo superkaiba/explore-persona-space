@@ -37,3 +37,23 @@ MODES (each must match the r2/r1 trace, not just "failed"), then restore via
 guard blocks any compound whose TEXT contains `git checkout --`, killing the
 swap clause too (#1143 text-match). Confirm restore with an empty
 `git diff --stat HEAD -- <file>` before re-running the suite.
+
+**Zero-mutation dual-load variant (#2321 R2 g4):** when the target is a
+standalone script whose deps resolve from the current venv, skip the
+worktree swap entirely: `git show <round-parent>:scripts/<mod>.py >
+/tmp/<mod>_parent.py`, then in ONE python process importlib-load BOTH
+parent and HEAD as differently-named modules and run the same adversarial
+scenario against each (e.g. C3: build a real pack, tamper one index-part
+offset, expect parent ACCEPTS / HEAD raises AbortPrefix). Two-sided in one
+run — hole-present-pre-fix AND fix-engaged-at-HEAD — with no working-tree
+mutation and no restore step. Also the cheapest way to independently settle
+a reviewer-vs-reviewer disagreement about what the pre-fix code did (the
+#2321 C3 adjudication: probe, don't re-read).
+
+**Pick a tamper the parent's AGGREGATE checks don't already catch (#2321 R2
+g2):** a naive "add a ghost entry" tamper was caught by the PARENT's
+`n_members != manifest` count check — the probe initially "failed pre-fix"
+for the wrong reason. The true pre-fix hole needed a COUNT-PRESERVING
+mutation (rename one index key to a ghost path; bump one offset). When
+certifying tamper tests, prefer count-preserving/aggregate-invariant
+mutations, and read WHICH check fired on the parent, not just that one did.
