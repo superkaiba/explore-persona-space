@@ -1036,9 +1036,8 @@ def _upload_names_once(scratch: Path, path_in_repo: str, names: list[str], verif
     api = _hf_api()
     local_shas = {n: _sha256_file(scratch / n) for n in names} if verify_sha else {}
     _retry_transient(
-        # NO_RETRY: wrapped in the module's own _retry_transient port (standalone file)
         # HUB_DIR_FILECOUNT_EXEMPT: shard dirs hold <= ~40 files, far below the 10k cap
-        lambda: api.upload_folder(
+        lambda: api.upload_folder(  # NO_RETRY: wrapped in the module's own _retry_transient port
             folder_path=str(scratch),
             repo_id=HF_DATA_REPO,
             repo_type="dataset",
