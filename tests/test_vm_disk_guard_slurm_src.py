@@ -1903,3 +1903,65 @@ def test_r6_admin_enumeration_byte_exact_and_fail_closed(tmp_path, main_repo, mo
     assert os.path.realpath(str(main_repo)) in s
     monkeypatch.setattr(ced, "_git", lambda *a, **k: None)
     assert ced._admin_registered_worktree_paths(main_repo) is None
+
+
+# ─── round 7 (Codex R4-1): binary gitdir read — CR/CRLF are path bytes ────────
+
+
+def test_r7_cr_path_admin_enumeration_no_ghost(tmp_path, main_repo):
+    """R7 unit (Codex R4-1): the admin ``gitdir`` file for a worktree at a
+    CR-bearing path holds the raw bytes ``…/cr\\rX/.git\\n``; a text-mode
+    read translates the CR to LF, injecting a GHOST path (``…/cr\\nX``) into
+    the AUTHORITATIVE set while the REAL registration goes missing —
+    fail-open in the licensing layer. The binary read must recover the real
+    path byte-exactly and never the ghost."""
+    wt = tmp_path / "cr\rX"
+    _git(main_repo, "worktree", "add", "--detach", str(wt))
+    (wt / ".git").unlink()  # hardest case: only the admin side knows
+    (tmp_path / "cr\nX").mkdir()  # decoy at the NORMALIZED (ghost) name
+    s = ced._admin_registered_worktree_paths(main_repo)
+    assert s is not None
+    assert os.path.realpath(str(wt)) in s  # the real registration, byte-exact
+    assert os.path.realpath(str(tmp_path / "cr\nX")) not in s  # never the ghost
+
+
+def test_r7_crlf_path_admin_enumeration_no_ghost(tmp_path, main_repo):
+    """R7 CRLF variant: a literal ``\\r\\n`` inside the registered PATH is
+    two path bytes; universal newlines would collapse it to one LF (ghost).
+    The binary read preserves it byte-exactly."""
+    wt = tmp_path / "a\r\nb"
+    _git(main_repo, "worktree", "add", "--detach", str(wt))
+    (wt / ".git").unlink()
+    s = ced._admin_registered_worktree_paths(main_repo)
+    assert s is not None
+    assert os.path.realpath(str(wt)) in s
+    assert os.path.realpath(str(tmp_path / "a\nb")) not in s  # the collapsed ghost
+
+
+def test_r7_cr_flag_spoof_collision_kept_never_rmtree(
+    scratch_tmp_root, main_repo, repo, monkeypatch
+):
+    """R7 e2e — the full licensing chain: a registered worktree at
+    ``scratch-cr\\rbare`` with its pointer DELETED plus a decoy at the
+    truncation. Pre-fix BOTH layers failed together: the text-mode admin
+    read produced the LF-ghost (real path absent from the authoritative
+    set), and ``_git text=True`` translated the porcelain's CR to LF,
+    yielding the ``bare`` flag-spoof record whose truncated path exists
+    (the decoy) — so the porcelain ALSO parsed "successfully" without the
+    real path, and rmtree DESTROYED the registered worktree. Post-fix the
+    binary admin read proves registration byte-exactly and KEEPs."""
+    wt = scratch_tmp_root / "scratch-cr\rbare"
+    _git(main_repo, "worktree", "add", "--detach", str(wt))
+    (wt / ".git").unlink()
+    decoy = scratch_tmp_root / "scratch-cr"
+    decoy.mkdir()
+    (decoy / "tracked.py").write_text(COMMITTED_PY)
+    _backdate(scratch_tmp_root)
+    monkeypatch.setattr(ced.shutil, "rmtree", _rmtree_boom)
+    res = _tmp_sweep(scratch_tmp_root, main_repo, apply=True)
+    row = _tmp_row(res, wt.name)
+    assert row["disposition"] == "tmp-scratch-reap-reprobe-kept"
+    assert "registered-path" in row["reason"]
+    assert wt.exists() and (wt / "tracked.py").is_file()
+    admin_set = ced._admin_registered_worktree_paths(main_repo)
+    assert admin_set is not None and os.path.realpath(str(wt)) in admin_set

@@ -33,7 +33,12 @@ against the candidate, realpath comparisons only); (2) for
 deleted/replaced pointers, the ADMIN-side per-record files
 `<git-common-dir>/worktrees/<id>/gitdir` (content = `<wt>/.git` + exactly
 ONE trailing LF — strip one, dirname ⇒ byte-exact even for embedded/
-trailing newlines; `_admin_registered_worktree_paths`). Keep the hardened
+trailing newlines; `_admin_registered_worktree_paths`) — read BINARY +
+explicit decode, NEVER `read_text` (#2147 r7, Codex R4-1: universal
+newlines silently rewrite CR/CRLF path bytes to LF, injecting a GHOST path
+into the authoritative set while the real registration goes missing; and
+verify byte-exactness evidence on the SAME read mode the code uses —
+`open(f,'rb')` evidence never covered a `read_text` code path). Keep the hardened
 record-form listing parse (fail closed: orphan line / duplicate slot /
 existence cross-check with `prunable` exemption; never `.strip()` the
 path) as DEFENCE-IN-DEPTH ONLY — membership may add KEEPs, never license.
