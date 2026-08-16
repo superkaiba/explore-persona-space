@@ -2620,3 +2620,105 @@ def test_husk_wait_timeout_message_names_sync_repo_root(origin_and_clone, monkey
         assert "CRASHED rebase" in msg
     finally:
         tw.invalidate_cache()
+
+
+# ─── 15. Lock-path rejection (#2324: symlink/FIFO-safe bounded opens) ────────
+#
+# Child-process bounded matrix (plan §6 / Acceptance bullet 3), sites 1-2:
+# {single-flight, task-workflow-wait} x {symlink→FIFO, FIFO}. Each arm plants
+# the fixture, runs the acquisition in a CHILD process with a hard timeout,
+# and asserts (a) bounded completion — the PRE-fix open() blocks forever on
+# the FIFO and trips the subprocess timeout — and (b) the fail-CLOSED posture
+# outcome (SyncAbortError, exit-code 5 class), never a silent wrong-inode
+# flock and never a None that reads as healthy contention.
+
+_LOCK_REJECT_DRIVER = """
+import importlib.util, sys, time
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("srr_child", sys.argv[1])
+m = importlib.util.module_from_spec(spec)
+sys.modules["srr_child"] = m
+spec.loader.exec_module(m)
+site, lock_path = sys.argv[2], sys.argv[3]
+t0 = time.monotonic()
+try:
+    if site == "single-flight":
+        m.ROOT_SYNC_LOCK = Path(lock_path)
+        m.acquire_single_flight()
+    else:
+        m.task_workflow.LOCK_PATH = lock_path
+        m.acquire_task_workflow_lock(5.0)
+    print("OUTCOME=no-raise")
+except m.SyncAbortError as e:
+    print(f"OUTCOME=abort exit_code={e.exit_code} elapsed={time.monotonic() - t0:.2f}")
+    print("MSG=" + e.message.splitlines()[0])
+"""
+
+
+def _plant_lock_fixture(kind: str, lock_path: Path, tmp_path: Path) -> None:
+    """Symlink arms are pinned symlink→FIFO (plan §6): the child BOUND assert
+    only discriminates when the pre-fix code path would follow the link into a
+    blocking FIFO open — a symlink→regular-file fixture would make it vacuous."""
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    if kind == "symlink":
+        target = tmp_path / "target.fifo"
+        os.mkfifo(target)
+        os.symlink(target, lock_path)  # symlink -> FIFO, NOT -> regular file
+    else:
+        os.mkfifo(lock_path)
+
+
+@pytest.mark.skipif(not hasattr(os, "mkfifo"), reason="requires POSIX mkfifo")
+@pytest.mark.parametrize("kind", ["symlink", "fifo"])
+@pytest.mark.parametrize("site", ["single-flight", "task-workflow-wait"])
+def test_lock_path_rejection_bounded_in_child(site: str, kind: str, tmp_path: Path):
+    lock_path = tmp_path / "locks" / "planted.lock"
+    _plant_lock_fixture(kind, lock_path, tmp_path)
+    proc = subprocess.run(
+        [sys.executable, "-c", _LOCK_REJECT_DRIVER, str(_SCRIPT), site, str(lock_path)],
+        capture_output=True,
+        text=True,
+        timeout=30,  # bounded: the pre-fix shape hangs here and fails legibly
+        check=False,
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "OUTCOME=abort exit_code=5" in proc.stdout
+    assert "lock path rejected" in proc.stdout
+    elapsed = float(proc.stdout.split("elapsed=")[1].split()[0])
+    assert elapsed < 5.0  # rejection is immediate — well inside any advertised bound
+
+
+def test_main_symlink_root_sync_lock_exits_5_error_report(origin_and_clone, capsys):
+    """In-process main()-level posture pin (site 1): rejected lock path →
+    rc 5 + report state == "error" (fail-CLOSED: never proceeds unlocked).
+    Symlink→regular target here — posture-only; the bounded symlink→FIFO arms
+    are the child matrix's."""
+    _origin, local, _other = origin_and_clone
+    lock = Path(srr.ROOT_SYNC_LOCK)
+    lock.parent.mkdir(parents=True, exist_ok=True)
+    target = lock.parent / "target-regular"
+    target.write_bytes(b"")
+    os.symlink(target, lock)
+    rc, rep, err = _run(local, capsys=capsys)
+    assert rc == 5
+    assert rep["state"] == "error"
+    assert rep["exit_code"] == 5
+    assert "root-sync lock path rejected (symlink)" in err
+
+
+def test_task_workflow_lock_symlink_raises_within_bound(tmp_path: Path, monkeypatch):
+    """Construct-order pin (site 2, plan §6): the deadline is built BEFORE the
+    open, and a rejected path raises immediately — far inside wait_s."""
+    lock2 = tmp_path / "locks" / "task-workflow-lock"
+    lock2.parent.mkdir(parents=True, exist_ok=True)
+    target = tmp_path / "target-regular"
+    target.write_bytes(b"")
+    os.symlink(target, lock2)
+    monkeypatch.setattr(srr.task_workflow, "LOCK_PATH", lock2)
+    t0 = time.monotonic()
+    with pytest.raises(srr.SyncAbortError) as ei:
+        srr.acquire_task_workflow_lock(30.0)
+    assert time.monotonic() - t0 < 5.0  # << wait_s: the open sits inside the bound
+    assert ei.value.exit_code == 5
+    assert "task-workflow lock path rejected (symlink)" in ei.value.message

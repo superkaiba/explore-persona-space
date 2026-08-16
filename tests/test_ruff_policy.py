@@ -51,6 +51,7 @@ LIVE_WORKFLOW_HELPERS = [
     "scripts/dispatch_issue.py",
     "scripts/failure_classifier.py",
     "scripts/gpu_heuristics.py",
+    "scripts/lock_utils.py",
     "scripts/plan_patch.py",
     "scripts/pm_queue_report.py",
     "scripts/pod.py",

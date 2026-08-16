@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2324,
+  "highest_id": 2325,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8874,8 +8874,8 @@
     "2148": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2148",
-      "status": "proposed",
+      "path": "tasks/planning/2148",
+      "status": "planning",
       "title": "workflow-fix: upload-verifier reconciles self-reported row counts, not realized store contents (passed a 25% shortfall)"
     },
     "2149": {
@@ -10231,9 +10231,16 @@
     "2324": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2324",
-      "status": "running",
+      "path": "tasks/completed/2324",
+      "status": "completed",
       "title": "workflow-fix: symlink/FIFO-safe bounded opens for the three advisory-flock lock sites + thread realized lock mode into codex_task failure notes"
+    },
+    "2325": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/2325",
+      "status": "planning",
+      "title": "workflow-fix: .claude/skills/issue/SKILL.md is 813 bytes from its hard FAIL cap \u2014 next edit wedges the Step 9c gate fleet-wide"
     },
     "233": {
       "has_clean_result": false,

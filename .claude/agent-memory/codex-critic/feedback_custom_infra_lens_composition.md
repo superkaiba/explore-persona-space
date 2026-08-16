@@ -76,6 +76,32 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   suffix all new paths `-r2` so the stale round-1 files never collide and
   need no mv (used on #2147 r2 — numcheck PASS first try at ~220 KB).
 
+- **Folded standard lenses (#2148 r2): when the brief names STANDARD lenses
+  with one folded in ("Methodology (with Alternatives folded in)") plus press
+  points — not a custom lens list — extract BOTH lens sections verbatim from
+  critic-lens-reference.md into ONE lens span (marker lens attr stays the
+  primary lens), quote the brief's press points + round-record verbatim as
+  the prior-critiques span (works when no prior Codex /tmp output exists —
+  Claude-only round one), add a digit-free verify-N/A scaffold naming the
+  experiment-only items BY NAME with reuse-fitness called the central live
+  item, and add a `### Round-one fix sufficiency` output section (one
+  SOUND/INSUFFICIENT line per brief-named fix; INSUFFICIENT ⇒ matching Must
+  Fix). Numcheck passed first try at ~136 KB with the collect-all +
+  task-ref-extraction-first script shape.
+
+- **Folded standard lenses (#2148 r2): when the brief names STANDARD lenses
+  with one folded in ("Methodology (with Alternatives folded in)") plus press
+  points — not a custom lens list — extract BOTH lens sections verbatim from
+  critic-lens-reference.md into ONE lens span (marker lens attr stays the
+  primary lens), quote the brief's press points + round-record verbatim as
+  the prior-critiques span (works when no prior Codex /tmp output exists —
+  Claude-only round one), add a digit-free verify-N/A scaffold naming the
+  experiment-only items BY NAME with reuse-fitness called the central live
+  item, and add a `### Round-one fix sufficiency` output section (one
+  SOUND/INSUFFICIENT line per brief-named fix; INSUFFICIENT ⇒ matching Must
+  Fix). Numcheck passed first try at ~136 KB with the collect-all +
+  task-ref-extraction-first script shape.
+
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
 re-review) passed on the second numcheck run, the only failures being the
