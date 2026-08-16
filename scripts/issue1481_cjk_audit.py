@@ -55,7 +55,9 @@ from explore_persona_space.orchestrate import hub as eps_hub  # noqa: E402
 
 DATA_REPO = "superkaiba1/explore-persona-space-data"
 PREFIX = "issue1481_conpos_grid"
-CJK_RE = re.compile(r"[一-鿿㐀-䶿豈-﫿぀-ヿ가-힯]")
+# Explicit \uXXXX escapes: Edit-tool NFC normalization corrupted a literal
+# form of this range once (U+F900 -> U+8C48; r2 g4) - keep it pure-ASCII.
+CJK_RE = re.compile("[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff\u3040-\u30ff\uac00-\ud7af]")
 HEADLINE = {"cas": ["bare"], "imp": ["bare"], "syc": ["conv", "icl"]}
 INSTRUMENT = {
     "cas": "pv_trait_score",

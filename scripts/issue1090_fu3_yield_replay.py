@@ -85,14 +85,16 @@ def main() -> int:
 
     api = HfApi()
     cells = _derive_cells(api)
-    if args.cells:
-        want = set(args.cells.split(","))
-        cells = [c for c in cells if c in want]
     assert cells, (
         f"empty cell derivation — repacked prefix or wrong path? (raw+packed listing of "
         f"{DATA_REPO}/{PREFIX} yielded no */datagen/judge_raw_pos.json; #2321 I17: "
         "refusing to exit 0 on an empty work list)"
     )
+    if args.cells:
+        want = set(args.cells.split(","))
+        cells = [c for c in cells if c in want]
+        # r2 g4 minor: a typo'd --cells is a FILTER miss, not a repack symptom.
+        assert cells, f"--cells {args.cells!r} matched none of the derived cells"
 
     rows = []
     with tempfile.TemporaryDirectory(prefix="i1090fu3_stage_") as td_stage:
