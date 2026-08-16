@@ -59,7 +59,7 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - smoke-blind-spots.md — a plan declares a pre-launch smoke run, or code adds/edits a smoke-conditional branch that substitutes an implementation, downgrades an assertion, or leaves a production-only third-party import.
 - trigger-dense-review.md — reviewing/reconciling a guard/security artifact or refusal corpus, composing briefs on such targets (#1503/#1413), orchestrator run-failure ingest, judge-monitor reads, or ANY orchestrator turn on a guard-surface round.
 - upload-policy.md — you write training/Hub/sweep code, or sequence phases around a regeneration-costly store (Hub-API verification, verify + staging-download transport retry, delete-after-eval persist, store-before-long-fit #825, quota-403 recovery, upload-wedge ladder).
-- upload-verifier-section-reference.md — the upload-verifier runs a Step 2/2.5/2.6/2.9/3/4/6 recipe (pointer-loaded span).
+- upload-verifier-section-reference.md — the upload-verifier runs a Step 2/2.5/2.6/2.9/2.10/2.11/3/4/6 recipe (pointer-loaded).
 - vectorize-many-cell-fits.md — many-cell GD, dense fits (svd/eigh/lstsq/ridge), or a perm/bootstrap/null-draw battery over a fixed pool (VECTORIZE first; detached+checkpointed VM fits; Supersede contract incl. mid-run ≥2×-deviation + width re-eval).
 - workflow-fix-on-bug.md — any agent hits a bug from a gap in the workflow surface itself (emit a `workflow-fix-candidate`).
 - agents-vs-skills.md — you create/restructure anything under `.claude/` (decide agent vs skill).

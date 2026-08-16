@@ -30,6 +30,16 @@ Usage:
         --outroot-listing /tmp/issue-42-outroot.txt \
         --hf-prefix issue42_slug/raw_completions
 
+    # Realized row-count reconciliation (#2148): count what is REALLY in the
+    # store's own row_index*.jsonl files and gate on the DISTINCT count of
+    # the full row key vs the run's INPUT-side declaration - never a raw
+    # line count and never the producer's self-reported count field (#2091:
+    # `capture_rows` echoed the expectation back; PASS at a ~25% shortfall).
+    uv run python scripts/verify_uploads.py --issue 42 \
+        --expected-rows greedy_wildchat=2000 \
+        --row-index-hf-prefix issue42_slug/store/greedy_wildchat \
+        --row-index-distinct-key context_id,rollout_k
+
     # Just check and print, no exit code (for interactive use)
     uv run python scripts/verify_uploads.py --issue 42 --no-fail
 
@@ -111,6 +121,20 @@ OUTROOT_EXEMPT_DIR_PARTS = frozenset(
     {".venv", ".git", "__pycache__", ".cache", "wandb", "hf_dl", "logs"}
 )
 OUTROOT_EXEMPT_SUFFIXES = frozenset({".log", ".pid", ".lock", ".tmp"})
+
+# Realized row-count reconciliation (#2148): the WITHIN-FILE sibling of the
+# out-root residue check above. Budgets bound what the check may FETCH; the
+# index files are KB-scale JSONL by design, so the per-file cap is generous
+# while still refusing a mis-scoped invocation that would pull a data store.
+ROW_INDEX_DEFAULT_GLOB = "row_index*.jsonl"
+ROW_INDEX_MAX_BYTES_DEFAULT = 16_000_000  # per file
+ROW_INDEX_MAX_TOTAL_BYTES_DEFAULT = 268_435_456  # aggregate (256 MiB)
+ROW_INDEX_MAX_FILES_DEFAULT = 2000
+# Word characters for label/path-component boundary matching: a label is a
+# component-prefix match only when the next char is NOT one of these, so
+# `syc_aita` never swallows `syc_aita_v2` while `arm` DOES reach `arm-repair`
+# (which the ambiguity arm then refuses as a mis-scoped label vocabulary).
+_ROW_INDEX_WORD_CHARS = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_")
 
 # Map task-workflow frontmatter ``kind`` values to the experiment type whose
 # checklist rows apply when the caller omits --type. ``experiment`` stays
@@ -1558,6 +1582,532 @@ def check_outroot_residue(
     }
 
 
+def _label_matches_component(label: str, component: str) -> bool:
+    """Component-boundary label match (#2148 attribution step).
+
+    True when the path component IS the label, or starts with it followed by
+    a NON-word character: `syc_aita` must never swallow `syc_aita_v2` (the
+    boundary char `_` is a word char), while `arm` DOES match `arm-repair`
+    (`-` is not) - the ambiguity ERROR arm exists to refuse exactly that
+    nested-label vocabulary rather than guess.
+    """
+    if component == label:
+        return True
+    if label and component.startswith(label):
+        rest = component[len(label) :]
+        return bool(rest) and rest[0] not in _ROW_INDEX_WORD_CHARS
+    return False
+
+
+def _labels_for_path(labels: tuple[str, ...], rel_path: str) -> list[str]:
+    """All declared labels matching any path component of ``rel_path``."""
+    comps = [c for c in rel_path.split("/") if c]
+    return [lb for lb in labels if any(_label_matches_component(lb, c) for c in comps)]
+
+
+def _row_index_hf_entries(hf_prefixes: tuple[str, ...]) -> list[tuple[str, int | None]]:
+    """One scoped tree walk per prefix over the data repo, sizes riding along.
+
+    Seam for tests (monkeypatched); the live body reuses the canonical
+    sizes-preserving walker (`list_repo_entries_complete`, #833 pagination) -
+    never a bare full-repo `list_repo_files` (wedges on the ~1M-file repo,
+    #920). A prefix that does not resolve raises (fail-loud -> ERROR row at
+    the caller): unlike the residue check there is no fail-toward-FAIL
+    direction here - a silently-empty prefix would read as `row-index-missing`
+    with a store-defect remediation when the actual defect is the invocation.
+    """
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate.hub import list_repo_entries_complete
+
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+    entries: list[tuple[str, int | None]] = []
+    for prefix in hf_prefixes:
+        normalized = str(prefix).rstrip("/")
+        if not normalized:
+            continue
+        entries.extend(
+            list_repo_entries_complete(
+                api,
+                HF_DATA_REPO,
+                repo_type="dataset",
+                path_in_repo=normalized,
+            )
+        )
+    return entries
+
+
+def _row_index_resolve_sizes(paths: list[str]) -> dict[str, int | None]:
+    """ONE batched ``get_paths_info`` POST for listing entries whose size the
+    tree walk left unknown (#2148 budget step). Seam for tests."""
+    from huggingface_hub import HfApi
+
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+    infos = api.get_paths_info(HF_DATA_REPO, paths, expand=True, repo_type="dataset")
+    return {getattr(i, "path", ""): getattr(i, "size", None) for i in infos}
+
+
+def _row_index_fetch(path_in_repo: str, target: Path) -> Path:
+    """Fetch ONE budget-passed index file via the retried atomic staging
+    helper (`stage_hub_file` - transport-retried, fail-loud). Seam for tests."""
+    from explore_persona_space.orchestrate.hub import stage_hub_file
+
+    return stage_hub_file(HF_DATA_REPO, path_in_repo, target, repo_type="dataset")
+
+
+def _row_index_entries(
+    hf_prefixes: tuple[str, ...], local_root: str | None, glob_pattern: str
+) -> list[dict] | dict:
+    """Enumerate candidate row-index files, or return an ERROR row dict.
+
+    Entry shape: ``{"path": <fetch id>, "rel": <attribution path>, "size":
+    int | None, "mode": "hf" | "local"}``. Missing-input handling is
+    fail-loud (a nonexistent local root / failed Hub listing is never a
+    clean zero - the silent-default false-PASS is the #2091 class).
+    """
+    entries: list[dict] = []
+    if local_root:
+        root = Path(local_root)
+        if not root.is_dir():
+            return {
+                "status": "ERROR",
+                "url": "",
+                "detail": (
+                    f"row-index local root not found: {local_root} - a missing "
+                    "input never reads as a clean zero (fail-loud)"
+                ),
+            }
+        for p in sorted(root.rglob("*")):
+            if not p.is_file() or not fnmatch.fnmatch(p.name, glob_pattern):
+                continue
+            try:
+                size = p.stat().st_size
+            except OSError as e:
+                return {
+                    "status": "ERROR",
+                    "url": "",
+                    "detail": f"row-index file unreadable: {p} ({type(e).__name__}: {e})",
+                }
+            entries.append(
+                {"path": str(p), "rel": str(p.relative_to(root)), "size": size, "mode": "local"}
+            )
+    if hf_prefixes:
+        try:
+            listed = _row_index_hf_entries(tuple(hf_prefixes))
+        except Exception as e:
+            return {
+                "status": "ERROR",
+                "url": "",
+                "detail": f"row-index Hub listing failed: {type(e).__name__}: {e}",
+            }
+        for path, size in listed:
+            if fnmatch.fnmatch(path.rsplit("/", 1)[-1], glob_pattern):
+                entries.append({"path": path, "rel": path, "size": size, "mode": "hf"})
+    return entries
+
+
+def _attribute_row_index_entries(
+    entries: list[dict],
+    expected_rows: dict[str, int],
+    exempt_labels: dict[str, str],
+    glob_pattern: str,
+) -> tuple[dict[str, list[dict]], dict | None]:
+    """Attribute every matched file to EXACTLY ONE declared label (#2148).
+
+    The three attribution ERROR arms (`row-index-missing`,
+    `row-index-unattributed`, `row-index-label-ambiguous`) fire BEFORE any
+    counting - a mis-scoped invocation must never shrink a denominator. A
+    declared prefix must be label-COVERED; the remedy for unattributed /
+    ambiguous files is per-label prefixes (the flag is repeatable) or
+    disjoint label spellings, never a weaker arm.
+    """
+    labels = tuple(expected_rows)
+    by_label: dict[str, list[dict]] = {label: [] for label in labels}
+    problems: list[str] = []
+    for entry in entries:
+        matches = _labels_for_path(labels, entry["rel"])
+        if not matches:
+            problems.append(f"row-index-unattributed: {entry['rel']} matches no declared label")
+        elif len(matches) > 1:
+            problems.append(
+                f"row-index-label-ambiguous: {entry['rel']} matches labels {sorted(matches)}"
+            )
+        else:
+            by_label[matches[0]].append(entry)
+    for label in labels:
+        if not by_label[label] and label not in exempt_labels:
+            problems.append(
+                f"row-index-missing: declared label '{label}' matched zero index "
+                f"files (glob {glob_pattern!r})"
+            )
+    if problems:
+        return by_label, {
+            "status": "ERROR",
+            "url": "",
+            "detail": (
+                "; ".join(problems) + ". Attribution is fail-loud BEFORE any "
+                "counting: every glob-matched file must resolve to exactly one "
+                "declared label - scope per-label prefixes "
+                "(--row-index-hf-prefix is repeatable) or use disjoint label "
+                "spellings; a mis-scoped invocation is not a store defect (#2148)."
+            ),
+        }
+    return by_label, None
+
+
+def _row_index_budget_error(
+    entries: list[dict], *, max_bytes: int, max_total_bytes: int, max_files: int
+) -> dict | None:
+    """Enforce the fetch budgets off the LISTING, before the first fetch.
+
+    Unknown sizes are resolved with ONE batched ``get_paths_info`` probe;
+    a size that stays unknown is never assumed under cap (#2148). Every
+    failing arm returns with ZERO downloads performed.
+    """
+    unknown = [e for e in entries if e["size"] is None]
+    if unknown:
+        paths = [e["path"] for e in unknown]
+        try:
+            resolved = _row_index_resolve_sizes(paths)
+        except Exception as e:
+            return {
+                "status": "ERROR",
+                "url": "",
+                "detail": (
+                    f"row-index-size-unknown: batched get_paths_info size probe "
+                    f"failed for {len(paths)} file(s) ({type(e).__name__}: {e}); "
+                    "an unprovable size is never assumed under cap (zero "
+                    "downloads performed)"
+                ),
+            }
+        for entry in unknown:
+            entry["size"] = resolved.get(entry["path"])
+        still = sorted(e["path"] for e in entries if e["size"] is None)
+        if still:
+            return {
+                "status": "ERROR",
+                "url": "",
+                "detail": (
+                    "row-index-size-unknown: size unresolved after the batched "
+                    f"probe for: {', '.join(still)} - an unprovable size is "
+                    "never assumed under cap (zero downloads performed)"
+                ),
+            }
+    over = sorted((e["rel"], e["size"]) for e in entries if e["size"] > max_bytes)
+    if over:
+        described = ", ".join(f"{rel} ({size} B)" for rel, size in over)
+        return {
+            "status": "ERROR",
+            "url": "",
+            "detail": (
+                f"row-index-file-over-cap: {described} exceeds "
+                f"--row-index-max-bytes={max_bytes} (zero downloads performed)"
+            ),
+        }
+    total = sum(e["size"] for e in entries)
+    if len(entries) > max_files or total > max_total_bytes:
+        return {
+            "status": "ERROR",
+            "url": "",
+            "detail": (
+                f"row-index-budget-exceeded: matched set is {len(entries)} "
+                f"file(s) / {total} B against --row-index-max-files={max_files} "
+                f"/ --row-index-max-total-bytes={max_total_bytes} (zero "
+                "downloads performed)"
+            ),
+        }
+    return None
+
+
+def _count_row_index_file(
+    text: str, key_fields: tuple[str, ...]
+) -> tuple[int, set[tuple[str, ...]] | None, list[str]]:
+    """Count one index file: (non-empty lines, distinct key tuples, violations).
+
+    With no declared key the distinct set is None (line-count-only mode). A
+    row missing a declared key field - or unparseable as JSON - is a
+    `row-index-key-absent` violation, never silently skipped (a skipped row
+    would shrink the very denominator this check gates on).
+    """
+    lines = [ln for ln in text.splitlines() if ln.strip()]
+    if not key_fields:
+        return len(lines), None, []
+    distinct: set[tuple[str, ...]] = set()
+    violations: list[str] = []
+    for i, ln in enumerate(lines, start=1):
+        try:
+            obj = json.loads(ln)
+        except json.JSONDecodeError as e:
+            violations.append(f"line {i}: unparseable JSON ({e})")
+            continue
+        if not isinstance(obj, dict):
+            violations.append(f"line {i}: JSON row is not an object")
+            continue
+        missing = [f for f in key_fields if f not in obj]
+        if missing:
+            violations.append(f"line {i}: missing key field(s) {missing}")
+            continue
+        distinct.add(tuple(json.dumps(obj[f], sort_keys=True) for f in key_fields))
+    return len(lines), distinct, violations
+
+
+def _read_row_index_entry(entry: dict) -> str:
+    """Read one budget-passed index file's text (local stat'd file, or a
+    KB-scale Hub fetch via the retried staging seam into a temp dir)."""
+    if entry["mode"] == "local":
+        return Path(entry["path"]).read_text(encoding="utf-8")
+    with tempfile.TemporaryDirectory(prefix="rowindex-") as td:
+        target = Path(td) / entry["path"].rsplit("/", 1)[-1]
+        fetched = _row_index_fetch(entry["path"], target)
+        return Path(fetched).read_text(encoding="utf-8")
+
+
+def _count_label_entries(
+    by_label: dict[str, list[dict]], key_fields: tuple[str, ...]
+) -> tuple[dict[str, dict], list[str]]:
+    """Fetch + count every attributed index file, per label.
+
+    Returns ``(counts, errors)``: counts[label] = {lines, distinct, shards};
+    errors collects fetch failures + key-absent violations (both fail-loud).
+    """
+    counts: dict[str, dict] = {}
+    errors: list[str] = []
+    for label, label_entries in by_label.items():
+        lines_total = 0
+        distinct: set[tuple[str, ...]] = set()
+        shards: list[str] = []
+        for entry in sorted(label_entries, key=lambda e: str(e["rel"])):
+            try:
+                text = _read_row_index_entry(entry)
+            except Exception as e:
+                errors.append(
+                    f"row-index fetch/read failed for {entry['rel']}: {type(e).__name__}: {e}"
+                )
+                continue
+            n_lines, file_distinct, violations = _count_row_index_file(text, key_fields)
+            errors.extend(f"row-index-key-absent: {entry['rel']}: {v}" for v in violations)
+            lines_total += n_lines
+            if file_distinct is not None:
+                distinct |= file_distinct
+            shards.append(f"{str(entry['rel']).rsplit('/', 1)[-1]}:{n_lines}")
+        counts[label] = {
+            "lines": lines_total,
+            "distinct": len(distinct) if key_fields else None,
+            "shards": shards,
+        }
+    return counts, errors
+
+
+def _realized_rows_label_verdict(
+    label: str,
+    expected: int,
+    counted: dict,
+    key_fields: tuple[str, ...],
+    self_reported_rows: dict[str, int],
+    exempt_labels: dict[str, str],
+) -> tuple[dict, str]:
+    """Per-label verdict row + detail part (#2148 verdict lattice).
+
+    Gate quantity: the DISTINCT count of the declared full-key tuple - never
+    the raw line count (a healthy repaired store holds MORE lines than rows:
+    #2091 post-repair is 2048 lines / 2000 distinct) and never a producer
+    self-reported field (reported for context only; #2091's fields were
+    wrong in BOTH directions). No key declared -> line count is a floor
+    only: `lines >= expected` is a WARN (`realized-rows-no-distinct-key`),
+    never an OK. Exempt labels WARN visibly with realized counts intact.
+    """
+    lines = counted["lines"]
+    distinct = counted["distinct"]
+    gate_quantity = distinct if key_fields else lines
+    row: dict = {
+        "expected": expected,
+        "realized_lines": lines,
+        "realized_distinct": distinct,
+        "duplicates": (lines - distinct) if distinct is not None else None,
+        "shards": counted["shards"],
+        "key_fields": list(key_fields),
+    }
+    notes: list[str] = []
+    if label in self_reported_rows:
+        row["self_reported"] = self_reported_rows[label]
+        notes.append(
+            f"self-reported={self_reported_rows[label]} (producer self-reported, context only)"
+        )
+        if self_reported_rows[label] != gate_quantity:
+            notes.append("producer-field-mismatch (reported, never gated)")
+    if label in exempt_labels:
+        verdict, tag = "WARN", "realized-rows-exempt"
+        notes.append(f"exempt: {exempt_labels[label]}")
+    elif key_fields:
+        if distinct < expected:
+            verdict, tag = "FAIL", "realized-rows-short"
+        elif distinct > expected:
+            verdict, tag = "FAIL", "realized-rows-unexpected-surplus"
+        else:
+            verdict, tag = "OK", ""
+    elif lines < expected:
+        verdict, tag = "FAIL", "realized-rows-short"
+    else:
+        verdict, tag = "WARN", "realized-rows-no-distinct-key"
+        notes.append(
+            "no --row-index-distinct-key declared: a line count >= expected is "
+            "uninformative about within-file shortfall (declare the full row "
+            "identity to resolve)"
+        )
+    row["verdict"] = verdict
+    row["tag"] = tag
+    part = (
+        f"{label}: {verdict}"
+        + (f" {tag}" if tag else "")
+        + f" expected={expected}"
+        + f" distinct={distinct if distinct is not None else 'n/a'}"
+        + f" lines={lines}"
+        + f" duplicates={row['duplicates'] if row['duplicates'] is not None else 'n/a'}"
+        + f" shards=[{','.join(counted['shards'])}]"
+        + f" key=({','.join(key_fields) if key_fields else 'none'})"
+    )
+    if notes:
+        part += " [" + "; ".join(notes) + "]"
+    return row, part
+
+
+def check_realized_row_counts(
+    *,
+    expected_rows: dict[str, int] | None = None,
+    hf_prefixes: tuple[str, ...] = (),
+    local_root: str | None = None,
+    glob_pattern: str = ROW_INDEX_DEFAULT_GLOB,
+    distinct_key_fields: tuple[str, ...] = (),
+    self_reported_rows: dict[str, int] | None = None,
+    exempt_labels: dict[str, str] | None = None,
+    max_bytes: int = ROW_INDEX_MAX_BYTES_DEFAULT,
+    max_total_bytes: int = ROW_INDEX_MAX_TOTAL_BYTES_DEFAULT,
+    max_files: int = ROW_INDEX_MAX_FILES_DEFAULT,
+) -> dict:
+    """Reconcile REALIZED row-index contents vs the input-side declaration (#2148).
+
+    The within-file sibling of :func:`check_outroot_residue`: the residue
+    check binds DISK to the upload filters at FILE grain; this binds the
+    CONTENT of present ``row_index*.jsonl`` files to the run's INPUT-side
+    expectation. #2091 PASSed every file-level check while ~25% of rows were
+    missing INSIDE present files, because the count check read the
+    producer's self-reported ``capture_rows`` - literally
+    ``manifest.get("n_rows")``, the expectation echoed back.
+
+    Mechanics, in order: (1) enumerate each declared source (one scoped tree
+    walk per HF prefix / one local walk); (2) attribute every matched file
+    to EXACTLY ONE declared label - the three attribution ERROR arms fire
+    BEFORE any counting; (3) enforce the per-file AND aggregate fetch
+    budgets off the listing (ONE batched ``get_paths_info`` probe for
+    unknown sizes; every failing arm returns with ZERO downloads); (4) fetch
+    + count non-empty lines and distinct declared-key tuples; (5) apply the
+    LABEL-grained exemptions (mandatory reason; always a visible WARN row
+    that still reports realized counts; an exemption naming an undeclared
+    label ERRORs); (6) per-label verdict lattice + ERROR > FAIL > WARN > OK
+    reduction. SKIP fires only when no expectation is declared, so legacy
+    invocations gain exactly one inert SKIP row.
+    """
+    expected_rows = dict(expected_rows or {})
+    self_reported_rows = dict(self_reported_rows or {})
+    exempt_labels = dict(exempt_labels or {})
+
+    if not expected_rows:
+        extra = (
+            " (a row-index source was supplied without an expectation)"
+            if (hf_prefixes or local_root)
+            else ""
+        )
+        return {
+            "status": "SKIP",
+            "url": "",
+            "detail": ("no --expected-rows LABEL=N declared; realized row counts not checked")
+            + extra,
+        }
+    if not hf_prefixes and not local_root:
+        return {
+            "status": "ERROR",
+            "url": "",
+            "detail": (
+                "--expected-rows declared but no row-index source supplied "
+                "(--row-index-hf-prefix / --row-index-local-root) - a missing "
+                "input never reads as a clean zero (fail-loud)"
+            ),
+        }
+
+    entries = _row_index_entries(tuple(hf_prefixes), local_root, glob_pattern)
+    if isinstance(entries, dict):
+        return entries
+
+    by_label, attribution_error = _attribute_row_index_entries(
+        entries, expected_rows, exempt_labels, glob_pattern
+    )
+    if attribution_error is not None:
+        return attribution_error
+
+    budget_error = _row_index_budget_error(
+        entries, max_bytes=max_bytes, max_total_bytes=max_total_bytes, max_files=max_files
+    )
+    if budget_error is not None:
+        return budget_error
+
+    key_fields = tuple(distinct_key_fields or ())
+    label_counts, count_errors = _count_label_entries(by_label, key_fields)
+    if count_errors:
+        return {
+            "status": "ERROR",
+            "url": "",
+            "detail": (
+                "; ".join(count_errors) + ". A row missing its declared key - or an "
+                "unreadable index file - is never silently skipped: skipping would "
+                "shrink the very denominator this check gates on (#2148)."
+            ),
+        }
+
+    exempt_unmatched = sorted(set(exempt_labels) - set(expected_rows))
+    if exempt_unmatched:
+        return {
+            "status": "ERROR",
+            "url": "",
+            "detail": (
+                "realized-rows-exempt-unmatched: --realized-rows-exempt names "
+                f"label(s) not in the declared --expected-rows set: "
+                f"{', '.join(exempt_unmatched)} (rejects stale and typo'd exemptions)"
+            ),
+        }
+
+    labels_report: dict[str, dict] = {}
+    statuses: list[str] = []
+    parts: list[str] = []
+    for label in sorted(expected_rows):
+        counted = label_counts.get(label) or {
+            "lines": 0,
+            "distinct": 0 if key_fields else None,
+            "shards": [],
+        }
+        row, part = _realized_rows_label_verdict(
+            label, expected_rows[label], counted, key_fields, self_reported_rows, exempt_labels
+        )
+        labels_report[label] = row
+        statuses.append(row["verdict"])
+        parts.append(part)
+
+    if any(s == "FAIL" for s in statuses):
+        status = "FAIL"
+    elif any(s == "WARN" for s in statuses):
+        status = "WARN"
+    else:
+        status = "OK"
+    return {
+        "status": status,
+        "url": "",
+        "detail": (
+            "; ".join(parts) + " | gate quantity: distinct full-key rows, never a "
+            "raw line count and never a producer-reported field (#2148)"
+        ),
+        "labels": labels_report,
+    }
+
+
 def check_git_figures(issue_num: int) -> dict:
     """Check if figures for this issue are committed to git.
 
@@ -1724,6 +2274,16 @@ def run_verification(
     hf_prefixes: tuple[str, ...] = (),
     outroot_exempt: tuple[str, ...] = (),
     discarded_names: tuple[str, ...] = (),
+    expected_rows: dict[str, int] | None = None,
+    row_index_hf_prefixes: tuple[str, ...] = (),
+    row_index_local_root: str | None = None,
+    row_index_glob: str = ROW_INDEX_DEFAULT_GLOB,
+    row_index_distinct_key: tuple[str, ...] = (),
+    self_reported_rows: dict[str, int] | None = None,
+    realized_rows_exempt: dict[str, str] | None = None,
+    row_index_max_bytes: int = ROW_INDEX_MAX_BYTES_DEFAULT,
+    row_index_max_total_bytes: int = ROW_INDEX_MAX_TOTAL_BYTES_DEFAULT,
+    row_index_max_files: int = ROW_INDEX_MAX_FILES_DEFAULT,
 ) -> dict:
     """Run all verification checks and return structured report.
 
@@ -1843,6 +2403,25 @@ def run_verification(
         discarded_names=tuple(discarded_names or ()),
     )
 
+    # 10. Realized row-count reconciliation (#2148): distinct full-key rows
+    # REALLY inside the store's row_index*.jsonl files vs the input-side
+    # declaration - never a producer self-reported count (#2091 echoed the
+    # expectation back and PASSed a ~25% shortfall). SKIPs (inert) when no
+    # --expected-rows is declared, so legacy invocations differ only by
+    # this one SKIP row.
+    report["checks"]["realized_row_counts"] = check_realized_row_counts(
+        expected_rows=expected_rows,
+        hf_prefixes=tuple(row_index_hf_prefixes or ()),
+        local_root=row_index_local_root,
+        glob_pattern=row_index_glob,
+        distinct_key_fields=tuple(row_index_distinct_key or ()),
+        self_reported_rows=self_reported_rows,
+        exempt_labels=realized_rows_exempt,
+        max_bytes=row_index_max_bytes,
+        max_total_bytes=row_index_max_total_bytes,
+        max_files=row_index_max_files,
+    )
+
     # Compute overall verdict
     statuses = [c["status"] for c in report["checks"].values()]
     if (
@@ -1896,6 +2475,46 @@ def format_report(report: dict) -> str:
         )
 
     return "\n".join(lines)
+
+
+def _parse_label_count_args(
+    parser: argparse.ArgumentParser, pairs: list[str], flag: str
+) -> dict[str, int]:
+    """Parse repeatable ``LABEL=N`` flags into a dict (fail-loud on malformed
+    / duplicate / negative input - a silently-dropped expectation would
+    un-gate the very label it was declared for, #2148)."""
+    out: dict[str, int] = {}
+    for raw in pairs:
+        label, sep, value = str(raw).partition("=")
+        if not sep or not label:
+            parser.error(f"{flag} expects LABEL=N, got {raw!r}")
+        if label in out:
+            parser.error(f"{flag} declares label {label!r} twice")
+        try:
+            count = int(value)
+        except ValueError:
+            parser.error(f"{flag} expects an integer count, got {raw!r}")
+        if count < 0:
+            parser.error(f"{flag} expects a non-negative count, got {raw!r}")
+        out[label] = count
+    return out
+
+
+def _parse_label_reason_args(
+    parser: argparse.ArgumentParser, pairs: list[str], flag: str
+) -> dict[str, str]:
+    """Parse repeatable ``LABEL=REASON`` flags (reason MANDATORY and
+    non-empty: an exemption with no recorded reason is indistinguishable
+    from a silenced shortfall, #2148)."""
+    out: dict[str, str] = {}
+    for raw in pairs:
+        label, sep, reason = str(raw).partition("=")
+        if not sep or not label or not reason.strip():
+            parser.error(f"{flag} expects LABEL=REASON with a non-empty reason, got {raw!r}")
+        if label in out:
+            parser.error(f"{flag} declares label {label!r} twice")
+        out[label] = reason.strip()
+    return out
 
 
 def main():
@@ -1974,6 +2593,95 @@ def main():
             "(repeatable; text/JSON is never discardable)"
         ),
     )
+    parser.add_argument(
+        "--expected-rows",
+        action="append",
+        default=[],
+        metavar="LABEL=N",
+        help=(
+            "Input-side expected row count per artifact label (repeatable). "
+            "Arms the #2148 realized row-count reconciliation: the gate "
+            "quantity is the DISTINCT count of --row-index-distinct-key "
+            "tuples REALLY inside the label's row_index*.jsonl files - never "
+            "a raw line count, never a producer-reported field."
+        ),
+    )
+    parser.add_argument(
+        "--row-index-hf-prefix",
+        action="append",
+        default=[],
+        dest="row_index_hf_prefixes",
+        help=(
+            "HF data-repo prefix holding one label's row-index files "
+            "(repeatable; scope PER LABEL - a whole-store prefix whose files "
+            "match no declared label trips row-index-unattributed by design)"
+        ),
+    )
+    parser.add_argument(
+        "--row-index-local-root",
+        help=(
+            "Local directory to walk for row-index files instead of (or in "
+            "addition to) --row-index-hf-prefix (e.g. staged pre-teardown "
+            "copies)"
+        ),
+    )
+    parser.add_argument(
+        "--row-index-glob",
+        default=ROW_INDEX_DEFAULT_GLOB,
+        help=f"fnmatch basename glob selecting index files (default {ROW_INDEX_DEFAULT_GLOB!r})",
+    )
+    parser.add_argument(
+        "--row-index-distinct-key",
+        default="",
+        metavar="FIELD[,FIELD...]",
+        help=(
+            "Comma-separated JSON fields forming the FULL logical row "
+            "identity (unit key + any draw/rollout index). Omitted: the line "
+            "count is a floor only - lines >= expected WARNs "
+            "(realized-rows-no-distinct-key), never OK."
+        ),
+    )
+    parser.add_argument(
+        "--self-reported-rows",
+        action="append",
+        default=[],
+        metavar="LABEL=N",
+        help=(
+            "Producer self-reported count per label (repeatable; REPORTED "
+            "for context, never gated on - #2091's fields were wrong in "
+            "both directions)"
+        ),
+    )
+    parser.add_argument(
+        "--realized-rows-exempt",
+        action="append",
+        default=[],
+        metavar="LABEL=REASON",
+        help=(
+            "Exempt one declared label from the FAIL lattice with a "
+            "MANDATORY reason (repeatable). The label still counts and "
+            "emits a visible WARN row with its realized figures; an "
+            "exemption naming an undeclared label ERRORs."
+        ),
+    )
+    parser.add_argument(
+        "--row-index-max-bytes",
+        type=int,
+        default=ROW_INDEX_MAX_BYTES_DEFAULT,
+        help="Per-file fetch cap in bytes (over-cap ERRORs with zero downloads)",
+    )
+    parser.add_argument(
+        "--row-index-max-total-bytes",
+        type=int,
+        default=ROW_INDEX_MAX_TOTAL_BYTES_DEFAULT,
+        help="Aggregate fetch cap in bytes (over-cap ERRORs with zero downloads)",
+    )
+    parser.add_argument(
+        "--row-index-max-files",
+        type=int,
+        default=ROW_INDEX_MAX_FILES_DEFAULT,
+        help="Matched-set file-count cap (over-cap ERRORs with zero downloads)",
+    )
     parser.add_argument("--json", action="store_true", help="Output raw JSON")
     parser.add_argument("--no-fail", action="store_true", help="Don't exit with error on FAIL")
 
@@ -1994,6 +2702,22 @@ def main():
         hf_prefixes=tuple(args.hf_prefixes),
         outroot_exempt=tuple(args.outroot_exempt),
         discarded_names=tuple(args.discarded_names),
+        expected_rows=_parse_label_count_args(parser, args.expected_rows, "--expected-rows"),
+        row_index_hf_prefixes=tuple(args.row_index_hf_prefixes),
+        row_index_local_root=args.row_index_local_root,
+        row_index_glob=args.row_index_glob,
+        row_index_distinct_key=tuple(
+            f.strip() for f in args.row_index_distinct_key.split(",") if f.strip()
+        ),
+        self_reported_rows=_parse_label_count_args(
+            parser, args.self_reported_rows, "--self-reported-rows"
+        ),
+        realized_rows_exempt=_parse_label_reason_args(
+            parser, args.realized_rows_exempt, "--realized-rows-exempt"
+        ),
+        row_index_max_bytes=args.row_index_max_bytes,
+        row_index_max_total_bytes=args.row_index_max_total_bytes,
+        row_index_max_files=args.row_index_max_files,
     )
 
     if args.json:
