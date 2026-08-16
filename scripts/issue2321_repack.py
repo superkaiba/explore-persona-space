@@ -1701,6 +1701,7 @@ def count_repo_files(api, *, repo_id: str) -> int:
     from explore_persona_space.orchestrate import hub
 
     top = hub.retry_transient(
+        # HUB_VERIFY_RETRY_EXEMPT: root listing (no scoped-helper form); self-wrapped just above
         lambda: list(api.list_repo_tree(repo_id, repo_type="dataset", recursive=False)),
         what="root listing (remeasure)",
     )

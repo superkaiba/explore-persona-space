@@ -19,6 +19,13 @@ Produces two committed artifacts under ``eval_results/issue_1481/analysis/``:
   (ws-po-bare rows; a cross-pass source with +/-3 per-context judge-draw
   variation vs the committed aggregate, labeled ``cross-pass`` in the output).
 
+Packed-aware since #2321 (I17): the pool listing unions the raw scoped walk
+with the pack's recorded members, pool files stage through
+``hub.stage_hub_file`` (which resolves repacked originals via the ``packed/``
+fallback), and an empty pool listing / zero scannable pools FAILS LOUD before
+any output artifact is written — the silent-empty listing shape can never
+again persist a false zero-intrusion scan over a repacked prefix.
+
 Inputs (HF data repo, downloaded on demand to --cache-dir):
   issue1481_conpos_grid/raw_completions/{panel,base_arms}/**
   issue1481_conpos_grid/analysis/judge_packed/judge_{cas,imp,syc}.shard00.jsonl
@@ -44,9 +51,11 @@ from pathlib import Path  # noqa: E402
 
 from huggingface_hub import HfApi, hf_hub_download  # noqa: E402
 
+from explore_persona_space.orchestrate import hub as eps_hub  # noqa: E402
+
 DATA_REPO = "superkaiba1/explore-persona-space-data"
 PREFIX = "issue1481_conpos_grid"
-CJK_RE = re.compile(r"[一-鿿㐀-䶿豈-﫿぀-ヿ가-힯]")
+CJK_RE = re.compile(r"[一-鿿㐀-䶿豈-﫿぀-ヿ가-힯]")
 HEADLINE = {"cas": ["bare"], "imp": ["bare"], "syc": ["conv", "icl"]}
 INSTRUMENT = {
     "cas": "pv_trait_score",
@@ -82,18 +91,30 @@ def _newcombe(k1: int, n1: int, k2: int, n2: int) -> dict:
 
 
 def _download_pools(cache_dir: Path) -> list[Path]:
+    """Packed-aware pool listing + staging (#2321 I17): union the raw scoped
+    walk with the pack's recorded members so a repacked prefix still yields
+    every original pool path, and refuse an EMPTY listing instead of silently
+    scanning zero pools."""
     api = HfApi()
     paths: list[str] = []
     for sub in ("panel", "base_arms"):
-        # HUB_VERIFY_RETRY_EXEMPT: frozen #1481 repro script; one-shot scoped listing (#1552)
-        for t in api.list_repo_tree(
-            DATA_REPO, f"{PREFIX}/raw_completions/{sub}", repo_type="dataset", recursive=True
-        ):
-            if t.path.endswith(".json"):
-                paths.append(t.path)
+        root = f"{PREFIX}/raw_completions/{sub}"
+        raw = [e.path for e in eps_hub.list_repo_repofiles_under_path(api, DATA_REPO, root)]
+        packed = [
+            m.path
+            for m in eps_hub.packed_members_under_path(api, DATA_REPO, root, repo_type="dataset")
+        ]
+        paths.extend(p for p in sorted(set(raw) | set(packed)) if p.endswith(".json"))
+    assert paths, (
+        f"empty pool listing under {PREFIX}/raw_completions — repacked prefix or wrong path? "
+        "(#2321 I17: refusing to scan zero pools)"
+    )
 
     def dl(p: str) -> str:
-        return hf_hub_download(DATA_REPO, p, repo_type="dataset", local_dir=str(cache_dir))
+        # stage_hub_file resolves repacked originals via the packed/ fallback
+        # (#2321); the cache_dir/<repo path> layout matches the old
+        # hf_hub_download(local_dir=cache_dir) layout recount() globs over.
+        return str(eps_hub.stage_hub_file(DATA_REPO, p, cache_dir / p))
 
     with ThreadPoolExecutor(16) as ex:
         local = list(ex.map(dl, paths))
@@ -266,6 +287,10 @@ def main(argv: list[str] | None = None) -> int:
     pool_files = _download_pools(cache_dir)
     scan_out = scan(pool_files, cache_dir)
     pools = [v for v in scan_out.values() if "n" in v]
+    assert pools, (
+        "0 scannable pools after download — repacked prefix or wrong path? "
+        "(#2321 I17: refusing to write a zero-count cjk_intrusion_scan.json)"
+    )
     summary = {
         "n_pools": len(pools),
         "n_completions": sum(v["n"] for v in pools),

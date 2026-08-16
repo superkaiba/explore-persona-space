@@ -2487,7 +2487,8 @@ HUB_VERIFY_LEGACY_ALLOWLIST: frozenset[str] = frozenset(
         "scripts/issue1074_aggregate.py",
         "scripts/issue1074_generator_compare.py",
         "scripts/issue1090_fu1.py",
-        "scripts/issue1090_fu3_yield_replay.py",
+        # issue1090_fu3_yield_replay.py migrated onto the hub helpers (#2321
+        # I17) and dropped per this check's drop-on-migrate caveat.
         "scripts/issue1090_run.py",
         "scripts/issue1108_repo_file_audit.py",
         "scripts/issue1112_dispatch.py",
