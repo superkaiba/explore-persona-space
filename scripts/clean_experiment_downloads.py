@@ -201,6 +201,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
+from explore_persona_space.backends.slurm import WORKING_TREE_OVERLAY_PATHS
 from explore_persona_space.orchestrate.env import is_shared_vm_env
 from explore_persona_space.task_workflow import (
     STATUSES,
@@ -1160,11 +1161,19 @@ def scratch_verdict_cache_path() -> Path:
     """Production location of the scratch-sweep verdict cache
     (``<main checkout>/.claude/cache/scratch-verify-cache.json``).
 
+    Env ``EPS_SCRATCH_VERDICT_CACHE`` overrides the location (#2147: the
+    report-mode acceptance run must never WRITE the production cache —
+    report mode legitimately caches verify work, so the override redirects
+    the cache instead of disabling it).
+
     main()-ONLY opt-in, the same hermeticity contract as
     :func:`production_tmp_root`: library callers default to ``None`` (no
     cache reads/writes), so tests never touch — nor are influenced by —
     the real cache. AST-pinned by
     ``tests/test_janitor_noncanonical_caches.py::test_production_tmp_root_only_in_mains``."""
+    raw = os.environ.get("EPS_SCRATCH_VERDICT_CACHE", "").strip()
+    if raw:
+        return Path(raw)
     return _resolution_root() / SCRATCH_VERDICT_CACHE_REL
 
 
@@ -2250,6 +2259,295 @@ def sweep_tmp_scratch(
             cache=cache,
             result=result,
             floor=floor,
+        )
+    cache.save()
+    return result
+
+
+# ─── slurm-src staging-tree sweep (#2147, vm_disk_guard tier (g)) ─────────────
+
+# ~/.eps-slurm-src/issue-<N> trees are full repo checkouts materialized by
+# backends/slurm.py::materialize_branch_src for the SLURM lanes; nothing
+# reaped TERMINAL issues' copies before tier (g) (13 dirs / 112 GB measured
+# 2026-08-16). The sweep below runs the D4 pre-gates, then the SHARED #2127
+# verified-scratch per-candidate core unchanged.
+_SLURM_SRC_NAME_RE = re.compile(r"^issue-(\d+)$")
+SLURM_SRC_SWEEP_KILL_ENV = "EPM_SKIP_SLURM_SRC_SWEEP"
+SLURM_SRC_ESCALATION_STATE_REL = Path(".claude") / "cache" / "slurm-src-escalation-state.json"
+# D6: leg-scoped escalation dedup — re-alert cadence (days) for STANDING
+# slurm-src keeps (an active issue's tree, a head-unreachable worktree),
+# which would otherwise append a sidecar row on every guard pass. Weekly.
+SLURM_SRC_ESCALATION_REALERT_DAYS_DEFAULT = 7.0
+_SLURM_SRC_ESCALATION_BANDS_GB = (1.0, 5.0, 10.0, 25.0, 50.0, 100.0)
+
+
+def slurm_src_sweep_enabled() -> bool:
+    """Two-layer kill switch for the slurm-src leg (#2147, mirrors the #2127
+    scratch pattern): runs only when BOTH the family switch
+    (:data:`NONCANONICAL_SWEEP_KILL_ENV`) and the leg's own switch
+    (:data:`SLURM_SRC_SWEEP_KILL_ENV`) are unset."""
+    if os.environ.get(NONCANONICAL_SWEEP_KILL_ENV, "").strip():
+        return False
+    return not os.environ.get(SLURM_SRC_SWEEP_KILL_ENV, "").strip()
+
+
+def slurm_src_escalation_state_path() -> Path:
+    """Production location of the tier-(g) leg-scoped escalation-dedup state
+    (#2147 D6): ``<main checkout>/.claude/cache/slurm-src-escalation-state.json``.
+
+    main()-ONLY opt-in, the same hermeticity contract as
+    :func:`scratch_verdict_cache_path`: library callers default to ``None``
+    (no dedup-state reads/writes). AST-pinned by
+    ``tests/test_janitor_noncanonical_caches.py::test_production_tmp_root_only_in_mains``."""
+    return _resolution_root() / SLURM_SRC_ESCALATION_STATE_REL
+
+
+def _slurm_src_escalation_band_gb(bytes_: int) -> float:
+    """Coarse size band (GB) for the D6 dedup key — the largest crossed
+    boundary, integer-GB above the top band (mirrors the tier-(b) band shape
+    so a growing standing keep re-alerts when it crosses into a new band)."""
+    gb = bytes_ / 1e9
+    band = 0.0
+    for boundary in _SLURM_SRC_ESCALATION_BANDS_GB:
+        if gb >= boundary:
+            band = boundary
+    if gb >= _SLURM_SRC_ESCALATION_BANDS_GB[-1]:
+        band = max(band, float(int(gb)))
+    return band
+
+
+def _slurm_src_escalation_realert_secs() -> float:
+    """D6 re-alert window in seconds (env
+    ``EPS_SLURM_SRC_ESCALATION_REALERT_DAYS``; invalid -> the weekly default)."""
+    raw = os.environ.get("EPS_SLURM_SRC_ESCALATION_REALERT_DAYS", "").strip()
+    try:
+        days = float(raw) if raw else SLURM_SRC_ESCALATION_REALERT_DAYS_DEFAULT
+    except ValueError:
+        days = SLURM_SRC_ESCALATION_REALERT_DAYS_DEFAULT
+    return days * 86400.0
+
+
+def _load_slurm_src_escalation_state(path: Path) -> dict:
+    """Fail-soft read of the D6 dedup state (missing/corrupt -> ``{}`` —
+    dedup-state loss re-alerts, it never blocks the sweep)."""
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, ValueError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_slurm_src_escalation_state(path: Path, state: dict) -> None:
+    """Atomic tmp+rename write of the D6 dedup state; fail-soft (a write
+    failure re-alerts next pass — it never corrupts or blocks the sweep)."""
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_name(path.name + ".tmp")
+        tmp.write_text(json.dumps(state, sort_keys=True))
+        os.replace(tmp, path)
+    except OSError:  # pragma: no cover - fail-soft I/O guard
+        pass
+
+
+def _slurm_src_escalation_gate(
+    state_path: Path | None, *, apply: bool, now: float
+) -> Callable[[dict, str, str], bool]:
+    """Leg-scoped escalation dedup gate for tier (g) (#2147 D6).
+
+    The #2127 scratch core appends a sidecar escalation row on EVERY pass —
+    correct for the rare tmp-scratch keeps, but slurm-src STANDING keeps (an
+    ACTIVE issue's tree, a head-unreachable worktree) would re-alert every
+    guard run. Dedup key: (path, disposition, size band); re-alert after
+    ``EPS_SLURM_SRC_ESCALATION_REALERT_DAYS`` (default 7 d). Report-only
+    runs and a ``None`` state path never dedup and never write (the printed
+    report stays complete); state IO is fail-soft."""
+
+    def gate(row: dict, disposition: str, reason: str) -> bool:
+        if not apply or state_path is None:
+            return True
+        band = _slurm_src_escalation_band_gb(int(row.get("bytes", 0) or 0))
+        key = f"{row.get('path')}|{disposition}|{band:g}"
+        state = _load_slurm_src_escalation_state(state_path)
+        prev = state.get(key)
+        prev_ts = prev.get("ts") if isinstance(prev, dict) else None
+        if isinstance(prev_ts, int | float):
+            if now - prev_ts < _slurm_src_escalation_realert_secs():
+                return False
+        state[key] = {"ts": now, "bytes": int(row.get("bytes", 0) or 0)}
+        _save_slurm_src_escalation_state(state_path, state)
+        return True
+
+    return gate
+
+
+def sweep_slurm_src(
+    staging_root: Path | None,
+    *,
+    apply: bool,
+    main_repo: Path | None,
+    status_resolver: Callable[[int], str | None] | None = None,
+    terminal_statuses: frozenset[str] | set[str] | None = None,
+    min_age_hours: float | None = None,
+    now: float | None = None,
+    verdict_cache_path: Path | None = None,
+    escalation_state_path: Path | None = None,
+    overlay_paths: tuple[str, ...] | None = None,
+) -> ScratchSweepResult:
+    """Evidence-gated sweep of ``~/.eps-slurm-src/issue-<N>`` SLURM staging
+    trees (#2147, ``vm_disk_guard`` tier (g)): the D4 pre-gates below, then
+    the SHARED #2127 verified-scratch per-candidate core
+    (:func:`_sweep_scratch_candidate`) UNCHANGED, keep reasons re-tagged
+    ``slurm-src-*``. Report-only unless ``apply``.
+
+    Pre-gates (every early exit is a KEEP row; g4/g4b escalate through the
+    D6 leg-scoped dedup gate):
+
+    - g1  name not ``issue-<N>`` shaped -> ``slurm-src-unrecognized-kept``;
+    - g2  not uid-owned -> ``slurm-src-not-owned-kept``;
+    - g3  symlink / non-directory entry, or resolved path escaping the
+      staging root -> ``slurm-src-containment-kept`` (never followed);
+    - g4  owning issue's status not in ``terminal_statuses`` (incl.
+      unresolvable) -> ``slurm-src-active-kept`` + escalate;
+    - g4b the status probe RAISED -> ``slurm-src-status-probe-failed-kept``
+      + escalate.
+
+    There is deliberately NO durable-path presence gate (plan #2147 §0,
+    binding reconcile): these trees are full repo checkouts, so committed
+    ``store/`` / ``eval_results/`` content is EXPECTED — the shared core's
+    native ``under_durable`` rule already PROOF-gates every file under those
+    components per-file against the odb (denying the small-text tolerance
+    there), which is strictly STRONGER than a presence block for
+    verified-reproducible checkouts.
+
+    STRICT opt-in, hermetic by construction: runs only when ``staging_root``
+    AND ``main_repo`` are non-None and both kill-switch layers are unset
+    (:func:`slurm_src_sweep_enabled`); production ``main()`` bodies pass
+    ``vm_disk_guard.slurm_src_root()`` / :func:`_resolution_root` /
+    :func:`scratch_verdict_cache_path` /
+    :func:`slurm_src_escalation_state_path`. ``status_resolver`` +
+    ``terminal_statuses`` are REQUIRED once armed (fail fast — a
+    status-blind sweep could reap an ACTIVE issue's staging tree); the
+    production adapter passes ``vm_disk_guard._resolve_issue_status`` +
+    ``TERMINAL_CACHE_REAP_STATUSES`` verbatim (plan D3, read-only).
+    ``overlay_paths`` defaults to
+    ``backends.slurm.WORKING_TREE_OVERLAY_PATHS`` (D9 — the writer's own
+    constant, imported, never a re-typed literal)."""
+    result = ScratchSweepResult()
+    if staging_root is None or main_repo is None or not slurm_src_sweep_enabled():
+        return result
+    if status_resolver is None or terminal_statuses is None:
+        raise ValueError(
+            "sweep_slurm_src: status_resolver + terminal_statuses are REQUIRED when the "
+            "sweep is armed — a status-blind slurm-src sweep could reap an ACTIVE issue's "
+            "staging tree (fail fast, never a silent default)"
+        )
+    if overlay_paths is None:
+        overlay_paths = WORKING_TREE_OVERLAY_PATHS
+    now = time.time() if now is None else now
+    if min_age_hours is None:
+        min_age_hours = _noncanonical_min_age_hours()
+    window_start = now - min_age_hours * 3600.0
+    cache = _ScratchVerdictCache(verdict_cache_path)
+    floor = _scratch_escalate_floor_bytes()
+    gate = _slurm_src_escalation_gate(escalation_state_path, apply=apply, now=now)
+    try:
+        names = sorted(os.listdir(staging_root))
+    except OSError:
+        return result
+    root_real = os.path.realpath(staging_root)
+    for name in names:
+        cand = staging_root / name
+        row: dict = {"path": str(cand), "name": name, "leg": "slurm-src"}
+        result.rows.append(row)
+
+        def _finish(
+            disposition: str, reason: str, *, row: dict = row, escalate: bool | None = None
+        ) -> None:
+            _scratch_row_finish(
+                row,
+                disposition,
+                reason,
+                leg="slurm-src",
+                apply=apply,
+                floor=floor,
+                escalate=escalate,
+                escalation_gate=gate,
+            )
+
+        m = _SLURM_SRC_NAME_RE.match(name)
+        if m is None:  # g1 — name shape
+            _finish(
+                "slurm-src-unrecognized-kept", "name not issue-<N> shaped; KEPT", escalate=False
+            )
+            continue
+        issue_n = int(m.group(1))
+        row["issue"] = issue_n
+        if not _tmp_entry_owned(cand):  # g2 — uid ownership (lstat, link itself)
+            _finish(
+                "slurm-src-not-owned-kept",
+                "entry not owned by the current uid; KEPT",
+                escalate=False,
+            )
+            continue
+        # g3 — containment: a REAL directory whose resolved path stays
+        # strictly inside the staging root (a symlinked entry is never
+        # followed; rmtree/worktree-remove must never chase an escape).
+        try:
+            st = cand.lstat()
+        except OSError:
+            _finish("slurm-src-containment-kept", "lstat failed; KEPT", escalate=False)
+            continue
+        if not stat.S_ISDIR(st.st_mode):
+            _finish(
+                "slurm-src-containment-kept",
+                "entry is a symlink or non-directory — never followed; KEPT",
+                escalate=False,
+            )
+            continue
+        real = os.path.realpath(cand)
+        if real == root_real or os.path.commonpath([root_real, real]) != root_real:
+            _finish(
+                "slurm-src-containment-kept",
+                f"resolved path escapes the staging root ({real}); KEPT",
+                escalate=False,
+            )
+            continue
+        try:  # g4/g4b — terminal-status gate (read-only, plan D3)
+            status = status_resolver(issue_n)
+        except Exception as exc:  # g4b: the probe ITSELF failed — keep + escalate
+            row["bytes"] = _dir_size_bytes(cand)
+            result.total_discovered_bytes += row["bytes"]
+            _finish(
+                "slurm-src-status-probe-failed-kept",
+                f"status probe failed for issue {issue_n} ({exc.__class__.__name__}: {exc}); KEPT",
+                escalate=True,
+            )
+            continue
+        if status is None or status not in terminal_statuses:  # g4 — active/unresolved
+            row["status"] = status
+            row["bytes"] = _dir_size_bytes(cand)
+            result.total_discovered_bytes += row["bytes"]
+            _finish(
+                "slurm-src-active-kept",
+                f"issue {issue_n} status {status or 'unresolved'} not terminal-for-reap; KEPT",
+                escalate=True,
+            )
+            continue
+        row["status"] = status
+        _sweep_scratch_candidate(
+            cand,
+            row,
+            leg="slurm-src",
+            apply=apply,
+            main_repo=main_repo,
+            window_start=window_start,
+            min_age_hours=min_age_hours,
+            now=now,
+            cache=cache,
+            result=result,
+            floor=floor,
+            overlay_paths=overlay_paths,
+            escalation_gate=gate,
         )
     cache.save()
     return result
