@@ -24,6 +24,12 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
+# v2 pack codec (#2321) — stdlib-only sibling module (packing never imports
+# hub, so this cannot cycle). The packed-path reader shim below decodes
+# through it (C19: the same production parse+decode path the repack driver's
+# verify phase uses).
+from explore_persona_space.orchestrate import packing as _packing
+
 logger = logging.getLogger(__name__)
 
 # Default public HF Hub repos
@@ -2679,9 +2685,14 @@ def stage_hub_file(
       resume never asserts). The default ``size_bytes=None`` keeps every
       existing caller byte-identical (no assert). ``stage_hub_prefix`` does
       NOT thread per-file sizes — its ONE prefix-level assert covers the
-      whole download.
+      whole download;
+    - packed-tree fallback (#2321): a raw-path ``EntryNotFoundError`` retries
+      through :func:`stage_packed_file` when the path resolves to a member of
+      a ``<prefix>/packed/`` tree (kill switch ``EPM_HF_PACKED_FALLBACK=0``);
+      a genuine non-member re-raises the ORIGINAL raw-path miss.
     """
     from huggingface_hub import hf_hub_download
+    from huggingface_hub.utils import EntryNotFoundError
 
     target = Path(target)
     if target.exists() and not overwrite:
@@ -2693,17 +2704,44 @@ def stage_hub_file(
     target.parent.mkdir(parents=True, exist_ok=True)
     tok = token or os.environ.get("HF_TOKEN")
     with tempfile.TemporaryDirectory(dir=target.parent, prefix=".hfstage-") as td:
-        local = retry_transient(
-            lambda: hf_hub_download(
-                repo_id=repo_id,
-                filename=path_in_repo,
-                repo_type=repo_type,
-                revision=revision,
-                local_dir=td,
-                token=tok,
-            ),
-            what=f"stage_hub_file({repo_id}:{path_in_repo})",
-        )
+        try:
+            local = retry_transient(
+                lambda: hf_hub_download(
+                    repo_id=repo_id,
+                    filename=path_in_repo,
+                    repo_type=repo_type,
+                    revision=revision,
+                    local_dir=td,
+                    token=tok,
+                ),
+                what=f"stage_hub_file({repo_id}:{path_in_repo})",
+            )
+        except EntryNotFoundError as raw_miss:
+            # Packed-tree fallback (#2321): the raw path may have been
+            # repacked into <prefix>/packed/. A resolved member whose SHARD
+            # then turns out missing raises the shard's own error AS ITSELF
+            # (an integrity failure, not a miss); only a genuine non-member
+            # maps back to the ORIGINAL raw-path miss.
+            if not _packed_fallback_enabled():
+                raise
+            try:
+                staged = stage_packed_file(
+                    repo_id,
+                    path_in_repo,
+                    target,
+                    repo_type=repo_type,
+                    revision=revision,
+                    token=tok,
+                    overwrite=overwrite,
+                )
+            except PackedMemberNotFoundError:
+                raise raw_miss from None
+            logger.info(
+                "stage_hub_file: %s:%s served from packed/ fallback",
+                repo_id,
+                path_in_repo,
+            )
+            return staged
         os.replace(local, target)
     return target
 
@@ -2736,9 +2774,13 @@ def stage_hub_prefix(
     (``max_workers<=6``: the org 2500-req/5-min quota, #658/#833).
     ``revision=None`` resolves ONE commit sha up front via retried ``repo_info``,
     so every file comes from one snapshot (the #833 coherence note). Files land
-    at ``dest_dir/<repo-relative path>`` (verbatim prefix mirror). An empty
-    listing raises ``FileNotFoundError``; any per-file failure propagates
-    (fail-loud). NOTE: each per-file ``stage_hub_file`` carries its OWN
+    at ``dest_dir/<repo-relative path>`` (verbatim prefix mirror). The raw
+    listing is UNIONED with any members of a covering ``packed/`` tree
+    (#2321; dedupe prefers the raw listing; kill switch
+    ``EPM_HF_PACKED_FALLBACK=0``), so repacked prefixes keep staging their
+    original per-file layout. An empty raw+packed listing raises
+    ``FileNotFoundError``; any per-file failure propagates (fail-loud).
+    NOTE: each per-file ``stage_hub_file`` carries its OWN
     ``EPM_HF_RETRY_BUDGET_S`` budget, so an N-file prefix under a persistent
     outage can serially burn up to ~N x budget across pool workers before the
     fail-loud raise (consistent with existing per-call ``_retry_upload``
@@ -2800,70 +2842,110 @@ def stage_hub_prefix(
     entries = list_hf_entries_under_path(
         api, repo_id, prefix, repo_type=repo_type, revision=revision
     )
-    if not entries:
+    # Packed-tree merge (#2321): union the raw listing with any members of a
+    # covering <prefix>/packed/ tree, deduped on ORIGINAL path with the RAW
+    # listing preferred (an unpacked file beside a stale pack wins).
+    packed_members: list[PackedMember] = []
+    if _packed_fallback_enabled():
+        raw_paths = {p for p, _ in entries}
+        packed_members = [
+            m
+            for m in packed_members_under_path(
+                api, repo_id, prefix, repo_type=repo_type, revision=revision, token=token
+            )
+            if m.path not in raw_paths
+        ]
+    if packed_members:
+        # The covering pack's OWN internals (shards/index under <root>/packed/)
+        # are raw repo files under the prefix — drop them from the mirror so
+        # the staged tree keeps the ORIGINAL per-file layout (and shards are
+        # not downloaded twice). Staging the packed/ dir ITSELF still works:
+        # a packed/-bearing prefix merges no members by construction.
+        pack_roots = {m.shard_repo_path.rsplit(f"/{PACKED_DIRNAME}/", 1)[0] for m in packed_members}
+        internal = tuple(f"{r}/{PACKED_DIRNAME}/" for r in sorted(pack_roots))
+        entries = [(p, s) for p, s in entries if not p.startswith(internal)]
+    if not entries and not packed_members:
         raise FileNotFoundError(f"no files under {repo_id}@{revision}:{prefix}")
     files = [p for p, _ in entries]
     known_gb = sum(sz for _, sz in entries if sz is not None) / 1e9
     n_unknown = sum(1 for _, sz in entries if sz is None)
     unknown_note = f", {n_unknown} unknown-size" if n_unknown else ""
+    packed_note = f" + {len(packed_members)} packed member(s)" if packed_members else ""
     print(
-        f"[stage_hub_prefix] {len(files)} files (~{known_gb:.2f} GB known{unknown_note}) "
-        f"under {repo_id}@{revision}:{prefix}",
+        f"[stage_hub_prefix] {len(files)} files (~{known_gb:.2f} GB known{unknown_note})"
+        f"{packed_note} under {repo_id}@{revision}:{prefix}",
         flush=True,
     )
     dest_dir = Path(dest_dir)
     # Prefix-level headroom assert on the MISSING files only (#2097) — a
     # skip-existing resume with every target already on disk never asserts.
+    # Packed members join the sizing (their index-recorded original sizes).
     missing = [(f, sz) for f, sz in entries if not (dest_dir / f).exists()]
+    missing += [(m.path, m.size) for m in packed_members if not (dest_dir / m.path).exists()]
     if missing:
         _assert_stage_headroom(dest_dir, missing, what=f"{repo_id}@{revision}:{prefix}")
     staged: dict[str, Path] = {}
-    with ThreadPoolExecutor(max_workers=min(max_workers, len(files))) as pool:
-        futs = {
-            pool.submit(
-                stage_hub_file,
-                repo_id,
-                f,
-                dest_dir / f,
-                repo_type=repo_type,
-                revision=revision,
-                token=token,
-            ): f
-            for f in files
-        }
-        completed = as_completed(futs, timeout=stage_timeout)
-        while True:
-            try:
-                fut = next(completed)
-            except StopIteration:
-                break
-            except TimeoutError:
-                # Wall budget expired with >=1 file still in flight (the #1739
-                # hang shape). Flush the diagnostic, then hard-exit — never a
-                # raise (unjoinable native worker; constant's comment above).
-                pending = sorted(name for f, name in futs.items() if not f.done())
-                shown = ", ".join(pending[:20]) + (
-                    f" (+{len(pending) - 20} more)" if len(pending) > 20 else ""
-                )
+    if files:  # all-packed prefixes have no raw files — a 0-worker pool raises
+        with ThreadPoolExecutor(max_workers=min(max_workers, len(files))) as pool:
+            futs = {
+                pool.submit(
+                    stage_hub_file,
+                    repo_id,
+                    f,
+                    dest_dir / f,
+                    repo_type=repo_type,
+                    revision=revision,
+                    token=token,
+                ): f
+                for f in files
+            }
+            completed = as_completed(futs, timeout=stage_timeout)
+            while True:
+                try:
+                    fut = next(completed)
+                except StopIteration:
+                    break
+                except TimeoutError:
+                    # Wall budget expired with >=1 file still in flight (the #1739
+                    # hang shape). Flush the diagnostic, then hard-exit — never a
+                    # raise (unjoinable native worker; constant's comment above).
+                    pending = sorted(name for f, name in futs.items() if not f.done())
+                    shown = ", ".join(pending[:20]) + (
+                        f" (+{len(pending) - 20} more)" if len(pending) > 20 else ""
+                    )
+                    print(
+                        f"[stage_hub_prefix] TIMEOUT after {int(time.monotonic() - t0)}s "
+                        f"(EPM_HF_STAGE_TIMEOUT_S={timeout_env}): staged "
+                        f"{len(staged)}/{len(files)} under {repo_id}@{revision}:{prefix}; "
+                        f"stalled file(s): {shown} — hard-exit "
+                        f"rc={STAGE_HUB_PREFIX_TIMEOUT_RC} (#1739/#2153)",
+                        flush=True,
+                    )
+                    sys.stdout.flush()
+                    sys.stderr.flush()
+                    os._exit(STAGE_HUB_PREFIX_TIMEOUT_RC)
+                name = futs[fut]
+                staged[name] = fut.result()  # .result() re-raises — fail-loud
                 print(
-                    f"[stage_hub_prefix] TIMEOUT after {int(time.monotonic() - t0)}s "
-                    f"(EPM_HF_STAGE_TIMEOUT_S={timeout_env}): staged "
-                    f"{len(staged)}/{len(files)} under {repo_id}@{revision}:{prefix}; "
-                    f"stalled file(s): {shown} — hard-exit "
-                    f"rc={STAGE_HUB_PREFIX_TIMEOUT_RC} (#1739/#2153)",
+                    f"[stage_hub_prefix] unit {len(staged)}/{len(files)} {name} "
+                    f"elapsed={int(time.monotonic() - t0)}s",
                     flush=True,
                 )
-                sys.stdout.flush()
-                sys.stderr.flush()
-                os._exit(STAGE_HUB_PREFIX_TIMEOUT_RC)
-            name = futs[fut]
-            staged[name] = fut.result()  # .result() re-raises — fail-loud
-            print(
-                f"[stage_hub_prefix] unit {len(staged)}/{len(files)} {name} "
-                f"elapsed={int(time.monotonic() - t0)}s",
-                flush=True,
-            )
-    return [staged[f] for f in files]
+    staged_packed: list[Path] = []
+    if packed_members:
+        # Packed members stage AFTER the raw pool (shard downloads ride
+        # stage_hub_file's own retry budget; the EPM_HF_STAGE_TIMEOUT_S wall
+        # above bounds only the raw pool — #2321).
+        staged_packed = _stage_packed_members(
+            repo_id,
+            packed_members,
+            dest_dir,
+            repo_type=repo_type,
+            revision=revision,
+            token=token,
+            t0=t0,
+        )
+    return [staged[f] for f in files] + staged_packed
 
 
 def _parse_shard_manifest(text: str, *, what: str) -> tuple[list[str], dict[str, str]]:
@@ -3063,6 +3145,555 @@ def stage_sharded_text(
         target.stat().st_size,
     )
     return target
+
+
+# ---------------------------------------------------------------------------
+# Packed-tree reader shim (#2321)
+#
+# The #2321 repack replaces many-small-file prefixes on the data repo with a
+# v2 pack (``<prefix>/packed/`` holding ``<group>.shardNN.jsonl`` line-shards,
+# ``<group>.indexNN.json`` member-index parts, a top ``INDEX.json``, and
+# ``pack_manifest.json``). The shim below resolves an ORIGINAL (pre-pack)
+# repo path to its packed member and stages the original bytes back out,
+# decoding through the SAME production parse+decode path the repack driver's
+# verify phase uses (``packing.extract_member_from_shard`` ->
+# ``packing.decode_member_line``; C19). ``stage_hub_file`` /
+# ``stage_hub_prefix`` fall back to it on a raw-path miss, so existing
+# consumers keep resolving repacked paths verbatim.
+# ---------------------------------------------------------------------------
+
+PACKED_DIRNAME = _packing.PACKED_DIRNAME
+
+
+class PackedMemberNotFoundError(FileNotFoundError):
+    """A repo path resolves to NO member of any ``packed/`` tree (#2321)."""
+
+
+@dataclass(frozen=True)
+class PackedMember:
+    """One original file's resolved location inside a v2 ``packed/`` tree."""
+
+    path: str  # ORIGINAL (pre-pack) repo path of the member file
+    shard_repo_path: str  # repo path of the shard jsonl holding the member
+    offset: int  # byte offset of the member line within the shard
+    length: int  # byte length of the member line INCLUDING trailing newline
+    sha256: str  # sha256 of the original file bytes (from the index entry)
+    enc: str  # "text" | "b64"
+    size: int  # original file size in bytes
+
+
+def _packed_fallback_enabled() -> bool:
+    """Kill switch: ``EPM_HF_PACKED_FALLBACK=0`` disables the shim (default ON)."""
+    return os.environ.get("EPM_HF_PACKED_FALLBACK", "").strip() != "0"
+
+
+# Top-index cache: (repo_id, repo_type, prefix, revision) -> groups mapping
+# (the parsed INDEX.json ``groups`` dict) or None (probed, no pack there).
+# POSITIVE entries cache unconditionally; NEGATIVE (None) entries cache ONLY
+# under a PINNED revision — at revision=None a later repack can create the
+# index mid-run, so a miss must stay re-probeable (I16).
+_PACKED_TOP_INDEX_CACHE: dict[tuple[str, str, str, str | None], dict | None] = {}
+# Index parts are write-once per (pack round, name) by the repack commit
+# contract, so entries cache unconditionally — bounded FIFO to keep memory
+# flat on wide prefix walks.
+_PACKED_INDEX_PART_CACHE: dict[tuple[str, str, str, str | None], dict] = {}
+_PACKED_INDEX_PART_CACHE_MAX = 16
+
+
+def clear_packed_caches() -> None:
+    """Drop the packed-tree index caches (test hook / manual refresh)."""
+    _PACKED_TOP_INDEX_CACHE.clear()
+    _PACKED_INDEX_PART_CACHE.clear()
+
+
+def _drop_unpinned_packed_caches(repo_id: str, repo_type: str) -> None:
+    """Drop revision=None cache entries for one repo (the I16 refresh-on-miss)."""
+    for cache in (_PACKED_TOP_INDEX_CACHE, _PACKED_INDEX_PART_CACHE):
+        stale = [k for k in cache if k[0] == repo_id and k[1] == repo_type and k[3] is None]
+        for k in stale:
+            del cache[k]
+
+
+def _stage_repo_text(
+    repo_id: str,
+    repo_path: str,
+    *,
+    repo_type: str,
+    revision: str | None,
+    token: str | None = None,
+) -> str:
+    """Stage one small repo file into a tempdir and return its text."""
+    with tempfile.TemporaryDirectory(prefix=".packed-idx-") as td:
+        local = stage_hub_file(
+            repo_id,
+            repo_path,
+            Path(td) / "staged.json",
+            repo_type=repo_type,
+            revision=revision,
+            token=token,
+        )
+        return Path(local).read_text(encoding="utf-8")
+
+
+def _packed_top_index(
+    api,
+    repo_id: str,
+    prefix: str,
+    *,
+    repo_type: str,
+    revision: str | None,
+    token: str | None = None,
+) -> dict | None:
+    """The parsed ``<prefix>/packed/INDEX.json`` groups mapping, or None.
+
+    Probes via retried ``file_exists`` (the #1335 lesson: an un-retried HEAD
+    probe turns one transient 429 into a wrong branch), stages + parses via
+    ``packing.load_top_index`` on a hit. Cache semantics per the module-level
+    cache comment (positive always; negative only under a pinned revision).
+    """
+    key = (repo_id, repo_type, prefix, revision)
+    if key in _PACKED_TOP_INDEX_CACHE:
+        return _PACKED_TOP_INDEX_CACHE[key]
+    index_path = f"{prefix}/{PACKED_DIRNAME}/{_packing.INDEX_NAME}"
+    exists = retry_transient(
+        # HUB_VERIFY_RETRY_EXEMPT: single-path probe wrapped in retry_transient at call site
+        lambda: api.file_exists(repo_id, index_path, repo_type=repo_type, revision=revision),
+        what=f"file_exists({repo_id}:{index_path})",
+    )
+    groups: dict | None = None
+    if exists:
+        text = _stage_repo_text(
+            repo_id, index_path, repo_type=repo_type, revision=revision, token=token
+        )
+        groups = _packing.load_top_index(text, what=f"{repo_id}:{index_path}")
+    if groups is not None or revision is not None:
+        _PACKED_TOP_INDEX_CACHE[key] = groups
+    return groups
+
+
+def _packed_index_part(
+    repo_id: str,
+    part_repo_path: str,
+    *,
+    repo_type: str,
+    revision: str | None,
+    token: str | None = None,
+) -> dict:
+    """Stage + parse one ``<group>.indexNN.json`` part (``src -> entry``)."""
+    key = (repo_id, repo_type, part_repo_path, revision)
+    cached = _PACKED_INDEX_PART_CACHE.get(key)
+    if cached is not None:
+        return cached
+    text = _stage_repo_text(
+        repo_id, part_repo_path, repo_type=repo_type, revision=revision, token=token
+    )
+    entries = _packing.load_index_part(text, what=f"{repo_id}:{part_repo_path}")
+    if len(_PACKED_INDEX_PART_CACHE) >= _PACKED_INDEX_PART_CACHE_MAX:
+        _PACKED_INDEX_PART_CACHE.pop(next(iter(_PACKED_INDEX_PART_CACHE)))
+    _PACKED_INDEX_PART_CACHE[key] = entries
+    return entries
+
+
+def _packed_ancestor_prefixes(norm: str, *, include_self: bool) -> list[str]:
+    """Candidate pack-root prefixes for ``norm``, top-level inward."""
+    parts = norm.split("/")
+    stop = len(parts) if include_self else len(parts) - 1
+    return ["/".join(parts[:i]) for i in range(1, stop + 1)]
+
+
+def _member_from_entry(prefix: str, src: str, entry) -> PackedMember:
+    """Build a :class:`PackedMember` from an index entry under ``prefix``."""
+    return PackedMember(
+        path=f"{prefix}/{src}",
+        shard_repo_path=f"{prefix}/{PACKED_DIRNAME}/{entry.shard}",
+        offset=entry.offset,
+        length=entry.length,
+        sha256=entry.sha256,
+        enc=entry.enc,
+        size=entry.size,
+    )
+
+
+def resolve_packed_member(
+    api,
+    repo_id: str,
+    path_in_repo: str,
+    *,
+    repo_type: str = "dataset",
+    revision: str | None = None,
+    token: str | None = None,
+) -> PackedMember | None:
+    """Resolve an ORIGINAL repo path to its packed member, or None (#2321).
+
+    Walks ancestor prefixes of ``path_in_repo`` top-level inward, probing
+    ``<prefix>/packed/INDEX.json``; the first pack found resolves the path
+    (packed trees never nest — the repack's selection excludes files under
+    ``packed/``). Collided groups resolve via the INDEX.json's RECORDED
+    ``rel_dir`` (C13), never by re-deriving the group key. A path INSIDE a
+    ``packed/`` tree returns None unconditionally (it IS the raw storage —
+    prevents fallback recursion). At ``revision=None`` a miss triggers ONE
+    unpinned-cache refresh + re-walk (I16 mid-run freshness: a repack landing
+    mid-run must become visible without a process restart).
+    """
+    norm = path_in_repo.strip("/")
+    if not norm:
+        raise ValueError("resolve_packed_member: empty path")
+    if PACKED_DIRNAME in norm.split("/"):
+        return None
+    if not _packed_fallback_enabled():
+        return None
+    member = _resolve_packed_member_once(
+        api, repo_id, norm, repo_type=repo_type, revision=revision, token=token
+    )
+    if member is None and revision is None:
+        _drop_unpinned_packed_caches(repo_id, repo_type)
+        member = _resolve_packed_member_once(
+            api, repo_id, norm, repo_type=repo_type, revision=revision, token=token
+        )
+    return member
+
+
+def _resolve_packed_member_once(
+    api,
+    repo_id: str,
+    norm: str,
+    *,
+    repo_type: str,
+    revision: str | None,
+    token: str | None,
+) -> PackedMember | None:
+    """One cache-honoring ancestor walk for :func:`resolve_packed_member`."""
+    for prefix in _packed_ancestor_prefixes(norm, include_self=False):
+        groups = _packed_top_index(
+            api, repo_id, prefix, repo_type=repo_type, revision=revision, token=token
+        )
+        if groups is None:
+            continue
+        rel = norm[len(prefix) + 1 :]
+        rel_dir = rel.rsplit("/", 1)[0] if "/" in rel else ""
+        # C13: resolve by the RECORDED rel_dir, never a re-derived key.
+        hit = next((g for g in groups.values() if g["rel_dir"] == rel_dir), None)
+        if hit is None:
+            return None  # pack found, but this dir was never packed
+        for part_name in hit["index_files"]:
+            part_path = f"{prefix}/{PACKED_DIRNAME}/{part_name}"
+            entries = _packed_index_part(
+                repo_id, part_path, repo_type=repo_type, revision=revision, token=token
+            )
+            entry = entries.get(rel)
+            if entry is not None:
+                return _member_from_entry(prefix, rel, entry)
+        return None  # group exists but the member is not in it
+    return None
+
+
+def _packed_group_in_scope(gdir: str, rel_scope: str) -> bool:
+    """Whether group dir ``gdir`` can hold members under ``rel_scope``."""
+    if rel_scope == "":
+        return True
+    if gdir == rel_scope or gdir.startswith(rel_scope + "/"):
+        return True  # group dir at/under the requested scope
+    # Scope DEEPER than the group dir: members sit directly in gdir, so only
+    # an exact member path can match (one extra path component).
+    return rel_scope.startswith(gdir + "/") if gdir else "/" not in rel_scope
+
+
+def packed_members_under_path(
+    api,
+    repo_id: str,
+    path: str,
+    *,
+    repo_type: str = "dataset",
+    revision: str | None = None,
+    token: str | None = None,
+) -> list[PackedMember]:
+    """Every packed member whose ORIGINAL path is at/under ``path`` (#2321).
+
+    The prefix-enumeration sibling of :func:`resolve_packed_member`: walks
+    candidate pack roots (ancestors of ``path`` PLUS ``path`` itself,
+    top-level inward; first pack found wins), scopes groups by their RECORDED
+    ``rel_dir`` (C13), and filters members by original-path containment.
+    Returns [] when no pack covers ``path`` (raw listings are unaffected).
+    Sorted by original path.
+    """
+    norm = path.strip("/")
+    if not norm:
+        raise ValueError("packed_members_under_path: empty path")
+    if PACKED_DIRNAME in norm.split("/"):
+        return []
+    if not _packed_fallback_enabled():
+        return []
+    for prefix in _packed_ancestor_prefixes(norm, include_self=True):
+        groups = _packed_top_index(
+            api, repo_id, prefix, repo_type=repo_type, revision=revision, token=token
+        )
+        if groups is None:
+            continue
+        rel_scope = norm[len(prefix) + 1 :] if len(norm) > len(prefix) else ""
+        members: list[PackedMember] = []
+        for g in groups.values():
+            if not _packed_group_in_scope(g["rel_dir"], rel_scope):
+                continue
+            for part_name in g["index_files"]:
+                part_path = f"{prefix}/{PACKED_DIRNAME}/{part_name}"
+                entries = _packed_index_part(
+                    repo_id, part_path, repo_type=repo_type, revision=revision, token=token
+                )
+                for src, entry in entries.items():
+                    if rel_scope and not (src == rel_scope or src.startswith(rel_scope + "/")):
+                        continue
+                    members.append(_member_from_entry(prefix, src, entry))
+        return sorted(members, key=lambda m: m.path)
+    return []
+
+
+def list_packed_members_under_path(
+    api,
+    repo_id: str,
+    path: str,
+    *,
+    repo_type: str = "dataset",
+    revision: str | None = None,
+    token: str | None = None,
+) -> list[tuple[str, int | None]]:
+    """``(original path, size)`` pairs — the listing-shaped view of
+    :func:`packed_members_under_path` (matches ``list_hf_entries_under_path``
+    so listing consumers can union raw + packed entries)."""
+    return [
+        (m.path, m.size)
+        for m in packed_members_under_path(
+            api, repo_id, path, repo_type=repo_type, revision=revision, token=token
+        )
+    ]
+
+
+def _extract_verified_member(local_shard: Path, member: PackedMember) -> bytes:
+    """Extract one member from a staged shard; verify src suffix + index sha."""
+    src, data = _packing.extract_member_from_shard(local_shard, member.offset, member.length)
+    if not (member.path == src or member.path.endswith("/" + src)):
+        raise _packing.PackError(
+            f"packed member src mismatch: shard line src {src!r} does not "
+            f"terminate resolved path {member.path!r} — stale index?"
+        )
+    got = hashlib.sha256(data).hexdigest()
+    if got != member.sha256:
+        raise _packing.PackError(
+            f"packed member sha mismatch for {member.path}: {got[:12]}... != "
+            f"index {member.sha256[:12]}..."
+        )
+    return data
+
+
+def stage_packed_file(
+    repo_id: str,
+    path_in_repo: str,
+    target: Path | str,
+    *,
+    repo_type: str = "dataset",
+    revision: str | None = None,
+    token: str | None = None,
+    overwrite: bool = False,
+) -> Path:
+    """Stage ONE original file back out of a ``packed/`` tree (#2321).
+
+    Resolution via :func:`resolve_packed_member`; a non-member raises
+    :class:`PackedMemberNotFoundError` (``stage_hub_file``'s fallback maps
+    that back to the ORIGINAL raw-path miss). Decode is the production codec
+    (``packing.extract_member_from_shard`` — per-member length + sha asserts)
+    plus an index-sha cross-check; the write is atomic (tempdir INSIDE
+    ``target.parent`` + ``os.replace`` — the #1335 EXDEV gotcha). Idempotent:
+    an existing target returns without a network call unless ``overwrite``.
+    """
+    target = Path(target)
+    if target.exists() and not overwrite:
+        return target
+    tok = token or os.environ.get("HF_TOKEN")
+    from huggingface_hub import HfApi
+
+    api = HfApi(token=tok)
+    member = resolve_packed_member(
+        api, repo_id, path_in_repo, repo_type=repo_type, revision=revision, token=tok
+    )
+    if member is None:
+        raise PackedMemberNotFoundError(
+            f"{repo_id}@{revision or 'main'}:{path_in_repo} resolves to no packed/ member"
+        )
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(dir=target.parent, prefix=".hfpacked-") as td:
+        local_shard = stage_hub_file(
+            repo_id,
+            member.shard_repo_path,
+            Path(td) / "shard.jsonl",
+            repo_type=repo_type,
+            revision=revision,
+            token=tok,
+        )
+        data = _extract_verified_member(Path(local_shard), member)
+        tmp = Path(td) / "member.bin"
+        tmp.write_bytes(data)
+        os.replace(tmp, target)
+    logger.info(
+        "stage_packed_file: %s:%s -> %s (%d B via %s)",
+        repo_id,
+        path_in_repo,
+        target,
+        len(data),
+        member.shard_repo_path,
+    )
+    return target
+
+
+def _stage_packed_members(
+    repo_id: str,
+    members: Sequence[PackedMember],
+    dest_dir: Path,
+    *,
+    repo_type: str = "dataset",
+    revision: str | None = None,
+    token: str | None = None,
+    t0: float | None = None,
+) -> list[Path]:
+    """Stage many packed members under ``dest_dir/<original path>``.
+
+    Each shard downloads ONCE (members grouped by shard; shard scratch keyed
+    by sha1 of the shard's repo path so same-basename shards from different
+    pack roots cannot collide), with one flushed progress line per shard.
+    Restores ride ``packing._restore_file`` — atomic, and NEVER overwriting an
+    existing differing file (an existing identical file is an idempotent
+    skip). Returns staged paths sorted by original path.
+    """
+    t0 = time.monotonic() if t0 is None else t0
+    dest_dir = Path(dest_dir)
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    by_shard: dict[str, list[PackedMember]] = {}
+    for m in members:
+        by_shard.setdefault(m.shard_repo_path, []).append(m)
+    staged: list[Path] = []
+    with tempfile.TemporaryDirectory(dir=dest_dir, prefix=".hfpacked-") as td:
+        for i, shard_repo_path in enumerate(sorted(by_shard), start=1):
+            shard_members = by_shard[shard_repo_path]
+            pending = [m for m in shard_members if not (dest_dir / m.path).exists()]
+            if pending:
+                shard_key = hashlib.sha1(shard_repo_path.encode("utf-8")).hexdigest()[:16]
+                local_shard = stage_hub_file(
+                    repo_id,
+                    shard_repo_path,
+                    Path(td) / shard_key / PurePosixPath(shard_repo_path).name,
+                    repo_type=repo_type,
+                    revision=revision,
+                    token=token,
+                )
+                for m in pending:
+                    data = _extract_verified_member(Path(local_shard), m)
+                    _packing._restore_file(dest_dir, m.path, data)
+            staged.extend(dest_dir / m.path for m in shard_members)
+            print(
+                f"[stage_packed] shard {i}/{len(by_shard)} "
+                f"{PurePosixPath(shard_repo_path).name} ({len(shard_members)} member(s), "
+                f"{len(pending)} staged) elapsed={int(time.monotonic() - t0)}s",
+                flush=True,
+            )
+    return sorted(staged)
+
+
+def stage_packed_prefix(
+    repo_id: str,
+    prefix: str,
+    dest_dir: Path | str,
+    *,
+    repo_type: str = "dataset",
+    revision: str | None = None,
+    token: str | None = None,
+) -> list[Path]:
+    """Stage EVERY packed member under ``prefix`` (verbatim path mirror).
+
+    The packed-only sibling of :func:`stage_hub_prefix` (which unions raw +
+    packed itself); raises FileNotFoundError when no pack covers ``prefix``.
+    """
+    tok = token or os.environ.get("HF_TOKEN")
+    from huggingface_hub import HfApi
+
+    api = HfApi(token=tok)
+    members = packed_members_under_path(
+        api, repo_id, prefix, repo_type=repo_type, revision=revision, token=tok
+    )
+    if not members:
+        raise FileNotFoundError(f"no packed members under {repo_id}@{revision or 'main'}:{prefix}")
+    return _stage_packed_members(
+        repo_id, members, Path(dest_dir), repo_type=repo_type, revision=revision, token=tok
+    )
+
+
+@dataclass(frozen=True)
+class RepoFileEntry:
+    """One file from a scoped rich tree walk (#2321 repack census unit)."""
+
+    path: str
+    size: int | None
+    is_lfs: bool
+    lfs_sha256: str | None  # content sha256 (LFS files only)
+    blob_id: str | None  # git blob sha1 (non-LFS: sha1 of the content blob)
+
+
+def list_repo_repofiles_under_path(
+    api,
+    repo_id: str,
+    path: str,
+    *,
+    repo_type: str = "dataset",
+    revision: str | None = None,
+) -> list[RepoFileEntry]:
+    """Rich scoped walk: path/size/LFS-ness/lfs-sha256/blob_id per file (#2321).
+
+    The census sibling of :func:`list_hf_entries_under_path`: same ONE
+    server-side scoped ``list_repo_tree`` walk (retried, materialized inside
+    the retry thunk — a cursor-page 504 raises DURING iteration, #794/#658),
+    but returning the anchor fields the repack driver's census + landed-state
+    probes need (A6: a non-LFS ``blob_id`` is the git blob sha1 of the
+    content; an LFS entry's ``lfs_sha256`` is the content sha256). An absent
+    path returns []; an empty ``path`` raises ValueError (a falsy path would
+    silently full-list the ~1M-file data repo). Sorted by path.
+    """
+    from huggingface_hub.hf_api import RepoFile
+    from huggingface_hub.utils import EntryNotFoundError
+
+    normalized = path.strip("/")
+    if not normalized:
+        raise ValueError("list_repo_repofiles_under_path: empty path (would full-list the repo)")
+
+    def _list() -> list[RepoFileEntry]:
+        out: list[RepoFileEntry] = []
+        for entry in api.list_repo_tree(
+            repo_id=repo_id,
+            repo_type=repo_type,
+            revision=revision,
+            recursive=True,
+            path_in_repo=normalized,
+        ):
+            if not isinstance(entry, RepoFile):
+                continue
+            lfs = getattr(entry, "lfs", None)
+            out.append(
+                RepoFileEntry(
+                    path=entry.path,
+                    size=getattr(entry, "size", None),
+                    is_lfs=lfs is not None,
+                    lfs_sha256=getattr(lfs, "sha256", None) if lfs is not None else None,
+                    blob_id=getattr(entry, "blob_id", None),
+                )
+            )
+        return out
+
+    try:
+        entries = retry_transient(_list, what=f"list_repo_tree({repo_id}:{normalized})")
+    except EntryNotFoundError:
+        return []
+    scoped = normalized + "/"
+    # Defensive client-side filter (same rationale as list_hf_entries_under_path).
+    return sorted(
+        (e for e in entries if e.path == normalized or e.path.startswith(scoped)),
+        key=lambda e: e.path,
+    )
 
 
 def list_hub_datasets(
