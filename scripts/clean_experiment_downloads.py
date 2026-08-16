@@ -196,6 +196,7 @@ import stat
 import subprocess
 import sys
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -1638,12 +1639,50 @@ class _ScratchVerdictCache:
             pass
 
 
+def _overlay_member(rel: str, overlay_paths: tuple[str, ...]) -> str | None:
+    """The overlay path owning candidate-relative ``rel`` (#2147 D9), or
+    None. Membership is "/"-joined path-prefix; a FILE sitting AT the
+    overlay path itself is a member too (the nested-repo probe then KEEPs
+    the tree as ``overlay-not-a-repo``)."""
+    if not overlay_paths:
+        return None
+    for op in overlay_paths:
+        if rel == op or rel.startswith(op + "/"):
+            return op
+    return None
+
+
+def _overlay_nested_repo_probe(nested: Path) -> str | None:
+    """#2147 D9 nested-repo checks for a ``WORKING_TREE_OVERLAY_PATHS`` copy
+    inside a slurm-src candidate: the overlay must be a real nested git
+    CLONE (its own ``.git`` DIRECTORY), its tree clean, and its HEAD
+    reachable from a surviving ref of the NESTED repo itself. Returns None
+    when all hold, else a keep-reason slug (fail-toward-keep). An overlay
+    that is NOT a git repo KEEPs the whole tree — deliberately NO silent
+    fallback to the outer-odb proof (plan #2147 D9)."""
+    kind, _admin = _git_dir_kind(nested)
+    if kind != "clone":
+        return "overlay-not-a-repo"
+    status = _git(["status", "--porcelain"], cwd=nested)
+    if status is None or status.returncode != 0:
+        return "overlay-probe-failed"
+    if status.stdout.strip():
+        return "overlay-dirty"
+    head = _git(["rev-parse", "HEAD"], cwd=nested)
+    if head is None or head.returncode != 0:
+        return "overlay-probe-failed"
+    if not _reachable_in_main(nested, head.stdout.strip()):
+        return "overlay-head-unreachable"
+    return None
+
+
 def _git_blob_reproducibility_evidence(
     cand: Path,
     *,
     main_repo: Path,
     full_stats: dict,
     verdict_cache: _ScratchVerdictCache | None = None,
+    overlay_paths: tuple[str, ...] = (),
 ) -> tuple[str | None, dict]:
     """Per-file git-reproducibility proof for a scratch candidate (#2127).
 
@@ -1660,7 +1699,23 @@ def _git_blob_reproducibility_evidence(
     verify-cap -> per-file blob walk (exempt dirs pruned; symlinks skipped;
     any non-regular file aborts; small-text tolerance per
     :data:`_SCRATCH_TOLERATED_EXTS`, never under a ``store``/
-    ``eval_results`` component) -> batched odb existence probe."""
+    ``eval_results`` component) -> batched odb existence probe.
+
+    ``overlay_paths`` (#2147 D9, default empty = pre-#2147 behavior
+    byte-identical): files whose candidate-relative path lies under a named
+    overlay path (``backends.slurm.WORKING_TREE_OVERLAY_PATHS`` copies —
+    working-tree-only nested repos rsync'd into slurm-src staging trees,
+    absent from the OUTER committed tree) are proven against the NESTED
+    repo's OWN odb instead of ``main_repo``'s, ADDITIVELY requiring the
+    nested tree clean + nested HEAD reachable from the nested repo's own
+    surviving refs (:func:`_overlay_nested_repo_probe`); an overlay that is
+    not a git repo KEEPs — never a fallback to the outer proof. The
+    ``under_durable`` no-tolerance rule and the outer-odb proof for
+    non-overlay paths are UNCHANGED (strictly additive). Nested-state
+    residual: overlay keep slugs are non-cacheable (recomputed every run),
+    and nested ``.git`` writes bump ``newest_mtime`` (exempt dirs included
+    in the cache key), so a cached PASS is invalidated by nested ref
+    changes the same way tree writes invalidate it."""
     detail: dict = {
         "reason": None,
         "first_unverified": None,
@@ -1703,7 +1758,8 @@ def _git_blob_reproducibility_evidence(
     if full_stats["nonexempt_bytes"] > _scratch_verify_cap_bytes():
         return _keep("over-verify-cap")
     walk_errors: list[OSError] = []
-    entries: list[tuple[str, str]] = []  # (sha, candidate-relative path)
+    entries: list[tuple[str, str]] = []  # (sha, cand-relative path) — outer-odb proofs
+    overlay_entries: dict[str, list[tuple[str, str]]] = {}  # #2147 D9 nested-odb proofs
     tolerated_bytes = 0
     try:
         for dirpath, dirnames, filenames in os.walk(
@@ -1750,25 +1806,48 @@ def _git_blob_reproducibility_evidence(
                         os.close(fd)
                 if sha is None:
                     return _keep("concurrent-write", rel)
-                entries.append((sha, rel))
+                op = _overlay_member(rel, overlay_paths)
+                if op is not None:
+                    overlay_entries.setdefault(op, []).append((sha, rel))
+                else:
+                    entries.append((sha, rel))
         if walk_errors:
             return _keep("walk-error")
     except Exception:
         return _keep("walk-error")
-    if not entries:
+    n_overlay = sum(len(v) for v in overlay_entries.values())
+    if not entries and not n_overlay:
         if detail["n_tolerated"] > 0:
             return _keep("tolerance-only")
         return _keep("no-verifiable-content")
-    missing = _git_first_missing_blob(main_repo, [sha for sha, _ in entries])
-    if missing is None:
-        return _keep("git-probe-failed")
-    if missing >= 0:
-        return _keep("unverified-file", entries[missing][1])
-    detail["n_verified"] = len(entries)
+    if entries:
+        missing = _git_first_missing_blob(main_repo, [sha for sha, _ in entries])
+        if missing is None:
+            return _keep("git-probe-failed")
+        if missing >= 0:
+            return _keep("unverified-file", entries[missing][1])
+    # #2147 D9: overlay files are proven against the NESTED repo's OWN odb —
+    # additive and STRICTER (nested tree clean + nested HEAD reachable from
+    # the nested repo's own surviving refs); an overlay that is not a git
+    # repo KEEPs — deliberately NO fallback to the outer-odb proof.
+    for op in sorted(overlay_entries):
+        nested = cand / Path(op)
+        slug = _overlay_nested_repo_probe(nested)
+        if slug is not None:
+            return _keep(slug, op)
+        op_entries = overlay_entries[op]
+        missing = _git_first_missing_blob(nested, [sha for sha, _ in op_entries])
+        if missing is None:
+            return _keep("git-probe-failed", op)
+        if missing >= 0:
+            return _keep("unverified-file", op_entries[missing][1])
+    detail["n_verified"] = len(entries) + n_overlay
     evidence = (
         f"git-blob-reproducible: {len(entries)} files verified in the main odb, "
         f"{detail['n_tolerated']} small-text tolerated"
     )
+    if n_overlay:
+        evidence += f", {n_overlay} overlay files verified in nested odb(s)"
     if verdict_cache is not None:
         det = dict(detail)
         det["reason"] = "pass"
@@ -1925,6 +2004,182 @@ class ScratchSweepResult:
     total_discovered_bytes: int = 0
 
 
+def _scratch_row_finish(
+    row: dict,
+    disposition: str,
+    reason: str,
+    *,
+    leg: str,
+    apply: bool,
+    floor: int,
+    escalate: bool | None = None,
+    escalation_gate: Callable[[dict, str, str], bool] | None = None,
+) -> None:
+    """Finish one scratch-sweep row (#2127, parameterized for #2147): record
+    disposition + reason on ``row``, print the per-candidate report line, and
+    append the floor-gated sidecar escalation row. ``leg`` prefixes the
+    printed tag and the sidecar ``kind`` — byte-identical to the pre-#2147
+    inline ``_finish`` closure for ``leg="tmp-scratch"``. ``escalation_gate``
+    (#2147 D6) is consulted ONLY when an escalation would fire; returning
+    False suppresses the sidecar append (row + print are unaffected) —
+    ``None`` keeps the tmp-scratch behavior of appending every escalation."""
+    row["disposition"] = disposition
+    row["reason"] = reason
+    size = row.get("bytes", 0)
+    if escalate is None:
+        escalate = size >= floor
+    print(
+        f"  [{leg}] {disposition}: {row['path']} ({size / 1e9:.2f} GB) — {reason}",
+        file=sys.stderr,
+    )
+    if escalate and (escalation_gate is None or escalation_gate(row, disposition, reason)):
+        append_disk_guard_event(
+            {
+                "kind": (
+                    disposition if disposition.startswith(f"{leg}-") else f"{leg}-{disposition}"
+                ),
+                "path": row["path"],
+                "bytes": size,
+                "reason": reason,
+                "evidence": row.get("evidence"),
+            },
+            apply=apply,
+        )
+
+
+def _sweep_scratch_candidate(
+    cand: Path,
+    row: dict,
+    *,
+    leg: str,
+    apply: bool,
+    main_repo: Path,
+    window_start: float,
+    min_age_hours: float,
+    now: float,
+    cache: _ScratchVerdictCache,
+    result: ScratchSweepResult,
+    floor: int,
+    overlay_paths: tuple[str, ...] = (),
+    escalation_gate: Callable[[dict, str, str], bool] | None = None,
+) -> None:
+    """The SHARED per-candidate #2127 verified-scratch pipeline, extracted for
+    #2147 so the slurm-src leg reuses it UNCHANGED: defensive walk -> write
+    recency -> git-blob evidence (verdict-cached; ``overlay_paths`` adds the
+    #2147 D9 nested-repo evidence class) -> reader-atime pin -> live-process
+    probe -> (report) would-reap / (apply) worktree-aware reap.
+
+    The caller creates ``row`` (``path``/``name``/``leg`` keys) and appends
+    it to ``result.rows`` BEFORE calling; keep dispositions are tagged
+    ``{leg}-...`` (``would-reap`` stays unprefixed). Behavior for
+    ``leg="tmp-scratch"``, ``overlay_paths=()``, ``escalation_gate=None`` is
+    byte-identical to the pre-extraction ``sweep_tmp_scratch`` loop body
+    (pinned by ``tests/test_vm_disk_guard_slurm_src.py`` T15)."""
+
+    def _finish(disposition: str, reason: str, *, escalate: bool | None = None) -> None:
+        _scratch_row_finish(
+            row,
+            disposition,
+            reason,
+            leg=leg,
+            apply=apply,
+            floor=floor,
+            escalate=escalate,
+            escalation_gate=escalation_gate,
+        )
+
+    stats = _scratch_walk_stats(cand)
+    if stats is None:
+        _finish(f"{leg}-unverified-kept", "walk error — unreadable tree; KEPT")
+        return
+    row["bytes"] = stats["total_bytes"]
+    row["age_hours"] = round((now - stats["newest_mtime"]) / 3600.0, 2)
+    result.total_discovered_bytes += stats["total_bytes"]
+    if stats["nonregular"] is not None:
+        _finish(
+            f"{leg}-nonregular-kept",
+            f"non-regular file in tree ({stats['nonregular']}); KEPT",
+        )
+        return
+    if stats["newest_mtime"] > window_start:
+        _finish(
+            f"{leg}-recent-kept",
+            f"written within the last {min_age_hours:.0f}h; KEPT (age is only a keep signal)",
+            escalate=False,
+        )
+        return
+    # The overlay kwarg is threaded ONLY when the leg declares overlays
+    # (#2147 D9): the tmp-scratch leg's call shape stays byte-identical to
+    # the pre-extraction loop (T15), incl. for test stubs of the evidence fn.
+    overlay_kwargs = {"overlay_paths": overlay_paths} if overlay_paths else {}
+    evidence, detail = _git_blob_reproducibility_evidence(
+        cand,
+        main_repo=main_repo,
+        full_stats=stats,
+        verdict_cache=cache,
+        **overlay_kwargs,
+    )
+    row["git_class"] = detail.get("git_class")
+    row["n_verified"] = detail.get("n_verified")
+    row["n_tolerated"] = detail.get("n_tolerated")
+    if evidence is None:
+        reason_slug = str(detail.get("reason"))
+        row["first_unverified"] = detail.get("first_unverified")
+        disposition = {
+            "worktree-locked": f"{leg}-worktree-locked-kept",
+            "tolerance-only": f"{leg}-tolerance-only-kept",
+            "nonregular": f"{leg}-nonregular-kept",
+        }.get(reason_slug, f"{leg}-unverified-kept")
+        first = detail.get("first_unverified")
+        _finish(
+            disposition,
+            f"no git-reproducibility proof ({reason_slug}"
+            + (f"; first unverified: {first}" if first else "")
+            + "); KEPT",
+        )
+        return
+    row["evidence"] = evidence
+    atime = stats["newest_reader_atime"]
+    if atime is not None and atime > window_start:
+        row["reader_atime_age_hours"] = round((now - atime) / 3600.0, 2)
+        _finish(
+            f"{leg}-verified-atime-pinned",
+            "verified reproducible, but a non-hardlinked file was READ within the "
+            f"window (atime {row['reader_atime_age_hours']}h ago); KEPT",
+            escalate=True,
+        )
+        return
+    hit = _scratch_live_process_hit(cand)
+    if hit is not None:
+        _finish(f"{leg}-live-process-kept", f"live process holds the tree ({hit}); KEPT")
+        return
+    if not apply:
+        _finish("would-reap", f"evidence: {evidence}", escalate=True)
+        return
+    reaped, reap_reason = _reap_scratch_tree(cand, main_repo=main_repo, verify_started=now)
+    if reaped:
+        result.bytes_freed += stats["total_bytes"]
+        cache.prune(cand)
+        _finish(f"{leg}-reaped", f"{reap_reason}; evidence: {evidence}", escalate=True)
+    elif reap_reason == "reap-recheck-recency":
+        _finish(
+            f"{leg}-reap-aborted-recency",
+            "tree changed between verification and reap; KEPT",
+            escalate=True,
+        )
+    elif reap_reason.startswith("reap-reprobe-"):
+        _finish(
+            f"{leg}-reap-reprobe-kept",
+            "git state flipped since (possibly cached) verification "
+            f"({reap_reason.removeprefix('reap-reprobe-')}); KEPT",
+            escalate=True,
+        )
+    elif reap_reason.startswith("worktree-remove-failed"):
+        _finish(f"{leg}-worktree-remove-failed", f"{reap_reason}; KEPT", escalate=True)
+    else:
+        _finish(f"{leg}-reap-failed", f"{reap_reason}; KEPT", escalate=True)
+
+
 def sweep_tmp_scratch(
     tmp_root: Path | None,
     *,
@@ -1983,122 +2238,19 @@ def sweep_tmp_scratch(
     for cand in _tmp_scratch_candidates(tmp_root):
         row: dict = {"path": str(cand), "name": cand.name, "leg": "tmp-scratch"}
         result.rows.append(row)
-
-        def _finish(
-            disposition: str,
-            reason: str,
-            *,
-            row: dict = row,
-            escalate: bool | None = None,
-        ) -> None:
-            row["disposition"] = disposition
-            row["reason"] = reason
-            size = row.get("bytes", 0)
-            if escalate is None:
-                escalate = size >= floor
-            print(
-                f"  [tmp-scratch] {disposition}: {row['path']} ({size / 1e9:.2f} GB) — {reason}",
-                file=sys.stderr,
-            )
-            if escalate:
-                append_disk_guard_event(
-                    {
-                        "kind": disposition
-                        if disposition.startswith("tmp-scratch-")
-                        else f"tmp-scratch-{disposition}",
-                        "path": row["path"],
-                        "bytes": size,
-                        "reason": reason,
-                        "evidence": row.get("evidence"),
-                    },
-                    apply=apply,
-                )
-
-        stats = _scratch_walk_stats(cand)
-        if stats is None:
-            _finish("tmp-scratch-unverified-kept", "walk error — unreadable tree; KEPT")
-            continue
-        row["bytes"] = stats["total_bytes"]
-        row["age_hours"] = round((now - stats["newest_mtime"]) / 3600.0, 2)
-        result.total_discovered_bytes += stats["total_bytes"]
-        if stats["nonregular"] is not None:
-            _finish(
-                "tmp-scratch-nonregular-kept",
-                f"non-regular file in tree ({stats['nonregular']}); KEPT",
-            )
-            continue
-        if stats["newest_mtime"] > window_start:
-            _finish(
-                "tmp-scratch-recent-kept",
-                f"written within the last {min_age_hours:.0f}h; KEPT (age is only a keep signal)",
-                escalate=False,
-            )
-            continue
-        evidence, detail = _git_blob_reproducibility_evidence(
-            cand, main_repo=main_repo, full_stats=stats, verdict_cache=cache
+        _sweep_scratch_candidate(
+            cand,
+            row,
+            leg="tmp-scratch",
+            apply=apply,
+            main_repo=main_repo,
+            window_start=window_start,
+            min_age_hours=min_age_hours,
+            now=now,
+            cache=cache,
+            result=result,
+            floor=floor,
         )
-        row["git_class"] = detail.get("git_class")
-        row["n_verified"] = detail.get("n_verified")
-        row["n_tolerated"] = detail.get("n_tolerated")
-        if evidence is None:
-            reason_slug = str(detail.get("reason"))
-            row["first_unverified"] = detail.get("first_unverified")
-            disposition = {
-                "worktree-locked": "tmp-scratch-worktree-locked-kept",
-                "tolerance-only": "tmp-scratch-tolerance-only-kept",
-                "nonregular": "tmp-scratch-nonregular-kept",
-            }.get(reason_slug, "tmp-scratch-unverified-kept")
-            first = detail.get("first_unverified")
-            _finish(
-                disposition,
-                f"no git-reproducibility proof ({reason_slug}"
-                + (f"; first unverified: {first}" if first else "")
-                + "); KEPT",
-            )
-            continue
-        row["evidence"] = evidence
-        atime = stats["newest_reader_atime"]
-        if atime is not None and atime > window_start:
-            row["reader_atime_age_hours"] = round((now - atime) / 3600.0, 2)
-            _finish(
-                "tmp-scratch-verified-atime-pinned",
-                "verified reproducible, but a non-hardlinked file was READ within the "
-                f"window (atime {row['reader_atime_age_hours']}h ago); KEPT",
-                escalate=True,
-            )
-            continue
-        hit = _scratch_live_process_hit(cand)
-        if hit is not None:
-            _finish(
-                "tmp-scratch-live-process-kept",
-                f"live process holds the tree ({hit}); KEPT",
-            )
-            continue
-        if not apply:
-            _finish("would-reap", f"evidence: {evidence}", escalate=True)
-            continue
-        reaped, reap_reason = _reap_scratch_tree(cand, main_repo=main_repo, verify_started=now)
-        if reaped:
-            result.bytes_freed += stats["total_bytes"]
-            cache.prune(cand)
-            _finish("tmp-scratch-reaped", f"{reap_reason}; evidence: {evidence}", escalate=True)
-        elif reap_reason == "reap-recheck-recency":
-            _finish(
-                "tmp-scratch-reap-aborted-recency",
-                "tree changed between verification and reap; KEPT",
-                escalate=True,
-            )
-        elif reap_reason.startswith("reap-reprobe-"):
-            _finish(
-                "tmp-scratch-reap-reprobe-kept",
-                "git state flipped since (possibly cached) verification "
-                f"({reap_reason.removeprefix('reap-reprobe-')}); KEPT",
-                escalate=True,
-            )
-        elif reap_reason.startswith("worktree-remove-failed"):
-            _finish("tmp-scratch-worktree-remove-failed", f"{reap_reason}; KEPT", escalate=True)
-        else:
-            _finish("tmp-scratch-reap-failed", f"{reap_reason}; KEPT", escalate=True)
     cache.save()
     return result
 
