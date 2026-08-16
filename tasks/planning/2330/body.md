@@ -16,6 +16,8 @@ goal: 'Compare context-to-answer map quality between Qwen2.5-7B-Instruct and Qwe
   per-layer ridge maps fit at 5k and 10k training generations per model, compared
   on held-out R2 (plus ceiling-normalized secondary, identity+bias/kNN companions,
   shuffled-pairing null).'
+relates_to:
+- spec-context-as-vector
 ---
 ## Goal
 
