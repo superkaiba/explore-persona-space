@@ -508,7 +508,12 @@ def test_mirror_append_failure_row_lands_uncounted_replay_never_repairs_mirror(
 
     The round-2 fake (the test above) patches ``raise_concern`` wholesale
     and structurally cannot expose this — the split lives INSIDE the
-    library call."""
+    library call.
+
+    Scope: primary/non-routed mode (the fixture's repo root is a
+    primary-style checkout on main); in ROUTED mode a fresh-process
+    replay converges row AND mirror after the resolver re-sync discards
+    the uncommitted row (see module docstring)."""
     repo, tw, tid = concerns_task
     mb = tmp_path / "mb.md"
     mb.write_text(_THREE_ROWS)

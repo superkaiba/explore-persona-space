@@ -3305,10 +3305,10 @@ retries). VALIDATION is all-or-nothing; PERSISTENCE is per-row — a
 mid-loop operational failure (exit 4) leaves a PARTIAL ledger whose
 printed count is COMPLETED calls only: the library appends the
 ledger row BEFORE the events.jsonl mirror + commit, so the failing row
-may itself be in `concerns.jsonl`, uncommitted until a later concern
-append commits the file by path. The idempotent re-run here and the
-resume recovery below converge the LEDGER — a missing events.jsonl
-mirror (a decision-inert breadcrumb) is never restored.
+may itself sit in `concerns.jsonl` uncommitted. The idempotent re-run
+here and the resume recovery below converge the LEDGER; the
+decision-inert events.jsonl mirror's fate is mode-dependent (forwarder
+module docstring).
 
 **Resume recovery (crash between marker post and persist — #2326).**
 At ANY resume/decision point where a current-round `epm:<kind>-codex v<n>`
