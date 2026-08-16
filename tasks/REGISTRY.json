@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2331,
+  "highest_id": 2332,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10292,6 +10292,13 @@
       "path": "tasks/proposed/2331",
       "status": "proposed",
       "title": "Fix stale fellows-first auto-default text in critic-lens-reference.md + plan-compute-sizing.md (live order is runpod-first, #2054)"
+    },
+    "2332": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2332",
+      "status": "proposed",
+      "title": "Repack small-file HF prefixes to reclaim ~610k file-count slots without breaking readers"
     },
     "234": {
       "has_clean_result": true,
