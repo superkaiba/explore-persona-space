@@ -22,7 +22,7 @@
 
 ## Claude code-review misses (FAIL-leaning calibration)
 
-- [Claude proves a dry_run/smoke gate-skip is SAFE but skips Step 0.71 enumeration](feedback_claude_verifies_downgrade_safety_skips_071_enumeration.md) — round-added downgrade unnamed in the blind-spot enumeration = rule-pinned BLOCKING (#2165); safety + enumeration findings are compatible (#2321 r2)
+- [Claude proves a dry_run/smoke gate-skip is SAFE but skips Step 0.71 enumeration](feedback_claude_verifies_downgrade_safety_skips_071_enumeration.md) — unenumerated downgrade OR round-authored false 'only N gates' summary = rule-pinned BLOCKING (#2165); safety+enumeration compatible (#2321 r2, r3)
 
 - [Persist-before-reduce: ordering not existence; derived expected-set ≠ hollow gate](feedback_persist_before_reduce_ordering_vs_existence.md) — Claude counts a site persisted because the file exists (write AFTER remote judge) (#906)
 - [Claude misses when the plan's HEADLINE decision statistic isn't produced](feedback_claude_misses_headline_decision_statistic_not_produced.md) — Claude PASSes verifying OTHER plan items while never checking the pre-registered headline estimator is actually computed + persisted (#841, #922)

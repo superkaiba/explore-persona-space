@@ -1,6 +1,6 @@
 ---
 name: claude-verifies-downgrade-safety-skips-071-enumeration
-description: "Claude reviewers prove a round-added dry_run/smoke gate-skip is mutation-SAFE but never run Step 0.71's enumeration check — the #2165 smoke-blind-spot FAIL class; verify the branch is round-added (parent diff) and the enumeration text names it (#2321 r2)"
+description: "Claude reviewers prove a dry_run/smoke gate-skip is mutation-SAFE but never hold the #2165 disclosure line — round-added branch unenumerated (r2) OR round-authored affirmative summary falsified by pre-existing branches (r3); verify against the full branch sweep (#2321 r2+r3)"
 metadata:
   type: feedback
 ---
@@ -36,3 +36,21 @@ doc nit, even when the safety analysis is correct (the fix is one
 docstring block + report mirror; cheap bounce, rule-pinned). Claude-side
 mutation-safety findings and the Codex enumeration finding are COMPATIBLE,
 not contradictory.
+
+**Recurrence + refinement (#2321 r3):** the r3 fix round enumerated the
+ordered items (g)/(h) but AUTHORED a new affirmative summary ("skips the
+two Hub-probe gates named in (g)/(h)") that PRE-EXISTING dry-run branches
+falsify — the pre-issue admission probe (`:1297` early-return before
+`probe_unit_state` + drift/mixed/content-mismatch/window-drift aborts +
+I18/I8 interlocks) and the #1739 liveness SystemExit/defer gate (`:2669`)
+are also skipped. Claude g2 again ran the safety-not-disclosure argument
+("raise LOUD on any live launch — disclosure not owed") — even after r2
+was upheld against exactly that — and even LISTED the omitted sites in a
+no-action minor. Upheld Codex FAIL again. Refinement to step (1): a
+pre-existing branch does not trigger 0.71 by itself, but a ROUND-AUTHORED
+affirmative claim in the enumeration (a count, "only", "the two …", or an
+empty-form sentence) puts the module's WHOLE `dry_run`/`smoke` branch
+inventory in scope — sweep all conditional sites and check the claim
+against the full table before crediting closure. A Claude minor that
+states the omitted facts "for completeness, no action" is the tell, not a
+mitigation.
