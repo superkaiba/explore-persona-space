@@ -37,3 +37,17 @@ artifact).
 diff each cited statistic against the committed artifact, not the
 parent plan prose. Related: [[trap-turn-boundary-count-arithmetic]],
 [[trap-value-constrained-donor-null-combinatorics]].
+
+**Validated remedy shapes (round-2 confirmed on the same rerun):**
+(1) Holm-m fix = register analysis-time m (the code's `len(pvals)` over
+testable n>=12 cells; `SURVIVAL_FLOOR=12` at issue2162_analysis.py L76,
+testable gate L484) with 31/15/28 as constructional CEILINGS — NOT a
+fixed-m fork: fixed m makes the child strictly more conservative than
+the parent's realized correction, a second changed variable in a
+transfer read. Exclusion keys on n (pair survival), not the test
+statistic, so analysis-time m carries no selection bias; require the
+realized-m gap reported wherever cross-run verdicts are compared.
+(2) An aggregate bank-level separation HALT demotes to ADVISORY on a
+transfer question (per-cell exclusions keep survivors interpretable;
+"which types fail" IS the answer), retaining only a justified
+instrument-broken catastrophic floor (e.g. <25% cells separable).
