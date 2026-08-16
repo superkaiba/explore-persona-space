@@ -365,6 +365,30 @@ Also reuse the prior-round concern IDS from the verdict's own `## Concerns to
 persist` lines as the closure-item ids (the #1092-r4 pseudo-ID pattern, ids
 pre-minted by Codex itself).
 
+**Mechanism-corrected acceptance round (#2147 cr4, 2026-08-16):** when the
+prior Codex FAIL was accepted with its SEVERITY credited but its MECHANISM
+DISPROVEN by orchestrator reproduction (r3 blamed C-quoted porcelain; git
+2.34.1 emits raw, only newline splits), compose three extra blocks: (a) a
+"severity RIGHT, mechanism WRONG" section crediting the call and naming the
+disproven mechanism explicitly, with a ban on re-raising it; (b) an
+ESTABLISHED FACTS block (orchestrator-verified-by-reproduction, do NOT
+re-derive/contradict without a reproduction) sourced from the inlined
+progress notes; (c) an instruction to read the prior verdict's Evidence+Fix
+CONTRACT "through the correction" — the binding content is the consequence
+(registered worktree reaches rmtree), never the literal prescribed fix (dead
+code on this git version). Pair with a both-directions residual-claim
+discipline when the task burned both ways (new Critical needs a reproduction
+construction; "unreachable" dismissal needs the blocking line named). Also
+(#2147 cr4): a POSTED epm:code-review-codex marker body can carry the
+"Codex session ID" footer — strip after the FIRST closing tag even when
+fetching from events.jsonl, not only from /tmp output files. FOLD ROUNDS
+(multiple impl markers, one review round): Step 0.5 subject = the HIGHEST
+marker; inline the intermediate markers in their own "FOLD-ROUND r<k> MARKER
+BODY (context)" envelopes (do-not-score-shape, intermediate residuals are not
+open findings), and adjudicate Step 4.6 across the fold — a terse "same N
+selector hit files" by-reference line in the head marker is PRESENT-BUT-TERSE
+when an earlier fold marker carries the verbatim list.
+
 **Acceptance-impossible round shape (external mid-task population change;
 #2147 cr3, 2026-08-16):** when the plan's live acceptance became IMPOSSIBLE
 (an external actor destroyed the population it was keyed on) and the task
