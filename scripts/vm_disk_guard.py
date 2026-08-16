@@ -1107,14 +1107,19 @@ DEFAULT_SLURM_SRC_ROOT = Path.home() / ".eps-slurm-src"  # env EPS_SLURM_SRC_ROO
 
 def slurm_src_root() -> Path:
     """The SLURM-lane staging root (#2147 tier (g)) — env
-    ``EPS_SLURM_SRC_ROOT``, blank/unset -> ``~/.eps-slurm-src``: the SAME
-    name + precedence as the writer
-    (``backends.slurm.materialize_branch_src``), so the janitor always
-    watches the tree the SLURM lanes populate. main()-ONLY opt-in (the
-    ``production_tmp_root()`` hermeticity pattern; the source-scan test
-    pins this symbol) — ``run_guard`` never calls it."""
-    raw = os.environ.get("EPS_SLURM_SRC_ROOT", "").strip()
-    return Path(raw) if raw else DEFAULT_SLURM_SRC_ROOT
+    ``EPS_SLURM_SRC_ROOT``, falsy/unset -> ``~/.eps-slurm-src``: EXACTLY the
+    writer's expression (``backends.slurm.materialize_branch_src``:
+    ``Path(os.environ.get("EPS_SLURM_SRC_ROOT") or (Path.home() / ...))``),
+    so the janitor always watches the tree the SLURM lanes populate.
+    Review round 2 (minor): the reaper deliberately mirrors the writer's
+    precedence VERBATIM — no ``.strip()`` or other normalization the writer
+    does not apply, so a value the writer treats as a root is never mapped
+    to a different reaper root (``sweep_slurm_src``'s
+    ``_assert_safe_slurm_src_root`` rejects nonsense values loudly).
+    main()-ONLY opt-in (the ``production_tmp_root()`` hermeticity pattern;
+    the source-scan test pins this symbol) — ``run_guard`` never calls
+    it."""
+    return Path(os.environ.get("EPS_SLURM_SRC_ROOT") or DEFAULT_SLURM_SRC_ROOT)
 
 
 def clean_slurm_src(
@@ -1157,6 +1162,14 @@ def clean_slurm_src(
         verdict_cache_path=verdict_cache_path,
         escalation_state_path=escalation_state_path,
     )
+    if sweep.skip_reason is not None:
+        # #2147 review round 2 M1: the sweep did not ENUMERATE (absent
+        # staging root) — surface the tier as SKIPPED with the sweep's own
+        # reason instead of an indistinguishable empty result. (Any other
+        # enumeration failure RAISES inside sweep_slurm_src.)
+        res.skipped = True
+        res.skip_reason = sweep.skip_reason
+        return res
     res.bytes_freed = sweep.bytes_freed
     res.total_discovered_bytes = sweep.total_discovered_bytes
     res.scratch_candidates = list(sweep.rows)

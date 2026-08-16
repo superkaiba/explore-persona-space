@@ -499,19 +499,26 @@ def disk_guard_sidecar_path() -> Path:
     return _resolution_root() / DISK_GUARD_SIDECAR_REL
 
 
-def append_disk_guard_event(event: dict, *, apply: bool = True) -> None:
+def append_disk_guard_event(event: dict, *, apply: bool = True) -> bool:
     """Append one JSON line to the shared disk-guard sidecar (fail-soft).
 
     Used by every VM-disk escalation path so all disk events share one stream.
     A ``ts`` is stamped if the caller did not supply one. The parent dir is
     created idempotently. A write failure is logged loudly but NEVER raises —
     the sidecar is observability, and losing one escalation row must not crash
-    the cleanup / guard pass that emits it. ``apply=False`` reports only."""
+    the cleanup / guard pass that emits it. ``apply=False`` reports only.
+
+    Returns whether the caller's durable-emission obligation is DISCHARGED:
+    ``True`` on a successful append (or in report-only mode, where no durable
+    row is owed), ``False`` when the append FAILED — so a dedup/suppression
+    layer (#2147 D6 / review round 2 M2) can decline to record the event as
+    "alerted" and re-alert on the next pass instead of silently suppressing
+    an escalation that never landed."""
     row = {"ts": datetime.now().astimezone().isoformat(), **event}
     line = json.dumps(row)
     if not apply:
         print(f"  [report-only] would append disk-guard event: {line[:160]}", file=sys.stderr)
-        return
+        return True
     dest = disk_guard_sidecar_path()
     try:
         dest.parent.mkdir(parents=True, exist_ok=True)
@@ -519,6 +526,8 @@ def append_disk_guard_event(event: dict, *, apply: bool = True) -> None:
             fh.write(line + "\n")
     except OSError as exc:  # pragma: no cover - fail-soft I/O guard
         print(f"  WARNING: appending disk-guard event failed: {exc}", file=sys.stderr)
+        return False
+    return True
 
 
 def _data_root() -> Path:
@@ -1661,27 +1670,62 @@ def _overlay_member(rel: str, overlay_paths: tuple[str, ...]) -> str | None:
     return None
 
 
-def _overlay_nested_repo_probe(nested: Path) -> str | None:
+def _overlay_nested_repo_probe(nested: Path, *, surviving_repo: Path) -> str | None:
     """#2147 D9 nested-repo checks for a ``WORKING_TREE_OVERLAY_PATHS`` copy
-    inside a slurm-src candidate: the overlay must be a real nested git
-    CLONE (its own ``.git`` DIRECTORY), its tree clean, and its HEAD
-    reachable from a surviving ref of the NESTED repo itself. Returns None
-    when all hold, else a keep-reason slug (fail-toward-keep). An overlay
-    that is NOT a git repo KEEPs the whole tree — deliberately NO silent
-    fallback to the outer-odb proof (plan #2147 D9)."""
+    inside a slurm-src candidate (review round 2 C2: the FULL clone-class
+    evidence standard, anchored in the SURVIVING repo). The overlay must be
+    a real nested git CLONE (its own ``.git`` DIRECTORY) with a clean tree,
+    an EMPTY own stash, and EVERY ref tip + HEAD reachable from the refs of
+    ``surviving_repo`` — the main working tree's own copy of the overlay
+    (``<main_repo>/<overlay path>``), the one repo that SURVIVES the reap.
+    Anchoring reachability in the nested copy's own odb would be CIRCULAR:
+    that odb is a ``.git`` DIR inside the tree being deleted, so it dies
+    with the tree and proves nothing about recoverability (the same rule
+    the outer clone class already follows — see
+    :func:`_scratch_git_class_probes`).
+
+    Returns ``None`` when all hold, else a keep-reason slug
+    (fail-toward-keep on every probe failure). An overlay that is NOT a git
+    repo KEEPs the whole tree — deliberately NO silent fallback to the
+    outer-odb proof (plan #2147 D9). Reachability of the (possibly many —
+    the production overlay carries ~900 refs) nested tips is checked in ONE
+    batched ``rev-list`` against the surviving repo's branches/tags/remotes,
+    so there is no ref-fanout cap here."""
     kind, _admin = _git_dir_kind(nested)
     if kind != "clone":
         return "overlay-not-a-repo"
+    if _git_dir_kind(surviving_repo)[0] != "clone":
+        return "overlay-surviving-repo-missing"
     status = _git(["status", "--porcelain"], cwd=nested)
     if status is None or status.returncode != 0:
         return "overlay-probe-failed"
     if status.stdout.strip():
         return "overlay-dirty"
+    stash = _git(["stash", "list"], cwd=nested)
+    if stash is None or stash.returncode != 0:
+        return "overlay-probe-failed"
+    if stash.stdout.strip():
+        return "overlay-stash"
     head = _git(["rev-parse", "HEAD"], cwd=nested)
     if head is None or head.returncode != 0:
         return "overlay-probe-failed"
-    if not _reachable_in_main(nested, head.stdout.strip()):
-        return "overlay-head-unreachable"
+    tips_proc = _git(["for-each-ref", "--format=%(objectname)"], cwd=nested)
+    if tips_proc is None or tips_proc.returncode != 0:
+        return "overlay-probe-failed"
+    tips = sorted({*tips_proc.stdout.split(), head.stdout.strip()})
+    # One batched reachability probe in the SURVIVING repo: rev-list
+    # enumerates ancestors of the nested tips minus ancestors of every
+    # surviving ref — empty output (rc 0) iff ALL tips are reachable. A
+    # nonzero rc (an object absent from the surviving odb is a "bad
+    # revision") or any output line means at least one nested-only ref.
+    reach = _git(
+        ["rev-list", "--max-count=1", *tips, "--not", "--branches", "--tags", "--remotes"],
+        cwd=surviving_repo,
+    )
+    if reach is None:
+        return "overlay-probe-failed"
+    if reach.returncode != 0 or reach.stdout.strip():
+        return "overlay-unpushed-ref"
     return None
 
 
@@ -1714,11 +1758,20 @@ def _git_blob_reproducibility_evidence(
     byte-identical): files whose candidate-relative path lies under a named
     overlay path (``backends.slurm.WORKING_TREE_OVERLAY_PATHS`` copies —
     working-tree-only nested repos rsync'd into slurm-src staging trees,
-    absent from the OUTER committed tree) are proven against the NESTED
-    repo's OWN odb instead of ``main_repo``'s, ADDITIVELY requiring the
-    nested tree clean + nested HEAD reachable from the nested repo's own
-    surviving refs (:func:`_overlay_nested_repo_probe`); an overlay that is
-    not a git repo KEEPs — never a fallback to the outer proof. The
+    absent from the OUTER committed tree) are proven against the SURVIVING
+    overlay repo — the main working tree's own copy at
+    ``main_repo / <overlay path>`` — under the FULL clone-class standard
+    (clean tree + empty own stash + every ref tip and HEAD reachable in the
+    surviving repo; :func:`_overlay_nested_repo_probe`, review round 2 C2:
+    the nested copy's own odb dies with the tree, so anchoring there was
+    circular). Overlay MEMBERSHIP is classified BEFORE the small-text
+    tolerance and BEFORE exemption/symlink skips are allowed to hide the
+    overlay (round 2 C3): no file under a claimed overlay is ever tolerated
+    into the outer proof, and every DECLARED overlay path present on disk
+    is validated as a nested repo even when the walk hashed nothing under
+    it (only tolerated logs / exempt content / symlinks / an empty dir) —
+    an overlay that is not a positively-established nested git repo KEEPs
+    the whole tree; never a fallback to the outer proof. The
     ``under_durable`` no-tolerance rule and the outer-odb proof for
     non-overlay paths are UNCHANGED (strictly additive). Nested-state
     residual: overlay keep slugs are non-cacheable (recomputed every run),
@@ -1754,6 +1807,25 @@ def _git_blob_reproducibility_evidence(
     probe = _scratch_git_class_probes(cand, kind, admin, main_repo=main_repo)
     if probe is not None:
         return _keep(probe)
+    # #2147 review round 2 C3: every DECLARED overlay path PRESENT on disk is
+    # validated as a nested repo BEFORE any other disposition — including the
+    # empty-tree carve-out, the tolerance-only / no-verifiable-content keeps,
+    # and the outer blob proof. Presence is keyed on the directory entry
+    # itself (lstat), NOT on whether the walk hashed any file under it, so a
+    # non-git overlay holding only tolerated logs, exempt content, symlinks,
+    # or nothing at all still KEEPs the tree (fail-toward-keep; a probe
+    # OSError keeps as a walk error).
+    for op in overlay_paths:
+        nested = cand / Path(op)
+        try:
+            nested.lstat()
+        except FileNotFoundError:
+            continue  # overlay not materialized in this tree — nothing to prove
+        except OSError:
+            return _keep("walk-error", op)
+        slug = _overlay_nested_repo_probe(nested, surviving_repo=main_repo / Path(op))
+        if slug is not None:
+            return _keep(slug, op)
     if (
         full_stats["n_regular"] == 0
         and full_stats["nonregular"] is None
@@ -1794,9 +1866,15 @@ def _git_blob_reproducibility_evidence(
                     return _keep("nonregular", rel)
                 if _scratch_is_exempt_rel((*rel_dir_parts, name)):
                     continue  # rebuildable tool state (root ``.git`` pointer file)
+                # #2147 review round 2 C3: overlay membership is classified
+                # BEFORE the small-text tolerance — a file under a claimed
+                # overlay is NEVER tolerated into the outer proof; it is
+                # hashed and proven against the surviving overlay repo.
+                op = _overlay_member(rel, overlay_paths)
                 ext = os.path.splitext(name)[1].lower()
                 if (
-                    ext in _SCRATCH_TOLERATED_EXTS
+                    op is None
+                    and ext in _SCRATCH_TOLERATED_EXTS
                     and not under_durable
                     and lst.st_size <= SCRATCH_TOLERATED_FILE_MAX_BYTES
                     and tolerated_bytes + lst.st_size <= SCRATCH_TOLERATED_TOTAL_MAX_BYTES
@@ -1815,7 +1893,6 @@ def _git_blob_reproducibility_evidence(
                         os.close(fd)
                 if sha is None:
                     return _keep("concurrent-write", rel)
-                op = _overlay_member(rel, overlay_paths)
                 if op is not None:
                     overlay_entries.setdefault(op, []).append((sha, rel))
                 else:
@@ -1835,17 +1912,16 @@ def _git_blob_reproducibility_evidence(
             return _keep("git-probe-failed")
         if missing >= 0:
             return _keep("unverified-file", entries[missing][1])
-    # #2147 D9: overlay files are proven against the NESTED repo's OWN odb —
-    # additive and STRICTER (nested tree clean + nested HEAD reachable from
-    # the nested repo's own surviving refs); an overlay that is not a git
-    # repo KEEPs — deliberately NO fallback to the outer-odb proof.
+    # #2147 D9 (round 2 C2): overlay files are proven against the SURVIVING
+    # overlay repo's odb (``main_repo / <overlay path>`` — the copy that
+    # outlives the reap; the nested copy's own odb dies with the tree). The
+    # nested repos themselves were already validated by the presence loop
+    # above (clone class + clean + stash-empty + all tips/HEAD reachable in
+    # the surviving repo); deliberately NO fallback to the outer-odb proof.
     for op in sorted(overlay_entries):
-        nested = cand / Path(op)
-        slug = _overlay_nested_repo_probe(nested)
-        if slug is not None:
-            return _keep(slug, op)
+        surviving = main_repo / Path(op)
         op_entries = overlay_entries[op]
-        missing = _git_first_missing_blob(nested, [sha for sha, _ in op_entries])
+        missing = _git_first_missing_blob(surviving, [sha for sha, _ in op_entries])
         if missing is None:
             return _keep("git-probe-failed", op)
         if missing >= 0:
@@ -1856,7 +1932,7 @@ def _git_blob_reproducibility_evidence(
         f"{detail['n_tolerated']} small-text tolerated"
     )
     if n_overlay:
-        evidence += f", {n_overlay} overlay files verified in nested odb(s)"
+        evidence += f", {n_overlay} overlay files verified in the surviving overlay repo(s)"
     if verdict_cache is not None:
         det = dict(detail)
         det["reason"] = "pass"
@@ -1961,13 +2037,24 @@ def _reap_scratch_tree(cand: Path, *, main_repo: Path, verify_started: float) ->
     probe = _scratch_git_class_probes(cand, kind, admin, main_repo=main_repo)
     if probe is not None:
         return False, f"reap-reprobe-{probe}"
-    if kind == "worktree" and admin is not None and _worktree_admin_of_main(admin, main_repo):
+    if kind == "worktree":
+        # #2147 review round 2 C1: dispatch SOLELY on the freshly proven
+        # ``kind``. The class re-probe above already required a non-None
+        # admin dir REGISTERED to ``main_repo`` (else it kept with
+        # ``foreign-worktree``), so re-running the registration lookup here
+        # would add nothing — except a transient failure mode that would
+        # fall through to ``shutil.rmtree`` on a REGISTERED worktree. With
+        # this dispatch the only reachable outcomes for the worktree class
+        # are a checked ``git worktree remove --force`` or a KEEP;
+        # ``rmtree`` is structurally unreachable.
         proc = _git(["worktree", "remove", "--force", str(cand)], cwd=main_repo, timeout=600.0)
         if proc is None or proc.returncode != 0:
-            try:
-                locked = (admin / "locked").exists()
-            except OSError:
-                locked = False
+            locked = False
+            if admin is not None:
+                try:
+                    locked = (admin / "locked").exists()
+                except OSError:
+                    locked = False  # message-detail only; the KEEP stands regardless
             err = "timeout" if proc is None else (proc.stderr.strip() or "unknown error")
             tag = "locked" if locked else "remove-failed"
             return False, f"worktree-remove-failed ({tag}: {err.splitlines()[-1] if err else ''})"
@@ -2006,11 +2093,18 @@ def _tmp_scratch_candidates(tmp_root: Path) -> list[Path]:
 
 @dataclass
 class ScratchSweepResult:
-    """Outcome of one :func:`sweep_tmp_scratch` run (#2127)."""
+    """Outcome of one :func:`sweep_tmp_scratch` run (#2127).
+
+    ``skip_reason`` (#2147 review round 2 M1) is set when the sweep did NOT
+    enumerate its root (e.g. the slurm-src staging root does not exist) —
+    an explicit signal distinct from "enumerated and found zero
+    candidates", so the tier adapter can surface a skipped tier instead of
+    silently reporting an empty sweep."""
 
     rows: list[dict] = field(default_factory=list)
     bytes_freed: int = 0
     total_discovered_bytes: int = 0
+    skip_reason: str | None = None
 
 
 def _scratch_row_finish(
@@ -2022,16 +2116,20 @@ def _scratch_row_finish(
     apply: bool,
     floor: int,
     escalate: bool | None = None,
-    escalation_gate: Callable[[dict, str, str], bool] | None = None,
+    escalation_gate: Callable[[dict, str, str], Callable[[], None] | None] | None = None,
 ) -> None:
     """Finish one scratch-sweep row (#2127, parameterized for #2147): record
     disposition + reason on ``row``, print the per-candidate report line, and
     append the floor-gated sidecar escalation row. ``leg`` prefixes the
     printed tag and the sidecar ``kind`` — byte-identical to the pre-#2147
     inline ``_finish`` closure for ``leg="tmp-scratch"``. ``escalation_gate``
-    (#2147 D6) is consulted ONLY when an escalation would fire; returning
-    False suppresses the sidecar append (row + print are unaffected) —
-    ``None`` keeps the tmp-scratch behavior of appending every escalation."""
+    (#2147 D6) is consulted ONLY when an escalation would fire; it returns
+    ``None`` to SUPPRESS the sidecar append (row + print are unaffected) or
+    a COMMIT thunk invoked ONLY AFTER :func:`append_disk_guard_event`
+    reports the durable emission landed (review round 2 M2 — recording the
+    dedup timestamp before the append would let a FAILED append suppress
+    the alert for the whole re-alert window). ``None`` for the gate keeps
+    the tmp-scratch behavior of appending every escalation."""
     row["disposition"] = disposition
     row["reason"] = reason
     size = row.get("bytes", 0)
@@ -2041,19 +2139,29 @@ def _scratch_row_finish(
         f"  [{leg}] {disposition}: {row['path']} ({size / 1e9:.2f} GB) — {reason}",
         file=sys.stderr,
     )
-    if escalate and (escalation_gate is None or escalation_gate(row, disposition, reason)):
-        append_disk_guard_event(
-            {
-                "kind": (
-                    disposition if disposition.startswith(f"{leg}-") else f"{leg}-{disposition}"
-                ),
-                "path": row["path"],
-                "bytes": size,
-                "reason": reason,
-                "evidence": row.get("evidence"),
-            },
-            apply=apply,
-        )
+    if not escalate:
+        return
+
+    def _no_commit() -> None:
+        return None
+
+    commit: Callable[[], None] | None = _no_commit
+    if escalation_gate is not None:
+        commit = escalation_gate(row, disposition, reason)
+    if commit is None:
+        return  # deduped within the re-alert window — nothing appended
+    appended = append_disk_guard_event(
+        {
+            "kind": (disposition if disposition.startswith(f"{leg}-") else f"{leg}-{disposition}"),
+            "path": row["path"],
+            "bytes": size,
+            "reason": reason,
+            "evidence": row.get("evidence"),
+        },
+        apply=apply,
+    )
+    if appended:
+        commit()
 
 
 def _sweep_scratch_candidate(
@@ -2133,6 +2241,7 @@ def _sweep_scratch_candidate(
     row["n_tolerated"] = detail.get("n_tolerated")
     if evidence is None:
         reason_slug = str(detail.get("reason"))
+        row["reason_slug"] = reason_slug  # #2147 M2: stable slug for the D6 dedup key
         row["first_unverified"] = detail.get("first_unverified")
         disposition = {
             "worktree-locked": f"{leg}-worktree-locked-kept",
@@ -2177,6 +2286,7 @@ def _sweep_scratch_candidate(
             escalate=True,
         )
     elif reap_reason.startswith("reap-reprobe-"):
+        row["reason_slug"] = reap_reason  # #2147 M2: stable slug for the D6 dedup key
         _finish(
             f"{leg}-reap-reprobe-kept",
             "git state flipped since (possibly cached) verification "
@@ -2339,45 +2449,131 @@ def _load_slurm_src_escalation_state(path: Path) -> dict:
 
 def _save_slurm_src_escalation_state(path: Path, state: dict) -> None:
     """Atomic tmp+rename write of the D6 dedup state; fail-soft (a write
-    failure re-alerts next pass — it never corrupts or blocks the sweep)."""
+    failure re-alerts next pass — it never corrupts or blocks the sweep) but
+    NEVER silent (review round 2 M1): the failure is logged with the path +
+    error so a persistently unwritable state file is diagnosable."""
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         tmp = path.with_name(path.name + ".tmp")
         tmp.write_text(json.dumps(state, sort_keys=True))
         os.replace(tmp, path)
-    except OSError:  # pragma: no cover - fail-soft I/O guard
-        pass
+    except OSError as exc:
+        print(
+            f"  WARNING: writing slurm-src escalation dedup state failed "
+            f"({path}: {exc.__class__.__name__}: {exc}) — the alert will re-fire next pass",
+            file=sys.stderr,
+        )
 
 
 def _slurm_src_escalation_gate(
     state_path: Path | None, *, apply: bool, now: float
-) -> Callable[[dict, str, str], bool]:
+) -> Callable[[dict, str, str], Callable[[], None] | None]:
     """Leg-scoped escalation dedup gate for tier (g) (#2147 D6).
 
     The #2127 scratch core appends a sidecar escalation row on EVERY pass —
     correct for the rare tmp-scratch keeps, but slurm-src STANDING keeps (an
     ACTIVE issue's tree, a head-unreachable worktree) would re-alert every
-    guard run. Dedup key: (path, disposition, size band); re-alert after
-    ``EPS_SLURM_SRC_ESCALATION_REALERT_DAYS`` (default 7 d). Report-only
-    runs and a ``None`` state path never dedup and never write (the printed
-    report stays complete); state IO is fail-soft."""
+    guard run. Dedup key: (path, disposition, stable reason slug, size
+    band) — the reason slug (``row["reason_slug"]``, falling back to the
+    disposition) is IN the key per plan D6 and review round 2 M2: several
+    materially different keep reasons share one disposition
+    (``slurm-src-unverified-kept`` covers head-unreachable / dirty-stash /
+    unverified-file / git-probe-failed), so a disposition-only key would
+    hide a changed reason for the whole re-alert window. Re-alert after
+    ``EPS_SLURM_SRC_ESCALATION_REALERT_DAYS`` (default 7 d).
 
-    def gate(row: dict, disposition: str, reason: str) -> bool:
+    Returns a DECIDE function: ``decide(row, disposition, reason)`` yields
+    ``None`` to suppress (deduped within the window) or a COMMIT thunk the
+    caller invokes ONLY AFTER the sidecar append durably landed (round 2
+    M2 — committing the dedup timestamp before the append would let a
+    failed append suppress the alert for 7 days). Report-only runs and a
+    ``None`` state path never dedup and never write (the printed report
+    stays complete); state IO is fail-soft-but-logged."""
+
+    def _noop() -> None:
+        return None
+
+    def decide(row: dict, disposition: str, reason: str) -> Callable[[], None] | None:
         if not apply or state_path is None:
-            return True
+            return _noop
         band = _slurm_src_escalation_band_gb(int(row.get("bytes", 0) or 0))
-        key = f"{row.get('path')}|{disposition}|{band:g}"
+        slug = str(row.get("reason_slug") or disposition)
+        key = f"{row.get('path')}|{disposition}|{slug}|{band:g}"
         state = _load_slurm_src_escalation_state(state_path)
         prev = state.get(key)
         prev_ts = prev.get("ts") if isinstance(prev, dict) else None
         if isinstance(prev_ts, int | float):
             if now - prev_ts < _slurm_src_escalation_realert_secs():
-                return False
-        state[key] = {"ts": now, "bytes": int(row.get("bytes", 0) or 0)}
-        _save_slurm_src_escalation_state(state_path, state)
-        return True
+                return None
 
-    return gate
+        def commit() -> None:
+            fresh = _load_slurm_src_escalation_state(state_path)
+            fresh[key] = {"ts": now, "bytes": int(row.get("bytes", 0) or 0)}
+            _save_slurm_src_escalation_state(state_path, fresh)
+
+        return commit
+
+    return decide
+
+
+def _assert_safe_slurm_src_root(staging_root: Path) -> None:
+    """#2147 review round 2 C4: fail LOUD (ValueError) unless the
+    canonicalized staging root satisfies the strict staging-root contract —
+    BEFORE any enumeration, status probe, or evidence probe runs.
+
+    ``EPS_SLURM_SRC_ROOT`` is operator input, and tier (g)'s g3 containment
+    is defined RELATIVE to the supplied root: a broad root would turn every
+    top-level ``issue-<N>`` dir under it into a deletion candidate. Rejected
+    unconditionally:
+
+    - a non-absolute root (would resolve against an accidental cwd);
+    - ``/`` or any DIRECT child of ``/`` (``/home``, ``/tmp``, ``/mnt``,
+      ``/root``, ...) — comparably broad anchors;
+    - the current user's home directory, or any ancestor of it;
+    - a filesystem mount point (a whole-disk anchor like ``/mnt/eps-data``);
+    - any git repository / worktree root (a ``.git`` entry exists — a repo
+      checkout is never a staging root).
+
+    The default ``~/.eps-slurm-src`` passes every check. Validation runs on
+    the REALPATH (symlinked misconfigurations cannot dodge it); an OSError
+    while validating is itself a ValueError (fail-closed, never enumerate an
+    unvalidatable root)."""
+    if not staging_root.is_absolute():
+        raise ValueError(
+            f"sweep_slurm_src: staging root {staging_root} is not absolute — refusing to "
+            "sweep a cwd-relative root (check EPS_SLURM_SRC_ROOT)"
+        )
+    real = Path(os.path.realpath(staging_root))
+    if len(real.parts) <= 2:
+        raise ValueError(
+            f"sweep_slurm_src: staging root {staging_root} resolves to {real} — '/' and "
+            "direct children of '/' are never staging roots (check EPS_SLURM_SRC_ROOT)"
+        )
+    home_real = Path(os.path.realpath(Path.home()))
+    if real == home_real or real in home_real.parents:
+        raise ValueError(
+            f"sweep_slurm_src: staging root {staging_root} resolves to {real}, the current "
+            "user's home directory (or an ancestor of it) — refusing (check EPS_SLURM_SRC_ROOT)"
+        )
+    try:
+        if os.path.ismount(real):
+            raise ValueError(
+                f"sweep_slurm_src: staging root {staging_root} resolves to the mount point "
+                f"{real} — a whole-filesystem anchor is never a staging root "
+                "(check EPS_SLURM_SRC_ROOT)"
+            )
+        git_entry = real / ".git"
+        if git_entry.is_symlink() or git_entry.exists():
+            raise ValueError(
+                f"sweep_slurm_src: staging root {staging_root} resolves to {real}, which "
+                "carries a .git entry — a repository root is never a staging root "
+                "(check EPS_SLURM_SRC_ROOT)"
+            )
+    except OSError as exc:
+        raise ValueError(
+            f"sweep_slurm_src: cannot validate staging root {staging_root} "
+            f"({exc.__class__.__name__}: {exc}) — refusing to sweep an unvalidatable root"
+        ) from exc
 
 
 def sweep_slurm_src(
@@ -2398,6 +2594,13 @@ def sweep_slurm_src(
     the SHARED #2127 verified-scratch per-candidate core
     (:func:`_sweep_scratch_candidate`) UNCHANGED, keep reasons re-tagged
     ``slurm-src-*``. Report-only unless ``apply``.
+
+    Round 2 hardening: the ARMED sweep first validates the staging root
+    against the strict staging-root contract
+    (:func:`_assert_safe_slurm_src_root` — ValueError on ``/``, ``$HOME``,
+    repo roots, mount points, relative paths, BEFORE any probe; C4); an
+    ABSENT root is an explicit ``skip_reason`` and any other enumeration
+    failure raises (M1 — never an indistinguishable empty sweep).
 
     Pre-gates (every early exit is a KEEP row; g4/g4b escalate through the
     D6 leg-scoped dedup gate):
@@ -2441,6 +2644,12 @@ def sweep_slurm_src(
             "sweep is armed — a status-blind slurm-src sweep could reap an ACTIVE issue's "
             "staging tree (fail fast, never a silent default)"
         )
+    # Round 2 C4: the staging-root contract is validated BEFORE any
+    # enumeration / status probe / evidence probe — a misconfigured
+    # EPS_SLURM_SRC_ROOT (``/``, ``$HOME``, a repo root, a mount point)
+    # aborts the armed sweep loudly instead of turning ``issue-<N>`` dirs
+    # under a broad anchor into deletion candidates.
+    _assert_safe_slurm_src_root(staging_root)
     if overlay_paths is None:
         overlay_paths = WORKING_TREE_OVERLAY_PATHS
     now = time.time() if now is None else now
@@ -2450,10 +2659,22 @@ def sweep_slurm_src(
     cache = _ScratchVerdictCache(verdict_cache_path)
     floor = _scratch_escalate_floor_bytes()
     gate = _slurm_src_escalation_gate(escalation_state_path, apply=apply, now=now)
+    # Round 2 M1: an absent staging root is an EXPLICIT skip (surfaced via
+    # ``skip_reason``, distinct from "enumerated, zero candidates"); any
+    # OTHER enumeration failure RAISES — a permission/IO error silently
+    # reported as an empty sweep would hide a broken tier indefinitely.
     try:
         names = sorted(os.listdir(staging_root))
-    except OSError:
+    except FileNotFoundError:
+        result.skip_reason = (
+            f"staging root absent: {staging_root} (no SLURM staging trees on this machine)"
+        )
         return result
+    except OSError as exc:
+        raise RuntimeError(
+            f"sweep_slurm_src: cannot enumerate staging root {staging_root} "
+            f"({exc.__class__.__name__}: {exc}) — refusing to report an empty sweep"
+        ) from exc
     root_real = os.path.realpath(staging_root)
     for name in names:
         cand = staging_root / name
@@ -2517,6 +2738,7 @@ def sweep_slurm_src(
         except Exception as exc:  # g4b: the probe ITSELF failed — keep + escalate
             row["bytes"] = _dir_size_bytes(cand)
             result.total_discovered_bytes += row["bytes"]
+            row["reason_slug"] = f"status-probe-{exc.__class__.__name__}"  # M2 dedup slug
             _finish(
                 "slurm-src-status-probe-failed-kept",
                 f"status probe failed for issue {issue_n} ({exc.__class__.__name__}: {exc}); KEPT",
@@ -2527,6 +2749,7 @@ def sweep_slurm_src(
             row["status"] = status
             row["bytes"] = _dir_size_bytes(cand)
             result.total_discovered_bytes += row["bytes"]
+            row["reason_slug"] = f"status-{status or 'unresolved'}"  # M2 dedup slug
             _finish(
                 "slurm-src-active-kept",
                 f"issue {issue_n} status {status or 'unresolved'} not terminal-for-reap; KEPT",
