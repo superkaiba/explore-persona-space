@@ -900,6 +900,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="gate 0b: assert transformers==5.15.0 loads qwen3_5 with 32 resolvable "
         "decoder blocks (pod-side, CPU, tiny from-config model) and exit 0",
     )
+    # UPLOAD_PREFIX_EXEMPT: per-issue pod driver, issue-pinned end-to-end (HF_PREFIX + sentinel + out-root); child issues reuse by forking (2162->2329 convention), never runtime prefix override — the #1005 clobber shape cannot arise from this default.
     ap.add_argument("--out-root", type=Path, default=DEFAULT_OUT_ROOT)
     ap.add_argument("--log-dir", type=Path, default=DEFAULT_LOG_DIR)
     ap.add_argument("--model-id", default=MODEL_ID)
@@ -4227,6 +4228,10 @@ def _import_check() -> None:
     import transformers  # noqa: F401
     from huggingface_hub import HfApi  # noqa: F401
     from scipy.stats import wilcoxon  # noqa: F401
+
+    from explore_persona_space.orchestrate.argcheck import assert_args_attributes_defined
+
+    assert_args_attributes_defined(__file__)
 
     from explore_persona_space.analysis.extraction import (  # noqa: F401
         _resolve_decoder_blocks,

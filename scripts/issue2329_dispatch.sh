@@ -80,6 +80,7 @@ PIDFILE="$LOG_DIR/issue-2329-workers.pid"
 mkdir -p "$LOG_DIR" "$OUT_ROOT"
 
 # Worker count = realized GPU count (derived, never hardcoded).
+# SLURM_GPU_WIDTH_EXEMPT: runpod-pinned pod dispatcher (plan §9 sentinel lane pins the drained runpod lane; never runs on a shared SLURM node, so dedicated-pod nvidia-smi enumeration IS the allocation width).
 NUM_WORKERS="$(nvidia-smi -L 2>/dev/null | grep -c '^GPU ' || true)"
 NUM_WORKERS="${NUM_WORKERS:-0}"
 if [ "$NUM_WORKERS" -lt 1 ]; then

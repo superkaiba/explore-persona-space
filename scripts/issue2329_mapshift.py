@@ -240,7 +240,11 @@ def phase_stage(cfg: Cfg) -> None:
 
     assert cfg.hf_revision, "phase_stage requires a resolved --hf-revision (main->sha)"
     logger.info("[phase=stage] revision=%s -> %s", cfg.hf_revision, cfg.in_root)
-    usage = shutil.disk_usage(cfg.in_root if cfg.in_root.exists() else cfg.in_root.parent)
+    # First run on a fresh box: neither in_root nor its parent exists yet, and
+    # statvfs on a missing path is a raw FileNotFoundError BEFORE staging
+    # begins (U5 smoke catch) — create the staging root, then probe headroom.
+    cfg.in_root.mkdir(parents=True, exist_ok=True)
+    usage = shutil.disk_usage(cfg.in_root)
     logger.info("[stage] dest fs free=%.1f GB", usage.free / 1e9)
     for prefix in (BANK_PREFIX, ANCHOR_PREFIX):
         files = stage_hub_prefix(
@@ -1129,6 +1133,24 @@ def phase_dv3ext(cfg: Cfg, inp: Inputs) -> None:
 # ── phase: digest ─────────────────────────────────────────────────────
 
 
+def persist_work_tensors(cfg: Cfg) -> None:
+    """Plan phase_outputs P7: ``analysis_tensors/mapshift/*`` -> HF, fail-loud.
+
+    The per-layer OOF-pred + shuffled-map-null tensors are the plan-declared
+    persisted class (U5 smoke plan-glob parity catch); reuses the run driver's
+    bounded-retry ``upload_dir_hf`` seam (same posture as the analysis
+    driver's probe-perm-matrix upload).
+    """
+    import issue2329_run as R
+
+    for sub_dir in (cfg.fresh_dir, cfg.shufmap_dir):
+        if sub_dir.is_dir() and any(sub_dir.glob("*.pt")):
+            uploaded = R.upload_dir_hf(
+                sub_dir, f"{R.HF_PREFIX}/analysis_tensors/mapshift/{sub_dir.name}", ["*.pt"]
+            )
+            logger.info("[digest] persisted %d tensors -> %s", len(uploaded), sub_dir.name)
+
+
 def phase_digest(cfg: Cfg, walls: dict[str, float], extra: dict) -> None:
     digest = {
         "leg": cfg.leg,
@@ -1215,6 +1237,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     ap.add_argument("--out-root", type=Path, default=REPO_ROOT / "eval_results/issue_2329/mapshift")
     ap.add_argument("--device", default="cpu")
+    ap.add_argument(
+        "--no-upload",
+        action="store_true",
+        help="skip the digest-phase HF persist of the mapshift work tensors (smoke only; "
+        "production runs MUST upload — plan phase_outputs P7)",
+    )
     return ap.parse_args(argv)
 
 
@@ -1303,6 +1331,13 @@ def main() -> None:
             cfg.cells_sel = [first_surv, other]
         timed("dv3ext", phase_dv3ext, cfg, inp)
     if args.phase in ("all", "digest"):
+        if cfg.leg == "full" and not args.no_upload:
+            persist_work_tensors(cfg)  # plan P7: analysis_tensors/mapshift/* -> HF
+        elif cfg.leg == "full":
+            logger.warning(
+                "[digest] --no-upload: mapshift tensors NOT persisted to HF — "
+                "production runs must upload (plan phase_outputs P7)"
+            )
         if cfg.leg == "pilot" and (cfg.out_root / "fresh_fit_diagnostics.json").exists():
             extra["pilot_projection"] = pilot_projection(cfg, walls)
             logger.info(
