@@ -11,6 +11,7 @@ origin_prompt: can you make an issue to just compare the performance for the mod
   and compare the R^2 of both. start issue in background. 5k generations and 10k generations
   as 2 data points for each model is enough
 workflow: v1
+backend: runpod
 goal: 'Compare context-to-answer map quality between Qwen2.5-7B-Instruct and Qwen3.5-9B
   (thinking disabled) on matched LMSYS prompts with each model''s own on-policy generations:
   per-layer ridge maps fit at 5k and 10k training generations per model, compared
