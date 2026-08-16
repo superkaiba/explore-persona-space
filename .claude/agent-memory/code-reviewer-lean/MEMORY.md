@@ -30,3 +30,4 @@
 - [Stats-reuse driver live probes](stats_reuse_driver_live_probes.md) — shared-idx / relabel-partition / seed-lattice claims settle by 5-line live probes, not reading (#2225 fu1 F5)
 - [Stats-reuse driver live probes](stats_reuse_driver_live_probes.md) — shared-idx / relabel-partition / seed-lattice claims settle by 5-line live probes, not reading (#2225 fu1 F5)
 - [/tmp rerun zero-diff on analysis JSON](tmp_rerun_zero_diff_analysis_artifact.md) — rerun committed 0-GPU analysis script to /tmp, diff vs committed JSON; zero-diff retires parity/pre-reg/hand-edit questions at once (#2225 fu1)
+- [Per-file id namespace is not leakage](perfile_id_namespace_not_leakage.md) — eval ids inside the train id range = per-file local ids; read the extraction line before flagging; recompute-verify split artifacts (#2330 R1 g2)
