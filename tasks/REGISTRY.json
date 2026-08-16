@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2322,
+  "highest_id": 2323,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10220,6 +10220,13 @@
       "path": "tasks/proposed/2322",
       "status": "proposed",
       "title": "Codex twin: CLI 0.147.0 + gpt-5.6-sol, daily auto-upgrade cron"
+    },
+    "2323": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2323",
+      "status": "proposed",
+      "title": "workflow-fix: serialize Codex twin dispatch against the repo-shared non-atomic job index + post-spawn probe retry"
     },
     "233": {
       "has_clean_result": false,
