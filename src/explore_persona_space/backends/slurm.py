@@ -3045,8 +3045,12 @@ class SlurmBackend(ComputeBackend):
         materialized snapshot (``cleanup_branch_src``) whenever the resolved
         source is not the live ``self._src_root`` — with EVERY dispatch now
         materializing (see ``_resolve_rsync_source``), an unreaped
-        ``~/.eps-slurm-src/issue-<N>`` (~3.8 GB) per issue would otherwise
-        accrete on the shared boot disk with NO covering janitor
+        ``~/.eps-slurm-src/issue-<N>`` (~8.6 GB mean, measured 2026-08-16
+        over 13 accreted trees) per issue would otherwise accrete on the
+        shared boot disk; this in-band reap stays the FIRST line of defense,
+        with ``vm_disk_guard.py`` tier (g) (#2147,
+        ``clean_experiment_downloads.sweep_slurm_src``) as the evidence-gated
+        janitor backstop for trees a crashed prepare strands
         (``worktree_audit.py`` sweeps ``.claude/worktrees/`` only). The
         cleanup NEVER runs on the live root, and a prepare failure still
         reaps (the sbatch job runs from the CLUSTER dest; launch/reconnect/
@@ -3845,10 +3849,14 @@ def cleanup_branch_src(src_root: Path, scratch: Path, *, timeout: int = 300) -> 
     materializer's pre-create cleanup and :meth:`SlurmBackend.prepare`'s
     post-rsync ``finally`` reap share ONE implementation and cannot drift.
     With every dispatch now materializing a snapshot, an unreaped
-    ``~/.eps-slurm-src/issue-<N>`` (~3.8 GB full checkout) per issue would
-    accrete on the shared 485 GB boot disk with NO covering janitor
-    (``worktree_audit.py`` sweeps ``.claude/worktrees/`` only;
-    ``vm_disk_guard.py`` tiers never touch ``~/.eps-slurm-src``).
+    ``~/.eps-slurm-src/issue-<N>`` (~8.6 GB mean full checkout, measured
+    2026-08-16 over 13 accreted trees) per issue would accrete on the
+    shared boot disk. This in-band reap is the FIRST line of defense;
+    ``vm_disk_guard.py`` tier (g) (#2147,
+    ``clean_experiment_downloads.sweep_slurm_src`` — terminal-status +
+    git-blob-evidence gated) is the janitor backstop for trees a crashed
+    prepare strands (``worktree_audit.py`` still sweeps
+    ``.claude/worktrees/`` only).
 
     All git calls are guarded/best-effort (a fresh scratch has no registered
     worktree; ``worktree remove`` on an absent path exits non-zero) — callers
