@@ -94,9 +94,13 @@ lint_rc=$?
 # tool-missing (126/127) run can leave a parseable partial line in $out.
 # rc 0 must carry the PASS summary; rc 1 must carry a complete FAIL summary
 # (`workflow_lint: FAIL (N error(s))`); every other status exits 0.
+# Both sentinels are WHOLE-LINE anchored (-x; #2325 r3): the emitters write
+# the invariant full lines, so a truncated `workflow_lint: FAIL (1 error`
+# fragment — exactly the incomplete-run shape this gate rejects — or a
+# substring hit (e.g. `... PASSING`) must not satisfy the completion check.
 case "$lint_rc" in
-  0) printf '%s\n' "$out" | grep -qF "workflow_lint: PASS" || exit 0 ;;
-  1) printf '%s\n' "$out" | grep -qE 'workflow_lint: FAIL \([0-9]+ error' || exit 0 ;;
+  0) printf '%s\n' "$out" | grep -qxF "workflow_lint: PASS" || exit 0 ;;
+  1) printf '%s\n' "$out" | grep -qxE 'workflow_lint: FAIL \([0-9]+ error\(s\)\)' || exit 0 ;;
   *) exit 0 ;;
 esac
 

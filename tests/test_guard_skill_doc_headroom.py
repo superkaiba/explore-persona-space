@@ -238,6 +238,28 @@ def test_fail_line_relayed_on_complete_fail_run(tmp_path) -> None:
     assert "OVER its grandfather cap" in proc.stderr
 
 
+def test_fail_open_on_truncated_fail_summary(tmp_path) -> None:
+    """Round-3 blocker (#2325): the completion sentinels must be WHOLE-LINE
+    anchored. A truncated `workflow_lint: FAIL (1 error` fragment (an
+    incomplete-run shape) satisfied the unanchored rc-1 grep, letting a
+    rel-scoped FAIL line from an incomplete run trip the hook."""
+    stub = _stub_bin(
+        tmp_path,
+        "uv",
+        'echo "workflow_lint: .claude/skills/issue/SKILL.md: 999999 bytes exceeds'
+        ' its grandfather ratchet cap (985300 bytes)"\n'
+        'echo "workflow_lint: FAIL (1 error"\n'
+        "exit 1\n",
+    )
+    proc = _run(
+        _hook_json(str(_REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md")),
+        env_extra={"PATH": f"{stub}:{os.environ['PATH']}"},
+    )
+    assert proc.returncode == 0, (proc.returncode, proc.stdout, proc.stderr)
+    assert proc.stdout == ""
+    assert proc.stderr == ""
+
+
 def test_quiet_on_eligible_path_with_ample_headroom() -> None:
     """Inverse branch (Codex Should-Fix 1): threshold 0 means no real headroom
     can read as low, so the SAME eligible live file must produce rc 0 and
