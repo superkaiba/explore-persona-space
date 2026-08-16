@@ -48,6 +48,7 @@
 ## Codex code-review overreach (PASS-leaning calibration)
 
 - [Codex flags same-privilege local-artifact forgery as a data-loss blocker](feedback_codex_local_artifact_forgery_as_blocker.md) — replay the forgery in escalating offline stages; forger privilege == destructive authority ⇒ reject blocker, salvage the tamper-test residue as CONCERN (#2321 r2)
+- [Codex FAILs on false causal provenance in durable memory (facts right, severity down)](feedback_codex_false_causal_provenance_in_durable_memory.md) — verify from retained artifacts: TSV byte-identity, OWN-run derived file, input-vs-output delta, tool no-git contract; text-only remedy + valid payload ⇒ PASS + persisted CONCERN w/ exact corrected text (#2321 r4)
 
 - [Codex demands hardening beyond minimal-port contract](feedback_codex_hardening_beyond_minimal_port_contract.md) — registered change set + writer-reachability + execution-test the proposed fix; persist residue via raise+defer-concern (#556, #958)
 - [Codex Step 0.6 literal vs purpose](feedback_codex_step_06_literal_vs_purpose.md) — decisive variable = gate topology: PASS when a demonstrated pre-launch gate runs the changed code for real (#551, #560)
