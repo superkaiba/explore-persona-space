@@ -12,7 +12,10 @@ test loudly instead of leaving the prose quietly wrong — (d) this
 file's own registration in the Step-9c selector's WORKFLOW_INVARIANT set
 (SKILL.md/CLAUDE.md diffs select only that set — an unregistered pin never
 runs on the diffs it guards) — (e) the round-2 C1-C3 qualifiers, each
-grounded against the LIVE ``compute_issue_verdict`` and token-pinned in
+grounded against the LIVE ``compute_issue_verdict`` — with ``over_cap``
+driven through the LIVE ``plan_pending_over_cap`` on synthetic events
+(all three of its branches; round 3) and the SKILL.md block's exact
+at-least-as-new predicate wording pinned — and token-pinned in
 BOTH prose surfaces: the ``plan_pending`` under-cap (PARK) vs gate-parked
 over-cap (TERMINAL/gate branch) split, the transition-dependent
 (first-fire, ``prev_status != status``) gate push, and the out-of-enum
@@ -194,19 +197,50 @@ def test_registered_in_step9c_workflow_invariant():
 # document it in BOTH surfaces (the SKILL.md block window + the CLAUDE.md
 # mirror sentence), so deleting a qualifier fails this test even while the
 # per-class set-equality pins stay green. ``marker_age_s`` is very stale so
-# a PARK status deterministically STALE-REDRIVEs.
-_QUALIFIER_CASES: tuple[tuple[str, str | None, bool, str, tuple[str, ...]], ...] = (
-    # C1: under-cap plan_pending is PARK — a stale tick re-drives the full
-    # /issue skill (the forbidden re-spawn).
-    ("plan_pending", None, False, "STALE-REDRIVE", ("under-cap `plan_pending`",)),
-    # C1+C2: gate-parked (over-cap) plan_pending routes through the
-    # TERMINAL/gate branch instead, pushing only on the first fire
+# a PARK status deterministically STALE-REDRIVEs. Round 3: ``over_cap`` is
+# NOT a hardcoded bool — each row carries a synthetic ``events`` list and
+# the test computes ``over_cap = plan_pending_over_cap(events)``, so the
+# LIVE helper's predicate is pinned across all three of its branches:
+# (i) no spend marker -> False; (ii) spend marker with NO status-changed
+# marker -> True; (iii) spend marker with ts EQUAL to the newest
+# status-changed ts -> True (``spend >= changed`` — at-least-as-new, not
+# strictly-newer; narrowing the helper now fails THIS test).
+_TS = "2026-08-15T00:00:00Z"
+_SPEND_MARKER = {"kind": "epm:awaiting-spend-approval", "ts": _TS}
+_STATUS_CHANGED_MARKER = {"kind": "epm:status-changed", "ts": _TS}
+_QUALIFIER_CASES: tuple[tuple[str, str | None, list[dict], str, tuple[str, ...]], ...] = (
+    # C1 / over-cap branch (i): no spend marker -> under-cap plan_pending is
+    # PARK — a stale tick re-drives the full /issue skill (the forbidden
+    # re-spawn).
+    ("plan_pending", None, [], "STALE-REDRIVE", ("under-cap `plan_pending`",)),
+    # C1+C2 / over-cap branch (ii): a spend marker with NO status-changed
+    # marker at all -> gate-parked (over-cap) plan_pending routes through
+    # the TERMINAL/gate branch instead, pushing only on the first fire
     # (no prior same-status snapshot).
-    ("plan_pending", None, True, "GATE-TRANSITION", ("over-cap `plan_pending`", "first fire")),
-    ("plan_pending", "plan_pending", True, "TERMINAL", ("transition-dependent",)),
+    (
+        "plan_pending",
+        None,
+        [_SPEND_MARKER],
+        "GATE-TRANSITION",
+        ("over-cap `plan_pending`", "first fire"),
+    ),
+    # C2 / over-cap branch (iii): a spend marker with ts EQUAL to the newest
+    # status-changed ts is still over-cap (``spend >= changed``); a later
+    # same-status fire reads plain TERMINAL.
+    (
+        "plan_pending",
+        "plan_pending",
+        [_STATUS_CHANGED_MARKER, _SPEND_MARKER],
+        "TERMINAL",
+        ("transition-dependent",),
+    ),
     # C2: the same transition dependence on the ISSUE_GATE members proper.
-    ("awaiting_promotion", None, False, "GATE-TRANSITION", ("first fire",)),
-    ("awaiting_promotion", "awaiting_promotion", False, "TERMINAL", ("transition-dependent",)),
+    ("awaiting_promotion", None, [], "GATE-TRANSITION", ("first fire",)),
+    ("awaiting_promotion", "awaiting_promotion", [], "TERMINAL", ("transition-dependent",)),
+    # Round 3 (F3): a REAL transition — a non-None, DIFFERENT prev_status —
+    # exercises the ``prev_status != status`` branch beyond the
+    # missing-snapshot (prev=None) case.
+    ("awaiting_promotion", "interpreting", [], "GATE-TRANSITION", ("transition-dependent",)),
 )
 
 
@@ -214,13 +248,15 @@ def test_c1_c2_qualifiers_match_live_verdicts_and_are_pinned():
     tt = _load_module("tick_triage_2146_qual", TICK_TRIAGE_PY)
     skill_window = _skill_block_window()
     claude_window = _claude_sentence_window()
-    for status, prev_status, over_cap, expected, tokens in _QUALIFIER_CASES:
+    for status, prev_status, events, expected, tokens in _QUALIFIER_CASES:
+        over_cap = tt.plan_pending_over_cap(events)
         verdict, _reason, _streak = tt.compute_issue_verdict(
             status, prev_status, 10.0**9, over_cap, stale_after_s=3600.0
         )
         assert verdict == expected, (
             f"compute_issue_verdict(status={status!r}, prev={prev_status!r}, "
-            f"over_cap={over_cap}) returned {verdict!r}, expected {expected!r} "
+            f"over_cap={over_cap} via plan_pending_over_cap({events!r})) "
+            f"returned {verdict!r}, expected {expected!r} "
             "— the SKILL.md 9a-ter backstop block + CLAUDE.md mirror sentence "
             "qualifiers rest on this behavior; update BOTH surfaces (and this "
             "table) together with any tick_triage change."
@@ -236,6 +272,32 @@ def test_c1_c2_qualifiers_match_live_verdicts_and_are_pinned():
                 "sentence — the round-2 #2146 correction it pins was edited "
                 "away."
             )
+    # Round 3 (F2): the SKILL.md block states plan_pending_over_cap's EXACT
+    # predicate — at-least-as-new (equal timestamps count) OR no
+    # status-changed marker at all — never the strictly-newer reading the
+    # r1/r2 prose carried. The CLAUDE.md mirror deliberately does NOT
+    # restate the predicate (it compresses to "gate-parked" and lets the
+    # canonical block carry it), so these fragments pin the SKILL window
+    # only.
+    for fragment in (
+        "AT LEAST as new as the newest `epm:status-changed` marker",
+        "equal timestamps count",
+        "or with no `epm:status-changed` marker at all",
+        "`tick_triage.plan_pending_over_cap`",
+    ):
+        assert fragment in skill_window, (
+            f"predicate fragment {fragment!r} missing from the SKILL.md "
+            "9a-ter backstop block — the round-3 #2146 exact-predicate "
+            "wording (``spend >= changed``, or no status-changed marker at "
+            "all) was edited away; re-verify against "
+            "tick_triage.plan_pending_over_cap before rewording."
+        )
+    assert "marker newer than the last status change" not in skill_window, (
+        "the retracted strictly-newer over-cap wording resurfaced in the "
+        "SKILL.md 9a-ter backstop block — plan_pending_over_cap is "
+        "``spend >= changed`` (at-least-as-new) with a missing "
+        "status-changed marker counting as over-cap."
+    )
 
 
 def test_c3_out_of_enum_realizes_stale_redrive_not_a_crash():
@@ -260,8 +322,16 @@ def test_c3_out_of_enum_realizes_stale_redrive_not_a_crash():
     )
     token = "maps a non-zero triage exit to STALE-REDRIVE"
     skill_window = _skill_block_window()
-    assert token in skill_window
-    assert token in _claude_sentence_window()
+    assert token in skill_window, (
+        f"C3 token {token!r} missing from the SKILL.md 9a-ter backstop block "
+        "— the round-2 out-of-enum consequence (the SAME forbidden re-spawn, "
+        "never silence) was edited away."
+    )
+    assert token in _claude_sentence_window(), (
+        f"C3 token {token!r} missing from the CLAUDE.md mirror sentence — "
+        "the round-2 out-of-enum consequence (the SAME forbidden re-spawn, "
+        "never silence) was edited away."
+    )
     # The retracted round-1 wording must not resurface.
     assert "(a crash, not a backstop)" not in skill_window
 

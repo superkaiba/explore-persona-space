@@ -7994,7 +7994,9 @@ raises on anything outside them): a parent in `ISSUE_TERMINAL`
 (`completed` / `archived` / `awaiting_promotion` / `blocked` / `on_hold`)
 — the dominant inline-override case — gets ONE fire then self-teardown
 (TERMINAL verdict), and a gate-parked over-cap `plan_pending` parent (an
-`epm:awaiting-spend-approval` marker newer than the last status change)
+`epm:awaiting-spend-approval` marker AT LEAST as new as the newest
+`epm:status-changed` marker — equal timestamps count — or with no
+`epm:status-changed` marker at all; `tick_triage.plan_pending_over_cap`)
 routes through that SAME terminal/gate branch; the misleading gate push
 is transition-dependent (`prev_status != status`) — on a freshly-armed
 cron that is the first fire, before a same-status snapshot exists — and
