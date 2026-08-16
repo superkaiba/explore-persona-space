@@ -1005,6 +1005,50 @@ def _lane_suffix_runpod_grammar_conflict(spec: Any) -> dict[str, Any] | None:
     }
 
 
+def _validate_gpu_type_arg(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
+    """Parse-time ``--gpu-type`` validation (#2145) — ``parser.error`` (exit 2) on a miss.
+
+    Validates through the SAME resolver the provision path uses
+    (``runpod_api.resolve_gpu_type_id``) — a nonexistent gpuTypeId submitted
+    to RunPod reads as a PERMANENT no-capacity miss (#537), so reject before
+    any backend is built (mirrors the ``--env-pin`` lazy-validate pattern;
+    lazy import via the ``scripts.*`` package form — the repo-root sys.path
+    bootstrap at module top resolves it in script mode and under the test
+    conftest alike; a bare ``from runpod_api import ...`` only resolves in
+    script mode, where ``scripts/`` itself is ``sys.path[0]``). No-op when
+    the flag is absent. Extracted from :func:`main` so the knob doesn't push
+    it over the C901 cap."""
+    if not getattr(args, "gpu_type", None):
+        return
+    from scripts.runpod_api import RunPodError, resolve_gpu_type_id
+
+    try:
+        resolve_gpu_type_id(args.gpu_type)
+    except RunPodError as exc:
+        parser.error(str(exc))
+
+
+def _pre_route_refusals(
+    spec: Any, args: argparse.Namespace, extra: dict[str, Any]
+) -> dict[str, Any] | None:
+    """First pre-route exit-2 refusal body, or ``None`` when the launch may route.
+
+    Order (preserved from the pre-extraction ``_cmd_launch`` inline blocks):
+    (1) the #2145 ``--lane-suffix`` / RunPod pod-name grammar guard — a
+    #934-legal suffix that fails the tighter pod grammar would otherwise die
+    as a provision-subprocess ``SystemExit`` wrapped into a re-drivable
+    capacity miss; (2) the #2161 CLI-drift refusals (no ``--repo-branch``
+    with a live ``issue-<N>`` branch + a repo-materializing lane reachable;
+    ``--max-run-duration`` without ``--time-budget-hours`` while a SLURM
+    lane is reachable). Extracted from :func:`_cmd_launch` so each new guard
+    doesn't push the dispatcher over the C901 cap (the
+    ``_spec_extra_from_args`` precedent)."""
+    conflict = _lane_suffix_runpod_grammar_conflict(spec)
+    if conflict is not None:
+        return conflict
+    return _cli_drift_refusal(args, extra)
+
+
 def _width_required_gpus_conflict(args: argparse.Namespace) -> dict[str, Any] | None:
     """Pre-route ``--width-required`` vs ``--gpus`` conflict guard (#1379).
 
@@ -2200,25 +2244,13 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         print(json.dumps(mismatch, sort_keys=True))
         return 2
 
-    # Pre-route --lane-suffix / RunPod pod-name grammar guard (#2145): a
-    # #934-legal suffix that fails the tighter pod grammar would die as a
-    # provision-subprocess SystemExit wrapped into a re-drivable capacity
-    # miss — refuse legibly here instead (runs after build_run_spec so the
-    # frontmatter-resolved backend is what's checked).
-    suffix_conflict = _lane_suffix_runpod_grammar_conflict(spec)
-    if suffix_conflict is not None:
-        print(json.dumps(suffix_conflict, sort_keys=True))
-        return 2
-
-    # Pre-route CLI-drift refusals (#2161, incident #1336 — an implicit-main
-    # fellows launch ran stale code under a silently-evaporated 24h fence):
-    # (ii) no --repo-branch + a live issue-<N> branch + a repo-materializing
-    # lane reachable; (iii) --max-run-duration without --time-budget-hours
-    # while a SLURM lane is reachable. Same exit-2 JSON shape as the guards
-    # above; explicit flags bypass both by construction.
-    drift_conflict = _cli_drift_refusal(args, extra)
-    if drift_conflict is not None:
-        print(json.dumps(drift_conflict, sort_keys=True))
+    # Pre-route exit-2 refusals (#2145 lane-suffix/pod-name grammar, then the
+    # #2161 CLI-drift guards) — one combined helper so each new guard doesn't
+    # push _cmd_launch over the C901 cap (the _spec_extra_from_args precedent);
+    # runs after build_run_spec so the frontmatter-resolved backend is checked.
+    refusal = _pre_route_refusals(spec, args, extra)
+    if refusal is not None:
+        print(json.dumps(refusal, sort_keys=True))
         return 2
 
     # Pre-route workload-cmd lane-env lint (#1329, incident #825): a bare
@@ -3617,22 +3649,9 @@ def main(
                 validate_extra_sync_paths(args.extra_sync_path)
             except ValueError as exc:
                 parser.error(str(exc))
-        # #2145: --gpu-type validates at parse time through the SAME
-        # resolver the provision path uses (runpod_api.resolve_gpu_type_id)
-        # — a nonexistent gpuTypeId submitted to RunPod reads as a PERMANENT
-        # no-capacity miss (#537), so reject before any backend is built
-        # (mirrors the --env-pin lazy-validate pattern above; lazy import via
-        # the scripts.* package form — the repo-root sys.path bootstrap at
-        # module top resolves it in script mode and under the test conftest
-        # alike; a bare `from runpod_api import ...` only resolves in script
-        # mode, where scripts/ itself is sys.path[0]).
-        if getattr(args, "gpu_type", None):
-            from scripts.runpod_api import RunPodError, resolve_gpu_type_id
-
-            try:
-                resolve_gpu_type_id(args.gpu_type)
-            except RunPodError as exc:
-                parser.error(str(exc))
+        # #2145: --gpu-type validates at parse time (helper keeps main()
+        # under the C901 cap; see _validate_gpu_type_arg).
+        _validate_gpu_type_arg(args, parser)
     logging.basicConfig(
         stream=sys.stderr,
         level=logging.DEBUG if args.debug else logging.INFO,

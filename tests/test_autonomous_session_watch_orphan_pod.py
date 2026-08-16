@@ -93,7 +93,7 @@ def gcp_sidecar(tmp_path, monkeypatch):
     write_handle_sidecar(_gcp_handle(), sidecar)
     monkeypatch.setattr(
         "explore_persona_space.backends.issue_dispatch.resolve_handle_sidecar_path",
-        lambda issue: (sidecar, False),
+        lambda issue, lane_suffix=None: (sidecar, False),
     )
     return sidecar
 
@@ -288,7 +288,7 @@ def test_orphan_arm_negative_control_runpod_sidecar(
     )
     monkeypatch.setattr(
         "explore_persona_space.backends.issue_dispatch.resolve_handle_sidecar_path",
-        lambda issue: (sidecar, False),
+        lambda issue, lane_suffix=None: (sidecar, False),
     )
     now = time.time()
     assert not _run_helper(
@@ -303,7 +303,7 @@ def test_orphan_arm_negative_control_sidecar_absent(
     """No resolvable sidecar -> quiet (bias quiet; nothing to attribute)."""
     monkeypatch.setattr(
         "explore_persona_space.backends.issue_dispatch.resolve_handle_sidecar_path",
-        lambda issue: (tmp_path / "no-such-handle.json", False),
+        lambda issue, lane_suffix=None: (tmp_path / "no-such-handle.json", False),
     )
     now = time.time()
     assert not _run_helper(
@@ -321,7 +321,7 @@ def test_orphan_arm_negative_control_sidecar_unreadable(
     sidecar.write_text("{not json")
     monkeypatch.setattr(
         "explore_persona_space.backends.issue_dispatch.resolve_handle_sidecar_path",
-        lambda issue: (sidecar, False),
+        lambda issue, lane_suffix=None: (sidecar, False),
     )
     now = time.time()
     assert not _run_helper(
