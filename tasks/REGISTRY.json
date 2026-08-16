@@ -10304,8 +10304,8 @@
       "goal": "Test the snowball explanation of context-vector patch causality on Qwen2.5-7B-Instruct and Qwen3.5-9B (thinking disabled): compare the all-layer context-end patch against patching only the first 1/2/3 generated answer-token positions (ce excluded) and against prefilling the first 1/2/3 tokens, under two donor schemes (mediation form: content produced under the ce patch with the patch then removed; B's-answer-start form: the target context's own reference answer opening), measured by F_beh/F_act vs scheme-matched shuffled-donor nulls on the pre-registered most-successful cells (#2162's 5 stored-and-used + #2094's pirate matched-query pairs).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/2333",
-      "status": "proposed",
+      "path": "tasks/planning/2333",
+      "status": "planning",
       "title": "Snowball test: do context-vector patch effects run through the first few answer tokens? First-k token patches + prefills vs ce patch, both models"
     },
     "234": {
