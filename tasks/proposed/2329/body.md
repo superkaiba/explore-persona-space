@@ -9,7 +9,7 @@ parent_id: 2162
 origin_prompt: 'okay. Rerun with qwen3.5-9B. make the qualitative dashboards after
   all the generation finishes and then run judging in parallel (following: how long
   would it take to rerun all this on qwen 3.5 9b? with thinking DISABLED)'
-workflow: v1
+workflow: v2
 goal: 'Test whether the #2162 findings transfer to Qwen3.5-9B (hybrid linear attention,
   thinking disabled): which minimal-pair information types are decodable at the context
   vector, which are causally usable via single-position patching (F_act/F_beh vs nulls),
