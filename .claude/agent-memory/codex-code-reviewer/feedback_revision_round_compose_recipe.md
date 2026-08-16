@@ -418,3 +418,38 @@ Concerns-to-persist, not auto-Critical), and weigh any recorded mitigation
 (report-only default, first-apply review) before severity. Give the related
 open concern an adjudication-form status line (SATISFIED-BY-SUBSTITUTE /
 STILL-BINDING) — the orchestrator owns the ledger action.
+
+## Cap-round (5-of-5) compose recipe — #2147 cr5
+
+Re-derived by the orchestrator after the original append was destroyed by the
+#2015 pre-commit stash race (staged at the shared root, swept by a concurrent
+session's commit; confirmed absent from HEAD, origin/main AND the worktree, and
+absent from the pre-commit patch cache for the staging window — destroyed on
+restore, not stashed). Lesson: an agent-memory append is a tracked write —
+commit it by explicit path in the SAME turn it is produced, never leave it
+staged across a turn boundary.
+
+**Cap-round framing.** State 5-of-5 and advance-or-surface semantics
+explicitly, and demand calibration in BOTH directions: do not manufacture a
+blocker because it is last call, do not wave through a real defect for the same
+reason. Honest PASS is available on the cap round exactly as on round 1.
+
+**Three-way closure vocabulary** (beats plain ADDRESSED/NOT-ADDRESSED when the
+orchestrator has exercised judgment):
+- `VERIFIED-ADDRESSED` / `NOT-ADDRESSED` — for a fix.
+- `ACCEPTED-NON-CHANGE` / `OVERTURNED` — for a deliberate non-change; require
+  the overturn to carry a positive construction (here: porcelain membership
+  LICENSES a reap), not merely a missed KEEP.
+- `SCOPE-RULING-CORRECT` / `SCOPE-RULING-WRONG` — for an out-of-scope ruling;
+  ask the twin to adjudicate the diff-scope citation (AST/hunk scan) rather
+  than re-raise the defect as a blocker on this branch. A correct ruling routes
+  the re-raise to the pre-existing-on-trunk path.
+
+**Read-mode completeness sweep.** When a round fixes one text-mode read,
+enumerate EVERY remaining text-mode read whose bytes are used as a path or as
+licensing evidence, with enclosing function names, and hand them to the twin
+flagged NEUTRALLY (severity not pre-resolved). Partial-fix is the specific risk
+after a defect class has produced a fresh manifestation in consecutive rounds.
+
+Rerunnable compose script for this shape: `/tmp/codex-2147-r5cr-compose.py`
+(ephemeral; the recipe above is the durable part).
