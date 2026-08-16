@@ -7993,13 +7993,21 @@ there (the `scripts/tick_triage.py` status sets; `compute_issue_verdict`
 raises on anything outside them): a parent in `ISSUE_TERMINAL`
 (`completed` / `archived` / `awaiting_promotion` / `blocked` / `on_hold`)
 — the dominant inline-override case — gets ONE fire then self-teardown
-(TERMINAL verdict), preceded by a misleading gate push on the two
-`ISSUE_GATE` (`awaiting_promotion` / `blocked`) members; a parent in
-`ISSUE_PARK` (`proposed` / `planning` / `plan_pending` /
-`followups_running`) does NOT self-clear — a stale tick STALE-REDRIVEs
-the FULL `/issue <N>` skill, the re-spawn the override clause forbids,
-driving the PARENT's lifecycle rather than the inline round; any status
-outside the three sets raises `ValueError` (a crash, not a backstop). On
+(TERMINAL verdict), and a gate-parked over-cap `plan_pending` parent (an
+`epm:awaiting-spend-approval` marker newer than the last status change)
+routes through that SAME terminal/gate branch; the misleading gate push
+is transition-dependent (`prev_status != status`) — on a freshly-armed
+cron that is the first fire, before a same-status snapshot exists — and
+covers the two `ISSUE_GATE` (`awaiting_promotion` / `blocked`) members
+plus over-cap `plan_pending`, later same-status fires reading plain
+TERMINAL; a parent in `ISSUE_PARK` (`proposed` / `planning` / under-cap
+`plan_pending` / `followups_running`) does NOT self-clear — a stale tick
+STALE-REDRIVEs the FULL `/issue <N>` skill, the re-spawn the override
+clause forbids, driving the PARENT's lifecycle rather than the inline
+round; and a status outside the three sets lands in that SAME forbidden
+re-spawn — `compute_issue_verdict` raises `ValueError`, but
+`/issue-tick` maps a non-zero triage exit to STALE-REDRIVE by design
+(fail toward coverage, never toward silence). On
 every non-ACTIVE parent the binding backstop is (1) the
 `[long-phase-heartbeat]` `epm:progress` cadence (≤ ~60 min), (2) the
 `keep-running` tag + pod-naming `epm:run-launched` shield of the

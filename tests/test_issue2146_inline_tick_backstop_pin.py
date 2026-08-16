@@ -8,10 +8,19 @@ carve-out's Detached-by-default sub-block, (c) the status-partition PREMISE
 against the LIVE ``scripts/tick_triage.py`` module — the block's per-class
 status enumerations must EQUAL the module's frozensets, so a future
 re-partition (a status moved between sets, a new status added) fails THIS
-test loudly instead of leaving the prose quietly wrong — and (d) this
+test loudly instead of leaving the prose quietly wrong — (d) this
 file's own registration in the Step-9c selector's WORKFLOW_INVARIANT set
 (SKILL.md/CLAUDE.md diffs select only that set — an unregistered pin never
-runs on the diffs it guards).
+runs on the diffs it guards) — (e) the round-2 C1-C3 qualifiers, each
+grounded against the LIVE ``compute_issue_verdict`` and token-pinned in
+BOTH prose surfaces: the ``plan_pending`` under-cap (PARK) vs gate-parked
+over-cap (TERMINAL/gate branch) split, the transition-dependent
+(first-fire, ``prev_status != status``) gate push, and the out-of-enum
+consequence being the SAME forbidden re-spawn (``/issue-tick`` maps a
+non-zero triage exit to STALE-REDRIVE), never silence — and (f) the
+three-set union equalling the FULL ``task_workflow.STATUSES`` enum, so a
+hypothetical FOURTH issue-mode status set cannot stale the block's
+"outside the three sets" clause while the per-class pins stay green.
 
 Incident (#1491, 2026-08-05): an inline-override round on an
 ``awaiting_promotion`` parent armed no session-survival backstop while an
@@ -33,9 +42,12 @@ import itertools
 import re
 from pathlib import Path
 
+import pytest
+
 REPO = Path(__file__).resolve().parent.parent
 SKILL_MD = REPO / ".claude" / "skills" / "issue" / "SKILL.md"
 CLAUDE_MD = REPO / "CLAUDE.md"
+ISSUE_TICK_SKILL_MD = REPO / ".claude" / "skills" / "issue-tick" / "SKILL.md"
 SELECTOR_PY = REPO / "scripts" / "select_step9c_tests.py"
 TICK_TRIAGE_PY = REPO / "scripts" / "tick_triage.py"
 
@@ -93,19 +105,26 @@ def test_skill_9a_ter_backstop_block_present():
     )
 
 
-def test_claude_md_backstop_sentence_present():
+def _claude_sentence_window() -> str:
+    """The CLAUDE.md Detached-by-default sub-block holding the mirror sentence.
+
+    "**User-chat inline free analysis**" occurs TWICE in CLAUDE.md (a
+    cross-reference inside the Follow-up bullet, then the carve-out bullet
+    itself). Search from the SECOND occurrence — strictly safer than the
+    family precedent's documented first-occurrence search. The sentence
+    lives INSIDE the Detached-by-default sub-block (appended, not a new
+    bullet or bold sub-block), before the pod-safety sub-block.
+    """
     text = CLAUDE_MD.read_text(encoding="utf-8")
-    # "**User-chat inline free analysis**" occurs TWICE in CLAUDE.md (a
-    # cross-reference inside the Follow-up bullet, then the carve-out bullet
-    # itself). Search from the SECOND occurrence — strictly safer than the
-    # family precedent's documented first-occurrence search.
     i0 = text.index("**User-chat inline free analysis**")
     i1 = text.index("**User-chat inline free analysis**", i0 + 1)
-    # The sentence lives INSIDE the Detached-by-default sub-block (appended,
-    # not a new bullet or bold sub-block), before the pod-safety sub-block.
     start = text.index("**Detached-by-default + lifecycle ack", i1)
     end = text.index("**Pod-safety pre-launch signals (deviation case", start)
-    window = text[start:end]
+    return text[start:end]
+
+
+def test_claude_md_backstop_sentence_present():
+    window = _claude_sentence_window()
     # Cites the canonical block (the sibling-duty citation convention).
     assert "SKILL.md Step 9a-ter § " + ANCHOR in window
     # Carries the arm-iff-ACTIVE rule + the incident citations.
@@ -167,4 +186,110 @@ def test_registered_in_step9c_workflow_invariant():
         "unregistered pin: SKILL.md/CLAUDE.md diffs select only the "
         "WORKFLOW_INVARIANT set, so this file never runs on the diffs it "
         "guards until it is registered in scripts/select_step9c_tests.py."
+    )
+
+
+# Round-2 (#2146) C1/C2 qualifier pins. Each row grounds one prose qualifier
+# against the LIVE ``compute_issue_verdict`` AND pins the token(s) that
+# document it in BOTH surfaces (the SKILL.md block window + the CLAUDE.md
+# mirror sentence), so deleting a qualifier fails this test even while the
+# per-class set-equality pins stay green. ``marker_age_s`` is very stale so
+# a PARK status deterministically STALE-REDRIVEs.
+_QUALIFIER_CASES: tuple[tuple[str, str | None, bool, str, tuple[str, ...]], ...] = (
+    # C1: under-cap plan_pending is PARK — a stale tick re-drives the full
+    # /issue skill (the forbidden re-spawn).
+    ("plan_pending", None, False, "STALE-REDRIVE", ("under-cap `plan_pending`",)),
+    # C1+C2: gate-parked (over-cap) plan_pending routes through the
+    # TERMINAL/gate branch instead, pushing only on the first fire
+    # (no prior same-status snapshot).
+    ("plan_pending", None, True, "GATE-TRANSITION", ("over-cap `plan_pending`", "first fire")),
+    ("plan_pending", "plan_pending", True, "TERMINAL", ("transition-dependent",)),
+    # C2: the same transition dependence on the ISSUE_GATE members proper.
+    ("awaiting_promotion", None, False, "GATE-TRANSITION", ("first fire",)),
+    ("awaiting_promotion", "awaiting_promotion", False, "TERMINAL", ("transition-dependent",)),
+)
+
+
+def test_c1_c2_qualifiers_match_live_verdicts_and_are_pinned():
+    tt = _load_module("tick_triage_2146_qual", TICK_TRIAGE_PY)
+    skill_window = _skill_block_window()
+    claude_window = _claude_sentence_window()
+    for status, prev_status, over_cap, expected, tokens in _QUALIFIER_CASES:
+        verdict, _reason, _streak = tt.compute_issue_verdict(
+            status, prev_status, 10.0**9, over_cap, stale_after_s=3600.0
+        )
+        assert verdict == expected, (
+            f"compute_issue_verdict(status={status!r}, prev={prev_status!r}, "
+            f"over_cap={over_cap}) returned {verdict!r}, expected {expected!r} "
+            "— the SKILL.md 9a-ter backstop block + CLAUDE.md mirror sentence "
+            "qualifiers rest on this behavior; update BOTH surfaces (and this "
+            "table) together with any tick_triage change."
+        )
+        for token in tokens:
+            assert token in skill_window, (
+                f"qualifier token {token!r} missing from the SKILL.md 9a-ter "
+                "session-survival backstop block — the round-2 #2146 "
+                "correction it pins was edited away."
+            )
+            assert token in claude_window, (
+                f"qualifier token {token!r} missing from the CLAUDE.md mirror "
+                "sentence — the round-2 #2146 correction it pins was edited "
+                "away."
+            )
+
+
+def test_c3_out_of_enum_realizes_stale_redrive_not_a_crash():
+    """C3: the realized out-of-enum outcome is the forbidden re-spawn.
+
+    ``compute_issue_verdict`` raises ``ValueError`` on a status outside the
+    three sets, but ``/issue-tick`` maps a non-zero triage exit to
+    STALE-REDRIVE by design (fail toward coverage, never toward silence),
+    so the REALIZED outcome is the same forbidden full-``/issue <N>``
+    re-spawn as the ISSUE_PARK case — not a mere crash. Pin the raise, the
+    mapping at its source, and the corrected consequence in both surfaces.
+    """
+    tt = _load_module("tick_triage_2146_c3", TICK_TRIAGE_PY)
+    with pytest.raises(ValueError):
+        tt.compute_issue_verdict("no_such_status", None, None, False, stale_after_s=3600.0)
+    tick_skill = _normalized(ISSUE_TICK_SKILL_MD)
+    assert "Non-zero exit or unparseable output → treat as `STALE-REDRIVE`" in tick_skill, (
+        ".claude/skills/issue-tick/SKILL.md no longer documents the "
+        "non-zero-exit → STALE-REDRIVE mapping the C3 correction rests on — "
+        "re-verify the realized out-of-enum outcome and update the 9a-ter "
+        "block + CLAUDE.md mirror sentence."
+    )
+    token = "maps a non-zero triage exit to STALE-REDRIVE"
+    skill_window = _skill_block_window()
+    assert token in skill_window
+    assert token in _claude_sentence_window()
+    # The retracted round-1 wording must not resurface.
+    assert "(a crash, not a backstop)" not in skill_window
+
+
+def test_three_set_union_covers_full_status_enum():
+    """C4: no FOURTH issue-mode status set can hide from the pins.
+
+    ``test_status_partition_matches_tick_triage`` pins per-class set
+    equality, which a hypothetical fourth set added to tick_triage would
+    PASS while staling the block's "outside the three sets" clause.
+    tick_triage's own header comment scopes the sets to the runtime enum
+    ``task_workflow.STATUSES``; today the three-set union EQUALS that full
+    14-status enum, which is exactly what makes the clause load-bearing —
+    every real task status routes through one of the three sets, so the
+    ValueError → STALE-REDRIVE path fires only on enum drift. Equality
+    (not subset) is asserted so BOTH drift directions fail loudly: a
+    status carved out of the three sets into a fourth, and a new STATUSES
+    member left unrouted.
+    """
+    from explore_persona_space.task_workflow import STATUSES
+
+    tt = _load_module("tick_triage_2146_union", TICK_TRIAGE_PY)
+    union = tt.ISSUE_ACTIVE | tt.ISSUE_PARK | tt.ISSUE_TERMINAL
+    assert union == set(STATUSES), (
+        "ISSUE_ACTIVE | ISSUE_PARK | ISSUE_TERMINAL no longer equals "
+        f"task_workflow.STATUSES (union-only: {sorted(union - set(STATUSES))}; "
+        f"enum-only: {sorted(set(STATUSES) - union)}). A fourth issue-mode "
+        "status set (or an unrouted new status) stales the 9a-ter backstop "
+        "block's 'outside the three sets' clause — update the block, the "
+        "CLAUDE.md mirror sentence, and this pin together."
     )
