@@ -1016,6 +1016,24 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     shared-B̄ structure; a missing split-half reliability report on a sampled
     difference-vector leg (with a fix registered) is a binding Concern, not a
     REVISE.
+    ALSO verify null-statistic gate calibration: a registered gate reading a
+    NULL / permutation / shuffle-derived quantity whose threshold is an
+    asserted constant with NO measured calibration basis (a 1-cell pilot of
+    that null through the production entrypoint at production `n`/`d` shape,
+    or a cited prior measured null value for the same construct + shape) is
+    a REVISE — unsatisfiable-by-construction risk: a refit null is strictly
+    negative (−d/(n−d−1)-scale under the `1 − SS_res/SS_tot` convention,
+    never ≈ 0) with depth non-monotone in the shape parameters, so no
+    constant is portable across a ladder (the null-side sibling of this
+    item's Band-vs-ceiling arm and of item 3's joint-satisfiability bar;
+    `selection-symmetric-nulls.md` § Gate thresholds on a NULL statistic).
+    A null-side condition defaults to ADVISORY logging — a HARD-ABORT
+    null-side gate with no stated argument (the downstream claim invalidated
+    + why analysis-time rejection is worse) is likewise a REVISE; an
+    advisory null-side log line with nothing branching on it is not
+    (#1491: `abs(r2_null) < 0.05` on a shuffle-refit null with realized
+    values −1 to −4 hard-aborted all 8 shards; the asserted `-3.0` floor
+    then died at the 1.5B rung on realized −3.40 … −3.80).
 12. **Re-cost on power-raising recommendations (same round).** Any recommendation in YOUR review
     that raises statistical power parameters — permutation/null draws B, bootstrap N, seeds, cells,
     folds, samples-per-cell — MUST, in the SAME round, re-cost every affected §9 compute row: state
