@@ -1189,10 +1189,19 @@ def _shared_state_index_hint() -> str:
     (state.json) this dispatch reads/writes — mirrors the plugin's
     resolveStateDir() (state.mjs: slug = sanitized basename of the
     workspace root, hash = sha256(realpath)[:16], under
-    $CLAUDE_PLUGIN_DATA/state else the observed plugin-data layout).
+    $CLAUDE_PLUGIN_DATA/state when the env var is set, else
+    tmpdir()/codex-companion — state.mjs:10,42-43, note the env-unset
+    branch has NO `/state` segment).
     DIAGNOSTIC ONLY (failure notes + fail-open WARNs name it so the
     orchestrator/human can inspect the index) — never drives a branch;
-    fail-soft to a descriptive placeholder."""
+    fail-soft to a descriptive placeholder.
+
+    Caveat for the env-unset (off-harness) branch: a manual run there also
+    has its COMPANION subprocess resolve the tmpdir index, so a job spawned
+    under Claude Code (where CLAUDE_PLUGIN_DATA is set) is not visible to
+    it — a plugin-env property, not a defect of this wrapper. The
+    `--reattach` command in the same failure note is the load-bearing
+    recovery content."""
     try:
         root = Path(DISPATCH_ROOT)
         slug = re.sub(r"[^a-zA-Z0-9._-]+", "-", root.name).strip("-") or "workspace"
@@ -1201,7 +1210,7 @@ def _shared_state_index_hint() -> str:
         state_root = (
             Path(plugin_data) / "state"
             if plugin_data
-            else Path.home() / ".claude" / "plugins" / "data" / "codex-openai-codex" / "state"
+            else Path(tempfile.gettempdir()) / "codex-companion"
         )
         return str(state_root / f"{slug}-{digest}" / "state.json")
     except Exception as exc:  # diagnostic-only: a hint failure must not mask the real error
