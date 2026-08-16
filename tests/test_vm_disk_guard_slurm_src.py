@@ -1333,3 +1333,251 @@ def test_t15b_registered_vs_unregistered_reap_dispatch(scratch_tmp_root, main_re
     assert "rmtree" in plain_row["reason"]
     assert not plain.exists()
     assert res.bytes_freed > 0
+
+
+# ─── round 3 C1: positive non-registration proof before ANY rmtree ───────────
+
+
+def test_r3c1_registered_worktree_paths_helper(tmp_path, main_repo, monkeypatch):
+    """C1 helper: the admin-side listing contains the main working tree AND
+    every linked worktree; probe failure or parse ambiguity returns None
+    (fail-toward-keep), never an empty 'proof' of non-registration."""
+    wt = tmp_path / "helper-wt"
+    _git(main_repo, "worktree", "add", "--detach", str(wt))
+    paths = ced._registered_worktree_paths(main_repo)
+    assert paths is not None
+    assert os.path.realpath(str(main_repo)) in paths
+    assert os.path.realpath(str(wt)) in paths
+    # Probe failure => None.
+    monkeypatch.setattr(ced, "_git", lambda *a, **k: None)
+    assert ced._registered_worktree_paths(main_repo) is None
+    # Parse ambiguity (no `worktree ` lines at all) => None: a successful
+    # listing always contains at least the main working tree.
+    monkeypatch.setattr(
+        ced,
+        "_git",
+        lambda *a, **k: subprocess.CompletedProcess([], 0, stdout="junk\n", stderr=""),
+    )
+    assert ced._registered_worktree_paths(main_repo) is None
+
+
+def test_r3c1_registered_worktree_missing_pointer_never_rmtree(
+    slurm_root, main_repo, repo, monkeypatch
+):
+    """C1: a REGISTERED worktree whose in-tree ``.git`` pointer file was
+    DELETED classifies as ``none`` (every class probe passes), yet must KEEP —
+    pre-fix it fell through to ``shutil.rmtree`` and was deleted WITHOUT
+    unregistering, defeating the round-2 structural-unreachability contract
+    by a different route."""
+    cand = _slurm_worktree(main_repo, slurm_root, "issue-9944")
+    (cand / ".git").unlink()
+    _backdate(cand)
+    monkeypatch.setattr(ced.shutil, "rmtree", _rmtree_boom)
+    res = _sweep(slurm_root, main_repo, apply=True)
+    row = _row(res, cand.name)
+    assert row["disposition"] == "slurm-src-reap-reprobe-kept"
+    assert "registered-path" in row["reason"]
+    assert cand.exists() and (cand / "tracked.py").is_file()
+    assert str(cand) in _git(main_repo, "worktree", "list").stdout  # registration survives
+
+
+def test_r3c1_registered_worktree_pointer_replaced_by_clone_never_rmtree(
+    slurm_root, main_repo, repo, monkeypatch
+):
+    """C1 (replaced-pointer variant): the registered path's content replaced
+    by a CLEAN, fully-reachable clone (class ``clone``, every clone probe
+    passes) must still KEEP — the registration list, not the tree's own
+    ``.git`` entry, is what proves rmtree-eligibility."""
+    cand = _slurm_worktree(main_repo, slurm_root, "issue-9943")
+    shutil.rmtree(cand)  # simulate the pointer/tree replacement...
+    r = subprocess.run(
+        ["git", "clone", str(main_repo), str(cand)],
+        capture_output=True,
+        text=True,
+        env={**os.environ, **_GIT_ENV},
+    )
+    assert r.returncode == 0, r.stderr
+    _backdate(cand)
+    monkeypatch.setattr(ced.shutil, "rmtree", _rmtree_boom)
+    res = _sweep(slurm_root, main_repo, apply=True)
+    row = _row(res, cand.name)
+    assert row["disposition"] == "slurm-src-reap-reprobe-kept"
+    assert "registered-path" in row["reason"]
+    assert cand.exists()
+    assert str(cand) in _git(main_repo, "worktree", "list").stdout
+
+
+def test_r3c1_registration_probe_failure_keeps_plain_dir(slurm_root, main_repo, repo, monkeypatch):
+    """C1: a FAILED registration probe KEEPS even a plain unregistered dir —
+    probe failure is ambiguity, never license (fail-toward-keep)."""
+    cand = _staged_copy(slurm_root, "issue-9942")
+    real_git = ced._git
+
+    def flaky(args, **kw):
+        if args[:2] == ["worktree", "list"]:
+            return None
+        return real_git(args, **kw)
+
+    monkeypatch.setattr(ced, "_git", flaky)
+    monkeypatch.setattr(ced.shutil, "rmtree", _rmtree_boom)
+    res = _sweep(slurm_root, main_repo, apply=True)
+    row = _row(res, cand.name)
+    assert row["disposition"] == "slurm-src-reap-reprobe-kept"
+    assert "registration-probe-failed" in row["reason"]
+    assert cand.exists()
+
+
+def test_r3c1_gate17_branch_c_refuses_declassified_registered_worktree(tmp_path, main_repo):
+    """C1 sibling site: gate-1.7 evidence branch (c) licenses a plain rmtree
+    in the issue-keyed /tmp legs; its kind-based registered-worktree refusal
+    is class-downgradeable the same way, so it too must refuse via the
+    POSITIVE registration listing when the pointer is gone."""
+    wt = tmp_path / "i9941_dl"
+    _git(main_repo, "worktree", "add", "--detach", str(wt))
+    (wt / ".git").unlink()
+    _backdate(wt)
+    ev, det = ced._tmp_git_evidence_branch_c(wt, main_repo=main_repo)
+    assert ev is None
+    assert det["reason"] == "registered-worktree"
+
+
+def test_r3c1_gate17_branch_c_probe_failure_refuses(tmp_path, main_repo, monkeypatch):
+    """C1 sibling site, failure arm: a failed registration probe REFUSES the
+    evidence branch (fail-toward-keep) instead of proceeding to the blob
+    proof."""
+    d = tmp_path / "i9940_dl"
+    d.mkdir()
+    (d / "copy.py").write_text(COMMITTED_PY)
+    _backdate(d)
+    monkeypatch.setattr(ced, "_registered_worktree_paths", lambda mr: None)
+    ev, det = ced._tmp_git_evidence_branch_c(d, main_repo=main_repo)
+    assert ev is None
+    assert det["reason"] == "registration-probe-failed"
+
+
+# ─── round 3 C2: overlay proof re-run on the cached-PASS + destructive paths ─
+
+
+def test_r3c2_cached_pass_surviving_anchor_deleted_keeps(slurm_root, main_repo, repo, tmp_path):
+    """C2(a): a CACHED PASS must not be honored after the SURVIVING overlay
+    anchor changes with ZERO candidate-tree change — deleting the anchor repo
+    after a report-mode pass leaves the cache key identical, and pre-fix the
+    apply run reaped the tree, destroying the only remaining overlay copy."""
+    cand = slurm_root / "issue-9939"
+    cand.mkdir()
+    (cand / "tracked.py").write_text(COMMITTED_PY)
+    _staged_overlay_copy(cand, main_repo)
+    _backdate(cand)
+    cache = tmp_path / "verdict-cache.json"
+    res1 = _sweep(slurm_root, main_repo, apply=False, verdict_cache_path=cache)
+    assert _row(res1, cand.name)["disposition"] == "would-reap"
+    assert cache.is_file()
+    # Flip EXTERNAL overlay state with zero candidate-tree change: the
+    # surviving anchor repo disappears (rebase/cleanup in the main tree).
+    shutil.rmtree(main_repo / "external" / "open-instruct")
+    _backdate(cand)  # reset atimes/mtimes the verification probes refreshed
+    # Precondition pin: the apply run's lookup HITs the stored PASS (the
+    # regression is only reachable through the cache-hit path).
+    key2 = ced._ScratchVerdictCache._key(cand, ced._scratch_walk_stats(cand))
+    assert key2 in json.loads(cache.read_text())
+    res2 = _sweep(slurm_root, main_repo, apply=True, verdict_cache_path=cache)
+    row = _row(res2, cand.name)
+    assert row["disposition"] == "slurm-src-unverified-kept"
+    assert "overlay-surviving-repo-missing" in row["reason"]
+    assert cand.exists()
+    assert (cand / "external" / "open-instruct" / "nested_only.py").is_file()
+
+
+def test_r3c2_nested_stash_between_evidence_and_reap_keeps(
+    slurm_root, main_repo, repo, monkeypatch
+):
+    """C2(b): nested-overlay state mutated BETWEEN evidence and reap (a stash
+    created in the nested repo — its ref lives under the exempt ``.git`` dir,
+    invisible to the non-exempt recency re-walk) trips the reap-time overlay
+    RE-probe; pre-fix the reap re-ran only the OUTER class probes and rmtree'd
+    the stash."""
+    cand = slurm_root / "issue-9938"
+    cand.mkdir()
+    (cand / "tracked.py").write_text(COMMITTED_PY)
+    nested = _staged_overlay_copy(cand, main_repo)
+    _backdate(cand)
+    real_hit = ced._scratch_live_process_hit
+
+    def stash_then_pass(c):
+        (nested / "nested_only.py").write_text(NESTED_ONLY_PY + "# about-to-stash edit\n")
+        _git(nested, "stash")
+        _backdate(cand)  # zero non-exempt mtime residue: isolate the overlay re-probe
+        return real_hit(c)
+
+    monkeypatch.setattr(ced, "_scratch_live_process_hit", stash_then_pass)
+    res = _sweep(slurm_root, main_repo, apply=True)
+    row = _row(res, cand.name)
+    assert row["disposition"] == "slurm-src-reap-reprobe-kept"
+    assert "overlay-stash" in row["reason"]
+    assert cand.exists()
+    assert _git(nested, "stash", "list").stdout.strip()  # the stash survives
+
+
+# ─── round 3 C3: a symlinked declared-overlay path is never followed ──────────
+
+
+def test_r3c3_symlinked_overlay_path_keeps(slurm_root, main_repo, repo):
+    """C3: a declared overlay path that is a SYMLINK to a valid surviving
+    clone must KEEP as overlay-not-a-repo — pre-fix the presence lstat
+    ignored the entry's mode and ``_git_dir_kind`` followed the symlink into
+    the target's ``.git``, accepting it as a nested clone."""
+    surv = _surviving_overlay(main_repo)
+    cand = slurm_root / "issue-9937"
+    (cand / "external").mkdir(parents=True)
+    (cand / "tracked.py").write_text(COMMITTED_PY)  # a verified outer file
+    (cand / "external" / "open-instruct").symlink_to(surv)
+    _backdate(cand)
+    res = _sweep(slurm_root, main_repo, apply=True)
+    row = _row(res, cand.name)
+    assert row["disposition"] == "slurm-src-unverified-kept"
+    assert "overlay-not-a-repo" in row["reason"]
+    assert cand.exists()
+    assert (surv / "nested_only.py").is_file()  # the symlink target is never touched
+
+
+# ─── round 3 C4: the validated CANONICAL root is the enumerated root ──────────
+
+
+def test_r3c4_root_swap_after_validation_is_inert(tmp_path, main_repo, monkeypatch):
+    """C4: a symlink-target swap BETWEEN validation and enumeration must be
+    inert — the sweep enumerates the validator's RETURNED canonical root, so
+    the ``.git``-bearing swapped target (which validation would have refused)
+    is never enumerated, never status-probed, never evidence-probed."""
+    safe = tmp_path / "safe-root"
+    safe.mkdir()
+    danger = tmp_path / "danger-root"
+    (danger / "issue-9936").mkdir(parents=True)
+    (danger / "issue-9936" / "precious.py").write_text("never committed anywhere\n")
+    _git(danger, "init", "-b", "main")  # a target validation would refuse (.git-bearing)
+    link = tmp_path / "root-link"
+    link.symlink_to(safe)
+    real_validate = ced._assert_safe_slurm_src_root
+
+    def swap_after_validate(root):
+        canonical = real_validate(root)  # the REAL validator body runs
+        link.unlink()
+        link.symlink_to(danger)  # the TOCTOU: the raw root now points elsewhere
+        return canonical
+
+    monkeypatch.setattr(ced, "_assert_safe_slurm_src_root", swap_after_validate)
+    probes: list[int] = []
+
+    def spy_resolver(n: int):
+        probes.append(n)
+        raise AssertionError("status probe reached through a swapped, unvalidated root")
+
+    res = ced.sweep_slurm_src(
+        link,
+        apply=True,
+        main_repo=main_repo,
+        status_resolver=spy_resolver,
+        terminal_statuses=frozenset({"completed"}),
+    )
+    assert probes == []
+    assert res.rows == []  # enumeration used the validated canonical (safe, empty) root
+    assert (danger / "issue-9936" / "precious.py").is_file()
