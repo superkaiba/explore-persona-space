@@ -17,6 +17,7 @@ Loaded via importlib like ``tests/test_janitor_tmp_scratch_sweep.py``
 import importlib.util
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -500,11 +501,41 @@ def test_t13_report_mode_never_writes_dedup_state(slurm_root, main_repo, repo, t
     assert _sidecar_rows(repo) == []  # apply=False: report-only, no sidecar append
 
 
-# ─── T14: D9 nested working-tree overlay evidence ────────────────────────────
+# ─── T14: D9 nested working-tree overlay evidence (round 2: C2 + C3 + M3) ────
+
+NESTED_ONLY_PY = "print('unique to the nested overlay repo, never in the outer odb')\n"
+
+
+def _surviving_overlay(main_repo: Path) -> Path:
+    """The SURVIVING overlay repo at ``main_repo/external/open-instruct`` —
+    the round-2 C2 anchor every scratch-copy overlay proof verifies against.
+    Holds a committed file whose content is deliberately ABSENT from the
+    outer main odb (M3: nested blobs must not ride the outer proof)."""
+    surv = main_repo / "external" / "open-instruct"
+    if not (surv / ".git").exists():
+        surv.mkdir(parents=True, exist_ok=True)
+        _git(surv, "init", "-b", "main")
+        (surv / "nested_only.py").write_text(NESTED_ONLY_PY)
+        _git(surv, "add", "-A")
+        _git(surv, "commit", "-m", "nested init")
+    return surv
+
+
+def _staged_overlay_copy(cand: Path, main_repo: Path) -> Path:
+    """The ``materialize_branch_src`` overlay shape: an rsync-style FULL copy
+    (``.git`` included) of the surviving overlay repo into the staged tree —
+    byte-identical trees, exactly the measured production state."""
+    surv = _surviving_overlay(main_repo)
+    nested = cand / "external" / "open-instruct"
+    nested.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(surv, nested, symlinks=True)
+    return nested
 
 
 def _nested_overlay_clone(cand: Path, main_repo: Path) -> Path:
-    """A clean nested clone at the D9 overlay path ``external/open-instruct``."""
+    """A clean nested clone OF THE OUTER MAIN REPO at the overlay path —
+    kept only for the C2 surviving-repo-missing case (its blobs live in the
+    outer odb, and ``main_repo`` has no surviving overlay copy)."""
     nested = cand / "external" / "open-instruct"
     nested.parent.mkdir(parents=True, exist_ok=True)
     r = subprocess.run(
@@ -518,19 +549,29 @@ def _nested_overlay_clone(cand: Path, main_repo: Path) -> Path:
 
 
 def test_t14_clean_nested_overlay_reaps(slurm_root, main_repo, repo):
-    """T14(a): overlay files proven against the NESTED repo's own odb (clean
-    tree, reachable HEAD) let the whole staged tree reap — using the DEFAULT
-    overlay set (the writer's ``WORKING_TREE_OVERLAY_PATHS`` constant)."""
+    """T14(a), M3 rebuild: overlay files proven against the SURVIVING overlay
+    repo let the whole staged tree reap — with the nested-only blob asserted
+    ABSENT from the outer odb BEFORE the sweep, so a PASS can only come from
+    the overlay arm (pre-M3 the fixture cloned the outer repo, making the
+    outer proof able to mask a broken overlay arm)."""
     cand = slurm_root / "issue-9973"
     cand.mkdir()
     (cand / "tracked.py").write_text(COMMITTED_PY)
-    _nested_overlay_clone(cand, main_repo)
+    nested = _staged_overlay_copy(cand, main_repo)
+    # M3: blob disjointness — cat-file FAILS in the outer odb, SUCCEEDS in
+    # the surviving overlay repo (and its staged copy).
+    sha = _git(main_repo, "hash-object", str(nested / "nested_only.py")).stdout.strip()
+    assert _git(main_repo, "cat-file", "-e", sha, check=False).returncode != 0
+    surv = main_repo / "external" / "open-instruct"
+    assert _git(surv, "cat-file", "-e", sha).returncode == 0
     _backdate(cand)
     res = _sweep(slurm_root, main_repo, apply=True)
     row = _row(res, cand.name)
     assert row["disposition"] == "slurm-src-reaped"
-    assert "overlay files verified in nested odb" in row["evidence"]
+    assert "overlay files verified in the surviving overlay repo" in row["evidence"]
     assert not cand.exists()
+    # The C2 anchor itself is never touched by the reap.
+    assert (surv / "nested_only.py").is_file()
 
 
 def test_t14_dirty_nested_overlay_keeps(slurm_root, main_repo, repo):
@@ -538,8 +579,8 @@ def test_t14_dirty_nested_overlay_keeps(slurm_root, main_repo, repo):
     cand = slurm_root / "issue-9972"
     cand.mkdir()
     (cand / "tracked.py").write_text(COMMITTED_PY)
-    nested = _nested_overlay_clone(cand, main_repo)
-    (nested / "tracked.py").write_text(COMMITTED_PY + "# nested local edit\n")
+    nested = _staged_overlay_copy(cand, main_repo)
+    (nested / "nested_only.py").write_text(NESTED_ONLY_PY + "# nested local edit\n")
     _backdate(cand)
     res = _sweep(slurm_root, main_repo, apply=True)
     row = _row(res, cand.name)
@@ -555,6 +596,114 @@ def test_t14_overlay_not_a_repo_keeps_no_outer_fallback(slurm_root, main_repo, r
     cand = slurm_root / "issue-9971"
     (cand / "external" / "open-instruct").mkdir(parents=True)
     (cand / "external" / "open-instruct" / "copy.py").write_text(COMMITTED_PY)
+    (cand / "tracked.py").write_text(COMMITTED_PY)
+    _backdate(cand)
+    res = _sweep(slurm_root, main_repo, apply=True)
+    row = _row(res, cand.name)
+    assert row["disposition"] == "slurm-src-unverified-kept"
+    assert "overlay-not-a-repo" in row["reason"]
+    assert cand.exists()
+
+
+def test_t14_c2_unpushed_nested_ref_keeps(slurm_root, main_repo, repo):
+    """C2: a nested overlay with a CLEAN tree but a local-only branch commit
+    (absent from the SURVIVING repo) KEEPs — under the round-1 nested-odb
+    anchor this tree read as reapable and the commit died with it."""
+    cand = slurm_root / "issue-9964"
+    cand.mkdir()
+    (cand / "tracked.py").write_text(COMMITTED_PY)
+    nested = _staged_overlay_copy(cand, main_repo)
+    _git(nested, "checkout", "-b", "local-only")
+    (nested / "wip.py").write_text("print('nested-only work')\n")
+    _git(nested, "add", "wip.py")
+    _git(nested, "commit", "-m", "nested-only commit")
+    _backdate(cand)
+    res = _sweep(slurm_root, main_repo, apply=True)
+    row = _row(res, cand.name)
+    assert row["disposition"] == "slurm-src-unverified-kept"
+    assert "overlay-unpushed-ref" in row["reason"]
+    assert cand.exists() and (nested / "wip.py").is_file()
+
+
+def test_t14_c2_nested_stash_keeps(slurm_root, main_repo, repo):
+    """C2: a nested overlay with a clean tree but a non-empty OWN stash
+    KEEPs — stashed work dies with the tree; the round-1 probe never
+    checked the stash."""
+    cand = slurm_root / "issue-9963"
+    cand.mkdir()
+    (cand / "tracked.py").write_text(COMMITTED_PY)
+    nested = _staged_overlay_copy(cand, main_repo)
+    (nested / "nested_only.py").write_text(NESTED_ONLY_PY + "# stashed edit\n")
+    _git(nested, "stash")
+    _backdate(cand)
+    res = _sweep(slurm_root, main_repo, apply=True)
+    row = _row(res, cand.name)
+    assert row["disposition"] == "slurm-src-unverified-kept"
+    assert "overlay-stash" in row["reason"]
+    assert cand.exists()
+    assert _git(nested, "stash", "list").stdout.strip()  # the stash survives
+
+
+def test_t14_c2_surviving_repo_missing_keeps(slurm_root, main_repo, repo):
+    """C2: a clean, valid nested overlay whose SURVIVING anchor repo does not
+    exist in the main working tree KEEPs — with no surviving copy, deletion
+    would be unrecoverable regardless of the nested repo's own health."""
+    cand = slurm_root / "issue-9959"
+    cand.mkdir()
+    (cand / "tracked.py").write_text(COMMITTED_PY)
+    _nested_overlay_clone(cand, main_repo)  # main_repo has NO external/open-instruct
+    _backdate(cand)
+    res = _sweep(slurm_root, main_repo, apply=True)
+    row = _row(res, cand.name)
+    assert row["disposition"] == "slurm-src-unverified-kept"
+    assert "overlay-surviving-repo-missing" in row["reason"]
+    assert cand.exists()
+
+
+def test_t14_c3_overlay_with_only_tolerated_log_keeps(slurm_root, main_repo, repo):
+    """C3: a NON-git overlay holding ONLY a small tolerated ``.log`` file
+    KEEPs — round 1 tolerated the log, left ``overlay_entries`` empty, and
+    fell back to the outer proof, silently reaping the overlay."""
+    cand = slurm_root / "issue-9958"
+    ov = cand / "external" / "open-instruct"
+    ov.mkdir(parents=True)
+    (ov / "run.log").write_text("small telemetry only\n")
+    (cand / "tracked.py").write_text(COMMITTED_PY)
+    _backdate(cand)
+    res = _sweep(slurm_root, main_repo, apply=True)
+    row = _row(res, cand.name)
+    assert row["disposition"] == "slurm-src-unverified-kept"
+    assert "overlay-not-a-repo" in row["reason"]
+    assert cand.exists() and (ov / "run.log").is_file()
+
+
+def test_t14_c3_overlay_with_only_exempt_and_symlink_content_keeps(
+    slurm_root, main_repo, repo, tmp_path
+):
+    """C3: a NON-git overlay holding only exempt-dir content and a symlink
+    (nothing the walk hashes) KEEPs via the presence-keyed validation."""
+    cand = slurm_root / "issue-9957"
+    ov = cand / "external" / "open-instruct"
+    (ov / "__pycache__").mkdir(parents=True)
+    (ov / "__pycache__" / "x.pyc").write_bytes(b"\x00\x01")
+    target = tmp_path / "symlink-target.py"
+    target.write_text(COMMITTED_PY)
+    (ov / "link.py").symlink_to(target)
+    (cand / "tracked.py").write_text(COMMITTED_PY)
+    _backdate(cand)
+    res = _sweep(slurm_root, main_repo, apply=True)
+    row = _row(res, cand.name)
+    assert row["disposition"] == "slurm-src-unverified-kept"
+    assert "overlay-not-a-repo" in row["reason"]
+    assert cand.exists() and target.is_file()
+
+
+def test_t14_c3_empty_overlay_dir_keeps(slurm_root, main_repo, repo):
+    """C3: an EMPTY declared-overlay dir in an otherwise-proven tree KEEPs —
+    presence of the declared path alone demands a positively-established
+    nested repo before any other disposition."""
+    cand = slurm_root / "issue-9956"
+    (cand / "external" / "open-instruct").mkdir(parents=True)
     (cand / "tracked.py").write_text(COMMITTED_PY)
     _backdate(cand)
     res = _sweep(slurm_root, main_repo, apply=True)
@@ -776,3 +925,411 @@ def test_t8_main_acceptance_argv_report_mode_zero_mutation(
     assert not (tmp_path / ced.SCRATCH_VERDICT_CACHE_REL).exists()
     assert not (main_repo / ced.SCRATCH_VERDICT_CACHE_REL).exists()
     assert override_cache.is_file()
+
+
+# ─── round 2 C1: worktree reap dispatch keys SOLELY on the proven kind ────────
+
+
+def _rmtree_boom(path, *a, **k):
+    raise AssertionError(f"shutil.rmtree reached for a registered worktree: {path}")
+
+
+def test_c1_transient_admin_failure_never_routes_worktree_to_rmtree(
+    slurm_root, main_repo, repo, monkeypatch
+):
+    """C1: a TRANSIENT ``_worktree_admin_of_main`` failure AFTER the class
+    probes must never route a REGISTERED worktree to ``shutil.rmtree``.
+
+    Post-fix the admin lookup runs exactly TWICE per candidate (evidence
+    class probe + reap-time class re-probe, both inside
+    ``_scratch_git_class_probes``); the pre-fix reap dispatch made a THIRD
+    call whose transient False fell through to rmtree. The fake succeeds for
+    the two probe calls and fails afterwards; the rmtree spy turns any
+    worktree-rmtree into a hard failure. Post-fix outcome: a clean checked
+    ``git worktree remove`` (rmtree never consulted)."""
+    cand = _slurm_worktree(main_repo, slurm_root, "issue-9955")
+    real = ced._worktree_admin_of_main
+    calls = {"n": 0}
+
+    def flaky(admin, mr):
+        calls["n"] += 1
+        if calls["n"] > 2:
+            return False  # the transient registration-lookup failure
+        return real(admin, mr)
+
+    monkeypatch.setattr(ced, "_worktree_admin_of_main", flaky)
+    monkeypatch.setattr(ced.shutil, "rmtree", _rmtree_boom)
+    res = _sweep(slurm_root, main_repo, apply=True)
+    row = _row(res, cand.name)
+    assert row["disposition"] == "slurm-src-reaped"
+    assert "worktree-removed" in row["reason"]
+    assert not cand.exists()
+    assert str(cand) not in _git(main_repo, "worktree", "list").stdout
+    assert calls["n"] == 2  # the pin: no third (dispatch-condition) lookup exists
+
+
+def test_c1_worktree_remove_failure_keeps_never_rmtree(slurm_root, main_repo, repo, monkeypatch):
+    """C1: when ``git worktree remove`` FAILS, the worktree-class candidate is
+    KEPT (tree + registration intact) — ``shutil.rmtree`` is structurally
+    unreachable for ``kind == "worktree"``."""
+    cand = _slurm_worktree(main_repo, slurm_root, "issue-9954")
+    real_git = ced._git
+
+    def failing_remove(args, **kw):
+        if args[:2] == ["worktree", "remove"]:
+            return subprocess.CompletedProcess(args, 1, stdout="", stderr="simulated failure")
+        return real_git(args, **kw)
+
+    monkeypatch.setattr(ced, "_git", failing_remove)
+    monkeypatch.setattr(ced.shutil, "rmtree", _rmtree_boom)
+    res = _sweep(slurm_root, main_repo, apply=True)
+    row = _row(res, cand.name)
+    assert row["disposition"] == "slurm-src-worktree-remove-failed"
+    assert "simulated failure" in row["reason"]
+    assert cand.exists()
+    assert str(cand) in _git(main_repo, "worktree", "list").stdout
+
+
+# ─── round 2 C4: staging-root contract (fail LOUD before any probe) ──────────
+
+
+@pytest.mark.parametrize(
+    "case", ["slash", "slash_child", "home", "home_ancestor", "repo_root", "relative"]
+)
+def test_c4_dangerous_staging_root_refused_before_any_probe(case, main_repo):
+    """C4: a misconfigured staging root (``/``, a direct child of ``/``,
+    ``$HOME`` or an ancestor, a git repo root, a relative path) aborts the
+    ARMED sweep with a ValueError BEFORE any enumeration or status/evidence
+    probe — the spy resolver proves no candidate was ever probed."""
+    roots = {
+        "slash": Path("/"),
+        "slash_child": Path("/tmp"),
+        "home": Path.home(),
+        "home_ancestor": Path.home().parent,
+        "repo_root": main_repo,
+        "relative": Path("relative-staging-root"),
+    }
+    resolver_calls: list[int] = []
+
+    def spy_resolver(n: int):
+        resolver_calls.append(n)
+        raise AssertionError("status probe reached under a dangerous staging root")
+
+    with pytest.raises(ValueError, match="staging root"):
+        ced.sweep_slurm_src(
+            roots[case],
+            apply=True,
+            main_repo=main_repo,
+            status_resolver=spy_resolver,
+            terminal_statuses=frozenset({"completed"}),
+        )
+    assert resolver_calls == []
+
+
+def test_c4_mount_point_staging_root_refused(tmp_path, main_repo, monkeypatch):
+    """C4: a staging root resolving to a filesystem MOUNT POINT is refused
+    (the ``/mnt/eps-data``-class whole-disk anchor), and a candidate under
+    it is never touched."""
+    root = tmp_path / "mnt-like"
+    root.mkdir()
+    cand = root / "issue-9953"
+    cand.mkdir()
+    (cand / "tracked.py").write_text(COMMITTED_PY)
+    real_ismount = os.path.ismount
+    root_real = os.path.realpath(root)
+
+    def fake_ismount(p):
+        if os.path.realpath(str(p)) == root_real:
+            return True
+        return real_ismount(p)
+
+    monkeypatch.setattr(ced.os.path, "ismount", fake_ismount)
+    with pytest.raises(ValueError, match="mount point"):
+        ced.sweep_slurm_src(
+            root,
+            apply=True,
+            main_repo=main_repo,
+            status_resolver=lambda n: "completed",
+            terminal_statuses=frozenset({"completed"}),
+        )
+    assert cand.exists() and (cand / "tracked.py").is_file()
+
+
+# ─── round 2 M1: enumeration failures are explicit, never an empty sweep ─────
+
+
+def test_m1_absent_staging_root_is_explicit_skip(tmp_path, main_repo):
+    """M1: a nonexistent staging root sets ``skip_reason`` — an explicit
+    "did not enumerate" signal, never an indistinguishable empty result."""
+    root = tmp_path / "eps-slurm-src-never-created"
+    res = ced.sweep_slurm_src(
+        root,
+        apply=True,
+        main_repo=main_repo,
+        status_resolver=lambda n: "completed",
+        terminal_statuses=frozenset({"completed"}),
+    )
+    assert res.rows == []
+    assert res.skip_reason is not None and "absent" in res.skip_reason
+
+
+def test_m1_unreadable_staging_root_raises(slurm_root, main_repo, monkeypatch):
+    """M1: any NON-absence enumeration failure RAISES — a permission/IO
+    error reported as an empty sweep would hide a broken tier forever."""
+    real_listdir = os.listdir
+
+    def denied(path=None):
+        if path is not None and os.path.realpath(str(path)) == os.path.realpath(str(slurm_root)):
+            raise PermissionError(13, "Permission denied", str(path))
+        return real_listdir(path) if path is not None else real_listdir()
+
+    monkeypatch.setattr(ced.os, "listdir", denied)
+    with pytest.raises(RuntimeError, match="cannot enumerate"):
+        _sweep(slurm_root, main_repo, apply=True)
+
+
+def test_m1_clean_slurm_src_surfaces_absent_root_as_skipped(tmp_path, main_repo, monkeypatch):
+    """M1 (tier adapter): the vm_disk_guard tier maps the sweep's
+    ``skip_reason`` onto ``TierResult.skipped`` instead of reporting an
+    empty tier."""
+    monkeypatch.setattr(vdg, "_resolve_issue_status", lambda n: "completed")
+    res = vdg.clean_slurm_src(
+        True, staging_root=tmp_path / "eps-slurm-src-never-created", main_repo=main_repo
+    )
+    assert res.skipped
+    assert res.skip_reason is not None and "absent" in res.skip_reason
+    assert res.detail == [] and res.scratch_candidates == []
+
+
+def test_m1_state_write_failure_is_logged_not_silent(tmp_path, capsys):
+    """M1: a dedup-state write failure is fail-soft but LOGGED with the path
+    and error — never ``except OSError: pass``."""
+    blocked = tmp_path / "not-a-dir"
+    blocked.write_text("a file where a directory is needed\n")
+    ced._save_slurm_src_escalation_state(blocked / "esc.json", {"k": {"ts": 1.0}})
+    err = capsys.readouterr().err
+    assert "WARNING" in err and "escalation dedup state" in err and "esc.json" in err
+
+
+# ─── round 2 M2: reason slug in the dedup key; commit-after-emit ─────────────
+
+
+def test_m2_reason_change_realerts_within_window(slurm_root, main_repo, repo, tmp_path):
+    """M2: a materially different reason under the SAME disposition
+    re-alerts WITHIN the dedup window (the plan-D6 ``(path, reason, band)``
+    key) — and the same reason still dedups."""
+    cand = _staged_copy(slurm_root, "issue-9952")
+    state = tmp_path / "esc.json"
+    now = time.time()
+    common = dict(apply=True, escalation_state_path=state)
+    _sweep(slurm_root, main_repo, now=now, status="running", **common)
+    assert len(_sidecar_rows(repo)) == 1
+    # Same disposition (slurm-src-active-kept), DIFFERENT reason slug.
+    _sweep(slurm_root, main_repo, now=now + 3600.0, status="verifying", **common)
+    assert len(_sidecar_rows(repo)) == 2
+    # A repeat of the SAME reason within the window still dedups.
+    _sweep(slurm_root, main_repo, now=now + 7200.0, status="verifying", **common)
+    assert len(_sidecar_rows(repo)) == 2
+    assert cand.exists()
+
+
+def test_m2_failed_append_never_suppresses(slurm_root, main_repo, repo, tmp_path, monkeypatch):
+    """M2: the dedup timestamp commits ONLY after the sidecar append lands —
+    a FAILED append re-alerts on the next pass instead of being silently
+    suppressed for the whole 7-day window."""
+    cand = _staged_copy(slurm_root, "issue-9951")
+    state = tmp_path / "esc.json"
+    now = time.time()
+    common = dict(apply=True, status="running", escalation_state_path=state)
+    fail_next = {"on": True}
+    real_append = ced.append_disk_guard_event
+
+    def flaky_append(event, *, apply=True):
+        if fail_next["on"]:
+            return False  # the append did NOT land
+        return real_append(event, apply=apply)
+
+    monkeypatch.setattr(ced, "append_disk_guard_event", flaky_append)
+    _sweep(slurm_root, main_repo, now=now, **common)
+    assert _sidecar_rows(repo) == []  # nothing landed
+    assert ced._load_slurm_src_escalation_state(state) == {}  # nothing committed
+    fail_next["on"] = False
+    _sweep(slurm_root, main_repo, now=now + 3600.0, **common)  # well within the window
+    assert len(_sidecar_rows(repo)) == 1  # NOT suppressed — the failure never committed
+    assert cand.exists()
+
+
+# ─── round 2 M4 (T15b): REAL tier-(f) parity matrix over sweep_tmp_scratch ───
+#
+# The T15 tests above pin the extraction SEAM (call shapes); this matrix pins
+# the tier-(f) BEHAVIOR through the real shared core — every #2127 protection
+# exercised end-to-end on the tmp-scratch leg, with the exact row disposition
+# AND the filesystem/registration outcome asserted per arm (plan K3: the
+# refactor may not loosen tier (f)).
+
+
+@pytest.fixture
+def scratch_tmp_root(tmp_path):
+    root = tmp_path / "faketmp"
+    root.mkdir()
+    return root
+
+
+def _tmp_copy(scratch_tmp_root: Path, name: str = "scratch-copy") -> Path:
+    cand = scratch_tmp_root / name
+    cand.mkdir()
+    (cand / "tracked.py").write_text(COMMITTED_PY)
+    _backdate(cand)
+    return cand
+
+
+def _tmp_sweep(scratch_tmp_root: Path, main_repo: Path, *, apply: bool, **kw):
+    return ced.sweep_tmp_scratch(scratch_tmp_root, apply=apply, main_repo=main_repo, **kw)
+
+
+def _tmp_row(res, name: str) -> dict:
+    rows = [r for r in res.rows if r["name"] == name]
+    assert rows, f"no tmp-scratch row for {name}; rows={[r['name'] for r in res.rows]}"
+    return rows[0]
+
+
+def test_t15b_walk_error_kept(scratch_tmp_root, main_repo, repo):
+    """T15b arm 1: an unreadable subtree keeps (walk error), nothing deleted."""
+    if os.geteuid() == 0:
+        pytest.skip("chmod 000 does not block root")
+    cand = _tmp_copy(scratch_tmp_root, "scratch-walkerr")
+    sub = cand / "sub"
+    sub.mkdir()
+    (sub / "x.py").write_text(COMMITTED_PY)
+    _backdate(cand)
+    sub.chmod(0o000)
+    try:
+        res = _tmp_sweep(scratch_tmp_root, main_repo, apply=True)
+        row = _tmp_row(res, cand.name)
+        assert row["disposition"] == "tmp-scratch-unverified-kept"
+        assert "walk error" in row["reason"]
+        assert cand.exists()
+    finally:
+        sub.chmod(0o755)
+
+
+def test_t15b_nonregular_kept(scratch_tmp_root, main_repo, repo):
+    """T15b arm 2: a FIFO anywhere in the tree keeps with its own tag."""
+    cand = _tmp_copy(scratch_tmp_root, "scratch-fifo")
+    os.mkfifo(cand / "pipe")
+    _backdate(cand)
+    res = _tmp_sweep(scratch_tmp_root, main_repo, apply=True)
+    row = _tmp_row(res, cand.name)
+    assert row["disposition"] == "tmp-scratch-nonregular-kept"
+    assert cand.exists()
+
+
+def test_t15b_recent_write_kept(scratch_tmp_root, main_repo, repo):
+    """T15b arm 3: a fresh mtime keeps (age only ever a KEEP signal)."""
+    cand = _tmp_copy(scratch_tmp_root, "scratch-recent")
+    now = time.time()
+    os.utime(cand / "tracked.py", (now, now))
+    res = _tmp_sweep(scratch_tmp_root, main_repo, apply=True)
+    row = _tmp_row(res, cand.name)
+    assert row["disposition"] == "tmp-scratch-recent-kept"
+    assert cand.exists() and (cand / "tracked.py").is_file()
+
+
+def test_t15b_unproven_blob_kept_and_named(scratch_tmp_root, main_repo, repo):
+    """T15b arm 4: one uncommitted byte keeps the tree and NAMES the file."""
+    cand = _tmp_copy(scratch_tmp_root, "scratch-unproven")
+    (cand / "precious.py").write_text("never committed anywhere\n")
+    _backdate(cand)
+    res = _tmp_sweep(scratch_tmp_root, main_repo, apply=True)
+    row = _tmp_row(res, cand.name)
+    assert row["disposition"] == "tmp-scratch-unverified-kept"
+    assert "precious.py" in row["reason"]
+    assert cand.exists() and (cand / "precious.py").is_file()
+
+
+def test_t15b_reader_atime_pins_verified_tree(scratch_tmp_root, main_repo, repo):
+    """T15b arm 5: a VERIFIED tree recently READ (fresh nlink==1 atime) is
+    kept + escalated as atime-pinned, never reaped."""
+    cand = _tmp_copy(scratch_tmp_root, "scratch-atime")
+    os.utime(cand / "tracked.py", (time.time(), AGED_TS))  # atime fresh, mtime old
+    res = _tmp_sweep(scratch_tmp_root, main_repo, apply=True)
+    row = _tmp_row(res, cand.name)
+    assert row["disposition"] == "tmp-scratch-verified-atime-pinned"
+    assert cand.exists()
+    assert [r["kind"] for r in _sidecar_rows(repo)] == ["tmp-scratch-verified-atime-pinned"]
+
+
+def test_t15b_live_process_holds_tree(scratch_tmp_root, main_repo, repo):
+    """T15b arm 6: a live process cwd'd inside the tree holds the reap."""
+    cand = _tmp_copy(scratch_tmp_root, "scratch-live")
+    proc = subprocess.Popen(["sleep", "60"], cwd=cand)
+    try:
+        res = _tmp_sweep(scratch_tmp_root, main_repo, apply=True)
+        row = _tmp_row(res, cand.name)
+        assert row["disposition"] == "tmp-scratch-live-process-kept"
+        assert cand.exists()
+    finally:
+        proc.kill()
+        proc.wait()
+
+
+def test_t15b_cached_pass_state_flip_reprobed_at_reap(scratch_tmp_root, main_repo, repo, tmp_path):
+    """T15b arm 7: a CACHED PASS never licenses a deletion on flipped
+    external git state — the reap-time class RE-probe catches a ref deleted
+    AFTER the verdict was cached (the #2127 gc-residual contract)."""
+    cand = _slurm_worktree(main_repo, scratch_tmp_root, "scratch-flip")
+    cache = tmp_path / "verdict-cache.json"
+    res1 = _tmp_sweep(scratch_tmp_root, main_repo, apply=False, verdict_cache_path=cache)
+    assert _tmp_row(res1, cand.name)["disposition"] == "would-reap"
+    assert cache.is_file()
+    # Flip EXTERNAL git state with ZERO tree change: delete the only branch,
+    # making the worktree's detached HEAD unreachable from every ref.
+    _git(main_repo, "update-ref", "-d", "refs/heads/main")
+    _backdate(cand)  # reset atimes the verification hashing refreshed
+    res2 = _tmp_sweep(scratch_tmp_root, main_repo, apply=True, verdict_cache_path=cache)
+    row = _tmp_row(res2, cand.name)
+    # A cache MISS would keep earlier as unverified-kept; reap-reprobe-kept
+    # proves the cached PASS was honored AND the destructive path re-probed.
+    assert row["disposition"] == "tmp-scratch-reap-reprobe-kept"
+    assert "head-unreachable" in row["reason"]
+    assert cand.exists()
+    assert str(cand) in _git(main_repo, "worktree", "list").stdout
+
+
+def test_t15b_worktree_remove_failure_kept(scratch_tmp_root, main_repo, repo, monkeypatch):
+    """T15b arm 8: a failed ``git worktree remove`` keeps tree +
+    registration; rmtree is never a fallback (C1 on the tier-(f) leg)."""
+    cand = _slurm_worktree(main_repo, scratch_tmp_root, "scratch-rmfail")
+    real_git = ced._git
+
+    def failing_remove(args, **kw):
+        if args[:2] == ["worktree", "remove"]:
+            return subprocess.CompletedProcess(args, 1, stdout="", stderr="simulated failure")
+        return real_git(args, **kw)
+
+    monkeypatch.setattr(ced, "_git", failing_remove)
+    monkeypatch.setattr(ced.shutil, "rmtree", _rmtree_boom)
+    res = _tmp_sweep(scratch_tmp_root, main_repo, apply=True)
+    row = _tmp_row(res, cand.name)
+    assert row["disposition"] == "tmp-scratch-worktree-remove-failed"
+    assert cand.exists()
+    assert str(cand) in _git(main_repo, "worktree", "list").stdout
+
+
+def test_t15b_registered_vs_unregistered_reap_dispatch(scratch_tmp_root, main_repo, repo):
+    """T15b arm 9: a REGISTERED worktree reaps via ``git worktree remove``
+    (gone AND unregistered); a plain dir reaps via rmtree — the dispatch is
+    class-keyed on both legs."""
+    wt = _slurm_worktree(main_repo, scratch_tmp_root, "scratch-wt")
+    plain = _tmp_copy(scratch_tmp_root, "scratch-plain")
+    res = _tmp_sweep(scratch_tmp_root, main_repo, apply=True)
+    wt_row = _tmp_row(res, wt.name)
+    assert wt_row["disposition"] == "tmp-scratch-reaped"
+    assert "worktree-removed" in wt_row["reason"]
+    assert not wt.exists()
+    assert str(wt) not in _git(main_repo, "worktree", "list").stdout
+    plain_row = _tmp_row(res, plain.name)
+    assert plain_row["disposition"] == "tmp-scratch-reaped"
+    assert "rmtree" in plain_row["reason"]
+    assert not plain.exists()
+    assert res.bytes_freed > 0

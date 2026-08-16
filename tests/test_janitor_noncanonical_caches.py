@@ -543,6 +543,56 @@ def test_production_tmp_root_only_in_mains(symbol):
             )
 
 
+def _top_level_funcs(script: str) -> dict[str, ast.AST]:
+    tree = ast.parse((_SCRIPTS / script).read_text())
+    return {
+        node.name: node
+        for node in tree.body
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef)
+    }
+
+
+def _calls_in(node: ast.AST) -> set[str]:
+    """Every callee NAME invoked anywhere inside ``node`` (nested defs
+    included — closures like a ``_finish`` helper still count as calls made
+    by their enclosing function)."""
+    out: set[str] = set()
+    for sub in ast.walk(node):
+        if isinstance(sub, ast.Call):
+            fn = sub.func
+            if isinstance(fn, ast.Name):
+                out.add(fn.id)
+            elif isinstance(fn, ast.Attribute):
+                out.add(fn.attr)
+    return out
+
+
+def test_slurm_src_tier_call_chain_reachable():
+    """#2147 review round 2 M5: the main()-only resolver assertions above
+    pin where the PRODUCTION ROOTS may be referenced, but nothing pinned
+    that tier (g) is actually WIRED — a future refactor could orphan
+    ``clean_slurm_src`` (or the shared core) with every hermeticity test
+    still green. Pin each edge of the production chain
+    ``main -> run_guard -> clean_slurm_src -> sweep_slurm_src ->
+    _sweep_scratch_candidate -> _scratch_row_finish`` as an AST
+    call-reachability fact."""
+    edges = [
+        ("vm_disk_guard.py", "main", "run_guard"),
+        ("vm_disk_guard.py", "run_guard", "clean_slurm_src"),
+        ("vm_disk_guard.py", "clean_slurm_src", "sweep_slurm_src"),
+        ("clean_experiment_downloads.py", "sweep_slurm_src", "_sweep_scratch_candidate"),
+        ("clean_experiment_downloads.py", "_sweep_scratch_candidate", "_scratch_row_finish"),
+    ]
+    funcs_by_script = {script: _top_level_funcs(script) for script in {s for s, _, _ in edges}}
+    for script, caller, callee in edges:
+        funcs = funcs_by_script[script]
+        assert caller in funcs, f"{script}: top-level def {caller}() disappeared"
+        assert callee in _calls_in(funcs[caller]), (
+            f"{script}: {caller}() no longer calls {callee}() — the #2147 tier-(g) "
+            "chain is broken/orphaned"
+        )
+
+
 def test_cli_main_forwards_tmp_root_to_cleaner(tmp_path, monkeypatch):
     """r2 Minor: pin that ced ``main()``'s signature-adaptive dispatch
     actually FORWARDS ``production_tmp_root()`` into the production cleaners
