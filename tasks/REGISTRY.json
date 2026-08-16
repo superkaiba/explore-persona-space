@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2329,
+  "highest_id": 2330,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10277,6 +10277,13 @@
       "path": "tasks/archived/233",
       "status": "archived",
       "title": "Rerun prefix-completion dissociation with rstrip bug fix (#138 follow-up)"
+    },
+    "2330": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2330",
+      "status": "proposed",
+      "title": "Matched-data map R2: Qwen2.5-7B-Instruct vs Qwen3.5-9B on LMSYS on-policy generations at 5k/10k"
     },
     "234": {
       "has_clean_result": true,
