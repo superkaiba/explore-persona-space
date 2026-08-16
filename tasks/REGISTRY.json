@@ -8853,8 +8853,8 @@
     "2145": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2145",
-      "status": "planning",
+      "path": "tasks/approved/2145",
+      "status": "approved",
       "title": "daily-fix: dispatch_issue launch lacks name-suffix/gpu-type"
     },
     "2146": {
