@@ -8860,8 +8860,8 @@
     "2146": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2146",
-      "status": "proposed",
+      "path": "tasks/planning/2146",
+      "status": "planning",
       "title": "daily-fix: inline override duty list misses tick cron"
     },
     "2147": {
