@@ -609,6 +609,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_precommit_gitleaks_merge_scope.py",
     "tests/test_diff_base_origin_main_pin.py",  # NEW (#1289) — diff-base origin/main pin
     "tests/test_fit_loop_batching_review_pin.py",  # NEW (#1397) — fit-loop batching review-lens pin
+    # NEW (#2325) — skill-doc headroom PostToolUse hook pin (warn-only,
+    # fail-open) incl. its settings.json registration + resolved-path assert:
+    # `.json` diffs map to no tests (_DATA_DOC_SUFFIXES), so the registration
+    # pin runs on every gate ONLY via this tuple.
+    "tests/test_guard_skill_doc_headroom.py",
     # NEW (#1577) — guard-script read-bounding hook pin: the selector's
     # stem/literal/dependency arms are .py-only, so a later .sh-hook /
     # settings.json diff re-runs this pin ONLY via this tuple.

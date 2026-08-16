@@ -160,6 +160,25 @@ def test_grandfathered_over_cap_fails(tmp_path: Path, monkeypatch: pytest.Monkey
     assert str(cap) in errors[0].replace(",", "")
 
 
+def test_regrowth_fail_names_suggested_cap(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The regrowth FAIL emits the exact replacement cap line (#2325): the
+    corridor-max suggested value ``((size + 2_800) // 100) * 100``, the caps
+    data file, the lockstep ``_MIGRATION_SNAPSHOT`` reminder, and the fast
+    re-verify flag — the pre-commit blocked session applies the designed
+    raise-the-cap remedy from the FAIL text alone (Should-Fix 1)."""
+    cap = AGENT_SPEC_FAIL_BYTES + 4_000
+    monkeypatch.setattr(workflow_lint, "AGENT_SPEC_SIZE_GRANDFATHER", {"gf.md": cap})
+    size = cap + 1
+    _write_agent(tmp_path, "gf.md", size)
+    errors = check_agent_spec_size(repo_root=tmp_path, warn_sink=[])
+    assert len(errors) == 1, errors
+    suggested = ((size + 2_800) // 100) * 100
+    assert "agent_spec_size_caps.txt" in errors[0]
+    assert "_MIGRATION_SNAPSHOT" in errors[0]
+    assert f"{suggested:_}" in errors[0]
+    assert "--check-agent-spec-size" in errors[0]
+
+
 # --------------------------------------------------------------------------
 # (f) grandfather entry whose file does not exist → FAIL "stale"
 # --------------------------------------------------------------------------
