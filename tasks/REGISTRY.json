@@ -10210,8 +10210,8 @@
     "2321": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2321",
-      "status": "approved",
+      "path": "tasks/running/2321",
+      "status": "running",
       "title": "Repack the 10 largest prefixes in the HF data repo to recover ~610k of the 1,000,000-file cap"
     },
     "2322": {
