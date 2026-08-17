@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2347,
+  "highest_id": 2348,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10413,6 +10413,13 @@
       "path": "tasks/running/2347",
       "status": "running",
       "title": "workflow-fix: main-red \u2014 post_marker_echo test stubs lack set_status's new if_plan_v kwarg (4 tests)"
+    },
+    "2348": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2348",
+      "status": "proposed",
+      "title": "workflow-fix: Step 10d pre-push gate mapped-test legs compare failure sets over different collections (false block on pre-existing main-red)"
     },
     "235": {
       "has_clean_result": true,
