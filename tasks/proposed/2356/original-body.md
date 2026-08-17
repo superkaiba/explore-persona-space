@@ -10,6 +10,11 @@ origin_prompt: 'run the full experiment i talked about earlier on the overrefusa
   probe on actual answer vector, fair train/eval split)'
 workflow: v1
 ---
+---
+kind: experiment
+goal: "On borderline (dual-use) prompts, determine whether Qwen2.5-7B-Instruct's over-refuse-vs-answer decision is predictable from its INTERNAL representation of the context when it is NOT predictable from the prompt text by a strong LLM judge, and whether a fitted context->answer map recovers the behavior-relevant signal that only the actual-answer representation contains. Compare four predictors under a fair group-level split: (1) LLM judge on context text, (2) linear probe on the context activation, (3) linear probe on the mapped (predicted) answer activation, (4) linear probe on the actual answer activation (ceiling)."
+---
+
 ## Goal
 
 Predict Qwen2.5-7B-Instruct's behavior (RELIABLY-ANSWER vs RELIABLY-OVER-REFUSE) on borderline dual-use prompts, and compare four predictors of that behavior under a fair, group-level train/eval split:
@@ -32,13 +37,13 @@ Predict Qwen2.5-7B-Instruct's behavior (RELIABLY-ANSWER vs RELIABLY-OVER-REFUSE)
 - **Dataset:** OR-Bench-Hard-1k (`bench-llm/or-bench`) + PHTest (`furonghuang-lab/PHTest`, controversial subset) — benign-but-scary dual-use prompts that straddle the refuse/answer boundary. Inline pilot (this session): OR-Bench-Hard greedy over-refusal rate ≈ 15% (answer 85%), and near-duplicate prompts already straddle the boundary naturally (e.g. "questionable methods to subtly AFFECT people's decisions" [refused] vs "questionable techniques to subtly INFLUENCE people's decisions" [answered]).
 - **Behavior label (DV):** reliable, multi-sample. Sample N≈10 per prompt at temp≈0.9, Sonnet-judge each response as answer vs over-refuse. Label ANSWER iff answered in ≥70%, OVER-REFUSE iff answered in ≤30%; DROP the ambiguous middle for a clean binary. Balance by subsampling the majority class.
 - **Activations:** Qwen2.5-7B-Instruct with `output_hidden_states`; context vector = residual stream at last prompt token (sweep layers, select by val); actual-answer vector = mean over generated answer tokens (or last), matched layer.
-- **Map M (LABEL-BLIND, trained on additional unjudged generic data — user decision):** fit the context→answer representation map on a SEPARATE, GENERIC, UNJUDGED corpus of (context, answer) pairs — disjoint from the behavior-labeled borderline set, NO behavior labels, NO prompt overlap. M is a task-agnostic transform (the model's general context→answer geometry), never fit to the DV — this is what makes #3 non-circular with #2 (M cannot encode behavior labels it never saw). Prefer a LOW-RANK / answer-subspace map and REPORT its effective rank, so #3 is a probe restricted to the generically-learned answer geometry (a strict, regularizing subset of #2's hypothesis class).
+- **Map M:** fit context→answer representation map on TRAIN groups; produce mapped-answer vectors for eval.
 - **Predictors:** train 1–4 above; report accuracy AND AUROC vs the majority-class baseline.
 - **Fair split:** GROUP-LEVEL by seed/topic — all paraphrases/near-duplicates of one seed stay on the same side of train/eval (no leakage). Report LODO-style generalization too.
 
 ## Design risks to resolve in planning (flagged)
 
-1. **Is predictor #3 distinct from #2? — RESOLVED (user):** M is trained on ADDITIONAL UNJUDGED GENERIC (context, answer) data, label-blind and disjoint from the behavior set, so #3 is NOT circular with #2 (M never sees the DV, so it cannot re-derive the behavior probe). Residual to handle: with a FULL-RANK linear M, probe(M·x) is still linear-in-x, so a linear #2 with ample labels matches #3 IN-SAMPLE by hypothesis-class equivalence. Genuine dissociation therefore requires (a) M effectively LOW-RANK (an answer-subspace projection) so #3's hypothesis class is a strict subset of #2's, and/or (b) evaluating GENERALIZATION under LIMITED labels — M is a label-blind feature map fit on abundant generic data, acting as a strong prior for the small labeled probe. Planner: make M low-rank/answer-subspace, report effective rank, and compare the 4 predictors on held-out generalization (limited-label regime), not in-sample fit. The scientific read of #3: does the label-blind context→answer geometry already carry the behavior signal (behavior lives in the general answer-prediction, not a refusal-specific direction)?
+1. **Is predictor #3 distinct from #2?** If both M and the probe are linear, a linear probe on M(context) carries the same linear information as a probe on the context (reparametrization) — #3 would be redundant. #3 is only meaningful if M is trained cross-group to predict answer geometry and we test transfer, or M/probe is nonlinear, or #3 targets a specific answer position. The planner must pin this or #3 is uninformative.
 2. **Judge baseline must be strong** (few-shot, calibrated) so a low judge AUROC means "surface-unpredictable," not "weak judge."
 3. **Linear by default** for all probes and the map (project rule); nonlinear only if explicitly justified.
 
