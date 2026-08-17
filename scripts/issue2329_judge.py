@@ -66,7 +66,7 @@ if str(_SCRIPTS_DIR) not in sys.path:
 
 import issue2094_judge as J94  # noqa: E402  (same-dir script import; reused machinery)
 from explore_persona_space.eval.graded_judge import judge_graded  # noqa: E402
-from explore_persona_space.eval.judge_pilot import judge_pilot_gate  # noqa: E402
+from explore_persona_space.eval.judge_pilot import ArmPilotStats, judge_pilot_gate  # noqa: E402
 from explore_persona_space.experiments.issue2162 import bank2162 as BANK  # noqa: E402
 
 logger = logging.getLogger("issue2329.judge")
@@ -453,17 +453,79 @@ def _family_min_effective_floor(arms: dict[str, list[tuple[str, str, str]]], n_d
     is pinned at ``n_draws=1`` (rules 23/26: the pilot runs the EXACT
     production instrument, which draws once per item), so no
     ``target_total_draws`` can raise its draw count — gets its own realized
-    capacity ``min(arm item count) * n_draws`` as the floor instead: the
-    verdict floor in ``judge_pilot._gate_verdict`` is UNCONDITIONAL (no
-    exemption for sub-resolution-bypassed or waived arms), so keeping the 51
-    ceiling would deterministically FAIL the family on arithmetic the data
-    cannot satisfy. Residual: that family's parse-fail check resolves at
-    ``1/floor`` (3.3% for 30 draws) instead of 2% — recorded per family in
-    the phase report (``per_family[*].parse_fail_resolution_pct``)."""
+    capacity ``item count * n_draws`` as the floor instead: the verdict floor
+    in ``judge_pilot._gate_verdict`` is UNCONDITIONAL (no exemption for
+    sub-resolution-bypassed or waived arms), so keeping the 51 ceiling would
+    deterministically FAIL the family on arithmetic the data cannot satisfy.
+    Residual: that family's parse-fail check resolves at 1/answered-draws —
+    equal to ``1/floor`` only when every draw is answered (3.3% for 30
+    draws) — instead of 2%; recorded per family in the phase report
+    (``per_family[*].parse_fail_resolution_pct``).
+
+    SINGLE-ARM PRECONDITION (asserted, #2329 review v10 Minor 3):
+    ``judge_pilot._gate_verdict`` compares EVERY arm against this one scalar
+    floor, so a min-over-arms derivation would silently UNDER-ENFORCE the
+    larger arms of a multi-arm family; per-arm floors are inexpressible
+    without a ``judge_pilot`` library change (``min_effective_draws_per_arm``
+    is a scalar kwarg). Fail loud here, never a silent widening — re-derive
+    per arm before widening the pilot slice to a second arm class.
+
+    Raises ``ValueError`` on ``n_draws < 1``: a non-positive draw count is
+    nonsensical for this gate (the production instrument draws >= 1 time per
+    item), and unvalidated it would derive a 0 floor that every arm trivially
+    clears — a silent PASS on zero evidence. The ``max(1, .)`` below is kept
+    for parity with ``judge_pilot``'s own ``d_eff = max(1, n_draws)`` clamp
+    (judge_pilot.py:327) and only ever operates on validated input.
+    """
     assert arms, "no arms"
-    d_eff = max(1, n_draws)
+    assert len(arms) == 1, (
+        f"_family_min_effective_floor assumes a SINGLE-ARM gate3pre family, got arms="
+        f"{sorted(arms)}: judge_pilot._gate_verdict floors EVERY arm at this one scalar, "
+        "so min-over-arms would silently under-enforce the larger arms; per-arm floors "
+        "need a judge_pilot library change (min_effective_draws_per_arm is scalar) — "
+        "re-derive per arm before widening the pilot slice"
+    )
+    if n_draws < 1:
+        raise ValueError(
+            f"n_draws={n_draws} < 1 is nonsensical for the gate-3-pre floor derivation: "
+            "the pilot runs the production instrument (>= 1 draw per item); an "
+            "unvalidated non-positive count would derive a 0 floor that every arm "
+            "trivially clears — a silent PASS on zero evidence"
+        )
+    d_eff = max(1, n_draws)  # judge_pilot d_eff parity (input validated above)
     min_arm_capacity = min(len(items) for items in arms.values()) * d_eff
     return min(GATE3PRE_MIN_EFFECTIVE_DRAWS, min_arm_capacity)
+
+
+def _family_resolution_fields(arms: dict[str, ArmPilotStats], family_floor: int) -> dict:
+    """Resolution-disclosure fields for one family's aggregate-report row.
+
+    ``effective_draws_min`` mirrors the EXACT quantity ``_gate_verdict``
+    floors on (``n_draws - n_transport_lost``, judge_pilot.py:240).
+    ``parse_fail_resolution_pct`` — the smallest observable nonzero parse-fail
+    rate — instead uses the ANSWERED denominator (``- n_api_refusal`` too),
+    the denominator of ``judge_pilot``'s own ``parse_fail_rate``
+    (judge_pilot.py:580-601) and ``_runtime_shrink_warnings`` (:422): rule 28
+    api-refusal draws leave the answered pool exactly as transport losses do,
+    so the effective count would OVERSTATE the check's fineness on an
+    api-refusal-bearing wave (#2329 review v10 Minor 1 / codex BLOCKER).
+    ``answered_draws_min`` makes the denominator auditable in the report. A
+    fully-censored family (0 answered draws) reports ``None`` — never a
+    coerced number. ``sub_resolution`` keys on the CONFIGURED relaxation
+    (``floor_applied < floor_ceiling``), never on realized draws: a
+    transport-hollowed FULL-strength family FAILs the gate but was not a
+    deliberate relaxation (v10 Minor 2).
+    """
+    min_effective = min(st.n_draws - st.n_transport_lost for st in arms.values())
+    min_answered = min(st.n_draws - st.n_transport_lost - st.n_api_refusal for st in arms.values())
+    return {
+        "floor_applied": family_floor,
+        "floor_ceiling": GATE3PRE_MIN_EFFECTIVE_DRAWS,
+        "effective_draws_min": min_effective,
+        "answered_draws_min": min_answered,
+        "sub_resolution": bool(family_floor < GATE3PRE_MIN_EFFECTIVE_DRAWS),
+        "parse_fail_resolution_pct": (round(100.0 / min_answered, 2) if min_answered > 0 else None),
+    }
 
 
 def phase_pilot_gate3pre(cfg: JudgeConfig) -> int:
@@ -529,20 +591,13 @@ def phase_pilot_gate3pre(cfg: JudgeConfig) -> int:
             report_path=cfg.gates_dir / "pilot_gate3pre" / f"{family}.json",
             seed=PILOT_SEED,
         )
-        min_effective = min(st.n_draws - st.n_transport_lost for st in report.arms.values())
         per_family[family] = {
             "rubric_id": rid,
             "verdict": report.verdict,
             "failures": report.failures,
             "warnings": report.warnings,
             "n_total_draws": report.n_total_draws,
-            "floor_applied": family_floor,
-            "floor_ceiling": GATE3PRE_MIN_EFFECTIVE_DRAWS,
-            "effective_draws_min": min_effective,
-            "sub_resolution": bool(min_effective < GATE3PRE_MIN_EFFECTIVE_DRAWS),
-            "parse_fail_resolution_pct": (
-                round(100.0 / min_effective, 2) if min_effective > 0 else None
-            ),
+            **_family_resolution_fields(report.arms, family_floor),
         }
         # Realized (arm x rubric-family) cell enumeration (plan §7 gate 3-pre:
         # "the pilot report enumerates realized cells + their effective draws").
@@ -555,6 +610,7 @@ def phase_pilot_gate3pre(cfg: JudgeConfig) -> int:
                     "rubric_id": rid,
                     "n_draws": st.n_draws,
                     "n_transport_lost": st.n_transport_lost,
+                    "n_api_refusal": st.n_api_refusal,
                     "effective_draws": effective,
                     "floor": family_floor,
                     "floor_ceiling": GATE3PRE_MIN_EFFECTIVE_DRAWS,
@@ -582,9 +638,10 @@ def phase_pilot_gate3pre(cfg: JudgeConfig) -> int:
             "parse-fail < 2% + effective draws per realized (arm x rubric-family) "
             f"cell >= min({GATE3PRE_MIN_EFFECTIVE_DRAWS}, the family's realized arm "
             "item count x n_draws) — the feasibility-aware per-family floor: an "
-            "item-limited family runs SUB-RESOLUTION (per_family[*].sub_resolution) "
-            "and its parse-fail check resolves at 1/floor "
-            "(per_family[*].parse_fail_resolution_pct) instead of 2%"
+            "item-limited family runs SUB-RESOLUTION (per_family[*].sub_resolution, "
+            "keyed on floor_applied < floor_ceiling) and its parse-fail check "
+            "resolves at 1/answered-draws (per_family[*].parse_fail_resolution_pct; "
+            "= 1/floor when every draw is answered) instead of 2%"
         ),
         "passed": all_pass,
         "per_family": per_family,
