@@ -3,7 +3,8 @@ title: Predicting Qwen2.5-7B-Instruct refuse/comply behavior from internal repre
   vs an LLM judge, across harmful-compliance and over-refusal regimes (context / mapped-answer
   / actual-answer probes)
 kind: experiment
-tags: []
+tags:
+- trigger-dense
 created_at: '2026-08-17T22:23:49Z'
 has_clean_result: false
 origin_prompt: 'run the full experiment i talked about earlier on the overrefusal
