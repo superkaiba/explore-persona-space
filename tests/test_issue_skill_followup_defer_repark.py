@@ -32,6 +32,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 ROOT = Path(__file__).resolve().parent.parent
 ISSUE_SKILL = ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 MARKERS_MD = ROOT / ".claude" / "skills" / "issue" / "markers.md"
@@ -52,7 +54,7 @@ def test_defer_teardown_repark_duty_pinned():
     """All three surfaces carry the #1321 mid-round defer -> re-park duty."""
     # (a) SKILL.md § Same-issue follow-up loop names the defer exit + the
     # deferred outcome, inside the loop section (after its anchor).
-    skill = ISSUE_SKILL.read_text()
+    skill = issue_skill_text()
     skill_norm = _normalized(skill)
     anchor_idx = skill_norm.find(_normalized(LOOP_ANCHOR))
     assert anchor_idx != -1, (

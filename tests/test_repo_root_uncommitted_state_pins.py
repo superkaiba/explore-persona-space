@@ -33,6 +33,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 ROOT = Path(__file__).resolve().parent.parent
 CLAUDE_MD = ROOT / "CLAUDE.md"
 ISSUE_SKILL = ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
@@ -59,7 +61,7 @@ def test_claude_md_concurrent_committers_carries_the_warning():
 def test_9ater_uncommitted_exposure_block_present():
     """The durability pin named in plan #2015 D5 / §10: the 9a-ter
     inline-round copy of the exposure-window guidance."""
-    text = _norm(ISSUE_SKILL.read_text(encoding="utf-8"))
+    text = _norm(issue_skill_text())
     assert "Uncommitted-exposure window" in text
     assert "git show <pushed-sha>:<path>" in text
     assert "repo-root-uncommitted-state.md" in text

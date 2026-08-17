@@ -51,6 +51,8 @@ import os
 import subprocess
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 ROOT = Path(__file__).resolve().parents[1]
 SKILL = ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 
@@ -76,7 +78,7 @@ LOCAL_SUBJECT = "issue-99: local-L1"
 
 
 def _text() -> str:
-    return SKILL.read_text(encoding="utf-8")
+    return issue_skill_text()
 
 
 def _normalized(text: str) -> str:

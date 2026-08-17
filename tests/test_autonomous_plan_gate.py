@@ -29,6 +29,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from tests.issue_skill_source import read_workflow_doc
+
 # Load `scripts/task.py` as a module so we can hit the pure gate resolver.
 _SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "task.py"
 _spec = importlib.util.spec_from_file_location("task_cli_plan_gate", _SCRIPT)
@@ -505,7 +507,7 @@ def test_cap_env_read_is_single_sourced():
         repo / ".claude" / "skills" / "issue-tick" / "SKILL.md",
     ):
         assert skill.exists(), f"scanned SKILL.md moved: {skill}"
-        assert not _SKILL_LITERAL_ENV_READ.search(skill.read_text(encoding="utf-8")), (
+        assert not _SKILL_LITERAL_ENV_READ.search(read_workflow_doc(skill)), (
             f"{skill}: snippet re-introduces a literal-bearing env read of "
             f"{_CAP_ENV_NAME} — use task_workflow.resolve_plan_gate_cap()"
         )
