@@ -295,6 +295,11 @@ def phase_pilot(args) -> None:
         raise RuntimeError(f"pilot kresample shard exited rc={rc}; see {log}")
     last = _last_unit_line(log)
     if last is None:
+        if "already on Hub; skip" in log.read_text(errors="replace"):
+            # resume after a completed pilot: the fence verdict was already
+            # rendered on the first pass (pilot_report.json persisted then).
+            logger.info("[pilot] shard already on Hub — fence already passed; skipping re-measure")
+            return
         raise RuntimeError(f"pilot log {log} has no per-unit progress lines — cannot size fence")
     kept, _n, elapsed = last
     units = kept * N_DRAWS
