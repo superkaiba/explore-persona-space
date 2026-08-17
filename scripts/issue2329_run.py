@@ -3632,7 +3632,13 @@ def _validate_breach_basis(rep: dict, path: Path, scope: str, cfg: RunConfig) ->
     phase runs at ONE regime-fingerprinted cap); a report missing the
     ``partial`` field entirely (absence is never finality — hand-built files
     fail loud, v11 minor); a PARTIAL report (the registered re-gen evaluates
-    per-cell rates on the COMPLETE phase); a --max-new-tokens below 2x the
+    per-cell rates on the COMPLETE phase); ``realized_row_caps`` unequal to
+    ``[max_new_tokens]`` (reconciler v12 Dispute-1 residual: a wrong-cap
+    basis — e.g. a report measured at the wrong --max-new-tokens over a
+    per-row-cap-carrying store, or an empty measurement — previously passed
+    the len>1 check, FROZE at the basis path, and wedged the campaign at the
+    fingerprint raise until the basis file was deleted; the equality refuses
+    it BEFORE the freeze); a --max-new-tokens below 2x the
     report's generating cap (codex BLOCKER regen-cap-not-enforced: the
     registered remedy is re-gen at >= 2x the cap — 4096 for the 2048 base,
     plan §-line-105 / CLAUDE.md; a sub-2x cap silently violates the recipe
@@ -3667,6 +3673,17 @@ def _validate_breach_basis(rep: dict, path: Path, scope: str, cfg: RunConfig) ->
             f"phase; re-run --phase cap_report after the {scope} phase completes"
         )
     base_cap = int(rep["max_new_tokens"])
+    if [int(c) for c in caps] != [base_cap]:
+        raise RuntimeError(
+            f"breach report {path} declares generating cap max_new_tokens={base_cap} but "
+            f"measured realized_row_caps={caps} — a basis whose realized row caps do not "
+            f"equal [{base_cap}] was measured at the wrong --max-new-tokens (or over a "
+            "store from another regime, or over zero rows) and can never drive a capregen "
+            "basis (reconciler v12 Dispute-1 residual: such a basis would FREEZE at "
+            f"{capregen_breach_basis_path(cfg, scope)} and wedge the campaign at the "
+            "fingerprint raise — a later correct --breach-report is refused by the "
+            "byte-match until the basis file is deleted)"
+        )
     if cfg.max_new_tokens < 2 * base_cap:
         raise RuntimeError(
             "capregen requires --max-new-tokens >= 2x the report's generating cap "

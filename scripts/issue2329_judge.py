@@ -109,6 +109,11 @@ JUDGE_N_DRAWS = J94.JUDGE_N_DRAWS  # 1 — the pair-clustered bootstrap carries 
 
 _DEFAULT_IN_ROOT = Path("data/issue_2329/judge_inputs")
 _BANK_JSON_REL = f"{HF_PREFIX}/analysis_tensors/vc_bank/bank.json"
+# Committed byte-copy of the FROZEN pre-regen cap-hit basis driving the anchors
+# capregen campaign (issue2329_run.py --phase capregen; sha256 78385e71b245...).
+# Scopes the gate-3 breach-cell row-cap staleness check — the breach set is
+# always READ from this artifact, never hardcoded.
+_DEFAULT_BREACH_BASIS = Path("eval_results/issue_2329/cap_hit/cap_hit_report_anchors_preregen.json")
 
 
 @dataclass
@@ -116,6 +121,7 @@ class JudgeConfig(J94.JudgeConfig):
     """The #2094 JudgeConfig + the frozen gate-0a bank.json (drop registry)."""
 
     bank_json: Path = _DEFAULT_IN_ROOT / _BANK_JSON_REL
+    breach_basis: Path = _DEFAULT_BREACH_BASIS
 
     @property
     def pilot_gate3pre_cache_root(self) -> Path:
@@ -203,7 +209,14 @@ def load_grid_rows(rollouts_dir: Path) -> list[dict]:
 def load_anchor_rows(anchors_dir: Path) -> list[dict]:
     files = sorted(anchors_dir.glob("anchors_*.jsonl"))
     assert files, f"no anchor shards under {anchors_dir}"
-    rows = [r for f in files for r in J94._iter_jsonl(f)]
+    rows: list[dict] = []
+    for f in files:
+        for r in J94._iter_jsonl(f):
+            # Shard provenance for the gate-3 staleness check's error naming
+            # (underscore-keyed; every consumer reads named fields only, so it
+            # never leaks into judge units or persisted artifacts).
+            r["_shard"] = f.name
+            rows.append(r)
     assert rows, "anchor shards present but empty"
     for r in rows[:1]:
         for key in ("context_id", "cell", "value_id", "carrier", "draw", "text"):
@@ -399,12 +412,144 @@ def _dry_run_units_report(phase: str, waves: dict[str, list[J94.JudgeUnit]]) -> 
 # ── gate slice shared derivation ──────────────────────────────────────
 
 
+def _assert_gate_rows_capregen_fresh(breach_basis: Path, gate_ctx_rows: list[dict]) -> None:
+    """Gate-3 pre-regen staleness backstop (#2329 reconciler v12, Dispute 2).
+
+    ``_resolve_anchors_dir`` prefers the full ``anchors`` prefix on shard-NAME
+    coverage — coverage says nothing about FRESHNESS, so a capregen shard
+    whose upload failed (or was skipped) keeps PRE-regen bytes under a
+    covering name and the judge cannot tell. This check replaces the
+    procedural protection ("open the judge window only after all 8 gate
+    workers exit rc==0") with a mechanical one: once the frozen capregen
+    breach basis exists, every staged gate row in a BREACHING cell must carry
+    the raised per-row ``max_new_tokens`` (>= 2x the basis's generating cap —
+    the registered remedy issue2329_run.py enforces; regen rows carry it via
+    ``_enrich_rows_with_capture``, merged keep-rows are backfilled with the
+    base cap). Non-breaching cells legitimately stay at the base cap and are
+    never checked.
+
+    Arming rules (fail-loud, no silent defaults):
+
+    - basis file PRESENT -> the check runs; any breach-cell row below the
+      raised cap (or lacking the per-row field — pre-diff base-run rows never
+      carried one) RAISES naming shard + cell + observed caps.
+    - basis file ABSENT + staged gate rows carry MIXED per-row caps -> RAISE:
+      only a capregen merge produces mixed caps, so a missing basis there is
+      a misconfiguration (wrong cwd / wrong --breach-basis), never a fresh
+      run.
+    - basis file ABSENT + uniform/absent row caps -> the legitimate
+      pre-capregen fresh-run ordering (gate 3-pre historically runs before
+      any cap-hit analysis exists): SKIP with a WARNING naming the path.
+    """
+    caps_seen = sorted({int(r["max_new_tokens"]) for r in gate_ctx_rows if "max_new_tokens" in r})
+    if not breach_basis.exists():
+        if len(caps_seen) > 1:
+            raise RuntimeError(
+                f"gate-3 staging: staged gate rows carry MIXED per-row caps {caps_seen} — "
+                "only a capregen merge produces mixed caps, so the pre-regen breach basis "
+                f"MUST be available to scope the staleness check, but {breach_basis} does "
+                "not exist (wrong cwd? pass --breach-basis); refusing to stage "
+                "unverifiable gate rows"
+            )
+        logger.warning(
+            "[gate3-capcheck] breach basis %s not found — gate-3 pre-regen staleness "
+            "check SKIPPED. Legitimate ONLY for a pre-capregen fresh-run ordering (no "
+            "cap-hit analysis exists yet); after a capregen campaign this means a wrong "
+            "cwd or missing checkout — verify before opening the judge window.",
+            breach_basis,
+        )
+        return
+    rep = json.loads(breach_basis.read_text(encoding="utf-8"))
+    # Mirror issue2329_run._validate_breach_basis's refusal semantics for the
+    # fields this check consumes (a wrong basis must never scope it). The
+    # run-side validator is not importable here without a RunConfig — and its
+    # >=2x check binds the CAPREGEN CLI cap, which has no judge-side analogue.
+    if rep.get("scope") != "anchors":
+        raise RuntimeError(
+            f"breach basis {breach_basis} has scope={rep.get('scope')!r}, need 'anchors'"
+        )
+    if rep.get("postregen"):
+        raise RuntimeError(
+            f"breach basis {breach_basis} is a POST-regen measurement (postregen: true) — "
+            "it can never scope the gate-3 staleness check; point --breach-basis at the "
+            "frozen PRE-regen basis"
+        )
+    if "partial" not in rep or rep["partial"]:
+        raise RuntimeError(
+            f"breach basis {breach_basis} is PARTIAL or lacks the 'partial' field "
+            f"(partial={rep.get('partial')!r}) — not a complete pre-regen basis"
+        )
+    base_cap = int(rep["max_new_tokens"])
+    caps = rep.get("realized_row_caps") or []
+    if [int(c) for c in caps] != [base_cap]:
+        raise RuntimeError(
+            f"breach basis {breach_basis} declares max_new_tokens={base_cap} but measured "
+            f"realized_row_caps={caps} — a wrong-cap / mixed-cap basis can never scope "
+            "the gate-3 staleness check"
+        )
+    breach = set(rep["breaching_cells"])
+    required = 2 * base_cap
+    if not breach:
+        logger.info(
+            "[gate3-capcheck] basis %s has an EMPTY breach list — no capregen mandated, "
+            "nothing to verify",
+            breach_basis.name,
+        )
+        return
+    stale: dict[tuple[str, str], dict] = {}
+    n_checked = 0
+    for r in gate_ctx_rows:
+        if r["cell"] not in breach:
+            continue
+        n_checked += 1
+        cap = r.get("max_new_tokens")
+        if cap is None or int(cap) < required:
+            key = (str(r.get("_shard", "<unknown-shard>")), r["cell"])
+            entry = stale.setdefault(key, {"n": 0, "caps": set()})
+            entry["n"] += 1
+            entry["caps"].add("absent" if cap is None else int(cap))
+    if stale:
+        detail = "; ".join(
+            f"shard={s} cell={c} rows={e['n']} caps={sorted(e['caps'], key=str)}"
+            for (s, c), e in sorted(stale.items())
+        )
+        raise RuntimeError(
+            f"gate-3 staging: {sum(e['n'] for e in stale.values())} gate row(s) in "
+            f"BREACHING cells carry a pre-regen cap (< {required}) — a PRE-REGEN shard is "
+            "being staged into the gate-3 window: the capregen gate upload for the named "
+            "shard(s) has not landed (or was skipped), and _resolve_anchors_dir's "
+            "name-coverage preference cannot tell freshness. Re-run / re-upload the "
+            f"failed capregen gate worker(s) first. Offenders: {detail} (basis "
+            f"{breach_basis.name}: {len(breach)} breaching cells, base cap {base_cap})"
+        )
+    if n_checked == 0:
+        logger.warning(
+            "[gate3-capcheck] zero staged gate rows fall in the basis's %d breaching "
+            "cells — vacuous pass (legitimate only when every breaching cell lies "
+            "outside the gate slice; a cell-name drift between basis and rows looks "
+            "identical — eyeball the basis before trusting this)",
+            len(breach),
+        )
+        return
+    logger.info(
+        "[gate3-capcheck] %d breach-cell gate rows verified at max_new_tokens >= %d "
+        "(basis %s: %d breaching cells)",
+        n_checked,
+        required,
+        breach_basis.name,
+        len(breach),
+    )
+
+
 def _gate_slice_inputs(
     cfg: JudgeConfig,
 ) -> tuple[list[BANK.Pair2162], list[BANK.Pair2162], list[dict], dict[str, str]]:
     """(pairs, gate_pairs, gate ctx anchor rows, rubric registry) — shared by
     gate 3-pre and gate 3 (one derivation; the pod driver generates the SAME
-    ``BANK.gate_slice_pairs(surviving)`` slice first in P2)."""
+    ``BANK.gate_slice_pairs(surviving)`` slice first in P2). Every gate-3
+    entry path — pilot-gate3pre and separation-gate alike, whatever staging
+    route or --anchors-dir override supplied the rows — funnels through here,
+    so the capregen-freshness backstop below cannot be bypassed."""
     pairs = surviving_pairs(cfg.bank_json)
     gate_pairs = BANK.gate_slice_pairs(pairs)
     anchor_rows = load_anchor_rows(cfg.anchors_file)
@@ -417,6 +562,7 @@ def _gate_slice_inputs(
             f"(first: {missing[:3]}) — the P2 gate shards are incomplete"
         )
     gate_ctx_rows = [r for r in anchor_rows if r["context_id"] in need_ctx]
+    _assert_gate_rows_capregen_fresh(cfg.breach_basis, gate_ctx_rows)
     return pairs, gate_pairs, gate_ctx_rows, rubric_registry(pairs)
 
 
@@ -1322,6 +1468,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help=f"frozen gate-0a bank.json (default <in-root>/{_BANK_JSON_REL}); the "
         "pair-drop registry every pairs-consuming phase derives from (divergence 9)",
     )
+    ap.add_argument(
+        "--breach-basis",
+        type=Path,
+        default=_DEFAULT_BREACH_BASIS,
+        help="frozen PRE-regen cap-hit basis driving the anchors capregen campaign "
+        "(default: the committed copy); scopes the gate-3 breach-cell row-cap "
+        "staleness check (_assert_gate_rows_capregen_fresh) — absent + uniform "
+        "row caps skips with a WARNING (pre-capregen fresh-run ordering only)",
+    )
     ap.add_argument("--stage-from-hf", action="store_true")
     ap.add_argument("--hf-revision", type=str, default=None)
     ap.add_argument("--work-root", type=Path, default=Path("eval_results/issue_2329/judge"))
@@ -1471,6 +1626,7 @@ def build_config(args: argparse.Namespace) -> JudgeConfig:
         max_tokens=args.max_tokens,
         dry_run=args.dry_run,
         bank_json=bank_json,
+        breach_basis=args.breach_basis,
     )
 
 

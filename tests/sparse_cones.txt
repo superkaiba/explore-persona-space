@@ -95,6 +95,9 @@
 #                             committed parent tables and byte-compares against the
 #                             committed recency_rawscale.json (narrow 8.3M cone —
 #                             the full issue_2162 dir is 37M)
+#   eval_results/issue_2329/cap_hit — test_issue2329_gate3_capfresh.py sha-pins +
+#                             re-validates the committed frozen capregen breach
+#                             basis (cap_hit_report_anchors_preregen.json, ~30K)
 eval_results/issue_545
 eval_results/issue_521
 eval_results/issue_257
@@ -117,4 +120,5 @@ eval_results/issue_2054
 eval_results/issue_778
 eval_results/issue_2162/f_metrics
 eval_results/issue_2329/judge/gates
+eval_results/issue_2329/cap_hit
 external/jacobian-lens
