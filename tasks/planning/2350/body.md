@@ -2,7 +2,8 @@
 title: 'Experimenter launcher composition: mandatory per-leg out/scratch dir isolation
   for concurrent same-driver legs (#2330 fu1 dense-store poisoning)'
 kind: infra
-tags: []
+tags:
+- wf-fix
 created_at: '2026-08-17T15:51:16Z'
 has_clean_result: false
 workflow: v1
