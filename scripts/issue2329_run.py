@@ -3338,6 +3338,19 @@ def compute_cap_hit_report(
         present = set(covered_names) | set(pending)
         missing = sorted(expected_shards - present)
         unexpected = sorted(present - expected_shards)
+        if unexpected:
+            # v11 M2 / codex cap-report-finality-clobber: a foreign/stale shard
+            # must never enter the re-gen trigger statistic — it can flip
+            # per-cell breach membership in either direction, and cap_report /
+            # capregen have no entry sweep protecting them. Fail loud, never
+            # count-and-note (an unexpected shard can also never ride into a
+            # report that then claims partial: false).
+            raise RuntimeError(
+                f"cap-hit report ({scope}): {len(unexpected)} shard(s) present but NOT in "
+                f"the expected set (first: {unexpected[:8]}) — quarantine the foreign/"
+                "stale shard(s) or fix the expected-set derivation; refusing to count "
+                "them into the re-gen trigger statistic"
+            )
         if missing:
             reasons.append(f"{len(missing)} expected shard(s) missing (phase incomplete)")
     toks = np.asarray(n_tok_all, dtype=np.int64)
@@ -3435,31 +3448,132 @@ def _cap_report_inputs(
     return paths, {f"shard_{b.slug}.jsonl" for b in blocks}, None
 
 
-def cap_hit_report_path(cfg: RunConfig, scope: str) -> Path:
-    """Canonical report path (manifests/ rides the existing P5 upload row)."""
-    return cfg.manifest_dir / f"cap_hit_report_{scope}.json"
+def cap_hit_report_path(cfg: RunConfig, scope: str, *, postregen: bool = False) -> Path:
+    """Canonical report path (manifests/ rides the existing P5 upload row).
+
+    ``postregen=True`` names the SIBLING path for post-regen measurements —
+    NEVER ``_load_breach_report``'s default read path (code-review v11 C1: the
+    post-regen emit used to clobber the driving report in place)."""
+    suffix = "_postregen" if postregen else ""
+    return cfg.manifest_dir / f"cap_hit_report_{scope}{suffix}.json"
 
 
-def emit_cap_hit_report(cfg: RunConfig, scope: str) -> dict:
-    """Compute + atomically write the scope's cap-hit report; returns it."""
+def capregen_breach_basis_path(cfg: RunConfig, scope: str) -> Path:
+    """Capregen-owned FROZEN byte-copy of the driving pre-regen report.
+
+    Written ONCE by the first ``_load_breach_report`` of a campaign; every
+    later invocation (the deferred Phase B batch, crashed-worker respawns,
+    idempotent re-entries) reads THIS file, so no later write to the default
+    report path — a post-regen emit, a base-phase re-entry snapshot over the
+    mixed store, a stray ``--phase cap_report`` — can change which cells the
+    registered remedy regenerates (v11 C1 faces 1/2/4)."""
+    return cfg.manifest_dir / f"capregen_breach_basis_{scope}.json"
+
+
+def preregen_superseded_dir(cfg: RunConfig, scope: str) -> Path:
+    """Durable home for pre-regen rollout files a capregen supersedes (FIX 2).
+
+    OUT-ROOT-TOP, deliberately outside every consumer glob (all non-recursive)
+    AND outside every existing upload allow-pattern (hub allow_patterns are
+    fnmatch and cross '/', so a subdir of anchors_dir/rollouts_dir would ride
+    their P5 rows under the wrong prefix) — the preserved text gets its OWN
+    in-phase uploads + P5 row at raw_completions/preregen_superseded/ instead.
+    Plan §10 declares ``discarded_artifacts: none``: without this preservation
+    the merge/overwrite would discard the truncated completions that EVIDENCE
+    the asymmetric-truncation finding the remedy exists to fix, leaving them
+    recoverable only via HF revision history (not an acceptable declared home,
+    CLAUDE.md § Upload Policy)."""
+    return cfg.out_root / "preregen_superseded" / scope
+
+
+def _preserve_preregen_file(cfg: RunConfig, scope: str, src: Path) -> Path:
+    """Write-once atomic byte-copy of a rollout file capregen will supersede.
+
+    Ordered BEFORE the overwrite/merge at every call site. Write-once is
+    load-bearing for idempotent re-entries: after a crash-between-writes the
+    re-merged store already carries REGENERATED rows, so a second copy would
+    clobber the TRUE pre-regen bytes — an existing destination is always the
+    authentic pre-regen capture and is never overwritten. The copy itself
+    rides ``_atomic_replace`` (process-unique tmp + ``os.replace``), so an
+    interrupted preservation leaves NO destination and NO tmp residue."""
+    dest = preregen_superseded_dir(cfg, scope) / src.name
+    if dest.exists():
+        return dest
+    if not src.exists():
+        raise RuntimeError(
+            f"capregen preservation ({scope}): source {src} missing — a breaching "
+            "unit's pre-regen rollout file must exist (the breach basis was "
+            "measured on it)"
+        )
+    with _atomic_replace(dest) as tmp:
+        tmp.write_bytes(src.read_bytes())
+    logger.info("[capregen:%s] preserved superseded pre-regen rows -> %s", scope, dest)
+    return dest
+
+
+def emit_cap_hit_report(
+    cfg: RunConfig,
+    scope: str,
+    *,
+    postregen: bool = False,
+    base_cap: int | None = None,
+    capregen_pending: list[str] | None = None,
+) -> dict:
+    """Compute + atomically write the scope's cap-hit report; returns it.
+
+    Post-regen mode (v11 C1): the row-cap attribution DEFAULT is the BASE cap
+    (rows lacking the per-row ``max_new_tokens`` field are base-run rows — the
+    live store was generated by pre-diff code that wrote no per-row cap, so
+    attributing the CURRENT raised cap corrupted ``realized_row_caps`` /
+    ``realized_caps_by_batch``: a half-done Phase A read ``gate: [4096]``,
+    indistinguishable from complete); the destination is the ``*_postregen``
+    SIBLING path (mechanically pinned — never the driving report's path); the
+    report is stamped ``postregen: true`` (refused as a breach basis); and any
+    pending capregen merges mark it ``partial`` (a per-worker emit mid-fleet
+    must never claim ``partial: false``, v11 face 4 / efficiency (d))."""
+    if postregen and base_cap is None:
+        raise ValueError("postregen emit requires base_cap (the BASE attribution cap)")
     paths, expected, why = _cap_report_inputs(cfg, scope)
     report = compute_cap_hit_report(
         paths,
-        cfg.max_new_tokens,
+        base_cap if postregen else cfg.max_new_tokens,
         scope=scope,
         expected_shards=expected,
         expected_unavailable_reason=why,
     )
     report["repro"] = _repro(cfg)
-    out = cap_hit_report_path(cfg, scope)
+    out = cap_hit_report_path(cfg, scope, postregen=postregen)
+    if postregen:
+        # v11 C1 mechanical pin: the post-regen measurement must never land on
+        # either of _load_breach_report's read paths (default report / basis).
+        assert out != cap_hit_report_path(cfg, scope), out
+        assert out != capregen_breach_basis_path(cfg, scope), out
+        report["postregen"] = True
+        report["base_max_new_tokens"] = int(base_cap)  # type: ignore[arg-type]
+        report["raised_max_new_tokens"] = cfg.max_new_tokens
+        basis = capregen_breach_basis_path(cfg, scope)
+        if basis.exists():
+            report["breach_basis"] = {
+                "path": basis.name,
+                "sha256": _sha256_bytes(basis.read_bytes()),
+            }
+        pend = sorted(capregen_pending or [])
+        report["capregen_pending"] = pend
+        if pend:
+            report["partial"] = True
+            reasons = list(report["partial_reason"] or [])
+            head = ", ".join(pend[:12]) + (", ..." if len(pend) > 12 else "")
+            reasons.append(f"{len(pend)} capregen merge(s) pending: {head}")
+            report["partial_reason"] = reasons
     _write_json_atomic(out, report)
     logger.info(
-        "[cap_report:%s] rows=%d cap_hit=%.4f%% breaching_cells=%d partial=%s -> %s",
+        "[cap_report:%s] rows=%d cap_hit=%.4f%% breaching_cells=%d partial=%s postregen=%s -> %s",
         scope,
         report["n_rows"],
         report["cap_hit_pct"],
         len(report["breaching_cells"]),
         report["partial"],
+        postregen,
         out,
     )
     return report
@@ -3510,36 +3624,100 @@ def phase_cap_report(cfg: RunConfig) -> int:
     return RC_OK
 
 
-def _load_breach_report(cfg: RunConfig, scope: str) -> tuple[dict, Path]:
-    """Load + validate the cap-hit report driving a capregen invocation.
+def _validate_breach_basis(rep: dict, path: Path, scope: str, cfg: RunConfig) -> None:
+    """Refusals a capregen basis must clear (all fail-loud, no override flags).
 
-    Refusals (all fail-loud, no override flags): missing report; scope
-    mismatch; PARTIAL report (the registered re-gen evaluates per-cell rates
-    on the COMPLETE phase); a --max-new-tokens not STRICTLY above the
-    report's generating cap (4096 is a per-invocation re-gen argument,
-    never a default change)."""
-    path = cfg.breach_report or cap_hit_report_path(cfg, scope)
-    if not path.exists():
-        raise RuntimeError(
-            f"breach report {path} missing — run --phase cap_report --cap-scope {scope} first"
-        )
-    rep = json.loads(path.read_text())
+    Missing/mismatched scope; a POST-regen measurement (``postregen: true``
+    stamp, or a mixed-cap store — post-regen by construction, since every base
+    phase runs at ONE regime-fingerprinted cap); a report missing the
+    ``partial`` field entirely (absence is never finality — hand-built files
+    fail loud, v11 minor); a PARTIAL report (the registered re-gen evaluates
+    per-cell rates on the COMPLETE phase); a --max-new-tokens below 2x the
+    report's generating cap (codex BLOCKER regen-cap-not-enforced: the
+    registered remedy is re-gen at >= 2x the cap — 4096 for the 2048 base,
+    plan §-line-105 / CLAUDE.md; a sub-2x cap silently violates the recipe
+    AND leaves the long tail truncated, surviving the very bias this remedy
+    exists to remove)."""
     if rep.get("scope") != scope:
         raise RuntimeError(f"breach report {path} has scope={rep.get('scope')!r}, need {scope!r}")
-    if rep.get("partial"):
+    if rep.get("postregen"):
+        raise RuntimeError(
+            f"breach report {path} is a POST-regen measurement (postregen: true) — it can "
+            "never drive a capregen basis (v11 C1: regenerated rows dilute per-cell rates, "
+            "silently under-scoping the registered remedy); the frozen pre-regen basis "
+            f"lives at {capregen_breach_basis_path(cfg, scope)}"
+        )
+    caps = rep.get("realized_row_caps") or []
+    if len(caps) > 1:
+        raise RuntimeError(
+            f"breach report {path} measured a MIXED-cap store (realized_row_caps={caps}) — "
+            "post-regen by construction, never a capregen basis; an ESCALATED re-gen on an "
+            "already-regenerated store runs on a fresh --out-root (the stacking refusals "
+            "forbid it here anyway)"
+        )
+    if "partial" not in rep:
+        raise RuntimeError(
+            f"breach report {path} lacks the 'partial' field — absence is not finality; "
+            "not a cap-hit report this driver recognizes"
+        )
+    if rep["partial"]:
         raise RuntimeError(
             f"breach report {path} is PARTIAL ({rep.get('partial_reason')}) — the "
             "registered re-gen trigger evaluates per-cell rates on the COMPLETE "
             f"phase; re-run --phase cap_report after the {scope} phase completes"
         )
     base_cap = int(rep["max_new_tokens"])
-    if cfg.max_new_tokens <= base_cap:
+    if cfg.max_new_tokens < 2 * base_cap:
         raise RuntimeError(
-            "capregen requires --max-new-tokens STRICTLY greater than the report's "
-            f"generating cap {base_cap} (registered remedy: {2 * base_cap}); "
-            f"got {cfg.max_new_tokens}"
+            "capregen requires --max-new-tokens >= 2x the report's generating cap "
+            f"{base_cap} (registered remedy: {2 * base_cap}, plan §-line-105 / CLAUDE.md "
+            f"'re-generate at >= 2x the cap'); got {cfg.max_new_tokens} — a sub-2x re-gen "
+            "cap violates the registered recipe and leaves the long tail truncated"
         )
-    return rep, path
+
+
+def _load_breach_report(cfg: RunConfig, scope: str) -> tuple[dict, Path]:
+    """Load + validate + FREEZE the cap-hit report driving a capregen campaign.
+
+    The first invocation of a campaign validates the source report
+    (``--breach-report`` when given, else the default report path) and freezes
+    a byte-verbatim copy at ``capregen_breach_basis_path`` — the atomic-replace
+    copy keeps the source's sha256, so done-record provenance is stable. Every
+    later invocation — Phase B of the batch split, crashed-worker respawns,
+    idempotent re-entries — loads the FROZEN basis, making the pre-regen breach
+    set immutable for the whole campaign (v11 C1: post-regen emits / re-runs of
+    --phase cap_report over the mixed store can no longer wedge Phase B, block
+    a respawn, or silently launder the breach list). A ``--breach-report``
+    passed alongside an existing basis must match it byte-for-byte — one
+    campaign keys off ONE basis. Validation re-runs on every load (defense in
+    depth against a hand-planted basis file). Returns ``(report, basis_path)``;
+    all done-record ``source_report`` provenance therefore names the basis."""
+    basis = capregen_breach_basis_path(cfg, scope)
+    if basis.exists():
+        if cfg.breach_report is not None:
+            b_sha = _sha256_bytes(basis.read_bytes())
+            e_sha = _sha256_bytes(cfg.breach_report.read_bytes())
+            if b_sha != e_sha:
+                raise RuntimeError(
+                    f"--breach-report {cfg.breach_report} (sha256 {e_sha[:12]}) != the frozen "
+                    f"capregen basis {basis} (sha256 {b_sha[:12]}) — one campaign keys off ONE "
+                    "pre-regen basis; a different basis needs a fresh --out-root"
+                )
+        rep = json.loads(basis.read_text())
+        _validate_breach_basis(rep, basis, scope, cfg)
+        return rep, basis
+    src = cfg.breach_report or cap_hit_report_path(cfg, scope)
+    if not src.exists():
+        raise RuntimeError(
+            f"breach report {src} missing — run --phase cap_report --cap-scope {scope} first"
+        )
+    payload = src.read_bytes()
+    rep = json.loads(payload.decode("utf-8"))
+    _validate_breach_basis(rep, src, scope, cfg)
+    with _atomic_replace(basis) as tmp:
+        tmp.write_bytes(payload)  # byte-verbatim freeze: sha-stable provenance
+    logger.info("[capregen:%s] froze breach basis %s -> %s", scope, src, basis)
+    return rep, basis
 
 
 def _capregen_block_done(
@@ -3648,6 +3826,12 @@ def phase_capregen_grid(cfg: RunConfig) -> int:
             "regen_regime_fp": regen_fp,
             "source_report": rep_path.name,
             "source_report_sha256": _sha256_bytes(rep_path.read_bytes()),
+            # FIX 2: where a consumer / the upload-verifier finds the
+            # superseded pre-regen rollout text this block's re-gen replaced.
+            "preregen_dir": (
+                preregen_superseded_dir(cfg, "grid").relative_to(cfg.out_root).as_posix()
+            ),
+            "preregen_hf_prefix": f"{HF_PREFIX}/raw_completions/preregen_superseded/grid",
             "ts": datetime.now(UTC).isoformat(),
         }
     }
@@ -3658,10 +3842,26 @@ def phase_capregen_grid(cfg: RunConfig) -> int:
     n_run = 0
     uploaded: list[str] = []
     pending: list[Block] = []
+    preserved: list[str] = []
 
     def run_one(block: Block) -> None:
         nonlocal n_run, uploaded, pending
         t0 = time.monotonic()
+        # FIX 2: byte-preserve the pre-regen shard BEFORE run_block overwrites
+        # it (write-once — an idempotent re-entry never clobbers the true
+        # pre-regen bytes with regenerated content).
+        _preserve_preregen_file(cfg, "grid", cfg.rollouts_dir / f"shard_{block.slug}.jsonl")
+        preserved.append(f"shard_{block.slug}.jsonl")
+        de = done_extra
+        prior_done_path = block_done_path(cfg.out_root, block)
+        if prior_done_path.exists():
+            prior = json.loads(prior_done_path.read_text())
+            if "margin_inline" in prior:
+                # v11 minor: pools=None here never recomputes margins, but the
+                # BASE run's margin shard + margin_blocks done-record twin stay
+                # valid (TF margins are cap-independent) — carry the base flag
+                # instead of stamping margin_inline: False over it.
+                de = {**done_extra, "margin_inline": prior["margin_inline"]}
         rec = run_block(
             cfg,
             model,
@@ -3676,7 +3876,7 @@ def phase_capregen_grid(cfg: RunConfig) -> int:
             base_fp,  # done record keeps the BASE resume key; capregen rides done_extra
             None,  # pools=None: TF margins are cap-independent — never recomputed here
             draws,
-            done_extra=done_extra,
+            done_extra=de,
         )
         n_run += 1
         pending.append(block)
@@ -3700,7 +3900,17 @@ def phase_capregen_grid(cfg: RunConfig) -> int:
     if pending:
         uploaded += _upload_grid_increment(cfg, pending)
         pending.clear()
-    emit_cap_hit_report(cfg, "grid")  # post-regen measurement over the mixed-cap store
+    # Post-regen measurement over the mixed-cap store (v11 C1): BASE-cap row
+    # attribution + the *_postregen SIBLING path — the frozen driving basis is
+    # never touched; blocks siblings have not merged yet keep it partial.
+    still_pending = [
+        b.key
+        for b in blocks
+        if not _capregen_block_done(cfg.out_root, b, base_fp, cfg.max_new_tokens)
+    ]
+    emit_cap_hit_report(
+        cfg, "grid", postregen=True, base_cap=base_cap, capregen_pending=still_pending
+    )
     _write_json_atomic(
         cfg.manifest_dir / f"capregen_grid_done_w{cfg.worker_index}.json",
         {
@@ -3714,6 +3924,11 @@ def phase_capregen_grid(cfg: RunConfig) -> int:
             "n_blocks_run": stats["ran"],
             "uploads": uploaded,
             "source_report": rep_path.name,
+            "preregen_shards": sorted(preserved),
+            "preregen_dir": (
+                preregen_superseded_dir(cfg, "grid").relative_to(cfg.out_root).as_posix()
+            ),
+            "preregen_hf_prefix": f"{HF_PREFIX}/raw_completions/preregen_superseded/grid",
             "repro": _repro(cfg),
         },
     )
@@ -3746,10 +3961,20 @@ def _merge_anchor_capregen(
     the fresh regen rows are appended). Kept rows are backfilled with the
     BASE cap (provably theirs: the done record's regime_fp — which embeds
     max_new_tokens — matched the base fingerprint before this runs). Write
-    order: jsonl -> va .pt -> done record (the commit point)."""
+    order: pre-regen preservation (write-once byte-copy, FIX 2) -> jsonl ->
+    va .pt -> done record (the commit point)."""
     w = cfg.worker_index
     jsonl = cfg.anchors_dir / f"anchors_{batch}_w{w}.jsonl"
     va_path = cfg.anchors_dir / f"va_anchors_{batch}_w{w}.pt"
+    # FIX 2: byte-preserve the ENTIRE pre-regen shard (superseded breach-cell
+    # rows included) BEFORE any write — write-once, so an idempotent re-merge
+    # after a crash never clobbers the true pre-regen bytes.
+    preserved = _preserve_preregen_file(cfg, "anchors", jsonl)
+    capregen_record["preregen_superseded"] = {
+        "local": preserved.relative_to(cfg.out_root).as_posix(),
+        "hf_prefix": f"{HF_PREFIX}/raw_completions/preregen_superseded/anchors",
+        "note": "byte-copy of the entire pre-regen shard (dropped breach-cell rows incl.)",
+    }
     old_rows = [json.loads(line) for line in jsonl.open(encoding="utf-8") if line.strip()]
     keep_rows = [r for r in old_rows if r["cell"] not in breach_cells]
     dropped_ctx = {r["context_id"] for r in old_rows if r["cell"] in breach_cells}
@@ -3885,6 +4110,9 @@ def phase_capregen_anchors(cfg: RunConfig) -> int:
                 f"regime_fp={base_fp!r} — refusing to re-gen across regimes "
                 "(quarantine or use a fresh --out-root)"
             )
+        pending_file = (
+            cfg.manifest_dir / f"capregen_pending_anchors_{batch}_w{cfg.worker_index}.jsonl"
+        )
         cr = done_rec.get("capregen")
         if cr is not None:
             if (
@@ -3899,69 +4127,109 @@ def phase_capregen_anchors(cfg: RunConfig) -> int:
                     "(fresh --out-root to redo)"
                 )
             logger.info(
-                "[capregen:anchors:%s] already merged for this breach list — skipping", batch
-            )
-            continue
-        my = order[cfg.worker_index :: cfg.num_workers]
-        my_regen = [cid for cid in my if cell_of[cid] in breach]
-        capregen_record = {
-            "cells": sorted(breach),
-            "max_new_tokens": cfg.max_new_tokens,
-            "base_max_new_tokens": base_cap,
-            "regen_regime_fp": regen_fp,
-            "source_report": rep_path.name,
-            "source_report_sha256": _sha256_bytes(rep_path.read_bytes()),
-            "n_rows_regen": 0,
-            "ts": datetime.now(UTC).isoformat(),
-        }
-        if not my_regen:
-            _write_json_atomic(
-                done_path, {**done_rec, "capregen": capregen_record, "repro": _repro(cfg)}
-            )
-            logger.info(
-                "[capregen:anchors:%s] no breaching contexts in this worker's shard — "
-                "stamped done record",
+                "[capregen:anchors:%s] already merged for this breach list — skipping to "
+                "the idempotent upload retry",
                 batch,
             )
-            continue
-        draws = int(done_rec["draws"])  # match the ORIGINAL shard's draws exactly
-        if model is None:
-            model, tok = load_model_and_tokenizer(cfg)
-            eot = eot_tail_ids(tok)
-        rows, flat_ctx, flat_text = _generate_anchor_rows(
-            cfg, model, tok, contexts, my_regen, draws, batch
-        )
-        # Rollout text durable BEFORE the capture reduce (#779 two-write
-        # pattern); side file so no shard glob / upload pattern matches it.
-        pending = cfg.manifest_dir / f"capregen_pending_anchors_{batch}_w{cfg.worker_index}.jsonl"
-        _write_jsonl_atomic(pending, rows)
-        states = capture_answer_states(cfg, model, tok, flat_ctx, flat_text, eot)
-        _enrich_rows_with_capture(rows, states, cfg.max_new_tokens)
-        capregen_record["n_rows_regen"] = len(rows)
-        _merge_anchor_capregen(
-            cfg, batch, base_cap, breach, cell_of, rows, states, done_rec, capregen_record
-        )
-        pending.unlink()
-        logger.info(
-            "[capregen:anchors:%s] merged %d regenerated rows (%d contexts x %d draws)",
-            batch,
-            len(rows),
-            len(my_regen),
-            draws,
-        )
-        _upload_dir(
-            cfg,
-            cfg.anchors_dir,
-            f"{HF_PREFIX}/raw_completions/anchors",
-            [f"anchors_{batch}_w{cfg.worker_index}.jsonl"],
-        )
+        else:
+            my = order[cfg.worker_index :: cfg.num_workers]
+            my_regen = [cid for cid in my if cell_of[cid] in breach]
+            capregen_record = {
+                "cells": sorted(breach),
+                "max_new_tokens": cfg.max_new_tokens,
+                "base_max_new_tokens": base_cap,
+                "regen_regime_fp": regen_fp,
+                "source_report": rep_path.name,
+                "source_report_sha256": _sha256_bytes(rep_path.read_bytes()),
+                "n_rows_regen": 0,
+                "ts": datetime.now(UTC).isoformat(),
+            }
+            if not my_regen:
+                _write_json_atomic(
+                    done_path, {**done_rec, "capregen": capregen_record, "repro": _repro(cfg)}
+                )
+                logger.info(
+                    "[capregen:anchors:%s] no breaching contexts in this worker's shard — "
+                    "stamped done record",
+                    batch,
+                )
+            else:
+                draws = int(done_rec["draws"])  # match the ORIGINAL shard's draws exactly
+                if model is None:
+                    model, tok = load_model_and_tokenizer(cfg)
+                    eot = eot_tail_ids(tok)
+                rows, flat_ctx, flat_text = _generate_anchor_rows(
+                    cfg, model, tok, contexts, my_regen, draws, batch
+                )
+                # Rollout text durable BEFORE the capture reduce (#779 two-write
+                # pattern); side file so no shard glob / upload pattern matches it.
+                _write_jsonl_atomic(pending_file, rows)
+                states = capture_answer_states(cfg, model, tok, flat_ctx, flat_text, eot)
+                _enrich_rows_with_capture(rows, states, cfg.max_new_tokens)
+                capregen_record["n_rows_regen"] = len(rows)
+                _merge_anchor_capregen(
+                    cfg, batch, base_cap, breach, cell_of, rows, states, done_rec, capregen_record
+                )
+                logger.info(
+                    "[capregen:anchors:%s] merged %d regenerated rows (%d contexts x %d draws)",
+                    batch,
+                    len(rows),
+                    len(my_regen),
+                    draws,
+                )
+        # EVERY path (merged / no-breach / already-merged re-entry) falls
+        # through here: the pending-side-file unlink and the uploads sit AFTER
+        # the done-record commit point, so a crash between commit and upload is
+        # retried on re-entry instead of skipped (v11 minors: orphaned pending
+        # file; upload never retried), and a no-breach worker still uploads its
+        # (unchanged) shard so the consumer-facing prefixes converge COMPLETE
+        # (v11 MAJOR 1).
+        pending_file.unlink(missing_ok=True)
+        jsonl_name = f"anchors_{batch}_w{cfg.worker_index}.jsonl"
+        # v11 MAJOR 1: same-filename overwrites keep BOTH judge-visible
+        # prefixes complete AND fresh. raw_completions/anchors currently holds
+        # the complete PRE-regen store (P5 upload) — without the overwrite the
+        # judge's _resolve_anchors_dir would silently prefer STALE truncated
+        # gate rows over the regenerated ones; anchors_gate is the early gate
+        # mirror gate-3 stages from before the full prefix exists, refreshed
+        # here so a fallback can never score stale rows either.
+        _upload_dir(cfg, cfg.anchors_dir, f"{HF_PREFIX}/raw_completions/anchors", [jsonl_name])
+        if batch == "gate":
+            _upload_dir(
+                cfg, cfg.anchors_dir, f"{HF_PREFIX}/raw_completions/anchors_gate", [jsonl_name]
+            )
         _upload_dir(
             cfg,
             cfg.anchors_dir,
             f"{HF_PREFIX}/analysis_tensors/anchors",
             [f"va_anchors_{batch}_w{cfg.worker_index}.pt"],
         )
-    emit_cap_hit_report(cfg, "anchors")  # post-regen measurement over the mixed-cap store
+        pre_dir = preregen_superseded_dir(cfg, "anchors")
+        if (pre_dir / jsonl_name).exists():
+            # FIX 2: the preserved superseded pre-regen rows upload
+            # unconditionally to their OWN prefix (never HF revision history).
+            _upload_dir(
+                cfg,
+                pre_dir,
+                f"{HF_PREFIX}/raw_completions/preregen_superseded/anchors",
+                [jsonl_name],
+            )
+    # Post-regen measurement over the mixed-cap store (v11 C1): BASE-cap row
+    # attribution + the *_postregen SIBLING path — the frozen driving basis is
+    # never touched; units (either batch, any worker) whose merge has not
+    # landed keep the report partial (a mid-fleet emit never claims final).
+    pending_units = [
+        f"anchors_{b}_w{w}"
+        for b in ("gate", "rest")
+        for w in range(width)
+        if json.loads((cfg.manifest_dir / f"anchors_{b}_w{w}_done.json").read_text()).get(
+            "capregen"
+        )
+        is None
+    ]
+    emit_cap_hit_report(
+        cfg, "anchors", postregen=True, base_cap=base_cap, capregen_pending=pending_units
+    )
     logger.info("[phase=capregen_done] scope=anchors worker=%d", cfg.worker_index)
     return RC_OK
 
@@ -4214,14 +4482,24 @@ def _upload_grid_increment(cfg: RunConfig, blocks: list[Block]) -> list[str]:
     the 256/hr cap.
     """
     slugs = [b.slug for b in blocks if (cfg.rollouts_dir / f"shard_{b.slug}.jsonl").exists()]
-    if not slugs:
-        return []
-    return _upload_dir(
-        cfg,
-        cfg.rollouts_dir,
-        f"{HF_PREFIX}/raw_completions/grid",
-        [f"shard_{s}.jsonl" for s in slugs],
-    )
+    out: list[str] = []
+    if slugs:
+        out += _upload_dir(
+            cfg,
+            cfg.rollouts_dir,
+            f"{HF_PREFIX}/raw_completions/grid",
+            [f"shard_{s}.jsonl" for s in slugs],
+        )
+    # FIX 2: preserved superseded pre-regen shards (capregen only — the dir
+    # does not exist during the base grid phase) ride the same incremental
+    # cadence to their OWN prefix.
+    pre_dir = preregen_superseded_dir(cfg, "grid")
+    pre = [f"shard_{b.slug}.jsonl" for b in blocks if (pre_dir / f"shard_{b.slug}.jsonl").exists()]
+    if pre:
+        out += _upload_dir(
+            cfg, pre_dir, f"{HF_PREFIX}/raw_completions/preregen_superseded/grid", pre
+        )
+    return out
 
 
 MARGIN_DEFERRED_RECIPE = (
@@ -4464,6 +4742,15 @@ def phase_upload(cfg: RunConfig) -> int:
         cfg.out_root,
         f"{HF_PREFIX}/analysis_tensors/outroot_top",
         ["pilot_gate_report.json", "best_cells_actsel.json"],
+    )
+    # FIX 2 backstop row: superseded pre-regen rollout text preserved by a
+    # capregen (write-once byte-copies) — in-phase uploads are primary; this
+    # bulk row guarantees the class rides P5 too. Absent dir -> skipped.
+    uploaded["preregen_superseded"] = _upload_dir(
+        cfg,
+        cfg.out_root / "preregen_superseded",
+        f"{HF_PREFIX}/raw_completions/preregen_superseded",
+        ["anchors/*.jsonl", "grid/*.jsonl"],
     )
     # blocks/*.done.json + claim residue ride along: per-block resume state +
     # the sentinel's cap-hit provenance become durable off-pod.

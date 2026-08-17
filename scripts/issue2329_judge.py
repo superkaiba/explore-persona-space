@@ -1419,16 +1419,34 @@ def _stage_inputs(args: argparse.Namespace) -> None:
 
 
 def _resolve_anchors_dir(mirror: Path) -> Path:
-    """Default anchors dir: the full ``anchors`` mirror when it holds shards,
-    else the early-uploaded ``anchors_gate`` mirror (P2 uploads the gate slice
-    there FIRST so gates 3-pre/3 can run before the terminal anchors upload
-    lands). Falls back to the canonical path when neither holds shards — the
-    loaders fail loud on absence."""
+    """Default anchors dir: the full ``anchors`` mirror when it holds shards
+    AND its shard name set COVERS the early gate mirror's, else the
+    early-uploaded ``anchors_gate`` mirror (P2 uploads the gate slice there
+    FIRST so gates 3-pre/3 can run before the terminal anchors upload lands).
+
+    The coverage condition is load-bearing (run.py v11 MAJOR 1): capregen
+    uploads land per-worker, so on a not-yet-fully-populated full prefix a
+    bare non-empty check would prefer a strict SUBSET of the gate shards and
+    wedge gate-3 staging with a misleading "shards incomplete" error while
+    the COMPLETE gate mirror sits ignored. A full prefix that covers every
+    gate-mirror shard name is safe: gate-3 only needs the gate contexts.
+    Falls back to the canonical path when neither holds shards — the loaders
+    fail loud on absence."""
     full, gate = mirror / "anchors", mirror / "anchors_gate"
-    if any(full.glob("anchors_*.jsonl")):
+    full_names = {p.name for p in full.glob("anchors_*.jsonl")}
+    gate_names = {p.name for p in gate.glob("anchors_*.jsonl")}
+    if full_names and gate_names <= full_names:
         return full
-    if any(gate.glob("anchors_*.jsonl")):
-        logger.info("[stage] anchors dir -> %s (full anchors prefix not staged yet)", gate)
+    if gate_names:
+        if full_names:
+            logger.warning(
+                "[stage] full anchors prefix is PARTIAL (%d shard(s) in the gate mirror "
+                "missing from it) — staging from the complete gate mirror %s",
+                len(gate_names - full_names),
+                gate,
+            )
+        else:
+            logger.info("[stage] anchors dir -> %s (full anchors prefix not staged yet)", gate)
         return gate
     return full
 

@@ -311,6 +311,7 @@ def test_merge_anchor_capregen_caps_alignment_and_done_record(tmp_path):
     ]
     jsonl = cfg.anchors_dir / "anchors_gate_w0.jsonl"
     _write_shard(jsonl, old_rows)
+    orig_bytes = jsonl.read_bytes()  # FIX 2: the pre-regen capture to preserve
     va = torch.arange(4 * 2 * 8, dtype=torch.float16).reshape(4, 2, 8)
     torch.save(
         {
@@ -377,6 +378,17 @@ def test_merge_anchor_capregen_caps_alignment_and_done_record(tmp_path):
     assert new_done["n_cap_hit"] == 1  # one regen row still hits 4096
     on_disk = json.loads((cfg.manifest_dir / "anchors_gate_w0_done.json").read_text())
     assert on_disk["capregen"]["max_new_tokens"] == 4096
+    # FIX 2: the merge preserved the ENTIRE pre-regen shard (superseded
+    # breach-cell rows included) byte-identically BEFORE overwriting, and
+    # recorded the preservation location in the done sub-record so a consumer
+    # and the upload-verifier can find it without HF revision history.
+    pre = R.preregen_superseded_dir(cfg, "anchors") / "anchors_gate_w0.jsonl"
+    assert pre.read_bytes() == orig_bytes
+    assert (
+        on_disk["capregen"]["preregen_superseded"]["local"]
+        == pre.relative_to(cfg.out_root).as_posix()
+    )
+    assert "preregen_superseded" in on_disk["capregen"]["preregen_superseded"]["hf_prefix"]
 
 
 def test_merge_refuses_context_set_drift(tmp_path):
@@ -456,6 +468,7 @@ def test_load_breach_report_refusals(tmp_path):
         "scope": "grid",
         "partial": False,
         "max_new_tokens": 2048,
+        "realized_row_caps": [2048],
         "breaching_cells": ["cellA"],
     }
     path.write_text(json.dumps({**ok, "partial": True, "partial_reason": ["x"]}))
@@ -464,14 +477,302 @@ def test_load_breach_report_refusals(tmp_path):
     path.write_text(json.dumps({**ok, "scope": "anchors"}))
     with pytest.raises(RuntimeError, match="scope"):
         R._load_breach_report(cfg, "grid")
+    # A report MISSING the partial field entirely is refused — absence is
+    # never finality (v11 minor: hand-built --breach-report files fail loud).
+    path.write_text(json.dumps({k: v for k, v in ok.items() if k != "partial"}))
+    with pytest.raises(RuntimeError, match="lacks the 'partial' field"):
+        R._load_breach_report(cfg, "grid")
     path.write_text(json.dumps(ok))
     rep, rep_path = R._load_breach_report(cfg, "grid")
-    assert rep["breaching_cells"] == ["cellA"] and rep_path == path
-    # A not-strictly-raised cap is refused (2048 stays the default; 4096 is
-    # strictly a per-invocation re-gen argument).
+    assert rep["breaching_cells"] == ["cellA"]
+    # The load FREEZES the basis and returns the capregen-owned copy (byte-
+    # verbatim, so provenance shas are stable across legs/respawns).
+    basis = R.capregen_breach_basis_path(cfg, "grid")
+    assert rep_path == basis and basis.exists()
+    assert basis.read_bytes() == path.read_bytes()
+    # A sub-2x cap is refused (codex BLOCKER regen-cap-not-enforced: the
+    # registered remedy is >= 2x the generating cap; 2048 stays the default,
+    # 4096 the registered per-invocation re-gen argument for this run).
     cfg_same = _cfg(tmp_path)
     assert cfg_same.max_new_tokens == 2048
-    with pytest.raises(RuntimeError, match="STRICTLY greater"):
+    with pytest.raises(RuntimeError, match=">= 2x"):
         R._load_breach_report(cfg_same, "grid")
     with pytest.raises(RuntimeError, match="missing"):
         R._load_breach_report(_cfg(tmp_path / "elsewhere"), "grid")
+
+
+def test_regen_cap_must_be_at_least_2x_base(tmp_path):
+    """codex BLOCKER 2 pin: every cap in (base, 2*base) is REFUSED — a 2049
+    capregen would silently violate the registered 4096 remedy AND leave the
+    long tail truncated; 4096 (== 2x) and 8192 (>= 2x) are accepted."""
+    basis = {
+        "scope": "grid",
+        "partial": False,
+        "max_new_tokens": 2048,
+        "realized_row_caps": [2048],
+        "breaching_cells": ["cellA"],
+    }
+    for cap, ok in ((2049, False), (4095, False), (4096, True), (8192, True)):
+        cfg = _cfg(tmp_path / f"cap{cap}", ["--max-new-tokens", str(cap)])
+        cfg.manifest_dir.mkdir(parents=True)
+        R.cap_hit_report_path(cfg, "grid").write_text(json.dumps(basis))
+        if ok:
+            rep, _ = R._load_breach_report(cfg, "grid")
+            assert rep["breaching_cells"] == ["cellA"]
+        else:
+            with pytest.raises(RuntimeError, match=">= 2x"):
+                R._load_breach_report(cfg, "grid")
+
+
+# ── (5) frozen basis + postregen sibling path (code-review v11 C1) ──────
+
+
+def _basis(**over) -> dict:
+    base = {
+        "scope": "anchors",
+        "partial": False,
+        "max_new_tokens": 2048,
+        "realized_row_caps": [2048],
+        "breaching_cells": ["cellX"],
+    }
+    base.update(over)
+    return base
+
+
+def test_phase_b_runs_after_phase_a_and_basis_survives_clobber(tmp_path):
+    """The (a)+(c) regressions: after Phase A (gate) completes — post-regen
+    reports emitted, and even the DEFAULT report path clobbered by a mixed-
+    store measurement — Phase B (rest) and every respawn still key off the
+    SAME frozen PRE-regen basis: no strict-cap wedge, no laundered breach set."""
+    cfg = _cfg(tmp_path, ["--max-new-tokens", "4096"])
+    cfg.manifest_dir.mkdir(parents=True)
+    default = R.cap_hit_report_path(cfg, "anchors")
+    default.write_text(json.dumps(_basis()))
+    _rep1, p1 = R._load_breach_report(cfg, "anchors")  # Phase A froze the basis
+    assert p1 == R.capregen_breach_basis_path(cfg, "anchors")
+    # Worst case: the default path gets clobbered by a post-regen measurement
+    # (breach list laundered to [], cap raised to 4096 -> would wedge/skip).
+    default.write_text(
+        json.dumps(_basis(max_new_tokens=4096, realized_row_caps=[2048, 4096], breaching_cells=[]))
+    )
+    rep2, p2 = R._load_breach_report(cfg, "anchors")  # Phase B / respawn
+    assert p2 == p1
+    assert rep2["breaching_cells"] == ["cellX"]  # the PRE-regen set, not []
+    assert int(rep2["max_new_tokens"]) == 2048  # no 4096<=4096 refusal wedge
+
+
+def test_respawned_worker_resumes_rather_than_refusing(tmp_path):
+    """The (b) regression: a crashed capregen worker respawned AFTER a sibling
+    finished (post-regen report emitted) reaches its per-block resume skip."""
+    cfg = _cfg(tmp_path, ["--max-new-tokens", "4096"])
+    cfg.manifest_dir.mkdir(parents=True)
+    R.cap_hit_report_path(cfg, "grid").write_text(
+        json.dumps(_basis(scope="grid", breaching_cells=["cellA"]))
+    )
+    R._load_breach_report(cfg, "grid")  # first invocation froze the basis
+    # Sibling's post-regen emit lands on the SIBLING path, never the default:
+    R.cap_hit_report_path(cfg, "grid", postregen=True).write_text(
+        json.dumps(_basis(scope="grid", postregen=True, realized_row_caps=[2048, 4096]))
+    )
+    rep, _ = R._load_breach_report(cfg, "grid")  # respawn: NO refusal
+    assert rep["breaching_cells"] == ["cellA"]
+    # ...and the done-record predicate skips the block it already regenerated:
+    block = R.Block("cellA", "ce", "steered", ("p1",))
+    done = R.block_done_path(cfg.out_root, block)
+    done.parent.mkdir(parents=True)
+    done.write_text(
+        json.dumps({"key": block.key, "regime_fp": "basefp", "capregen": {"max_new_tokens": 4096}})
+    )
+    assert R._capregen_block_done(cfg.out_root, block, "basefp", 4096) is True
+
+
+def test_postregen_artifact_never_loads_as_breach_basis(tmp_path):
+    """A post-regen measurement can never be mistaken for the pre-regen basis:
+    the postregen stamp AND the mixed-cap signature each refuse, on the default
+    path and via an explicit --breach-report alike."""
+    cfg = _cfg(tmp_path, ["--max-new-tokens", "4096"])
+    cfg.manifest_dir.mkdir(parents=True)
+    R.cap_hit_report_path(cfg, "anchors").write_text(json.dumps(_basis(postregen=True)))
+    with pytest.raises(RuntimeError, match="POST-regen"):
+        R._load_breach_report(cfg, "anchors")
+    R.cap_hit_report_path(cfg, "anchors").write_text(
+        json.dumps(_basis(realized_row_caps=[2048, 4096]))
+    )
+    with pytest.raises(RuntimeError, match="MIXED-cap"):
+        R._load_breach_report(cfg, "anchors")
+    pr = tmp_path / "post.json"
+    pr.write_text(json.dumps(_basis(postregen=True)))
+    cfg2 = _cfg(tmp_path / "two", ["--max-new-tokens", "4096", "--breach-report", str(pr)])
+    cfg2.manifest_dir.mkdir(parents=True)
+    with pytest.raises(RuntimeError, match="POST-regen"):
+        R._load_breach_report(cfg2, "anchors")
+
+
+def test_explicit_breach_report_must_match_frozen_basis(tmp_path):
+    cfg = _cfg(tmp_path, ["--max-new-tokens", "4096"])
+    cfg.manifest_dir.mkdir(parents=True)
+    src = tmp_path / "committed_basis.json"
+    src.write_text(json.dumps(_basis()))
+    cfg1 = _cfg(tmp_path, ["--max-new-tokens", "4096", "--breach-report", str(src)])
+    _rep, p = R._load_breach_report(cfg1, "anchors")
+    assert p == R.capregen_breach_basis_path(cfg1, "anchors")
+    # Same file again: fine (byte-equal). A DIFFERENT file: refused.
+    R._load_breach_report(cfg1, "anchors")
+    other = tmp_path / "other_basis.json"
+    other.write_text(json.dumps(_basis(breaching_cells=["cellY"])))
+    cfg2 = _cfg(tmp_path, ["--max-new-tokens", "4096", "--breach-report", str(other)])
+    with pytest.raises(RuntimeError, match="ONE"):
+        R._load_breach_report(cfg2, "anchors")
+
+
+def test_postregen_emit_sibling_path_base_cap_attribution_and_pending(tmp_path):
+    """The v11 C1 fix shape: the post-regen emit (i) never touches the default
+    report path (mechanical pin — destination is the *_postregen sibling),
+    (ii) attributes legacy rows (no per-row cap) to the BASE cap so
+    realized_row_caps / realized_caps_by_batch stay legible over the mixed
+    store, and (iii) claims partial while capregen merges are pending —
+    a mid-fleet per-worker emit can never publish partial: false (face (d))."""
+    cfg = _cfg(tmp_path, ["--max-new-tokens", "4096"])
+    cfg.anchors_dir.mkdir(parents=True)
+    cfg.manifest_dir.mkdir(parents=True)
+    # gate shard: MERGED (regen rows carry the raised per-row cap);
+    # rest shard: legacy pre-regen rows (NO per-row cap field).
+    regen = [
+        {**_row("cellX", "v1", i, False, cap=4096), "context_id": f"x{i}", "draw": 0}
+        for i in range(10)
+    ]
+    legacy = [
+        {k: v for k, v in _row("cellA", "v1", i, False).items() if k != "max_new_tokens"}
+        for i in range(10)
+    ]
+    _write_shard(cfg.anchors_dir / "anchors_gate_w0.jsonl", regen)
+    _write_shard(cfg.anchors_dir / "anchors_rest_w0.jsonl", legacy)
+    for batch in ("gate", "rest"):
+        (cfg.manifest_dir / f"anchors_{batch}_w0_done.json").write_text(
+            json.dumps(
+                {
+                    "regime_fp": "basefp",
+                    "batch": batch,
+                    "worker_index": 0,
+                    "num_workers": 1,
+                    "n_rows": 10,
+                    "draws": 1,
+                }
+            )
+        )
+    default = R.cap_hit_report_path(cfg, "anchors")
+    default.write_text(json.dumps(_basis()))
+    before = default.read_bytes()
+    rep = R.emit_cap_hit_report(
+        cfg, "anchors", postregen=True, base_cap=2048, capregen_pending=["anchors_rest_w0"]
+    )
+    out = R.cap_hit_report_path(cfg, "anchors", postregen=True)
+    assert out.exists() and out != default
+    assert default.read_bytes() == before  # driving report byte-identical
+    assert rep["postregen"] is True
+    assert rep["partial"] is True  # pending merges -> never claims final
+    assert any("capregen merge" in why for why in rep["partial_reason"])
+    assert rep["capregen_pending"] == ["anchors_rest_w0"]
+    # BASE-cap attribution: legacy rows read 2048, regen rows their own 4096.
+    assert rep["realized_row_caps"] == [2048, 4096]
+    assert rep["per_cell"]["cellX"]["realized_caps_by_batch"]["gate"] == [4096]
+    assert rep["per_cell"]["cellA"]["realized_caps_by_batch"]["gate"] == [2048]
+    # No pending merges + the same emit -> partial: false is reachable.
+    rep2 = R.emit_cap_hit_report(cfg, "anchors", postregen=True, base_cap=2048)
+    assert rep2["partial"] is False and rep2["capregen_pending"] == []
+    # And the postregen artifact itself can never become a basis:
+    with pytest.raises(RuntimeError, match="POST-regen"):
+        R._validate_breach_basis(rep2, out, "anchors", cfg)
+
+
+def test_postregen_emit_requires_base_cap(tmp_path):
+    cfg = _cfg(tmp_path, ["--max-new-tokens", "4096"])
+    with pytest.raises(ValueError, match="base_cap"):
+        R.emit_cap_hit_report(cfg, "anchors", postregen=True)
+
+
+# ── (6) MAJOR 2: unexpected shards fail loud, never counted ─────────────
+
+
+def test_unexpected_shard_fails_loud_never_counted(tmp_path):
+    a = tmp_path / "shard_a.jsonl"
+    foreign = tmp_path / "shard_zz.jsonl"
+    _write_shard(a, _cell_rows("cellA", "v1", 10, 0))
+    _write_shard(foreign, _cell_rows("cellZ", "v1", 10, 10))
+    with pytest.raises(RuntimeError, match="NOT in the expected set"):
+        R.compute_cap_hit_report(
+            [a, foreign], 2048, scope="grid", expected_shards={"shard_a.jsonl"}
+        )
+
+
+# ── (7) FIX 2: superseded pre-regen preservation ────────────────────────
+
+
+def test_preservation_write_once_byte_identical_atomic(tmp_path, monkeypatch):
+    cfg = _cfg(tmp_path)
+    cfg.anchors_dir.mkdir(parents=True)
+    src = cfg.anchors_dir / "anchors_gate_w0.jsonl"
+    rows = [_row("cellX", "v1", i, True) for i in range(3)]
+    _write_shard(src, rows)
+    original = src.read_bytes()
+    dest = R._preserve_preregen_file(cfg, "anchors", src)
+    assert dest == R.preregen_superseded_dir(cfg, "anchors") / src.name
+    assert dest.read_bytes() == original  # byte-recoverable
+    # write-once: a re-entry after the store already merged must never clobber
+    # the TRUE pre-regen bytes with post-regen content.
+    src.write_text("REGENERATED\n")
+    assert R._preserve_preregen_file(cfg, "anchors", src) == dest
+    assert dest.read_bytes() == original
+    # missing source fails loud (a breaching unit's shard must exist):
+    with pytest.raises(RuntimeError, match="must exist"):
+        R._preserve_preregen_file(cfg, "anchors", cfg.anchors_dir / "nope.jsonl")
+    # atomicity: a crashed copy leaves NO destination and NO tmp residue.
+    cfg2 = _cfg(tmp_path / "two")
+    cfg2.anchors_dir.mkdir(parents=True)
+    src2 = cfg2.anchors_dir / "anchors_gate_w0.jsonl"
+    _write_shard(src2, rows)
+
+    def boom(*a, **k):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(R.os, "replace", boom)
+    with pytest.raises(OSError, match="disk full"):
+        R._preserve_preregen_file(cfg2, "anchors", src2)
+    ddir = R.preregen_superseded_dir(cfg2, "anchors")
+    assert not (ddir / src2.name).exists()
+    assert list(ddir.glob("*.tmp")) == []
+
+
+# ── (8) MAJOR 1: judge staging never prefers a partial full prefix ──────
+
+
+def test_resolve_anchors_dir_never_prefers_partial_full_prefix(tmp_path):
+    """v11 MAJOR 1: capregen uploads land per-worker, so the full anchors
+    mirror can transiently hold a strict SUBSET of the gate shards; the judge
+    must stage from the COMPLETE gate mirror until the full prefix covers it —
+    a partial full prefix would wedge gate-3 with a misleading error."""
+    import issue2329_judge as J
+
+    mirror = tmp_path
+    gate = mirror / "anchors_gate"
+    full = mirror / "anchors"
+    gate.mkdir()
+    for w in range(2):
+        (gate / f"anchors_gate_w{w}.jsonl").write_text('{"context_id": "c"}\n')
+    # No full prefix yet: the early gate mirror stages (pre-existing behavior).
+    assert J._resolve_anchors_dir(mirror) == gate
+    # 1-of-2 workers uploaded to the full prefix (mid-fleet capregen): the
+    # PARTIAL full prefix must never shadow the complete gate mirror.
+    full.mkdir()
+    (full / "anchors_gate_w0.jsonl").write_text('{"context_id": "c"}\n')
+    assert J._resolve_anchors_dir(mirror) == gate
+    # Full prefix covers the gate mirror's shard names: preferred (rest
+    # shards are a superset — gate-3 filters to gate contexts).
+    (full / "anchors_gate_w1.jsonl").write_text('{"context_id": "c"}\n')
+    assert J._resolve_anchors_dir(mirror) == full
+    (full / "anchors_rest_w0.jsonl").write_text('{"context_id": "c"}\n')
+    assert J._resolve_anchors_dir(mirror) == full
+    # Neither dir holds shards: canonical full path (loaders fail loud).
+    empty = tmp_path / "empty_mirror"
+    empty.mkdir()
+    assert J._resolve_anchors_dir(empty) == empty / "anchors"
