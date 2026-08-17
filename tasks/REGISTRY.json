@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2335,
+  "highest_id": 2336,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10321,6 +10321,13 @@
       "path": "tasks/running/2335",
       "status": "running",
       "title": "gotchas.md: RunPod host-driver vs CUDA-major wheel mismatch \u2014 cuda-compat forward-compat recipe"
+    },
+    "2336": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2336",
+      "status": "proposed",
+      "title": "Hoist a process-safe atomic-write helper into shared code and sweep the shared-tmp pattern out of scripts/"
     },
     "234": {
       "has_clean_result": true,
