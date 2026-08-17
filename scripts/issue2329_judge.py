@@ -442,15 +442,42 @@ def _family_representative(
     return max(cands, key=lambda rid: len(cands[rid]))
 
 
+def _family_min_effective_floor(arms: dict[str, list[tuple[str, str, str]]], n_draws: int) -> int:
+    """Feasibility-aware per-family verdict floor for the gate-3-pre pilot.
+
+    ``GATE3PRE_MIN_EFFECTIVE_DRAWS`` (51 = floor(1/0.02)+1, the rule-26(b)
+    resolution floor) stays the CEILING and binds whenever every arm holds
+    >= 51 draws' worth of items (coherence 4,240 / value-rubric 640 units on
+    the realized gate slice). An ITEM-LIMITED family — the realized
+    query-rubric representative holds 30 units, and the production instrument
+    is pinned at ``n_draws=1`` (rules 23/26: the pilot runs the EXACT
+    production instrument, which draws once per item), so no
+    ``target_total_draws`` can raise its draw count — gets its own realized
+    capacity ``min(arm item count) * n_draws`` as the floor instead: the
+    verdict floor in ``judge_pilot._gate_verdict`` is UNCONDITIONAL (no
+    exemption for sub-resolution-bypassed or waived arms), so keeping the 51
+    ceiling would deterministically FAIL the family on arithmetic the data
+    cannot satisfy. Residual: that family's parse-fail check resolves at
+    ``1/floor`` (3.3% for 30 draws) instead of 2% — recorded per family in
+    the phase report (``per_family[*].parse_fail_resolution_pct``)."""
+    assert arms, "no arms"
+    d_eff = max(1, n_draws)
+    min_arm_capacity = min(len(items) for items in arms.values()) * d_eff
+    return min(GATE3PRE_MIN_EFFECTIVE_DRAWS, min_arm_capacity)
+
+
 def phase_pilot_gate3pre(cfg: JudgeConfig) -> int:
     """Plan §7 gate 3-pre (S2): rule-26 pilot on the FIRST gate-3-slice rollouts.
 
     Runs BEFORE the gate-3 sync slice's remaining ~8.7k calls dispatch
     (``phase_separation_gate`` requires this report present-and-PASSED). ALL
     rubric families at the exact production instrument; fresh pilot
-    ``cache_dir``; PASS <=> zero ``stop_reason == "max_tokens"`` AND per-arm
-    parse-fail < 2% AND >= 51 effective draws per realized
-    (arm x rubric-family) cell — the report enumerates the realized cells and
+    ``cache_dir``; PASS <=> zero ``stop_reason == "max_tokens"`` (unconditional,
+    never waived) AND per-arm parse-fail < 2% AND effective draws per realized
+    (arm x rubric-family) cell >= the feasibility-aware per-family floor
+    (:func:`_family_min_effective_floor` — 51 for coherence/value-rubric; an
+    item-limited family runs SUB-RESOLUTION at its realized capacity, recorded
+    per family in the report). The report enumerates the realized cells and
     their effective draws. REFUSES ``--dry-run``: the gate exists to measure
     the real instrument's drop profile on a model it has never scored."""
     if cfg.dry_run:
@@ -479,6 +506,15 @@ def phase_pilot_gate3pre(cfg: JudgeConfig) -> int:
         arms: dict[str, list[tuple[str, str, str]]] = {}
         for u in units:
             arms.setdefault(_pilot_arm(u), []).append((u.item_id, u.question, u.answer))
+        # Feasibility-aware per-family floor (#2329): the ceiling 51 stays
+        # binding for coherence/value-rubric; the item-limited query-rubric
+        # family (30 units, n_draws pinned at 1 by the production instrument
+        # — no target_total_draws can fix it) is checked at its realized
+        # capacity. allow_subresolution_pilot=True clears the #2124
+        # config-time guard for exactly that family; the relaxation is
+        # recorded per family in the aggregate below. Rule 26(a)'s truncation
+        # check is untouched — _gate_verdict applies it unconditionally.
+        family_floor = _family_min_effective_floor(arms, JUDGE_N_DRAWS)
         report = judge_pilot_gate(
             arms,
             registry[rid],
@@ -487,17 +523,26 @@ def phase_pilot_gate3pre(cfg: JudgeConfig) -> int:
             save_raw_dir=cfg.raw_dir / "pilot_gate3pre" / rid,
             n_draws=JUDGE_N_DRAWS,
             target_total_draws=GATE3PRE_TARGET_PER_FAMILY,
-            min_effective_draws_per_arm=GATE3PRE_MIN_EFFECTIVE_DRAWS,
+            min_effective_draws_per_arm=family_floor,
+            allow_subresolution_pilot=True,
             judge_model=cfg.judge_model,
             report_path=cfg.gates_dir / "pilot_gate3pre" / f"{family}.json",
             seed=PILOT_SEED,
         )
+        min_effective = min(st.n_draws - st.n_transport_lost for st in report.arms.values())
         per_family[family] = {
             "rubric_id": rid,
             "verdict": report.verdict,
             "failures": report.failures,
             "warnings": report.warnings,
             "n_total_draws": report.n_total_draws,
+            "floor_applied": family_floor,
+            "floor_ceiling": GATE3PRE_MIN_EFFECTIVE_DRAWS,
+            "effective_draws_min": min_effective,
+            "sub_resolution": bool(min_effective < GATE3PRE_MIN_EFFECTIVE_DRAWS),
+            "parse_fail_resolution_pct": (
+                round(100.0 / min_effective, 2) if min_effective > 0 else None
+            ),
         }
         # Realized (arm x rubric-family) cell enumeration (plan §7 gate 3-pre:
         # "the pilot report enumerates realized cells + their effective draws").
@@ -511,27 +556,35 @@ def phase_pilot_gate3pre(cfg: JudgeConfig) -> int:
                     "n_draws": st.n_draws,
                     "n_transport_lost": st.n_transport_lost,
                     "effective_draws": effective,
-                    "floor": GATE3PRE_MIN_EFFECTIVE_DRAWS,
-                    "meets_floor": bool(effective >= GATE3PRE_MIN_EFFECTIVE_DRAWS),
+                    "floor": family_floor,
+                    "floor_ceiling": GATE3PRE_MIN_EFFECTIVE_DRAWS,
+                    "meets_floor": bool(effective >= family_floor),
                     "parse_fail_rate": st.parse_fail_rate,
                     "stop_reason_tally": st.stop_reason_tally,
                 }
             )
         all_pass &= report.passed
         logger.info(
-            "[pilot-gate3pre] %s (%s): %s (%d draws)",
+            "[pilot-gate3pre] %s (%s): %s (%d draws; floor %d/%d%s)",
             family,
             rid,
             report.verdict,
             report.n_total_draws,
+            family_floor,
+            GATE3PRE_MIN_EFFECTIVE_DRAWS,
+            ", SUB-RESOLUTION" if family_floor < GATE3PRE_MIN_EFFECTIVE_DRAWS else "",
         )
     aggregate = {
         "criterion": (
             "rule-26 judge pilot on the FIRST gate-3-slice rollouts, BEFORE the gate-3 "
             "sync slice bulk dispatch (plan §7 gate 3-pre, S2): zero "
-            "stop_reason=='max_tokens' + per-arm parse-fail < 2% + >= "
-            f"{GATE3PRE_MIN_EFFECTIVE_DRAWS} effective draws per realized "
-            "(arm x rubric-family) cell"
+            "stop_reason=='max_tokens' (unconditional, never waived) + per-arm "
+            "parse-fail < 2% + effective draws per realized (arm x rubric-family) "
+            f"cell >= min({GATE3PRE_MIN_EFFECTIVE_DRAWS}, the family's realized arm "
+            "item count x n_draws) — the feasibility-aware per-family floor: an "
+            "item-limited family runs SUB-RESOLUTION (per_family[*].sub_resolution) "
+            "and its parse-fail check resolves at 1/floor "
+            "(per_family[*].parse_fail_resolution_pct) instead of 2%"
         ),
         "passed": all_pass,
         "per_family": per_family,
@@ -541,7 +594,7 @@ def phase_pilot_gate3pre(cfg: JudgeConfig) -> int:
             "max_tokens": cfg.max_tokens,
             "n_draws": JUDGE_N_DRAWS,
             "target_per_family": GATE3PRE_TARGET_PER_FAMILY,
-            "min_effective_draws_per_cell": GATE3PRE_MIN_EFFECTIVE_DRAWS,
+            "min_effective_draws_ceiling": GATE3PRE_MIN_EFFECTIVE_DRAWS,
             "seed": PILOT_SEED,
         },
         "repro": J94._repro(),
