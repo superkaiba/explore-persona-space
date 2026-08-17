@@ -10410,8 +10410,8 @@
     "2347": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2347",
-      "status": "running",
+      "path": "tasks/completed/2347",
+      "status": "completed",
       "title": "workflow-fix: main-red \u2014 post_marker_echo test stubs lack set_status's new if_plan_v kwarg (4 tests)"
     },
     "2348": {
