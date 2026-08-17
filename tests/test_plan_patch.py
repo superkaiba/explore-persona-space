@@ -24,6 +24,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 _HELPER_PATH = REPO_ROOT / "scripts" / "plan_patch.py"
 _spec = importlib.util.spec_from_file_location("plan_patch", _HELPER_PATH)
@@ -414,9 +416,7 @@ def test_skillmd_pointer_present_in_both_recipes():
     ap_text = (REPO_ROOT / ".claude" / "skills" / "adversarial-planner" / "SKILL.md").read_text(
         encoding="utf-8"
     )
-    issue_text = (REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md").read_text(
-        encoding="utf-8"
-    )
+    issue_text = issue_skill_text()
     assert "scripts/plan_patch.py" in ap_text
     assert "scripts/plan_patch.py" in issue_text
     assert "Edit-success gate" in ap_text
