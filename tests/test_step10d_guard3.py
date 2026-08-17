@@ -1464,6 +1464,79 @@ def test_tg_leg_node_grain_subtraction():
         ), "the verdict must OR the node-grain file beside the file-grain hit set"
 
 
+def test_tg_leg_classify_and_merge_base_pin():
+    """#2348: both TG blocks (1) cut the BASELINE at a merge-base, never
+    current origin/main — `--base "$TG_BASE_REF"` resolved via
+    `git merge-base origin/main HEAD` with a LOUD origin/main degrade — and
+    (2) run the classify-new-nodes SET-mismatch split AFTER the node-grain
+    comm and BEFORE the verdict read, in-place-filtering tg-new-nodes.txt
+    (the verdict operand is unchanged) with the unclassifiable stale-file
+    init HOISTED beside the tg-new-nodes init. The merge-base `-C` target is
+    pinned PER-BLOCK (never a shared literal): the baseline base must match
+    the VINTAGE OF THE TREE THE GATED LEG RUNS — form (i)/(ii)'s gated leg
+    runs the branch-tip worktree, so its merge-base resolves in `-C "$WT"`;
+    form (iii)'s gated leg runs the ROOT tree (current local main +
+    payload), so its merge-base resolves in `-C "$REPO_ROOT"` and must NOT
+    carry `${WT` — a `${WT:-...}` form there would anchor the baseline at
+    the branch fork point while the gated leg runs current main, so any
+    mapped test main broke since fork would read NEW and the classify split
+    would keep it blocking (its file is in the baseline selection),
+    reintroducing the false-block class on the surgical fence (#2348 critic
+    round-1 Must-Fix)."""
+    text = _skill_text()
+    blocks = _tg_blocks(text)
+    for block in blocks:
+        # (1) merge-base-pinned baseline + loud degrade:
+        assert '--base "$TG_BASE_REF"' in block, "the baseline must consume the resolved base"
+        assert "--base origin/main" not in block, "no leg may pin the baseline to origin/main"
+        mb_lines = [ln for ln in block.splitlines() if "TG_BASE_REF=$(git -C " in ln]
+        assert len(mb_lines) == 1, "exactly ONE merge-base resolution per block"
+        assert "merge-base origin/main HEAD" in mb_lines[0]
+        assert "TG_BASE_REF=origin/main" in block, (
+            "the resolution-failure arm must degrade LOUDLY to origin/main"
+        )
+        # (2) selection-sidecar parse + classify split, ordered comm -> classify
+        # -> verdict; init hoisted to the top of the block:
+        assert "sed -n 's/^selected_path=//p'" in block, "TG_BASE_SELECTED parse missing"
+        assert ": > /tmp/issue-<N>-tg-unclassifiable-nodes.txt" in block, (
+            "the unclassifiable stale-file init must be present"
+        )
+        assert block.index(": > /tmp/issue-<N>-tg-unclassifiable-nodes.txt") < block.index(
+            '"$TG_S9B" mapped-baseline'
+        ), "the unclassifiable init must be HOISTED above the TG legs"
+        classify = block.index("classify-new-nodes \\")
+        comm_nodes = block.index("comm -23 /tmp/issue-<N>-tg-gated-nodes.txt")
+        verdict_or = block.index(
+            "[ -s /tmp/issue-<N>-tg-new.txt ] || [ -s /tmp/issue-<N>-tg-new-nodes.txt ]"
+        )
+        assert comm_nodes < classify < verdict_or, (
+            "classify must run AFTER the node-grain comm and BEFORE the verdict read"
+        )
+        assert '--baseline-selected "${TG_BASE_SELECTED:-/__eps_no_selected__}"' in block, (
+            "an unset TG_BASE_SELECTED must degrade via the never-matching default"
+        )
+        assert "--out-block /tmp/issue-<N>-tg-new-nodes.txt" in block, (
+            "classify must in-place-filter the verdict operand"
+        )
+        assert "--out-unclassifiable /tmp/issue-<N>-tg-unclassifiable-nodes.txt" in block
+        assert "WARN: classify-new-nodes failed" in block, (
+            "a classify failure must be a loud status-quo WARN, never silent"
+        )
+    # Per-block -C target (the #2348 critic round-1 Must-Fix) — _tg_blocks
+    # returns document order: shared form (i)/(ii) first, surgical form (iii)
+    # second (the same order test_tg_blocks_bash_parseable relies on):
+    shared, surgical = blocks
+    shared_mb = next(ln for ln in shared.splitlines() if "TG_BASE_REF=$(git -C " in ln)
+    assert '-C "$WT"' in shared_mb, "form (i)/(ii) must resolve the merge-base in the worktree"
+    surgical_mb = next(ln for ln in surgical.splitlines() if "TG_BASE_REF=$(git -C " in ln)
+    assert '-C "$REPO_ROOT"' in surgical_mb, (
+        "form (iii) must resolve the merge-base in the ROOT tree its gated leg runs"
+    )
+    assert "${WT" not in surgical_mb, (
+        "form (iii)'s merge-base must NEVER take the ${WT:-...} fallback form"
+    )
+
+
 def test_tg_blocks_bash_parseable(tmp_path):
     """#1847 (origin #1790): both Step 10d TG executable fences must parse
     under `bash -n`. Orchestrators execute these blocks verbatim; the
