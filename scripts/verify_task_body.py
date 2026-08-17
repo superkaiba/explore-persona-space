@@ -1368,6 +1368,46 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   silent; arm (a) fires on forward-looking `the next result (queued)`
   prose in the last block (zero corpus instances).
 
+- **check 59** (`check_v4_result_section_per_unit_coverage`, WARN,
+  v4-only, FORWARD-ONLY issue >= 2353, #2353; incident #2330 fu1 fold
+  r3; dispatched OUTSIDE CHECKS with the issue number — the
+  check-20/#921 precedent): EVERY `### <result>`
+  block under `## Results` — any inline-figure count (0, 1, or >1) —
+  must carry at least ONE of (a) the literal machine-read
+  `per-unit exemption` token anywhere in the block's prose layer,
+  (b) an embedded inline figure whose basename matches the
+  `_PER_UNIT_FIG_RE` per-unit companion convention, or (c) a per-unit
+  view CLAIM matching `_PER_UNIT_CLAIM_RE` (`_DECLARED_PAIR_RE` minus
+  the aggregate grains `cell`/`pair` — bare "per cell" prose does NOT
+  exempt: "cell" names the design-cell REGIME, the check-31 `indiv`
+  exclusion precedent — plus point-by-point / labeled-points /
+  per-layer-profile view idioms) anywhere in the block's prose layer,
+  markdown link text and link targets included (a LINKED per-unit
+  artifact counts). Blocks with none join ONE WARN naming each flagged
+  H3 + the missing evidence classes, check-55 remediation tail. The
+  UNCONDITIONAL per-section coverage floor of SPEC's "low-level data
+  plot behind every aggregate" rule: checks 48 (figure-less
+  quantitative), 49 (unpaired multi-figure), and 55 (single-figure
+  caption statistic) each fire on a NARROWER trigger, so a section can
+  legitimately draw this WARN alongside a check-48, check-49, or
+  check-55 WARN — acceptable double-WARN overlap: all point at the same
+  remediation, and one acknowledgment paragraph covers both. WARN never
+  FAIL (grandfathering + heuristic prose detection; clean-result-critic
+  Lens 11 stays the substantive owner). Vacuous PASS on v3/v2/legacy
+  bodies, and SKIP when the issue is unknown or < 2353
+  (`_PER_UNIT_COVERAGE_MIN_ISSUE` — calibration lever (ii): the
+  2026-08-17 corpus sweep measured 84/91 v4 bodies (92.3%) WARNing
+  under the recognizer and 69/91 (75.8%) under maximal lever-(i)
+  widening, the residual dominated by the aggregate grains the
+  must-fire rail forbids counting, so the corpus is exempt BY
+  CONSTRUCTION and every future body gets the floor at draft time —
+  the check-57 Leg B posture). Incident #2330 fu1 r3: the cap2048
+  section's figure-adjacent text carried no valued r/rho/R^2/AUC
+  statistic, so check 55 never fired; the section shipped through an
+  OVERALL PASS with neither a per-unit view nor an exemption line —
+  the only 1 of 10 result sections without the conventions — caught
+  only by the LM critic in round 3.
+
 - **judge drop-line population reconciliation**
   (`check_judge_drop_line_population`, FAIL/WARN, v3+v4, #1776 incident /
   task #1881; unnumbered — dispatched outside CHECKS next to the #732
@@ -2990,6 +3030,48 @@ _PER_UNIT_EXEMPTION_TOKEN_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Check 59: per-unit view CLAIM recognizer — evidence class (c) of the
+# unconditional per-section coverage floor. `_DECLARED_PAIR_RE` minus the
+# aggregate grains plus explicit view-claim idioms, scanned over the WHOLE
+# block prose layer (unlike checks 49/55's figure-adjacent scoping — this
+# check asks "does the section carry ANY per-unit story?", so generous
+# scope reduces false WARNs; the false-exemption risk that forced the
+# figure-adjacent scoping there is neutralized by removing the
+# aggregate-grain vocabulary instead). Deltas vs `_DECLARED_PAIR_RE`:
+# `cell` REMOVED — in this project's v4 bodies "cell" names the
+# design-cell (condition x size) REGIME, not a per-unit view (the #2330
+# incident section's own prose says "test R^2 per cell"; check-31's
+# `indiv` exclusion precedent); `pair` REMOVED — pairing names
+# arm-matching, not unit grain (#2330's caption: "the 7B pairs
+# coincide"). ADDED view-claim idioms observed in the wild:
+# point-by-point, labeled/labelled points, per-layer profile (#2330's
+# r2_vs_n section: "shown point-by-point in the per-context cosine strip
+# above"). The whole-block scope deliberately includes markdown link
+# text AND link TARGETS — a linked (not embedded) per-unit artifact path
+# is a real per-unit story pointer (`_prose_layer` retains links).
+_PER_UNIT_CLAIM_RE = re.compile(
+    r"(?<![a-z0-9])per[-_ ](unit|question|context|point|source|seed)s?\b"
+    r"|\bpoint[- ]by[- ]point\b"
+    r"|\bpoints\s+(?:are\s+)?labell?ed\b|\blabell?ed\s+points\b"
+    r"|\bper[- ]layer\s+profile\b"
+    r"|\braw\b[^.\n]{0,60}\b(alongside|counterpart|version|view|scatter)\b"
+    r"|\b(unbinned|low[- ]level)\b"
+    r"|\b(companion|counterpart)\b",
+    re.IGNORECASE,
+)
+# Check 59: forward-only issue gate (calibration lever (ii), #2353 — the
+# check-31 class-C `_PROSE_BAR_MIN_ISSUE` precedent). Corpus-measured at
+# implementation time (2026-08-17, 91 v4 bodies): the recognizer above
+# draws the WARN on 84/91 bodies (92.3%) / 497 of 869 sections, and the
+# maximal lever-(i) widening still leaves 69/91 (75.8%) — the residual is
+# dominated by the aggregate grains (per-cell 73 hits, per-arm 50,
+# per-pair 25) the must-fire rail forbids counting as evidence — so
+# lever (i) cannot meet the <=20% noise budget and the forward-only gate
+# is the sanctioned resolution (plan § Calibration). Existing bodies are
+# exempt BY CONSTRUCTION (all < 2353; the check-57 Leg B posture); every
+# FUTURE v4 body gets the coverage floor at draft time.
+_PER_UNIT_COVERAGE_MIN_ISSUE = 2353
+
 # Check 38: any markdown link (image embeds are masked out before this
 # scans, so no `!`-lookbehind is needed); link text tolerates `]` not
 # followed by `(` — the same tolerance `_IMAGE_RE` uses — and may be
@@ -4370,6 +4452,119 @@ def check_v4_aggregate_stat_needs_per_unit(body: str) -> CheckResult:
         True,
         f"all {len(result_h3s)} `### <result>`(s) scanned — no exemption-less "
         "single-figure aggregate statistic",
+    )
+
+
+def check_v4_result_section_per_unit_coverage(
+    body: str, *, issue: int | None = None
+) -> CheckResult:
+    """Check 59 (v4 only, WARN, forward-only issue >= 2353): EVERY
+    `### <result>` section under `## Results` — regardless of its
+    inline-figure count (0, 1, or >1) — must carry at least ONE of:
+
+    (a) the literal machine-read exemption token `per-unit exemption`
+        (`_PER_UNIT_EXEMPTION_TOKEN_RE`) anywhere in the block's prose
+        layer — the established body convention checks 31/55 read;
+    (b) >=1 embedded inline figure whose basename matches
+        `_PER_UNIT_FIG_RE` (the figure itself IS the per-unit view);
+    (c) a per-unit view CLAIM matching `_PER_UNIT_CLAIM_RE` anywhere in
+        the block's prose layer — `_DECLARED_PAIR_RE` minus the
+        aggregate grains (`cell`, `pair`) plus explicit view-claim
+        idioms. The whole-block scope deliberately includes markdown
+        link text and link TARGETS, so a LINKED (not embedded) per-unit
+        artifact path counts as a per-unit story pointer.
+
+    Blocks with none of the three join ONE WARN naming each flagged H3
+    and the missing evidence classes, with the check-55 remediation
+    tail. This is the UNCONDITIONAL per-section arm of SPEC.md
+    § "Low-level data plot behind every aggregate" (clean-result-critic
+    Lens 11's substantive rule): checks 48 (figure-less quantitative),
+    49 (unpaired multi-figure), and 55 (single-figure caption
+    statistic) each fire on a NARROWER trigger, so a section can
+    legitimately draw this WARN alongside any of theirs — acceptable
+    overlap: all point at the same remediation, and one acknowledgment
+    paragraph covers both.
+
+    Bare "per cell" prose does NOT exempt — "cell" names the
+    design-cell REGIME in this project, not a per-unit view (check-31's
+    `indiv` exclusion precedent; the incident section's own prose says
+    "test R^2 per cell").
+
+    FORWARD-ONLY ISSUE GATE (calibration lever (ii), #2353): fires only
+    when the task's issue number is KNOWN and >=
+    `_PER_UNIT_COVERAGE_MIN_ISSUE` (2353) — the check-31 class-C
+    `_PROSE_BAR_MIN_ISSUE` precedent; `issue=None` (a bare body-string
+    invocation) skips, fail-safe for legacy re-verifies. Rationale +
+    measured corpus rates: the `_PER_UNIT_COVERAGE_MIN_ISSUE` comment
+    block. Needs the issue number, so this check is dispatched OUTSIDE
+    the body-only CHECKS list in `verify_text` (the check-20/#921
+    precedent, like check 56).
+
+    WARN, NEVER FAIL: per-unit-story detection from prose is heuristic,
+    grandfathered bodies and legitimately-exempt sections ship through
+    the existing WARN-acknowledgment mechanism, and clean-result-critic
+    Lens 11 stays the substantive owner. Scans the `_prose_layer`
+    (fenced code + `<details>` stripped, so a quoted example embed or a
+    fenced evidence phrase never counts — the check-49/55 convention).
+    PASSes vacuously on v3 / v2 / legacy bodies (forward-only).
+    Incident #2330 fu1 fold round 3 (#2353): the cap2048 section
+    (figure `cap2048_comparison.png` — per-cell paired dots + cap-hit
+    bars) carried no valued r/rho/R^2/AUC statistic in its alt/caption,
+    so check 55 never fired; it shipped through an OVERALL PASS as the
+    only 1 of 10 result sections with neither a per-unit view nor an
+    exemption line, caught only by the LM critic Lens 11 in round 3.
+    """
+    label = "Every result section has per-unit evidence or exemption (v4)"
+    if issue is None or issue < _PER_UNIT_COVERAGE_MIN_ISSUE:
+        return CheckResult(
+            label,
+            True,
+            "skipped — forward-only (fires for issue >= "
+            f"{_PER_UNIT_COVERAGE_MIN_ISSUE}; issue unknown or older)",
+        )
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped — not a v4 body")
+    results = _v4_results_body(body)
+    if results is None:
+        return CheckResult(label, True, "## Results missing — check 2 will report")
+    prose = _prose_layer(results)
+    result_h3s = _collect_tldr_h3_names(prose)
+    if not result_h3s:
+        return CheckResult(label, True, "no `### <result>` headings — check 3 will report")
+    plines = prose.splitlines()
+    flagged: list[str] = []
+    for idx, (name, line_no) in enumerate(result_h3s):
+        end_line = result_h3s[idx + 1][1] if idx + 1 < len(result_h3s) else len(plines)
+        block = plines[line_no + 1 : end_line]
+        block_text = "\n".join(block)
+        if _PER_UNIT_EXEMPTION_TOKEN_RE.search(block_text):
+            continue  # evidence (a): the literal machine-read exemption token
+        figures = _v4_block_inline_figures(block)
+        if any(_PER_UNIT_FIG_RE.search(_fig_basename(url)) for url, _alt in figures):
+            continue  # evidence (b): an embedded per-unit-stem figure
+        if _PER_UNIT_CLAIM_RE.search(block_text):
+            continue  # evidence (c): a per-unit view claim in the block's prose
+        flagged.append(f"'{name[:48]}'")
+    if flagged:
+        preview = "; ".join(flagged[:3]) + (" …" if len(flagged) > 3 else "")
+        return CheckResult(
+            label,
+            True,
+            f"{len(flagged)} `### <result>` section(s) carry NO per-unit evidence — no "
+            "literal `per-unit exemption` token in the section prose, no embedded figure "
+            "with a per-unit companion basename, and no per-unit view claim "
+            "(per-unit/question/context/point/source/seed vocabulary, point-by-point, "
+            "labeled points, per-layer profile, raw-alongside, unbinned/low-level, "
+            "companion/counterpart) anywhere in the section. Embed the per-unit companion "
+            "(SPEC.md § Low-level data plot behind every aggregate) or state "
+            "`Per-unit exemption: <reason>` in the section (substantive owner: "
+            f"clean-result-critic Lens 11): {preview}",
+            is_warn=True,
+        )
+    return CheckResult(
+        label,
+        True,
+        f"all {len(result_h3s)} `### <result>`(s) carry per-unit evidence or an exemption",
     )
 
 
@@ -19093,6 +19288,11 @@ CHECKS = [
     # folded-round evidence via `_count_extra_followup_rounds_v4`), so it
     # is dispatched separately in `verify_text` (#2264; the check-20/#921
     # precedent).
+    # Check 59 (`check_v4_result_section_per_unit_coverage`, WARN, v4-only,
+    # forward-only issue >= 2353) is NOT here either — its forward-only
+    # gate needs the issue number (calibration lever (ii), #2353), so it
+    # is dispatched separately in `verify_text` (the check-20/#921
+    # precedent).
 ]
 
 
@@ -19301,6 +19501,12 @@ def verify_text(
     # the issue number for the events.jsonl folded-round evidence, so it
     # lives outside the body-only CHECKS list (the check-20/#921 precedent).
     results.append(check_v4_ack_result_count(body, issue=issue))
+    # Check 59 (WARN, #2353; incident #2330 fu1 r3): the unconditional
+    # per-section per-unit coverage floor — its forward-only gate
+    # (fires only for issue >= _PER_UNIT_COVERAGE_MIN_ISSUE, calibration
+    # lever (ii)) needs the issue number, so it lives outside the
+    # body-only CHECKS list (the check-20/#921 precedent).
+    results.append(check_v4_result_section_per_unit_coverage(body, issue=issue))
     overall = all(r.passed for r in results)
     return overall, results
 
