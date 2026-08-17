@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2346,
+  "highest_id": 2347,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10406,6 +10406,13 @@
       "path": "tasks/planning/2346",
       "status": "planning",
       "title": "gotchas.md: warn that an interrupted posix_fallocate quota probe leaks its full allocation (12.6 GB leaked on a live pod, #2329)"
+    },
+    "2347": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2347",
+      "status": "proposed",
+      "title": "workflow-fix: main-red \u2014 post_marker_echo test stubs lack set_status's new if_plan_v kwarg (4 tests)"
     },
     "235": {
       "has_clean_result": true,
