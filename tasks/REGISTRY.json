@@ -10245,8 +10245,8 @@
     "2326": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2326",
-      "status": "running",
+      "path": "tasks/completed/2326",
+      "status": "completed",
       "title": "Codex reviewers' \"Concerns to persist\" never reach raise-concern, so the next round's prior-concerns gate walks an empty ledger"
     },
     "2327": {
