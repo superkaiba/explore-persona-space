@@ -35,3 +35,4 @@
 - [vLLM-port terminal + self-ref parity](vllm_port_terminal_and_selfref_parity.md) — exception paths must reach os._exit; a self-emitted parity reference only certifies venv drift (#2330 R1 g1)
 - [Minimal-pair gate predicates](maximal_prefix_suffix_diff_check_tautology.md) — prefix/suffix form = tautology; opcode-count form false-rejects multi-region-by-design pairs; want locus-anchored span identity + a full-real-corpus review probe (#2333 R1→R3)
 - [Smoke shard namespace ≠ done-file namespace](smoke_shard_namespace_only_done_files.md) — namespace EVERY per-block artifact path, not just done-files; dir-glob uploads sweep smoke shards under the prod prefix (#2333 R1 g1)
+- [Banked-parent dual-schema equivalence](banked_parent_dual_schema_equivalence.md) — certify a claimed slot equivalence against the producer's OWN consumer read + the real pinned-artifact probe, never the fix's docstring (#2333 R4)
