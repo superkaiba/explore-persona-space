@@ -521,6 +521,25 @@ def phase_envcheck(cfg: RunConfig, regime_fp: str) -> int:
         probe_ctx = {"id": "envcheck", "system": None, "history": [], "user": "What is 2+2?"}
         ids = ids_fn(tok, probe_ctx)
         report["probe_ids_len"] = len(ids)
+        # Meta-device STRUCTURE probe (plan §4.4 B-1 / A9): the decoder-block
+        # list must resolve through the (multimodal) wrapper WITHOUT weights —
+        # A9 expects the naive .layers path to fail on Qwen3.5 and the
+        # .language_model nesting (extraction._resolve_decoder_blocks) to hold.
+        from transformers import AutoModelForCausalLM
+
+        try:
+            with torch.device("meta"):
+                meta_model = AutoModelForCausalLM.from_config(mcfg)
+        except (ValueError, KeyError):
+            from transformers import AutoModelForImageTextToText
+
+            with torch.device("meta"):
+                meta_model = AutoModelForImageTextToText.from_config(mcfg)
+        blocks, depth = resolve_decoder_blocks_2333(meta_model)
+        assert len(blocks) == cfg.n_layers, (len(blocks), cfg.n_layers)
+        report["n_blocks_resolved"] = len(blocks)
+        report["blocks_depth"] = depth
+        del meta_model
     except Exception as e:  # designed halt — report + distinct rc, never rc=1
         ok = False
         report["error"] = f"{type(e).__name__}: {e}"
