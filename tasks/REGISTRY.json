@@ -10318,8 +10318,8 @@
     "2335": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2335",
-      "status": "running",
+      "path": "tasks/reviewing/2335",
+      "status": "reviewing",
       "title": "gotchas.md: RunPod host-driver vs CUDA-major wheel mismatch \u2014 cuda-compat forward-compat recipe"
     },
     "2336": {
