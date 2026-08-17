@@ -1,0 +1,23 @@
+{
+  "phase": "upload",
+  "regime_fp": "b9c2431f8e0cdc87",
+  "num_workers": 1,
+  "uploaded": {
+    "issue2333_snowball/q25/rollouts": 144,
+    "issue2333_snowball/q25/donors": 4,
+    "issue2333_snowball/q25/vc_bank": 2,
+    "issue2333_snowball/q25/gates": 4,
+    "issue2333_snowball/q25/manifests": 221,
+    "issue2333_snowball/q25/va_store": 144
+  },
+  "repro": {
+    "git_commit": "7bb354b55716c9c26e8b0c571ac781a2b510b2a3",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "model_tag": "q25",
+    "tiny": false,
+    "smoke": false,
+    "timestamp": "2026-08-17T08:23:09.869575+00:00"
+  }
+}
