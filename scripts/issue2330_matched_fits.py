@@ -397,20 +397,27 @@ def assemble_store(
     layer: int,
     cache_dir: Path,
     expected_n: dict[str, int] | None,
+    wc_hf_prefix: str | None = None,
 ) -> dict[str, dict]:
     """Stream one model's four splits at one layer from HF via the reuse cores.
 
     Returns {split: {"cx": (n,H) fp32, "vx": (n,H) fp32, "ci": list[int]}} with
     the #2130-style count pins applied at the STORE grain (``expected_n`` maps
     store split names → expected realized counts; None = smoke opt-out).
+    ``wc_hf_prefix`` (cap2048 follow-up): stream ``wc_test_1k`` from a
+    DIFFERENT (original) store prefix — the alternate-store battery inherits
+    the wc fold from the original store (default None = same prefix).
     """
     store: dict[str, dict] = {}
     realized: dict[str, int] = {}
     for split in [train_split, *STORE_SPLITS]:
-        cx, vx, ci = LF._stream_ladder_split(hf_prefix, split, layer, cache_dir)
+        src_prefix = hf_prefix
+        if split == "wc_test_1k" and wc_hf_prefix:
+            src_prefix = wc_hf_prefix
+        cx, vx, ci = LF._stream_ladder_split(src_prefix, split, layer, cache_dir)
         store[split] = {"cx": cx, "vx": vx, "ci": list(ci)}
         realized[split] = int(cx.shape[0])
-        logger.info("[matched-fits]   %s/%s L%d: n=%d", hf_prefix, split, layer, realized[split])
+        logger.info("[matched-fits]   %s/%s L%d: n=%d", src_prefix, split, layer, realized[split])
     _pin_counts(realized, expected_n, f"{hf_prefix} (layer {layer})")
     return store
 
@@ -661,10 +668,13 @@ def save_cell_preds(
     ci_te: list[int],
     ci_wc: list[int],
     per_layer_preds: dict[int, dict],
+    out_suffix: str = "",
 ) -> Path:
-    """Write one npz per cell: test + WildChat preds/targets at all 3 layers."""
+    """Write one npz per cell: test + WildChat preds/targets at all 3 layers.
+    ``out_suffix`` (cap2048 follow-up) suffixes the filename so an
+    alternate-store battery never clobbers the canonical committed preds."""
     preds_dir.mkdir(parents=True, exist_ok=True)
-    path = preds_dir / f"{cell}_test_preds_ridge.npz"
+    path = preds_dir / f"{cell}_test_preds_ridge{out_suffix}.npz"
     arrays: dict[str, np.ndarray] = {
         "ci_te": np.array(ci_te, dtype=np.int64),
         "ci_wc": np.array(ci_wc, dtype=np.int64),
@@ -695,6 +705,7 @@ def run_battery(
     models: dict[str, dict] | None = None,
     anchor_fn=run_anchor_gate,
     cap_hit_fn=None,
+    out_suffix: str = "",
 ) -> dict[str, Path]:
     """Run the 4-cell × 3-layer battery.
 
@@ -705,7 +716,9 @@ def run_battery(
     ({"test_1000"|"train_10k"|"val_400": rec | None}, round 3) feeding the
     primary-layer truncation-restriction read+refit control (None ⇒ it
     records ``cap_hit_unavailable``). Cell JSONs are atomically rewritten
-    after EVERY (cell, layer) unit.
+    after EVERY (cell, layer) unit. ``out_suffix`` (cap2048 follow-up)
+    suffixes every cell JSON + preds filename so an alternate-store battery
+    (``--hf-prefix-override``) never clobbers the canonical committed outputs.
     """
     models = models or MODELS
     t0 = time.time()
@@ -774,6 +787,7 @@ def run_battery(
                         "model": mcfg["model"],
                         "hf_prefix": mcfg["hf_prefix"],
                         "store_revision_pin": mcfg.get("store_revision_pin"),
+                        "store_prefix_override": mcfg.get("override_meta"),
                         "train_key": train_key,
                         "layers": sorted(mcfg["layers"]),
                         "primary_layer": int(mcfg["primary_layer"]),
@@ -798,7 +812,7 @@ def run_battery(
                 rec["port_parity_anchor"] = anchor_record or {
                     "skipped": "anchor gate not run in this mode"
                 }
-                path = out_dir / f"matched_fits_{cell}.json"
+                path = out_dir / f"matched_fits_{cell}{out_suffix}.json"
                 _write_json_atomic(path, rec)
                 cell_paths[cell] = path
                 print(
@@ -817,6 +831,7 @@ def run_battery(
                 split_ids["splits"]["test_1000"],
                 split_ids["splits"]["wc_test_1k"],
                 per_cell_preds[cell],
+                out_suffix=out_suffix,
             )
             rec = results[cell]
             rec["preds_path"] = str(npz_path)
@@ -842,6 +857,98 @@ def _run_anchor_on_store(store: dict[str, dict], mcfg: dict, dev, anchor_fn) -> 
 
 
 # ---------------------------------------------------------------------------
+# Alternate-store prefix overrides (cap2048 follow-up)
+# ---------------------------------------------------------------------------
+
+
+def _parse_prefix_overrides(raw: list[str] | None) -> dict[str, str]:
+    """Parse ``--hf-prefix-override MODEL_KEY=PREFIX`` entries (fail-loud)."""
+    out: dict[str, str] = {}
+    for item in raw or []:
+        key, sep, prefix = item.partition("=")
+        key, prefix = key.strip(), prefix.strip()
+        if not sep or not key or not prefix:
+            raise RuntimeError(f"--hf-prefix-override wants MODEL_KEY=PREFIX, got {item!r}")
+        if key not in MODELS:
+            raise RuntimeError(
+                f"--hf-prefix-override unknown model key {key!r} (want one of {sorted(MODELS)})"
+            )
+        if key in out:
+            raise RuntimeError(f"--hf-prefix-override duplicate entry for {key!r}")
+        if prefix == MODELS[key]["hf_prefix"]:
+            raise RuntimeError(
+                f"--hf-prefix-override for {key!r} equals the original prefix "
+                f"({prefix!r}) — nothing to override"
+            )
+        out[key] = prefix
+    return out
+
+
+def _apply_store_prefix_overrides(
+    models: dict[str, dict], overrides: dict[str, str], split_ids: dict
+) -> dict[str, dict]:
+    """Deep-copied MODELS dict for an alternate-store battery (cap2048 follow-up).
+
+    Per overridden model: train/val/test stream from the OVERRIDE prefix (the
+    regen scope: test_1000 + train rows + val_400 at the 3 original layers);
+    ``wc_test_1k`` + the two-draw ceiling INHERIT the original prefix — the
+    regen deliberately excludes them, recorded as a stated caveat in every
+    cell JSON's ``store_prefix_override`` block. The 7B port-parity anchor
+    gate is skipped (``anchor=False``): the override store carries only the
+    split_ids train rows (10k), never the banked 25k anchor split. Revision
+    pin dropped (issue-owned regen store, consumed at head). Count pins:
+    train/val/test at the split_ids grain — the override store's train
+    subpath keeps the model's ``store_train_split`` NAME but realizes exactly
+    ``counts["train_10k"]`` rows (the #1491 driver regenerates shards 0-1 of
+    the train_25k manifest == the train_10k id prefix); wc keeps the ORIGINAL
+    store's banked grain (inherited read).
+
+    Returns ONLY the overridden models — a non-overridden model would just
+    re-fit its original store into suffixed duplicate outputs.
+    """
+    import copy
+
+    counts = split_ids["counts"]
+    out = {key: copy.deepcopy(models[key]) for key in overrides}
+    for key, prefix in overrides.items():
+        m = out[key]
+        orig_prefix = m["hf_prefix"]
+        orig_expected = m.get("store_expected_n")
+        wc_expected = (
+            int(orig_expected["wc_test_1k"]) if orig_expected else int(counts["wc_test_1k"])
+        )
+        anchor_was = bool(m.get("anchor"))
+        m["hf_prefix"] = prefix
+        m["wc_hf_prefix"] = orig_prefix
+        m["ceiling_hf_prefix"] = orig_prefix
+        m["store_revision_pin"] = None
+        m["anchor"] = False
+        m["store_expected_n"] = {
+            m["store_train_split"]: int(counts["train_10k"]),
+            "val_400": int(counts["val_400"]),
+            "test_1000": int(counts["test_1000"]),
+            "wc_test_1k": wc_expected,
+        }
+        m["override_meta"] = {
+            "store_prefix": prefix,
+            "orig_hf_prefix": orig_prefix,
+            "inherited_from_original": ["wc_test_1k", "ceiling_two_draw"],
+            "anchor_skipped": (
+                "override store carries only the split_ids train rows (no banked 25k anchor split)"
+                if anchor_was
+                else None
+            ),
+            "note": (
+                "cap2048 alternate-store battery: train/val/test streamed from the "
+                "override prefix; wc_test_1k + the two-draw ceiling inherited from the "
+                "original store (regen scope excluded them) — mixed-provenance reads, "
+                "labeled here"
+            ),
+        }
+    return out
+
+
+# ---------------------------------------------------------------------------
 # Production wiring (HF streaming + ceiling via the reuse cores)
 # ---------------------------------------------------------------------------
 
@@ -858,7 +965,12 @@ def _production_store_fn(args, split_ids: dict):
                 **{s: int(split_ids["counts"][s]) for s in STORE_SPLITS},
             }
         return assemble_store(
-            mcfg["hf_prefix"], mcfg["store_train_split"], layer, cache_dir, expected
+            mcfg["hf_prefix"],
+            mcfg["store_train_split"],
+            layer,
+            cache_dir,
+            expected,
+            wc_hf_prefix=mcfg.get("wc_hf_prefix"),
         )
 
     return store_fn
@@ -866,10 +978,13 @@ def _production_store_fn(args, split_ids: dict):
 
 def _production_ceiling_fn(args, split_ids: dict):
     def ceiling_fn(mcfg: dict, layer: int) -> dict:
+        """Two-draw ceiling; an alternate-store battery (cap2048 follow-up)
+        INHERITS the ceiling draws from the original prefix via
+        ``ceiling_hf_prefix`` (the regen scope excludes ceiling draws)."""
         cache_dir = args.cache_dir / mcfg["hf_prefix"].replace("/", "_")
         cache_dir.mkdir(parents=True, exist_ok=True)
         return LF._reliability_ceiling(
-            mcfg["hf_prefix"],
+            mcfg.get("ceiling_hf_prefix") or mcfg["hf_prefix"],
             layer,
             cache_dir,
             expected_n=int(split_ids["counts"]["test_1000"]),
@@ -1047,6 +1162,274 @@ def _upload_preds_mirror(preds_dir: Path) -> None:
             "silent durability loss; refusing to exit 0 (upload-policy tracked gap)"
         )
     logger.info("[matched-fits] mirrored %s -> %s (%s)", preds_dir, PREDS_HF_PREFIX, base_url)
+
+
+# ---------------------------------------------------------------------------
+# Dense 9B layer sweep (follow-up dense-9b-layer-sweep — scoped-peak diagnostic)
+# ---------------------------------------------------------------------------
+
+DENSE_MODEL_KEY = "qwen35_9b"
+DENSE_SPLITS = ("train_10k", "val_400", "test_1000")  # NO wc/ceiling (scoped diagnostic)
+DENSE_MIN_LAYERS = 4  # wrong-prefix guard: the 3-layer registry store must never fit here
+
+
+def _dense_chunk_prefix(prefix: str, split: str) -> str:
+    """Chunk sub-prefix for one split of the dense store (write-side parity:
+    issue2330_qwen35_generate_capture uploads chunks under
+    ``<hf_prefix>/<split>/final_token_capture/``)."""
+    return f"{prefix}/{split}/final_token_capture"
+
+
+def _peek_dense_store(args) -> tuple[list[int], int]:
+    """Read the dense store's realized layer list + h_dim from its FIRST train
+    chunk (schema-from-artifact — never a hardcoded dense layer list)."""
+    if args.dense_local_dir is not None:
+        local = Path(args.dense_local_dir) / "train_10k" / "final_token_capture"
+        names = sorted(p.name for p in local.glob("shard*_chunk*.pt"))
+        if not names:
+            raise FileNotFoundError(f"no dense capture chunks under {local}")
+        got = local / names[0]
+    else:
+        from huggingface_hub import HfApi
+
+        from explore_persona_space.orchestrate import hub
+
+        prefix = _dense_chunk_prefix(args.dense_prefix, "train_10k")
+        names = hub.retry_transient(
+            lambda: sorted(
+                f.path.rsplit("/", 1)[-1]
+                # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient right here
+                for f in HfApi().list_repo_tree(
+                    F.C.HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
+                )
+                if getattr(f, "size", None) is not None and f.path.endswith(".pt")
+            ),
+            what=f"dense chunk listing ({prefix})",
+        )
+        if not names:
+            raise FileNotFoundError(f"no dense capture chunks under HF {prefix}")
+        cache = args.cache_dir / "dense_peek"
+        cache.mkdir(parents=True, exist_ok=True)
+        got = Path(F._download_chunk_with_retry(F.C.HF_DATA_REPO, f"{prefix}/{names[0]}", cache))
+    b = FFC._mmap_load(got)
+    layers = [int(x) for x in b["layers"]]
+    n_rows, n_layers, h_dim = b["cx_last"].shape
+    assert n_layers == len(layers), (b["cx_last"].shape, layers)
+    del b
+    return layers, int(h_dim)
+
+
+def _dense_stream_split(args, split: str, layers: list[int], h_dim: int) -> tuple[dict, int]:
+    """One-pass multi-layer memmap stream of ONE dense-store split via the
+    reuse core ``F._stream_n1m_multilayer`` (zero-row pb_head: the hidden dim
+    rides the head arrays' shape; every realized row comes from the store —
+    NEVER the per-layer ``_stream_ladder_split``, whose chunk deletion would
+    re-download the store once PER LAYER, ~31x). Chunks are deleted after
+    slicing (HF mode); memmaps live under ``<cache-dir>/dense_mm/<split>``
+    with the core's own cursor resume."""
+    zero = np.zeros((0, h_dim), dtype=np.float32)
+    pb_head = {int(li): (zero, zero) for li in layers}
+    local_dir = None
+    if args.dense_local_dir is not None:
+        local_dir = Path(args.dense_local_dir) / split / "final_token_capture"
+    arrays, n_rows = F._stream_n1m_multilayer(
+        _dense_chunk_prefix(args.dense_prefix, split),
+        [int(x) for x in layers],
+        args.cache_dir / "dense_dl" / split,
+        args.cache_dir / "dense_mm" / split,
+        pb_head,
+        local_dir=local_dir,
+    )
+    return arrays, int(n_rows)
+
+
+def run_dense_sweep(args) -> int:
+    """Dense 9B layer sweep (follow-up dense-9b-layer-sweep): per-layer
+    held-out test R² + selected λ for the q35 cells over EVERY hooked layer in
+    the dense store — a scoped-peak diagnostic. Deliberately NO floors /
+    ceilings / wc-transfer fold (the registered 4-cell battery carries those
+    at the pre-registered layers; this sweep only locates the per-layer peak —
+    stated in the output meta). Checkpoint per (layer, cell) unit into
+    ``--dense-out`` (atomic rewrite; ~62 units > the ~50-unit T2 trigger) with
+    a regime-keyed resume (prefix + layers + split_ids sha + device + h_dim)."""
+    dev = _resolve_device(args.device)
+    _phase("load_split_ids")
+    split_ids = load_split_ids(args.split_ids)
+    mcfg = MODELS[DENSE_MODEL_KEY]
+    cells = [c.strip() for c in str(args.dense_cells).split(",") if c.strip()]
+    unknown = [c for c in cells if c not in mcfg["cells"]]
+    if not cells or unknown:
+        raise RuntimeError(
+            f"--dense-cells must be a non-empty subset of {sorted(mcfg['cells'])}, "
+            f"got {args.dense_cells!r}"
+        )
+
+    _phase("dense_peek")
+    layers, h_dim = _peek_dense_store(args)
+    if len(set(layers)) != len(layers):
+        raise RuntimeError(f"dense store carries duplicate layers: {layers}")
+    if len(layers) < DENSE_MIN_LAYERS:
+        raise RuntimeError(
+            f"dense store at {args.dense_prefix!r} carries only {len(layers)} layers "
+            f"({layers}) — this looks like the 3-layer registry store, not a dense sweep; "
+            "refusing (wrong --dense-prefix?)"
+        )
+    if int(h_dim) != int(args.dense_expect_h_dim):
+        raise RuntimeError(
+            f"dense store h_dim={h_dim} != expected {args.dense_expect_h_dim} "
+            "(--dense-expect-h-dim)"
+        )
+    print(f"[dense] store layers ({len(layers)}): {layers} h_dim={h_dim}", flush=True)
+
+    out_json: Path = args.dense_out
+    regime = {
+        "dense_prefix": str(args.dense_prefix),
+        "layers": [int(x) for x in layers],
+        "split_ids_sha256": split_ids.get("sha256"),
+        "device": str(dev),
+        "h_dim": int(h_dim),
+    }
+    payload: dict = {}
+    if out_json.is_file():
+        payload = json.loads(out_json.read_text(encoding="utf-8"))
+        got = {k: payload.get("meta", {}).get(k) for k in regime}
+        if got != regime:
+            raise RuntimeError(
+                f"--dense-out {out_json} exists with a DIFFERENT regime "
+                f"(existing {got} vs requested {regime}) — pass a fresh --dense-out "
+                "(a resume must never mix regimes, #722)"
+            )
+        n_done = sum(len(c.get("per_layer", {})) for c in payload.get("cells", {}).values())
+        print(f"[dense] resuming: {n_done} completed units in {out_json}", flush=True)
+
+    _phase("dense_stream")
+    views: dict[str, dict] = {}
+    realized: dict[str, int] = {}
+    for split in DENSE_SPLITS:
+        arrays, n_rows = _dense_stream_split(args, split, layers, h_dim)
+        views[split] = arrays
+        realized[split] = n_rows
+        print(f"[dense] streamed {split}: n={n_rows}", flush=True)
+    _pin_counts(
+        realized,
+        {s: int(split_ids["counts"][s]) for s in DENSE_SPLITS},
+        f"{args.dense_prefix} (dense)",
+    )
+
+    def _rows_for(split: str, want_ids: list[int], what: str) -> np.ndarray:
+        """Row indices for ``want_ids`` IN ids ORDER (fail-loud on any miss)."""
+        by_ci = {int(c): i for i, c in enumerate(views[split]["ci"])}
+        missing = [i for i in want_ids if int(i) not in by_ci]
+        if missing:
+            raise RuntimeError(
+                f"dense matched-ID assert failed for {what}: {len(missing)}/{len(want_ids)} "
+                f"split_ids ids absent from the streamed store (first: {missing[:10]})"
+            )
+        return np.array([by_ci[int(i)] for i in want_ids], dtype=np.int64)
+
+    ids = split_ids["splits"]
+    va_rows = _rows_for("val_400", ids["val_400"], "val_400")
+    te_rows = _rows_for("test_1000", ids["test_1000"], "test_1000")
+    tr_rows_by_cell = {
+        cell: _rows_for("train_10k", ids[mcfg["cells"][cell]], mcfg["cells"][cell])
+        for cell in cells
+    }
+
+    payload.setdefault("cells", {})
+    payload["meta"] = {
+        **regime,
+        "label": (
+            "dense layer sweep — scoped-peak diagnostic: per-layer held-out test R² + "
+            "selected λ ONLY; NO floors/ceilings/wc-transfer fold (the registered 4-cell "
+            "battery carries those at the pre-registered layers)"
+        ),
+        "model_key": DENSE_MODEL_KEY,
+        "model": mcfg["model"],
+        "cells": sorted(set(cells) | set(payload.get("cells", {}))),
+        "counts": {s: int(split_ids["counts"][s]) for s in DENSE_SPLITS},
+        "fit_config": {
+            "lambdas": [float(x) for x in LF.LAMBDAS],
+            "ridge_block": int(LF.RIDGE_BLOCK),
+            "grid_edge_disposition": "extend one decade + refit (plan §11)",
+        },
+        "_meta": _repro_meta(),
+    }
+
+    unit_total = len(layers) * len(cells)
+    unit_i = 0
+    t0 = time.time()
+    _phase("dense_fits")
+    for layer in layers:
+        for cell in cells:
+            unit_i += 1
+            crec = payload["cells"].setdefault(
+                cell, {"train_key": mcfg["cells"][cell], "per_layer": {}}
+            )
+            if str(layer) in crec["per_layer"]:
+                print(
+                    f"[dense] unit {unit_i}/{unit_total} {cell}_L{layer} SKIP (resumed)",
+                    flush=True,
+                )
+                continue
+            t_unit = time.time()
+            tr_r = tr_rows_by_cell[cell]
+            X = np.concatenate(
+                [
+                    np.asarray(views["train_10k"][("cx", layer)])[tr_r],
+                    np.asarray(views["val_400"][("cx", layer)])[va_rows],
+                    np.asarray(views["test_1000"][("cx", layer)])[te_rows],
+                ],
+                axis=0,
+            )
+            Y = np.concatenate(
+                [
+                    np.asarray(views["train_10k"][("vx", layer)])[tr_r],
+                    np.asarray(views["val_400"][("vx", layer)])[va_rows],
+                    np.asarray(views["test_1000"][("vx", layer)])[te_rows],
+                ],
+                axis=0,
+            )
+            n_tr, n_va, n_te = len(tr_r), len(va_rows), len(te_rows)
+            tr = np.arange(0, n_tr, dtype=np.int64)
+            val = np.arange(n_tr, n_tr + n_va, dtype=np.int64)
+            te = np.arange(n_tr + n_va, n_tr + n_va + n_te, dtype=np.int64)
+            pred, meta_fit = fit_ridge_edge_extended(X, Y, tr, val, te, dev, LF.RIDGE_BLOCK)
+            r2 = LF._pooled_r2(pred, Y[te])
+            crec["n_train"] = int(n_tr)
+            crec["n_vs_d"] = {
+                "n_train": int(n_tr),
+                "d": int(h_dim),
+                "n_train_over_d": float(n_tr / h_dim),
+                "underdetermined": bool(n_tr < h_dim),
+            }
+            crec["per_layer"][str(layer)] = {
+                "test_r2": float(r2),
+                "selected_lambda": float(meta_fit["selected_lambda"]),
+                "val_r2_at_selected": float(meta_fit["val_r2_at_selected"]),
+                "lambda_grid_edge": meta_fit.get("lambda_grid_edge"),
+                "n_grid_extensions": int(len(meta_fit.get("grid_extensions") or [])),
+            }
+            _write_json_atomic(out_json, payload)
+            print(
+                f"[dense] unit {unit_i}/{unit_total} {cell}_L{layer} r2={r2:.4f} "
+                f"lam={meta_fit['selected_lambda']:.3g} elapsed={time.time() - t_unit:.1f}s",
+                flush=True,
+            )
+    for cell in cells:
+        pl = payload["cells"][cell]["per_layer"]
+        best = max(pl.items(), key=lambda kv: kv[1]["test_r2"])
+        payload["cells"][cell]["peak"] = {
+            "layer": int(best[0]),
+            "test_r2": float(best[1]["test_r2"]),
+            "note": (
+                "scoped-peak diagnostic — a max over the free layer axis with NO null "
+                "band/CI; locate-the-peak only, never a selection-corrected headline"
+            ),
+        }
+    _write_json_atomic(out_json, payload)
+    print(f"[dense] done: {unit_total} units in {time.time() - t0:.1f}s -> {out_json}", flush=True)
+    _phase("done")
+    return 0
 
 
 # ---------------------------------------------------------------------------
@@ -1687,6 +2070,53 @@ def _build_parser() -> argparse.ArgumentParser:
         "records 'cap_hit_unavailable' loud, never fabricated)",
     )
     ap.add_argument(
+        "--hf-prefix-override",
+        action="append",
+        default=None,
+        metavar="MODEL_KEY=PREFIX",
+        help="alternate-store battery (cap2048 follow-up): stream MODEL_KEY's train/val/test "
+        "from PREFIX (wc_test_1k + the two-draw ceiling inherit the original store; the 7B "
+        "anchor gate is skipped); repeatable; REQUIRES a non-empty --out-suffix (clobber "
+        "guard on the canonical committed cell JSONs/preds)",
+    )
+    ap.add_argument(
+        "--out-suffix",
+        default="",
+        help="suffix for cell JSON + preds npz filenames (e.g. _cap2048); REQUIRED with "
+        "--hf-prefix-override",
+    )
+    ap.add_argument(
+        "--dense-prefix",
+        default=None,
+        help="dense-sweep mode (follow-up dense-9b-layer-sweep): per-layer ridge test R² + "
+        "selected λ for the q35 cells over EVERY layer of the dense 9B store at this HF "
+        "prefix (e.g. issue2330_matched/qwen35_9b_dense)",
+    )
+    ap.add_argument(
+        "--dense-cells",
+        default="q35_n10k,q35_n5k",
+        help="dense-sweep cells (non-empty subset of the q35 cells; default both)",
+    )
+    ap.add_argument(
+        "--dense-out",
+        type=Path,
+        default=None,
+        help="dense-sweep output JSON (default <out-dir>/dense_sweep/matched_fits_q35_dense.json)",
+    )
+    ap.add_argument(
+        "--dense-local-dir",
+        type=Path,
+        default=None,
+        help="dense-sweep: read capture chunks from <dir>/<split>/final_token_capture/ "
+        "instead of HF (tests / pod-local reuse)",
+    )
+    ap.add_argument(
+        "--dense-expect-h-dim",
+        type=int,
+        default=4096,
+        help="dense-sweep wrong-store guard: assert the peeked chunk h_dim",
+    )
+    ap.add_argument(
         "--smoke-chunk-dir",
         default=None,
         help="P1 step-4 fits-shape smoke on a LOCAL capture-chunk dir (count pins opted out)",
@@ -1722,6 +2152,10 @@ def _run_import_check() -> int:
     from explore_persona_space.orchestrate.argcheck import assert_args_attributes_defined
 
     assert_args_attributes_defined(__file__)
+    import copy  # noqa: F401  (_apply_store_prefix_overrides deferred import)
+
+    from huggingface_hub import HfApi  # noqa: F401  (_peek_dense_store deferred import)
+
     from explore_persona_space.orchestrate import hub  # noqa: F401
     from explore_persona_space.orchestrate.provenance import (  # noqa: F401
         as_metadata_dict,
@@ -1746,8 +2180,21 @@ def main() -> int:
         return run_synthetic_e2e(args)
     if args.smoke_chunk_dir:
         return run_fits_smoke(args)
+    if args.dense_prefix:
+        # Dense 9B layer sweep (follow-up A) — scoped-peak diagnostic mode.
+        if args.cache_dir is None:
+            args.cache_dir = args.out_dir / ".cache"
+        if args.dense_out is None:
+            args.dense_out = args.out_dir / "dense_sweep" / "matched_fits_q35_dense.json"
+        return run_dense_sweep(args)
 
     # Production battery.
+    overrides = _parse_prefix_overrides(args.hf_prefix_override)
+    if overrides and not args.out_suffix:
+        raise RuntimeError(
+            "--hf-prefix-override requires a non-empty --out-suffix (e.g. _cap2048) — "
+            "clobber guard on the canonical committed cell JSONs/preds"
+        )
     if args.preds_dir is None:
         args.preds_dir = REPO_ROOT / "data" / "issue_2330" / "preds"
     if args.cache_dir is None:
@@ -1757,6 +2204,7 @@ def main() -> int:
     dev = _resolve_device(args.device)
     _phase("load_split_ids")
     split_ids = load_split_ids(args.split_ids)
+    models = _apply_store_prefix_overrides(MODELS, overrides, split_ids) if overrides else MODELS
     _phase("battery")
     store_fn = _production_store_fn(args, split_ids)
     ceiling_fn = _production_ceiling_fn(args, split_ids)
@@ -1767,7 +2215,9 @@ def main() -> int:
         dev,
         args.out_dir,
         args.preds_dir,
+        models=models,
         cap_hit_fn=_production_cap_hit_fn(args, split_ids),
+        out_suffix=args.out_suffix,
     )
     if not args.no_upload:
         _upload_preds_mirror(args.preds_dir)

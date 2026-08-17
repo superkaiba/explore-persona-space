@@ -160,6 +160,25 @@ LENGTH_MARGIN = 64
 PROMPT_TOKEN_BUDGET = MAX_MODEL_LEN - GEN_MAX_TOKENS - LENGTH_MARGIN
 assert PROMPT_TOKEN_BUDGET == 7104, f"budget drift: {PROMPT_TOKEN_BUDGET} != 7104 (plan §4 P1)"
 
+
+def _apply_gen_max_tokens(n: int) -> tuple[int, int, int]:
+    """Rebind the generation cap (cap2048 follow-up): GEN_MAX_TOKENS <- n with
+    PROMPT_TOKEN_BUDGET held INVARIANT at 7104 and MAX_MODEL_LEN derived
+    (budget + cap + margin). Holding the BUDGET fixed keeps the admitted row
+    set byte-identical to the cap-1024 originals (a shrunk budget would drop
+    tokenizer-dependent long-prompt tails and break the matched-ID row
+    alignment); raising max_model_len instead is the CLAUDE.md inherited-rig
+    rule for a raised cap (#505/#601). Returns the realized
+    (gen_max_tokens, max_model_len, prompt_token_budget) triple; asserts the
+    arithmetic re-derives (fail-loud, never a silent drift)."""
+    global GEN_MAX_TOKENS, MAX_MODEL_LEN
+    assert n >= 1, f"--gen-max-tokens must be >= 1, got {n}"
+    GEN_MAX_TOKENS = int(n)
+    MAX_MODEL_LEN = PROMPT_TOKEN_BUDGET + GEN_MAX_TOKENS + LENGTH_MARGIN
+    assert PROMPT_TOKEN_BUDGET == MAX_MODEL_LEN - GEN_MAX_TOKENS - LENGTH_MARGIN
+    return GEN_MAX_TOKENS, MAX_MODEL_LEN, PROMPT_TOKEN_BUDGET
+
+
 # Sampling params (recipe identity with the banked 7B targets — plan §11,
 # grounded at issue1491_ladder_generate_capture.py:148-150).
 GEN_TEMP = 1.0
@@ -1269,10 +1288,26 @@ def _split_shard_range(n_total: int, num_shards: int, shard_index: int) -> tuple
 
 
 def _resolve_layers_arg(layers_arg: str) -> list[int]:
-    parts = [p.strip() for p in layers_arg.split(",") if p.strip()]
-    ints = [int(p) for p in parts]
+    """Comma-separated block indices, each element an int OR an inclusive
+    ``A-B`` range (dense-sweep follow-up: ``--layers 0-30``). Duplicates are
+    rejected (a duplicated hook layer would silently double rows in the
+    stacked (n, L, H) bundle)."""
+    ints: list[int] = []
+    for part in (p.strip() for p in layers_arg.split(",")):
+        if not part:
+            continue
+        lo, sep, hi = part.partition("-")
+        if sep and lo.strip() and hi.strip():
+            a, b = int(lo), int(hi)
+            if a > b:
+                raise ValueError(f"--layers range {part!r} is inverted (want A<=B)")
+            ints.extend(range(a, b + 1))
+        else:
+            ints.append(int(part))
     if not ints:
         raise ValueError(f"--layers must be non-empty, got {layers_arg!r}")
+    if len(set(ints)) != len(ints):
+        raise ValueError(f"--layers contains duplicates: {layers_arg!r}")
     return ints
 
 
@@ -1821,12 +1856,24 @@ def run_capture(args) -> int:
     # subpath table — the cap-hit aggregator READS through the same function.
     stage_prefix = f"{args.hf_prefix}/{store_subpath_for_split(args.split)}"
 
+    # Dense re-capture follow-up: phase_split_capture may read the gen wave's
+    # raw chunks from a DIFFERENT (banked) prefix than this run's write prefix
+    # (asserted phase_split_capture-only in main; identical otherwise).
+    gen_stage_prefix = stage_prefix
+    if args.gen_source_prefix:
+        gen_stage_prefix = f"{args.gen_source_prefix}/{store_subpath_for_split(args.split)}"
+        logger.info(
+            "[i2330] gen-source prefix: %s (capture .pt writes stay under %s)",
+            gen_stage_prefix,
+            stage_prefix,
+        )
+
     scratch = args.out_dir / "shards" / args.split.replace("ceiling_draw_", "cdraw_")
     scratch.mkdir(parents=True, exist_ok=True)
 
     # 2. Resume — chunks already on the Hub are skipped (mode-scoped below).
     done_pt = set(_remote_index(f"{stage_prefix}/final_token_capture"))
-    done_raw = set(_remote_index(f"{stage_prefix}/raw_completions"))
+    done_raw = set(_remote_index(f"{gen_stage_prefix}/raw_completions"))
 
     # 3. Load models (mode governs which we hold at once — phase_split keeps
     # the 9B HF fp32 model and the vLLM engine on SEPARATE invocations).
@@ -1865,7 +1912,7 @@ def run_capture(args) -> int:
             probe_raw_name = f"shard{args.shard_index:02d}_chunk0000.json"
             probe_map = _load_persisted_gen_chunk(
                 scratch,
-                stage_prefix,
+                gen_stage_prefix,
                 probe_raw_name,
                 cache_dir,
                 done_raw,
@@ -1998,7 +2045,7 @@ def run_capture(args) -> int:
             if args.capture_mode == "phase_split_capture":
                 raw_map = _load_persisted_gen_chunk(
                     scratch,
-                    stage_prefix,
+                    gen_stage_prefix,
                     raw_name,
                     cache_dir,
                     done_raw,
@@ -2129,6 +2176,9 @@ def run_capture(args) -> int:
                 if rows:
                     bundle = _stack_chunk(rows, layers, args.shard_index, ci_idx)
                     bundle["dropped_empty_cis"] = [int(c) for c in dropped_cis]
+                    # Provenance: which prefix the source completions came from
+                    # (== --hf-prefix except on a --gen-source-prefix re-capture).
+                    bundle["gen_source_prefix"] = args.gen_source_prefix or args.hf_prefix
                     torch.save(bundle, scratch / name)
                     pending_pt.append(name)
                 else:
@@ -2636,6 +2686,22 @@ def _build_parser() -> argparse.ArgumentParser:
         "bfloat16 — the banked 7B captures were computed in bf16)",
     )
     ap.add_argument("--capture-batch-size", type=int, default=8)
+    ap.add_argument(
+        "--gen-max-tokens",
+        type=int,
+        default=GEN_MAX_TOKENS,
+        help="vLLM generation cap (cap2048 follow-up; default 1024 keeps every existing "
+        "invocation byte-identical). A non-default value re-derives MAX_MODEL_LEN with "
+        "PROMPT_TOKEN_BUDGET held at 7104 (same admitted row set as the originals)",
+    )
+    ap.add_argument(
+        "--gen-source-prefix",
+        default=None,
+        help="phase_split_capture only (dense re-capture follow-up): HF prefix holding the "
+        "ALREADY-BANKED gen wave's raw_completions to capture from (default --hf-prefix). "
+        "Lets a dense re-capture read the original seed-42 completions while writing its "
+        ".pt chunks under a NEW --hf-prefix (the original store is never clobbered)",
+    )
     ap.add_argument("--num-shards", type=int, default=2, help="plan §4 P2: 2-way sharding")
     ap.add_argument("--shard-index", type=int, default=0)
     ap.add_argument("--shard-size", type=int, default=DEFAULT_SHARD_SIZE)
@@ -2866,6 +2932,19 @@ def main() -> int:
     )
     if args.import_check:
         return _run_import_check()
+
+    if args.gen_max_tokens != GEN_MAX_TOKENS:
+        gm, mml, budget = _apply_gen_max_tokens(args.gen_max_tokens)
+        print(
+            f"[gen-cap-tokens] gen_max_tokens={gm} max_model_len={mml} "
+            f"prompt_token_budget={budget} (non-default cap; budget invariant)",
+            flush=True,
+        )
+    if args.gen_source_prefix:
+        assert args.capture_mode == "phase_split_capture", (
+            "--gen-source-prefix is only meaningful for --capture-mode phase_split_capture "
+            f"(got {args.capture_mode!r}) — the gen wave always writes under its own --hf-prefix"
+        )
 
     args.out_dir = Path(os.path.expanduser(str(args.out_dir)))
     args.out_dir.mkdir(parents=True, exist_ok=True)
