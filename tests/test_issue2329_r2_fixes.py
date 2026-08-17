@@ -660,15 +660,51 @@ def test_atomic_writers_unlink_tmp_on_failure_no_orphan_residue(tmp_path, monkey
     assert residue == [], residue
 
 
+def test_atomic_replace_cleanup_failure_does_not_mask_original_exception(tmp_path, monkeypatch):
+    """r3 finding 1 (``cleanup-can-mask-original``): when the write/replace
+    fails AND the best-effort temp unlink ALSO fails (PermissionError, a
+    non-ENOENT OSError), the ORIGINAL write/replace exception must escape
+    unchanged with its traceback intact — the SECONDARY cleanup error is
+    suppressed (logged at warning), never propagated in its place.
+    Pre-fix red (BEHAVIOURAL): the unlink sat bare inside the
+    ``except BaseException`` handler, so its PermissionError displaced the
+    original OSError before the bare ``raise`` was reached."""
+
+    def _boom_replace(src, dst):
+        raise OSError("simulated replace failure")
+
+    def _boom_unlink(self, missing_ok=False):  # mirrors Path.unlink's signature
+        raise PermissionError("simulated unlink failure")
+
+    with monkeypatch.context() as m:
+        m.setattr(R.os, "replace", _boom_replace)
+        m.setattr(Path, "unlink", _boom_unlink)
+        with pytest.raises(OSError, match="simulated replace failure") as excinfo:
+            R._write_json_atomic(tmp_path / "a.json", {"x": 1})
+    # The ORIGINAL exception type escapes — not the cleanup's PermissionError
+    # (PermissionError IS an OSError subclass, so pin the exact type too).
+    assert type(excinfo.value) is OSError, type(excinfo.value)
+    # Traceback intact: the original raise site (the patched replace) is on it.
+    assert any(t.name == "_boom_replace" for t in excinfo.traceback), [
+        t.name for t in excinfo.traceback
+    ]
+
+
 def test_atomic_writer_tmp_paths_are_process_unique_for_all_three(tmp_path, monkeypatch):
     """The temp name embeds the writer's pid (process-unique across the
     8-way grid fan-out) for ALL THREE writers — json (exercised concurrently
     above) plus the jsonl/pt siblings that are one grid-shape change away
     from the identical crash. Pre-fix red for all three (shared
-    ``<name>.tmp``, no pid). Coverage note: jsonl/pt get this naming pin
-    rather than a full concurrent hammer to keep suite runtime modest; all
-    three writers share one temp-derivation code path, which the hammer
-    above exercises under real cross-process contention."""
+    ``<name>.tmp``, no pid). Per-call uuid uniqueness is pinned on the SAME
+    destination (r3 finding 2, ``uuid-uniqueness-pin-vacuous``): two writes
+    to ONE destination in ONE process share basename + pid, so their temp
+    names can differ ONLY via a genuinely per-call uuid draw — a
+    module-scope/hoisted constant uuid makes them collide and fails the
+    assertion (verified empirically against a constant-uuid scratch
+    variant). Coverage note: jsonl/pt get this naming pin rather than a
+    full concurrent hammer to keep suite runtime modest; all three writers
+    share one temp-derivation code path, which the hammer above exercises
+    under real cross-process contention."""
     captured: list[str] = []
     real_replace = os.replace
 
@@ -681,9 +717,14 @@ def test_atomic_writer_tmp_paths_are_process_unique_for_all_three(tmp_path, monk
         R._write_json_atomic(tmp_path / "a.json", {"x": 1})
         R._write_jsonl_atomic(tmp_path / "b.jsonl", [{"x": 1}])
         R._save_pt_atomic(tmp_path / "c.pt", torch.tensor([1.0]))
-    assert len(captured) == 3, captured
+        # SAME destination as the first write, same process, back-to-back:
+        # the only component that can vary is the per-call uuid fragment.
+        R._write_json_atomic(tmp_path / "a.json", {"x": 2})
+    assert len(captured) == 4, captured
     pid_token = f".{os.getpid()}."
     for name in captured:
         assert pid_token in name and name.endswith(".tmp"), (name, pid_token)
-    # uuid fragment: unique per call even within one process
-    assert len(set(captured)) == 3, captured
+    # Per-call uuid uniqueness, pinned on the SAME destination basename.
+    first_a, second_a = captured[0], captured[3]
+    assert first_a.startswith("a.json.") and second_a.startswith("a.json."), captured
+    assert first_a != second_a, (first_a, second_a)

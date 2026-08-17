@@ -1255,7 +1255,8 @@ def build_config(args: argparse.Namespace) -> RunConfig:
 @contextmanager
 def _atomic_replace(path: Path):
     """Yield a PROCESS-UNIQUE same-directory temp path; ``os.replace`` it
-    onto ``path`` on success, unlink it on failure.
+    onto ``path`` on success, best-effort unlink it on failure (a cleanup
+    failure never masks the original exception).
 
     The temp name embeds pid + a uuid fragment: concurrent workers writing
     identical content to ONE shared destination (all 8 grid workers write
@@ -1273,7 +1274,15 @@ def _atomic_replace(path: Path):
         yield tmp
         os.replace(tmp, path)
     except BaseException:
-        tmp.unlink(missing_ok=True)
+        # Best-effort cleanup: a failed unlink (PermissionError / non-ENOENT
+        # OSError) must never displace the ORIGINAL write/replace exception —
+        # the bare ``raise`` re-raises it with its traceback intact. Only the
+        # SECONDARY cleanup error is suppressed (logged); the fault itself
+        # stays loud (r3 finding 1, ``cleanup-can-mask-original``).
+        try:
+            tmp.unlink(missing_ok=True)
+        except OSError:
+            logger.warning("cleanup unlink of %s failed; propagating original exception", tmp)
         raise
 
 
