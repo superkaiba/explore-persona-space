@@ -9,10 +9,18 @@ origin_prompt: 'run the full experiment i talked about earlier on the overrefusa
   (4-way: LLM judge on context, probe on context vector, probe on mapped answer vector,
   probe on actual answer vector, fair train/eval split)'
 workflow: v1
+goal: 'On borderline (dual-use) prompts, determine whether Qwen2.5-7B-Instruct''s
+  over-refuse-vs-answer decision is predictable from its INTERNAL representation of
+  the context when it is NOT predictable from the prompt text by a strong LLM judge,
+  and whether a fitted context->answer map recovers the behavior-relevant signal that
+  only the actual-answer representation contains. Compare four predictors under a
+  fair group-level split: (1) LLM judge on context text, (2) linear probe on the context
+  activation, (3) linear probe on the mapped (predicted) answer activation, (4) linear
+  probe on the actual answer activation (ceiling).'
 ---
 ## Goal
 
-Predict Qwen2.5-7B-Instruct's behavior (RELIABLY-ANSWER vs RELIABLY-OVER-REFUSE) on borderline dual-use prompts, and compare four predictors of that behavior under a fair, group-level train/eval split:
+On borderline (dual-use) prompts, determine whether Qwen2.5-7B-Instruct's over-refuse-vs-answer decision is predictable from its INTERNAL representation of the context when it is NOT predictable from the prompt text by a strong LLM judge, and whether a fitted context->answer map recovers the behavior-relevant signal that only the actual-answer representation contains. Compare four predictors under a fair group-level split: (1) LLM judge on context text, (2) linear probe on the context activation, (3) linear probe on the mapped (predicted) answer activation, (4) linear probe on the actual answer activation (ceiling).
 
 1. **LLM judge on context** — Sonnet (`claude-sonnet-4-5-20250929`) reads only the prompt text and predicts behavior (few-shot, calibrated, returns P). Surface baseline; expected near chance if behavior is surface-unpredictable.
 2. **Probe on context vector** — linear probe on Qwen's residual-stream activation at the last prompt token → behavior.
