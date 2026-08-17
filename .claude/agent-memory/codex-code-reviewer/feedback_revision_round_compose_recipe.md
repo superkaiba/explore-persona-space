@@ -486,3 +486,22 @@ that every dropped envelope is ABSENT plus `len(prompt) < 200_000`, and
 report residual flagged-vocab density BY REGION (every hit must map to an
 artifact envelope) — on a repeat refusal the next rung is digesting the
 artifact envelopes themselves (context-hygiene rung b2-content).
+
+**Dictated-wording convergence round (#2326 r4, 2026-08-16):** when a
+reconciler DICTATES verbatim replacement wording (W-items) after consecutive
+rounds each produced a wrong sentence about the same residual, drop the full
+rubric template entirely — compose a TIGHT (~45 KB) prompt whose acceptance
+contract is the inlined reconcile marker body itself (its `### Required fix`
+section), scoped to exactly four questions: verbatim landing (word-for-word,
+reflow tolerated, old fragments GONE by grep), truth-against-source (name the
+frozen-library spans + BOTH prior failure shapes the text must not repeat),
+executable-change check, regression. Frame the twin's own prior FAIL as
+UPHELD-on-facts / label-overstated (credits the catch, pre-empts re-FAIL),
+state the class severity precedent (doc-accuracy class twice adjudicated
+CONCERN → genuine falseness re-raises as CONCERN + corrected sentence, FAIL
+reserved for new blocking defects), and carry an explicit do-not-relitigate
+list incl. ruled-OPEN NITs whose recorded fix sketches are known-unsafe.
+Assert-side traps hit live: the full round-SHA count spans template AND
+inlined marker (assert each side separately before the sum), and a
+compose-time "marker lacks `<!-- epm:results vN -->`" observation puts that
+literal in YOUR prose — assert body==0 and template==1, not absent.
