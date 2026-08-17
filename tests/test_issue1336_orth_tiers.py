@@ -164,6 +164,34 @@ def test_both_sides_rotation_recovered_by_t5b() -> None:
     assert wrong < 0.5, wrong
 
 
+def test_answer_rotation_recovered_by_t5d() -> None:
+    """Target answers = rotated source answers, contexts UNCHANGED: t5d ~ 1
+    (R_ans on the raw t0 prediction suffices) while t0 stays poor; t5ds == t5d
+    (exact rotation => fitted s_fwd == 1). Under a BOTH-sides rotation t5d
+    (no context rotation) collapses while t5b recovers — pinning that t5d and
+    t5b share R_ans and differ only in R_ctx."""
+    rng = np.random.default_rng(12)
+    xs, ys = _source_pair(rng)
+    qa = _rand_orth(rng, D)
+    xt = xs + 0.01 * rng.normal(size=xs.shape)
+    yt = ys @ qa
+    payload, preds = _battery(xs, ys, xt, yt)
+    layer = payload["per_layer"]["0"]
+    orth = layer["orth_tiers"]
+    t0_r2 = layer["raw"]["tiers"]["t0"]["r2"]
+    assert orth["t5d"]["raw"]["r2"] > 0.9, orth["t5d"]["raw"]
+    assert t0_r2 < 0.5, t0_r2
+    assert abs(orth["t5ds"]["raw"]["r2"] - orth["t5d"]["raw"]["r2"]) < 1e-9
+    assert "t5d_l0" in preds and "t5d_recal_l0" in preds, sorted(preds)
+
+    # Both-sides rotation: t5d has no R_ctx, so it collapses where t5b holds.
+    qc = _rand_orth(rng, D)
+    payload2, _ = _battery(xs, ys, xs @ qc, ys @ qa)
+    orth2 = payload2["per_layer"]["0"]["orth_tiers"]
+    assert orth2["t5b"]["raw"]["r2"] > 0.95, orth2["t5b"]["raw"]
+    assert orth2["t5d"]["raw"]["r2"] < 0.5, orth2["t5d"]["raw"]
+
+
 def test_scale_true_reduces_to_scale_false_at_unit_s_fwd() -> None:
     """B an EXACT (centered) rotation of A => fitted s_fwd == 1 and the scaled
     prediction equals the unscaled one."""

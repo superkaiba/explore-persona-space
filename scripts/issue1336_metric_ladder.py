@@ -140,9 +140,16 @@ DRAWS_ORDER = ("within", *TIER_NAMES)
 #   t5cs  same, scaled       (s_fwd * R_ctx)
 #   t5b   both-sides:        R_ans( t5c ),       R_ans = Procrustes y_s -> y_t
 #   t5bs  both-sides scaled: s_ans * R_ans( t5cs )
+#   t5d   answer-side only:  R_ans( t0 ) — the PINNED answer-correspondence
+#         rotation applied to the raw W_s(x_t) prediction, NO context rotation
+#         (t5d - t5b isolates R_ctx's effect inside the composition — shared
+#         R_ans; t5 - t5d isolates what the OPTIMIZED output rotation adds
+#         over the measured correspondence). Reuses the t5b R_ans fit: zero
+#         extra SVDs.
+#   t5ds  answer-side only, scaled (s_ans * R_ans( t0 ))
 # R_ans is fit on the ANSWER CORRESPONDENCE (y_s -> y_t) — a DIFFERENT object
 # from t5's rotation (fit on W_s x_t -> y_t); both are kept.
-ORTH_TIER_NAMES = ("t5c", "t5cs", "t5b", "t5bs")
+ORTH_TIER_NAMES = ("t5c", "t5cs", "t5b", "t5bs", "t5d", "t5ds")
 # Operator-swap control reads: t6/t7/t8 recomputed with W_s replaced by a
 # donor while the REAL alignment maps (A_ctx_rev, A_ans) and the t6
 # mean-correction FORM stay at their observed fits. "rand" = full-rank
@@ -616,7 +623,7 @@ def _fold_observed(
     # Gated (user call 2026-08-12: layer 30 only). These two d x d Procrustes
     # SVDs per (fold, layer) ARE the marginal cost of the orth tiers -- 2,240
     # across the sweep at all four frozen layers vs 560 at the full-tier layer
-    # alone. Skipping them omits the four keys from te_preds entirely rather
+    # alone. Skipping them omits the orth keys from te_preds entirely rather
     # than emitting placeholders, so a consumer that forgets the gate gets a
     # KeyError instead of a silent zero.
     orth_preds: dict = {}
@@ -634,6 +641,11 @@ def _fold_observed(
             "t5cs": t5cs_te,
             "t5b": ma._orth_predict(orth_ans, t5c_te, reverse=False, scale=False),
             "t5bs": ma._orth_predict(orth_ans, t5cs_te, reverse=False, scale=True),
+            # t5d: the pinned R_ans on the RAW t0 prediction — no context
+            # rotation. Shares orth_ans with t5b (zero extra SVDs), so
+            # t5d - t5b reads R_ctx's effect at held-fixed R_ans.
+            "t5d": ma._orth_predict(orth_ans, p0_te, reverse=False, scale=False),
+            "t5ds": ma._orth_predict(orth_ans, p0_te, reverse=False, scale=True),
         }
 
     te_preds = {
