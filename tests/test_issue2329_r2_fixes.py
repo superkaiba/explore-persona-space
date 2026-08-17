@@ -21,6 +21,13 @@ One test class per binding round-1 finding that added a permanent invariant:
   ``no_prefix`` flag as ``no_prefix_asymmetry_expected`` (not a violation)
   IFF the frozen bank explains it — exactly one side has no system message
   and the bare side IS that side; every other np mismatch keeps the HALT.
+- r5 (Codex blocker ``signature-artifact-only-regressions``): one
+  SIGNATURE-COMPATIBLE behavioural red test drives the guard's production
+  DEFAULT system-presence derivation on the real frozen bank (pre-fix: the
+  24 ``no_prefix_mismatch`` violations of the rc=23 halt; post-fix: 0
+  violations + 24 recorded, asserted on report CONTENT), plus the reverse
+  A-bare cases (excused when A is the system-absent side; HALT when A is
+  bare but A is the system-PRESENT side).
 
 CPU-only, network-free, repo-root-path-free (tmp_path).
 """
@@ -455,3 +462,93 @@ def test_bank_system_presence_production_derivation():
     assert len(v2) == 12
     assert all(not pp[cid] for cid in v2)
     assert all(pp[cid] for cid in set(pp) - v2)
+
+
+def test_np_excuse_via_production_default_derivation_on_frozen_bank():
+    """SIGNATURE-COMPATIBLE behavioural red test (r5, Codex blocker
+    ``signature-artifact-only-regressions``): callable identically against
+    the pre-fix guard — no ``system_presence=`` kwarg, no
+    ``_bank_system_presence`` reference. Reconstructs the 2026-08-16 rc=23
+    halt on the REAL frozen bank: all 36 ``persona_prompted`` pairs, the 12
+    v2 contexts bare (the NO-PERSONA control renders with no system turn
+    under the Qwen3.5 thinking-off template), v1/v3 prefixed. Pre-fix the
+    guard flagged the 24 v2-involving pairs as ``no_prefix_mismatch``
+    (``n_violations == 24`` — the halt); post-fix the production DEFAULT
+    derivation path (``system_presence`` omitted -> frozen-bank
+    ``build_contexts()``) excuses exactly those 24 — asserted on report
+    CONTENT, not merely ``passed`` (a ``passed``-only assert cannot tell a
+    SKIPPED pe check from one that ran). The 12 v2-as-side-A rows double as
+    the reverse A-bare direction on the real derivation."""
+    pairs = [p for p in R.BANK.build_pairs() if p.cell == "persona_prompted"]
+    assert len(pairs) == 36
+    assert sum(1 for p in pairs if "v2" in (p.value_a, p.value_b)) == 24
+    angle = {"v1": 0.0, "v2": 0.8, "v3": 1.6}  # pairwise cos <= ~0.70, far below the bar
+    zeros = torch.zeros((1, 2), dtype=torch.float32)
+    recs: dict[str, dict] = {}
+    for p in pairs:
+        for cid, val in ((p.a, p.value_a), (p.b, p.value_b)):
+            bare = val == "v2"  # capture_bank zero-v_pe convention for bare renders
+            recs[cid] = {
+                "v_pe": zeros if bare else _unit2(angle[val]),
+                "v_ce": _unit2(angle[val]),
+                "no_prefix": bare,
+            }
+    report = R.run_degeneracy_guard({"per_context": recs}, pairs, token_prefixes={})
+    # BEHAVIOURAL red/green boundary: pre-fix this count is 24 (the rc=23
+    # halt) and the assert fails on flag CONTENT, not on a missing symbol.
+    assert report["n_violations"] == 0, sorted(
+        (v["pair_id"], v["flag"]) for v in report["violations"]
+    )[:5]
+    assert report["passed"]
+    assert report["n_pairs_checked"] == 36
+    assert report["n_no_prefix_asymmetry_expected"] == 24
+    rows = report["no_prefix_asymmetry_expected"]
+    assert all(r["cell"] == "persona_prompted" for r in rows)
+    assert all(r["no_prefix_side"] == r["system_absent_side"] for r in rows)
+    # Both directions realized on the REAL derivation: v2 as side B (v1-v2
+    # pairs) AND as side A (v2-v3 pairs) — the reverse A-bare direction.
+    assert sum(1 for r in rows if r["no_prefix_side"] == "a") == 12
+    assert sum(1 for r in rows if r["no_prefix_side"] == "b") == 12
+    # Excused pairs never enter the both-sides-bare counter; the 12 v1-v3
+    # pairs ran the ordinary pe/ce distinctness checks and produced nothing.
+    assert report["n_no_prefix_pe_pairs"] == 0
+
+
+def test_np_asymmetry_a_bare_explained_by_a_side_system_absence():
+    """Reverse direction of the incident (r5): side A is the bare AND
+    system-absent side. The excuse applies symmetrically (recorded, never a
+    violation), and ce distinctness still binds on the excused pair."""
+    pair = _np_pair()
+    bank = _np_bank(pair, np_a=True, np_b=False)
+    sp = {pair.a: False, pair.b: True}  # A is the system-absent side
+    report = R.run_degeneracy_guard(bank, [pair], token_prefixes={}, system_presence=sp)
+    assert report["passed"], report["violations"]
+    assert report["n_violations"] == 0
+    (row,) = report["no_prefix_asymmetry_expected"]
+    assert row == {
+        "pair_id": pair.pair_id,
+        "cell": "persona_prompted",
+        "no_prefix_side": "a",
+        "system_absent_side": "a",
+    }
+    assert report["n_no_prefix_pe_pairs"] == 0
+    # ce distinctness still binds in the A-bare direction.
+    bank = _np_bank(pair, np_a=True, np_b=False, ce_theta=0.0)
+    report = R.run_degeneracy_guard(bank, [pair], token_prefixes={}, system_presence=sp)
+    assert not report["passed"]
+    assert report["violations"][0]["flag"] == "distinctness_ce"
+    assert report["n_no_prefix_asymmetry_expected"] == 1
+
+
+def test_np_a_bare_but_a_system_present_still_halts():
+    """A bare on the system-PRESENT side (r5, A direction): the
+    system-presence mismatch does NOT explain the render asymmetry — B is
+    the system-absent side yet renders prefixed — so the HALT is kept."""
+    pair = _np_pair()
+    bank = _np_bank(pair, np_a=True, np_b=False)
+    sp = {pair.a: True, pair.b: False}  # ...but A HAS the system message
+    report = R.run_degeneracy_guard(bank, [pair], token_prefixes={}, system_presence=sp)
+    assert not report["passed"]
+    assert report["violations"][0]["flag"] == "no_prefix_mismatch"
+    assert report["no_prefix_asymmetry_expected"] == []
+    assert report["n_no_prefix_asymmetry_expected"] == 0
