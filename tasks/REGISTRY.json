@@ -10481,8 +10481,8 @@
       "goal": "On borderline (dual-use) prompts, determine whether Qwen2.5-7B-Instruct's over-refuse-vs-answer decision is predictable from its INTERNAL representation of the context when it is NOT predictable from the prompt text by a strong LLM judge, and whether a fitted context->answer map recovers the behavior-relevant signal that only the actual-answer representation contains. Compare four predictors under a fair group-level split: (1) LLM judge on context text, (2) linear probe on the context activation, (3) linear probe on the mapped (predicted) answer activation, (4) linear probe on the actual answer activation (ceiling).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/2356",
-      "status": "proposed",
+      "path": "tasks/planning/2356",
+      "status": "planning",
       "title": "Predicting Qwen2.5-7B-Instruct over-refusal from internal representations vs an LLM judge (context / mapped-answer / actual-answer probes)"
     },
     "237": {
