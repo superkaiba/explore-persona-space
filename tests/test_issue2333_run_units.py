@@ -375,6 +375,137 @@ def test_final_turn_boundary_occurrence_relaxation():
         ftb([IMS, 10, 11], IMS)  # single occurrence — not a chat render
 
 
+class _ImsTok(FakeTok):
+    """FakeTok + the ``convert_tokens_to_ids`` surface the prefix-end helpers
+    read (both the parent ``prefix_end_index_multi`` and the r5
+    ``prefix_end_index_2333`` resolve the atomic ``<|im_start|>`` id)."""
+
+    def convert_tokens_to_ids(self, token: str) -> int:
+        assert token == "<|im_start|>", token
+        return IMS
+
+
+def test_prefix_end_index_2333_boundary_semantics():
+    """r5 crash fix: q35 thinking-off BARE renders (2 <|im_start|> occurrences
+    — no default system turn) get boundary 0 (EMPTY varied prefix, the #2329
+    ``prefix_end_index_2329`` shape); >= 3 occurrences delegate to the parent
+    ``prefix_end_index_multi`` VERBATIM (q25 byte-equality); every valid input
+    is value-coherent with ``final_turn_boundary`` (occ[-2])."""
+    from explore_persona_space.experiments.issue2094 import bank as BANK94
+
+    tok = _ImsTok()
+    pe = RUN.prefix_end_index_2333
+
+    # q35 bare render: 2 occurrences, opens with the final user turn -> 0.
+    bare = [IMS, 10, 11, IMS, 20]
+    assert pe(tok, bare) == 0
+    assert pe(tok, bare) == RUN.final_turn_boundary(bare, IMS)
+
+    # q25 render (default system turn, 3 occurrences) -> parent VERBATIM.
+    q25 = [IMS, 1, 2, IMS, 10, IMS, 20]
+    assert pe(tok, q25) == BANK94.prefix_end_index_multi(tok, q25) == 3
+    assert pe(tok, q25) == RUN.final_turn_boundary(q25, IMS)
+
+    # demo-history render (4 occurrences) -> parent VERBATIM.
+    hist = [IMS, 1, IMS, 2, 3, IMS, 10, IMS, 20]
+    assert pe(tok, hist) == BANK94.prefix_end_index_multi(tok, hist) == 5
+    assert pe(tok, hist) == RUN.final_turn_boundary(hist, IMS)
+
+    # single occurrence: not a chat render -> fail loud.
+    with pytest.raises(AssertionError):
+        pe(tok, [IMS, 10, 11])
+    # 2 occurrences NOT opening the render -> fail loud (not the bare shape).
+    with pytest.raises(AssertionError):
+        pe(tok, [9, IMS, 10, IMS, 20])
+
+
+def test_ce_slot_position_no_prefix_tolerance():
+    """r5: the ce slot (last context token) is prefix_end-independent — pe >= 1
+    records route through the parent ``slot_position`` VERBATIM (q25
+    byte-equal, incl. completed-bank records that predate the ``no_prefix``
+    field); pe == 0 records must carry the bank r5 ``no_prefix`` flag."""
+    rec = {"context_id": "c", "ctx_len": 10, "prefix_end": 3, "no_prefix": False}
+    assert RUN.ce_slot_position(rec) == R.slot_position(10, 3, "ce") == 9
+    # completed q25 bank records lack the r5 field entirely -> parent path.
+    assert RUN.ce_slot_position({"context_id": "c", "ctx_len": 10, "prefix_end": 3}) == 9
+    # q35 bare render record: pe == 0 + flagged -> ctx_len - 1 directly.
+    assert (
+        RUN.ce_slot_position({"context_id": "b", "ctx_len": 6, "prefix_end": 0, "no_prefix": True})
+        == 5
+    )
+    # unflagged pe == 0 is a corrupted record -> fail loud.
+    with pytest.raises(AssertionError):
+        RUN.ce_slot_position({"context_id": "b", "ctx_len": 6, "prefix_end": 0})
+
+
+def test_capture_bank_no_prefix_pe_exclusion(tmp_path, monkeypatch):
+    """r5 regression (fails pre-fix with the parent >=3-occurrence assert):
+    ``capture_bank`` over a q35-shaped 2-occurrence bare render completes,
+    flags the record ``no_prefix`` and OMITS ``v_pe`` (pre-fix the pe-1 read
+    would have silently indexed position -1 = the LAST token); a 3-occurrence
+    sibling keeps the parent-verbatim prefix_end + a position-correct v_pe.
+    Real ``capture_bank`` body — only the model-forward boundary is faked
+    (signature-conformant, position-addressable values)."""
+    from unittest.mock import create_autospec
+
+    def _fake_extract(
+        model,
+        input_ids,
+        layers,
+        *,
+        attention_mask=None,
+        return_logits=False,
+        detach_to_cpu=False,
+    ):
+        b_n, t_n = input_ids.shape
+        out = {}
+        for layer in layers:
+            vals = torch.zeros(b_n, t_n, HIDDEN)
+            for b in range(b_n):
+                for t in range(t_n):
+                    vals[b, t] = layer * 1000 + b * 100 + t
+            out[layer] = vals
+        return out
+
+    monkeypatch.setattr(
+        RUN,
+        "extract_layer_activations",
+        create_autospec(RUN.extract_layer_activations, side_effect=_fake_extract),
+    )
+    cfg = _mk_cfg(tmp_path)
+    tok = _ImsTok()
+    ids = {
+        "bare_q": [IMS, 10, 11, IMS, 20],  # q35 bare render: 2 occurrences
+        "sys_q": [IMS, 1, 2, IMS, 10, IMS, 20],  # system turn: 3 occurrences
+    }
+    contexts = {cid: {"id": cid, "__set": "s2"} for cid in ids}
+    bank = RUN.capture_bank(cfg, object(), tok, contexts, lambda _tok, c: ids[c["id"]], "test-fp")
+    recs = bank["per_context"]
+    assert sorted(recs) == ["bare_q", "sys_q"]
+
+    bare = recs["bare_q"]
+    assert bare["prefix_end"] == 0 and bare["no_prefix"] is True
+    assert "v_pe" not in bare  # pe-exclusion: a slot-"pe" read KeyErrors
+    assert bare["ctx_len"] == 5
+    # v_ce at ctx_len-1 = position 4, row 0.
+    for li, layer in enumerate(cfg.layers):
+        assert torch.all(bare["v_ce"][li] == layer * 1000 + 0 * 100 + 4)
+
+    sysr = recs["sys_q"]
+    assert sysr["prefix_end"] == 3 and sysr["no_prefix"] is False
+    assert sysr["ctx_len"] == 7
+    for li, layer in enumerate(cfg.layers):
+        # v_ce at position 6, v_pe at pe-1 = position 2, row 1.
+        assert torch.all(sysr["v_ce"][li] == layer * 1000 + 1 * 100 + 6)
+        assert torch.all(sysr["v_pe"][li] == layer * 1000 + 1 * 100 + 2)
+
+    # the pe slot on the no-prefix record fails loud through the parent reader.
+    with pytest.raises(KeyError):
+        R._slot_state(bare, "pe")
+    # chunk checkpoint landed (resume surface unchanged).
+    assert list((cfg.bank_dir / "bank_chunks").glob("chunk_*.pt"))
+
+
 def test_common_affix_non_overlapping():
     """Vendored #2329 ``_common_affix``: prefix counted first, suffix bounded
     so the two never overlap (diagnostic fields in the violation report)."""

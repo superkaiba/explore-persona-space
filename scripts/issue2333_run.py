@@ -386,6 +386,31 @@ def final_turn_boundary(ids: list[int], im_start_id: int) -> int:
     return occ[-2]
 
 
+def prefix_end_index_2333(tok, ids: list[int]) -> int:
+    """Tokenizer-agnostic prefix/query boundary (r5 crash fix, #2329 semantics).
+
+    >= 3 ``<|im_start|>`` occurrences (every q25 render — the template inserts
+    a default system turn — and q35 persona/history renders): the parent
+    ``prefix_end_index_multi`` VERBATIM, so leg A's banked values are
+    byte-equal to the parent helper. Exactly 2 occurrences (q35 thinking-off
+    BARE render — Qwen3.5 inserts NO default system turn, so the final user
+    turn opens the render): boundary 0 = EMPTY varied prefix; callers flag the
+    record ``no_prefix`` and capture NO pe-slot state (there is no "last
+    prefix token" — #2329 ``prefix_end_index_2329`` / pe-exclusion shape).
+    Value-coherent with ``final_turn_boundary`` (occ[-2]) on every valid input.
+    """
+    im_start_id = tok.convert_tokens_to_ids(BANK2162.IM_START)
+    assert isinstance(im_start_id, int) and im_start_id >= 0, im_start_id
+    occ = [i for i, t in enumerate(ids) if t == im_start_id]
+    if len(occ) >= 3:
+        return BANK94.prefix_end_index_multi(tok, ids)
+    assert len(occ) == 2, (
+        f"expected 2 or >=3 {BANK2162.IM_START} occurrences, got {len(occ)} at {occ}"
+    )
+    assert occ[0] == 0, occ  # bare render opens with the final user turn
+    return 0
+
+
 def minimal_pair_check(ids_a: list[int], ids_b: list[int], im_start_id: int) -> tuple[str, ...]:
     """Span-locus minimal-pair verdict (plan A16/B0): empty tuple iff intact.
 
@@ -849,9 +874,18 @@ def capture_bank(
 ) -> dict:
     """All-layer v_ce + v_pe per context (right-padded chunks; BPE-seam-safe
     ID-space positions — parent capture_bank recipe). Chunk-checkpointed +
-    resumable (``_ChunkStore``)."""
+    resumable (``_ChunkStore``).
+
+    r5: prefix ends via ``prefix_end_index_2333`` — q35 thinking-off bare
+    renders have prefix_end 0 (EMPTY varied prefix): those records carry
+    ``no_prefix: True`` and NO ``v_pe`` key (a pe-slot read fail-louds with
+    KeyError instead of silently reading position -1 = the LAST token). No
+    2333 phase reads slot "pe"; q25 records are byte-equal to the parent.
+    """
     ctx_ids = {cid: ids_fn(tok, c) for cid, c in contexts.items()}
-    prefix_ends = {cid: BANK94.prefix_end_index_multi(tok, ids) for cid, ids in ctx_ids.items()}
+    prefix_ends = {cid: prefix_end_index_2333(tok, ids) for cid, ids in ctx_ids.items()}
+    no_prefix_ids = sorted(cid for cid, pe in prefix_ends.items() if pe == 0)
+    logger.info("[bank] no-prefix contexts (bare renders, pe==0): %d", len(no_prefix_ids))
     layers = cfg.layers
     pad_id = tok.pad_token_id
     records: dict[str, dict] = {}
@@ -872,18 +906,24 @@ def capture_bank(
         for j, cid in enumerate(chunk):
             ctx_len = len(ctx_ids[cid])
             pe = prefix_ends[cid]
-            assert 1 <= pe < ctx_len, (cid, ctx_len, pe)
+            assert 0 <= pe < ctx_len, (cid, ctx_len, pe)
             v_ce = torch.stack([captured[layer][j, ctx_len - 1] for layer in layers])
-            v_pe = torch.stack([captured[layer][j, pe - 1] for layer in layers])
             assert v_ce.shape == (len(layers), cfg.hidden), v_ce.shape
-            chunk_records[cid] = {
+            rec = {
                 "context_id": cid,
                 "set": contexts[cid]["__set"],
                 "ctx_len": ctx_len,
                 "prefix_end": pe,
+                "no_prefix": pe == 0,
                 "v_ce": v_ce.float().cpu(),
-                "v_pe": v_pe.float().cpu(),
             }
+            if pe >= 1:
+                v_pe = torch.stack([captured[layer][j, pe - 1] for layer in layers])
+                assert v_pe.shape == (len(layers), cfg.hidden), v_pe.shape
+                rec["v_pe"] = v_pe.float().cpu()
+            # pe == 0: no pe-slot token exists — v_pe deliberately OMITTED
+            # (#2329 pe-exclusion; a slot-"pe" read on this record KeyErrors).
+            chunk_records[cid] = rec
         del captured
         store.save(key, chunk_records)
         records.update(chunk_records)
@@ -1150,6 +1190,11 @@ def phase_bank(cfg: RunConfig, regime_fp: str) -> int:
         "s1_pair_ids": [p.pair_id for p in s1_pairs],
         "s2_pair_ids": [p.pair_id for p in s2_pairs],
         "context_ids": sorted(contexts),
+        # q35 bare renders (pe == 0, EMPTY varied prefix): #2329 pe-exclusion
+        # shape — these records carry no v_pe (r5). Empty on q25.
+        "no_prefix_context_ids": sorted(
+            cid for cid, rec in bank["per_context"].items() if rec.get("no_prefix")
+        ),
         "minpair_violations": violations,
         "minpair_dropped_pair_ids": violations,
         "donor_maps": donor_maps,
@@ -1181,6 +1226,24 @@ def _load_bank(cfg: RunConfig) -> tuple[dict, dict]:
 # ── phase: donors ─────────────────────────────────────────────────────
 
 
+def ce_slot_position(rec: dict) -> int:
+    """Parent ``slot_position(..., "ce")`` tolerant of no-prefix records (r5).
+
+    The ce slot is the last context token — independent of ``prefix_end`` —
+    but the parent helper asserts ``1 <= prefix_end``, unsatisfiable for a q35
+    bare render (prefix_end 0, EMPTY varied prefix). pe >= 1 records route
+    through the parent VERBATIM (q25 byte-equal); pe == 0 records must carry
+    the bank r5 ``no_prefix`` flag (fail loud on an unflagged 0) and return
+    ``ctx_len - 1`` directly (the parent's own ce arithmetic).
+    """
+    ctx_len, pe = int(rec["ctx_len"]), int(rec["prefix_end"])
+    if pe >= 1:
+        return R.slot_position(ctx_len, pe, "ce")
+    assert rec.get("no_prefix"), (rec.get("context_id"), ctx_len, pe)
+    assert ctx_len >= 2, (rec.get("context_id"), ctx_len)
+    return ctx_len - 1
+
+
 def _arm_ce_stack(
     cfg: RunConfig,
     model,
@@ -1202,7 +1265,7 @@ def _arm_ce_stack(
         arm = "steered" if variant == "steered" else "shuffled"
         payload, _donor = payload_for_arm(bank, p, "ce", arm, donor_maps, pairs_by_id)
         payloads.append(payload)
-        positions.append((R.slot_position(recs[p.a]["ctx_len"], recs[p.a]["prefix_end"], "ce"),))
+        positions.append((ce_slot_position(recs[p.a]),))
     return R._arm_hook_all_layers(model, _R_cfg_proxy(cfg), row_lens, positions, payloads, T)
 
 
@@ -2318,9 +2381,7 @@ def _ce_regen_block_capped_rows(
             for p in chunk:
                 payload, _donor_pid = payload_for_arm(bank, p, "ce", arm, donor_maps, pairs_by_id)
                 payloads.append(payload)
-                positions.append(
-                    (R.slot_position(recs[p.a]["ctx_len"], recs[p.a]["prefix_end"], "ce"),)
-                )
+                positions.append((ce_slot_position(recs[p.a]),))
             stack = R._arm_hook_all_layers(
                 model, _R_cfg_proxy(cfg), [len(r) for r in gen_rows], positions, payloads, T
             )
@@ -2473,9 +2534,7 @@ def phase_ce_control(cfg: RunConfig, regime_fp: str) -> int:
             for p in chunk:
                 payload, donor_pid = payload_for_arm(bank, p, "ce", arm, donor_maps, pairs_by_id)
                 payloads.append(payload)
-                positions.append(
-                    (R.slot_position(recs[p.a]["ctx_len"], recs[p.a]["prefix_end"], "ce"),)
-                )
+                positions.append((ce_slot_position(recs[p.a]),))
                 donor_pids.append(donor_pid or p.pair_id)
             stack = R._arm_hook_all_layers(
                 model, _R_cfg_proxy(cfg), [len(r) for r in gen_rows], positions, payloads, T
