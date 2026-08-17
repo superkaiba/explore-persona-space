@@ -142,3 +142,4 @@
 - [Infra dispatch-plan failure modes](feedback_infra_dispatch_plan_failure_modes.md) — asyncio.run in async sites; stale fingerprints (#626)
 - [Husk-reap comparator reviews](feedback_husk_reap_comparator_review.md) — trace vs REAL artifact (materialized pointer); empty-unique backstop; occupancy channel orthogonal (#2138)
 - [Hub repack/deletion plans](feedback_hub_repack_deletion_plan_review.md) — 6-link probe-first commit chain; drift-race = Concern (history-recoverable, pin has contention downside) (#2321)
+- [Family-sync membership review](feedback_family_sync_membership_review.md) — enumerate importers across ALL families; comment-bearing FAMILY_OF lines escape test (10) (#2352)
