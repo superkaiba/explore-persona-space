@@ -10452,8 +10452,8 @@
     "2352": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2352",
-      "status": "proposed",
+      "path": "tasks/planning/2352",
+      "status": "planning",
       "title": "Step 5a spec-freshness: add tests/issue_skill_source.py to FAMILY_workflow (half-sync reds test_issue_skill_* collection)"
     },
     "237": {
