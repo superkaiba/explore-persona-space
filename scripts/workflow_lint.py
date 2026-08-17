@@ -16626,11 +16626,24 @@ def _gcp_pin_scan_files(root: Path) -> list[Path]:
         base_dir = root / base
         if base_dir.is_dir():
             out.extend(p for p in sorted(base_dir.glob(pattern)) if p.is_file())
+    # The #2155 split relocated the /issue step bodies to
+    # .claude/skills/issue/steps/*.md — outside the **/SKILL.md glob above —
+    # so append the companions (returns [] on a pre-split tree), or a future
+    # unannotated stale-GCP instruction in a step body silently evades the
+    # check (round-1 blocker gcp-pin-scan-misses-step-companions).
+    out.extend(_issue_step_companions(root / ".claude" / "skills"))
     for rel in _GCP_PIN_SCAN_FILES:
         p = root / rel
         if p.is_file():
             out.append(p)
-    return [p for p in out if not _gcp_pin_excluded(p, root)]
+    seen: set[Path] = set()
+    result: list[Path] = []
+    for p in out:
+        if p in seen or _gcp_pin_excluded(p, root):
+            continue
+        seen.add(p)
+        result.append(p)
+    return result
 
 
 def _gcp_pin_py_literal_lines(text: str) -> set[int] | None:
