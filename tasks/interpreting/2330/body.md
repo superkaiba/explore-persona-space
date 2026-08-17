@@ -5,7 +5,7 @@ title: Qwen2.5-7B-Instruct's context-to-answer map outscores Qwen3.5-9B's at mat
 kind: experiment
 tags: []
 created_at: '2026-08-16T18:05:01Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1491
 origin_prompt: can you make an issue to just compare the performance for the model
   we've been using vs qwen3.5-9B on same data (on-policy generations) -- lm SYS --

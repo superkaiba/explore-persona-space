@@ -10280,7 +10280,7 @@
     },
     "2330": {
       "goal": "Compare context-to-answer map quality between Qwen2.5-7B-Instruct and Qwen3.5-9B (thinking disabled) on matched LMSYS prompts with each model's own on-policy generations: per-layer ridge maps fit at 5k and 10k training generations per model, compared on held-out R2 (plus ceiling-normalized secondary, identity+bias/kNN companions, shuffled-pairing null).",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/2330",
       "status": "interpreting",
