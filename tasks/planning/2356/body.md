@@ -20,6 +20,7 @@ goal: 'On borderline (dual-use) prompts, determine whether Qwen2.5-7B-Instruct''
   probe on the actual answer activation (ceiling).'
 relates_to:
 - spec-context-as-vector
+backend: runpod
 ---
 ## Goal
 
