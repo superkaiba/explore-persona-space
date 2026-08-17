@@ -1,0 +1,1 @@
+{"ts": "2026-08-17T16:52:57Z", "event": "raised", "concern_id": "implementation-marker-shape-missing", "severity": "BLOCKER", "summary": "Required (a)-(d) sections, fenced verification command, and ruff-policy pin result are absent.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
