@@ -438,6 +438,94 @@ def test_ce_slot_position_no_prefix_tolerance():
         RUN.ce_slot_position({"context_id": "b", "ctx_len": 6, "prefix_end": 0})
 
 
+def test_gate_spot_position_pe_safe_dispatch():
+    """r6: the donors-gate position seam — ce slots dispatch through
+    ``ce_slot_position`` (q35 bare render: pe == 0 + ``no_prefix`` -> last
+    context token; UNFLAGGED pe == 0 fails loud); non-ce slots and the parent
+    default seam stay byte-equal to ``slot_position``."""
+    bare = {"context_id": "bare__q1", "ctx_len": 6, "prefix_end": 0, "no_prefix": True}
+    sysr = {"context_id": "sys__q2", "ctx_len": 9, "prefix_end": 3}
+    assert RUN.gate_spot_position(bare, "ce") == 5
+    assert RUN.gate_spot_position(sysr, "ce") == R.slot_position(9, 3, "ce") == 8
+    assert RUN.gate_spot_position(sysr, "pe") == R.slot_position(9, 3, "pe") == 2
+    with pytest.raises(AssertionError):
+        RUN.gate_spot_position({"context_id": "b", "ctx_len": 6, "prefix_end": 0}, "ce")
+    # Parent default seam: byte-equal to slot_position, incl. the pe assert
+    # (existing issue2162 / ladder callers keep the crash-loud contract).
+    assert R._default_spot_position(sysr, "ce") == 8
+    with pytest.raises(AssertionError):
+        R._default_spot_position(bare, "ce")
+
+
+class _LeftPadSentinel(RuntimeError):
+    """Raised by the monkeypatched ``_left_pad`` — reaching it proves the
+    gate's spot loop got PAST the position computation (the leg-B crash
+    point) without any model forward."""
+
+
+def test_injection_gate_position_seam_q35_spot(monkeypatch):
+    """r6 regression (leg-B crash shape): an S2 gate spot whose a-record is a
+    q35 bare render (``a=bare__q1``, prefix_end == 0, ``no_prefix``) must flow
+    through ``run_injection_gate``'s spot-position computation without
+    tripping the parent ``slot_position`` assert. Model-free: ``_left_pad`` is
+    stubbed to raise a sentinel, so the sentinel (not the assert) proves
+    positions were computed for the WHOLE batch (flagged pe == 0 spot row +
+    pe >= 1 companion row)."""
+
+    def _boom(rows, pad_id, device):
+        raise _LeftPadSentinel(str([len(r) for r in rows]))
+
+    monkeypatch.setattr(R, "_left_pad", _boom)
+
+    def _payload_stub(bank, pair, slot, arm, donor_maps, pairs_by_id):
+        return torch.zeros(1, N_LAYERS, HIDDEN), None
+
+    def _ids_stub(tok, c):
+        return c["ids"]
+
+    recs = {
+        "bare__q1": {"context_id": "bare__q1", "ctx_len": 6, "prefix_end": 0, "no_prefix": True},
+        "sys__q2": {"context_id": "sys__q2", "ctx_len": 9, "prefix_end": 3, "no_prefix": False},
+    }
+    p1 = SimpleNamespace(pair_id="s2_p1", a="bare__q1", b="bare__q9")
+    p2 = SimpleNamespace(pair_id="s1_p2", a="sys__q2", b="sys__q9")
+    contexts = {"bare__q1": {"ids": [7] * 6}, "sys__q2": {"ids": [7] * 9}}
+    spots = [{"cell": "s2", "slot": "ce", "arm": "steered", "pair": p1}]
+    cfg = SimpleNamespace(device="cpu", layers=[0, 1])
+    kwargs = dict(contexts=contexts, ids_fn=_ids_stub, spots=spots, payload_fn=_payload_stub)
+    # Pre-fix shape (parent default position path): the leg-B crash — the S2
+    # spot's pe == 0 record trips ``assert 1 <= prefix_end < ctx_len``.
+    with pytest.raises(AssertionError, match=r"\(6, 0\)"):
+        R.run_injection_gate(cfg, None, FakeTok(), {"per_context": recs}, [p1, p2], {}, **kwargs)
+    # Post-fix: the pe-safe seam computes positions for both rows and the gate
+    # proceeds to the (stubbed) padded forward — the sentinel, not the assert.
+    with pytest.raises(_LeftPadSentinel):
+        R.run_injection_gate(
+            cfg,
+            None,
+            FakeTok(),
+            {"per_context": recs},
+            [p1, p2],
+            {},
+            position_fn=RUN.gate_spot_position,
+            **kwargs,
+        )
+    # Fail-loud preserved through the gate: an UNFLAGGED pe == 0 record still
+    # asserts inside ``ce_slot_position`` even under the pe-safe seam.
+    recs_bad = {**recs, "bare__q1": {"context_id": "bare__q1", "ctx_len": 6, "prefix_end": 0}}
+    with pytest.raises(AssertionError, match=r"bare__q1"):
+        R.run_injection_gate(
+            cfg,
+            None,
+            FakeTok(),
+            {"per_context": recs_bad},
+            [p1, p2],
+            {},
+            position_fn=RUN.gate_spot_position,
+            **kwargs,
+        )
+
+
 def test_capture_bank_no_prefix_pe_exclusion(tmp_path, monkeypatch):
     """r5 regression (fails pre-fix with the parent >=3-occurrence assert):
     ``capture_bank`` over a q35-shaped 2-occurrence bare render completes,

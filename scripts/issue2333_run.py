@@ -1244,6 +1244,17 @@ def ce_slot_position(rec: dict) -> int:
     return ctx_len - 1
 
 
+def gate_spot_position(rec: dict, slot: str) -> int:
+    """pe-safe ``run_injection_gate`` position seam (r6): ce slots dispatch
+    through :func:`ce_slot_position` (tolerant of flagged ``no_prefix`` pe==0
+    bare renders — leg B q35's S2 gate spots select ``a=bare__q1``; an
+    UNFLAGGED pe==0 still fails loud there); any other slot routes through the
+    parent :func:`issue2162_run.slot_position` VERBATIM."""
+    if slot == "ce":
+        return ce_slot_position(rec)
+    return R.slot_position(rec["ctx_len"], rec["prefix_end"], slot)
+
+
 def _arm_ce_stack(
     cfg: RunConfig,
     model,
@@ -1529,6 +1540,7 @@ def phase_donors(cfg: RunConfig, regime_fp: str) -> int:
             [p for p in pairs if pair_set_of(p) == "s2"],
         ),
         payload_fn=payload_for_arm,
+        position_fn=gate_spot_position,
     )
     R._write_json_atomic(cfg.gates_dir / "injection_gate_report.json", {**gate1, **_repro(cfg)})
     # Parent contract: R.run_injection_gate returns {"passed": bool} (no
