@@ -26,6 +26,7 @@
 
 - [Split-review composites miss cross-commit plan contracts](feedback_split_review_misses_cross_commit_plan_contracts.md) — grep §9 phase_outputs writers + §8/§11 registered controls + marker ported/asserted claims yourself; Codex facts all verified, 5/8 blockers over-classed (#2330 r1)
 - [Mode-dependent durability doc claims — enumerate routed vs primary](feedback_mode_dependent_durability_doc_claims.md) — Claude verifies doc clauses locally, missing cross-clause falsification; dictate mode-split wording on a 3rd-round sentence loop (#2326 r3)
+- [Fix-round closure: expand elided plan quotes + open the parent impl](feedback_fix_round_closure_elided_control_arm.md) — Claude's "VERIFIED FIXED" quoted §8 minus "+ untruncated refit", certifying half a control; brief wording never rescopes the plan (#2330 r2)
 
 - [Persist-before-reduce: ordering not existence; derived expected-set ≠ hollow gate](feedback_persist_before_reduce_ordering_vs_existence.md) — Claude counts a site persisted because the file exists (write AFTER remote judge) (#906)
 - [Claude misses when the plan's HEADLINE decision statistic isn't produced](feedback_claude_misses_headline_decision_statistic_not_produced.md) — Claude PASSes verifying OTHER plan items while never checking the pre-registered headline estimator is actually computed + persisted (#841, #922)

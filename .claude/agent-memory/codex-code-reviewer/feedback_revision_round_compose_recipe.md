@@ -487,6 +487,14 @@ report residual flagged-vocab density BY REGION (every hit must map to an
 artifact envelope) — on a repeat refusal the next rung is digesting the
 artifact envelopes themselves (context-hygiene rung b2-content).
 
+**Label every count-assert with its subject (#2330 r2, 2026-08-16):** write
+`assert t.count(sha) == 7, ('b13f', t.count(sha))` — never a bare count in the
+assert message. A `-c` script's traceback line number is offset by the leading
+newline and adjacent count-asserts look identical, so a bare `AssertionError: 8`
+was misattributed to the WRONG SHA's assert for two debug probes (the actual
+failure was the round-PARENT SHA count — the merge-base sentence carries it
+twice, plus the r1 commit list and the Step 0.9 provenance line).
+
 **Dictated-wording convergence round (#2326 r4, 2026-08-16):** when a
 reconciler DICTATES verbatim replacement wording (W-items) after consecutive
 rounds each produced a wrong sentence about the same residual, drop the full
