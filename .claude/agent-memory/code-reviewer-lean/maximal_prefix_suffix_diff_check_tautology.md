@@ -26,3 +26,12 @@ one window from many.
 hollow. Also check the predicate has a unit test WITH a violating input —
 a gate whose tests only feed conforming pairs certifies nothing. Related:
 [[registered-gate-quantity-substituted]].
+
+**R2 nuance (the fix's own residual):** the opcode-based fix is
+CONSERVATIVE, not exact — SequenceMatcher maximizes matches, so a pair
+identical outside ONE declared window whose window interiors share an
+internal token run (X1·M·X2 vs Y1·M·Y2) reports TWO non-equal regions and
+false-REJECTS. Fails toward pair-drops/halt, never silent acceptance —
+acceptable for a validity gate, but check the drop/halt telemetry is
+reported and, where a known-good corpus exists (q25 parents), expect
+violation count ≈ 0 there as the calibration read (#2333 R2 g1).
