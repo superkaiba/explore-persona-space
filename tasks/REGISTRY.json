@@ -10381,8 +10381,8 @@
     "2343": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2343",
-      "status": "approved",
+      "path": "tasks/archived/2343",
+      "status": "archived",
       "title": "mission-control rung-0 write-path smoke (scratch)"
     },
     "235": {
