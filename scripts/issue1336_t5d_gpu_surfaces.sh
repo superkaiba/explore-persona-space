@@ -191,6 +191,7 @@ for ((i = FIRST; i <= LAST; i++)); do
 
   # ---- leg A: pair batteries in waves of $par, one GPU per process. --------
   pairs=(${LADDER_PAIRS//,/ })
+  declare -a failed_uploads=()
   idx=0
   while [ "$idx" -lt "${#pairs[@]}" ]; do
     declare -a wave_pids=() wave_pairs=() wave_t0=()
@@ -244,15 +245,37 @@ for ((i = FIRST; i <= LAST; i++)); do
         echo "[pilot] measured ${pwall}s for 1 battery on $label -> 56-battery serial projection $(( pwall * 56 / 60 )) min (n-scaled: big corpora run ~n_ratio slower; read later surfaces' walls as they land)"
       fi
       # Per-cell upload + local npz reap (#664; MooseFS quota headroom).
+      # A failed upload is DEFERRED, not fatal: the fit succeeded and the npz
+      # stays on disk, so one contention blip (the s2 409 with a sibling pod)
+      # must not rc=1 the whole invocation — retried at end of surface.
       u0=$(date +%s)
       uv run python scripts/issue1336_t5d_upload_cell.py \
         --preds-dir "$PREDS" --out-dir "$OUT_A" --unit "$unit"
       urc=$?
       echo "[upload] ${unit} rc=${urc} elapsed=$(( $(date +%s) - u0 ))s"
-      [ "$urc" -ne 0 ] && rc_all=$urc
+      if [ "$urc" -ne 0 ]; then
+        echo "[upload] ${unit} DEFERRED (rc=${urc}) — end-of-surface retry"
+        failed_uploads+=("$unit")
+      fi
     done
     unset wave_pids wave_pairs wave_t0
   done
+
+  # ---- end-of-surface retry for deferred uploads (idempotent — the cell
+  # script re-verifies + skips already-landed files). Only a unit that fails
+  # HERE too marks rc_all.
+  if [ "${#failed_uploads[@]}" -gt 0 ]; then
+    echo "[upload-retry] ${#failed_uploads[@]} deferred unit(s): ${failed_uploads[*]}"
+    for unit in "${failed_uploads[@]}"; do
+      u0=$(date +%s)
+      uv run python scripts/issue1336_t5d_upload_cell.py \
+        --preds-dir "$PREDS" --out-dir "$OUT_A" --unit "$unit"
+      urc=$?
+      echo "[upload-retry] ${unit} rc=${urc} elapsed=$(( $(date +%s) - u0 ))s"
+      [ "$urc" -ne 0 ] && rc_all=$urc
+    done
+  fi
+  unset failed_uploads
 
   # Reap this surface's staged turnstores (re-downloadable Hub copies; the
   # small wave-1 gen answers under gen/ are KEPT). Out-roots never reaped.

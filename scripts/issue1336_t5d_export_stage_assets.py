@@ -222,13 +222,21 @@ def _export_unit(args, model: str, api) -> None:
         # Dir-filecount guard (#1190) OUTSIDE the retry wrapper (a guard raise
         # is deterministic; retrying it burns the budget for nothing).
         hub.assert_hub_dir_filecounts(src, prefix)
-        hub.retry_transient(
-            lambda src=src, prefix=prefix: upload_folder(
-                repo_id=cm.HF_DATA_REPO,
-                repo_type="dataset",
-                folder_path=str(src),
-                path_in_repo=prefix,
-                commit_message=f"issue-1336 t5d round stage assets: {unit} -> {prefix}",
+        # Bounded outer 409 envelope (commit contention with sibling pods on
+        # the shared data repo — the s2 base__sft upload rc=1'd on exactly
+        # this; helper lives in the round's upload_cell script).
+        from issue1336_t5d_upload_cell import retry_hub_409
+
+        retry_hub_409(
+            lambda src=src, prefix=prefix: hub.retry_transient(
+                lambda: upload_folder(
+                    repo_id=cm.HF_DATA_REPO,
+                    repo_type="dataset",
+                    folder_path=str(src),
+                    path_in_repo=prefix,
+                    commit_message=f"issue-1336 t5d round stage assets: {unit} -> {prefix}",
+                ),
+                what=f"stage-asset upload {unit} {prefix}",
             ),
             what=f"stage-asset upload {unit} {prefix}",
         )
