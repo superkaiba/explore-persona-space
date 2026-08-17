@@ -505,3 +505,41 @@ Assert-side traps hit live: the full round-SHA count spans template AND
 inlined marker (assert each side separately before the sum), and a
 compose-time "marker lacks `<!-- epm:results vN -->`" observation puts that
 literal in YOUR prose — assert body==0 and template==1, not absent.
+
+**Post-halt regression-round shape (#2333 r3, 2026-08-16):** when a binding
+reconciler PASS shipped, the pod then HALTED in production, and the fix
+round vendors a sibling-branch implementation: (a) brief-ordered
+by-reference markers work — main-checkout absolute events.jsonl + exact-kind
+`jq 'select(.kind==... and .version==N)'` (proven readable by Codex in r2);
+give the python3 fallback and the frozen-worktree-copy warning. (b) The
+reconciler-persisted upheld-non-blocking CONCERNs are REGRESSION duties,
+not closure: new `## Prior-concern regression check` section with
+NOT-REGRESSED / TOUCHED-VERIFIED / REGRESSED vocabulary, plus a
+stale-line-number warning (the fix shifts ledger-cited lines — key on
+symbols). Do NOT tell Codex to re-emit the inlined ledger rows as
+forwarder rows (already persisted; only NEW findings / a REGRESSED id).
+(c) Vendored-source fidelity is priority 1: pin the exact
+`show origin/<branch>:<file> | sed -n 'A,Bp'` command (verify the ref
+resolves in the worktree at compose time), and enumerate the deltas to
+adjudicate — verbatim-copy claim, relaxed asserts (occurrence count),
+dropped locus branches — with the instruction to VERIFY the implementer's
+"dead code for this universe" rationale against the pair construction, not
+the docstring. (d) Build the do-not-relitigate list from the reconciled
+marker's per-item table: DISCARDED items, RECORDED-DEVIATION-OK items, and
+its "Standing recommendations on PASS" are all non-duties for a focused
+fix round. The reconciled marker's posted top-level version can differ
+from its body head sentinel (v1 posted, body says v2 = the review round) —
+tell Codex not to be confused. (e) Add a machine-scannable
+`## Round-N fix verification` section (one verdict line per brief
+priority: vendored fidelity / halt path / relaxation safety / Step 4.5
+regression-test adequacy). (f) HEAD-drift robustness: committing agent
+memory to the SAME worktree branch mid-round moves HEAD past the round
+tip — word the prompt "at compose time HEAD was the round commit;
+reviewer-memory commits may follow, touching no round file; verify round
+files via `show <round-sha>:<path>`" instead of asserting HEAD identity
+(hit LIVE this compose: a parallel reviewer's memory commit landed on the
+branch between my assemble and my memory commit). Also: a PreToolUse-
+blocked compound Bash means NOTHING in it ran — a `cat >>` upstream of the
+blocked git verb never executed; re-apply the write (via the Edit tool,
+never a heredoc — #1756) before retrying the commit, and verify landing by
+blob read at HEAD, never by the commit line.
