@@ -390,7 +390,7 @@ def fig_r2_vs_n(data: dict, fits: dict, out: Path) -> None:
             edgecolor=COL_MODEL["qwen25_7b"],
             linewidths=1.6,
             zorder=5,
-            label="7B 25k anchor (#1491 port parity)",
+            label="7B 25k anchor (parent-ladder reproduction)",
         )
     elif "skipped" in anchor:
         print(
@@ -436,9 +436,10 @@ def fig_wc_transfer(data: dict, fits: dict, out: Path) -> None:
             plt.Rectangle((0, 0), 1, 1, color=COL_INDIST),
             plt.Rectangle((0, 0), 1, 1, color=COL_WC),
         ],
-        ["LMSYS in-distribution test", f"WildChat transfer (fold: {fold_label})"],
+        ["LMSYS in-distribution test", "WildChat transfer fold (never seen in fitting)"],
         fontsize=8,
     )
+    assert fold_label is not None  # fold availability was validated per cell above
     ax.set_title("Corpus transfer: in-distribution vs WildChat fold")
     savefig_paper(fig, "issue_2330/wc_transfer_vs_indist", dir=str(out))
     plt.close(fig)
@@ -508,7 +509,12 @@ def fig_cap_hit(cap_hit_dir: Path, out: Path) -> None:
     set_paper_style("blog")
     fig, ax = plt.subplots(figsize=(6.6, 3.9))
     keys = sorted(rows)
-    labels = [f"{MODEL_LABEL[m]}\n{s}" for m, s in keys]
+    split_label = {
+        "test_1000": "test prompts\n(1,000)",
+        "train_10k": "training prompts\n(10,000)",
+        "val_400": "validation prompts\n(400)",
+    }
+    labels = [f"{MODEL_LABEL[m]}\n{split_label.get(s, s)}" for m, s in keys]
     fracs = [rows[k] for k in keys]
     colors = [COL_MODEL.get(m, GRAY) for m, _ in keys]
     ax.bar(range(len(labels)), fracs, color=colors, width=0.7)
@@ -521,7 +527,7 @@ def fig_cap_hit(cap_hit_dir: Path, out: Path) -> None:
     )
     ax.set_xticks(range(len(labels)))
     ax.set_xticklabels(labels, fontsize=7)
-    ax.set_ylabel("cap-hit fraction (% finish_reason == length)")
+    ax.set_ylabel("generations ending at the 1,024-token cap (%)")
     ax.set_title("Generation cap-hit per (model, split)")
     ax.legend(fontsize=7)
     savefig_paper(fig, "issue_2330/cap_hit_fractions", dir=str(out))
@@ -565,11 +571,12 @@ def fig_boot_delta(data: dict, con: dict, out: Path) -> None:
         ax.set_title(rec["label"], fontsize=9)
         ax.set_xlabel("Δ test R² (b − a)")
         ax.set_ylabel("bootstrap draws")
-    fig.subplots_adjust(top=0.88, hspace=0.38, wspace=0.28)
+    # Constrained layout ignores subplots_adjust, and a manually-positioned
+    # suptitle (explicit y) is excluded from its layout pass — which is what
+    # overlapped the upper subplot titles. Let the engine place it.
     fig.suptitle(
         f"Paired-bootstrap Δ distributions ({con['n_boot']} draws, shared resample matrix; "
-        "dotted = 95% CI)",
-        y=0.97,
+        "dotted = 95% CI)"
     )
     savefig_paper(fig, "issue_2330/boot_delta_distributions", dir=str(out))
     plt.close(fig)

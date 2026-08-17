@@ -1,9 +1,42 @@
 {
-  "commit": "fa54cfc2",
-  "render_id": "a97d65268b1f4724",
-  "git_commit": "fa54cfc2",
-  "git_dirty": false,
-  "created": "2026-08-17T07:10:30Z",
+  "commit": "49bbca4f+dirty",
+  "render_id": "0686c866f95147c7",
+  "git_commit": "49bbca4f",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2330/boot_delta_distributions.meta.json",
+    "figures/issue_2330/boot_delta_distributions.pdf",
+    "figures/issue_2330/boot_delta_distributions.png",
+    "figures/issue_2330/cap_hit_fractions.meta.json",
+    "figures/issue_2330/cap_hit_fractions.pdf",
+    "figures/issue_2330/cap_hit_fractions.png",
+    "figures/issue_2330/floors_panel.meta.json",
+    "figures/issue_2330/floors_panel.pdf",
+    "figures/issue_2330/floors_panel.png",
+    "figures/issue_2330/hero_r2_raw_and_normalized.meta.json",
+    "figures/issue_2330/hero_r2_raw_and_normalized.pdf",
+    "figures/issue_2330/hero_r2_raw_and_normalized.png",
+    "figures/issue_2330/per_layer_r2.meta.json",
+    "figures/issue_2330/per_layer_r2.pdf",
+    "figures/issue_2330/per_layer_r2.png",
+    "figures/issue_2330/percontext_cosine_strip.meta.json",
+    "figures/issue_2330/percontext_cosine_strip.pdf",
+    "figures/issue_2330/percontext_cosine_strip.png",
+    "figures/issue_2330/r2_vs_n.meta.json",
+    "figures/issue_2330/r2_vs_n.pdf",
+    "figures/issue_2330/r2_vs_n.png",
+    "figures/issue_2330/retrieval_acc1.meta.json",
+    "figures/issue_2330/retrieval_acc1.pdf",
+    "figures/issue_2330/retrieval_acc1.png",
+    "figures/issue_2330/selected_lambda_table.meta.json",
+    "figures/issue_2330/selected_lambda_table.pdf",
+    "figures/issue_2330/selected_lambda_table.png",
+    "figures/issue_2330/wc_transfer_vs_indist.meta.json",
+    "figures/issue_2330/wc_transfer_vs_indist.pdf",
+    "figures/issue_2330/wc_transfer_vs_indist.png",
+    "scripts/issue2330_figures.py"
+  ],
+  "created": "2026-08-17T08:07:57Z",
   "figsize": [
     6.6,
     3.9
@@ -69,7 +102,7 @@
         "ylabel": "held-out R\u00b2 (primary layers)",
         "legend_labels": [
           "LMSYS in-distribution test",
-          "WildChat transfer (fold: wildchat_corpus_transfer)"
+          "WildChat transfer fold (never seen in fitting)"
         ],
         "xticklabels": [
           "Qwen2.5-7B\n5k-fit",
