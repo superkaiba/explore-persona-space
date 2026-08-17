@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2326,
+  "highest_id": 2334,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8867,15 +8867,15 @@
     "2147": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2147",
-      "status": "running",
+      "path": "tasks/blocked/2147",
+      "status": "blocked",
       "title": "workflow-fix: reclaim tier for ~/.eps-slurm-src terminal-issue staging (112 GB unreaped)"
     },
     "2148": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2148",
-      "status": "running",
+      "path": "tasks/completed/2148",
+      "status": "completed",
       "title": "workflow-fix: upload-verifier reconciles self-reported row counts, not realized store contents (passed a 25% shortfall)"
     },
     "2149": {
@@ -10210,8 +10210,8 @@
     "2321": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2321",
-      "status": "running",
+      "path": "tasks/blocked/2321",
+      "status": "blocked",
       "title": "Repack the 10 largest prefixes in the HF data repo to recover ~610k of the 1,000,000-file cap"
     },
     "2322": {
@@ -10238,8 +10238,8 @@
     "2325": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2325",
-      "status": "running",
+      "path": "tasks/completed/2325",
+      "status": "completed",
       "title": "workflow-fix: .claude/skills/issue/SKILL.md is 813 bytes from its hard FAIL cap \u2014 next edit wedges the Step 9c gate fleet-wide"
     },
     "2326": {
@@ -10249,12 +10249,71 @@
       "status": "running",
       "title": "Codex reviewers' \"Concerns to persist\" never reach raise-concern, so the next round's prior-concerns gate walks an empty ledger"
     },
+    "2327": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2327",
+      "status": "proposed",
+      "title": "Step 5a spec-freshness sync copies a .claude doc without its workflow_lint.py grandfather cap, producing a deterministic false-red gate"
+    },
+    "2328": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2328",
+      "status": "proposed",
+      "title": "workflow-fix: review/compose briefs check marker presence against the WORKING TREE, so a transient stash-cycle read produces a false marker-destroyed escalation"
+    },
+    "2329": {
+      "goal": "Test whether the #2162 findings transfer to Qwen3.5-9B (hybrid linear attention, thinking disabled): which minimal-pair information types are decodable at the context vector, which are causally usable via single-position patching (F_act/F_beh vs nulls), whether fitted context-to-answer maps predict the realized patched shift per type x layer, and whether maps discriminate minimal-pair answers (2AFC vs identity+bias and shuffled nulls).",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/2329",
+      "status": "running",
+      "title": "Qwen3.5-9B rerun of the #2162 minimal-pair context-vector pipeline (thinking disabled)"
+    },
     "233": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/233",
       "status": "archived",
       "title": "Rerun prefix-completion dissociation with rstrip bug fix (#138 follow-up)"
+    },
+    "2330": {
+      "goal": "Compare context-to-answer map quality between Qwen2.5-7B-Instruct and Qwen3.5-9B (thinking disabled) on matched LMSYS prompts with each model's own on-policy generations: per-layer ridge maps fit at 5k and 10k training generations per model, compared on held-out R2 (plus ceiling-normalized secondary, identity+bias/kNN companions, shuffled-pairing null).",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/2330",
+      "status": "running",
+      "title": "Matched-data map R2: Qwen2.5-7B-Instruct vs Qwen3.5-9B on LMSYS on-policy generations at 5k/10k"
+    },
+    "2331": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2331",
+      "status": "proposed",
+      "title": "Fix stale fellows-first auto-default text in critic-lens-reference.md + plan-compute-sizing.md (live order is runpod-first, #2054)"
+    },
+    "2332": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2332",
+      "status": "running",
+      "title": "Repack small-file HF prefixes to reclaim ~610k file-count slots without breaking readers"
+    },
+    "2333": {
+      "goal": "Test the snowball explanation of context-vector patch causality on Qwen2.5-7B-Instruct and Qwen3.5-9B (thinking disabled): compare the all-layer context-end patch against patching only the first 1/2/3 generated answer-token positions (ce excluded) and against prefilling the first 1/2/3 tokens, under two donor schemes (mediation form: content produced under the ce patch with the patch then removed; B's-answer-start form: the target context's own reference answer opening), measured by F_beh/F_act vs scheme-matched shuffled-donor nulls on the pre-registered most-successful cells (#2162's 5 stored-and-used + #2094's pirate matched-query pairs).",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/2333",
+      "status": "running",
+      "title": "Snowball test: do context-vector patch effects run through the first few answer tokens? First-k token patches + prefills vs ce patch, both models"
+    },
+    "2334": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/2334",
+      "status": "reviewing",
+      "title": "Register eval_results/issue_1739 cone in tests/sparse_cones.txt (deterministic sparse-worktree test FAIL, #671 class)"
     },
     "234": {
       "has_clean_result": true,

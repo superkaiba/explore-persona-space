@@ -15012,12 +15012,19 @@ def check_agent_spec_size(  # noqa: C901 -- flat per-entry hygiene ladder (stale
             cap = AGENT_SPEC_SIZE_GRANDFATHER.get(name)
             if cap is not None:
                 if size > cap:
+                    suggested = ((size + 2_800) // 100) * 100
                     errors.append(
                         f".claude/agents/{name}: {size} bytes exceeds its "
-                        f"grandfather ratchet cap ({cap} bytes) — the spec "
-                        f"regrew past its recorded post-trim size; trim it "
-                        f"back (relocate per-scenario content to "
-                        f".claude/rules/, see #829)."
+                        f"grandfather ratchet cap ({cap} bytes) — the spec regrew past "
+                        f"its recorded cap. Remedies, in the designed order (#1753/#1727 "
+                        f"landing-bytes protocol): (a) raise the cap for this landing — "
+                        f"set the {name} line in .claude/config/agent_spec_size_caps.txt "
+                        f"to {suggested:_} (= measured + <=2.8 KB corridor margin) and "
+                        f"update _MIGRATION_SNAPSHOT in "
+                        f"tests/test_workflow_lint_agent_spec_caps.py in lockstep; or "
+                        f"(b) trim (relocate per-scenario content to .claude/rules/, "
+                        f"see #829). Verify in seconds: uv run python "
+                        f"scripts/workflow_lint.py --check-agent-spec-size"
                     )
                 else:
                     _warn(
@@ -15252,331 +15259,51 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 )
 
 # Grandfather-ratchet caps for skill docs still above SKILL_DOC_FAIL_BYTES,
-# keyed by path relative to .claude/skills/. Each cap = measured size at the
-# 2026-08-05 introduction + <= 3 KB margin; a grandfathered file FAILs above
-# its cap (regrowth ratchet) and FAILs as stale once it drops to
-# <= SKILL_DOC_FAIL_BYTES ("remove the entry"). Ratchet DOWN when trimmed
-# (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
-# change). Each entry names its trim direction; none is licensed to grow.
+# keyed by path relative to .claude/skills/.
+#
+# Cap protocol (per landing; #1753/#1727 landing-bytes rule, corridor-max
+# form since #2325):
+#
+#     cap = ((measured_landing_bytes + 2_800) // 100) * 100
+#
+# Properties: headroom lands in [2,701, 2,800] B — strictly under the
+# 3,000 B SKILL_DOC_GRANDFATHER_MAX_HEADROOM_BYTES loose-cap bar, with
+# ~200-300 B of trim-slack so a small net-negative sibling landing does not
+# trip the loose-cap arm. Rationale for corridor-max over the older
+# measured + ~1-1.2 KB convention: growth dominates trims ~7:1 in this
+# ladder, and a regrowth trip costs a full Step 9c gate round (median
+# ~13 min), so buy the mechanical maximum every landing.
+#
+# Semantics: a grandfathered file FAILs above its cap (regrowth ratchet; the
+# FAIL message emits the exact replacement cap line), FAILs as stale once it
+# drops to <= SKILL_DOC_FAIL_BYTES ("remove the entry"), and ratchets DOWN
+# when trimmed (> 3 KB headroom FAILs until the cap is lowered in the same
+# change — the loose-cap message prints the exact new cap).
+#
+# RE-MEASURE at Step 10d against the merged tree, and again on EVERY merge
+# attempt: the moving-main class (a sibling landing skill-doc bytes inside
+# this branch's gate window) is the norm, not the exception — each ~1h gate
+# round hands a sibling time to land ~2 KB of SKILL.md prose.
+#
+# Full per-raise chronicle (every prior value + its incident): git log -p
+# --follow scripts/workflow_lint.py at commits before the #2325 trim (the
+# same history move #1718 made for the agent-spec caps).
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
-    # measured 963,447 B after #2312 added the Step 10d rewritten-branch
-    # arm (+18,660 B on #2302's 944,787 B main: the five mutual-non-ancestry
-    # descendancy guards at the push/pull copy sites — canonical snippet
-    # (1), the safe-case push, the zero-PR stale-ref arm, the post-gate
-    # re-sync push, the shape-2 retry — plus the fail-closed PR-head
-    # parity gate and the "Rewritten-branch landing route" subsection);
-    # cap = measured + ~1.2 KB (#1753/#1727 landing-bytes rule; headroom
-    # 1,203 B <= the 3,000 B loose-cap hygiene bar). MEASURED POST-MERGE:
-    # the branch absorbed #2302's landed +1,754 B before this cap was set,
-    # so the value is the real landing size, not a projection off a stale
-    # merge-base (a cap computed against the pre-#2302 base would have
-    # FAILED by 547 B the moment this branch landed).
-    # Prior: 945_400 —
-    # measured 944,138 B after #2302 round 2 de-duplicated the stale-sync
-    # residual prose (the Step 9c 1d parenthetical now cross-references
-    # "Step 5a § Base-identity invariant (#2302)" instead of restating it,
-    # -184 B on round 1's 944,322 B) and the cap was LOWERED back to the new
-    # minimum + ~1.2 KB (#1753/#1727 landing-bytes rule; headroom 1,262 B
-    # <= the 3,000 B loose-cap hygiene bar — a ratchet is a real cost;
-    # give budget back when prose shrinks).
-    # Prior: 945_600 — measured 944,322 B after #2302 round 1 documented the
-    # base-identity invariant at BOTH consumers of the Step 5a sibling-sync
-    # output (+1,938 B on the #2136 942,384 B base): the Step 5a
-    # "Base-identity invariant" paragraph (synced paths are base-identical BY
-    # CONSTRUCTION; selector `base_identical_excluded` + compare
-    # `base_identical_files` reporting; the stale-sync residual + its re-sync
-    # remedy) and the Step 9c 1d COMPARE_RC=0 bullet's content-test
-    # parenthetical (#2024 precondition 1 is a CONTENT test as of #2302).
-    # Prior: 943_600 —
-    # measured 942,384 B after #2136 anchored the Step 5b durable-verdict
-    # snippet (+1,370 B: the since_ts=review_round_anchor_ts call form,
-    # the fallback-only anchor-semantics paragraph, and the per-site
-    # opener table). Base was 941,014 B — ALREADY 114 B over the
-    # un-raised 940,900 cap (the #2285 prose pins, 740ed2a0a1, landed
-    # without a cap raise: a pre-existing no-flags red on main this raise
-    # also absorbs); cap = measured + ~1.2 KB (#1753/#1727 landing-bytes
-    # rule).
-    # Prior: 940_900 —
-    # measured 939,648 B after #2277 added the three owner-fence emitter
-    # insertions (+1,992 B on the post-#2265 937,656 B: the Step 8
-    # owner-fence refusal sentence + PASS owner= first-person duty, the
-    # 9a-ter PASS-shape extension with the co-located non-copy
-    # prohibition, and the 6d.2 heartbeat fence_until= recipe); cap =
-    # measured + ~1.2 KB (#1753/#1727 landing-bytes rule).
-    # Prior: 938_900 —
-    # measured 937,656 B LANDING bytes after #2265 added the Step 6d.2
-    # `pid-stale-workload-live` branch row (+3,106 B on origin/main's
-    # post-#2268 934,550 B: the non-terminal dead-veto status row — the
-    # never-post-epm:failure clause, the first-tick bracketed-pgrep
-    # contradiction probe, pid-file repair + epm:run-launched re-post, the
-    # decay arm and the POD-WIDE conclude/post-failure arm — plus the
-    # stalled|dead row's exclusion clause and the post-tick-duties
-    # contradiction-probe sentence); cap = measured + ~1.2 KB (#1753/#1727
-    # landing-bytes rule; headroom 1,244 B <= the 3,000 B loose-cap
-    # hygiene bar).
-    # Prior: 935_400 — measured 934,550 B after the #2268 trim (Lever A
-    # retelling condensation, 23 sites, -1,641 B on the 936,191 B
-    # #2256-union tree: dropped session-ids, dates, and narrative
-    # retellings per the 2026-08-05 editorial policy — operative rules,
-    # diagnostic signatures, and bare (#N) citations kept); cap was the
-    # RESTORED pre-#2256 fleet vintage 935_400, deliberately NOT
-    # measured + ~1 KB (#1753): stale pre-#2256 branch lint copies still
-    # carried cap 935,400, so matching it made the trimmed main file PASS
-    # under BOTH vintages (the #2221 stale-vintage gate-block class).
-    # Prior: 936_900 — measured 935,501 B at the #2256 + #2244 MERGE UNION (origin/main
-    # merged into issue-2256 to pick up the coupled LESSONS cap raise):
-    # #2256 re-keyed the Step 10d gate single-flight probe /
-    # completion-read / kill-arm patterns from the transient gate-TREE
-    # token to the whole-life workload SCRIPT-path tokens (+1,529 B on its
-    # pre-merge base: the #2115 script-file-launcher coverage rationale at
-    # the trigger + surgical probes, the own-Bash-call reminder and the
-    # subshell-argv fork-without-exec note at the main kill-arm, and the
-    # surgical kill-arm's section reference replacing the stale L11949
-    # line reference), atop main's #2244 advance (934,312 B); cap =
-    # measured + ~1.4 KB (#1753/#1727 landing-bytes rule; the margin
-    # absorbs small main-side advance at the landing union — the #2074
-    # landing-union measurement class).
-    # Prior: 935_400 — measured 934,312 B branch-tip after #2244 stated the Step 6b bg-Bash
-    # `timeout` floor for EVERY parking lane (+1,871 B: the timeout-floor
-    # paragraph beside the 420 s park contract, the LAUNCHER_RC rc-capture
-    # paragraph, and the launch-recovery under-budgeted-timeout
-    # cross-reference); cap = measured + ~1 KB rounded up to the next 100 B
-    # (#1753 landing-bytes rule). Measured on the POST-REBASE landing tree:
-    # the branch was rebased onto a main that had already advanced to
-    # 932,441 B (#2126), so the pre-rebase 928,327 B measurement and its
-    # 929_400 cap are both superseded.
-    # Prior: 933_800 — measured 932,441 B branch-tip after #2126 hardened the two gate
-    # recipes (+5,985 B: the 1b gate-set cross-check + 1a selector-key pin
-    # (#1992), the every-relaunch pre-gate re-sync scope clause + four
-    # re-sync-then-re-run next-action messages (#2006), the detached-launch
-    # stdout-redirect rule + timeout-bounded wrapper + no-pid adopt
-    # recovery (measured, probe-detached-fd.txt), the verdict-conditional
-    # re-compose ban at both consumers (#2006), and the Guard-1
-    # per-disposition retry restore (#2087)); cap = measured + ~1.4 KB
-    # (#1753/#1727 landing-bytes rule; the margin absorbs small main-side
-    # advance at the landing union).
-    # Prior: 927_800 — measured 926,329 B branch-tip after #2240 made the Step 10d no-PR arm
-    # payload-aware (+5,831 B: USABLE_PR resolution over BOTH no-usable-PR
-    # cases — terminal PR #1897 and zero PR objects #2240 — with the
-    # origin-precondition push + rc-gated fresh-PR create, realized-outcome
-    # [step10d-no-pr-anomaly] notes, the loud novel-payload-but-no-usable-PR
-    # epm:merge-failed arm, the Step 4a prose correction, and the merge-site
-    # draft-ready comment); cap = measured + ~1.5 KB (#1753/#1727
-    # landing-bytes rule; the margin absorbs small main-side advance at the
-    # landing union).
-    # Prior: 921_700 — measured 920,127 B branch-tip after #2115 converted
-    # the two gate-script
-    # heredoc launchers (Step 10d lint gate + surgical twin) to Write-tool
-    # composition and added the Step 9c script-file-variant note (+1,554 B:
-    # the heredoc form ships the whole gate workload as Bash tool-call argv
-    # through the harness transport — the #2115 forever-pending-dispatch
-    # stall surface).
-    # Prior: 918_600 — measured 917,043 B at the #2074 Step-10d LANDING
-    # UNION (branch-tip 916,019 B — the Step 5 "Per-commit split-review
-    # dispatch (large rounds)" block, +3,660 B: T1 >4-commit / T2 >100 KB
-    # round-diff trigger, G=min(m,8) code-reviewer-lean sub-briefs,
-    # CONTRACT-BEARING routing, mechanical verdict composition + the
-    # split_review provenance line — plus +1,024 B of main-side advance
-    # since the fork; the gate's landing-union overlay measured the merged
-    # content, the #1721 class).
-    # Prior: 917_000 (branch-tip-measured first cut) / 913_400 —
-    # measured 912,359 B after the #2041 + #2208 + #2040 merge union on the
-    # 907,385 B pre-edit tree: #2041 inserted the Step 4b "Fan-out completion
-    # contract in every work-producing brief" paragraph (+1,068 B — same-turn
-    # durable landing, report-last, synchronous delegated gate-waits,
-    # join-time consolidation), #2208 the Step 5a sibling-arm
-    # import-satisfiability probe (+2,591 B), #2040 the 9a-ter across-cell
-    # shard-axis + detached checkpoint-cadence duties (+1,315 B); cap =
-    # merged landing bytes + ~1 KB (#1753 landing-bytes rule). Prior:
-    # 912_300 (#2040 alone) / 911_000 (#2208 alone) / 909_500 (#2041 alone)
-    # / 907_400 — measured 906,356 B after #2024 extended the Step 9c 1d
-    # COMPARE_RC=0 bullet with the `ordering_suspect` verdict class
-    # (+1,333 B); 905_400 — measured 904,929 B after #2015 inserted the
-    # § 9a-ter "Uncommitted-exposure window" block (+425 B on #2014's
-    # 904,504 B base); the remaining mass is the judgment tranche
-    # (bash-block extraction to step10d_guards.sh-style scripts, 9a-quater
-    # legacy-path stub, GCP rollback-prose relocation).
-    # Prior: 942_000 — measured 941,014 B on main after TWO concurrent
-    # workflow-fix branches landed SKILL.md edits inside the same ~90 min:
-    # #2284 (a70965d3bb, plan-review-floor trigger attribution, +550 B) then
-    # #2285 (740ed2a0a1, Step 10d Guard 2 + trigger-point bullet state the
-    # post-#1723 status ordering, +816 B). Each measured its own landing
-    # bytes against a pre-#2284 main and fit the 1,252 B headroom alone
-    # (#2285's own gate certified 940,464 B / margin 436); their SUM
-    # overshot by 114 B, so main went red on this check between the two
-    # merges. This is the #1721 moving-main class the Step 10d gate's
-    # landing-union merge cannot fully close: the union is computed against
-    # origin/main AT GATE TIME, and a sibling wf-fix merge afterwards is
-    # invisible to it. Cap = landing bytes + ~1 KB (#1753 landing-bytes
-    # rule); NOT a licence for regrowth — SKILL.md is the fleet's largest
-    # always-loaded surface and the compaction tranche below still stands.
-    # Prior: 952_000 — #2296's FIRST Step 10d recovery merge (superseded above).
-    # Measured 950,705 B on the POST-MERGE tree, and the three deltas are
-    # exactly additive: merge base 108ce58854 held 942,384 B, main
-    # 10e9c165a3 added +2,403 B (#2302's base-identity-invariant prose at
-    # the two Step 5a/9c consumers), #2296 added +5,918 B (below). BOTH
-    # pre-merge caps predate the merged tree and would FAIL it — main's
-    # 945_400 by 5,305 B and #2296's own 949_600 by 1,105 B — so the higher
-    # cap is the correct resolution, not a regrowth licence (the same
-    # forward-resolution shape as #2136's, recorded below). This is the
-    # #1721 moving-main class in its two-surface form: each side measured
-    # its own landing against a pre-sibling main and fit its own headroom
-    # alone, and only the merge sees the sum. Cap = measured + ~1.3 KB
-    # (#1753/#1727 landing-bytes rule; headroom 1,295 B <= the 3,000 B
-    # loose-cap hygiene bar).
-    # Prior: 949_600 — #2296 measured 948,302 B PRE-merge (the Step 10d
-    # mapped-invariant BASELINE leg moved off the shared root onto a
-    # base-pinned detached sparse scratch via `step9c_baseline.py
-    # mapped-baseline`: the shared-form + surgical-form baseline blocks,
-    # the TG_SCRATCH sed clause at both <TREE> sites, the fail-closed
-    # rc-parse lines, the rewritten residual-risk items, and the
-    # bootstrap-safe $TG_S9B helper resolution + FALLBACK audit token at
-    # both baseline sites; +5,918 B over origin/main's 942,384 B). Cap =
-    # measured + ~1.3 KB (#1753/#1727 landing-bytes rule; headroom
-    # 1,298 B <= the 3,000 B loose-cap hygiene bar). Re-derived TWICE
-    # mid-round, both superseded and recorded here so the trail is not
-    # lost: 947_450 (measured 946,230 B) predates the $TG_S9B bootstrap
-    # fix and would FAIL by 321 B; 949_000 (measured 947,771 B) predates
-    # the round-2 reviewer Minors and would FAIL by nothing but records
-    # the wrong measurement.
-    # Prior: 943_600 — #2136 measured 942,384 B for THAT landing (the Step 5b
-    # durable-verdict anchor snippet + its per-site opening_kinds table,
-    # +1,370 B over main's 941,014 B). Merge-resolved forward from main's
-    # 942_000: that value predates this landing and would FAIL it by 384 B,
-    # so the higher cap is the correct resolution, not a regrowth licence
-    # (headroom 1,216 B, the same ~1 KB the #1753 rule prescribes).
-    # 953_900 — SECOND merge-resolve forward inside #2296's landing window.
-    # Measured 952,575 B on the post-merge tree, additive again: the first
-    # recovery merge's 950,705 B + #2303's +1,870 B = 952,575 B. BOTH candidate
-    # caps FAIL it — #2296's own 952_000 by 575 B, main's 947_700 by 4,875 B.
-    # Cap = measured + ~1.3 KB (#1753/#1727 landing-bytes rule; headroom
-    # 1,325 B <= the 3,000 B loose-cap hygiene bar).
-    #
-    # THIRD consecutive forward-resolution of this ONE constant inside a single
-    # landing window (#2302 -> #2303 -> here), which sharpens the class main's
-    # comment below names: the conflict is on the LINE, so no amount of headroom
-    # can prevent it — headroom only decides whether the merged tree is RED. And
-    # each ~1h Step 10d gate round hands a sibling wf-fix branch time to land
-    # ~2 KB of SKILL.md prose and bump this line again, so a SKILL.md-bearing
-    # branch should expect to re-measure PER MERGE ATTEMPT, not once per round.
-    # 947_700 — #2303 measured 946,657 B for THIS landing, and that figure is
-    # the SUM of two workflow-fix landings, not one: #2303's own Step 5a family
-    # work (+1,870 B over the 942,384 B base at 3ac07d46fd —
-    # .claude/config/agent_spec_size_caps.txt joins the lint family in BOTH
-    # copies, since the linter reads it at module import, #2293; and both sync
-    # commits gain rc-checked FATAL/exit-1 arms) PLUS #2302's sibling-arm
-    # landing (5bfb7eb6f0, +2,403 B), which reached main at 944,787 B / cap
-    # 945_400 while #2303 sat in its Step 9c + pre-push gates. Cap = landing
-    # bytes + ~1 KB (#1753 landing-bytes rule; headroom 1,043 B).
-    #
-    # This IS the #2284/#2285 moving-main class recorded above, caught rather
-    # than repeated: each branch fit the headroom it measured against ALONE
-    # (#2302 at 945_400, #2303 at 945_400 off a pre-#2302 base), and their SUM
-    # would have landed 946,657 B against a 945_400 cap — main red by 1,257 B
-    # between the two merges. The Step 10d re-measure duty (#2303 plan §4.2 /
-    # risk R8) is what fired here; keep it on any SKILL.md-bearing branch.
-    #
-    # 972_600 — MEASURED 971,235 B on the #2312 rewritten-branch landing merge for
-    # #2296: main's 965,317 B + this branch's +5,918 B, additive exactly as in
-    # every prior round of this chain. Both candidates FAIL it — main's 966_520 by
-    # 4,715 B and the branch's own 953_900 by 17,335 B. Cap = measured + ~1.4 KB
-    # (#1753/#1727 landing-bytes rule; headroom 1,365 B <= the 3,000 B loose-cap
-    # hygiene bar).
-    #
-    # Resolved IN THE SCRATCH per the § Rewritten-branch landing route, which is
-    # what makes this the LAST re-measure for #2296 rather than the fourth link in
-    # a chain: the branch tip — and the gate verdict SHA-bound to it — are left
-    # untouched, so no re-gate is owed. The three preceding re-measures each came
-    # from a branch-side recovery merge, and each re-opened the ~84-min gate window
-    # that let the next SKILL.md-bearing sibling (#2302, #2303, #2312) land first.
-    # That is the mechanism behind the "norm, not the exception" note below.
-    #
-    # 966_520 — MEASURED 965,317 B after #2312 added the Step 10d rewritten-branch
-    # arm (+18,660 B: the mutual-non-ancestry guard at all four push sites, the
-    # zero-PR stale-ref arm, the PR-head parity gate, and the § Rewritten-branch
-    # landing route) ON TOP of #2303's landed 946,657 B main. Cap = measured
-    # + ~1.2 KB (#1753/#1727 landing-bytes rule; headroom 1,203 B <= the 3,000 B
-    # loose-cap hygiene bar). Prior on this branch: 964_650 — computed against a
-    # pre-#2303 base (944,787 B) and STALE by 667 B the moment #2303 landed
-    # bbc5d75807 mid-gate; the re-measure duty #2303's own comment prescribes is
-    # what caught it, for the SECOND time on this branch (the first was #2302's
-    # +1,754 B, absorbed before the earlier cap was set). Two consecutive
-    # SKILL.md-bearing siblings landing inside one branch's gate window is now
-    # the norm, not the exception: re-measure at Step 10d, never at Step 4.
-    #
-    # 974_900 — #2317 MEASURED 973,681 B on the branch's own origin/main
-    # (ec10edbcb0) merge: main's 971,235 B + this branch's +2,446 B (the
-    # Step 9c 1b splice-shape guard: the --files-only tr-to-spaces sourcing
-    # note, the wc -l embedded-newline assertion + shell self-test, and the
-    # site-scope note), additive — the 1b region was untouched by
-    # #2296/#2312. Prior: 972_600 (#2296/#2312, above) and this branch's own
-    # 950_300 measured against the pre-#2296 base bbc5d75807 — the
-    # moving-main class again, absorbed by the branch-side re-merge BEFORE
-    # the gate this time. Cap = landing bytes + ~1.2 KB (#1753/#1727
-    # landing-bytes rule; headroom 1,219 B <= the 3,000 B loose-cap hygiene
-    # bar). Re-measure at Step 10d if main moves again.
-    #
-    # 980_400 — #2320 MEASURED 979,368 B on the branch's own origin/main
-    # (db6eb28cac) merge: main's 974,701 B + this branch's +4,667 B (the
-    # Guard-3 first-parent fix: the MB_VALID hard-stop block with the
-    # MB_FIRST_PARENT diagnostic, the unconditional content-check prose,
-    # the corrected #479 note, the retired-condition template rewrites +
-    # mb_first_parent note fields, and the #1144 stranded-MODIFIED
-    # surfacing scan), partly offset by the deleted BEHIND-threshold
-    # prose. Prior: 974_900 (#2317, above). Cap = landing bytes + ~1 KB
-    # (#1753/#1727 landing-bytes rule; headroom 1,032 B <= the 3,000 B
-    # loose-cap hygiene bar). Re-measure at Step 10d if main moves again.
-    #
-    # 983_400 — #2146 MEASURED 982,223 B after rounds 1-3 on this branch,
-    # against an UNMOVED origin/main SKILL.md (979,368 B at both the
-    # d1c3534a10 merge-base and the r3-time origin/main tip): main's
-    # 979,368 B + this branch's +2,855 B (r1: the Step 9a-ter "Inline-round
-    # session-survival backstop" block — the arm-iff-tick_triage.ISSUE_ACTIVE
-    # rule, the per-class no-arm verdicts with the four status enumerations
-    # the #2146 partition pin compares against the live tick_triage module,
-    # and the non-ACTIVE backstop chain; r2: the C1-C3 qualifier corrections;
-    # r3: the exact `plan_pending_over_cap` predicate wording —
-    # at-least-as-new, or no status-changed marker at all). Cap = measured
-    # + ~1.2 KB (#1753/#1727 landing-bytes rule; headroom 1,177 B <= the
-    # 3,000 B loose-cap hygiene bar). Prior: 982_700 — r1's measurement
-    # (981,524 B; headroom 1,176 B), left stale by the r2 qualifier splice
-    # (+561 B -> 982,085 B live / 615 B headroom, below the margin this
-    # ladder's own history calls normal for concurrent sibling landings).
-    # Prior: 980_400 (#2320, above). Re-measure at Step 10d if main moves
-    # again.
-    #
-    # 989_650 — #2326 MEASURED 988,436 B after the Codex concerns-persistence
-    # edits on this branch, against origin/main SKILL.md at 982,587 B (the
-    # f726c6befe merge; +364 B of concurrent sibling landings over #2146's
-    # r3 982,223 B measurement): this branch's +5,849 B = the "Codex
-    # concerns persistence at verdict collection" subsection (the two
-    # collection invocations, the predicate-anchored resume-recovery clause
-    # incl. the exit-2 carve-out + part=K/N concatenation note, the
-    # generalized non-zero-exit disposition), the File-only recipe's step-5
-    # pointer comment, the 5c-ter empty-ledger log line + rationale, and the
-    # resume-table preamble recovery-first pointer sentence. Cap = measured
-    # + ~1.2 KB (#1753/#1727 landing-bytes rule; headroom 1,214 B <= the
-    # 3,000 B loose-cap hygiene bar). Prior: 983_400 (#2146, above).
-    # Re-measure at Step 10d if main moves again.
-    "issue/SKILL.md": 989_650,
-    # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
-    # the v3 body drain.
-    "clean-results/SPEC.md": 106_900,
-    # measured 87,195 B; problem-sweep prose + living-docs passes are the
-    # trim direction.
-    "daily/SKILL.md": 90_000,
-    # Prior: 72_100 — measured 72,748 B after #2276 back-filled the c62
-    # (backend pin-claim) + c63 (declared width vs launch width) escape
-    # entries into the Phase 1.5.0 canonical escapes block (+845 B,
-    # required by the verify_plan docstring sync test); cap = landing
-    # bytes + ~1 KB (#1753 landing-bytes rule).
-    # Prior: 70_900 — measured 71,103 B after #2123 back-filled the c59
-    # (GPU-hours token conflict) escape entry into the Phase 1.5.0 canonical
-    # escapes block (+203 B, required by the verify_plan docstring sync
-    # test); cap = landing bytes + ~1 KB (#1753 landing-bytes rule).
-    # Prior context: measured 68,032 B; Phase 1 planner-prompt restatement
-    # of planner.md is the trim direction.
-    "adversarial-planner/SKILL.md": 73_750,
+    # measured 989,603 B @ #2326 2026-08-16 merge of origin/main
+    # (c2cf24e5e2, the #2325-trimmed 982,587 B SKILL.md) into issue-2326
+    # (+7,016 B: the concerns-persistence additions); corridor-max
+    # ((measured+2_800)//100)*100 -> headroom 2,797 B. Prior: 985_300
+    # (#2325 main) / 989_650 (branch pre-merge); chronicle: git log.
+    "issue/SKILL.md": 992_400,
+    # measured 106,625 B @ #2325 2026-08-16; corridor-max
+    # ((measured+2_800)//100)*100. Prior: 106_900; chronicle: git log.
+    "clean-results/SPEC.md": 109_400,
+    # measured 88,010 B @ #2325 2026-08-16; corridor-max
+    # ((measured+2_800)//100)*100. Prior: 90_000; chronicle: git log.
+    "daily/SKILL.md": 90_800,
+    # measured 73,229 B @ #2325 2026-08-16; corridor-max
+    # ((measured+2_800)//100)*100. Prior: 73_750; chronicle: git log.
+    "adversarial-planner/SKILL.md": 76_000,
 }
 
 
@@ -15654,12 +15381,19 @@ def check_skill_doc_size(  # noqa: C901 -- flat per-entry hygiene ladder, mirror
             cap = SKILL_DOC_SIZE_GRANDFATHER.get(rel)
             if cap is not None:
                 if size > cap:
+                    suggested = ((size + 2_800) // 100) * 100
                     errors.append(
                         f".claude/skills/{rel}: {size} bytes exceeds its "
-                        f"grandfather ratchet cap ({cap} bytes) — the doc "
-                        f"regrew past its recorded post-trim size; trim it "
-                        f"back (story->citation compression, relocate "
-                        f"reference material to .claude/rules/)."
+                        f"grandfather ratchet cap ({cap} bytes) — the doc regrew past "
+                        f"its recorded cap. Remedies, in the designed order (#1753/#1727 "
+                        f"landing-bytes protocol): (a) raise the cap for this landing — "
+                        f"set SKILL_DOC_SIZE_GRANDFATHER['{rel}'] = {suggested:_} "
+                        f"(= measured + <=2.8 KB corridor margin) in "
+                        f"scripts/workflow_lint.py, re-measured at Step 10d against the "
+                        f"merged tree; or (b) trim (story->citation compression, "
+                        f"relocate reference material to .claude/rules/). Verify in "
+                        f"seconds: uv run python scripts/workflow_lint.py "
+                        f"--check-skill-doc-size"
                     )
                 else:
                     _warn(

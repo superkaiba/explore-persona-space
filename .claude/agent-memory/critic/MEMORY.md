@@ -87,6 +87,7 @@
 - [Span-pair swap-control audit](feedback_span_pair_swap_control_audit.md) — ΔR²: proximity linkage, own-speech contamination, subset match (#931)
 - [Rank-1 read/write designs](feedback_rank1_readwrite_design_621.md) — trained-neg bystanders, bridge swap = Concerns not REVISEs (#621)
 - [Rank-1 firing-test alternatives](feedback_rank1_firing_test_alternatives.md) — shift-DV strawman; folded |firing| inverts suppression (#621)
+- [Snowball opening-mediation designs](feedback_snowball_opening_mediation_designs.md) — prefill-only verdict + null-covered continuation companion = recoverable alternatives (#2333)
 
 ## Panel composition / axis conflation
 - [Repaired-grid re-mine](feedback_repaired_grid_remine_review.md) — cap mismatch from own-suite fix; twin families; scarcity narration (#2221)

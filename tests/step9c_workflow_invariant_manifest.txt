@@ -23,6 +23,7 @@ tests/test_experimenter_md.py
 tests/test_failure_classifier.py
 tests/test_fit_loop_batching_review_pin.py
 tests/test_gotchas_finalization_entry.py
+tests/test_guard_skill_doc_headroom.py
 tests/test_guard_trigger_dense_read.py
 tests/test_implementer_spec_mechanical_pin_sweep.py
 tests/test_implementer_spec_names_invariant_local_union.py
@@ -90,6 +91,7 @@ tests/test_plan_handoff_path_convention.py
 tests/test_plan_patch.py
 tests/test_planner_phase_outputs_declaration.py
 tests/test_precommit_gitleaks_merge_scope.py
+tests/test_realized_rows_prose_pins.py
 tests/test_repo_root_uncommitted_state_pins.py
 tests/test_ruff_format_hook_tmp_exclusion.py
 tests/test_sparse_worktree.py

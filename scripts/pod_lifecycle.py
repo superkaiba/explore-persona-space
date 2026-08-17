@@ -3512,6 +3512,47 @@ def _upload_verification_outroot_attested(note: str) -> bool:
     )
 
 
+_ROWS_ATTESTATION_VALUES = frozenset({"reconciled", "no-declared-count", "n/a"})
+
+
+def _upload_verification_rows_attested(note: str) -> bool:
+    """True iff the note carries the realized row-count attestation token (#2148).
+
+    Mirrors :func:`_upload_verification_outroot_attested`: a JSON-shaped note
+    with ``"rows": "reconciled" | "no-declared-count" | "n/a"``, or a prose
+    note carrying ``rows=<value>`` / ``rows: <value>`` (case-insensitive).
+
+    Fixed value semantics (the three are NOT interchangeable):
+    ``reconciled`` = the sweep ran and every non-exempt label's realized
+    distinct full-key count reconciled against the input-side declaration
+    (exempt / keyless labels are named inline in the note);
+    ``no-declared-count`` = the sweep ran but the run declared no
+    expectation for its artifact classes, so the reconciliation SKIPped;
+    ``n/a`` = the run produced no artifact class carrying a per-row index
+    at all. There is deliberately no fourth value - an ERROR/FAIL-bearing
+    sweep never reaches a PASS note, so the guard's PASS gate already
+    excludes it. #2091: a store short by ~25% INSIDE present files passed
+    every file-level check because the count check read the producer's
+    self-reported ``capture_rows`` - the expectation echoed back; the
+    realized row-count sweep (upload-verifier Step 2.11 /
+    ``verify_uploads.py --expected-rows``) is the arm that catches it, and
+    this token is what makes a skipped sweep block teardown.
+    """
+    try:
+        parsed = json.loads(note)
+    except (json.JSONDecodeError, TypeError, ValueError):
+        parsed = None
+    if isinstance(parsed, dict):
+        return str(parsed.get("rows", "")).strip().lower() in _ROWS_ATTESTATION_VALUES
+    return bool(
+        re.search(
+            r"\brows\s*[=:]\s*(reconciled|no-declared-count|n/a)\b",
+            note,
+            re.IGNORECASE,
+        )
+    )
+
+
 def _guard_upload_verification_before_terminate(
     issue: int, *, skip_flag: bool, dry_run: bool
 ) -> None:
@@ -3519,9 +3560,11 @@ def _guard_upload_verification_before_terminate(
     ``kind: experiment`` task unless an ``epm:upload-verification PASS``
     marker exists on the task AND its note carries the out-root
     sweep-attestation token ``outroot=<swept-clean|residue-committed|none>``
-    (#2187), OR ``--skip-upload-verify`` was passed (logs a LOUD warning,
-    still proceeds; the flag waives the token exactly as it waives the
-    PASS itself).
+    (#2187) AND the realized row-count attestation token
+    ``rows=<reconciled|no-declared-count|n/a>`` (#2148), OR
+    ``--skip-upload-verify`` was passed (logs a LOUD warning, still
+    proceeds; the flag waives the tokens exactly as it waives the PASS
+    itself).
 
     Non-experiment tasks (``kind`` ∈ {analysis, infra, batch, survey}),
     tasks that can't be resolved (manual / ad-hoc pods, branch-guard
@@ -3586,7 +3629,48 @@ def _guard_upload_verification_before_terminate(
     note = _latest_upload_verification_note(issue)
     if note is not None and _note_records_pass(note):
         if _upload_verification_outroot_attested(note):
-            return
+            if _upload_verification_rows_attested(note):
+                return
+            # PASS with outroot= but WITHOUT the rows= realized row-count
+            # attestation (#2148). Same waiver logic as the outroot token:
+            # --skip-upload-verify already waives the strictly stronger
+            # no-marker case, so it waives this token too - LOUDLY.
+            if skip_flag:
+                print(
+                    f"[pod_lifecycle] WARN: terminating {issue} with an "
+                    f"epm:upload-verification PASS marker that LACKS the "
+                    f"rows= realized row-count attestation because "
+                    f"--skip-upload-verify was passed (#2148). Rows missing "
+                    f"INSIDE present files (the #2091 class: ~25% short "
+                    f"behind a PASS) will NOT have been reconciled.",
+                    file=sys.stderr,
+                )
+                return
+            raise SystemExit(
+                f"Refusing to terminate the pod for task #{issue}: the "
+                f"latest epm:upload-verification PASS note lacks the "
+                f"realized row-count attestation token "
+                f"`rows=<reconciled|no-declared-count|n/a>` (#2148 - #2091 "
+                f"PASSed while ~25% of rows were missing INSIDE present "
+                f"files; the producer's self-reported count was the "
+                f"expectation echoed back). Run the reconciliation first: "
+                f"declare the run's input-side expectations and count the "
+                f"store's own row-index files via `uv run python "
+                f"scripts/verify_uploads.py --issue {issue} --expected-rows "
+                f"<LABEL>=<N> --row-index-hf-prefix <per-label prefix> "
+                f"--row-index-distinct-key <unit_field,rollout_field>` "
+                f"(recipe: upload-verifier Step 2.11; "
+                f".claude/rules/upload-verifier-section-reference.md). Then "
+                f"re-post the marker with BOTH tokens (`uv run python "
+                f"scripts/task.py post-marker {issue} "
+                f"epm:upload-verification --file <note.md>` where the note "
+                f"leads with `Verdict: PASS` and carries `outroot=<value>` "
+                f"and `rows=<reconciled|no-declared-count|n/a>` - `n/a` "
+                f"only when the run produced no per-row-index artifact "
+                f"class), and re-run terminate. --skip-upload-verify "
+                f"remains the never-ran-pod escape (it waives the token "
+                f"exactly as it waives the PASS itself)."
+            )
         # PASS without the outroot= sweep-attestation token (#2187). The
         # skip flag waives the token exactly as it waives the whole PASS
         # (it already waives the strictly stronger requirement — a pod with

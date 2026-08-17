@@ -573,6 +573,14 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # CLAUDE.md diffs are WORKFLOW_SURFACE-only, so this registration is the
     # ONLY gate that fires the pin on those changes.
     "tests/test_outroot_residue_prose_pins.py",
+    # NEW (#2148) — realized row-count reconciliation prose pins
+    # (upload-verifier.md Step 2.11 + verdict row + note-template rows=
+    # token, upload-policy.md § Realized row counts, section-reference
+    # § Step 2.11, pods.md teardown clause, CLAUDE.md recipe clause). Same
+    # rationale as the #2187 sibling above: `.claude/agents/*.md` +
+    # CLAUDE.md diffs are WORKFLOW_SURFACE-only, so this registration is
+    # the ONLY gate that fires the pin on those changes.
+    "tests/test_realized_rows_prose_pins.py",
     # NEW (#1645) — CLAUDE.md + issue SKILL.md bracketed ownership-probe exemplar pin (#1495)
     "tests/test_ownership_probe_exemplar_bracketed.py",
     # NEW (#2326) — scripts/persist_verdict_concerns.py forwarder semantics
@@ -617,6 +625,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_precommit_gitleaks_merge_scope.py",
     "tests/test_diff_base_origin_main_pin.py",  # NEW (#1289) — diff-base origin/main pin
     "tests/test_fit_loop_batching_review_pin.py",  # NEW (#1397) — fit-loop batching review-lens pin
+    # NEW (#2325) — skill-doc headroom PostToolUse hook pin (warn-only,
+    # fail-open) incl. its settings.json registration + resolved-path assert:
+    # `.json` diffs map to no tests (_DATA_DOC_SUFFIXES), so the registration
+    # pin runs on every gate ONLY via this tuple.
+    "tests/test_guard_skill_doc_headroom.py",
     # NEW (#1577) — guard-script read-bounding hook pin: the selector's
     # stem/literal/dependency arms are .py-only, so a later .sh-hook /
     # settings.json diff re-runs this pin ONLY via this tuple.

@@ -1,1 +1,0 @@
-{"ts": "2026-08-16T15:09:14Z", "event": "raised", "concern_id": "d9-nested-odb-dies-with-tree", "severity": "CONCERN", "summary": "D9 overlay evidence anchors in the nested odb that dies with the tree: no stash probe; own-ref HEAD reachability is vacuous for committed state. Harden: stash-empty + remotes-only reachability.", "raised_by": "code-reviewer", "raised_at_round": 1}

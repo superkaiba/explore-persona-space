@@ -61,12 +61,14 @@ from workflow_lint import _load_agent_spec_caps  # noqa: E402
 # stale branch-tip values would have silently reverted those raises and FAILed
 # code-reviewer.md (measured 106,857 B vs the old 102_800 cap) fleet-wide.
 _MIGRATION_SNAPSHOT: dict[str, int] = {
-    "code-reviewer.md": 107_300,
-    "codex-clean-result-critic.md": 48_400,
-    "codex-code-reviewer.md": 50_500,
-    "experiment-implementer.md": 67_800,
-    "experimenter.md": 67_600,
-    "research-pm.md": 47_000,
+    # #2325 corridor-max re-cap (2026-08-16): cap = ((measured + 2_800) // 100) * 100,
+    # re-measured at Step 10d against the merged tree.
+    "code-reviewer.md": 109_600,
+    "codex-clean-result-critic.md": 50_200,
+    "codex-code-reviewer.md": 52_200,
+    "experiment-implementer.md": 69_600,
+    "experimenter.md": 70_300,
+    "research-pm.md": 49_700,
 }
 
 
