@@ -63,7 +63,7 @@ import unicodedata
 import uuid
 from collections import Counter
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -124,6 +124,12 @@ GRID_DRAWS = 5
 SEED_BASE = 42
 ANCHOR_DRAWS = 10
 ANCHOR_TEMPERATURE = 1.0
+# Registered cap-hit re-gen trigger (plan §"Coherence …" registration, Source
+# #2162): cap-hit STRICTLY > 2% per cell => re-generate that cell's rollouts
+# at a raised cap (the registered remedy names 4096, passed per re-gen
+# invocation via --max-new-tokens — never a pre-emptive default change).
+# Exactly 2.0% does NOT fire.
+CAP_HIT_REGEN_TRIGGER_PCT = 2.0
 
 SLOTS: tuple[str, ...] = ("ce", "pe")
 ARMS: tuple[str, ...] = ("steered", "shuffled", "crosstype")
@@ -542,23 +548,29 @@ def run_claim_queue(
     regime_fp: str,
     namespace: str,
     run_one,
+    is_done=block_is_done,
 ) -> dict:
     """Work-conserving queue: pull the next unclaimed pending block until every
-    block is done (crashed workers' claims go stale and are reclaimed)."""
+    block is done (crashed workers' claims go stale and are reclaimed).
+
+    ``is_done`` defaults to :func:`block_is_done` (the #722 r3 hard-refusal
+    resume predicate). ``phase_capregen_grid`` passes
+    :func:`_capregen_block_done`, which PRESERVES that hard refusal and
+    additionally treats a pre-regen done record as PENDING."""
     cdir = claims_dir(cfg.out_root, namespace)
     stats = {"ran": 0, "skipped_done": 0, "waits": 0}
     while True:
         ran_this_scan = 0
         n_open = 0
         for block in blocks:
-            if block_is_done(cfg.out_root, block, regime_fp, namespace):
+            if is_done(cfg.out_root, block, regime_fp, namespace):
                 continue
             n_open += 1
             token = uuid.uuid4().hex
             if not try_claim(cdir, block, cfg.worker_index, token):
                 continue
             try:
-                if block_is_done(cfg.out_root, block, regime_fp, namespace):
+                if is_done(cfg.out_root, block, regime_fp, namespace):
                     # Raced completion between scan and claim — nothing to do.
                     continue
                 run_one(block)
@@ -1079,6 +1091,10 @@ class RunConfig:
     # the CLI. Default False so a width whose provenance is unknown can never
     # arm a destructive stale-width sweep (_entry_sweep skips + warns).
     num_workers_explicit: bool = False
+    # Cap-hit report + cell-restricted re-gen (registered >2%/cell trigger).
+    cap_scope: str = "both"
+    capregen_scope: str | None = None
+    breach_report: Path | None = None
 
     @property
     def rollouts_dir(self) -> Path:
@@ -1135,8 +1151,29 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "fact_select",
             "stage2",
             "upload",
+            "cap_report",
+            "capregen",
         ),
         help="pipeline phase to run (required unless --import-check / --gate0b-check)",
+    )
+    ap.add_argument(
+        "--cap-scope",
+        choices=("anchors", "grid", "both"),
+        default="both",
+        help="cap_report: which rollout set(s) to aggregate (incremental/partial-safe)",
+    )
+    ap.add_argument(
+        "--capregen-scope",
+        choices=("anchors", "grid"),
+        default=None,
+        help="capregen: which rollout set to re-generate breaching cells for (required)",
+    )
+    ap.add_argument(
+        "--breach-report",
+        type=Path,
+        default=None,
+        help="capregen: cap-hit report JSON driving the breach list "
+        "(default <out-root>/manifests/cap_hit_report_<scope>.json)",
     )
     ap.add_argument(
         "--import-check",
@@ -1246,6 +1283,9 @@ def build_config(args: argparse.Namespace) -> RunConfig:
         pools_path=args.pools,
         best_cells_path=args.best_cells,
         num_workers_explicit=args.num_workers is not None,
+        cap_scope=args.cap_scope,
+        capregen_scope=args.capregen_scope,
+        breach_report=args.breach_report,
     )
 
 
@@ -2374,7 +2414,19 @@ def _anchor_context_order(cfg: RunConfig) -> tuple[list[str], list[str], dict[st
     return gate_ids, rest, contexts
 
 
-def _run_anchor_batch(
+def _enrich_rows_with_capture(rows: list[dict], states: dict, max_new_tokens: int) -> None:
+    """Post-capture per-row telemetry: token count + cap_hit vs the REALIZED
+    generating cap, and the cap itself. Recording the cap per row is what
+    keeps a mixed-cap store (protocol-sanctioned after a cell-restricted
+    capregen) VISIBLE downstream instead of implicit."""
+    for r, n_tok in zip(rows, states["n_completion_tokens"], strict=True):
+        r["n_completion_tokens"] = n_tok
+        r["cap_hit"] = cap_hit(n_tok, max_new_tokens)
+        r["cap_hit_basis"] = "retokenized_completion_len >= max_new_tokens"
+        r["max_new_tokens"] = max_new_tokens
+
+
+def _generate_anchor_rows(
     cfg: RunConfig,
     model,
     tok,
@@ -2382,10 +2434,13 @@ def _run_anchor_batch(
     order: list[str],
     draws: int,
     batch: str,
-    regime_fp: str,
-) -> dict:
-    """Generate + capture one anchors batch for THIS worker; write shards."""
-    eot = eot_tail_ids(tok)
+) -> tuple[list[dict], list[list[int]], list[str]]:
+    """Unpatched anchor generation core — ``(rows, flat_ctx, flat_text)``.
+
+    The SINGLE anchors generation loop, shared by ``_run_anchor_batch`` and
+    ``phase_capregen_anchors`` (no second generation loop; capture +
+    enrichment stay caller-side so the two-write text-persist ordering is
+    preserved at each call site)."""
     rows: list[dict] = []
     flat_ctx: list[list[int]] = []
     flat_text: list[str] = []
@@ -2430,6 +2485,24 @@ def _run_anchor_batch(
             len(order),
             time.monotonic() - t0,
         )
+    return rows, flat_ctx, flat_text
+
+
+def _run_anchor_batch(
+    cfg: RunConfig,
+    model,
+    tok,
+    contexts: dict[str, dict],
+    order: list[str],
+    draws: int,
+    batch: str,
+    regime_fp: str,
+) -> dict:
+    """Generate + capture one anchors batch for THIS worker; write shards."""
+    eot = eot_tail_ids(tok)
+    rows, flat_ctx, flat_text = _generate_anchor_rows(
+        cfg, model, tok, contexts, order, draws, batch
+    )
     # Persist the rollout TEXT the moment generation completes, BEFORE the
     # capture reduce (#779 / r1 m2): a capture crash must never lose ~1,650
     # generated rollouts. The post-capture write below atomically REPLACES
@@ -2437,10 +2510,7 @@ def _run_anchor_batch(
     jsonl = cfg.anchors_dir / f"anchors_{batch}_w{cfg.worker_index}.jsonl"
     _write_jsonl_atomic(jsonl, rows)
     states = capture_answer_states(cfg, model, tok, flat_ctx, flat_text, eot)
-    for r, n_tok in zip(rows, states["n_completion_tokens"], strict=True):
-        r["n_completion_tokens"] = n_tok
-        r["cap_hit"] = cap_hit(n_tok, cfg.max_new_tokens)
-        r["cap_hit_basis"] = "retokenized_completion_len >= max_new_tokens"
+    _enrich_rows_with_capture(rows, states, cfg.max_new_tokens)
     _write_jsonl_atomic(jsonl, rows)
     _save_pt_atomic(
         cfg.anchors_dir / f"va_anchors_{batch}_w{cfg.worker_index}.pt",
@@ -2466,6 +2536,7 @@ def _run_anchor_batch(
             "n_rows": len(rows),
             "n_cap_hit": cap_hits,
             "n_empty": len(states["empty_rows"]),
+            "max_new_tokens": cfg.max_new_tokens,
             "repro": _repro(cfg),
         },
     )
@@ -2520,6 +2591,7 @@ def phase_anchors(cfg: RunConfig) -> int:
                     "n_rows": 0,
                     "n_cap_hit": 0,
                     "n_empty": 0,
+                    "max_new_tokens": cfg.max_new_tokens,
                     "repro": _repro(cfg),
                 },
             )
@@ -2544,11 +2616,16 @@ def phase_anchors(cfg: RunConfig) -> int:
                     "n_rows": 0,
                     "n_cap_hit": 0,
                     "n_empty": 0,
+                    "max_new_tokens": cfg.max_new_tokens,
                     "repro": _repro(cfg),
                 },
             )
     else:
         logger.info("[anchors:rest] already done for this regime — skipping")
+    # Registered cap-hit>2%/cell trigger, MEASURED at phase end (plan
+    # registration; the trigger previously had no enforcing code). Partial
+    # snapshots (other workers still generating) are labeled partial.
+    _emit_cap_hit_snapshot(cfg, "anchors")
     logger.info("[phase=anchors_done] worker=%d", cfg.worker_index)
     return RC_OK
 
@@ -2680,6 +2757,7 @@ def run_block(
     pools: dict[str, list[dict]] | None,
     draws: int,
     write_done: bool = True,
+    done_extra: dict | None = None,
 ) -> dict:
     """One block: K hooked temp-1.0 draws per pair, the hooked V_a pass, and
     (pools present) the margin TF pass — pipelined on the same GPU.
@@ -2687,7 +2765,10 @@ def run_block(
     ``write_done=False`` (the PILOT leg) suppresses BOTH resume done-files —
     the block done-file AND the margin_blocks twin — so a pilot run on
     production ``blocks[0]`` can never leave a ``regime_fp + "-pilot"`` done
-    record that the grid queue's ``block_is_done`` scan RAISES on (r1 C1)."""
+    record that the grid queue's ``block_is_done`` scan RAISES on (r1 C1).
+
+    ``done_extra`` (capregen) is merged into the block done record — the
+    durable marker that a block was re-generated at a raised cap."""
     cells = _block_cells(bank, block, pairs_by_id, donor_maps)
 
     def ids_for(cid: str) -> list[int]:
@@ -2780,10 +2861,7 @@ def run_block(
     states = capture_answer_states(
         cfg, model, tok, flat_ctx, flat_text, eot, payloads=flat_payload, positions=flat_pos
     )
-    for r, n_tok in zip(rows_out, states["n_completion_tokens"], strict=True):
-        r["n_completion_tokens"] = n_tok
-        r["cap_hit"] = cap_hit(n_tok, cfg.max_new_tokens)
-        r["cap_hit_basis"] = "retokenized_completion_len >= max_new_tokens"
+    _enrich_rows_with_capture(rows_out, states, cfg.max_new_tokens)
     _write_jsonl_atomic(shard_jsonl, rows_out)
     _save_pt_atomic(
         cfg.va_dir / f"shard_{block.slug}.pt",
@@ -2824,9 +2902,11 @@ def run_block(
         "n_rows": len(rows_out),
         "n_cap_hit": sum(1 for r in rows_out if r["cap_hit"]),
         "n_empty": len(states["empty_rows"]),
+        "max_new_tokens": cfg.max_new_tokens,
         "hooked_batch_gt1_unequal": hooked_gt1_unequal,
         "margin_inline": margin_done,
         "repro": _repro(cfg),
+        **(done_extra or {}),
     }
     if write_done:
         _write_json_atomic(block_done_path(cfg.out_root, block), done)
@@ -2989,6 +3069,10 @@ def phase_grid(cfg: RunConfig) -> int:
             "smoke ran blocks but no hooked batch>1 chunk had unequal prompt "
             "lengths — pad-into-recurrence coverage missing (plan §12)"
         )
+    # Registered cap-hit>2%/cell trigger, MEASURED at phase end (the trigger
+    # previously had no enforcing code). Sibling workers still mid-block make
+    # this snapshot partial — labeled, and re-emittable via --phase cap_report.
+    _emit_cap_hit_snapshot(cfg, "grid")
     _write_json_atomic(
         cfg.manifest_dir / f"grid_done_w{cfg.worker_index}.json",
         {
@@ -3094,6 +3178,753 @@ def _enforce_pilot_gate(
 
 
 # ── margin phase (pools-dependent TF legs) ────────────────────────────
+
+
+# ── cap-hit report + cell-restricted re-gen (registered >2%/cell trigger) ─────
+#
+# The plan registers (Source #2162): max_new_tokens=2048, cap-hit > 2% per
+# cell => re-generate those rows at 4096. These phases make the trigger
+# MEASURED (cap_report) and its remedy EXECUTABLE (capregen) instead of
+# registered-but-unenforced. Field names follow the parent's hand-derived
+# eval_results/issue_2162/f_metrics/grid_caphit_aggregate.json where they
+# apply (derived_from / derived_from_sha256 / derivation / n_rows /
+# cap_hit_rows / cap_hit_pct / pre_registered_regen_trigger_pct /
+# trigger_fired) so the child artifact is comparable to the parent's; the
+# per-cell and per-(cell, value) breakdowns are new here.
+
+
+def compute_cap_hit_report(
+    shard_paths: list[Path],
+    max_new_tokens: int,
+    *,
+    scope: str,
+    expected_shards: set[str] | None,
+    expected_unavailable_reason: str | None = None,
+    threshold_pct: float = CAP_HIT_REGEN_TRIGGER_PCT,
+) -> dict:
+    """Per-cell + per-(cell, value) cap-hit aggregate over realized rollout shards.
+
+    INCREMENTAL BY DESIGN: accepts whatever shards exist so far. A read over
+    an incomplete set is labeled ``partial: true`` with the realized row
+    count, the covered/missing shard names, and the reason — a partial read
+    can never be mistaken for a final one. Counting basis is each row's
+    RECORDED ``cap_hit`` (computed at generation time against the cap then
+    in force), so the report stays correct over a mixed-cap store after a
+    cell-restricted re-gen. Shards not yet capture-enriched (the two-write
+    pattern's text-only first write) are EXCLUDED from counts and listed
+    under ``pending_capture_shards`` — never silently counted as zero hits.
+    An EMPTY breach list is a legitimate outcome (``breaching_cells: []``,
+    ``trigger_fired: false``), never coerced. Raises when no shard exists or
+    nothing is capture-enriched yet (a zero-row aggregate is not a
+    measurement)."""
+    if not shard_paths:
+        raise RuntimeError(
+            f"cap-hit report ({scope}): no rollout shards found — wrong --out-root, "
+            "or the phase has not written any shard yet"
+        )
+    covered: list[dict] = []
+    pending: list[str] = []
+    cell_counts: dict[str, list[int]] = {}
+    cv_counts: dict[tuple[str, str], list[int]] = {}
+    n_rows = 0
+    hits = 0
+    n_tok_all: list[int] = []
+    realized_caps: set[int] = set()
+    value_fields: set[str] = set()
+    for path in sorted(shard_paths, key=lambda p: p.name):
+        data = path.read_bytes()  # ONE read: rows + sha come from the same bytes
+        rows = [json.loads(line) for line in data.decode("utf-8").splitlines() if line.strip()]
+        if not rows:
+            raise RuntimeError(f"cap-hit report ({scope}): {path} is EMPTY — malformed shard")
+        enriched = [("cap_hit" in r) for r in rows]
+        if not all(enriched):
+            if any(enriched):
+                raise RuntimeError(
+                    f"cap-hit report ({scope}): {path} mixes capture-enriched and "
+                    "text-only rows — corrupt shard"
+                )
+            pending.append(path.name)
+            continue
+        for r in rows:
+            cell = r["cell"]
+            if "value_id" in r:
+                vkey, vfield = str(r["value_id"]), "value_id"
+            elif "value_a" in r:
+                vkey, vfield = str(r["value_a"]), "value_a"
+            else:
+                raise RuntimeError(
+                    f"cap-hit report ({scope}): row in {path.name} has neither "
+                    "value_id nor value_a — cannot key the per-(cell, value) breakdown"
+                )
+            value_fields.add(vfield)
+            hit = 1 if r["cap_hit"] else 0
+            n_rows += 1
+            hits += hit
+            n_tok_all.append(int(r["n_completion_tokens"]))
+            realized_caps.add(int(r.get("max_new_tokens", max_new_tokens)))
+            c = cell_counts.setdefault(cell, [0, 0])
+            c[0] += 1
+            c[1] += hit
+            cv = cv_counts.setdefault((cell, vkey), [0, 0])
+            cv[0] += 1
+            cv[1] += hit
+        covered.append({"name": path.name, "sha256": _sha256_bytes(data), "n_rows": len(rows)})
+    if n_rows == 0:
+        raise RuntimeError(
+            f"cap-hit report ({scope}): every present shard is still text-only "
+            "(pre-capture) — nothing capture-enriched to measure yet; retry after "
+            "the first block/batch completes its capture pass"
+        )
+    per_cell: dict[str, dict] = {}
+    for cell, (n, h) in sorted(cell_counts.items()):
+        pct = 100.0 * h / n
+        per_cell[cell] = {
+            "n_rows": n,
+            "cap_hit_rows": h,
+            "cap_hit_pct": pct,
+            "breach": pct > threshold_pct,  # STRICT >: exactly threshold does NOT fire
+        }
+    per_cell_value: dict[str, dict[str, dict]] = {}
+    for (cell, vkey), (n, h) in sorted(cv_counts.items()):
+        per_cell_value.setdefault(cell, {})[vkey] = {
+            "n_rows": n,
+            "cap_hit_rows": h,
+            "cap_hit_pct": 100.0 * h / n,
+        }
+    max_spread: dict | None = None
+    for cell, vals in per_cell_value.items():
+        if len(vals) < 2:
+            continue
+        pcts = [d["cap_hit_pct"] for d in vals.values()]
+        spread = max(pcts) - min(pcts)
+        if max_spread is None or spread > max_spread["spread_pct"]:
+            max_spread = {
+                "cell": cell,
+                "min_pct": min(pcts),
+                "max_pct": max(pcts),
+                "spread_pct": spread,
+            }
+    covered_names = sorted(c["name"] for c in covered)
+    reasons: list[str] = []
+    if pending:
+        reasons.append(f"{len(pending)} shard(s) pending capture enrichment")
+    missing: list[str] | None = None
+    unexpected: list[str] = []
+    if expected_shards is None:
+        reasons.append(expected_unavailable_reason or "expected shard set unavailable")
+    else:
+        present = set(covered_names) | set(pending)
+        missing = sorted(expected_shards - present)
+        unexpected = sorted(present - expected_shards)
+        if missing:
+            reasons.append(f"{len(missing)} expected shard(s) missing (phase incomplete)")
+    toks = np.asarray(n_tok_all, dtype=np.int64)
+    breaching = sorted(c for c, d in per_cell.items() if d["breach"])
+    return {
+        "scope": scope,
+        "derived_from": (
+            f"{scope} rollout shards "
+            f"({len(covered)} capture-enriched of {len(covered) + len(pending)} present)"
+        ),
+        "derived_from_shards": covered,
+        "derived_from_sha256": _sha256_bytes(
+            "\n".join(f"{c['name']}:{c['sha256']}" for c in covered).encode()
+        ),
+        "derivation": (
+            "count of rows with truthy recorded cap_hit over all capture-enriched rows, "
+            "overall + per cell + per (cell, value); trigger_fired = any cell with "
+            "cap_hit_pct STRICTLY > pre_registered_regen_trigger_pct; derived_from_sha256 "
+            "= sha256 over newline-joined '<name>:<sha256>' of derived_from_shards"
+        ),
+        "n_rows": n_rows,
+        "cap_hit_rows": hits,
+        "cap_hit_frac": hits / n_rows,
+        "cap_hit_pct": 100.0 * hits / n_rows,
+        "pre_registered_regen_trigger_pct": threshold_pct,
+        "trigger_fired": bool(breaching),
+        "breaching_cells": breaching,
+        "max_new_tokens": max_new_tokens,
+        "realized_row_caps": sorted(realized_caps),
+        "value_key_fields": sorted(value_fields),
+        "per_cell": per_cell,
+        "per_cell_value": per_cell_value,
+        "max_value_spread": max_spread,
+        "n_completion_tokens": {
+            "min": int(toks.min()),
+            "median": float(np.median(toks)),
+            "p95": float(np.percentile(toks, 95)),
+            "p99": float(np.percentile(toks, 99)),
+            "max": int(toks.max()),
+        },
+        "partial": bool(reasons),
+        "partial_reason": reasons or None,
+        "covered_shards": covered_names,
+        "pending_capture_shards": sorted(pending),
+        "missing_shards": missing,
+        "unexpected_shards": unexpected,
+        "generated_at": datetime.now(UTC).isoformat(),
+    }
+
+
+def _cap_report_inputs(
+    cfg: RunConfig, scope: str
+) -> tuple[list[Path], set[str] | None, str | None]:
+    """``(shard_paths, expected_shard_names, expected_unavailable_reason)``.
+
+    anchors: expected set from the family's own done records (a 0-row worker
+    writes no jsonl, so only n_rows>0 records expect a file); width
+    unresolved => completeness underivable (partial). grid: expected block
+    set derived mechanically from the frozen bank (smoke_blocks under
+    --smoke, mirroring phase_grid's enumeration); bank absent => partial."""
+    if scope == "anchors":
+        paths = sorted(cfg.anchors_dir.glob("anchors_*_w*.jsonl"))
+        width = _family_realized_width(cfg.manifest_dir, "anchors")
+        if width is None:
+            return (
+                paths,
+                None,
+                (
+                    "anchors family width unresolved (phase incomplete) — "
+                    "expected shard set underivable"
+                ),
+            )
+        expected: set[str] = set()
+        for batch in ("gate", "rest"):
+            for w in range(width):
+                rec = json.loads((cfg.manifest_dir / f"anchors_{batch}_w{w}_done.json").read_text())
+                if int(rec.get("n_rows", 0)) > 0:
+                    expected.add(f"anchors_{batch}_w{w}.jsonl")
+        return paths, expected, None
+    assert scope == "grid", scope
+    paths = sorted(cfg.rollouts_dir.glob("shard_*.jsonl"))
+    if not (cfg.bank_dir / "vc_bank.pt").exists():
+        return (
+            paths,
+            None,
+            (f"{cfg.bank_dir / 'vc_bank.pt'} absent — expected block set underivable"),
+        )
+    bank = _load_bank(cfg)
+    manifest = _load_frozen_manifest(cfg)
+    pairs = surviving_pairs(manifest)
+    base = smoke_blocks(pairs) if cfg.smoke else enumerate_blocks(pairs)
+    blocks, _excl = apply_pe_exclusions(
+        base, no_prefix_ids(manifest), bank["donor_assignments"], pairs
+    )
+    return paths, {f"shard_{b.slug}.jsonl" for b in blocks}, None
+
+
+def cap_hit_report_path(cfg: RunConfig, scope: str) -> Path:
+    """Canonical report path (manifests/ rides the existing P5 upload row)."""
+    return cfg.manifest_dir / f"cap_hit_report_{scope}.json"
+
+
+def emit_cap_hit_report(cfg: RunConfig, scope: str) -> dict:
+    """Compute + atomically write the scope's cap-hit report; returns it."""
+    paths, expected, why = _cap_report_inputs(cfg, scope)
+    report = compute_cap_hit_report(
+        paths,
+        cfg.max_new_tokens,
+        scope=scope,
+        expected_shards=expected,
+        expected_unavailable_reason=why,
+    )
+    report["repro"] = _repro(cfg)
+    out = cap_hit_report_path(cfg, scope)
+    _write_json_atomic(out, report)
+    logger.info(
+        "[cap_report:%s] rows=%d cap_hit=%.4f%% breaching_cells=%d partial=%s -> %s",
+        scope,
+        report["n_rows"],
+        report["cap_hit_pct"],
+        len(report["breaching_cells"]),
+        report["partial"],
+        out,
+    )
+    return report
+
+
+_CAP_SCOPE_GLOBS: dict[str, tuple[str, str]] = {
+    "anchors": ("anchors_dir", "anchors_*_w*.jsonl"),
+    "grid": ("rollouts_dir", "shard_*.jsonl"),
+}
+
+
+def _emit_cap_hit_snapshot(cfg: RunConfig, scope: str) -> None:
+    """Phase-end auto-emit, tolerant of the two legitimate early states.
+
+    A zero-context worker finishing FIRST can see no shard at all, and a
+    worker can finish while every present sibling shard is still text-only
+    (pre-capture) — both are transient run states, not defects, so the
+    snapshot is SKIPPED WITH A WARNING instead of crashing a healthy worker;
+    the last-finishing worker (and the standalone ``--phase cap_report``,
+    which keeps the fail-loud empty-selection raise) writes the real thing."""
+    attr, pat = _CAP_SCOPE_GLOBS[scope]
+    paths = sorted(getattr(cfg, attr).glob(pat))
+
+    def _first_row_enriched(p: Path) -> bool:
+        with p.open(encoding="utf-8") as f:
+            for line in f:
+                if line.strip():
+                    return "cap_hit" in json.loads(line)
+        return False
+
+    if not paths or not any(_first_row_enriched(p) for p in paths):
+        logger.warning(
+            "[cap_report:%s] no capture-enriched shard present yet — snapshot "
+            "skipped (run --phase cap_report later for the aggregate)",
+            scope,
+        )
+        return
+    emit_cap_hit_report(cfg, scope)
+
+
+def phase_cap_report(cfg: RunConfig) -> int:
+    """Standalone (re-)aggregation over whatever rollout shards exist so far."""
+    logger.info("[phase=cap_report] scope=%s", cfg.cap_scope)
+    scopes = ("anchors", "grid") if cfg.cap_scope == "both" else (cfg.cap_scope,)
+    for scope in scopes:
+        emit_cap_hit_report(cfg, scope)
+    logger.info("[phase=cap_report_done]")
+    return RC_OK
+
+
+def _load_breach_report(cfg: RunConfig, scope: str) -> tuple[dict, Path]:
+    """Load + validate the cap-hit report driving a capregen invocation.
+
+    Refusals (all fail-loud, no override flags): missing report; scope
+    mismatch; PARTIAL report (the registered re-gen evaluates per-cell rates
+    on the COMPLETE phase); a --max-new-tokens not STRICTLY above the
+    report's generating cap (4096 is a per-invocation re-gen argument,
+    never a default change)."""
+    path = cfg.breach_report or cap_hit_report_path(cfg, scope)
+    if not path.exists():
+        raise RuntimeError(
+            f"breach report {path} missing — run --phase cap_report --cap-scope {scope} first"
+        )
+    rep = json.loads(path.read_text())
+    if rep.get("scope") != scope:
+        raise RuntimeError(f"breach report {path} has scope={rep.get('scope')!r}, need {scope!r}")
+    if rep.get("partial"):
+        raise RuntimeError(
+            f"breach report {path} is PARTIAL ({rep.get('partial_reason')}) — the "
+            "registered re-gen trigger evaluates per-cell rates on the COMPLETE "
+            f"phase; re-run --phase cap_report after the {scope} phase completes"
+        )
+    base_cap = int(rep["max_new_tokens"])
+    if cfg.max_new_tokens <= base_cap:
+        raise RuntimeError(
+            "capregen requires --max-new-tokens STRICTLY greater than the report's "
+            f"generating cap {base_cap} (registered remedy: {2 * base_cap}); "
+            f"got {cfg.max_new_tokens}"
+        )
+    return rep, path
+
+
+def _capregen_block_done(
+    out_root: Path, block: Block, base_fp: str, regen_cap: int, namespace: str = "blocks"
+) -> bool:
+    """Capregen resume predicate over the SAME done files as ``block_is_done``.
+
+    The #722 r3 hard refusal is PRESERVED: any done record at a regime_fp
+    other than the BASE run's raises, never skips. On top of it: a pre-regen
+    done record (no ``capregen`` sub-record) is PENDING — a stale done-file
+    can never let a breaching block skip re-generation — and a capregen
+    record at a DIFFERENT raised cap raises (mixed raised caps within one
+    scope are not sanctioned)."""
+    path = block_done_path(out_root, block, namespace)
+    if not path.exists():
+        return False
+    rec = json.loads(path.read_text())
+    if rec.get("key") != block.key:
+        raise RuntimeError(f"block done-file key mismatch: {rec.get('key')!r} != {block.key!r}")
+    if rec.get("regime_fp") != base_fp:
+        raise RuntimeError(
+            f"block {block.key} done-file carries regime_fp={rec.get('regime_fp')!r} "
+            f"but the capregen BASE regime_fp={base_fp!r} — refusing to re-gen across "
+            "regimes (quarantine or use a fresh --out-root)"
+        )
+    cr = rec.get("capregen")
+    if cr is None:
+        return False
+    if int(cr.get("max_new_tokens", -1)) != regen_cap:
+        raise RuntimeError(
+            f"block {block.key} was already re-generated at "
+            f"max_new_tokens={cr.get('max_new_tokens')} != this invocation's "
+            f"{regen_cap} — refusing to mix raised caps (fresh --out-root to redo)"
+        )
+    return True
+
+
+def phase_capregen_grid(cfg: RunConfig) -> int:
+    """Cell-restricted grid re-gen at a raised cap (registered >2% remedy).
+
+    Reuses the EXISTING machinery end to end: the same block enumeration
+    filtered to the breach list, the same ``run_block`` (whole-block
+    regenerate — draws are stochastic, so within a breaching cell every row
+    is regenerated at the raised cap; mixed caps ACROSS cells are the
+    sanctioned end state), the same claim-file queue + per-block checkpoints
+    + incremental text upload, 8-wide like the phase it amends. Margins are
+    NOT recomputed (teacher-forced pool scoring — independent of the
+    generation cap), so margin shards/done-files stay untouched. Regenerated
+    va shards persist via a follow-up ``--phase upload``."""
+    logger.info(
+        "[phase=capregen] scope=grid worker=%d/%d smoke=%s",
+        cfg.worker_index,
+        cfg.num_workers,
+        cfg.smoke,
+    )
+    rep, rep_path = _load_breach_report(cfg, "grid")
+    breach = set(rep["breaching_cells"])
+    if not breach:
+        logger.info(
+            "[capregen:grid] breach list EMPTY (trigger_fired=false) — nothing to "
+            "re-generate; exiting rc=0"
+        )
+        return RC_OK
+    base_cap = int(rep["max_new_tokens"])
+    bank = _load_bank(cfg)
+    manifest = _load_frozen_manifest(cfg)
+    frozen_sha = _sha256_bytes(json.dumps(manifest, sort_keys=True, ensure_ascii=False).encode())
+    assert frozen_sha == str(bank.get("bank_sha")), (
+        "frozen bank.json sha != vc_bank.pt bank_sha — bank/capture drift",
+        frozen_sha,
+        bank.get("bank_sha"),
+    )
+    pairs = surviving_pairs(manifest)
+    np_ids = no_prefix_ids(manifest)
+    pairs_by_id = {p.pair_id: p for p in pairs}
+    donor_maps = bank["donor_assignments"]
+    bank_sha = str(bank.get("bank_sha"))
+    base_fp = regime_fingerprint(replace(cfg, max_new_tokens=base_cap), bank_sha)
+    regen_fp = regime_fingerprint(cfg, bank_sha)
+    draws = SMOKE_GRID_DRAWS if cfg.smoke else cfg.grid_draws
+    base_blocks = smoke_blocks(pairs) if cfg.smoke else enumerate_blocks(pairs)
+    runnable, _excl = apply_pe_exclusions(base_blocks, np_ids, donor_maps, pairs)
+    blocks = [b for b in runnable if b.cell in breach]
+    unmatched = breach - {b.cell for b in blocks}
+    if unmatched:
+        raise RuntimeError(
+            f"breaching cells matched no runnable grid blocks: {sorted(unmatched)} — "
+            "report/run regime mismatch (smoke vs full?)"
+        )
+    logger.info(
+        "[capregen:grid] %d breaching cells -> %d blocks at max_new_tokens=%d (base %d)",
+        len(breach),
+        len(blocks),
+        cfg.max_new_tokens,
+        base_cap,
+    )
+    done_extra = {
+        "capregen": {
+            "max_new_tokens": cfg.max_new_tokens,
+            "base_max_new_tokens": base_cap,
+            "regen_regime_fp": regen_fp,
+            "source_report": rep_path.name,
+            "source_report_sha256": _sha256_bytes(rep_path.read_bytes()),
+            "ts": datetime.now(UTC).isoformat(),
+        }
+    }
+    model, tok = load_model_and_tokenizer(cfg)
+    eot = eot_tail_ids(tok)
+    contexts = BANK.build_contexts()
+    ctx_ids_cache: dict[str, list[int]] = {}
+    n_run = 0
+    uploaded: list[str] = []
+    pending: list[Block] = []
+
+    def run_one(block: Block) -> None:
+        nonlocal n_run, uploaded, pending
+        t0 = time.monotonic()
+        rec = run_block(
+            cfg,
+            model,
+            tok,
+            bank,
+            block,
+            pairs_by_id,
+            donor_maps,
+            contexts,
+            ctx_ids_cache,
+            eot,
+            base_fp,  # done record keeps the BASE resume key; capregen rides done_extra
+            None,  # pools=None: TF margins are cap-independent — never recomputed here
+            draws,
+            done_extra=done_extra,
+        )
+        n_run += 1
+        pending.append(block)
+        logger.info(
+            "[capregen:grid] unit %d/%d %s rows=%d cap_hit=%d elapsed=%.1fs",
+            n_run,
+            len(blocks),
+            block.key,
+            rec["n_rows"],
+            rec["n_cap_hit"],
+            time.monotonic() - t0,
+        )
+        if cfg.upload_every > 0 and len(pending) >= cfg.upload_every:
+            uploaded += _upload_grid_increment(cfg, pending)
+            pending.clear()
+
+    def is_done(out_root: Path, block: Block, fp: str, namespace: str) -> bool:
+        return _capregen_block_done(out_root, block, fp, cfg.max_new_tokens, namespace)
+
+    stats = run_claim_queue(cfg, blocks, base_fp, "blocks", run_one, is_done=is_done)
+    if pending:
+        uploaded += _upload_grid_increment(cfg, pending)
+        pending.clear()
+    emit_cap_hit_report(cfg, "grid")  # post-regen measurement over the mixed-cap store
+    _write_json_atomic(
+        cfg.manifest_dir / f"capregen_grid_done_w{cfg.worker_index}.json",
+        {
+            "scope": "grid",
+            "base_regime_fp": base_fp,
+            "regen_regime_fp": regen_fp,
+            "max_new_tokens": cfg.max_new_tokens,
+            "base_max_new_tokens": base_cap,
+            "breaching_cells": sorted(breach),
+            "n_blocks_target": len(blocks),
+            "n_blocks_run": stats["ran"],
+            "uploads": uploaded,
+            "source_report": rep_path.name,
+            "repro": _repro(cfg),
+        },
+    )
+    logger.info(
+        "[phase=capregen_done] scope=grid worker=%d blocks_run=%d — run --phase upload "
+        "to persist regenerated va shards",
+        cfg.worker_index,
+        stats["ran"],
+    )
+    return RC_OK
+
+
+def _merge_anchor_capregen(
+    cfg: RunConfig,
+    batch: str,
+    base_cap: int,
+    breach_cells: set[str],
+    cell_of: dict[str, str],
+    regen_rows: list[dict],
+    regen_states: dict,
+    done_rec: dict,
+    capregen_record: dict,
+) -> dict:
+    """Merge regenerated breaching-cell rows into this worker's anchors shard.
+
+    IDEMPOTENT per artifact: the keep-mask for the jsonl comes from its own
+    rows' ``cell`` and for the va store from its own index's context->cell
+    map, so a crash between the two writes re-merges cleanly on re-run
+    (breach-cell rows are dropped wholesale whatever cap they carry, then
+    the fresh regen rows are appended). Kept rows are backfilled with the
+    BASE cap (provably theirs: the done record's regime_fp — which embeds
+    max_new_tokens — matched the base fingerprint before this runs). Write
+    order: jsonl -> va .pt -> done record (the commit point)."""
+    w = cfg.worker_index
+    jsonl = cfg.anchors_dir / f"anchors_{batch}_w{w}.jsonl"
+    va_path = cfg.anchors_dir / f"va_anchors_{batch}_w{w}.pt"
+    old_rows = [json.loads(line) for line in jsonl.open(encoding="utf-8") if line.strip()]
+    keep_rows = [r for r in old_rows if r["cell"] not in breach_cells]
+    dropped_ctx = {r["context_id"] for r in old_rows if r["cell"] in breach_cells}
+    regen_ctx = {r["context_id"] for r in regen_rows}
+    if dropped_ctx != regen_ctx:
+        raise RuntimeError(
+            f"anchors capregen {batch} w{w}: regenerated context set != dropped context "
+            f"set (dropped-not-regen={sorted(dropped_ctx - regen_ctx)}, "
+            f"regen-not-dropped={sorted(regen_ctx - dropped_ctx)})"
+        )
+    for r in keep_rows:
+        r.setdefault("max_new_tokens", base_cap)
+    merged = keep_rows + list(regen_rows)
+    old = torch.load(va_path, weights_only=False)  # self-produced bundle (#1900)
+    assert list(old["layers"]) == list(cfg.layers), (old["layers"], cfg.layers)
+    idx = old["index"]
+    va = old["va_span"]
+    assert va.shape[0] == len(idx), (va.shape, len(idx))
+    assert regen_states["pooling"]["va_span"] == old["pooling"]["va_span"], (
+        regen_states["pooling"],
+        old["pooling"],
+    )
+    keep_pos = [i for i, e in enumerate(idx) if cell_of[e["context_id"]] not in breach_cells]
+    pos_map = {p: j for j, p in enumerate(keep_pos)}
+    new_index = [idx[p] for p in keep_pos] + [
+        {"context_id": r["context_id"], "draw": r["draw"]} for r in regen_rows
+    ]
+    new_va = torch.cat(
+        [va[torch.tensor(keep_pos, dtype=torch.long)], regen_states["va_span"]], dim=0
+    )
+    new_empties = sorted(
+        [pos_map[p] for p in old.get("empty_rows", []) if p in pos_map]
+        + [len(keep_pos) + int(i) for i in regen_states["empty_rows"]]
+    )
+    if not (len(merged) == len(new_index) == new_va.shape[0]):
+        raise RuntimeError(
+            f"anchors capregen {batch} w{w}: merged jsonl/index/tensor row counts "
+            f"diverge ({len(merged)}/{len(new_index)}/{new_va.shape[0]})"
+        )
+    _write_jsonl_atomic(jsonl, merged)
+    _save_pt_atomic(
+        va_path,
+        {
+            "layers": old["layers"],
+            "index": new_index,
+            "va_span": new_va,
+            "pooling": old["pooling"],
+            "empty_rows": new_empties,
+            "repro": _repro(cfg),
+        },
+    )
+    new_done = {
+        **done_rec,
+        "n_rows": len(merged),
+        "n_cap_hit": sum(1 for r in merged if r["cap_hit"]),
+        "n_empty": len(new_empties),
+        "max_new_tokens": base_cap,  # the shard's BASE regime cap; raised cap in capregen
+        "capregen": capregen_record,
+        "repro": _repro(cfg),
+    }
+    _write_json_atomic(cfg.manifest_dir / f"anchors_{batch}_w{w}_done.json", new_done)
+    return new_done
+
+
+def phase_capregen_anchors(cfg: RunConfig) -> int:
+    """Cell-restricted anchors re-gen at a raised cap (registered >2% remedy).
+
+    Same sharding as the anchors phase (``order[w::W]`` at the REALIZED
+    width, asserted), same generation core (``_generate_anchor_rows``), same
+    per-(batch, worker) done records — breaching cells' rows are regenerated
+    wholesale and MERGED into the existing per-worker shard + va store, so
+    every downstream consumer reads the same files it always did. The done
+    record keeps the BASE regime_fp (post-regen re-entries of the standard
+    anchors command skip cleanly) and gains a ``capregen`` sub-record; the
+    #722 r3 cross-regime hard refusal is preserved via the base-fp check."""
+    logger.info(
+        "[phase=capregen] scope=anchors worker=%d/%d smoke=%s",
+        cfg.worker_index,
+        cfg.num_workers,
+        cfg.smoke,
+    )
+    rep, rep_path = _load_breach_report(cfg, "anchors")
+    breach = set(rep["breaching_cells"])
+    if not breach:
+        logger.info(
+            "[capregen:anchors] breach list EMPTY (trigger_fired=false) — nothing to "
+            "re-generate; exiting rc=0"
+        )
+        return RC_OK
+    base_cap = int(rep["max_new_tokens"])
+    _manifest, bank_sha = bank_manifest_and_sha()
+    base_fp = regime_fingerprint(replace(cfg, max_new_tokens=base_cap), bank_sha)
+    regen_fp = regime_fingerprint(cfg, bank_sha)
+    width = _family_realized_width(cfg.manifest_dir, "anchors")
+    if width is None:
+        raise RuntimeError(
+            "anchors family width unresolved — the anchors phase is incomplete; "
+            "capregen amends a COMPLETED store only"
+        )
+    if not cfg.num_workers_explicit or cfg.num_workers != width:
+        raise RuntimeError(
+            f"anchors capregen must run at the realized width {width} for shard "
+            f"alignment (pass --num-workers {width} --worker-index <i>); got "
+            f"num_workers={cfg.num_workers} explicit={cfg.num_workers_explicit}"
+        )
+    gate_ids, rest_ids, contexts = _anchor_context_order(cfg)
+    cell_of = {cid: ctx["cell"] for cid, ctx in contexts.items()}
+    model, tok, eot = None, None, None
+    for batch, order in (("gate", gate_ids), ("rest", rest_ids)):
+        done_path = cfg.manifest_dir / f"anchors_{batch}_w{cfg.worker_index}_done.json"
+        if not done_path.exists():
+            raise RuntimeError(
+                f"{done_path} missing — anchors {batch} incomplete for worker "
+                f"{cfg.worker_index}; capregen amends a COMPLETED store only"
+            )
+        done_rec = json.loads(done_path.read_text())
+        if done_rec.get("regime_fp") != base_fp:
+            raise RuntimeError(
+                f"anchors {batch} w{cfg.worker_index} done-record carries "
+                f"regime_fp={done_rec.get('regime_fp')!r} but the capregen BASE "
+                f"regime_fp={base_fp!r} — refusing to re-gen across regimes "
+                "(quarantine or use a fresh --out-root)"
+            )
+        cr = done_rec.get("capregen")
+        if cr is not None:
+            if (
+                int(cr.get("max_new_tokens", -1)) != cfg.max_new_tokens
+                or set(cr.get("cells", [])) != breach
+            ):
+                raise RuntimeError(
+                    f"anchors {batch} w{cfg.worker_index} already merged a capregen at "
+                    f"cap={cr.get('max_new_tokens')} cells={sorted(cr.get('cells', []))} "
+                    f"!= this invocation's cap={cfg.max_new_tokens} "
+                    f"cells={sorted(breach)} — refusing to stack re-gens "
+                    "(fresh --out-root to redo)"
+                )
+            logger.info(
+                "[capregen:anchors:%s] already merged for this breach list — skipping", batch
+            )
+            continue
+        my = order[cfg.worker_index :: cfg.num_workers]
+        my_regen = [cid for cid in my if cell_of[cid] in breach]
+        capregen_record = {
+            "cells": sorted(breach),
+            "max_new_tokens": cfg.max_new_tokens,
+            "base_max_new_tokens": base_cap,
+            "regen_regime_fp": regen_fp,
+            "source_report": rep_path.name,
+            "source_report_sha256": _sha256_bytes(rep_path.read_bytes()),
+            "n_rows_regen": 0,
+            "ts": datetime.now(UTC).isoformat(),
+        }
+        if not my_regen:
+            _write_json_atomic(
+                done_path, {**done_rec, "capregen": capregen_record, "repro": _repro(cfg)}
+            )
+            logger.info(
+                "[capregen:anchors:%s] no breaching contexts in this worker's shard — "
+                "stamped done record",
+                batch,
+            )
+            continue
+        draws = int(done_rec["draws"])  # match the ORIGINAL shard's draws exactly
+        if model is None:
+            model, tok = load_model_and_tokenizer(cfg)
+            eot = eot_tail_ids(tok)
+        rows, flat_ctx, flat_text = _generate_anchor_rows(
+            cfg, model, tok, contexts, my_regen, draws, batch
+        )
+        # Rollout text durable BEFORE the capture reduce (#779 two-write
+        # pattern); side file so no shard glob / upload pattern matches it.
+        pending = cfg.manifest_dir / f"capregen_pending_anchors_{batch}_w{cfg.worker_index}.jsonl"
+        _write_jsonl_atomic(pending, rows)
+        states = capture_answer_states(cfg, model, tok, flat_ctx, flat_text, eot)
+        _enrich_rows_with_capture(rows, states, cfg.max_new_tokens)
+        capregen_record["n_rows_regen"] = len(rows)
+        _merge_anchor_capregen(
+            cfg, batch, base_cap, breach, cell_of, rows, states, done_rec, capregen_record
+        )
+        pending.unlink()
+        logger.info(
+            "[capregen:anchors:%s] merged %d regenerated rows (%d contexts x %d draws)",
+            batch,
+            len(rows),
+            len(my_regen),
+            draws,
+        )
+        _upload_dir(
+            cfg,
+            cfg.anchors_dir,
+            f"{HF_PREFIX}/raw_completions/anchors",
+            [f"anchors_{batch}_w{cfg.worker_index}.jsonl"],
+        )
+        _upload_dir(
+            cfg,
+            cfg.anchors_dir,
+            f"{HF_PREFIX}/analysis_tensors/anchors",
+            [f"va_anchors_{batch}_w{cfg.worker_index}.pt"],
+        )
+    emit_cap_hit_report(cfg, "anchors")  # post-regen measurement over the mixed-cap store
+    logger.info("[phase=capregen_done] scope=anchors worker=%d", cfg.worker_index)
+    return RC_OK
 
 
 def phase_margin(cfg: RunConfig) -> int:
@@ -3490,6 +4321,8 @@ def _sentinel_payload(cfg: RunConfig, uploaded: dict[str, list[str]]) -> dict:
                 str(cfg.fact_dir),
                 str(best_path),
                 str(cfg.out_root / "pilot_gate_report.json"),
+                str(cap_hit_report_path(cfg, "anchors")),
+                str(cap_hit_report_path(cfg, "grid")),
             }
         ),
         "reproducibility_card": {
@@ -4422,10 +5255,7 @@ def run_stage2_block(
         positions=flat_pos,
         hook_builder=_stage2_hook_builder(block.layer, block.dose),
     )
-    for r, n_tok in zip(rows_out, states["n_completion_tokens"], strict=True):
-        r["n_completion_tokens"] = n_tok
-        r["cap_hit"] = cap_hit(n_tok, cfg.max_new_tokens)
-        r["cap_hit_basis"] = "retokenized_completion_len >= max_new_tokens"
+    _enrich_rows_with_capture(rows_out, states, cfg.max_new_tokens)
     _write_jsonl_atomic(shard_jsonl, rows_out)
     _save_pt_atomic(
         cfg.va_dir / f"stage2_shard_{block.slug}.pt",
@@ -4450,6 +5280,7 @@ def run_stage2_block(
         "n_rows": len(rows_out),
         "n_cap_hit": sum(1 for r in rows_out if r["cap_hit"]),
         "n_empty": len(states["empty_rows"]),
+        "max_new_tokens": cfg.max_new_tokens,
         "layers_patched": [block.layer],
         "repro": _repro(cfg),
     }
@@ -4688,6 +5519,15 @@ def main(argv: list[str] | None = None) -> int:
         return phase_fact_select(cfg)
     if cfg.phase == "stage2":
         return phase_stage2(cfg)
+    if cfg.phase == "cap_report":
+        return phase_cap_report(cfg)
+    if cfg.phase == "capregen":
+        assert cfg.capregen_scope in ("anchors", "grid"), (
+            "--capregen-scope anchors|grid is required for --phase capregen"
+        )
+        if cfg.capregen_scope == "anchors":
+            return phase_capregen_anchors(cfg)
+        return phase_capregen_grid(cfg)
     assert cfg.phase == "upload", cfg.phase
     return phase_upload(cfg)
 
