@@ -254,6 +254,7 @@ def main() -> int:
             r, m, jc = csls_covered(s_full, pos, gamma)
             per_cell.setdefault(conv, {})[variant] = stats_block(r, m, n_pool)
             row_store[f"rank_{conv}_{variant}"], row_store[f"margin_{conv}_{variant}"] = r, m
+            row_store[f"comp_{conv}_{variant}"] = jc.astype(np.int64)
             csls_comp[(conv, variant)] = jc
         del s_full
 
@@ -304,8 +305,63 @@ def main() -> int:
                 "read": read,
             }
         )
+    # ── Addendum: WORST-DISCRIMINATED bottom-50 by csls_k10 avg-target margin ──
+    m_k10 = row_store["margin_csls_k10_whitencos_avg"]
+    bottom = np.argsort(m_k10)[:50]
+    wd_rows: list[dict] = []
+    for i in bottom:
+        ci = int(kci[i])
+        lab = labels.get(str(ci))
+        jc = int(csls_comp[("csls_k10_whitencos", "avg")][i])
+        benign = is_benign(lab)
+        if benign:
+            needed_text_cis.add(ci)
+        wd_rows.append(
+            {
+                "ci": ci,
+                "margin_csls_k10": float(m_k10[i]),
+                "margin_whiten_cos": float(row_store["margin_whiten_cos_avg"][i]),
+                "rank_csls_k10": float(row_store["rank_csls_k10_whitencos_avg"][i]),
+                "is_failure": bool(row_store["rank_csls_k10_whitencos_avg"][i] > 1.0),
+                "twin_cosine_whitened": float(twn[pos[i]] @ twn[jc]),
+                "competitor_ci": int(pci[jc]),
+                "labels": lab or "UNLABELED",
+                "depth": (ci_fields.get(str(ci)) or {}).get("depth"),
+                "depth_band": (ci_fields.get(str(ci)) or {}).get("depth_band"),
+                "attribution": kres_cls[i],
+                "benign_for_text": benign,
+            }
+        )
+
+    def composition(rows_idx: np.ndarray) -> dict:
+        """Per-label counts + shares for a covered-row index set (descriptive)."""
+        from collections import Counter
+
+        fields = ("topic", "language", "answer_is_refusal", "request_refusal_adjacent")
+        counters: dict[str, Counter] = {f: Counter() for f in (*fields, "depth_band")}
+        for i in rows_idx:
+            lab = labels.get(str(int(kci[i]))) or {}
+            for f in fields:
+                counters[f][str(lab.get(f, "UNLABELED"))] += 1
+            counters["depth_band"][
+                str((ci_fields.get(str(int(kci[i]))) or {}).get("depth_band", "?"))
+            ] += 1
+        n = max(1, len(rows_idx))
+        return {
+            f: {k: {"n": int(v), "share": round(v / n, 4)} for k, v in c.most_common()}
+            for f, c in counters.items()
+        }
+
+    raweuc_fail_idx = np.nonzero(row_store["rank_raw_euclidean_single"] > 1.0)[0]
+    comp_block = {
+        "bottom50": composition(bottom),
+        "full_covered_pool_n1988": composition(np.arange(len(kci))),
+        "raw_euclidean_single_failures": composition(raweuc_fail_idx),
+        "n_raw_euclidean_single_failures": int(len(raweuc_fail_idx)),
+    }
+
     texts = load_texts_for(needed_text_cis) if needed_text_cis else {}
-    for row in table:
+    for row in [*table, *wd_rows]:
         if row["benign_for_text"] and row["ci"] in texts:
             tr = texts[row["ci"]]
             row["last_user_excerpt"] = sanitize(tr.get("last_user", ""), 120)
@@ -335,6 +391,19 @@ def main() -> int:
             "n_target_degeneracy": n_deg,
             "n_map_error_candidates": len(table) - n_deg,
             "rows": table,
+        },
+        "worst_discriminated": {
+            "note": (
+                "bottom 50 covered rows by csls_k10_whitencos draw-averaged-target margin "
+                "(NOT just rank>1 failures — barely-won successes included, flagged by "
+                "is_failure); whiten_cos avg margin as companion column; twin cosine = whitened "
+                "cosine to the csls_k10 runner-up on the modified pool; composition shares are "
+                "DESCRIPTIVE (n=50, no significance battery), against the full 1,988-row "
+                "covered pool and against the raw-euclidean SINGLE-draw failure set"
+            ),
+            "n_failures_in_bottom50": int(sum(r["is_failure"] for r in wd_rows)),
+            "rows": wd_rows,
+            "composition": comp_block,
         },
         "part2_differentiation": per_cell,
         "reproduction_gate": {
