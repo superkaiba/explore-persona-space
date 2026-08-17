@@ -277,7 +277,13 @@ run_stage2() {
 }
 
 run_upload() {
-  run_cpu_phase upload
+  # r3 C1 fix (c), defense in depth: thread the realized width into the upload
+  # phase so cfg.num_workers is never the implicit width-1 default there. The
+  # binding fix is driver-side — phase_upload derives each family's width from
+  # its OWN done-record set (fix (b)) and NEVER sweeps on this value — but the
+  # threaded width keeps the sentinel's recorded num_workers truthful and arms
+  # the derived-vs-threaded mismatch warning.
+  run_cpu_phase upload --num-workers "$NUM_WORKERS"
 }
 
 case "$PHASE" in

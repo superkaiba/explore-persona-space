@@ -769,20 +769,27 @@ def _anchor_batch_done(cfg: RunConfig, regime_fp: str, batch: str, expected_draw
     return True
 
 
-_WIDTH_SHARDED_STEMS = frozenset(
-    {
-        "anchors_gate",
-        "anchors_rest",
-        "va_anchors_gate",
-        "va_anchors_rest",
-        "anchor_margin",
-        "margin_anchors",
-    }
-)
+# r3 C1: width-sharded artifacts are grouped into FAMILIES; a sweep is scoped
+# to exactly one family so no phase can ever destroy ANOTHER family's shards
+# (r2 C1: phase_margin/phase_upload applied ONE process's width to EVERY
+# family — a 1-wide deferred margin leg would have quarantined 7/8 of a valid
+# 8-wide anchor store, and the width-less upload leg quarantined w1..wN at
+# implicit width 1 before the bulk upload).
+_ARTIFACT_FAMILIES: dict[str, frozenset[str]] = {
+    "anchors": frozenset({"anchors_gate", "anchors_rest", "va_anchors_gate", "va_anchors_rest"}),
+    "margin": frozenset({"anchor_margin", "margin_anchors"}),
+}
+_WIDTH_SHARDED_STEMS = frozenset().union(*_ARTIFACT_FAMILIES.values())
+# Done-record stems whose per-width index coverage DEFINES a family's realized
+# width (every kind must be complete at the same W).
+_FAMILY_DONE_KINDS: dict[str, tuple[str, ...]] = {
+    "anchors": ("anchors_gate", "anchors_rest"),
+    "margin": ("margin_anchors",),
+}
 
 
-def _shard_worker_index(name: str) -> int | None:
-    """Worker index of a width-sharded anchor/margin artifact filename, else None.
+def _shard_stem_index(name: str) -> tuple[str, int] | None:
+    """(stem head, worker index) of a width-sharded artifact filename, else None.
 
     Strict stem allowlist (``_WIDTH_SHARDED_STEMS``) so block shards / other
     manifests can never be swept by accident.
@@ -797,13 +804,25 @@ def _shard_worker_index(name: str) -> int | None:
     head, sep, idx = stem.rpartition("_w")
     if not sep or not idx.isdigit() or head not in _WIDTH_SHARDED_STEMS:
         return None
-    return int(idx)
+    return head, int(idx)
+
+
+def _shard_worker_index(name: str) -> int | None:
+    """Worker index of a width-sharded anchor/margin artifact filename, else None."""
+    parsed = _shard_stem_index(name)
+    return None if parsed is None else parsed[1]
 
 
 def _sweep_stale_width_shards(
-    anchors_dir: Path, margin_dir: Path, manifest_dir: Path, out_root: Path, num_workers: int
+    anchors_dir: Path,
+    margin_dir: Path,
+    manifest_dir: Path,
+    out_root: Path,
+    num_workers: int,
+    *,
+    family: str,
 ) -> int:
-    """Quarantine prior-width anchor/margin shards + their done records (r2 F3).
+    """Quarantine ONE family's prior-width shards + done records (r2 F3, r3 C1).
 
     Anchor/margin shard names are width-unnamespaced (``anchors_{batch}_w{i}``),
     and the designed cross-width resume (``_sharded_done_record``'s 8-GPU ->
@@ -814,13 +833,28 @@ def _sweep_stale_width_shards(
     waves), mapshift SUM-accumulates ``va_anchors_*.pt`` (double-counted anchor
     means), analysis ``_load_anchor_va`` dict-keys (silent last-write-wins).
 
+    r3 C1 scoping: only stems of ``_ARTIFACT_FAMILIES[family]`` are eligible —
+    a phase sweeps ONLY its OWN family at that family's width, so a narrow
+    deferred/salvage leg can never destroy the other family's wider live
+    shards. ``num_workers`` MUST be an explicit positive width (CLI-provided
+    or done-record-derived); an implicitly-defaulted width raises rather than
+    driving a destructive sweep.
+
     Quarantine, never delete (generated rollout text), into
     ``out_root/stale_width_quarantine/<dirname>/`` — OUTSIDE every uploaded dir
     (hub allow_patterns are fnmatch and cross "/", so a subdir of the
     anchors/margin/manifests dirs would still ride their P5 uploads) and
     outside every consumer glob (all non-recursive). Concurrent workers race
-    benignly: a sibling's rename winning leaves nothing to move.
+    benignly: a sibling's rename winning leaves nothing to move; the uuid
+    suffix keeps same-second re-quarantines from renaming over each other.
     """
+    assert family in _ARTIFACT_FAMILIES, family
+    if not (isinstance(num_workers, int) and num_workers >= 1):
+        raise ValueError(
+            f"stale-width sweep needs an explicit positive width, got {num_workers!r} — "
+            "an implicitly-defaulted width must never drive a destructive sweep (r3 C1)"
+        )
+    stems = _ARTIFACT_FAMILIES[family]
     moved = 0
     qroot = out_root / "stale_width_quarantine"
     for d in (anchors_dir, margin_dir, manifest_dir):
@@ -829,10 +863,13 @@ def _sweep_stale_width_shards(
         for p in sorted(d.iterdir()):
             if not p.is_file():
                 continue
-            widx = _shard_worker_index(p.name)
-            if widx is None or widx < num_workers:
+            parsed = _shard_stem_index(p.name)
+            if parsed is None:
                 continue
-            dest = qroot / d.name / f"{p.name}.stale-{int(time.time())}"
+            head, widx = parsed
+            if head not in stems or widx < num_workers:
+                continue
+            dest = qroot / d.name / f"{p.name}.stale-{int(time.time())}-{uuid.uuid4().hex[:8]}"
             dest.parent.mkdir(parents=True, exist_ok=True)
             try:
                 p.rename(dest)
@@ -841,13 +878,132 @@ def _sweep_stale_width_shards(
                 continue
             moved += 1
             logger.warning(
-                "[stale-width] quarantined prior-width shard %s -> %s (num_workers=%d)",
+                "[stale-width] quarantined prior-width %s shard %s -> %s (num_workers=%d)",
+                family,
                 p,
                 dest,
                 num_workers,
             )
     if moved:
-        logger.warning("[stale-width] quarantined %d prior-width artifacts", moved)
+        logger.warning("[stale-width] quarantined %d prior-width %s artifacts", moved, family)
+    return moved
+
+
+def _family_realized_width(manifest_dir: Path, family: str) -> int | None:
+    """Realized worker width of ONE artifact family, from its OWN done records.
+
+    r3 C1 fix (b): the upload-entry sweep must never take a width from the
+    CPU process's ``--num-workers`` (implicitly 1 on the r2 dispatcher path).
+    The width is derivable exactly when EVERY done-record kind of the family
+    (``_FAMILY_DONE_KINDS``) has worker indexes {0..W-1} all recorded at
+    ``num_workers == W`` for exactly one W (mirrors ``_margin_state``'s
+    completeness read). Returns None when NO width is complete (family
+    absent / mid-run / crashed) — the caller SKIPS the sweep: quarantining on
+    a guessed width silently destroys live shards, while surviving duplicates
+    fail LOUD in every consumer (judge uniqueness assert, mapshift/analysis
+    key checks). Raises RuntimeError when MULTIPLE widths are simultaneously
+    complete — an inconsistent store the phase-entry sweeps are designed to
+    prevent; sweeping at either width could destroy the live one.
+    """
+    kinds = _FAMILY_DONE_KINDS[family]
+    per_kind: dict[str, dict[int, set[int]]] = {k: {} for k in kinds}
+    for kind in kinds:
+        for p in sorted(manifest_dir.glob(f"{kind}_w*_done.json")):
+            try:
+                rec = json.loads(p.read_text())
+            except (json.JSONDecodeError, OSError) as e:
+                raise RuntimeError(
+                    f"unreadable done record {p} while deriving the {family} family "
+                    f"width — refusing to sweep on partial evidence: {e}"
+                ) from e
+            w = int(rec.get("num_workers", 0))
+            idx = int(rec.get("worker_index", -1))
+            if w > 0 and idx >= 0:
+                per_kind[kind].setdefault(w, set()).add(idx)
+    candidate_ws: set[int] = set()
+    for d in per_kind.values():
+        candidate_ws |= set(d)
+    complete = {
+        w for w in candidate_ws if all(per_kind[k].get(w, set()) >= set(range(w)) for k in kinds)
+    }
+    if not complete:
+        return None
+    if len(complete) > 1:
+        raise RuntimeError(
+            f"{family} family has MULTIPLE complete widths {sorted(complete)} in "
+            f"{manifest_dir} — inconsistent store (a phase-entry sweep should have "
+            "quarantined the prior width); refusing to sweep or upload past this"
+        )
+    return complete.pop()
+
+
+def _entry_sweep(cfg: RunConfig, family: str) -> int:
+    """Family-scoped stale prior-width sweep at a GENERATION phase entry (r3 C1).
+
+    A phase sweeps ONLY its OWN artifact family, at its OWN explicit width.
+    An implicitly-defaulted width (no ``--num-workers`` on the CLI) never
+    drives a destructive sweep — a width-less manual invocation would
+    otherwise quarantine every w1..wN live shard at implicit width 1 (r2 C1).
+    A skipped sweep degrades to LOUD downstream failure on true duplicates,
+    never silent data loss.
+    """
+    if not cfg.num_workers_explicit:
+        logger.warning(
+            "[stale-width] %s: --num-workers not explicitly provided — SKIPPING the "
+            "stale-width sweep (an implicit width-1 default must never quarantine "
+            "live shards; pass --num-workers to arm the sweep)",
+            family,
+        )
+        return 0
+    return _sweep_stale_width_shards(
+        cfg.anchors_dir,
+        cfg.margin_dir,
+        cfg.manifest_dir,
+        cfg.out_root,
+        cfg.num_workers,
+        family=family,
+    )
+
+
+def _upload_entry_sweeps(cfg: RunConfig) -> int:
+    """Upload-entry defense-in-depth sweeps, width DERIVED per family (r3 C1).
+
+    Each family's realized width comes from its OWN complete done-record set —
+    NEVER from this CPU process's ``--num-workers`` (r2 C1: the dispatcher's
+    upload leg ran at implicit width 1, quarantined every w1..wN live shard +
+    done record, and ``_upload_dir``'s exact-set verify then passed against
+    the POST-sweep local set — a silent self-consistent truncation). An
+    underivable width SKIPS that family's sweep (duplicates, if any, fail
+    loud in consumers); multiple complete widths raise via
+    ``_family_realized_width``.
+    """
+    moved = 0
+    for family in _ARTIFACT_FAMILIES:
+        width = _family_realized_width(cfg.manifest_dir, family)
+        if width is None:
+            logger.info(
+                "[upload] %s family width underivable from done records — skipping the "
+                "stale-width sweep for this family",
+                family,
+            )
+            continue
+        if cfg.num_workers_explicit and cfg.num_workers != width:
+            logger.warning(
+                "[upload] %s family realized width %d != this process's --num-workers %d "
+                "(expected on a narrower deferred/salvage leg) — sweeping at the DERIVED "
+                "width",
+                family,
+                width,
+                cfg.num_workers,
+            )
+        moved += _sweep_stale_width_shards(
+            cfg.anchors_dir,
+            cfg.margin_dir,
+            cfg.manifest_dir,
+            cfg.out_root,
+            width,
+            family=family,
+        )
     return moved
 
 
@@ -918,6 +1074,10 @@ class RunConfig:
     gpu_hours_budgeted: float
     pools_path: Path | None
     best_cells_path: Path | None = None
+    # r3 C1 fix (d): True ONLY when --num-workers was explicitly provided on
+    # the CLI. Default False so a width whose provenance is unknown can never
+    # arm a destructive stale-width sweep (_entry_sweep skips + warns).
+    num_workers_explicit: bool = False
 
     @property
     def rollouts_dir(self) -> Path:
@@ -1017,7 +1177,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "pilot refusal); never passed by the dispatcher — manual diagnosis only",
     )
     ap.add_argument("--worker-index", type=int, default=0)
-    ap.add_argument("--num-workers", type=int, default=1)
+    ap.add_argument(
+        "--num-workers",
+        type=int,
+        default=None,
+        help="realized worker width; omitted => shard single-worker (width 1) but NEVER "
+        "run a stale-width sweep — an implicitly-defaulted width must not quarantine "
+        "live shards (r3 C1)",
+    )
     ap.add_argument("--gpu-id", type=int, default=None, help="informational; CVD pins the device")
     ap.add_argument("--upload", choices=("hf", "local-mirror", "none"), default="hf")
     ap.add_argument(
@@ -1070,13 +1237,14 @@ def build_config(args: argparse.Namespace) -> RunConfig:
         force=args.force,
         force_past_halt_gates=args.force_past_halt_gates,
         worker_index=args.worker_index,
-        num_workers=args.num_workers,
+        num_workers=args.num_workers if args.num_workers is not None else 1,
         upload_mode=args.upload,
         upload_every=args.upload_every,
         planned_wall_h=args.planned_wall_h,
         gpu_hours_budgeted=args.gpu_hours_budgeted,
         pools_path=args.pools,
         best_cells_path=args.best_cells,
+        num_workers_explicit=args.num_workers is not None,
     )
 
 
@@ -2211,9 +2379,7 @@ def phase_anchors(cfg: RunConfig) -> int:
     logger.info(
         "[phase=anchors] worker=%d/%d smoke=%s", cfg.worker_index, cfg.num_workers, cfg.smoke
     )
-    _sweep_stale_width_shards(
-        cfg.anchors_dir, cfg.margin_dir, cfg.manifest_dir, cfg.out_root, cfg.num_workers
-    )
+    _entry_sweep(cfg, "anchors")
     # >= 2 draws even under --smoke: the disjoint-half floor F_act needs k >= 2.
     draws = 2 if cfg.smoke else cfg.anchor_draws
     _manifest, bank_sha = bank_manifest_and_sha()
@@ -2830,9 +2996,10 @@ def phase_margin(cfg: RunConfig) -> int:
     logger.info(
         "[phase=margin] worker=%d/%d smoke=%s", cfg.worker_index, cfg.num_workers, cfg.smoke
     )
-    _sweep_stale_width_shards(
-        cfg.anchors_dir, cfg.margin_dir, cfg.manifest_dir, cfg.out_root, cfg.num_workers
-    )
+    # r3 C1: margin sweeps ONLY the margin family — the deferred 1x H100 leg
+    # runs this phase at width 1 over an out-root holding a VALID 8-wide
+    # anchor family; a cross-family sweep would destroy 7/8 of it.
+    _entry_sweep(cfg, "margin")
     assert cfg.pools_path is not None and cfg.pools_path.exists(), (
         f"--pools file required for --phase margin (got {cfg.pools_path}) — the pools are "
         "judge-built from the gate-3 slice and staged by the orchestrator"
@@ -3272,12 +3439,12 @@ def _sentinel_payload(cfg: RunConfig, uploaded: dict[str, list[str]]) -> dict:
 def phase_upload(cfg: RunConfig) -> int:
     """P5: bulk upload every prefix, then write the pod sentinel."""
     logger.info("[phase=upload]")
-    # r2 F3 defense-in-depth: a manual `--phase upload` on a cross-width-resumed
-    # out-root must never ship prior-width duplicates (the anchors/margin phase
-    # entries run the same idempotent sweep).
-    _sweep_stale_width_shards(
-        cfg.anchors_dir, cfg.margin_dir, cfg.manifest_dir, cfg.out_root, cfg.num_workers
-    )
+    # r2 F3 / r3 C1 defense-in-depth: each family is swept at ITS OWN realized
+    # width, derived from its OWN done-record set — never this CPU process's
+    # --num-workers (r2 C1: the dispatcher's width-less upload leg ran at
+    # implicit width 1 and quarantined every w1..wN live shard before the
+    # bulk upload; the exact-set verify then passed on the truncated set).
+    _upload_entry_sweeps(cfg)
     uploaded: dict[str, list[str]] = {}
     uploaded["vc_bank"] = _upload_dir(
         cfg, cfg.bank_dir, f"{HF_PREFIX}/analysis_tensors/vc_bank", ["*.pt", "*.json"]

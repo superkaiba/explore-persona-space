@@ -51,7 +51,9 @@ def _touch(path: Path, text: str = "x") -> None:
 
 def test_stale_width_sweep_quarantines_prior_width_shards_and_done_records(tmp_path):
     """8->4 reshard fixture: w4/w5 artifacts (+ done records) quarantined,
-    surviving-worker files and non-width-sharded decoys untouched."""
+    surviving-worker files and non-width-sharded decoys untouched. r3 C1:
+    the sweep is FAMILY-scoped, so both families run at their explicit width
+    (F3's original purpose — remove true prior-width duplicates — preserved)."""
     out_root = tmp_path / "out"
     anchors = out_root / "anchors"
     margin = out_root / "margin"
@@ -78,7 +80,11 @@ def test_stale_width_sweep_quarantines_prior_width_shards_and_done_records(tmp_p
     for p in stale + kept:
         _touch(p)
 
-    moved = R._sweep_stale_width_shards(anchors, margin, manifests, out_root, num_workers=4)
+    moved = 0
+    for family in ("anchors", "margin"):
+        moved += R._sweep_stale_width_shards(
+            anchors, margin, manifests, out_root, num_workers=4, family=family
+        )
 
     assert moved == len(stale)
     qroot = out_root / "stale_width_quarantine"
@@ -89,7 +95,13 @@ def test_stale_width_sweep_quarantines_prior_width_shards_and_done_records(tmp_p
     for p in kept:
         assert p.exists(), f"sweep removed a surviving-width / decoy file: {p}"
     # Idempotent: a second sweep finds nothing.
-    assert R._sweep_stale_width_shards(anchors, margin, manifests, out_root, num_workers=4) == 0
+    for family in ("anchors", "margin"):
+        assert (
+            R._sweep_stale_width_shards(
+                anchors, margin, manifests, out_root, num_workers=4, family=family
+            )
+            == 0
+        )
 
 
 def test_shard_worker_index_allowlist():
