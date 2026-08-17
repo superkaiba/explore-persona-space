@@ -16,7 +16,7 @@ set -uo pipefail
 
 REPO=/workspace/explore-persona-space
 BRANCH=${EPM_1336_BRANCH:-issue-1336-insertarm}
-FIX_SHA="${EPM_1336_INSERTARM_FIX_SHA:?set EPM_1336_INSERTARM_FIX_SHA to the round's commit}"
+FIX_SHA="${EPM_1336_INSERTARM_FIX_SHA:?set EPM_1336_INSERTARM_FIX_SHA to this rounds commit}"
 
 OUT=${EPM_1336_OUT:-/workspace/eval_results/issue_1336/arrow_ladders}
 STAGE=${EPM_1336_STAGE:-/workspace/data/issue_1336/insertarm_stage}
