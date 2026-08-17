@@ -112,7 +112,11 @@ class AnswerPositionEditHook:
         self._expected_prompt_len = expected_prompt_len
         self._prefill_seen = False
         self._decode_step = 0
-        self.realized_edits = []
+        # NOTE: realized_edits is deliberately NOT reset here — telemetry
+        # accumulates across all K per-block draws (each draw re-arms), so
+        # block-level summaries see every draw's edits, not only the last
+        # draw's (r1 Minor: last-draw-only telemetry). It resets at __init__
+        # (one stack per generation call site).
 
     def arm_capture(self, batch: int, capture_k: int, expected_prompt_len: int) -> None:
         """Arm to record every row's output state at decode steps 1..capture_k."""

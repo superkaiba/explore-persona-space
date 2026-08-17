@@ -124,12 +124,31 @@ class RunConfig:
         return self.out_root / "rollouts"
 
     @property
+    def grid_namespace(self) -> str:
+        """Shard + done-file namespace — SMOKE artifacts never share paths with
+        production (r1 Major 2: shared ``blocks/`` shard paths let production
+        uploads sweep stale K=1 smoke shards under the production prefix)."""
+        return "smoke_blocks" if self.smoke else "blocks"
+
+    @property
+    def grid_blocks_dir(self) -> Path:
+        return self.rollouts_dir / self.grid_namespace
+
+    @property
+    def ce_namespace(self) -> str:
+        return "ce_control_smoke" if self.smoke else "ce_control"
+
+    @property
+    def ce_blocks_dir(self) -> Path:
+        return self.rollouts_dir / self.ce_namespace
+
+    @property
     def va_dir(self) -> Path:
-        return self.out_root / "va_store"
+        return self.out_root / ("va_store_smoke" if self.smoke else "va_store")
 
     @property
     def anchors_dir(self) -> Path:
-        return self.out_root / "anchors"
+        return self.out_root / ("anchors_smoke" if self.smoke else "anchors")
 
     @property
     def bank_dir(self) -> Path:
@@ -158,7 +177,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     ap.add_argument(
         "--phase",
-        choices=("envcheck", "bank", "donors", "grid", "anchors", "ce_control", "upload"),
+        choices=(
+            "envcheck",
+            "fitness2329",
+            "bank",
+            "donors",
+            "grid",
+            "anchors",
+            "ce_control",
+            "upload",
+        ),
         help="pipeline phase (required unless --import-check)",
     )
     ap.add_argument("--import-check", action="store_true")
@@ -307,7 +335,19 @@ def make_ids_fn(model_tag: str):
                 rendered[:idx] + f"{BANK2162.IM_START}{header}" + rendered[idx + len(anchor) :]
             )
         if model_tag == "q35":
-            assert "<think>" not in rendered, "thinking block leaked into q35 render"
+            # Qwen3.5's thinking-OFF convention (measured under the resolved
+            # transformers==5.15.0: `enable_thinking=False` renders a CLOSED
+            # EMPTY `<think>\n\n</think>` block in the generation prompt,
+            # while thinking-ON leaves a dangling open `<think>`). Assert
+            # closed-and-empty, not absence (r2 smoke caught the absence
+            # assert failing on the correct thinking-off render).
+            open_i = rendered.rfind("<think>")
+            if open_i >= 0:
+                close_i = rendered.rfind("</think>")
+                assert close_i > open_i, "OPEN thinking block in q35 render (thinking mode on)"
+                assert not rendered[open_i + len("<think>") : close_i].strip(), (
+                    "non-empty thinking block leaked into q35 render"
+                )
         ids = tok(rendered, add_special_tokens=False)["input_ids"]
         assert len(ids) >= 4, (len(ids), context.get("id"))
         return ids
@@ -316,17 +356,23 @@ def make_ids_fn(model_tag: str):
 
 
 def minimal_pair_check(ids_a: list[int], ids_b: list[int]) -> bool:
-    """True iff A/B differ only in ONE contiguous token window (plan A16)."""
-    p = 0
-    while p < min(len(ids_a), len(ids_b)) and ids_a[p] == ids_b[p]:
-        p += 1
-    s = 0
-    while (
-        s < min(len(ids_a), len(ids_b)) - p
-        and ids_a[len(ids_a) - 1 - s] == ids_b[len(ids_b) - 1 - s]
-    ):
-        s += 1
-    return p + s <= min(len(ids_a), len(ids_b))
+    """True iff A/B differ in AT MOST one contiguous token window (plan A16).
+
+    r1 Critical fix: the previous prefix/suffix-length predicate was a
+    TAUTOLOGY (its suffix loop was bounded by ``min_len - p``, so the returned
+    inequality always held and the rc-26 minimal-pair HALT could never fire).
+    This version computes the actual diff structure via
+    ``difflib.SequenceMatcher`` opcodes over the id lists: the minimal-pair
+    property holds iff at most ONE non-``equal`` opcode region exists
+    (identical lists trivially satisfy it). Adversarially unit-tested with
+    violating pairs (two disjoint edits, reversal, disjoint sequences) in
+    tests/test_issue2333_run_units.py.
+    """
+    import difflib
+
+    ops = difflib.SequenceMatcher(a=ids_a, b=ids_b, autojunk=False).get_opcodes()
+    n_diff_regions = sum(1 for op in ops if op[0] != "equal")
+    return n_diff_regions <= 1
 
 
 # ── model loading (q25 / q35) ─────────────────────────────────────────
@@ -403,8 +449,23 @@ def _R_cfg_proxy(cfg: RunConfig, model_id: str | None = None) -> R.RunConfig:
 
 
 def regime_fingerprint(cfg: RunConfig) -> str:
-    """Every output-affecting knob (resume key; #722 r3)."""
+    """Every output-affecting knob (resume key; #722 r3).
+
+    r1 blocker fix (incomplete-regime-fingerprint): now ALSO keys on
+    ``anchor_draws`` / ``ce_control_draws`` (anchor + ce outputs),
+    ``gen_batch`` / ``capture_batch`` (batched sampling + bf16 capture numerics
+    depend on batch composition), ``donor_k_max``, the RESOLVED transformers
+    version (the q35 env identity — plan §4.4 B-1), and the chat-template
+    identity (``enable_thinking`` pin). Field-sensitivity is unit-tested.
+    DELIBERATELY EXCLUDED: ``worker_index`` / ``num_workers`` — block outputs
+    are worker-independent under the claim queue; the anchors phase (the one
+    place sharding IS output-partitioning) keys its OWN done files + shard
+    filenames on ``w{i}of{N}`` instead (a global num_workers key would wrongly
+    invalidate every completed block on a width change).
+    """
     import hashlib
+
+    import transformers
 
     payload = json.dumps(
         {
@@ -417,12 +478,19 @@ def regime_fingerprint(cfg: RunConfig) -> str:
             "max_new_tokens": cfg.max_new_tokens,
             "grid_temperature": C.GRID_TEMPERATURE,
             "grid_draws": cfg.grid_draws,
+            "anchor_draws": cfg.anchor_draws,
+            "ce_control_draws": C.CE_CONTROL_DRAWS,
+            "gen_batch": cfg.gen_batch,
+            "capture_batch": cfg.capture_batch,
             "seed_base": cfg.seed_base,
             "smoke": cfg.smoke,
             "s1_cells": list(C.S1_CELLS),
             "s2_derangement_seed": C.S2_DERANGEMENT_SEED,
             "donor_max_new_tokens": C.DONOR_MAX_NEW_TOKENS,
+            "donor_k_max": C.DONOR_K_MAX,
             "arm_slugs": list(C.ARM_SLUGS),
+            "transformers": str(transformers.__version__),
+            "template_kwargs": {"enable_thinking": False} if cfg.model_tag == "q35" else {},
             "pins": {"p2162": C.PIN_2162, "p2094": C.PIN_2094, "fu1": C.PIN_FU1},
         },
         sort_keys=True,
@@ -507,9 +575,24 @@ def phase_envcheck(cfg: RunConfig, regime_fp: str) -> int:
     import transformers
     from transformers import AutoConfig, AutoTokenizer
 
-    report: dict = {"transformers": str(transformers.__version__), "model_id": cfg.model_id}
+    report: dict = {
+        "transformers": str(transformers.__version__),
+        "transformers_pin_expected": C.Q35_TRANSFORMERS_PIN if cfg.model_tag == "q35" else None,
+        "model_id": cfg.model_id,
+    }
     ok = True
     try:
+        if cfg.model_tag == "q35":
+            # Plan §4.4 B-1 version RESOLUTION: the pod env must run #2329's
+            # realized pin (gate 0b, origin/issue-2329) — the repo pin 4.57.6
+            # FAILS AutoConfig for qwen3_5 (A8). Run this phase under the
+            # resolved env (e.g. `uv run --with transformers==5.15.0 ...`).
+            assert str(transformers.__version__) == C.Q35_TRANSFORMERS_PIN, (
+                f"q35 envcheck must run under transformers=={C.Q35_TRANSFORMERS_PIN} "
+                f"(#2329 realized pin); got {transformers.__version__} — launch via "
+                f"`uv run --with 'transformers=={C.Q35_TRANSFORMERS_PIN}'` or the pod "
+                "venv pin (issue2329_dispatch.sh gate0b shape)"
+            )
         mcfg = AutoConfig.from_pretrained(cfg.model_id)
         text_cfg = getattr(mcfg, "text_config", mcfg)
         report["n_layers"] = int(text_cfg.num_hidden_layers)
@@ -553,23 +636,193 @@ def phase_envcheck(cfg: RunConfig, regime_fp: str) -> int:
     return RC_OK
 
 
+def _require_q35_env(cfg: RunConfig) -> None:
+    """q35 env-identity guard (r1 Major fix): every model-loading q35 phase
+    runs under the EXACT environment the envcheck gate PASSed — same
+    transformers version, envcheck verdict PASS. Enforces plan §4.4 B-1's
+    "run envcheck under the env the pod will install" mechanically."""
+    import transformers
+
+    path = cfg.gates_dir / "envcheck_report.json"
+    if not path.is_file():
+        raise RuntimeError(
+            f"q35 phase {cfg.phase!r} requires a PASSING envcheck first — "
+            f"{path} missing (run --phase envcheck under the resolved env)"
+        )
+    rec = json.loads(path.read_text(encoding="utf-8"))
+    if rec.get("verdict") != "PASS":
+        raise RuntimeError(f"q35 envcheck verdict is {rec.get('verdict')!r} — fix the env first")
+    if str(transformers.__version__) != rec.get("transformers"):
+        raise RuntimeError(
+            f"q35 env drifted since envcheck: transformers {transformers.__version__} "
+            f"!= envcheck's {rec.get('transformers')} — re-run envcheck under THIS env"
+        )
+
+
+# ── phase: fitness2329 (B-1 reuse-or-selfgen decision, VM/CPU-side) ───
+
+
+def phase_fitness2329(cfg: RunConfig, regime_fp: str) -> int:
+    """Plan §4.4 B-1 #2329 artifact FITNESS probe -> reuse-or-selfgen decision.
+
+    Probes each #2329 artifact class (``C.FITNESS_2329_CLASSES``) at ONE
+    resolved data-repo revision. Decision policy (plan §4.4 B-1): reuse ONLY
+    when EVERY check passes; ANY failed/unverifiable check => the declared
+    self-generation path (B0/B1), never partial reuse. A class that is
+    PRESENT still fails today: its realized keys/schema can only be verified
+    through the actual loader against an OBSERVED artifact (schema-from-
+    artifact rule), and no #2329 rows have landed — so a present class is
+    recorded ``present-unverified`` and treated as FAILED until a probe-able
+    artifact exists. The decision JSON is the launch-marker record.
+    """
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate.hub import retry_transient
+
+    api = HfApi()
+    info = retry_transient(
+        lambda: api.repo_info(C.DATA_REPO, repo_type="dataset"),
+        what="fitness2329 repo_info",
+    )
+    resolved_rev = str(info.sha)
+    checks: dict[str, dict] = {}
+    for prefix in C.FITNESS_2329_CLASSES:
+        try:
+            entries = retry_transient(
+                lambda p=prefix: list(
+                    api.list_repo_tree(
+                        C.DATA_REPO,
+                        path_in_repo=p,
+                        repo_type="dataset",
+                        revision=resolved_rev,
+                        recursive=False,
+                    )
+                ),
+                what=f"fitness2329 probe {prefix}",
+            )
+        except Exception as e:  # EntryNotFound and kin — absent class
+            checks[prefix] = {"result": "absent", "detail": f"{type(e).__name__}: {e}"[:200]}
+            continue
+        if not entries:
+            checks[prefix] = {"result": "absent", "detail": "prefix resolves empty"}
+            continue
+        checks[prefix] = {
+            "result": "present-unverified",
+            "n_entries": len(entries),
+            "detail": (
+                "realized-schema / pair-coverage / provenance-coherence checks require an "
+                "OBSERVED artifact schema (schema-from-artifact); treated as FAILED per "
+                "plan §4.4 B-1 (any failed check => selfgen) — re-probe after #2329 lands"
+            ),
+        }
+    all_pass = all(c["result"] == "pass" for c in checks.values()) and bool(checks)
+    decision = "reuse" if all_pass else "selfgen"
+    report = {
+        "decision": decision,
+        "policy": "reuse only if EVERY check passes (plan §4.4 B-1); else selfgen",
+        "resolved_data_repo_revision": resolved_rev,
+        "checks": checks,
+        "transformers_pin_resolved": C.Q35_TRANSFORMERS_PIN,
+        "transformers_pin_source": (
+            "origin/issue-2329 scripts/issue2329_run.py gate 0b (asserts ==5.15.0) + "
+            "issue2329_dispatch.sh TRANSFORMERS_PIN"
+        ),
+        **_repro(cfg),
+    }
+    R._write_json_atomic(cfg.gates_dir / "fitness2329_decision.json", report)
+    _write_phase_done(cfg, "fitness2329", regime_fp, {"decision": decision})
+    logger.info(
+        "[fitness2329] decision=%s @ %s (%d classes probed)",
+        decision,
+        resolved_rev[:12],
+        len(checks),
+    )
+    return RC_OK
+
+
 # ── phase: bank ───────────────────────────────────────────────────────
 
 
+class _ChunkStore:
+    """Per-unit intra-phase checkpointing (code-style.md checkpoint rule, T2:
+    bank = 195 contexts, donors = 390 rollouts — both > ~50 units; r1 blocker
+    bank-donor-restartability). Each chunk lands atomically the moment it
+    completes, keyed on the regime fingerprint; resume loads completed chunks
+    and SKIPS them; a cross-regime chunk is a HARD refusal (#722 r3)."""
+
+    def __init__(self, root: Path, regime_fp: str) -> None:
+        self.root = root
+        self.regime_fp = regime_fp
+        root.mkdir(parents=True, exist_ok=True)
+
+    def _path(self, key: str) -> Path:
+        return self.root / f"chunk_{key}.pt"
+
+    def load(self, key: str):
+        path = self._path(key)
+        if not path.exists():
+            return None
+        rec = torch.load(path, map_location="cpu", weights_only=False)
+        if rec.get("regime_fp") != self.regime_fp:
+            raise RuntimeError(
+                f"chunk {path} carries regime_fp={rec.get('regime_fp')!r} != "
+                f"{self.regime_fp!r} — refusing cross-regime chunk resume "
+                "(fresh --out-root or quarantine)"
+            )
+        return rec["payload"]
+
+    def save(self, key: str, payload) -> None:
+        path = self._path(key)
+        tmp = path.parent / f"{path.name}.tmp.pt"
+        torch.save({"regime_fp": self.regime_fp, "payload": payload}, tmp)
+        os.replace(tmp, path)
+
+    def clear(self) -> None:
+        for p in self.root.glob("chunk_*.pt"):
+            p.unlink()
+
+
+def _require_single_worker(cfg: RunConfig, phase: str) -> None:
+    """bank/donors are SINGLE-WORKER phases (named deviation from plan §9's
+    8-way rows, recorded in the r2 marker): both write ONE shared store
+    (vc_bank.pt / donors_<scheme>.pt) and their realized wall is minutes
+    (195 batched forwards / 390 greedy 8-token rollouts), so an 8-way fan-out
+    would duplicate the full workload and race the shared tmp files (r1
+    Critical bank-donor-compute-shape). Fail LOUD instead of racing."""
+    if cfg.num_workers != 1 or cfg.worker_index != 0:
+        raise RuntimeError(
+            f"phase {phase!r} is single-worker by design (shared-output store; "
+            f"minutes of wall) — launch with --num-workers 1, got "
+            f"worker_index={cfg.worker_index} num_workers={cfg.num_workers}"
+        )
+
+
 @torch.no_grad()
-def capture_bank(cfg: RunConfig, model, tok, contexts: dict[str, dict], ids_fn) -> dict:
+def capture_bank(
+    cfg: RunConfig, model, tok, contexts: dict[str, dict], ids_fn, regime_fp: str
+) -> dict:
     """All-layer v_ce + v_pe per context (right-padded chunks; BPE-seam-safe
-    ID-space positions — parent capture_bank recipe)."""
+    ID-space positions — parent capture_bank recipe). Chunk-checkpointed +
+    resumable (``_ChunkStore``)."""
     ctx_ids = {cid: ids_fn(tok, c) for cid, c in contexts.items()}
     prefix_ends = {cid: BANK94.prefix_end_index_multi(tok, ids) for cid, ids in ctx_ids.items()}
     layers = cfg.layers
     pad_id = tok.pad_token_id
     records: dict[str, dict] = {}
     order = list(contexts)
+    store = _ChunkStore(cfg.bank_dir / "bank_chunks", regime_fp)
     for start in range(0, len(order), cfg.capture_batch):
         chunk = order[start : start + cfg.capture_batch]
+        key = f"{start:04d}"
+        cached = store.load(key)
+        if cached is not None:
+            assert sorted(cached) == sorted(chunk), (key, sorted(cached), sorted(chunk))
+            records.update(cached)
+            logger.info("[bank] unit %d/%d contexts (resumed)", start + len(chunk), len(order))
+            continue
         ids, mask = R._right_pad([ctx_ids[c] for c in chunk], pad_id, cfg.device)
         captured = extract_layer_activations(model, ids, layers, attention_mask=mask)
+        chunk_records: dict[str, dict] = {}
         for j, cid in enumerate(chunk):
             ctx_len = len(ctx_ids[cid])
             pe = prefix_ends[cid]
@@ -577,7 +830,7 @@ def capture_bank(cfg: RunConfig, model, tok, contexts: dict[str, dict], ids_fn) 
             v_ce = torch.stack([captured[layer][j, ctx_len - 1] for layer in layers])
             v_pe = torch.stack([captured[layer][j, pe - 1] for layer in layers])
             assert v_ce.shape == (len(layers), cfg.hidden), v_ce.shape
-            records[cid] = {
+            chunk_records[cid] = {
                 "context_id": cid,
                 "set": contexts[cid]["__set"],
                 "ctx_len": ctx_len,
@@ -586,6 +839,8 @@ def capture_bank(cfg: RunConfig, model, tok, contexts: dict[str, dict], ids_fn) 
                 "v_pe": v_pe.float().cpu(),
             }
         del captured
+        store.save(key, chunk_records)
+        records.update(chunk_records)
         logger.info(
             "[bank] unit %d/%d contexts", min(start + cfg.capture_batch, len(order)), len(order)
         )
@@ -643,34 +898,39 @@ def capture_parity_gate(cfg: RunConfig, bank: dict) -> dict:
     }
 
 
+S2_DONOR_MAP_PROVENANCE = (
+    "fallback fresh seeded derangement over the 15 matched-query pair ids, seed "
+    f"{C.S2_DERANGEMENT_SEED} (constants.seeded_derangement) — the plan §4.2 NAMED "
+    "FALLBACK. The §4.2 PRIMARY (recover the parent's realized derangement from "
+    "eval_results/issue_2094/f_metrics/null_cells.jsonl donor_pair_id fields) is "
+    "AMBIGUOUS: 5/15 mq pairs carry >1 distinct pair-type donor across the parent's "
+    "null blocks (15/15 counting centroid donors; measured 2026-08-16, r2 re-probe)."
+)
+
+
 def build_donor_maps(s1_pairs: list, s2_pairs: list) -> dict[str, dict[str, str]]:
     """Shuffled-donor maps: S1 = the parent's value-constrained same-cell
     assignment (deterministic regeneration over the FULL 1404-pair set, seed
     BANK2162.SEED — the bank.json realized map), restricted to the survivor
-    cells; S2 = fresh seeded derangement (seed 23330; recovery of the parent's
-    realized derangement was ambiguous — constants.py note)."""
+    cells; S2 = the plan §4.2 NAMED FALLBACK — fresh seeded derangement, seed
+    ``C.S2_DERANGEMENT_SEED`` (23330) — because the primary (recovery from the
+    parent's null_cells.jsonl) is ambiguous (``S2_DONOR_MAP_PROVENANCE``)."""
     full = BANK2162.donor_assignment_2162(BANK2162.build_pairs())
     s1_ids = {p.pair_id for p in s1_pairs}
     s1_map = {pid: d for pid, d in full["shuffled"].items() if pid in s1_ids}
     assert set(s1_map) == s1_ids, "S1 donor map does not cover the survivor pairs"
     missing = [d for d in s1_map.values() if d not in s1_ids]
     assert not missing, f"S1 shuffled donors leave the survivor-cell pair set: {missing[:5]}"
-    # S2: the parent's SEEDED derangement (bank.json `donor_derangement` —
-    # deterministic regeneration over the full #2094 pair set, within-setting).
-    # NOT recovered from null_cells.jsonl (ambiguous: 6/15 mq pairs carry >1
-    # typeA donor across fu rounds); the canonical bank map is the plan §4.2
-    # primary, with constants.seeded_derangement(seed 23330) the named
-    # fallback should the bank regeneration ever fail.
-    full94 = BANK94.donor_derangement(BANK94.build_pairs())
-    s2_ids = {p.pair_id for p in s2_pairs}
-    s2_map = {pid: full94[pid] for pid in sorted(s2_ids)}
-    stray = [d for d in s2_map.values() if d not in s2_ids]
+    s2_ids = sorted(p.pair_id for p in s2_pairs)
+    s2_map = C.seeded_derangement(s2_ids, C.S2_DERANGEMENT_SEED)
+    stray = [d for d in s2_map.values() if d not in set(s2_ids)]
     assert not stray, f"S2 donors leave the matched-query set: {stray[:5]}"
     assert all(pid != d for pid, d in s2_map.items()), "S2 derangement has a fixed point"
     return {"shuffled": {**s1_map, **s2_map}}
 
 
 def phase_bank(cfg: RunConfig, regime_fp: str) -> int:
+    _require_single_worker(cfg, "bank")
     if (
         not cfg.force
         and _phase_done(cfg, "bank", regime_fp)
@@ -698,7 +958,7 @@ def phase_bank(cfg: RunConfig, regime_fp: str) -> int:
         )
         return RC_MINPAIR_GATE
 
-    bank = capture_bank(cfg, model, tok, contexts, ids_fn)
+    bank = capture_bank(cfg, model, tok, contexts, ids_fn, regime_fp)
 
     parity: dict = {"verdict": "N/A", "reason": "q35 has no pinned parent bank"}
     if cfg.model_tag == "q25" and not cfg.tiny:
@@ -738,10 +998,8 @@ def phase_bank(cfg: RunConfig, regime_fp: str) -> int:
         "minpair_violations": violations,
         "minpair_dropped_pair_ids": violations,
         "donor_maps": donor_maps,
-        "s2_donor_map_provenance": (
-            "fallback fresh seeded derangement, seed 23330 (parent recovery ambiguous: "
-            "6/15 mq pairs carry >1 typeA donor across null blocks)"
-        ),
+        "s2_donor_map_provenance": S2_DONOR_MAP_PROVENANCE,
+        "s2_derangement_seed": C.S2_DERANGEMENT_SEED,
         "capture_parity": parity,
         "regime_fp": regime_fp,
         **_repro(cfg),
@@ -751,6 +1009,7 @@ def phase_bank(cfg: RunConfig, regime_fp: str) -> int:
     tmp = cfg.bank_dir / "vc_bank.pt.tmp.pt"
     torch.save(bank, tmp)
     os.replace(tmp, cfg.bank_dir / "vc_bank.pt")
+    _ChunkStore(cfg.bank_dir / "bank_chunks", regime_fp).clear()  # merged into vc_bank.pt
     _write_phase_done(
         cfg, "bank", regime_fp, {"n_contexts": len(contexts), "n_minpair_viol": len(violations)}
     )
@@ -807,19 +1066,34 @@ def payload_for_arm(bank, pair, slot, arm, donor_maps, pairs_by_id):
 
 @torch.no_grad()
 def generate_donors(
-    cfg: RunConfig, model, tok, bank: dict, pairs: list, donor_maps, pairs_by_id, ctx_ids
+    cfg: RunConfig, model, tok, bank: dict, pairs: list, donor_maps, pairs_by_id, ctx_ids, regime_fp
 ) -> dict:
     """Greedy 8-token openings + answer-position states 1..3 (all layers).
 
     med: context A with the banked ce patch armed (steered payload) — capture
     stack records the ACTUAL decode states of the patched run. bstart: context
     B unhooked. Returns {scheme: {pair_id: rec}} + rollout text rows.
+    Chunk-checkpointed + resumable (``_ChunkStore``; 390 units > the ~50-unit
+    durability trigger).
     """
     out: dict[str, dict[str, dict]] = {"med": {}, "bstart": {}}
     text_rows: list[dict] = []
+    store = _ChunkStore(cfg.donors_dir / "donor_chunks", regime_fp)
     for scheme in C.ARM_SCHEMES:
         for start in range(0, len(pairs), cfg.gen_batch):
             chunk = pairs[start : start + cfg.gen_batch]
+            chunk_key = f"{scheme}_{start:04d}"
+            cached = store.load(chunk_key)
+            if cached is not None:
+                out[scheme].update(cached["recs"])
+                text_rows.extend(cached["text_rows"])
+                logger.info(
+                    "[donors:%s] unit %d/%d pairs (resumed)",
+                    scheme,
+                    start + len(chunk),
+                    len(pairs),
+                )
+                continue
             if scheme == "med":
                 rows = [ctx_ids[p.a] for p in chunk]
             else:
@@ -857,6 +1131,8 @@ def generate_donors(
                 cap_stack.remove()
                 if ce_stack is not None:
                     ce_stack.remove()
+            chunk_recs: dict[str, dict] = {}
+            chunk_text_rows: list[dict] = []
             for j, p in enumerate(chunk):
                 row = draws[0][j]
                 k_len = min(C.DONOR_K_MAX, row["n_completion_tokens"])
@@ -869,8 +1145,8 @@ def generate_donors(
                     "states": states[j][:k_len].to(torch.float16),  # (k_len, L, H)
                 }
                 assert rec["states"].shape[0] == k_len, (rec["states"].shape, k_len)
-                out[scheme][p.pair_id] = rec
-                text_rows.append(
+                chunk_recs[p.pair_id] = rec
+                chunk_text_rows.append(
                     {
                         "pair_id": p.pair_id,
                         "scheme": scheme,
@@ -879,6 +1155,9 @@ def generate_donors(
                         "text": row["text"],
                     }
                 )
+            store.save(chunk_key, {"recs": chunk_recs, "text_rows": chunk_text_rows})
+            out[scheme].update(chunk_recs)
+            text_rows.extend(chunk_text_rows)
             logger.info(
                 "[donors:%s] unit %d/%d pairs",
                 scheme,
@@ -1002,6 +1281,7 @@ def run_decode_injection_gate(cfg: RunConfig, model, tok, donors, pairs: list, c
 
 
 def phase_donors(cfg: RunConfig, regime_fp: str) -> int:
+    _require_single_worker(cfg, "donors")
     if not cfg.force and _phase_done(cfg, "donors", regime_fp):
         logger.info("[donors] done — skip")
         return RC_OK
@@ -1039,7 +1319,9 @@ def phase_donors(cfg: RunConfig, regime_fp: str) -> int:
         logger.error("[donors] prefill injection gate FAIL")
         return RC_INJECTION_GATE
 
-    donors_out = generate_donors(cfg, model, tok, bank, pairs, donor_maps, pairs_by_id, ctx_ids)
+    donors_out = generate_donors(
+        cfg, model, tok, bank, pairs, donor_maps, pairs_by_id, ctx_ids, regime_fp
+    )
     recs = donors_out["recs"]
 
     gate2 = run_decode_injection_gate(cfg, model, tok, recs, pairs, ctx_ids)
@@ -1064,6 +1346,7 @@ def phase_donors(cfg: RunConfig, regime_fp: str) -> int:
     R._write_json_atomic(
         cfg.donors_dir / "donor_edge_accounting.json", {"donor_lens": edge, **_repro(cfg)}
     )
+    _ChunkStore(cfg.donors_dir / "donor_chunks", regime_fp).clear()  # merged into donors_*.pt
     _write_phase_done(cfg, "donors", regime_fp, {"n_pairs": len(pairs)})
     logger.info("[donors] done: %d pairs x 2 schemes", len(pairs))
     return RC_OK
@@ -1115,6 +1398,31 @@ def smoke_blocks_2333(s1_pairs: list, s2_pairs: list, dropped: set[str]) -> list
                 blocks.append(R.Block(cell, arm_slug, variant, (pid,)))
     assert len(blocks) == 48, len(blocks)
     return blocks
+
+
+def _pair_gen_input(
+    kind: str, k: int, scheme: str, variant: str, p, donors, donor_maps, ctx_ids
+) -> tuple[list[int], torch.Tensor | None, list[int], str]:
+    """(gen_row_ids, donor_states_or_None, donor_ids, donor_pair_id) for ONE
+    (pair, arm, variant) — the single donor-selection code path shared by
+    run_block_2333 and the cap-regen pass (no drift between them)."""
+    own = donors[scheme][p.pair_id]
+    null_id = donor_maps["shuffled"][p.pair_id]
+    null_rec = donors[scheme][null_id]
+    if variant == "steered":
+        d_ids = own["token_ids"][:k]
+        d_states = own["states"][:k].float()
+        donor_pid = p.pair_id
+    else:
+        d_ids = null_rec["token_ids"][:k]
+        # scheme-matched norm-matched null: null donor states rescaled
+        # positionwise to the recipient's OWN scheme donor states.
+        d_states = BANK94.norm_match(null_rec["states"][:k].float(), own["states"][:k].float())
+        donor_pid = null_id
+    if kind == "patch":
+        return ctx_ids[p.a], d_states, d_ids, donor_pid
+    base = ctx_ids[p.a]
+    return [*base, *d_ids], None, d_ids, donor_pid
 
 
 def pair_dropped_for_arm(donors: dict, donor_maps: dict, pair_id: str, k: int, scheme: str) -> bool:
@@ -1219,34 +1527,17 @@ def run_block_2333(
         donor_ids_used: list[list[int]] = []
         donor_pids: list[str] = []
         for p in chunk:
-            own = donors[scheme][p.pair_id]
-            null_id = donor_maps["shuffled"][p.pair_id]
-            null_rec = donors[scheme][null_id]
-            if variant == "steered":
-                d_ids = own["token_ids"][:k]
-                d_states = own["states"][:k].float()
-                donor_pid = p.pair_id
-            else:
-                d_ids = null_rec["token_ids"][:k]
-                # scheme-matched norm-matched null: null donor states rescaled
-                # positionwise to the recipient's OWN scheme donor states.
-                d_states = BANK94.norm_match(
-                    null_rec["states"][:k].float(), own["states"][:k].float()
-                )
-                donor_pid = null_id
+            # Prefill token identity (plan §7) is carried by
+            # generate_batch_ids' pad-tail verbatim assert (the REAL gate —
+            # it re-reads the padded tensor tail); no in-block re-assert
+            # (the r1 one was vacuous: it compared a list to itself).
+            gen_row, d_states, d_ids, donor_pid = _pair_gen_input(
+                kind, k, scheme, variant, p, donors, donor_maps, ctx_ids
+            )
+            gen_rows.append(gen_row)
+            donors_full.append(d_states)
+            donor_ids_used.append(d_ids)
             donor_pids.append(donor_pid)
-            if kind == "patch":
-                gen_rows.append(ctx_ids[p.a])
-                donors_full.append(d_states)
-                donor_ids_used.append(d_ids)
-            else:
-                base = ctx_ids[p.a]
-                row = [*base, *d_ids]
-                # Prefill token-identity assert (plan §7): ids verbatim.
-                assert row[len(base) :] == list(d_ids)
-                gen_rows.append(row)
-                donors_full.append(None)
-                donor_ids_used.append(d_ids)
 
         stack = joint_answer_hooks(model) if kind == "patch" else None
         try:
@@ -1261,41 +1552,20 @@ def run_block_2333(
                 temperature=C.GRID_TEMPERATURE,
                 seed_base=cfg.seed_base,
             )
+            # realized_edits accumulates across ALL K draws (decode_hooks no
+            # longer resets it per arm_replace — r1 Minor: last-draw-only).
             telemetry = stack.realized_edits() if stack is not None else {}
         finally:
             if stack is not None:
                 stack.remove()
 
-        # Cap-hit regen (plan §6): >2% of this chunk's rows at cap => regen
-        # those rows once at 2x the cap (recorded, never silent).
-        n_rows_chunk = len(chunk) * cfg.grid_draws
-        cap_rows = [
-            (i, j)
-            for i, dr in enumerate(draws)
-            for j, r in enumerate(dr)
-            if R.cap_hit(r["n_completion_tokens"], cfg.max_new_tokens)
-        ]
-        n_regen = 0
-        if cap_rows and len(cap_rows) / n_rows_chunk > CAP_HIT_REGEN_FRAC:
-            for i, j in cap_rows:
-                sub_stack = joint_answer_hooks(model) if kind == "patch" else None
-                try:
-                    redraw = generate_batch_ids(
-                        model,
-                        tok,
-                        [gen_rows[j]],
-                        n=1,
-                        stack=sub_stack,
-                        donors_full=[donors_full[j]] if kind == "patch" else None,
-                        max_new_tokens=2 * cfg.max_new_tokens,
-                        temperature=C.GRID_TEMPERATURE,
-                        seed_base=cfg.seed_base + i,
-                    )
-                finally:
-                    if sub_stack is not None:
-                        sub_stack.remove()
-                draws[i][j] = {**redraw[0][0], "regenerated_at": 2 * cfg.max_new_tokens}
-                n_regen += 1
+        # NOTE: cap-hit REGEN deliberately does NOT happen here. The
+        # registered grain (plan §6) is per-CELL across BOTH variants —
+        # a per-chunk single-variant regen mis-fires in both directions and
+        # can give paired variants different caps (r1 blocker
+        # cap-regen-wrong-grain). phase_grid runs `_cap_regen_pass` AFTER the
+        # claim queue completes (all blocks done), pooling each (cell, arm)'s
+        # steered+null rows.
 
         # V_a capture (flat rows: pair x draw).
         full_rows, spans, h_pos, h_pay, keys = [], [], [], [], []
@@ -1334,8 +1604,17 @@ def run_block_2333(
         for i in range(cfg.grid_draws):
             for j, p in enumerate(chunk):
                 row = draws[i][j]
+                # Diagnostic ONLY — the judged whole response is the ONE-SHOT
+                # decode of donor_ids + gen_ids (a split decode can corrupt a
+                # multi-byte char / cleanup-space seam between the segments;
+                # r1 blocker prefill-response-decode).
                 donor_text = tok.decode(donor_ids_used[j], skip_special_tokens=True)
-                response = (donor_text + row["text"]) if kind == "prefill" else row["text"]
+                if kind == "prefill":
+                    response = tok.decode(
+                        [*donor_ids_used[j], *row["gen_ids"]], skip_special_tokens=True
+                    )
+                else:
+                    response = row["text"]
                 rows_out.append(
                     {
                         "block_key": block.key,
@@ -1381,7 +1660,7 @@ def run_block_2333(
             time.time() - t0,
         )
 
-    R._write_jsonl_atomic(cfg.rollouts_dir / "blocks" / f"{block.slug}.jsonl", rows_out)
+    R._write_jsonl_atomic(cfg.grid_blocks_dir / f"{block.slug}.jsonl", rows_out)
     cfg.va_dir.mkdir(parents=True, exist_ok=True)
     tmp = cfg.va_dir / f"{block.slug}.tmp.pt"
     torch.save(va_store, tmp)
@@ -1389,8 +1668,9 @@ def run_block_2333(
     n_cap = sum(1 for r in rows_out if r["cap_hit"])
     # Done-file namespace MUST match phase_grid's claim-queue namespace
     # ("smoke_blocks" under --smoke) — a "blocks"-default write makes the
-    # queue re-run every smoke block forever (namespace mismatch).
-    done_namespace = "smoke_blocks" if cfg.smoke else "blocks"
+    # queue re-run every smoke block forever (namespace mismatch). Shard +
+    # va dirs are namespaced the same way via the cfg properties (r1 Major 2).
+    done_namespace = cfg.grid_namespace
     R._write_json_atomic(
         R.block_done_path(cfg.out_root, block, done_namespace),
         {
@@ -1415,6 +1695,202 @@ def run_block_2333(
     )
 
 
+def _load_shard_rows(path: Path) -> list[dict]:
+    return [
+        json.loads(line) for line in path.read_text(encoding="utf-8").split("\n") if line.strip()
+    ]
+
+
+def _was_capped_at_original(row: dict, cap: int) -> bool:
+    """Original-cap status, idempotent across regen re-runs: a row already
+    regenerated (regenerated_at set) WAS capped at the original cap."""
+    if row.get("regenerated_at") is not None:
+        return True
+    return R.cap_hit(row["n_completion_tokens"], cap)
+
+
+def _regen_block_capped_rows(
+    cfg: RunConfig, model, tok, donors, donor_maps, pairs_by_id, ctx_ids, block: R.Block
+) -> int:
+    """Regenerate THIS block's cap-hit rows at 2x the cap (both-variant callers
+    ensure the paired variant gets the same treatment), update the shard + va
+    store + done record atomically. Returns the number of rows regenerated."""
+    arm_slug, variant = block.slot, block.arm
+    kind, k, scheme = C.parse_arm(arm_slug)
+    shard_path = cfg.grid_blocks_dir / f"{block.slug}.jsonl"
+    rows = _load_shard_rows(shard_path)
+    todo = [
+        idx
+        for idx, r in enumerate(rows)
+        if r.get("regenerated_at") is None
+        and R.cap_hit(r["n_completion_tokens"], cfg.max_new_tokens)
+    ]
+    if not todo:
+        return 0
+    va_path = cfg.va_dir / f"{block.slug}.pt"
+    va_store = (
+        torch.load(va_path, map_location="cpu", weights_only=False) if va_path.exists() else {}
+    )
+    by_draw: dict[int, list[int]] = {}
+    for idx in todo:
+        by_draw.setdefault(int(rows[idx]["draw"]), []).append(idx)
+    n_regen = 0
+    for draw, idxs in sorted(by_draw.items()):
+        for start in range(0, len(idxs), cfg.gen_batch):
+            batch_idx = idxs[start : start + cfg.gen_batch]
+            inputs = [
+                _pair_gen_input(
+                    kind,
+                    k,
+                    scheme,
+                    variant,
+                    pairs_by_id[rows[i]["pair_id"]],
+                    donors,
+                    donor_maps,
+                    ctx_ids,
+                )
+                for i in batch_idx
+            ]
+            gen_rows = [t[0] for t in inputs]
+            d_states = [t[1] for t in inputs]
+            d_ids = [t[2] for t in inputs]
+            stack = joint_answer_hooks(model) if kind == "patch" else None
+            try:
+                redraw = generate_batch_ids(
+                    model,
+                    tok,
+                    gen_rows,
+                    n=1,
+                    stack=stack,
+                    donors_full=d_states if kind == "patch" else None,
+                    max_new_tokens=2 * cfg.max_new_tokens,
+                    temperature=C.GRID_TEMPERATURE,
+                    seed_base=cfg.seed_base + draw,
+                )
+            finally:
+                if stack is not None:
+                    stack.remove()
+            # V_a recapture for the regenerated rows.
+            full_rows, spans, h_pos, h_pay, keys = [], [], [], [], []
+            for j, i in enumerate(batch_idx):
+                new = redraw[0][j]
+                r = rows[i]
+                base = ctx_ids[pairs_by_id[r["pair_id"]].a]
+                key = r["va_key"]
+                if kind == "patch":
+                    if not new["gen_ids"]:
+                        va_store.pop(key, None)  # stale entry from the capped draw
+                    else:
+                        k_eff = min(k, len(new["gen_ids"]))
+                        full_rows.append([*base, *new["gen_ids"]])
+                        spans.append((len(base), len(base) + len(new["gen_ids"])))
+                        h_pos.append(tuple(range(len(base), len(base) + k_eff)))
+                        h_pay.append(d_states[j][:k_eff])
+                        keys.append(key)
+                else:
+                    full_rows.append([*base, *d_ids[j], *new["gen_ids"]])
+                    spans.append((len(base), len(base) + len(d_ids[j]) + len(new["gen_ids"])))
+                    keys.append(key)
+                response = (
+                    tok.decode([*d_ids[j], *new["gen_ids"]], skip_special_tokens=True)
+                    if kind == "prefill"
+                    else new["text"]
+                )
+                rows[i] = {
+                    **r,
+                    "n_completion_tokens": new["n_completion_tokens"],
+                    "cap_hit": R.cap_hit(new["n_completion_tokens"], 2 * cfg.max_new_tokens),
+                    "regenerated_at": 2 * cfg.max_new_tokens,
+                    "response_text": response,
+                    "continuation_text": new["text"],
+                }
+                n_regen += 1
+            if full_rows:
+                vas = _capture_va(
+                    cfg,
+                    model,
+                    tok,
+                    full_rows,
+                    spans,
+                    h_pos if kind == "patch" else None,
+                    h_pay if kind == "patch" else None,
+                )
+                va_store.update(dict(zip(keys, vas)))
+    R._write_jsonl_atomic(shard_path, rows)
+    tmp = cfg.va_dir / f"{block.slug}.regen.tmp.pt"
+    torch.save(va_store, tmp)
+    os.replace(tmp, va_path)
+    done_path = R.block_done_path(cfg.out_root, block, cfg.grid_namespace)
+    done = json.loads(done_path.read_text(encoding="utf-8"))
+    done["n_cap_hit"] = sum(1 for r in rows if r["cap_hit"])
+    done["cap_regen_applied"] = done.get("cap_regen_applied", 0) + n_regen
+    R._write_json_atomic(done_path, done)
+    logger.info(
+        "[capregen] block %s: regenerated %d rows at %d", block.key, n_regen, 2 * cfg.max_new_tokens
+    )
+    return n_regen
+
+
+def _cap_regen_pass(
+    cfg: RunConfig,
+    model,
+    tok,
+    donors,
+    donor_maps,
+    pairs_by_id,
+    ctx_ids,
+    blocks: list[R.Block],
+    regime_fp: str,
+) -> None:
+    """Registered cap-hit regen (plan §6, r1 blocker cap-regen-wrong-grain):
+    the trigger is evaluated per (cell x arm) POOLING BOTH VARIANTS' rows —
+    frac(cap-hit at the original cap) > 2% => regenerate the cap-hit rows of
+    BOTH paired variants at 2x the cap. Runs AFTER run_claim_queue returned
+    (the queue polls until EVERY block is done, so both variants exist), as
+    its own claim-queue over (cell, arm) pseudo-blocks — single-flight across
+    the 8 workers, resumable, fingerprint-keyed."""
+    by_unit: dict[tuple[str, str], dict[str, R.Block]] = {}
+    for b in blocks:
+        by_unit.setdefault((b.cell, b.slot), {})[b.arm] = b
+    pseudo = [R.Block(cell, slug, "capregen", ()) for (cell, slug) in sorted(by_unit)]
+    regen_ns = f"{cfg.grid_namespace}_capregen"
+
+    def run_one(pb: R.Block) -> None:
+        unit = by_unit[(pb.cell, pb.slot)]
+        rows_all = [
+            r
+            for blk in unit.values()
+            for r in _load_shard_rows(cfg.grid_blocks_dir / f"{blk.slug}.jsonl")
+        ]
+        n_cap = sum(1 for r in rows_all if _was_capped_at_original(r, cfg.max_new_tokens))
+        frac = n_cap / len(rows_all) if rows_all else 0.0
+        fire = bool(n_cap) and frac > CAP_HIT_REGEN_FRAC
+        n_regen = 0
+        if fire:
+            for blk in unit.values():
+                n_regen += _regen_block_capped_rows(
+                    cfg, model, tok, donors, donor_maps, pairs_by_id, ctx_ids, blk
+                )
+        R._write_json_atomic(
+            R.block_done_path(cfg.out_root, pb, regen_ns),
+            {
+                "key": pb.key,
+                "regime_fp": regime_fp,
+                "cap_frac_original": frac,
+                "n_cap_hit_original": n_cap,
+                "n_rows": len(rows_all),
+                "threshold": CAP_HIT_REGEN_FRAC,
+                "fired": fire,
+                "n_regenerated": n_regen,
+                "variants_pooled": sorted(unit),
+                **_repro(cfg),
+            },
+        )
+
+    stats = R.run_claim_queue(_R_cfg_proxy(cfg), pseudo, regime_fp, regen_ns, run_one)
+    logger.info("[capregen] pass complete over %d (cell, arm) units: %s", len(pseudo), stats)
+
+
 def phase_grid(cfg: RunConfig, regime_fp: str) -> int:
     manifest, bank = _load_bank(cfg)
     donors = _load_donors(cfg)
@@ -1430,10 +1906,9 @@ def phase_grid(cfg: RunConfig, regime_fp: str) -> int:
 
     if cfg.smoke:
         blocks = smoke_blocks_2333(s1_pairs, s2_pairs, dropped)
-        namespace = "smoke_blocks"
     else:
         blocks = enumerate_blocks_2333(s1_pairs, s2_pairs, dropped)
-        namespace = "blocks"
+    namespace = cfg.grid_namespace
     if cfg.only_blocks:
         blocks = [b for b in blocks if any(s in b.key for s in cfg.only_blocks)]
         assert blocks, f"--only-blocks {cfg.only_blocks} matched nothing"
@@ -1473,6 +1948,10 @@ def phase_grid(cfg: RunConfig, regime_fp: str) -> int:
         return RC_OK
 
     stats = R.run_claim_queue(_R_cfg_proxy(cfg), blocks, regime_fp, namespace, run_one)
+    # Registered cap-hit regen (plan §6) — AFTER the queue (all blocks done,
+    # incl. other workers': run_claim_queue polls to completion), pooled per
+    # (cell, arm) across BOTH variants (r1 blocker cap-regen-wrong-grain).
+    _cap_regen_pass(cfg, model, tok, donors, donor_maps, pairs_by_id, ctx_ids, blocks, regime_fp)
     _maybe_incremental_upload(cfg, force=True)
     _write_phase_done(
         cfg, f"grid_{namespace}", regime_fp, {"stats": stats, "n_blocks": len(blocks)}
@@ -1493,19 +1972,41 @@ def _maybe_incremental_upload(cfg: RunConfig, force: bool = False) -> None:
     if not force and _UPLOAD_COUNTER["blocks_since"] < cfg.upload_every:
         return
     _UPLOAD_COUNTER["blocks_since"] = 0
-    R.upload_dir_hf(cfg.rollouts_dir, f"{hf_prefix(cfg)}/rollouts", ["blocks/*.jsonl"])
-    R.upload_dir_hf(cfg.va_dir, f"{hf_prefix(cfg)}/va_store", ["*.pt"])
+    # Remote paths mirror the local NAMESPACED dir names, so smoke artifacts
+    # can never land under (or sweep) the production prefixes (r1 Major 2).
+    R.upload_dir_hf(
+        cfg.rollouts_dir, f"{hf_prefix(cfg)}/rollouts", [f"{cfg.grid_namespace}/*.jsonl"]
+    )
+    R.upload_dir_hf(cfg.va_dir, f"{hf_prefix(cfg)}/{cfg.va_dir.name}", ["*.pt"])
 
 
 # ── phase: anchors (q35) ──────────────────────────────────────────────
 
 
+def _anchors_stale_width_guard(cfg: RunConfig) -> None:
+    """Fail loud when anchors shards from a DIFFERENT sharding width exist:
+    ``sorted(contexts)[i::N]`` partitions depend on N, so mixed-width shards
+    double-cover or gap contexts silently (num_workers is deliberately OUT of
+    the global regime fingerprint — the width is anchored HERE instead)."""
+    tag = f"of{cfg.num_workers}."
+    stale = [p.name for p in sorted(cfg.anchors_dir.glob("anchors_w*.jsonl")) if tag not in p.name]
+    if stale:
+        raise RuntimeError(
+            f"anchors shards from a different --num-workers width exist: {stale}; "
+            f"current width is {cfg.num_workers}. Remove/relocate them (or rerun at "
+            "the original width) before proceeding."
+        )
+
+
 def phase_anchors(cfg: RunConfig, regime_fp: str) -> int:
     assert cfg.model_tag == "q35", "anchors phase is q35-only (q25 anchors are banked, plan §4.4)"
-    phase_key = f"anchors_w{cfg.worker_index}"
+    shard_key = f"w{cfg.worker_index}of{cfg.num_workers}"
+    phase_key = f"anchors_{shard_key}"
     if not cfg.force and _phase_done(cfg, phase_key, regime_fp):
         logger.info("[anchors] done — skip")
         return RC_OK
+    cfg.anchors_dir.mkdir(parents=True, exist_ok=True)
+    _anchors_stale_width_guard(cfg)
     s1_pairs, s2_pairs = build_pair_universe()
     contexts = build_context_universe(s1_pairs, s2_pairs)
     ids_fn = make_ids_fn(cfg.model_tag)
@@ -1556,16 +2057,223 @@ def phase_anchors(cfg: RunConfig, regime_fp: str) -> int:
         logger.info(
             "[anchors] unit %d/%d contexts", min(start + cfg.gen_batch, len(order)), len(order)
         )
-    R._write_jsonl_atomic(cfg.anchors_dir / f"anchors_w{cfg.worker_index}.jsonl", rows_out)
-    cfg.anchors_dir.mkdir(parents=True, exist_ok=True)
-    tmp = cfg.anchors_dir / f"va_anchors_w{cfg.worker_index}.tmp.pt"
+    # Registered cap policy (plan §6) applied to the anchor rows this worker
+    # owns: pooled cap-hit frac > 2% => regenerate the capped rows at 2x cap
+    # (no variants/pairs here — the pool is this worker's context slice; the
+    # per-worker grain is disclosed in the phase-done record).
+    n_cap0 = sum(1 for r in rows_out if r["cap_hit"])
+    frac0 = n_cap0 / len(rows_out) if rows_out else 0.0
+    n_regen = 0
+    if n_cap0 and frac0 > CAP_HIT_REGEN_FRAC:
+        by_draw: dict[int, list[int]] = {}
+        for idx, r in enumerate(rows_out):
+            if r["cap_hit"]:
+                by_draw.setdefault(int(r["draw"]), []).append(idx)
+        for draw, idxs in sorted(by_draw.items()):
+            for start in range(0, len(idxs), cfg.gen_batch):
+                batch_idx = idxs[start : start + cfg.gen_batch]
+                gen_rows = [ids_fn(tok, contexts[rows_out[i]["context_id"]]) for i in batch_idx]
+                redraw = generate_batch_ids(
+                    model,
+                    tok,
+                    gen_rows,
+                    n=1,
+                    max_new_tokens=2 * cfg.max_new_tokens,
+                    temperature=C.GRID_TEMPERATURE,
+                    seed_base=cfg.seed_base + draw,
+                )
+                full_rows, spans, keys = [], [], []
+                for j, i in enumerate(batch_idx):
+                    new = redraw[0][j]
+                    r = rows_out[i]
+                    if not new["gen_ids"]:
+                        va_store.pop(r["va_key"], None)
+                    else:
+                        full_rows.append([*gen_rows[j], *new["gen_ids"]])
+                        spans.append((len(gen_rows[j]), len(gen_rows[j]) + len(new["gen_ids"])))
+                        keys.append(r["va_key"])
+                    rows_out[i] = {
+                        **r,
+                        "n_completion_tokens": new["n_completion_tokens"],
+                        "cap_hit": R.cap_hit(new["n_completion_tokens"], 2 * cfg.max_new_tokens),
+                        "regenerated_at": 2 * cfg.max_new_tokens,
+                        "response_text": new["text"],
+                    }
+                    n_regen += 1
+                if full_rows:
+                    vas = _capture_va(cfg, model, tok, full_rows, spans, None, None)
+                    va_store.update(dict(zip(keys, vas)))
+        logger.info("[anchors] cap regen fired: frac=%.3f, %d rows at 2x cap", frac0, n_regen)
+
+    R._write_jsonl_atomic(cfg.anchors_dir / f"anchors_{shard_key}.jsonl", rows_out)
+    tmp = cfg.anchors_dir / f"va_anchors_{shard_key}.tmp.pt"
     torch.save(va_store, tmp)
-    os.replace(tmp, cfg.anchors_dir / f"va_anchors_w{cfg.worker_index}.pt")
-    _write_phase_done(cfg, phase_key, regime_fp, {"n_rows": len(rows_out), "draws": draws_n})
+    os.replace(tmp, cfg.anchors_dir / f"va_anchors_{shard_key}.pt")
+    _write_phase_done(
+        cfg,
+        phase_key,
+        regime_fp,
+        {
+            "n_rows": len(rows_out),
+            "draws": draws_n,
+            "num_workers": cfg.num_workers,
+            "cap_frac_original": frac0,
+            "cap_regen_applied": n_regen,
+            "cap_regen_grain": "per-worker context slice (pooled)",
+        },
+    )
     return RC_OK
 
 
 # ── phase: ce_control (q35) ───────────────────────────────────────────
+
+
+def _ce_regen_block_capped_rows(
+    cfg: RunConfig, model, tok, bank, donor_maps, pairs_by_id, ctx_ids, recs, block: R.Block
+) -> int:
+    """ce_control sibling of _regen_block_capped_rows: regenerate THIS ce
+    block's cap-hit rows at 2x the cap (prefill-hook re-armed per draw),
+    update shard + va store + done record atomically."""
+    arm = "steered" if block.arm == "steered" else "shuffled"
+    shard_path = cfg.ce_blocks_dir / f"{block.slug}.jsonl"
+    rows = _load_shard_rows(shard_path)
+    todo = [
+        idx
+        for idx, r in enumerate(rows)
+        if r.get("regenerated_at") is None
+        and R.cap_hit(r["n_completion_tokens"], cfg.max_new_tokens)
+    ]
+    if not todo:
+        return 0
+    va_path = cfg.va_dir / f"ce_{block.slug}.pt"
+    va_store = (
+        torch.load(va_path, map_location="cpu", weights_only=False) if va_path.exists() else {}
+    )
+    by_draw: dict[int, list[int]] = {}
+    for idx in todo:
+        by_draw.setdefault(int(rows[idx]["draw"]), []).append(idx)
+    n_regen = 0
+    for draw, idxs in sorted(by_draw.items()):
+        for start in range(0, len(idxs), cfg.gen_batch):
+            batch_idx = idxs[start : start + cfg.gen_batch]
+            chunk = [pairs_by_id[rows[i]["pair_id"]] for i in batch_idx]
+            gen_rows = [ctx_ids[p.a] for p in chunk]
+            T = max(len(r) for r in gen_rows)
+            payloads, positions = [], []
+            for p in chunk:
+                payload, _donor_pid = payload_for_arm(bank, p, "ce", arm, donor_maps, pairs_by_id)
+                payloads.append(payload)
+                positions.append(
+                    (R.slot_position(recs[p.a]["ctx_len"], recs[p.a]["prefix_end"], "ce"),)
+                )
+            stack = R._arm_hook_all_layers(
+                model, _R_cfg_proxy(cfg), [len(r) for r in gen_rows], positions, payloads, T
+            )
+            try:
+                stack.arm(T)
+                redraw = generate_batch_ids(
+                    model,
+                    tok,
+                    gen_rows,
+                    n=1,
+                    max_new_tokens=2 * cfg.max_new_tokens,
+                    temperature=C.GRID_TEMPERATURE,
+                    seed_base=cfg.seed_base + draw,
+                )
+            finally:
+                stack.remove()
+            full_rows, spans, h_pos, h_pay, keys = [], [], [], [], []
+            for j, i in enumerate(batch_idx):
+                new = redraw[0][j]
+                r = rows[i]
+                base = ctx_ids[chunk[j].a]
+                if not new["gen_ids"]:
+                    va_store.pop(r["va_key"], None)  # stale entry from the capped draw
+                else:
+                    full_rows.append([*base, *new["gen_ids"]])
+                    spans.append((len(base), len(base) + len(new["gen_ids"])))
+                    h_pos.append(positions[j])
+                    h_pay.append(payloads[j])
+                    keys.append(r["va_key"])
+                rows[i] = {
+                    **r,
+                    "n_completion_tokens": new["n_completion_tokens"],
+                    "cap_hit": R.cap_hit(new["n_completion_tokens"], 2 * cfg.max_new_tokens),
+                    "regenerated_at": 2 * cfg.max_new_tokens,
+                    "response_text": new["text"],
+                    "continuation_text": new["text"],
+                }
+                n_regen += 1
+            if full_rows:
+                vas = _capture_va(cfg, model, tok, full_rows, spans, h_pos, h_pay)
+                va_store.update(dict(zip(keys, vas)))
+    R._write_jsonl_atomic(shard_path, rows)
+    tmp = cfg.va_dir / f"ce_{block.slug}.regen.tmp.pt"
+    torch.save(va_store, tmp)
+    os.replace(tmp, va_path)
+    done_path = R.block_done_path(cfg.out_root, block, cfg.ce_namespace)
+    done = json.loads(done_path.read_text(encoding="utf-8"))
+    done["n_cap_hit"] = sum(1 for r in rows if r["cap_hit"])
+    done["cap_regen_applied"] = done.get("cap_regen_applied", 0) + n_regen
+    R._write_json_atomic(done_path, done)
+    logger.info("[capregen:ce] block %s: regenerated %d rows", block.key, n_regen)
+    return n_regen
+
+
+def _ce_cap_regen_pass(
+    cfg: RunConfig,
+    model,
+    tok,
+    bank,
+    donor_maps,
+    pairs_by_id,
+    ctx_ids,
+    recs,
+    blocks: list[R.Block],
+    regime_fp: str,
+) -> None:
+    """Cap-hit regen for ce_control — same registered grain as _cap_regen_pass
+    (per cell, pooled across BOTH variants; plan §6), claim-queued."""
+    by_cell: dict[str, dict[str, R.Block]] = {}
+    for b in blocks:
+        by_cell.setdefault(b.cell, {})[b.arm] = b
+    pseudo = [R.Block(cell, "ce_replace", "capregen", ()) for cell in sorted(by_cell)]
+    regen_ns = f"{cfg.ce_namespace}_capregen"
+
+    def run_one(pb: R.Block) -> None:
+        unit = by_cell[pb.cell]
+        rows_all = [
+            r
+            for blk in unit.values()
+            for r in _load_shard_rows(cfg.ce_blocks_dir / f"{blk.slug}.jsonl")
+        ]
+        n_cap = sum(1 for r in rows_all if _was_capped_at_original(r, cfg.max_new_tokens))
+        frac = n_cap / len(rows_all) if rows_all else 0.0
+        fire = bool(n_cap) and frac > CAP_HIT_REGEN_FRAC
+        n_regen = 0
+        if fire:
+            for blk in unit.values():
+                n_regen += _ce_regen_block_capped_rows(
+                    cfg, model, tok, bank, donor_maps, pairs_by_id, ctx_ids, recs, blk
+                )
+        R._write_json_atomic(
+            R.block_done_path(cfg.out_root, pb, regen_ns),
+            {
+                "key": pb.key,
+                "regime_fp": regime_fp,
+                "cap_frac_original": frac,
+                "n_cap_hit_original": n_cap,
+                "n_rows": len(rows_all),
+                "threshold": CAP_HIT_REGEN_FRAC,
+                "fired": fire,
+                "n_regenerated": n_regen,
+                "variants_pooled": sorted(unit),
+                **_repro(cfg),
+            },
+        )
+
+    stats = R.run_claim_queue(_R_cfg_proxy(cfg), pseudo, regime_fp, regen_ns, run_one)
+    logger.info("[capregen:ce] pass complete over %d cells: %s", len(pseudo), stats)
 
 
 def phase_ce_control(cfg: RunConfig, regime_fp: str) -> int:
@@ -1677,24 +2385,31 @@ def phase_ce_control(cfg: RunConfig, regime_fp: str) -> int:
                             "va_key": f"{p.pair_id}|ce_replace|{block.arm}|d{i}",
                         }
                     )
-        R._write_jsonl_atomic(cfg.rollouts_dir / "ce_control" / f"{block.slug}.jsonl", rows_out)
+        R._write_jsonl_atomic(cfg.ce_blocks_dir / f"{block.slug}.jsonl", rows_out)
         cfg.va_dir.mkdir(parents=True, exist_ok=True)
         tmp = cfg.va_dir / f"ce_{block.slug}.tmp.pt"
         torch.save(va_store, tmp)
         os.replace(tmp, cfg.va_dir / f"ce_{block.slug}.pt")
         R._write_json_atomic(
-            R.block_done_path(cfg.out_root, block, "ce_control"),
+            R.block_done_path(cfg.out_root, block, cfg.ce_namespace),
             {
                 "key": block.key,
                 "regime_fp": regime_fp,
                 "n_rows": len(rows_out),
+                "n_cap_hit": sum(1 for r in rows_out if r["cap_hit"]),
                 "wall_s": time.time() - t0,
                 **_repro(cfg),
             },
         )
 
-    stats = R.run_claim_queue(_R_cfg_proxy(cfg), blocks, regime_fp, "ce_control", run_one)
-    _write_phase_done(cfg, "ce_control", regime_fp, {"stats": stats, "n_blocks": len(blocks)})
+    stats = R.run_claim_queue(_R_cfg_proxy(cfg), blocks, regime_fp, cfg.ce_namespace, run_one)
+    # ce_control inherits the SAME registered cap policy (plan §6): pooled
+    # per cell across both variants, regen at 2x cap (r1: fresh q35 rows
+    # need the policy too — the banked q25 ce cells were produced under it).
+    _ce_cap_regen_pass(
+        cfg, model, tok, bank, donor_maps, pairs_by_id, ctx_ids, recs, blocks, regime_fp
+    )
+    _write_phase_done(cfg, cfg.ce_namespace, regime_fp, {"stats": stats, "n_blocks": len(blocks)})
     return RC_OK
 
 
@@ -1705,18 +2420,31 @@ def phase_upload(cfg: RunConfig, regime_fp: str) -> int:
     prefix = hf_prefix(cfg)
     uploaded: dict[str, int] = {}
     if cfg.upload_mode == "hf":
+        # Every leg mirrors the local NAMESPACED dir/pattern names, so a smoke
+        # run's upload can only ever land under smoke-named remote paths and a
+        # production upload can never sweep smoke shards (r1 Major 2).
         legs = [
-            (cfg.rollouts_dir, f"{prefix}/rollouts", ["blocks/*.jsonl", "ce_control/*.jsonl"]),
+            (
+                cfg.rollouts_dir,
+                f"{prefix}/rollouts",
+                [f"{cfg.grid_namespace}/*.jsonl", f"{cfg.ce_namespace}/*.jsonl"],
+            ),
             (cfg.donors_dir, f"{prefix}/donors", ["*.jsonl", "*.json", "*.pt"]),
             (cfg.bank_dir, f"{prefix}/vc_bank", ["bank.json", "vc_bank.pt"]),
             (cfg.gates_dir, f"{prefix}/gates", ["*.json"]),
             (
                 cfg.manifest_dir,
                 f"{prefix}/manifests",
-                ["*.json", "blocks/*.json", "smoke_blocks/*.json", "ce_control/*.json"],
+                [
+                    "*.json",
+                    f"{cfg.grid_namespace}/*.json",
+                    f"{cfg.grid_namespace}_capregen/*.json",
+                    f"{cfg.ce_namespace}/*.json",
+                    f"{cfg.ce_namespace}_capregen/*.json",
+                ],
             ),
-            (cfg.va_dir, f"{prefix}/va_store", ["*.pt"]),
-            (cfg.anchors_dir, f"{prefix}/anchors", ["*.jsonl", "*.pt"]),
+            (cfg.va_dir, f"{prefix}/{cfg.va_dir.name}", ["*.pt"]),
+            (cfg.anchors_dir, f"{prefix}/{cfg.anchors_dir.name}", ["*.jsonl", "*.pt"]),
         ]
         for local, remote, pats in legs:
             if local.exists():
@@ -1788,6 +2516,7 @@ def _import_check() -> None:
 
 PHASES = {
     "envcheck": phase_envcheck,
+    "fitness2329": phase_fitness2329,
     "bank": phase_bank,
     "donors": phase_donors,
     "grid": phase_grid,
@@ -1795,6 +2524,10 @@ PHASES = {
     "ce_control": phase_ce_control,
     "upload": phase_upload,
 }
+
+# Phases that never LOAD the q35 model (or must run BEFORE the env-identity
+# guard can exist): exempt from _require_q35_env.
+_Q35_ENV_EXEMPT_PHASES = ("envcheck", "fitness2329", "upload")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -1808,6 +2541,8 @@ def main(argv: list[str] | None = None) -> int:
     cfg.out_root.mkdir(parents=True, exist_ok=True)
     cfg.manifest_dir.mkdir(parents=True, exist_ok=True)
     cfg.gates_dir.mkdir(parents=True, exist_ok=True)
+    if cfg.model_tag == "q35" and not cfg.tiny and cfg.phase not in _Q35_ENV_EXEMPT_PHASES:
+        _require_q35_env(cfg)  # env identity with the PASSing envcheck (plan §4.4 B-1)
     regime_fp = regime_fingerprint(cfg)
     random.seed(cfg.seed_base)
     logger.info(

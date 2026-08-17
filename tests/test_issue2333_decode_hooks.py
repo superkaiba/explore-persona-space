@@ -137,3 +137,56 @@ def test_generate_batch_ids_left_pad_token_identity(tiny_model):
 def test_generate_batch_ids_empty_batch_fails_loud(tiny_model):
     with pytest.raises(AssertionError, match="empty batch"):
         generate_batch_ids(tiny_model, FakeTok(), [], n=1)
+
+
+def test_arm_replace_does_not_reset_realized_edits():
+    """r1 Minor (last-draw-only telemetry): re-arming for the next draw must
+    NOT clear the accumulated realized_edits — run_block reads the stack's
+    telemetry ONCE after all K draws."""
+    from explore_persona_space.experiments.issue2333.decode_hooks import AnswerPositionEditHook
+
+    hook = AnswerPositionEditHook(layer=0)
+    hook.realized_edits.append((0, 1, 0.5, 1.0, 1.0))
+    hook.arm_replace([None], expected_prompt_len=3)
+    assert hook.realized_edits == [(0, 1, 0.5, 1.0, 1.0)], "arm_replace cleared telemetry"
+
+
+def test_resolve_decoder_blocks_language_model_nesting():
+    """extraction._resolve_decoder_blocks resolves the q35 multimodal wrapper
+    nesting (.model.language_model.layers) — g2 Minor: the branch previously
+    had no committed regression test (bare layouts never reach it)."""
+    import torch.nn as nn
+
+    from explore_persona_space.analysis import extraction
+
+    class Lang(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.layers = nn.ModuleList([nn.Identity() for _ in range(5)])
+            self.embed_tokens = nn.Embedding(4, 2)
+
+    class Inner(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.language_model = Lang()
+
+    class Wrapper(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.model = Inner()
+
+    wrapper = Wrapper()
+    blocks, embed, depth = extraction._resolve_decoder_blocks(wrapper)
+    assert blocks is wrapper.model.language_model.layers
+    assert len(blocks) == 5 and depth == 1
+    assert embed is wrapper.model.language_model.embed_tokens
+    # And through the #2333 fail-loud wrapper used by the driver:
+    blocks2, depth2 = resolve_decoder_blocks_2333(wrapper)
+    assert list(blocks2) == list(blocks) and depth2 == 1
+
+
+def test_resolve_decoder_blocks_2333_raises_on_chainless_module():
+    import torch.nn as nn
+
+    with pytest.raises((RuntimeError, AssertionError)):
+        resolve_decoder_blocks_2333(nn.Linear(2, 2))

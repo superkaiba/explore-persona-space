@@ -116,22 +116,65 @@ class JudgeConfig2333:
 # ── input walkers (2333 row schemas) ──────────────────────────────────
 
 
-def load_grid_rows(rollouts_dir: Path) -> list[dict]:
+def assert_shard_set_complete(found_slugs: set[str], expected_slugs: set[str], what: str) -> None:
+    """Pre-spend completeness gate (r1 Major 3): the judge NEVER dispatches a
+    Batch-API wave against a partial/overfull shard set — a missing block
+    would silently censor whole (cell, arm, variant) cells from the F tables.
+    Raises naming the exact missing/extra slugs."""
+    missing = sorted(expected_slugs - found_slugs)
+    extra = sorted(found_slugs - expected_slugs)
+    if missing or extra:
+        raise RuntimeError(
+            f"{what} shard set incomplete: {len(found_slugs)}/{len(expected_slugs)} expected; "
+            f"missing={missing[:8]}{'...' if len(missing) > 8 else ''} "
+            f"extra={extra[:8]}{'...' if len(extra) > 8 else ''} — "
+            "re-run/finish the pod grid (or re-stage) before ANY judge spend"
+        )
+
+
+def assert_draw_consistency(rows: list[dict]) -> int:
+    """Every (block_key, pair_id) group carries the SAME draw set {0..K-1}.
+    Returns K. A ragged group means a partially-written/mixed-regime shard."""
+    by_group: dict[tuple[str, str], set[int]] = {}
+    for r in rows:
+        by_group.setdefault((r["block_key"], r["pair_id"]), set()).add(int(r["draw"]))
+    draw_sets = {frozenset(s) for s in by_group.values()}
+    assert len(draw_sets) == 1, (
+        f"ragged per-(block, pair) draw sets: {sorted(map(sorted, draw_sets))[:4]}"
+    )
+    draws = next(iter(draw_sets))
+    k = len(draws)
+    assert draws == frozenset(range(k)), sorted(draws)
+    return k
+
+
+def load_grid_rows(rollouts_dir: Path, expect_complete: bool = True) -> list[dict]:
     shards = sorted((rollouts_dir / "blocks").glob("*.jsonl"))
     assert shards, f"no grid block shards under {rollouts_dir}/blocks"
+    if expect_complete:
+        assert_shard_set_complete(
+            {s.stem for s in shards}, C.expected_grid_slugs(), "grid (144-block)"
+        )
     rows = [r for s in shards for r in J94._iter_jsonl(s)]
     assert rows, "grid shards present but empty"
     for r in rows[:1]:
         for key in ("block_key", "pair_id", "draw", "response_text", "kind", "variant", "cell"):
             assert key in r, (key, sorted(r))
+    k = assert_draw_consistency(rows)
+    logger.info("[load] grid: %d shards, %d rows, K=%d", len(shards), len(rows), k)
     return rows
 
 
-def load_ce_rows(rollouts_dir: Path) -> list[dict]:
+def load_ce_rows(rollouts_dir: Path, expect_complete: bool = True) -> list[dict]:
     shards = sorted((rollouts_dir / "ce_control").glob("*.jsonl"))
     assert shards, f"no ce_control shards under {rollouts_dir}/ce_control"
+    if expect_complete:
+        assert_shard_set_complete(
+            {s.stem for s in shards}, C.expected_ce_control_slugs(), "ce_control (12-block)"
+        )
     rows = [r for s in shards for r in J94._iter_jsonl(s)]
     assert rows, "ce_control shards present but empty"
+    assert_draw_consistency(rows)
     return rows
 
 
@@ -408,6 +451,34 @@ def _pilot_arm(u: J94.JudgeUnit) -> str:
     return f"{src.get('kind', 'unknown')}.{src.get('variant') or 'na'}"
 
 
+def forced_batch_probe_verdict(
+    scores: dict[str, float | None], stop_reason_tally: dict[str, int], n_items: int
+) -> tuple[bool, dict]:
+    """Registered forced-batch gate (plan §7): the probe is EXACTLY
+    ``J94.FORCED_BATCH_PROBE_N`` items, ALL scored, and EVERY persisted draw
+    stop_reason is ``end_turn`` (r1 Minor: the shipped ``n_probe >= 1`` was
+    weaker than the registered 6/6-all-end_turn criterion). A cache-served
+    legacy entry tallies ``unknown`` and FAILS — run the probe against its
+    fresh ``_forced_batch`` cache dir."""
+    n_scored = sum(1 for v in scores.values() if v is not None)
+    tally = dict(stop_reason_tally)
+    non_end_turn = {k: v for k, v in tally.items() if k != "end_turn" and v}
+    passed = (
+        n_items == J94.FORCED_BATCH_PROBE_N
+        and n_scored == J94.FORCED_BATCH_PROBE_N
+        and sum(tally.values()) >= J94.FORCED_BATCH_PROBE_N
+        and not non_end_turn
+    )
+    return passed, {
+        "n_items": n_items,
+        "n_scored": n_scored,
+        "required": J94.FORCED_BATCH_PROBE_N,
+        "stop_reason_tally": tally,
+        "non_end_turn": non_end_turn,
+        "passed": passed,
+    }
+
+
 def phase_pilot(cfg: JudgeConfig2333) -> int:
     """Rule-26 pilot per rubric family (coherence / S1 rubric / S2 rubric)
     plus the live forced-batch request-shape probe."""
@@ -474,14 +545,17 @@ def phase_pilot(cfg: JudgeConfig2333) -> int:
         max_tokens=cfg.base.max_tokens,
         threshold_base=0,
     )
-    n_probe = sum(1 for v in probe.scores.values() if v is not None)
-    all_pass &= n_probe >= 1
+    probe_ok, probe_report = forced_batch_probe_verdict(
+        probe.scores, probe.stop_reason_tally, len(probe_units)
+    )
+    all_pass &= probe_ok
+    logger.info("[pilot] forced-batch probe: %s", probe_report)
     J94._write_json_atomic(
         cfg.base.gates_dir / "pilot_gate_report.json",
         {
             "passed": all_pass,
             "per_family": per_family,
-            "forced_batch_probe": {"n_items": len(probe_units), "n_scored": n_probe},
+            "forced_batch_probe": probe_report,
             "instrument": {
                 "judge_model": cfg.base.judge_model,
                 "max_tokens": cfg.base.max_tokens,
@@ -630,8 +704,10 @@ PHASES = {
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap = argparse.ArgumentParser(description="Issue #2333 VM-side judge pipeline.")
-    ap.add_argument("--phase", required=True, choices=tuple(PHASES))
-    ap.add_argument("--model-tag", required=True, choices=("q25", "q35"))
+    # required unless --import-check (r1 Minor: the standalone import-check
+    # invocation must parse without a phase; main() asserts them otherwise).
+    ap.add_argument("--phase", choices=tuple(PHASES))
+    ap.add_argument("--model-tag", choices=("q25", "q35"))
     ap.add_argument(
         "--in-root",
         type=Path,
@@ -727,6 +803,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     if args.import_check:
         return _import_check()
+    assert args.phase and args.model_tag, "--phase and --model-tag required (or --import-check)"
     if args.stage_from_hf:
         _stage_inputs(args)
     cfg = build_config(args)

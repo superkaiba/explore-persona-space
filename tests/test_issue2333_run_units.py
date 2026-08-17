@@ -33,6 +33,17 @@ class FakeTok:
         return "".join(f"[{t}]" for t in ids)
 
 
+class FakeSeamTok(FakeTok):
+    """Seam-sensitive tokenizer: decode prefixes the CALL's token count, so a
+    joint decode of donor+continuation ids is DISTINGUISHABLE from the
+    concatenation of two split decodes (r1 blocker prefill-response-decode —
+    with a concat-only fake, split == joint by construction and the pin was
+    vacuous)."""
+
+    def decode(self, ids, skip_special_tokens=True):
+        return f"<{len(ids)}>" + "".join(f"[{t}]" for t in ids)
+
+
 @pytest.fixture(scope="module")
 def tiny_model():
     from transformers import Qwen2Config, Qwen2ForCausalLM
@@ -108,53 +119,107 @@ def _mk_cfg(tmp_path: Path) -> RUN.RunConfig:
 
 
 def test_run_block_prefill_cap_hit_regen_and_id_seam(tiny_model, tmp_path):
-    """The REAL run_block_2333 body on a prefill/steered block: (a) the
-    cap-hit regen branch fires (max_new_tokens=1 caps every non-EOS row;
-    regenerated rows carry regenerated_at == 2x cap); (b) the prefill seam
-    is an ID concatenation — donor ids verbatim, response_text ==
-    donor_text + continuation_text; (c) V_a spans cover donor+continuation."""
+    """The REAL run_block_2333 body + the REGISTERED post-queue cap-regen pass
+    on a prefill (steered AND null) pair of blocks: (a) the trigger pools BOTH
+    variants per (cell, arm) and regenerates BOTH (r1 blocker
+    cap-regen-wrong-grain — the r1 inline per-chunk/one-variant regen is
+    gone); (b) the judged whole response is ONE joint decode of
+    donor_ids + gen_ids (seam-sensitive FakeSeamTok: a split decode would
+    carry TWO `<len>` prefixes — r1 blocker prefill-response-decode);
+    (c) V_a spans cover donor+continuation and survive the regen rewrite."""
     cfg = _mk_cfg(tmp_path)
-    tok = FakeTok()
+    tok = FakeSeamTok()
     pairs = [
         SimpleNamespace(pair_id="p1", a="ctxA1", b="ctxB1", cell="cellX"),
         SimpleNamespace(pair_id="p2", a="ctxA2", b="ctxB2", cell="cellX"),
     ]
     pairs_by_id = {p.pair_id: p for p in pairs}
     ctx_ids = {"ctxA1": [3, 4, 5, 6], "ctxA2": [7, 8, 9]}
-    donors = {"med": {"p1": _donor_rec([21, 22]), "p2": _donor_rec([23, 24, 25])}}
+    donors = {"med": {"p1": _donor_rec_randn([21, 22], 1), "p2": _donor_rec_randn([23, 24, 25], 2)}}
     donor_maps = {"shuffled": {"p1": "p2", "p2": "p1"}}
     bank = {"per_context": {}}
-    block = R.Block("cellX", "prefill2_med", "steered", ("p1", "p2"))
-
-    RUN.run_block_2333(
-        cfg, tiny_model, tok, bank, donors, donor_maps, pairs_by_id, ctx_ids, block, "test-fp"
+    blocks = [
+        R.Block("cellX", "prefill2_med", "steered", ("p1", "p2")),
+        R.Block("cellX", "prefill2_med", "null", ("p1", "p2")),
+    ]
+    for block in blocks:
+        RUN.run_block_2333(
+            cfg, tiny_model, tok, bank, donors, donor_maps, pairs_by_id, ctx_ids, block, "test-fp"
+        )
+    # Registered regen grain: post-queue, per (cell, arm), BOTH variants pooled.
+    RUN._cap_regen_pass(
+        cfg, tiny_model, tok, donors, donor_maps, pairs_by_id, ctx_ids, blocks, "test-fp"
     )
 
-    shard = cfg.rollouts_dir / "blocks" / f"{block.slug}.jsonl"
-    rows = [json.loads(line) for line in shard.read_text().splitlines() if line.strip()]
-    assert len(rows) == 2 * cfg.grid_draws  # 2 pairs x 2 draws
-    n_regen = sum(1 for r in rows if r.get("regenerated_at") == 2 * cfg.max_new_tokens)
-    assert n_regen >= 1, "cap-hit regen branch never fired"
-    for r in rows:
-        assert r["donor_len"] == 2  # k=2 donor ids verbatim
-        assert r["response_text"] == r["donor_text"] + r["continuation_text"]
-        assert r["kind"] == "prefill" and r["variant"] == "steered"
-        assert r["cap_hit_basis"] == "gen_token_count"
-    # V_a store: one (L, H) summary per (pair, draw), fp16.
-    va = torch.load(cfg.va_dir / f"{block.slug}.pt", map_location="cpu", weights_only=False)
-    assert len(va) == 4
-    for key, t in va.items():
-        assert t.shape == (N_LAYERS, HIDDEN), key
-        assert t.dtype == torch.float16
-    # Done file lands in the SMOKE namespace (cfg.smoke=True) — the claim
-    # queue's resume predicate reads the same namespace (regression pin: a
-    # "blocks"-default write made the smoke queue re-run blocks forever).
-    done_path = R.block_done_path(cfg.out_root, block, "smoke_blocks")
-    done = json.loads(done_path.read_text())
-    assert done["n_rows"] == 4 and done["n_pairs_kept"] == 2
-    assert done["n_cap_hit"] == sum(1 for r in rows if r["cap_hit"])
-    assert R.block_is_done(cfg.out_root, block, "test-fp", "smoke_blocks")
-    assert not R.block_done_path(cfg.out_root, block, "blocks").exists()
+    n_regen_total = 0
+    for block in blocks:
+        # Shard lands in the SMOKE-namespaced dir (r1 Major 2) — never blocks/.
+        shard = cfg.grid_blocks_dir / f"{block.slug}.jsonl"
+        assert cfg.grid_blocks_dir.name == "smoke_blocks"
+        assert not (cfg.rollouts_dir / "blocks").exists()
+        rows = [json.loads(line) for line in shard.read_text().split("\n") if line.strip()]
+        assert len(rows) == 2 * cfg.grid_draws  # 2 pairs x 2 draws
+        n_regen = sum(1 for r in rows if r.get("regenerated_at") == 2 * cfg.max_new_tokens)
+        assert n_regen >= 1, f"cap regen never fired on {block.key}"
+        n_regen_total += n_regen
+        for r in rows:
+            assert r["donor_len"] == 2  # k=2 donor ids verbatim
+            # Joint-decode pin: EXACTLY ONE decode call over donor+continuation
+            # (a split decode would read "<2>[..][..]<n>..." instead).
+            assert r["response_text"].startswith(f"<{r['donor_len'] + r['n_completion_tokens']}>")
+            assert r["donor_text"].startswith("<2>")
+            assert r["kind"] == "prefill" and r["variant"] == block.arm
+            assert r["cap_hit_basis"] == "gen_token_count"
+        va = torch.load(cfg.va_dir / f"{block.slug}.pt", map_location="cpu", weights_only=False)
+        assert len(va) == 4  # prefill spans include the donor ids -> never dropped
+        for key, t in va.items():
+            assert t.shape == (N_LAYERS, HIDDEN), key
+            assert t.dtype == torch.float16
+        done = json.loads(R.block_done_path(cfg.out_root, block, "smoke_blocks").read_text())
+        assert done["n_rows"] == 4 and done["n_pairs_kept"] == 2
+        assert done["cap_regen_applied"] == n_regen
+        assert done["n_cap_hit"] == sum(1 for r in rows if r["cap_hit"])
+        assert R.block_is_done(cfg.out_root, block, "test-fp", "smoke_blocks")
+        assert not R.block_done_path(cfg.out_root, block, "blocks").exists()
+    # The capregen pseudo-block done record: fired, both variants pooled.
+    pb = R.Block("cellX", "prefill2_med", "capregen", ())
+    rec = json.loads(R.block_done_path(cfg.out_root, pb, "smoke_blocks_capregen").read_text())
+    assert rec["fired"] is True and rec["variants_pooled"] == ["null", "steered"]
+    assert rec["n_regenerated"] == n_regen_total
+    assert rec["threshold"] == RUN.CAP_HIT_REGEN_FRAC
+    assert R.block_is_done(cfg.out_root, pb, "test-fp", "smoke_blocks_capregen")
+
+
+def test_cap_regen_pass_does_not_fire_below_threshold(tmp_path):
+    """Zero cap hits => the capregen pass records fired=False and rewrites
+    NOTHING (idempotent no-op with a durable decision record). Synthetic
+    shards; the model/tok are never touched on the no-fire path."""
+    cfg = _mk_cfg(tmp_path)
+    blocks = [R.Block("cellX", "prefill2_med", v, ("p1",)) for v in ("steered", "null")]
+    cfg.grid_blocks_dir.mkdir(parents=True, exist_ok=True)
+    for b in blocks:
+        rows = [
+            {
+                "block_key": b.key,
+                "pair_id": "p1",
+                "draw": 0,
+                "n_completion_tokens": 0,
+                "cap_hit": False,
+                "regenerated_at": None,
+                "va_key": f"p1|prefill2_med|{b.arm}|d0",
+            }
+        ]
+        (cfg.grid_blocks_dir / f"{b.slug}.jsonl").write_text(
+            "".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8"
+        )
+    before = {b.slug: (cfg.grid_blocks_dir / f"{b.slug}.jsonl").read_text() for b in blocks}
+    RUN._cap_regen_pass(cfg, None, None, None, None, None, None, blocks, "test-fp")
+    pb = R.Block("cellX", "prefill2_med", "capregen", ())
+    rec = json.loads(R.block_done_path(cfg.out_root, pb, "smoke_blocks_capregen").read_text())
+    assert rec["fired"] is False and rec["n_regenerated"] == 0
+    assert rec["cap_frac_original"] == 0.0 and rec["variants_pooled"] == ["null", "steered"]
+    for b in blocks:
+        assert (cfg.grid_blocks_dir / f"{b.slug}.jsonl").read_text() == before[b.slug]
 
 
 def _donor_rec_randn(token_ids: list[int], seed: int) -> dict:
@@ -202,8 +267,14 @@ def test_run_block_patch_arm_null_variant(tiny_model, tmp_path):
     done = json.loads(R.block_done_path(cfg.out_root, block, "smoke_blocks").read_text())
     assert done["n_pairs_kept"] == 2 and done["n_rows"] == 2 * cfg.grid_draws
     assert done["edit_telemetry"]["n_edits"] > 0, "decode-step edits never fired"
-    shard = cfg.rollouts_dir / "blocks" / f"{block.slug}.jsonl"
-    rows = [json.loads(line) for line in shard.read_text().splitlines() if line.strip()]
+    # Telemetry accumulates ACROSS the K draws (decode_hooks no longer resets
+    # realized_edits per arm_replace — r1 Minor last-draw-only): a single
+    # draw's ceiling is k=2 positions x 2 pairs x N_LAYERS = 8 edits, so any
+    # count above it proves cross-draw accumulation (exact count is
+    # early-EOS-dependent; grid_draws=2 here).
+    assert done["edit_telemetry"]["n_edits"] > 2 * 2 * N_LAYERS
+    shard = cfg.grid_blocks_dir / f"{block.slug}.jsonl"
+    rows = [json.loads(line) for line in shard.read_text().split("\n") if line.strip()]
     for r in rows:
         assert r["kind"] == "patch" and r["variant"] == "null"
         assert r["donor_pair_id"] == donor_maps["shuffled"][r["pair_id"]]
@@ -248,3 +319,137 @@ def test_run_block_drops_short_donor_pairs(tiny_model, tmp_path):
     done = json.loads(R.block_done_path(cfg.out_root, block, "smoke_blocks").read_text())
     assert done["n_pairs_kept"] == 0 and done["dropped_pair_ids"] == ["p1"]
     assert done["n_rows"] == 0
+
+
+# ── r2 additions: minimal-pair / fingerprint / S2 map / chunk store / guards ──
+
+
+def test_minimal_pair_check_single_region_only():
+    """The A16 gate is a real predicate (r1 Critical: the r1 form was a
+    tautology): TRUE iff the two id sequences differ in AT MOST one contiguous
+    region, FALSE on every multi-region adversarial shape."""
+    mp = RUN.minimal_pair_check
+    assert mp([1, 2, 3, 4], [1, 2, 3, 4])  # identical
+    assert mp([1, 2, 3, 4], [1, 9, 3, 4])  # single substitution
+    assert mp([1, 2, 3, 4], [1, 2, 9, 9, 3, 4])  # single contiguous insertion
+    assert mp([1, 2, 3, 4], [1, 4])  # single contiguous deletion
+    assert mp([1, 2, 3, 4], [9, 8, 3, 4])  # multi-token single region
+    assert mp([], [1, 2])  # pure insertion
+    # Adversarial multi-region shapes (each fooled the r1 predicate):
+    assert not mp([1, 2, 3, 4], [9, 2, 9, 4])  # two separated substitutions
+    assert not mp([1, 2, 3, 4], [1, 9, 3, 9])  # gap-1 separated substitutions
+    assert not mp([1, 2, 3], [3, 2, 1])  # reversal
+    assert not mp([1, 2, 3, 4, 5], [9, 2, 3, 4, 9])  # prefix AND suffix changed
+    assert not mp([1, 2, 3, 4, 5, 6], [1, 9, 3, 9, 5, 9])  # three regions
+
+
+def test_regime_fingerprint_field_sensitivity(tmp_path):
+    """Every output-affecting knob moves the fingerprint (r1 blocker
+    incomplete-regime-fingerprint); num_workers deliberately does NOT (the
+    anchors phase keys its own shards/done files on w{i}of{N} instead)."""
+    import dataclasses
+
+    cfg = _mk_cfg(tmp_path)
+    base_fp = RUN.regime_fingerprint(cfg)
+    moving = {
+        "model_tag": "q35",
+        "model_id": "other-model",
+        "tiny": False,
+        "n_layers": 3,
+        "hidden": 64,
+        "max_new_tokens": 2,
+        "grid_draws": 3,
+        "anchor_draws": 2,
+        "gen_batch": 8,
+        "capture_batch": 2,
+        "seed_base": 12,
+        "smoke": False,
+    }
+    for field, value in moving.items():
+        fp = RUN.regime_fingerprint(dataclasses.replace(cfg, **{field: value}))
+        assert fp != base_fp, f"regime_fingerprint insensitive to {field}"
+    for field, value in (("num_workers", 8), ("worker_index", 3), ("upload_every", 99)):
+        fp = RUN.regime_fingerprint(dataclasses.replace(cfg, **{field: value}))
+        assert fp == base_fp, f"regime_fingerprint must NOT key on {field}"
+
+
+def test_s2_donor_map_is_seeded_derangement(monkeypatch):
+    """build_donor_maps installs the plan §4.2 NAMED FALLBACK for S2: the
+    seed-23330 derangement over the 15 matched-query pair ids (parent
+    recovery is AMBIGUOUS — 5/15 pairs multi-donor; provenance recorded)."""
+    monkeypatch.chdir(REPO_ROOT)
+    import issue2333_run as RUN2
+
+    s1, s2 = RUN2.build_pair_universe()
+    maps = RUN2.build_donor_maps(s1, s2)
+    s2_ids = sorted(p.pair_id for p in s2)
+    expected = RUN2.C.seeded_derangement(s2_ids, RUN2.C.S2_DERANGEMENT_SEED)
+    realized = {pid: maps["shuffled"][pid] for pid in s2_ids}
+    assert realized == expected
+    assert all(k != v for k, v in realized.items())  # derangement: no fixed point
+    assert sorted(realized.values()) == s2_ids  # bijection over the S2 set
+
+
+def test_chunk_store_roundtrip_and_cross_regime_refusal(tmp_path):
+    store = RUN._ChunkStore(tmp_path / "chunks", "fp-a")
+    assert store.load("0001") is None
+    store.save("0001", {"rows": [1, 2, 3]})
+    assert store.load("0001") == {"rows": [1, 2, 3]}
+    other = RUN._ChunkStore(tmp_path / "chunks", "fp-b")
+    with pytest.raises(RuntimeError, match="cross-regime chunk resume"):
+        other.load("0001")
+    store.clear()
+    assert store.load("0001") is None
+
+
+def test_require_single_worker_guard(tmp_path):
+    import dataclasses
+
+    cfg = _mk_cfg(tmp_path)
+    RUN._require_single_worker(cfg, "bank")  # w0of1 — fine
+    with pytest.raises(RuntimeError, match="single-worker"):
+        RUN._require_single_worker(dataclasses.replace(cfg, num_workers=8), "bank")
+    with pytest.raises(RuntimeError, match="single-worker"):
+        RUN._require_single_worker(
+            dataclasses.replace(cfg, num_workers=8, worker_index=3), "donors"
+        )
+
+
+def test_anchors_stale_width_guard(tmp_path):
+    """Mixed-width anchors shards fail LOUD (i::N partitions depend on N —
+    num_workers is deliberately outside the global fingerprint)."""
+    cfg = _mk_cfg(tmp_path)
+    cfg.anchors_dir.mkdir(parents=True, exist_ok=True)
+    RUN._anchors_stale_width_guard(cfg)  # empty dir — fine
+    (cfg.anchors_dir / "anchors_w0of1.jsonl").write_text("", encoding="utf-8")
+    RUN._anchors_stale_width_guard(cfg)  # matching width (num_workers=1) — fine
+    (cfg.anchors_dir / "anchors_w0of2.jsonl").write_text("", encoding="utf-8")
+    with pytest.raises(RuntimeError, match="different --num-workers width"):
+        RUN._anchors_stale_width_guard(cfg)
+
+
+class _FakeTemplateTok:
+    """apply_chat_template-shaped fake for the q35 thinking-off render assert."""
+
+    def __init__(self, rendered: str):
+        self.rendered = rendered
+
+    def apply_chat_template(self, msgs, tokenize=False, add_generation_prompt=True, **kw):
+        return self.rendered
+
+    def __call__(self, text, add_special_tokens=False):
+        return {"input_ids": list(range(max(4, len(text) // 8)))}
+
+
+def test_q35_render_thinking_off_assert():
+    """Qwen3.5 thinking-OFF = a CLOSED EMPTY <think></think> block (measured
+    under transformers==5.15.0); an OPEN or non-empty block fails loud."""
+    ids_fn = RUN.make_ids_fn("q35")
+    ctx = {"id": "t", "system": None, "history": [], "user": "hi"}
+    base = "<|im_start|>user\nhi<|im_end|>\n<|im_start|>assistant\n"
+    assert ids_fn(_FakeTemplateTok(base + "<think>\n\n</think>\n\n"), ctx)  # closed empty: OK
+    assert ids_fn(_FakeTemplateTok(base), ctx)  # no block at all: also OK
+    with pytest.raises(AssertionError, match="OPEN thinking block"):
+        ids_fn(_FakeTemplateTok(base + "<think>\n"), ctx)
+    with pytest.raises(AssertionError, match="non-empty thinking block"):
+        ids_fn(_FakeTemplateTok(base + "<think>\nreasoning...\n</think>\n\n"), ctx)

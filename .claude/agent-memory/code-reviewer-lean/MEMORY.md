@@ -33,3 +33,5 @@
 - [Per-file id namespace is not leakage](perfile_id_namespace_not_leakage.md) — eval ids inside the train id range = per-file local ids; read the extraction line before flagging; recompute-verify split artifacts (#2330 R1 g2)
 - [Stacked lint waivers vs read window](stacked_lint_waivers_read_window.md) — two waiver comments above one call push the outer to i-2, inert; `_`-prefixed local ports escape \b wrap regexes; certify via scanner probe on parent blob vs HEAD (#2330 R1 g4)
 - [vLLM-port terminal + self-ref parity](vllm_port_terminal_and_selfref_parity.md) — exception paths must reach os._exit; a self-emitted parity reference only certifies venv drift (#2330 R1 g1)
+- [Max-prefix/suffix diff check is a tautology](maximal_prefix_suffix_diff_check_tautology.md) — hand-execute single-window predicates on [1,2,3,4] vs [1,9,3,9]; demand LCS-opcode checks + a violating-input test (#2333 R1 g1)
+- [Smoke shard namespace ≠ done-file namespace](smoke_shard_namespace_only_done_files.md) — namespace EVERY per-block artifact path, not just done-files; dir-glob uploads sweep smoke shards under the prod prefix (#2333 R1 g1)

@@ -90,44 +90,64 @@ def _mean_ci(values: list[float]) -> tuple[float, float, float] | None:
     )
 
 
-def _ce_values(data: dict, tag: str, set_name: str, keep: set[str]) -> list[float]:
-    """SAME-WAVE ce F per pair (q25: calib steered; q35: fresh ce_control)."""
+def _ce_values(
+    data: dict, tag: str, set_name: str, keep: set[str], field: str = "f_beh"
+) -> list[float]:
+    """SAME-WAVE ce F per pair (q25: calib steered; q35: fresh ce_control).
+    ``field="f_act"`` exists only on the q35 fresh ce rows (calib rows are
+    banked TEXT re-judged — no V_a), so q25 f_act returns []."""
     if tag == "q35":
         rows = [r for r in data["ce"] if r["variant"] == "steered" and r["set"] == set_name]
     else:
         rows = [r for r in data["calib"] if r["arm"] == "steered" and r["set"] == set_name]
-    return [r["f_beh"] for r in rows if r["pair_id"] in keep and r["f_beh"] is not None]
+    return [r[field] for r in rows if r["pair_id"] in keep and r.get(field) is not None]
 
 
-def _arm_values(rows: list[dict], set_name: str, slug: str, keep: set[str]) -> list[float]:
+def _arm_values(
+    rows: list[dict], set_name: str, slug: str, keep: set[str], field: str = "f_beh"
+) -> list[float]:
     return [
-        r["f_beh"]
+        r[field]
         for r in rows
         if r["set"] == set_name
         and r["arm_slug"] == slug
         and r["pair_id"] in keep
-        and r["f_beh"] is not None
+        and r.get(field) is not None
     ]
 
 
-def fig_hero(data: dict, tag: str) -> None:
-    """Hero: F_beh per arm [ce, patch k=1..3, prefill k=1..3], steered vs
-    scheme-matched shuffled-donor null, per (pair-set x scheme)."""
+def fig_hero(data: dict, tag: str, field: str = "f_beh") -> None:
+    """Hero: F per arm [ce, patch k=1..3, prefill k=1..3], steered vs
+    scheme-matched shuffled-donor null, per (pair-set x scheme). The same-wave
+    ce mean rides a shaded 95%-CI BAND across the axis (the recovery target
+    every arm is read against) plus its own point. ``field="f_act"`` renders
+    the secondary-DV mirror (suffix ``_act``)."""
     colors = paper_palette(3)
     keep = _wellsep([*data["steered"], *data["null"]])
+    suffix = "" if field == "f_beh" else "_act"
     for set_name in ("s1", "s2"):
         fig, axes = plt.subplots(1, 2, figsize=(9.6, 3.6), sharey=True)
+        any_points = False
         for ax, scheme in zip(axes, C.ARM_SCHEMES, strict=True):
             xs = np.arange(len(ARM_ORDER))
+            ce_mc = _mean_ci(_ce_values(data, tag, set_name, keep, field=field))
+            if ce_mc is not None:
+                m, lo, hi = ce_mc
+                ax.axhspan(lo, hi, color=colors[2], alpha=0.15, zorder=0)
+                ax.axhline(m, color=colors[2], lw=0.8, ls="--", label="ce same-wave (95% CI band)")
             for off, (variant, rows, color) in enumerate(
                 (("steered", data["steered"], colors[0]), ("null", data["null"], colors[1]))
             ):
                 means, lows, highs, xpos = [], [], [], []
                 for i, arm in enumerate(ARM_ORDER):
                     if arm == "ce":
-                        vals = _ce_values(data, tag, set_name, keep) if variant == "steered" else []
+                        vals = (
+                            _ce_values(data, tag, set_name, keep, field=field)
+                            if variant == "steered"
+                            else []
+                        )
                     else:
-                        vals = _arm_values(rows, set_name, f"{arm}_{scheme}", keep)
+                        vals = _arm_values(rows, set_name, f"{arm}_{scheme}", keep, field=field)
                     mc = _mean_ci(vals)
                     if mc is None:
                         continue
@@ -136,6 +156,7 @@ def fig_hero(data: dict, tag: str) -> None:
                     lows.append(max(0.0, m - lo))
                     highs.append(max(0.0, hi - m))
                     xpos.append(i + (off - 0.5) * 0.22)
+                any_points = any_points or bool(means)
                 ax.errorbar(
                     xpos,
                     means,
@@ -150,11 +171,16 @@ def fig_hero(data: dict, tag: str) -> None:
             ax.set_xticks(xs)
             ax.set_xticklabels(ARM_ORDER, rotation=30, ha="right")
             ax.set_title(f"scheme = {scheme}" + ("" if scheme == "med" else " (natural-opening)"))
-        axes[0].set_ylabel("F_beh (anchor-normalized)")
+        if not any_points:  # e.g. f_act with no staged V_a store — skip, don't emit blank axes
+            plt.close(fig)
+            print(f"[figures] hero{suffix} {tag}/{set_name}: no {field} values — skipped")
+            continue
+        ylabel = "F_beh (anchor-normalized)" if field == "f_beh" else "F_act (secondary DV)"
+        axes[0].set_ylabel(ylabel)
         axes[0].legend(frameon=False, fontsize=8)
-        fig.suptitle(f"{tag} / {set_name}: snowball recovery profile", y=1.02)
+        fig.suptitle(f"{tag} / {set_name}: snowball recovery profile{suffix}", y=1.02)
         fig.tight_layout()
-        savefig_paper(fig, f"hero_snowball_{tag}_{set_name}", dir=str(FIG_DIR))
+        savefig_paper(fig, f"hero_snowball{suffix}_{tag}_{set_name}", dir=str(FIG_DIR))
         plt.close(fig)
 
 
@@ -224,6 +250,218 @@ def fig_perpair(data: dict, tag: str) -> None:
     ax.legend(frameon=False, fontsize=8)
     fig.tight_layout()
     savefig_paper(fig, f"perpair_prefill3_{tag}", dir=str(FIG_DIR))
+    plt.close(fig)
+
+
+def fig_forest_cells(data: dict, tag: str) -> None:
+    """Per-S1-cell forests (plan §6): paired diff (steered − null) per arm,
+    one forest panel per surviving S1 cell — the low-level per-unit view
+    behind the pooled S1 hero."""
+    keep = _wellsep([*data["steered"], *data["null"]])
+    st = {(r["cell"], r["pair_id"], r["arm_slug"]): r["f_beh"] for r in data["steered"]}
+    nu = {(r["cell"], r["pair_id"], r["arm_slug"]): r["f_beh"] for r in data["null"]}
+    cells = [c for c in C.S1_CELLS]
+    fig, axes = plt.subplots(1, len(cells), figsize=(2.4 * len(cells), 4.2), sharex=True)
+    colors = paper_palette(2)
+    slugs = list(C.ARM_SLUGS)
+    drew = False
+    for ax, cell in zip(axes, cells, strict=True):
+        ys, ms, los, his, cs = [], [], [], [], []
+        for y, slug in enumerate(slugs):
+            diffs = [
+                st[(cell, pid, slug)] - nu[(cell, pid, slug)]
+                for (c2, pid, s2) in st
+                if c2 == cell
+                and s2 == slug
+                and pid in keep
+                and st[(cell, pid, slug)] is not None
+                and nu.get((cell, pid, slug)) is not None
+            ]
+            mc = _mean_ci(diffs)
+            if mc is None:
+                continue
+            m, lo, hi = mc
+            ys.append(y)
+            ms.append(m)
+            los.append(max(0.0, m - lo))
+            his.append(max(0.0, hi - m))
+            cs.append(colors[0] if slug.endswith("_med") else colors[1])
+        for y, m, lo_, hi_, c2 in zip(ys, ms, los, his, cs, strict=True):
+            ax.errorbar([m], [y], xerr=[[lo_], [hi_]], fmt="o", color=c2, capsize=2, ms=3.5)
+        drew = drew or bool(ys)
+        ax.axvline(0.0, color="0.6", lw=0.8, ls=":")
+        ax.set_yticks(range(len(slugs)))
+        ax.set_yticklabels(slugs if ax is axes[0] else [""] * len(slugs), fontsize=7)
+        ax.set_title(cell, fontsize=8)
+        ax.invert_yaxis()
+    if not drew:
+        plt.close(fig)
+        print(f"[figures] forest_cells {tag}: no per-cell diffs — skipped")
+        return
+    fig.supxlabel("F_beh: steered − null (95% CI)")
+    fig.suptitle(f"{tag}: per-S1-cell paired diffs (med vs bstart colors)", y=1.02)
+    fig.tight_layout()
+    savefig_paper(fig, f"forest_cells_{tag}", dir=str(FIG_DIR))
+    plt.close(fig)
+
+
+def fig_k_traces(data: dict, tag: str) -> None:
+    """k-monotonicity per-pair traces (plan §6): each pair's paired diff
+    (steered − null) traced across k=1..3, thin per-pair lines + mean overlay,
+    per (set x scheme x kind)."""
+    keep = _wellsep([*data["steered"], *data["null"]])
+    st = {(r["pair_id"], r["arm_slug"]): r["f_beh"] for r in data["steered"]}
+    nu = {(r["pair_id"], r["arm_slug"]): r["f_beh"] for r in data["null"]}
+    colors = dict(zip(C.ARM_KINDS, paper_palette(2), strict=True))
+    fig, axes = plt.subplots(2, 2, figsize=(8.4, 6.0), sharey=True)
+    drew = False
+    for i, set_name in enumerate(("s1", "s2")):
+        set_pids = {
+            r["pair_id"] for r in data["steered"] if r["set"] == set_name and r["pair_id"] in keep
+        }
+        for j, scheme in enumerate(C.ARM_SCHEMES):
+            ax = axes[i][j]
+            for kind in C.ARM_KINDS:
+                mean_by_k: dict[int, list[float]] = {k: [] for k in C.ARM_KS}
+                for pid in sorted(set_pids):
+                    ks, ds = [], []
+                    for k in C.ARM_KS:
+                        slug = f"{kind}{k}_{scheme}"
+                        a, b = st.get((pid, slug)), nu.get((pid, slug))
+                        if a is None or b is None:
+                            continue
+                        ks.append(k)
+                        ds.append(a - b)
+                        mean_by_k[k].append(a - b)
+                    if len(ks) >= 2:
+                        ax.plot(ks, ds, color=colors[kind], alpha=0.15, lw=0.7)
+                        drew = True
+                mk = [k for k in C.ARM_KS if mean_by_k[k]]
+                if mk:
+                    ax.plot(
+                        mk,
+                        [float(np.mean(mean_by_k[k])) for k in mk],
+                        color=colors[kind],
+                        lw=2.0,
+                        marker="o",
+                        label=kind,
+                    )
+            ax.axhline(0.0, color="0.6", lw=0.8, ls=":")
+            ax.set_title(f"{set_name} / {scheme}", fontsize=9)
+            ax.set_xticks(list(C.ARM_KS))
+    if not drew:
+        plt.close(fig)
+        print(f"[figures] k_traces {tag}: no per-pair traces — skipped")
+        return
+    axes[1][0].set_xlabel("k (answer positions)")
+    axes[1][1].set_xlabel("k (answer positions)")
+    axes[0][0].set_ylabel("F steered − F null")
+    axes[1][0].set_ylabel("F steered − F null")
+    axes[0][0].legend(frameon=False, fontsize=8)
+    fig.suptitle(f"{tag}: per-pair k traces (thin) + means (bold)", y=1.01)
+    fig.tight_layout()
+    savefig_paper(fig, f"k_traces_{tag}", dir=str(FIG_DIR))
+    plt.close(fig)
+
+
+def fig_scheme_contrast(data: dict, tag: str) -> None:
+    """Donor-scheme contrast (plan §6): per-pair steered F under med (x) vs
+    bstart (y), per (kind, k) — the natural-opening descriptive comparison."""
+    keep = _wellsep(data["steered"])
+    st = {(r["pair_id"], r["arm_slug"]): r["f_beh"] for r in data["steered"]}
+    fig, ax = plt.subplots(figsize=(4.6, 4.2))
+    colors = dict(zip(C.ARM_KINDS, paper_palette(2), strict=True))
+    markers = {1: "o", 2: "s", 3: "^"}
+    drew = False
+    for kind in C.ARM_KINDS:
+        for k in C.ARM_KS:
+            pts = [
+                (st[(pid, f"{kind}{k}_med")], st[(pid, f"{kind}{k}_bstart")])
+                for pid in sorted(keep)
+                if st.get((pid, f"{kind}{k}_med")) is not None
+                and st.get((pid, f"{kind}{k}_bstart")) is not None
+            ]
+            if pts:
+                xs, ys = zip(*pts, strict=True)
+                ax.scatter(
+                    xs,
+                    ys,
+                    s=14,
+                    color=colors[kind],
+                    marker=markers[k],
+                    alpha=0.6,
+                    label=f"{kind} k={k}",
+                )
+                drew = True
+    if not drew:
+        plt.close(fig)
+        print(f"[figures] scheme_contrast {tag}: no paired scheme values — skipped")
+        return
+    lim = ax.get_xlim() + ax.get_ylim()
+    lo, hi = min(lim), max(lim)
+    ax.plot([lo, hi], [lo, hi], color="0.6", lw=0.8, ls=":")
+    ax.set_xlabel("F_beh — med donors (confirmatory scheme)")
+    ax.set_ylabel("F_beh — bstart donors (natural-opening)")
+    ax.set_title(f"{tag}: donor-scheme contrast (steered)")
+    ax.legend(frameon=False, fontsize=7, ncol=2)
+    fig.tight_layout()
+    savefig_paper(fig, f"scheme_contrast_{tag}", dir=str(FIG_DIR))
+    plt.close(fig)
+
+
+def fig_arm_vs_ce(data: dict, tag: str) -> None:
+    """Per-arm F_arm vs same-wave F_ce scatter (plan §6): each point one
+    (pair, arm); identity + the D3 half-share line are the reference reads."""
+    keep = _wellsep(data["steered"])
+    ce_by_pair: dict[str, float] = {}
+    for set_name in ("s1", "s2"):
+        if tag == "q35":
+            rows = [r for r in data["ce"] if r["variant"] == "steered" and r["set"] == set_name]
+        else:
+            rows = [r for r in data["calib"] if r["arm"] == "steered" and r["set"] == set_name]
+        for r in rows:
+            if r["f_beh"] is not None:
+                ce_by_pair[r["pair_id"]] = r["f_beh"]
+    fig, axes = plt.subplots(1, 2, figsize=(8.6, 4.0), sharex=True, sharey=True)
+    colors = dict(zip(C.ARM_KS, paper_palette(3), strict=True))
+    drew = False
+    for ax, kind in zip(axes, C.ARM_KINDS, strict=True):
+        for k in C.ARM_KS:
+            for scheme, alpha in (("med", 0.8), ("bstart", 0.35)):
+                pts = [
+                    (ce_by_pair[r["pair_id"]], r["f_beh"])
+                    for r in data["steered"]
+                    if r["arm_slug"] == f"{kind}{k}_{scheme}"
+                    and r["pair_id"] in keep
+                    and r["pair_id"] in ce_by_pair
+                    and r["f_beh"] is not None
+                ]
+                if pts:
+                    xs, ys = zip(*pts, strict=True)
+                    ax.scatter(
+                        xs,
+                        ys,
+                        s=12,
+                        color=colors[k],
+                        alpha=alpha,
+                        label=f"k={k} {scheme}" if kind == C.ARM_KINDS[0] else None,
+                    )
+                    drew = True
+        lim = ax.get_xlim() + ax.get_ylim()
+        lo, hi = min(lim), max(lim)
+        ax.plot([lo, hi], [lo, hi], color="0.6", lw=0.8, ls=":", label=None)
+        ax.plot([lo, hi], [0.5 * lo, 0.5 * hi], color="0.6", lw=0.8, ls="--", label=None)
+        ax.set_title(kind, fontsize=9)
+        ax.set_xlabel("F_ce (same-wave)")
+    if not drew:
+        plt.close(fig)
+        print(f"[figures] arm_vs_ce {tag}: no (arm, ce) pairs — skipped")
+        return
+    axes[0].set_ylabel("F_arm (steered)")
+    axes[0].legend(frameon=False, fontsize=7, ncol=2)
+    fig.suptitle(f"{tag}: per-pair F_arm vs F_ce (identity ┊, half-share ╌)", y=1.01)
+    fig.tight_layout()
+    savefig_paper(fig, f"arm_vs_ce_{tag}", dir=str(FIG_DIR))
     plt.close(fig)
 
 
@@ -331,8 +569,13 @@ def main(argv: list[str] | None = None) -> int:
     for tag in args.model_tags:
         data = _load_tag(tag)
         fig_hero(data, tag)
+        fig_hero(data, tag, field="f_act")  # secondary-DV mirror (plan §6)
         fig_recovery(data, tag)
         fig_perpair(data, tag)
+        fig_forest_cells(data, tag)
+        fig_k_traces(data, tag)
+        fig_scheme_contrast(data, tag)
+        fig_arm_vs_ce(data, tag)
         fig_whole_vs_continuation(data, tag)
         fig_coherence(data, tag)
     if len(args.model_tags) > 1:

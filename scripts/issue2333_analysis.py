@@ -440,13 +440,31 @@ def phase_f_tables(args: argparse.Namespace) -> int:
     if not va:
         logger.warning("[f-tables] no --va-dir staged: f_act = None everywhere (secondary DV)")
 
+    def _expects_va(r: dict) -> bool:
+        """Which rows MUST have a V_a entry: prefill rows always (span covers
+        the donor ids even at an empty continuation); patch/ce rows whenever
+        the completion is non-empty (the driver skips V_a on empty gen_ids)."""
+        if r.get("kind") == "prefill":
+            return True
+        return int(r.get("n_completion_tokens", 0)) > 0
+
     def _f_act(rows: list[dict], p) -> float | None:
         if not va or not anchor_va:
             return None
-        from explore_persona_space.experiments.issue2094 import fmetrics as FM
         import torch
 
-        patched = [va[r["va_key"]] for r in rows if r.get("va_key") in va]
+        from explore_persona_space.experiments.issue2094 import fmetrics as FM
+
+        expected = [r["va_key"] for r in rows if _expects_va(r)]
+        missing = [k for k in expected if k not in va]
+        if missing:
+            # Fail LOUD (r1: the silent `in va` filter turned a stale/partial
+            # --va-dir staging into quietly-thinner F_act means).
+            raise RuntimeError(
+                f"va store missing {len(missing)}/{len(expected)} expected keys "
+                f"(e.g. {missing[:3]}) — stale or partially-staged --va-dir"
+            )
+        patched = [va[k] for k in expected]
         floor = [v for k, v in anchor_va.items() if k.startswith(f"{p.a}|anchor|")]
         ceil = [v for k, v in anchor_va.items() if k.startswith(f"{p.b}|anchor|")]
         if not patched or len(floor) < 2 or not ceil:
@@ -501,6 +519,9 @@ def phase_f_tables(args: argparse.Namespace) -> int:
                 "variant": variant,
                 "separation": anchors[pid].get("separation"),
                 **_f_from_rows(rows, "e", scores, anchors[pid]),
+                # F_act on the fresh ce rows too (the F_act recovery
+                # denominator — r1 blocker f-act-downstream-missing).
+                "f_act": _f_act(rows, pairs_by_id[pid]),
             }
             for (pid, variant), rows in sorted(by_ce.items())
         ]
@@ -558,12 +579,25 @@ def phase_f_tables(args: argparse.Namespace) -> int:
     A62._write_json_atomic(
         out_dir / "calib_offset.json",
         {
-            s: {
-                "mean_offset": _mean(v),
-                "sd": float(np.std(v, ddof=1)) if len(v) > 1 else None,
-                "n_pairs": len(v),
-            }
-            for s, v in offs.items()
+            "model_tag": tag,
+            # r1 Minor: on q35 the calibration rows are q25-GENERATED text
+            # re-judged in the q35 wave against q25-banked F — a cross-model
+            # JUDGE-INSTRUMENT offset (mixed normalization), never a q35
+            # behavior read; label it so downstream tables cannot silently
+            # treat it as within-model.
+            "offset_semantics": (
+                "same-wave re-judge of q25-generated banked ce text minus the banked "
+                "q25 F values; instrument offset only"
+                + (" — CROSS-MODEL wave (q35 instrument on q25 text)" if tag == "q35" else "")
+            ),
+            **{
+                s: {
+                    "mean_offset": _mean(v),
+                    "sd": float(np.std(v, ddof=1)) if len(v) > 1 else None,
+                    "n_pairs": len(v),
+                }
+                for s, v in offs.items()
+            },
         },
     )
     logger.info(
@@ -627,6 +661,30 @@ def _survivors(anchors_sep: dict[str, float | None], pair_ids: list[str]) -> lis
     ]
 
 
+HOLM_FIXED_M = 12  # plan §6: the registered family is the 12 arms per (model x pair-set)
+
+
+def holm_fixed_m(pvals: dict[str, float], m: int = HOLM_FIXED_M) -> dict[str, float]:
+    """Holm step-down with the family size FIXED at ``m`` (plan §6): the
+    registered (model x pair-set) family is the 12 arms, so an arm that
+    produced no p-value (dropped/untestable) still counts toward the
+    correction — ``m = len(realized)`` was anti-conservative whenever arms
+    dropped out (r1 Minor)."""
+    assert len(pvals) <= m, (sorted(pvals), m)
+    out: dict[str, float] = {}
+    running = 0.0
+    for i, (k, p) in enumerate(sorted(pvals.items(), key=lambda kv: kv[1])):
+        running = max(running, min(1.0, (m - i) * p))
+        out[k] = running
+    return out
+
+
+def _spearman(xs: list[float], ys: list[float]) -> float:
+    from scipy.stats import spearmanr
+
+    return float(spearmanr(xs, ys).statistic)
+
+
 def phase_stats(args: argparse.Namespace) -> int:
     tag = args.model_tag
     out_dir = args.out_dir or (FMETRICS_DIR / tag)
@@ -635,6 +693,8 @@ def phase_stats(args: argparse.Namespace) -> int:
     calib = list(A62._iter_jsonl(out_dir / "calib_cells.jsonl"))
     f_st = {(r["pair_id"], r["arm_slug"]): r for r in steered}
     f_nu = {(r["pair_id"], r["arm_slug"]): r for r in nulls}
+    act_st = {(r["pair_id"], r["arm_slug"]): r.get("f_act") for r in steered}
+    act_nu = {(r["pair_id"], r["arm_slug"]): r.get("f_act") for r in nulls}
     sep_by_pair = {r["pair_id"]: r.get("separation") for r in [*steered, *nulls]}
 
     # ce denominators: SAME-WAVE calibration (primary, q25) / fresh ce (q35);
@@ -660,14 +720,67 @@ def phase_stats(args: argparse.Namespace) -> int:
         if r["arm"] == "steered" and r["f_beh"] is not None:
             ce_banked[r["pair_id"]] = r["f_beh"]
 
+    # F_act ce denominators (secondary mirror — r1 blocker f-act-downstream):
+    # q35 = fresh same-model ce_cells; q25 = the BANKED #2162 ce f_act (S1
+    # only; the fu1-derived S2 ce table carries no f_act).
+    ce_act: dict[str, float] = {}
+    if tag == "q35":
+        ce_act_source = "fresh-q35-ce (same model/wave)"
+        for r in A62._iter_jsonl(out_dir / "ce_cells.jsonl"):
+            if r["variant"] == "steered" and r.get("f_act") is not None:
+                ce_act[r["pair_id"]] = r["f_act"]
+    else:
+        ce_act_source = "banked-q25-ce (#2162 f_cells; no banked S2 ce f_act)"
+        for r in A62._iter_jsonl(A2162_F_CELLS):
+            if (
+                r["slot"] == "ce"
+                and r["cell"] in C.S1_CELLS
+                and r["arm"] == "steered"
+                and r.get("f_act") is not None
+            ):
+                ce_act[r["pair_id"]] = r["f_act"]
+
     s1_pairs, s2_pairs = J33.build_pair_universe()
+    cells_of = {p.pair_id: p.cell for p in s1_pairs}
     sets = {"s1": [p.pair_id for p in s1_pairs], "s2": [p.pair_id for p in s2_pairs]}
     result: dict = {"model_tag": tag, "per_set": {}}
+    if tag == "q35":
+        result["banked_ce_note"] = (
+            "recovery_banked denominators are q25-normalized banked ce values — a "
+            "CROSS-MODEL comparison read, never the q35 headline (samewave is primary)"
+        )
     for set_name, pair_ids in sets.items():
-        survivors = _survivors(sep_by_pair, pair_ids)
-        floor = S1_SURVIVAL_FLOOR if set_name == "s1" else S2_SURVIVAL_FLOOR
+        survivors_all = _survivors(sep_by_pair, pair_ids)
+        # Survival-floor gating (plan §6; r1 blocker survival-floor-inference):
+        # S1 floors are PER CELL (parent #2162 grain, 12/36); the pooled S1
+        # analysis uses ONLY pairs from floor-passing cells. S2 is one 15-pair
+        # set with a set-level floor of 5. Below-floor => NO tests, a
+        # registered untestable label — never a small-n p-value.
+        if set_name == "s1":
+            floor = S1_SURVIVAL_FLOOR
+            by_cell_surv: dict[str, list[str]] = defaultdict(list)
+            for pid in survivors_all:
+                by_cell_surv[cells_of[pid]].append(pid)
+            passing = {c: v for c, v in by_cell_surv.items() if len(v) >= floor}
+            survivors = sorted(pid for v in passing.values() for pid in v)
+            floor_meta = {
+                "grain": "per-cell",
+                "floor": floor,
+                "per_cell_n_survivors": {c: len(v) for c, v in sorted(by_cell_surv.items())},
+                "cells_passing": sorted(passing),
+                "cells_below_floor": sorted(set(by_cell_surv) - set(passing)),
+            }
+            testable_set = bool(passing)
+        else:
+            floor = S2_SURVIVAL_FLOOR
+            survivors = sorted(survivors_all)
+            floor_meta = {"grain": "set", "floor": floor, "n_survivors": len(survivors)}
+            testable_set = len(survivors) >= floor
+
         arms_out: dict[str, dict] = {}
         pvals: dict[str, float] = {}
+        arms_act: dict[str, dict] = {}
+        pvals_act: dict[str, float] = {}
         for slug in C.ARM_SLUGS:
             pids = [
                 pid
@@ -675,25 +788,30 @@ def phase_stats(args: argparse.Namespace) -> int:
                 if f_st.get((pid, slug), {}).get("f_beh") is not None
                 and f_nu.get((pid, slug), {}).get("f_beh") is not None
             ]
-            d = np.array([f_st[(p, slug)]["f_beh"] - f_nu[(p, slug)]["f_beh"] for p in pids])
-            # Registered joint per-pair columns (one bootstrap resample of the
-            # PAIR axis drives every read — denominator variation propagates
-            # into D3 by construction, plan §3):
-            #   0 diff  1 F_steered  2 F_ce_samewave  3 D3-contrib(samewave)
-            #   4 F_ce_banked       5 D3-contrib(banked)
-            cols = np.full((len(pids), 6), np.nan)
-            for i, p in enumerate(pids):
-                fs = f_st[(p, slug)]["f_beh"]
-                cols[i, 0] = d[i]
-                cols[i, 1] = fs
-                if p in ce_samewave:
-                    cols[i, 2] = ce_samewave[p]
-                    cols[i, 3] = fs - D3_SHARE * ce_samewave[p]
-                if p in ce_banked:
-                    cols[i, 4] = ce_banked[p]
-                    cols[i, 5] = fs - D3_SHARE * ce_banked[p]
-            rec: dict = {"n_pairs": len(pids), "below_floor": len(pids) < floor}
-            if len(pids) >= 2:
+            rec: dict = {
+                "n_pairs": len(pids),
+                "below_floor": (not testable_set) or len(pids) < floor,
+            }
+            if rec["below_floor"]:
+                rec["label"] = "untestable-small-n"
+            else:
+                d = np.array([f_st[(p, slug)]["f_beh"] - f_nu[(p, slug)]["f_beh"] for p in pids])
+                # Registered joint per-pair columns (one bootstrap resample of
+                # the PAIR axis drives every read — denominator variation
+                # propagates into D3 by construction, plan §3):
+                #   0 diff  1 F_steered  2 F_ce_samewave  3 D3-contrib(samewave)
+                #   4 F_ce_banked       5 D3-contrib(banked)
+                cols = np.full((len(pids), 6), np.nan)
+                for i, p in enumerate(pids):
+                    fs = f_st[(p, slug)]["f_beh"]
+                    cols[i, 0] = d[i]
+                    cols[i, 1] = fs
+                    if p in ce_samewave:
+                        cols[i, 2] = ce_samewave[p]
+                        cols[i, 3] = fs - D3_SHARE * ce_samewave[p]
+                    if p in ce_banked:
+                        cols[i, 4] = ce_banked[p]
+                        cols[i, 5] = fs - D3_SHARE * ce_banked[p]
                 draws = bootstrap_family_means_batched(cols, BOOT_B, BOOT_SEED)
                 rec["diff_mean"] = float(np.mean(d))
                 rec["diff_ci"] = _ci(draws[:, 0])
@@ -713,54 +831,144 @@ def phase_stats(args: argparse.Namespace) -> int:
                         "d3_ci": _ci(draws[:, d3_col]),
                     }
             arms_out[slug] = rec
-        holmed = A62.holm(pvals) if pvals else {}
-        for slug, rec in arms_out.items():
-            if slug in holmed:
-                rec["p_holm"] = holmed[slug]
-                rec["holm_significant"] = holmed[slug] < HOLM_ALPHA
-                if "diff_ci" in rec:
-                    lo, hi = rec["diff_ci"]
-                    rec["separates"] = (lo > 0) and rec["holm_significant"]
-        # Verdict lattice on prefill-3 per scheme (plan §3).
-        verdicts = {}
-        for scheme in C.ARM_SCHEMES:
-            slug = f"prefill3_{scheme}"
-            rec = arms_out.get(slug, {})
-            if "diff_ci" not in rec:
-                verdicts[scheme] = {
-                    "label": instance_label(scheme, "indeterminate"),
-                    "reason": "no-data",
-                }
-                continue
-            d3 = rec.get("recovery_samewave", {})
-            label = lattice_label(
-                rec["diff_ci"][0],
-                rec["diff_ci"][1],
-                bool(rec.get("holm_significant")),
-                d3.get("d3_ci", (None, None))[0],
-                d3.get("d3_ci", (None, None))[1],
-            )
-            d3_banked = rec.get("recovery_banked", {})
-            label_banked = lattice_label(
-                rec["diff_ci"][0],
-                rec["diff_ci"][1],
-                bool(rec.get("holm_significant")),
-                d3_banked.get("d3_ci", (None, None))[0],
-                d3_banked.get("d3_ci", (None, None))[1],
-            )
-            verdicts[scheme] = {
-                "label": instance_label(scheme, label),
-                "label_banked_ce": instance_label(scheme, label_banked),
-                "confirmatory": scheme == "med",
-                "below_floor": rec.get("below_floor"),
+
+            # F_act SECONDARY mirror (plan §6): same registered reads on the
+            # activation DV — paired diff CI + exact Wilcoxon + its OWN fixed
+            # m=12 Holm family + recovery + pair-level rank agreement.
+            pids_a = [
+                pid
+                for pid in survivors
+                if act_st.get((pid, slug)) is not None and act_nu.get((pid, slug)) is not None
+            ]
+            rec_a: dict = {
+                "n_pairs": len(pids_a),
+                "below_floor": (not testable_set) or len(pids_a) < floor,
             }
+            if rec_a["below_floor"]:
+                rec_a["label"] = "untestable-small-n"
+            else:
+                d_a = np.array([act_st[(p, slug)] - act_nu[(p, slug)] for p in pids_a])
+                cols_a = np.full((len(pids_a), 4), np.nan)
+                for i, p in enumerate(pids_a):
+                    fa = act_st[(p, slug)]
+                    cols_a[i, 0] = d_a[i]
+                    cols_a[i, 1] = fa
+                    if p in ce_act:
+                        cols_a[i, 2] = ce_act[p]
+                        cols_a[i, 3] = fa - D3_SHARE * ce_act[p]
+                draws_a = bootstrap_family_means_batched(cols_a, BOOT_B, BOOT_SEED)
+                rec_a["diff_mean"] = float(np.mean(d_a))
+                rec_a["diff_ci"] = _ci(draws_a[:, 0])
+                rec_a["f_act_steered_mean"] = float(np.nanmean(cols_a[:, 1]))
+                rec_a["p_wilcoxon"] = A62._wilcoxon_exact_p(d_a)
+                pvals_act[slug] = rec_a["p_wilcoxon"]
+                ce_mean_a = float(np.nanmean(cols_a[:, 2]))
+                if not (math.isnan(ce_mean_a) or abs(ce_mean_a) < 1e-9):
+                    rec_a["recovery"] = {
+                        "ce_mean": ce_mean_a,
+                        "ce_source": ce_act_source,
+                        "ratio": float(np.nanmean(cols_a[:, 1])) / ce_mean_a,
+                        "ratio_ci": _ci(draws_a[:, 1] / draws_a[:, 2]),
+                        "d3_mean": float(np.nanmean(cols_a[:, 3])),
+                        "d3_ci": _ci(draws_a[:, 3]),
+                    }
+                common = [
+                    p
+                    for p in pids_a
+                    if f_st.get((p, slug), {}).get("f_beh") is not None
+                    and f_nu.get((p, slug), {}).get("f_beh") is not None
+                ]
+                if len(common) >= 3:
+                    db = [f_st[(p, slug)]["f_beh"] - f_nu[(p, slug)]["f_beh"] for p in common]
+                    da = [act_st[(p, slug)] - act_nu[(p, slug)] for p in common]
+                    rec_a["spearman_vs_f_beh"] = {"rho": _spearman(db, da), "n_pairs": len(common)}
+            arms_act[slug] = rec_a
+
+        for family_pvals, family_arms in ((pvals, arms_out), (pvals_act, arms_act)):
+            holmed = holm_fixed_m(family_pvals) if family_pvals else {}
+            for slug, rec in family_arms.items():
+                if slug in holmed:
+                    rec["p_holm"] = holmed[slug]
+                    rec["holm_significant"] = holmed[slug] < HOLM_ALPHA
+                    if "diff_ci" in rec:
+                        lo, hi = rec["diff_ci"]
+                        rec["separates"] = (lo > 0) and rec["holm_significant"]
+
+        def _prefill3_verdicts(family_arms: dict[str, dict], samewave_key: str) -> dict:
+            verdicts: dict = {}
+            for scheme in C.ARM_SCHEMES:
+                slug = f"prefill3_{scheme}"
+                rec = family_arms.get(slug, {})
+                if rec.get("label") == "untestable-small-n":
+                    verdicts[scheme] = {
+                        "label": instance_label(scheme, "untestable-small-n"),
+                        "reason": "below survival floor — no tests run",
+                    }
+                    continue
+                if "diff_ci" not in rec:
+                    verdicts[scheme] = {
+                        "label": instance_label(scheme, "indeterminate"),
+                        "reason": "no-data",
+                    }
+                    continue
+                d3 = rec.get(samewave_key, {})
+                label = lattice_label(
+                    rec["diff_ci"][0],
+                    rec["diff_ci"][1],
+                    bool(rec.get("holm_significant")),
+                    d3.get("d3_ci", (None, None))[0],
+                    d3.get("d3_ci", (None, None))[1],
+                )
+                verdict = {
+                    "label": instance_label(scheme, label),
+                    "confirmatory": scheme == "med",
+                    "below_floor": rec.get("below_floor"),
+                }
+                d3_banked = rec.get("recovery_banked")
+                if d3_banked is not None:
+                    verdict["label_banked_ce"] = instance_label(
+                        scheme,
+                        lattice_label(
+                            rec["diff_ci"][0],
+                            rec["diff_ci"][1],
+                            bool(rec.get("holm_significant")),
+                            d3_banked.get("d3_ci", (None, None))[0],
+                            d3_banked.get("d3_ci", (None, None))[1],
+                        ),
+                    )
+                verdicts[scheme] = verdict
+            return verdicts
+
+        both = [
+            slug
+            for slug in C.ARM_SLUGS
+            if "diff_mean" in arms_out.get(slug, {}) and "diff_mean" in arms_act.get(slug, {})
+        ]
+        arm_spearman = {
+            "rho": _spearman(
+                [arms_out[s]["diff_mean"] for s in both],
+                [arms_act[s]["diff_mean"] for s in both],
+            )
+            if len(both) >= 3
+            else None,
+            "n_arms": len(both),
+        }
+
         result["per_set"][set_name] = {
-            "n_survivors": len(survivors),
-            "survival_floor": floor,
-            "untestable": len(survivors) < floor,
+            "n_survivors_anchor": len(survivors_all),
+            "n_survivors_tested": len(survivors),
+            "floor": floor_meta,
+            "untestable": not testable_set,
             "arms": arms_out,
-            "prefill3_verdicts": verdicts,
-            "holm_family_m": len(pvals),
+            "prefill3_verdicts": _prefill3_verdicts(arms_out, "recovery_samewave"),
+            "holm_family_m": HOLM_FIXED_M,
+            "f_act": {
+                "role": "secondary companion DV (plan §6) — never the headline",
+                "arms": arms_act,
+                "prefill3_verdicts": _prefill3_verdicts(arms_act, "recovery"),
+                "arm_level_spearman_vs_f_beh": arm_spearman,
+                "holm_family_m": HOLM_FIXED_M,
+            },
         }
     A62._write_json_atomic(out_dir / "stats.json", result)
     logger.info("[stats] %s: wrote %s", tag, out_dir / "stats.json")
@@ -778,7 +986,8 @@ PHASES = {
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap = argparse.ArgumentParser(description="Issue #2333 VM-side analysis.")
-    ap.add_argument("--phase", required=True, choices=tuple(PHASES))
+    # required unless --import-check (r1 Minor: standalone --import-check).
+    ap.add_argument("--phase", choices=tuple(PHASES))
     ap.add_argument("--model-tag", choices=("q25", "q35"), default=None)
     ap.add_argument("--stage-dir", type=Path, default=Path("data/issue_2333/fu1_stage"))
     ap.add_argument("--scores-dir", type=Path, default=None)
@@ -820,6 +1029,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     if args.import_check:
         return _import_check()
+    assert args.phase, "--phase required (or --import-check)"
     if args.phase in ("f-tables", "stats"):
         assert args.model_tag, f"--model-tag required for --phase {args.phase}"
         if args.phase == "f-tables":

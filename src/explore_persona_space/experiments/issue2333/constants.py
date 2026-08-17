@@ -80,14 +80,34 @@ S2_EXCLUDED_N = 5
 # ---------------------------------------------------------------------------
 # S2 shuffled-donor map (fallback derangement, seed 23330 — plan §4.2 / A15).
 # Recovery of the parent's realized derangement from
-# eval_results/issue_2094/f_metrics/null_cells.jsonl was AMBIGUOUS: 6 of 15
-# matched-query pairs carry >1 distinct typeA donor_pair_id across the
-# parent's null blocks (e.g. mq--bare__q1--conv__q1 -> 2 donors), so no single
-# derangement reproduces the parent. Per plan §4.2's named fallback we use a
-# fresh seeded derangement over the 15 matched-query pair ids, seed 23330.
+# eval_results/issue_2094/f_metrics/null_cells.jsonl (the plan §4.2 PRIMARY)
+# is AMBIGUOUS — measured 2026-08-16 (r2 re-probe): restricting donor_pair_id
+# to pair-type ("mq--*") donors, 5 of 15 matched-query pairs carry >1 distinct
+# donor across the parent's null blocks (all 15 are multi-donor once centroid
+# nulls are included), so no single derangement reproduces the parent. Per
+# plan §4.2's NAMED FALLBACK the realized map is a fresh seeded derangement
+# over the 15 matched-query pair ids, seed 23330 (`seeded_derangement` below —
+# the map `issue2333_run.build_donor_maps` actually installs).
 # ---------------------------------------------------------------------------
 S2_DERANGEMENT_SEED = 23330
 BOOTSTRAP_SEED = 23330  # analysis bootstrap (plan §10)
+
+# q35 environment resolution (plan §4.4 B-1): #2329's REALIZED transformers
+# pin — origin/issue-2329 scripts/issue2329_run.py gate 0b asserts ==5.15.0
+# and issue2329_dispatch.sh installs it pod-side (`TRANSFORMERS_PIN`); the
+# repo pin (4.57.6) FAILS AutoConfig for qwen3_5 (plan §12 A8). envcheck
+# (q35) asserts the RUNTIME version equals this pin; every later q35 phase
+# asserts env identity with the envcheck that passed.
+Q35_TRANSFORMERS_PIN = "5.15.0"
+
+# #2329 artifact prefix (plan §4.4 B-1 fitness probe): the reuse-or-selfgen
+# decision probes these classes at ONE resolved data-repo revision.
+HF_PREFIX_2329 = "issue2329_q35rerun"
+FITNESS_2329_CLASSES = (
+    f"{HF_PREFIX_2329}/analysis_tensors/vc_bank",  # bank slice (q35 re-tokenized)
+    f"{HF_PREFIX_2329}/raw_completions/anchors",  # fresh q35 anchors
+    f"{HF_PREFIX_2329}/raw_completions/ce_control",  # stage-1 ce-control rows
+)
 
 
 def seeded_derangement(items: list[str], seed: int) -> dict[str, str]:
@@ -127,6 +147,33 @@ def parse_arm(slug: str) -> tuple[str, int, str]:
             assert k in ARM_KS and scheme in ARM_SCHEMES, slug
             return kind, k, scheme
     raise ValueError(f"unknown arm slug: {slug}")
+
+
+def expected_grid_slugs() -> set[str]:
+    """The 144 production grid-block shard slugs (byte-parity with
+    ``issue2162_run.block_slug(f"{cell}|{arm}|{variant}")`` — test-pinned).
+
+    Torch-free so the VM-side judge/analysis completeness gate (pre-spend,
+    plan §7 / code-review r1 Major 3) can enumerate without the pod driver.
+    """
+    cells = (*S1_CELLS, S2_CELL)
+    slugs = {
+        f"{cell}|{arm}|{variant}".replace("|", "__").replace(".", "p")
+        for cell in cells
+        for arm in ARM_SLUGS
+        for variant in VARIANTS
+    }
+    assert len(slugs) == len(cells) * len(ARM_SLUGS) * len(VARIANTS), len(slugs)
+    return slugs
+
+
+def expected_ce_control_slugs() -> set[str]:
+    """The 12 q35 ce_control shard slugs ((5 S1 cells + 1 S2 cell) x 2 variants)."""
+    return {
+        f"{cell}|ce_replace|{variant}".replace("|", "__").replace(".", "p")
+        for cell in (*S1_CELLS, S2_CELL)
+        for variant in VARIANTS
+    }
 
 
 # ---------------------------------------------------------------------------

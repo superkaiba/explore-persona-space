@@ -123,3 +123,97 @@ def test_load_2094_anchors_committed_shape(monkeypatch):
         if a["separation"] is not None and abs(a["separation"]) >= A33.SEPARATION_BAR
     ]
     assert len(wellsep) == A33.C.S2_WELLSEP_N  # 10 (plan §5; 5 excluded)
+
+
+# ── r2 additions: fixed-m Holm + floor gating + F_act mirror ──────────
+
+
+def test_holm_fixed_m_uses_registered_family_size():
+    """r1 Minor: Holm must correct at the REGISTERED family size m=12 per
+    (model x pair-set) — never at the realized arm count."""
+    out = A33.holm_fixed_m({"a": 0.004})
+    assert out["a"] == pytest.approx(0.048)  # factor 12, not 1
+    out = A33.holm_fixed_m({"a": 0.001, "b": 0.002})
+    assert out["a"] == pytest.approx(0.012)  # (12 - 0) * p
+    assert out["b"] == pytest.approx(0.022)  # (12 - 1) * p
+    out = A33.holm_fixed_m({"a": 0.5, "b": 0.0001})
+    assert out["b"] == pytest.approx(0.0012)
+    assert out["a"] == 1.0  # capped
+    with pytest.raises(AssertionError):
+        A33.holm_fixed_m({f"p{i}": 0.01 for i in range(13)})
+
+
+def test_phase_stats_floor_gating_fixed_holm_and_f_act_mirror(tmp_path, monkeypatch):
+    """Registered survival-floor gating (r1 blocker): per-cell S1 floors (a
+    below-floor cell's pairs are excluded from the pooled S1 read), below-
+    floor arms get NO tests (label untestable-small-n), Holm fixed m=12, the
+    F_act secondary mirror with its own family + rank agreement, and an
+    untestable S2 set (3 < 5 survivors)."""
+    monkeypatch.chdir(REPO_ROOT)
+    s1_pairs, s2_pairs = A33.J33.build_pair_universe()
+    cell1, cell2 = A33.C.S1_CELLS[0], A33.C.S1_CELLS[1]
+    c1 = sorted(p.pair_id for p in s1_pairs if p.cell == cell1)[:14]
+    c2 = sorted(p.pair_id for p in s1_pairs if p.cell == cell2)[:3]  # below per-cell floor
+    s2_ids = sorted(p.pair_id for p in s2_pairs)[:3]  # below the S2 set floor (5)
+    out = tmp_path / "stats_out"
+    out.mkdir()
+
+    def row(pid, set_name, cell, variant, f, fa):
+        return {
+            "pair_id": pid,
+            "set": set_name,
+            "cell": cell,
+            "arm_slug": "prefill3_med",
+            "variant": variant,
+            "separation": 1.0,
+            "f_beh": f,
+            "f_act": fa,
+        }
+
+    steered, nulls = [], []
+    for i, pid in enumerate(c1):
+        steered.append(row(pid, "s1", cell1, "steered", 0.8 + 0.001 * i, 0.7 + 0.002 * i))
+        nulls.append(row(pid, "s1", cell1, "null", 0.1, 0.05))
+    for pid in c2:
+        steered.append(row(pid, "s1", cell2, "steered", 0.9, 0.8))
+        nulls.append(row(pid, "s1", cell2, "null", 0.1, 0.1))
+    for pid in s2_ids:
+        steered.append(row(pid, "s2", "s2_matched_query", "steered", 0.9, None))
+        nulls.append(row(pid, "s2", "s2_matched_query", "null", 0.1, None))
+    calib = [{"pair_id": pid, "set": "s1", "arm": "steered", "f_beh": 0.5} for pid in c1]
+    A33.A62._write_jsonl_atomic(out / "f_cells.jsonl", steered)
+    A33.A62._write_jsonl_atomic(out / "null_cells.jsonl", nulls)
+    A33.A62._write_jsonl_atomic(out / "calib_cells.jsonl", calib)
+
+    assert A33.phase_stats(argparse.Namespace(model_tag="q25", out_dir=out)) == 0
+    res = json.loads((out / "stats.json").read_text(encoding="utf-8"))
+
+    s1 = res["per_set"]["s1"]
+    assert s1["floor"]["grain"] == "per-cell" and s1["floor"]["floor"] == 12
+    assert s1["floor"]["cells_passing"] == [cell1]
+    assert cell2 in s1["floor"]["cells_below_floor"]
+    assert s1["n_survivors_tested"] == 14  # cell2's 3 pairs excluded from the pool
+    arm = s1["arms"]["prefill3_med"]
+    assert arm["n_pairs"] == 14 and not arm["below_floor"]
+    assert s1["holm_family_m"] == 12
+    assert arm["p_holm"] == pytest.approx(min(1.0, 12 * arm["p_wilcoxon"]))
+    assert arm["separates"] is True
+    for slug in A33.C.ARM_SLUGS:
+        if slug == "prefill3_med":
+            continue
+        rec = s1["arms"][slug]
+        assert rec["label"] == "untestable-small-n"
+        assert "p_wilcoxon" not in rec and "diff_ci" not in rec  # NO tests below floor
+    assert s1["prefill3_verdicts"]["med"]["label"] == "snowball-sufficient"
+    assert s1["prefill3_verdicts"]["bstart"]["label"] == "natural-opening-untestable-small-n"
+    fa = s1["f_act"]
+    assert fa["holm_family_m"] == 12
+    arm_a = fa["arms"]["prefill3_med"]
+    assert arm_a["n_pairs"] == 14 and "diff_ci" in arm_a and "p_holm" in arm_a
+    assert arm_a["spearman_vs_f_beh"]["n_pairs"] == 14
+    assert "secondary" in fa["role"]
+
+    s2 = res["per_set"]["s2"]
+    assert s2["untestable"] is True and s2["floor"]["grain"] == "set"
+    assert all(r.get("label") == "untestable-small-n" for r in s2["arms"].values())
+    assert s2["prefill3_verdicts"]["med"]["label"] == "untestable-small-n"
