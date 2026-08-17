@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2348,
+  "highest_id": 2349,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10420,6 +10420,13 @@
       "path": "tasks/planning/2348",
       "status": "planning",
       "title": "workflow-fix: Step 10d pre-push gate mapped-test legs compare failure sets over different collections (false block on pre-existing main-red)"
+    },
+    "2349": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2349",
+      "status": "proposed",
+      "title": "plan-compute-sizing.md: a 1-unit pilot is not a sizing basis when the phase's own design admits unequal unit costs (1.5x grid under-projection, #2329)"
     },
     "235": {
       "has_clean_result": true,
