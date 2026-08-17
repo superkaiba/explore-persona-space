@@ -1,6 +1,7 @@
 ---
-title: Predicting Qwen2.5-7B-Instruct over-refusal from internal representations vs
-  an LLM judge (context / mapped-answer / actual-answer probes)
+title: Predicting Qwen2.5-7B-Instruct refuse/comply behavior from internal representations
+  vs an LLM judge, across harmful-compliance and over-refusal regimes (context / mapped-answer
+  / actual-answer probes)
 kind: experiment
 tags: []
 created_at: '2026-08-17T22:23:49Z'
@@ -22,7 +23,7 @@ relates_to:
 ---
 ## Goal
 
-On borderline (dual-use) prompts, determine whether Qwen2.5-7B-Instruct's over-refuse-vs-answer decision is predictable from its INTERNAL representation of the context when it is NOT predictable from the prompt text by a strong LLM judge, and whether a fitted context->answer map recovers the behavior-relevant signal that only the actual-answer representation contains. Compare four predictors under a fair group-level split: (1) LLM judge on context text, (2) linear probe on the context activation, (3) linear probe on the mapped (predicted) answer activation, (4) linear probe on the actual answer activation (ceiling).
+Predict Qwen2.5-7B-Instruct's binary decision (RELIABLY-COMPLY/ANSWER vs RELIABLY-REFUSE) across TWO behavioral regimes — (A) harmful-compliance flip-pairs and (B) over-refusal on borderline dual-use prompts — and compare four predictors of that behavior under a fair, group-level train/eval split, run separately on each arm (robustness) plus a cross-regime transfer check:
 
 1. **LLM judge on context** — Sonnet (`claude-sonnet-4-5-20250929`) reads only the prompt text and predicts behavior (few-shot, calibrated, returns P). Surface baseline; expected near chance if behavior is surface-unpredictable.
 2. **Probe on context vector** — linear probe on Qwen's residual-stream activation at the last prompt token → behavior.
@@ -39,7 +40,10 @@ On borderline (dual-use) prompts, determine whether Qwen2.5-7B-Instruct's over-r
 
 ## Design
 
-- **Dataset:** OR-Bench-Hard-1k (`bench-llm/or-bench`) + PHTest (`furonghuang-lab/PHTest`, controversial subset) — benign-but-scary dual-use prompts that straddle the refuse/answer boundary. Inline pilot (this session): OR-Bench-Hard greedy over-refusal rate ≈ 15% (answer 85%), and near-duplicate prompts already straddle the boundary naturally (e.g. "questionable methods to subtly AFFECT people's decisions" [refused] vs "questionable techniques to subtly INFLUENCE people's decisions" [answered]).
+- **Dataset — TWO ARMS (run the full 4-predictor comparison on each; user decision):**
+  - **Arm A — Harmful flip-pairs.** Matched (refuse-base, comply-variant) pairs: harmful bases (AdvBench moderate-tier, deduped) × subtle intent-preserving axes (past/passive/declarative-curiosity/formal/nominalization/technical). Behavior label = the model's decision: COMPLY (harmful_comply) vs REFUSE. Inline pilot (this session, 400 bases → 2,364 variants): **121 genuine flip-pairs from 92 distinct bases, 72 borderline** (comply rate 0.1–0.7), well-spread comply-rate — bases reliably refuse (rate≈0), variants comply. Scale this up for the real set. Bank: `/tmp/borderline_harmful_scan2.json`.
+  - **Arm B — Over-refusal.** OR-Bench-Hard-1k (`bench-llm/or-bench`) + PHTest (`furonghuang-lab/PHTest`, controversial subset) — benign-but-scary dual-use prompts. Behavior label = ANSWER vs OVER-REFUSE. Inline pilot: OR-Bench-Hard greedy over-refusal ≈ 15%; near-duplicate prompts already straddle the boundary naturally (e.g. "questionable methods to subtly AFFECT people's decisions" [refused] vs "questionable techniques to subtly INFLUENCE people's decisions" [answered]).
+  - **Commensurable target:** in both arms the probe predicts the model's binary decision REFUSE vs COMPLY/ANSWER, so the two arms are directly comparable. (Semantics differ — in A, comply is the unsafe outcome; in B, refuse is the error — but the predicted quantity is the same behavioral bit.)
 - **Behavior label (DV):** reliable, multi-sample. Sample N≈10 per prompt at temp≈0.9, Sonnet-judge each response as answer vs over-refuse. Label ANSWER iff answered in ≥70%, OVER-REFUSE iff answered in ≤30%; DROP the ambiguous middle for a clean binary. Balance by subsampling the majority class.
 - **Activations:** Qwen2.5-7B-Instruct with `output_hidden_states`; context vector = residual stream at last prompt token (sweep layers, select by val); actual-answer vector = mean over generated answer tokens (or last), matched layer.
 - **Map M (LABEL-BLIND, trained on additional unjudged generic data — user decision):** fit the context→answer representation map on a SEPARATE, GENERIC, UNJUDGED corpus of (context, answer) pairs — disjoint from the behavior-labeled borderline set, NO behavior labels, NO prompt overlap. M is a task-agnostic transform (the model's general context→answer geometry), never fit to the DV — this is what makes #3 non-circular with #2 (M cannot encode behavior labels it never saw). Prefer a LOW-RANK / answer-subspace map and REPORT its effective rank, so #3 is a probe restricted to the generically-learned answer geometry (a strict, regularizing subset of #2's hypothesis class).
@@ -50,6 +54,7 @@ On borderline (dual-use) prompts, determine whether Qwen2.5-7B-Instruct's over-r
   Both map conditions use TRAIN groups only; eval groups are held out from BOTH the map and the probe (group-level split — no leakage in either stage). Comparison tests whether label-blind in-domain adaptation of the map improves behavior prediction, i.e. whether the borderline domain's answer geometry carries the behavior signal beyond generic geometry. Behavior probe is trained on the labeled train set in both conditions.
 - **Predictors:** train 1–4 above; report accuracy AND AUROC vs the majority-class baseline.
 - **Fair split:** GROUP-LEVEL by seed/topic — all paraphrases/near-duplicates of one seed stay on the same side of train/eval (no leakage). Report LODO-style generalization too.
+- **Two-arm robustness + cross-regime transfer:** run the full 4-predictor comparison (with the #3a/#3b map ablation) SEPARATELY on Arm A (harmful) and Arm B (over-refusal) — the headline claim (judge-on-text ≈ chance ≪ context-probe ≤ mapped-answer ≤ actual-answer ceiling) is only robust if it holds in BOTH regimes. Then a CROSS-REGIME transfer check: train the context-probe on one arm, evaluate on the other — does the behavior-prediction signal generalize across the harmful↔over-refusal regimes, or is it regime-specific? (Report; do not gate the headline on it.)
 
 ## Design risks to resolve in planning (flagged)
 
