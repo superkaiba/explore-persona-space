@@ -322,3 +322,99 @@ def test_coherence_score_parses_through_harness_reduce():
     assert _score_from_parsed(41) == 41.0  # bare-integer off-spec envelope
     assert _score_from_parsed({"score": "REFUSAL"}) is None  # drop-never-coerce
     assert _score_from_parsed({"score": 150}) is None  # out-of-range dropped
+
+
+# --------------------------------------------------------------------------- #
+# 6. judge phase — empty-assistant turns scored directly, never dropped
+# --------------------------------------------------------------------------- #
+def test_phase_judge_empty_assistant_scored_zero_not_dropped(tmp_path, monkeypatch):
+    """An empty-assistant turn gets harm=0 / coherence=0 / empty:true rows on BOTH
+    DVs (never a missing key), and its item is NEVER sent to the judge."""
+    import json
+
+    from explore_persona_space.eval import graded_judge as GJ
+
+    out_root = tmp_path / "cs"
+    sc_dir = out_root / R.model_slug("32b") / "jailbreak"
+    sc_dir.mkdir(parents=True)
+    cell = {
+        "layers": "band",
+        "arm": "steer_ctx_k8",
+        "turns": [
+            {"turn": 1, "user": "q1", "assistant": "a non-empty reply"},
+            {"turn": 2, "user": "q2", "assistant": ""},  # greedy-decoded straight to EOS
+        ],
+    }
+    (sc_dir / "band__steer_ctx_k8.json").write_text(json.dumps(cell))
+
+    judged_batches: list[list[tuple[str, str, str]]] = []
+
+    def fake_judge_graded(  # signature mirrors graded_judge.judge_graded
+        items,
+        eval_prompt,
+        *,
+        n_draws,
+        cache_dir,
+        save_raw,
+        judge_model=GJ.DEFAULT_JUDGE_MODEL,
+        temperature=GJ.DEFAULT_JUDGE_TEMPERATURE,
+        max_tokens=64,
+        dry_run=False,
+        threshold_base=None,
+    ):
+        judged_batches.append(list(items))
+        return GJ.JudgeResult(
+            scores={iid: 80.0 for iid, _q, _a in items},
+            n_total_draws=len(items) * n_draws,
+            n_dropped_draws=0,
+        )
+
+    # _judge_dv imports judge_graded at call time, so patching the source module works
+    monkeypatch.setattr(GJ, "judge_graded", fake_judge_graded)
+    args = _Args(
+        out_root=str(out_root),
+        model="32b",
+        scenario="jailbreak",
+        judge_draws=3,
+        dry_run=False,
+    )
+    R.phase_judge(args)
+
+    judged = out_root / R.model_slug("32b") / "judged"
+    harm = json.loads((judged / "scores_jailbreak.json").read_text())
+    coh = json.loads((judged / "coherence_jailbreak.json").read_text())
+    for payload in (harm, coh):
+        rows = payload["cells"]["band__steer_ctx_k8"]
+        # the empty turn is PRESENT with the direct-scored row, not a dropped key
+        assert rows["2"] == {"score": 0, "flag": False, "empty": True}
+        # the judged turn keeps its judge-produced score, no empty flag
+        assert rows["1"]["score"] == 80.0 and "empty" not in rows["1"]
+        assert payload["n_empty_turns"] == 1
+    # the judge API never saw the empty turn (both DV batches)
+    assert len(judged_batches) == 2
+    for batch in judged_batches:
+        assert [iid for iid, _q, _a in batch] == ["jailbreak--band--steer_ctx_k8--t01"]
+        assert all(a for _iid, _q, a in batch)
+
+
+# --------------------------------------------------------------------------- #
+# 7. generate phase — upfront strength-arm geometry guard (pre-strength tau_map)
+# --------------------------------------------------------------------------- #
+def test_strength_geometry_guard_rejects_pre_strength_taumap():
+    """A strength arm against a pre-strength extraction fails LOUD with the
+    re-extract instruction, before any model load; valid geoms + original arms pass."""
+    import pytest
+
+    layers = [0, 1]
+    geom = _synth_geom(layers, 8)
+    # a PRE-strength extraction: tau_map.json lacked the strength maps entirely
+    # (load_cs_geometry's tau_map.get(..., {}) yields empty dicts)
+    pre = dict(geom, cap_percentile_tau={}, alpha={})
+    with pytest.raises(RuntimeError, match=r"--phase extract"):
+        R._check_strength_geometry(
+            pre, ["cap_ctx_p100", "steer_ctx_k8"], Path("/x"), "32b", Path("/o")
+        )
+    # original (non-strength) arms never trip the guard on the same pre geom
+    R._check_strength_geometry(pre, ["cap_ctx", "unsteered"], Path("/x"), "32b", Path("/o"))
+    # a complete geom passes for every new18 arm
+    R._check_strength_geometry(geom, list(R.NEW_STRENGTH_ARMS), Path("/x"), "32b", Path("/o"))
