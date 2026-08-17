@@ -162,6 +162,27 @@ for ((i = FIRST; i <= LAST; i++)); do
   fi
   echo "[stage] disk after ${label}:"; df -h /workspace | tail -1
 
+  # ---- stage-asset export (persistence-only extensions): per-stage fitted
+  # maps + layer-30 paired clouds -> HF, while the staging is on disk. A
+  # failure here marks rc_all but does NOT block the batteries (independent
+  # persistence; the sentinel carries the rc).
+  e0=$(date +%s)
+  echo "[export] ${label} stage assets START $(date -u +%FT%TZ)"
+  CUDA_VISIBLE_DEVICES=0 \
+  OMP_NUM_THREADS=$NCPU MKL_NUM_THREADS=$NCPU OPENBLAS_NUM_THREADS=$NCPU NUMEXPR_NUM_THREADS=$NCPU \
+  uv run python scripts/issue1336_t5d_export_stage_assets.py \
+    --models base,sft,dpo,rlvr,rlvr_long --format "$fmt" --corpus "$corpus" \
+    --layer "$LAYER" \
+    --turnstore-dir "$STAGE/turnstore_v2" \
+    --wave1-turnstore-dir "$STAGE/turnstore_wave1" \
+    > "$LOGDIR/issue-1336-t5d-export-${fmt}_${corpus}.log" 2>&1
+  erc=$?
+  echo "[export] ${label} rc=${erc} elapsed=$(( $(date +%s) - e0 ))s"
+  if [ "$erc" -ne 0 ]; then
+    rc_all=$erc
+    echo "[export] tail of failing log:"; tail -15 "$LOGDIR/issue-1336-t5d-export-${fmt}_${corpus}.log"
+  fi
+
   # ---- per-surface width: RAM binds, not GPU count (see header). -----------
   if [ "$need_gb" -ge 80 ]; then pair_ram=95; elif [ "$need_gb" -ge 40 ]; then pair_ram=55; else pair_ram=20; fi
   par=$(( (MEM_GB - 30) / pair_ram )); [ "$par" -lt 1 ] && par=1; [ "$par" -gt "$NGPU" ] && par="$NGPU"
