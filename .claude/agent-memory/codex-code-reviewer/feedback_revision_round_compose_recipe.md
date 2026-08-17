@@ -617,3 +617,22 @@ the inlined impl body usually carries the round SHA once — count template span
 and body separately before asserting the total; (d) a prior twin verdict at a
 NON-standard /tmp name (e.g. `/tmp/<N>-codex-r<k>-marker.md`) may be the posted
 events.jsonl note verbatim — byte-compare before trusting either copy.
+
+**Production-data-mutation round, v2 combined (#2329 r11 = sentinel v11,
+2026-08-17):** when the brief names a helper the fix is supposed to route
+through (here `_atomic_replace` for crash-safety) grep the ROUND DIFF for the
+token at compose time — zero hits is a load-bearing composer observation:
+locate the actual write-path symbols in the new blob (`_write_jsonl_atomic` /
+`_save_pt_atomic` / `_write_json_atomic`, call order jsonl → pt → done) and
+hand Codex the wrapper-routing adjudication with anchors, never resolve it
+yourself and never let the brief's helper name pass into the prompt as an
+established fact. Also: a full-feature round (+1378) composes fine in the
+task's established TIGHT shape when the brief supplies the question list —
+expand the v2 efficiency lens for a GPU generation round (work-conserving
+claim queue, extracted-core dual call sites, realized-width fail-loud,
+regenerated-text upload path ⇒ include `raw-completions-upload-missing` +
+`compute-shape-mismatch` + `hollow-verification-gate` in the tag enumeration)
+and give the in-place merge a three-part ruling frame: byte-preservation
+(name any DECLARED mutation, e.g. cap backfill), per-crash-point idempotency,
+per-file atomicity with done-record-strictly-LAST (a done record before data
+writes is the stale-done question by another road).
