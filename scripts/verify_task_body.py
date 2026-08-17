@@ -4546,7 +4546,11 @@ def check_v4_result_section_per_unit_coverage(
             continue  # evidence (c): a per-unit view claim in the block's prose
         flagged.append(f"'{name[:48]}'")
     if flagged:
-        preview = "; ".join(flagged[:3]) + (" …" if len(flagged) > 3 else "")
+        # Full enumeration by design — the docs bullet promises "ONE WARN
+        # naming each flagged H3": the join is bounded by the body's section
+        # count, and the remediation-oriented purpose favors naming every
+        # section over the sibling capped-preview idiom (check 55).
+        preview = "; ".join(flagged)
         return CheckResult(
             label,
             True,

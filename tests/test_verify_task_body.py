@@ -177,7 +177,7 @@ def test_good_body_passes_all():
     # locally reachable, so the cited SHA is silently skipped), AND the
     # check-38 linked-not-embedded-figures scan (needs `issue` for
     # own-figures-dir scoping, #1371; PASS-skip: not a v4 body) →
-    # 74 results total (2 prepended + CHECKS[1:]=57 + 15 appended, counting
+    # 75 results total (2 prepended + CHECKS[1:]=57 + 16 appended, counting
     # the #1827 plan-conditions check narrated below; check 36
     # `check_v4_result_paragraph_sentences` (#1368), check 37
     # `check_footer_reuse_bullets_pinned` (#1370), check 39
@@ -21225,6 +21225,69 @@ def test_check59_outside_checks_and_dispatched_in_verify_text():
     assert res.passed is True
     assert res.is_warn is True
     assert res.name == _CHECK59_NAME
+
+
+def test_check59_warn_detail_names_all_flagged_sections():
+    """Reconciler round-1 `check59-truncated-section-names`: the WARN
+    detail enumerates EVERY flagged H3 — the docs bullet promises "ONE
+    WARN naming each flagged H3", so there is no `[:3]` capped preview
+    and no trailing ellipsis (the join is bounded by the body's section
+    count; remediation favors full enumeration over the sibling
+    capped-preview idiom). Four evidence-less sections, all four named
+    in the single WARN detail."""
+    names = [
+        "First aggregate read",
+        "Second aggregate read",
+        "Third aggregate read",
+        "Fourth aggregate read",
+    ]
+    body = _v4_minimal_results_body(
+        "".join(
+            f"### {n}\n\nMean alignment shifts +17 pts across arms as a table.\n\n" for n in names
+        )
+    )
+    res = verify_task_body.check_v4_result_section_per_unit_coverage(body, issue=2353)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "4 `### <result>` section(s)" in res.detail
+    for n in names:
+        assert f"'{n}'" in res.detail
+    assert "…" not in res.detail
+
+
+def test_check59_incident_body_warns_through_verify_text_dispatch():
+    """Reconciler round-1 `check59-dispatch-negative-test-gaps` (a): the
+    LIVE dispatch path — `verify_text(body, issue=2353)` — surfaces
+    check 59's WARN (`passed=True`, `is_warn=True`) on the incident
+    fixture, proving the issue number threads through to the OUTSIDE-
+    CHECKS dispatch. Assertions are scoped to the check-59 row only
+    (pulled by name), so sibling issue-parameterized checks can never
+    flake this test."""
+    body = _v4_minimal_results_body(_check59_cap2048_incident_block())
+    _ok, results = verify_task_body.verify_text(body, issue=2353)
+    r59 = next(r for r in results if r.name == _CHECK59_NAME)
+    assert r59.passed is True
+    assert r59.is_warn is True
+    assert "'The gap survives a doubled generation cap'" in r59.detail
+
+
+def test_check59_per_arm_prose_does_not_exempt():
+    """Reconciler round-1 `check59-dispatch-negative-test-gaps` (b): the
+    non-exemption rail generalized off the incident text — literal
+    `per-arm` prose in an otherwise evidence-less section is an
+    AGGREGATE grain (`arm` is deliberately absent from
+    `_PER_UNIT_CLAIM_RE`, like `cell` and `pair`) and MUST NOT silence
+    the WARN."""
+    body = _v4_minimal_results_body(
+        "### Arm-level read\n\n"
+        "Mean alignment per-arm as bars; the per arm spread is a table.\n\n"
+        "![Bars](https://x/figures/issue_9/arm_bars.png)\n\n"
+        "> **Figure.** *Lead.* Per-arm means with bootstrap CIs.\n"
+    )
+    res = verify_task_body.check_v4_result_section_per_unit_coverage(body, issue=2353)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "'Arm-level read'" in res.detail
 
 
 # ─── Check 56: fold-staled acknowledgment claims (v4 WARN, #2264) ────────────
