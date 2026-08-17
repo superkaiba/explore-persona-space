@@ -36,6 +36,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 ROOT = Path(__file__).resolve().parent.parent
 ISSUE_SKILL = ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 GUARD_HOOK = ROOT / ".claude" / "hooks" / "guard_piped_git_push.sh"
@@ -70,7 +72,7 @@ def _normalized(text: str) -> str:
 def _snippets_region() -> str:
     """The normalized SKILL.md span between the Bare-push-snippets heading and
     the Merge-safety-guards heading (the canonical copy-source subsection)."""
-    skill_norm = _normalized(ISSUE_SKILL.read_text())
+    skill_norm = _normalized(issue_skill_text())
     start = skill_norm.find(REGION_START)
     assert start != -1, (
         f"SKILL.md lost the {REGION_START!r} heading; if the subsection was "

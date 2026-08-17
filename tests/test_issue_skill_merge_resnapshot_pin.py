@@ -31,6 +31,8 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 _SKILL = _REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 
@@ -45,7 +47,7 @@ _RECOVERY_CERT_DIFF = (
 
 
 def _skill_text() -> str:
-    return _SKILL.read_text(encoding="utf-8")
+    return issue_skill_text()
 
 
 def _normalized(text: str) -> str:
