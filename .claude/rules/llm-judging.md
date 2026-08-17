@@ -249,13 +249,23 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     REPORTED (#1739: 287 items, batch mean 7.26 vs sync 7.77), and DISCLOSE
     the batch/sync split in the run's `judge_meta`. Reference
     implementation: `scripts/issue1739_evilood_refusal_rejudge.py`.
-    NON-COVERAGE NOTE: the rule-26 pilot gate does NOT key on this class — a
-    forced-BATCH pilot against a censoring wave will PASS the parse-fail
-    gate BY DESIGN (api-refusal draws leave both the parse-fail numerator
-    AND its denominator, alongside transport losses), and the routing-parity
-    gap (rule-26 pilots route SYNC below the crossover while gating a
-    forced-BATCH production wave) is a separately-filed sibling task — do
-    NOT read a rule-26 PASS as protection against api-refusal censoring.
+    COVERAGE NOTE (#2152): the rule-26 pilot gate NOW covers this class
+    when the caller declares the wave's dispatch (`wave_n_calls` /
+    `wave_threshold_base` / `wave_force_sync` on `judge_pilot_gate`): the
+    pilot is forced onto the wave's transport (realized route read back
+    from the persisted `save_raw["routing"]` record; a mismatch, an
+    unverifiable transport, or a partially cache-served pilot —
+    `n_cached > 0`, whose cache-served draws are refusal-free by
+    construction and dilute the rate — is a FAIL; an unpinned
+    count-routed declaration inside the OTPM-probe region
+    `n < 2×threshold_base` is refused fail-fast), and the per-arm
+    api-refusal rate `n_api_refusal / (n_draws − n_transport_lost)` gates
+    at ≥ 0.10 (waivable per arm via `waive_api_refusal_arms` with the
+    reason recorded at the caller-site constant — e.g. a pre-planned sync
+    re-issue remediation; truncation and the effective-draws floor stay
+    unwaivable). RESIDUAL non-coverage: a LEGACY caller that does not
+    declare the wave gets only a report warning — do not read THAT
+    pilot's PASS as protection against api-refusal censoring.
     The residual backstops that DO fire: a censored arm's shrunken
     `n_answered` / `n_scored` — api-refusal draws leave the `n_answered`
     parse-fail denominator, so a downstream consumer's scored-count floor
@@ -263,7 +273,8 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     (`min_effective_draws_per_arm`, evaluated against
     `n_draws - n_transport_lost`) does NOT shrink: api-refusal draws stay
     inside it — the reduce's WARNING on any non-zero count, and the
-    `n_api_refusal` field now carried per arm in the pilot report.
+    `n_api_refusal` field carried per arm in the pilot report —
+    gate-keyed since #2152 for wave-declared pilots (clause (d)).
 
 29. **Report per-ITEM completeness (`frac_items_complete`) per behavior /
     arm against a pre-registered floor — a per-DRAW drop rate does not
@@ -446,14 +457,53 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     the production spend.** Before any production judge dispatch of
     ≥ ~5,000 calls, run a PILOT of ~100–200 draws spanning the arms /
     conditions (and every rubric in the wave) at the EXACT production
-    instrument (rubric, judge model, `max_tokens`), and gate the full
-    dispatch on BOTH: (a) `stop_reason == "max_tokens"` fraction ≈ 0 in
-    the pilot's raw responses — any nonzero truncation signature → raise
+    instrument (rubric, judge model, `max_tokens`, and TRANSPORT — the
+    sync-vs-Batch dispatch path the wave itself will use; #2152), and
+    gate the full dispatch on ALL of: (a) `stop_reason == "max_tokens"`
+    fraction ≈ 0 in the pilot's raw responses — any nonzero truncation
+    signature → raise
     the budget (generously; rule 23's cap-is-not-a-spend point) and
     re-pilot; and (b) per-arm parse-failure rate < ~2%, or explained as a
     known content-drop class per rule 9 (e.g. empty judge responses on
-    degenerate steered text, #1769). Record the pilot verdict — per-arm
-    drop rate + `stop_reason` tally + the `max_tokens` used — in the run
+    degenerate steered text, #1769); (c) TRANSPORT PARITY (#2152) — the
+    pilot must RUN the wave's transport: a ~200-draw pilot routes SYNC by
+    call count while the wave it gates is typically forced BATCH, so the
+    caller DECLARES the wave's dispatch (`wave_n_calls` /
+    `wave_threshold_base` / `wave_force_sync` on `judge_pilot_gate`,
+    mirroring the wave's actual dispatch kwargs 1:1), the gate computes
+    the wave's route via `judge_dispatch.decide_route`, forces the pilot
+    onto it (`threshold_base=0` for batch, `force_sync` for sync), reads
+    the REALIZED route back from each arm's persisted
+    `save_raw["routing"]` record, and FAILs on a mismatch or an
+    unverifiable transport — never a silent pass. Cache-served draws are
+    NOT transport evidence: a wave-declared pilot whose `save_raw`
+    records `n_cached > 0` FAILs as transport-unverifiable (cached draws
+    carry no routing provenance and, being refusal-free by construction —
+    the #2151 cache PUT-SKIP — dilute the clause-(d) rate toward PASS);
+    run pilots against a fresh pilot `cache_dir` (rule 24(ii)). An
+    UNPINNED count-routed declaration inside the dispatcher's OTPM-probe
+    region (`wave_n_calls < 2 × wave_threshold_base`, neither pin set) is
+    REFUSED fail-fast before any pilot dispatch — the realized route
+    there depends on a live OTPM probe at dispatch time and no pilot can
+    certify it; PIN the wave's transport (`threshold_base=0` forces
+    batch / `force_sync=True` forces sync), with the SAME pin on the
+    production dispatch. Outside the region the count-routed route is
+    deterministic batch (any ≥ ~5,000-call wave at the default
+    `threshold_base=2,000` sits at n ≥ 2×tb — no pin needed). An
+    UNDECLARED wave downgrades to a recorded report warning (legacy
+    callers), but every NEW ≥ ~5,000-call wave MUST declare; and (d)
+    per-arm API-REFUSAL rate (`n_api_refusal / (n_draws −
+    n_transport_lost)`) < 0.10 — the rule-28 transport-conditional censor
+    the transport-parity clause exists to expose (#1739: 34.1% batch-path
+    censoring, 0/14,887 sync re-refusals; supersedes #2151's report-only
+    treatment). Waivable per arm via `waive_api_refusal_arms` with the
+    reason recorded at the caller-site constant (the #2091
+    `PILOT_WAIVE_PARSE_FAIL_ARMS` pattern; a wave with a pre-planned
+    rule-28 sync re-issue remediation is the legitimate waiver case);
+    truncation and the effective-draws floor stay unwaivable. Record the
+    pilot verdict — per-arm drop rate + `stop_reason` tally + the
+    `max_tokens` used + the pilot's realized transport and the wave's
+    declared transport — in the run
     digest / plan §6. Rationale: rule 23's binding check is POST-HOC
     (measured only after the full wave is spent), so every miss costs a
     full re-judge — three waves in one week (#1739: a surgical re-judge
@@ -523,10 +573,12 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     under-powered pilot, not a clean read.
 
     A pilot PASS certifies only the instrument it ran: rubric text, judge
-    model, `n_draws`, and `max_tokens`. Any change to those invalidates
-    it — re-pilot. (`scripts/issue2203_runtime.py` is the in-repo
-    precedent: it fingerprints `rubric_sha + n_draws + max_tokens` and
-    honors a prior PASS only on match.)
+    model, `n_draws`, `max_tokens`, and TRANSPORT (#2152). Any change to
+    those invalidates it — re-pilot. (`scripts/issue2203_runtime.py` is
+    the in-repo precedent: it fingerprints `rubric_sha + n_draws +
+    max_tokens` and honors a prior PASS only on match; that fingerprint
+    predates transport — a prior PASS does NOT cover a transport
+    change.)
 
     When a satisfiable pilot is genuinely unaffordable for one arm, the
     escape is the AUDITABLE one — never a quietly loosened threshold: name
@@ -798,7 +850,8 @@ narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin
   judge. Plan-enforced in v1 — no mechanical lint.
 - Rule 26 (pilot gate) rides the same lens load: a plan whose judged DV
   dispatches ≥ ~5,000 judge calls names its pilot gate (pilot size, arms
-  spanned, the two gate thresholds) or states the exemption; the
+  spanned, the gate thresholds, and the wave-transport declaration —
+  #2152) or states the exemption; the
   Statistics & Measurement critic REVISEs an ungated large wave.
   Plan-enforced in v1 — no mechanical lint (same class as rules 23/24);
   the `judge_pilot_gate` helper is #2021's deliverable.
@@ -822,9 +875,10 @@ narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin
   (reference implementation:
   `scripts/issue1739_evilood_refusal_rejudge.py`), or states the
   exemption; the Statistics & Measurement critic REVISEs a harm-class
-  judged-DV plan with no api-refusal accounting. A rule-26 pilot-gate
-  PASS is NOT a substitute (rule 28's non-coverage note: api-refusal
-  draws leave both the parse-fail numerator and denominator).
+  judged-DV plan with no api-refusal accounting. A wave-DECLARED rule-26
+  pilot PASS (transport parity + the api-refusal clause, #2152) is
+  corroborating evidence but not a substitute for the accounting; an
+  UNDECLARED pilot's PASS is NOT protective (rule 28's coverage note).
   Mechanical backstop: `verify_plan.py` c53 WARNs on the
   missing-handling shape (WARN-only; the lens REVISE is the binding
   gate).
