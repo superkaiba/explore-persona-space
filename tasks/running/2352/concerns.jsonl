@@ -1,0 +1,1 @@
+{"ts": "2026-08-17T21:26:15Z", "event": "raised", "concern_id": "helper-import-guard-parser-gaps", "severity": "BLOCKER", "summary": "Section 19 misses multiline and comma-separated static tests imports, so the promised forward half-sync invariant remains bypassable.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
